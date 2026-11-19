@@ -271,10 +271,15 @@ fn retaining(kit: &mut Kit, area: &Area, (paths, outcrops): (&[Path], &[Outcrop]
             let at = ahead(area.at, outward, out, 0.0);
             crate::rocks::raised(kit, carved, at) >= FOOT && carved.floor_distance(at[0], at[1]) > 0.0
         };
-        while out < (edge + 2.0) * 1.35 && !foot(out) {
+        // Past a raised floor's edge the land may fall away instead: no cliff rises there to hold back.
+        let falls = |out: f64| {
+            let at = ahead(area.at, outward, out, 0.0);
+            crate::rocks::raised(kit, carved, at) <= -FOOT && carved.floor_distance(at[0], at[1]) > 0.0
+        };
+        while out < (edge + 2.0) * 1.35 && !foot(out) && !falls(out) {
             out += 0.5;
         }
-        if out >= (edge + 2.0) * 1.35 {
+        if out >= (edge + 2.0) * 1.35 || falls(out) {
             continue;
         }
         let at = ahead(area.at, outward, out - 0.7, 0.0);

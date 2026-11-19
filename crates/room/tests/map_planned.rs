@@ -145,12 +145,12 @@ fn a_mines_and_an_undercrofts_beats_are_roofed_and_no_area_of_saltmeres_is() {
 /// A body's step: the most the land may rise within half a metre along a way, metres.
 const STEP_M: f64 = 0.5;
 
-#[test]
-#[ignore = "the Driftwood Moors' way from Moorend steps 0.5 to 0.7 m onto the Tithe Camp's platform where its ramp, cut straight, leaves the way's line; cutting each ramp along its way moves the step onto the way that passes between two ramps, so it waits on the height rework's graded network"]
-fn every_way_and_climb_of_saltmeres_is_walked_without_a_step() {
+/// Each place along a zone's ways and climbs where the carved land rises more than a body's step within half a metre,
+/// but where a bridge carries the way.
+fn steps_on(zones: &[&str]) -> Vec<String> {
     let ground = &laid_one().1;
     let mut steps_found = Vec::new();
-    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+    for laid in continent_one().iter().filter(|laid| zones.contains(&laid.id.as_str())) {
         // A river crossing's bridge carries the way over the water and its banks.
         let bridged = |at: [f64; 2]| {
             laid.paths
@@ -171,14 +171,46 @@ fn every_way_and_climb_of_saltmeres_is_walked_without_a_step() {
                     let rise = ground.height_at(at[0], at[1]) - ground.height_at(before[0], before[1]);
                     if rise.abs() > STEP_M && !bridged(at) && !bridged(before) {
                         let (from, to) = (joined.from, joined.to);
-                        steps_found.push(format!(
-                            "{}: {:?} {from} to {to} steps {rise:+.2} m at {at:?}",
-                            laid.id, joined.joined
-                        ));
+                        let joined = joined.joined;
+                        steps_found
+                            .push(format!("{}: {joined:?} {from} to {to} steps {rise:+.2} m at {at:?}", laid.id));
                     }
                 }
             }
         }
     }
-    assert!(steps_found.is_empty(), "{} steps: {steps_found:#?}", steps_found.len());
+    steps_found
+}
+
+#[test]
+fn every_way_and_climb_of_the_vales_is_walked_without_a_step() {
+    let steps = steps_on(&["gullwing-vale"]);
+    assert!(steps.is_empty(), "{} steps: {steps:#?}", steps.len());
+}
+
+#[test]
+#[ignore = "the Driftwood Moors' way from Moorend steps 0.5 to 0.7 m onto the Tithe Camp's platform where its ramp, cut straight, leaves the way's line; it waits on the Moors taking the graded network the Vale has"]
+fn every_way_and_climb_of_saltmeres_is_walked_without_a_step() {
+    let steps = steps_on(&ZONES);
+    assert!(steps.is_empty(), "{} steps: {steps:#?}", steps.len());
+}
+
+#[test]
+fn the_vales_places_stand_at_their_heights() {
+    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let level = |name: &str| {
+        let number = laid.areas.iter().position(|area| area.name == name).expect("the area is laid out");
+        laid.map.spaces[number].level
+    };
+    let (keep, shrine, hamlet, farm) =
+        (level("Valeguard"), level("The Old Stones"), level("Gullwing"), level("Orchard Farm"));
+    assert!(keep > shrine && shrine > hamlet && hamlet > farm && farm > 0.1, "{keep} {shrine} {hamlet} {farm}");
+    for low in ["Weir Mill", "The Water Meadows", "Hollow Coven"] {
+        assert!(level(low) < 0.05, "{low} lies by the river: {}", level(low));
+    }
+    let mut heights: Vec<i64> =
+        laid.map.spaces[..laid.areas.len()].iter().map(|space| (space.level * 10.0).round() as i64).collect();
+    heights.sort_unstable();
+    heights.dedup();
+    assert!(heights.len() >= 4, "the Vale's places stand at {heights:?} tenths of its massif");
 }

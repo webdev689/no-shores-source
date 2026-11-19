@@ -26,6 +26,7 @@ code:
   - crates/layout/src/ring.rs#traced
   - crates/layout/src/collide.rs#boxes_of
   - crates/layout/src/spaces.rs#map
+  - crates/layout/src/heights.rs#graded
   - content/world/briefs.json
   - client/src/layout/layoutPlan.ts#planOfLayouts
   - client/src/game/groundPaint.ts#paintOfLayouts
@@ -50,7 +51,9 @@ something enormous, a causeway, a cave's mouth, and an instance's way in and the
 is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). A layout
+and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (the Vale's
+only for now, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
+height, sets its own height in place of its kind's (the Vale's Water Meadows lie by the river at 0). A layout
 carries its `stone` out with it, and the client wears it (below).
 
 ## How a layout is planned
@@ -319,6 +322,23 @@ of its turned corners. Boxes are written to the centimetre, grown out so none sh
 building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
 body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
 lays them (`crates/room/tests/rooms_walked.rs`).
+
+## Heights
+
+Where the brief asks for `heights`, each area's floor stands at a level by its kind, as a share of the massif's
+height: the land's own for what meets the sea, a river or a gorge out, and for what lies sunk (a landing, a gate, a
+dock, a wreck, a mill, a quarry, a graveyard, a coven, a cave); the wilds and an arena 0.2, a farm 0.25, a hamlet 0.35,
+a camp 0.4, a ruin 0.45, a shrine 0.55, a tower and a lighthouse 0.6, a keep 0.7. Every point of every way then takes
+the blend of the levels round it along the ways (`heights`): a point on an area's floor holds that area's level, and
+every other point the mean of those before and after it along its way, weighted by how near, and of every other way's
+points within 10 m, relaxed until it settles; so a way climbs evenly from one place's level to the next, and ways that
+share or run beside one another stand at one level. A raised area's floors and every stretch of way off the land's own
+level are carved as the sculpt's raised floors ([[Land]]); a terrace stands its area's level higher, a ramp's foot at
+the level of the land under it; a lookout's climb starts at its floor's level, and a pocket opens at its way's. What
+was stood on the land before the carving is lifted onto it. A retaining wall stands only where a cliff rises from the
+floor: past a raised floor's edge the land may fall away instead. In the Vale every way and climb is walked without a
+step a body cannot take (`crates/room/tests/map_planned.rs`), its keep highest, then its shrine, its hamlet and its
+farm, its mill, meadows and coven by the river.
 
 ## The map
 

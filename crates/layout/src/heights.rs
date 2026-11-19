@@ -123,3 +123,51 @@ pub fn graded(paths: &[Path], basins: &[Basin], levels: &[f64]) -> Vec<Vec<f64>>
     }
     paths.iter().zip(&starts).map(|(path, &start)| level[start..start + path.points.len()].to_vec()).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::paths::Tier;
+
+    fn way(points: &[[f64; 2]]) -> Path {
+        Path { tier: Tier::Track, points: points.to_vec(), crossings: Vec::new(), heights: Vec::new() }
+    }
+
+    fn basin_at(at: [f64; 2]) -> Basin {
+        Basin { floors: vec![[at[0], at[1], at[0], at[1], 20.0]], terraces: Vec::new() }
+    }
+
+    #[test]
+    fn a_way_between_two_levels_runs_evenly_from_one_to_the_other() {
+        let points: Vec<[f64; 2]> = (0..=20).map(|step| [f64::from(step) * 10.0, 0.0]).collect();
+        let graded = graded(&[way(&points)], &[basin_at([0.0, 0.0]), basin_at([200.0, 0.0])], &[0.0, 0.6]);
+        let levels = &graded[0];
+        assert!(levels[0].abs() < 1e-9 && (levels[20] - 0.6).abs() < 1e-9, "each end at its area's level");
+        // Off the basins (20 m round each end), the way climbs evenly between them.
+        for pair in levels[2..=18].windows(2) {
+            let step = pair[1] - pair[0];
+            assert!((step - 0.6 / 16.0).abs() < 0.01, "an even step: {step}");
+        }
+    }
+
+    #[test]
+    fn ways_side_by_side_stand_at_one_level() {
+        let first: Vec<[f64; 2]> = (0..=20).map(|step| [f64::from(step) * 10.0, 0.0]).collect();
+        let second: Vec<[f64; 2]> = (0..=20).map(|step| [f64::from(step) * 10.0, 6.0]).collect();
+        let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0])];
+        let graded = graded(&[way(&first), way(&second)], &basins, &[0.0, 0.6]);
+        for (one, other) in graded[0].iter().zip(&graded[1]) {
+            assert!((one - other).abs() < 0.02, "{one} beside {other}");
+        }
+    }
+
+    #[test]
+    fn a_brief_without_heights_keeps_every_area_at_the_land_level() {
+        let area = |kind| Area { kind, name: String::new(), at: [0.0, 0.0], radius: 40.0, leads_to: None };
+        let areas = [area(AreaKind::Keep), area(AreaKind::Hamlet)];
+        let mut brief = crate::brief::Briefs::default().of("none", land::sites::NodeKind::Patrol);
+        assert_eq!(levels(&areas, &brief), vec![0.0, 0.0]);
+        brief.heights = true;
+        assert_eq!(levels(&areas, &brief), vec![level_of(AreaKind::Keep), level_of(AreaKind::Hamlet)]);
+    }
+}

@@ -160,7 +160,7 @@ impl From<Vec<Sculpt>> for Sculpts {
                 spread(bounds, &mut |entry| entry.3.push(number as u32));
             }
             for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.levels.iter().enumerate() {
-                let reach = half + CLIFF_RUN_M + RUN_BLEND_M;
+                let reach = half * (1.0 + WANDER) + CLIFF_RUN_M + RUN_BLEND_M;
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.4.push(number as u32));
             }
@@ -342,15 +342,27 @@ impl Sculpts {
     fn off_level(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
         let Some((.., levels)) = self.near[number].get(&(bucket(x), bucket(y))) else { return (f64::INFINITY, 1.0) };
+        // A raised floor's edge wanders as a floor's does, so a place keeps its shape at any height.
+        let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(sculpt.seed, x / 70.0, y / 70.0, 2));
         let parts: Vec<(f64, f64)> = levels
             .iter()
             .map(|&level| {
                 let [x1, y1, x2, y2, half, from, to] = sculpt.levels[level as usize];
                 let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
-                (distance - half, from + (to - from) * along)
+                (distance - half * wander, from + (to - from) * along)
             })
             .collect();
         blended(&parts)
+    }
+
+    /// How much of a sculpt's carving stands at a point: 1 in its claim, falling to 0 over its fade past it.
+    fn fade_at(&self, number: usize, x: f64, y: f64) -> f64 {
+        let sculpt = &self.sculpts[number];
+        match self.fades[number].at(x, y) {
+            Fade::Whole => 1.0,
+            Fade::None => 0.0,
+            Fade::Measured => smooth(-FADE_M, 0.0, inside_claim(&sculpt.claim, &sculpt.wings, x, y)),
+        }
     }
 
     /// A sculpt's massif's height at a point, metres: its rise, varied slowly by its noise, so the top rolls.
@@ -361,14 +373,8 @@ impl Sculpts {
 
     /// The level of a sculpt's raised floor at a point on it, metres; 0 off every raised floor.
     fn raised_level(&self, number: usize, x: f64, y: f64) -> f64 {
-        let Some((.., levels)) = self.near[number].get(&(bucket(x), bucket(y))) else { return 0.0 };
-        let sculpt = &self.sculpts[number];
-        let on =
-            levels.iter().map(|&level| sculpt.levels[level as usize]).find_map(|[x1, y1, x2, y2, half, from, to]| {
-                let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
-                (distance <= half).then_some(from + (to - from) * along)
-            });
-        on.map_or(0.0, |share| share * self.rise_at(number, x, y))
+        let (off, share) = self.off_level(number, x, y);
+        if off <= 0.0 { share * self.rise_at(number, x, y) } else { 0.0 }
     }
 
     /// How far a point lies off the nearest sculpt's floor or climb, metres: negative on it, infinity far from any.
@@ -413,7 +419,7 @@ impl Sculpts {
                 } else {
                     (floor, 0.0)
                 };
-                (off, share * self.rise_at(number, x, y))
+                (off, share * self.rise_at(number, x, y) * self.fade_at(number, x, y))
             })
             .filter(|(off, _)| off.is_finite())
             .min_by(|first, second| first.0.total_cmp(&second.0))
@@ -485,11 +491,7 @@ impl Sculpts {
     /// past its claim.
     fn raised_by(&self, number: usize, x: f64, y: f64) -> f64 {
         let sculpt = &self.sculpts[number];
-        let fade = match self.fades[number].at(x, y) {
-            Fade::Whole => 1.0,
-            Fade::None => 0.0,
-            Fade::Measured => smooth(-FADE_M, 0.0, inside_claim(&sculpt.claim, &sculpt.wings, x, y)),
-        };
+        let fade = self.fade_at(number, x, y);
         if fade <= 0.0 {
             return 0.0;
         }
