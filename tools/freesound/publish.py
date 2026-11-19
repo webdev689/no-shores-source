@@ -6,7 +6,8 @@ The download holds `picks.json`, each pick read from its own Freesound page (its
 `picks/<cue>.mp3`, its preview. Each preview is put on R2 under the SHA-256 of its bytes, unchanged unless its cue
 names a `cut` (a long one cut to the stretch the game plays, with ffmpeg, the credit saying so), and
 content/audio/sounds.json is written for the game, which plays each in place of its synthesised cue and lists each
-credit in Settings. A pick that was not read whole stops the publish: no sound goes in without its credit.
+credit in Settings. A pick already in the list, cut the same way, keeps its file. A pick that was not read whole
+stops the publish: no sound goes in without its credit.
 """
 import json
 import os
@@ -76,6 +77,8 @@ def main():
     # Every pick the list names, and no other: an older download would drop one from the game unsaid.
     if {pick['id'] for pick in picks} != picked:
         sys.exit(f'the download holds {sorted(pick["id"] for pick in picks)}, the list picks {sorted(picked)}')
+    with open(MANIFEST) as file:
+        before = json.load(file)['sounds']
     sounds = {}
     for pick in picks:
         cue = pick['id']
@@ -95,13 +98,20 @@ def main():
         if not is_mp3(data):
             sys.exit(f'{cue}: {pick["file"]} is not an MP3')
         changes = VARIES if VARIED.fullmatch(cue) else CHANGES
-        if cues[cue].get('cut'):
-            start, seconds = cues[cue]['cut']
+        trim = cues[cue].get('cut')
+        if trim:
+            start, seconds = trim
             mono = cues[cue].get('mono', False)
-            data = cut(data, start, seconds, mono)
             changes = f'Cut to {seconds:g} s from {start:g} s in{", made mono" if mono else ""}, its ends faded.'
+        published = before.get(cue, {})
+        # ffmpeg's bytes differ from one version to the next, so a pick already up, cut the same way, stays as it is:
+        # cut again, it would go up anew under another hash and the game would fetch the same sound twice over.
+        if published.get('freesound') == pick['freesound'] and published.get('changes') == changes:
+            key = published['key']
+        else:
+            key = put(cut(data, start, seconds, mono) if trim else data, 'sounds', 'mp3', 'audio/mpeg')
         sounds[cue] = {
-            'key': put(data, 'sounds', 'mp3', 'audio/mpeg'),
+            'key': key,
             'freesound': pick['freesound'],
             'name': pick['name'],
             'author': pick['author'],
@@ -111,8 +121,6 @@ def main():
             'changes': changes,
         }
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
-    with open(MANIFEST) as file:
-        before = json.load(file)['sounds']
     sounds.update({cue: sound for cue, sound in before.items() if 'freesound' not in sound and cue not in sounds})
     manifest = {
         'about': "The owner's picks, kept on R2 by their hash: Freesound's, each with its credit, written by "

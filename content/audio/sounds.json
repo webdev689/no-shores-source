@@ -12,6 +12,16 @@
       "page": "https://freesound.org/people/SoundsLikeYukon/sounds/824995/",
       "changes": "Unchanged."
     },
+    "amb.rain.gutters": {
+      "key": "sounds/3122961e2708af3f51869230bba812fb61fb0d62fe709bb260c84dd752f469b2.mp3",
+      "freesound": 249944,
+      "name": "Rain dripping from the rain gutter.wav",
+      "author": "IllusiaProductions",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/IllusiaProductions/sounds/249944/",
+      "changes": "Unchanged."
+    },
     "amb.rainforest.parrot": {
       "key": "sounds/c8ab7260beed5dbd81354ad68a9c94e377ef9a71946642d7dde6b5e8dda4020d.mp3",
       "freesound": 875522,
@@ -60,6 +70,26 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/dobroide/sounds/65264/",
+      "changes": "Unchanged."
+    },
+    "amb.thunder.crack": {
+      "key": "sounds/aa5bcebc20a1ef006c92889af71a5a3fa26dfb041bd4cfb304163c7952aedade.mp3",
+      "freesound": 567945,
+      "name": "200817 Thunder, pretty close crack 4pm.flac",
+      "author": "TRP",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TRP/sounds/567945/",
+      "changes": "Unchanged."
+    },
+    "amb.thunder.roll": {
+      "key": "sounds/b9df1ba92664cc955df66e52ac88cfa59035be0405ca4dc82b44c51cf1727096.mp3",
+      "freesound": 581125,
+      "name": "Distant Thunder 4",
+      "author": "Fission9",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Fission9/sounds/581125/",
       "changes": "Unchanged."
     },
     "amb.woodland.crow": {
