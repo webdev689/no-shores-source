@@ -8,8 +8,8 @@ code:
   - crates/room/src/players.rs#VIEW_LAG
   - client/src/network/localRoom.ts#LocalRoom
   - client/src/combat/fighting.ts#Fighting
-  - crates/room/src/lib.rs#SLACK_TICKS
-  - crates/room/src/lib.rs#WAITING_LIMIT
+  - crates/room/src/players.rs#SLACK_TICKS
+  - crates/room/src/players.rs#WAITING_LIMIT
   - crates/room/src/sea.rs#Sea
   - crates/room/src/sea.rs#PACES
   - crates/room/src/fleet.rs#Fleet
@@ -390,8 +390,8 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.10 to 0.23 s of WebAssembly, garrison
   and beats and all, 0.11 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).
-- A node's room with one player and every group but a Boss's walking its beat ticks in 0.02 to 0.12 ms of
-  WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
+- A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
+  of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
   the same after an hour open (tested offline).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.

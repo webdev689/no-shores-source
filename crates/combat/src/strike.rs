@@ -1,6 +1,6 @@
 //! Who a swing's blow reaches: a fighter on another side, alive, within the weapon's reach and the stroke's arc
 //! (close in, almost any way it faces), near the striker's own height, with nothing between them. The nearest first,
-//! the soft lock's target before all, up to the stroke's count.
+//! the soft lock's target before all; every one reached is struck.
 
 use crate::arms::{Stroke, WeaponClass, stroke_shape, weapon};
 use crate::fighter::{Attack, Fighter, FighterId};

@@ -128,16 +128,16 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   [[The Display as Claude Lays It Out]]). Its bars do what DFO's Enhanced UI Plus does with them
   ([[Pick - Enhanced Plus UI]]). It takes a larger step where the view is 1500 by 900 or more, and stands at twice
   its first size past 1440p (2400 by 1300), as the rest of the display does (`combat/hudLayout.ts`).
-- **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over
-  a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
-  at 22 px and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
-  an end. A brass needle marks its middle. Its column stands what comes under it 10 px under its rule, 56 px down:
-  a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px long beside the compass
-  stands the whole column under the vitals instead. At sea it marks each ship within 900 m on its top edge, a bow pointing up,
-  at her bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
-  on the side to turn toward. She is red while she would take the player (a hostile ship, or a hostile captain in
-  the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one
-  going down has no mark. The compass hides with the view while the held map is up at the helm.
+- **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over a 2
+  px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
+  and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
+  strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
+  under its rule, 56 px down: a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px
+  long beside the compass stands the whole column under the vitals instead. At sea it marks each ship within 900 m on
+  its top edge, a bow pointing up, at her bearing on the same quarter turn, so one north-east stands under NE; one off
+  the strip is held at the end on the side to turn toward. She is red while she would take the player (a hostile ship,
+  or a hostile captain in the fight), bone for another player's or a captain who is not hostile, and grey once her
+  colours are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
   over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),
   drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
@@ -227,8 +227,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   no level; to its right its name above a long thin track, the meter in its rank's
   colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
   three sizes. Ships' plates are drawn alike on an SVG, at the same sizes (`PLATES`): 140 by 26 px over a figure,
-  and the boss bar 640 px wide at most, three quarters of a narrower screen, its faction after its name. The soft
-  lock's is 340 px wide at most, and never wider than three quarters of the view. Its name stands at 11 px and the
+  and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
+  wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
   seen starts whole at her bar.

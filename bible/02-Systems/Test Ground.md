@@ -110,8 +110,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   grants them; a node's refuses.
 - **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
   the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). After each ask the room's
-  next word sets every list back to what it holds, so a choice it refused does not stay shown. The ability bar stands
-  at the bottom left, beside the weapons. An Anima's release pushes the view in and frames the screen in its element, as in the game.
+  next word sets every list back to what it holds, so a choice it refused does not stay shown. The ability bar stands at
+  the bottom left, beside the weapons. An Anima's release pushes the view in and frames the screen in its element, as in
+  the game.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
@@ -215,26 +216,25 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   the outfit shown, the pointer held or not), a crosshair marks the view's middle, where an aimed shot lands; a bow
   aiming rings it with its draw, gold once at full power. The shots left stand beside it while it shows ([[Interface]]).
 - **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
-  the view; health, stamina and poise as long thin pointed bars at the top left, a faint strip holding what a loss
-  took before it drains, the health's frame flashing blood at a quarter or less and the stamina's flashing when a swing
-  or a dodge is pressed with none; the Arts and the weapons in hand and in the other loadout at the bottom left; the soft lock's target marked at its chest; the
-  target's plate (level, name, health and poise track) under the compass (below the boss bar while one shows); over
-  each living foe but a Boss, near the crosshair or fought in the last minute, its plate: its level, its
-  type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by rank, a "?" while it is
-  suspicious or searching and a "!" for a second as it turns alert, no plate over another's; under the compass, for the
-  nearest living Boss alert or struck, the boss bar: its level, name and faction, "Phase n of 3", and its health in
-  yellow marked at 2/3 and 1/3 ([[Enemies]]); words where each blow met the body for each blow and what it came to (its
-  damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Crit, Slain, a foe's Feint), gold or
-  green when it is good for the player and red when bad, those said together (a stroke over each foe it struck) each
-  standing clear of the rest; in first person, words about the player under the
-  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a
-  foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once
-  a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or
-  hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red
-  mark with no ring; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the
-  [[Game]] has it; a red edge when the player is struck; and, while the player
-  lies dead, how long until they stand again at the start, or, with `?room=`, "Reconnecting…" while the page joins its
-  room again, or that the room sent the player away and why.
+  the view; health, stamina and poise as long thin pointed bars at the top left, a faint strip holding what a loss took
+  before it drains, the health's frame flashing blood at a quarter or less and the stamina's flashing when a swing or a
+  dodge is pressed with none; the Arts and the weapons in hand and in the other loadout at the bottom left; the soft
+  lock's target marked at its chest; the target's plate (level, name, health and poise track) under the compass (below
+  the boss bar while one shows); over each living foe but a Boss, near the crosshair or fought in the last minute, its
+  plate: its level, its type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by
+  rank, a "?" while it is suspicious or searching and a "!" for a second as it turns alert, no plate over another's;
+  under the compass, for the nearest living Boss alert or struck, the boss bar: its level, name and faction, "Phase n of
+  3", and its health in yellow marked at 2/3 and 1/3 ([[Enemies]]); words where each blow met the body for each blow and
+  what it came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Crit, Slain, a
+  foe's Feint), gold or green when it is good for the player and red when bad, those said together (a stroke over each
+  foe it struck) each standing clear of the rest; in first person, words about the player under the crosshair; an arrow
+  at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a foe at a blow at
+  the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once a press of the
+  guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or hard on the
+  heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red mark with no
+  ring; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
+  red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
+  with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.
@@ -252,8 +252,8 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
 - **Asks.** Its buttons wear an item in its slot, take one off, buy a node or choose among
   those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
   an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes: the room
-  runs on, the player standing still, until it has answered, a fifth of a second of its time at most, so each answer
-  shows at once. A refusal says why.
+  runs on, the player standing still, until it has answered, a second of its time at most, so each answer shows at
+  once. A refusal says why.
 - **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
   the vault is reached, as in a social space.
 - **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
@@ -384,8 +384,10 @@ picture.
 
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
-- Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.
-- Each figure's likeliest moves are composed ahead, two frames a tick, each figure's in a queue of its own, every view
+- Composed frames are kept on the GPU up to 4,000; past that, the least lately asked for are let go down to 3,000
+  and composed again as needed.
+- Each figure's likeliest moves are composed ahead, two frames a tick in all, from one queue in which a figure's new
+  dress replaces only its own frames still queued, every view
   as drawn and as mirrored: its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or
   a shield's block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap
   shows it at once. A move not composed yet shows the last frame until it is: its strips take most of a second to come
