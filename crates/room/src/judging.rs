@@ -100,9 +100,17 @@ pub fn how_of_swing(attack: &Attack, defender: FighterId) -> How {
 impl Room {
     /// Judges a blow against `then`, the defender as its striker saw it, and settles it now. `hand` is the striking
     /// player's loadout, if a player struck.
-    pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter, hand: Option<Slot>) {
+    pub(crate) fn judge_now(
+        &mut self,
+        blow: &Blow,
+        how: How,
+        defender: FighterId,
+        then: &Fighter,
+        hand: Option<Slot>,
+    ) -> Verdict {
         let verdict = judge(blow, then);
         self.settle(blow, how, defender, verdict, hand);
+        verdict
     }
 
     /// Does what a verdict does to the defender and its striker as they are now, its damage weighed by their statuses,

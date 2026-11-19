@@ -6,7 +6,7 @@ export const HINTS = {
     'Click to look round · W A S D move · Shift run',
     'Space jump · C crouch · Wheel: third person · M menu',
     'Z weapon · 1 Melee · 2 Ranged · Right button swing or aim · Left button or F guard or fire · V dodge',
-    'R Anima · Q G Tenets (hold Dusk Daggers to aim)',
+    'R Anima · Q G Tenets · hold Q to aim Dusk Daggers',
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],
   sea: [

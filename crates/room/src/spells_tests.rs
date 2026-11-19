@@ -165,7 +165,8 @@ fn the_dawnflare_flies_its_line_burning_each_foe_near_it_once_and_back_with_wing
     let (near, off_path) = (stand_foe(&mut room, 2.0, -10.0, 1000.0), stand_foe(&mut room, 7.0, -10.0, 1000.0));
     cast(&mut room, player, DAWNFLARE, None, 0);
     let bird = seen(&room, DAWNFLARE);
-    assert_eq!(bird.first().and_then(|bird| bird.heads).map(|heads| heads[1].round()), Some(-24.0), "24 m ahead");
+    let path = bird.first().and_then(|bird| bird.heads.map(|heads| (bird.at[1].round(), heads[1].round())));
+    assert_eq!(path, Some((3.0, -21.0)), "from 3 m behind, 24 m along");
     for _ in 0..120 {
         room.tick();
     }
@@ -264,4 +265,43 @@ fn vanish_rolls_three_metres_back_from_standing_into_a_veil_two_seconds_longer_w
         let body = room.fighter(player).expect("in").body;
         assert!((body.y - 3.0).abs() < 0.2 && body.x.abs() < 1e-6, "back 3 m: {}", body.y);
     }
+}
+
+#[test]
+fn dusk_daggers_lie_on_the_ground_whatever_height_the_page_sends() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 3, &[]);
+    cast(&mut room, player, DUSK_DAGGERS, Some([0.0, -10.0, 30.0]), 0);
+    let ring = seen(&room, DUSK_DAGGERS);
+    assert_eq!(ring.first().map(|ring| ring.at), Some([0.0, -10.0, 0.0]), "on the flat floor, not 30 m up");
+}
+
+#[test]
+fn a_dodge_passes_a_spell_whole_neither_its_harm_nor_its_charge() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 1, &[]);
+    let foe = stand_foe(&mut room, 0.0, -4.0, 1000.0);
+    room.ask_cast(player, Some(crate::arts::Cast { spell: ARC_LASH, aim: None }));
+    for _ in 0..19 {
+        // Kept in its dodge's safe frames through the release.
+        let mut dodging = *room.fighter(foe).expect("in");
+        dodging.action = combat::fighter::Action::Dodge { elapsed: combat::tuning::DODGE_SAFE.0, toward: [0.0, 1.0] };
+        room.set_fighter(foe, dodging);
+        room.tick();
+    }
+    assert_eq!((health(&room, foe), has(&room, foe, Status::Charge)), (1000.0, 0));
+}
+
+#[test]
+fn vanish_out_of_a_reload_veils_without_the_roll_and_the_reload_runs_on() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 3, &[]);
+    let mut reloading = *room.fighter(player).expect("in");
+    reloading.action = combat::fighter::Action::Reload { left: 100 };
+    room.set_fighter(player, reloading);
+    cast(&mut room, player, VANISH, None, 0);
+    let after = *room.fighter(player).expect("in");
+    assert!(has(&room, player, Status::Veiled) > 0, "veiled");
+    assert!(matches!(after.action, combat::fighter::Action::Reload { .. }), "{:?}", after.action);
+    assert!(after.body.y.abs() < 1e-6, "no roll");
 }

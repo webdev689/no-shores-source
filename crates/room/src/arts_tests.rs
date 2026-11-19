@@ -186,3 +186,14 @@ fn the_room_answers_the_arts_asks_and_the_test_ground_readies_every_spell() {
     room.answer(player, Asked::Grant(Grant::ArtsReady));
     assert_eq!((casting(&room, player).anima, casting(&room, player).tenets), (1.0, [1.0, 1.0]));
 }
+
+#[test]
+fn wearing_another_art_starts_it_empty_so_no_recharge_runs_at_another_art_s_pace() {
+    let (mut room, player) = room_with_player();
+    room.ready_arts(player);
+    assert_eq!(room.ask_art(player, ArtAsk::Wear { art: 1 }), 0);
+    assert_eq!(casting(&room, player).tenets, [1.0, 1.0], "the worn Art again changes nothing");
+    assert_eq!(room.ask_art(player, ArtAsk::Wear { art: 3 }), 0);
+    let now = casting(&room, player);
+    assert_eq!((now.anima, now.tenets, now.releasing.is_none()), (0.0, [0.0, 0.0], true));
+}

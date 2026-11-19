@@ -1,20 +1,5 @@
 {
   "about": "The Arts: Overlook's subclasses (bible/05-Decisions/Arts Are Overlook's Subclasses.md), with Claude's numbers (Arts and Loadouts as Claude Shapes Them.md). Read by the rules (the gear crate) and the client alike. Times in seconds, distances in metres, damage before power as a weapon's is; element by the gear crate's numbers (1 Blaze, 2 Volt, 3 Cosmic).",
-  "verbs": {
-    "critTimes": 1.5,
-    "critS": 5,
-    "exposeTimes": 1.15,
-    "exposeS": 6,
-    "chargeS": { "minor": 2, "major": 1.5, "elite": 1, "miniboss": 0.6, "boss": 0.4 },
-    "chargeImmuneS": 3,
-    "hasteTimes": 1.3,
-    "hasteS": 6,
-    "linkedHealPerS": 5,
-    "linkedTimes": 1.2,
-    "linkedLingerS": 3,
-    "veiledS": 4,
-    "backArcDegrees": 60
-  },
   "cast": { "releaseS": 0.3, "animaKillShare": 0.02 },
   "arts": [
     {

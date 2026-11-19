@@ -109,10 +109,10 @@ fn a_pistolet_takes_ranged_and_the_off_hands_mace_is_carried() {
 }
 
 #[test]
-fn a_mace_with_a_named_shield_becomes_a_mace_and_shield_and_the_shield_its_loadout() {
+fn a_named_mace_with_a_named_shield_keeps_its_kind_and_the_shield_becomes_its_loadout() {
     let (old, character) = read(include_str!("old_saves/mace_and_seawall.json"));
     kept_whole(&old, &character);
-    assert_eq!(kind_at(&character, 6), (Kind::MaceAndShield, At::Worn(Slot::Melee)), "Anchorhead");
+    assert_eq!(kind_at(&character, 6), (Kind::Mace, At::Worn(Slot::Melee)), "Anchorhead keeps its own kind");
     let seawall = character.item(7).expect("Seawall");
     assert_eq!((seawall.kind, seawall.named.as_deref()), (Kind::SwordAndShield, Some("seawall")));
     assert_eq!(character.at(7), Some(At::Carried));
@@ -125,7 +125,7 @@ fn a_mace_with_a_named_shield_becomes_a_mace_and_shield_and_the_shield_its_loado
 fn two_swords_become_their_pair_and_slots_read_past_nine_only_empty() {
     let (old, mut character) = read(include_str!("old_saves/two_swords_full.json"));
     kept_whole(&old, &character);
-    assert_eq!(kind_at(&character, 6), (Kind::DoubleSwords, At::Worn(Slot::Melee)), "Harbourwarden");
+    assert_eq!(kind_at(&character, 6), (Kind::Sword, At::Worn(Slot::Melee)), "Harbourwarden keeps its own kind");
     assert_eq!(kind_at(&character, 7), (Kind::Sword, At::Carried));
     assert_eq!((character.carried_in(Slot::Melee), character.carried_in(Slot::Ranged)), (13, 3));
     assert_eq!(character.materials.aurem, crate::character::AUREM_MOST, "three Normal shields, at the most held");

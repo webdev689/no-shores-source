@@ -21,10 +21,10 @@ scale elsewhere: a player has 100 health, a sword's blow does 14 before power, a
 | Greatsword | Its own class: reach 2.3 m, 24 damage, weight 1.3 x 1.15, stamina 21, handling 1.06, two-handed; drawn with the sword's pictures in the two-handed hilt blows, in first person with the sword's |
 | Double pistolet | Two shots, one from each hand, before one reload 1.5 times a pistolet's; each shot 0.85 of a pistolet's damage |
 | Defense | Comes from armour alone; the share a shield had is spread over the four armour pieces |
-| Switching | Melee is drawn by default; `1` draws Melee, `2` Ranged (the mouse wheel stays the camera's, as [[The Player Plays as in DFO]] has it); a swap takes 24 ticks (0.4 s), in which no blow or shot starts. The room accepts the arms of either worn loadout |
-| Old saves | Read once into the new shape. The main hand's piece takes its slot by kind; a sword, dagger or mace with a shield in the off hand becomes its "& Shield"; two daggers, swords or maces become their pair; a lone dagger becomes Double Daggers, an axe a Great axe. An off-hand piece left over is carried, as its new kind; a shield left over is refunded as its dismantle materials. A Vestige for the off hand becomes one for Melee |
+| Switching | Melee is drawn by default; `1` draws Melee, `2` Ranged (the mouse wheel stays the camera's, as [[The Player Plays as in DFO]] has it); a swap takes 24 ticks (0.4 s), in which no blow or shot starts, and begins once the fighter is at rest: never in a swing, a guard, a draw or a reload, so a swap never skips one. The room accepts the arms of either worn loadout |
+| Old saves | Read once into the new shape. The main hand's piece takes its slot by kind; a sword, dagger or mace with a shield in the off hand becomes its "& Shield"; two daggers, swords or maces become their pair; a lone dagger becomes Double Daggers, an axe a Great axe. An off-hand piece left over is carried, as its new kind; a shield left over is refunded as its dismantle materials. A named weapon takes its named kind, whatever stood beside it. A Vestige for either hand becomes one for Melee |
 | Named pieces | One Legendary for each kind; the old ones keep their names under their new kind (The Reefwall becomes an Atheric Sword & Shield); new ones for the new kinds |
-| Vendors | The Armsmith sells two Melee pieces and one Ranged a day |
+| Vendors | The Armsmith sells four Melee pieces and two Ranged a day |
 
 ## Verbs and statuses
 
@@ -49,6 +49,9 @@ animation in the Art's colour, and cannot start while staggered, Charged or down
 
 - **The Anima** fills over its base time, as a Destiny Super does, and 2% more with each kill; it is cast when full.
 - **The Tenets** each recharge over their own cooldown, after Destiny's grenade and class abilities.
+- **Changing Art** empties the new Art's Anima and both Tenets, as changing subclass does in Destiny, so no recharge
+  runs at another Art's pace; a cast on its way is let go.
+- **A dodge** passes a spell whole: neither its harm nor the status it gives.
 - **Keys**: Anima `R`, first Tenet `Q`, second Tenet `G`: keys DFO's scheme leaves free, since the owner keeps its
   controls ([[The Player Plays as in DFO]]); `Q` was the cosmetic cast.
 - Charge and cooldowns are kept by the room while the player is in it; a new room starts the Anima empty and the
@@ -68,7 +71,7 @@ animation in the Art's colour, and cannot start while staggered, Charged or down
 |---|---|---|
 | Anima: **Sunwell** | An orb of sun hangs where it is cast for 12 s; every player within 10 m is Linked to it | 417 s (Destiny's tier 5, Well of Radiance) |
 | Tenet: **Mend** | Heals the player 40 at once (Destiny's Cure) | 91 s (Destiny's healing grenade) |
-| Tenet: **Dawnflare** | A fire bird flies from behind the player 24 m along their facing in 1.6 s, burning each foe within 3 m of its path once for 14 | 121 s |
+| Tenet: **Dawnflare** | A fire bird flies from 3 m behind the player, 24 m along their facing in 1.6 s, burning each foe within 3 m of its path once for 14 | 121 s |
 
 ### Shadow (Cosmic): the mystic
 
@@ -76,7 +79,7 @@ animation in the Art's colour, and cannot start while staggered, Charged or down
 |---|---|---|
 | Anima: **Duskraven** | A raven follows at the player's shoulder for 12 s, firing a bolt every 0.8 s at the nearest foe within 22 m (30 m/s): 7 damage and Expose; the player heals half the damage it deals | 455 s (Destiny's tier 4) |
 | Tenet: **Dusk Daggers** | Held, it aims a ring on the ground up to 16 m away; let go, daggers whirl there for 5 s in a 4 m ring: every 0.5 s, 3 to each foe inside, and Expose | 121 s |
-| Tenet: **Vanish** | A 3 m dodge roll the way the player moves (back when still), then Veiled | 38 s (Destiny's Gambler's Dodge) |
+| Tenet: **Vanish** | A 3 m dodge roll the way the player moves (back when still), then Veiled; out of a reload or an overreach, the veil without the roll | 38 s (Destiny's Gambler's Dodge) |
 
 ### The Core
 

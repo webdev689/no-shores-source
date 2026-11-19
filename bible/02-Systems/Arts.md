@@ -62,8 +62,8 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
   chooses. Escape closes the flyout, then the screen, and the focus goes back to what opened it.
 - **Sizes.** The face keeps its grid: 11 for words, 22 for headings where the menu is wide, 33 for the Art's name.
   The pictures stand at whole multiples of their cells: the large diamond at 8 (7 on a short screen, 11 on a wide
-  one), the three Arts' at 2 (3 wide), the Anima's icon at 3, and the Tenets' and fragments' at 4. Past 1440p the
-  menu doubles, the screen with it.
+  one), the three Arts' at 2 (3 wide), the Character page's at 4 (2 on a short screen), the Anima's icon at 3, and
+  the Tenets' and fragments' at 4. Past 1440p the menu doubles, the screen with it.
 - **Pictures** are drawn pixel by pixel in the Art's element: its outline, a deep shade, the body, its light and a
   white heat. The emblems are 24 cells square in a diamond: Storm a forked bolt, Divine a sun with wings, Shadow a
   crescent holding a raven's eye. An Anima's icon is 24 square, a Tenet's and a fragment's 12. Fragments share three
@@ -85,17 +85,18 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), and one set
   already in another slot of that Art (113). Only the worn Art's Core changes its spells.
 - **Charge.** The room keeps each player's Anima and Tenets while they are in it, as shares from 0 to 1. A new room
-  starts the Anima empty and the Tenets ready. Each share fills over its spell's recharge, a tick at a time, whatever
-  Art is worn. Each kill the player makes gives the Anima 2% more.
+  starts the Anima empty and the Tenets ready. Each share fills over its worn spell's recharge, a tick at a time. Each
+  kill the player makes gives the Anima 2% more. Wearing another Art empties all three and lets go a cast on its way,
+  so no recharge runs at another Art's pace.
 - **Casting.** An input names a spell by its number: its Art's number less one, times three, plus its ability (0 the
   Anima, 1 and 2 the Tenets), plus one, so 1 Tempest to 9 Vanish. The room takes it only if it is the worn Art's,
   its share is full, no other cast is on its way, and the player is not staggered, Charged, dead or dead past a
   section's edge. It releases 18 ticks (0.3 s) after the tick that took it. If the player is staggered, Charged or
   dead by then, it is lost and costs nothing; else its share empties and the spell is cast.
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from
-  a matching element and half from another. Its damage is weighed by the power of the player's best worn weapon's
-  Attack against the foe's level, as a weapon's blow is, then by the statuses, as any blow is ([[Combat]]). No weapon's
-  perk touches it. It is never parried or guarded; a dodge passes it. Its kills pay the caster as a weapon's do, to
+  a matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the
+  Ranged one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is ([[Combat]]). No weapon's
+  perk touches it. It is never parried or guarded; a dodge passes it whole, the status it would give too. Its kills pay the caster as a weapon's do, to
   the weapon whose Attack it struck with.
 - **Gives back.** A Volt kill with Recharge set takes 4% off both Tenets; a Blaze kill while Linked, with Zeal, 5%.
   A crit landed out of Vanish's veil, with Hunt, gives back half of Vanish's cooldown, once a Vanish. A Cosmic kill on
@@ -109,10 +110,10 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 | Arc Lash | Each foe within 7 m in a 70-degree cone along the aim is struck, then Charged | 16 damage, Charge by rank | Conduction: Charge 1.5 times as long. Overload: Exposed |
 | Sunwell | An orb at the caster's feet. Each tick, every living player within reach is Linked, so it lingers 3 s after | 10 m, 12 s | Radiance: 13 m, 16 s |
 | Mend | Heals the caster | 40 | Mercy: players within 8 m heal 20. Resolve: Crit |
-| Dawnflare | A bird flies from the chest along the aim, burning each foe within 3 m of it once a pass | 24 m in 1.6 s, 14 damage | Wings: a second pass back. Searing: Exposes |
+| Dawnflare | A bird flies from 3 m behind the chest along the aim, burning each foe within 3 m of it once a pass | 24 m in 1.6 s, 14 damage | Wings: a second pass back. Searing: Exposes |
 | Duskraven | A raven at the right shoulder. On its first tick and every 0.8 s it fires a bolt at the foe nearest it within reach. The bolt flies at its foe, strikes, Exposes and heals the caster half the health it took, or fizzles if its foe falls first | 12 s, 22 m, 30 m/s, 7 damage | Hunger: heals all it took. Dread: see above |
-| Dusk Daggers | Aimed while held, then a ring where it was aimed, drawn in to the reach across the ground. Every 0.5 s from its first tick, each foe inside is struck and Exposed | 16 m, 4 m ring, 5 s, 3 damage | Blades: 5.5 m ring, 7 s |
-| Vanish | On the ground, a dodge's hop the way the body moves, or back when still, landing the roll away, blows passing through it as a dodge's do. Then Veiled | 3 m, the veil's 4 s | Night: 6 s. Hunt: see above |
+| Dusk Daggers | Aimed while held, then a ring where it was aimed, drawn in to the reach, always on the ground there. Every 0.5 s from its first tick, each foe inside is struck and Exposed | 16 m, 4 m ring, 5 s, 3 damage | Blades: 5.5 m ring, 7 s |
+| Vanish | On the ground, a dodge's hop the way the body moves, or back when still, landing the roll away, blows passing through it as a dodge's do. Then Veiled; out of a reload or an overreach, which a dodge cannot leave, the veil without the hop | 3 m, the veil's 4 s | Night: 6 s. Hunt: see above |
 
 - **Seen by all.** Each spell that lasts or moves is an entity every player is sent: an orb, the Sunwell, the
   Dawnflare, the Duskraven, each bolt and the daggers' ring. Quicken, Arc Lash, Mend and Vanish each leave one for
@@ -135,7 +136,7 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 
 - **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows
   its ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent for
-  0.6 s, while the room's word comes back. Crouching is on `X`, and the guard on the left button alone. With the
+  0.6 s, while the room's word comes back. Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them. With the
   menu open the game takes no keys, so `F` still dismantles a piece there.
 - **Dusk Daggers.** Pressed, `Q` aims: a faint ring in Shadow's purple lies on the ground at the crosshair's point,
   drawn in to 16 m, as wide as the ring will be. Let go, it casts there.

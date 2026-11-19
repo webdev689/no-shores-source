@@ -1,7 +1,7 @@
 //! A character kept while players wore a main hand and an off hand, read once into the Melee and Ranged loadouts, so
 //! nothing it held is lost. The main hand's piece takes its slot by kind: a sword, dagger or mace with a shield beside
-//! it becomes its "& Shield", beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great axe. An
-//! off-hand weapon left over is carried as its new kind. A shield is refunded as its dismantle materials, unless it is
+//! it becomes its "& Shield", beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great axe. A
+//! named weapon becomes its named kind's. An off-hand weapon left over is carried as its new kind. A shield is refunded as its dismantle materials, unless it is
 //! a named one, which is made again as the named loadout it is now, with what its nodes cost given back. Carried and
 //! vaulted pieces are read the same way, and a Vestige for either hand is one for Melee.
 
@@ -72,7 +72,11 @@ pub(crate) fn read(kept: &mut Value) -> Shields {
         let hand = text(at, "/Worn").filter(|hand| [MAIN, OFF].contains(hand)).map(str::to_owned);
         let kind = text(item, "/kind").unwrap_or_default().to_owned();
         let in_main = main_key.as_ref() == Some(key);
-        let new = if in_main { main.as_deref() } else { alone(&kind) };
+        // A named weapon takes its own kind now, whatever stood beside it: its name is one Legendary of that kind.
+        let named = text(item, "/named").filter(|_| kind != "shield").and_then(|named| catalogue().named(named));
+        let named =
+            named.and_then(|def| serde_json::to_value(def.kind).ok()).and_then(|kind| kind.as_str().map(str::to_owned));
+        let new = named.as_deref().or(if in_main { main.as_deref() } else { alone(&kind) });
         let Some(fields) = item.as_object_mut() else { continue };
         let Some(new) = new else {
             gone.push(key.clone());

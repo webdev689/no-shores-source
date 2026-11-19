@@ -27,7 +27,10 @@ export function startArtsPanel(root: HTMLElement, ask: (asked: GearAsk) => void)
   const slots = Array.from({ length: CORE_SLOTS }, (unused, slot) => {
     const select = make('select');
     select.addEventListener('change', () => {
-      if (shown && select.value !== '') ask(coreAsk(shown.art, slot, Number(select.value)));
+      if (!shown) return;
+      // A fragment is never taken out, only replaced: "—" goes back to what the room holds.
+      if (select.value === '') select.value = String(shown.cores[shown.art - 1]?.[slot] ?? '');
+      else ask(coreAsk(shown.art, slot, Number(select.value)));
     });
     return select;
   });
@@ -38,9 +41,14 @@ export function startArtsPanel(root: HTMLElement, ask: (asked: GearAsk) => void)
     button('Fill the Anima, ready the Tenets', () => ask({ kind: ASKS.grantArts })),
     make('p', 'R casts the Anima, Q and G the Tenets. A fragment set in another slot is refused.', 'hint'),
   );
+  let drawn = '';
   return (state) => {
     if (!state || state === shown) return;
     shown = state;
+    // Built again only when the Art or its Core changes, so a list held open is not closed under the pointer.
+    const now = JSON.stringify([state.art, state.cores[state.art - 1]]);
+    if (now === drawn) return;
+    drawn = now;
     worn.value = String(state.art);
     const core = arts.arts.find((art) => art.id === state.art)?.core ?? [];
     const set = state.cores[state.art - 1] ?? [];

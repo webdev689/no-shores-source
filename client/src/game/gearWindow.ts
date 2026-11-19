@@ -447,7 +447,9 @@ export function startGearWindow(
         render();
       },
       atVault: view === 'vault',
-      ...(gear.arts && { art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = null), render()), tip) }),
+      ...(gear.arts && {
+        art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip),
+      }),
     };
     const worn = view === 'character' && arts ? gear.arts : undefined;
     const page = worn

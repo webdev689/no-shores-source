@@ -12,7 +12,7 @@ use combat::fighter::{Action, FighterId};
 use combat::judge::Blow;
 use combat::sight::{bearing, off};
 use combat::tuning::{BODY_HEIGHT, BODY_RADIUS, DODGE_LIFT};
-use combat::{BlowKind, Fighter, Status, Trim, ticks};
+use combat::{BlowKind, Fighter, Status, Trim, Verdict, ticks};
 use gear::arts::{FragmentDef, SpellDef, arts};
 use movement::{Body, Mode, TICK_SECONDS, TUNING};
 
@@ -20,6 +20,8 @@ use movement::{Body, Mode, TICK_SECONDS, TUNING};
 pub const BOLT: u8 = 10;
 /// How long a spell that acts at once shows: half a second.
 const FLASH_TICKS: u32 = 30;
+/// How far behind the caster the Dawnflare sets out, so it strafes past them (metres).
+const FLARE_BEHIND: f64 = 3.0;
 /// How far past a body's side, and above and below it, an orb or a bolt strikes it (metres).
 const STRIKE_REACH: f64 = 0.25;
 /// How far above or below its foe's feet a spell along the ground (a cone, a ring, a flight) still reaches it.
@@ -215,10 +217,10 @@ impl Room {
     /// A spell's blow on a living foe from `from`, `damage` before power: in its Art's element, by the caster's best
     /// weapon's Attack, judged against the foe as it stands and settled as a weapon's blow is. Answers the health it
     /// took.
-    fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> f64 {
-        let Some(found) = self.players.get(&spell.caster) else { return 0.0 };
+    fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> Option<f64> {
+        let found = self.players.get(&spell.caster)?;
         let (attack, hand) = spell_power(&found.character);
-        let Some(then) = self.foes.get(&foe).map(|foe| foe.fighter).filter(|then| !then.dead()) else { return 0.0 };
+        let then = self.foes.get(&foe).map(|foe| foe.fighter).filter(|then| !then.dead())?;
         let element = arts().art(spell.art).and_then(|art| gear::Element::from_number(art.element));
         let blow = Blow {
             striker: spell.caster,
@@ -236,8 +238,11 @@ impl Room {
             crit: false,
         };
         let blow = self.empower_as(blow, foe, Some(Loosed { attack, element, trim: Trim::PLAIN }));
-        self.judge_now(&blow, How::Spell, foe, &then, Some(hand));
-        (then.health - self.foes.get(&foe).map_or(then.health, |foe| foe.fighter.health)).max(0.0)
+        // A dodge passes a spell whole: none of its harm, nor the status it would give.
+        if matches!(self.judge_now(&blow, How::Spell, foe, &then, Some(hand)), Verdict::Dodged { .. }) {
+            return None;
+        }
+        Some((then.health - self.foes.get(&foe).map_or(then.health, |foe| foe.fighter.health)).max(0.0))
     }
 
     /// Lets a cast go: what its spell does at once, and the entity it leaves.
@@ -287,9 +292,10 @@ impl Room {
             }
             "dawnflare" => {
                 let speed = if def.flight_s > 0.0 { def.length / def.flight_s } else { 0.0 };
-                let heads = [chest[0] + ahead[0] * def.length, chest[1] + ahead[1] * def.length, chest[2]];
+                let start = [chest[0] - ahead[0] * FLARE_BEHIND, chest[1] - ahead[1] * FLARE_BEHIND, chest[2]];
+                let heads = [start[0] + ahead[0] * def.length, start[1] + ahead[1] * def.length, chest[2]];
                 let passes = 1 + u32::from(self.core(caster, "wings").is_some());
-                let flare = made(chest, ticks(def.flight_s) * passes, def.width);
+                let flare = made(start, ticks(def.flight_s) * passes, def.width);
                 let velocity = [ahead[0] * speed, ahead[1] * speed, 0.0];
                 self.add_spell(Spell { velocity, heads: Some(heads), ..flare });
             }
@@ -333,7 +339,9 @@ impl Room {
             if off(caster.aim, bearing([feet[0], feet[1]], [body.x, body.y])) > half {
                 continue;
             }
-            self.spell_strikes(lash, foe, feet, def.damage);
+            if self.spell_strikes(lash, foe, feet, def.damage).is_none() {
+                continue;
+            }
             let lasts = ticks(f64::from(self.lasts(foe, Status::Charge)) * longer * TICK_SECONDS);
             self.give(foe, Status::Charge, Some(lasts), Some(lash.caster));
         }
@@ -344,10 +352,9 @@ impl Room {
     fn daggers_at(&self, feet: [f64; 3], aim: Option<[f64; 3]>, reach: f64) -> [f64; 3] {
         let Some(wanted) = aim else { return feet };
         let far = libm::hypot(wanted[0] - feet[0], wanted[1] - feet[1]);
-        if far <= reach {
-            return wanted;
-        }
-        let [x, y] = [0, 1].map(|axis| feet[axis] + (wanted[axis] - feet[axis]) * reach / far);
+        // Within reach the ring lies where it was aimed, but always on the ground: the page's height is not taken.
+        let share = if far <= reach { 1.0 } else { reach / far };
+        let [x, y] = [0, 1].map(|axis| feet[axis] + (wanted[axis] - feet[axis]) * share);
         [x, y, standing_on(&self.floor, &self.blocks, x, y).z]
     }
 
@@ -357,7 +364,10 @@ impl Room {
         let Some(found) = self.players.get_mut(&caster) else { return };
         found.casting.hunting = true;
         let fighter = &mut found.fighter;
-        if fighter.body.mode != Mode::Ground {
+        // A reload or an overreach is kept, since a dodge cannot leave them either: the veil falls without the roll.
+        if fighter.body.mode != Mode::Ground
+            || matches!(fighter.action, Action::Reload { .. } | Action::Overreach { .. })
+        {
             return;
         }
         let moving = libm::hypot(fighter.body.vx, fighter.body.vy);
@@ -436,8 +446,9 @@ impl Room {
             }
             "duskDaggers" if spell.age.is_multiple_of(ticks(def.every_s).max(1)) => {
                 for foe in self.foes_near(spell.at, spell.radius, SPELL_HEIGHT) {
-                    self.spell_strikes(&spell, foe, spell.at, def.damage);
-                    self.give(foe, Status::Expose, None, Some(spell.caster));
+                    if self.spell_strikes(&spell, foe, spell.at, def.damage).is_some() {
+                        self.give(foe, Status::Expose, None, Some(spell.caster));
+                    }
                 }
             }
             _ => {}
@@ -484,8 +495,8 @@ impl Room {
                 continue;
             }
             flare.struck.push(foe);
-            self.spell_strikes(flare, foe, flare.at, def.damage);
-            if self.core(flare.caster, "searing").is_some() {
+            let landed = self.spell_strikes(flare, foe, flare.at, def.damage).is_some();
+            if landed && self.core(flare.caster, "searing").is_some() {
                 self.give(foe, Status::Expose, None, Some(flare.caster));
             }
         }
@@ -505,7 +516,7 @@ impl Room {
         let chest = self.foes.get(&foe).filter(|found| !found.fighter.dead())?.fighter.chest();
         let step = def.speed * TICK_SECONDS;
         if distance(bolt.at, chest) <= step + BODY_RADIUS + STRIKE_REACH {
-            let took = self.spell_strikes(&bolt, foe, bolt.at, def.damage);
+            let took = self.spell_strikes(&bolt, foe, bolt.at, def.damage)?;
             self.give(foe, Status::Expose, None, Some(bolt.caster));
             let share = self.core(bolt.caster, "hunger").map_or(def.heal_share, |hunger| hunger.heal_share);
             self.heal(bolt.caster, took * share);

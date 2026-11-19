@@ -542,8 +542,8 @@ img.gear-glyph {
 .gear-side .gear-heading {
   align-self: stretch;
 }
-/* The worn Art's place, over the loadouts. */
-.gear-art {
+/* The worn Art's place, over the loadouts: kept while none is worn, so the slots stand where they will. */
+.gear-art:empty {
   min-height: 96px;
 }
 .gear-character > .gear-side:first-child .gear-heading {
@@ -678,7 +678,7 @@ img.gear-glyph {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2px 16px;
+  padding: 2px 8px;
 }
 .gear-stat + .gear-stat {
   border-left: 1px solid rgba(255, 255, 255, 0.08);

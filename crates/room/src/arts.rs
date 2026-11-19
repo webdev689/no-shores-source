@@ -192,7 +192,15 @@ impl Room {
     /// Answers a player's ask of their Arts: 0 done, else the refusal's number.
     pub(crate) fn ask_art(&mut self, player: PlayerId, ask: ArtAsk) -> u8 {
         let Some(found) = self.players.get_mut(&player) else { return 0 };
-        found.character.ask_art(ask).map_or_else(|refusal| refusal as u8, |()| 0)
+        let worn = found.character.art().id;
+        if let Err(refusal) = found.character.ask_art(ask) {
+            return refusal as u8;
+        }
+        // A new Art starts empty, as a new subclass does in Destiny: else its charge would fill at another Art's pace.
+        if found.character.art().id != worn {
+            found.casting = Casting { anima: 0.0, tenets: [0.0, 0.0], releasing: None, hunting: false };
+        }
+        0
     }
 
     /// The Test Ground's grant: the player's Anima full and both Tenets ready.

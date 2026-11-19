@@ -144,8 +144,9 @@ number is one of [[Gear as Claude Shapes It]].
   double pistolet and Broadside. The Reefwall is an Atheric Sword & Shield.
 - **A character kept with two hands** is read once into the loadouts (`gear::old_hands`), losing nothing. The main
   hand's piece takes its slot by its kind: a sword, dagger or mace with a shield beside it becomes its "& Shield",
-  beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great Axe. An off-hand weapon is carried
-  as its new kind. A shield is given back as its dismantle materials; a named one is made again as the named loadout
+  beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great Axe. A named weapon takes its named
+  kind whatever stood beside it, so each name stays one Legendary of one kind. An off-hand weapon is carried as its
+  new kind. A shield is given back as its dismantle materials; a named one is made again as the named loadout
   it is now, carried or in the vault where it was, its XP kept and what its nodes cost given back. Carried and vaulted
   pieces read the same way, and a Vestige for either hand is one for Melee.
 

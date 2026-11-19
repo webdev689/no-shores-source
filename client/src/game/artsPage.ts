@@ -241,6 +241,8 @@ export function artsPage(
   const side = make('div', '', 'arts-side');
   const name = make('h2', art.name, 'arts-name');
   name.tabIndex = -1;
+  // Named, so the menu finds the focus again on the page built anew when the room's word comes.
+  name.dataset['key'] = 'arts-name';
   const kind = make('p', '', 'arts-kind');
   const glyph = elementGlyph(art.element, 'gear-element-inline');
   if (glyph) kind.append(glyph);
