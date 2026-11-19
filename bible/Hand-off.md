@@ -237,6 +237,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
   slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
   (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
+- **The world's sounds on #69 wait on the owner's picks** on the sound sheet
+  ([[The World Sounds From the Sound Picker]]): each of the 64 cues is silent until picked. DFO's heal (`02_Heal_02`),
+  the owner's pick in DFO, cannot ship until its source and licence are known
+  ([[DFO's Own Sounds Join the Sound Sheet]]). Claude's calls in the layer, the owner's to change: a gun's ball on a
+  body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the [[Test Ground]]'s crate, and up to 16
+  sounds at once within 40 m.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -246,6 +252,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
 
 ## Next
+
+- **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
+  renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+  layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), tested offline with every cue silent. Not yet: any world
+  sound heard, the layer in the game on foot in a browser, the walking blows looked at frame by frame.
+- **Publishing the world's picks**: once the owner marks them, set each cue's `picked` in
+  `content/audio/freesound.json`, let the `freesound` workflow run, then `tools/freesound/publish.py <download>`. A
+  pick of one of DFO's synthesised sounds (marked `dfo:<name>` on the sheet) has no path yet: `publish.py` takes
+  Freesound picks only. Its source is DFO's `tools/{climb,gather,lock,storefront,naval}Sfx.mjs`: import their
+  `CLIPS`, render each `make()` at 44.1 kHz 16-bit, from a scratch folder, since `navalSfx.mjs` writes
+  `public/sfx` on import.
 
 - **The Arts round (#69)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and verbs with
   foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar, the verb
