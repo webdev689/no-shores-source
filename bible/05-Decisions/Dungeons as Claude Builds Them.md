@@ -44,3 +44,35 @@ change any of them.
 | The cache | A chest beside the Reeve's post, shut while the Reeve stands. When the Reeve falls it opens, and every player in the dungeon finds a Vestige before it, theirs alone, sure, at the Reeve's level and colours. It shuts when the Reeve stands again | Each activity gives its own Vestiges on completion ([[Gear as Claude Shapes It]]) |
 | Dying inside | Back at the way in after the 4 s | The way in is the dungeon's one spawn, as a section's spawns are its own |
 | The light | No sky and no sun: each torch a warm light reaching 8 m that flickers; two torches either side of the return portal; and a dim cold light everywhere else, enough that a room past every torch still shows its walls | Underground; the end of the way lit and marked |
+
+## The varied dungeons
+
+> "Make sure youre on overlook. Do a detailed pass on everything. I want this to be perfect and insanely varied"
+> ([[The Dungeons Are Perfect and Insanely Varied]])
+
+Claude's choices for the variety, each open to change. They replace the rows above where they say otherwise.
+
+| Choice | Chosen | Why |
+|---|---|---|
+| Styles | Six: the crypt, the halls, the cells and the sanctum, and two of the Forge's left behind before: the Caverns (its cave: natural rock, rooms bitten irregular, rock standing inside the great ones) and the Mines (its mine: hewn rock and timber, long galleries). A patrol's three take three of the six | The painter now paints the rock they wanted (sets 19 and 20), so the Forge's caves and mines come over |
+| Its size | Two to five blocks, drawn for each dungeon: a quick run or a long delve | No two runs take the same time |
+| The way down changes | In about half the dungeons the last block breaks into the style below: halls into a crypt, a sanctum into its catacombs, cells into mines, a crypt into caverns, mines into caverns, caverns into a crypt. The dungeon keeps its first style's name | The end feels deeper than the start |
+| Room shapes | Rectangles, and by style: Ls and crosses in the halls and the sanctum, octagons in the crypt and the sanctum, alcoves cut a cell into the rock in the crypt (burial niches) and the cells (cells), caves bitten irregular in the caverns and the mines' stopes | A room's outline tells its style |
+| A room's purpose | Every room has a purpose drawn from its style's bank, never twice in a dungeon while the bank lasts. The way in's room and the end room have their style's own. A purpose lays its own props: against the walls, in the middle, in rows with aisles between, in pairs either side, in alcoves, or as scattered rubble | A room reads as a place, not a box, and none stands bare |
+| Its name | Each room is named for its purpose, and the name shows once when the player first steps in: "the Ossuary". A name used twice takes a word before it: "the Old Ossuary" | DFO's landmarks: a player can say where they have been |
+| The light | Torches as before, and by purpose: braziers, candles on altars and tables, a hearth's fire, lanterns in the mines, glowing crystals and fungus in the caverns, each its own colour and reach. Every room has a light | Light tells a room's purpose as much as its props |
+| The mood | Each style its own faint light everywhere: the crypt's cold grey-blue, the halls' plain grey, the cells' sickly green, the sanctum's pale gold, the caverns' deep teal, the mines' dusty brown | DFO's moods by type |
+| Ceilings | Flat; a barrel vault along a long room; a dome over a square room or an octagon; rough rock over a cave | The rooms differ above as well as around |
+| Entrances | By style: a temple ruin (43137 to 43141) for a sanctum, a cave mouth (43603, 43604) for the caverns and the mines, the two mounds for the crypt, the halls and the cells | The way in says what lies below |
+| Where foes stand | On a room's free cells nearest its middle, its quiet cells first, once its props are laid. A room's props always leave every doorway open and its free cells one walk | The props come first, and the fight finds room round them |
+
+The purposes, by style (the way in's room first, the end room last):
+
+| Style | Its rooms |
+|---|---|
+| Crypt | the Mourners' Hall; the Ossuary, the Burial Hall, the Chapel of Rest, the Catacomb, the Embalming Room, the Collapsed Vault; the Sepulchre |
+| Halls | the Gatehouse; the Barracks, the Mess Hall, the Armoury, the Storeroom, the Archive, the War Room; the Great Hall |
+| Cells | the Warden's Gate; the Cell Block, the Guard Room, the Kitchen, the Question Room, the Pit, the Chain Hall; the Warden's Hall |
+| Sanctum | the Narthex; the Nave, the Reliquary, the Scriptorium, the Cloister, the Shrine, the Vestry; the High Altar |
+| Caverns | the Cave Mouth; the Crystal Hollow, the Dripping Gallery, the Bone Pit, the Fungus Grove, the Squatters' Den, the Echoing Chamber; the Deep Cavern |
+| Mines | the Adit; the Gallery, the Stope, the Ore Store, the Miners' Rest, the Collapsed Drift, the Winch Room; the Motherlode |

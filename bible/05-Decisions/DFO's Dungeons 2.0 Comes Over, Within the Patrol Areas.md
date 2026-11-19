@@ -46,3 +46,5 @@ status: in force
 - The [[Rules]] hold. The Forge's pictures are the procedural textures' dungeon sets and its entrances are forged
   models, both of which come over under [[Every Island Is Seen Whole and Reached by Nodes]]; the rest of what
   Daggerfall made stays behind ([[Own Work]]).
+- Its first build done, the owner asked for a detailed pass on everything, perfect and insanely varied
+  ([[The Dungeons Are Perfect and Insanely Varied]]).

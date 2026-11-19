@@ -121,6 +121,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Exposed, Charged and Haste Make No Sound]]
 - [[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]
 - [[Dungeons as Claude Builds Them]]
+- [[The Dungeons Are Perfect and Insanely Varied]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
