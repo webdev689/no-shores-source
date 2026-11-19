@@ -28,6 +28,10 @@ The owner's answers to the questions that followed:
 > Asked to approve the design (three runs a zone, none under the land, the detail pass free to reshape basins,
 > canyons, outcrops and great works but not a zone's areas, paths and gates) and whether Saltmere's three zones come
 > first for the owner to look at: "Approve; Saltmere first (Recommended)"
+>
+> Asked how a run along the top of the rock is bounded, since a body may climb any wall or solid and only the land's
+> rock faces hold it: a way sunk into the rock's top as a walled trench, so rock faces bound it; a new rule holding
+> bodies in their zone's playable area; or the top left open: "Sunken way (Recommended)"
 
 ## What it settles
 
@@ -38,6 +42,8 @@ The owner's answers to the questions that followed:
 - **Linear combat areas break off the zones**: some in open space, some through larger buildings. They prepare the
   zones for mission areas. Some are cut into the zone's own rock, and some leave the zone past its edge into land
   beyond it.
+- **A run along the rock's top runs in a sunken way**: its way is cut down into the top, so the rock's faces bound
+  it, and its walls and battlements stand on the trench's lips. The movement rules stay as they are.
 - **Saltmere's three zones first** (the Saltgrass Downs, the Gullwing Vale and the Driftwood Moors): their runs and
   detail are built and shown to the owner before the other 24.
 - [[The World Editor Draws the Layouts' Buildings]], [[The Well House's Roof Is Fixed]] and the flora workflow's
