@@ -1,0 +1,52 @@
+{
+  "scenes": {
+    "sighted": [
+      { "who": "lookout", "say": "Sails off the bow!", "kind": "bark", "emote": "alert" },
+      { "who": "bosun", "say": "Three of them!", "kind": "bark", "emote": "alert" },
+      { "who": "mate", "say": "Running dark in this weather. They mean to take us.", "emote": "anger" },
+      { "who": "gunner", "say": "Guns are loaded, Captain. Say the word.", "emote": "alert" }
+    ],
+    "hitTaken": [{ "who": "bosun", "say": "We're hit!", "kind": "bark", "emote": "pain" }],
+    "hitGiven": [{ "who": "gunner", "say": "Good hit!", "kind": "bark", "emote": "cheer" }],
+    "sinking": [{ "who": "lookout", "say": "She's going down!", "kind": "bark", "emote": "cheer" }],
+    "calm": [
+      { "who": "bosun", "say": "Three ships, Captain. Not a man lost.", "emote": "cheer" },
+      { "who": "lookout", "say": "Men in the water. Pirates, clinging to the wreckage.", "emote": "question" },
+      { "who": "mate", "say": "Leave them. They would cut our throats for the boat.", "emote": "silence" },
+      { "who": "gunner", "say": "Storm's not done with us either.", "emote": "fear" },
+      { "who": "mate", "say": "Patch her up. We make for land at first light." }
+    ],
+    "ram": [
+      { "who": "lookout", "say": "Ship to starboard!", "kind": "bark", "emote": "alert" },
+      { "who": "lookout", "say": "She's huge. Coming straight for us!", "emote": "fear" },
+      { "who": "mate", "say": "Brace!", "kind": "bark", "emote": "fear" },
+      { "who": "bosun", "say": "Hold on to something!", "kind": "bark", "emote": "fear" }
+    ],
+    "wreck": [
+      { "who": "tithe", "say": "For the Tithe!", "kind": "bark", "emote": "anger" },
+      { "who": "pirate", "say": "Cut them down!", "kind": "bark", "emote": "anger" },
+      { "who": "tithe", "say": "Survivor! Get that one!", "kind": "bark", "emote": "alert" }
+    ],
+    "warCry": [{ "who": "thule", "say": "The Tithe is owed!", "kind": "bark", "emote": "anger" }],
+    "bossStruck": [{ "who": "thule", "say": "Is that all?", "kind": "bark" }],
+    "bossStrikes": [{ "who": "thule", "say": "Kneel.", "kind": "bark", "emote": "anger" }],
+    "overboard": [
+      { "who": "thule", "say": "Over the side.", "kind": "bark" },
+      { "who": "tithe", "say": "Tithe paid!", "kind": "bark", "emote": "cheer" },
+      { "who": "tithe", "say": "Ha! Into the deep!", "kind": "bark", "emote": "cheer" }
+    ],
+    "deep": [
+      { "who": "voice", "say": "Not yet." },
+      { "who": "voice", "say": "Wake." }
+    ],
+    "shore": [
+      { "who": "stranger", "say": "Hey! Can you hear me?", "emote": "alert" },
+      { "who": "stranger", "say": "Easy now. You swallowed half the sea.", "emote": "fear" }
+    ],
+    "standing": [{ "who": "stranger", "say": "Overlook is just up the shore. Lean on me." }],
+    "arrived": [
+      { "who": "stranger", "say": "Here we are. Overlook.", "emote": "cheer" },
+      { "who": "stranger", "say": "Find your feet. Someone here will know what to do." }
+    ]
+  }
+}
