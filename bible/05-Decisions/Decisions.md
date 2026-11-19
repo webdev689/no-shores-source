@@ -124,6 +124,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]
 - [[Foes Fight With Intelligence, Not by Rushing]]
 - [[Foes Spread Across the Players They Fight]]
+- [[A Locked-On Dodge Rolls the Way It Goes]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
