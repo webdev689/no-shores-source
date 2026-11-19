@@ -556,16 +556,20 @@
     {
       "id": "cast.charge",
       "use": "An Anima gathering as it is cast",
-      "query": "magic power",
+      "query": "build up whoosh",
       "seconds": [
         0.3,
         3.0
       ],
       "skip": [
         443955,
+        524200,
         588242,
         592573,
-        610562
+        609025,
+        610562,
+        742835,
+        871078
       ]
     },
     {
@@ -587,7 +591,7 @@
     {
       "id": "spell.orb",
       "use": "A Tempest orb bursts on what it seeks",
-      "query": "orb",
+      "query": "energy impact",
       "seconds": [
         0.1,
         1.0
@@ -596,6 +600,8 @@
         136542,
         148772,
         232885,
+        270304,
+        390378,
         512471,
         683181,
         789632,
@@ -865,7 +871,8 @@
         512471,
         536741,
         853286
-      ]
+      ],
+      "picked": 127125
     },
     {
       "id": "finish.cosmic",
@@ -880,7 +887,7 @@
     {
       "id": "status.linked",
       "use": "Linked: healed in the Sunwell",
-      "query": "magic heal",
+      "query": "buff spell",
       "seconds": [
         0.2,
         1.5
@@ -888,8 +895,11 @@
       "skip": [
         376748,
         483608,
+        530488,
+        562292,
         789596,
-        789599
+        789599,
+        878312
       ]
     },
     {
@@ -924,7 +934,7 @@
     {
       "id": "shield.break",
       "use": "A foe's element shield breaks",
-      "query": "magic shatter",
+      "query": "crystal shatter",
       "seconds": [
         0.2,
         2.0
@@ -934,7 +944,8 @@
         444134,
         753899,
         807391,
-        814954
+        814954,
+        879915
       ]
     },
     {
@@ -977,7 +988,8 @@
         483795,
         556879,
         856777
-      ]
+      ],
+      "picked": 858795
     },
     {
       "id": "respawn",
@@ -1000,7 +1012,8 @@
         812521,
         831718,
         838027
-      ]
+      ],
+      "picked": 807391
     }
   ]
 }
