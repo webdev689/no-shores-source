@@ -143,10 +143,10 @@
     {
       "id": "swing.heavy",
       "use": "A heavy weapon swung: an axe, a flail, a warhammer or a greatsword",
-      "query": "heavy weapon swing whoosh",
+      "query": "swing whoosh",
       "seconds": [
         0.2,
-        1.2
+        1.5
       ]
     },
     {
@@ -161,10 +161,10 @@
     {
       "id": "hit.blade",
       "use": "A blade cuts a body",
-      "query": "sword hit flesh",
+      "query": "sword slash",
       "seconds": [
         0.1,
-        0.8
+        1.0
       ]
     },
     {
@@ -278,10 +278,10 @@
     {
       "id": "crossbow.reload",
       "use": "A crossbow wound again",
-      "query": "crossbow reload",
+      "query": "crossbow",
       "seconds": [
         0.3,
-        2.5
+        3.0
       ]
     },
     {
@@ -305,10 +305,10 @@
     {
       "id": "gun.reload",
       "use": "A gun loaded again",
-      "query": "flintlock reload",
+      "query": "gun reload",
       "seconds": [
-        0.5,
-        3.0
+        0.4,
+        4.0
       ]
     },
     {
@@ -323,10 +323,10 @@
     {
       "id": "arrow.hit",
       "use": "An arrow or bolt strikes a body",
-      "query": "arrow hit flesh",
+      "query": "arrow impact",
       "seconds": [
         0.1,
-        0.8
+        1.0
       ]
     },
     {
@@ -422,19 +422,19 @@
     {
       "id": "cast.charge",
       "use": "An Anima gathering as it is cast",
-      "query": "magic charge",
+      "query": "spell charge",
       "seconds": [
         0.3,
-        1.5
+        2.5
       ]
     },
     {
       "id": "spell.tempest",
       "use": "Tempest: the seeking orbs cast",
-      "query": "electric orb",
+      "query": "electricity crackle",
       "seconds": [
         0.3,
-        2.0
+        3.0
       ]
     },
     {
@@ -503,16 +503,16 @@
     {
       "id": "spell.ravenbolt",
       "use": "A Duskraven bolt flies",
-      "query": "dark magic bolt",
+      "query": "magic projectile",
       "seconds": [
         0.1,
-        1.0
+        1.5
       ]
     },
     {
       "id": "spell.daggers",
       "use": "Dusk Daggers strike in their ring",
-      "query": "magic blades",
+      "query": "knife whoosh",
       "seconds": [
         0.1,
         1.2
@@ -665,10 +665,10 @@
     {
       "id": "shield.break",
       "use": "A foe's element shield breaks",
-      "query": "shield break",
+      "query": "magic break",
       "seconds": [
         0.2,
-        1.5
+        2.0
       ]
     },
     {
