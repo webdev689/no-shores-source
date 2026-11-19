@@ -226,9 +226,9 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
 - **Its buildings** are broken where the page stands them (`ruins.ts`), each by its place to the centimetre, the same
   on every machine: one in four has fallen to a heap of rubble over its hull's footprint, a quarter of its walls'
   height and at least 1.5 m; the rest are broken off at 35 to 75 % of their height, never above their lowest wing's
-  eaves, so roofless, the edge ragged, each 1.5 m square of wall fallen up to 3 m lower, their walls darkened
-  toward the break, at the break 78 % darker. Near, the forged model is cut at the break in the shader and drawn
-  from both faces, an open shell, its level faces over a quarter of the break's height (its upper floors and
+  eaves, so roofless, the edge ragged, each 1.5 m square of wall fallen up to 3 m lower or half its standing height,
+  their walls darkened toward the break, at the break 78 % darker. Near, the forged model is cut at the break in the
+  shader and drawn from both faces, an open shell, its level faces over a quarter of the break's height (its upper floors and
   ceilings) left out too; its shadow is cast as if every corner above the break stood at it, lidded there.
   Its masses and hull end at the break, open at the top and drawn from both faces, so a ruin reads as one at every
   distance, from the sea and the Overworld too. A ruin's windows are as dark as a port city's: lit windows are not

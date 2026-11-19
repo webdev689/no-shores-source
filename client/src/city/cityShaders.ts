@@ -141,7 +141,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   // above its break a ruin's building is gone, and so are its floors and ceilings in its upper part, which would
   // otherwise read as a roof from above
   let slab = abs(normalize(surface.normal).z) > 0.9 && surface.ruin.x > 0.25 * surface.ruin.y;
-  let jag = ${JAG_M} * jagged(surface.from_eye + view.eye.xyz);
+  // never more than half its standing height, so a low building keeps its ground floor
+  let jag = min(${JAG_M}.0, 0.5 * surface.ruin.y) * jagged(surface.from_eye + view.eye.xyz);
   if broken && (surface.ruin.x > surface.ruin.y - jag || slab) {
     discard;
   }
