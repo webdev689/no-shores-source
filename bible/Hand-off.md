@@ -322,7 +322,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   platform, a ruin's broken tiers, the wilds' rock platforms, a coven or cave in a cavern, a quarry's stepped pit);
   ways that switch back down faces, climb stairs, cross land bridges and bridges over chasms, and run through roofed
   tunnels; gates set in walls from cliff to cliff or clefts in the rock; each zone's map of its spaces and
-  connections for missions, events and raids; and foes fighting in tunnels and caverns. The order:
+  connections for missions, events and raids; and foes fighting in tunnels and caverns. The owner wants it
+  "insanely amazing", and chose the Gullwing Vale as the showcase, built end to end (every step below) with pictures
+  and a fly-through before the Downs and the Moors, and real 3D rock (cave ceilings, overhanging cliffs, natural
+  arches, tunnel mouths), since the ground holds one height a point. The order, each step on the Vale first:
   1. done: the map of spaces and connections ([[Layouts]], "The map"), which shows every Saltmere area at the land's
      own level but the camps' and the keep's platforms;
   2. heights. The sculpt only raises, so on Saltmere (28 m) the deepest place is the land's own level, and the code

@@ -40,6 +40,18 @@ The owner's answers to the questions that followed:
 > until the navmesh learns floors under roofs, or with the navmesh taught that in this pass: "Approve, foes in
 > caverns too"
 
+> "Im really trying to make this insanely amazing"
+
+> Asked whether one zone is built end to end first (heights, winding ways, land bridges, places below ground, gates
+> set into rock, foes in caverns, then pictures and a fly-through) before the other two, or all three step by step:
+> "One zone first (Recommended)"
+>
+> Asked which zone is the showcase: "Gullwing Vale (Recommended)"
+>
+> Asked, since the ground holds one height a point and cannot overhang, whether caves and tunnels are trenches roofed
+> with stone blocks, as the Chalk Adit is, or the land gains real 3D rock (cave ceilings, overhanging cliffs, natural
+> arches, tunnel mouths, lit and collided like the rest): "Add real 3D rock (Recommended)"
+
 ## What it settles
 
 - **A zone's land varies in height**, instead of flat floors joined by canyon lanes round circular basins: areas on
@@ -55,5 +67,9 @@ The owner's answers to the questions that followed:
 - **The design is approved as asked**: areas on heights shaped by their kind, ways that switch back, climb, bridge
   and tunnel between them, gates set in walls or clefts, and a map of each zone's spaces and connections.
 - **Foes fight in tunnels and caverns too**: the [[Navmesh]] learns floors under roofs in this pass.
+- **The Gullwing Vale is built first, end to end**, as the showcase, with pictures and a fly-through for the owner to
+  judge, before the Saltgrass Downs and the Driftwood Moors.
+- **The land gains real 3D rock**: cave ceilings, overhanging cliffs, natural arches and tunnel mouths, lit and
+  collided like the rest, where the ground's one height a point cannot reach.
 
 It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]].
