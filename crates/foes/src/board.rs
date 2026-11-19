@@ -17,10 +17,11 @@ struct Fight {
     waiting: BTreeMap<FighterId, (u64, bool)>,
     /// The one foe striking it on an opening, without a turn: a back turned to it, or a walk in on it.
     opportunist: Option<FighterId>,
-    /// The latest blow begun at it: by whom, and the tick it lands; and the foe held back longest by the beat after
-    /// it, with the tick it last asked.
+    /// The latest blow begun at it: by whom, and the tick it lands; the foe ready in reach that the beat after it
+    /// holds back longest, and the foe going in to strike next, each with the tick it last asked.
     due: Option<(FighterId, u64)>,
     next: Option<(FighterId, u64)>,
+    going: Option<(FighterId, u64)>,
     /// The waiting foe working round to its flank, and how well its role suits that (the lower, the better).
     flanker: Option<(FighterId, u8)>,
 }
@@ -33,6 +34,11 @@ impl Fight {
     fn tokens(&mut self, ranged: bool) -> &mut BTreeMap<FighterId, u64> {
         if ranged { &mut self.ranged } else { &mut self.melee }
     }
+}
+
+/// Whether a place in line is free for `foe` at `tick`: empty, its own, or let go by a foe that did not ask last tick.
+fn free_for(place: Option<(FighterId, u64)>, foe: FighterId, tick: u64) -> bool {
+    place.is_none_or(|(holder, asked)| holder == foe || asked + 1 < tick)
 }
 
 /// What the foes of a room share: who holds the turns to fight each target, and since when each waits; and the spot
@@ -124,7 +130,7 @@ impl Board {
         queues: bool,
     ) -> bool {
         let fight = self.fights.entry(target).or_default();
-        let first = fight.next.is_none_or(|(next, asked)| next == foe || asked + 1 < tick);
+        let first = free_for(fight.next, foe, tick);
         if first && queues {
             fight.next = Some((foe, tick));
         }
@@ -135,9 +141,9 @@ impl Board {
     /// reach for the beat. If it may, it is the one going in, as long as it asks each tick.
     pub fn go_in(&mut self, target: FighterId, foe: FighterId, tick: u64) -> bool {
         let fight = self.fights.entry(target).or_default();
-        let first = fight.next.is_none_or(|(next, asked)| next == foe || asked + 1 < tick);
+        let first = free_for(fight.going, foe, tick) && free_for(fight.next, foe, tick);
         if first {
-            fight.next = Some((foe, tick));
+            fight.going = Some((foe, tick));
         }
         first
     }
@@ -150,6 +156,9 @@ impl Board {
         }
         if fight.next.is_some_and(|(next, _)| next == foe) {
             fight.next = None;
+        }
+        if fight.going.is_some_and(|(going, _)| going == foe) {
+            fight.going = None;
         }
     }
 

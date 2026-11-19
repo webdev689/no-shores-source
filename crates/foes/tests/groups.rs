@@ -7,7 +7,7 @@ mod common;
 
 use combat::fighter::Action;
 use combat::sight::off;
-use common::{BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still};
+use common::{ARCHER, BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still};
 use core::f64::consts::{PI, TAU};
 use foes::Board;
 use foes::Director;
@@ -35,10 +35,13 @@ fn landings(room: &Room) -> Vec<(u64, u32)> {
 
 #[test]
 fn blows_from_several_foes_at_one_target_land_a_beat_apart() {
+    // The beat at rest, more than a second: time for a person to answer one blow before the next.
     let beat = u64::from(combat::ticks(BEAT));
+    assert!(beat > 60);
     let mut landed = 0;
     for seed in [2, 5, 9] {
-        let mut room = group(seed, foes::director::REST, &[(SWORDSMAN, -40.0), (BRUTE, 0.0), (SKIRMISHER, 40.0)]);
+        let foes = [(SWORDSMAN, -40.0), (BRUTE, 0.0), (SKIRMISHER, 40.0), (ARCHER, 150.0), (ARCHER, -150.0)];
+        let mut room = group(seed, foes::director::REST, &foes);
         room.run(1800, &mut still(0.0));
         let blows = landings(&room);
         for pair in blows.windows(2).filter(|pair| pair[0].1 != pair[1].1) {
@@ -73,6 +76,9 @@ fn a_shot_takes_only_a_beat_no_blow_waits_for() {
     board.struck(9, 2, 180);
     assert!(board.may_strike(9, 4, 260, 72, 70, false), "with no one waiting, it looses into the next");
     assert!(board.may_strike(9, 2, 400, 72, 71, true), "and takes no place a blow would wait behind");
+    assert!(board.go_in(9, 3, 80), "foe 3 goes in to strike next");
+    assert!(!board.go_in(9, 5, 80), "and foe 5 keeps to the ring while it does");
+    assert!(board.may_strike(9, 4, 500, 72, 81, false), "a shot is loosed while foe 3 is on its way");
 }
 
 #[test]
