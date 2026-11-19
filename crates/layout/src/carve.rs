@@ -134,7 +134,8 @@ pub(crate) fn gorge(field: &Field, from: [f64; 2], way: [f64; 2], half: f64) -> 
 }
 
 /// What a layout's floor is carved round: its areas, its paths, the gorges out of it (each a start and a way), the
-/// pockets off its paths where its resources lie, and the water meadows along a river its brief names.
+/// pockets off its paths where its resources lie, the water meadows along a river its brief names, and each area's
+/// level (`heights`, all the land's own where the brief asks for none).
 #[derive(Debug, Clone, Copy)]
 pub struct Network<'layout> {
     pub areas: &'layout [Area],
@@ -142,6 +143,7 @@ pub struct Network<'layout> {
     pub exits: &'layout [([f64; 2], [f64; 2])],
     pub pockets: &'layout [[f64; 2]],
     pub meadows: &'layout [[f64; 5]],
+    pub levels: &'layout [f64],
 }
 
 /// A pocket's half-width, metres: room round a resource and a way into it from the path.
@@ -195,7 +197,7 @@ pub fn carve(
     rise: f64,
     seed: u32,
 ) -> (Sculpt, Vec<Basin>) {
-    let Network { areas, paths, exits, pockets, meadows } = network;
+    let Network { areas, paths, exits, pockets, meadows, levels } = network;
     let mut drawn = 0_i64;
     let mut draw = || {
         drawn += 1;
@@ -208,22 +210,61 @@ pub fn carve(
             basin(area, seating, paths, water, &mut draw)
         })
         .collect();
-    let mut floors: Vec<[f64; 5]> = basins.iter().flat_map(|basin| basin.floors.iter().copied()).collect();
-    let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
-    for path in paths {
+    // A raised area's floor is a flat at its level, its terraces that much higher; one at the land's own level stays
+    // floor, as does every way graded to it.
+    let mut floors: Vec<[f64; 5]> = Vec::new();
+    let (mut terraces, mut raised): (Vec<[f64; 7]>, Vec<[f64; 7]>) = (Vec::new(), Vec::new());
+    for (basin, &level) in basins.iter().zip(levels) {
+        if level > 0.0 {
+            raised.extend(basin.floors.iter().map(|&[x1, y1, x2, y2, half]| [x1, y1, x2, y2, half, level, level]));
+        } else {
+            floors.extend_from_slice(&basin.floors);
+        }
+        let lifted = |share: f64| (share + level).min(1.0);
+        terraces.extend(
+            basin
+                .terraces
+                .iter()
+                .map(|&[x1, y1, x2, y2, half, from, to]| [x1, y1, x2, y2, half, lifted(from), lifted(to)]),
+        );
+    }
+    let grades = if levels.iter().any(|&level| level > 0.0) {
+        crate::heights::graded(paths, &basins, levels)
+    } else {
+        Vec::new()
+    };
+    let graded = |number: usize, point: [f64; 2]| {
+        let found = paths[number].points.iter().position(|&each| each == point);
+        found.and_then(|index| grades.get(number).map(|levels| levels[index])).unwrap_or(0.0)
+    };
+    for (number, path) in paths.iter().enumerate() {
         let points = simplified(&path.points, 3.0);
         for (index, pair) in points.windows(2).enumerate() {
             let half = canyon_half(path, index, &points, areas);
-            floors.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half]);
+            let (from, to) = (graded(number, pair[0]), graded(number, pair[1]));
+            if from > 0.0 || to > 0.0 {
+                raised.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half, from, to]);
+            } else {
+                floors.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half]);
+            }
         }
     }
     floors.extend_from_slice(meadows);
     for &(from, way) in exits {
         floors.push(gorge(field, from, way, FOOTPATH_HALF_M + 3.0));
     }
+    // A pocket opens off its way at the way's level there.
     for &pocket in pockets {
         let mouth = nearest_on(paths, pocket).unwrap_or(pocket);
-        floors.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
+        let level = (0..paths.len())
+            .flat_map(|number| paths[number].points.iter().map(move |&point| (number, point)))
+            .min_by(|first, second| distance(first.1, mouth).total_cmp(&distance(second.1, mouth)))
+            .map_or(0.0, |(number, point)| graded(number, point));
+        if level > 0.0 {
+            raised.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M, level, level]);
+        } else {
+            floors.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
+        }
     }
     let bare = Sculpts::from(vec![Sculpt {
         claim: claim.clone(),
@@ -234,11 +275,14 @@ pub fn carve(
         climbs: terraces.clone(),
         runs: Vec::new(),
         wings: Vec::new(),
+        levels: raised.clone(),
     }]);
     let mut climbs = climbs(field, areas, &bare, rise, seed);
     climbs.extend(terraces);
     let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
-    (Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new() }, basins)
+    let sculpt =
+        Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new(), levels: raised };
+    (sculpt, basins)
 }
 
 /// How steep a climb rises at most (a rise a metre, for the massif's tallest), its half-width, its lookout's reach,
@@ -291,8 +335,8 @@ fn climbs(field: &Field, areas: &[Area], bare: &Sculpts, rise: f64, seed: u32) -
     found
 }
 
-/// A climb from `start` (on a floor's edge) along `way` up the massif, and its lookout on the top, where they fit
-/// (`climb_clear`): each a capsule of the sculpt's climbs.
+/// A climb from `start` (on a floor's edge, at its level) along `way` up the massif, and its lookout on the top, where
+/// they fit (`climb_clear`): each a capsule of the sculpt's climbs.
 pub(crate) fn climb_along(
     field: &Field,
     bare: &Sculpts,
@@ -301,10 +345,11 @@ pub(crate) fn climb_along(
     way: [f64; 2],
     rise: f64,
 ) -> Option<[[f64; 7]; 2]> {
-    let length = rise * 1.15 / CLIMB_STEEPEST;
+    let from = (bare.floor_level(start[0], start[1]) / rise).clamp(0.0, 1.0);
+    let length = (rise * 1.15 * (1.0 - from) / CLIMB_STEEPEST).max(LOOKOUT_HALF_M);
     let end = [start[0] + way[0] * length, start[1] + way[1] * length];
     climb_clear(field, bare, taken, start, way, length).then_some([
-        [start[0], start[1], end[0], end[1], CLIMB_HALF_M, 0.0, 1.0],
+        [start[0], start[1], end[0], end[1], CLIMB_HALF_M, from, 1.0],
         [end[0], end[1], end[0], end[1], LOOKOUT_HALF_M, 1.0, 1.0],
     ])
 }

@@ -340,6 +340,7 @@ mod tests {
             climbs,
             runs: Vec::new(),
             wings: Vec::new(),
+            levels: Vec::new(),
         };
         Sculpts::from(vec![sculpt])
     }

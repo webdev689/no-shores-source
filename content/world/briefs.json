@@ -43,6 +43,7 @@
   "theme": "A river vale of water meadows and mills under a guarded keep, its old stones older than anyone remembers.",
   "rock": "knoll",
   "river": true,
+  "heights": true,
   "areas": [
    {
     "kind": "landing",
@@ -71,7 +72,8 @@
    },
    {
     "kind": "wilds",
-    "name": "The Water Meadows"
+    "name": "The Water Meadows",
+    "level": 0
    },
    {
     "kind": "coven",

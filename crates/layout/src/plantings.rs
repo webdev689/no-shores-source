@@ -285,7 +285,8 @@ pub fn takes(ground: &Ground, sculpt: &Sculpt, carved: &Sculpts, ring: &[[f64; 2
         east * east + south * south <= most * most
     };
     ring_holds(ring, at[0], at[1])
-        && sculpt.floors.iter().any(|floor| off(floor) <= -reach)
+        && (sculpt.floors.iter().any(|floor| off(floor) <= -reach)
+            || sculpt.levels.iter().any(|level| off(level) <= -reach))
         && sculpt.climbs.iter().chain(&sculpt.runs).all(|climb| off(climb) > reach)
         && sculpt.outcrops.iter().all(|outcrop| {
             let ([first, last], out) = outcrop.footprint();

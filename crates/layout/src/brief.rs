@@ -66,6 +66,10 @@ pub struct AreaBrief {
     /// How many RMB blocks a hamlet stands, 1 to 4.
     #[serde(default)]
     pub blocks: Option<u8>,
+    /// Where its brief asks for heights, its floor's level in hundredths of the massif's height, in place of its
+    /// kind's (`heights::level_of`).
+    #[serde(default)]
+    pub level: Option<u8>,
 }
 
 /// What a run is: one in the open (a gorge, a ledge up a face, a rampart along the top) or through a large building
@@ -124,6 +128,9 @@ pub struct Brief {
     /// Whether a river runs through it.
     #[serde(default)]
     pub river: bool,
+    /// Whether its places stand at heights by their kind, its ways graded between them (`heights`).
+    #[serde(default)]
+    pub heights: bool,
 }
 
 /// Every node's brief, by node id.
@@ -146,12 +153,12 @@ impl Briefs {
 /// A brief for a node no one has written one for: open ground to arrive on and fight over.
 fn plain(kind: land::sites::NodeKind) -> Brief {
     use land::sites::NodeKind;
-    let area = |kind: AreaKind, name: &str| AreaBrief { kind, name: name.to_owned(), blocks: None };
+    let area = |kind: AreaKind, name: &str| AreaBrief { kind, name: name.to_owned(), blocks: None, level: None };
     let areas = match kind {
         NodeKind::Patrol => vec![area(AreaKind::Landing, "The Landing"), area(AreaKind::Wilds, "The Wilds")],
         _ => vec![area(AreaKind::Entrance, "The Way In"), area(AreaKind::Arena, "The Heart")],
     };
-    Brief { theme: String::new(), areas, runs: Vec::new(), rock: None, stone: None, river: false }
+    Brief { theme: String::new(), areas, runs: Vec::new(), rock: None, stone: None, river: false, heights: false }
 }
 
 #[cfg(test)]

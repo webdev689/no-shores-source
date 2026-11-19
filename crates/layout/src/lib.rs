@@ -15,6 +15,7 @@ pub mod compose;
 pub mod dressing;
 pub mod field;
 pub mod halls;
+pub mod heights;
 pub mod interiors;
 pub mod marks;
 pub mod masses;
@@ -200,14 +201,18 @@ pub fn plan(
     let mut wide = (patrol && (beyond || brief.river)).then(|| field.widened(ground, &claim, RUNS_MARGIN_M));
     let river = wide.as_ref().filter(|_| brief.river).and_then(|wide| field::river_wing(wide, &claim, avoid));
     let meadows = river.as_ref().map_or(&[][..], |river| river.floors.as_slice());
-    let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets, meadows };
+    let levels = heights::levels(&areas, brief);
+    let network =
+        carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets, meadows, levels: &levels };
     let (mut sculpt, basins) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
-    // What stands on a terrace was stood on the land before it was carved: lift it onto the terrace's level.
+    // What stands on a terrace or a raised floor (a place at a height, a way graded between places) was stood on the
+    // land before it was carved: lift it onto the land's level there.
     let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
-    if !terraces.is_empty() {
+    let raised_floors: Vec<[f64; 7]> = terraces.iter().chain(&sculpt.levels).copied().collect();
+    if !raised_floors.is_empty() {
         let lifting = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
         let raised = |[x, y]: [f64; 2]| lifting.raise(x, y, ground.coast.at(x, y));
-        basins::seat_on_terraces(&mut seating, &terraces, &raised);
+        basins::seat_on_terraces(&mut seating, &raised_floors, &raised);
     }
     // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
     // found in what is left.

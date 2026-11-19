@@ -53,10 +53,15 @@ pub struct Sculpt {
     pub runs: Vec<[f64; 7]>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub wings: Vec<[f64; 5]>,
+    /// Its raised floors (`[x1, y1, x2, y2, half, from, to]`): a place standing at a height, a way graded between
+    /// places. Each is carved as its climbs are, the land at its level, and is floor to all that asks for floor.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub levels: Vec<[f64; 7]>,
 }
 
-/// The floors, the outcrops, the climbs and the runs near one bucket, by their places in a sculpt's lists.
-type Near = (Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>);
+/// The floors, the outcrops, the climbs, the runs and the raised floors near one bucket, by their places in a sculpt's
+/// lists.
+type Near = (Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>);
 
 /// Every sculpt on a ground, indexed by bucket so a point finds only the shapes near it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -151,6 +156,11 @@ impl From<Vec<Sculpt>> for Sculpts {
                 let reach = half + CLIFF_RUN_M + RUN_BLEND_M;
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.3.push(number as u32));
+            }
+            for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.levels.iter().enumerate() {
+                let reach = half + CLIFF_RUN_M + RUN_BLEND_M;
+                let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
+                spread(bounds, &mut |entry| entry.4.push(number as u32));
             }
             near.push(map);
         }
@@ -288,7 +298,7 @@ impl Sculpts {
     /// is: the land then climbs round a bend, or beside a climb's top, without a step.
     fn off_climb(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
-        let Some((_, _, climbs, runs)) = self.near[number].get(&(bucket(x), bucket(y))) else {
+        let Some((_, _, climbs, runs, levels)) = self.near[number].get(&(bucket(x), bucket(y))) else {
             return (f64::INFINITY, 1.0);
         };
         let measured = |capsule: &[f64; 7]| {
@@ -300,6 +310,7 @@ impl Sculpts {
             .iter()
             .map(|&climb| measured(&sculpt.climbs[climb as usize]))
             .chain(runs.iter().map(|&run| measured(&sculpt.runs[run as usize])))
+            .chain(levels.iter().map(|&level| measured(&sculpt.levels[level as usize])))
             .collect();
         let nearest = parts.iter().map(|part| part.0).fold(f64::INFINITY, f64::min);
         if !nearest.is_finite() {
