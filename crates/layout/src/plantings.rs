@@ -248,8 +248,8 @@ impl Kept {
 }
 
 /// Whether a layout's land takes a planting reaching `reach` round a point: in its section, on its floor by that
-/// reach and as far off its climbs, its runs' rock and its outcrops, so nothing stands up or into a face; dry; and
-/// on land as level as the ground carved by `carved` lies there.
+/// reach and as far off its climbs, its runs' rock and its outcrops, so nothing stands up or into a face; dry; and no
+/// steeper there than STEEPEST, on the ground as `carved` carves it.
 #[must_use]
 pub fn takes(ground: &Ground, sculpt: &Sculpt, carved: &Sculpts, ring: &[[f64; 2]], at: [f64; 2], reach: f64) -> bool {
     let off = |capsule: &[f64]| off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4];
@@ -281,7 +281,7 @@ mod tests {
     use crate::paths::{Tier, off_line};
 
     const AT: [f64; 2] = [1000.0, 2000.0];
-    /// The field's way, a unit vector east-north-east.
+    /// The field's way, a unit vector to the north-east.
     const AXIS: [f64; 2] = [0.8, -0.6];
 
     #[test]
