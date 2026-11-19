@@ -1,5 +1,6 @@
 // A patrol's dungeon as the page reads it: room-wasm's `room_dungeon` answer, and what the movement rules and the
 // camera stand on in it.
+import { startRoomDoor } from '../../../server/roomDoor.ts';
 import type { Block } from '../rules/movementRules.ts';
 
 type Triple = readonly [number, number, number];
@@ -42,26 +43,10 @@ export const SIDE_STEPS: readonly (readonly [number, number])[] = [
 /** How high the rock beside the open cells stands for the camera and the shots: over any ceiling. */
 const ROCK_TOP_M = 12;
 
-interface DungeonExports {
-  readonly memory: WebAssembly.Memory;
-  reserve(length: number): number;
-  release(address: number, length: number): void;
-  room_dungeon(address: number, length: number): bigint;
-}
-
 /** The dungeon `number` of the patrol `patrol` (its id) named `name`, laid by the room module's own rules; an ask it
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {
-  const exports = new WebAssembly.Instance(module, {}).exports as unknown as DungeonExports;
-  const bytes = new TextEncoder().encode(JSON.stringify({ patrol, name, number }));
-  const address = exports.reserve(bytes.length);
-  new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
-  const packed = exports.room_dungeon(address, bytes.length);
-  exports.release(address, bytes.length);
-  const [handed, length] = [Number(packed >> 32n), Number(packed & 0xffff_ffffn)];
-  const text = new TextDecoder().decode(new Uint8Array(exports.memory.buffer, handed, length));
-  exports.release(handed, length);
-  const layout = JSON.parse(text) as DungeonLayout | null;
+  const layout = JSON.parse(startRoomDoor(module).dungeon(patrol, name, number)) as DungeonLayout | null;
   if (!layout) throw new Error(`${patrol} has no dungeon ${number}`);
   return layout;
 }
