@@ -54,15 +54,17 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
     let intent = &clean(intent, fighter.aim);
     let input = &intent.combat;
     let now = Held { attack: input.attack.is_some(), guard: input.guard, dodge: input.dodge, shoot: input.shoot };
-    let statuses = fighter.statuses.ticked();
-    let mut next = Fighter { held: now, kept: kept(fighter, input, now), statuses, ..*fighter };
+    // A Charge holds its fighter from the tick's start, so its stagger and its ticks run down together.
+    let mut held = *fighter;
+    crate::status::held_still(&mut held);
+    let statuses = held.statuses.ticked(&held.action);
+    let mut next = Fighter { held: now, kept: kept(fighter, input, now), statuses, ..held };
     if let Action::Dead { elapsed } = fighter.action {
         next.action = Action::Dead { elapsed: elapsed.saturating_add(1) };
         next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, around.terrain, TICK_SECONDS);
         return (next, None);
     }
     rest(&mut next);
-    crate::status::held_still(&mut next);
     let pulled = input.shoot && !fighter.held.shoot;
     let happening = act(&mut next, intent, around, pulled);
     if matches!(happening, Some(Happening::Struck(_) | Happening::Loosed(_))) {
@@ -459,10 +461,12 @@ fn slowed(controls: Controls, share: f64) -> Controls {
     Controls { forward: controls.forward * share, sideways: controls.sideways * share, ..still(controls) }
 }
 
-/// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck, and a
-/// charge or a leap carried to its landing at the end of its wind-up.
+/// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck or while
+/// a Charge holds (one waiting out a reload too), and a charge or a leap carried to its landing at the end of its
+/// wind-up.
 fn move_body(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) {
     let allowed = match next.action {
+        _ if next.statuses.has(crate::Status::Charge) => still(controls),
         Action::Idle | Action::Reload { .. } => controls,
         Action::Attack(_) => slowed(controls, ATTACK_PACE),
         Action::Guard { .. } | Action::Parry { .. } => slowed(controls, GUARD_PACE),

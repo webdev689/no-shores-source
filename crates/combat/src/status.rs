@@ -117,13 +117,17 @@ impl Statuses {
         self.held[status as usize].from.filter(|_| self.has(status))
     }
 
-    /// A tick on: each runs down, and a Charge that ends begins its immunity.
+    /// A tick on of a fighter in `action`: each runs down, but a Charge waiting out an action it does not cut
+    /// (`outlasts_charge`); and a Charge that ends begins its immunity.
     #[must_use]
-    pub fn ticked(&self) -> Statuses {
+    pub fn ticked(&self, action: &Action) -> Statuses {
         let mut next = *self;
         next.charge_immune = next.charge_immune.saturating_sub(1);
         for given in &mut next.held {
             given.ticks = given.ticks.saturating_sub(1);
+        }
+        if outlasts_charge(action) {
+            next.held[Status::Charge as usize].ticks = self.left(Status::Charge);
         }
         if self.has(Status::Charge) && !next.has(Status::Charge) {
             next.charge_immune = CHARGE_IMMUNE;
@@ -165,7 +169,8 @@ impl Statuses {
 
 /// The fighter given `status` for `ticks` by `from`: refreshed to the longer of what it holds and this, never stacked.
 /// A Charge takes only on a fighter neither Charged nor immune to it, and cuts what it was doing, as a stagger of its
-/// own cause, unless a longer stagger already holds it. The dead take nothing. None when it does not take.
+/// own cause, unless it is doing what a Charge waits out (`outlasts_charge`). The dead take nothing. None when it does
+/// not take.
 #[must_use]
 pub fn give(fighter: &Fighter, status: Status, ticks: u32, from: Option<FighterId>) -> Option<Fighter> {
     let statuses = &fighter.statuses;
@@ -182,11 +187,23 @@ pub fn give(fighter: &Fighter, status: Status, ticks: u32, from: Option<FighterI
     Some(next)
 }
 
-/// A Charged fighter can do nothing: unless a stagger or a fall already holds it, it stands staggered by the Charge for
-/// as long as the Charge has left.
+/// Whether a Charge waits out an action rather than cut it: a stagger of another cause, a fall, an overreach or a
+/// reload. Cut short, a foe would rise early from the opening it gave and a gun skip its reload; so the Charge runs
+/// down only once the action ends, and then holds for its whole time.
+#[must_use]
+pub fn outlasts_charge(action: &Action) -> bool {
+    match action {
+        Action::Staggered { cause, .. } => *cause != Cause::Charged,
+        Action::Down { .. } | Action::Overreach { .. } | Action::Reload { .. } => true,
+        _ => false,
+    }
+}
+
+/// A Charged fighter can do nothing: unless it is doing what the Charge waits out, it stands staggered by the Charge
+/// for as long as the Charge has left.
 pub(crate) fn held_still(fighter: &mut Fighter) {
     let left = fighter.statuses.left(Status::Charge);
-    if left > 0 && !fighter.dead() && !fighter.staggered() {
+    if left > 0 && !fighter.dead() && !fighter.staggered() && !outlasts_charge(&fighter.action) {
         fighter.action = Action::Staggered { left, cause: Cause::Charged };
     }
 }

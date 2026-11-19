@@ -165,3 +165,37 @@ fn a_fighter_s_statuses_cross_its_numbers_whole() {
     let glanced = Fighter::from_glance(&fighter.glance());
     assert_eq!(glanced.statuses, combat::Statuses::NONE, "a glance carries none");
 }
+
+/// A fighter held in an action, given a Charge of `ticks`: the action runs its whole `action_ticks`, uncut, standing
+/// still; then the Charge holds it for its own whole time; and only after that does its immunity begin.
+fn waits_out(held: Fighter, ticks: u32, action_ticks: u32) {
+    let charged = give(&held, Status::Charge, ticks, Some(9)).expect("a Charge takes");
+    assert_eq!(charged.action, held.action, "the action it was in is kept");
+    let pushing = combat::Intent {
+        controls: Controls { forward: 1.0, run: true, ..Controls::default() },
+        combat: combat::CombatInput::default(),
+    };
+    let (waiting, _) = run(charged, pushing, action_ticks - 1, None);
+    assert_eq!(waiting.statuses.left(Status::Charge), ticks, "the Charge waits: {:?}", waiting.action);
+    assert!((waiting.body.x, waiting.body.y) == (charged.body.x, charged.body.y), "not a step while it waits");
+    let (holding, _) = run(charged, pushing, action_ticks + ticks - 1, None);
+    assert!(holding.statuses.has(Status::Charge), "then it holds for its whole time");
+    assert!(matches!(holding.action, Action::Staggered { cause: Cause::Charged, .. }), "{:?}", holding.action);
+    assert_eq!(holding.statuses.charge_immune, 0, "no immunity while it holds");
+    let (freed, _) = run(charged, pushing, action_ticks + ticks + 1, None);
+    assert!(!freed.statuses.has(Status::Charge), "and it ends");
+    assert!(freed.statuses.charge_immune > CHARGE_IMMUNE - 3, "its immunity begins only once it held");
+}
+
+#[test]
+fn a_charge_waits_out_a_reload_an_overreach_a_fall_or_another_stagger_then_holds_its_whole_time() {
+    let reloading = Fighter { action: Action::Reload { left: 40 }, ..player_at(0.0, 0.0) };
+    waits_out(reloading, charge_ticks(1), 40);
+    let overreached = Fighter { action: Action::Overreach { left: 30 }, punished: 30, ..foe_at(0.0, 0.0, 0.0) };
+    waits_out(overreached, charge_ticks(3), 30);
+    let down = Fighter { action: Action::Down { left: 50 }, ..player_at(0.0, 0.0) };
+    waits_out(down, charge_ticks(1), 50);
+    // Thunderclap on a Boss: its Charge waits out the guard-broken stagger, then holds.
+    let broken = Fighter { action: Action::Staggered { left: 48, cause: Cause::GuardBroken }, ..foe_at(0.0, 0.0, 0.0) };
+    waits_out(broken, charge_ticks(5), 48);
+}
