@@ -1,0 +1,404 @@
+//! A whole dungeon: three or four blocks grown from the way in's, each next beside one already laid, every two side
+//! by side sharing one or two doorways in their edge. With it, what the rooms and the Game read: the way in's exit door,
+//! the torches, each room's walk from the way in, and what a body runs into beside the rock, the doorways' jambs and
+//! the great rooms' pillars.
+
+use crate::block::{BLOCK_CELLS, BlockLayout, OPENING_FIRST, OPENING_LAST, Opening};
+use crate::lane::Lane;
+use crate::{CELL_M, Cell, SIDES, Shape, Side, Style};
+
+/// Blocks a dungeon grows to, fewest and most.
+const BLOCKS: (usize, usize) = (3, 4);
+/// A doorway's frame: the opening's half width, the jambs' depth into the corridor, and the lintel's underside (m).
+pub const DOORWAY_HALF_M: f64 = 0.9;
+pub const JAMB_DEPTH_M: f64 = 0.3;
+pub const LINTEL_M: f64 = 2.8;
+/// A pillar's half width, and the room that stands them: at least this many cells each way.
+pub const PILLAR_HALF_M: f64 = 0.35;
+const PILLAR_ROOM_CELLS: usize = 4;
+/// A torch's height over the floor, how far in from its wall, and how far its light reaches (m).
+pub const TORCH_M: f64 = 2.1;
+const TORCH_INSET_M: f64 = 0.35;
+pub const TORCH_REACH_M: f64 = 8.0;
+/// The exit door's width and height, how far off its wall it stands, and how far from it a body arrives (m).
+pub const EXIT_WIDTH_M: f64 = 1.4;
+pub const EXIT_HEIGHT_M: f64 = 2.4;
+const EXIT_OFF_WALL_M: f64 = 0.02;
+const ARRIVE_FROM_DOOR_M: f64 = 0.4;
+
+/// A room: its rectangle in the dungeon's cells, its cells and those of them no side of which meets a corridor (row
+/// by row), its ceiling's height, its shape, and how many cells' walk it lies from the way in.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Room {
+    pub x: usize,
+    pub y: usize,
+    pub width: usize,
+    pub depth: usize,
+    pub cells: Vec<usize>,
+    pub quiet: Vec<usize>,
+    pub height: f64,
+    pub shape: Shape,
+    pub walk: u32,
+}
+
+/// The way in: the room's cell the exit door stands at, and the side of it the door is on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WayIn {
+    pub cell: usize,
+    pub side: Side,
+    pub room: usize,
+}
+
+/// A torch on a wall: where its flame is (x east, y south, z up), and the side of its cell its wall is on.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Torch {
+    pub at: [f64; 3],
+    pub wall: Side,
+}
+
+/// A doorway where a room's cell meets a corridor on `side`, framed up to the lower of the two ceilings.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Frame {
+    pub cell: usize,
+    pub side: Side,
+    pub height: f64,
+}
+
+/// A dungeon as the Forge lays it, in its own frame: x east and y south from its north-west corner, its floor at 0 m.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Dungeon {
+    pub style: Style,
+    /// The blocks' squares, the way in's first, each its column and row of blocks.
+    pub squares: Vec<(usize, usize)>,
+    pub columns: usize,
+    pub rows: usize,
+    pub cells: Vec<Cell>,
+    /// Each open cell's ceiling, 0 for rock.
+    pub ceilings: Vec<f64>,
+    pub rooms: Vec<Room>,
+    pub way_in: WayIn,
+    pub torches: Vec<Torch>,
+    pub frames: Vec<Frame>,
+    /// Each pillar's middle, (x, y), and its top.
+    pub pillars: Vec<[f64; 3]>,
+}
+
+/// The squares of the blocks: the first at the start, each next one beside one already laid, drawn from those free.
+fn grow(lane: &mut Lane, count: usize) -> Vec<(isize, isize)> {
+    let mut squares = vec![(0, 0)];
+    while squares.len() < count {
+        let mut free: Vec<(isize, isize)> = Vec::new();
+        for &(column, row) in &squares {
+            for side in SIDES {
+                let (dx, dy) = side.step();
+                let next = (column + dx, row + dy);
+                if !squares.contains(&next) && !free.contains(&next) {
+                    free.push(next);
+                }
+            }
+        }
+        squares.push(free[lane.below(free.len())]);
+    }
+    squares
+}
+
+/// Each block's openings: every two blocks side by side share one or two, each a cell along their edge.
+fn contracts(seed: u32, squares: &[(usize, usize)]) -> Vec<Vec<Opening>> {
+    let mut openings = vec![Vec::new(); squares.len()];
+    for (first, &(column, row)) in squares.iter().enumerate() {
+        for side in [Side::East, Side::South] {
+            let (dx, dy) = side.step();
+            let next = (column.wrapping_add_signed(dx), row.wrapping_add_signed(dy));
+            let Some(second) = squares.iter().position(|&square| square == next) else { continue };
+            let mut lane = Lane::named(&format!("edge:{seed}:{first}:{second}"));
+            let mut taken = Vec::new();
+            for _ in 0..lane.int(1, 2) {
+                let cell = lane.int(OPENING_FIRST, OPENING_LAST);
+                if !taken.contains(&cell) {
+                    taken.push(cell);
+                    openings[first].push(Opening { side, cell });
+                    openings[second].push(Opening { side: side.opposite(), cell });
+                }
+            }
+        }
+    }
+    openings
+}
+
+impl Dungeon {
+    /// The dungeon a seed lays in a style.
+    #[must_use]
+    pub fn forge(seed: u32, style: Style) -> Self {
+        let mut lane = Lane::named(&format!("squares:{seed}"));
+        let count = lane.int(BLOCKS.0, BLOCKS.1);
+        let grown = grow(&mut lane, count);
+        let (west, north) =
+            grown.iter().fold((0, 0), |(west, north), &(column, row)| (west.min(column), north.min(row)));
+        let squares: Vec<(usize, usize)> =
+            grown.iter().map(|&(column, row)| (column.abs_diff(west), row.abs_diff(north))).collect();
+        let columns = (squares.iter().map(|square| square.0).max().unwrap_or(0) + 1) * BLOCK_CELLS;
+        let rows = (squares.iter().map(|square| square.1).max().unwrap_or(0) + 1) * BLOCK_CELLS;
+        let openings = contracts(seed, &squares);
+        let mut dungeon = Self {
+            style,
+            squares: squares.clone(),
+            columns,
+            rows,
+            cells: vec![Cell::Rock; columns * rows],
+            ceilings: vec![0.0; columns * rows],
+            rooms: Vec::new(),
+            way_in: WayIn { cell: 0, side: Side::North, room: 0 },
+            torches: Vec::new(),
+            frames: Vec::new(),
+            pillars: Vec::new(),
+        };
+        let blocks: Vec<BlockLayout> = openings
+            .iter()
+            .enumerate()
+            .map(|(number, own)| {
+                BlockLayout::sound(crate::lane::named(&format!("block:{seed}:{number}")), own, &style, number == 0)
+            })
+            .collect();
+        for (number, block) in blocks.iter().enumerate() {
+            dungeon.lay(squares[number], block);
+        }
+        if let Some((x, y, side)) = blocks[0].exit_spot() {
+            let cell = dungeon.cell_of(squares[0], x, y);
+            dungeon.way_in = WayIn { cell, side, room: dungeon.room_at(cell).unwrap_or(0) };
+        }
+        for (number, block) in blocks.iter().enumerate() {
+            dungeon.light(squares[number], block);
+        }
+        dungeon.frame();
+        dungeon.walk();
+        dungeon
+    }
+
+    /// The whole grid's cell for a block's cell (x, y).
+    fn cell_of(&self, square: (usize, usize), x: usize, y: usize) -> usize {
+        (square.1 * BLOCK_CELLS + y) * self.columns + square.0 * BLOCK_CELLS + x
+    }
+
+    /// The room a cell is, if it is one.
+    #[must_use]
+    pub fn room_at(&self, cell: usize) -> Option<usize> {
+        match self.cells.get(cell) {
+            Some(&Cell::Room(number)) => Some(usize::from(number)),
+            _ => None,
+        }
+    }
+
+    /// The cell beside a cell, if it is in the grid.
+    #[must_use]
+    pub fn beside(&self, cell: usize, side: Side) -> Option<usize> {
+        let (dx, dy) = side.step();
+        let x = (cell % self.columns).checked_add_signed(dx)?;
+        let y = (cell / self.columns).checked_add_signed(dy)?;
+        (x < self.columns && y < self.rows).then_some(y * self.columns + x)
+    }
+
+    /// Whether the cell beside on `side` is rock, or past the grid.
+    fn rock_beside(&self, cell: usize, side: Side) -> bool {
+        self.beside(cell, side).is_none_or(|next| self.cells[next] == Cell::Rock)
+    }
+
+    /// A cell's middle, (x, y) in metres.
+    #[must_use]
+    pub fn centre(&self, cell: usize) -> [f64; 2] {
+        [((cell % self.columns) as f64 + 0.5) * CELL_M, ((cell / self.columns) as f64 + 0.5) * CELL_M]
+    }
+
+    /// Copies a block's cells, ceilings and rooms into the grid, its rooms numbered after those laid before, with its
+    /// great rooms' pillars.
+    fn lay(&mut self, square: (usize, usize), block: &BlockLayout) {
+        let first = self.rooms.len();
+        for y in 0..BLOCK_CELLS {
+            for x in 0..BLOCK_CELLS {
+                let cell = self.cell_of(square, x, y);
+                let local = y * BLOCK_CELLS + x;
+                self.cells[cell] = match block.cells[local] {
+                    Cell::Room(number) => Cell::Room(u16::try_from(first + usize::from(number)).unwrap_or(u16::MAX)),
+                    other => other,
+                };
+                self.ceilings[cell] = block.ceilings[local];
+            }
+        }
+        for (number, room) in block.rooms.iter().enumerate() {
+            let own = |(x, y): (usize, usize)| self.cell_of(square, x, y);
+            let cells = block.room_cells(number).into_iter().map(own).collect();
+            let quiet = block.quiet_cells(number).into_iter().map(own).collect();
+            let (x, y) = (square.0 * BLOCK_CELLS + room.x, square.1 * BLOCK_CELLS + room.y);
+            let placed = Room {
+                x,
+                y,
+                width: room.width,
+                depth: room.depth,
+                cells,
+                quiet,
+                height: room.height,
+                shape: room.shape,
+                walk: 0,
+            };
+            self.pillars.extend(self.pillars_of(&placed, first + number));
+            self.rooms.push(placed);
+        }
+    }
+
+    /// The corners a room's pillars stand on: every second inner corner of a room at least PILLAR_ROOM_CELLS each
+    /// way, all four cells round it the room's own; each corner and the room's ceiling.
+    fn pillars_of(&self, room: &Room, number: usize) -> Vec<[f64; 3]> {
+        if room.width < PILLAR_ROOM_CELLS || room.depth < PILLAR_ROOM_CELLS {
+            return Vec::new();
+        }
+        let own = |x: usize, y: usize| self.room_at(y * self.columns + x) == Some(number);
+        let mut corners = Vec::new();
+        for y in (room.y + 2..room.y + room.depth - 1).step_by(2) {
+            for x in (room.x + 2..room.x + room.width - 1).step_by(2) {
+                if own(x, y) && own(x - 1, y) && own(x, y - 1) && own(x - 1, y - 1) {
+                    corners.push([x as f64 * CELL_M, y as f64 * CELL_M, room.height]);
+                }
+            }
+        }
+        corners
+    }
+
+    /// A torch on the first wall of a cell that has one, never over the exit door; whether it stood.
+    fn torch_on(&mut self, cell: usize) -> bool {
+        let door = (self.way_in.cell, self.way_in.side);
+        let Some(wall) = SIDES.into_iter().find(|&side| self.rock_beside(cell, side) && (cell, side) != door) else {
+            return false;
+        };
+        let [x, y] = self.centre(cell);
+        let [dx, dy] = wall.unit();
+        let off = CELL_M / 2.0 - TORCH_INSET_M;
+        self.torches.push(Torch { at: [x + dx * off, y + dy * off, TORCH_M], wall });
+        true
+    }
+
+    /// A block's torches: on a wall of each room, one for every sixteen of its rectangle's cells, its quiet cells on
+    /// every third diagonal first and any of its cells if none will do; and on every fourth corridor cell, row by row.
+    fn light(&mut self, square: (usize, usize), block: &BlockLayout) {
+        for (number, room) in block.rooms.iter().enumerate() {
+            let want = ((room.width * room.depth + 8) / 16).max(1);
+            let mut lit = 0;
+            for (x, y) in block.quiet_cells(number) {
+                if lit < want && (x + y) % 3 == 0 && self.torch_on(self.cell_of(square, x, y)) {
+                    lit += 1;
+                }
+            }
+            for (x, y) in block.room_cells(number) {
+                if lit == 0 && self.torch_on(self.cell_of(square, x, y)) {
+                    lit += 1;
+                }
+            }
+        }
+        let mut corridors = 0;
+        for y in 0..BLOCK_CELLS {
+            for x in 0..BLOCK_CELLS {
+                if block.cells[y * BLOCK_CELLS + x] == Cell::Corridor {
+                    if corridors % 4 == 0 {
+                        self.torch_on(self.cell_of(square, x, y));
+                    }
+                    corridors += 1;
+                }
+            }
+        }
+    }
+
+    /// Frames every doorway: a room's cell beside a corridor, up to the lower of their ceilings.
+    fn frame(&mut self) {
+        for cell in 0..self.cells.len() {
+            if self.room_at(cell).is_none() {
+                continue;
+            }
+            for side in SIDES {
+                let Some(next) = self.beside(cell, side) else { continue };
+                if self.cells[next] == Cell::Corridor {
+                    self.frames.push(Frame { cell, side, height: self.ceilings[cell].min(self.ceilings[next]) });
+                }
+            }
+        }
+    }
+
+    /// Each room's walk from the way in: the fewest cells crossed to reach any of its cells.
+    fn walk(&mut self) {
+        let mut steps = vec![u32::MAX; self.cells.len()];
+        let mut todo = std::collections::VecDeque::from([self.way_in.cell]);
+        steps[self.way_in.cell] = 0;
+        while let Some(cell) = todo.pop_front() {
+            for side in SIDES {
+                let Some(next) = self.beside(cell, side) else { continue };
+                if self.cells[next] != Cell::Rock && steps[next] == u32::MAX {
+                    steps[next] = steps[cell] + 1;
+                    todo.push_back(next);
+                }
+            }
+        }
+        for room in &mut self.rooms {
+            room.walk = room.cells.iter().map(|&cell| steps[cell]).min().unwrap_or(u32::MAX);
+        }
+    }
+
+    /// The room farthest from the way in by walk; of two as far, the one laid first.
+    #[must_use]
+    pub fn end(&self) -> usize {
+        (0..self.rooms.len())
+            .fold(0, |far, number| if self.rooms[number].walk > self.rooms[far].walk { number } else { far })
+    }
+
+    /// Where a body arrives and comes back after death: before the exit door, (x, y), and the way it faces, away from
+    /// the door into its room.
+    #[must_use]
+    pub fn arrival(&self) -> ([f64; 2], [f64; 2]) {
+        let [x, y] = self.centre(self.way_in.cell);
+        let [dx, dy] = self.way_in.side.unit();
+        ([x - dx * ARRIVE_FROM_DOOR_M, y - dy * ARRIVE_FROM_DOOR_M], [-dx, -dy])
+    }
+
+    /// The exit door's middle at its foot, (x, y), on its wall.
+    #[must_use]
+    pub fn exit_door(&self) -> [f64; 2] {
+        let [x, y] = self.centre(self.way_in.cell);
+        let [dx, dy] = self.way_in.side.unit();
+        let off = CELL_M / 2.0 - EXIT_OFF_WALL_M;
+        [x + dx * off, y + dy * off]
+    }
+
+    /// The floor as movement stands bodies on it: each cell's height, 0 m for an open cell and none for rock, row by
+    /// row from the north-west, in cells of CELL_M.
+    #[must_use]
+    pub fn heights(&self) -> Vec<Option<f64>> {
+        self.cells.iter().map(|&cell| (cell != Cell::Rock).then_some(0.0)).collect()
+    }
+
+    /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up
+    /// to its ceiling, and every pillar.
+    #[must_use]
+    pub fn boxes(&self) -> Vec<[f64; 5]> {
+        let half = CELL_M / 2.0;
+        let mut boxes = Vec::with_capacity(self.frames.len() * 2 + self.pillars.len());
+        for frame in &self.frames {
+            let [x, y] = self.centre(frame.cell);
+            let [dx, dy] = frame.side.unit();
+            let (edge_x, edge_y) = (x + dx * half, y + dy * half);
+            let (across_x, across_y) = (-dy, dx);
+            for (from, to) in [(-half, -DOORWAY_HALF_M), (DOORWAY_HALF_M, half)] {
+                let corners =
+                    [(from, 0.0), (to, 0.0), (from, JAMB_DEPTH_M), (to, JAMB_DEPTH_M)].map(|(along, deep)| {
+                        (edge_x + across_x * along + dx * deep, edge_y + across_y * along + dy * deep)
+                    });
+                let (min_x, max_x) = corners
+                    .iter()
+                    .fold((f64::MAX, f64::MIN), |(low, high), point| (low.min(point.0), high.max(point.0)));
+                let (min_y, max_y) = corners
+                    .iter()
+                    .fold((f64::MAX, f64::MIN), |(low, high), point| (low.min(point.1), high.max(point.1)));
+                boxes.push([min_x, min_y, max_x, max_y, frame.height]);
+            }
+        }
+        for &[x, y, top] in &self.pillars {
+            boxes.push([x - PILLAR_HALF_M, y - PILLAR_HALF_M, x + PILLAR_HALF_M, y + PILLAR_HALF_M, top]);
+        }
+        boxes
+    }
+}

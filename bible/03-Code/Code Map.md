@@ -51,6 +51,7 @@ decision, made in the same change as its entry here.
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
+| `crates/dungeon` | [[Dungeons]]: the patrol areas' dungeons, laid by DFO's Forge from a seed, rooms and corridors on a grid of 3.2 m cells |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the paths across it, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows and shots in flight |
 | `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
@@ -116,14 +117,15 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
   `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
   `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
-  and `libm`; `reach`, which uses no other crate; `gear`, which may use `serde`, `serde_json` and `libm`; and `city`,
+  and `libm`; `reach` and `dungeon`, which use no other crate; `gear`, which may use `serde`, `serde_json` and `libm`; and `city`,
   which may use `land`, `world`, `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `land`,
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`, `land`,
   `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
   `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
   the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file and the layout with `foes`, `gear`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
+  node's baked file and the layout with `dungeon`, `foes`, `gear`, `land`, `naval`, `sailing`, `world`, `serde` and
+  `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
   `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

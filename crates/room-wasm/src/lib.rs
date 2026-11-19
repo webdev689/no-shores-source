@@ -19,6 +19,7 @@ use serde::Deserialize;
 use std::cell::RefCell;
 
 mod deck_door;
+mod dungeon_door;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
@@ -411,6 +412,17 @@ pub extern "C" fn room_sloop() -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_roster() -> u64 {
     hand_over(roster_door::roster_json().into_bytes())
+}
+
+/// A patrol's dungeon as JSON (`dungeon_door::dungeon_json`), asked for by the JSON written at `address`, `length`
+/// bytes long: its patrol's id and name and its number.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_dungeon(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    hand_over(dungeon_door::dungeon_json(unsafe { std::slice::from_raw_parts(address, length) }).into_bytes())
 }
 
 /// Lets the open room take players' asks for foes; see `take_foe_asks`.

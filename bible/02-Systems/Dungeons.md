@@ -1,0 +1,66 @@
+---
+type: system
+status: planned
+code:
+  - crates/dungeon/src/lib.rs#of_patrol
+  - crates/dungeon/src/lib.rs#name
+  - crates/dungeon/src/lib.rs#STYLES
+  - crates/dungeon/src/dungeon.rs#Dungeon
+  - crates/dungeon/src/block.rs#BlockLayout
+  - crates/dungeon/src/lane.rs#Lane
+  - crates/room-wasm/src/dungeon_door.rs#dungeon_json
+---
+# Dungeons
+
+The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from a seed
+([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]], [[Pick - Dungeons 2.0]]). The choices are Claude's
+([[Dungeons as Claude Builds Them]]).
+
+## How it works
+
+- **One crate for every machine.** The `dungeon` crate lays a dungeon from its seed and style, and uses no other
+  crate. Its maths is + - * / and comparisons, and every draw is made on a lane of its own: Mulberry32 over a seed
+  that is the FNV-1a hash of the lane's name, as DFO's lanes draw ([[Agree to the Bit]]).
+- **A patrol's three.** `of_patrol` gives each its seed, from the patrol's id and its number, and its style; the
+  three take three different styles, shuffled by the patrol's id. `name` names one for its style and its patrol: The
+  Crypt of the Saltgrass Downs.
+- **The styles**, the Forge's own, each with its two dungeon picture sets ([[Procedural Textures]]):
+
+| Style | Rooms a block | A room's side (cells) | Ceilings (m) | Ls | Pictures | Its name |
+|---|---|---|---|---|---|---|
+| Crypt | 3 to 5 | 2 to 4 | 3.2 to 4.4 | no | 123, 124 | Crypt |
+| Hall | 2 to 4 | 3 to 7 | 4.0 to 5.6 | yes | 122, 124 | Halls |
+| Cells | 4 to 6 | 2 to 3 | 3.2 to 3.6 | no | 122, 123 | Cells |
+| Temple | 2 to 4 | 3 to 6 | 4.4 to 5.6 | yes | 124, 122 | Sanctum |
+
+- **The blocks.** A dungeon is three or four blocks of 51.2 m, the way in's first and each next one beside one
+  already laid, drawn from the free squares round them. Every two side by side share one or two doorways, each a cell
+  along their edge from the third to the fourteenth.
+- **A block** is 16 by 16 cells of 3.2 m, rock to begin with. The square inside its rim is split, the largest part
+  first, into parts no smaller than five cells, and a room is carved in each, a cell of rock kept round it: its sides
+  and its ceiling (a whole number of 0.4 m) drawn from its style's ranges, and in a hall or a temple, two times in
+  five, an L, a corner quarter of its rectangle left rock. Its rooms and its doorways are joined by a spanning tree,
+  nearest first, and a share of the other pairs as loops (0.3, or 2 over their count where that is less), each by the
+  cheapest way: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a
+  doorway. A block that is not one walk, or a way in's with no room against rock for its exit door, tries again on
+  the next of sixteen seeds, and past them takes its simplest form, one room of 3 by 3.
+- **The way in** is the room's cell nearest its middle with rock beside it, its quiet cells first: the exit door
+  stands on that rock, 1.4 m wide and 2.4 m high, and a body arrives 0.4 m in from it, facing into the room.
+- **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m: on each room's quiet cells on every third
+  diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
+  on every fourth corridor cell of a block, row by row. None stands over the exit door.
+- **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
+  to 1.8 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A room at least 4 cells each way stands a
+  pillar 0.7 m square at every second inner corner whose four cells are its own.
+- **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; the end is the room farthest.
+- **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
+  cells of 3.2 m, as [[Movement]]'s grid of heights takes them; and the jambs and pillars as its blocks.
+- **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
+  name and its number: its cells (-2 rock, -1 corridor, or a room's number), ceilings, rooms, way in, arrival, exit
+  door, torches, frames, pillars and boxes.
+
+## Limits
+
+- One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
+  behind.
+- No room in a dungeon is closed off, but a room ringed by corridors has no wall for a torch and stands unlit.

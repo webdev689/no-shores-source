@@ -108,6 +108,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]]
 - [[Sounds Come From Freesound, Judged on a Test Sheet]]
 - [[Garrisons Take the Gear Loop's Levels and Shields]]
+- [[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]
+- [[Dungeons as Claude Builds Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

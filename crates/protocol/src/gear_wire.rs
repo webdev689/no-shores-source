@@ -285,6 +285,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         emblems: Some(builder.create_vector(&emblems)),
         emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
         emblems_sold: Some(builder.create_vector(&emblems_sold)),
+        dungeons: None,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

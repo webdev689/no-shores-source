@@ -1,0 +1,12 @@
+[package]
+name = "dungeon"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "The patrol areas' dungeons, laid by DFO's Forge: rooms and corridors on a grid of 3.2 m cells, from a seed."
+
+[dependencies]
+
+[lints]
+workspace = true

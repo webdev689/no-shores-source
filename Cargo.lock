@@ -39,6 +39,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "dungeon"
+version = "0.0.0"
+
+[[package]]
 name = "flatbuffers"
 version = "25.12.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -207,6 +211,7 @@ dependencies = [
  "bake",
  "city",
  "combat",
+ "dungeon",
  "foes",
  "gear",
  "land",
