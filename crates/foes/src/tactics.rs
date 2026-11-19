@@ -315,10 +315,14 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     }
     let pressed = here.world.director.pressed();
     // In its turn it runs after a target walking away from it, which at a walk it would never close on, and closes in
-    // nearer by as far as the target walks on while its blow comes round.
+    // nearer by as far as the target walks on while its blow comes round, but no nearer than their bodies touch: there
+    // it keeps the target's pace rather than run and stop by turns.
     let chasing = board.holds(sight.id, here.me, false) && speed_away(sight) > CLOSING;
     let lead = if chasing { lead(here, speed_away(sight)) } else { 0.0 };
-    let way = (sight.distance > reach - lead).then(|| way_to(here, sight.spot)).flatten();
+    let closest = (reach - lead).max(2.0 * BODY_RADIUS);
+    let way = (sight.distance > closest || chasing).then(|| way_to(here, sight.spot)).flatten();
+    let gap = (sight.distance - closest).max(0.0) / TICK_SECONDS;
+    let pace = if chasing { ((speed_away(sight) + gap) / TUNING.run).min(1.0) } else { 1.0 };
     // Its beat begins in reach; a sway past the edge of its reach and back does not start it over.
     if sight.distance > reach + SWING_SLACK || (sight.distance > reach && brain.ready_at.is_none()) {
         brain.ready_at = None;
@@ -339,7 +343,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let delay = pressed.swing_delay;
     let ready_at =
         *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, delay)));
-    let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
+    let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, pace, sight.toward));
     ask.run = chasing;
     if walled {
         ask = Ask::stepping(sight.toward + PI + side * FRAC_PI_2, STEP_PACE, sight.toward);

@@ -98,11 +98,12 @@ phases) is [[Enemies]].
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off, and, in its
   turn, after a target walking away from it faster than 0.5 m/s, which at a walk it would never close on: it closes in
-  by as far as the target walks on while its blow comes round, and follows it through its swing at a swing's pace, so
-  the blow lands. Foes without a turn keep their places on the ring. It finds its way by the room's routes, and stops by
-  its distance to the target, never to a route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed
-  at up to 0.7 of a walk, and the part of a foe's move that walks into an ally turns aside round it, all of it within
-  0.8 m, so a foe going in slips past an ally rather than through it. Nothing is moved but by its own controls.
+  by as far as the target walks on while its blow comes round, but no nearer than their bodies touch, and there keeps
+  the target's pace; it follows it through its swing at a swing's pace, so the blow lands. Foes without a turn keep
+  their places on the ring. It finds its way by the room's routes, and stops by its distance to the target, never to a
+  route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part
+  of a foe's move that walks into an ally turns aside round it, all of it within 0.8 m, so a foe going in slips past an
+  ally rather than through it. Nothing is moved but by its own controls.
 - **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
   [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
   steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
