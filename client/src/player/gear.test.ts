@@ -65,6 +65,8 @@ test('an item is named as the catalogue names it', () => {
   assert.equal(answerText(15), 'You do not have enough for it.');
   for (let code = 1; code <= 21; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the gear crate's refusal ${code} has words`);
+  for (let code = 110; code <= 113; code++)
+    assert.ok(!answerText(code).startsWith('Refused'), `the Arts' refusal ${code} has words`);
 });
 
 test('the hands hold what the gear wears, in its rarity’s metal where the forge draws it', () => {
