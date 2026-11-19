@@ -65,7 +65,7 @@ export interface WaterScene {
   readonly target: GPUTextureView;
 }
 
-const FRAME_FLOATS = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4 + HULLS * 8;
+const FRAME_FLOATS = 64 + MOST_WAVES * 8 + CHOP_WAVES * 8 + HULLS * 8;
 /** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
 export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
@@ -73,8 +73,9 @@ const RINGS = 220;
 const SEGMENTS = 192;
 
 /** The bearings the chop is laid along: the local wind's, to the nearest of sixteen, so a slowly turning wind sets the
- *  pattern afresh only now and then. */
+ *  pattern afresh only now and then; it fades from the last bearing's over this long, seconds, so it never jumps. */
 const CHOP_BEARINGS = 16;
+export const CHOP_FADE_S = 8;
 
 /** The bearing step (of CHOP_BEARINGS) nearest a wind blowing `wind` (m/s east and south). */
 export function chopBearing(wind: readonly [number, number]): number {
@@ -106,6 +107,29 @@ export function chopWaves(bearing: number): Float32Array {
   return out;
 }
 
+const CHOPS = Array.from({ length: CHOP_BEARINGS }, (unused, bearing) => chopWaves(bearing));
+
+/** The chop's fade as the wind veers: the bearing now, the one it fades from, and when the fade began. */
+export interface ChopFade {
+  readonly bearing: number;
+  readonly before: number;
+  readonly since: number;
+}
+
+/** How far a fade has come at `time`, 0 to 1. */
+export const chopShare = (fade: ChopFade, time: number): number =>
+  Math.min(1, Math.max(0, (time - fade.since) / CHOP_FADE_S));
+
+/** The fade once the wind lies on `bearing` at `time`. Back to the bearing it was leaving, the fade turns round where
+ *  it stands, so a wind on a step's edge never jumps; a third bearing fades from whichever of the two showed most. */
+export function chopFade(fade: ChopFade | null, bearing: number, time: number): ChopFade {
+  if (!fade) return { bearing, before: bearing, since: -Infinity };
+  if (bearing === fade.bearing) return fade;
+  const share = chopShare(fade, time);
+  if (bearing === fade.before) return { bearing, before: fade.bearing, since: time - (1 - share) * CHOP_FADE_S };
+  return { bearing, before: share >= 0.5 ? fade.bearing : fade.before, since: time };
+}
+
 /** Draws the water over a scene already drawn: the sky and haze or the view under water, then the surface. */
 export class WaterView {
   private readonly gpu: Gpu;
@@ -116,7 +140,7 @@ export class WaterView {
   private readonly sampler: GPUSampler;
   private readonly ripples: RippleField;
   private readonly empty: { readonly flat: GPUTexture; readonly shore: GPUTexture };
-  private chop: { readonly bearing: number; readonly waves: Float32Array } | null = null;
+  private chop: ChopFade | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -258,12 +282,13 @@ export class WaterView {
       values.set([wave.direction[0], wave.direction[1], wave.number, phase], 64 + index * 8);
       values.set([wave.amplitude, wave.shift, 0, 0], 68 + index * 8);
     }
-    const bearing = chopBearing(skyUniformFor(this.gpu.device).look.wind);
-    const chop = this.chop?.bearing === bearing ? this.chop : { bearing, waves: chopWaves(bearing) };
+    const chop = chopFade(this.chop, chopBearing(skyUniformFor(this.gpu.device).look.wind), scene.time);
     this.chop = chop;
-    values.set(chop.waves, 64 + MOST_WAVES * 8);
+    values[46] = chopShare(chop, scene.time);
+    values.set(CHOPS[chop.bearing] ?? [], 64 + MOST_WAVES * 8);
+    values.set(CHOPS[chop.before] ?? [], 64 + MOST_WAVES * 8 + CHOP_WAVES * 4);
     for (const [index, hull] of scene.hulls.slice(0, HULLS).entries()) {
-      const start = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4 + index * 8;
+      const start = 64 + MOST_WAVES * 8 + CHOP_WAVES * 8 + index * 8;
       values.set([hull.x - eyeX, hull.y - eyeY, Math.sin(hull.heading), Math.cos(hull.heading)], start);
       values.set([hull.halfLength * HULL_FIT, hull.halfBeam * HULL_FIT, hull.way, 1], start + 4);
     }

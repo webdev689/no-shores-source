@@ -52,8 +52,9 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
 - **Light.** The sky ([[Sky]]) and its clouds reflect, more at a glancing angle; the sun glints, its glitter
   blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed.
-- **The weather.** The wind's chop runs along the local wind and grows with it: near glassy in a calm, steep in a
-  gale. From a fresh breeze up the wind raises whitecaps in patches that break and fade. Rain roughens the surface and
+- **The weather.** The wind's chop runs along the local wind, to the nearest of sixteen bearings, and grows with it:
+  near glassy in a calm, steep in a gale. As the wind veers past a bearing, the chop fades over 8 s from the old
+  bearing's waves to the new. From a fresh breeze up the wind raises whitecaps in patches that break and fade. Rain roughens the surface and
   dots it near the eye with spreading rings.
 - **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea in a
   moderate breeze, more in a strong wind, less on calm fresh water. So the reflected clouds lose their fine detail

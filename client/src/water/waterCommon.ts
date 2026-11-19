@@ -295,7 +295,8 @@ struct Frame {
   swell_terms: vec4f,
   local: vec4f,
   waves: array<vec4f, ${MOST_WAVES * 2}>,
-  chop: array<vec4f, ${CHOP_WAVES}>,
+  // The chop along the wind's bearing now, then along the one it fades from (coarse_area.z is how far it has come).
+  chop: array<vec4f, ${CHOP_WAVES * 2}>,
   // Each ship's footprint: her middle from the eye, and the sine and cosine of her heading; then her fitted half
   // length and half beam, her way, and whether she is there.
   hulls: array<vec4f, ${HULLS * 2}>,
@@ -472,16 +473,24 @@ fn ripple_at(offset: vec2f) -> vec3f {
 // a whole number of waves along the anchor's step. Rivers carry theirs downstream with their 'flow' (metres a
 // second); 'calm' scales them, 1 at sea.
 fn chop_slope(local: vec2f, flow: vec2f, calm: f32, footprint: f32) -> vec2f {
+  let share = frame.coarse_area.z;
+  var slope = chop_set(0, local, flow, footprint) * share;
+  if (share < 1.0) { slope += chop_set(${CHOP_WAVES}, local, flow, footprint) * (1.0 - share); }
+  return slope * calm;
+}
+
+// One bearing's chop, its waves from 'first' in the frame.
+fn chop_set(first: i32, local: vec2f, flow: vec2f, footprint: f32) -> vec2f {
   let time = frame.eye.w;
   var slope = vec2f(0.0);
   for (var index = 0; index < ${CHOP_WAVES}; index++) {
-    let wave = frame.chop[index];
+    let wave = frame.chop[first + index];
     let number = length(wave.xy);
     let fade = smoothstep(footprint * 1.5, footprint * 4.0, TAU / number);
     let angle = dot(wave.xy, local - flow * time) - wave.z * time + wave.w;
     // Strengths from 0.55 to 1.15 of the mean, so no two waves cross evenly into a grid.
     let strength = 0.55 + 0.6 * fract(f32(index) * 0.754877 + 0.31);
-    slope += wave.xy / number * cos(angle) * 0.042 * strength * fade * calm;
+    slope += wave.xy / number * cos(angle) * 0.042 * strength * fade;
   }
   return slope;
 }
