@@ -39,6 +39,15 @@ const CLASH = { high: 1.3, toward: 0.45 } as const;
  *  its cells shrink to keep its size as seen. A crit's star stands a little nearer still, over the rest. */
 const PULL_M = 0.45;
 const CRIT_PULL_M = 0.05;
+/** A figure's card stands this far toward the eye from its feet; a picture pulled past one stands this much nearer
+ *  still, and none nearer the eye than this (metres). */
+const CARD_TOWARD_M = 0.35;
+const PAST_CARD_M = 0.15;
+const NEAREST_M = 0.8;
+/** An eye this near a fighter's feet across the ground is its own (metres); through it a blow's pictures are drawn at
+ *  this share of their size, and a blow landing on it is not drawn at all. */
+const EYES_M = 0.6;
+const EYES_SHARE = 0.45;
 /** A landed blow's pictures (metres across): the star, the ring, the broken ring, the slash; sized by the share of the
  *  defender's health it took (smaller under a tenth, larger over three tenths), and a kill's far larger and held. */
 export const HIT = {
@@ -109,17 +118,33 @@ export function contactOf(defender: Point, striker: Point): Point {
   ];
 }
 
-/** A point `metres` from `at` toward `eye`, and the share its cells shrink by to keep their size as seen. */
-export function toward(place: Point, eye: Point, metres: number): { readonly place: Point; readonly shrink: number } {
+/** Where a picture meant for `place` is drawn and the share its cells shrink by to keep their size as seen: PULL_M
+ *  (and `more`) nearer the eye, or further, past a `striker` (its feet) standing nearer the eye than the place, so
+ *  neither figure's card hides it; never within NEAREST_M of the eye. */
+export function pulled(
+  place: Point,
+  eye: Point,
+  striker: Point | null,
+  more = 0,
+): { readonly place: Point; readonly shrink: number } {
   const way = [eye[0] - place[0], eye[1] - place[1], eye[2] - place[2]] as const;
   const apart = Math.hypot(...way);
-  if (apart < metres + 0.8) return { place, shrink: 1 };
+  const card = striker
+    ? Math.hypot(eye[0] - striker[0], eye[1] - striker[1], eye[2] - place[2]) - CARD_TOWARD_M
+    : apart;
+  const metres = Math.min(Math.max(PULL_M, apart - card + PAST_CARD_M) + more, apart - NEAREST_M);
+  // Through the striker's own eyes the picture stands so near that it is drawn smaller, so it never fills the view.
+  const eyes = striker && throughEyes(striker, eye) ? EYES_SHARE : 1;
+  if (metres <= 0) return { place, shrink: eyes };
   const share = metres / apart;
   return {
     place: [place[0] + way[0] * share, place[1] + way[1] * share, place[2] + way[2] * share],
-    shrink: 1 - share,
+    shrink: (1 - share) * eyes,
   };
 }
+
+/** Whether `eye` is the eyes of the fighter standing at `feet`: first person. */
+const throughEyes = (feet: Point, eye: Point): boolean => Math.hypot(eye[0] - feet[0], eye[1] - feet[1]) < EYES_M;
 
 /** The sixteenth of a turn a line along `travel` lies at on a card at `at` facing `eye`, from flat. */
 function turnOnCard(travel: Vector, place: Point, eye: Point): number {
@@ -140,6 +165,7 @@ export interface Told {
 interface Landed {
   readonly kind: number;
   readonly contact: Point;
+  readonly striker: Point;
   readonly feet: Point;
   readonly ramp: Ramp;
   readonly look: GlowLook;
@@ -194,7 +220,7 @@ export class Impacts {
     const spell = event.how === HOW.spell;
     const shot = event.how === HOW.shot;
     const harms = event.kind === EVENT.hit && event.amount > 0;
-    const base = { feet, look, crit: !!event.crit && harms, age: 0, seed: this.seeds++ } as const;
+    const base = { feet, striker: from, look, crit: !!event.crit && harms, age: 0, seed: this.seeds++ } as const;
     const clash = CLASHES[event.kind as keyof typeof CLASHES];
     if (clash && !spell && !shot) {
       const place: Point = [feet[0] + back[0] * CLASH.toward, feet[1] + back[1] * CLASH.toward, feet[2] + CLASH.high];
@@ -261,7 +287,8 @@ function lifeOf(landed: Landed): number {
 const cellsFor = (metres: number) => Math.round(metres / 2 / CELL_M);
 
 function layHit(out: number[], landed: Landed, frame: number, eye: Point): void {
-  const { place, shrink } = toward(landed.contact, eye, PULL_M);
+  if (throughEyes(landed.feet, eye)) return;
+  const { place, shrink } = pulled(landed.contact, eye, landed.striker);
   const cell = CELL_M * shrink;
   const { scale, ramp, held } = landed;
   const step = Math.floor(frame / held);
@@ -284,7 +311,7 @@ function layHit(out: number[], landed: Landed, frame: number, eye: Point): void 
     layUpright(out, slashSprite(turn, length, step === 0 ? HOT : LIGHT), ramp, place, eye, cell);
   }
   if (landed.crit && frame < CRIT.frames) {
-    const over = toward(landed.contact, eye, PULL_M + CRIT_PULL_M);
+    const over = pulled(landed.contact, eye, landed.striker, CRIT_PULL_M);
     layUpright(out, starSprite(cellsFor(CRIT.star), false), GOLD, over.place, eye, CELL_M * over.shrink);
   }
   if (landed.look) layBurst(out, landed, frame, place, eye, cell);
@@ -306,7 +333,7 @@ function layBurst(out: number[], landed: Landed, frame: number, place: Point, ey
 function layClash(out: number[], landed: Landed, frame: number, eye: Point): void {
   const clash = CLASHES[landed.kind as keyof typeof CLASHES];
   if (!clash) return;
-  const { place, shrink } = toward(landed.contact, eye, PULL_M);
+  const { place, shrink } = pulled(landed.contact, eye, landed.striker);
   const cell = CELL_M * shrink;
   const reach = cellsFor(clash.star);
   if (frame < 2) layUpright(out, starSprite(reach, landed.kind !== EVENT.parried), clash.ramp, place, eye, cell);

@@ -10,6 +10,7 @@ import type { Bits } from './bits.ts';
 import { EVENT } from './cues.ts';
 import { KNOCK } from './flashes.ts';
 import {
+  ASH,
   CHIPS,
   DUST,
   forksSprite,
@@ -21,7 +22,7 @@ import {
   scorchSprite,
   swirlSprite,
 } from './impactPixels.ts';
-import { toward } from './impacts.ts';
+import { pulled } from './impacts.ts';
 import { BODY, CELL_M, DARK, HOT, LIGHT, hashOf } from './spellPixels.ts';
 import { jagged } from './spellLines.ts';
 
@@ -29,8 +30,6 @@ type Point = readonly [number, number, number];
 
 const FRAME_S = 1 / 60;
 const CHEST = (BODY_HEIGHT * 5) / 8;
-/** A finisher stands this much nearer the eye than the body, as a blow's star does. */
-const PULL_M = 0.45;
 /** Every kill's dust ring on the ground: its radius (metres) at each step, each held this many frames, its stop and
  *  how broken it is at each; and its chips: how many, their speed (m/s) and life (s). */
 export const DUST_RING = { radii: [0.4, 0.8, 1.2, 1.6], frames: 3, stops: [2, 1, 1, 0], broken: [0, 0.15, 0.3, 0.5] };
@@ -67,6 +66,7 @@ export interface KillsTold {
 interface Kill {
   readonly look: GlowLook;
   readonly feet: Point;
+  readonly from: Point | null;
   readonly chain: readonly Point[];
   readonly seed: number;
   age: number;
@@ -149,9 +149,10 @@ export class KillLooks {
       const found = told.where(event.defender);
       if (!found) continue;
       const look = told.lookOf(event);
-      const feet = restingAt(found, told.where(event.striker));
+      const from = told.where(event.striker);
+      const feet = restingAt(found, from);
       const chain = look === 2 ? chainOf(feet, told.foesBut?.(event.defender) ?? []) : [];
-      const kill: Kill = { look, feet, chain, seed: this.seeds++, age: 0 };
+      const kill: Kill = { look, feet, from, chain, seed: this.seeds++, age: 0 };
       this.kills.push(kill);
       this.bits.throw(chest(feet), [0, 0], CHIP_THROW.count, {
         ramp: CHIPS,
@@ -254,7 +255,7 @@ export class KillLooks {
     for (const kill of this.kills) {
       const frame = Math.floor(kill.age / FRAME_S + 1e-6);
       layDust(out, kill.feet, frame);
-      const { place, shrink } = toward(chest(kill.feet), eye, PULL_M);
+      const { place, shrink } = pulled(chest(kill.feet), eye, kill.from);
       const cell = CELL_M * shrink;
       if (kill.look === 1) layBlaze(out, frame, place, eye, cell);
       if (kill.look === 2) layVolt(out, kill, frame, place, eye, cell);
@@ -267,7 +268,7 @@ export class KillLooks {
       const share = left >= fading ? 1 : Math.ceil((left / fading) * 4) / 4;
       if (mark.look === 1) {
         const radius = Math.max(1, Math.round((share * BLAZE.ash.across) / 2 / DECAL_CELL_M));
-        layFlat(out, scorchSprite(radius, DARK), rampFor(1), mark.place, DECAL_CELL_M);
+        layFlat(out, scorchSprite(radius, DARK), ASH, mark.place, DECAL_CELL_M);
       } else {
         const radius = Math.max(1, Math.round((share * COSMIC.swirl.across) / 2 / DECAL_CELL_M));
         layFlat(out, swirlSprite(radius, Math.floor(mark.age / 0.2)), rampFor(3), mark.place, DECAL_CELL_M);

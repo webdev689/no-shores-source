@@ -136,3 +136,19 @@ test('a blow burns in its caster’s Art for a spell, the page’s glow for the 
   assert.equal(blowLook(event(EVENT.hit, { element: 3 }), { ...own, own: 0 }), 3);
   assert.equal(blowLook(event(EVENT.hit, { striker: 7, element: 9 }), own), 0, 'no element by that number');
 });
+
+test('through the striker’s own eyes a blow’s pictures are smaller; one landing on the eyes’ own body is not drawn', () => {
+  const across = (eye: readonly [number, number, number]) => {
+    const impacts = new Impacts(() => 0.5);
+    impacts.update([event(EVENT.hit)], 0, told());
+    impacts.bits.flying.length = 0;
+    const out: number[] = [];
+    impacts.lay(out, eye);
+    const xs = out.filter((unused, index) => index % 7 === 0);
+    return xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+  };
+  const behind = across([0, 4, 1.6]);
+  const ownEyes = across([0, 2, 1.6]);
+  assert.ok(ownEyes > 0 && ownEyes < behind * 0.6, `${ownEyes} against ${behind}`);
+  assert.equal(across([0, 0.2, 1.6]), 0, 'the struck one’s own eyes');
+});

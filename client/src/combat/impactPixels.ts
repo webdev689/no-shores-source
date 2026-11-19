@@ -25,6 +25,8 @@ export const STEEL: Ramp = rampOf(['#2a3340', '#8fa6c8', '#cfe0ff', '#ffffff']);
 export const GOLD: Ramp = swingRamp(RAMP.gold);
 export const DUST: Ramp = swingRamp(RAMP.dust);
 export const CHIPS: Ramp = rampOf(['#1c1712', '#3a3026', '#57493a', '#7a6852']);
+/** Blaze's ash on the ground: charred black, its edge still glowing in Blaze's stops. */
+export const ASH: Ramp = [hex('#16110e'), GLOW_RAMPS[1][1], GLOW_RAMPS[1][2], GLOW_RAMPS[1][3]];
 
 /** The ramp a blow burns in: its element's, else steel. */
 export const rampFor = (look: GlowLook): Ramp => (look ? GLOW_RAMPS[look] : STEEL);
@@ -76,22 +78,37 @@ function cached(key: string, make: () => Sprite): Sprite {
 }
 
 /** A star of four rays `radius` cells long, white-hot at its heart and cooling to its tips, with four short diagonal
- *  rays when `diagonals`: the frame a blow lands on. */
+ *  rays when `diagonals`, rimmed a cell round in its ramp's dark so it reads even over a figure flashed white: the
+ *  frame a blow lands on. */
 export function starSprite(radius: number, diagonals = true): Sprite {
   const reach = Math.max(2, Math.round(radius));
   return cached(`star:${reach}:${diagonals}`, () => {
-    const size = reach * 2 + 1;
-    return sprite(size, size, (across, up) => {
+    const size = reach * 2 + 3;
+    const lit = sprite(size, size, (across, up) => {
       const [far, near] = [Math.max(Math.abs(across), Math.abs(up)), Math.min(Math.abs(across), Math.abs(up))];
       const share = far / reach;
-      if (far <= reach * 0.18 + 0.5 && near <= reach * 0.18 + 0.5) return HOT;
-      if (near <= Math.max(0, 1.4 * (1 - share)) + 0.01 && far <= reach)
+      if (Math.hypot(across, up) <= reach * 0.26 + 0.5) return HOT;
+      if (near <= Math.max(0, 2.2 * (1 - share)) + 0.01 && far <= reach)
         return share < 0.45 ? HOT : share < 0.75 ? LIGHT : BODY;
       const slant = Math.abs(Math.abs(across) - Math.abs(up));
       if (diagonals && slant < 0.5 && Math.hypot(across, up) <= reach * 0.42) return LIGHT;
       return CLEAR;
     });
+    return rimmed(lit);
   });
+}
+
+/** `picture` with every clear cell beside one of its own (across or up and down) in the ramp's dark. */
+function rimmed(picture: Sprite): Sprite {
+  const { width } = picture;
+  const cells = picture.cells.map((stop, index) => {
+    if (stop !== CLEAR) return stop;
+    const [column, row] = [index % width, Math.floor(index / width)];
+    const sides = [stopOf(picture, column - 1, row), stopOf(picture, column + 1, row)];
+    sides.push(stopOf(picture, column, row - 1), stopOf(picture, column, row + 1));
+    return sides.some((side) => side !== CLEAR) ? DARK : CLEAR;
+  });
+  return { ...picture, cells };
 }
 
 /** A ring `radius` cells round, `thick` cells across, in stop `stop`; broken into sixteenths by `broken` (the share
@@ -109,20 +126,21 @@ export function ringSprite(radius: number, stop: number, thick = 1, broken = 0, 
 }
 
 /** A slash `length` cells long through its middle at `turn` sixteenths of a turn from flat, two cells thick: `stop`
- *  along it, a stop darker at each end. */
+ *  along it, a stop darker at each end, rimmed in the ramp's dark. */
 export function slashSprite(turn: number, length: number, stop: number): Sprite {
   const way = ((Math.round(turn) % 8) + 8) % 8;
   return cached(`slash:${way}:${length}:${stop}`, () => {
     const angle = (way * Math.PI) / 8;
     const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
     const half = Math.round(length / 2);
-    const size = half * 2 + 3;
-    return sprite(size, size, (across, up) => {
+    const size = half * 2 + 5;
+    const cut = sprite(size, size, (across, up) => {
       const along = across * cos + up * sin;
       const aside = -across * sin + up * cos;
       if (Math.abs(along) > half || aside < -0.5 || aside > 1) return CLEAR;
-      return Math.abs(along) > half * 0.7 ? Math.max(DARK, stop - 1) : stop;
+      return Math.abs(along) > half * 0.7 ? Math.max(BODY, stop - 1) : stop;
     });
+    return rimmed(cut);
   });
 }
 
