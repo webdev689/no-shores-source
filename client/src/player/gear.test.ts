@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { answerText, fullyUpgraded, gearHands, itemName, traitOf, upgraded } from './gear.ts';
+import { WORN, answerText, fullyUpgraded, gearHands, heldElement, itemName, traitOf, upgraded } from './gear.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -89,4 +89,14 @@ test('the gauge counts the nodes bought, and an item is fully upgraded once ever
   assert.equal(fullyUpgraded(item({ columns, bought: 0b011 })), false, 'one perk still to buy');
   assert.equal(fullyUpgraded(item({ columns, bought: 0b111 })), true);
   assert.equal(fullyUpgraded(item({ columns: [] })), false, 'nothing to upgrade');
+});
+
+test('a hand glows in the element of the weapon worn in it, and nothing else glows', () => {
+  const volt = item({ kind: 2, element: 2, at: WORN });
+  const armour = item({ id: 2, kind: 14, element: 3, at: WORN + 3 });
+  assert.equal(heldElement(state([volt, armour]), 0), 2);
+  assert.equal(heldElement(state([volt, armour]), 1), 0, 'nothing in the off hand');
+  assert.equal(heldElement(state([{ ...armour, at: WORN + 1 }]), 1), 0, 'no weapon in the off hand');
+  assert.equal(heldElement(state([{ ...volt, at: 0 }]), 0), 0, 'carried, not worn');
+  assert.equal(heldElement(null, 0), 0);
 });

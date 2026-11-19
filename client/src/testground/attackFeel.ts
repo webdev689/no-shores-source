@@ -6,6 +6,7 @@ import { HitStops, heldBack } from '../combat/hitStop.ts';
 import { lungeOf } from '../combat/lunge.ts';
 import { type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
 import type { Orbit } from '../editor/orbit.ts';
+import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { blowWay } from '../player/playerMoves.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -105,6 +106,15 @@ export class AttackFeel {
   /** How far behind the rules a fighter's drawing is held, seconds. */
   private lag(id: number): number {
     return this.unheld.has(id) ? 0 : this.stops.lagOf(id);
+  }
+
+  /** What each hand glows in, as the panel has it: the gear's `own` elements, the element chosen in their place, or
+   *  nothing. */
+  glow(own: readonly [GlowLook, GlowLook]): readonly [GlowLook, GlowLook] {
+    const { glow, glowLook } = this.feel;
+    const chosen = glowLook === 1 || glowLook === 2 || glowLook === 3 ? glowLook : 0;
+    if (!glow) return [0, 0];
+    return chosen ? [chosen, chosen] : own;
   }
 
   /** A fighter's view as its drawing shows it, held back while a blow landing holds it. */

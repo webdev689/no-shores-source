@@ -27,7 +27,7 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { COURSE, RESOURCE_NODES, STALL, START } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
-import { SLOTS, worn } from '../player/gear.ts';
+import { SLOTS, heldElement, worn } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
@@ -244,6 +244,7 @@ async function start(): Promise<void> {
       const outfit = gearOutfit(ownGear, wardrobeOf(you.dress.body, bodyLayers), you.dress.outfit);
       you.dress = { ...you.dress, outfit };
     }
+    player.glow = feel.glow([heldElement(ownGear, 0), heldElement(ownGear, 1)]);
     const bodies = [...foes.placed.values(), ...others.values()].map(
       (placed) => [placed.x, placed.y, placed.z] as const,
     );

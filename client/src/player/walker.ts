@@ -1,3 +1,4 @@
+import type { GlowLook } from '../elementGlow.ts';
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Look } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
@@ -48,6 +49,9 @@ export function strokesAfter(strokes: number, swingWas: number | null, progress:
   return progress !== null && (swingWas === null || progress < swingWas) ? strokes + 1 : strokes;
 }
 
+/** Neither hand glows. */
+const NO_GLOW = [0, 0] as const;
+
 /** The dress the figure shows: on a wall or a ledge the hands hold on, so the weapon is worn, not held. */
 export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
@@ -62,6 +66,8 @@ export class Walker {
   player: Player;
   /** The player's figure: where it stands and what it wears. */
   readonly you: Placed;
+  /** The element each hand's weapon glows in (the right, then the left), as the page reads it from the gear. */
+  glow: readonly [GlowLook, GlowLook] = NO_GLOW;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
   lookDress: string;
@@ -95,6 +101,11 @@ export class Walker {
   /** Whether the camera is in the head, so the hands are drawn and the figure is not. */
   get inFirstPerson(): boolean {
     return this.player.view.shown <= HIDE_FIGURE_M;
+  }
+
+  /** What glows this frame: each hand's element while its weapon is drawn, else nothing. */
+  get glowing(): readonly [GlowLook, GlowLook] {
+    return this.dress.outfit.drawn ? this.glow : NO_GLOW;
   }
 
   /** The dress the figure shows this frame: the weapon worn while the hands hold a wall or a ledge. */
@@ -204,6 +215,7 @@ export class Walker {
     forge.warm(
       dress,
       likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, drawn) => forge.draws(dress.body, anim, drawn)),
+      outfit.drawn ? this.glow[0] : 0,
     );
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);
@@ -246,7 +258,7 @@ export class Walker {
     const body = shownBody(player);
     const [x, y, z] = [body.x + shift[0], body.y + shift[1], body.z + shift[2]];
     const { view, flip } = viewOf(you.facing, x, y, eyeX, eyeY);
-    const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip);
+    const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip, this.glowing[0]);
     return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, ...(flash ? { flash } : {}) };
   }
 }

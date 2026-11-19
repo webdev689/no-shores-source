@@ -14,9 +14,11 @@ test('the kept feel reads back, each number held to its slider and each switch a
     },
   );
   assert.deepEqual(feelOf(null), FEEL);
+  assert.equal(feelOf(JSON.stringify({ glowLook: 2 })).glowLook, 2);
+  assert.equal(feelOf(JSON.stringify({ glowLook: 7 })).glowLook, 0, 'no such element');
   assert.deepEqual(feelOf('not a feel'), FEEL);
   assert.equal(
     feelLine({ ...FEEL, kick: false, arcTrail: 1.4 }),
-    'Swing arc: brightness 1, trail 1.4; Hit-stop: length 1; Camera kick: off; Lunge: distance 1',
+    'Swing arc: brightness 1, trail 1.4; Hit-stop: length 1; Camera kick: off; Lunge: distance 1; Element glow: own gear',
   );
 });
