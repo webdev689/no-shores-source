@@ -214,3 +214,17 @@ test('a magazine run dry reads as a large 0 in the loss colour, with No ammo sai
     assert.deepEqual([words('shots'), words('most'), hand.classList.contains('empty')], ['0', 'No ammo', true]);
     assert.equal(hand.ariaLabel?.endsWith('no ammo'), true, 'a screen reader is still told it has none');
   }));
+
+test('a loadout pressed while the fighter is busy waits, as the rules do, until they rest to take it up', () =>
+  onFakePage((root) => {
+    const rows = new WeaponRows(root, null);
+    const busy: FighterView = { ...own, action: { kind: 'guard', elapsed: 4, window: 0 } };
+    const inHand = () => (findAll(root, 'weapon', 'hand')[0]?.classList.contains('ranged') ? 'Ranged' : 'Melee');
+    rows.update(arms(0), own, 1 / 60);
+    rows.update(arms(1), busy, 1 / 60);
+    assert.deepEqual([inHand(), rows.root.classList.contains('swapping')], ['Melee', false], 'the hands still hold it');
+    rows.update(arms(1, false), busy, 1 / 60);
+    assert.equal(rows.root.classList.contains('away'), false, 'nor is it put away mid-guard');
+    rows.update(arms(1), own, 1 / 60);
+    assert.deepEqual([inHand(), rows.root.classList.contains('swapping')], ['Ranged', true], 'taken up at rest');
+  }));

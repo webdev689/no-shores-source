@@ -155,7 +155,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
   name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
-  and its own shots. A swap trades the two rows over its 0.4 s, and a swap pressed during one trades them again from
+  and its own shots. The rows change weapons as the fight's rules take them up, only at rest: one pressed, or put
+  away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
+  its 0.4 s, and a swap pressed during one trades them again from
   the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
   its picture and words over the row's own dark band. In a view too narrow for the vitals beside the compass, the
   weapons stand over the Arts, so the corner keeps clear of the view's middle and the hands drawn there
