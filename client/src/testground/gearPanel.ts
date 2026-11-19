@@ -68,6 +68,15 @@ export function heldLine(gear: Pick<GearState, 'aurem' | 'stocks' | 'resources'>
   return [`${gear.aurem.toLocaleString()} Aurem`, ...held].join(' · ');
 }
 
+/** The ammunition and Ammo crates held: the shots left in the Ranged loadout worn, or with none worn the share of a
+ *  full load kept for one, so a grant of ammunition shows either way. */
+export function ammoLine(gear: Pick<GearState, 'ammo' | 'ammoMost' | 'ammoShare' | 'crates'>): string {
+  const ammo = gear.ammoMost
+    ? `Ammo ${gear.ammo ?? 0} of ${gear.ammoMost}`
+    : `No Ranged weapon worn: its ammo at ${Math.round((gear.ammoShare ?? 0) * 100)}%`;
+  return `${ammo} · ${gear.crates ?? 0} Ammo crates`;
+}
+
 /** A button that asks only once held down for a moment. */
 function holdButton(label: string, held: () => void): HTMLElement {
   const pressed = button(label, () => undefined);
@@ -186,6 +195,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       gear?.items.length,
       gear?.drops.length,
       gear?.ammo,
+      gear?.ammoShare,
       gear?.crates,
       view.atStall,
       view.nodesInReach,
@@ -226,7 +236,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     body.replaceChildren(
       make('p', level),
       make('p', heldLine(gear), 'hint'),
-      make('p', `Ammo ${gear.ammo ?? 0} of ${gear.ammoMost ?? 0} · ${gear.crates ?? 0} Ammo crates`, 'hint'),
+      make('p', ammoLine(gear), 'hint'),
       ...(opened && opened.at === CARRIED ? [make('p', `The Vestige opened: ${itemName(opened)}.`)] : []),
       make(
         'p',

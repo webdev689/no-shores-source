@@ -244,8 +244,9 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
 
 - **Asks.** Its buttons wear an item in its slot, take one off, buy a node or choose among
   those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
-  an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes, carried
-  by a tick of the player standing still.
+  an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes: the room
+  runs on, the player standing still, until it has answered, a fifth of a second of its time at most, so each answer
+  shows at once. A refusal says why.
 - **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
   the vault is reached, as in a social space.
 - **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
@@ -255,7 +256,8 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
 - **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
 - **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
   item of any kind, rarity and level, any named item, 50 of every material, and XP; and ammunition full or none, five
-  Ammo crates, and one used. The panel shows the shots left and the crates carried.
+  Ammo crates, and one used. The panel shows the shots left and the crates carried; with no Ranged weapon worn, the
+  share of a full load kept for one.
 
 The room in the page runs one tick as the page opens, so the gear is there before the player first plays.
 
