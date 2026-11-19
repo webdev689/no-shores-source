@@ -207,6 +207,38 @@ test('a shield’s ward and the words of what it took are drawn in its element�
   });
 });
 
+test('an arrow to a threat off the screen stands clear of what the page keeps beside the display, as the game’s hints', () =>
+  onFakePage((root) => {
+    // The game's hints stand over the left edge's middle, where an arrow to a foe off the left would point.
+    const hints = document.createElement('div');
+    const box = { left: 28, top: 300, width: 400, height: 120, right: 428, bottom: 420 };
+    Object.assign(hints, { getBoundingClientRect: () => box });
+    const hud = new Hud(root, null, null, [hints]);
+    const foe: FighterView = { ...standing, x: -5, side: 'foes', target: 1, action: { kind: 'draw', elapsed: 3 } };
+    hud.update(
+      {
+        own: standing,
+        foes: [{ id: 2, name: 'Runner', view: foe, rank: 0, faction: '', phase: 0, alert: 0 }],
+        where: () => [0, 0, 0],
+        matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        width: 1280,
+        height: 720,
+        events: [],
+        player: 1,
+        firstPerson: false,
+        pressed: false,
+        lost: null,
+      },
+      1 / 60,
+    );
+    const [arrow] = findAll(root, 'arrow');
+    const [x = NaN, y = NaN] = (/translate\(([-\d.]+)px, ([-\d.]+)px\)/.exec(arrow?.style['transform'] ?? '') ?? [])
+      .slice(1)
+      .map(Number);
+    assert.ok(x < box.right, `the arrow at the left edge (${x})`);
+    assert.ok(y <= box.top - 22, `standing above the hints (${y})`);
+  }));
+
 test('a settled display writes nothing more to the page and reads no layout, with a threat’s arrow at the edge', () =>
   onFakePage((root) => {
     const hud = new Hud(root);

@@ -162,7 +162,8 @@ export class Hud {
   private layout: HudLayout | null = null;
   /** Where the vitals and the Arts and weapons stand, read from the page once and again only after they or the view
    *  change size (`viewed`, the view's last), never each frame. */
-  private corners: Box[] | null = null;
+  private corners: { readonly vitals: Box | null; readonly under: readonly Box[] } | null = null;
+  private readonly beside: readonly HTMLElement[];
   private viewed: readonly [number, number] = [0, 0];
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
@@ -172,15 +173,18 @@ export class Hud {
   private hurtFlash = 0;
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
-   *  with `forge`, the weapons beside them are drawn as its pictures. */
+   *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces in `beside` (the game's
+   *  hints) are kept clear of as the display's corners are. */
   constructor(
     root: HTMLElement,
     pictures: ((art: number) => ArtPictures | null) | null = null,
     forge: Cards | null = null,
+    beside: readonly HTMLElement[] = [],
   ) {
     wearFightSheet(root.ownerDocument);
     root.classList.add('fight-hud');
     this.root = root;
+    this.beside = beside;
     // Back to front: what stands over the world, then the compass's column at the top over it (the compass, the boss
     // bar, the target's plate), then the veil over all.
     this.hurt = element('div', 'hurt', root);
@@ -202,8 +206,7 @@ export class Hud {
     this.veil = element('div', 'veil', root);
     if (typeof ResizeObserver !== 'undefined') {
       const resized = new ResizeObserver(() => (this.corners = null));
-      resized.observe(this.vitals.root);
-      resized.observe(this.arms);
+      for (const node of [this.vitals.root, this.arms, ...beside]) resized.observe(node);
     }
   }
 
@@ -332,13 +335,11 @@ export class Hud {
       const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
       const edge = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
       if (!edge) continue;
-      this.corners ??= [this.vitals.root, this.arms].map((node) => {
-        const [box, origin] = [node.getBoundingClientRect(), this.root.getBoundingClientRect()];
-        const [left, top] = [box.left - origin.left, box.top - origin.top];
-        return { left, top, right: left + box.width, bottom: top + box.height };
-      });
-      const [vitals, arms] = this.corners;
-      const spot = arms && vitals ? clearOf(clearOf(edge, vitals, ARROW_CLEAR, true), arms, ARROW_CLEAR) : edge;
+      this.corners ??= this.cornerBoxes();
+      const { vitals, under } = this.corners;
+      // Below the vitals; above what stands from the foot, the lowest first, so a move past one lands clear of the next.
+      let spot = vitals ? clearOf(edge, vitals, ARROW_CLEAR, true) : edge;
+      for (const box of under) spot = clearOf(spot, box, ARROW_CLEAR);
       shown.add(id);
       const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
       this.arrows.set(id, arrow);
@@ -349,6 +350,21 @@ export class Hud {
       arrow.remove();
       this.arrows.delete(id);
     }
+  }
+
+  /** Where the vitals stand, then the Arts and weapons and the page's pieces beside the display from the foot up, read
+   *  from the page in the display's own pixels; a piece shown nowhere (an empty box) is left out. */
+  private cornerBoxes(): { readonly vitals: Box | null; readonly under: readonly Box[] } {
+    const origin = this.root.getBoundingClientRect();
+    const boxOf = (node: HTMLElement): Box | null => {
+      const box = node.getBoundingClientRect();
+      if (box.width === 0 && box.height === 0) return null;
+      const [left, top] = [box.left - origin.left, box.top - origin.top];
+      return { left, top, right: left + box.width, bottom: top + box.height };
+    };
+    const under = [this.arms, ...this.beside].flatMap((node) => boxOf(node) ?? []);
+    under.sort((one, other) => other.bottom - one.bottom);
+    return { vitals: boxOf(this.vitals.root), under };
   }
 
   /** The events' words, each where its blow met the body, thrown the way the stroke went, and clear of the plates (in
