@@ -10,8 +10,9 @@ code:
 ---
 # Hulls
 
-The ships Overlook may sail beyond the Sloop, planned in her style, one for each rank of ship
-([[Enemies Come in Five Ranks, After Destiny]], [[New Ships Are Planned in the Sloop's Style, After the System]]).
+The ships Overlook sails beyond the Sloop, chosen in her style for each rank of ship, the player's own hulls and the
+merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
+[[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 Only the Sloop is built ([[Sailing]]): until the others are, both factions' captains sail her at every rank
 ([[Naval Combat]], "Ranks and factions").
 
@@ -28,17 +29,21 @@ Every hull keeps what the Sloop's model holds:
 - **One deck to walk**, with a raised quarterdeck holding the wheel, a hatch and steps down.
 - **Made small and scaled up**, as the Sloop stands three times her model ([[The Sloop Is About 18 m Long]]).
 
-## The hulls proposed
+## The hulls
 
-The owner's to pick; nothing below is decided.
+Chosen by Claude, to be built one at a time in this order ([[The Ships as Claude Shapes Them]]). One model serves
+every side, dressed in its colours by the game's painter.
 
-| Rank | Hull | Length | Rig | Guns | Needs |
+| Hull | Length | Rig | Guns a side | Sails as | Needs |
 |---|---|---|---|---|---|
-| Minor | Longboat | About 10 m | One gaff sail, and oars | Swivels only | Swivel mounts |
-| Major | The Sloop | 18.7 m | Gaff and staysail | 3 a side | Built |
-| Elite | A two-masted schooner | About 26 m | Two gaff sails and a staysail | 5 a side | Today's sails |
-| Miniboss | A three-master | About 36 m | Square sails | 8 a side, two decks | Square sails |
-| Boss | Brannoc Thule's ram ship | About 40 m | Square sails | 8 a side | Square sails, an iron ram bow |
+| Schooner | About 26 m | Two gaff sails and a staysail | 5 | Elite ships; the player's fast ship | Today's sails |
+| Longboat | About 10 m | One gaff sail, and oars | Swivels only | Minor ships, and a big ship's boats | Swivel mounts, oars |
+| Brig | About 32 m | Two masts, square sails | 7 | Miniboss ships; the player's heavy ship | Square sails |
+| Frigate | About 40 m | Three masts, square sails, two gun decks | 10 | Boss ships, a sea strike's flagship; the player's last ship | Square sails, a second gun deck |
+| The Tithe Ram | About 40 m | The Frigate's, with an iron ram bow | 8 | Captain Brannoc Thule's flagship | The ram |
+| Fluyt | About 28 m | Two masts, square sails; a broad belly and a high stern | 2 | Merchantmen, and the Grey Tithe's tribute ships | Square sails |
+
+The Sloop, built, sails as Major ships and is the player's first ship.
 
 ## How one is made
 

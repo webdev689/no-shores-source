@@ -234,13 +234,22 @@ Where the work stands now, for the next session. Each session rewrites this note
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- The cleanup audit (#70): dead code out of the overworld, naval and player, and the Overworld note, its pick and the
-  [[Code Map]] brought in line with the code, in files no open pull request changes. Its description lists what it
-  found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
-  Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
+- The cleanup audit (#70, merged and deployed with the owner's yes): its description lists what it found in #63's,
+  #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted; whether the Overworld's
+  rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
+- The sea's open choices ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): being the pirate, the opening voyage
+  (to be talked through first), and which of DFO's companion systems the crew comes from ([[Open Questions]]).
 
 ## Next
 
+- **The ships, one at a time** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner first, then the
+  Longboat, the Brig, the Frigate, the Tithe Ram and the Fluyt, each built in Blender (`bpy`, as the `ships` workflow
+  installs it) in the Sloop's style, rendered from four sides for the owner's yes, then UV-mapped and painted. Then the
+  sea as the owner approved it: waters with owners and levels, ships sighted on the horizon, sea fights paying into
+  the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear, then merchantmen, bounties,
+  public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]). Measured on the sea room as it is,
+  at a voyage's pace a fight began for 17% of players by 5 minutes and 28% by 10, and most hostile ships stayed in
+  sight under 3 seconds: the reason the sea felt empty.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
