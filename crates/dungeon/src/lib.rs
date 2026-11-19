@@ -1,20 +1,34 @@
 //! The patrol areas' dungeons, laid as DFO's Forge lays them: blocks of 16 by 16 cells of 3.2 m, each block's rooms
 //! carved by a seeded split and joined through the rock by the cheapest ways, the blocks grown from the way in's and
-//! joined at their shared edges. One floor: rooms and corridors stand at 0 m, under ceilings of their own heights.
-//! The same seed lays the same dungeon on every machine: the maths is + - * / and comparisons, and every draw is made
-//! on a lane of its own (`lane`).
+//! joined at their shared edges, in six styles. Each room has a purpose that furnishes and lights it. One floor:
+//! rooms and corridors stand at 0 m, under ceilings of their own heights. The same seed lays the same dungeon on
+//! every machine: the maths is + - * / and comparisons, and every draw is made on a lane of its own (`lane`).
 
+mod banks;
 mod block;
 mod dungeon;
+mod fixtures;
+mod furnish;
 pub mod lane;
+pub mod models;
 mod props;
+mod purposes;
+mod shapes;
+mod styles;
+mod torches;
 
 pub use block::{BLOCK_CELLS, Ends, Opening};
 pub use dungeon::{
-    DOORWAY_HALF_M, Dungeon, EXIT_HEIGHT_M, EXIT_WIDTH_M, Frame, JAMB_DEPTH_M, LINTEL_M, PILLAR_HALF_M, Room, TORCH_M,
-    TORCH_REACH_M, Torch, WallDoor,
+    BLOCKS, DOORWAY_HALF_M, Dungeon, EXIT_HEIGHT_M, EXIT_WIDTH_M, Frame, JAMB_DEPTH_M, LINTEL_M, PILLAR_HALF_M, Room,
+    WallDoor,
 };
-pub use props::{CELLS_PROPS, CRYPT_PROPS, HALLS_PROPS, POSTS_A_ROOM, Prop, PropModel, SANCTUM_PROPS};
+pub use fixtures::{BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CRYSTALS_TOP_M, Fixture, Kind, LANTERN_M};
+pub use models::{Piece, PropModel, prop_model};
+pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
+pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};
+pub use shapes::{Ceiling, Roof, Shape};
+pub use styles::{Form, STYLES, Style};
+pub use torches::{TORCH_M, TORCH_REACH_M, Torch};
 
 /// A cell's side in metres, and a block's.
 pub const CELL_M: f64 = 3.2;
@@ -85,73 +99,11 @@ impl Side {
     }
 }
 
-/// A room's shape inside its rectangle: all of it, or an L with a corner quarter left rock.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Shape {
-    Rectangle,
-    Ell,
-}
-
-/// A dungeon's style: the Forge's rooms for one kind of place (how many a block, their sides in cells, their ceilings'
-/// heights, and whether some are Ls), the two dungeon picture sets it is drawn in, and its name's noun.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Style {
-    pub rooms: (usize, usize),
-    pub room_cells: (usize, usize),
-    pub heights: (f64, f64),
-    pub ells: bool,
-    /// Its main picture set and its second, by Daggerfall's dungeon archives.
-    pub pictures: [u16; 2],
-    pub noun: &'static str,
-    /// The forged props its rooms are furnished with.
-    pub props: &'static [PropModel],
-}
-
-/// The four styles, as the Forge's crypt, hall, cells and temple.
-pub const STYLES: [Style; 4] = [
-    Style {
-        rooms: (3, 5),
-        room_cells: (2, 4),
-        heights: (3.2, 4.4),
-        ells: false,
-        pictures: [123, 124],
-        noun: "Crypt",
-        props: CRYPT_PROPS,
-    },
-    Style {
-        rooms: (2, 4),
-        room_cells: (3, 7),
-        heights: (4.0, 5.6),
-        ells: true,
-        pictures: [122, 124],
-        noun: "Halls",
-        props: HALLS_PROPS,
-    },
-    Style {
-        rooms: (4, 6),
-        room_cells: (2, 3),
-        heights: (3.2, 3.6),
-        ells: false,
-        pictures: [122, 123],
-        noun: "Cells",
-        props: CELLS_PROPS,
-    },
-    Style {
-        rooms: (2, 4),
-        room_cells: (3, 6),
-        heights: (4.4, 5.6),
-        ells: true,
-        pictures: [124, 122],
-        noun: "Sanctum",
-        props: SANCTUM_PROPS,
-    },
-];
-
-/// A patrol's dungeon by its number: its seed, from the patrol's id, and its style. A patrol's dungeons take different
-/// styles, shuffled by the patrol's id.
+/// A patrol's dungeon by its number: its seed, from the patrol's id, and its style. A patrol's dungeons take three
+/// different styles of the six, shuffled by the patrol's id.
 #[must_use]
 pub fn of_patrol(patrol: &str, number: usize) -> (u32, Style) {
-    let mut order = [0, 1, 2, 3];
+    let mut order: [usize; STYLES.len()] = core::array::from_fn(|index| index);
     let mut lane = lane::Lane::named(&format!("styles:{patrol}"));
     for last in (1..order.len()).rev() {
         order.swap(last, lane.below(last + 1));
@@ -171,4 +123,10 @@ mod block_tests;
 #[cfg(test)]
 mod dungeon_tests;
 #[cfg(test)]
+mod fixtures_tests;
+#[cfg(test)]
 mod props_tests;
+#[cfg(test)]
+mod purposes_tests;
+#[cfg(test)]
+mod shapes_tests;

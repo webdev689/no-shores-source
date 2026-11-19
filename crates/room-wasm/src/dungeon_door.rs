@@ -34,10 +34,11 @@ pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
 
 /// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
 /// wall as the exit door stands on the way in's, as wide and as high. Each cell is -2 for rock, -1 for a corridor
-/// or its room's number; sides are 0 east, 1 south, 2 west, 3 north; points are x east, y south, z up from the
-/// dungeon's north-west corner at its floor; a bearing is radians clockwise from north. Each prop is its forged model's
-/// id, where its origin stands (x, y, z) and its yaw, which turns its +z as an RMB block's yaw does; its solid is
-/// among the boxes, after the jambs and the pillars.
+/// or its room's number, and wears a look by its number (-1 for rock); sides are 0 east, 1 south, 2 west, 3 north;
+/// points are x east, y south, z up from the dungeon's north-west corner at its floor; a bearing is radians clockwise
+/// from north. Each prop is its forged model's id, where its origin stands (x, y, z) and its yaw, which turns its +z
+/// as an RMB block's yaw does; each fixture where its light burns and its kind. The boxes are the jambs, the pillars,
+/// the props' solids (a hanging has none) and the fixtures' solids, in that order.
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
     let (Ok(found), Some((seed, style))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
@@ -56,7 +57,30 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let rooms: Vec<Value> = laid
         .rooms
         .iter()
-        .map(|room| json!({ "x": room.x, "y": room.y, "width": room.width, "depth": room.depth, "height": room.height, "walk": room.walk }))
+        .map(|room| {
+            json!({
+                "x": room.x,
+                "y": room.y,
+                "width": room.width,
+                "depth": room.depth,
+                "height": room.height,
+                "walk": room.walk,
+                "role": room.purpose.role,
+                "name": room.name,
+                "ceiling": room.ceiling.key(),
+                "look": room.look,
+            })
+        })
+        .collect();
+    let looks: Vec<Value> =
+        laid.looks.iter().map(|look| json!({ "style": look.key, "pictures": look.pictures })).collect();
+    let cell_looks: Vec<i64> = (0..laid.cells.len())
+        .map(|cell| laid.look_at(cell).and_then(|look| i64::try_from(look).ok()).unwrap_or(-1))
+        .collect();
+    let fixtures: Vec<[f64; 4]> = laid
+        .fixtures
+        .iter()
+        .map(|fixture| [fixture.at[0], fixture.at[1], fixture.at[2], f64::from(fixture.kind.number())])
         .collect();
     let ([arrive_x, arrive_y], _) = laid.arrival();
     let [door_x, door_y] = laid.exit_door();
@@ -72,7 +96,10 @@ pub fn dungeon_json(text: &[u8]) -> String {
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
     json!({
         "name": dungeon::name(&style, &found.name),
+        "style": style.key,
         "pictures": style.pictures,
+        "looks": looks,
+        "cellLooks": cell_looks,
         "cell": dungeon::CELL_M,
         "columns": laid.columns,
         "rows": laid.rows,
@@ -92,6 +119,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
         },
         "torches": torches,
         "torchReach": dungeon::TORCH_REACH_M,
+        "fixtures": fixtures,
         "frames": frames,
         "doorway": { "half": dungeon::DOORWAY_HALF_M, "jambDepth": dungeon::JAMB_DEPTH_M, "lintel": dungeon::LINTEL_M },
         "pillars": laid.pillars,
@@ -163,7 +191,7 @@ mod tests {
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
     ];
-    const AGREED_HASH: u64 = 0x2274_d792_af96_aae5;
+    const AGREED_HASH: u64 = 0x7233_f058_c3cd_fe3d;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -172,6 +200,86 @@ mod tests {
             .flat_map(|ask| dungeon_json(ask).into_bytes())
             .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
         assert_eq!(format!("{hash:016x}"), format!("{AGREED_HASH:016x}"));
+    }
+
+    /// A JSON object's keys, in order.
+    fn keys(value: &Value) -> Vec<&str> {
+        value.as_object().unwrap().keys().map(String::as_str).collect()
+    }
+
+    #[test]
+    fn a_dungeon_answers_every_field_of_the_pages_layout_each_consistent_with_the_rest() {
+        let mut deeper = 0;
+        for nth in 0..60 {
+            for number in 0..dungeon::PER_PATROL {
+                let patrol = format!("patrol-{nth}");
+                let ask = format!(r#"{{"patrol":"{patrol}","name":"The Patrol","number":{number}}}"#);
+                let laid: Value = serde_json::from_str(&dungeon_json(ask.as_bytes())).unwrap();
+                let mut want = vec![
+                    "arrival",
+                    "boxes",
+                    "cell",
+                    "cellLooks",
+                    "ceilings",
+                    "cells",
+                    "columns",
+                    "doorway",
+                    "end",
+                    "exitDoor",
+                    "fixtures",
+                    "frames",
+                    "looks",
+                    "name",
+                    "pictures",
+                    "pillarHalf",
+                    "pillars",
+                    "portal",
+                    "props",
+                    "rooms",
+                    "rows",
+                    "style",
+                    "torchReach",
+                    "torches",
+                    "wayIn",
+                ];
+                want.sort_unstable();
+                assert_eq!(keys(&laid), want);
+                let (seed, style) = dungeon::of_patrol(&patrol, number);
+                let native = dungeon::Dungeon::forge(seed, style);
+                let looks = laid["looks"].as_array().unwrap();
+                assert_eq!(laid["style"], style.key);
+                assert_eq!(looks[0]["style"], style.key, "the first look is the first block's");
+                assert_eq!(laid["pictures"], looks[0]["pictures"]);
+                assert!(looks.iter().all(|look| keys(look) == ["pictures", "style"]));
+                deeper += usize::from(looks.len() == 2);
+                let cells = laid["cells"].as_array().unwrap();
+                let cell_looks = laid["cellLooks"].as_array().unwrap();
+                assert_eq!(cell_looks.len(), cells.len());
+                for (kind, look) in cells.iter().zip(cell_looks) {
+                    let look = look.as_i64().unwrap();
+                    assert_eq!(look == -1, kind.as_i64() == Some(-2), "rock alone wears no look");
+                    assert!(look < looks.len() as i64);
+                }
+                for (number, room) in laid["rooms"].as_array().unwrap().iter().enumerate() {
+                    let room_keys = ["ceiling", "depth", "height", "look", "name", "role", "walk", "width", "x", "y"];
+                    assert_eq!(keys(room), room_keys);
+                    assert!(["flat", "vault", "dome", "cave"].contains(&room["ceiling"].as_str().unwrap()));
+                    assert!(room["name"].as_str().unwrap().starts_with("the "));
+                    let look = room["look"].as_u64().unwrap() as usize;
+                    assert!(look < looks.len());
+                    let first = native.rooms[number].cells[0];
+                    assert_eq!(cell_looks[first].as_u64(), Some(look as u64), "a room wears its cells' look");
+                }
+                for fixture in laid["fixtures"].as_array().unwrap() {
+                    let numbers = fixture.as_array().unwrap();
+                    assert_eq!(numbers.len(), 4);
+                    assert!((0.0..=4.0).contains(&numbers[3].as_f64().unwrap()), "a kind of the five");
+                }
+                assert_eq!(laid["boxes"].as_array().unwrap().len(), native.boxes().len());
+                assert_eq!(laid["props"].as_array().unwrap().len(), native.props.len());
+            }
+        }
+        assert!(deeper > 30 && deeper < 150, "{deeper} of 180 break into the style below");
     }
 
     #[test]

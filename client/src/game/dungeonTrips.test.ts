@@ -46,12 +46,12 @@ test('a trip into a dungeon and out again keeps the seas of the room the player 
   const { trips, happenings, ways, settled } = recorded({
     foot: { ...onPatrol, held: { entrances: { entrances: [] } } },
   });
-  trips.enter(1, 'The Sanctum of the Saltgrass Downs');
+  trips.enter(1, 'The Halls of the Saltgrass Downs');
   await settled();
   trips.leave();
   await settled();
   assert.deepEqual(ways, [
-    ['into', 'the node file', 1, 'The Sanctum of the Saltgrass Downs', 'storm'],
+    ['into', 'the node file', 1, 'The Halls of the Saltgrass Downs', 'storm'],
     ['onto', 'saltgrass-downs', 0, 'storm', undefined],
   ]);
   assert.deepEqual(
@@ -64,7 +64,7 @@ test("a company member in a patrol's dungeon is joined in that dungeon, at their
   const { trips, happenings, ways, settled } = recorded({ foot: null });
   trips.join(patrol, 2, 'rough');
   await settled();
-  const name = 'The Halls of the Saltgrass Downs';
+  const name = 'The Caverns of the Saltgrass Downs';
   assert.deepEqual(happenings, [{ kind: 'join', node: 'saltgrass-downs--dungeon-2', name }]);
   assert.deepEqual(ways, [['into', '', 2, name, 'rough']]);
 });

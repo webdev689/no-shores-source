@@ -31,15 +31,14 @@ fn a_body_run_at_a_wall_stops_its_half_width_off_it_on_the_floor() {
                 let body = run(&ground, dungeon.centre(cell), side, 90);
                 let into = past(&dungeon, cell, side, &body);
                 let wall = CELL_M / 2.0 - TUNING.radius;
-                let furnished = dungeon.props.iter().any(|prop| {
-                    let [min_x, min_y, max_x, max_y, _] = prop.solid;
+                let furnished = solids_of(&dungeon).into_iter().any(|[min_x, min_y, max_x, max_y, _]| {
                     let [x, y] = dungeon.centre(cell);
                     (min_x + max_x) / 2.0 - x < CELL_M / 2.0
                         && x - (min_x + max_x) / 2.0 < CELL_M / 2.0
                         && (min_y + max_y) / 2.0 - y < CELL_M / 2.0
                         && y - (min_y + max_y) / 2.0 < CELL_M / 2.0
                 });
-                // A prop may stand over the cell's middle: the props' own test runs at them.
+                // A prop or a fixture may stand over the cell's middle: their own tests run at them.
                 if furnished {
                     continue;
                 }
@@ -113,57 +112,64 @@ fn a_body_run_slantwise_into_a_wall_slides_along_it() {
     assert!(past(&dungeon, cell, Side::North, &body) <= CELL_M / 2.0 - TUNING.radius + 1e-9);
 }
 
+/// The props' and the fixtures' solids.
+fn solids_of(dungeon: &Dungeon) -> Vec<[f64; 5]> {
+    let props = dungeon.props.iter().filter_map(|prop| prop.solid);
+    props.chain(dungeon.fixtures.iter().filter_map(|fixture| fixture.solid)).collect()
+}
+
+/// A solid's cell, and the side of it toward a neighbouring cell of its room that holds no solid, if one does.
+fn way_out(dungeon: &Dungeon, solid: &[f64; 5]) -> Option<(usize, Side)> {
+    let solids = solids_of(dungeon);
+    let cell_of = |solid: &[f64; 5]| {
+        let middle = [(solid[0] + solid[2]) / 2.0, (solid[1] + solid[3]) / 2.0];
+        (middle[1] / CELL_M) as usize * dungeon.columns + (middle[0] / CELL_M) as usize
+    };
+    let cell = cell_of(solid);
+    let side = SIDES.into_iter().find(|&side| {
+        dungeon.beside(cell, side).is_some_and(|next| {
+            dungeon.room_at(next) == dungeon.room_at(cell) && solids.iter().all(|other| cell_of(other) != next)
+        })
+    })?;
+    Some((cell, side))
+}
+
 #[test]
-fn a_body_run_at_a_prop_stops_its_half_width_off_it() {
-    let (dungeon, ground) = forged(5);
-    assert!(!dungeon.props.is_empty());
-    for prop in &dungeon.props {
-        let [min_x, min_y, max_x, max_y, _] = prop.solid;
-        let middle = [(min_x + max_x) / 2.0, (min_y + max_y) / 2.0];
-        let cell = (middle[1] / CELL_M) as usize * dungeon.columns + (middle[0] / CELL_M) as usize;
-        // From the cell's middle toward the wall the prop stands against.
-        let wall = SIDES
-            .into_iter()
-            .find(|&side| {
-                let [dx, dy] = side.unit();
-                let [x, y] = dungeon.centre(cell);
-                (middle[0] - x) * dx + (middle[1] - y) * dy > 0.0
-            })
-            .unwrap();
-        let [x, y] = dungeon.centre(cell);
-        let [dx, dy] = wall.unit();
-        let back = 0.6_f64.max(0.0);
-        let start = [x - dx * back, y - dy * back];
-        let body = run(&ground, start, wall, 120);
-        let [near_x, near_y] = [body.x.clamp(min_x, max_x), body.y.clamp(min_y, max_y)];
-        let apart = ((body.x - near_x) * (body.x - near_x) + (body.y - near_y) * (body.y - near_y)).sqrt();
-        assert!(apart >= TUNING.radius - 1e-9, "{apart} m from the prop");
-        assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground, "never on it");
+fn a_body_run_at_a_prop_from_the_room_stops_its_half_width_off_it() {
+    let (mut run_at, mut seed) = (0, 0);
+    while run_at < 40 {
+        let (dungeon, ground) = forged(seed);
+        seed += 1;
+        for solid in solids_of(&dungeon) {
+            let Some((cell, side)) = way_out(&dungeon, &solid) else { continue };
+            let [min_x, min_y, max_x, max_y, _] = solid;
+            // From the free cell's middle beside it, straight at its cell.
+            let start = dungeon.centre(dungeon.beside(cell, side).unwrap());
+            let body = run(&ground, start, side.opposite(), 120);
+            let [near_x, near_y] = [body.x.clamp(min_x, max_x), body.y.clamp(min_y, max_y)];
+            let apart = ((body.x - near_x) * (body.x - near_x) + (body.y - near_y) * (body.y - near_y)).sqrt();
+            assert!(apart >= TUNING.radius - 1e-9, "seed {seed}: {apart} m from a solid");
+            assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground, "never on it");
+            run_at += 1;
+        }
     }
 }
 
 #[test]
 fn a_body_shoved_inside_a_prop_walks_out_of_it_toward_the_room() {
-    let (dungeon, ground) = forged(5);
-    for prop in &dungeon.props {
-        let [min_x, min_y, max_x, max_y, _] = prop.solid;
-        let middle = [(min_x + max_x) / 2.0, (min_y + max_y) / 2.0];
-        let cell = (middle[1] / CELL_M) as usize * dungeon.columns + (middle[0] / CELL_M) as usize;
-        let [x, y] = dungeon.centre(cell);
-        // The way into the room: from the prop's middle toward its cell's.
-        let toward = SIDES
-            .into_iter()
-            .max_by(|a, b| {
-                let along = |side: Side| {
-                    let [dx, dy] = side.unit();
-                    (x - middle[0]) * dx + (y - middle[1]) * dy
-                };
-                along(*a).total_cmp(&along(*b))
-            })
-            .unwrap();
-        let body = run(&ground, middle, toward, 60);
-        let out = body.x < min_x || body.x > max_x || body.y < min_y || body.y > max_y;
-        assert!(out, "out of prop {} toward the room", prop.model);
+    let (mut shoved, mut seed) = (0, 0);
+    while shoved < 40 {
+        let (dungeon, ground) = forged(seed);
+        seed += 1;
+        for solid in solids_of(&dungeon) {
+            let Some((_, side)) = way_out(&dungeon, &solid) else { continue };
+            let [min_x, min_y, max_x, max_y, _] = solid;
+            let middle = [(min_x + max_x) / 2.0, (min_y + max_y) / 2.0];
+            let body = run(&ground, middle, side, 60);
+            let out = body.x < min_x || body.x > max_x || body.y < min_y || body.y > max_y;
+            assert!(out, "seed {seed}: out of a solid toward the room");
+            shoved += 1;
+        }
     }
 }
 

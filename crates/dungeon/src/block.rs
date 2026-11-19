@@ -4,7 +4,9 @@
 //! where an opening passes, so a block closes its own edges.
 
 use crate::lane::Lane;
-use crate::{CORRIDOR_HEIGHT_M, Cell, SIDES, Shape, Side, Style};
+use crate::shapes::{Shape, outline};
+use crate::styles::{Form, Style};
+use crate::{CORRIDOR_HEIGHT_M, Cell, SIDES, Side};
 
 /// Cells to a block's side.
 pub const BLOCK_CELLS: usize = 16;
@@ -17,7 +19,8 @@ const LEAST_PART: usize = 5;
 /// Tries at a sound layout before a block takes its simplest form, and the step between their seeds.
 const TRIES: u32 = 16;
 const TRY_STEP: u32 = 0x9e37_79b1;
-/// The simplest form's ceiling heights, the Forge's own default whatever the style.
+/// The simplest form: one room of 3 by 3 under the Forge's own default heights, whatever the style.
+const SIMPLEST_FORMS: &[Form] = &[Form { shape: Shape::Rectangle, weight: 1, along: (3, 3), across: (3, 3) }];
 const SIMPLEST_HEIGHTS: (f64, f64) = (3.2, 5.6);
 
 /// A way through a block's edge: its side and its cell along it.
@@ -27,8 +30,9 @@ pub struct Opening {
     pub cell: usize,
 }
 
-/// A room of a block: its rectangle in the block's cells, its ceiling's height and its shape.
-#[derive(Clone, Copy, Debug, PartialEq)]
+/// A room of a block: its rectangle in the block's cells, its ceiling's height, its shape, and the rock standing
+/// inside it.
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct BlockRoom {
     pub x: usize,
     pub y: usize,
@@ -36,6 +40,7 @@ pub(crate) struct BlockRoom {
     pub depth: usize,
     pub height: f64,
     pub shape: Shape,
+    pub stones: Vec<(usize, usize)>,
 }
 
 /// A block's way in, the opening from the block before it, and its way on, the opening onto the next; the way in's
@@ -119,18 +124,30 @@ fn split(lane: &mut Lane, want: usize) -> Vec<Part> {
     parts
 }
 
-/// Whether a room's shape takes the cell (x, y) of its rectangle: a rectangle all of it; an L leaves a corner quarter
-/// rock.
-fn takes(shape: Shape, ell: (usize, usize, bool, bool), width: usize, depth: usize, x: usize, y: usize) -> bool {
-    let (cut_width, cut_depth, right, far) = ell;
-    match shape {
-        Shape::Rectangle => true,
-        Shape::Ell => {
-            let in_columns = if right { x >= width - cut_width } else { x < cut_width };
-            let in_rows = if far { y >= depth - cut_depth } else { y < cut_depth };
-            !(in_columns && in_rows)
-        }
-    }
+/// The sides a form takes in a part, `along` east-west or north-south, or None where its least sides do not fit.
+fn fitted(form: &Form, part: &Part, along_x: bool) -> Option<((usize, usize), (usize, usize))> {
+    let (room_x, room_y) = (part.width - 2, part.depth - 2);
+    let (room_along, room_across) = if along_x { (room_x, room_y) } else { (room_y, room_x) };
+    let along = (form.along.0, form.along.1.min(room_along));
+    let across = (form.across.0, form.across.1.min(room_across));
+    (along.0 <= along.1 && across.0 <= across.1).then_some((along, across))
+}
+
+/// Draws a form for a part among those whose least sides fit it, by their weights, and its width and depth.
+fn draw_form(lane: &mut Lane, forms: &[Form], part: &Part) -> Option<(Shape, usize, usize)> {
+    let fitting: Vec<&Form> =
+        forms.iter().filter(|form| fitted(form, part, true).or(fitted(form, part, false)).is_some()).collect();
+    let mut pick = lane.below(fitting.iter().map(|form| form.weight).sum());
+    let form = fitting.iter().find(|form| {
+        let found = pick < form.weight;
+        pick = pick.saturating_sub(form.weight);
+        found
+    })?;
+    let ways: Vec<bool> = [true, false].into_iter().filter(|&along_x| fitted(form, part, along_x).is_some()).collect();
+    let along_x = ways[lane.below(ways.len())];
+    let (along, across) = fitted(form, part, along_x)?;
+    let (length, breadth) = (lane.int(along.0, along.1), lane.int(across.0, across.1));
+    Some(if along_x { (form.shape, length, breadth) } else { (form.shape, breadth, length) })
 }
 
 impl BlockLayout {
@@ -144,42 +161,40 @@ impl BlockLayout {
         }
     }
 
-    /// Carves a room into each part, a cell of rock kept on every side of it.
+    /// Carves a room into each part, a cell of rock kept on every side of it: a form of the style drawn among those
+    /// that fit the part, its sides drawn within the form's and the part's, and its outline drawn in its rectangle.
     fn carve_rooms(&mut self, lane: &mut Lane, style: &Style) {
         let (fewest, most) = style.rooms;
         let want = lane.int(fewest, most);
         for part in split(lane, want).into_iter().take(want) {
-            let (smallest, largest) = style.room_cells;
-            let (widest, deepest) = (largest.min(part.width - 2), largest.min(part.depth - 2));
-            if widest < 2 || deepest < 2 {
-                continue;
-            }
-            let width = lane.int(smallest.min(widest), widest);
-            let depth = lane.int(smallest.min(deepest), deepest);
+            let Some((shape, width, depth)) = draw_form(lane, style.forms, &part) else { continue };
             let x = part.x + 1 + lane.below(part.width - width - 1);
             let y = part.y + 1 + lane.below(part.depth - depth - 1);
             let (lowest, highest) = style.heights;
             let steps = ((lowest + lane.draw() * (highest - lowest)) / 0.4 + 0.5).floor();
             let height = steps * 0.4;
-            let mixed = style.ells && width >= 4 && depth >= 4 && lane.chance(0.4);
-            let shape = if mixed { Shape::Ell } else { Shape::Rectangle };
-            let ell =
-                if mixed { (width / 2, depth / 2, lane.chance(0.5), lane.chance(0.5)) } else { (0, 0, false, false) };
+            let outlined = outline(shape, width, depth, lane);
             let number = u16::try_from(self.rooms.len()).unwrap_or(u16::MAX);
-            self.rooms.push(BlockRoom { x, y, width, depth, height, shape });
-            for row in y..y + depth {
-                for column in x..x + width {
-                    if takes(shape, ell, width, depth, column - x, row - y) {
-                        self.cells[at(column, row)] = Cell::Room(number);
-                        self.ceilings[at(column, row)] = height;
+            let stones = outlined.stones.iter().map(|&(stone_x, stone_y)| (x + stone_x, y + stone_y)).collect();
+            self.rooms.push(BlockRoom { x, y, width, depth, height, shape, stones });
+            for row in 0..depth {
+                for column in 0..width {
+                    if outlined.takes[row * width + column] {
+                        self.cells[at(x + column, y + row)] = Cell::Room(number);
+                        self.ceilings[at(x + column, y + row)] = height;
                     }
                 }
             }
         }
     }
 
+    /// Whether a cell is rock standing inside a room, which no way cuts and no door stands on.
+    pub(crate) fn stone(&self, cell: (usize, usize)) -> bool {
+        self.rooms.iter().any(|room| room.stones.contains(&cell))
+    }
+
     /// The cheapest way between two cells, through rock, rooms and corridors but never the rim (but `rim`'s cells and
-    /// the goal); its cells, or None. Rock costs more than an open cell, so ways reuse ways.
+    /// the goal) or a room's stone; its cells, or None. Rock costs more than an open cell, so ways reuse ways.
     fn route(&self, from: (usize, usize), to: (usize, usize), rim: &[(usize, usize)]) -> Option<Vec<(usize, usize)>> {
         let cost = |index: usize| match self.cells[index] {
             Cell::Rock => 3.0,
@@ -207,7 +222,7 @@ impl BlockLayout {
             for side in SIDES {
                 let Some((x, y)) = beside(index % BLOCK_CELLS, index / BLOCK_CELLS, side) else { continue };
                 let next = at(x, y);
-                if on_rim(x, y) && !rim.contains(&(x, y)) && next != goal {
+                if (on_rim(x, y) && !rim.contains(&(x, y)) && next != goal) || self.stone((x, y)) {
                     continue;
                 }
                 let through = distance[index] + cost(next);
@@ -245,7 +260,7 @@ impl BlockLayout {
 
     /// A room's cells, row by row.
     pub(crate) fn room_cells(&self, number: usize) -> Vec<(usize, usize)> {
-        let room = self.rooms[number];
+        let room = &self.rooms[number];
         let own = Cell::Room(u16::try_from(number).unwrap_or(u16::MAX));
         (room.y..room.y + room.depth)
             .flat_map(|y| (room.x..room.x + room.width).map(move |x| (x, y)))
@@ -325,13 +340,13 @@ impl BlockLayout {
         self.room_cells(number).into_iter().filter(|&(x, y)| !busy(x, y)).collect()
     }
 
-    /// Where the way in's exit door stands: a room's cell with rock beside it, the rooms in the block's order, their
-    /// quiet cells first and then the rest, each nearest its room's middle; the cell and the side the rock is on. None
-    /// where no room meets rock.
+    /// Where the way in's exit door stands: a room's cell with rock beside it that is no stone, the rooms in the
+    /// block's order, their quiet cells first and then the rest, each nearest its room's middle; the cell and the side
+    /// the rock is on. None where no room meets such rock.
     pub(crate) fn exit_spot(&self) -> Option<(usize, usize, Side)> {
         for quiet in [true, false] {
             for &number in &self.order {
-                let room = self.rooms[number];
+                let room = &self.rooms[number];
                 let mut cells = if quiet { self.quiet_cells(number) } else { self.room_cells(number) };
                 let off = |&(x, y): &(usize, usize)| {
                     (2 * x).abs_diff(2 * room.x + room.width - 1) + (2 * y).abs_diff(2 * room.y + room.depth - 1)
@@ -339,7 +354,9 @@ impl BlockLayout {
                 cells.sort_by_key(off);
                 for (x, y) in cells {
                     for side in SIDES {
-                        if beside(x, y, side).is_some_and(|(bx, by)| self.cells[at(bx, by)] == Cell::Rock) {
+                        let rock =
+                            |(bx, by): (usize, usize)| self.cells[at(bx, by)] == Cell::Rock && !self.stone((bx, by));
+                        if beside(x, y, side).is_some_and(rock) {
                             return Some((x, y, side));
                         }
                     }
@@ -358,10 +375,6 @@ impl BlockLayout {
                 return block;
             }
         }
-        Self::laid(
-            seed,
-            ends,
-            &Style { rooms: (1, 1), room_cells: (3, 3), heights: SIMPLEST_HEIGHTS, ells: false, ..*style },
-        )
+        Self::laid(seed, ends, &Style { rooms: (1, 1), forms: SIMPLEST_FORMS, heights: SIMPLEST_HEIGHTS, ..*style })
     }
 }

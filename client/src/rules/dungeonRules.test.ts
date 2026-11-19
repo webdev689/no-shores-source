@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 
 /** The room-wasm crate's dungeon door holds the same asks and hash (crates/room-wasm/src/dungeon_door.rs). */
-const AGREED_HASH = '2274d792af96aae5';
+const AGREED_HASH = '7233f058c3cdfe3d';
 const AGREED_ASKS: readonly (readonly [string, string, number])[] = [
   ['saltgrass-downs', 'The Saltgrass Downs', 0],
   ['highwater-glen', 'The Highwater Glen', 1],

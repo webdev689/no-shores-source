@@ -1,14 +1,22 @@
-//! A whole dungeon: three or four blocks in a chain from the way in's, each next one beside the one before and sharing
-//! one doorway with it, so the way runs from a beginning through a middle to an end. With it, what the rooms and the
-//! Game read: the way in's exit door, the return portal in the end room, the torches, each room's walk from the way in,
-//! and what a body runs into beside the rock, the doorways' jambs and the great rooms' pillars.
+//! A whole dungeon: two to five blocks in a chain from the way in's, each next one beside the one before and sharing
+//! one doorway with it, so the way runs from a beginning through a middle to an end; in about half of them the last
+//! block is laid in the style below the first. With it, what the rooms and the Game read: the way in's exit door, the
+//! return portal in the end room, each room's walk from the way in, purpose, name and ceiling, and what a body runs
+//! into beside the rock, the doorways' jambs, the great rooms' pillars, the props and the fixtures.
 
 use crate::block::{BLOCK_CELLS, BlockLayout, Ends, OPENING_FIRST, OPENING_LAST, Opening};
+use crate::fixtures::Fixture;
 use crate::lane::Lane;
-use crate::{CELL_M, Cell, SIDES, Shape, Side, Style};
+use crate::purposes::Purpose;
+use crate::shapes::{Ceiling, Shape, ceiling};
+use crate::styles::Style;
+use crate::torches::Torch;
+use crate::{CELL_M, Cell, SIDES, Side};
 
-/// Blocks a dungeon grows to, fewest and most.
-const BLOCKS: (usize, usize) = (3, 4);
+/// Blocks a dungeon grows to, fewest and most, each count as likely; and the share of dungeons whose last block is
+/// laid in the style below.
+pub const BLOCKS: (usize, usize) = (2, 5);
+const DEEPER_SHARE: f64 = 0.5;
 /// A doorway's frame: the opening's half width, the jambs' depth into the corridor, and the lintel's underside (m).
 pub const DOORWAY_HALF_M: f64 = 0.9;
 pub const JAMB_DEPTH_M: f64 = 0.3;
@@ -16,12 +24,6 @@ pub const LINTEL_M: f64 = 2.8;
 /// A pillar's half width, and the room that stands them: at least this many cells each way.
 pub const PILLAR_HALF_M: f64 = 0.35;
 const PILLAR_ROOM_CELLS: usize = 4;
-/// A torch's height over the floor, how far in from its wall, and how far its light reaches (m).
-pub const TORCH_M: f64 = 2.1;
-const TORCH_INSET_M: f64 = 0.35;
-pub const TORCH_REACH_M: f64 = 8.0;
-/// How far along its wall each of the portal's two torches stands from its middle: past its edge, inside its cell.
-const PORTAL_TORCH_M: f64 = 1.15;
 /// The exit door's width and height, how far off its wall it stands, and how far past its cell's middle, away from it,
 /// a body arrives (m), as the Forge stands a body in front of its exit door.
 pub const EXIT_WIDTH_M: f64 = 1.4;
@@ -30,7 +32,8 @@ const EXIT_OFF_WALL_M: f64 = 0.02;
 const ARRIVE_PAST_MIDDLE_M: f64 = 0.4;
 
 /// A room: its rectangle in the dungeon's cells, its cells and those of them no side of which meets a corridor (row
-/// by row), its ceiling's height, its shape, and how many cells' walk it lies from the way in.
+/// by row), the rock standing inside it, its ceiling's height and form, its shape, how many cells' walk it lies from
+/// the way in, its look (by its number among the dungeon's), and its purpose and name.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Room {
     pub x: usize,
@@ -39,9 +42,14 @@ pub struct Room {
     pub depth: usize,
     pub cells: Vec<usize>,
     pub quiet: Vec<usize>,
+    pub stones: Vec<usize>,
     pub height: f64,
+    pub ceiling: Ceiling,
     pub shape: Shape,
     pub walk: u32,
+    pub look: usize,
+    pub purpose: &'static Purpose,
+    pub name: String,
 }
 
 /// A door on a wall of a room: the room's cell it stands at, the side of that cell its wall is on, and the room. The
@@ -51,13 +59,6 @@ pub struct WallDoor {
     pub cell: usize,
     pub side: Side,
     pub room: usize,
-}
-
-/// A torch on a wall: where its flame is (x east, y south, z up), and the side of its cell its wall is on.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Torch {
-    pub at: [f64; 3],
-    pub wall: Side,
 }
 
 /// A doorway where a room's cell meets a corridor on `side`, framed up to the lower of the two ceilings.
@@ -71,9 +72,13 @@ pub struct Frame {
 /// A dungeon as the Forge lays it, in its own frame: x east and y south from its north-west corner, its floor at 0 m.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dungeon {
+    /// The first block's style, which names the dungeon.
     pub style: Style,
-    /// The blocks' squares, the way in's first, each its column and row of blocks.
+    /// The looks its parts wear, the first block's first: its style, and the style below where its last block is.
+    pub looks: Vec<Style>,
+    /// The blocks' squares, the way in's first, each its column and row of blocks, and each block's look.
     pub squares: Vec<(usize, usize)>,
+    pub block_looks: Vec<usize>,
     pub columns: usize,
     pub rows: usize,
     pub cells: Vec<Cell>,
@@ -89,8 +94,9 @@ pub struct Dungeon {
     pub frames: Vec<Frame>,
     /// Each pillar's middle, (x, y), and its top.
     pub pillars: Vec<[f64; 3]>,
-    /// The props its rooms are furnished with (`props`).
+    /// The props its rooms are furnished with, and the lights that are not torches (`furnish`, `fixtures`).
     pub props: Vec<crate::Prop>,
+    pub fixtures: Vec<Fixture>,
 }
 
 /// The squares of the blocks, in a chain: the first at the start, each next one beside the one before, drawn from
@@ -129,12 +135,13 @@ fn contracts(seed: u32, squares: &[(usize, usize)]) -> Vec<Ends> {
 }
 
 impl Dungeon {
-    /// The dungeon a seed lays in a style.
+    /// The dungeon a seed lays in a style: how many blocks drawn on its own lane, two to five alike, and whether its
+    /// last is laid in the style below on another.
     #[must_use]
     pub fn forge(seed: u32, style: Style) -> Self {
-        let mut lane = Lane::named(&format!("squares:{seed}"));
-        let count = lane.int(BLOCKS.0, BLOCKS.1);
-        let grown = grow(&mut lane, count);
+        let count = Lane::named(&format!("size:{seed}")).int(BLOCKS.0, BLOCKS.1);
+        let deeper = Lane::named(&format!("deeper:{seed}")).chance(DEEPER_SHARE);
+        let grown = grow(&mut Lane::named(&format!("squares:{seed}")), count);
         let (west, north) =
             grown.iter().fold((0, 0), |(west, north), &(column, row)| (west.min(column), north.min(row)));
         let squares: Vec<(usize, usize)> =
@@ -142,9 +149,14 @@ impl Dungeon {
         let columns = (squares.iter().map(|square| square.0).max().unwrap_or(0) + 1) * BLOCK_CELLS;
         let rows = (squares.iter().map(|square| square.1).max().unwrap_or(0) + 1) * BLOCK_CELLS;
         let openings = contracts(seed, &squares);
+        let looks = if deeper { vec![style, style.style_below()] } else { vec![style] };
+        let block_looks: Vec<usize> =
+            (0..count).map(|number| if deeper && number + 1 == count { 1 } else { 0 }).collect();
         let mut dungeon = Self {
             style,
+            looks,
             squares: squares.clone(),
+            block_looks: block_looks.clone(),
             columns,
             rows,
             cells: vec![Cell::Rock; columns * rows],
@@ -157,16 +169,23 @@ impl Dungeon {
             frames: Vec::new(),
             pillars: Vec::new(),
             props: Vec::new(),
+            fixtures: Vec::new(),
         };
         let blocks: Vec<BlockLayout> = openings
             .iter()
             .enumerate()
             .map(|(number, &own)| {
-                BlockLayout::sound(crate::lane::named(&format!("block:{seed}:{number}")), own, &style, number == 0)
+                let block_style = dungeon.looks[block_looks[number]];
+                BlockLayout::sound(
+                    crate::lane::named(&format!("block:{seed}:{number}")),
+                    own,
+                    &block_style,
+                    number == 0,
+                )
             })
             .collect();
         for (number, block) in blocks.iter().enumerate() {
-            dungeon.lay(squares[number], block);
+            dungeon.lay(squares[number], block, block_looks[number]);
         }
         if let Some((x, y, side)) = blocks[0].exit_spot() {
             let cell = dungeon.cell_of(squares[0], x, y);
@@ -181,13 +200,25 @@ impl Dungeon {
             dungeon.light(squares[number], block);
         }
         dungeon.flank_portal();
-        dungeon.furnish(seed, style.props);
+        dungeon.name_rooms(seed);
+        dungeon.furnish(seed, &steps);
         dungeon.frame();
         dungeon
     }
 
+    /// A cell's look, by its number among `looks`: its block's; None for rock.
+    #[must_use]
+    pub fn look_at(&self, cell: usize) -> Option<usize> {
+        if self.cells.get(cell).is_none_or(|&kind| kind == Cell::Rock) {
+            return None;
+        }
+        let square = ((cell % self.columns) / BLOCK_CELLS, (cell / self.columns) / BLOCK_CELLS);
+        let block = self.squares.iter().position(|&found| found == square)?;
+        self.block_looks.get(block).copied()
+    }
+
     /// The whole grid's cell for a block's cell (x, y).
-    fn cell_of(&self, square: (usize, usize), x: usize, y: usize) -> usize {
+    pub(crate) fn cell_of(&self, square: (usize, usize), x: usize, y: usize) -> usize {
         (square.1 * BLOCK_CELLS + y) * self.columns + square.0 * BLOCK_CELLS + x
     }
 
@@ -220,9 +251,9 @@ impl Dungeon {
         [((cell % self.columns) as f64 + 0.5) * CELL_M, ((cell / self.columns) as f64 + 0.5) * CELL_M]
     }
 
-    /// Copies a block's cells, ceilings and rooms into the grid, its rooms numbered after those laid before, with its
-    /// great rooms' pillars.
-    fn lay(&mut self, square: (usize, usize), block: &BlockLayout) {
+    /// Copies a block's cells, ceilings and rooms into the grid, its rooms numbered after those laid before and
+    /// wearing its look, with its great rooms' pillars.
+    fn lay(&mut self, square: (usize, usize), block: &BlockLayout, look: usize) {
         let first = self.rooms.len();
         for y in 0..BLOCK_CELLS {
             for x in 0..BLOCK_CELLS {
@@ -239,7 +270,9 @@ impl Dungeon {
             let own = |(x, y): (usize, usize)| self.cell_of(square, x, y);
             let cells = block.room_cells(number).into_iter().map(own).collect();
             let quiet = block.quiet_cells(number).into_iter().map(own).collect();
+            let stones = room.stones.iter().map(|&stone| own(stone)).collect();
             let (x, y) = (square.0 * BLOCK_CELLS + room.x, square.1 * BLOCK_CELLS + room.y);
+            let style = self.looks[look];
             let placed = Room {
                 x,
                 y,
@@ -247,19 +280,25 @@ impl Dungeon {
                 depth: room.depth,
                 cells,
                 quiet,
+                stones,
                 height: room.height,
+                ceiling: ceiling(room.shape, room.width, room.depth, style.roof),
                 shape: room.shape,
                 walk: 0,
+                look,
+                // Each room's own purpose and name are given once the walk is known (`name_rooms`).
+                purpose: &style.purposes.way_in,
+                name: String::new(),
             };
             self.pillars.extend(self.pillars_of(&placed, first + number));
             self.rooms.push(placed);
         }
     }
 
-    /// The corners a room's pillars stand on: every second inner corner of a room at least PILLAR_ROOM_CELLS each
-    /// way, all four cells round it the room's own; each corner and the room's ceiling.
+    /// The corners a room's pillars stand on: every second inner corner of a hewn room (no cave) at least
+    /// PILLAR_ROOM_CELLS each way, all four cells round it the room's own; each corner and the room's ceiling.
     fn pillars_of(&self, room: &Room, number: usize) -> Vec<[f64; 3]> {
-        if room.width < PILLAR_ROOM_CELLS || room.depth < PILLAR_ROOM_CELLS {
+        if room.width < PILLAR_ROOM_CELLS || room.depth < PILLAR_ROOM_CELLS || room.shape == Shape::Cave {
             return Vec::new();
         }
         let own = |x: usize, y: usize| self.room_at(y * self.columns + x) == Some(number);
@@ -272,62 +311,6 @@ impl Dungeon {
             }
         }
         corners
-    }
-
-    /// A torch on the first wall of a cell that has one, never over the exit door or the portal; whether it stood.
-    fn torch_on(&mut self, cell: usize) -> bool {
-        let doors = [(self.way_in.cell, self.way_in.side), (self.portal.cell, self.portal.side)];
-        let Some(wall) = SIDES.into_iter().find(|&side| self.rock_beside(cell, side) && !doors.contains(&(cell, side)))
-        else {
-            return false;
-        };
-        let [x, y] = self.centre(cell);
-        let [dx, dy] = wall.unit();
-        let off = CELL_M / 2.0 - TORCH_INSET_M;
-        self.torches.push(Torch { at: [x + dx * off, y + dy * off, TORCH_M], wall });
-        true
-    }
-
-    /// A block's torches: on a wall of each room, one for every sixteen of its rectangle's cells, its quiet cells on
-    /// every third diagonal first and any of its cells if none will do; and on every fourth corridor cell, row by row.
-    fn light(&mut self, square: (usize, usize), block: &BlockLayout) {
-        for (number, room) in block.rooms.iter().enumerate() {
-            let want = ((room.width * room.depth + 8) / 16).max(1);
-            let mut lit = 0;
-            for (x, y) in block.quiet_cells(number) {
-                if lit < want && (x + y) % 3 == 0 && self.torch_on(self.cell_of(square, x, y)) {
-                    lit += 1;
-                }
-            }
-            for (x, y) in block.room_cells(number) {
-                if lit == 0 && self.torch_on(self.cell_of(square, x, y)) {
-                    lit += 1;
-                }
-            }
-        }
-        let mut corridors = 0;
-        for y in 0..BLOCK_CELLS {
-            for x in 0..BLOCK_CELLS {
-                if block.cells[y * BLOCK_CELLS + x] == Cell::Corridor {
-                    if corridors % 4 == 0 {
-                        self.torch_on(self.cell_of(square, x, y));
-                    }
-                    corridors += 1;
-                }
-            }
-        }
-    }
-
-    /// Two torches on the portal's wall, one either side of it, so the end of the way is lit and marked before the
-    /// portal opens.
-    fn flank_portal(&mut self) {
-        let [x, y] = self.centre(self.portal.cell);
-        let [dx, dy] = self.portal.side.unit();
-        let off = CELL_M / 2.0 - TORCH_INSET_M;
-        for along in [-PORTAL_TORCH_M, PORTAL_TORCH_M] {
-            let at = [x + dx * off - dy * along, y + dy * off + dx * along, TORCH_M];
-            self.torches.push(Torch { at, wall: self.portal.side });
-        }
     }
 
     /// Frames every doorway: a room's cell beside a corridor, up to the lower of their ceilings.
@@ -345,8 +328,17 @@ impl Dungeon {
         }
     }
 
-    /// Each room's walk from the way in: the fewest cells crossed to reach any of its cells.
+    /// Each room's walk from the way in: the fewest cells crossed to reach any of its cells; and each cell's.
     pub(crate) fn walk(&mut self) -> Vec<u32> {
+        let steps = self.steps();
+        for room in &mut self.rooms {
+            room.walk = room.cells.iter().map(|&cell| steps[cell]).min().unwrap_or(u32::MAX);
+        }
+        steps
+    }
+
+    /// Each cell's walk from the way in, u32::MAX for one never reached.
+    fn steps(&self) -> Vec<u32> {
         let mut steps = vec![u32::MAX; self.cells.len()];
         let mut todo = std::collections::VecDeque::from([self.way_in.cell]);
         steps[self.way_in.cell] = 0;
@@ -359,14 +351,12 @@ impl Dungeon {
                 }
             }
         }
-        for room in &mut self.rooms {
-            room.walk = room.cells.iter().map(|&cell| steps[cell]).min().unwrap_or(u32::MAX);
-        }
         steps
     }
 
-    /// Where the return portal stands: on a wall of the end room, at its cell farthest from the way in by walk (its
-    /// quiet cells first), the first such wall; on the way in's own wall only where the end room has no other.
+    /// Where the return portal stands: on a wall of the end room that is no stone, at its cell farthest from the way
+    /// in by walk (its quiet cells first), the first such wall; on the way in's own wall only where the end room has
+    /// no other.
     fn portal_spot(&self, steps: &[u32]) -> WallDoor {
         let room = self.end();
         let found = &self.rooms[room];
@@ -375,8 +365,11 @@ impl Dungeon {
             deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
             for cell in deepest {
                 let door = (self.way_in.cell, self.way_in.side);
-                if let Some(side) = SIDES.into_iter().find(|&side| self.rock_beside(cell, side) && (cell, side) != door)
-                {
+                let wall = |side: Side| {
+                    let stone = self.beside(cell, side).is_some_and(|next| found.stones.contains(&next));
+                    self.rock_beside(cell, side) && !stone && (cell, side) != door
+                };
+                if let Some(side) = SIDES.into_iter().find(|&side| wall(side)) {
                     return WallDoor { cell, side, room };
                 }
             }
@@ -427,7 +420,7 @@ impl Dungeon {
     }
 
     /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up
-    /// to its ceiling, then every pillar, then every prop.
+    /// to its ceiling, then every pillar, then every prop's solid (a hanging has none), then every fixture's.
     #[must_use]
     pub fn boxes(&self) -> Vec<[f64; 5]> {
         let half = CELL_M / 2.0;
@@ -454,7 +447,8 @@ impl Dungeon {
         for &[x, y, top] in &self.pillars {
             boxes.push([x - PILLAR_HALF_M, y - PILLAR_HALF_M, x + PILLAR_HALF_M, y + PILLAR_HALF_M, top]);
         }
-        boxes.extend(self.props.iter().map(|prop| prop.solid));
+        boxes.extend(self.props.iter().filter_map(|prop| prop.solid));
+        boxes.extend(self.fixtures.iter().filter_map(|fixture| fixture.solid));
         boxes
     }
 }

@@ -1,6 +1,8 @@
-use crate::dungeon::{DOORWAY_HALF_M, EXIT_WIDTH_M, JAMB_DEPTH_M, TORCH_M};
+use crate::dungeon::{DOORWAY_HALF_M, EXIT_WIDTH_M, JAMB_DEPTH_M};
+use crate::shapes::Ceiling;
+use crate::torches::TORCH_M;
 use crate::{
-    BLOCK_CELLS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor, name, of_patrol,
+    BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor, name, of_patrol,
 };
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
@@ -8,9 +10,9 @@ fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
 }
 
 #[test]
-fn every_dungeon_is_three_or_four_blocks_side_by_side_and_one_walk_from_its_way_in() {
+fn every_dungeon_is_two_to_five_blocks_side_by_side_and_one_walk_from_its_way_in() {
     for dungeon in every_dungeon(600) {
-        assert!((3..=4).contains(&dungeon.squares.len()));
+        assert!((2..=5).contains(&dungeon.squares.len()));
         for (number, square) in dungeon.squares.iter().enumerate().skip(1) {
             let touches = dungeon.squares[..number]
                 .iter()
@@ -111,7 +113,9 @@ fn torches_stand_on_rock_walls_over_head_height_never_on_the_exit_door() {
 fn a_doorway_narrows_to_its_frame_and_its_jambs_stand_in_the_corridor() {
     for dungeon in every_dungeon(100) {
         let boxes = dungeon.boxes();
-        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + dungeon.props.len());
+        let props = dungeon.props.iter().filter(|prop| prop.solid.is_some()).count();
+        let fixtures = dungeon.fixtures.iter().filter(|fixture| fixture.solid.is_some()).count();
+        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + props + fixtures);
         for (frame, pair) in dungeon.frames.iter().zip(boxes.chunks(2)) {
             assert!(dungeon.room_at(frame.cell).is_some());
             assert_eq!(dungeon.cells[dungeon.beside(frame.cell, frame.side).unwrap()], Cell::Corridor);
@@ -177,14 +181,21 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         depth: 1,
         cells,
         quiet: Vec::new(),
+        stones: Vec::new(),
         height: 3.2,
+        ceiling: Ceiling::Flat,
         shape: Shape::Rectangle,
         walk: 0,
+        look: 0,
+        purpose: &STYLES[0].purposes.way_in,
+        name: String::new(),
     };
     let (rock, corridor) = (Cell::Rock, Cell::Corridor);
     let mut laid = Dungeon {
         style: STYLES[0],
+        looks: vec![STYLES[0]],
         squares: vec![(0, 0)],
+        block_looks: vec![0],
         columns: 6,
         rows: 2,
         cells: vec![
@@ -210,6 +221,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         frames: Vec::new(),
         pillars: Vec::new(),
         props: Vec::new(),
+        fixtures: Vec::new(),
     };
     let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
@@ -235,13 +247,13 @@ fn a_quiet_cell_is_a_rooms_cell_beside_no_corridor_and_every_other_is_beside_one
 }
 
 #[test]
-fn pillars_stand_on_every_second_inner_corner_of_a_great_room_four_of_its_own_cells_round_each() {
+fn pillars_stand_on_every_second_inner_corner_of_a_great_hewn_room_four_of_its_own_cells_round_each() {
     let mut stood = 0;
     for dungeon in every_dungeon(300) {
         let own = |x: usize, y: usize| dungeon.room_at(y * dungeon.columns + x);
         for (number, room) in dungeon.rooms.iter().enumerate() {
             let mut want = Vec::new();
-            if room.width >= 4 && room.depth >= 4 {
+            if room.width >= 4 && room.depth >= 4 && room.shape != Shape::Cave {
                 for y in (room.y + 2..room.y + room.depth - 1).step_by(2) {
                     for x in (room.x + 2..room.x + room.width - 1).step_by(2) {
                         if [own(x, y), own(x - 1, y), own(x, y - 1), own(x - 1, y - 1)]
@@ -276,16 +288,80 @@ fn the_end_lies_past_every_room_of_the_first_block_and_is_never_the_way_ins() {
 }
 
 #[test]
-fn a_patrols_dungeons_take_different_styles_and_are_named_for_their_patrol() {
-    for patrol in ["saltgrass-downs", "highwater-glen", "aurora-wastes"] {
-        let dungeons: Vec<_> = (0..PER_PATROL).map(|number| of_patrol(patrol, number)).collect();
+fn a_patrols_dungeons_take_three_different_styles_of_the_six_and_are_named_for_their_patrol() {
+    let mut taken = Vec::new();
+    for patrol in (0..200).map(|nth| format!("patrol-{nth}")) {
+        let dungeons: Vec<_> = (0..PER_PATROL).map(|number| of_patrol(&patrol, number)).collect();
         for (number, (seed, style)) in dungeons.iter().enumerate() {
-            assert_eq!(of_patrol(patrol, number), (*seed, *style));
-            assert!(dungeons[number + 1..].iter().all(|other| other.1.noun != style.noun && other.0 != *seed));
+            assert_eq!(of_patrol(&patrol, number), (*seed, *style));
+            assert!(dungeons[number + 1..].iter().all(|other| other.1.key != style.key && other.0 != *seed));
+            if !taken.contains(&style.key) {
+                taken.push(style.key);
+            }
         }
     }
+    assert_eq!(taken.len(), STYLES.len(), "every style is some patrol's: {taken:?}");
     assert_eq!(name(&STYLES[0], "The Saltgrass Downs"), "The Crypt of the Saltgrass Downs");
     assert_eq!(name(&STYLES[3], "The Pale Wastes"), "The Sanctum of the Pale Wastes");
+    assert_eq!(name(&STYLES[4], "The Sunken Fen"), "The Caverns of the Sunken Fen");
+    assert_eq!(name(&STYLES[5], "The Ochre Wastes"), "The Mines of the Ochre Wastes");
+}
+
+#[test]
+fn the_six_styles_keys_breaks_pictures_and_entrances() {
+    let keys = STYLES.map(|style| style.key);
+    assert_eq!(keys, ["crypt", "halls", "cells", "sanctum", "caverns", "mines"]);
+    let below = STYLES.map(|style| style.style_below().key);
+    assert_eq!(below, ["caverns", "crypt", "mines", "crypt", "crypt", "caverns"]);
+    assert_eq!(STYLES[4].pictures, [120, 119]);
+    assert_eq!(STYLES[5].pictures, [119, 120]);
+    for style in STYLES {
+        let caves = ["caverns", "mines"].contains(&style.key);
+        let entrances: &[u16] = if caves { &[43603, 43604] } else { &[43601, 43602] };
+        assert_eq!(style.entrances, entrances, "{}", style.key);
+    }
+}
+
+#[test]
+fn sizes_span_two_to_five_blocks_each_about_as_often() {
+    let mut counts = [0; 6];
+    for dungeon in every_dungeon(2000) {
+        counts[dungeon.squares.len()] += 1;
+    }
+    for (blocks, &count) in counts.iter().enumerate() {
+        let drawn = (BLOCKS.0..=BLOCKS.1).contains(&blocks);
+        assert!(if drawn { (400..600).contains(&count) } else { count == 0 }, "{blocks} blocks in {count} of 2000");
+    }
+}
+
+#[test]
+fn about_half_break_into_the_style_below_in_their_last_block_alone() {
+    let mut deeper = 0;
+    for dungeon in every_dungeon(2000) {
+        assert_eq!(dungeon.looks[0], dungeon.style, "the first look is the dungeon's own style");
+        let last = dungeon.squares.len() - 1;
+        for (block, &look) in dungeon.block_looks.iter().enumerate() {
+            assert_eq!(look, usize::from(block == last && dungeon.looks.len() == 2), "only the last block breaks");
+        }
+        if dungeon.looks.len() == 2 {
+            deeper += 1;
+            assert_eq!(dungeon.looks[1], dungeon.style.style_below(), "the style below");
+        }
+        for (cell, &kind) in dungeon.cells.iter().enumerate() {
+            let square = square_of(&dungeon, cell);
+            let block = dungeon.squares.iter().position(|&found| found == square);
+            let want = (kind != Cell::Rock).then(|| block.map(|block| dungeon.block_looks[block])).flatten();
+            assert_eq!(dungeon.look_at(cell), want, "a cell wears its block's look");
+        }
+        for room in &dungeon.rooms {
+            assert_eq!(dungeon.look_at(room.cells[0]), Some(room.look), "a room wears its block's look");
+            let style = dungeon.looks[room.look];
+            let bank = style.purposes;
+            let own = bank.rooms.contains(room.purpose) || *room.purpose == bank.end || *room.purpose == bank.way_in;
+            assert!(own, "{}'s purpose is its own style's", room.name);
+        }
+    }
+    assert!((900..1100).contains(&deeper), "{deeper} of 2000 break into the style below");
 }
 
 /// The square of blocks a cell lies in.

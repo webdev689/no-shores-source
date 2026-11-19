@@ -1,6 +1,6 @@
 use crate::block::{BLOCK_CELLS, BlockLayout, Ends, Opening, opening_cell};
 use crate::lane::Lane;
-use crate::{Cell, STYLES, Shape, Side};
+use crate::{Cell, STYLES, Shape, Side, Style};
 
 /// A block's way in and way on as a seed draws them: each on a side of its own, or none.
 fn ends(seed: u32) -> Ends {
@@ -71,10 +71,21 @@ fn the_same_seed_lays_the_same_block() {
     }
 }
 
+/// Whether a room's rectangle is one of its style's forms: its shape, and its sides within the form's one way or the
+/// other.
+fn of_a_form(style: &Style, shape: Shape, width: usize, depth: usize) -> bool {
+    let within = |side: usize, (least, most): (usize, usize)| (least..=most).contains(&side);
+    style.forms.iter().any(|form| {
+        form.shape == shape
+            && ((within(width, form.along) && within(depth, form.across))
+                || (within(depth, form.along) && within(width, form.across)))
+    })
+}
+
 #[test]
-fn rooms_take_their_styles_sizes_heights_and_shapes() {
+fn rooms_take_their_styles_forms_and_heights_and_every_form_is_drawn() {
     for style in STYLES {
-        let (mut ells, mut could) = (0, 0);
+        let mut shapes = Vec::new();
         for seed in 0..600 {
             let block = BlockLayout::sound(seed, Ends::default(), &style, false);
             // No part is cut below five cells, so the square is cut at most once each way: four rooms at most.
@@ -82,25 +93,29 @@ fn rooms_take_their_styles_sizes_heights_and_shapes() {
             let rooms = block.rooms.len();
             assert!((fewest..=most).contains(&rooms), "{}: {rooms} rooms, not {fewest} to {most}", style.noun);
             for room in &block.rooms {
-                assert!(room.width <= style.room_cells.1 && room.depth <= style.room_cells.1);
+                assert!(of_a_form(&style, room.shape, room.width, room.depth), "{}: {room:?}", style.noun);
                 assert!(room.height >= style.heights.0 - 0.2 && room.height <= style.heights.1 + 0.2);
                 let steps = room.height / 0.4;
                 assert!((steps - (steps + 0.5).floor()).abs() < 1e-9, "a ceiling a whole number of 0.4 m");
-                if room.width >= 4 && room.depth >= 4 {
-                    could += 1;
-                }
-                if room.shape == Shape::Ell {
-                    ells += 1;
+                if !shapes.contains(&room.shape) {
+                    shapes.push(room.shape);
                 }
             }
         }
-        if style.ells {
-            let share = f64::from(ells) / f64::from(could);
-            assert!((0.33..0.47).contains(&share), "{}: an L two times in five, {share}", style.noun);
-        } else {
-            assert_eq!(ells, 0, "{}: rectangles only", style.noun);
+        for form in style.forms {
+            assert!(shapes.contains(&form.shape), "{}: no {:?} in 600 blocks", style.noun, form.shape);
         }
     }
+}
+
+#[test]
+fn the_mines_lay_long_galleries_two_cells_wide() {
+    let mines = STYLES.into_iter().find(|style| style.key == "mines").unwrap();
+    let galleries = (0..300)
+        .flat_map(|seed| BlockLayout::sound(seed, Ends::default(), &mines, false).rooms)
+        .filter(|room| room.width.min(room.depth) == 2 && room.width.max(room.depth) >= 5)
+        .count();
+    assert!(galleries > 100, "{galleries} galleries in 300 blocks");
 }
 
 #[test]
@@ -113,20 +128,21 @@ fn an_ell_leaves_one_corner_quarter_of_its_rectangle_rock() {
             Some((block, number))
         })
         .unwrap();
-    let room = block.rooms[number];
+    let room = &block.rooms[number];
     let own = block.room_cells(number).len();
     assert_eq!(own, room.width * room.depth - (room.width / 2) * (room.depth / 2));
 }
 
 #[test]
-fn the_way_ins_block_has_its_exit_door_against_rock_in_a_room() {
+fn the_way_ins_block_has_its_exit_door_against_rock_in_a_room_never_on_a_stone() {
     for seed in 0..500 {
-        let block = BlockLayout::sound(seed, ends(seed), &STYLES[seed as usize % 4], true);
+        let block = BlockLayout::sound(seed, ends(seed), &STYLES[seed as usize % STYLES.len()], true);
         let (x, y, side) = block.exit_spot().unwrap();
         assert!(matches!(block.cells[y * BLOCK_CELLS + x], Cell::Room(_)), "seed {seed}: the door is in a room");
         let (dx, dy) = side.step();
         let behind = (x.wrapping_add_signed(dx), y.wrapping_add_signed(dy));
         assert_eq!(block.cells[behind.1 * BLOCK_CELLS + behind.0], Cell::Rock, "seed {seed}: rock behind the door");
+        assert!(!block.stone(behind), "seed {seed}: the door is on a wall, not a stone");
     }
 }
 
@@ -142,4 +158,24 @@ fn a_quiet_cell_meets_no_corridor() {
             }
         }
     }
+}
+
+#[test]
+fn no_way_cuts_a_caves_stones_which_stand_inside_its_room() {
+    let caverns = STYLES.into_iter().find(|style| style.key == "caverns").unwrap();
+    let mut stones = 0;
+    for seed in 0..600 {
+        let block = BlockLayout::sound(seed, ends(seed), &caverns, seed % 3 == 0);
+        for (number, room) in block.rooms.iter().enumerate() {
+            for &(x, y) in &room.stones {
+                stones += 1;
+                assert_eq!(block.cells[y * BLOCK_CELLS + x], Cell::Rock, "seed {seed}: a stone is rock");
+                let own = Cell::Room(u16::try_from(number).unwrap());
+                for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)] {
+                    assert_eq!(block.cells[ny * BLOCK_CELLS + nx], own, "seed {seed}: its room all round it");
+                }
+            }
+        }
+    }
+    assert!(stones > 100, "{stones} stones in 600 blocks of caverns");
 }

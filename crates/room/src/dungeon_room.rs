@@ -1,8 +1,8 @@
 //! A patrol's dungeon as a room: the Forge's floor in the dungeon's own frame (x east, y south from its north-west
 //! corner, its floor at 0 m), one spawn at the way in, and a navmesh over the whole dungeon kept to the floor joined to
 //! the way in. Its garrison is the Grey Tithe's dungeon garrison standing where the Forge puts foes: the Reeve, a
-//! Miniboss, alone in the end room, and a band in each other room past the way in's, each room's on its quiet cells
-//! nearest its middle. Beside the Reeve's post stands the cache, shut while the Reeve stands; when the Reeve falls it
+//! Miniboss, alone in the end room, and a band in each other room past the way in's, each room's on its free cells
+//! nearest its middle, its quiet cells first, round its props. Beside the Reeve's post stands the cache, shut while the Reeve stands; when the Reeve falls it
 //! opens and every player then in the room finds a Vestige before it, theirs alone.
 
 use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
@@ -20,9 +20,6 @@ const CACHE_FROM_POST_M: f64 = 1.6;
 const CACHE_CLEAR_M: f64 = 0.5;
 /// How far before the cache a Vestige lies (m).
 const VESTIGE_BEFORE_M: f64 = 0.8;
-/// A band's foes: one for each this many of its room's cells, rounded, and at least and at most so many.
-const CELLS_A_FOE: usize = 10;
-const BAND: (usize, usize) = (2, dungeon::POSTS_A_ROOM);
 
 /// A dungeon's cache: where it stands (x, y, z), the way it faces, the post of the Reeve it lies by, and whether it
 /// stands open.
@@ -63,9 +60,9 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
     }
 }
 
-/// A room's band size: one foe for each CELLS_A_FOE of its cells, rounded, within BAND.
+/// A room's band size: as many foes as the cells its props leave free for them.
 fn band_size(cells: usize) -> usize {
-    ((cells + CELLS_A_FOE / 2) / CELLS_A_FOE).clamp(BAND.0, BAND.1)
+    dungeon::posts_for(cells)
 }
 
 /// The rooms that stand a band, by walk from the way in: every room past the way in's but the end; when their bands
@@ -141,7 +138,7 @@ impl Room {
         self.cache = self.cache_by(reeve);
     }
 
-    /// Where `count` foes stand in a room: its cells nearest its middle, each on the navmesh.
+    /// Where `count` foes stand in a room: its free cells nearest its middle, each on the navmesh.
     fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
         dungeon
             .nearest_middle(room, count)
