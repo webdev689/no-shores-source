@@ -70,10 +70,10 @@ takes them straight to Overlook's social space. While the story plays the menu (
 | `battle` | The sea's own fight against the three, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage", and how many ships are left until every one is beaten, sunk or struck | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where the fight left them, struck ones afloat, sinking ones settling on; the crew talk until the lookout cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side; the crew brace; the impact; black | shown |
-| `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights and back | shown |
-| `wreck` | Fought on foot through the wreck; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won | played |
-| `overboard` | Out and back in on the body thrown over the rail, Thule and his crew crying out and dancing | shown |
-| `deep` | Sinking past the fallen crew, the fire's light through the surface; the eyes; a flash; a voice; black | shown |
+| `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
+| `wreck` | Fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
+| `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and dancing on the drawn wreck | shown |
+| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
 **The shore.** The player wakes lying on the strand, looking up at the sky while the eyes blink open. The stranger
@@ -155,25 +155,44 @@ are the story's; the wreck is the level they run.
   path, the zones, the arena and the fires. Fires are places and sizes, for the fire's drawing.
 - **The path** runs from the Brig's quarterdeck aft, where the player wakes, forward along her deck, across the fallen
   mast, up the planks onto the rammer's bow and aft along her deck to her quarterdeck. A step takes every rise on it
-  but two lips, which a jump takes.
+  but two lips, which a jump takes. Where the rammer's deck is cut for planks, the planks reach the squares the cut
+  takes, so no gap is left a body's centre could drop through.
 - **Zones.** Six along the path, each an area with a checkpoint: entered, its checkpoint is where the next respawn
   stands the player. Each but the arena holds a wave of Grey Tithe deck crew and pirates, Minor and Major, placed
   facing each other so they are already fighting when the player comes: a zone's wave stands as the player reaches
   the zone before it. At most 6 of the wreck's foes are alive at once; the rest wait their turn.
+- **Heaps across the way.** Each zone but the arena has a heap of debris across the way on from it, standing from the
+  start, more than a jump over the way under it. It is cleared once its zone's wave has stood whole and every foe of
+  it has fallen; the room and the page's movement take it from the course together. A player who climbs over a heap
+  still standing, into a zone beyond it, is brought back to their last checkpoint. The last heap is the arena's: it
+  stands again behind the player when the boss fight begins.
 - **The sea.** A body that falls off the decks (lower than 1.5 m over the sea) is brought back to its last checkpoint
   after 1.2 s, as it was, never killed.
+- **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
+  itself. The HUD shows no death panel and no Respawn; the prompt says "You will rise at the last checkpoint."
 - **The arena** is the rammer's quarterdeck and the end of her waist, about 12 m by 9 m, open. When the boss fight
-  begins, a heap of debris closes its way in behind the player, every other foe is sent away, and Captain Brannoc
-  Thule stands on the quarterdeck facing the player, three levels over them: their blows land at 0.47 of their
-  worth. A player who climbs out over the heap is brought back in.
+  begins, its heap closes the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands
+  on the quarterdeck facing the player, three levels over them: their blows land at 0.47 of their worth. A player who
+  climbs out into the waist is brought back in; anywhere on the quarterdeck's deck, rails and all, is in.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
-  his last phase, so it stays one on one.
+  his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.
+- **The cries.** In the wake's flight the first staged pair the camera holds on the view for 2.4 s cries "For the
+  Tithe!" and "Cut them down!"; in the fight the first Grey Tithe foe on the view cries "Survivor! Get that one!",
+  once. Thule cries when the player's blows land on him and when his land on them, at most once in 9 s each.
 - **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the page's own on the
-  layout's blocks over open sea, the fight's marks drawn by the view on foot, both ships drawn from the Brig's mesh
-  with their canvas struck, and the blocks that show in the ships' own timber. A cutscene holds it still. It tells the
-  story the zone reached, whether the arena is entered, Thule's health and phase, how the fight ended, and the points
-  over every head for barks and emotes. Under `npm run dev`, `?prologue=wake` or `?prologue=wreck` starts there.
+  layout's blocks over open sea, the fight's marks drawn by the view on foot. It tells the story whether the arena is
+  entered, Thule's health, how the fight ended, the points over every head for barks and emotes (by crew), and the
+  shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
+  let go as the wreck's fight ends. The hints are foot's, without the menu: the story has none.
+- **Drawn** by `WreckScenery`, made once from the Brig's mesh the story loaded and shown by the wake, the fight, the
+  throw overboard and, from below, the deep: both ships from the Brig's mesh with their canvas struck, the blocks that
+  show in the ships' own timber, and each heap while it stands. The fires burn in all four. It lets go of its GPU
+  buffers once the deep ends.
+- **Each beat sets its world** at its start (the wreck's storm, fires and sounds, no lightning; the deep's water), so
+  under `npm run dev`, `?prologue=wake`, `?prologue=wreck`, `?prologue=overboard` or `?prologue=deep` plays as the
+  story does. Leaving the fight hands the HUD back clean (no death, hints, prompt, nameplate or fight's display) and
+  frees the pointer.
 
 ## Limits
 
@@ -185,4 +204,4 @@ are the story's; the wreck is the level they run.
 - The decks are boxes half a metre across: a deck's camber and the slope of her sheer are steps of 5 cm, a mast or a
   gun inside her deck is walked through, and her hatches are walked over.
 - Every wall is climbable ([[Movement]]): the rails keep no one in who climbs them, and the sea brings them back.
-- The heap that closes the arena is not in the foes' navmesh; it closes a way no foe is left to walk.
+- The heaps are not in the foes' navmesh: a foe that runs at one stops against it until it clears.

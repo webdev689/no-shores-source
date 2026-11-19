@@ -220,7 +220,8 @@ impl Room {
         }
     }
 
-    /// Sends every foe away at once, with the blows they struck still waiting.
+    /// Sends every foe away at once, and with them every blow a foe struck that has not landed: only players' blows
+    /// still wait.
     pub(crate) fn send_foes_away(&mut self) {
         let gone: Vec<FighterId> = self.foes.keys().copied().collect();
         for foe in gone {

@@ -21,7 +21,8 @@ export interface Beat {
   /** What to show this frame, or null while it waits behind the screen's black. A beat whose work has failed (a load,
    *  a room, a fight's rules) throws it here, and the director goes on to the next beat. */
   frame(tick: Tick): StoryFrame | null;
-  /** Ends a skippable beat at once, its moments run. */
+  /** Ends a skippable beat at once, its moments run. The director frames it once more after, so the picture shows
+   *  where the skip left it: that frame must start nothing new. */
   skip?(): void;
   readonly done: boolean;
   /** A key down or up; true when the beat takes it. */

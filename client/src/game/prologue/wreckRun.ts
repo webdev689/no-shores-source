@@ -21,19 +21,17 @@ import { type CombatRules, startCombatRules } from '../../rules/combatRules.ts';
 import type { FighterView } from '../../rules/fighters.ts';
 import type { Block, MovementRules } from '../../rules/movementRules.ts';
 import { rosterOf } from '../../rules/roster.ts';
-import { loadShip } from '../../ships/shipMesh.ts';
-import { shotOfOrbit } from '../camera.ts';
+import type { ShipMesh } from '../../ships/shipMesh.ts';
+import { type Shot, shotOfOrbit } from '../camera.ts';
 import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
-import { HINTS, footHints } from '../hints.ts';
-import { standingOf } from '../hudLaw.ts';
-import type { Drawer } from '../scene.ts';
+import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
-import { courseOf, layoutAt, type WreckLayout } from './wreckLayout.ts';
-import { type Outcome, WreckProgress } from './wreckProgress.ts';
-import { WreckScenery } from './wreckScenery.ts';
+import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
+import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
+import type { WreckScenery } from './wreckScenery.ts';
 
 /** What the wreck needs of the game: the movement rules, the walker, the forge's cards, the room's compiled module,
- *  the ground as the scene draws it, and the GPU to draw the ships and what shows on them. */
+ *  the ground as the scene draws it, the GPU, and the Brig's mesh the story loaded, to draw both ships with. */
 export interface WreckContext {
   readonly movement: MovementRules;
   readonly walker: Walker;
@@ -41,6 +39,7 @@ export interface WreckContext {
   readonly roomModule: Promise<WebAssembly.Module>;
   readonly groundAt: (x: number, y: number) => number | null;
   readonly gpu: Gpu;
+  readonly hull: ShipMesh;
 }
 
 /** Thule's place in the roster, the rank he comes in, and how many levels over the player he fights. */
@@ -49,16 +48,19 @@ const THULE = { type: 12, rank: 5, over: 3 } as const;
 const OVER_THE_HEAD_M = 2.1;
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 const CAMERA_CLEARANCE_M = 0.3;
+/** The menu's key as foot's hints list it: the story has no menu, so its hints leave it out. */
+const MENU_HINT = ' · M menu';
 
 /**
  * The wreck played, as `Foot` plays a node: the player on both ships' decks in a room of the page's own on the
  * layout's blocks, fighting through its zones to the arena, where Thule cannot be beaten. Its progress (checkpoints,
- * waves, the sea, the fight's end) is `WreckProgress`'s; this asks the room for it and draws it.
+ * waves, the heaps across the way, the sea, the fight's end) is `WreckProgress`'s; this asks the room for it, and the
+ * scenery stands or clears each heap as the room does.
  */
 export class WreckRun {
   private readonly context: WreckContext;
   private readonly layout: WreckLayout;
-  private readonly room: LocalRoom;
+  private room: LocalRoom | null;
   /** The fight, the blocks its blood lies on and the place it stands for, as the view on foot reads a node's: the
    *  wreck's blood is measured from its origin. A room in the page is never joined again. */
   readonly fight: Fighting;
@@ -70,7 +72,9 @@ export class WreckRun {
   private readonly combat: CombatRules;
   private readonly player: PlayerFight;
   private readonly steps: MovementRules;
-  private readonly course: Block[];
+  /** The blocks of both decks and what shows on them; the heaps standing are added to them. */
+  private readonly base: readonly Block[];
+  private course: Block[];
   readonly boxes: readonly Block[];
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
@@ -83,6 +87,8 @@ export class WreckRun {
   private thule = 0;
   /** The foes stood that no snapshot has shown yet: counted alive, so a wave never outruns the room's word. */
   private readonly unseen = new Set<number>();
+  /** Every foe the run has stood, by its number in the room: its wave's foe and zone. */
+  private readonly stood = new Map<number, Standing>();
 
   private constructor(
     context: WreckContext,
@@ -95,28 +101,31 @@ export class WreckRun {
     [this.room, this.fight, this.combat] = [parts.room, parts.fight, parts.combat];
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);
     this.steps = parts.fight.steps(context.movement);
-    this.course = courseOf(layout);
+    this.base = courseOf(layout);
+    this.course = [...this.base];
     this.foes = new FoeFigures(rosterOf(parts.module));
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     [this.scenery, this.level] = [drawn.scenery, drawn.level];
     this.progress = new WreckProgress(layout);
-    this.boxes = this.course;
+    this.boxes = this.base;
     this.node = { spawns: [drawn.origin], centre: drawn.origin };
+    for (const zone of this.scenery.standing) this.standGate(zone);
   }
 
-  /** Opens the wreck at `origin` (x, y) in the world: its room in the page on the layout's blocks, the player waking
-   *  where it says, both ships and what shows on them made to draw. */
-  static async open(context: WreckContext, local: WreckLayout, origin: readonly [number, number]): Promise<WreckRun> {
+  /** Opens the wreck laid in the world (`layout`, its blocks measured from `origin`): its room in the page on the
+   *  layout's blocks, every heap standing across the way, the player waking where it says, drawn by `scenery`. */
+  static async open(
+    context: WreckContext,
+    layout: WreckLayout,
+    origin: readonly [number, number],
+    scenery: WreckScenery,
+  ): Promise<WreckRun> {
     const { movement, walker } = context;
-    const [module, hull] = await Promise.all([context.roomModule, loadShip('brig')]);
-    const layout = layoutAt(local, origin);
+    const module = await context.roomModule;
     const course = courseOf(layout);
     const combat = startCombatRules(module);
     // The open sea under the decks: no land's window, only the blocks.
-    for (const rules of [movement, combat]) {
-      rules.setCourse(course);
-      rules.setGround(null);
-    }
+    for (const rules of [movement, combat]) rules.setGround(null);
     const [x, y] = layout.wake.at;
     const { facing } = layout.wake;
     walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
@@ -130,17 +139,39 @@ export class WreckRun {
       (gear) => (level.value = gear.level),
     );
     fight = new Fighting(combat, room);
-    const scenery = new WreckScenery(context.gpu, hull, layout, origin);
     return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, level, origin });
   }
 
-  /** The zone the player has reached; -1 before the first. */
-  get zone(): number {
-    return this.progress.zone;
+  /** The room, while the run is played. */
+  private get openRoom(): LocalRoom {
+    if (!this.room) throw new Error('the wreck has been left');
+    return this.room;
   }
 
-  /** Whether the player has reached a zone. */
-  readonly reached = (zone: number): boolean => this.progress.reached(zone);
+  /** The course as it stands now, laid on the room, the page's own movement and the fight's rules alike. */
+  private relay(): void {
+    const gates = [...this.scenery.standing].flatMap((zone) => this.layout.zones[zone]?.gate ?? []);
+    this.course = [...this.base, ...gates];
+    for (const rules of [this.context.movement, this.combat]) rules.setCourse(this.course);
+  }
+
+  /** A zone's heap stands across the way on from it. The foes' routes were laid without it: a foe that runs at it
+   *  stops there until it clears. */
+  private standGate(zone: number): void {
+    const gate = this.layout.zones[zone]?.gate;
+    if (!gate) return;
+    this.scenery.standing.add(zone);
+    this.openRoom.standBlock(gate);
+    this.relay();
+  }
+
+  /** A zone's heap is cleared: its wave has fallen. */
+  private openGate(zone: number): void {
+    const gate = this.layout.zones[zone]?.gate;
+    if (!gate || !this.scenery.standing.delete(zone)) return;
+    this.openRoom.takeBlock(gate);
+    this.relay();
+  }
 
   /** Whether the player has entered the arena. */
   get arena(): boolean {
@@ -152,51 +183,76 @@ export class WreckRun {
     return this.progress.outcome;
   }
 
-  /** The boss fight begins: the way into the arena closes behind the player, every other foe is sent away, and Thule
-   *  stands where the layout puts him, facing the player, three levels over them. */
+  /** The boss fight begins: the heap closes the way into the arena behind the player, every other foe is sent away,
+   *  and Thule stands where the layout puts him, facing the player, three levels over them. */
   beginBoss(): void {
     if (this.progress.fighting) return;
-    const { gate } = this.layout.arena;
-    this.room.standBlock(gate);
-    for (const rules of [this.context.movement, this.combat]) rules.setCourse([...this.course, gate]);
-    this.course.push(gate);
-    this.scenery.gateStands = true;
-    this.room.clearFoes();
+    this.standGate(this.layout.arena.zone - 1);
+    const room = this.openRoom;
+    room.clearFoes();
     this.unseen.clear();
     this.progress.beginBoss();
     const [x, y] = this.layout.arena.thule;
     const { body } = this.context.walker.player;
     const facing = Math.atan2(body.x - x, -(body.y - y));
-    this.thule = this.room.standFoe(THULE.type, THULE.rank, x, y, facing, this.level.value + THULE.over);
+    this.thule = room.standFoe(THULE.type, THULE.rank, x, y, facing, this.level.value + THULE.over);
   }
 
-  /** Thule's health and phase, once he stands. */
-  get boss(): { readonly health: number; readonly healthMax: number; readonly phase: number } | null {
+  /** Thule's health, once he stands. */
+  get boss(): { readonly health: number; readonly healthMax: number } | null {
     const kept = this.fight.foes.get(this.thule);
-    return kept ? { health: kept.view.health, healthMax: kept.view.healthMax, phase: kept.phase } : null;
+    return kept ? { health: kept.view.health, healthMax: kept.view.healthMax } : null;
   }
 
-  /** World points over heads, for barks and emotes: Thule's as 'thule', every other foe's as 'foe-<number>'. */
+  /** World points over heads, for barks and emotes: Thule's as 'thule', each wave's foe's by its crew and number,
+   *  'tithe-<number>' or 'pirate-<number>'. */
   heads(): ReadonlyMap<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
-    for (const [id, placed] of this.foes.placed)
-      heads.set(id === this.thule ? 'thule' : `foe-${id}`, [placed.x, placed.y, placed.z + OVER_THE_HEAD_M]);
+    for (const [id, placed] of this.foes.placed) {
+      const foe = this.stood.get(id);
+      const name = id === this.thule ? 'thule' : `${foe && titheCrew(foe.type) ? 'tithe' : 'pirate'}-${id}`;
+      heads.set(name, [placed.x, placed.y, placed.z + OVER_THE_HEAD_M]);
+    }
     return heads;
   }
 
-  /** The level's progress this frame: checkpoints kept, waves stood, a fall into the sea brought back. */
-  private advance(seconds: number): void {
-    const { body } = this.context.walker.player;
+  /** The foes alive now by the zone whose wave they came in: those a snapshot shows standing, and those stood that
+   *  none has shown yet. */
+  private aliveByZone(): number[] {
+    const alive: number[] = this.layout.zones.map(() => 0);
+    const count = (id: number) => {
+      const foe = this.stood.get(id);
+      if (foe) alive[foe.zone] = (alive[foe.zone] ?? 0) + 1;
+    };
     for (const id of this.fight.foes.keys()) this.unseen.delete(id);
-    const seen = [...this.fight.foes.values()].filter((kept) => kept.view.health > 0).length;
-    const alive = seen + this.unseen.size;
+    for (const kept of this.fight.foes.values()) if (kept.view.health > 0) count(kept.id);
+    for (const id of this.unseen) count(id);
+    return alive;
+  }
+
+  /** The level's progress this frame: heaps cleared, checkpoints kept, waves stood, a fall into the sea brought
+   *  back. */
+  private advance(seconds: number): void {
+    const room = this.openRoom;
+    const { body } = this.context.walker.player;
     const dead = this.fight.own?.action.kind === 'dead';
+    const alive = this.aliveByZone();
     const asks = this.progress.frame({ x: body.x, y: body.y, z: body.z, dead, alive, thule: this.boss }, seconds);
-    if (asks.checkpoint) this.room.setSpawn(...asks.checkpoint);
-    if (asks.bringBack) this.room.putPlayer(...asks.bringBack);
-    for (const foe of asks.stand)
-      this.unseen.add(this.room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value));
-    this.unseen.delete(0);
+    for (const zone of asks.open) this.openGate(zone);
+    if (asks.checkpoint) room.setSpawn(...asks.checkpoint);
+    if (asks.bringBack) room.putPlayer(...asks.bringBack);
+    for (const foe of asks.stand) {
+      const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value);
+      if (id === 0) continue;
+      this.unseen.add(id);
+      this.stood.set(id, foe);
+    }
+  }
+
+  /** The shot the run's camera takes of the player standing still: where a cutscene hands play over from. */
+  restingShot(): Shot {
+    const { walker, movement, groundAt } = this.context;
+    return shotOfOrbit(playerCamera(walker.player, movement, this.course), LENS, groundAt, CAMERA_CLEARANCE_M);
   }
 
   /** One frame: the player plays and fights (nothing pressed while `paused`, the fight's buttons only while
@@ -320,19 +376,16 @@ export class WreckRun {
       ammoMost: null,
       crosshair: sights ? { charge: null } : null,
     };
+    // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
+    // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    const standing = standingOf(dead ? 'dead' : 'inside', 0);
-    const hints = dead ? HINTS.dead : footHints(fight.arts?.art ?? 0);
-    return { shot, figures, standing, marks, swings, fight: fought, hints };
+    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).map((line) => line.replace(MENU_HINT, ''));
+    return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
   }
 
-  /** The drawer of both ships and what shows on them, drawn with the figures. */
-  get drawer(): Drawer {
-    return this.scenery.drawer;
-  }
-
-  /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does. */
+  /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, and the room let go of. */
   leave(): void {
     showAnimaEdge(QUIET);
+    this.room = null;
   }
 }

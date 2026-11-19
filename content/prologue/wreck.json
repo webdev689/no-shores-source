@@ -14,10 +14,10 @@
     { "kind": "planks", "name": "a plank up from the brig", "box": [4.5, 2.6, 5.5, 4.0, 3.1] },
     { "kind": "planks", "name": "a plank up from the brig", "box": [3.5, 2.6, 4.5, 4.0, 3.5] },
     { "kind": "planks", "name": "a plank up from the brig", "box": [2.5, 2.6, 3.5, 4.0, 3.9] },
-    { "kind": "planks", "name": "a plank onto the rammer's bow", "box": [-0.2, 2.6, 2.5, 4.0, 4.3] },
-    { "kind": "planks", "name": "planks up to the quarterdeck", "box": [-3.2, 31.5, 3.2, 32.5, 3.5] },
-    { "kind": "planks", "name": "planks up to the quarterdeck", "box": [-3.2, 32.5, 3.2, 33.5, 3.9] },
-    { "kind": "planks", "name": "planks up to the quarterdeck", "box": [-3.2, 33.5, 3.2, 34.6, 4.25] },
+    { "kind": "planks", "name": "a plank onto the rammer's bow", "box": [-0.2, 2.18, 2.74, 4.8, 4.3] },
+    { "kind": "planks", "name": "planks up to the quarterdeck", "box": [-3.2, 31.44, 3.39, 32.5, 3.5] },
+    { "kind": "planks", "name": "planks up to the quarterdeck", "box": [-3.2, 32.5, 3.39, 33.5, 3.9] },
+    { "kind": "planks", "name": "planks up to the quarterdeck", "box": [-3.2, 33.5, 3.39, 34.7, 4.25] },
     { "kind": "crate", "name": "a crate", "box": [-11.2, 2.4, -10.2, 3.4, 4.2] },
     { "kind": "crate", "name": "a crate", "box": [-7.6, 2.6, -6.6, 3.6, 3.3] },
     { "kind": "crate", "name": "a crate", "box": [-6.4, 2.9, -5.6, 3.7, 3.1] },
@@ -32,37 +32,42 @@
   ],
   "zones": [
     { "name": "the brig's quarterdeck", "area": [-15.5, -5, -8.5, 5], "checkpoint": [-12.5, 0],
+      "gate": [-8.45, -4.8, -7.95, 4.9, 5.8],
       "wave": [
-        { "type": 7, "rank": 1, "at": [-9.6, -3.0], "facing": 0 },
-        { "type": 13, "rank": 1, "at": [-9.6, -1.6], "facing": 180 }
+        { "type": 7, "rank": 1, "at": [-9.6, -3.0], "facing": 180 },
+        { "type": 13, "rank": 1, "at": [-9.6, -1.6], "facing": 0 }
       ] },
     { "name": "the brig's waist", "area": [-8.5, -5, -3, 5], "checkpoint": [-6.5, -1.8],
+      "gate": [-3.3, -2.6, -2.8, -1.0, 4.7],
       "wave": [
         { "type": 8, "rank": 2, "at": [-5.2, 1.2], "facing": 90 },
         { "type": 14, "rank": 1, "at": [-4.0, 1.2], "facing": 270 },
         { "type": 9, "rank": 1, "at": [-7.2, 3.6], "facing": 90 }
       ] },
     { "name": "the brig's fore deck", "area": [3, -5, 10, 5], "checkpoint": [5.0, -1.8],
+      "gate": [2.55, 2.0, 3.05, 5.3, 6.5],
       "wave": [
         { "type": 15, "rank": 1, "at": [6.4, 0.6], "facing": 0 },
         { "type": 7, "rank": 1, "at": [6.4, -0.6], "facing": 180 },
         { "type": 16, "rank": 1, "at": [8.0, 2.2], "facing": 270 }
       ] },
     { "name": "the rammer's bow", "area": [-2.5, 0, 2.5, 10], "checkpoint": [0, 5.0],
+      "gate": [-3.6, 10.1, 3.6, 10.6, 5.4],
       "wave": [
         { "type": 11, "rank": 1, "at": [-0.6, 8.6], "facing": 90 },
         { "type": 17, "rank": 1, "at": [0.8, 8.6], "facing": 270 }
       ] },
-    { "name": "the rammer's waist", "area": [-4, 10, 4, 29.5], "checkpoint": [1.8, 11.5],
+    { "name": "the rammer's waist", "area": [-6.5, 10, 6.5, 29.5], "checkpoint": [1.8, 11.5],
+      "gate": [-4.6, 29.6, 4.6, 30.2, 5.4],
       "wave": [
         { "type": 10, "rank": 1, "at": [-1.6, 16.0], "facing": 90 },
         { "type": 14, "rank": 2, "at": [-0.2, 16.0], "facing": 270 },
         { "type": 8, "rank": 1, "at": [-1.8, 24.5], "facing": 90 },
         { "type": 13, "rank": 1, "at": [-0.4, 24.5], "facing": 270 }
       ] },
-    { "name": "the rammer's quarterdeck", "area": [-4.5, 30.6, 4.5, 42], "checkpoint": [0, 31], "wave": [] }
+    { "name": "the rammer's quarterdeck", "area": [-4.5, 30.6, 4.5, 42], "checkpoint": [0, 31], "gate": null, "wave": [] }
   ],
-  "arena": { "zone": 5, "gate": [-4.6, 29.6, 4.6, 30.2, 5.4], "thule": [0, 39] },
+  "arena": { "zone": 5, "thule": [0, 39] },
   "fires": [
     { "at": [-1.0, -3.6, 2.3], "size": 2.0 },
     { "at": [2.2, -0.4, 3.0], "size": 1.6 },

@@ -69,3 +69,18 @@ test('a block stood on the course closes a way: the player put on it stands on i
   room.pump(ONE_TICK);
   assert.equal(feet(last(), room.player)?.[2], gate.top);
 });
+
+test("a zone's heap stood across the way stops the player, and taken once its wave falls lets them through", () => {
+  const { room, last } = wreckRoom();
+  const gate = layout.zones[0]?.gate;
+  assert.ok(gate);
+  const [x, y] = [(gate.minX + gate.maxX) / 2, (gate.minY + gate.maxY) / 2];
+  room.standBlock(gate);
+  room.putPlayer(x, y);
+  room.pump(ONE_TICK);
+  assert.equal(feet(last(), room.player)?.[2], gate.top, 'the heap stands');
+  room.takeBlock(gate);
+  room.putPlayer(x, y);
+  room.pump(ONE_TICK);
+  assert.equal(feet(last(), room.player)?.[2], topAt(course, x, y), 'and is gone');
+});

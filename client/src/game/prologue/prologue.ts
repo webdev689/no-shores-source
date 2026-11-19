@@ -24,6 +24,7 @@ import { Wake } from './wake.ts';
 import { WreckFight } from './wreckFight.ts';
 import { layoutAt, readWreck, type WreckLayout } from './wreckLayout.ts';
 import { type WreckContext, WreckRun } from './wreckRun.ts';
+import { WreckScenery } from './wreckScenery.ts';
 
 /** How the story ends: into the game at Overlook, the story played or not. */
 export type StoryEnd = 'played' | 'begun';
@@ -36,6 +37,7 @@ interface Carried {
   wrecks: Sailed[] | null;
   meeting: { readonly x: number; readonly y: number } | null;
   layout: WreckLayout | null;
+  scenery: WreckScenery | null;
   run: Promise<WreckRun> | null;
 }
 
@@ -55,7 +57,15 @@ export class Prologue {
   /** Whether a touch is held on the screen, which skips a cutscene as Space held does. */
   private touching = false;
   private beat: Beat;
-  private carried: Carried = { shot: null, inbound: [], wrecks: null, meeting: null, layout: null, run: null };
+  private carried: Carried = {
+    shot: null,
+    inbound: [],
+    wrecks: null,
+    meeting: null,
+    layout: null,
+    scenery: null,
+    run: null,
+  };
   private clock = 0;
   /** Set once the story hands the player to the game. */
   end: StoryEnd | null = null;
@@ -89,15 +99,13 @@ export class Prologue {
       case 'ram':
         return new Ram(story);
       case 'wake':
-        return new Wake(story, this.wreck());
+        return new Wake(story, this.wreck(), this.scenery(), this.openRun());
       case 'wreck':
-        return new WreckFight(story, this.wreck(), this.openRun(), this.nameplate);
+        return new WreckFight(story, this.wreck(), this.scenery(), this.openRun(), this.nameplate);
       case 'overboard':
-        return new Overboard(story, this.wreck());
-      case 'deep': {
-        const [x, y] = this.wreck().arena.thule;
-        return new Deep(story, [x + 10, y]);
-      }
+        return new Overboard(story, this.wreck(), this.scenery());
+      case 'deep':
+        return new Deep(story, this.wreck(), this.scenery());
       case 'shore':
         return new Shore(story);
     }
@@ -115,11 +123,20 @@ export class Prologue {
     return this.carried.layout;
   }
 
-  /** The wreck's run, opened once behind the wake's black. */
+  /** The wreck as drawn, made once for every beat that shows it, from the wake to the deep. */
+  private scenery(): WreckScenery {
+    const { gpu, hull } = this.wreckContext;
+    this.carried.scenery ??= new WreckScenery(gpu, hull, this.wreck(), this.meeting());
+    return this.carried.scenery;
+  }
+
+  /** The wreck's run, opened once behind the wake's black. A run that fails to open is the wreck's beat to tell. */
   private openRun(): Promise<WreckRun> {
-    const run = this.carried.run ?? WreckRun.open(this.wreckContext, readWreck(), this.meeting());
-    this.carried.run = run;
-    return run;
+    if (!this.carried.run) {
+      this.carried.run = WreckRun.open(this.wreckContext, this.wreck(), this.meeting(), this.scenery());
+      void this.carried.run.catch(() => undefined);
+    }
+    return this.carried.run;
   }
 
   /** What the beat that ended leaves, and the beat after it; a played story ends at the title. */
@@ -134,9 +151,13 @@ export class Prologue {
       this.end = 'begun';
       return;
     }
-    if (ended instanceof Overboard) void this.carried.run?.then((run) => run.leave());
-    if (ended instanceof Deep)
+    // The room is let go once the wreck's fight is over, and the wreck's drawing once the deep has shown it last.
+    if (ended instanceof WreckFight) this.carried.run = null;
+    if (ended instanceof Deep) {
+      this.carried.scenery?.destroy();
+      this.carried.scenery = null;
       this.islands.home().catch((error: unknown) => console.error('Saltmere would not open:', error));
+    }
     if (ended instanceof Shore) {
       keepProloguePlayed(localStorage);
       this.end = 'played';

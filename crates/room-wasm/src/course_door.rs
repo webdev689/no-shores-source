@@ -1,6 +1,6 @@
 //! A course's room as a page playing alone asks of it, and a server never does: a foe of the roster stood where the
-//! page puts it, every foe sent away, a checkpoint, the player stood somewhere at once, and a block stood after the room opened (the room
-//! crate's `course.rs`). Each answers nothing but whether it was done.
+//! page puts it, every foe sent away, a checkpoint, the player stood somewhere at once, and a block stood or taken
+//! after the room opened (the room crate's `course.rs`). Each answers nothing but whether it was done.
 
 use super::{Opened, with_open};
 use movement::Block;
@@ -45,6 +45,21 @@ pub fn stand_block(block: Block) -> bool {
     stood
 }
 
+/// Takes a block from the course, in the room and in this instance's own course for prediction; false when the room
+/// holds no such block or none is open on land.
+pub fn take_block(block: Block) -> bool {
+    let taken = on_land(|room| room.take_block(block)).unwrap_or(false);
+    if taken {
+        super::fighter_door::COURSE.with(|course| {
+            let mut course = course.borrow_mut();
+            if let Some(found) = course.iter().position(|stood| *stood == block) {
+                course.remove(found);
+            }
+        });
+    }
+    taken
+}
+
 /// Stands a foe (`stand_foe`): its type, rank and level as the roster numbers them, where, and the way it faces in
 /// radians clockwise from north.
 #[unsafe(no_mangle)]
@@ -75,4 +90,10 @@ pub extern "C" fn room_put_player(player: u32, x: f64, y: f64) -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_stand_block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> u32 {
     u32::from(stand_block(Block { min_x, min_y, max_x, max_y, top }))
+}
+
+/// Takes a block (`take_block`) by its west, north, east and south edges and its top; 1 if taken, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_take_block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> u32 {
+    u32::from(take_block(Block { min_x, min_y, max_x, max_y, top }))
 }

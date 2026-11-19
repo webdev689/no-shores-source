@@ -1,19 +1,20 @@
-// The owner's ninth and tenth beats, played: the player fights through the wreck's foes on foot, as on any node; at
-// its end the camera drives forward to Captain Brannoc Thule, his nameplate struck in as he cries out, and the arena
-// closes on a fight one on one that cannot be won. It ends as the run says: the player felled, or overpowered.
+// The owner's ninth and tenth beats, played: the player fights through the wreck's foes on foot, as on any node, each
+// heap across the way clearing as the wave holding it falls; at its end the camera drives forward to Captain Brannoc
+// Thule, his nameplate struck in as he cries out, and the arena closes on a fight one on one that cannot be won. It
+// ends as the run says, the player felled or overpowered, and the screen fades out on it.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
-import type { Shot } from '../camera.ts';
-import { footHints } from '../hints.ts';
+import { onScreen, type Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
 import { ACTOR_IDS, type Actor } from './actors.ts';
 import { storyCue } from './music.ts';
 import type { Nameplate } from './nameplate.ts';
-import type { StoryFrame } from './stage.ts';
+import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
+import { setAblaze, type WreckScenery } from './wreckScenery.ts';
 
 /** Captain Brannoc Thule's type in the roster, and his faction's. */
 const THULE = 12;
@@ -23,6 +24,8 @@ const PUSH_S = 0.9;
 const BACK_S = 5.6;
 /** The fewest seconds between two of Thule's barks of one kind. */
 const BARK_GAP_S = 9;
+/** How long the screen takes to fade out on the fight's end, seconds. */
+const END_S = 0.6;
 
 export class WreckFight implements Beat {
   readonly name = 'wreck';
@@ -30,29 +33,42 @@ export class WreckFight implements Beat {
   private readonly story: Story;
   private readonly layout: WreckLayout;
   private readonly nameplate: Nameplate;
+  private readonly scenery: WreckScenery;
   private run: WreckRun | null = null;
+  /** Why the run could not open, thrown from the next frame so the story goes on past the wreck. */
+  private failure: unknown = null;
   /** The boss's coming, from its first frame: its cues and the shot it began from. */
   private coming: { since: number; cues: Cues; from: Shot } | null = null;
   private fought = false;
   private barked = { struck: -Infinity, strikes: -Infinity };
   private clock = 0;
   private lastHealth: { boss: number; you: number } | null = null;
+  /** Whether a Tithe hand has cried out at the player, and whether the player lay dead last frame. */
+  private spotted = false;
+  private wasDead = false;
+  /** Seconds since the fight ended, while the screen fades out on it. */
+  private ending: number | null = null;
   done = false;
 
-  constructor(story: Story, layout: WreckLayout, run: Promise<WreckRun>, nameplate: Nameplate) {
+  constructor(story: Story, layout: WreckLayout, scenery: WreckScenery, run: Promise<WreckRun>, nameplate: Nameplate) {
     this.story = story;
     this.layout = layout;
+    this.scenery = scenery;
     this.nameplate = nameplate;
-    void run.then((opened) => {
-      this.run = opened;
-      story.stage.parts.objective.show('Fight', 'Fight your way through the wreck.', 7);
-      window.setTimeout(() => void story.stage.play('wreck', true), 1500);
-    });
+    setAblaze(story, layout);
+    story.stage.parts.ambience.heartbeat(false);
+    void run.then(
+      (opened) => {
+        this.run = opened;
+        story.stage.parts.objective.show('Fight', 'Fight your way through the wreck.', 7);
+      },
+      (error: unknown) => (this.failure = error ?? new Error('the wreck did not open')),
+    );
   }
 
   /** Whether the player plays: the pointer is theirs to lock. */
   get playing(): boolean {
-    return !!this.run && !this.coming;
+    return !!this.run && !this.coming && this.ending === null;
   }
 
   private thuleAt(): Point3 {
@@ -123,6 +139,7 @@ export class WreckFight implements Beat {
   }
 
   frame(tick: Tick): StoryFrame | null {
+    if (this.failure) throw this.failure;
     const run = this.run;
     if (!run) return null;
     const { story } = this;
@@ -134,23 +151,25 @@ export class WreckFight implements Beat {
       coming.since += tick.seconds;
       coming.cues.step(coming.since);
     }
+    const held = !!coming || this.ending !== null;
     const aspect = tick.size.width / Math.max(1, tick.size.height);
     const shown = run.frame(tick.controls, tick.seconds, tick.clock, {
-      paused: !!coming,
-      hands: tick.controls.locked && !coming,
+      paused: held,
+      hands: tick.controls.locked && !held,
       aspect,
-      held: !!coming,
+      held,
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
     this.barks(shown.fight.own?.health ?? 0);
-    if (run.outcome) this.done = true;
+    this.fallen(shown.fight.own?.action.kind === 'dead');
+    this.end(tick.seconds, !!run.outcome);
     const { footView, hud, scene } = stage.parts;
     const fight = footView.frame(run, shown, tick.seconds, {
       size: tick.size,
       viewport: tick.viewport,
       groundAt: (x, y) => scene.groundAt(x, y),
     });
-    hud.hints(coming ? [] : footHints(0));
+    hud.hints(held ? [] : shown.hints);
     hud.reach(shown.standing);
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
     const hands =
@@ -158,15 +177,52 @@ export class WreckFight implements Beat {
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) =>
             firstPerson.draw(encoder, view, tick.size.width, tick.size.height)
         : undefined;
+    const heads = new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]);
+    const shot = coming ? this.comingShot() : shown.shot;
+    if (!held) this.spot(shot, heads, tick.viewport);
     return {
-      shot: coming ? this.comingShot() : shown.shot,
+      shot,
       cards: shown.figures,
       actors: thule ? [thule] : [],
-      drawers: [fight.under, fight.over],
+      drawers: [this.scenery.drawer, fight.under, fight.over],
       after: hands,
-      heads: new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]),
+      heads,
       focus: [shown.shot.eye[0], shown.shot.eye[1]],
     };
+  }
+
+  /** The first Tithe hand the player sees cries out at them, once. */
+  private spot(
+    shot: Shot,
+    heads: ReadonlyMap<string, readonly [number, number, number]>,
+    view: { readonly width: number; readonly height: number },
+  ): void {
+    if (this.spotted) return;
+    for (const [name, point] of heads) {
+      if (!name.startsWith('tithe-') || !headOnView(onScreen(shot, view, point), view)) continue;
+      this.spotted = true;
+      void this.story.stage.play('survivor', true, { tithe: name });
+      return;
+    }
+  }
+
+  /** A death before the arena's end says what happens: the room raises the player at the last checkpoint. */
+  private fallen(dead: boolean): void {
+    if (dead && !this.wasDead && !this.run?.outcome)
+      this.story.stage.parts.objective.show('Fallen', 'You will rise at the last checkpoint.', 4);
+    this.wasDead = dead;
+  }
+
+  /** Once the fight has ended, the screen fades out on it, and the beat is done when it is black. */
+  private end(seconds: number, over: boolean): void {
+    if (this.ending === null) {
+      if (!over) return;
+      this.ending = 0;
+      this.story.stage.parts.screen.fade(1, END_S);
+      return;
+    }
+    this.ending += seconds;
+    if (this.ending >= END_S) this.done = true;
   }
 
   /** Thule's barks as the fight goes: when the player's blows land, and when his land on them. */
@@ -186,12 +242,18 @@ export class WreckFight implements Beat {
     }
   }
 
-  get outcome(): WreckRun['outcome'] {
-    return this.run?.outcome ?? null;
-  }
-
+  /** Hands the game back as it was before the wreck: no nameplate, prompt, hints, death or fight's display, the
+   *  letterbox's bars down, the pointer free, and the run's room let go. */
   leave(): void {
+    const { hud, footView, objective, screen } = this.story.stage.parts;
     this.nameplate.hide();
-    this.story.stage.parts.hud.hints([]);
+    hud.hints([]);
+    hud.reach({ kind: 'inside' });
+    footView.hide();
+    objective.clear();
+    screen.bars(false);
+    if (typeof document !== 'undefined' && document.pointerLockElement) document.exitPointerLock();
+    this.run?.leave();
+    this.run = null;
   }
 }

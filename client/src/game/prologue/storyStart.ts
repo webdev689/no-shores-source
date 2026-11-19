@@ -150,8 +150,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     roomModule: game.roomModule,
     groundAt: (x: number, y: number) => scene.groundAt(x, y),
     gpu,
-    footView: game.footView,
-    canvas: game.canvas,
+    hull: brigMesh,
   };
   const prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
   return { prologue, epilogue: new Epilogue(stage, game.forge), stage, look: () => story.look };

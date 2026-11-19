@@ -1,7 +1,7 @@
 //! What a page playing a course alone may ask of its own room, and a server never does: a foe of the roster stood
-//! where the page puts it, every foe sent away at once, the spawn the next respawn stands the player at, the player stood somewhere at once, and a
-//! block stood on the course after it opened. A story level is played so: its waves placed, its checkpoints kept, a
-//! fall into the sea brought back, its way into an arena closed.
+//! where the page puts it, every foe sent away at once, the spawn the next respawn stands the player at, the player
+//! stood somewhere at once, and a block stood on the course after it opened or taken from it. A story level is played
+//! so: its waves placed, its checkpoints kept, a fall into the sea brought back, its ways closed until a wave falls.
 
 use crate::{PlayerId, Room};
 use ::foes::{Rank, foe_type};
@@ -65,5 +65,12 @@ impl Room {
     /// their routes still run where it stands, so it is for a way no foe is left to walk.
     pub fn stand_block(&mut self, block: Block) {
         self.blocks.push(block);
+    }
+
+    /// Takes a block from the course at once, as a way opening: the first block equal to `block`. False when none is.
+    pub fn take_block(&mut self, block: Block) -> bool {
+        let Some(found) = self.blocks.iter().position(|stood| *stood == block) else { return false };
+        self.blocks.remove(found);
+        true
     }
 }

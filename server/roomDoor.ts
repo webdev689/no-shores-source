@@ -93,6 +93,8 @@ export interface RoomDoor {
   putPlayer(player: number, x: number, y: number): boolean;
   /** A page alone: stands a block on the course at once, as a way closing; false with no room on land. */
   standBlock(block: CourseBlock): boolean;
+  /** A page alone: takes a block from the course at once, as a way opening; false when the room holds no such block. */
+  takeBlock(block: CourseBlock): boolean;
 }
 
 interface RoomExports {
@@ -126,6 +128,7 @@ interface RoomExports {
   room_set_spawn(x: number, y: number): number;
   room_put_player(player: number, x: number, y: number): number;
   room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number): number;
+  room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number): number;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -203,5 +206,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
     putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
     standBlock: ({ minX, minY, maxX, maxY, top }) => exports.room_stand_block(minX, minY, maxX, maxY, top) === 1,
+    takeBlock: ({ minX, minY, maxX, maxY, top }) => exports.room_take_block(minX, minY, maxX, maxY, top) === 1,
   };
 }

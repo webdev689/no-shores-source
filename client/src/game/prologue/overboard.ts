@@ -1,5 +1,6 @@
-// The owner's eleventh beat: the screen fades out and back in on the player thrown over the rammer's rail, Thule and
-// his crew crying out and dancing on her quarterdeck as the body arcs into the sea; a splash, and the fade again.
+// The owner's eleventh beat: the screen, faded out on the fight, fades back in on the player thrown over the rammer's
+// rail, Thule and his crew crying out and dancing on her quarterdeck as the body arcs into the sea; a splash, and the
+// fade again.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
@@ -10,6 +11,7 @@ import { YOU_ID } from './helm.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
+import { setAblaze, type WreckScenery } from './wreckScenery.ts';
 
 const LENS = { fov: 0.85, near: 0.2, far: 20_000 } as const;
 /** The crew who celebrate by the boss: their roster types, their moves, and where they stand from him (east, south). */
@@ -45,20 +47,25 @@ export class Overboard implements Beat {
   readonly skippable = true;
   private readonly story: Story;
   private readonly layout: WreckLayout;
+  private readonly scenery: WreckScenery;
   private readonly cues: Cues;
   private since = 0;
   done = false;
 
-  constructor(story: Story, layout: WreckLayout) {
+  constructor(story: Story, layout: WreckLayout, scenery: WreckScenery) {
     this.story = story;
     this.layout = layout;
+    this.scenery = scenery;
     const { stage } = story;
     const { screen, ambience } = stage.parts;
+    setAblaze(story, layout);
+    ambience.heartbeat(false);
     stage.parts.hud.hints([]);
     stage.parts.objective.clear();
-    screen.fade(1, 0.6);
+    // The fight has faded out already; begun here, the beat starts as black as the fight left it.
+    screen.fade(1, 0);
     this.cues = new Cues([
-      [0.9, () => screen.fade(0, 0.9)],
+      [0.3, () => screen.fade(0, 0.9)],
       [1.1, () => void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
       [THROW_AT_S + FLIGHT_S, () => ambience.splash(1)],
       [OVER_S - 1, () => screen.fade(1, 1)],
@@ -113,7 +120,7 @@ export class Overboard implements Beat {
         z: thrown[2],
         facing: -Math.PI / 2,
       });
-    return { shot: this.shot([x, y, z]), actors, heads, focus: [x, y] };
+    return { shot: this.shot([x, y, z]), actors, drawers: [this.scenery.drawer], heads, focus: [x, y] };
   }
 
   /** From off the rammer's other side and a little astern, watching the deck and the rail the body goes over. */
