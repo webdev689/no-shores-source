@@ -74,8 +74,10 @@ export interface MovementRules {
    *  grid, is open ground at 0 m. Answers whether a deck was set. */
   setHeights(grid: readonly number[] | null): boolean;
   /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres), by the room's own
-   *  reach rules, the body standing inside; null clears it. */
-  setSection(section: { readonly ring: readonly Point[]; readonly spawns: readonly Point[] } | null): void;
+   *  reach rules, the body standing as `standing` says (a room's last word) or inside; null clears it. */
+  setSection(
+    section: { readonly ring: readonly Point[]; readonly spawns: readonly Point[]; readonly standing?: Reach } | null,
+  ): void;
   /** One tick of the body at (x, y) against the section: inside, warned with the ticks left, or dead for so many. */
   reachTick(x: number, y: number): Reach;
   /** Respawns a body that died at (x, y), once allowed: the spawn it stands at, or null while too soon. */
@@ -93,6 +95,13 @@ export type Reach =
   | { readonly kind: 'inside' }
   | { readonly kind: 'warned'; readonly ticksLeft: number }
   | { readonly kind: 'dead'; readonly ticks: number };
+
+/** A standing as the door's one number: its kind in the top two bits, its ticks below. */
+export function packedOf(reach: Reach): number {
+  if (reach.kind === 'inside') return 0;
+  const ticks = Math.min(reach.kind === 'warned' ? reach.ticksLeft : reach.ticks, 0x3fffffff);
+  return ((reach.kind === 'warned' ? 1 : 2) * 0x40000000 + ticks) >>> 0;
+}
 
 /** A standing from the door's one number: its kind in the top two bits, its ticks below. */
 export function reachOf(packed: number): Reach {
@@ -266,7 +275,9 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       }
     },
     setSection: (section) => {
-      const bytes = new TextEncoder().encode(section ? JSON.stringify(section) : 'null');
+      const standing = section?.standing ? packedOf(section.standing) : 0;
+      const text = section ? JSON.stringify({ ring: section.ring, spawns: section.spawns, standing }) : 'null';
+      const bytes = new TextEncoder().encode(text);
       const address = exports.reserve(bytes.length);
       new Uint8Array(exports.memory.buffer, address, bytes.length).set(bytes);
       exports.movement_set_section(address, bytes.length);

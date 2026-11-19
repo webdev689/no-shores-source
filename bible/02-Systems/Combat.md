@@ -2,6 +2,8 @@
 type: system
 status: live
 code:
+  - crates/combat/src/fighter.rs#Side
+  - crates/combat/src/shots.rs#foe_speed
   - crates/combat/src/step.rs#step_fighter
   - crates/combat/src/judge.rs#judge
   - crates/combat/src/judge.rs#suffer
@@ -23,12 +25,15 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 
 - **One crate for every machine.** The `combat` crate holds the rules, beside [[Movement]]'s, and steps a fighter in
   the same whole ticks of 1/60 s. A fighter is a body and everything a fight keeps for it: what it holds, health,
-  stamina, poise, what it is doing, its aim and its soft lock's target. What a fighter does to others is the host's
-  to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
+  stamina, poise, what it is doing, its aim and its soft lock's target, and its side: the players', or an enemy
+  faction's by its number ([[Enemies]]); fighters of different sides are each other's foes. What a fighter does to
+  others is the host's to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
 - **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer or
   staff, fists with nothing drawn, or a bow, crossbow, pistolet or thunderlock. The left hand holds a shield, a second
   blade (the pair's blows take turns between the hands), a torch, or nothing; a two-handed weapon leaves it empty.
-  Metals do not change a fight yet.
+  In a room a player holds only what their [[Gear]] puts in their hands. Metals do not change a fight. A blow carries
+  its weapon's element, which only a foe's shield weighs, in the room ([[Gear]], "Elements and shields";
+  [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]).
 
 | Weapon | Reach (m) | Damage | Weight | Stamina | Blow lands / swing ends (ticks) |
 |---|---|---|---|---|---|
@@ -84,6 +89,15 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
+- **Gear's trim.** A fighter carries what its gear trims of these numbers ([[Gear]]): what a swing, a dodge (and a
+  dodge with a weapon drawn) and a guard's blow cost; how fast stamina comes back, and again below half health; a
+  reload's time, a bow's draw to full power and the pace kept while aiming; what its blows do (a riposte, a counter,
+  an aimed shot, the poise they fill, what a guard lets through and pays, how long a stagger they cause lasts); and how
+  blows land on it (the poise they fill, and again with a weapon drawn; from behind; telegraphed, through a guard as
+  well). Nothing trimmed is these numbers; a foe's never are. A riposte is the stagger's own answer: the stagger's
+  extra harm, and a striker's trim on a staggered foe, never count in it. A snapshot leaves the trim out of each fighter; the room sends a player theirs
+  with their gear, and their browser puts it back before it predicts them. A fighter stood again after death keeps
+  its trim.
 - **Numbers that are none.** A look, a push or a pitch that is not a number is never taken: the look keeps the aim.
 - **Death.** At no health a fighter dies and lies where it fell.
 
@@ -135,10 +149,12 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   fires onto the mark, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
   round across the ground (looking straight down at its feet), down onto it along the look's bearing. An aimed shot
   strikes half again as hard as a quick one: a crossbow's or a gun's at once, a bow's by its draw, from a quick shot's
-  power at none to half again at a full second; a foe's drawn shot strikes as a quick one. Letting the aim go lowers
-  the weapon unfired.
-- **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block or a body
-  stops it; a pistolet's or thunderlock's ball reaches 60 m along its line at once. A body is an upright cylinder
+  power at none to half again at a full second; a foe's drawn shot strikes as a quick one, times its might. Letting
+  the aim go lowers the weapon unfired.
+- **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block, the
+  ground the room stands bodies on (a node's land, its hills included) or a body stops it; a pistolet's or
+  thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a foe's, at 70 m/s and
+  110 m/s, so it can be dodged. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
   one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
@@ -171,7 +187,7 @@ human limits ([[Foes]]).
 
 ## Limits
 
-- No gear power yet: every sword strikes alike whatever its metal.
+- Gear's power and the rest of its perks reach a blow in the rooms ([[Gear]]): a fight stepped alone, with no room, has its trims but not those.
 - Running costs no stamina.
 - Casting does no harm yet.
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).

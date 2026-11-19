@@ -6,7 +6,7 @@ use super::OPEN;
 use super::sail::{helm_from, ship_from, ticks_from};
 use land::exact::fingerprint;
 use land::sea::Swell;
-use naval::arms::{PIRATE_SLOOP, Side};
+use naval::arms::Side;
 use naval::ballistics::flight;
 use naval::captain::Mode;
 use naval::damage::{State, Zone};
@@ -155,7 +155,9 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
         })
         .collect();
     let mut captain = vessel_json(captain_ship);
-    captain["name"] = json!(PIRATE_SLOOP.name);
+    captain["name"] = json!(her.build.name);
+    captain["faction"] = json!(her.commission.faction);
+    captain["rank"] = json!(her.commission.rank.number());
     captain["mode"] = json!(mode_name(her.mode));
     captain["hostile"] = json!(her.hostile_to(PLAYER));
     captain["run_out"] = json!(

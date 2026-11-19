@@ -12,7 +12,7 @@ const built = (name: string) =>
 const content = (path: string) => readFile(new URL(`../../../content/world/${path}`, import.meta.url), 'utf8');
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects and scripts (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'ed8693b13e32caba';
+const NODE_RUN_HASH = 'd0d409b360b165d7';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];

@@ -34,6 +34,17 @@ export interface InputFrame {
   readonly locked: boolean;
 }
 
+/** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
+export const IDLE: InputFrame = {
+  held: () => false,
+  pressed: () => false,
+  released: () => false,
+  lookX: 0,
+  lookY: 0,
+  wheel: 0,
+  locked: true,
+};
+
 /** Listens to the keyboard, the mouse and the wheel on a canvas; `frame()` hands over each frame's input. Clicking the
  *  canvas locks the pointer to look round; Escape lets it go. */
 export class Input {

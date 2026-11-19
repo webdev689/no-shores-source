@@ -1,0 +1,20 @@
+{
+  "names": {
+    "dagger": { "normal": ["Dagger"], "magic": ["Tempered Dagger", "Sailor's Dagger", "Keen Dagger"], "rare": ["Gullet", "Saltfang", "Ropecutter"] },
+    "sword": { "normal": ["Sword"], "magic": ["Tempered Sword", "Sailor's Sword", "Sound Sword"], "rare": ["Gullcutter", "Spray Edge", "Watchman's Blade"] },
+    "mace": { "normal": ["Mace"], "magic": ["Tempered Mace", "Studded Mace", "Sound Mace"], "rare": ["Capstan", "Ballast", "Barnacle Knot"] },
+    "flail": { "normal": ["Flail"], "magic": ["Tempered Flail", "Linked Flail", "Sound Flail"], "rare": ["Chain Shot", "Rigging Weight", "Squall Flail"] },
+    "axe": { "normal": ["Axe"], "magic": ["Tempered Axe", "Boarding Axe", "Sound Axe"], "rare": ["Hullbiter", "Mastfeller", "Driftwood Splitter"] },
+    "warhammer": { "normal": ["Warhammer"], "magic": ["Tempered Warhammer", "Shipwright's Maul", "Sound Warhammer"], "rare": ["Keelhauler", "Dockbreaker", "Tidehammer"] },
+    "staff": { "normal": ["Staff"], "magic": ["Iron-shod Staff", "Pilgrim's Staff", "Sound Staff"], "rare": ["Lantern Pole", "Oarsman's Staff", "Spar"] },
+    "bow": { "normal": ["Bow"], "magic": ["Recurve Bow", "Fowler's Bow", "Sound Bow"], "rare": ["Tern", "Skua", "Kittiwake"] },
+    "crossbow": { "normal": ["Crossbow"], "magic": ["Windlass Crossbow", "Hunter's Crossbow", "Sound Crossbow"], "rare": ["Bolt Thrower", "Gaff", "Deadeye"] },
+    "pistolet": { "normal": ["Pistolet"], "magic": ["Bright Pistolet", "Officer's Pistolet", "Sound Pistolet"], "rare": ["Powder Flash", "Quickmatch", "Signal Shot"] },
+    "thunderlock": { "normal": ["Thunderlock"], "magic": ["Long Thunderlock", "Fowling Piece", "Sound Thunderlock"], "rare": ["Galeforce", "Smokestack", "Thunderhead"] },
+    "shield": { "normal": ["Shield"], "magic": ["Banded Shield", "Sailor's Buckler", "Sound Shield"], "rare": ["Hatch Cover", "Bulkhead", "Ship's Wheel"] },
+    "head": { "normal": ["Padded Cap"], "magic": ["Boiled Leather Cap", "Sailor's Helm", "Sound Helm"], "rare": ["Crow's Nest", "Lookout's Helm", "Spray Visor"] },
+    "torso": { "normal": ["Quilted Coat"], "magic": ["Boiled Leather Coat", "Sailor's Hauberk", "Sound Hauberk"], "rare": ["Deckplate", "Boarder's Coat", "Squallguard"] },
+    "arms": { "normal": ["Work Gloves"], "magic": ["Leather Bracers", "Sailor's Gauntlets", "Sound Gauntlets"], "rare": ["Ropewrights", "Grapple Gauntlets", "Tarred Hands"] },
+    "legs": { "normal": ["Sailcloth Trousers"], "magic": ["Leather Greaves", "Sailor's Greaves", "Sound Greaves"], "rare": ["Deckwalkers", "Seabooted Greaves", "Tidewaders"] }
+  }
+}

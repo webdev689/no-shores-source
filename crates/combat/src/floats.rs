@@ -5,6 +5,7 @@
 use crate::arms::{Arms, Stroke};
 use crate::fighter::{Action, Attack, Cause, CombatInput, Fighter, Held, Intent, Kept, Side, Swing, Weight};
 use crate::shapes::{Shape, Telegraph};
+use crate::trim::{TRIM_FLOATS, Trim};
 use movement::floats::{BODY_FLOATS, CONTROLS_FLOATS};
 use movement::{Body, Controls};
 
@@ -14,7 +15,8 @@ use movement::{Body, Controls};
 /// blows, might; then the action's kind and its numbers.
 pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS;
 const ACTION_NUMBERS: usize = 10;
-pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS;
+/// A whole fighter: its body, the fight's numbers, then its gear's trim.
+pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS + TRIM_FLOATS;
 /// An intent's numbers: the controls', then the stroke held (0 none), guard, dodge, shoot, pitch, aim, and the point an
 /// aimed shot is laid on (none for the look).
 pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 9;
@@ -199,7 +201,7 @@ impl Fighter {
         let riposte = self.riposte.map_or((0.0, 0.0), |(foe, left)| (f64::from(foe) + 1.0, f64::from(left)));
         let (kind, numbers) = action_floats(&self.action);
         let combat = [
-            f64::from(self.side as u8),
+            f64::from(self.side.number()),
             f64::from(self.arms.code()),
             f64::from(self.weight as u8),
             self.health,
@@ -225,7 +227,9 @@ impl Fighter {
             kind,
         ];
         floats[BODY_FLOATS..BODY_FLOATS + combat.len()].copy_from_slice(&combat);
-        floats[BODY_FLOATS + combat.len()..].copy_from_slice(&numbers);
+        let actions = BODY_FLOATS + combat.len();
+        floats[actions..actions + numbers.len()].copy_from_slice(&numbers);
+        floats[FIGHTER_FLOATS - TRIM_FLOATS..].copy_from_slice(&self.trim.to_floats());
         floats
     }
 
@@ -234,7 +238,7 @@ impl Fighter {
         let (body, combat) = floats.split_at(BODY_FLOATS);
         let body = Body::from_floats(body.try_into().unwrap_or(&[0.0; BODY_FLOATS]));
         let at = |index: usize| combat.get(index).copied().unwrap_or_default();
-        let side = if count(at(0)) == 1 { Side::Foes } else { Side::Players };
+        let side = Side::from_number(small(at(0)));
         let weight = [Weight::Light, Weight::Medium, Weight::Heavy, Weight::Massive]
             .into_iter()
             .find(|weight| f64::from(*weight as u8) == at(2))
@@ -253,7 +257,7 @@ impl Fighter {
             poise_max: at(8),
             poise_rest: count(at(9)),
             poise_immune: count(at(10)),
-            action: action_from(at(23), &combat[24..]),
+            action: action_from(at(23), &combat[24..COMBAT_FLOATS]),
             aim: at(11),
             target: id_or_none(at(12)),
             lock_away: count(at(13)),
@@ -266,6 +270,7 @@ impl Fighter {
             kept: kept_of(held),
             blows: count(at(21)),
             might: at(22),
+            trim: combat[COMBAT_FLOATS..].try_into().map_or(Trim::PLAIN, Trim::from_floats),
         }
     }
 }
@@ -284,7 +289,7 @@ impl Fighter {
             body.mode.number(),
             flag(body.crouched),
             self.aim,
-            f64::from(self.side as u8),
+            f64::from(self.side.number()),
             f64::from(self.arms.code()),
             f64::from(self.weight as u8),
             self.health,
@@ -342,7 +347,10 @@ impl Fighter {
             at(16),
         ];
         full[BODY_FLOATS..BODY_FLOATS + combat.len()].copy_from_slice(&combat);
-        full[BODY_FLOATS + combat.len()..].copy_from_slice(&floats[17..]);
+        let actions = BODY_FLOATS + combat.len();
+        full[actions..actions + ACTION_NUMBERS].copy_from_slice(&floats[17..]);
+        // A glance carries no trim: the fighter seen reads as untrimmed.
+        full[actions + ACTION_NUMBERS..].copy_from_slice(&crate::trim::Trim::PLAIN.to_floats());
         Fighter::from_floats(&full)
     }
 }

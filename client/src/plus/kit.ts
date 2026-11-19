@@ -9,12 +9,20 @@ import { BEVELS, TONES } from './tones.ts';
 export const ROLES = {
   /** A whole surface over the world: the carved frame and its brass fittings, a solid ground, a hard drop. */
   window: 'plus-window',
+  /** A box inside a window: a stone bevel and an engraved inner line. */
+  panel: 'plus-panel',
   /** Something pressed: raised, brass under the pointer, sunk while held, flat when it cannot be pressed. */
   button: 'plus-button',
   /** The one press a surface is for: the button, in brass. */
   primary: 'plus-primary',
+  /** A press that costs something: the button's edge in blood rather than brass. */
+  warn: 'plus-warn',
+  /** A pickable cell in a dense grid: the button without its drop, so a grid does not turn to noise. */
+  tile: 'plus-tile',
   /** A readout, never pressed. */
   chip: 'plus-chip',
+  /** Something sunk into the surface: a meter, an input. */
+  well: 'plus-well',
   /** The band that names a window: a lit ground over a groove. */
   header: 'plus-header',
   /** The band a window's actions stand on: a groove above. */
@@ -23,6 +31,10 @@ export const ROLES = {
   rule: 'plus-rule',
   /** An upright between two parts of a surface, engraved as a rule is. */
   rail: 'plus-rail',
+  /** A bar's trough: a dark ground sunk into its edge, which a 1 px border makes a hairline. */
+  track: 'plus-track',
+  /** A bar's fill, in the colour its surface gives it: lit along its top, shaded along its foot, its leading edge lit. */
+  meter: 'plus-meter',
 } as const;
 
 export type Role = keyof typeof ROLES;
@@ -42,7 +54,7 @@ const pressable = (state = '') => `${role('button', state)}, ${role('primary', s
 
 /** The kit's sheet. */
 export function kitCss(): string {
-  const { primary } = ROLES;
+  const { warn, primary, button, tile } = ROLES;
   return `
 ${role('window')} {
   border-image: ${frameImage()};
@@ -50,25 +62,44 @@ ${role('window')} {
   box-shadow: 4px 4px 0 ${OUTSET}px rgba(0,0,0,0.42);
   color: ${TONES.word}; }
 
+${role('panel')} {
+  border-color: ${BEVELS.raised};
+  background-color: ${TONES.groundPanel};
+  box-shadow: ${RING}, inset 0 0 0 1px rgba(5,6,8,0.75), inset 0 3px 0 -1px rgba(255,255,255,0.04),
+    3px 3px 0 1px rgba(0,0,0,0.4); }
+
 ${pressable()} {
   border-color: ${BEVELS.raised};
   background-color: ${TONES.groundButton}; background-image: ${LIT_BAND};
   box-shadow: ${RING}, 2px 2px 0 1px rgba(0,0,0,0.45);
   color: ${TONES.word}; transition: none; }
 ${role('primary')} { border-color: ${BEVELS.brass}; background-color: #2a2217; }
-${pressable(':hover')}, ${pressable(':focus-visible')} {
+${pressable(':hover')}, ${pressable(':focus-visible')}, .${button}.on {
   border-color: ${BEVELS.brass}; background-color: ${TONES.groundButtonHi}; background-image: ${LIT_BAND}; }
 .${primary}:hover, .${primary}:focus-visible { background-color: #3a2e1c; }
+.${warn} { border-color: ${BEVELS.blood}; background-color: #241514; background-image: ${LIT_BAND}; color: #f4dfd8; }
+.${warn}:hover:not(:disabled), .${warn}:focus-visible {
+  border-color: ${BEVELS.bloodHi}; background-color: #321b19; background-image: ${LIT_BAND}; color: #fff3ee; }
 ${pressable(':active:not(:disabled)')} {
   border-color: ${BEVELS.sunk}; translate: 1px 1px;
   box-shadow: ${RING}, inset 2px 2px 0 rgba(0,0,0,0.5); }
+.${warn}:active:not(:disabled) { border-color: ${BEVELS.bloodSunk}; }
 ${pressable(':disabled')}, ${pressable('[disabled]')} {
   border-color: rgba(125,116,96,0.3); background-color: rgba(12,14,18,0.6); background-image: none;
   box-shadow: 0 0 0 1px rgba(5,6,8,0.6); color: ${TONES.wordDim}; translate: none; }
 
+.${tile} {
+  border-color: ${BEVELS.raisedSoft};
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.06) 0 2px, transparent 2px);
+  box-shadow: ${RING}; transition: none; }
+.${tile}:hover, .${tile}:focus-visible, .${tile}.on { border-color: ${BEVELS.brass}; }
+.${tile}:active { border-color: ${BEVELS.sunk}; }
+
 ${role('chip')} {
   border-color: ${BEVELS.raisedSoft}; background-color: ${TONES.groundChip};
   box-shadow: ${RING}, 2px 2px 0 1px rgba(0,0,0,0.35); }
+
+${role('well')} { border-color: ${BEVELS.sunk}; box-shadow: ${RING}, inset 2px 2px 0 rgba(0,0,0,0.5); }
 
 ${role('header')} {
   border-bottom-color: ${TONES.outline};
@@ -80,6 +111,12 @@ ${role('footer')} {
   background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2));
   box-shadow: inset 0 1px 0 ${TONES.groove}; }
 
+${role('track')} { border-color: ${BEVELS.sunk}; background-color: ${TONES.groundTrack}; box-shadow: ${RING}; }
+${role('meter')} {
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.34) 0 1px, transparent 1px calc(100% - 2px),
+    rgba(0,0,0,0.36) calc(100% - 2px));
+  box-shadow: inset -2px 0 0 rgba(255,255,255,0.42); }
+
 ${role('rule')} { border-bottom-color: rgba(5,6,8,0.6); box-shadow: 0 1px 0 rgba(163,152,128,0.13); }
 ${role('rail')} { border-left-color: rgba(5,6,8,0.75); box-shadow: inset 1px 0 0 rgba(163,152,128,0.13); }
 
@@ -87,6 +124,12 @@ ${role('rail')} { border-left-color: rgba(5,6,8,0.75); box-shadow: inset 1px 0 0
   ${pressable(':active:not(:disabled)')} { translate: none; }
 }
 `;
+}
+
+/** Whether the player asked for reduced motion: what moves on the display (a falling piece, a rising word, a flash)
+ *  stands still, or is not drawn. False where no page answers. */
+export function motionReduced(): boolean {
+  return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
 /** Lays the kit's sheet into `page` once; a second call leaves it as it is. */

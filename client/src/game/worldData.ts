@@ -1,3 +1,5 @@
+import type { StationInfo } from './nodes.ts';
+
 /** A node's kind, as the edits files and the plans name it. */
 export type NodeKind = 'social' | 'patrol' | 'mission' | 'dungeon' | 'boss';
 
@@ -12,6 +14,8 @@ export interface NodeInfo {
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
   readonly centre: Point;
+  /** A social space's stations (`nodes.ts`). */
+  readonly stations?: readonly StationInfo[];
 }
 
 /** A continent's port city, as its edits file names it. */

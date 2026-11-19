@@ -20,3 +20,9 @@ test("the sea lists the ship's two buttons, and her deck how to take the helm ag
   assert.ok(HINTS.sea.some((line) => line.includes('B manage') && line.includes('H leave the helm')));
   assert.ok(HINTS.deck.some((line) => line.includes('E: take the helm')));
 });
+
+test('on foot the keys listed take in the fight: the weapon, the swing, the guard and the dodge', () => {
+  const keys = HINTS.foot.join(' · ');
+  for (const key of ['Z weapon', 'Right button swing', 'Left button or F guard', 'V dodge'])
+    assert.ok(keys.includes(key), key);
+});

@@ -1,8 +1,11 @@
 //! A path: A* over the poly graph for the corridor of polys, then the funnel pulls the line from start to goal taut
 //! through the corridor's portals into a few corners.
 
-use crate::locate::Mesh;
+use crate::locate::{self, Mesh};
 use crate::obstacles::{ObstacleId, Obstacles};
+use core::cell::{RefCell, RefMut};
+use core::cmp::Ordering;
+use std::collections::BinaryHeap;
 
 /// Which obstacles a search walks through.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -12,39 +15,145 @@ pub(crate) enum Waive {
     All,
 }
 
+/// A poly waiting to be searched: its estimate when it was offered, and the order it was first offered in.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Open {
+    estimate: f64,
+    order: usize,
+    poly: usize,
+}
+
+impl Eq for Open {}
+
+impl Ord for Open {
+    /// The heap pops the greatest, so the greatest is the least estimate, then the poly offered first.
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.estimate.total_cmp(&self.estimate).then(other.order.cmp(&self.order))
+    }
+}
+
+impl PartialOrd for Open {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// What a search keeps between runs: each poly's cost, estimate, the poly it was reached from, whether it is closed
+/// and when it was first offered, read only where its stamp is the current search's, so a search costs what it visits
+/// rather than the whole mesh.
+#[derive(Debug, Default)]
+pub(crate) struct Search {
+    stamp: u32,
+    stamps: Vec<u32>,
+    cost: Vec<f64>,
+    estimate: Vec<f64>,
+    came_from: Vec<Option<usize>>,
+    closed: Vec<bool>,
+    order: Vec<usize>,
+    open: BinaryHeap<Open>,
+}
+
+impl Search {
+    /// Starts a search over `count` polys: every poly unvisited.
+    fn begin(&mut self, count: usize) {
+        if self.stamps.len() != count || self.stamp == u32::MAX {
+            *self = Self { stamps: vec![0; count], ..Self::default() };
+            for list in [&mut self.cost, &mut self.estimate] {
+                list.resize(count, f64::INFINITY);
+            }
+            self.came_from.resize(count, None);
+            self.closed.resize(count, false);
+            self.order.resize(count, usize::MAX);
+        }
+        self.stamp += 1;
+        self.open.clear();
+    }
+
+    /// Readies a poly's slots for this search, fresh if it has not been visited yet.
+    fn visit(&mut self, poly: usize) {
+        if self.stamps[poly] != self.stamp {
+            self.stamps[poly] = self.stamp;
+            self.cost[poly] = f64::INFINITY;
+            self.estimate[poly] = f64::INFINITY;
+            self.came_from[poly] = None;
+            self.closed[poly] = false;
+            self.order[poly] = usize::MAX;
+        }
+    }
+
+    /// Offers a poly at its estimate. A poly offered again keeps the order it was first offered in, so the open set
+    /// pops the least estimate, then the poly first offered.
+    fn offer(&mut self, poly: usize, offered: &mut usize) {
+        if self.order[poly] == usize::MAX {
+            self.order[poly] = *offered;
+            *offered += 1;
+        }
+        self.open.push(Open { estimate: self.estimate[poly], order: self.order[poly], poly });
+    }
+}
+
+/// A mesh's search, kept for its next path. A copy starts empty and any two are alike, so the buffers never tell two
+/// meshes apart.
+#[derive(Default)]
+pub(crate) struct Scratch(RefCell<Search>);
+
+impl Scratch {
+    pub fn borrow(&self) -> RefMut<'_, Search> {
+        self.0.borrow_mut()
+    }
+}
+
+impl Clone for Scratch {
+    fn clone(&self) -> Self {
+        Self::default()
+    }
+}
+
+impl PartialEq for Scratch {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl core::fmt::Debug for Scratch {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter.write_str("Scratch")
+    }
+}
+
 /// A* over the polys from `start` to `goal`, measured centre to centre; the heuristic is the straight line between
 /// centres, which never overestimates. A blocked poly cannot be entered unless it is the goal or its obstacle is
-/// waived; leaving the start is always allowed. Answers the corridor, start to goal.
+/// waived; leaving the start is always allowed. Answers the corridor, start to goal; none at once when no walk joins
+/// the two.
 pub(crate) fn corridor(
     mesh: &Mesh,
     obstacles: &Obstacles,
-    start: usize,
-    goal: usize,
+    search: &mut Search,
+    (start, goal): (usize, usize),
     waive: Waive,
 ) -> Option<Vec<usize>> {
-    let count = mesh.polys.len();
-    let centre = |poly: usize| mesh.centres[poly];
-    let apart = |one: usize, two: usize| libm::hypot(centre(one).0 - centre(two).0, centre(one).1 - centre(two).1);
-    let mut cost = vec![f64::INFINITY; count];
-    let mut estimate = vec![f64::INFINITY; count];
-    let mut came_from: Vec<Option<usize>> = vec![None; count];
-    let mut closed = vec![false; count];
-    cost[start] = 0.0;
-    estimate[start] = apart(start, goal);
-    let mut open = vec![start];
-    while !open.is_empty() {
-        let best =
-            (1..open.len()).fold(0, |best, at| if estimate[open[at]] < estimate[open[best]] { at } else { best });
-        let current = open.remove(best);
+    if mesh.islands[start] != mesh.islands[goal] {
+        return None;
+    }
+    let apart = |one: usize, two: usize| locate::apart(&mesh.centres, one, two);
+    search.begin(mesh.polys.len());
+    search.visit(start);
+    search.cost[start] = 0.0;
+    search.estimate[start] = apart(start, goal);
+    let mut offered = 0;
+    search.offer(start, &mut offered);
+    while let Some(Open { poly: current, .. }) = search.open.pop() {
         if current == goal {
             break;
         }
-        if closed[current] {
+        if search.closed[current] {
             continue;
         }
-        closed[current] = true;
-        for &next in mesh.polys[current].neighbours.iter().flatten() {
-            if closed[next] {
+        search.closed[current] = true;
+        let links = mesh.polys[current].neighbours.iter().zip(&mesh.steps[current]);
+        for (&next, &step) in links.filter_map(|(next, step)| Some((next.as_ref()?, step))) {
+            search.visit(next);
+            if search.closed[next] {
                 continue;
             }
             let blocker = if obstacles.is_empty() { None } else { obstacles.blocked[next] };
@@ -56,22 +165,23 @@ pub(crate) fn corridor(
             if !waived && next != goal {
                 continue;
             }
-            let through = cost[current] + apart(current, next);
-            if through < cost[next] {
-                cost[next] = through;
-                came_from[next] = Some(current);
-                estimate[next] = through + apart(next, goal);
-                open.push(next);
+            let through = search.cost[current] + step;
+            if through < search.cost[next] {
+                search.cost[next] = through;
+                search.came_from[next] = Some(current);
+                search.estimate[next] = through + apart(next, goal);
+                search.offer(next, &mut offered);
             }
         }
     }
-    if start != goal && came_from[goal].is_none() {
+    search.visit(goal);
+    if start != goal && search.came_from[goal].is_none() {
         return None;
     }
     let mut path = vec![goal];
     let mut at = goal;
     while at != start {
-        at = came_from[at]?;
+        at = search.came_from[at]?;
         path.push(at);
     }
     path.reverse();

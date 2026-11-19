@@ -6,9 +6,9 @@ mod common;
 
 use combat::fighter::Swing;
 use combat::{Happening, Stroke, Verdict};
-use common::{Room, standing_still};
+use common::{BRUTE, Room, SKIRMISHER, SWORDSMAN, standing_still};
 use core::f64::consts::PI;
-use foes::Kind;
+use foes::Rank::Major;
 
 const PLAYER: u32 = 1;
 const SWINGS_AT: u64 = 5;
@@ -22,10 +22,11 @@ fn one_swing(room: &Room, _me: u32) -> combat::Intent {
     intent
 }
 
-/// The room after one swing at a foe of `kind` 1.5 m north of the player: the verdict on the swing, the tick the foe
-/// first pressed its guard or its dodge, and whether it then riposted.
-fn answered(kind: Kind, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
-    let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, kind, 0.0, -1.5, PI);
+/// The room after one swing at a foe of the type numbered `number`, a Major already alert, 1.5 m north of the player:
+/// the verdict on the swing, the tick the foe first pressed its guard or its dodge, and whether it then riposted.
+fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
+    let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, number, Major, 0.0, -1.5, PI);
+    let mut room = room.alert(10, PLAYER);
     room.run(120, &mut one_swing);
     let verdict =
         room.verdicts.iter().find(|(_, by, on, _)| *by == PLAYER && *on == 10).map(|(_, _, _, verdict)| *verdict);
@@ -45,7 +46,7 @@ fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripost
     let lands = SWINGS_AT + 24;
     let (mut parried, mut riposted) = (0, 0);
     for seed in 1..=60 {
-        let (verdict, pressed, riposte) = answered(Kind::Swordsman, seed);
+        let (verdict, pressed, riposte) = answered(SWORDSMAN, seed);
         if let Some(pressed) = pressed {
             assert!(pressed >= SWINGS_AT + 16, "never sooner than its reaction time: {pressed}");
         }
@@ -66,9 +67,9 @@ fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripost
 fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
     let mut room = Room::new(3)
         .player(PLAYER, 0.0, 0.0, 0.0)
-        .foe(10, Kind::Swordsman, 0.0, -4.0, PI)
-        .foe(11, Kind::Swordsman, 3.5, 2.0, -PI / 3.0)
-        .foe(12, Kind::Swordsman, -3.5, 2.0, PI / 3.0);
+        .foe(10, SWORDSMAN, Major, 0.0, -4.0, PI)
+        .foe(11, SWORDSMAN, Major, 3.5, 2.0, -PI / 3.0)
+        .foe(12, SWORDSMAN, Major, -3.5, 2.0, PI / 3.0);
     room.run(240, &mut |_, _| standing_still(0.0));
     let guarded_long = [10, 11, 12].iter().any(|foe| {
         let intents = room.foe_intents(*foe);
@@ -81,7 +82,7 @@ fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
 fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch() {
     let mut dodged = 0;
     for seed in 1..=30 {
-        let (verdict, pressed, _) = answered(Kind::Skirmisher, seed);
+        let (verdict, pressed, _) = answered(SKIRMISHER, seed);
         match verdict {
             Some(Verdict::Dodged { perfect }) => {
                 dodged += 1;
@@ -99,7 +100,7 @@ fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch(
 #[test]
 fn a_brute_takes_the_blow() {
     for seed in 1..=10 {
-        let (verdict, pressed, _) = answered(Kind::Brute, seed);
+        let (verdict, pressed, _) = answered(BRUTE, seed);
         assert_eq!(pressed, None);
         assert!(matches!(verdict, Some(Verdict::Hit { .. })), "{verdict:?}");
     }
@@ -109,7 +110,7 @@ fn a_brute_takes_the_blow() {
 fn a_blow_from_behind_is_not_seen_coming() {
     for seed in 1..=20 {
         // The skirmisher faces north, away from the player south of it.
-        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, Kind::Skirmisher, 0.0, -1.5, 0.0);
+        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SKIRMISHER, Major, 0.0, -1.5, 0.0);
         let mut swing_at_its_back = |room: &Room, _me: u32| {
             let mut intent = standing_still(0.0);
             if room.tick == 1 {
@@ -133,4 +134,48 @@ fn only_one_foe_at_a_time_strikes_an_opening_without_its_turn() {
     assert!(board.opening(PLAYER, 11, true), "let go, 11 may take it");
     board.forget(11);
     assert!(board.opening(PLAYER, 12, true), "a foe gone frees it");
+}
+
+/// The tick a pirate skirmisher, alert and fighting a Grey Tithe runner before it, presses a dodge from a bolt loosed
+/// at it from 40 m on tick 10, told to fly at `speed` (0: not told), if it dodges at all.
+fn dodge_pressed(seed: u64, speed: f64) -> Option<u64> {
+    let foe = |number: u8, y: f64, facing: f64| {
+        foes::spawn(foes::foe_type(number).expect("a type of the roster"), Major, 0.0, y, facing)
+    };
+    let (skirmisher, mut brain) = foe(13, 0.0, 0.0);
+    let (runner, _) = foe(1, -2.0, PI);
+    let (bowman, _) = foe(3, -40.0, PI);
+    let fighters = [(1, skirmisher), (2, runner), (3, bowman)];
+    let mut board = foes::Board::default();
+    let shout = foes::Seen::Shouted { from: [0.0, 0.0, 0.0], at: [0.0, -2.0, 0.0] };
+    foes::notice(&mut brain, 1, &shout, 0);
+    for tick in 1..60 {
+        if tick == 10 {
+            foes::notice(&mut brain, 1, &foes::Seen::Loosed { by: 3, speed }, tick);
+        }
+        let world = foes::World {
+            tick,
+            seed,
+            fighters: &fighters,
+            blocks: &[],
+            routes: &foes::Straight,
+            spots: &foes::NoSpots,
+            director: foes::Director::default(),
+        };
+        let (next, intent) = foes::think(1, &brain, &mut board, &world);
+        brain = next;
+        if intent.combat.dodge && tick > 10 {
+            return Some(tick);
+        }
+    }
+    None
+}
+
+#[test]
+fn a_foe_times_a_shot_at_it_by_the_speed_the_room_tells_so_an_aimed_one_is_met_in_time() {
+    // A crossbow's aimed bolt flies at 71.5 m/s, a third again its plain one's 55: from 40 m it lands on tick 44.
+    let lands = 10 + combat::ticks(40.0 / 71.5);
+    let pressed: Vec<u64> = (0..60).filter_map(|seed| dodge_pressed(seed, 71.5)).collect();
+    assert!(pressed.len() >= 10, "it dodges some: {pressed:?}");
+    assert!(pressed.iter().all(|tick| *tick + 2 <= u64::from(lands)), "each before the bolt lands: {pressed:?}");
 }

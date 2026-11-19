@@ -1,4 +1,6 @@
+import { AccountLink, type Kept, LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
 
 /**
  * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, judging the edge
@@ -9,4 +11,48 @@ export function roomsFrom(given: string | null): ((name: string) => string) | nu
   if (given === null) return null;
   const server = /^wss?:\/\//.test(given) ? given.replace(/\/room(\/.*)?$/, '').replace(/\/+$/, '') : LIVE_ROOMS;
   return (name) => `${server}/room/${name}`;
+}
+
+/** Whether an address is this machine's own, where only its player runs servers. */
+const LOOPBACK = /^(?:https?|wss?):\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?(?:\/|$)/;
+
+/** Where the game's accounts are, from its page's `?room=` and `?accounts=`. The deployed rooms keep characters on the
+ *  deployed accounts; a room server on this machine keeps them on accounts named on this machine
+ *  (`?accounts=http://127.0.0.1:8788` under `npm run accounts`). A session goes nowhere else, so a crafted link
+ *  cannot send it to another's room or accounts: offline, or with a room server or accounts elsewhere, none are kept. */
+export function accountsFrom(rooms: string | null, given: string | null): string | null {
+  if (rooms === null) return null;
+  const named = /^wss?:\/\//.test(rooms);
+  if (named && !LOOPBACK.test(rooms)) return null;
+  if (given !== null && LOOPBACK.test(given)) return given;
+  return named ? null : LIVE_ACCOUNTS;
+}
+
+/** The page's account, from its address: the link to the accounts its `?room=` and `?accounts=` name (null for none),
+ *  and the session's token the rooms keep the player's character by, once the player is signed in or made a guest. A
+ *  Discord sign-in comes back with a code in the address's fragment, which is taken and cleared at once; the tab's
+ *  own nonce (in `passing`) redeems it. */
+export function accountOf(
+  page: Location,
+  kept: Kept,
+  passing: Kept,
+): { link: AccountLink | null; session: Promise<string | null> } {
+  const asking = new URLSearchParams(page.search);
+  const where = accountsFrom(asking.get('room'), asking.get('accounts'));
+  if (where === null) return { link: null, session: Promise.resolve(null) };
+  const link = new AccountLink(where, kept, undefined, passing);
+  if (link.takeFrom(page.hash)) history.replaceState(null, '', `${page.pathname}${page.search}`);
+  return { link, session: link.session().then(() => link.token) };
+}
+
+/** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder seas is its own room
+ *  (`node-<id>--rough`); a social space is one for everyone, whatever the seas. */
+export function nodeRoom(node: { readonly id: string; readonly kind: string }, difficulty: Difficulty): string {
+  return node.kind === 'social' || difficulty === 'calm' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
+}
+
+/** The node and seas a node's room is for (`node-<id>`, `node-<id>--rough`); null for any other room. */
+export function nodeOfRoom(room: string): { readonly id: string; readonly seas: Difficulty } | null {
+  const found = /^node-([a-z0-9-]+?)(?:--(rough|storm))?$/.exec(room);
+  return found?.[1] ? { id: found[1], seas: (found[2] as Difficulty | undefined) ?? 'calm' } : null;
 }

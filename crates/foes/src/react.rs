@@ -1,6 +1,6 @@
 //! A foe's answers to blows at it, the fight Overlook adds to DFO's brain. Seeing a swing begin or a shot loosed at
-//! it, a foe waits its kind's reaction time, then parries (pressing its guard so the parry window spans the landing),
-//! blocks, dodges aside, or takes it, by its kind's shares and what its stamina and its own action allow. And the
+//! it, a foe waits its reaction time, then parries (pressing its guard so the parry window spans the landing),
+//! blocks, dodges aside, or takes it, by its shares and what its stamina and its own action allow. And the
 //! openings a fight gives it: the riposte a parry earned, the counter a perfect dodge earned, and a target spent in its
 //! own swing's follow-through, staggered, down or drawing a bow.
 
@@ -11,19 +11,21 @@ use crate::steer::Ask;
 use crate::tuning::{BACK_TURNED, GUARD_AFTER, PRESS_LATEST, PRESS_LEAD, THREAT_MARGIN};
 use combat::arms::{OffHand, stroke_shape, weapon};
 use combat::fighter::{Action, Attack};
-use combat::shots::shot_numbers;
+use combat::shots::{foe_speed, shot_numbers};
 use combat::sight::{apart, bearing, off};
 use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, PARRY_WINDOW};
 use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::FRAC_PI_2;
 
 /// A blow coming at it: who, when it was seen begun, and the tick it lands (none for a shot, timed by its distance
-/// when it is weighed).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// when it is weighed, by its speed).
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Threat {
     pub by: FighterId,
     pub seen: u64,
     pub lands: Option<u64>,
+    /// A shot's speed as the room told it, 0 when it did not.
+    pub speed: f64,
 }
 
 /// How a foe answers a blow.
@@ -57,13 +59,13 @@ impl Reactions {
     pub fn saw_swing(&mut self, by: FighterId, attack: &Attack, tick: u64) {
         let lands = tick + u64::from(attack.strike.saturating_sub(attack.elapsed));
         if self.threat.and_then(|threat| threat.lands).is_none_or(|sooner| lands < sooner) {
-            self.threat = Some(Threat { by, seen: tick, lands: Some(lands) });
+            self.threat = Some(Threat { by, seen: tick, lands: Some(lands), speed: 0.0 });
         }
     }
 
-    pub fn saw_shot(&mut self, by: FighterId, tick: u64) {
+    pub fn saw_shot(&mut self, by: FighterId, speed: f64, tick: u64) {
         if self.threat.is_none() {
-            self.threat = Some(Threat { by, seen: tick, lands: None });
+            self.threat = Some(Threat { by, seen: tick, lands: None, speed });
         }
     }
 }
@@ -74,7 +76,7 @@ fn can_swing(action: &Action) -> bool {
 }
 
 /// The answer it settles on for a threat its reaction time has passed, if any: whether the blow is at it at all, then
-/// its kind's shares, then what its action and stamina allow, then whether there is time.
+/// its shares, then what its action and stamina allow, then whether there is time.
 fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let tick = here.tick();
     let striker = here.enemy(threat.by)?;
@@ -94,7 +96,10 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
             (distance <= reach + THREAT_MARGIN && aimed_here).then_some(lands)?
         }
         None => {
-            let speed = shot_numbers(striker.arms.ranged?).0;
+            let ranged = striker.arms.ranged?;
+            // An aimed shot flies faster than its weapon's plain one: the room's word on its speed comes first.
+            let weapon = if striker.side.is_players() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
+            let speed = if threat.speed > 0.0 { threat.speed } else { weapon };
             if speed <= 0.0 || facing > 0.2 {
                 return None;
             }

@@ -21,7 +21,7 @@ type Vector = [number, number, number];
 /** A shot `share` of the way (0 to 1, eased by the caller) from `from` to `to`: its eye, pitch and lens straight, its
  *  bearing the short way round, its near plane the target's past half way, its far plane the first's. */
 export function panShot(from: Shot, to: Shot, share: number): Shot {
-  const mix = (start: number, end: number) => start + (end - start) * share;
+  const mix = (start: number, end: number) => start * (1 - share) + end * share;
   const turn = Math.atan2(Math.sin(to.yaw - from.yaw), Math.cos(to.yaw - from.yaw));
   return {
     eye: [mix(from.eye[0], to.eye[0]), mix(from.eye[1], to.eye[1]), mix(from.eye[2], to.eye[2])],
@@ -81,6 +81,17 @@ export function fromEyeMatrix(shot: Shot, aspect: number): Float32Array {
   return matrix;
 }
 
+/** A camera's matrix from the eye (column-major), taking points `offset` metres off from the eye: a point p maps as
+ *  p + offset would. Worked in double precision, so a world far from its origin keeps its centimetres. */
+export function shifted(fromEye: Float32Array, offset: readonly [number, number, number]): Float32Array {
+  const out = Float32Array.from(fromEye);
+  for (let row = 0; row < 4; row += 1) {
+    const term = (column: number) => fromEye[column * 4 + row] ?? 0;
+    out[12 + row] = term(0) * offset[0] + term(1) * offset[1] + term(2) * offset[2] + term(3);
+  }
+  return out;
+}
+
 /** Where a world point lands on the screen in pixels (x right, y down), or null behind the eye. */
 export function onScreen(
   shot: Shot,
@@ -97,8 +108,9 @@ export function onScreen(
   return [((across + 1) / 2) * size.width, ((1 - upward) / 2) * size.height];
 }
 
-/** The shot a player's orbit camera takes (its eye back from its target along its look), held `clearance` over the
- *  ground under the eye where the ground is known, so a camera pulled back up a slope never looks out from under it. */
+/** The shot a player's orbit camera takes (its eye back from its target along its look, its lens narrowed by the
+ *  orbit's zoom), held `clearance` over the ground under the eye where the ground is known, so a camera pulled back up
+ *  a slope never looks out from under it. */
 export function shotOfOrbit(
   orbit: {
     readonly targetX: number;
@@ -107,6 +119,7 @@ export function shotOfOrbit(
     readonly yaw: number;
     readonly pitch: number;
     readonly distance: number;
+    readonly zoom?: number;
   },
   lens: { readonly fov: number; readonly near: number; readonly far: number },
   groundAt: (x: number, y: number) => number | null,
@@ -120,7 +133,8 @@ export function shotOfOrbit(
   ];
   const ground = groundAt(eye[0], eye[1]);
   if (ground !== null && eye[2] < ground + clearance) eye[2] = ground + clearance;
-  return { eye, yaw: orbit.yaw, pitch: orbit.pitch, ...lens };
+  const fov = 2 * Math.atan(Math.tan(lens.fov / 2) / (orbit.zoom ?? 1));
+  return { eye, yaw: orbit.yaw, pitch: orbit.pitch, ...lens, fov };
 }
 
 /** The look of a forward vector (east, south, up) as a bearing and a pitch below the horizon. */

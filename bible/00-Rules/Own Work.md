@@ -13,8 +13,10 @@ libraries, which the owner brought over exactly ([[DFO's Sprite Forge Comes Over
 ([[The Player Plays as in DFO]]); Come Sail Away's sailing as DFO ported it ([[Come Sail Away's Sailing Comes Over]]);
 the forged models, procedural textures and RMB town blocks of DFO's branch `ccr-cab30c1a-oddrwb`, with the
 Daggerfall measures, texture archives and palette they are built on
-([[Every Island Is Seen Whole and Reached by Nodes]]); and DFO's blood with DaggerBlood's numbers and Daggerfall's
-blood red ([[Struck Figures Flash, and DFO's Blood Comes Over]]).
+([[Every Island Is Seen Whole and Reached by Nodes]]); DFO's blood with DaggerBlood's numbers and Daggerfall's
+blood red ([[Struck Figures Flash, and DFO's Blood Comes Over]]); the face Pixelify Sans, under the SIL Open Font
+Licence ([[Pixelify Sans Is Overlook's Font]]); and sounds and music from Freesound under CC0 or CC-BY, each CC-BY one
+credited in the game ([[Sounds Come From Freesound, Judged on a Test Sheet]]).
 
 **Why.** DFO Online ported other authors' mods and later spent months replacing them with its own work, and one ship
 system came from a decompiled mod with no licence. Overlook starts where DFO ended up ([[Overlook Is Our Own Game]]).

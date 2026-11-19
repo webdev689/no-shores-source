@@ -56,6 +56,16 @@ dependencies = [
  "combat",
  "libm",
  "movement",
+ "navmesh",
+]
+
+[[package]]
+name = "gear"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -115,6 +125,7 @@ name = "movement"
 version = "0.0.0"
 dependencies = [
  "libm",
+ "serde_json",
 ]
 
 [[package]]
@@ -159,6 +170,7 @@ version = "0.0.0"
 dependencies = [
  "combat",
  "flatbuffers",
+ "gear",
  "land",
  "movement",
  "naval",
@@ -190,6 +202,7 @@ dependencies = [
  "city",
  "combat",
  "foes",
+ "gear",
  "land",
  "layout",
  "libm",
@@ -209,6 +222,8 @@ dependencies = [
  "bake",
  "city",
  "combat",
+ "foes",
+ "gear",
  "land",
  "movement",
  "naval",

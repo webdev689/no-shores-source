@@ -9,8 +9,9 @@ thread_local! {
     static STANDING: RefCell<Standing> = const { RefCell::new(Standing::Inside) };
 }
 
-/// Keeps a section from its JSON (`{ "ring": [[x, y]…], "spawns": [[x, y]…] }`) and stands the body inside it; text
-/// that is not one clears it. Answers whether it was one.
+/// Keeps a section from its JSON (`{ "ring": [[x, y]…], "spawns": [[x, y]…], "standing": n }`) and stands the body
+/// as `standing` packs it (`packed`), taking up where a room's word left it, or inside; text that is not one clears
+/// it. Answers whether it was one.
 pub fn set_section(text: &[u8]) -> bool {
     let read = |value: &serde_json::Value, key: &str| -> Option<Vec<[f64; 2]>> {
         value
@@ -20,14 +21,31 @@ pub fn set_section(text: &[u8]) -> bool {
             .map(|point| Some([point.get(0)?.as_f64()?, point.get(1)?.as_f64()?]))
             .collect()
     };
-    let section = serde_json::from_slice::<serde_json::Value>(text)
-        .ok()
-        .and_then(|value| Some(Section { ring: read(&value, "ring")?, spawns: read(&value, "spawns")? }))
+    let value = serde_json::from_slice::<serde_json::Value>(text).ok();
+    let section = value
+        .as_ref()
+        .and_then(|value| Some(Section { ring: read(value, "ring")?, spawns: read(value, "spawns")? }))
         .filter(|section| section.ring.len() >= 3);
     let kept = section.is_some();
+    let standing = value
+        .as_ref()
+        .and_then(|value| value.get("standing")?.as_u64())
+        .and_then(|number| u32::try_from(number).ok())
+        .filter(|_| kept)
+        .map_or(Standing::Inside, unpacked);
     SECTION.with(|slot| *slot.borrow_mut() = section);
-    STANDING.with(|standing| *standing.borrow_mut() = Standing::Inside);
+    STANDING.with(|slot| *slot.borrow_mut() = standing);
     kept
+}
+
+/// A standing from its one number (`packed`).
+fn unpacked(number: u32) -> Standing {
+    let ticks = number & ((1 << 30) - 1);
+    match number >> 30 {
+        1 => Standing::Warned { ticks_left: ticks },
+        2 => Standing::Dead { ticks },
+        _ => Standing::Inside,
+    }
 }
 
 /// The standing as one number: its kind in the top two bits (0 inside, 1 warned, 2 dead) and its ticks below.
@@ -80,6 +98,14 @@ mod tests {
         }
         assert_eq!(respawn(95.0, 95.0), Some([90.0, 90.0]));
         assert_eq!(tick(90.0, 90.0), 0);
+    }
+
+    #[test]
+    fn a_section_taken_up_after_a_room_keeps_the_body_dead_as_the_room_had_it() {
+        let dead = SQUARE.replace('}', &format!(r#","standing":{}}}"#, packed(Standing::Dead { ticks: 5 })));
+        assert!(set_section(dead.as_bytes()));
+        assert_eq!(tick(50.0, 50.0), packed(Standing::Dead { ticks: 6 }), "still dead, its time running on");
+        assert_eq!(respawn(95.0, 95.0), None, "too soon, as the room had it");
     }
 
     #[test]

@@ -16,11 +16,29 @@ pub const GROUND_STEP_M: f64 = 4.0;
 /// A ship's number in a fight, never shared while she is in it.
 pub type ShipId = u32;
 
-/// Whom a ship sails for: the players, or the pirates. A ball strikes only a ship that flies another flag.
+/// Whom a ship sails for: the players, or a faction by its number (`ranks`). A ball strikes only a ship that flies
+/// another flag.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Flag {
     Player,
-    Pirate,
+    Faction(u8),
+}
+
+impl Flag {
+    /// Its number on the wire: 0 the players', else the faction's.
+    #[must_use]
+    pub fn number(self) -> u8 {
+        match self {
+            Flag::Player => crate::ranks::PLAYERS,
+            Flag::Faction(faction) => faction,
+        }
+    }
+
+    /// The flag numbered so.
+    #[must_use]
+    pub fn numbered(number: u8) -> Flag {
+        if number == crate::ranks::PLAYERS { Flag::Player } else { Flag::Faction(number) }
+    }
 }
 
 /// A ship as a ball meets her: her number and flag, her hull's box, her sails' boxes, and whether she is still there

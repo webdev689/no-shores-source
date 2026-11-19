@@ -1,6 +1,6 @@
 //! One step of a body: the rules for each way it can be held.
 
-use crate::blocks::{WallAhead, ground_at, room_at, slide, under_ceiling, wall_ahead};
+use crate::blocks::{Block, WallAhead, feet_after, ground_at, pushed_out, room_at, slide, under_ceiling, wall_ahead};
 use crate::body::{Body, Controls, Mode, Over, TUNING};
 use crate::near::Near;
 use crate::terrain::Terrain;
@@ -45,7 +45,7 @@ fn go_over<B: Near + ?Sized>(body: &Body, ahead: &WallAhead, bearing: f64, vault
     if !room_to_stand(blocks, body.x + dir_x * onto, body.y + dir_y * onto, ahead.block.top) {
         return None;
     }
-    let reach_over = if vault { ahead.depth + TUNING.radius * 2.0 + 0.2 } else { onto };
+    let reach_over = if vault { clearing(&ahead.block, body, dir_x, dir_y) + 0.2 } else { onto };
     if vault && !room_to_stand(blocks, body.x + dir_x * reach_over, body.y + dir_y * reach_over, body.z) {
         return None;
     }
@@ -62,6 +62,21 @@ fn go_over<B: Near + ?Sized>(body: &Body, ahead: &WallAhead, bearing: f64, vault
         facing: bearing,
         ..*body
     })
+}
+
+/// How far a body goes along (`dir_x`, `dir_y`) before its radius clears the block's far side, head on or slantwise.
+/// A vault carries it that far and a little more, so it lands past the block wherever it met it from.
+fn clearing(block: &Block, body: &Body, dir_x: f64, dir_y: f64) -> f64 {
+    let out = |at: f64, dir: f64, low: f64, high: f64| {
+        if dir > 0.0 {
+            (high + TUNING.radius - at) / dir
+        } else if dir < 0.0 {
+            (low - TUNING.radius - at) / dir
+        } else {
+            f64::INFINITY
+        }
+    };
+    out(body.x, dir_x, block.min_x, block.max_x).min(out(body.y, dir_y, block.min_y, block.max_y))
 }
 
 /// Whether a lip `rise` over the feet, on a block `depth` deep, is vaulted rather than mantled.
@@ -185,6 +200,10 @@ fn in_air<B: Near + ?Sized>(
     if z < rising {
         fall_speed = fall_speed.min(0.0);
     }
+    // Sinking past the top of a block beside it, a body slow to clear it is pushed out, judged where its feet end:
+    // on the ground they reach, or else where they fell to.
+    let (x, y) =
+        pushed_out(blocks, terrain, x, y, body.height(), |x, y| z.max(ground_at(blocks, terrain, x, y, body.z)));
     let crouch = ease(body.crouch, if body.crouched { 1.0 } else { 0.0 }, seconds);
     let moved = Body { x, y, z, ..*body };
     if wish.length > 0.0
@@ -230,6 +249,10 @@ fn on_ground<B: Near + ?Sized>(
     seconds: f64,
     wish: Wish,
 ) -> Body {
+    // A body set down overlapping a block, as a blow's charge may leave it, is pushed out before it moves.
+    let (x, y) =
+        pushed_out(blocks, terrain, body.x, body.y, body.height(), |x, y| feet_after(blocks, terrain, body, x, y));
+    let body = &Body { x, y, ..*body };
     // A crouched body stands up only where there is room over its head.
     let stand_up = controls.crouch && body.crouched && room_to_stand(blocks, body.x, body.y, body.z);
     let crouched = if controls.crouch && !body.crouched { true } else { body.crouched && !stand_up };

@@ -1,0 +1,21 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import type { Db, Statement } from './database.ts';
+
+/** A fresh database in memory, its tables made by the accounts' own migrations in order, behind the part of D1 they
+ *  use. */
+export function sqliteForTests(): Db {
+  const sqlite = new DatabaseSync(':memory:');
+  const migrations = new URL('migrations/', import.meta.url);
+  for (const name of readdirSync(migrations)
+    .filter((each) => each.endsWith('.sql'))
+    .sort())
+    sqlite.exec(readFileSync(new URL(name, migrations), 'utf8'));
+  const statement = (sql: string, values: readonly SQLInputValue[] = []): Statement => ({
+    bind: (...given) => statement(sql, given as SQLInputValue[]),
+    first: <T>() => Promise.resolve((sqlite.prepare(sql).get(...values) ?? null) as T | null),
+    all: <T>() => Promise.resolve({ results: sqlite.prepare(sql).all(...values) as T[] }),
+    run: () => Promise.resolve({ meta: { changes: Number(sqlite.prepare(sql).run(...values).changes) } }),
+  });
+  return { prepare: (sql) => statement(sql) };
+}

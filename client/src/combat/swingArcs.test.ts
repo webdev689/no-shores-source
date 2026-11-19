@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { directionOf } from '../rules/fighters.ts';
 import {
   PART,
   SWING_FLOATS,
@@ -14,7 +15,7 @@ import {
 
 const DEGREE = Math.PI / 180;
 const LOOK = { brightness: 1, trail: 1 };
-/** A sword's sweep to the left, aimed north, landing 0.4 s into a 1 s swing. */
+/** A sword's sweep to the left, aimed north, landing 0.4 s into a 1 s swing, drawn the way its stroke goes. */
 const swing = (over: Partial<Swing> = {}): Swing => ({
   id: 7,
   stroke: 3,
@@ -24,7 +25,9 @@ const swing = (over: Partial<Swing> = {}): Swing => ({
   reach: 2.05,
   halfArc: 70 * DEGREE,
   aim: 0,
+  way: directionOf(over.stroke ?? 3),
   leftHand: false,
+  mirrored: false,
   special: false,
   tint: [1, 1, 1],
   ...over,
@@ -83,12 +86,38 @@ test('a thrust drives out along its aim to its tip as it lands, from drawn back,
   assert.ok(course.land[1] < -0.99, 'north');
 });
 
-test('the left hand strikes from the left shoulder, and through the eyes the pivot stands ahead', () => {
+test('an arc goes the way its figure is drawn swinging, whatever way the stroke was asked', () => {
+  // Asked to the left, drawn as the side cut to the right: aimed north, it travels east.
+  const drawn = courseOf(swing({ stroke: 3, way: 'right' }));
+  assert.ok(drawn.travel[0] > 0.9, `east: ${drawn.travel[0]}`);
+  near(courseOf(swing({ stroke: 3, way: 'right' })).before, courseOf(swing({ stroke: 4 })).before);
+});
+
+test('the left hand strikes from the left shoulder; a mirrored figure swings left-handed, the other way', () => {
   assert.ok(courseOf(swing({ leftHand: true })).offset[0] < 0);
   assert.ok(courseOf(swing()).offset[0] > 0);
-  const own = courseOf(swing({ firstPerson: true }));
-  assert.ok(own.offset[1] < -0.3, 'ahead of the eye, north');
-  assert.ok(own.tip < courseOf(swing()).tip);
+  const mirrored = courseOf(swing({ way: 'right', mirrored: true }));
+  assert.ok(mirrored.offset[0] < 0, 'from the left shoulder');
+  assert.ok(mirrored.travel[0] < -0.9, 'drawn to the right, mirrored: west');
+  assert.ok(courseOf(swing({ way: 'downRight', mirrored: true })).travel[0] < -0.5, 'a slant mirrored too');
+  assert.ok(courseOf(swing({ leftHand: true, mirrored: true })).offset[0] > 0, 'a left hand mirrored is the right');
+});
+
+test("a blow keeps the mirror it began with, though its figure's side turns mid-sweep", () => {
+  const arcs = new SwingArcs();
+  play(arcs, [[0, 0.3]], { way: 'right' });
+  play(arcs, [[0.1, 0.4]], { way: 'right', mirrored: true });
+  assert.equal(arcs.count, 1);
+  // Swept to the right up to its landing, its streak lies west, where it came from; turned about, it would lie east.
+  const mesh = arcs.mesh(EYE, LOOK);
+  const across = Array.from(
+    { length: mesh.length / SWING_FLOATS },
+    (_unused, index) => (mesh[index * SWING_FLOATS] ?? 0) - 10,
+  );
+  assert.ok(
+    Math.min(...across) < -1 && Math.max(...across) < 0.6,
+    `west: ${Math.min(...across)} to ${Math.max(...across)}`,
+  );
 });
 
 test("a weapon's arc burns in its metal's light, bare hands in a warm white", () => {

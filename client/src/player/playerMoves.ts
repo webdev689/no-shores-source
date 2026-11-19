@@ -1,4 +1,6 @@
 import type { Mode } from '../rules/movementRules.ts';
+import { STRIKE_PACE } from '../firstperson/weaponMachine.ts';
+import type { StrokeDirection } from '../rules/fighters.ts';
 
 /** A swing's direction, as the first-person weapon draws it. */
 export type Direction = 'down' | 'downLeft' | 'left' | 'right' | 'downRight' | 'up';
@@ -134,14 +136,10 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
 /** The owner's blows (the forge's blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
  *  the fifth. */
 const BLOW = { frames: 9, lands: 4 } as const;
-/** How fast a strike's frames run, about a third faster than DFO's: the wind-up's in the last three quarters of the
- *  time up to the blow, its first frame held before; a blow's follow-through over a little over half that time after
- *  it lands. The blow still lands when the fight's rules land it. */
-const STRIKE = { windup: 0.75, recover: 0.55 } as const;
-
-/** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`. */
+/** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`: at
+ *  the first person's pace. */
 function woundUp(progress: number, lands: number): number {
-  const start = lands * (1 - STRIKE.windup);
+  const start = lands * (1 - STRIKE_PACE.windup);
   return Math.max(0, (progress - start) / Math.max(lands - start, 1e-6));
 }
 /** The hold each weapon strikes in alone: one hand, or both on a haft. */
@@ -157,6 +155,20 @@ const HOLD_OF: Readonly<Record<string, string>> = {
 /** The blow a swing in `direction` strikes with these hands, where the forge draws it with both: its stroke (down the
  *  overhead, up the thrust, any other the side cut) and its hold (a blade or mace in each hand as a pair, else the
  *  weapon's own). Null where none is drawn. */
+/** One of the owner's blows by name: its stroke and its hold. */
+const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair)$/;
+
+/** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down and the thrust
+ *  out; the side cut to the right with one hand or a pair (its right blade), to the left with a hilt or a haft, whatever
+ *  way the swing was asked. Null for any other move. */
+export function blowWay(anim: string): StrokeDirection | null {
+  const [, stroke, hold] = BLOW_NAME.exec(anim) ?? [];
+  if (stroke === 'over') return 'down';
+  if (stroke === 'thrust') return 'up';
+  if (stroke === 'side') return hold === 'haft' || hold === 'hilt' ? 'left' : 'right';
+  return null;
+}
+
 function blowOf(direction: Direction, right: string | null, left: string | null, draws: Draws): string | null {
   if (!right) return null;
   const stroke = direction === 'down' ? 'over' : direction === 'up' ? 'thrust' : 'side';
@@ -171,7 +183,7 @@ function blowOf(direction: Direction, right: string | null, left: string | null,
 export function blowFrame(progress: number, lands: number): number {
   const now = Math.max(0, progress);
   if (lands > 0 && now < lands) return Math.min(BLOW.lands - 1, Math.floor(woundUp(now, lands) * BLOW.lands));
-  const recover = lands * STRIKE.recover;
+  const recover = lands * STRIKE_PACE.recover;
   if (!(recover > 0)) return BLOW.frames - 1;
   return Math.min(BLOW.frames - 1, BLOW.lands + Math.floor(((now - lands) / recover) * (BLOW.frames - BLOW.lands)));
 }

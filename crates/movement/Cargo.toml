@@ -9,5 +9,8 @@ description = "How a body moves: walking, running, crouching, jumping, climbing,
 [dependencies]
 libm.workspace = true
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true

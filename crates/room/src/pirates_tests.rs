@@ -115,3 +115,63 @@ fn the_same_courses_make_the_same_pirates() {
     };
     assert_eq!(run(), run());
 }
+
+#[test]
+fn the_sea_brings_the_grey_tithe_as_often_as_pirates_and_minors_majors_and_elites_by_their_shares() {
+    let mut brought = std::collections::BTreeMap::new();
+    for seed in 1..=200 {
+        let mut pirates = Pirates::new(seed);
+        for _ in 0..4 * 3600 {
+            let met = pirates.tick(1.0, &[(1, [0.0, 0.0], false, 1.0)], OPEN);
+            for pirate in pirates.sailing.iter().chain(met.iter().map(|(_, pirate)| pirate)) {
+                brought.insert((seed, pirate.id), *pirate);
+            }
+        }
+    }
+    let count = brought.len() as f64;
+    assert!(count > 4_000.0, "{count} ships in 200 seas' four hours");
+    let share = |wanted: &dyn Fn(Commission) -> bool| {
+        brought.values().filter(|pirate| wanted(pirate.commission())).count() as f64 / count
+    };
+    let tithe = share(&|commission| commission.faction == GREY_TITHE);
+    assert!((tithe - TITHE_SHARE).abs() < 0.03, "the Grey Tithe's share {tithe}");
+    assert!((share(&|commission| commission.faction == PIRATES) + tithe - 1.0).abs() < 1e-9, "pirates the rest");
+    for (rank, expected) in RANKS_AT_SEA {
+        let seen = share(&|commission| commission.rank == rank);
+        assert!((seen - expected).abs() < 0.03, "{rank:?}: {seen}");
+    }
+    let elites = brought.values().filter(|pirate| pirate.commission().rank == Rank::Elite);
+    assert!(elites.clone().count() > 0 && elites.into_iter().all(|pirate| pirate.bold), "an Elite is always bold");
+}
+
+#[test]
+fn a_ships_faction_and_rank_come_from_her_seed_by_their_shares() {
+    let commissions: Vec<Commission> = (0..20_000).map(commission_at_sea).collect();
+    let share = |wanted: &dyn Fn(&Commission) -> bool| {
+        commissions.iter().filter(|commission| wanted(commission)).count() as f64 / commissions.len() as f64
+    };
+    assert!((share(&|commission| commission.faction == GREY_TITHE) - TITHE_SHARE).abs() < 0.015);
+    for (rank, expected) in RANKS_AT_SEA {
+        assert!((share(&|commission| commission.rank == rank) - expected).abs() < 0.015, "{rank:?}");
+    }
+    assert_eq!(commission_at_sea(77), commission_at_sea(77), "one seed, one commission");
+}
+
+#[test]
+fn a_bold_ship_meets_the_nearest_rival_in_sight_and_two_that_parted_meet_only_once_out_of_sight() {
+    use crate::clash::tests::at_sea;
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    let major = Commission::default();
+    let friend = Commission { faction: GREY_TITHE, rank: Rank::Major };
+    let ships = [at_sea(1, elite, 0.0, true), at_sea(2, friend, 100.0, true), at_sea(3, major, 700.0, false)];
+    let mut pirates = Pirates { sailing: ships.to_vec(), ..Pirates::default() };
+    let met: Vec<[u32; 2]> = pirates.meet_rivals().iter().map(|pair| pair.map(|pirate| pirate.id)).collect();
+    assert_eq!(met, [[1, 3]], "her own faction's ship is no rival");
+    let mut pirates = Pirates::default();
+    pirates.back_from_clash(vec![ships[0], Pirate { x: 400.0, ..ships[2] }]);
+    assert!(pirates.meet_rivals().is_empty(), "they parted");
+    pirates.sailing[1].x = 800.0;
+    assert!(pirates.meet_rivals().is_empty(), "out of sight");
+    pirates.sailing[1].x = 400.0;
+    assert_eq!(pirates.meet_rivals().len(), 1, "in sight again, they meet again");
+}

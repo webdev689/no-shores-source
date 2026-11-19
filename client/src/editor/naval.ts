@@ -3,6 +3,7 @@ import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
 import type { MarkView } from '../ships/markView.ts';
 import { type SailRig, windOff } from '../ships/sails.ts';
+import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
@@ -170,6 +171,13 @@ export class Naval {
       halfBeam: waterline.beamM / 2,
       way: Math.hypot(ahead, abeam),
     };
+  }
+
+  /** Her captain's bar over her masthead, heights as drawn, while one is on. */
+  bars(view: Window, shown: number): ShipBar[] {
+    const captain = this.fight?.view.captain;
+    const bar = captain && barOver({ ...captain, maxHull: captain.max_hull }, view, shown);
+    return bar ? [bar] : [];
   }
 
   /** The panel's lines: the fight's, or a fight's last for a while after it ends. */

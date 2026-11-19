@@ -58,11 +58,12 @@ export function groundUnder(patch: GroundPatch, x: number, y: number): number | 
   return heldSplineAt(patch.heights, patch.width, patch.height, gridX, gridY);
 }
 
-/** Puts points in the window's metres (z up) on the screen through one camera, or null behind it. */
+/** Puts points in the window's metres (z up) on the screen through one camera, with how far each is ahead of it, or
+ *  null behind it. */
 export function screenProjector(
   orbit: Orbit,
   size: { readonly width: number; readonly height: number },
-): (point: readonly [number, number, number]) => { x: number; y: number } | null {
+): (point: readonly [number, number, number]) => { x: number; y: number; depth: number } | null {
   const matrix = viewProjection(orbit, size.width / size.height);
   return ([x, y, z]) => {
     const row = (index: number) =>
@@ -72,7 +73,7 @@ export function screenProjector(
       (matrix[index + 12] ?? 0);
     const clipW = row(3);
     if (clipW <= 0) return null;
-    return { x: ((row(0) / clipW + 1) / 2) * size.width, y: ((1 - row(1) / clipW) / 2) * size.height };
+    return { x: ((row(0) / clipW + 1) / 2) * size.width, y: ((1 - row(1) / clipW) / 2) * size.height, depth: clipW };
   };
 }
 
@@ -119,7 +120,7 @@ export function drawScaleCues(
     draw('line', { x1: base.x, y1: base.y + 14, x2: end.x, y2: end.y + 14, stroke: '#fff', 'stroke-width': 2 });
     draw(
       'text',
-      { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30, fill: '#fff', 'text-anchor': 'middle', 'font-size': 12 },
+      { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30, fill: '#fff', 'text-anchor': 'middle', 'font-size': 11 },
       label,
     );
     const middle = { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30 };

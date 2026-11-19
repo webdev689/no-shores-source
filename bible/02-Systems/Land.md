@@ -171,8 +171,8 @@ cannot be planned is listed among the landmass's problems. The door answers for 
   the water's surface, and the sea's swell over it at a given moment ([[Water]]). The answer also holds fingerprints
   of the heights and of the sea. The game will call it.
 - `land_window`: the ground over a rect, cut as a node's window, as JSON: every number the same, to the bit, as the
-  window the bake writes for the rect a node's room names. The movement door stands a predicted body on it
-  ([[Movement]]).
+  window the bake writes for the rect a node's room names. The movement door and the fight's rules stand a predicted
+  body on it ([[Movement]], [[Combat]]), and a room played alone stands its bodies on it.
 - `land_boxes`: the boxes of the city a body runs into within a rect, west, north, east, south and top.
 - `land_city_plan`: the city's plan as JSON, for the drawing, or null for a landmass with no city.
 

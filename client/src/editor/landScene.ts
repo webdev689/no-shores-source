@@ -3,6 +3,7 @@ import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
 import { MarkView } from '../ships/markView.ts';
+import { ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
@@ -16,6 +17,7 @@ import {
   PATCH_SAMPLES,
   PATCH_STEP_M,
   REFRESH_M,
+  screenProjector,
   shownExaggeration,
   walkStep,
 } from './closeUp.ts';
@@ -27,7 +29,7 @@ import { type TerrainData, type TerrainOptions, TerrainView } from '../terrain/t
 import { helmOf, isRungKey } from '../ships/helmKeys.ts';
 import type { Afloat } from './afloat.ts';
 import type { FightSource } from './fighting.ts';
-import type { FleetCall } from './fleetLink.ts';
+import { chosenCaptain, type FleetCall } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
 import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
@@ -152,11 +154,15 @@ export class LandScene {
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
   private readonly layoutCity: LayoutCity;
+  /** The picture's overlay, which the editor clears each frame: each captain's bar is drawn on it. */
+  private readonly overlay: SVGSVGElement;
+  private readonly shipPlates = new ShipPlates();
 
-  constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
+  constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
     this.gpu = gpu;
     this.redraw = redraw;
     this.fail = fail;
+    this.overlay = overlay;
     this.water = new WaterView(gpu);
     this.harbour = new Harbour(
       () => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'))),
@@ -333,6 +339,11 @@ export class LandScene {
     }
     if (fleet) fleet.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, now / 1000);
     else this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, time, sails);
+    const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
+    if (bars.length > 0) {
+      const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
+      this.shipPlates.draw(this.overlay, bars, screenProjector(seen, size), size.width, now / 1000);
+    }
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -411,8 +422,9 @@ export class LandScene {
     return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
   }
 
-  /** The Sloop in a fleet room: her orders from the keys (F calls a captain, X sends them all off), her look while
-   *  aiming, the fleet's effects on the water, and her wake. Answers the camera's orbit, on her. */
+  /** The Sloop in a fleet room: her orders from the keys (F calls a captain of the faction and rank the panel chose,
+   *  X sends them all off), her look while aiming, the fleet's effects on the water, and her wake. Answers the
+   *  camera's orbit, on her. */
   private sailOnline(fleet: FleetScene, frame: SceneFrame, seconds: number, now: number): Orbit {
     const { view, orbit } = frame;
     this.harbour.fetchModel();
@@ -427,7 +439,7 @@ export class LandScene {
     const { steer, crab } = helmOf(frame.held, undefined);
     const brace = frame.held.has('c');
     const input = { steer, crab, climbs, look, fire: frame.fires > 0, brace, loadSteps: frame.loadSteps, call };
-    for (const splash of fleet.step(seconds, input, now, view))
+    for (const splash of fleet.step(seconds, { ...input, captain: chosenCaptain() }, now, view))
       this.water.stir(splash.x, splash.y, splash.radiusM, splash.strength);
     const waterline = this.ship?.waterline;
     for (const stir of waterline ? fleet.play.wake(view, waterline) : []) {

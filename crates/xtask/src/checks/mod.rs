@@ -8,6 +8,7 @@ mod layout;
 mod script_comments;
 mod size;
 mod vault;
+mod versions;
 
 use crate::files::Repo;
 use std::fmt;
@@ -71,6 +72,7 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     let sized: Vec<(String, u64)> =
         repo.files.iter().filter(|path| !kept_as_shipped(path)).map(|path| (path.clone(), repo.size(path))).collect();
     problems.extend(assets::check(&sized));
+    problems.extend(versions::check(&repo.files));
     let (manifests, skipped) =
         repo.sources(|path| path == "Cargo.toml" || (path.starts_with("crates/") && path.ends_with("/Cargo.toml")));
     problems.extend(unreadable(&skipped));

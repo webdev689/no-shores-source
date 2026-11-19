@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { blowFrame, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
+import { blowFrame, blowWay, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -223,4 +223,17 @@ test('a dodge rolls through its span, on the ground and in the air; with no roll
   assert.equal(shownMove(dodging, frames, classic).anim, 'idle', 'on the ground, the hop stands');
   assert.equal(shownMove({ ...dodging, mode: 'air', vz: 3 }, frames, classic).anim, 'jump');
   assert.equal(shownMove({ ...dodging, mounted: true }, frames, everything).anim, 'horseidle', 'mounted, the horse');
+});
+
+test("a blow's blade goes the way the forge draws it: down, out, a hand's side cut right and a two-hander's left", () => {
+  assert.deepEqual(['over1h', 'thrustpair', 'side1h', 'sidepair', 'sidehilt', 'sidehaft'].map(blowWay), [
+    'down',
+    'up',
+    'right',
+    'right',
+    'left',
+    'left',
+  ]);
+  assert.equal(blowWay('slash'), null, 'any other move');
+  assert.equal(blowWay('swing2h'), null);
 });

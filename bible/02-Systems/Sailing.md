@@ -175,7 +175,7 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 ## Limits
 
-- One hull, the Sloop.
+- One hull, the Sloop; the others are planned ([[Hulls]]).
 - A walker on deck stands on her heights, not her shape: no stairs below, no rigging to climb, and a body's edge
   may brush a rail it stands within a cell of. The tops of her rails and bulwarks lie past her walls, where no body
   comes.

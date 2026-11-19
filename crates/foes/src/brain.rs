@@ -1,13 +1,16 @@
-//! A foe's brain: whom it fights and where it last saw them, the way it faces, what it is about in its fight, and
-//! what it keeps for its telegraphed blows, its answers to blows at it and its bow. And what it notes of what the room
-//! tells it happened.
+//! A foe's brain: whom it fights and where it last saw or heard them, how aware it is, the way it faces, what it is
+//! about in its fight, and what it keeps for its telegraphed blows, its answers to blows at it and its bow. And what it
+//! notes of what the room tells it happened.
 
 use crate::Seen;
-use crate::kinds::{Kind, numbers};
+use crate::awareness::Awareness;
+use crate::ranks::{Call, Rank};
 use crate::react::Reactions;
+use crate::roles::{Numbers, Role};
+use crate::roster::FoeType;
 use crate::shoot::Bow;
 use crate::tell::Tells;
-use crate::tuning::{HURT_WINDOW, PHASE_MIGHT};
+use crate::tuning::HURT_WINDOW;
 use combat::{FighterId, Verdict};
 
 /// What a foe is about in its fight.
@@ -31,13 +34,43 @@ pub enum Plan {
 pub const SAMPLE_TICKS: u64 = 15;
 pub const SAMPLES: usize = (HURT_WINDOW * 60.0) as usize / SAMPLE_TICKS as usize + 1;
 
-/// A foe's brain.
+/// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled and the foes its phase calls,
+/// as it roars into a new phase; its shout as it turns alert, passing its allies the place it believes its foe is; and
+/// the health it gets back this tick, walking back to its post.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Calls {
+    pub refill_poise: bool,
+    pub crew: Option<Call>,
+    pub shout: Option<[f64; 3]>,
+    pub heal: f64,
+}
+
+/// A garrison foe's place at its post and the way it faces there.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Home {
+    pub at: [f64; 3],
+    pub facing: f64,
+}
+
+/// Why a garrison foe walks back to its post: its target led it past its leash, when it heeds nothing on the way but a
+/// blow; or its search found no one, when it heeds what it sees and hears as ever.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Homeward {
+    Leashed,
+    Searched,
+}
+
+/// A foe's brain: its type and rank, and all it keeps.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Brain {
-    pub kind: Kind,
+    pub foe_type: &'static FoeType,
+    pub rank: Rank,
+    pub(crate) calls: Calls,
     pub(crate) target: Option<FighterId>,
+    /// Where it believes its foe is: where it last saw its target, or what last stirred it.
     pub(crate) last_seen: Option<[f64; 3]>,
     pub(crate) seen_at: u64,
+    pub(crate) awareness: Awareness,
     /// The bearing it faces and steers by, turning at its own pace.
     pub(crate) heading: f64,
     pub(crate) plan: Plan,
@@ -53,20 +86,29 @@ pub struct Brain {
     pub(crate) sampled: u64,
     /// When, in reach, it may swing.
     pub(crate) ready_at: Option<u64>,
-    /// Its swings blocked running by a guard still raised.
+    /// Its swings blocked running by a guard still raised; since when that guard has walled it off, and the side it
+    /// steps round to (1 clockwise about its target, -1 not), chosen as the wall begins so a guard turning with it
+    /// never flips it.
     pub(crate) blocked: u8,
+    pub(crate) walled: Option<(u64, f64)>,
     pub(crate) tells: Tells,
     pub(crate) reactions: Reactions,
     pub(crate) bow: Bow,
+    /// A garrison foe's place at its post, and why it walks back there, if it does.
+    pub(crate) home: Option<Home>,
+    pub(crate) returning: Option<Homeward>,
 }
 
 impl Brain {
-    pub(crate) fn new(kind: Kind, facing: f64) -> Self {
+    pub(crate) fn new(foe_type: &'static FoeType, rank: Rank, facing: f64) -> Self {
         Brain {
-            kind,
+            foe_type,
+            rank,
+            calls: Calls::default(),
             target: None,
             last_seen: None,
             seen_at: 0,
+            awareness: Awareness::default(),
             heading: facing,
             plan: Plan::Wait,
             until: 0,
@@ -74,20 +116,62 @@ impl Brain {
             backoff_ready: 0,
             fled: false,
             slot: None,
-            health: [numbers(kind).health; SAMPLES],
+            health: [foe_type.numbers(rank, 1).health; SAMPLES],
             sampled: 0,
             ready_at: None,
             blocked: 0,
-            tells: Tells::default(),
+            walled: None,
+            tells: Tells { phase: 1, ..Tells::default() },
             reactions: Reactions::default(),
             bow: Bow::default(),
+            home: None,
+            returning: None,
         }
     }
 
-    /// What its fighter's blows are multiplied by now (a boss's second phase strikes harder).
+    /// Posts it at a garrison's place, facing `facing`: from now on it leashes to it.
+    pub fn posted_at(&mut self, at: [f64; 3], facing: f64) {
+        self.home = Some(Home { at, facing });
+    }
+
+    /// Whether it walks back to its post, its fight given up or its search let go.
+    #[must_use]
+    pub fn returning(&self) -> bool {
+        self.returning.is_some()
+    }
+
+    /// Its numbers now: its type's at its rank, in its phase.
+    #[must_use]
+    pub fn numbers(&self) -> Numbers {
+        self.foe_type.numbers(self.rank, self.tells.phase)
+    }
+
+    #[must_use]
+    pub fn role(&self) -> Role {
+        self.foe_type.role
+    }
+
+    /// The phase it fights in: 1, then 2 and 3 for those that have them.
+    #[must_use]
+    pub fn phase(&self) -> u8 {
+        self.tells.phase
+    }
+
+    /// What its fighter's blows are multiplied by now (a later phase strikes harder).
     #[must_use]
     pub fn might(&self) -> f64 {
-        numbers(self.kind).might * if self.tells.phase_two { PHASE_MIGHT } else { 1.0 }
+        self.numbers().might * self.foe_type.phase(self.rank, self.tells.phase).might
+    }
+
+    /// What it asks of its room since it was last asked, taken once.
+    pub fn take_calls(&mut self) -> Calls {
+        core::mem::take(&mut self.calls)
+    }
+
+    /// What it is about in its fight.
+    #[must_use]
+    pub fn plan(&self) -> Plan {
+        self.plan
     }
 
     /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it
@@ -113,23 +197,30 @@ impl Brain {
     }
 }
 
-/// What the room tells a foe's brain it saw happen this tick, noted for its next thought.
-#[must_use]
-pub fn notice(brain: &Brain, me: FighterId, seen: &Seen, tick: u64) -> Brain {
-    let mut next = brain.clone();
+/// What the room tells a foe's brain it saw happen this tick, noted in place for its next thought. Only an alert foe
+/// sees a blow coming; a blow on it alerts it at once.
+pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
+    let alert = brain.awareness.alert;
     match *seen {
-        Seen::Swung { by, attack } if by != me => next.reactions.saw_swing(by, &attack, tick),
-        Seen::Loosed { by } if by != me => next.reactions.saw_shot(by, tick),
-        Seen::Struck { by, .. } if next.target.is_none() => {
-            // The one that strikes it is its foe, as the soft lock takes it.
-            next.target = Some(by);
-            next.seen_at = tick;
+        Seen::Swung { by, attack } if by != me && alert => brain.reactions.saw_swing(by, &attack, tick),
+        Seen::Loosed { by, speed } if by != me && alert => brain.reactions.saw_shot(by, speed, tick),
+        Seen::Struck { by, .. } => {
+            brain.awareness.level = 1.0;
+            // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place.
+            if brain.target.is_none() {
+                brain.target = Some(by);
+                brain.seen_at = tick;
+                brain.last_seen = None;
+            }
         }
+        // Its own side's noises it pays no heed; an ally's shout it does.
+        Seen::Heard(noise) if noise.side != brain.foe_type.side() => brain.awareness.heard.push(*seen),
+        Seen::Shouted { .. } => brain.awareness.heard.push(*seen),
         Seen::Landed { verdict, .. } => {
-            next.blocked = if matches!(verdict, Verdict::Blocked { .. }) { next.blocked.saturating_add(1) } else { 0 };
+            brain.blocked =
+                if matches!(verdict, Verdict::Blocked { .. }) { brain.blocked.saturating_add(1) } else { 0 };
         }
-        Seen::TelegraphEnded { missed, .. } => next.tells.ended = Some(!missed),
+        Seen::TelegraphEnded { missed, .. } => brain.tells.ended = Some(!missed),
         _ => {}
     }
-    next
 }

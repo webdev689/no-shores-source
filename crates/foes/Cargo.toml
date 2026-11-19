@@ -4,12 +4,15 @@ version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "How foes think: the kinds of foe, and the brain each fights with on the combat rules, the same on every machine."
+description = "How foes think: the factions, their enemy types, the roles and ranks they come in, and the brain each fights with on the combat rules, the same on every machine."
 
 [dependencies]
 combat = { path = "../combat" }
 movement = { path = "../movement" }
 libm.workspace = true
+
+[dev-dependencies]
+navmesh = { path = "../navmesh" }
 
 [lints]
 workspace = true

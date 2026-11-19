@@ -8,6 +8,13 @@ export interface CourseBlock {
   readonly bottom: number;
 }
 
+/** A resource node on a course: where it stands, and its island's resource by its place in the gear's list. */
+export interface CourseNode {
+  readonly x: number;
+  readonly y: number;
+  readonly resource: number;
+}
+
 /** What became of a player's input: the room took it, or why not. At sea, `too soon` is a second course in one tick,
  *  and `refused` a course the sea's law will not sail: across land, at a pace off the steps, or too long. */
 export type InputAnswer = 'taken' | 'not an input' | 'out of order' | 'no such player' | 'too soon' | 'refused';
@@ -35,6 +42,9 @@ export interface RoomDoor {
   openSea(layoutText: string, seed: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(): boolean;
+  /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
+   *  Only a page playing alone tells it; a server never does. */
+  takeFoeAsks(): void;
   /** A new player's number, or 0 when the room is full. */
   join(): number;
   /** The welcome's bytes for a player. */
@@ -47,9 +57,31 @@ export interface RoomDoor {
   /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
    *  bytes. */
   snapshot(): Uint8Array;
+  /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
+   *  course open. */
+  furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
+  /** A player's own gear's bytes, to send them alone; empty when it has not changed since last asked. */
+  gear(player: number): Uint8Array;
+  /** Sets a node's room's seas, as its voyage set out: 0 calm, 1 rough, 2 storm; false if it is no room on land. */
+  difficulty(seas: number): boolean;
+  /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
+  day(day: number): boolean;
+  /** Draws a room on land's loot, and apart from it its foes and camps, from seeds the host keeps secret, each as two
+   *  halves; false if it is none. */
+  reseed(seeds: readonly [number, number, number, number]): boolean;
+  /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
+  character(player: number): string | null;
+  /** Gives a player the character kept for them; false if the text is not one or they are not in. */
+  restoreCharacter(player: number, kept: string): boolean;
+  /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
+  own(player: number, account: string): boolean;
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
+  /** Every enemy type the rules know, as JSON, in their order: each one's number (`type`), name, faction (`faction`
+   *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
+   *  first), and its right and left forge layers. */
+  roster(): string;
 }
 
 interface RoomExports {
@@ -61,13 +93,23 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
+  room_take_foe_asks(): void;
   room_join(): number;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
   room_snapshot(): bigint;
+  room_gear(player: number): bigint;
+  room_character(player: number): bigint;
+  room_difficulty(seas: number): number;
+  room_day(day: number): number;
+  room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
+  room_restore_character(player: number, address: number, length: number): number;
+  room_own(player: number, address: number, length: number): number;
+  room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
+  room_roster(): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -109,6 +151,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openSea: (layoutText, seed) =>
       openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
     openFleet: () => exports.room_open_fleet() === 1,
+    takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
@@ -116,6 +159,28 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
     snapshot: () => take(exports.room_snapshot()),
+    furnish: (stall, nodes) => {
+      const numbers = [
+        stall?.x ?? Number.NaN,
+        stall?.y ?? Number.NaN,
+        ...nodes.flatMap((node) => [node.x, node.y, node.resource]),
+      ];
+      const bytes = new Uint8Array(new Float64Array(numbers).buffer);
+      return lend(bytes, (address) => exports.room_furnish(address, bytes.length)) === 1;
+    },
+    gear: (player) => take(exports.room_gear(player)),
+    difficulty: (seas) => exports.room_difficulty(seas) === 1,
+    day: (day) => exports.room_day(day) === 1,
+    reseed: ([lootLow, lootHigh, worldLow, worldHigh]) =>
+      exports.room_reseed(lootLow, lootHigh, worldLow, worldHigh) === 1,
+    character: (player) => {
+      const bytes = take(exports.room_character(player));
+      return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
+    },
+    restoreCharacter: (player, kept) =>
+      openWith((address, length) => exports.room_restore_character(player, address, length), kept),
+    own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
+    roster: () => new TextDecoder().decode(take(exports.room_roster())),
   };
 }

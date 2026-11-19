@@ -18,11 +18,12 @@ export interface Measure {
   readonly draughtM: number;
 }
 
-/** Where her voyage stands: her heading (radians clockwise from north), her pace's step, and the words for it. */
+/** Where her voyage stands: her heading (radians clockwise from north), her pace's step, and the words for it, as
+ *  the sea has them. */
 export interface Voyaging {
   readonly heading: number;
-  readonly pace: number;
-  readonly note: string;
+  readonly paceStep: number;
+  readonly voyageNote: string;
 }
 
 /** One part of the panel: its heading and its rows, label and value; or a part still to come. */
@@ -69,8 +70,18 @@ export function compassOf(heading: number): string {
 const metres = (value: number) => `${value.toFixed(1)} m`;
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
-/** The panel for her build, her measure and her voyage. Her hurts are not kept between fights, so she is whole. */
-export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyaging): ShipPanel {
+/** The panel once her build is read, none before: for her build, her measure and her voyage, if she is under one. */
+export function shipPanelOnceBuilt(
+  build: SloopBuild | null,
+  measure: Measure,
+  voyage: Voyaging | null,
+): ShipPanel | null {
+  return build ? shipPanelOf(build, measure, voyage) : null;
+}
+
+/** The panel for her build, her measure and her voyage, if she is under one. Her hurts are not kept between fights,
+ *  so she is whole. */
+export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyaging | null): ShipPanel {
   const guns =
     build.guns.port === build.guns.starboard
       ? `${build.guns.port} a side`
@@ -91,15 +102,19 @@ export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyagin
         ],
         later: false,
       },
-      {
-        heading: 'Voyage',
-        rows: [
-          ['Heading', compassOf(voyage.heading)],
-          ['Pace', `×${voyage.pace}`],
-          ['Under way', voyage.note],
-        ],
-        later: false,
-      },
+      ...(voyage
+        ? [
+            {
+              heading: 'Voyage',
+              rows: [
+                ['Heading', compassOf(voyage.heading)],
+                ['Pace', `×${voyage.paceStep}`],
+                ['Under way', voyage.voyageNote],
+              ] as const,
+              later: false,
+            },
+          ]
+        : []),
       { heading: 'Cargo', rows: [], later: true },
       { heading: 'Crew', rows: [], later: true },
     ],

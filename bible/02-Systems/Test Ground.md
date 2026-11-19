@@ -24,7 +24,16 @@ code:
   - client/src/forge/compose.ts#composeFrame
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
-  - client/src/testground/blood.ts#TestgroundBlood
+  - client/src/combat/fightBlood.ts#FightBlood
+  - client/src/testground/panel.ts#startPanel
+  - client/src/player/foeDress.ts#foeDress
+  - client/src/combat/foeBars.ts#FoeBars
+  - client/src/combat/hudSheet.ts#wearFightSheet
+  - client/src/combat/vitals.ts#Vitals
+  - client/src/combat/tracers.ts#Tracers
+  - client/src/combat/playerFight.ts#PlayerFight
+  - client/src/combat/foeFigures.ts#FoeFigures
+  - client/src/combat/fightEffects.ts#FightEffects
 ---
 # Test Ground
 
@@ -63,27 +72,30 @@ zero), how far behind and above, and its zoom. A ticked **Hold the aiming view**
 crosshair, while the sliders move, without a weapon drawn. The place is kept in the browser, and its numbers are
 shown to copy into the game's own (`AIM` in `playerCamera.ts`); **Back to the game's** returns to them.
 
-North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump
-and shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
+North of the start is a course: steps, a low thin wall to vault, a crate to mantle, a 2.3 m ledge to catch on a jump and
+shimmy along, a 4 m wall to climb, and stairs up to a platform. The blocks have a darker line at each metre of height.
 
 ## Fighting
 
 The Test Ground plays the [[Combat]] rules in a room, always: alone, the room crate itself runs in the page's
 WebAssembly; with `?room=`, a server's. The page predicts the player's fighter by the room's own rules and takes the
-room's word for it, so playing alone and online are the same game.
+room's word for it, so playing alone and online are the same game. The [[Game]] fights on foot by the same modules:
+the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight's effects and blood, and the display.
 
-- **Foes.** The panel stands a foe of each kind 5 m ahead of where the player looks, facing them, at most twelve, or
-  sends every foe away; a foe asked for while the forge still loads is not asked for. Each
-  fights by its brain ([[Foes]]) and is dressed by its kind: the skirmisher in leather with a pair of daggers, the
-  swordsman in mail with a sword and kite shield, the brute in iron plate with a warhammer, the archer in leather with
-  a short bow, and the captain in ebony plate with an ebony sword.
-- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen
-  when knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air,
-  no weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the
-  jump's rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the
-  jump); the parry's deflect, or a shield's
-  block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its
-  wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame, before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+- **Foes.** The panel picks a faction, then one of its types (marked land or deck), then one of the ranks that type
+  comes in, the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
+  shield if one is picked ([[Gear]], "Elements and shields"); Spawn stands it 5 m ahead of where the player looks,
+  facing them, at most twelve, and Clear sends every foe away; a foe asked for while the forge still loads is not asked
+  for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])
+  and wears its type's dress ([[Enemies]]): the Grey Tithe in grey over leather or iron, the pirates as the foes of
+  each kind were dressed before.
+- **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
+  knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
+  weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
+  rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the jump);
+  the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed
+  blow's stroke raised through its wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame,
+  before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
   edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
@@ -93,8 +105,11 @@ room's word for it, so playing alone and online are the same game.
   muzzle. An arrow or a bolt trails the last 0.3 s of its falling flight. The player's own shots draw at once from the
   weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
-  comes. Others' come from the room's word, each ball's line from the one snapshot that carries it. Where a shot comes
-  to rest it throws six sparks back the way it came.
+  comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which
+  flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle,
+  until the snapshot that says it stopped, with the point it left its gun: then its head runs on to where it stopped.
+  A ball first seen where it stopped is drawn from that point. One no snapshot carries on for a second, its shooter
+  sent away, is dropped with no sparks. Where a shot comes to rest it throws six sparks back the way it came.
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
   throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
   `?blood=off` draws none.
@@ -104,14 +119,19 @@ room's word for it, so playing alone and online are the same game.
   **Attack feel**, kept in the browser with its numbers shown to copy
   ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never
   do.
-  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own stroke, landing, reach and width:
-    an overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
+  - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going the
+    way the striker's figure is drawn swinging
+    ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). A blow goes its own way, whatever
+    way the swing was asked: the overhead down, the thrust out, the side cut to the right with one hand or a pair, to
+    the left with a hilt or a haft. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
+    so its arc is mirrored too, as it was when the swing began.
+    An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
     cuts down and across, and a thrust drives out and flares where it lands. Each part fades by how long ago the blade
     passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
     seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
     red, steel blue, dwarven gold), gold for a riposte or a counter; it follows the blow's aim as the rules turn it,
-    flares where the blow meets something, stops where a flinch or a dodge cuts it short, waits while the fight waits,
-    and through the eyes crosses the view. Brightness and trail are set.
+    flares where the blow meets something, stops where a flinch or a dodge cuts it short, and waits while the fight
+    waits. None is drawn through the eyes. Brightness and trail are set.
   - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
     0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
     nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
@@ -126,24 +146,55 @@ room's word for it, so playing alone and online are the same game.
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
   view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
-- **The display.** Health, stamina and poise at the bottom left, the stamina flashing when a swing or a dodge is
-  pressed with none; the soft lock's target marked at its chest, with its name, health and poise at the top; a small
-  health bar over each struck foe within 16 m; words on a dark chip over whoever was struck for each blow and what it
+- **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
+  the view; health, stamina and poise in one window at the bottom left, each bar naming itself with its percentage
+  inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or less
+  and the stamina flashing when a swing or a dodge is pressed with none; the soft lock's target marked at its chest; the
+  target's plate (emblem, name, health and poise track) under the compass (below the boss bar while one shows); over
+  each living foe but a Boss, near the crosshair or fought in the last minute, its plate: its faction's emblem, its
+  type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by rank, a "?" while it is
+  suspicious or searching and a "!" for a second as it turns alert, no plate over another's; under the compass, for the
+  nearest living Boss alert or struck, the boss bar: its emblem, name and faction, "Phase n of 3", and its health in
+  yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
   gold or green when it is good for the player and red when bad; in first person, words about the player under the
-  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over
-  a foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold
-  once a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in
-  hand, or hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow
-  a red mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
-  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
-  with `?room=`, that the link to the room was lost and why.
+  crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a
+  foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once
+  a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or
+  hard on the heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red
+  mark with no ring; a figure a blow harms flashing white for a tenth of a second, red for the player's own
+  ([[Struck Figures Flash, and DFO's Blood Comes Over]]); a red edge when the player is struck; and, while the player
+  lies dead, how long until they stand again at the start, or, with `?room=`, "Reconnecting…" while the page joins its
+  room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
   rolled among those that reach the locked foe. Alone, Escape pauses the fight.
 - **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
+
+## Gear
+
+The [[Gear]] panel, at the right, shows the player's gear as the room holds it: their level, Prestige, Defense, XP,
+Aurem and every material; what they wear and carry, each item's Attack, Defense or Prestige, level and XP; each
+item's nodes, column by column, bought and chosen, with what a node costs or the XP it waits on; their Vestiges, those
+lying for them on the ground, and the vault; and the answer to their last ask.
+
+- **Asks.** Its buttons wear an item (a blade or mace in the off hand too), take one off, buy a node or choose among
+  those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
+  an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes, carried
+  by a tick of the player standing still.
+- **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
+  the vault is reached, as in a social space.
+- **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
+  Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
+- **Vestiges** a kill leaves lie where the foe fell, ringed in their colour on the ground, and are picked up by walking
+  over them.
+- **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
+- **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
+  item of any kind, rarity and level, any named item, 50 of every material, and XP.
+
+The room in the page runs one tick as the page opens, so the gear is there before the player first plays.
 
 ## Playing together
 
@@ -156,7 +207,11 @@ are the room's, the same for everyone in it, and fight whoever is near. Every ot
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
-which player this is.
+which player this is. A foe an older room sends with no type is drawn as the pirates' type in its role.
+
+When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
+"The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold
+kept and sent again.
 
 ## What the figure shows
 

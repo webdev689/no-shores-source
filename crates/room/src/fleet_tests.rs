@@ -1,5 +1,6 @@
 use super::*;
 use naval::fight::{Hurts, sail_hurt};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use naval::shots::ShotEvent;
 use sailing::waters::OpenSea;
 
@@ -192,7 +193,7 @@ fn a_captain_is_called_round_her_ship_four_at_most_and_all_sent_off_at_once() {
         fleet.tick();
     };
     for _ in 0..6 {
-        call(&mut fleet, Call::Captain);
+        call(&mut fleet, Call::Captain(Commission::default()));
     }
     let captains = |fleet: &Fleet| fleet.fight().ships.values().filter(|vessel| vessel.command().is_some()).count();
     assert_eq!(captains(&fleet), CAPTAINS_MOST);
@@ -234,7 +235,7 @@ fn a_room_holds_sixteen_players() {
 fn one_room_fights_the_same_fight_for_the_same_orders() {
     let fought = || {
         let (mut fleet, player) = rowing(30);
-        let call = Input { call: Call::Captain, ..orders(33, ROWING) };
+        let call = Input { call: Call::Captain(Commission::default()), ..orders(33, ROWING) };
         assert_eq!(fleet.input(player, call), Ok(()));
         for sequence in 34..600 {
             let fire = sequence % 97 == 0;
@@ -246,4 +247,20 @@ fn one_room_fights_the_same_fight_for_the_same_orders() {
         fleet.fight().numbers().iter().map(|number| number.to_bits()).collect::<Vec<_>>()
     };
     assert_eq!(fought(), fought());
+}
+
+#[test]
+fn a_captain_called_comes_of_the_faction_and_rank_asked_for() {
+    let (mut fleet, player) = rowing(1);
+    let boss = Commission { faction: GREY_TITHE, rank: Rank::Boss };
+    assert_eq!(fleet.input(player, Input { call: Call::Captain(boss), ..orders(4, ROWING) }), Ok(()));
+    fleet.tick();
+    let called: Vec<_> = fleet
+        .fight()
+        .ships
+        .values()
+        .filter_map(|vessel| vessel.command().map(|command| (command.her.commission, vessel.damage.max_hull)))
+        .collect();
+    assert_eq!(called, [(boss, 264.0 * 5.0)], "a Boss of the Grey Tithe, her hull five times a Major's");
+    assert_eq!(fleet.fight().ships.values().filter_map(|vessel| vessel.command()).count(), 1);
 }

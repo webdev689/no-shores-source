@@ -1,8 +1,9 @@
-//! Where a foe can walk, and the way there. A navmesh is baked once from a course's blocks over open ground: the
-//! course is voxelised, the floor a body fits on is kept, eroded by the body's radius, split into regions, outlined
-//! and cut into convex polys. A path is an A* over those polys, pulled taut into a few corners. Obstacles laid over
-//! the mesh at run time block the polys they touch. Coordinates are the game's: x east, y south, z up, in metres.
-//! Every number is a 64-bit float and every sum is taken in a fixed order, so every machine bakes and paths alike.
+//! Where a foe can walk, and the way there. A navmesh is baked once from a course's blocks over its ground (open
+//! ground at 0, or any terrain): the course is voxelised, the floor a body fits on is kept, eroded by the body's
+//! radius, split into regions, outlined and cut into convex polys; the places a shooter may fire from are found on it.
+//! A path is an A* over those polys, pulled taut into a few corners. Obstacles laid over the mesh at run time block the
+//! polys they touch. Coordinates are the game's: x east, y south, z up, in metres. Every number is a 64-bit float and
+//! every sum is taken in a fixed order, so every machine bakes and paths alike.
 
 mod collider;
 mod compact;
@@ -15,15 +16,17 @@ mod poly;
 mod raster;
 mod reach;
 mod regions;
+mod spots;
 
 pub use collider::{Collider, Ramp, Rise};
 pub use obstacles::ObstacleId;
 pub use reach::{REACH_LEVEL, Reachable};
+pub use spots::Spot;
 
 use locate::Mesh;
-use movement::{Block, TUNING};
+use movement::{Block, Flat, Heights, TUNING, Terrain};
 use obstacles::Obstacles;
-use path::Waive;
+use path::{Scratch, Waive};
 
 /// The body a navmesh is baked for, and the voxels it is baked at, in metres.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -63,15 +66,30 @@ pub struct Bounds {
     pub max_y: f64,
 }
 
-/// A baked navmesh, with the obstacles laid over it.
+/// How far a goal may move before a walker's way is searched afresh, in metres.
+const KEEP_WAY: f64 = 1.0;
+
+/// A walker's way over the mesh: the corridor of polys its last path ran through, the goal it was found for, and the
+/// mesh's epoch then. A walker keeps one for `find_path_kept`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Way {
+    corridor: Vec<usize>,
+    goal: [f64; 3],
+    epoch: u64,
+}
+
+/// A baked navmesh, with its ground (none for open ground at 0), its firing spots, and the obstacles laid over it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct NavMesh {
     min_x: f64,
     min_y: f64,
     cell: f64,
     colliders: Vec<Collider>,
+    ground: Option<Heights>,
     mesh: Mesh,
+    spots: Vec<Spot>,
     obstacles: Obstacles,
+    search: Scratch,
 }
 
 impl NavMesh {
@@ -85,23 +103,51 @@ impl NavMesh {
         Self::bake_colliders(&colliders, bounds, agent)
     }
 
-    /// Bakes from blocks and ramps.
+    /// Bakes a course's blocks standing on a terrain, which may dip below 0, as a seabed does: its height is read at
+    /// every cell's centre, and the ground is floor where its slope is within the agent's. A terrain that answers a
+    /// height that is not a number is baked as open ground at 0.
+    #[must_use]
+    pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent)
+    }
+
+    /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        let solid = raster::voxelise(colliders, bounds, agent);
+        Self::baked(colliders, None, bounds, agent)
+    }
+
+    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent) -> Self {
+        let floor: &dyn Terrain = match &ground {
+            Some(heights) => heights,
+            None => &Flat,
+        };
+        let solid = raster::voxelise(colliders, floor, bounds, agent);
         let mut field = compact::build(&solid, agent);
         regions::partition(&mut field);
+        let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
         let outlines = contours::build(&field);
         let grid = field.grid;
         let (mut corners, polys) = poly::build(&outlines, grid.cell, grid.voxel);
         // Each corner is lifted onto the true surface nearest its own level, rather than its voxel's rounded top.
         for corner in &mut corners {
             let (x, y) = (grid.min_x + corner.x * grid.cell, grid.min_y + corner.y * grid.cell);
-            corner.z = collider::surface_near(colliders, x, y, Some(corner.z));
+            corner.z = collider::surface_near(colliders, floor, x, y, Some(corner.z));
         }
         let mesh = Mesh::new(corners, polys);
         let obstacles = Obstacles::new(mesh.polys.len());
-        Self { min_x: grid.min_x, min_y: grid.min_y, cell: grid.cell, colliders: colliders.to_vec(), mesh, obstacles }
+        let (min_x, min_y, cell) = (grid.min_x, grid.min_y, grid.cell);
+        let search = Scratch::default();
+        Self { min_x, min_y, cell, colliders: colliders.to_vec(), ground, mesh, spots, obstacles, search }
+    }
+
+    /// The ground the mesh was baked on.
+    fn floor(&self) -> &dyn Terrain {
+        match &self.ground {
+            Some(heights) => heights,
+            None => &Flat,
+        }
     }
 
     /// A path from `from` to `to`: the waypoints from the start to the goal, both included, each on the surface
@@ -150,37 +196,79 @@ impl NavMesh {
 
     /// The height of the surface at (x, y) on a poly's level; the tallest top there with no poly.
     fn height_on(&self, poly: Option<usize>, x: f64, y: f64) -> f64 {
-        collider::surface_near(&self.colliders, x, y, poly.map(|poly| self.mesh.levels[poly]))
+        collider::surface_near(&self.colliders, self.floor(), x, y, poly.map(|poly| self.mesh.levels[poly]))
     }
 
-    /// Locate, A* and funnel. A start inside an obstacle walks out through it. A goal reachable only through
-    /// obstacles is still reached through them: obstacles steer a path, they never sever it.
+    /// Locate, A* and funnel.
     fn solve(&self, from: [f64; 3], to: [f64; 3], ignore: Option<ObstacleId>) -> Option<Vec<[f64; 3]>> {
         if self.mesh.polys.is_empty() {
             return None;
         }
-        let start = self.locate(from)?;
-        let goal = self.locate(to)?;
+        let corridor = self.search(self.locate(from)?, self.locate(to)?, ignore)?;
+        self.walk(&corridor, from, to)
+    }
+
+    /// The A* corridor between two polys. A start inside an obstacle walks out through it. A goal reachable only
+    /// through obstacles is still reached through them: obstacles steer a path, they never sever it.
+    fn search(&self, start: usize, goal: usize, ignore: Option<ObstacleId>) -> Option<Vec<usize>> {
         let has_obstacles = !self.obstacles.is_empty();
         let waive = match ignore {
             Some(id) => Waive::One(id),
             None if has_obstacles => self.obstacles.blocked[start].map_or(Waive::None, Waive::One),
             None => Waive::None,
         };
-        let mut corridor = path::corridor(&self.mesh, &self.obstacles, start, goal, waive);
+        let mut search = self.search.borrow();
+        let corridor = path::corridor(&self.mesh, &self.obstacles, &mut search, (start, goal), waive);
         if corridor.is_none() && has_obstacles && ignore.is_none() {
-            corridor = path::corridor(&self.mesh, &self.obstacles, start, goal, Waive::All);
+            return path::corridor(&self.mesh, &self.obstacles, &mut search, (start, goal), Waive::All);
         }
-        let corridor = corridor?;
-        let portals = path::portals(&self.mesh, &corridor, self.to_grid(from[0], from[1]), self.to_grid(to[0], to[1]))?;
+        corridor
+    }
+
+    /// The line from one point to another pulled taut through a corridor, each corner on the surface walked there.
+    fn walk(&self, corridor: &[usize], from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
+        let portals = path::portals(&self.mesh, corridor, self.to_grid(from[0], from[1]), self.to_grid(to[0], to[1]))?;
         let points = path::funnel(&portals)
             .into_iter()
             .map(|grid| {
-                let poly = self.mesh.scan(grid.0, grid.1, corridor.iter().copied(), None);
+                let poly = self.mesh.scan(grid.0, grid.1, corridor, None);
                 let (x, y) = self.to_world(grid);
                 [x, y, self.height_on(poly, x, y)]
             })
             .collect();
         Some(points)
+    }
+
+    /// A path as `find_path` finds it, kept in a walker's way: while the goal stays within a metre of the one the
+    /// way was found for and no obstacle has changed, the corridor is walked again from the poly the start stands
+    /// on, as far as the goal's, or one step on to it. Anything else searches afresh.
+    #[must_use]
+    pub fn find_path_kept(&self, way: &mut Way, from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
+        if self.mesh.polys.is_empty() {
+            return None;
+        }
+        let (start, goal) = (self.locate(from)?, self.locate(to)?);
+        if let Some(corridor) = self.kept(way, start, goal, to) {
+            return self.walk(corridor, from, to);
+        }
+        let corridor = self.search(start, goal, None)?;
+        let points = self.walk(&corridor, from, to);
+        *way = Way { corridor, goal: to, epoch: self.epoch() };
+        points
+    }
+
+    /// The part of a way's corridor from the start's poly to the goal's, if the way still serves.
+    fn kept<'way>(&self, way: &'way mut Way, start: usize, goal: usize, to: [f64; 3]) -> Option<&'way [usize]> {
+        let moved = (0..3).map(|axis| (to[axis] - way.goal[axis]) * (to[axis] - way.goal[axis])).sum::<f64>();
+        if way.epoch != self.epoch() || moved > KEEP_WAY * KEEP_WAY {
+            return None;
+        }
+        let first = way.corridor.iter().position(|&poly| poly == start)?;
+        let last = *way.corridor.last()?;
+        if !way.corridor.contains(&goal) && self.mesh.polys[last].neighbours.contains(&Some(goal)) {
+            way.corridor.push(goal);
+        }
+        let end = first + way.corridor[first..].iter().position(|&poly| poly == goal)?;
+        Some(&way.corridor[first..=end])
     }
 }

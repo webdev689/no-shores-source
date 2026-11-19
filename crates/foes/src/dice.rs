@@ -21,6 +21,9 @@ pub enum Purpose {
     ShotGap = 13,
     Aimed = 14,
     Press = 15,
+    Search = 16,
+    Hide = 24,
+    PostAim = 25,
 }
 
 /// One foe's dice for one tick.

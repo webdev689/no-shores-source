@@ -71,3 +71,16 @@ test('on foot the player goes through a gate into an instance and back out, neve
   const menu: Flow = { ...foot, menu: true };
   assert.equal(next(menu, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true }), menu);
 });
+
+test('a company member is joined from on foot or at sea, never while landing or loading', () => {
+  const join = { kind: 'join', node: 'saltgrass-downs', name: 'The Saltgrass Downs' } as const;
+  const joined = next({ mode: 'sea', menu: true }, join);
+  assert.deepEqual(joined, {
+    mode: 'loading',
+    words: 'Joining your company at The Saltgrass Downs',
+    then: { mode: 'foot', node: 'saltgrass-downs', menu: false },
+  });
+  assert.equal(next(joined, join), joined, 'not while loading');
+  const landing: Flow = { mode: 'landing', chosen: null };
+  assert.equal(next(landing, join), landing);
+});

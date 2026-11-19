@@ -4,13 +4,32 @@
 
 namespace overlook.wire;
 
+// A player's ask of their gear, carried by one input: what (as the room numbers it), and what it names: an item or a
+// Vestige by the player's own number for it, a slot, a node's column and place in it, and for the Test Ground's
+// grants a rarity, a level, a count, a kind of item and a named item's id.
+table Ask {
+  kind: ubyte;
+  item: uint;
+  slot: ubyte;
+  column: ubyte;
+  node: ubyte;
+  rarity: ubyte;
+  level: ubyte;
+  count: uint;
+  item_kind: ubyte;
+  named: string;
+}
+
 // A browser's controls for one tick: forward, sideways, yaw, run, jump, crouch, mounted. Numbered 1, 2, 3 and so on.
 // With them, what the player's figure shows on their own screen (the forge's move, its frame, the way it faces), and
 // their dress, as the browser writes it, only when it changed. Then the fight's buttons (the stroke a swing would take,
 // 0 for none and 1 to 6 as combat numbers them; guard, dodge and shoot held; the look's pitch), what the hands hold as
-// combat's arms code, the room tick of the last snapshot the screen showed, a foe's kind to stand before the player
-// (0 none; 255 sends every foe away), and whether they ask to respawn, dead past a node's section. New fields go at
-// the end, so old readers skip them.
+// combat's arms code, the room tick of the last snapshot the screen showed, a foe to stand before the player (0 none;
+// 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
+// shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
+// their gear, and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in
+// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). New
+// fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -23,6 +42,10 @@ table Input {
   seen: ulong;
   spawn: ubyte;
   respawn: bool;
+  ask: Ask;
+  spawn_level: ubyte;
+  spawn_type: ubyte;
+  spawn_rank: ubyte;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -46,7 +69,8 @@ table Course {
 // while she aims (its bearing off her bow in degrees and how far out it meets the water in metres, then its ray: the
 // aim eye and the way it looks, east, south and up; none while she does not aim); whether she fires and whether she
 // braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where she puts to sea (x, y and heading,
-// heeded once); and a captain asked for (0 none, 1 one called round her, 255 every one sent off).
+// heeded once); a captain asked for (0 none, 1 one called round her, 255 every one sent off); and the faction (1 the
+// Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates.
 table Orders {
   sequence: uint;
   steer: double;
@@ -58,6 +82,8 @@ table Orders {
   load: ubyte;
   put_to_sea: [double];
   call: ubyte;
+  call_faction: ubyte;
+  call_rank: ubyte;
 }
 
 // A player's dress, passed on as their browser wrote it.
@@ -73,6 +99,8 @@ table Joined {
   dressed: [Dressed];
   node: string;
   bounds: [double];
+  // The protocol's version: the schema's hash, so a page built from another schema knows to load again.
+  protocol: uint;
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
@@ -91,11 +119,24 @@ table Seen {
   standing_ticks: uint;
 }
 
-// A foe as the room last stepped it: its number, its kind, and a glance at its fighter (combat's glance order).
+// A foe as the room last stepped it: its number, its role (1 skirmisher, 2 swordsman, 3 brute, 4 archer, 5 captain), a
+// glance at its fighter (combat's glance order), its level, and its shield, if it stands with one: its element (the
+// gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
+// its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
+// 1 suspicious, 2 alert, 3 searching).
 table Foe {
   id: uint;
   kind: ubyte;
   glance: [double];
+  level: ubyte;
+  shield_element: ubyte;
+  shield: double;
+  shield_most: double;
+  type: ubyte;
+  rank: ubyte;
+  faction: ubyte;
+  phase: ubyte;
+  alert: ubyte;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -110,15 +151,17 @@ table Event {
   stroke: ubyte;
 }
 
-// A shot in flight, or a gun's ball in the tick it was fired: who shot it, what shot it (combat's number), where it is
-// (x, y, z), how fast it goes, and the ticks it has flown. A ball's whole line runs from `at` to `at` plus one tick of
-// its velocity.
+// A shot in flight, or a gun's ball in the tick it stopped: who shot it, what shot it (combat's number), where it is
+// (x, y, z), how fast it goes, and the ticks it has flown. A stopped ball's last segment runs from `at` to `at` plus
+// one tick of its velocity, to where it stopped, and carries `muzzle`, the point it left its gun; a ball still flying
+// carries none.
 table Flying {
   owner: uint;
   ranged: ubyte;
   at: [double];
   velocity: [double];
   age: ushort;
+  muzzle: [double];
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
@@ -131,18 +174,26 @@ table Ship {
   pace: ushort;
 }
 
-// A pirate at sea: her number, where she is, and her heading in radians clockwise from north.
+// A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
+// from north, her faction (1 the Grey Tithe, 2 pirates) and her rank (1 Minor to 5 Boss).
 table Pirate {
   id: uint;
   x: double;
   y: double;
   heading: double;
+  faction: ubyte;
+  rank: ubyte;
 }
 
-// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs).
+// A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
+// her captain's faction and rank, as Pirate numbers them. Then the other captains in the fight, their count and each
+// one's numbers (none when there are none), which the view leaves out so a page that knows one captain reads it whole.
 table SeaFight {
   player: uint;
   view: [double];
+  faction: ubyte;
+  rank: ubyte;
+  others: [double];
 }
 
 // One ship in a fleet room: her number; whether a captain sails her; her helm's numbers in the sailing crate's order
@@ -150,7 +201,8 @@ table SeaFight {
 // (0 afloat, 1 struck, 2 sinking, 3 sunk, 4 wrecked) and the fires aboard; her guns (the seconds each side has left
 // to load, port then starboard, then how far each has loaded); her load (as Orders numbers it) and whether she is
 // braced; for a captain, her mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship she fights (0 none) and
-// her sides run out (1 port, 2 starboard, 3 both); and for a player's ship, the number of her last orders taken.
+// her sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of her last orders taken; and the
+// faction she sails for (0 a player's, else as Pirate numbers them) and a captain's rank (1 Minor to 5 Boss, 0 none).
 table Vessel {
   id: uint;
   captain: bool;
@@ -166,6 +218,8 @@ table Vessel {
   target: uint;
   run_out: ubyte;
   acknowledged: uint;
+  faction: ubyte;
+  rank: ubyte;
 }
 
 // A ball aloft in a fleet room: the ship that fired it, where it leaves its gun and when (seconds of the fight's
@@ -220,10 +274,116 @@ table Snapshot {
   fight_clock: double;
 }
 
+// One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the
+// traits it offers by id, the XP that unlocks it, and what a node of it costs in Aurem, fragments, Essence and the
+// item's island resource.
+table GearColumn {
+  kind: ubyte;
+  traits: [string];
+  xp: uint;
+  aurem: uint;
+  fragments: ushort;
+  essence: ushort;
+  resource: ushort;
+}
+
+// An item a player holds, as their own gear message tells them: their number for it, its kind and rarity (the gear
+// crate's numbers), its level, the named item it is (empty for a rolled one) or a rolled one's name among its kind's,
+// its island resource (255 for none), whether a Breach's, its XP and the most it earns, the nodes bought (a bit each)
+// and the one chosen in each column (255 none), the slot it is carried with, where it is (0 carried, 1 the vault, 2
+// and on worn in the slot that many less 2), its Attack, Defense and Prestige, its columns, its price at a vendor, and
+// a weapon's element (the gear crate's numbers, 0 for none).
+table GearItem {
+  id: uint;
+  kind: ubyte;
+  rarity: ubyte;
+  level: ubyte;
+  named: string;
+  name: ubyte;
+  resource: ubyte;
+  breach: bool;
+  xp: uint;
+  xp_most: uint;
+  bought: uint;
+  chosen: [ubyte];
+  bucket: ubyte;
+  at: ubyte;
+  attack: uint;
+  defense: uint;
+  prestige: uint;
+  columns: [GearColumn];
+  price: uint;
+  element: ubyte;
+}
+
+// A Vestige a player holds: their number for it, its colour, the slot it holds an item for, that item's level, and
+// whether it is in the vault.
+table GearVestige {
+  id: uint;
+  rarity: ubyte;
+  slot: ubyte;
+  level: ubyte;
+  vaulted: bool;
+}
+
+// A Vestige lying on the ground for this player alone: their number for it, its colour, its slot, and where it lies
+// (x, y, z).
+table GearDrop {
+  id: uint;
+  rarity: ubyte;
+  slot: ubyte;
+  at: [double];
+}
+
+// A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
+// then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
+// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent;
+// whether they stand where a Vestige opens (the Reader's counter, or the stall); and the answer to their last ask (0 done, then the
+// gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
+// answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
+// island's resource; and in a social space, the vendors' wares of the day, the Quartermaster's then the Armsmith's,
+// each numbered by its place among its vendor's and priced in Aurem.
+table Gear {
+  xp: ulong;
+  level: ubyte;
+  prestige: uint;
+  defense: uint;
+  aurem: uint;
+  stocks: [ushort];
+  resources: [ushort];
+  items: [GearItem];
+  vestiges: [GearVestige];
+  drops: [GearDrop];
+  spent: [ubyte];
+  at_reader: bool;
+  answer: ubyte;
+  identified: uint;
+  answered: uint;
+  nodes: [double];
+  wares: [GearItem];
+  // What their worn gear trims of the fight's numbers (combat's Trim, in its order): their fighter in a snapshot
+  // leaves it out, and their browser puts it back before it predicts them.
+  trim: [double];
+  // How far to their next level, 0 to 1, and what it still takes: XP below level 20, Prestige past it.
+  to_next: double;
+  to_next_needs: uint;
+  // How far their next Fruit of Dagon has grown, 0 to 1; below 0 until their XP reaches level 20's.
+  fruit_growing: double = -1;
+  // The arms the room lets them take up, by combat's codes: their gear's, and with a torch where the main hand
+  // leaves the left free. The room makes any other bare hands.
+  arms: [uint];
+  // The emblems they keep and the one they wear, by their place in content/gear/emblems.json; and in a social space,
+  // the emblems the Tailor sells that day.
+  emblems: [ushort];
+  emblem: ushort;
+  emblems_sold: [ushort];
+}
+
 // What a room sends: exactly one of these is present.
 table FromRoom {
   joined: Joined;
   snapshot: Snapshot;
+  gear: Gear;
 }
 
 root_type FromRoom;

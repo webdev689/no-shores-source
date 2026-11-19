@@ -46,6 +46,8 @@ fn a_fight_begins_with_a_captain_on_the_ring_round_the_sloop() {
     let (x, y) = (captain[0].as_f64().unwrap_or(0.0) - 180_000.0, captain[1].as_f64().unwrap_or(0.0) - 360_000.0);
     assert!((650.0..=1000.0).contains(&(x * x + y * y).sqrt()));
     assert_eq!(begun["captain"]["name"], "Pirate Sloop");
+    assert_eq!(begun["captain"]["faction"], 2, "the pirates");
+    assert_eq!(begun["captain"]["rank"], 2, "a Major");
     assert_eq!(begun["player"]["max_hull"], 240.0);
     assert_eq!(begun["over"], Value::Null);
 }
@@ -147,10 +149,10 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     let fired = kinds.iter().filter(|kind| kind.as_str() == r#""muzzle"0"#).count();
     assert_eq!(fired, 6, "two broadsides of three, the third refused braced or loading: {kinds:?}");
     assert_eq!(last["player"]["guns"]["load"], "grape");
-    // Each leg's: the balls aloft at a leg's end are in it.
+    // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "09dd8c9bd99eff6c 85de4ce719306842 32cab532b0cd1a68 c618adbddc734f92 07f46d7bed623939 59ca543db216d105 a864cfe4e923d461 37ac921c66a09909 41765ed667ea77ff"
+        "f7ba7663f1a5a8f5 32cf95fe62a0a453 e4ab140683ed4d79 a3c91988b6f46a93 b6429b7c94d58b60 36f3fdf574d0a3bc 59a9408c4c2455d0 23017c1a3a61a784 3ffe4b1dc14aa2f2"
     );
 }
 

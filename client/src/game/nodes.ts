@@ -23,8 +23,17 @@ export interface CityPlan {
     readonly level: number;
     readonly ring: readonly Point[];
     readonly spawns: readonly Point[];
+    readonly stations?: readonly StationInfo[];
   };
   readonly pads: readonly Pad[];
+}
+
+/** A station in a social space's arcades (the city crate's `Station`): what it is, where its keeper stands, and its
+ *  counter, where a player comes to it. */
+export interface StationInfo {
+  readonly kind: string;
+  readonly keeper: Point;
+  readonly counter: Point;
 }
 
 /** How far past a section's ring its window of the ground reaches, as the bake cuts it: past the 60 m where a body
@@ -45,7 +54,7 @@ export function windowRect(ring: readonly Point[]): Rect {
 
 /** A city's social space as a node: `<city id>-social`, named for its city, its plaza's section and spawns. */
 export function socialNode(plan: CityPlan, continent: string): NodeInfo {
-  const { ring, spawns } = plan.social;
+  const { ring, spawns, stations = [] } = plan.social;
   return {
     id: `${plan.id}-social`,
     kind: 'social',
@@ -54,6 +63,7 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     ring,
     spawns,
     centre: ringMiddle(ring),
+    stations,
   };
 }
 

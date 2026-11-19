@@ -33,6 +33,7 @@ export interface SessionInput {
   readonly brace: boolean;
   readonly loadSteps: number;
   readonly call: 'none' | 'captain' | 'send off';
+  readonly captain?: { readonly faction: number; readonly rank: number };
 }
 
 /**
@@ -43,7 +44,9 @@ export interface SessionInput {
 export class FleetSession {
   private readonly link: RoomLink;
   private readonly rules: FleetRules;
-  private readonly prediction = new Prediction<FleetOrders>();
+  private prediction = new Prediction<FleetOrders>();
+  /** The link's welcomes followed: one more means she joined the fleet again. */
+  private joined: number;
   private start: readonly [number, number, number] | null;
   private ship: ShipFloats;
   private pose: Pose = { heave: 0, pitch: 0, roll: 0, aground: false };
@@ -51,7 +54,7 @@ export class FleetSession {
   private fires = 0;
   private loadSteps = 0;
   private climbs: number[] = [];
-  private calls: SessionInput['call'][] = [];
+  private calls: Pick<SessionInput, 'call' | 'captain'>[] = [];
   private lastLook: FleetLook | null = null;
   /** The load she last asked for and the orders that asked, until the room has taken them. */
   private loadAsked: { readonly load: number; readonly sequence: number } | null = null;
@@ -66,7 +69,23 @@ export class FleetSession {
     this.link = link;
     this.rules = rules;
     this.start = start;
+    this.joined = link.joins;
     this.ship = new Float64Array([start[0], start[1], start[2], 0, 0, 0, 0, 0]);
+  }
+
+  /** Follows the link into the fleet it joined again: a new player there, her ship put to sea where she lies, with
+   *  nothing of the old room kept. */
+  private follow(): void {
+    if (this.link.joins === this.joined) return;
+    const [x = 0, y = 0, heading = 0] = this.ship;
+    [this.joined, this.prediction, this.start] = [this.link.joins, new Prediction(), this.start ?? [x, y, heading]];
+    [this.latest, this.loadAsked, this.shownTime] = [null, null, 0];
+    this.captains.clear();
+  }
+
+  /** Whether the link is joining the fleet again after its socket closed. */
+  get rejoining(): boolean {
+    return this.link.rejoining;
   }
 
   /** Her number in the room: her ship's. */
@@ -126,6 +145,7 @@ export class FleetSession {
   /** A snapshot from the room: her ship set to its word with her orders it has not taken stepped on top, and what
    *  happened kept for the effects and the panel. */
   receive(snapshot: Snapshot, now: number): void {
+    this.follow();
     this.latest = snapshot;
     this.receivedAt = now;
     for (const vessel of snapshot.vessels) if (vessel.captain) this.captains.add(vessel.id);
@@ -150,10 +170,11 @@ export class FleetSession {
   /** Owes the room `seconds` more and sends a tick's orders for each whole tick owed: her rudder as held, her look
    *  while aiming, and the presses (a rung, a release, a load, a call) on the first tick that takes them. */
   advance(seconds: number, input: SessionInput, now: number): void {
+    this.follow();
     this.climbs.push(...input.climbs);
     if (input.fire) this.fires++;
     if (input.look) this.lastLook = input.look;
-    if (input.call !== 'none') this.calls.push(input.call);
+    if (input.call !== 'none') this.calls.push({ call: input.call, captain: input.captain });
     this.loadSteps += input.loadSteps;
     this.owed = Math.min(this.owed + seconds, MOST_OWED_TICKS * TICK_SECONDS);
     const time = this.roomTime(now);
@@ -166,6 +187,7 @@ export class FleetSession {
       // A press on top of one the room has not taken yet steps from that one.
       const loaded = this.loadAsked?.load ?? this.own()?.load ?? 1;
       const load = step === 0 ? 0 : ((loaded - 1 + step + LOADS.length) % LOADS.length) + 1;
+      const { call, captain } = this.calls.shift() ?? { call: 'none' };
       const orders: FleetOrders = {
         steer: input.steer,
         crab: input.crab,
@@ -175,7 +197,8 @@ export class FleetSession {
         brace: input.brace,
         load,
         putToSea: this.start,
-        call: this.calls.shift() ?? 'none',
+        call,
+        ...(captain ? { captain } : {}),
       };
       const sequence = this.prediction.next(orders);
       if (load !== 0) this.loadAsked = { load, sequence };
@@ -205,7 +228,7 @@ export class FleetSession {
     const load = this.own()?.load ?? 1;
     const sighted = (vessel: SeenVessel): LaySighted => ({
       id: vessel.id,
-      pirate: vessel.captain,
+      flag: vessel.faction,
       ship: vessel.ship,
       pose: vessel.pose,
       afloat: vessel.state !== 'sunk',
@@ -213,7 +236,7 @@ export class FleetSession {
     const { heave, pitch, roll, aground } = this.pose;
     const own: LaySighted = {
       id: this.id,
-      pirate: false,
+      flag: 0,
       ship: this.ship,
       pose: [heave, pitch, roll, aground ? 1 : 0],
       afloat: true,

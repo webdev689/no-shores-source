@@ -1,6 +1,7 @@
 use super::*;
 use crate::arms::{LARGE_BOAT, PIRATE_SLOOP, SLOOP_ARMS};
 use crate::damage::Hurt;
+use crate::ranks::{PIRATES, Rank};
 use sailing::SLOOP;
 
 const LEVEL: Pose = Pose { heave: 0.0, pitch: 0.0, roll: 0.0, aground: false };
@@ -48,7 +49,7 @@ fn steer_against(her: &mut Captain, deck: &Deck, enemy: &Sighting, seconds: f64)
 }
 
 fn captain(temper: Temper) -> Captain {
-    Captain { temper, ..Captain::new(PIRATE_SLOOP, 7, 1.0, &SLOOP_ARMS) }
+    Captain { temper, ..Captain::new(Commission::default(), 7, 1.0, &SLOOP_ARMS) }
 }
 
 #[test]
@@ -204,4 +205,36 @@ fn her_lookout_reckons_her_turning_circle_at_her_own_pace_even_lying_still() {
     deck.ship = Ship { ahead: 0.0, sail_way: 0.0, ..deck.ship };
     let her = captain(Temper::Bold);
     assert!(her.lookout(&deck.her()).near < 30.0, "{}", her.lookout(&deck.her()).near);
+}
+
+#[test]
+fn an_elite_and_above_is_bold_whatever_her_seed_and_a_minor_or_major_as_her_seed_says() {
+    for rank in Rank::ALL {
+        let commission = Commission { faction: PIRATES, rank };
+        for seed in 0..200 {
+            let temper = Captain::new(commission, seed, 0.0, &SLOOP_ARMS).temper;
+            let wanted = if rank >= Rank::Elite { Temper::Bold } else { temper_of(seed) };
+            assert_eq!(temper, wanted, "{rank:?}, seed {seed}");
+        }
+    }
+}
+
+#[test]
+fn hulled_to_28_percent_a_major_or_elite_runs_and_a_miniboss_or_boss_fights_on() {
+    for (rank, mode) in [
+        (Rank::Major, Mode::Flee),
+        (Rank::Elite, Mode::Flee),
+        (Rank::Miniboss, Mode::Engage),
+        (Rank::Boss, Mode::Engage),
+    ] {
+        let commission = Commission { faction: PIRATES, rank };
+        let mut deck = Deck::new();
+        deck.damage = Damage::new(&commission.build(), false);
+        let hull = (deck.damage.max_hull * 0.72).ceil();
+        deck.damage.apply(Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+        assert!(deck.damage.fighting(), "{rank:?} has not struck");
+        let mut her = Captain { temper: Temper::Bold, ..Captain::new(commission, 7, 1.0, &SLOOP_ARMS) };
+        steer_against(&mut her, &deck, &player_at(200.0, 0.0), 0.1);
+        assert_eq!(her.mode, mode, "{rank:?}");
+    }
 }

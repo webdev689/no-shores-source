@@ -1,6 +1,7 @@
 use super::*;
 use crate::captain::Temper;
 use crate::damage::Hurt;
+use crate::ranks::Commission;
 use crate::shots::ShotEvent;
 use sailing::waters::Spot;
 
@@ -28,7 +29,9 @@ fn fleet(first: f64, second: f64, temper: Temper) -> Fight {
     let mut fight = Fight::new(3);
     fight.put_to_sea(PLAYER, sloop_at(first, 0.0), &Open, 0.0);
     fight.put_to_sea(SECOND, sloop_at(second, 0.0), &Open, 0.0);
-    fight.call_captain(PIRATE, &sloop_at(0.0, 0.0), &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    fight
+        .call_captain(PIRATE, &sloop_at(0.0, 0.0), Commission::default(), &Open, 0.0)
+        .unwrap_or_else(|error| panic!("{error}"));
     let captain = fight.ships.get_mut(&PIRATE).unwrap_or_else(|| panic!("the captain"));
     captain.ship = sloop_at(0.0, 0.0);
     if let Sailor::Captain(command) = &mut captain.sailor {
@@ -166,7 +169,9 @@ fn a_player_with_no_orders_lies_where_she_was_and_one_late_catches_up() {
 fn a_captain_is_called_onto_the_ring_round_the_ship_she_is_called_to() {
     let mut fight = Fight::new(9);
     fight.put_to_sea(PLAYER, sloop_at(5000.0, -300.0), &Open, 0.0);
-    fight.call_captain(PIRATE, &sloop_at(5000.0, -300.0), &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    fight
+        .call_captain(PIRATE, &sloop_at(5000.0, -300.0), Commission::default(), &Open, 0.0)
+        .unwrap_or_else(|error| panic!("{error}"));
     let her = fight.vessel(PIRATE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
     assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&(her[0] * her[0] + her[1] * her[1]).sqrt()));
     assert_eq!(fight.over(), None, "she is in the fight");
@@ -177,7 +182,9 @@ fn a_captain_is_called_onto_the_ring_round_the_ship_she_is_called_to() {
 fn two_captains_balls_pass_each_other_by() {
     let mut fight = fleet(0.0, 4000.0, Temper::Bold);
     fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("first")).ship = sloop_at(120.0, 0.0);
-    fight.call_captain(PIRATE + 1, &sloop_at(60.0, 0.0), &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    fight
+        .call_captain(PIRATE + 1, &sloop_at(60.0, 0.0), Commission::default(), &Open, 0.0)
+        .unwrap_or_else(|error| panic!("{error}"));
     fight.ships.get_mut(&(PIRATE + 1)).unwrap_or_else(|| panic!("second captain")).ship = sloop_at(60.0, 0.0);
     let events = run(&mut fight, &idle_both(), 60 * 40);
     let struck_pirates = events.iter().any(|event| {

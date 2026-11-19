@@ -6,11 +6,11 @@ use super::{
     DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, STRUCK_GRACE_S, Sailor, carry_of, floats, her_of,
     sail_hurt, sighting_of,
 };
-use crate::arms::{LARGE_BOAT, PIRATE_SLOOP};
+use crate::arms::LARGE_BOAT;
 use crate::captain::Mode;
 use crate::captain::course::distance;
 use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
-use crate::gunnery::volley;
+use crate::gunnery::{Lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
 use crate::shots::{Flag, ShipId, ShotEvent, step_balls};
 use sailing::pose::{Pose, pose_of};
@@ -93,16 +93,18 @@ impl Fight {
         }
     }
 
-    /// A captain's tick: her helm among the players' ships, her step held back by her canvas, and her pose as she
-    /// lists and founders.
+    /// A captain's tick: her helm among the ships she may fight, her step held back by her canvas, and her pose as
+    /// she lists and founders.
     fn sail_captain(&mut self, id: ShipId, waters: &impl Waters, wind: [f64; 2], time: f64) {
-        let (sightings, traffic) = (self.sightings(), self.traffic(id));
+        let (sightings, traffic) = (self.sightings(id), self.traffic(id));
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
         let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
         let is_water = |x, y| floats(waters, x, y, time);
         let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
-        let pull = sailing::ship::Pull { sail: vessel.damage.way_share(), oars: 1.0 };
+        // Her rank's way pulls her sails and her oars alike.
+        let way = command.her.commission.rank.scale().way;
+        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
         let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
@@ -110,9 +112,9 @@ impl Fight {
             Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
     }
 
-    /// A captain's guns after her step: run out at her enemy, and fired.
+    /// A captain's guns after her step: run out at her enemy, and fired as her rank arms and paces them.
     fn captain_fires(&mut self, id: ShipId, wind: [f64; 2], events: &mut Vec<Event>) {
-        let sightings = self.sightings();
+        let sightings = self.sightings(id);
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
         let enemy = command.her.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
@@ -123,9 +125,13 @@ impl Fight {
         }
         if let Some(laid) = battery.fire {
             let seed = self.draws.seed();
-            let (skill, carry) = (PIRATE_SLOOP.skill, carry_of(&vessel.ship));
-            self.balls.extend(volley(&laid, carry, skill, seed, self.clock, (id, Flag::Pirate)));
+            let commission = command.her.commission;
+            let laid = Lay { gun: commission.armed(laid.gun), ..laid };
+            let (skill, carry) = (command.her.build.skill, carry_of(&vessel.ship));
+            let flag = Flag::Faction(commission.faction);
+            self.balls.extend(volley(&laid, carry, skill, seed, self.clock, (id, flag)));
             vessel.guns.fired(laid.side, vessel.damage.crew_share(), true);
+            vessel.guns.pace_reload(laid.side, commission.rank.scale().reload);
         }
     }
 
@@ -144,14 +150,15 @@ impl Fight {
     }
 
     /// A ball's strike: its harm by zone (grape's men by its flight), rolled; the struck grace for the rest of the
-    /// volley that made a captain strike; and a captain struck by a player is provoked by her.
+    /// volley that made a captain strike; and a captain struck by a ship in the fight is provoked by her.
     pub(super) fn strike(&mut self, hit: &ShotEvent, events: &mut Vec<Event>) {
         let ShotEvent::Hit { shooter, target, zone, flight, gun, shot, .. } = *hit else {
             return;
         };
         let gun = crate::guns::Gun { crew: gun.crew * shot_reach(shot, flight), ..gun };
         let clock = self.clock;
-        let shooter_is_player = self.ships.get(&shooter).is_some_and(|vessel| vessel.command().is_none());
+        // A ball strikes only another flag, so whoever fired it, a player or another faction's captain, is a foe.
+        let shooter_in_fight = self.ships.contains_key(&shooter);
         let Some(vessel) = self.ships.get_mut(&target) else { return };
         let (tough, braced, floor) = match &vessel.sailor {
             Sailor::Captain(command) => {
@@ -169,7 +176,7 @@ impl Fight {
             if state == Some(State::Struck) {
                 command.struck_at = Some(clock);
             }
-            if shooter_is_player {
+            if shooter_in_fight {
                 command.her.provoke(shooter);
             }
         }
@@ -200,18 +207,20 @@ impl Fight {
         }
     }
 
-    /// A captain who has sunk leaves the fight, as does one past every player's ship and not fighting.
+    /// A captain who has sunk leaves the fight, as does one past every ship she may fight (each player's, and each
+    /// afloat captain's of another faction) and not fighting.
     fn see_off(&mut self, events: &mut Vec<Event>) {
-        let players: Vec<[f64; 2]> = self
+        let foes: Vec<(Flag, [f64; 2])> = self
             .ships
             .values()
-            .filter(|vessel| vessel.command().is_none())
-            .map(|vessel| [vessel.ship.x, vessel.ship.y])
+            .filter(|vessel| vessel.command().is_none_or(|_| vessel.in_fight() && vessel.damage.fighting()))
+            .map(|vessel| (vessel.flag(), [vessel.ship.x, vessel.ship.y]))
             .collect();
         for id in self.ids(true) {
             let Some(vessel) = self.ships.get_mut(&id) else { continue };
-            let at = [vessel.ship.x, vessel.ship.y];
-            let nearest = players.iter().map(|player| distance(at, *player)).fold(f64::INFINITY, f64::min);
+            let (at, own) = ([vessel.ship.x, vessel.ship.y], vessel.flag());
+            let apart = foes.iter().filter(|(flag, _)| *flag != own).map(|(_, foe)| distance(at, *foe));
+            let nearest = apart.fold(f64::INFINITY, f64::min);
             let sunk = vessel.damage.state == State::Sunk;
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let end = if sunk {

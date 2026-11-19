@@ -14,7 +14,15 @@ code:
   - client/src/player/dressing.ts#plainDress
   - client/src/player/others.ts#showOther
   - client/src/player/others.ts#OtherPlayers
-  - client/src/player/roomPlay.ts#RoomPlay
+  - client/src/combat/playerFight.ts#PlayerFight
+  - client/src/player/gear.ts#RARITIES
+  - client/src/player/gear.ts#nodeShown
+  - client/src/player/gear.ts#gearHands
+  - client/src/player/gearLooks.ts#gearOutfit
+  - client/src/player/fightMoves.ts#foeDoing
+  - client/src/player/crosshair.ts#crosshairPoint
+  - client/src/player/glide.ts#Glides
+  - client/src/player/picture.ts#addedBy
 ---
 # Player
 
@@ -25,9 +33,10 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
 
 - **The walker** (`Walker`) is one frame of play. It steps the body by the [[Movement]] rules it is handed, under
   the frame's input, swings the [[First Person]]'s weapon, and chooses the move the figure shows from outside. The
-  page that holds it chooses the rules: the Test Ground's course, a node's ground with its section judged, or a
-  room's, which sends each tick's controls on. A page may set the walker's player: a room's correction, a respawn, a
-  move played from a panel.
+  page that holds it chooses the rules: a fight's in a room, which sends each tick's intent on and predicts the
+  fighter ([[Combat]]), or a ship's deck. In a fight the walker steps and shows the frame in two halves, the fight's
+  buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
+  Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Where a block
   or the ground stands between the head and the boom's end, the boom comes in to stand 0.25 m short of it, eased in
   fast and let out slowly so it never snaps (`boomFollowed`, `boom.ts`); however it eases it stands no nearer a block
@@ -38,10 +47,15 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
   The walker gives the player's own card for an eye; other players' figures stand where their room last saw them, in
   their own dress when it reads as one (`OtherPlayers`, `showOther`), as in the game's nodes so on the Test Ground.
-- **A room** (`RoomPlay`): the player's rules there send each tick's controls on, with what the figure shows, the
-  dress when it changed and a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing
-  with the room's section, holds a dead body still, and moves every other player's figure, which the page places and
-  takes away ([[Server]]).
+- **A room** (`Fighting`): it is joined with the player's session, if they have one, to keep their character
+  ([[Accounts]]). Each tick's intent goes to it, with what the figure shows, the dress when it changed, a gear ask and
+  a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,
+  holds a body dead past its edge still, and moves every other player's figure, which the page places and takes away
+  ([[Server]]); every figure glides between snapshots (`Glides`).
+- **Gear** (`gear.ts`, `gearLooks.ts`): the gear the room sends, as the screens and the figure read it: its
+  rarities' colours, its nodes, what the hands hold (`gearHands`) and what the figure wears (`gearOutfit`, [[Gear]]).
+  An item's own picture is the pixels its layers add to the figure, less any speck apart from the piece (`addedBy`).
+- **The crosshair** (`crosshair.ts`) finds where a shot would strike, over the ground and the bodies.
 - **The input** (`Input`) reads the keys and the mouse on the page's canvas, with the pointer locked to look round.
 
 ## Limits
