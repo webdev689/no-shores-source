@@ -8,7 +8,8 @@ type Triple = readonly [number, number, number];
 /** A patrol's dungeon as `room_dungeon` answers it (crates/room-wasm/src/dungeon_door.rs): x east and y south from
  *  its north-west corner, z up from its floor. A cell is -2 rock, -1 corridor or its room's number; a side is 0 east,
  *  1 south, 2 west, 3 north; a torch is x, y, z and its wall's side; a frame is its room's cell, the side its
- *  corridor lies on and its height; a pillar its corner and its height; a box min x, min y, max x, max y and top. */
+ *  corridor lies on and its height; a pillar its corner and its height; a box min x, min y, max x, max y and top: the jambs, then the pillars, then
+ *  the props' solids. */
 export interface DungeonLayout {
   readonly name: string;
   readonly pictures: readonly [number, number];
@@ -37,6 +38,8 @@ export interface DungeonLayout {
   readonly doorway: { readonly half: number; readonly jambDepth: number; readonly lintel: number };
   readonly pillars: readonly Triple[];
   readonly pillarHalf: number;
+  /** The forged props standing in it: each its model, where its origin stands (x, y, z) and its yaw. */
+  readonly props: readonly (readonly [number, number, number, number, number])[];
   readonly boxes: readonly (readonly [number, number, number, number, number])[];
 }
 

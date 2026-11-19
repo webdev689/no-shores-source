@@ -1,14 +1,14 @@
 // The pictures a dungeon or a patrol's entrances wear, as one small array the city's painter paints: each turned to
 // the island's climate as the textures turn it, and the plain colours by the city's own layers.
-import { type BookPicture, COLOUR_LAYERS, LAYER_SIZE, PICTURE_LAYERS } from '../city/pictures.ts';
+import { type BookPicture, COLOUR_LAYERS, LAYER_SIZE } from '../city/pictures.ts';
 import type { CityClimate } from '../city/plan.ts';
 import { climateArchive, pictureSize, type PictureUse } from '../textures/picture.ts';
 import { COLOUR } from './dungeonMesh.ts';
 
-/** The layer the return portal's face is drawn by: the last picture's, which a small array never holds. */
-export const PORTAL_LAYER = PICTURE_LAYERS - 1;
+/** Set in a vertex's layer for the return portal's face, over the layer of the picture it wears: past every layer. */
+export const PORTAL_FLAG = 256;
 
-/** A picture wanted: Daggerfall's archive and record (a negative archive for a plain colour), what it is named for,
+/** A picture wanted: Daggerfall's archive and record (a negative archive for a glow drawn as a colour), what it is named for,
  *  and the factor each channel is painted at, if any. */
 export type Wanted = readonly [
   archive: number,
@@ -50,9 +50,7 @@ export function smallBook(climate: CityClimate, wanted: Iterable<Wanted>): Small
   return {
     pictures,
     layerOf: (archive, record) => {
-      if (archive === COLOUR.iron) return COLOUR_LAYERS.iron;
       if (archive === COLOUR.glow) return COLOUR_LAYERS.glow;
-      if (archive === COLOUR.portal) return PORTAL_LAYER;
       return layers.get(`${archive}.${record}`) ?? 0;
     },
   };

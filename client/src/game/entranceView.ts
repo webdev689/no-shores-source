@@ -13,7 +13,7 @@ import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { smallBook, type Wanted } from './dungeonBook.ts';
-import { ENTRANCE_MODELS, type Entrance, standOf, turned } from './entrances.ts';
+import { ENTRANCE_MODELS, type Entrance, layModel, standOf } from './entrances.ts';
 
 const VIEW_BYTES = 96;
 
@@ -26,22 +26,8 @@ export function entrancesModel(
   const joined = meshBuilder();
   for (const entrance of entrances) {
     const model = propModel(props, ENTRANCE_MODELS[entrance.model] ?? -1);
-    if (!model) continue;
     const [x, y, z] = standOf(entrance);
-    const point = (vertex: number, from: Float32Array, shift: boolean) => {
-      const [east, south, up] = turned(
-        [from[vertex * 3] ?? 0, from[vertex * 3 + 1] ?? 0, from[vertex * 3 + 2] ?? 0],
-        entrance.yaw,
-      );
-      return shift ? [east + x - origin[0], south + y - origin[1], up + z] : [east, south, up];
-    };
-    for (const part of model.parts)
-      for (let index = part.start; index < part.start + part.count; index += 3) {
-        const vertices = [0, 1, 2].map((offset) => model.indices[index + offset] ?? 0);
-        const corners = vertices.map((vertex) => point(vertex, model.positions, true));
-        const mapping = vertices.map((vertex) => [model.uvs[vertex * 2] ?? 0, model.uvs[vertex * 2 + 1] ?? 0]);
-        joined.tri([part.archive, part.record], corners, point(vertices[0] ?? 0, model.normals, false), mapping);
-      }
+    if (model) layModel(joined, model, [x - origin[0], y - origin[1], z], entrance.yaw);
   }
   return joined.model();
 }

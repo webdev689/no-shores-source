@@ -13,8 +13,11 @@ export const BASE_M = 0.4;
 export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
-/** Archives that stand for a plain colour rather than a picture: iron, a flame's glow, and the portal's face. */
-export const COLOUR = { iron: -1, glow: -2, portal: -3 } as const;
+/** Archives that stand for no picture of their own: a flame's glow, drawn as a colour, and the portal's face, which
+ *  wears the end room's wall. */
+export const COLOUR = { glow: -2, portal: -3 } as const;
+/** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
+export const IRON: Picture = [93, 0];
 /** The portal's arch, metres: each post's width, the lintel's height, how far both stand off the wall, and how far
  *  off it the face stands, inside them. */
 const ARCH = { post: 0.3, lintel: 0.3, proud: 0.18, face: 0.04 };
@@ -229,7 +232,7 @@ function torch(mesh: MeshBuilder, [x, y, z, side]: readonly [number, number, num
   const edge = (along: number, step: number) =>
     step === 0 ? along : (Math.floor(along / cell) + 0.5 + step / 2) * cell;
   const [wallX, wallY] = [edge(x, east), edge(y, south)];
-  const iron: Picture = [COLOUR.iron, 0];
+  const iron = IRON;
   const across = (half: number, fromX: number, fromY: number, toX: number, toY: number, low: number, high: number) =>
     box(
       mesh,
@@ -327,8 +330,12 @@ function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
   doorFace(mesh, face, opening.side, [COLOUR.portal, 0]);
 }
 
-/** The whole floor's mesh, the exit door wearing `door`, and the return portal. */
-export function dungeonMesh(layout: DungeonLayout, door: Picture): ForgedModel {
+/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it. */
+export function dungeonMesh(
+  layout: DungeonLayout,
+  door: Picture,
+  furnish: (mesh: MeshBuilder) => void = () => undefined,
+): ForgedModel {
   const mesh = meshBuilder();
   const { cell, columns, rows, cells, ceilings } = layout;
   for (let row = 0; row < rows; row++)
@@ -366,5 +373,6 @@ export function dungeonMesh(layout: DungeonLayout, door: Picture): ForgedModel {
   for (const each of layout.torches) torch(mesh, each, cell);
   doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
   portal(mesh, layout);
+  furnish(mesh);
   return mesh.model();
 }

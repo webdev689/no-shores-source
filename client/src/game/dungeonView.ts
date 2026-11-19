@@ -9,11 +9,15 @@ import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { smallBook, type SmallBook, type Wanted } from './dungeonBook.ts';
+import { PORTAL_FLAG, smallBook, type SmallBook, type Wanted } from './dungeonBook.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import { lightAt } from './dungeonLight.ts';
-import { dungeonMesh, ROLE } from './dungeonMesh.ts';
+import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
+import { layModel } from './entrances.ts';
+import { propModel } from '../models/props.ts';
+import type { PropTable } from '../models/tables.ts';
+import type { PictureUse } from '../textures/picture.ts';
 import { SIDE_STEPS } from './dungeonLayout.ts';
 import { DUNGEON_SHADER, MOST_TORCHES } from './dungeonShaders.ts';
 
@@ -119,20 +123,35 @@ export class DungeonView {
 
   /** Draws this dungeon from now on, in the island's climate: its exit door in `door`, its cache's wood the
    *  climate's timber. */
-  set(layout: DungeonLayout, climate: CityClimate, door: readonly [number, number]): void {
+  set(layout: DungeonLayout, climate: CityClimate, door: readonly [number, number], props: PropTable): void {
     this.clear();
     const { device } = this.gpu;
     const [timberArchive, timberRecord, timberUse, timberTint] = MATERIALS[climate.climate].timber;
     const wood = [timberArchive, timberRecord] as const;
+    const model = dungeonMesh(layout, door, (mesh) => {
+      for (const [id, x, y, z, yaw] of layout.props) {
+        const forged = propModel(props, id);
+        if (forged) layModel(mesh, forged, [x, y, z], yaw);
+      }
+    });
+    const end = lookOf(layout, layout.end);
+    // A set's record by its role; the exit door's picture as a door; the props' and the iron as a prop's.
+    const useOf = (archive: number, record: number): PictureUse => {
+      if (!layout.pictures.includes(archive)) return archive === door[0] && record === door[1] ? 'door' : 'prop';
+      return record === ROLE.floor ? 'floor' : record === ROLE.ceiling ? 'ceiling' : 'wall';
+    };
     const wanted: Wanted[] = [
-      [door[0], door[1], 'door'],
       [timberArchive, timberRecord, timberUse, timberTint],
+      [...IRON, 'prop'],
+      [end.set, end.wall, 'wall'],
+      ...model.parts.map((part): Wanted => [part.archive, part.record, useOf(part.archive, part.record)]),
     ];
-    for (const set of layout.pictures) {
-      wanted.push([set, ROLE.wall, 'wall'], [set, ROLE.wallAlt, 'wall'], [set, ROLE.trim, 'wall']);
-      wanted.push([set, ROLE.floor, 'floor'], [set, ROLE.ceiling, 'ceiling']);
-    }
-    const book = smallBook(climate, wanted);
+    const plain = smallBook(climate, wanted);
+    const book: SmallBook = {
+      pictures: plain.pictures,
+      layerOf: (archive, record) =>
+        archive === COLOUR.portal ? PORTAL_FLAG | plain.layerOf(end.set, end.wall) : plain.layerOf(archive, record),
+    };
     const painter = new CityPainter(this.gpu, book, () => undefined);
     const view = device.createBuffer({
       size: VIEW_BYTES,
@@ -162,7 +181,7 @@ export class DungeonView {
     const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
     const { x, y, height } = layout.portal;
     const portalLight: Torch = [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, height / 2, torches.length];
-    const floor = this.buffersOf(dungeonMesh(layout, door), book);
+    const floor = this.buffersOf(model, book);
     this.drawn = {
       layout,
       torches,

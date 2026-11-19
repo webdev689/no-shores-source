@@ -1,5 +1,6 @@
 // A patrol's dungeon entrances: where each stands from its room's word (`Gear.dungeons`), its forged model lifted and
 // turned as Daggerfall's dungeon blocks stand it, and its door, where E offers to enter.
+import type { ForgedModel, MeshBuilder } from '../models/model.ts';
 import type { PropTable } from '../models/tables.ts';
 
 /** The four entrance models by their number (0 to 3), and the height each one's Daggerfall block stands it at: DUNGAA00
@@ -39,6 +40,25 @@ export function entrancesOf(numbers: readonly number[]): Entrance[] {
 export function turned([x, y, z]: Point, yaw: number): [number, number, number] {
   const [cosine, sine] = [Math.cos(yaw), Math.sin(yaw)];
   return [x * cosine + z * sine, x * sine - z * cosine, y];
+}
+
+/** Lays a forged model into `mesh` standing at `at` (east, south, up) turned by `yaw`, as the city stands a model;
+ *  each triangle keeps its picture and is lit by its first corner's normal. */
+export function layModel(mesh: MeshBuilder, model: ForgedModel, at: Point, yaw: number): void {
+  const point = (vertex: number, from: Float32Array, shift: boolean) => {
+    const [east, south, up] = turned(
+      [from[vertex * 3] ?? 0, from[vertex * 3 + 1] ?? 0, from[vertex * 3 + 2] ?? 0],
+      yaw,
+    );
+    return shift ? [east + at[0], south + at[1], up + at[2]] : [east, south, up];
+  };
+  for (const part of model.parts)
+    for (let index = part.start; index < part.start + part.count; index += 3) {
+      const vertices = [0, 1, 2].map((offset) => model.indices[index + offset] ?? 0);
+      const corners = vertices.map((vertex) => point(vertex, model.positions, true));
+      const mapping = vertices.map((vertex) => [model.uvs[vertex * 2] ?? 0, model.uvs[vertex * 2 + 1] ?? 0]);
+      mesh.tri([part.archive, part.record], corners, point(vertices[0] ?? 0, model.normals, false), mapping);
+    }
 }
 
 /** Where an entrance's model stands: on its ground, lifted as its block lifts it. */

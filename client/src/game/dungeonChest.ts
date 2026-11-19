@@ -1,7 +1,7 @@
 // The dungeon's cache: a chest of wooden boxes bound in iron, its lid shut or thrown back, where the room says it
 // stands and the way it faces.
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
-import { box, COLOUR } from './dungeonMesh.ts';
+import { box, IRON } from './dungeonMesh.ts';
 
 /** The cache as a room's snapshot gives it: where it stands, the way it faces (radians clockwise from north), and
  *  whether it stands open. */
@@ -33,7 +33,7 @@ export function chestMesh(cache: Cache, wood: readonly [number, number]): Forged
   // Built with x to its right, y to its back and z up, its front's middle at its foot at the origin.
   const body = meshBuilder();
   const lid = meshBuilder();
-  const iron = [COLOUR.iron, 0] as const;
+  const iron = IRON;
   const back = BODY.depth;
   box(body, wood, [-BODY.half, 0, 0], [BODY.half, back, BODY.height]);
   box(lid, wood, [-BODY.half, 0, BODY.height], [BODY.half, back, BODY.height + LID]);

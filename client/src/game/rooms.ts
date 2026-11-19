@@ -58,8 +58,13 @@ export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficu
   return `node-${patrol.id}${seas}--dungeon-${number}`;
 }
 
-/** The node and seas a node's room is for (`node-<id>`, `node-<id>--rough`); null for any other room. */
-export function nodeOfRoom(room: string): { readonly id: string; readonly seas: Difficulty } | null {
-  const found = /^node-([a-z0-9-]+?)(?:--(rough|storm))?$/.exec(room);
-  return found?.[1] ? { id: found[1], seas: (found[2] as Difficulty | undefined) ?? 'calm' } : null;
+/** The node and seas a node's room is for (`node-<id>`, `node-<id>--rough`), and the patrol's dungeon it is
+ *  (`--dungeon-<number>` after those, never a node's own name); null for any other room. */
+export function nodeOfRoom(
+  room: string,
+): { readonly id: string; readonly seas: Difficulty; readonly dungeon: number | null } | null {
+  const found = /^node-([a-z0-9-]+?)(?:--(rough|storm))?(?:--dungeon-([0-2]))?$/.exec(room);
+  if (!found?.[1]) return null;
+  const dungeon = found[3] === undefined ? null : Number(found[3]);
+  return { id: found[1], seas: (found[2] as Difficulty | undefined) ?? 'calm', dungeon };
 }

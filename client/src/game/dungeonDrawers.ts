@@ -109,7 +109,7 @@ export class DungeonDrawers {
   /** Draws this dungeon of `patrol` from now on, its exit door wearing the door picture its entrance's model wears. */
   show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): void {
     const look = entrance && this.props?.[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook;
-    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR);
+    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, this.props ?? {});
   }
 
   /** Lets go of the dungeon last drawn, once the player has left it. */

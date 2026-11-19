@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountsFrom, dungeonRoom, nodeRoom, roomsFrom } from './rooms.ts';
+import { accountsFrom, dungeonRoom, nodeOfRoom, nodeRoom, roomsFrom } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -45,4 +45,15 @@ test("a patrol's dungeon has one room at each sea, named for its patrol and its 
   assert.equal(dungeonRoom(patrol, 'calm', 0), 'node-saltgrass-downs--dungeon-0');
   assert.equal(dungeonRoom(patrol, 'rough', 2), 'node-saltgrass-downs--rough--dungeon-2');
   assert.equal(dungeonRoom(patrol, 'storm', 1), 'node-saltgrass-downs--storm--dungeon-1');
+});
+
+test("a room's name reads back as its node, its seas and its dungeon; a dungeon only after `--`", () => {
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs'), { id: 'saltgrass-downs', seas: 'calm', dungeon: null });
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--storm--dungeon-2'), {
+    id: 'saltgrass-downs',
+    seas: 'storm',
+    dungeon: 2,
+  });
+  assert.deepEqual(nodeOfRoom('node-dungeon-0'), { id: 'dungeon-0', seas: 'calm', dungeon: null });
+  assert.equal(nodeOfRoom('sea'), null);
 });

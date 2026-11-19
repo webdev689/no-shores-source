@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { ForgedModel } from '../models/model.ts';
 import { cross, dot, minus } from '../models/vector.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { COLOUR, dungeonMesh, lookOf, ROLE } from './dungeonMesh.ts';
+import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
 
 /** A room's cell (room 0, 4 m high) with a corridor (3.2 m) east of it and rock past that, framed between them; the
  *  exit door on the room's west wall; one torch on the corridor's north wall. */
@@ -27,6 +27,7 @@ const layout: DungeonLayout = {
   doorway: { half: 0.9, jambDepth: 0.3, lintel: 2.8 },
   pillars: [],
   pillarHalf: 0.35,
+  props: [],
   boxes: [
     [3.2, 0, 3.5, 0.7, 3.2],
     [3.2, 2.5, 3.5, 3.2, 3.2],
@@ -150,7 +151,7 @@ test('the exit door wears the door picture once, on its wall facing into the roo
 });
 
 test('a torch is an iron bracket off its wall and a glowing flame over it', () => {
-  const iron = triangles.filter(({ picture }) => picture === `${COLOUR.iron}.0`);
+  const iron = triangles.filter(({ picture }) => picture === `${IRON[0]}.${IRON[1]}`);
   const ironY = iron.flatMap(({ corners }) => corners.map(([, y]) => y));
   assert.ok(near(Math.min(...ironY), 0), 'its plate stands on the wall');
   const flame = triangles.filter(({ picture }) => picture === `${COLOUR.glow}.0`);
