@@ -195,8 +195,8 @@ export function characterPage(
   const stats = make('div', '', 'gear-stats');
   const [melee, ranged] = character.attack;
   stats.append(
-    stat('Melee Attack', melee === null || melee === undefined ? '—' : String(melee)),
-    stat('Ranged Attack', ranged === null || ranged === undefined ? '—' : String(ranged)),
+    stat('Melee', melee === null || melee === undefined ? '—' : String(melee)),
+    stat('Ranged', ranged === null || ranged === undefined ? '—' : String(ranged)),
     stat('Defense', String(character.defense)),
     stat('Prestige', String(character.prestige)),
     stat('Fruit of Dagon', String(character.fruit)),

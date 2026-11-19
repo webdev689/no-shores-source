@@ -239,9 +239,9 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
-  Melee and Ranged Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
-  emblem stand to its left, under a place kept for the worn Art, the armour to its right, each slot its item's picture
+- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the
+  Melee and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and
+  the emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture
   with its names; under the Ranged slot's, the shots left of its capacity ("18 of 24 shots"), or "No ammo" in the loss
   colour. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows on hover or focus; a click opens its
   flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those

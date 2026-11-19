@@ -198,6 +198,13 @@
   .arts-blurb {
     max-width: 352px;
   }
+  /* A spell's key reads at the footer's keycaps' size. */
+  #hud .arts-page kbd.arts-key {
+    right: -11px;
+    bottom: -11px;
+    font-size: var(--type-l);
+    line-height: 24px;
+  }
   .arts-emblem-img {
     width: 264px;
     height: 264px;
