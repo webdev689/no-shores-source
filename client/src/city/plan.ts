@@ -1,5 +1,5 @@
-// A city's plan as the city crate serialises it, a port city's or a ruin's, and the climate its pictures are drawn in. The land worker hands
-// the plan over as JSON; this layer only reads it.
+// A city's plan as the city crate serialises it, a port city's or a ruin's, and the climate its pictures are drawn
+// in. The land worker hands the plan over as JSON; this layer only reads it.
 import type { Climate, Season } from '../textures/picture.ts';
 
 /** A cell's side in metres: one RMB block. */

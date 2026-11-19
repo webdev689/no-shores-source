@@ -8,8 +8,8 @@ import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
 import { PAVED_TILE } from './cityGround.ts';
-import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
 import { MASS_RUIN } from './cityMasses.ts';
+import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
 
 /** How much nearer in depth (not on screen) the city is drawn than it stands: a few centimetres, and a share of the
  *  distance, so its terraces win over the land's coarser rings and its pads' own ground. */
@@ -127,7 +127,10 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     discard;
   }
   let broken = surface.ruin.y > 0.0;
-  if broken && surface.ruin.x > surface.ruin.y {
+  // above its break a ruin's building is gone, and so are its floors and ceilings in its upper part, which would
+  // otherwise read as a roof from above
+  let slab = abs(normalize(surface.normal).z) > 0.9 && surface.ruin.x > 0.25 * surface.ruin.y;
+  if broken && (surface.ruin.x > surface.ruin.y || slab) {
     discard;
   }
   // a ruin's open shell is drawn from inside too, lit from the side seen

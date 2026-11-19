@@ -214,7 +214,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   walks her deck, with her helmsman at the wheel under way. In a fight they all stand on her as the fight lies her.
   Each figure stands where her deck lies on the swell, drawn as large as she is.
 - **No nodes are marked at sea.** Only a port has an icon, over its harbour, with its name and distance, once the
-  ship is within 60 km of it, and only a port city's harbour is a port: a ruin's has none (`portOf`); it is held at the picture's edge when off it, its arrow pointing the way.
+  ship is within 60 km of it, and only a port city's harbour is a port: a ruin's has none (`portOf`); it is held at
+  the picture's edge when off it, its arrow pointing the way.
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
   It marks each ship within 900 m of hers: the hostile red, other players' bone, a fight's struck captains grey
   ([[Interface]]). It hides while the held map is up at the helm.

@@ -210,25 +210,27 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
   whole, and a light it carried is out, iron where it glowed.
 - **Its wall** is breached at one piece in three and at every gate: each breach is a heap of rubble 4.5 m high where
   the piece stood, a gate's arch gone into one across the gateway. Its towers and gatehouses stand to half their
-  height, roofless.
+  height over the ground, roofless.
 - **Its harbour's** piers are broken off at 40 % of their length from the quay. Two wrecks lie in it (`wrecks`): a
   Sloop 70 m one side of the harbour's way out and a Schooner 80 m the other, each where the water first lies more
-  than 4 m deep from 170 m out, heeled 25 degrees, one to each side, her heading across the way out turned a little
-  by the city's seed. The page draws each with the ships layer's mesh, every face more than 2 m over her highest
+  than 4 m deep from 170 m out (none where no such water lies within 750 m), heeled 25 degrees, one to each side,
+  her heading across the way out turned a little by the city's seed. The page draws each with the ships layer's mesh, every face more than 2 m over her highest
   deck left out (her masts and spars), settled in the water to her deck's middle height and shaded 0.6 as light as a
   ship afloat, in no side's colours.
 - **Its ways** are strewn with rubble: four heaps in each avenue's cell, each 3 to 7 m by 2 to 5 m and 0.8 to 2 m
-  high, turned at random, seeded by the cell; none within 110 m of the plaza, so its room's boxes are only what the
-  plaza and the landmark stand.
+  high, turned at random, seeded by the cell; none within 110 m of the plaza, so no heap stands in its node.
 - **Its plaza** is walkable and empty: its counters stand bare, without their goods, and no station is kept, so no
-  keeper or townsfolk stand there, no counter is served by its room, and nothing is offered (`stations`).
+  keeper or townsfolk stand there, no counter is served by its room, and nothing is offered (`stations`). Its room's
+  boxes are a port city's but for the goods and what of the landmark is gone.
 - **Its buildings** are broken where the page stands them (`ruins.ts`), each by its place to the centimetre, the same
   on every machine: one in four has fallen to a heap of rubble over its hull's footprint, a quarter of its walls'
-  height and at least 1.5 m; the rest are broken off at 35 to 75 % of their height, roofless, their walls darkened
+  height and at least 1.5 m; the rest are broken off at 35 to 75 % of their height, never above their lowest wing's
+  eaves, so roofless, their walls darkened
   toward the break, at the break 78 % darker. Near, the forged model is cut at the break in the shader and drawn
-  from both faces, an open shell; its shadow is cast as if every corner above the break stood at it. Its masses and
-  hull end at the break with a flat top, so a ruin reads as one at every distance, from the sea and the Overworld
-  too. A ruin's windows are as dark as a port city's: lit windows are not drawn.
+  from both faces, an open shell, its level faces over a quarter of the break's height (its upper floors and
+  ceilings) left out too; its shadow is cast as if every corner above the break stood at it, lidded there.
+  Its masses and hull end at the break, open at the top and drawn from both faces, so a ruin reads as one at every
+  distance, from the sea and the Overworld too. A ruin's windows are as dark as a port city's: lit windows are not drawn.
 
 Every heap is a frustum of rubble, its top 0.3 of its base, dressed in the climate's terrace rubble. At sea a ruin
 shows no port icon over its harbour and offers no docking there; its island's other landings stay ([[Game]],

@@ -20,8 +20,8 @@ pub const WRECK_HEEL: f64 = 25.0 * core::f64::consts::PI / 180.0;
 /// Heaps of rubble a way's cell holds, and how far inside its edges they lie, metres.
 const HEAPS_PER_CELL: usize = 4;
 const HEAP_INSET_M: f64 = 12.0;
-/// How far from the plaza no rubble lies, metres: past the window of ground its node is cut to, so its room's boxes
-/// are a port city's.
+/// How far from the plaza no rubble lies, metres: past the window of ground its node is cut to, so no heap stands in
+/// its room.
 const PLAZA_CLEAR_M: f64 = 110.0;
 /// The water a wreck settles in, deeper than this, metres; and how far out from the harbour her search starts and
 /// steps.
@@ -120,7 +120,7 @@ pub struct Wreck {
 }
 
 /// Two wrecks in the harbour, a Sloop and a Schooner, either side of its way out to sea, each where the water first
-/// lies deep enough past the piers.
+/// lies deep enough past the piers; none where no water that deep is found.
 #[must_use]
 pub fn wrecks(ground: &Ground, footprint: &Footprint, harbour: [f64; 2], seed: u32) -> Vec<Wreck> {
     let ray = footprint.ray_toward(harbour[0] - footprint.centre[0], harbour[1] - footprint.centre[1]);
@@ -129,14 +129,13 @@ pub fn wrecks(ground: &Ground, footprint: &Footprint, harbour: [f64; 2], seed: u
     [(Hull::Sloop, -70.0, 1.0), (Hull::Schooner, 80.0, -1.0)]
         .into_iter()
         .enumerate()
-        .map(|(place, (ship, aside, heel))| {
+        .filter_map(|(place, (ship, aside, heel))| {
             let start = ahead(harbour, across, aside);
-            let deep = (0..30)
+            let at = (0..30)
                 .map(|step| ahead(start, outward, WRECK_OUT_M[0] + WRECK_OUT_M[1] * step as f64))
-                .find(|at| ground.height_at(at[0], at[1]) < -WRECK_DEPTH_M);
-            let at = deep.unwrap_or_else(|| ahead(start, outward, WRECK_OUT_M[0]));
+                .find(|at| ground.height_at(at[0], at[1]) < -WRECK_DEPTH_M)?;
             let heading = turn_toward(across) + (rand01(seed, &[37, place as i64]) - 0.5) * 1.2;
-            Wreck { ship, at, heading, heel: heel * WRECK_HEEL }
+            Some(Wreck { ship, at, heading, heel: heel * WRECK_HEEL })
         })
         .collect()
 }

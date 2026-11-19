@@ -116,5 +116,5 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
 fn a_ruin_is_the_same_every_time() {
     let first = plan_of("continent-6", true);
     assert_eq!(first, plan_of("continent-6", true));
-    assert_eq!(fingerprint(&first), "81410446bc991a2b");
+    assert_eq!(fingerprint(&first), "922728626a411a2c");
 }

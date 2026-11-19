@@ -70,7 +70,7 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize], ruined
                 let base = ground.height_at(middle[0], middle[1]) - SINK_M;
                 let height = WALL_HEIGHT_M + 8.0 + SINK_M;
                 if ruined {
-                    solids.push(column(middle, base, 16.0, height / 2.0, 1.0, Material::Stone));
+                    solids.push(column(middle, base, 16.0, (height + SINK_M) / 2.0, 1.0, Material::Stone));
                 } else {
                     solids.push(column(middle, base, 16.0, height, 1.0, Material::Stone));
                     solids.push(column(middle, base + height, 19.0, 9.0, 0.0, Material::Roof));
@@ -87,7 +87,7 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize], ruined
         for side in [-1.0, 1.0] {
             let tower = ahead(at, across, side * 14.0);
             if ruined {
-                solids.push(column(tower, foot, 14.0, height / 2.0, 1.0, Material::Stone));
+                solids.push(column(tower, foot, 14.0, (height + SINK_M) / 2.0, 1.0, Material::Stone));
             } else {
                 solids.push(column(tower, foot, 14.0, height, 1.0, Material::Stone));
                 solids.push(column(tower, foot + height, 17.0, 10.0, 0.0, Material::Roof));

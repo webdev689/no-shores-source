@@ -39,6 +39,8 @@ export function brokenMesh(mesh: ShipMesh, stump: number): ShipMesh {
 }
 
 /** A wreck's view of her ship, made once a page for every ruin. */
+// shortcut: one view a hull with one slot, so two ruins drawn in one frame would share her place; give each wreck a
+// slot if more than one landmass is ever drawn at once.
 const views = new Map<Hull, Promise<ShipView>>();
 
 function viewOf(gpu: Gpu, ship: Hull): Promise<ShipView> {
