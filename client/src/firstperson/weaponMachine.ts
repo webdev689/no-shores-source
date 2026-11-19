@@ -34,6 +34,8 @@ const SWING_BASE_FRAME = (3 * (115 - 50)) / 980;
 const SWING_FRAME_MIN = 0.09;
 const SWING_FRAME_MAX = 0.4;
 const TWO_HANDED = 1.06;
+/** At the owner's word every swing takes three quarters of the law's time, as the combat crate's `SWING_PACE`. */
+const SWING_PACE = 0.75;
 /** How quickly each kind comes round apart from its weight, a sword the measure. */
 const HANDLING: Readonly<Record<WeaponKind, number>> = {
   sword: 1,
@@ -53,7 +55,7 @@ export const takesBothHands = (kind: WeaponKind): boolean => BOTH_HANDS.has(kind
 /** The seconds one strike frame of `kind` lasts. */
 export function swingFrameSeconds(kind: WeaponKind): number {
   const frame = SWING_BASE_FRAME * HANDLING[kind] * (BOTH_HANDS.has(kind) ? TWO_HANDED : 1);
-  return Math.min(SWING_FRAME_MAX, Math.max(SWING_FRAME_MIN, frame));
+  return Math.min(SWING_FRAME_MAX, Math.max(SWING_FRAME_MIN, frame)) * SWING_PACE;
 }
 
 const STRIKE_FRAMES = 5;

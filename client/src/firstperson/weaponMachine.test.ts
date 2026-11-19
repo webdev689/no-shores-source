@@ -31,10 +31,10 @@ function run(machine: WeaponMachine, count: number, seconds: number, input: Atta
   return steps;
 }
 
-test('a strike frame lasts 0.199 s for a sword, quicker for a dagger, slower for a two-handed warhammer', () => {
-  assert.equal(swingFrameSeconds('sword').toFixed(3), '0.199');
+test('a strike frame lasts 0.149 s for a sword, quicker for a dagger, slower for a two-handed warhammer', () => {
+  assert.equal(swingFrameSeconds('sword').toFixed(3), '0.149', 'three quarters of the law’s 0.199');
   assert.ok(swingFrameSeconds('dagger') < swingFrameSeconds('sword'));
-  assert.equal(swingFrameSeconds('warhammer').toFixed(3), (0.199 * 1.06 * 1.06).toFixed(3));
+  assert.equal(swingFrameSeconds('warhammer').toFixed(3), (0.199 * 1.06 * 1.06 * 0.75).toFixed(3));
 });
 
 /** Plays a click's swing in small steps: each frame shown as it changes and when, when its blow landed, how many
@@ -169,10 +169,11 @@ function blowsWhenRulesBegin(machine: WeaponMachine, every: number, seconds: num
   return blows;
 }
 
-test('a swing the rules begin while the last strike follows through starts again: a mace held 20 s lands 20 blows', () => {
-  // The rules end a mace's swing on its 61st tick; its five strike frames last 61.5.
-  assert.ok(5 * swingFrameSeconds('mace') * 60 > 61);
-  assert.equal(blowsWhenRulesBegin(new WeaponMachine('mace', always('down')), 61, 20), 20);
+test('a swing the rules begin while the last strike follows through starts again: each mace swing lands its blow', () => {
+  // The rules end a mace's swing on its 46th tick; its five strike frames last 46.1. In 20 s the rules begin 27
+  // swings, the last landing after the 20 s are up.
+  assert.ok(5 * swingFrameSeconds('mace') * 60 > 46);
+  assert.equal(blowsWhenRulesBegin(new WeaponMachine('mace', always('down')), 46, 20), 26);
 });
 
 test('a press before the blow lands does not start the strike again', () => {
