@@ -10,7 +10,8 @@ import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
 import { youAtHelm } from './helm.ts';
 import { storyCue } from './music.ts';
-import { onDeck, type Sailed } from './sailing.ts';
+import { type Wreck, wrecksOn } from './battle.ts';
+import { onDeck } from './sailing.ts';
 import { STILL } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -20,12 +21,11 @@ export const LENS = { fov: 0.85, near: 0.3, far: 30_000 } as const;
 export const DECK_VIEW = { eye: [-15.5, -1.6, 7.4], look: [4, 0.4, 3.2] } as const;
 /** The still air on her deck, the storm still heard round her. */
 export const CALM_SOUND: Partial<AmbienceLevels> = { wind: 0.3, rain: 0.7, waves: 0.7, creak: 0.7 };
-/** How long the camera takes down to her deck, when the crew begin to talk, how long the mate's last line runs before
- *  the lookout cuts in, and how long a wreck going down takes to settle as low as she will. */
+/** How long the camera takes down to her deck, when the crew begin to talk, and how long the mate's last line runs
+ *  before the lookout cuts in. */
 const DOWN_S = 3;
 const TALK_S = 3.2;
 const CUT_S = 1.3;
-const SETTLE_S = 20;
 /** The look out to the wrecks while the lookout speaks of them: how long the camera takes there and back, its lens,
  *  and where it stands, behind his head and to one side, so he and the nearest wreck are both in the picture. */
 const LOOK_OUT_S = 1.4;
@@ -62,8 +62,8 @@ export class Calm implements Beat {
   private readonly story: Story;
   private readonly from: Shot;
   private readonly cues: Cues;
-  /** The beaten ships where the fight left them; those going down settle on as the crew talk. */
-  private readonly wrecks: readonly { readonly ship: Sailed; readonly settling: boolean }[];
+  /** The beaten ships as the fight left them; those going down settle on as the crew talk. */
+  private readonly laid: readonly Wreck[];
   private since = 0;
   /** When the lookout began to speak of the wrecks, and when the next line drew the camera back, or -1. */
   private lookingOut = -1;
@@ -71,12 +71,14 @@ export class Calm implements Beat {
   /** When the mate's last line began, or -1. */
   private cutFrom = -1;
   private skipped = false;
+  /** Why the talk could not be played, thrown from the next frame for the director to go on past it. */
+  private failure: { readonly error: unknown } | null = null;
   done = false;
 
-  constructor(story: Story, from: Shot, wrecks: readonly Sailed[]) {
+  constructor(story: Story, from: Shot, wrecks: readonly Wreck[]) {
     this.story = story;
     this.from = from;
-    this.wrecks = wrecks.map((ship) => ({ ship, settling: (ship.sinking ?? 0) >= 0.3 }));
+    this.laid = wrecks;
     storyCue('calm');
     const { stage, brig } = story;
     stage.weatherTowards(STILL, 4);
@@ -84,7 +86,8 @@ export class Calm implements Beat {
     story.lightning.striking = false;
     brig.way = 0;
     const said = (line: Line) => this.said(line);
-    this.cues = new Cues([[TALK_S, () => void stage.play('calm', true, {}, said).then(() => this.lastLine())]]);
+    const failed = (error: unknown) => (this.failure = { error });
+    this.cues = new Cues([[TALK_S, () => void stage.play('calm', true, {}, said).then(() => this.lastLine(), failed)]]);
   }
 
   /** The lookout's line turns the camera out to the wrecks he speaks of, and the line after it brings it back. */
@@ -108,16 +111,14 @@ export class Calm implements Beat {
   frame(tick: Tick): StoryFrame {
     const { story } = this;
     const { stage, brig, lightning, sailing } = story;
+    if (this.failure) throw this.failure.error;
     this.since += tick.seconds;
     if (!this.skipped) this.cues.step(this.since);
     if (this.cutFrom >= 0 && this.since - this.cutFrom >= CUT_S) this.done = true;
     const strike = lightning.step(tick.seconds, [brig.x, brig.y]);
     stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
-    const wrecks = this.wrecks.map(({ ship, settling }) =>
-      settling ? { ...ship, sinking: (ship.sinking ?? 0) + this.since / SETTLE_S } : ship,
-    );
     const ships = sailing.frame(
-      [brig.sailed(), ...wrecks],
+      [brig.sailed(), ...this.wrecks.map((wreck) => wreck.ship)],
       tick.seconds,
       tick.clock,
       stage.windBearing(),
@@ -146,6 +147,11 @@ export class Calm implements Beat {
       land: false,
       focus: [brig.x, brig.y],
     };
+  }
+
+  /** The wrecks as they lie now, still above water, for the ram to draw on from. */
+  get wrecks(): Wreck[] {
+    return wrecksOn(this.laid, this.since);
   }
 
   /** Over the lookout's shoulder to the nearest wreck, on a longer lens, so a ship beaten far off still reads. */

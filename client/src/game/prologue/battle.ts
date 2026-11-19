@@ -3,19 +3,30 @@
 // as her balls strike home and as each ship goes down; it ends once every one is beaten, sunk or struck.
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
 import { shipSails } from '../../ships/shipMesh.ts';
+import { onScreen, type Shot } from '../camera.ts';
 import { HINTS } from '../hints.ts';
 import type { Beat, Tick } from './beat.ts';
-import { type Ambusher, StoryFight, type StoryFightFrame } from './fightAtSea.ts';
+import { type Ambusher, type Going, type Happening, StoryFight, type StoryFightFrame } from './fightAtSea.ts';
 import { youAtHelm } from './helm.ts';
 import { storyCue } from './music.ts';
-import type { Sailed, ShipDraw } from './sailing.ts';
-import { STORM_SOUND } from './sighted.ts';
+import type { Founder, Sailed, ShipDraw } from './sailing.ts';
+import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
 import { STORM } from './skies.ts';
-import type { StoryFrame } from './stage.ts';
+import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
-/** The fewest seconds between two of the crew's cries of one kind, so a hail of hits is not a hail of words. */
-const CRY_GAP_S = { 'hit-taken': 7, 'hit-given': 9, sinking: 3 } as const;
+/** What the crew cry out at, the scene each cries, and the fewest seconds between two cries of one kind, so a hail of
+ *  hits is not a hail of words. */
+type Cry = Exclude<Happening, 'sunk'>;
+const CRY_SCENES: Readonly<Record<Cry, string>> = {
+  'hit-taken': 'hitTaken',
+  'hit-given': 'hitGiven',
+  sinking: 'sinking',
+};
+const CRY_GAP_S: Readonly<Record<Cry, number>> = { 'hit-taken': 7, 'hit-given': 9, sinking: 3 };
+/** How long a cry waits for its speaker to come on the view (the player aiming out over her side) before it is let go:
+ *  later, it would answer nothing still in the picture. */
+const CRY_HELD_S = 2.5;
 const FAR_M = 30_000;
 /** A beaten captain's Sloop is drawn as dark as the fight drew her. */
 const WRECK_SHADE = 0.55;
@@ -31,77 +42,119 @@ export function ambushersFrom(story: Story, inbound: readonly Sailed[]): Ambushe
       faction: 2,
       rank: 2,
       heading: ship.heading,
+      way: ship.underWay ? INBOUND_WAY_M_S : 0,
     };
   });
 }
+
+type View = { readonly width: number; readonly height: number };
 
 /** What is left to do, for as long as the fight lasts. */
 export function shipsLeft(left: number, total: number): string {
   return `Ships left: ${left} of ${total}.`;
 }
 
-/** A beaten Sloop lying where she is, her sails furled: low in the water, or, `going` down, lower and settling on. */
-export function asWreck(
-  ship: { readonly x: number; readonly y: number; readonly heading: number },
-  going: boolean,
-): Sailed {
-  const { x, y, heading } = ship;
-  return {
-    who: `wreck-${x}-${y}`,
-    hull: 'sloop',
-    x,
-    y,
-    heading,
-    underWay: false,
-    shade: WRECK_SHADE,
-    sinking: going ? 0.3 : 0.1,
-  };
+/** A beaten Sloop as the fight left her: where she lies, her founder, and how she goes on under if she is going. */
+export interface Wreck {
+  readonly ship: Sailed;
+  readonly going: Going | null;
 }
 
-/** The beaten captains' Sloops where the fight left them, as the calm keeps them: struck ones lying still, ones going
- *  down still settling. The sunk are gone. */
-export function wrecksOf(frame: StoryFightFrame | null): Sailed[] {
-  const captains = frame?.ships.filter((ship) => ship.hull === 'captain') ?? [];
-  return captains
-    .filter((ship) => ship.state === 'struck' || ship.state === 'sinking')
-    .map((ship) => asWreck(ship.place, ship.state === 'sinking'));
+/** A beaten Sloop lying where she is, struck, as a story begun after the fight lays her. */
+export function asWreck(
+  ship: { readonly x: number; readonly y: number; readonly heading: number },
+  index: number,
+): Wreck {
+  const { x, y, heading } = ship;
+  const lying: Sailed = { who: `wreck-${index}`, hull: 'sloop', x, y, heading, underWay: false, shade: WRECK_SHADE };
+  return { ship: { ...lying, founder: [0, 0, 0] }, going: null };
+}
+
+/** The beaten captains' Sloops where the fight left them, in its own pose: struck ones lying still, ones going down
+ *  with what the rules last sent of how they go on under. The sunk are gone. */
+export function wrecksOf(frame: StoryFightFrame | null): Wreck[] {
+  return (frame?.ships ?? []).flatMap((ship, index) => {
+    if (ship.hull !== 'captain' || (ship.state !== 'struck' && ship.state !== 'sinking')) return [];
+    const wreck = asWreck(ship.place, index);
+    return [{ ship: { ...wreck.ship, founder: ship.founder }, going: ship.state === 'sinking' ? ship.going : null }];
+  });
+}
+
+/** `wreck` `seconds` on: one going down settles, trims and lists on from where she was toward how she will lie once
+ *  sunk, deeper ever faster, as the rules sink her; she is gone (null) once under. A struck one lies as she was. */
+export function settledOn(wreck: Wreck, seconds: number): Wreck | null {
+  const { going } = wreck;
+  if (!going) return wreck;
+  if (seconds >= going.inS) return null;
+  const [settled, trim, list] = wreck.ship.founder ?? [0, 0, 0];
+  const [under, sunkTrim, sunkList] = going.sunk;
+  const along = seconds / going.inS;
+  // The rules settle her by the square of her share of the way down: the share now, then as far again on.
+  const from = under > 0 ? Math.min(1, Math.sqrt(Math.max(0, settled) / under)) : 1;
+  const share = from + (1 - from) * along;
+  const deeper = from < 1 ? (share * share - from * from) / (1 - from * from) : along;
+  const founder: Founder = [
+    settled + (under - settled) * deeper,
+    trim + (sunkTrim - trim) * along,
+    list + (sunkList - list) * along,
+  ];
+  return { ship: { ...wreck.ship, founder }, going: { sunk: going.sunk, inS: going.inS - seconds } };
+}
+
+/** Every wreck `seconds` on that is still above water. */
+export function wrecksOn(wrecks: readonly Wreck[], seconds: number): Wreck[] {
+  return wrecks.flatMap((wreck) => settledOn(wreck, seconds) ?? []);
 }
 
 export class Battle implements Beat {
   readonly name = 'battle';
   readonly skippable = false;
   private readonly story: Story;
+  private readonly inbound: readonly Sailed[];
   private readonly ambushers: readonly Ambusher[];
+  /** Her way as the fight takes her up, m/s. */
+  private readonly way: number;
   private fight: StoryFight | null = null;
   private begun = false;
   /** Why the fight could not begin, thrown from the next frame for the director to go on past it. */
   private failure: unknown = null;
   private last: StoryFightFrame | null = null;
-  private readonly cried = new Map<string, number>();
+  private readonly cried = new Map<Cry, number>();
+  /** Each cry waiting for its speaker to come on the view, and when what it answers happened. */
+  private readonly waiting = new Map<Cry, number>();
   private clock = 0;
   done = false;
 
   constructor(story: Story, inbound: readonly Sailed[]) {
     this.story = story;
+    this.inbound = inbound;
     this.ambushers = ambushersFrom(story, inbound);
     storyCue('battle');
     const { brig, stage } = story;
     stage.weatherTowards(STORM, 2);
     stage.parts.ambience.set(STORM_SOUND, 1.5);
     story.lightning.striking = true;
+    this.way = brig.way;
     brig.way = 0;
   }
 
-  /** The fight begun on the story's clock, so its first words ("A ... is sighted") are on the panel a while. */
+  /** The fight begun on the story's clock, so its first words ("... sighted") are on the panel a while, every ship
+   *  under the sail and way she was last drawn with. */
   private begin(now: number): void {
     this.begun = true;
-    const { brig, land, marks, stage } = this.story;
+    const { brig, land, marks, stage, sailing } = this.story;
+    const wind = stage.windBearing();
+    const rigs = {
+      own: sailing.rigOf({ ...brig.sailed(), underWay: this.way > 0 }, wind, now),
+      captains: this.inbound.map((ship) => sailing.rigOf(ship, wind, now)),
+    };
     StoryFight.begin(
       land,
-      { x: brig.x, y: brig.y, heading: brig.heading },
+      { x: brig.x, y: brig.y, heading: brig.heading, way: this.way },
       this.ambushers,
       { sails: shipSails('sloop'), marks },
       now,
+      rigs,
     ).then(
       (fight) => {
         if (this.done) {
@@ -109,7 +162,7 @@ export class Battle implements Beat {
           return;
         }
         this.fight = fight;
-        stage.parts.objective.show('Engage', 'Sink the ships closing on you.', 8);
+        stage.parts.objective.show('Engage', 'Sink them, or make them strike.', 8);
       },
       (error: unknown) => (this.failure = error),
     );
@@ -124,11 +177,27 @@ export class Battle implements Beat {
     return this.done ? null : this.fight;
   }
 
-  private cry(happening: keyof typeof CRY_GAP_S, scene: string): void {
+  /** A cry the crew have to make, unless one of its kind was made a moment ago. */
+  private cry(happening: Cry): void {
     const last = this.cried.get(happening) ?? -Infinity;
     if (this.clock - last < CRY_GAP_S[happening]) return;
-    this.cried.set(happening, this.clock);
-    void this.story.stage.play(scene);
+    this.waiting.set(happening, this.clock);
+  }
+
+  /** Each waiting cry said once its speaker's head is on the view, so its words are heard; one whose moment has
+   *  passed unseen is let go, and no gap is spent on it. */
+  private sayCries(shot: Shot, heads: ReadonlyMap<string, readonly [number, number, number]>, view: View): void {
+    const { stage } = this.story;
+    for (const [happening, since] of this.waiting) {
+      const scene = CRY_SCENES[happening];
+      const who = stage.parts.scenes[scene]?.[0]?.who;
+      const head = who === undefined ? undefined : heads.get(who);
+      if (head && headOnView(onScreen(shot, view, head), view)) {
+        this.waiting.delete(happening);
+        this.cried.set(happening, this.clock);
+        void stage.play(scene);
+      } else if (this.clock - since > CRY_HELD_S) this.waiting.delete(happening);
+    }
   }
 
   frame(tick: Tick): StoryFrame | null {
@@ -143,11 +212,7 @@ export class Battle implements Beat {
     if (!fight) return null;
     const shown = fight.frame({ seconds: tick.seconds, time: tick.clock, far: FAR_M, swell: stage.swell() });
     this.last = shown;
-    for (const happening of shown.happened) {
-      if (happening === 'hit-taken') this.cry('hit-taken', 'hitTaken');
-      else if (happening === 'hit-given') this.cry('hit-given', 'hitGiven');
-      else if (happening === 'sinking') this.cry('sinking', 'sinking');
-    }
+    for (const happening of shown.happened) if (happening !== 'sunk') this.cry(happening);
     const ships: ShipDraw[] = shown.ships
       .filter((ship) => !ship.sunk)
       .map((ship) => ({
@@ -158,6 +223,8 @@ export class Battle implements Beat {
       }));
     const own = shown.ships[0]?.place;
     if (own) Object.assign(brig, { x: own.x, y: own.y, heading: own.heading });
+    const heads = own ? brig.heads(own) : undefined;
+    if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
     hud.hints([shipsLeft(shown.left, shown.ships.length - 1), ...shown.lines, ...HINTS.fight]);
     const { eye, yaw, pitch, fov } = shown.shot;
@@ -168,7 +235,7 @@ export class Battle implements Beat {
       ships,
       hulls: shown.hulls,
       actors: own ? [...brig.crew(own, tick.clock, { gunner: 'chop' }), youAtHelm(story, own, 'guard')] : [],
-      heads: own ? brig.heads(own) : undefined,
+      heads,
       drawers: [{ drawInto: (pass, fromEye, drawn, time) => fight.draw(pass, { fromEye, eye: drawn.eye }, time) }],
       land: false,
       focus: [brig.x, brig.y],
@@ -176,7 +243,7 @@ export class Battle implements Beat {
   }
 
   /** The beaten captains' Sloops where the fight left them, for the calm; none known if the fight never began. */
-  get wrecks(): Sailed[] | null {
+  get wrecks(): Wreck[] | null {
     return this.last ? wrecksOf(this.last) : null;
   }
 
@@ -187,6 +254,9 @@ export class Battle implements Beat {
     objective.clear();
     hud.hints([]);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));
+    // The calm draws her sails, and each wreck's, on from where the fight left them.
+    const { sailing } = this.story;
+    this.last?.ships.forEach((ship, index) => sailing.keep(index === 0 ? 'brig' : `wreck-${index}`, ship.rig));
     void this.fight?.end();
   }
 
