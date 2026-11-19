@@ -20,8 +20,9 @@ const TICK = 1 / 60;
  *  away, or the room lost): it is dropped, throwing no sparks. */
 const UNCARRIED_DROP = 1;
 const FALL = 6;
-/** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet and a Thunderlock fire balls. */
-const BALLS = new Set([3, 4]);
+/** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet, a Thunderlock and a Double Pistolet
+ *  fire balls. */
+const BALLS = new Set([3, 4, 5]);
 const THUNDERLOCK = 4;
 /** Another's ball first seen within this many ticks of its firing still flashes at its muzzle. */
 const FRESH_TICKS = 6;

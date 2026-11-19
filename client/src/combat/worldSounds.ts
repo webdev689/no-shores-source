@@ -281,6 +281,8 @@ export class WorldSounds {
       if (isAnima(spell.kind)) {
         if (this.clock - (this.released.get(spell.caster) ?? -Infinity) < ONE_RELEASE_S) continue;
         this.released.set(spell.caster, this.clock);
+        if (this.released.size > 64)
+          for (const [each, when] of this.released) if (this.clock - when >= ONE_RELEASE_S) this.released.delete(each);
       }
       for (const cue of spellCues(spell.kind)) hear(cue, spell.at, spell.caster);
     }

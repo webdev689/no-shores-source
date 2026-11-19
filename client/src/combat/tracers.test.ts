@@ -86,6 +86,14 @@ test("the player's ball races from the drawn muzzle as a solid tracer, breaks up
   assert.equal(tracers.mesh(eye, [], 1).length, 0, 'and goes');
 });
 
+test("a Double Pistolet's shot is a ball, as a Pistolet's is", () => {
+  const tracers = new Tracers();
+  tracers.fired([{ ...ball, ranged: 5 }], () => [0.2, -0.4, 1.4] as const);
+  tracers.update(TICK, [], []);
+  const shown = tracers.mesh(eye, [], 1);
+  assert.ok(has(shown, POWDER[3]) && has(shown, POWDER[1]), 'a white-hot core in a powder-orange glow');
+});
+
 test("the player's arrow flies and falls until the ground stops it, its trail out of the bow, then stays stuck there", () => {
   const tracers = new Tracers();
   const muzzle = [0.3, -0.5, 1.4] as const;
