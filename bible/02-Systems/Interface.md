@@ -200,7 +200,8 @@ weight, and made into a font in the page when it opens (`trueType.ts`), so nothi
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size; keys on keycaps where the menu is wide enough; Journal
+whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
+keys on keycaps where the menu is wide enough; Journal
 and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
 between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's

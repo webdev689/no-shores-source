@@ -179,9 +179,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
 ## Gear
 
 The [[Gear]] panel, at the right, shows the player's gear as the room holds it: their level, Prestige, Defense, XP,
-Aurem and every material; what they wear and carry, each item's Attack, Defense or Prestige, level and XP; each
-item's nodes, column by column, bought and chosen, with what a node costs or the XP it waits on; their Vestiges, those
-lying for them on the ground, and the vault; and the answer to their last ask.
+Aurem and each stack they hold any of; what they wear and carry, each item's Attack, Defense or Prestige, level and
+XP; each item's nodes, column by column, bought and chosen, with what a node costs or the XP it waits on; their
+Vestiges, those lying for them on the ground, and the vault; and the answer to their last ask.
 
 - **Asks.** Its buttons wear an item (a blade or mace in the off hand too), take one off, buy a node or choose among
   those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to

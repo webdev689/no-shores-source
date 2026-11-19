@@ -222,6 +222,13 @@
     margin-left: 0;
   }
 }
+/* Narrower still, the tabs' words take the face's smallest sharp step: at the names' size the longest ran past their
+   tabs' edges under 1100 px. */
+@media (max-width: 1099px) {
+  #hud .gear-tab {
+    font-size: var(--type-s);
+  }
+}
 /* The chosen tab is a lit press: the kit's brass bevel on its primary ground. */
 #hud .gear-tab.gear-chosen {
   color: var(--brass-lit);
