@@ -10,7 +10,9 @@ status: in force
 > The only currency at this point in time should be aurem."
 
 Asked how Vestiges should show, the owner chose "Leave Vestiges as they are": each in its own cell, with the empty
-places shown.
+places shown. Told that a stack of none would be hidden, the owner added:
+
+> "No I still want the empty grid like destiny"
 
 ## What it settles
 
@@ -19,4 +21,6 @@ places shown.
 - Aurem is the one currency at the inventory's head. Weapon and Armor Fragments and Essence are stacks among the
   materials, as Fruit of Dagon is among the consumables; a stack of none is not shown. This narrows the currencies of
   [[The Gear Screens Follow Destiny, on Enhanced Plus]].
+- Each shelf, the consumables and the materials alike, is a grid as Destiny's is: what is held, then empty places to
+  the end of its row.
 - Vestiges stay as [[The Inventory Keeps Vestiges, Holds Charge, Gains Show and the Menu Sounds]] lays them.

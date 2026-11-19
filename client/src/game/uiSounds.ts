@@ -31,7 +31,7 @@ const RECORDED: Partial<Record<Cue, string>> = {
 /** What a press is: buttons and what acts like them. */
 const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';
 /** What a tick is heard on, reached by the pointer. */
-const TICKED = `${PRESSABLE}, .gear-cell, .gear-material`;
+const TICKED = `${PRESSABLE}, .gear-cell`;
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;

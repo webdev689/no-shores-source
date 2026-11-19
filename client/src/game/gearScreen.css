@@ -1262,36 +1262,8 @@ img.gear-glyph {
   grid-template-columns: repeat(auto-fill, 64px);
   gap: 6px;
 }
-.gear-grid > .gear-empty,
-.gear-list > .gear-empty {
+.gear-grid > .gear-empty {
   grid-column: 1 / -1;
-}
-.gear-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 6px;
-}
-.gear-material {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px 6px 8px;
-  border: 2px solid transparent;
-}
-.gear-material img.gear-glyph {
-  width: 36px;
-  height: 36px;
-}
-.gear-material-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.gear-material b {
-  font-size: var(--type-m);
-  font-weight: 500;
 }
 /* The Vestiges carried: their name and count over a rule, then ten places in two rows of five, as Destiny 2's
    engrams stand; an empty place is a dark Vestige. */

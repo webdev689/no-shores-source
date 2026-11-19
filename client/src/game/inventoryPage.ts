@@ -1,9 +1,10 @@
 // The inventory page, after Destiny's: Aurem, the one currency, along its head, named under its count; then the
 // Vestiges carried, ten places in two rows of five as Destiny 2's engrams stand, an empty place a dark Vestige; then
 // shelves to switch between the consumables and the materials, each counting what it holds and dimmed while it holds
-// nothing, a stack of none not shown. The gear itself is on the Character page. The materials are a list, the
-// fragments and Essence then the islands' resources, each named beside its count, so nine alike are told apart; the rest are a grid of cells, each its glyph in a well of its rarity, its count at its foot and its pips
-// beside it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
+// nothing. The gear itself is on the Character page. Each shelf is a grid as Destiny's is: what is held first (the
+// materials' fragments and Essence, then the islands' resources), a stack of none not shown, then empty places to
+// the end of its row of ten. A cell is its glyph in a well of its rarity, its count at its foot and its pips beside
+// it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
 // Vestige opened at the Reader); a right-click its other use.
 
 import { make } from '../editor/dom.ts';
@@ -25,9 +26,8 @@ import {
   tileLabel,
 } from './gearDom.ts';
 
-/** A cell's picture box, and a material's in its row, in pixels. */
+/** A cell's picture box, in pixels. */
 const CELL_PX = 48;
-const ROW_PX = 32;
 
 /** Whether a cell holds anything: an item, or a count above none. */
 const holds = (cell: Cell): boolean => cell.item !== null || cell.glyph === 'vestige' || (cell.count ?? 0) > 0;
@@ -102,20 +102,6 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
 /** A shelf's tiles a row. */
 const SHELF_ROW = 10;
 
-/** A material in its row: its glyph, its name and its count, its card on hover or focus. */
-function materialRow(context: PageContext, cell: Cell): HTMLElement {
-  const row = make('div', '', `gear-material ${ROLES.well}`);
-  row.setAttribute('role', 'listitem');
-  row.tabIndex = 0;
-  row.dataset['key'] = `cell-${cell.key}`;
-  const icon = glyphImage(cell.glyph === 'item' ? 'empty' : cell.glyph, cell.rarity, cell.tint);
-  icon.width = icon.height = ROW_PX;
-  row.append(icon, make('span', cell.name, 'gear-material-name'), make('b', (cell.count ?? 0).toLocaleString()));
-  row.setAttribute('aria-label', `${cell.name}, ${(cell.count ?? 0).toLocaleString()} held`);
-  context.tip.over(row, () => cellCard(cell));
-  return row;
-}
-
 /** An empty place for a Vestige: a dark one stands in it. */
 export function vestigePlace(): HTMLElement {
   const place = make('div', '', `gear-cell ${ROLES.tile} gear-vacant gear-vestige-place`);
@@ -174,19 +160,11 @@ export function inventoryPage(context: PageContext, tab: string, choose: (tab: s
   }
   page.append(head, vestigeShelf(context, inventory.vestiges), tabs);
   const cells = inventory.tabs.find((each) => each.id === tab)?.cells ?? [];
-  const listed = tab === 'materials';
-  const grid = make('div', '', listed ? 'gear-list' : 'gear-grid');
-  if (listed) grid.setAttribute('role', 'list');
-  for (const cell of cells) grid.append(listed ? materialRow(context, cell) : cellTile(context, cell));
-  if (listed && cells.length === 0) grid.append(make('p', 'Nothing here yet.', 'gear-hint gear-empty'));
+  const grid = make('div', '', 'gear-grid');
+  for (const cell of cells) grid.append(cellTile(context, cell));
   // A grid's empty places stand as vacant tiles to the end of its row of ten, as the vault's do.
-  if (!listed)
-    for (
-      let place = cells.length;
-      place < Math.max(SHELF_ROW, Math.ceil(cells.length / SHELF_ROW) * SHELF_ROW);
-      place++
-    )
-      grid.append(make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
+  for (let place = cells.length; place < Math.max(SHELF_ROW, Math.ceil(cells.length / SHELF_ROW) * SHELF_ROW); place++)
+    grid.append(make('div', '', `gear-cell ${ROLES.tile} gear-vacant`));
   page.append(grid);
   return page;
 }
