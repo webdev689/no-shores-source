@@ -68,6 +68,10 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     }
     if matches!(here.fighter.action, Action::Attack(_)) {
         brain.plan = Plan::Strike;
+        // Mid-swing it may still dodge a blow at it, as its answers allow.
+        if let Some(ask) = defend(brain, here) {
+            return ask;
+        }
         return Ask::facing(sight.map_or(brain.heading, |sight| sight.toward));
     }
     if brain.plan == Plan::Strike {
