@@ -2,8 +2,8 @@
 
     <python with bpy> tools/ships/build_ship.py <hull> <out.blend> --sloop <the Sloop's source .blend>
 
-Her cannons are the Sloop's own, read from her source, so every ship's guns are one gun. Her cabin is built in a
-collection of its own that is not rendered, so tools/ships/export_ship.py publishes her outside alone.
+Her cannons are the Sloop's own, read from her source, so every ship's guns are one gun. Her companionway is her
+entrance to the one cabin every ship shares, which tools/ships/build_cabin.py builds.
 """
 import argparse
 import os
@@ -12,7 +12,6 @@ import sys
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from ship_cabin import build_cabin  # noqa: E402
 from ship_fittings import build_fittings, place_guns  # noqa: E402
 from ship_hull import Hull, build_hull  # noqa: E402
 from ship_rig import build_rig  # noqa: E402
@@ -49,9 +48,6 @@ HULLS = {
         'helm_x_m': -11.0,
         'hatch_x_m': 1.6,
         'stern_windows': ((-12.35, 1), (-12.35, -1), (-12.85, 1), (-12.85, -1)),
-        'cabin_m': (-12.3, -6.0),
-        'cabin_stairs_m': (-6.3, -8.6),
-        'cabin_table_x_m': -10.0,
     },
 }
 
@@ -69,7 +65,6 @@ def main():
     build_rig(hull, collection)
     build_fittings(hull, collection)
     place_guns(hull, collection, os.path.abspath(given.sloop))
-    build_cabin(hull)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(given.out))
 
 

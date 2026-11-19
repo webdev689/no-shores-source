@@ -6,7 +6,7 @@ code:
   - crates/sailing/src/hull.rs#SLOOP
   - client/src/ships/sails.ts#SailRig
   - tools/ships/build_ship.py#HULLS
-  - tools/ships/ship_cabin.py#build_cabin
+  - tools/ships/build_cabin.py#build_cabin
   - tools/ships/paint_ship.py#main
   - tools/ships/export_ship.py#main
 ---
@@ -29,7 +29,7 @@ Every hull keeps what the Sloop's model holds, at her detail:
 - **Tall bulwarks with gunports**, each gun its own object named `Cannon.Port.N` or `Cannon.Starboard.N`, fore to aft
   ([[Ship Models Live on R2]]).
 - **One deck to walk**, with a raised quarterdeck holding the wheel, a hatch and steps down.
-- **A cabin inside her**, entered by interacting at its door, the Sloop's too
+- **A companionway into the cabin**, the one every ship shares, entered by interacting at its doors, the Sloop's too
   ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]).
 - **Made small and scaled up**, as the Sloop stands three times her model ([[The Sloop Is About 18 m Long]]).
 
@@ -52,10 +52,15 @@ The Sloop, built and the smallest, sails as Minor and Major ships and is the pla
 
 1. `tools/ships/build_ship.py` makes the hull from her numbers in `HULLS`, in the Sloop's style: her faceted shell,
    lined gunports and capped rail, her quarterdeck, her rig and sails, her fittings, the Sloop's own cannon at each
-   port, and her cabin below her quarterdeck, entered by a companionway whose doors an empty named `Cabin.Entrance`
-   marks. The cabin stands in a collection that is not rendered, so the export publishes her outside alone.
-2. It is painted and rendered from four sides, on deck, in her cabin and beside the Sloop, for the owner's yes. The
-   Schooner is built and waits on it.
+   port, and her companionway, whose doors an empty named `Cabin.Entrance` marks as her way into the cabin.
+2. It is painted and rendered from four sides, on deck and beside the Sloop, for the owner's yes. The Schooner is
+   built and waits on it.
+
+The cabin is one room for every ship ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]):
+`tools/ships/build_cabin.py` builds it: spacious, about 10 m by 6.4 m with a 3 m ceiling, its middle and forward
+floor kept open for players to furnish later; its walls leaning out as a ship's sides do, stairs down from a hatch at
+its forward end, six windows across its stern, and a captain's table, chairs, bunk, sea chest and desk at its stern. `Cabin.Inside` marks
+where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, where they go back up.
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, and publishes it to R2 with its entry in `content/ships/ships.json`.
 
