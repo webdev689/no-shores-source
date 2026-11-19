@@ -38,7 +38,7 @@ import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
 import { startAcquiredFeed } from './acquiredFeed.ts';
-import { chime, installInterfaceSounds, play } from './uiSounds.ts';
+import { chime, play } from './uiSounds.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -293,7 +293,6 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
   startCompanyHud(root, link);
-  installInterfaceSounds(root);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */
