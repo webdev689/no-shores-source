@@ -405,13 +405,16 @@ fn an_outcrop_is_written_with_its_shape_and_read_from_four_numbers_as_a_mesa() {
 fn the_floor_level_is_the_nearest_floors_or_climbs() {
     let sculpts = sculpt();
     let level = |x: f64, y: f64| sculpts.floor_level(x, y);
+    let raise = |x: f64, y: f64| sculpts.raise(x, y, 1000.0);
     assert!(level(0.0, 0.0).abs() < 1e-9, "a basin's floor is the land's own level");
     assert!(level(250.0, 30.0).abs() < 1e-9, "beside a canyon, its floor's");
-    assert!((level(120.0, -40.0) - 15.0).abs() < 0.01, "halfway up a climb, half the massif's height");
-    assert!((level(180.0, -40.0) - 30.0).abs() < 0.01, "a lookout, the massif's top");
-    assert!((level(120.0, -50.0) - 15.0).abs() < 0.01, "off a climb, nearer it than any floor, the climb's level");
-    assert!((level(-50.0, 300.0) - 15.0).abs() < 0.01, "halfway along a rising run, its level there");
-    // On a climb the land stands at its level, so nothing there is raised over its floor.
-    let over = sculpts.raise(120.0, -40.0, 1000.0) - level(120.0, -40.0);
-    assert!(over.abs() < 0.5, "a climb is floor: {over:.2} m over it");
+    // On a climb, a lookout or a rising run the floor's level is the land as carved there, so nothing on it is raised
+    // over its floor.
+    for [x, y] in [[120.0, -40.0], [180.0, -40.0], [-50.0, 300.0]] {
+        assert!(level(x, y) > 1.0, "({x}, {y}) stands over the land's own level");
+        let over = raise(x, y) - level(x, y);
+        assert!(over.abs() < 0.5, "({x}, {y}) is floor: {over:.2} m over it");
+    }
+    // Off a climb, nearer it than any floor, its level there.
+    assert!((level(120.0, -50.0) - level(120.0, -40.0)).abs() < 0.5, "beside a climb, the climb's level");
 }

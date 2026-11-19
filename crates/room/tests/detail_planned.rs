@@ -490,7 +490,9 @@ fn misplanted(laid: &Layout, ground: &Ground, at: [f64; 2], reach: f64) -> Optio
     let mut upright = laid.seating.solids.iter().filter(|solid| solid.lean == 0.0 && solid.roll == 0.0);
     if !layout::field::ring_holds(&laid.ring, x, y) {
         Some("outside its section")
-    } else if !sculpt.floors.iter().any(|floor| off_capsule(floor) <= -reach) {
+    } else if !sculpt.floors.iter().any(|floor| off_capsule(floor) <= -reach)
+        && !sculpt.levels.iter().any(|level| off_capsule(level) <= -reach)
+    {
         Some("off its floor")
     } else if sculpt.climbs.iter().chain(&sculpt.runs).any(|climb| off_capsule(climb) <= reach) {
         Some("on a climb or a run's rock")

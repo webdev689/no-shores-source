@@ -76,6 +76,8 @@ pub struct Sculpts {
     /// fade (0), or across the claim's edge or fade, where a point is measured: the claim's edge measured once a
     /// bucket rather than at every point.
     fades: Vec<Fades>,
+    /// Per sculpt, the height each outcrop stands from: the level of the raised floor under its middle, or 0.
+    bases: Vec<Vec<f64>>,
 }
 
 /// A sculpt's buckets over its reach, row by row from its north-west bucket: what the fade is in each.
@@ -164,7 +166,14 @@ impl From<Vec<Sculpt>> for Sculpts {
             }
             near.push(map);
         }
-        Self { sculpts, reaches, near, fades }
+        let mut built = Self { sculpts, reaches, near, fades, bases: Vec::new() };
+        built.bases = (0..built.sculpts.len())
+            .map(|number| {
+                let outcrops = &built.sculpts[number].outcrops;
+                outcrops.iter().map(|outcrop| built.raised_level(number, outcrop.at[0], outcrop.at[1])).collect()
+            })
+            .collect();
+        built
     }
 }
 
@@ -323,6 +332,24 @@ impl Sculpts {
         (nearest, sum / weight)
     }
 
+    /// A sculpt's massif's height at a point, metres: its rise, varied slowly by its noise, so the top rolls.
+    fn rise_at(&self, number: usize, x: f64, y: f64) -> f64 {
+        let sculpt = &self.sculpts[number];
+        sculpt.rise * (0.7 + 0.45 * (0.5 + 0.5 * fbm(sculpt.seed ^ 0x51, x / 230.0, y / 230.0, 3)))
+    }
+
+    /// The level of a sculpt's raised floor at a point on it, metres; 0 off every raised floor.
+    fn raised_level(&self, number: usize, x: f64, y: f64) -> f64 {
+        let Some((.., levels)) = self.near[number].get(&(bucket(x), bucket(y))) else { return 0.0 };
+        let sculpt = &self.sculpts[number];
+        let on =
+            levels.iter().map(|&level| sculpt.levels[level as usize]).find_map(|[x1, y1, x2, y2, half, from, to]| {
+                let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
+                (distance <= half).then_some(from + (to - from) * along)
+            });
+        on.map_or(0.0, |share| share * self.rise_at(number, x, y))
+    }
+
     /// How far a point lies off the nearest sculpt's floor or climb, metres: negative on it, infinity far from any.
     #[must_use]
     pub fn floor_distance(&self, x: f64, y: f64) -> f64 {
@@ -353,7 +380,7 @@ impl Sculpts {
             })
             .map(|number| {
                 let (floor, (climb, share)) = (self.off_floor(number, x, y), self.off_climb(number, x, y));
-                let level = if climb < floor { share * self.sculpts[number].rise } else { 0.0 };
+                let level = if climb < floor { share * self.rise_at(number, x, y) } else { 0.0 };
                 (floor.min(climb), level)
             })
             .filter(|(off, _)| off.is_finite())
@@ -393,7 +420,7 @@ impl Sculpts {
     fn carved(&self, number: usize, x: f64, y: f64, rough: bool) -> f64 {
         let sculpt = &self.sculpts[number];
         let off = self.off_floor(number, x, y);
-        let rise = sculpt.rise * (0.7 + 0.45 * (0.5 + 0.5 * fbm(sculpt.seed ^ 0x51, x / 230.0, y / 230.0, 3)));
+        let rise = self.rise_at(number, x, y);
         let mut height = if rough {
             if off > 0.0 {
                 // A face in ledges up to the top's roughness.
@@ -435,7 +462,10 @@ impl Sculpts {
         let mut height = self.carved(number, x, y, true);
         if let Some((_, outcrops, ..)) = self.near[number].get(&(bucket(x), bucket(y))) {
             for &outcrop in outcrops {
-                height = height.max(sculpt.outcrops[outcrop as usize].stands(sculpt.seed ^ outcrop, x, y));
+                let stands = sculpt.outcrops[outcrop as usize].stands(sculpt.seed ^ outcrop, x, y);
+                if stands > 0.0 {
+                    height = height.max(self.bases[number][outcrop as usize] + stands);
+                }
             }
         }
         height * fade
