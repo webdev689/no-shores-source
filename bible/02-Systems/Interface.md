@@ -173,8 +173,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
   not break it says "Holds".
-- **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge blinks (it
-  holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
+- **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
+  blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while

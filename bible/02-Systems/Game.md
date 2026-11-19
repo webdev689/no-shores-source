@@ -95,9 +95,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
   foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
-  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the place, the keys (over
-  the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the top of the screen, and
-  the status line stands under the place's name, under the boss's bar ([[Interface]]).
+  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
+  place, the keys (over the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the
+  top of the screen, and the status line stands under the place's name, under the boss's bar ([[Interface]]).
 - **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole
   figure white for two, its outline white for two, then its outline for one in the blow's element's light (steel
   `#cfe0ff` for a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames
@@ -109,8 +109,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   over: plain, it greys and crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in
   an element (the one its killing blow carried, as the room tells it) dissolves at once in it (Blaze burning up from
   the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it. A
-  crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in [[Arts]], and the weapon's glow surges
-  ([[Weapon Glow]]).
+  crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
+  [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
