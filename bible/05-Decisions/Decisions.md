@@ -126,6 +126,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foes Spread Across the Players They Fight]]
 - [[A Locked-On Dodge Rolls the Way It Goes]]
 - [[A Tall Wall Is Climbed Within 45° of Square]]
+- [[A Click During a Weapon Swap Swings as It Ends]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
