@@ -448,7 +448,7 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

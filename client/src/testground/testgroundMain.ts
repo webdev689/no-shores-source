@@ -429,7 +429,7 @@ async function start(): Promise<void> {
       const figure = foes.placed.get(id) ?? others.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const bow = you.dress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw';
+    const bow = player.shownDress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw';
     hud.update(
       {
         own,

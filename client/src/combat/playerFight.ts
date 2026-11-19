@@ -118,7 +118,9 @@ export class PlayerFight {
     fight.look = walker.look;
     fight.dress = walker.lookDress;
     const pressed = (armed && !shooter && controls.pressed('swing')) || (hands && controls.pressed('dodge'));
-    const rangedDrawn = outfit.drawn && SHOOTERS.test(outfit.right ?? '') && free && !player.mounted;
+    // The sights (the crosshair and its shots) follow the weapon in hand, which the rules may not have taken up yet.
+    const held = walker.shownDress.outfit;
+    const rangedDrawn = held.drawn && SHOOTERS.test(held.right ?? '') && free && !player.mounted;
     return { shooter, ranged, rangedDrawn, aiming, pressed, pulled: ranged && controls.pressed('guard') };
   }
 

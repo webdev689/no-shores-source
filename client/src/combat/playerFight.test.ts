@@ -153,6 +153,27 @@ test('a weapon changed mid-swing is shown as the rules take it up, once the swin
   assert.equal(walker.shownDress.outfit.right, 'pistolet');
 });
 
+test('the sights follow the weapon in hand: a gun chosen mid-swing brings them up only as the rules take it up', () => {
+  const { fighting, walker, frame } = fightingPlayer();
+  frame(controls());
+  frame(controls(['swing'], ['swing']));
+  frame(controls());
+  assert.equal(fighting.own?.action.kind, 'attack');
+  walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, right: 'pistolet' } };
+  const seen: { swinging: boolean; sights: boolean }[] = [];
+  for (let tick = 0; tick < 60; tick++) {
+    const { rangedDrawn } = frame(controls());
+    seen.push({ swinging: fighting.own?.action.kind === 'attack', sights: rangedDrawn });
+  }
+  const during = seen.filter((each) => each.swinging);
+  assert.ok(during.length > 10, `the swing ran on (${during.length} frames)`);
+  assert.ok(
+    during.every((each) => !each.sights),
+    'no crosshair or shots shown while the sword is still swung',
+  );
+  assert.equal(seen.at(-1)?.sights, true, "the gun's sights once the rules take it up");
+});
+
 test('a climb begun while the rules reload puts the held weapon away, though the rules still hold it', () => {
   // Facing the course's tall wall from just short of its near face: a reload lets the body walk into it and climb.
   const { fighting, walker, frame, said } = fightingPlayer('pistolet', { x: 11, y: -0.6 });
