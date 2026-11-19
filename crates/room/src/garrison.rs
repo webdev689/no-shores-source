@@ -142,6 +142,9 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
     }
 }
 
+/// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
+/// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
+/// its blocks and the open ground round them; a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     if let (Floor::Dungeon(_), Some(section)) = (floor, section) {
         return crate::dungeon_room::baked(floor, blocks, first, section);

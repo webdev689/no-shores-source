@@ -174,7 +174,7 @@ impl Room {
                 let near_y = y.clamp(block.min_y, block.max_y);
                 apart([x, y], [near_x, near_y]) >= CACHE_CLEAR_M
             });
-            let open = !self.floor.walled((post[0], post[1]), (x, y)) && self.floor.height_at(x, y) <= post[2];
+            let open = !self.floor.walled((post[0], post[1]), (x, y));
             (clear && open).then(|| Cache {
                 at: [x, y, self.floor.height_at(x, y)],
                 facing: bearing([x, y], [post[0], post[1]]),

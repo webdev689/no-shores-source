@@ -56,6 +56,7 @@ fn a_dungeons_room_stands_its_reeve_alone_in_the_end_room_and_its_bands_past_the
             assert_eq!(room.section.as_ref().map(|section| section.spawns.clone()), Some(vec![arrival]));
             assert!(room.living_foes() <= NODE_FOES_MOST, "{patrol} {number}: {} foes", room.living_foes());
             assert!(room.garrison.len() > 1, "{patrol} {number} stands bands");
+            assert!(room.cache().is_some(), "{patrol} {number} has its cache");
             let reeve = &room.garrison[0];
             assert_eq!(
                 reeve.members.iter().map(|member| (member.0, member.1)).collect::<Vec<_>>(),

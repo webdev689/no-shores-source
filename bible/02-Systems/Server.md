@@ -297,8 +297,7 @@ so every decision is Rust and the shell only carries bytes and time.
   browser.
 - A WebSocket joins the room and is welcomed with the player's number; in a patrol's room, `?entrance=<number>` on
   its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. Each
-  binary message is one of their inputs,
-  at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
+  binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
@@ -399,7 +398,7 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
-- A dungeon's room bakes its navmesh over the dungeon's whole rectangle, up to 153.6 m by 102.4 m: the largest opens
+- A dungeon's room bakes its navmesh over the dungeon's whole rectangle: the largest, 153.6 m by 102.4 m, opens
   in about 0.15 s natively, the bake holding about 22 MB at its peak (tested offline). Movement has no ceilings, so
   a body pressed against a jamb or a pillar climbs it as it climbs any block too high to grab, and stands on its top.
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;

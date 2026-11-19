@@ -30,7 +30,8 @@ Where a foe can walk, and the way there. A room bakes its course into a navmesh 
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
 steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
 course and 30 m of ground about it; a node's room over a 70 m square of its own land by its first spawn, where its
-garrison stands ([[Enemies]]); a dungeon's room over the whole dungeon ([[Dungeons]]). Its [[Foes]] find their way and their firing spots by it.
+garrison stands ([[Enemies]]); a dungeon's room over the whole dungeon ([[Dungeons]]). Its [[Foes]] find their way
+and their firing spots by it.
 
 ## How it works
 

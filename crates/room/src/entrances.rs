@@ -27,7 +27,7 @@ pub const BEFORE_DOOR_M: f64 = 1.5;
 /// An entrance model as the forged props hold it, in the forged frame (x right, y up, z forward): its id, its door's
 /// quad by three corners in turn and the way it faces, and how far up its dungeon block stands it.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Model {
+pub(crate) struct Model {
     pub id: u32,
     pub door: [[f64; 3]; 3],
     pub normal: [f64; 3],
@@ -36,7 +36,7 @@ pub struct Model {
 
 /// The four entrances Daggerfall's dungeon blocks stand: DUNGAA00's and DUNGAA01's, and the two the other blocks do.
 #[allow(clippy::approx_constant, reason = "the forged props' own numbers, as they are written there")]
-pub const MODELS: [Model; 4] = [
+pub(crate) const MODELS: [Model; 4] = [
     Model {
         id: 42000,
         door: [[-0.634, 0.045, -1.692], [-0.634, -2.205, -1.692], [0.616, -2.205, -1.692]],

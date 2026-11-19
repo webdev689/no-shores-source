@@ -23,7 +23,7 @@ pub mod sea;
 pub mod threat;
 
 pub use asks::{Asked, Grant, ResourceNode};
-pub use entrances::{Entrance, MODELS, Model};
+pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
