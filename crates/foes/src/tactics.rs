@@ -249,8 +249,10 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     let ring = reach + pressed.ring_gap;
     board.join(sight.id, me, false, tick);
     let from_target = bearing([sight.spot[0], sight.spot[1]], here.at());
-    // Only a foe where its group means it to stand strikes a back turned to it: the flanker, or one in the line.
-    let back_turned = off(sight.fighter.aim, from_target) > BACK_TURNED && in_place(here, sight, brain.flanking);
+    // Only a foe where its group means it to stand strikes a back turned to it: the flanker, or one in the line; and
+    // not a back walking away, which the one whose turn it is runs after.
+    let turned_away = off(sight.fighter.aim, from_target) > BACK_TURNED && speed_away(sight) <= CLOSING;
+    let back_turned = turned_away && in_place(here, sight, brain.flanking);
     // Walked in on, it fights back rather than backpedal, and goes on fighting while the target stays that close; a
     // foe's own hop that ends inside the ring opens nothing.
     let body = sight.fighter.body;
