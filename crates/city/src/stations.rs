@@ -67,9 +67,10 @@ const COUNTER_IN_M: f64 = 1.6;
 const KEEPER_IN_M: f64 = 3.4;
 const SHELVES_IN_M: f64 = 8.6;
 
-/// The stations, and everything they stand on the plaza.
+/// The stations, and everything they stand on the plaza. A ruin's plaza (`bare`) has its counters only: no goods,
+/// and no station keeps them.
 #[must_use]
-pub fn stations(frame: &Frame) -> (Vec<Station>, Vec<Solid>) {
+pub fn stations(frame: &Frame, bare: bool) -> (Vec<Station>, Vec<Solid>) {
     let [start, end, deep, ..] = ARCADE_M;
     let spacing = ARCADE_M[4];
     let length = end - start;
@@ -85,6 +86,9 @@ pub fn stations(frame: &Frame) -> (Vec<Station>, Vec<Solid>) {
             let across = side * (start + pitch * (2.0 * alcove as f64 + 1.0));
             let counter = front - COUNTER_IN_M;
             solids.push(frame.block(counter, across, 0.0, COUNTER_M, Material::Timber));
+            if bare {
+                continue;
+            }
             solids.extend(goods(frame, kind, front, across));
             found.push(Station {
                 kind,
@@ -160,7 +164,7 @@ mod tests {
 
     #[test]
     fn each_alcove_has_its_station_its_keeper_behind_the_counter_facing_the_plaza() {
-        let (found, solids) = stations(&FRAME);
+        let (found, solids) = stations(&FRAME, false);
         assert_eq!(found.len(), 12);
         assert_eq!(found.iter().filter(|station| station.kind == StationKind::Vault).count(), 2, "a vault each side");
         for station in &found {
@@ -180,8 +184,16 @@ mod tests {
     }
 
     #[test]
+    fn a_bare_plaza_keeps_its_counters_and_nothing_else() {
+        let (found, solids) = stations(&FRAME, true);
+        assert!(found.is_empty(), "no station is kept");
+        assert_eq!(solids.len(), 12, "a counter in each alcove");
+        assert!(solids.iter().all(|solid| solid.material == Material::Timber && solid.size == COUNTER_M));
+    }
+
+    #[test]
     fn no_counter_stands_in_a_column() {
-        let (found, _) = stations(&FRAME);
+        let (found, _) = stations(&FRAME, false);
         let columns: Vec<Solid> =
             courtyard(&FRAME).into_iter().filter(|solid| solid.material == Material::Stone).collect();
         for station in &found {

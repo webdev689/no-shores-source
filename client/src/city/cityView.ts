@@ -5,7 +5,7 @@ import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, type Range, runs } from './cityBuild.ts';
-import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines } from './cityGpu.ts';
+import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import { MODEL_FLOATS } from './cityModels.ts';
 import { CityPainter, type PaintProgress } from './painter.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
@@ -153,8 +153,7 @@ export class CityView implements CityDrawer {
         { binding: 5, resource: tiles.createView() },
       ],
     });
-    const origin = new ArrayBuffer(24);
-    new Uint32Array(origin, 16, 2).set([0, 0]);
+    const origin = new ArrayBuffer(MODEL_INSTANCE_BYTES);
     this.drawn = {
       data,
       painter,
@@ -308,10 +307,11 @@ export class CityView implements CityDrawer {
     frame.draws++;
     frame.triangles += drawn.plateVertices / 3;
 
-    pass.setPipeline(this.pipelines.models);
+    pass.setPipeline(drawn.data.ruined ? this.pipelines.brokenModels : this.pipelines.models);
     const near = this.drawNear(pass, drawn, 'view', cells);
     frame.draws += near.draws;
     frame.triangles += near.triangles;
+    pass.setPipeline(this.pipelines.models);
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
@@ -321,7 +321,7 @@ export class CityView implements CityDrawer {
       frame.triangles += run.count / 3;
     }
 
-    pass.setPipeline(this.pipelines.masses);
+    pass.setPipeline(drawn.data.ruined ? this.pipelines.brokenMasses : this.pipelines.masses);
     pass.setVertexBuffer(0, drawn.masses);
     for (const run of this.massRuns(chunks, eye)) {
       pass.draw(42, run.count, 0, run.first);
@@ -356,15 +356,17 @@ export class CityView implements CityDrawer {
         held.draws.push([model, total, count]);
         total += count;
       }
-      const bytes = new ArrayBuffer(Math.max(total, 1) * 24);
+      const bytes = new ArrayBuffer(Math.max(total, 1) * MODEL_INSTANCE_BYTES);
       const [floats, whole] = [new Float32Array(bytes), new Uint32Array(bytes)];
+      const stride = MODEL_INSTANCE_BYTES / 4;
       for (const cell of cells)
         for (const instance of data.near.get(cell) ?? []) {
           const slot = starts.get(instance.model) ?? 0;
           starts.set(instance.model, slot + 1);
-          floats.set(instance.at, slot * 6);
-          whole[slot * 6 + 4] = cell;
-          whole[slot * 6 + 5] = TIER_WHOLE;
+          floats.set(instance.at, slot * stride);
+          whole[slot * stride + 4] = cell;
+          whole[slot * stride + 5] = TIER_WHOLE;
+          floats[slot * stride + 6] = instance.cut;
         }
       if (!held.buffer || held.buffer.size < bytes.byteLength) {
         held.buffer?.destroy();

@@ -1,5 +1,6 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, moved each
-// frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in.
+// frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in. A
+// ruin's plaza keeps no station (the city crate's `ruins`), and no one lives there.
 
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
@@ -41,7 +42,7 @@ const FLOOR_STEP_M = 0.5;
 
 /** The figures of a social space's people, kept among those drawn while the player is there. */
 export class PlazaLife {
-  private readonly folk: Townsfolk;
+  private readonly folk: Townsfolk | null;
   private readonly figures = new Map<number, Placed>();
   /** Where each person's floor was last found: it is found again only once they have walked a step from there. */
   private readonly floored = new Map<number, readonly [number, number]>();
@@ -59,14 +60,15 @@ export class PlazaLife {
     ] as const;
     // Seeded by the plaza, so its people walk the same each visit.
     const seed = Math.round(bounds[0] * 31 + bounds[1]);
-    this.folk = new Townsfolk({ bounds, spawns: node.spawns, stations: node.stations ?? [] }, seed);
+    const stations = node.stations ?? [];
+    this.folk = stations.length ? new Townsfolk({ bounds, spawns: node.spawns, stations }, seed) : null;
     this.others = others;
     this.floor = floor;
   }
 
   /** Moves everyone on by `seconds` and places their figures. */
   frame(seconds: number): void {
-    for (const person of this.folk.step(seconds)) {
+    for (const person of this.folk?.step(seconds) ?? []) {
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);
       placed.x = person.x;

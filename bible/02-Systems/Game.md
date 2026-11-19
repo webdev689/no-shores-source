@@ -76,7 +76,8 @@ the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet
 looking 17° down over the parapet onto the city, the harbour and the sea.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
-is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook.
+is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. A ruined
+city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins").
 
 ## On foot
 
@@ -232,10 +233,11 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   walks her deck, with her helmsman at the wheel under way. In a fight they all stand on her as the fight lies her.
   Each figure stands where her deck lies on the swell, drawn as large as she is.
 - **No nodes are marked at sea.** A port has an icon, over its harbour, with its name and distance, once the ship is
-  within 60 km of it, and every hostile ship within her own sight of the ship has a mark (`seaHostiles.ts`): her
-  faction's emblem in a ring of her rank's colour, her name as her plate gives it (Pirate Brig, Tithe Schooner, ...),
-  her level and her distance, a Miniboss's mark over it. Each is held at the picture's edge when off it, its arrow
-  pointing the way; ports too near each other on the picture are thinned to the nearest, a hostile ship's mark never.
+  within 60 km of it; only a port city's harbour is a port, so a ruin's has none (`portOf`). Every hostile ship within
+  her own sight of the ship has a mark (`seaHostiles.ts`): her faction's emblem in a ring of her rank's colour, her name
+  as her plate gives it (Pirate Brig, Tithe Schooner, ...), her level and her distance, a Miniboss's mark over it. Each
+  is held at the picture's edge when off it, its arrow pointing the way; ports too near each other on the picture are
+  thinned to the nearest, a hostile ship's mark never.
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
   It marks each hostile ship within her sight of hers in red, other players' within 900 m in bone, a fight's struck
   captains grey ([[Interface]]). It hides while the held map is up at the helm.
@@ -258,7 +260,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 ## Landings
 
 Within 30 km of the open landmass's coast the ship is offered a landfall (`landfallOf`): within 20 km of its port's
-harbour, to dock there ("Dock at Overlook"); anywhere else, to go ashore. Either one, by Enter, L or the offer's own
+harbour, to dock there ("Dock at Overlook"); anywhere else, to go ashore. A ruined city's harbour is no port
+(`portOf`): off it the ship is offered only to go ashore, and its social space, "Ruins of" its name, is among the
+side's nodes as any other. Either one, by Enter, L or the offer's own
 button, flies the view up over the island's side the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s;
 the ship heaves to, its voyage kept to be resumed. The side's nodes are marked by kind with names and distances from
 the ship; docking keeps the city's social space among them. A click chooses one; a second click on it, or

@@ -1,5 +1,5 @@
-// A port city's plan as the city crate serialises it, and the climate its pictures are drawn in. The land worker hands
-// the plan over as JSON; this layer only reads it.
+// A city's plan as the city crate serialises it, a port city's or a ruin's, and the climate its pictures are drawn
+// in. The land worker hands the plan over as JSON; this layer only reads it.
 import type { Climate, Season } from '../textures/picture.ts';
 
 /** A cell's side in metres: one RMB block. */
@@ -16,7 +16,7 @@ export type SolidShape =
   | { readonly shape: 'arch'; readonly opening: number };
 
 export type SolidMaterial =
-  'stone' | 'trim' | 'roof' | 'timber' | 'plaster' | 'paving' | 'gold' | 'iron' | 'bone' | 'glow';
+  'stone' | 'trim' | 'roof' | 'timber' | 'plaster' | 'paving' | 'gold' | 'iron' | 'bone' | 'glow' | 'rubble';
 
 /** One solid: the middle of its base in world metres (z up), its width, depth and height, its turn clockwise from
  *  north (its own x east and y south at 0), its lean toward its own +y and its roll about its own y, radians. */
@@ -42,6 +42,15 @@ export type PlanCell = {
 
 export type Pad = { readonly bounds: readonly [number, number, number, number]; readonly level: number };
 
+/** A wreck settled in a ruin's harbour (the city crate's `Wreck`): which ship, where she lies, her heading clockwise
+ *  from north and her heel to starboard, radians. */
+export type Wreck = {
+  readonly ship: 'sloop' | 'schooner';
+  readonly at: readonly [number, number];
+  readonly heading: number;
+  readonly heel: number;
+};
+
 export type CityPlan = {
   readonly id: string;
   readonly name: string;
@@ -61,6 +70,9 @@ export type CityPlan = {
     readonly solids: readonly Solid[];
   };
   readonly pads: readonly Pad[];
+  /** Whether the city is a ruin, desolate and destroyed (the city crate's `ruins`); a port city's plan says false. */
+  readonly ruined?: boolean;
+  readonly wrecks?: readonly Wreck[];
 };
 
 /** The climate and season a city's pictures are drawn in. */

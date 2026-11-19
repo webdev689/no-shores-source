@@ -59,3 +59,18 @@ test('the plaza’s people are placed once, moved each frame on its floor, and t
   life.close();
   assert.equal(placed.length, 0);
 });
+
+test('a ruin’s plaza, keeping no station, has no one in it', () => {
+  let placed = 0;
+  const others = {
+    place: (dress: Placed['dress'], x: number, y: number, facing: number) => {
+      placed++;
+      return { id: placed, x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false } as Placed;
+    },
+    remove: () => {},
+  };
+  const life = new PlazaLife({ ...PLAZA, name: 'Ruins of Mistfall', stations: [] }, others, () => 30);
+  for (let frame = 0; frame < 20; frame++) life.frame(0.25);
+  assert.equal(placed, 0);
+  assert.equal(offerAt([], 960.8, 1950), null, 'no counter offers anything');
+});
