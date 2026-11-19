@@ -9,6 +9,7 @@ import { PlayerFight } from '../combat/playerFight.ts';
 import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
+import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { GearState } from '../network/gearMessages.ts';
@@ -40,7 +41,7 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
-import { chime } from './uiSounds.ts';
+import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -151,6 +152,7 @@ export class Foot {
   /** The attack feel as made: the blows' arcs, hit-stops, the camera's kick and the lunge. */
   private readonly feel: AttackFeel;
   private readonly drops = new DropsShown();
+  private readonly sounds = new WorldSounds(worldOutput);
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
@@ -374,6 +376,10 @@ export class Foot {
     );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
+    const dropped = this.dropMarks(clock, shot.eye, [
+      ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      ...foes.overheads(shot.eye, clock),
+    ]);
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
@@ -385,10 +391,29 @@ export class Foot {
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
-      more: this.dropMarks(clock, shot.eye, [
-        ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
-        ...foes.overheads(shot.eye, clock),
-      ]),
+      more: dropped.marks,
+    });
+    this.sounds.frame({
+      seconds,
+      quiet: paused,
+      fight,
+      events,
+      shots: effects.shotsHeard,
+      eye: shot.eye,
+      yaw: shot.yaw,
+      walker: {
+        feet: [body.x, body.y, body.z],
+        walked: walker.walked,
+        drawn: walker.you.dress.outfit.drawn,
+        mounted: walker.player.mounted,
+        look: effects.ownLook,
+        pulled: shown.pulled,
+      },
+      others: this.otherPlayers.placed,
+      foes: foes.placed,
+      ground: { blocks: this.boxes, groundAt },
+      landed: dropped.landed,
+      crates: this.gearHeld.gear?.crates ?? null,
     });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({
@@ -443,13 +468,13 @@ export class Foot {
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
-  /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`; a Rare or
-   *  finer chimes as it comes to rest. */
-  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]): number[] {
-    const { marks, rested } = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
-    const rarest = Math.max(-1, ...rested);
+  /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
+   *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
+  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
+    const shown = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
+    const rarest = Math.max(-1, ...shown.rested);
     if (rarest >= 2) chime(rarest);
-    return marks;
+    return shown;
   }
 
   /** Every other player's figure, gliding toward where the room last saw them, drawn off it by the attack `feel` (and

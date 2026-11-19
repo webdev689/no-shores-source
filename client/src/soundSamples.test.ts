@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import bank from '../../../content/audio/sounds.json' with { type: 'json' };
+import bank from '../../content/audio/sounds.json' with { type: 'json' };
 import { levelOf, soundCredits } from './soundSamples.ts';
 
 test('every recorded sound is kept under its hash and carries its whole credit', () => {

@@ -10,13 +10,15 @@ type Point = readonly [number, number, number];
 
 /** What the display needs of the player's frame in a fight: whether a ranged weapon is out to fight with, whether the
  *  Ranged loadout is drawn on a body free to shoot (from the outfit shown, the pointer held or not), whether it aims,
- *  and whether a swing or a dodge was pressed (the stamina flashes for one pressed with none). */
+ *  whether a swing or a dodge was pressed (the stamina flashes for one pressed with none), and whether its trigger was
+ *  pulled (an empty gun clicks). */
 export interface PlayerFightFrame {
   readonly shooter: boolean;
   readonly ranged: boolean;
   readonly rangedDrawn: boolean;
   readonly aiming: boolean;
   readonly pressed: boolean;
+  readonly pulled: boolean;
 }
 
 /**
@@ -116,7 +118,7 @@ export class PlayerFight {
     fight.dress = walker.lookDress;
     const pressed = (armed && !shooter && controls.pressed('swing')) || (hands && controls.pressed('dodge'));
     const rangedDrawn = outfit.drawn && SHOOTERS.test(outfit.right ?? '') && free && !player.mounted;
-    return { shooter, ranged, rangedDrawn, aiming, pressed };
+    return { shooter, ranged, rangedDrawn, aiming, pressed, pulled: ranged && controls.pressed('guard') };
   }
 
   /** The casting keys: a cast sent to the room plays its move in its Art's colour, and Dusk Daggers' ring is laid while

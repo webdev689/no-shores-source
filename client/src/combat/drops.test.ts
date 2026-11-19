@@ -104,7 +104,10 @@ test('a Vestige chimes by its rarity as it comes to rest, once; one told of at r
   assert.deepEqual(late.frame([drop({ id: 9, rarity: 4, flying: 0 })], 0, EYE).rested, []);
   const ammo = new DropsShown();
   ammo.frame([drop({ kind: DROPPED.ammoBox })], 0, EYE);
-  assert.deepEqual(ammo.frame([drop({ kind: DROPPED.ammoBox })], FLIGHT_S, EYE).rested, [], 'ammo never chimes');
+  const box = ammo.frame([drop({ kind: DROPPED.ammoBox })], FLIGHT_S, EYE);
+  assert.deepEqual(box.rested, [], 'ammo never chimes');
+  assert.deepEqual(box.landed, [drop({ kind: DROPPED.ammoBox }).at], 'but every drop is told of where it lands');
+  assert.deepEqual(ammo.frame([drop({ kind: DROPPED.ammoBox })], FLIGHT_S + 1, EYE).landed, [], 'once');
 });
 
 test('a line is brightest where it leaves the picture and none at its tip, a glint climbing it', () => {

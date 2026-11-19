@@ -70,6 +70,13 @@ export interface Impact {
   readonly back: readonly [number, number];
 }
 
+/** Where a shot stopped, what on, and whether it was a ball. */
+export interface Struck {
+  readonly at: Point;
+  readonly surface: Surface;
+  readonly ball: boolean;
+}
+
 /** The share of a tracer kept `since` seconds after it began to break up over `fade`: whole before, then a step down
  *  each quarter, then none. */
 export function keptShare(since: number, fade: number): number {
@@ -262,6 +269,8 @@ export class Tracers {
   private flights: Flight[] = [];
   private readonly guns = new GunLooks();
   private readonly left = new ShotMarks();
+  /** Where shots stopped in the last update, for the world's sounds. */
+  struck: Struck[] = [];
 
   /** The player's own shots, each leaving the weapon as drawn at its `muzzle`. */
   fired(shots: readonly Fired[], muzzleOf: (shot: Fired) => Point): void {
@@ -329,9 +338,11 @@ export class Tracers {
     groundAt?: (x: number, y: number) => number | null,
   ): Impact[] {
     const impacts: Impact[] = [];
+    this.struck = [];
     const struck = (place: Point, way: Point, ball: boolean, met: { surface: Surface; feet?: Point } | null) => {
       if (!met) return;
       this.left.strike(met.surface, place, unit(way), ball, met.feet);
+      this.struck.push({ at: place, surface: met.surface, ball });
       if (met.surface !== 'stone') return;
       const back = Math.hypot(way[0], way[1]) || 1;
       impacts.push({ at: place, back: [-way[0] / back, -way[1] / back] });

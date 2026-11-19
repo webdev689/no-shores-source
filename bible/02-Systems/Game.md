@@ -10,6 +10,7 @@ code:
   - client/src/game/footView.ts#FootView
   - client/src/game/swingView.ts#SwingView
   - client/src/combat/attackFeel.ts#AttackFeel
+  - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
   - client/src/game/footGear.ts#groundRings
@@ -125,6 +126,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
   [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
+- **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
+  the drops landing and the player standing again, each where it happens, through the World volume once the first
+  press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
