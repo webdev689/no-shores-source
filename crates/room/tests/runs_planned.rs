@@ -298,3 +298,79 @@ fn a_ramparts_way_along_the_top_is_walled_on_both_sides() {
         );
     });
 }
+
+/// Compass degrees (0 north, a quarter turn east) from one point to another, rounded to a degree.
+fn compass(from: [f64; 2], to: [f64; 2]) -> f64 {
+    libm::atan2(to[0] - from[0], from[1] - to[1]).to_degrees().rem_euclid(360.0).round()
+}
+
+/// A name as a file name: lower case, other characters as dashes.
+fn slug(name: &str) -> String {
+    let dashed: String =
+        name.chars().map(|ch| if ch.is_ascii_alphanumeric() { ch.to_ascii_lowercase() } else { '-' }).collect();
+    dashed.split('-').filter(|part| !part.is_empty()).collect::<Vec<_>>().join("-")
+}
+
+/// A shot-list view: east, south, bearing, camera and name, the point rounded to a decimetre.
+fn view(at: [f64; 2], bearing: f64, camera: &str, name: &str) -> serde_json::Value {
+    serde_json::json!([(at[0] * 10.0).round() / 10.0, (at[1] * 10.0).round() / 10.0, bearing, camera, name])
+}
+
+/// Where a way first comes into an area: the point of the first path touching it that lies just outside its reach.
+fn way_in(laid: &layout::Layout, area: &layout::areas::Area) -> Option<[f64; 2]> {
+    let near = |point: &[f64; 2]| libm::hypot(point[0] - area.at[0], point[1] - area.at[1]) <= area.radius;
+    laid.paths.iter().find_map(|path| {
+        let first = path.points.iter().position(near)?;
+        let outside = if first > 0 { first - 1 } else { path.points.iter().position(|point| !near(point))? };
+        path.points.get(outside).copied()
+    })
+}
+
+/// Writes the views of each Saltmere zone for the picture driver's `views` step: every area's middle facing its first
+/// way in, every run beat from its entry, and three high views. Run it where the pictures are to be taken, so the
+/// views follow the runs as laid then: `cargo test -p room --test runs_planned shot_list -- --ignored`.
+#[test]
+#[ignore = "writes tools/claude-toolkit/shots/saltmere.json"]
+fn shot_list() {
+    let (layouts, _, _) = continent_one(&briefs());
+    let mut zones = serde_json::Map::new();
+    for id in ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let mut views = Vec::new();
+        for (number, area) in laid.areas.iter().enumerate() {
+            let from = way_in(laid, area).unwrap_or([area.at[0], area.at[1] + 1.0]);
+            views.push(view(area.at, compass(from, area.at), "first", &format!("area{number}_{}", slug(&area.name))));
+        }
+        for run in &laid.runs {
+            let mut before = run.mouth;
+            for (number, beat) in run.beats.iter().enumerate() {
+                let (dx, dy) = (beat.at[0] - before[0], beat.at[1] - before[1]);
+                let length = libm::hypot(dx, dy).max(1e-9);
+                let back = beat.radius.min(length) / length;
+                let entry = [beat.at[0] - dx * back, beat.at[1] - dy * back];
+                views.push(view(
+                    entry,
+                    compass(before, beat.at),
+                    "first",
+                    &format!("run_{}_{number}", slug(&run.name)),
+                ));
+                before = beat.at;
+            }
+        }
+        let count = laid.areas.len();
+        for index in [0, count / 2, count.saturating_sub(1)] {
+            let area = &laid.areas[index];
+            let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);
+            views.push(view(area.at, compass(area.at, middle), "third,60", &format!("high_{index}")));
+        }
+        for entry in &views {
+            let at = [entry[0].as_f64().unwrap_or(0.0), entry[1].as_f64().unwrap_or(0.0)];
+            assert!(ring_holds(&laid.ring, at[0], at[1]), "{id}: {entry} is inside the section");
+        }
+        zones.insert(id.to_string(), serde_json::Value::Array(views));
+    }
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/claude-toolkit/shots/saltmere.json");
+    std::fs::create_dir_all(path.parent().expect("a folder")).expect("the folder is made");
+    let text = serde_json::to_string_pretty(&serde_json::Value::Object(zones)).expect("the list writes");
+    std::fs::write(path, text + "\n").expect("the shot list is written");
+}

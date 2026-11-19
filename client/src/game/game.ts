@@ -30,6 +30,7 @@ import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { loadLandTexts } from '../terrain/landTexts.ts';
 import { askedArrival, type GateWay, gateWay } from './gates.ts';
+import { askedQaViews, type QaView, qaViewed } from './qaViews.ts';
 import { openForge } from './openForge.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
@@ -235,6 +236,14 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
   if (flow.mode === 'loading')
     behindVeil(flow.words, () => goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, landmass.plan, null)));
+
+  // Offline QA only: the picture driver's `views` step stands the body at each view of the node it arrived in.
+  if (askedQaViews(location.search))
+    (window as unknown as { __qaView: (view: QaView) => boolean }).__qaView = (view) => {
+      const moved = foot && qaViewed(movement, foot.node.ring, view);
+      if (moved) walker.player = moved;
+      return Boolean(moved);
+    };
 
   const landAt = (id: string) => {
     discovered.nodes([id]);

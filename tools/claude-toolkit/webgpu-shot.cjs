@@ -18,9 +18,13 @@
 // a backlog that a picture then waits minutes behind. The console's errors are printed. The game takes one wheel notch
 // a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about 20 notches in
 // (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks for a spawn:
-// `&view=first` or `&view=third,<metres>`.
+// `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load), offline behind the
+// same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>", "name"], ...] or "<list.json>",
+// "zone": "<key of the list>", "into": "<folder>", "settle": seconds } stands the body at each view in turn, inside
+// the node the page loaded, waits `settle` seconds (the ground and the sky come in) and writes `<into>/<name>.png`,
+// or `<into>/<number>.png` without a name. A view outside the node is said to be refused and skipped.
 const { chromium } = require('playwright');
-const { readFileSync } = require('node:fs');
+const { mkdirSync, readFileSync } = require('node:fs');
 
 const OWN_TEXTURE = () => {
   const kept = new WeakMap();
@@ -153,6 +157,24 @@ async function main() {
       const from = await page.evaluate(() => window.__shotFrames);
       await page.waitForFunction((until) => window.__shotFrames >= until, from + step.frames, { timeout: 600_000 });
     } else if (step.eval) console.log('eval:', JSON.stringify(await page.evaluate(step.eval)));
+    else if (step.views) {
+      const listed = typeof step.views === 'string' ? JSON.parse(readFileSync(step.views, 'utf8'))[step.zone] : step.views;
+      mkdirSync(step.into ?? '.', { recursive: true });
+      for (const [number, view] of listed.entries()) {
+        const stood = await page.evaluate((one) => window.__qaView?.(one.slice(0, 4)), view);
+        if (!stood) {
+          console.log(`view ${number} refused: ${JSON.stringify(view)}`);
+          continue;
+        }
+        await page.waitForTimeout((step.settle ?? 10) * 1000);
+        const from = await page.evaluate(() => window.__shotFrames);
+        await page.waitForFunction((until) => window.__shotFrames >= until, from + 2, { timeout: 600_000 });
+        const why = await page.evaluate(() => window.__shotLay());
+        if (why) console.log('shot:', why);
+        await page.screenshot({ path: `${step.into ?? '.'}/${view[4] ?? number}.png` });
+        await page.evaluate(() => document.getElementById('__shot')?.remove());
+      }
+    }
     else if (step.shot) {
       const why = await page.evaluate(() => window.__shotLay());
       if (why) console.log('shot:', why);
