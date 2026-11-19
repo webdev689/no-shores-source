@@ -12,7 +12,10 @@ test('a bolt to the ground runs from the cloud base to the strike, and every bro
   const main = path.filter(([, , brightness]) => brightness === 1);
   assert.equal(main[0]?.[0][2], 900, 'it leaves the cloud base');
   assert.deepEqual(main.at(-1)?.[1], [1000, 2000, 12], 'it lands where the strike fell');
-  assert.ok(path.some(([, , brightness]) => brightness < 1), 'it has branches');
+  assert.ok(
+    path.some(([, , brightness]) => brightness < 1),
+    'it has branches',
+  );
   assert.notDeepEqual(boltPath({ ...strike, atS: 51 }, 900, 12), path, 'another strike makes another bolt');
 });
 
