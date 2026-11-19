@@ -1,5 +1,5 @@
 // The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Ship, the Sloop's details as
-// Manage shows them; and Settings, which keeps the account and the interface's volume.
+// Manage shows them; and Settings, which keeps the account and the volumes of the interface and the world.
 
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
@@ -7,8 +7,8 @@ import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
 import { pressOf } from './gearDom.ts';
 import type { ShipPanel } from './shipPanel.ts';
-import { soundCredits } from './soundSamples.ts';
-import { interfaceVolume, play, setInterfaceVolume } from './uiSounds.ts';
+import { soundCredits } from '../soundSamples.ts';
+import { interfaceVolume, play, setInterfaceVolume, setWorldVolume, worldVolume } from './uiSounds.ts';
 
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
 export function laterPage(name: string, words: string): HTMLElement {
@@ -43,7 +43,7 @@ export function shipPage(panel: ShipPanel | null): HTMLElement {
   return page;
 }
 
-/** The Settings page: the account, or why there is none, and the interface's volume. */
+/** The Settings page: the account, or why there is none, and the volumes. */
 export function settingsPage(link: AccountLink | null): HTMLElement {
   const page = make('div', '', `gear-settings ${ROLES.panel}`);
   page.append(make('h2', 'Account', `gear-heading ${ROLES.rule}`));
@@ -53,26 +53,36 @@ export function settingsPage(link: AccountLink | null): HTMLElement {
   return page;
 }
 
-/** The interface's volume, from silent to full, kept in this browser; let go, it is heard at its new level. */
+/** The volumes of the interface and the world, each from silent to full, kept in this browser. */
 function soundPanel(): HTMLElement {
   const panel = make('section', '', 'gear-sound');
+  panel.append(
+    make('h2', 'Sound', `gear-heading ${ROLES.rule}`),
+    volumeRow('Interface sounds', interfaceVolume, setInterfaceVolume),
+    volumeRow('World sounds', worldVolume, setWorldVolume),
+    creditsList(),
+  );
+  return panel;
+}
+
+/** One volume's slider, its level said beside it; let go, the interface's press is heard at its new level. */
+function volumeRow(name: string, volume: () => number, setVolume: (volume: number) => void): HTMLElement {
   const row = make('label', '', 'gear-sound-row');
   const slider = make('input', '', 'gear-volume');
   Object.assign(slider, { type: 'range', min: '0', max: '100', step: '5' });
-  slider.value = String(Math.round(interfaceVolume() * 100));
+  slider.value = String(Math.round(volume() * 100));
   const shown = make('b', `${slider.value}%`);
   // The slider is named by its words alone, and says its level as a percentage.
   shown.setAttribute('aria-hidden', 'true');
   slider.setAttribute('aria-valuetext', `${slider.value}%`);
   slider.addEventListener('input', () => {
-    setInterfaceVolume(Number(slider.value) / 100);
+    setVolume(Number(slider.value) / 100);
     shown.textContent = `${slider.value}%`;
     slider.setAttribute('aria-valuetext', `${slider.value}%`);
   });
   slider.addEventListener('change', () => play('press'));
-  row.append(make('span', 'Interface sounds'), slider, shown);
-  panel.append(make('h2', 'Sound', `gear-heading ${ROLES.rule}`), row, creditsList());
-  return panel;
+  row.append(make('span', name), slider, shown);
+  return row;
 }
 
 /** The recorded sounds' credits: each sound's name and author, its licence and its source, and what was changed. */

@@ -1,9 +1,10 @@
-// The interface's recorded sounds: the owner's picks from Freesound (content/audio/sounds.json), kept on R2 under the
-// hash of their bytes. Each is fetched once the synthesiser wakes, levelled to one peak and one loudness so a quiet
-// recording and a loud one sit together, and played in place of the synthesiser's own for its cue; until it has come, or where it
-// cannot, the synthesiser's sound plays. Each Attribution sound carries its credit, which Settings lists.
+// The game's recorded sounds, the interface's and the world's: the owner's picks from Freesound
+// (content/audio/sounds.json), kept on R2 under the hash of their bytes. Each is fetched once the page's sound wakes,
+// levelled to one peak and one loudness so a quiet recording and a loud one sit together, and played for its cue; until
+// it has come, or where it cannot, the interface plays its synthesiser's sound and the world plays nothing. Each
+// Attribution sound carries its credit, which Settings lists.
 
-import bank from '../../../content/audio/sounds.json' with { type: 'json' };
+import bank from '../../content/audio/sounds.json' with { type: 'json' };
 
 /** A recorded sound's credit, as the licence asks it to be given. */
 export interface SoundCredit {
@@ -52,14 +53,15 @@ export function loadSamples(audio: AudioContext): void {
       .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`${answer.status}`))))
       .then((bytes) => audio.decodeAudioData(bytes))
       .then((buffer) => loaded.set(id, { buffer, level: levelOf(channelsOf(buffer), buffer.sampleRate) }))
-      // A sound that cannot be fetched leaves the synthesiser's own in its place.
+      // A sound that cannot be fetched leaves its cue as it was before it was picked.
       .catch(() => undefined);
 }
 
-/** Plays a recorded sound into `out`, its pitch at `rate`; false where it has not come, so the caller plays its own. */
-export function playSample(audio: AudioContext, out: AudioNode, id: string, rate = 1): boolean {
+/** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come, so the
+ *  caller plays its own or nothing. */
+export function playSample(audio: AudioContext, out: AudioNode, id: string, rate = 1): AudioBufferSourceNode | null {
   const sound = loaded.get(id);
-  if (!sound) return false;
+  if (!sound) return null;
   const source = audio.createBufferSource();
   source.buffer = sound.buffer;
   source.playbackRate.value = rate;
@@ -67,7 +69,7 @@ export function playSample(audio: AudioContext, out: AudioNode, id: string, rate
   gain.gain.value = sound.level;
   source.connect(gain).connect(out);
   source.start();
-  return true;
+  return source;
 }
 
 /** Every recorded sound's credit, by name. */

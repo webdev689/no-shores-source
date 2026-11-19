@@ -103,6 +103,11 @@ export class Walker {
     return this.inFirstPerson ? this.firstPerson.muzzle : null;
   }
 
+  /** The metres walked on the ground so far, which the first person's bob and the footsteps keep time by. */
+  get walked(): number {
+    return this.stride;
+  }
+
   /** Whether the camera is in the head, so the hands are drawn and the figure is not. */
   get inFirstPerson(): boolean {
     return this.player.view.shown <= HIDE_FIGURE_M;

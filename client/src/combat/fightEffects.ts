@@ -13,7 +13,7 @@ import { type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
 import type { AnimaScreen } from './animaMoment.ts';
 import { type Drawn, SpellLooks, castLookOf } from './spellLooks.ts';
-import { IMPACT_SPARKS, Tracers, othersArrows } from './tracers.ts';
+import { IMPACT_SPARKS, type Struck, Tracers, othersArrows } from './tracers.ts';
 
 type Point = readonly [number, number, number];
 
@@ -36,6 +36,8 @@ export class FightEffects {
   private clock = 0;
   /** The marks beyond the fight's own laid each frame, kept from frame to frame so none is made afresh. */
   private readonly more: number[] = [];
+  /** What the shots did as the marks were last laid: the player's own let go, and where any stopped. */
+  shotsHeard: { readonly fired: readonly Fired[]; readonly struck: readonly Struck[] } = { fired: [], struck: [] };
 
   constructor() {
     warmImpactPictures();
@@ -99,10 +101,12 @@ export class FightEffects {
       kept.view.action.kind === 'telegraph' ? [kept.view.action] : [],
     );
     const { eye, blocks, bodies, muzzleOf, origin, groundAt, more = [], drawn = null } = where;
-    this.tracers.fired(fight.fired.splice(0), muzzleOf);
+    const fired = fight.fired.splice(0);
+    this.tracers.fired(fired, muzzleOf);
     this.tracers.seen(fight.takeShots(), fight.player);
     for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt))
       this.sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
+    this.shotsHeard = { fired, struck: this.tracers.struck };
     const look = this.ownLook;
     if (look) for (const head of this.tracers.ownHeads) this.sparks.trail(head, look, seconds);
     const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);

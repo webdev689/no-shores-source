@@ -46,8 +46,11 @@ code:
   - client/src/game/acquiredFeed.ts#startAcquiredFeed
   - client/src/game/gains.ts#gainsOf
   - client/src/game/uiSounds.ts#play
-  - client/src/game/soundSamples.ts#playSample
-  - client/src/game/soundSamples.ts#soundCredits
+  - client/src/soundSamples.ts#playSample
+  - client/src/soundSamples.ts#soundCredits
+  - client/src/game/uiSounds.ts#worldOutput
+  - client/src/combat/worldSounds.ts#WorldSounds
+  - client/src/combat/worldCues.ts#eventCues
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/itemPictures.ts#ItemPictures
   - client/src/game/gearDom.ts#HoverCard
@@ -322,10 +325,42 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them; then the interface's volume, kept in this
-  browser, and the recorded sounds' credits: each one's name, author, licence and source, and what was changed.
+  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface and of the
+  world ("World sounds"), each kept in this browser, and the recorded sounds' credits: each one's name, author,
+  licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
   wash move: no quiver, no shards, and the gains appear without sliding in.
+
+## World sounds
+
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
+[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the
+owner has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. Which cue a moment calls
+for is chosen by pure rules (`combat/worldCues.ts`):
+
+- **Blows.** A swing as a fighter's attack begins, or as a foe's wound-up blow lands: light (fists, a dagger, a sword,
+  a mace), heavy (a flail, an axe, a warhammer, a greatsword) or a staff's. A blow that lands cuts (a dagger, a sword,
+  an axe, a greatsword) or strikes blunt (the rest, and a gun's ball); an arrow or a bolt strikes as itself. A crit,
+  the element a blow bursts in and an elemental kill's finisher sound over it; a spell's blow is heard as its spell. A
+  blow met by a shield or by a blade, a parry, a guard broken, a kill, a foe's shield struck and broken.
+- **Arms.** A weapon drawn or put away (the player's and other players'; foes stand armed). A bow drawn, each shot by
+  its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
+  no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
+- **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
+  Ground's crate), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
+- **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
+  Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; each status as it is
+  given.
+- **The rest.** A drop coming to rest, an Ammo crate used, a foe turning alert, and the player standing again.
+
+Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye
+facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
+0.1 s, and a step, a swing and a blow stray up to 4% in pitch. A figure first seen makes no sound for what it was
+already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
+Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
+The Test Ground makes its own sound at full volume on the first click into its view.
 
 ## The social space's counters
 
@@ -371,7 +406,8 @@ the Tailor's stall.
   the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
-- The sounds are the interface's alone; the world and the music have none yet.
+- The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
+  none yet.
 - The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
 - No gamepad or touch layer yet, and so none of DFO's narrow-screen places for the compass.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card

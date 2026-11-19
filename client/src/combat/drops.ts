@@ -242,7 +242,8 @@ const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
 /**
  * The drops lying for the player as they are drawn: each flying from where the room threw it the moment it is first
  * told of (or resting already, told of late), standing and lit once it rests. Each frame answers the marks (laid into
- * `out` when given) and the rarities of the Vestiges that came to rest since the last, for a Rare's or finer's chime.
+ * `out` when given), the rarities of the Vestiges that came to rest since the last, for a Rare's or finer's chime, and
+ * where every drop that came to rest since the last lies.
  */
 export class DropsShown {
   /** When each drop's flight began, on the page's clock. */
@@ -254,9 +255,10 @@ export class DropsShown {
     seconds: number,
     eye: Point,
     out: number[] = [],
-  ): { marks: number[]; rested: number[] } {
+  ): { marks: number[]; rested: number[]; landed: Point[] } {
     const marks = out;
     const rested: number[] = [];
+    const landed: Point[] = [];
     const lying = new Set<string>();
     for (const drop of drops) {
       const key = keyOf(drop);
@@ -274,6 +276,7 @@ export class DropsShown {
       if (!resting) continue;
       if (!this.rested.has(key)) {
         this.rested.add(key);
+        landed.push(drop.at);
         if (drop.kind === DROPPED.vestige) rested.push(drop.rarity);
       }
       const rise = Math.min(1, (since - FLIGHT_S) / RISE_S);
@@ -289,6 +292,6 @@ export class DropsShown {
         this.began.delete(key);
         this.rested.delete(key);
       }
-    return { marks, rested };
+    return { marks, rested, landed };
   }
 }

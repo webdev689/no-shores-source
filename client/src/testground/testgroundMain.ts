@@ -28,8 +28,10 @@ import type { GearState } from '../network/gearMessages.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
+import { type WorldOutput, WorldSounds } from '../combat/worldSounds.ts';
+import { loadSamples } from '../soundSamples.ts';
 import { type CardAt, type Cards, openCards } from '../player/cards.ts';
-import { COURSE, RESOURCE_NODES, STALL, START } from './course.ts';
+import { COURSE, RESOURCE_NODES, STALL, START, WOODEN } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
@@ -197,9 +199,16 @@ async function start(): Promise<void> {
   const player = new Walker(standing, you, firstPerson, forge);
   walker = player;
   status = 'Click the view to play.';
+  // The world's sounds wake with the first click into the view, as a browser lets sound start only after a press.
+  let output: WorldOutput | null = null;
   canvas.addEventListener('click', () => {
     if (!input.locked) input.lock();
+    if (output || typeof AudioContext === 'undefined') return;
+    const audio = new AudioContext();
+    loadSamples(audio);
+    output = { audio, out: audio.destination };
   });
+  const sounds = new WorldSounds(() => output);
 
   // With ?room=<name> (or a whole ws:// address), the Test Ground joins that room on a server; without one it plays in
   // a room in the page. Either way the player's fighter is predicted here and set by the room's word, each tick's
@@ -351,6 +360,7 @@ async function start(): Promise<void> {
     drawn.push(...foes.cards(fighting, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const fpMuzzle = inFirstPerson ? firstPerson.muzzle : null;
+    const dropped = dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye);
     const marks = effects.marks(fighting, running ? seconds : 0, {
       eye: cameraOf(camera).eye,
       blocks: COURSE,
@@ -361,10 +371,32 @@ async function start(): Promise<void> {
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
       more: [
         ...gearRings(STALL, RESOURCE_NODES, gear, clock),
-        ...dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye).marks,
+        ...dropped.marks,
         ...foes.overheads(cameraOf(camera).eye, clock),
       ],
       drawn: { foes: foes.placed, others },
+    });
+    sounds.frame({
+      seconds,
+      quiet: false,
+      fight: fighting,
+      events,
+      shots: effects.shotsHeard,
+      eye: cameraOf(camera).eye,
+      yaw: camera.yaw,
+      walker: {
+        feet: [body.x, body.y, body.z],
+        walked: player.walked,
+        drawn: you.dress.outfit.drawn,
+        mounted: player.player.mounted,
+        look: effects.ownLook,
+        pulled: shown.pulled,
+      },
+      others,
+      foes: foes.placed,
+      ground: { blocks: COURSE, wooden: WOODEN },
+      landed: dropped.landed,
+      crates: gear?.crates ?? null,
     });
     showAnimaEdge(effects.anima);
     scene.setMarks(marks);

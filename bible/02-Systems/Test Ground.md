@@ -4,6 +4,7 @@ status: live
 code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
+  - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/testground/aimPanel.ts
   - client/src/testground/statusPanel.ts#startStatusPanel
   - client/src/testground/artsPanel.ts#startArtsPanel
@@ -94,6 +95,8 @@ WebAssembly; with `?room=`, a server's. The page predicts the player's fighter b
 room's word for it, so playing alone and online are the same game. The [[Game]] fights on foot by the same modules:
 the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight's effects and blood, and the display.
 
+- **Sounds.** The world's sounds play here as on foot ([[Interface]], "World sounds"), from the first click into the
+  view, at full volume: the course's crate is wood underfoot, its other blocks stone. A cue not yet picked is silent.
 - **Foes.** The panel picks a faction, then one of its types (marked land or deck), then one of the ranks that type
   comes in, the level it stands at (0 for none, which fights by combat's own numbers) and a Blaze, Volt or Cosmic
   shield if one is picked ([[Gear]], "Elements and shields"); Spawn stands it 5 m ahead of where the player looks,
