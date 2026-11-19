@@ -225,8 +225,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
-  blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
-  while; and which foes beyond the patrols' carry them.
+  shield comes back after a while; and which foes beyond the patrols' carry them.
+- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
+  call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
+  cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
+  Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 6 m up, the Armsmith's wares, and
+  the seven named armour pieces that gave Bulwark and now give another armour perk.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -237,6 +241,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The Arts round (#69)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and verbs with
+  foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar, the verb
+  perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not yet
+  seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a live
+  room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
