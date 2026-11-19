@@ -34,6 +34,8 @@ pub enum Asked {
         node: u8,
     },
     Grant(Grant),
+    /// Wears an Art, or sets a fragment in a slot of one's Core.
+    Art(gear::arts::ArtAsk),
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -60,6 +62,8 @@ pub enum Grant {
         on_foes: bool,
         ticks: Option<u32>,
     },
+    /// The player's Anima full and their Tenets ready, to try every spell at once.
+    ArtsReady,
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -202,6 +206,7 @@ impl Room {
             Asked::Gather { node } => self.gather(player, node),
             Asked::Grant(grant) if self.section.is_none() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
+            Asked::Art(ask) => self.ask_art(player, ask),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;
@@ -238,6 +243,10 @@ impl Room {
     fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
         if let Grant::Status { status, on_foes, ticks } = grant {
             self.grant_status(player, status, on_foes, ticks);
+            return 0;
+        }
+        if grant == Grant::ArtsReady {
+            self.ready_arts(player);
             return 0;
         }
         let dice = self.dice(player);
@@ -287,7 +296,7 @@ impl Room {
                 }
             }
             Grant::Xp(xp) => character.earn_xp(xp, None),
-            Grant::Status { .. } => {}
+            Grant::Status { .. } | Grant::ArtsReady => {}
         }
         0
     }

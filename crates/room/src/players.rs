@@ -66,7 +66,8 @@ pub struct Shown {
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
 /// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
 /// or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it fights by
-/// combat's own numbers); whether they ask to respawn, dead past a node's section; and an ask of their gear.
+/// combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear; and a spell
+/// they cast.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -79,6 +80,7 @@ pub struct Input {
     pub respawn: bool,
     pub ask: Option<Asked>,
     pub spawn_level: u8,
+    pub cast: Option<crate::arts::Cast>,
 }
 
 /// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
@@ -164,6 +166,8 @@ pub struct Player {
     pub owner: Option<String>,
     /// What their worn gear trims of the fight's numbers, set whenever it may change.
     pub trim: combat::Trim,
+    /// Their Anima's charge, their Tenets' recharge and a cast on its way, kept while they are in the room.
+    pub casting: crate::arts::Casting,
 }
 
 impl Player {
@@ -198,6 +202,7 @@ impl Player {
             spent: Vec::new(),
             owner: None,
             trim: combat::Trim::PLAIN,
+            casting: crate::arts::Casting::default(),
         }
     }
 

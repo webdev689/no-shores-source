@@ -4,6 +4,7 @@
 //! of the land and judges each player against its section every tick. It has no network and no clock: whatever hosts
 //! the room hands it inputs and ticks, and sends out what it sees.
 
+mod arts;
 pub mod asks;
 pub mod clash;
 pub mod deck;
@@ -17,9 +18,11 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+mod spells;
 mod statuses;
 pub mod threat;
 
+pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
@@ -29,6 +32,7 @@ pub use players::{
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
 pub use power::{Drop, allowed_arms, arms_allowed, gear_arms};
+pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -140,6 +144,7 @@ pub struct Room {
     pub(crate) stall: Option<[f64; 2]>,
     pub(crate) resource_nodes: Vec<ResourceNode>,
     pub(crate) drops: Vec<Drop>,
+    pub(crate) spells: spells::Spells,
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
@@ -202,6 +207,7 @@ impl Room {
             stall: None,
             resource_nodes: Vec::new(),
             drops: Vec::new(),
+            spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
             day: 0,
@@ -296,6 +302,7 @@ impl Room {
         self.keep_patrol();
         self.step_foes();
         self.fly_shots();
+        self.step_arts();
         self.judge_waiting();
         self.heal_linked();
         self.tell_brains();
@@ -328,6 +335,7 @@ impl Room {
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }
+                self.ask_cast(id, input.cast);
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };

@@ -5,7 +5,7 @@
 
 use crate::{PlayerId, Room};
 use combat::fighter::FighterId;
-use combat::status::{LINKED_HEAL, charge_ticks, times};
+use combat::status::{LINKED_HEAL, charge_ticks, crits, times};
 use combat::{Blow, Fighter, Status, Verdict, give};
 
 /// Linked heals once a second of the room's clock.
@@ -19,6 +19,12 @@ impl Room {
         let ticks = ticks.unwrap_or_else(|| self.lasts(fighter, status));
         let Some(next) = self.fighter(fighter).and_then(|now| give(now, status, ticks, from)) else { return false };
         self.set_fighter(fighter, next);
+        // Overload: a foe the player Charges is Exposed too.
+        let overloads =
+            from.and_then(|from| self.players.get(&from)).is_some_and(|by| by.character.fragment("overload").is_some());
+        if status == Status::Charge && overloads {
+            self.give(fighter, Status::Expose, None, from);
+        }
         true
     }
 
@@ -47,9 +53,12 @@ impl Room {
     }
 
     /// A verdict's damage as statuses weigh it: a crit, its striker's Linked (as the striker stands now) and its
-    /// defender's Expose.
+    /// defender's Expose; and a player's crit on an Exposed foe 10% more with Cruelty.
     pub(crate) fn weighed(&self, blow: &Blow, defender: &Fighter, verdict: Verdict) -> Verdict {
-        let times = times(blow, self.fighter(blow.striker), defender);
+        let striker = self.fighter(blow.striker);
+        let cruelty = self.players.get(&blow.striker).and_then(|found| found.character.fragment("cruelty"));
+        let cruel = cruelty.filter(|_| defender.statuses.has(Status::Expose) && crits(blow, striker, defender));
+        let times = times(blow, striker, defender) * cruel.map_or(1.0, |cruelty| cruelty.crit_times);
         match verdict {
             Verdict::Hit { damage, poise } => Verdict::Hit { damage: damage * times, poise },
             Verdict::Blocked { damage, stamina } => Verdict::Blocked { damage: damage * times, stamina },

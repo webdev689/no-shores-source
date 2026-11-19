@@ -128,6 +128,9 @@ pub struct Character {
     pub emblems: Vec<String>,
     #[serde(default)]
     pub emblem: String,
+    /// The Art they wear and each Art's Core (`arts.rs`).
+    #[serde(default)]
+    pub arts: crate::arts::WornArts,
 }
 
 impl Character {
@@ -143,6 +146,7 @@ impl Character {
             next_id: 1,
             emblems: Vec::new(),
             emblem: crate::emblems::starting(),
+            arts: crate::arts::WornArts::default(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::MainHand),
@@ -207,6 +211,7 @@ impl Character {
         }
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
+        character.arts = std::mem::take(&mut character.arts).kept();
         character.earn_due();
         Some(character)
     }
