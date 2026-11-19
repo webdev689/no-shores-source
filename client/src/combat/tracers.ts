@@ -1,11 +1,15 @@
 import { type Orbit, rayAt } from '../editor/orbit.ts';
-import { type GlowLook, glowRampAt } from '../elementGlow.ts';
+import { GLOW_RAMPS, type GlowLook, type Rgb } from '../elementGlow.ts';
 import type { FlyingShot } from '../network/messages.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { bodyHit } from '../player/crosshair.ts';
+import { GunLooks } from './gunLooks.ts';
 import { markArrow } from './marks.ts';
+import { POWDER, STEEL, type Ramp, layPicture } from './markSprites.ts';
+import { ShotMarks, type Surface, overSea, surfaceAt } from './shotMarks.ts';
+import { HOT, LIGHT, sprite } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number, number];
@@ -18,28 +22,71 @@ const UNCARRIED_DROP = 1;
 const FALL = 6;
 /** The guns' numbers, as the combat crate numbers its ranged weapons: a Pistolet and a Thunderlock fire balls. */
 const BALLS = new Set([3, 4]);
+const THUNDERLOCK = 4;
+/** Another's ball first seen within this many ticks of its firing still flashes at its muzzle. */
+const FRESH_TICKS = 6;
 /** A ball's tracer: its head races out this fast (m/s), slower than a ball that reaches its mark at once so the eye can
  *  follow it (a travelling ball's goes at the ball's own pace), with a streak this long behind it (metres) that stays
- *  at the end once there and fades over this long (seconds), the whole line faintly behind it; a flash at the muzzle
- *  lasts this long and is this wide (metres). */
-const BALL = { speed: 350, streak: 6, fade: 0.3, trace: 0.22, flash: 0.06, flashSize: 0.16 } as const;
-/** An arrow's trail: this long of its flight (seconds) behind it, lingering this long once it stops; a shot's trail
- *  comes out of the drawn bow or barrel and joins its true flight within this long. */
+ *  at the end once there, breaking up over this long (seconds), a thin trace back to its muzzle with it. */
+const BALL = { speed: 350, streak: 6, fade: 0.32 } as const;
+/** An arrow's trail: this long of its flight (seconds) behind it, breaking up over this long once it stops; a shot's
+ *  trail comes out of the drawn bow or barrel and joins its true flight within this long. */
 const ARROW = { trail: 0.3, linger: 0.3, converge: 0.15, life: 4 } as const;
-/** Each tracer's two ribbons: a hot core and a wider glow (widths in metres, colours). */
-const CORE = { width: 0.03, colour: [1, 0.96, 0.8, 1] as Colour };
-const GLOW = { width: 0.13, colour: [1, 0.6, 0.2, 0.5] as Colour };
-const ARROW_CORE = { width: 0.022, colour: [0.96, 0.98, 1, 0.9] as Colour };
-const ARROW_GLOW = { width: 0.08, colour: [0.75, 0.86, 1, 0.32] as Colour };
+/** A tracer's ribbon: its width (metres), the least of the eye's view it keeps (radians: 2 and 4 pixels at 720p, so a
+ *  shot reads far off) and the most (so one leaving a first person's muzzle stays a line), its colour, and whether it
+ *  is the core, drawn over its glow. A ball's core is white-hot round
+ *  a powder-orange glow; an arrow's is white with a dark steel edge, which reads on the sky and the ground alike. */
+interface Layer {
+  readonly width: number;
+  readonly least: number;
+  readonly most: number;
+  readonly colour: Rgb;
+  readonly core: boolean;
+}
+const CORE: Layer = { width: 0.03, least: 0.0026, most: 0.0075, colour: POWDER[3], core: true };
+const GLOW: Layer = { width: 0.11, least: 0.0052, most: 0.015, colour: POWDER[1], core: false };
+const ARROW_CORE: Layer = { width: 0.022, least: 0.0026, most: 0.0075, colour: STEEL[3], core: true };
+const ARROW_GLOW: Layer = { width: 0.06, least: 0.0052, most: 0.015, colour: STEEL[0], core: false };
+/** A core stands this share of its distance nearer the eye than its glow, and at least this much (metres). */
+const CORE_FRONT = { share: 0.004, least: 0.01 } as const;
+/** A tracer breaks into pieces this long (metres) as it goes, in this order four at a time, keeping this share of
+ *  them through each quarter of its going. */
+const PIECE_M = 0.35;
+const PIECE_ORDER = [0, 2, 1, 3] as const;
+const KEPT = [1, 0.75, 0.5, 0.25] as const;
+/** A ball's head races out as a glint of three by three cells, each at least this much of the eye's view. */
+const HEAD_GLINT = sprite(3, 3, (across, up) =>
+  across === 0 && up === 0 ? HOT : across === 0 || up === 0 ? LIGHT : -1,
+);
+const HEAD_CELL = { metres: 0.04, least: 0.0026 } as const;
 /** A Volt trail's points jump aside this far on each axis at most (metres, 0.04 m in all), struck again this often a
  *  second. */
 const JOLT_M = 0.023;
 const JOLT_HZ = 12;
 
-/** Where a shot came to rest, and the way back over the ground it came from. */
+/** Where a shot struck stone, and the way back over the ground it came from, for the sparks it throws there. */
 export interface Impact {
   readonly at: Point;
   readonly back: readonly [number, number];
+}
+
+/** The share of a tracer kept `since` seconds after it began to break up over `fade`: whole before, then a step down
+ *  each quarter, then none. */
+export function keptShare(since: number, fade: number): number {
+  if (since < 0) return 1;
+  return KEPT[Math.floor((since / fade) * 4)] ?? 0;
+}
+
+/** The pieces of a line kept from `start` to `end` (metres along it) at `kept`: whole, or every piece the order keeps. */
+export function piecesAlong(start: number, end: number, kept: number): [number, number][] {
+  if (kept >= 1) return end > start ? [[start, end]] : [];
+  const pieces: [number, number][] = [];
+  for (let index = Math.floor(start / PIECE_M); index * PIECE_M < end; index++) {
+    if ((PIECE_ORDER[index % 4] ?? 0) >= kept * 4) continue;
+    const [low, high] = [Math.max(start, index * PIECE_M), Math.min(end, (index + 1) * PIECE_M)];
+    if (high > low) pieces.push([low, high]);
+  }
+  return pieces;
 }
 
 /** A ball's line, from its muzzle to the farthest it is known to reach, seconds after it was fired, and how fast its
@@ -84,6 +131,10 @@ const add = (point: Point, other: Point, share = 1): Point => [
   point[2] + other[2] * share,
 ];
 const minus = (point: Point, other: Point): Point => [point[0] - other[0], point[1] - other[1], point[2] - other[2]];
+const unit = (way: Point): Point => {
+  const length = Math.hypot(...way) || 1;
+  return [way[0] / length, way[1] / length, way[2] / length];
+};
 
 /** A ribbon along `points` turned to face `eye`, each point its own width and colour, as mark triangles. */
 export function ribbon(out: number[], eye: Point, points: readonly { at: Point; width: number; colour: Colour }[]) {
@@ -118,22 +169,28 @@ export function ribbon(out: number[], eye: Point, points: readonly { at: Point; 
   }
 }
 
-/** A colour with its opacity scaled. */
-const faded = (colour: Colour, share: number): Colour => [colour[0], colour[1], colour[2], colour[3] * share];
+/** A point of a tracer's `layer` at `place` as seen from `eye`: as wide as it is, held between its least and most of
+ *  the view, solid; a
+ *  core brought nearer the eye than its glow. */
+function shownAt(eye: Point, place: Point, layer: Layer): { at: Point; width: number; colour: Colour } {
+  const distance = Math.hypot(...minus(place, eye));
+  const [red, green, blue] = layer.colour;
+  const front = layer.core ? Math.max(CORE_FRONT.least, distance * CORE_FRONT.share) / (distance || 1) : 0;
+  return {
+    at: add(place, minus(eye, place), Math.min(0.5, front)),
+    width: Math.min(distance * layer.most, Math.max(layer.width, distance * layer.least)),
+    colour: [red, green, blue, 1],
+  };
+}
 
-/** A tracer's ribbons, its glow then its core, in the player's own element: the element's colours `share` of the way
- *  down its ramp, at the plain ribbons' opacities. */
-function ribbonsOf(
-  glow: { readonly width: number; readonly colour: Colour },
-  core: { readonly width: number; readonly colour: Colour },
-  look: GlowLook,
-): { readonly width: number; readonly colour: Colour }[] {
+/** A tracer's ribbons, its glow then its core, in the player's own element: its body stop and its white-hot. */
+function ribbonsOf(glow: Layer, core: Layer, look: GlowLook): readonly [Layer, Layer] {
   if (!look) return [glow, core];
-  const tinted = (layer: typeof glow, share: number) => ({
-    width: layer.width,
-    colour: [...glowRampAt(look, share), layer.colour[3]] as Colour,
-  });
-  return [tinted(glow, 0.5), tinted(core, 0)];
+  const ramp = GLOW_RAMPS[look];
+  return [
+    { ...glow, colour: ramp[1] },
+    { ...core, colour: ramp[3] },
+  ];
 }
 
 /** A Volt tracer's points, each jolted aside by a hash struck again JOLT_HZ times a second at `time` seconds. */
@@ -165,21 +222,53 @@ function underGround(from: Point, along: Point, groundAt: (x: number, y: number)
   return below;
 }
 
+/** How far along one tick's flight an arrow first meets something, and what: a block, the ground, the sea (over land
+ *  below its level), or a body (its feet); 1 and nothing when it meets none. */
+function firstMet(
+  from: Point,
+  along: Point,
+  blocks: readonly Block[],
+  bodies: readonly Point[],
+  groundAt?: (x: number, y: number) => number | null,
+): { share: number; met: { surface: Surface; feet?: Point } | null } {
+  let share = rayHit(from, add(from, along), blocks);
+  let met: { surface: Surface; feet?: Point } | null = share < 1 ? { surface: 'stone' } : null;
+  const to = add(from, along);
+  const ground = groundAt
+    ? underGround(from, along, groundAt)
+    : to[2] < 0 && from[2] >= 0
+      ? from[2] / (from[2] - to[2])
+      : 1;
+  if (ground < share) [share, met] = [ground, { surface: 'ground' }];
+  if (groundAt && from[2] > 0 && to[2] <= 0 && (groundAt(to[0], to[1]) ?? 0) < 0) {
+    const sea = from[2] / (from[2] - to[2]);
+    if (sea < share) [share, met] = [sea, { surface: 'water' }];
+  }
+  for (const feet of bodies) {
+    const hit = bodyHit(from, along, feet);
+    if (hit !== null && hit < share) [share, met] = [hit, { surface: 'body', feet }];
+  }
+  return { share, met };
+}
+
 /**
- * The tracers of every shot: a ball's line raced out from its muzzle to where it stopped and fading, with a flash at
- * the muzzle; an arrow's or a bolt's trail along its falling flight. The player's own come from the shots their own
- * ticks fired, out of the weapon as drawn and at once; everyone else's from the room's snapshots.
+ * The tracers of every shot: a ball's line raced out from its muzzle to where it stopped and breaking up, with its
+ * gun's flash and smoke; an arrow's or a bolt's trail along its falling flight; and what each leaves where it stops.
+ * The player's own come from the shots their own ticks fired, out of the weapon as drawn and at once; everyone else's
+ * from the room's snapshots.
  */
 export class Tracers {
   private lines: Line[] = [];
   private flights: Flight[] = [];
+  private readonly guns = new GunLooks();
+  private readonly left = new ShotMarks();
 
   /** The player's own shots, each leaving the weapon as drawn at its `muzzle`. */
   fired(shots: readonly Fired[], muzzleOf: (shot: Fired) => Point): void {
     for (const shot of shots) {
       const muzzle = muzzleOf(shot);
       const to = add(shot.at, shot.velocity, TICK);
-      if (BALLS.has(shot.ranged))
+      if (BALLS.has(shot.ranged)) {
         this.lines.push({
           from: muzzle,
           to,
@@ -190,7 +279,8 @@ export class Tracers {
           stopped: true,
           quiet: 0,
         });
-      else
+        this.guns.fire(muzzle, minus(to, muzzle), shot.ranged === THUNDERLOCK);
+      } else
         this.flights.push({ muzzle, launch: shot.at, at: shot.at, velocity: shot.velocity, flown: 0, stopped: null });
     }
   }
@@ -198,7 +288,8 @@ export class Tracers {
   /** Everyone else's balls, from the shots of snapshots each handed over once (Fighting's takeShots). A ball that
    *  reaches its mark at once comes whole in the one snapshot after it was fired; one that travels comes a tick's
    *  length in each, carrying its owner's line on, and its first fires it. Its last says it stopped, with the point it
-   *  left its gun: its line ends there at once. One first seen flying is reckoned back along its flight to its muzzle. */
+   *  left its gun: its line ends there at once. One first seen flying is reckoned back along its flight to its muzzle;
+   *  one first seen soon after it was fired flashes there. */
   seen(shots: readonly FlyingShot[], player: number): void {
     for (const shot of shots) {
       if (shot.owner === player || !BALLS.has(shot.ranged)) continue;
@@ -224,12 +315,13 @@ export class Tracers {
         stopped,
         quiet: 0,
       });
+      if (shot.age <= FRESH_TICKS) this.guns.fire(from, shot.velocity, shot.ranged === THUNDERLOCK);
     }
   }
 
   /** Runs every tracer on by `seconds`: the player's own arrows fly a tick at a time until a block, the ground
-   *  (`groundAt`'s, else level at 0) or one of `bodies` (feet) stops them. Answers where a ball's head or an arrow
-   *  came to rest this time, and the way back over the ground it came from, for the sparks it throws there. */
+   *  (`groundAt`'s, else level at 0), the sea or one of `bodies` (feet) stops them. What each shot struck keeps its
+   *  look; answers where one struck stone this time, and the way back it came, for the sparks it throws there. */
   update(
     seconds: number,
     blocks: readonly Block[],
@@ -237,11 +329,16 @@ export class Tracers {
     groundAt?: (x: number, y: number) => number | null,
   ): Impact[] {
     const impacts: Impact[] = [];
-    const back = (from: Point, to: Point): readonly [number, number] => {
-      const length = Math.hypot(from[0] - to[0], from[1] - to[1]) || 1;
-      return [(from[0] - to[0]) / length, (from[1] - to[1]) / length];
+    const struck = (place: Point, way: Point, ball: boolean, met: { surface: Surface; feet?: Point } | null) => {
+      if (!met) return;
+      this.left.strike(met.surface, place, unit(way), ball, met.feet);
+      if (met.surface !== 'stone') return;
+      const back = Math.hypot(way[0], way[1]) || 1;
+      impacts.push({ at: place, back: [-way[0] / back, -way[1] / back] });
     };
     for (const line of this.lines) {
+      // A ball over the sea stops on its surface, not on the ground under it.
+      line.to = overSea(line.from, line.to, groundAt);
       const arrives = this.arrival(line);
       line.quiet += seconds;
       if (!line.stopped) {
@@ -249,7 +346,7 @@ export class Tracers {
         continue;
       }
       if (line.age < arrives && line.age + seconds >= arrives)
-        impacts.push({ at: line.to, back: back(line.from, line.to) });
+        struck(line.to, minus(line.to, line.from), true, surfaceAt(line.to, blocks, bodies, groundAt));
       line.age += seconds;
     }
     this.lines = this.lines.filter((line) =>
@@ -264,19 +361,17 @@ export class Tracers {
         const step = Math.min(TICK, left);
         const velocity: Point = [flight.velocity[0], flight.velocity[1], flight.velocity[2] - FALL * step];
         const along: Point = [velocity[0] * step, velocity[1] * step, velocity[2] * step];
-        const to = add(flight.at, along);
-        let share = rayHit(flight.at, to, blocks);
-        if (groundAt) share = Math.min(share, underGround(flight.at, along, groundAt));
-        else if (to[2] < 0 && flight.at[2] >= 0) share = Math.min(share, flight.at[2] / (flight.at[2] - to[2]));
-        for (const feet of bodies) share = Math.min(share, bodyHit(flight.at, along, feet) ?? 1);
+        const { share, met } = firstMet(flight.at, along, blocks, bodies, groundAt);
         flight.at = add(flight.at, along, share);
         flight.velocity = velocity;
         flight.flown += step * share;
         if (share < 1 || flight.flown > ARROW.life) flight.stopped = 0;
-        if (share < 1) impacts.push({ at: flight.at, back: back(flight.launch, flight.at) });
+        if (share < 1) struck(flight.at, velocity, false, met);
       }
     }
     this.flights = this.flights.filter((flight) => flight.stopped === null || flight.stopped < ARROW.linger);
+    this.guns.update(seconds, groundAt);
+    this.left.update(seconds, bodies);
     return impacts;
   }
 
@@ -286,20 +381,20 @@ export class Tracers {
   }
 
   /** The tracers' triangles as seen from `eye`, with the player's own arrows and everyone else's arrows' trails (from
-   *  the room's `shots`, the player's own left out). The player's own take their weapon's element `own`, a Volt one
-   *  jumping as `time` (seconds) runs. */
+   *  the room's `shots`, the player's own left out), the guns' flashes and smoke, and what shots left where they
+   *  stopped. The player's own take their weapon's element `own`, a Volt one jumping as `time` (seconds) runs. */
   mesh(eye: Point, shots: readonly FlyingShot[], player: number, own: GlowLook = 0, time = 0): number[] {
     const out: number[] = [];
     for (const line of this.lines) this.lineMesh(out, eye, line, line.owner === null ? own : 0, time);
     for (const flight of this.flights) {
-      const fade = flight.stopped === null ? 1 : 1 - flight.stopped / ARROW.linger;
+      const kept = flight.stopped === null ? 1 : keptShare(flight.stopped, ARROW.linger);
       // Out of the drawn weapon, joining the true flight within ARROW.converge.
       const offset = minus(flight.muzzle, flight.launch);
       const shown = (flown: number) => {
         const true_ = before(flight.at, flight.velocity, flight.flown - flown);
         return add(true_, offset, Math.max(0, 1 - flown / ARROW.converge));
       };
-      this.trailMesh(out, eye, shown, flight.flown, fade, own, time);
+      this.trailMesh(out, eye, shown, flight.flown, kept, own, time);
       if (flight.stopped === null) markArrow(out, shown(flight.flown), flight.velocity);
     }
     for (const shot of shots) {
@@ -307,6 +402,8 @@ export class Tracers {
       const flown = shot.age * TICK;
       this.trailMesh(out, eye, (when) => before(shot.at, shot.velocity, flown - when), flown, 1);
     }
+    this.guns.mesh(out, eye);
+    this.left.mesh(out, eye);
     return out;
   }
 
@@ -320,72 +417,78 @@ export class Tracers {
     return [...this.flights.filter((flight) => flight.stopped === null).map((flight) => flight.at), ...ballHeads];
   }
 
-  /** A ball's line: its head raced out with a streak behind it, a faint trace along the whole of it, both fading once
-   *  the head arrives, and a flash at the muzzle. */
+  /** A ball's line: its head raced out as a glint with a streak behind it and a thin trace back to the muzzle, both
+   *  breaking up once the head arrives. */
   private lineMesh(out: number[], eye: Point, line: Line, look: GlowLook, time: number): void {
     const length = Math.hypot(...minus(line.to, line.from));
     if (length < 1e-6) return;
     const along = (distance: number) => add(line.from, minus(line.to, line.from), distance / length);
     const head = Math.min(length, line.age * line.speed);
+    const arrives = this.arrival(line);
+    const kept = keptShare(line.age - arrives, BALL.fade);
+    if (kept <= 0) return;
+    const [glow, core] = ribbonsOf(GLOW, CORE, look);
+    const trace: Layer = { ...glow, width: CORE.width, least: CORE.least, most: CORE.most };
     const tail = Math.max(0, head - BALL.streak);
-    const fade = 1 - Math.max(0, line.age - this.arrival(line)) / BALL.fade;
-    const point = (distance: number, ribbonOf: typeof CORE, share: number) => ({
-      at: along(distance),
-      width: ribbonOf.width,
-      colour: faded(ribbonOf.colour, share * fade),
-    });
-    for (const layer of ribbonsOf(GLOW, CORE, look)) {
-      ribbon(out, eye, jolted([point(0, layer, BALL.trace), point(head, layer, BALL.trace)], look, time));
-      if (head > tail) {
-        const streak = [point(tail, layer, 0), point((tail + head) / 2, layer, 0.6), point(head, layer, 1)];
-        ribbon(out, eye, jolted(streak, look, time));
+    for (const [layer, start] of [
+      [trace, 0],
+      [glow, tail],
+      [core, tail],
+    ] as const)
+      for (const [low, high] of piecesAlong(start, head, kept)) {
+        const points = [shownAt(eye, along(low), layer), shownAt(eye, along(high), layer)];
+        ribbon(out, eye, jolted(points, look, time));
       }
-    }
-    if (line.age < BALL.flash) {
-      const size = BALL.flashSize * (1 - line.age / BALL.flash);
-      const flash = (side: Point) => ({
-        at: add(line.from, side, size),
-        width: size,
-        colour: [1, 0.78, 0.35, 0.9] as Colour,
-      });
-      const toward = minus(line.to, line.from);
-      const unit: Point = [toward[0] / length, toward[1] / length, toward[2] / length];
-      ribbon(out, eye, [flash([-unit[0], -unit[1], -unit[2]]), flash(unit)]);
+    if (line.age < arrives) {
+      const place = along(head);
+      const cell = Math.max(HEAD_CELL.metres, Math.hypot(...minus(place, eye)) * HEAD_CELL.least);
+      const ramp: Ramp = look ? GLOW_RAMPS[look] : POWDER;
+      layPicture(out, HEAD_GLINT, ramp, place, eye, { cell });
     }
   }
 
-  /** A trail along a flight `shown` at each second flown, over its last ARROW.trail behind `flown`, in the element
-   *  `look` (none by default) at `time`. */
+  /** A trail along a flight `shown` at each second flown, over its last ARROW.trail behind `flown`, `kept` of it, in
+   *  the element `look` (none by default) at `time`: its newest stretch whole, its oldest breaking up. */
   private trailMesh(
     out: number[],
     eye: Point,
     shown: (flown: number) => Point,
     flown: number,
-    fade: number,
+    kept: number,
     look: GlowLook = 0,
     time = 0,
   ): void {
     const start = Math.max(0, flown - ARROW.trail);
-    if (flown - start < 1e-4) return;
+    if (flown - start < 1e-4 || kept <= 0) return;
     const steps = 10;
+    const keeps = (step: number) => {
+      const share = Math.min(kept, step >= 5 ? 1 : step >= 2 ? 0.5 : 0.25);
+      return (PIECE_ORDER[step % 4] ?? 0) < share * 4;
+    };
     for (const layer of ribbonsOf(ARROW_GLOW, ARROW_CORE, look)) {
-      const points = Array.from({ length: steps + 1 }, (unused, step) => {
-        const share = step / steps;
-        return {
-          at: shown(start + (flown - start) * share),
-          width: layer.width,
-          colour: faded(layer.colour, share * fade),
-        };
-      });
-      ribbon(out, eye, jolted(points, look, time));
+      let run: { at: Point; width: number; colour: Colour }[] = [];
+      const lay = () => {
+        if (run.length > 1) ribbon(out, eye, jolted(run, look, time));
+        run = [];
+      };
+      for (let step = 0; step < steps; step++) {
+        if (!keeps(step)) {
+          lay();
+          continue;
+        }
+        const point = (nth: number) => shownAt(eye, shown(start + ((flown - start) * nth) / steps), layer);
+        if (run.length === 0) run.push(point(step));
+        run.push(point(step + 1));
+      }
+      lay();
     }
   }
 }
 
 /** Where a shot leaves a weapon on the screen: the first person's muzzle carried out along its ray this far, in metres;
- *  and the sparks a shot throws where it comes to rest. */
+ *  and the sparks a shot throws where it strikes stone. */
 export const MUZZLE_OUT = 0.55;
-export const IMPACT_SPARKS = 6;
+export const IMPACT_SPARKS = 10;
 
 /** The first person's muzzle in the world: its point on the design screen (320 by 200 pixels over the whole canvas)
  *  carried out from the eye along the view's ray through it. */

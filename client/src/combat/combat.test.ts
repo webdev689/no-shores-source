@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { project } from './hud.ts';
-import { MARK_FLOATS, type TelegraphMark, marksMesh } from './marks.ts';
+import { DITHER_M, MARK_FLOATS, type TelegraphMark, ditherCode, marksMesh } from './marks.ts';
+import { IRON } from './markSprites.ts';
 import { SHAPES } from '../rules/fighters.ts';
 
 const lunge = (elapsed: number, iron: boolean): TelegraphMark => ({
@@ -16,26 +17,50 @@ const lunge = (elapsed: number, iron: boolean): TelegraphMark => ({
   feintAt: null,
 });
 
+const vertices = (mesh: Float32Array) =>
+  Array.from({ length: mesh.length / MARK_FLOATS }, (unused, index) =>
+    mesh.subarray(index * MARK_FLOATS, (index + 1) * MARK_FLOATS),
+  );
+const colourSet = (mesh: Float32Array) => new Set(vertices(mesh).map((vertex) => [...vertex.slice(3, 6)].join()));
+
 test('a telegraphed blow is marked on the ground where its shape lies, filling as it winds up, red when iron', () => {
   const early = marksMesh([lunge(4, false)], []);
   const late = marksMesh([lunge(40, true)], []);
   assert.equal(early.length % MARK_FLOATS, 0);
-  const vertices = (mesh: Float32Array) =>
-    Array.from({ length: mesh.length / MARK_FLOATS }, (unused, index) =>
-      mesh.subarray(index * MARK_FLOATS, (index + 1) * MARK_FLOATS),
-    );
   for (const vertex of vertices(late)) {
-    assert.ok(Math.abs((vertex[2] ?? 0) - 0.53) < 1e-6, 'a little over the ground it stands on');
-    assert.ok((vertex[0] ?? 0) >= 1 - 0.3 - 1e-6 && (vertex[0] ?? 0) <= 1 + 4.5 + 1e-6, 'along its lane, east');
-    assert.ok(Math.abs((vertex[1] ?? 0) - 2) <= 0.6 + 1e-6);
+    assert.ok(Math.abs((vertex[2] ?? 0) - 0.53) < 0.01, 'a little over the ground it stands on');
+    const [east = 0, south = 0] = vertex;
+    assert.ok(
+      east >= 1 - 0.3 - 1e-6 && east <= 1 + 4.5 + DITHER_M / 2 + 1e-6,
+      'along its lane, east, its dark line outside',
+    );
+    assert.ok(Math.abs(south - 2) <= 0.6 + DITHER_M / 2 + 1e-6);
   }
   const reach = (mesh: Float32Array) => Math.max(...vertices(mesh).map((vertex) => vertex[0] ?? 0));
   assert.ok(reach(late) >= 5.4, 'its edge marks the whole lane from the start');
-  const red = vertices(late).every((vertex) => (vertex[3] ?? 0) > 0.9 && (vertex[4] ?? 0) < 0.2);
-  assert.ok(red, 'iron is red');
-  assert.ok((vertices(late)[0]?.[6] ?? 0) > (vertices(early)[0]?.[6] ?? 0), 'brighter in its last stretch');
+  const iron = [...Float32Array.from(IRON[2])].join();
+  assert.ok(colourSet(late).has(iron), 'iron is the iron red');
+  assert.ok(!colourSet(early).has(iron), 'a plain blow is gold');
+  // The fill is dithered whole on the ground: an opacity above 1, keeping more of its cells in its last stretch.
+  const fill = (mesh: Float32Array) => Math.max(...vertices(mesh).map((vertex) => vertex[6] ?? 0));
+  assert.equal(fill(early), ditherCode(0.25));
+  assert.equal(fill(late), ditherCode(0.5));
+  assert.ok(
+    vertices(late).every((vertex) => (vertex[6] ?? 0) >= 1),
+    'every part of it solid',
+  );
   const arrow = marksMesh([], [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0], age: 0, muzzle: null }]);
-  assert.equal(arrow.length, 12 * MARK_FLOATS, 'an arrow is two crossed strips');
+  assert.equal(
+    arrow.length,
+    3 * 12 * MARK_FLOATS,
+    'an arrow is its head, its shaft and its fletching, each crossed strips',
+  );
+});
+
+test("a blow's last ticks light its mark's edge white-hot first, then its fill thickens", () => {
+  const hot = [...Float32Array.from([1, 0xf6 / 255, 0xd0 / 255])].join();
+  const white = (elapsed: number) => colourSet(marksMesh([lunge(elapsed, false)], [])).has(hot);
+  assert.ok(!white(20) && white(31) && white(32) && !white(35), 'white-hot for its first three ticks of twelve');
 });
 
 test('a point projects through the camera onto the canvas, and nothing behind it does', () => {

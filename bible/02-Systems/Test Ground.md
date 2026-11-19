@@ -36,6 +36,11 @@ code:
   - client/src/combat/hudSheet.ts#wearFightSheet
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/tracers.ts#Tracers
+  - client/src/combat/gunLooks.ts#GunLooks
+  - client/src/combat/shotMarks.ts#ShotMarks
+  - client/src/combat/glints.ts#foeGlints
+  - client/src/combat/markOrder.ts#MarkOrder
+  - client/src/combat/markDraw.ts#MarkDraw
   - client/src/combat/playerFight.ts#PlayerFight
   - client/src/combat/foeFigures.ts#FoeFigures
   - client/src/combat/fightEffects.ts#FightEffects
@@ -110,24 +115,37 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   blow's stroke raised through its wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame,
   before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
-  drawn at once and its fill growing with the wind-up, brighter in its last fifth of a second. An iron one has a second
-  edge inside the first, so it reads without its colour, and "Dodge!" floats over a foe near the player as it begins
-  one. Arrows and bolts are drawn in flight.
-- **Tracers.** Every shot draws a tracer, a hot core in a wider glow. A ball's head races from the muzzle to where it
-  stopped at 350 m/s, a 6 m streak behind it and the line faint behind that, then fades over 0.3 s; a flash marks the
-  muzzle. An arrow or a bolt trails the last 0.3 s of its falling flight. The player's own shots draw at once from the
+  drawn at once, four figure pixels wide with a dark line outside it, and its fill growing with the wind-up, a
+  quarter of its cells dithered whole on the ground, each cell four figure pixels square. In its last fifth of a second the fill keeps half its cells, and for its first
+  three ticks the edge is white-hot. An iron one has a second edge inside the first, so it reads without its colour,
+  and "Dodge!" floats over a foe near the player as it begins one; its foe is outlined iron red for that last fifth.
+  At 80% of a foe's wind-up, telegraphed or a plain swing, a star of steel flashes on its weapon for 4 ticks, red for
+  an iron blow. Arrows and bolts are drawn in flight: a steel head, a wooden shaft and pale fletching.
+- **Tracers.** Every shot draws a tracer, a white-hot core in a wider glow, solid and never thinner than 2 and 4
+  pixels at 720p. A ball's head races from the muzzle to where it stopped at 350 m/s as a glint, a 6 m streak behind
+  it and a thin trace back to the muzzle, then breaks into pieces over 0.32 s, fewer each quarter. A gun's shot
+  flashes a star of fire at its muzzle, then tongues of flame along the barrel, then sparks, lighting the ground under
+  it for two frames, and leaves five puffs of smoke that rise, drift the shot's way and thin out over 1.2 s; its
+  sizes are held to a share of the view, so first person's flash stays small. An arrow or a bolt trails the last
+  0.3 s of its falling flight, its tail broken up. The player's own shots draw at once from the
   weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
   comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which
   flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle,
   until the snapshot that says it stopped, with the point it left its gun: then its head runs on to where it stopped.
   A ball first seen where it stopped is drawn from that point. One no snapshot carries on for a second, its shooter
-  sent away, is dropped with no sparks. Where a shot comes to rest it throws six sparks back the way it came.
+  sent away, is dropped with no sparks. Where a shot comes to rest it shows what it struck: a ball's flash; a star on
+  a body; dust and, for a ball, a hole on the ground for 8 s; chips and ten sparks back the way it came on stone; a
+  splash and a ring on the sea. An arrow or a bolt stays stuck where it stopped for 8 s, in a body for as long as the
+  body stands; the 24 newest are kept.
+- **How marks are drawn.** Solid marks (whole, or dithered whole on the ground) write depth, so a near one hides a
+  far one; the see-through rest is drawn after them, each triangle far to near from the eye.
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
   throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
   `?blood=off` draws none.
 - **Sparks.** A parry, a block or a guard broken throws sparks from where the guard met the blow, a little toward
-  the striker at a guard's height: white-hot streaks that fall, cool to orange and burn out within half a second.
+  the striker at a guard's height: white-hot streaks two figure pixels thick that fall, cool a whole stop at a time
+  to orange and burn out within half a second.
 - **The attack feel.** Four effects over the fight's blows, each switched on or off and set by a slider in the panel's
   **Attack feel**, kept in the browser with its numbers shown to copy
   ([[The Attack Feel Is Tried in the Test Ground]]). Only the drawing moves: the fight's rules and their clock never

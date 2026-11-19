@@ -53,8 +53,8 @@ the menu's pictures stay plain.
   strike while it is fast; Cosmic leaves a star every 0.08 s along the path, fading over 0.4 s. In first person it
   leaves only as a blow lands, as a burst: a ring of its pixels flying out to the field's edge over a fifth of a
   second, cooling a stop each quarter of it, never a trail.
-- **Shots and blows.** The player's own tracers take the element's colours at the plain tracers' opacities, a Volt one
-  jumping up to 0.04 m twelve times a second, and leave about 30 motes a second. A blow the player lands for harm
+- **Shots and blows.** The player's own tracers take the element's colours, a white-hot core in its body stop, a
+  Volt one jumping up to 0.04 m twelve times a second, and leave about 30 motes a second. A blow the player lands for harm
   bursts in the element where it lands: Blaze 12 embers that float, Volt 10 quick sparks, Cosmic 14 motes that hang.
   A spell's hit bursts in its caster's Art's element instead, never the weapon's ([[Arts]]).
 - **The Test Ground.** Its Attack feel's Element glow row turns the glow off, or shows the gear's own element or one

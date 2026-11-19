@@ -4,6 +4,7 @@ import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { Fighting } from './fighting.ts';
 import { Flashes } from './flashes.ts';
+import { foeGlints } from './glints.ts';
 import { aimRingMesh } from './casting.ts';
 import { type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
@@ -79,6 +80,13 @@ export class FightEffects {
     const arrows = othersArrows(fight.shots, fight.player);
     const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
     const spells = this.spellLooks.marks(fight, eye, seconds, this.clock);
-    return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...ring, ...spells, ...more], origin);
+    const glints = foeGlints(fight.foes.values(), eye);
+    return marksMesh(
+      telegraphs,
+      arrows,
+      this.sparks.flying,
+      [...traced, ...ring, ...spells, ...more, ...glints],
+      origin,
+    );
   }
 }

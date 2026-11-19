@@ -255,7 +255,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 ## Drawing
 
 `GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
-drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]). The game adds the
+drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
+draws over the water: on foot, the fight's see-through marks, far to near, tested by hand against the scene's depth,
+so the water near a coast never covers them. The fight's solid marks write depth in the pass with the figures. The game adds the
 open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
 its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
 `world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`
