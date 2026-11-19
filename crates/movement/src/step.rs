@@ -253,9 +253,9 @@ fn on_ground(
     }
     // Pressing into a wall too high to grab, the body takes hold of it, square to it, and climbs.
     let wall = if controls.forward > 0.0 && !controls.mounted { wall_ahead(blocks, &next, controls.yaw) } else { None };
-    let into = wall.filter(|wall| wall.block.top - next.z > TUNING.reach).and_then(|wall| {
-        pressed_into(&wall.block, body, &next, controls.yaw).map(|facing| (wall.block.top, facing))
-    });
+    let into = wall
+        .filter(|wall| wall.block.top - next.z > TUNING.reach)
+        .and_then(|wall| pressed_into(&wall.block, body, &next, controls.yaw).map(|facing| (wall.block.top, facing)));
     match into {
         Some((lip, facing)) => Body { mode: Mode::Climb, facing, lip, crouched: false, ..next },
         None => next,
