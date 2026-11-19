@@ -27,11 +27,19 @@ pub fn shot_lands(here: &Here<'_, '_>, target: [f64; 3]) -> u64 {
     here.tick() + Here::ticks(flight)
 }
 
-/// Whether it may begin a blow at `target` that lands at `lands`: a beat, as the room's heat presses it, after the
-/// latest another foe has begun there.
-#[must_use]
-pub fn may(here: &Here<'_, '_>, board: &Board, target: FighterId, lands: u64) -> bool {
-    board.may_strike(target, here.me, lands, Here::ticks(here.world.director.pressed().beat))
+/// Whether, ready to, it may begin a blow at `target` that lands at `lands`: a beat, as the room's heat presses it,
+/// after the latest another foe has begun there, and in its place among the foes that beat holds back. Asked only
+/// once it would strike, so a foe not ready holds no place.
+pub fn may(here: &Here<'_, '_>, board: &mut Board, target: FighterId, lands: u64) -> bool {
+    let beat = Here::ticks(here.world.director.pressed().beat);
+    board.may_strike(target, here.me, lands, beat, here.tick(), true)
+}
+
+/// Whether, drawn, it may loose a shot or begin an aimed one at `target` that lands at `lands`: as a blow may, but
+/// only into a beat no ally waits for to strike hand to hand, so its shots fill the gaps between their blows.
+pub fn may_shoot(here: &Here<'_, '_>, board: &mut Board, target: FighterId, lands: u64) -> bool {
+    let beat = Here::ticks(here.world.director.pressed().beat);
+    board.may_strike(target, here.me, lands, beat, here.tick(), false)
 }
 
 /// Notes on the board the blow its intent begins this tick at its target, if it begins one: a swing from rest, a

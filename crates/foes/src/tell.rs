@@ -164,13 +164,15 @@ fn pool(here: &Here<'_, '_>, sight: &Sight, reach: f64) -> Vec<Shape> {
 }
 
 /// A holder's telegraphed blow at its target, if it throws one this tick: off its cooldown, ready, nobody else winding
-/// up near its target, a shape that reaches, and the roll (unless `forced`, as against a guard it will not swing into).
+/// up near its target, a shape that reaches, the roll (unless `forced`, as against a guard it will not swing into), and
+/// its crowd's pace: `paced` says whether a blow landing at the tick it is handed, the soonest one could, may begin.
 pub fn throw(
     brain: &mut Brain,
     here: &Here<'_, '_>,
     sight: &Sight,
     reach: f64,
     forced: bool,
+    paced: impl FnOnce(u64) -> bool,
 ) -> Option<TelegraphOrder> {
     let ready = matches!(here.fighter.action, Action::Idle) && here.tick() >= brain.tells.blow_ready && sight.seen;
     if !ready || windup_near(here, sight.spot) {
@@ -178,6 +180,9 @@ pub fn throw(
     }
     let shapes = pool(here, sight, reach);
     if shapes.is_empty() || !(forced || here.dice.roll(Purpose::Blow) < chance_a_tick()) {
+        return None;
+    }
+    if !paced(here.tick() + u64::from(combat::ticks(WINDUP_LEAST))) {
         return None;
     }
     let pick = (here.dice.roll(Purpose::Shape) * shapes.len() as f64) as usize;

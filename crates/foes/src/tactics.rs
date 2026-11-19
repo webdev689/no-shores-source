@@ -21,13 +21,13 @@ use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
     FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_ROOM, RING_SLACK,
-    RUN_FROM, SETTLED, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED, WINDUP_LEAST,
+    RUN_FROM, SETTLED, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, off, wrap};
 use combat::tuning::{ATTACK_PACE, BODY_RADIUS, guard_of};
-use combat::{CombatInput, FighterId, Stroke};
+use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::{TICK_SECONDS, TUNING};
 
@@ -124,8 +124,9 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     let engaged = brain.plan == Plan::Engage;
     // A riposte or a counter it earned it strikes at once; a spent target it punishes in its own beat.
     let earned = here.fighter.riposte.is_some() || here.fighter.counter > 0;
-    let paced = |_: &(FighterId, CombatInput)| earned || pace::may(here, board, sight.id, pace::swing_lands(here));
-    if let Some((whom, combat)) = opening(here, Some((sight.id, sight.seen)), engaged).filter(paced) {
+    let opened = opening(here, Some((sight.id, sight.seen)), engaged);
+    let opened = opened.filter(|_| earned || pace::may(here, board, sight.id, pace::swing_lands(here)));
+    if let Some((whom, combat)) = opened {
         let toward = here.find(whom).map_or(sight.toward, |other| bearing(here.at(), [other.body.x, other.body.y]));
         let facing = off(brain.heading, toward) <= SWING_FACE;
         return Ask {
@@ -296,8 +297,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let pending = brain.reactions.threat.is_some();
     if board.holds(sight.id, here.me, false)
         && !pending
-        && pace::may(here, board, sight.id, tick + Here::ticks(WINDUP_LEAST))
-        && let Some(order) = throw(brain, here, sight, reach, walled)
+        && let Some(order) = throw(brain, here, sight, reach, walled, |least| pace::may(here, board, sight.id, least))
     {
         return telegraph(brain, order);
     }
@@ -342,14 +342,13 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let stroke = stroke(here, sight);
     let reaches = sight.distance + lead <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
     let free = matches!(fighter.action, Action::Idle | Action::Guard { .. });
-    let paced = pace::may(here, board, sight.id, pace::swing_lands(here));
     if free
         && reaches
         && !walled
         && !pending
-        && paced
         && tick >= ready_at
         && off(brain.heading, sight.toward) <= SWING_FACE
+        && pace::may(here, board, sight.id, pace::swing_lands(here))
     {
         ask.combat.attack = Some(stroke);
         brain.ready_at = None;

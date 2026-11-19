@@ -17,8 +17,10 @@ struct Fight {
     waiting: BTreeMap<FighterId, (u64, bool)>,
     /// The one foe striking it on an opening, without a turn: a back turned to it, or a walk in on it.
     opportunist: Option<FighterId>,
-    /// The latest blow begun at it: by whom, and the tick it lands.
+    /// The latest blow begun at it: by whom, and the tick it lands; and the foe held back longest by the beat after
+    /// it, with the tick it last asked.
     due: Option<(FighterId, u64)>,
+    next: Option<(FighterId, u64)>,
     /// The waiting foe working round to its flank, and how well its role suits that (the lower, the better).
     flanker: Option<(FighterId, u8)>,
 }
@@ -108,12 +110,25 @@ impl Board {
         true
     }
 
-    /// Whether a foe may begin a blow at `target` that lands at `lands`: only `beat` ticks or more after the latest
-    /// another foe has begun there lands. Its own blows never hold it back.
-    #[must_use]
-    pub fn may_strike(&self, target: FighterId, foe: FighterId, lands: u64, beat: u64) -> bool {
-        let due = self.fights.get(&target).and_then(|fight| fight.due);
-        due.is_none_or(|(by, at)| by == foe || lands >= at + beat)
+    /// Whether a foe ready at `tick` to begin a blow at `target` that lands at `lands` may: only `beat` ticks or more
+    /// after the latest another foe has begun there lands, and, of the foes the beat holds back, the first held goes
+    /// first; one that stops asking loses its place. A shot (`queues` false) takes no place: it is loosed only into a
+    /// beat no blow hand to hand waits for. Its own blows never hold a foe back.
+    pub fn may_strike(
+        &mut self,
+        target: FighterId,
+        foe: FighterId,
+        lands: u64,
+        beat: u64,
+        tick: u64,
+        queues: bool,
+    ) -> bool {
+        let fight = self.fights.entry(target).or_default();
+        let first = fight.next.is_none_or(|(next, asked)| next == foe || asked + 1 < tick);
+        if first && queues {
+            fight.next = Some((foe, tick));
+        }
+        first && fight.due.is_none_or(|(by, at)| by == foe || lands >= at + beat)
     }
 
     /// A foe began a blow at `target` that lands at `lands`.
@@ -121,6 +136,9 @@ impl Board {
         let fight = self.fights.entry(target).or_default();
         if fight.due.is_none_or(|(_, at)| lands >= at) {
             fight.due = Some((foe, lands));
+        }
+        if fight.next.is_some_and(|(next, _)| next == foe) {
+            fight.next = None;
         }
     }
 

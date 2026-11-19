@@ -239,5 +239,5 @@ pub const BEAT: f64 = 1.2;
 /// rest on rings farther out; one foe at a time, the best suited, works round to the target's flank instead. The
 /// group's side is where its foes stand round the target, once the mean of their bearings leans this far one way;
 /// short of that the line forms before the target's face.
-pub const LINE_ARC: f64 = 60.0 * DEGREES;
+pub const LINE_ARC: f64 = 75.0 * DEGREES;
 pub const LINE_LEAN: f64 = 0.25;
