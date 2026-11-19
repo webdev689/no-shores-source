@@ -19,10 +19,10 @@ const SCENE_EVERY_M: f64 = 130.0;
 const LANTERN_EVERY_M: f64 = 42.0;
 /// How far past a settlement's reach its lanterns and its drystone walls run, metres.
 const LANTERN_REACH_M: f64 = 70.0;
-const WALL_REACH_M: f64 = 170.0;
+pub(crate) const WALL_REACH_M: f64 = 170.0;
 /// A drystone wall's length a stretch and how far it stands off the track's edge, metres.
 const WALL_STRETCH_M: f64 = 8.0;
-const WALL_OFF_M: f64 = 3.5;
+pub(crate) const WALL_OFF_M: f64 = 3.5;
 
 /// Places with folk living or working in them, lit along their ways.
 const fn settled(kind: AreaKind) -> bool {
@@ -39,7 +39,7 @@ const fn settled(kind: AreaKind) -> bool {
 }
 
 /// A path's samples every STEP_M: each point and the unit way the path runs there.
-fn samples(path: &Path) -> Vec<([f64; 2], [f64; 2])> {
+pub(crate) fn samples(path: &Path) -> Vec<([f64; 2], [f64; 2])> {
     let mut found = Vec::new();
     let mut carried = 0.0;
     for pair in path.points.windows(2) {
@@ -59,7 +59,7 @@ fn samples(path: &Path) -> Vec<([f64; 2], [f64; 2])> {
 }
 
 /// A point `out` metres to a side of a way (positive to its left).
-fn beside(at: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
+pub(crate) fn beside(at: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
     [at[0] - way[1] * out, at[1] + way[0] * out]
 }
 

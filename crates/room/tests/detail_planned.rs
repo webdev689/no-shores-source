@@ -2,8 +2,9 @@
 //! outcrop a spire the close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen
 //! rock, and every run its brief asks for still found; continent 1's basins shaped by their kinds, what stands on a
 //! terrace on its level; no claim holding a mass of rock that nothing reaches; the Gullwing Vale's river in its
-//! section, carried there by wings that touch no other node; and the climates with no hint, the swamp's and the
-//! desert's, keeping their outcrops under their massif and off their ways.
+//! section, carried there by wings that touch no other node; the climates with no hint, the swamp's and the
+//! desert's, keeping their outcrops under their massif and off their ways; and what continent 1 plants standing on
+//! its floor, clear of every way, yard, run, building and solid.
 
 use city::solids::{Material, Shape as SolidShape};
 use land::ground::Ground;
@@ -435,4 +436,109 @@ fn every_ruin_by_a_mass_lookout_stands_on_level_rock_clear_of_outcrops() {
     }
     assert!(ruins > 0, "Saltmere's mass lookouts have ruins");
     assert!(failed.is_empty(), "{} of {ruins}: {failed:#?}", failed.len());
+}
+
+/// Whether a point stands outside a print (west, north, east, south) grown by `margin` each way.
+fn outside([west, north, east, south]: [f64; 4], margin: f64, [x, y]: [f64; 2]) -> bool {
+    x < west - margin || x > east + margin || y < north - margin || y > south + margin
+}
+
+/// Why a planted point stands where nothing may: off its section's floor or on a face, a way, a run, a yard, a building,
+/// a prop or a solid; none when it stands clear.
+fn misplanted(laid: &Layout, ground: &Ground, at: [f64; 2]) -> Option<&'static str> {
+    let [x, y] = at;
+    let sculpt = &laid.sculpt;
+    let off_capsule = |capsule: &[f64]| off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]) - capsule[4];
+    let rise = |east: f64, south: f64| ground.height_at(x + east, y + south);
+    let (east, south) = (rise(1.0, 0.0) - rise(-1.0, 0.0), rise(0.0, 1.0) - rise(0.0, -1.0));
+    let slope = (east * east + south * south).sqrt() / 2.0;
+    // The client's yard round a building (layoutPlan.ts YARD_CLEAR_M).
+    let yards = laid.seating.buildings.iter().map(|building| (building.footprint, 10.0));
+    let half_tile = layout::seat::TILE_M / 2.0;
+    let tiles = laid.seating.tiles.iter().map(|tile| {
+        let [x, y] = tile.at;
+        ([x - half_tile, y - half_tile, x + half_tile, y + half_tile], 0.0)
+    });
+    let pads = laid.seating.pads.iter().map(|pad| (pad.bounds, 0.0));
+    let props = laid.seating.props.iter().map(|prop| (prop.footprint, 0.0));
+    let solids = laid.seating.solids.iter().map(|solid| {
+        let [west, north, east, south, ..] = solid.bounds();
+        ([west, north, east, south], 0.0)
+    });
+    let mut prints = yards.chain(tiles).chain(pads).chain(props).chain(solids);
+    if !layout::field::ring_holds(&laid.ring, x, y) {
+        Some("outside its section")
+    } else if !sculpt.floors.iter().any(|floor| off_capsule(floor) <= 0.0) {
+        Some("off its floor")
+    } else if sculpt.climbs.iter().chain(&sculpt.runs).any(|climb| off_capsule(climb) <= 0.0) {
+        Some("on a climb or a run's rock")
+    } else if sculpt.outcrops.iter().any(|outcrop| {
+        let ([first, last], reach) = outcrop.footprint();
+        off_line(at, first, last) <= reach
+    }) {
+        Some("on an outcrop")
+    } else if slope > 0.6 || ground.water_at(x, y) != land::ground::WaterAt::Dry {
+        Some("on a face or in water")
+    } else if laid
+        .paths
+        .iter()
+        .any(|path| path.points.windows(2).any(|pair| off_line(at, pair[0], pair[1]) <= path.tier.width() / 2.0))
+    {
+        Some("on a way")
+    } else if laid.runs.iter().any(|run| {
+        let passage = layout::runs::half_of(run.kind);
+        run.beats.iter().any(|beat| layout::field::distance(beat.at, at) <= beat.radius)
+            || run.way().windows(2).any(|pair| off_line(at, pair[0], pair[1]) <= passage)
+    }) {
+        Some("in a run")
+    } else if !prints.all(|(print, margin)| outside(print, margin, at)) {
+        Some("in a yard, a building, a prop or a solid")
+    } else {
+        None
+    }
+}
+
+#[test]
+fn plantings_stand_off_ways_yards_runs_and_buildings() {
+    let (layouts, biome, ground) = laid_one();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let flora: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("content/nature/flora.json")).expect("the flora reads"),
+    )
+    .expect("the flora parses");
+    let grown = &flora["biomes"][biome.expect("continent 1 has a climate")]["kinds"];
+    let (mut planted, mut failed) = (0, Vec::new());
+    for laid in layouts {
+        for planting in &laid.plantings {
+            assert!(grown.get(&planting.kind).is_some(), "{}: {} is no kind its nature grows", laid.id, planting.kind);
+            for &at in &planting.points {
+                planted += 1;
+                if let Some(why) = misplanted(laid, ground, at) {
+                    failed.push(format!("{}: a {} at {at:.1?} stands {why}", laid.id, planting.kind));
+                }
+            }
+        }
+    }
+    // Saltmere's own: the Vale's orchard, the Moors' thickets, and each farm's hedgerows out along its tracks.
+    let planted_in = |id: &str, kind: &str, area: &str, within: f64| {
+        let laid = zone(id);
+        let area = laid.areas.iter().find(|each| each.name == area).expect("the area is laid out");
+        let points =
+            laid.plantings.iter().filter(|planting| planting.kind == kind).flat_map(|planting| &planting.points);
+        let in_area = |at: &&[f64; 2]| layout::field::distance(**at, area.at) <= area.radius;
+        let outside_all =
+            |at: &&[f64; 2]| laid.areas.iter().all(|each| layout::field::distance(**at, each.at) > each.radius);
+        let near = |at: &&[f64; 2]| layout::field::distance(**at, area.at) <= area.radius + within;
+        if within > 0.0 { points.filter(outside_all).filter(near).count() } else { points.filter(in_area).count() }
+    };
+    let counts = [
+        ("the Vale's orchard", planted_in("gullwing-vale", "oak", "Orchard Farm", 0.0)),
+        ("the Moors' thickets", planted_in("driftwood-moors", "gorse", "The Gorse Moor", 0.0)),
+        ("Orchard Farm's hedgerows", planted_in("gullwing-vale", "gorse", "Orchard Farm", 170.0)),
+        ("Ewe Fold's hedgerows", planted_in("saltgrass-downs", "gorse", "Ewe Fold", 170.0)),
+    ];
+    for (what, count) in counts {
+        assert!(count >= 20, "{what}: {count} planted");
+    }
+    assert!(failed.is_empty(), "{} of {planted}: {:#?}", failed.len(), &failed[..failed.len().min(12)]);
 }

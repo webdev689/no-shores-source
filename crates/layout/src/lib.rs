@@ -22,6 +22,7 @@ pub mod paths;
 pub mod pieces;
 pub mod pieces_coast;
 pub mod pieces_land;
+pub mod plantings;
 pub mod ring;
 pub mod rocks;
 pub mod run_climbs;
@@ -85,6 +86,9 @@ pub struct Layout {
     pub basins: Vec<basins::Basin>,
     /// What a body runs into, once the layout is laid on the ground: west, north, east, south, top and bottom.
     pub boxes: Vec<collide::Box3>,
+    /// The kinds of its climate's nature it plants, and where.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub plantings: Vec<plantings::Planting>,
 }
 
 /// A claim's ring in world metres.
@@ -301,6 +305,10 @@ pub fn plan(
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
     // them all again. A run keeps its own pieces off its line (run_kits.rs).
     clearing::keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));
+    // Last, so what is planted keeps off all that stands.
+    let takes = |at: [f64; 2], reach: f64| plantings::takes(ground, &sculpt, &carved, &ring, at, reach);
+    let zone = plantings::Zone { theme: &brief.theme, biome, seed, takes: &takes };
+    let plantings = plantings::plantings(&areas, &basins, &paths, &seating, &runs, &zone);
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),
@@ -318,6 +326,7 @@ pub fn plan(
         sculpt,
         basins,
         boxes: Vec::new(),
+        plantings,
     }
 }
 
