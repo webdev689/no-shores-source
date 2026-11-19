@@ -28,6 +28,8 @@ code:
   - crates/protocol/src/lib.rs#snapshot_bytes
   - crates/room-wasm/src/lib.rs#room_input
   - crates/room-wasm/src/lib.rs#open_node
+  - crates/room/src/course.rs#stand_foe_at
+  - crates/room-wasm/src/course_door.rs#stand_foe
   - crates/room/src/garrison.rs#garrisoned
   - server/worker.ts#RoomHost
   - server/roomDoor.ts#startRoomDoor
@@ -54,7 +56,8 @@ on Cloudflare.
 - **Its ground:** a node's room stands its bodies on the node's window of the [[Land]], among the boxes of its city a
   body runs into ([[Movement]]). Any other room stands them on its course of blocks on open ground at 0 m.
 - **Joining:** a player gets a number no one else in the room has had. In a node's room they stand on the ground at
-  the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn.
+  the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn,
+  on the top of the block under it (or the ground where none stands), and a respawn stands them there too.
   A room holds 16 players; past that, it turns the next away.
 - **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
   number in it that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's
@@ -374,6 +377,13 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
+- **A course a page plays alone** may be asked four things more, which no server ever asks and no message carries
+  (`course.rs`, through the door's `room_stand_foe`, `room_set_spawn`, `room_put_player` and `room_stand_block`):
+  a foe of the roster stood where the page puts it, on the top of the block under it, at the level asked, posted
+  there (a Boss stood so calls no one in its phases); where the next respawn stands the player, a checkpoint; the
+  player stood somewhere at once, keeping their health, as when they fall into the sea and are brought back; and a
+  block stood on the course after it opened, as a way closing. The foes' navmesh is not baked again for that block.
+  The [[Prologue]]'s wreck is played so.
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
   and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).

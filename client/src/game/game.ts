@@ -556,6 +556,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       });
   };
 
+  // For trying the wreck under `npm run dev` only: `?wreck=1` plays it offshore in place of the first node.
+  if (import.meta.env.DEV && new URLSearchParams(location.search).has('wreck')) {
+    const context = { movement, walker, forge, roomModule, groundAt: footContext.groundAt, gpu };
+    const takeFirst = () => [foot, (foot = null)][0] as Foot | null;
+    const drawing = { scene, closeSource, input, standing, footView, canvas };
+    const tried = import('./prologue/wreckTrial.ts').then(({ tryWreck }) =>
+      tryWreck(context, landmass, takeFirst, drawing),
+    );
+    tried.catch((error: unknown) => console.error('the wreck did not open:', error));
+  }
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
   const frame = (now: number) => {

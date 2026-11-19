@@ -18,6 +18,7 @@ use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod course_door;
 mod deck_door;
 mod fighter_door;
 mod fleet_door;
@@ -443,6 +444,10 @@ pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
     let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
     hand_over(fleet_door::lay(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
 }
+
+#[cfg(test)]
+#[path = "course_door_tests.rs"]
+mod course_door_tests;
 
 #[cfg(test)]
 #[path = "door_tests.rs"]

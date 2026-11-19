@@ -82,6 +82,26 @@ export class LocalRoom implements RoomLink {
     this.door.input(this.player, bytes);
   }
 
+  /** Stands a foe of the roster on the top under (x, y), its post there (`RoomDoor.standFoe`); its number, or 0. */
+  standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number {
+    return this.door.standFoe(type, rank, x, y, facing, level);
+  }
+
+  /** Sets where the next respawn stands the player: a checkpoint. */
+  setSpawn(x: number, y: number): void {
+    this.door.setSpawn(x, y);
+  }
+
+  /** Stands the player at once on the top under (x, y), as when they fall into the sea and are brought back. */
+  putPlayer(x: number, y: number): void {
+    this.door.putPlayer(this.player, x, y);
+  }
+
+  /** Stands a block on the course at once, as a way closing behind the player. */
+  standBlock(block: CourseBlock): void {
+    this.door.standBlock(block);
+  }
+
   /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */
   pump(seconds: number): void {
     this.carry += seconds;

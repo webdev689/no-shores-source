@@ -104,7 +104,9 @@ phases) is [[Enemies]].
   about 9 s), then turns to face as it was posted and stands idle. Walking back it heeds nothing it sees or hears and
   shows as idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with
   the striker as its target; one struck from past its leash it gives up again. A foe a player asked for, or one a Boss
-  called, has no post and never leashes.
+  called, has no post and never leashes. A foe a page playing a course alone stands where it wants it ([[Server]],
+  "A course a page plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one in its
+  phases, so a scene that places its own foes keeps them as it placed them.
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds
   back first) walks home the same way, healing (from 20 m, about 5 s). On this walk it heeds what it sees and hears
   as ever: they raise its awareness, and once it is alert it takes its target or searches again; short of that it

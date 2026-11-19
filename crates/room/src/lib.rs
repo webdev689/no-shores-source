@@ -7,6 +7,7 @@
 mod arts;
 pub mod asks;
 pub mod clash;
+mod course;
 pub mod deck;
 mod drops;
 pub mod fleet;
@@ -48,12 +49,14 @@ use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
-use movement::{Block, Body, standing};
+#[cfg(test)]
+use movement::standing;
+use movement::{Block, Body};
 use players::Player;
 use reach::respawn_point;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 /// A player as the room last stepped them: their fighter, where it stands with the room's section, what their figure
 /// showed with it, and the number of their last input it took.
@@ -83,6 +86,8 @@ pub struct Room {
     joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
+    /// The foes a page stood itself, whose phases call no one (`course.rs`).
+    pub(crate) quiet: BTreeSet<FighterId>,
     /// Each with what its player loosed it with; a foe's with nothing.
     pub(crate) shots: Vec<(Shot, Option<power::Loosed>)>,
     pub(crate) pending: Vec<Pending>,
@@ -161,6 +166,7 @@ impl Room {
             joins: 0,
             players: BTreeMap::new(),
             foes: BTreeMap::new(),
+            quiet: BTreeSet::new(),
             shots: Vec::new(),
             pending: Vec::new(),
             groups: BTreeMap::new(),
@@ -199,9 +205,9 @@ impl Room {
         id
     }
 
-    /// A body standing at a spawn or a foe's place: on the ground in a node's room, at 0 m on a course.
+    /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { standing(x, y) }
+        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) }
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
@@ -558,6 +564,8 @@ impl Room {
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
+#[cfg(test)]
+mod course_tests;
 #[cfg(test)]
 mod faction_tests;
 #[cfg(test)]
