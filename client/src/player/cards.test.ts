@@ -66,6 +66,53 @@ test("one figure's warming leaves another's queued, and warms each view as drawn
   for (const view of [1, 2, 3]) assert.ok(ready(armed, view, true), `view ${view} mirrored`);
 });
 
+/** A forge kept to `most` cards, let down to `after`, counting the frames it composes and the cards it lets go. */
+function countedForge(most: number, after: number) {
+  const counts = { composed: 0, destroyed: 0 };
+  const counting: CardMaker = {
+    card: (pixels, width, height, root): Card => {
+      counts.composed += 1;
+      return { texture: { destroy: () => (counts.destroyed += 1) } as unknown as GPUTexture, width, height, root };
+    },
+    glow: () => ({}) as GPUTexture,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const forge = new Cards(counting, store, looks, colours, { palette: [], clothing: {}, armour: {} }, { most, after });
+  return { forge, counts };
+}
+/** Dresses told apart by their shirt's dye, each eight frames of the guard (five views, three of them mirrored). */
+const dyed = (dye: string): Dress => ({ ...armed, outfit: { ...armed.outfit, dyes: { shirt_long_v: dye } } });
+const dresses = ['White', 'Black', 'Red'].map(dyed);
+const pumped = async (forge: Cards, times = 40) => {
+  for (let pump = 0; pump < times; pump++) {
+    forge.pump();
+    await settled();
+  }
+};
+
+test('warming fills the kept frames up to the most and never past, so it lets go of none by itself', async () => {
+  const { forge, counts } = countedForge(10, 6);
+  dresses.forEach((dress, owner) => forge.warm(dress, () => ['guard'], 0, owner));
+  await pumped(forge);
+  assert.equal(counts.composed, 10, 'warmed up to the most kept');
+  assert.equal(counts.destroyed, 0, 'none let go for warming');
+});
+
+test('a warmed frame let go before it was asked for is warmed again once there is room', async () => {
+  const { forge, counts } = countedForge(10, 6);
+  dresses.forEach((dress, owner) => forge.warm(dress, () => ['guard'], 0, owner));
+  await pumped(forge);
+  // Another figure's frames asked for push past the most: the least lately asked for, the warmed ones, are let go.
+  for (let view = 0; view < VIEWS; view++) forge.card(50, dyed('Blue'), 'guard', view, 0);
+  await pumped(forge, 2);
+  assert.ok(counts.destroyed > 0, 'frames let go past the most');
+  const before = counts.composed;
+  // Each figure warms each frame; those whose warmed frames went are warmed again into the room let go.
+  dresses.forEach((dress, owner) => forge.warm(dress, () => ['guard'], 0, owner));
+  await pumped(forge);
+  assert.ok(counts.composed > before, `warmed again (${counts.composed - before} frames)`);
+});
+
 test('a dress warmed again asks for its moves only the first time, as a figure warms each frame', () => {
   const forge = new Cards(maker, store, looks, {} as never, {} as never);
   let asked = 0;

@@ -384,14 +384,17 @@ picture.
 
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
-- Composed frames are kept on the GPU up to 4,000; past that, the least lately asked for are let go down to 3,000
-  and composed again as needed.
+- Composed frames are kept on the GPU up to 4,000. Composing ahead fills them up to that and never past it; frames a
+  figure asks for go past it, and then the least lately asked for are let go down to 3,000 and composed again as
+  needed. A frame composed ahead and let go before it was asked for has its dress composed ahead again, into the room
+  let go.
 - Each figure's likeliest moves are composed ahead, two frames a tick in all, from one queue in which a figure's new
-  dress replaces only its own frames still queued, every view
-  as drawn and as mirrored: its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or
-  a shield's block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap
-  shows it at once. A move not composed yet shows the last frame until it is: its strips take most of a second to come
-  the first time.
+  dress replaces only its own frames still queued, passing over frames kept already: every view as drawn and as
+  mirrored, its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or a shield's
+  block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap shows it at
+  once. A move not composed yet shows the last frame until it is: its strips take most of a second to come the first
+  time. A crowd of many dresses (the player, the other loadout and five or six foes' dresses) holds more than 4,000
+  frames, so the last dresses are composed ahead only as room comes.
 
 ## First person
 
