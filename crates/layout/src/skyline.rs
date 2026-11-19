@@ -3,11 +3,11 @@
 //! its canyons, its way running under it. All past the section but the arch's span, which is met only overhead.
 
 use crate::field::{distance, ring_holds};
-use crate::paths::{Path, Tier, off_line};
+use crate::paths::{Path, off_line};
 use crate::pieces::{Kit, ahead, turn_along};
 use crate::rocks::stone;
 use city::solids::{Material, Shape, Solid};
-use land::sculpts::Sculpts;
+use land::sculpts::{Outcrop, Sculpts};
 
 /// How far apart the rim's ruins stand along the section's edge, and how far back from it, on the cliff tops, metres.
 const RUIN_EVERY_M: f64 = 170.0;
@@ -17,13 +17,16 @@ const UNEVEN_MOST_M: f64 = 1.5;
 /// How far a ruin keeps from a way out through the cliffs (a gorge or a canyon's mouth), metres.
 const WAY_CLEAR_M: f64 = 45.0;
 
+/// How far a ruin keeps from an outcrop's footprint, metres: more than a tower's radius or half a run of wall.
+const OUTCROP_CLEAR_M: f64 = 20.0;
+
 /// A point on the ground as carved.
 pub(crate) fn carved_at(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
     kit.height(at) + carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
 }
 
 /// Ruins along the cliff tops round the section, walked at even steps, each where the massif stands over it.
-pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts) {
+pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], (paths, outcrops): (&[Path], &[Outcrop]), carved: &Sculpts) {
     let mut carried = RUIN_EVERY_M / 2.0;
     for (at, &from) in ring.iter().enumerate() {
         let to = ring[(at + 1) % ring.len()];
@@ -53,7 +56,11 @@ pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts) {
                 .map(|[east, south]| carved_at(kit, carved, [site[0] + east, site[1] + south]));
             let uneven = heights.iter().copied().fold(f64::NEG_INFINITY, f64::max)
                 - heights.iter().copied().fold(f64::INFINITY, f64::min);
-            if near_way || ring_holds(ring, site[0], site[1]) || standing < 8.0 || uneven > UNEVEN_MOST_M {
+            let by_rock = outcrops.iter().any(|outcrop| {
+                let ([first, last], reach) = outcrop.footprint();
+                off_line(site, first, last) < reach + OUTCROP_CLEAR_M
+            });
+            if near_way || by_rock || ring_holds(ring, site[0], site[1]) || standing < 8.0 || uneven > UNEVEN_MOST_M {
                 continue;
             }
             if kit.draw() < 0.45 {
@@ -206,8 +213,7 @@ pub fn kerb(kit: &mut Kit, from: [f64; 2], to: [f64; 2], half: f64, carved: &Scu
 
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet in the cliffs either
 /// side, its crown a little over the massif's top, boulders fallen at its feet; the way runs under it.
-pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, carved: &Sculpts) {
-    let half = if tier == Tier::Track { 15.0 } else { 11.0 };
+pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64), rise: f64, carved: &Sculpts) {
     // The arch's opening is its middle four-fifths (the city's arch), so its jambs stand on the cliffs' feet.
     let span = 2.0 * (half + 6.0) / 0.9;
     let depth = 7.0 + kit.draw() * 5.0;

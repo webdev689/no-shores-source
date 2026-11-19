@@ -164,6 +164,24 @@ fn the_swamps_and_the_deserts_outcrops_stand_under_their_massif_and_off_their_wa
     }
 }
 
+#[test]
+fn every_zone_has_slots_and_bays() {
+    for id in ZONES {
+        let laid = zone(id);
+        let (mut slots, mut bays) = (0, 0);
+        for path in &laid.paths {
+            let points = layout::paths::simplified(&path.points, 3.0);
+            let plain = if path.tier == layout::paths::Tier::Track { 15.0 } else { 11.0 };
+            for index in 0..points.len().saturating_sub(1) {
+                let half = layout::carve::canyon_half(path, index, &points, &laid.areas);
+                slots += usize::from(half < plain);
+                bays += usize::from(half > plain);
+            }
+        }
+        assert!(slots > 0 && bays > 0, "{id} has {slots} slot segments and {bays} bay segments");
+    }
+}
+
 /// How much longer than wide a basin must be than another's, or how many more lobes it must have, to read as another
 /// kind's: a farm's field, 1.6 times as long as wide, against a round bowl's 1; and one lobe.
 const LONGER_BY: f64 = 0.6;

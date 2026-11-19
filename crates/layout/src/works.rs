@@ -26,12 +26,15 @@ const WORKS_APART_M: f64 = 250.0;
 /// Where the carving first raises the floor this much, metres, is a cliff's foot (rocks.rs FOOT_RISE_M).
 const FOOT: f64 = crate::rocks::FOOT_RISE_M;
 
-/// A straight run of a path: its middle, its way and its length.
-type Run = ([f64; 2], [f64; 2], f64);
+/// Where a work stands: a canyon's middle, its way and its half-width there.
+type Place = ([f64; 2], [f64; 2], f64);
+
+/// A straight run of a path: its middle, its way, its length and its canyon's half-width there.
+type Run = ([f64; 2], [f64; 2], f64, f64);
 
 /// A path's longest straight run: the point of the path itself nearest its middle, and the path's own way there, so
 /// a work square to it stands square to the way as it wanders, not to the run's chord.
-fn longest_run(path: &Path) -> Option<Run> {
+fn longest_run(path: &Path, areas: &[Area]) -> Option<Run> {
     let points = &path.points;
     let (middle, length) = simplified(points, 6.0)
         .windows(2)
@@ -41,7 +44,8 @@ fn longest_run(path: &Path) -> Option<Run> {
         .min_by(|&first, &second| distance(points[first], middle).total_cmp(&distance(points[second], middle)))?;
     let (back, ahead) = (points[nearest.saturating_sub(1)], points[(nearest + 1).min(points.len() - 1)]);
     let span = distance(back, ahead).max(1e-9);
-    Some((points[nearest], [(ahead[0] - back[0]) / span, (ahead[1] - back[1]) / span], length))
+    let way = [(ahead[0] - back[0]) / span, (ahead[1] - back[1]) / span];
+    Some((points[nearest], way, length, crate::carve::canyon_half_at(path, points[nearest], areas)))
 }
 
 /// Whether every one of a work's pieces that stands lower than a head over the floor keeps clear of every way's
@@ -63,27 +67,27 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
 pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &Sculpts) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
-        .filter_map(|path| longest_run(path).map(|run| (path.tier, run)))
+        .filter_map(|path| longest_run(path, areas).map(|run| (path.tier, run)))
         .filter(|(_, run)| run.2 > 50.0 && between_areas(areas, run.0))
         .collect();
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
     let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
-    if let Some((tier, (middle, way, _))) = wall {
-        great_wall(kit, middle, way, tier, rise, paths);
+    if let Some((tier, (middle, way, _, half))) = wall {
+        great_wall(kit, (middle, way, half), tier, rise, paths);
     }
     // The viaduct stands well away from the wall, so each is a place of its own.
-    let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, _, _))| distance(middle, run.1.0) > WORKS_APART_M);
+    let apart = |run: &&(Tier, Run)| wall.is_none_or(|(_, (middle, ..))| distance(middle, run.1.0) > WORKS_APART_M);
     let viaduct_at = runs.iter().find(apart).copied();
-    if let Some((tier, (middle, way, _))) = viaduct_at {
-        viaduct(kit, middle, way, tier, rise, paths);
+    if let Some((tier, (middle, way, _, half))) = viaduct_at {
+        viaduct(kit, (middle, way, half), tier, rise, paths);
     }
     // A natural arch over a third canyon, apart from both.
     let clear_of =
         |work: Option<(Tier, Run)>, at: [f64; 2]| work.is_none_or(|(_, run)| distance(run.0, at) > WORKS_APART_M);
-    if let Some((tier, (middle, way, _))) =
+    if let Some((_, (middle, way, _, half))) =
         runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
     {
-        crate::skyline::natural_arch(kit, *middle, *way, *tier, rise, carved);
+        crate::skyline::natural_arch(kit, (*middle, *way, *half), rise, carved);
     }
 }
 
@@ -96,17 +100,12 @@ pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: 
     }
 }
 
-/// A canyon's half-width at its floor and how far its cliffs run out, for a tier.
-fn canyon(tier: Tier) -> (f64, f64) {
-    (if tier == Tier::Track { 15.0 } else { 11.0 }, land::sculpts::CLIFF_RUN_M)
-}
-
 /// The great wall: a dam of ashlar across the canyon square to its way, its ends sunk into the cliffs either side,
 /// buttressed on both faces, battlemented, and broken through where the track runs, the breach's sides stepped where
 /// its courses fell and their stones heaped below. The breach opens until no piece stands on a way, and no fallen
 /// stone lies on one.
-fn great_wall(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, paths: &[Path]) {
-    let (half, run) = canyon(tier);
+fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, paths: &[Path]) {
+    let run = land::sculpts::CLIFF_RUN_M;
     let floor = kit.height(middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);
@@ -171,8 +170,8 @@ fn great_wall(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: 
 
 /// A viaduct: a deck from cliff top to cliff top across the canyon, on piers standing at the canyon's sides with
 /// arches between them, and one span fallen, its stones lying in the gorge beside the way.
-fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, paths: &[Path]) {
-    let (half, run) = canyon(tier);
+fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, rise: f64, paths: &[Path]) {
+    let run = land::sculpts::CLIFF_RUN_M;
     let floor = kit.height(middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);

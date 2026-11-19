@@ -130,8 +130,10 @@ from the sea, fresh water and the claim's edge), then:
    rising at most 0.25 a metre where the massif stands highest. What was stood before the carving on a terrace,
    a ramp or the fall of their edges is lifted onto the land as carved there: a building whole by the raise at its
    middle, with its pad, plinth, rooms and walls and all in its footprint, every other prop and solid by the raise
-   under it. Each path becomes a canyon (15 m either side of a track, 11 of a footpath), the edges of basins and
-   canyons wandering outward with a noise; a gorge runs out of the claim from each gate toward its instance and from
+   under it. Each path becomes a canyon, segment by segment: 15 m either side of a track and 11 of a footpath, closing
+   to a slot (11 and 7 m) where the way runs 80 m or more with every point 60 m past any area's reach, and opening
+   to a bay (22 and 18 m) at a bend sharper than 0.5 rad or by a river crossing; the great works take the half-width
+   where they stand. The edges of basins and canyons wander outward with a noise; a gorge runs out of the claim from each gate toward its instance and from
    the landing toward the sea. Everything else in the claim is raised into a
    massif whose faces fall to the floor over 16 m in four ledges of strata, its top rough, as high as the biome's
    land stands (38 m in the highland, 12 m in the swamp). Outcrops stand up in the wilds and arenas (up to five) and

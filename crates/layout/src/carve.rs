@@ -16,6 +16,20 @@ use land::sculpts::{Outcrop, Sculpt, Sculpts, Shape};
 /// A canyon's half-width along each tier of path, metres.
 const TRACK_HALF_M: f64 = 15.0;
 const FOOTPATH_HALF_M: f64 = 11.0;
+/// A slot's half-width, metres, along a way that runs long between places; a bay's, at a bend or a crossing. Each stays
+/// wider than the way's walked half (its road bed, 4.5 m across a track) plus 3 m.
+const TRACK_SLOT_M: f64 = 11.0;
+const FOOTPATH_SLOT_M: f64 = 7.0;
+const TRACK_BAY_M: f64 = 22.0;
+const FOOTPATH_BAY_M: f64 = 18.0;
+/// How far from every area a segment lies to be in a slot (past the area's reach), and how long the run of such
+/// segments must be, metres.
+const SLOT_FROM_AREAS_M: f64 = 60.0;
+const SLOT_RUN_M: f64 = 80.0;
+/// The cosine of a bend's turn at which it opens to a bay (0.5 rad), so no trigonometry is asked.
+const BEND_COSINE: f64 = 0.877_582_561_890_372_7;
+/// How near a river crossing's dry point a segment must pass to open to a bay, metres.
+const CROSSING_REACH_M: f64 = 12.0;
 /// How far a gate's gorge runs on past the claim's edge, metres.
 const EXIT_M: f64 = 60.0;
 
@@ -43,6 +57,65 @@ pub fn shape_of(brief: &Brief, biome: Option<&str>) -> Shape {
         Some("rainforest") => Shape::Knoll,
         Some("swamp") => Shape::Hummock,
         _ => Shape::Tor,
+    })
+}
+
+/// Whether a way turns sharper than a bend at one of its points.
+fn bends(points: &[[f64; 2]], at: usize) -> bool {
+    if at == 0 || at + 1 >= points.len() {
+        return false;
+    }
+    let (before, after) = (
+        [points[at][0] - points[at - 1][0], points[at][1] - points[at - 1][1]],
+        [points[at + 1][0] - points[at][0], points[at + 1][1] - points[at][1]],
+    );
+    let lengths = distance([0.0, 0.0], before) * distance([0.0, 0.0], after);
+    lengths > 0.0 && (before[0] * after[0] + before[1] * after[1]) < BEND_COSINE * lengths
+}
+
+/// The half-width of a path's canyon along its segment `index` (from `points[index]` to the next, the path as
+/// simplified): a bay at a bend or where it crosses water, a slot where it runs on between places, else its tier's.
+#[must_use]
+pub fn canyon_half(path: &Path, index: usize, points: &[[f64; 2]], areas: &[Area]) -> f64 {
+    let (plain, slot, bay) = match path.tier {
+        Tier::Track => (TRACK_HALF_M, TRACK_SLOT_M, TRACK_BAY_M),
+        Tier::Footpath => (FOOTPATH_HALF_M, FOOTPATH_SLOT_M, FOOTPATH_BAY_M),
+    };
+    let (from, to) = (points[index], points[index + 1]);
+    let wet = path.crossings.iter().flatten().any(|&dry| off_line(dry, from, to) < CROSSING_REACH_M);
+    if bends(points, index) || bends(points, index + 1) || wet {
+        return bay;
+    }
+    let far = |at: usize| {
+        areas.iter().all(|area| off_line(area.at, points[at], points[at + 1]) - area.radius > SLOT_FROM_AREAS_M)
+    };
+    let span = |at: usize| distance(points[at], points[at + 1]);
+    if !far(index) {
+        return plain;
+    }
+    let mut run = span(index);
+    let mut back = index;
+    while back > 0 && far(back - 1) {
+        back -= 1;
+        run += span(back);
+    }
+    let mut ahead = index + 1;
+    while ahead + 1 < points.len() && far(ahead) {
+        run += span(ahead);
+        ahead += 1;
+    }
+    if run >= SLOT_RUN_M { slot } else { plain }
+}
+
+/// The half-width of a path's canyon where a point of it lies (the nearest segment's).
+#[must_use]
+pub fn canyon_half_at(path: &Path, at: [f64; 2], areas: &[Area]) -> f64 {
+    let points = simplified(&path.points, 3.0);
+    let nearest = (0..points.len().saturating_sub(1)).min_by(|&first, &second| {
+        off_line(at, points[first], points[first + 1]).total_cmp(&off_line(at, points[second], points[second + 1]))
+    });
+    nearest.map_or(if path.tier == Tier::Track { TRACK_HALF_M } else { FOOTPATH_HALF_M }, |index| {
+        canyon_half(path, index, &points, areas)
     })
 }
 
@@ -137,8 +210,9 @@ pub fn carve(
     let mut floors: Vec<[f64; 5]> = basins.iter().flat_map(|basin| basin.floors.iter().copied()).collect();
     let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
     for path in paths {
-        let half = if path.tier == Tier::Track { TRACK_HALF_M } else { FOOTPATH_HALF_M };
-        for pair in simplified(&path.points, 3.0).windows(2) {
+        let points = simplified(&path.points, 3.0);
+        for (index, pair) in points.windows(2).enumerate() {
+            let half = canyon_half(path, index, &points, areas);
             floors.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half]);
         }
     }
@@ -358,6 +432,40 @@ mod tests {
         };
         assert_eq!(nearest_on(std::slice::from_ref(&path), [40.0, 35.0]), Some([40.0, 0.0]));
         assert_eq!(nearest_on(&[path], [130.0, 80.0]), Some([100.0, 80.0]));
+    }
+
+    fn area_at(at: [f64; 2]) -> Area {
+        Area { kind: AreaKind::Wilds, name: String::new(), at, radius: 30.0, leads_to: None }
+    }
+
+    fn way(tier: Tier, points: Vec<[f64; 2]>) -> Path {
+        Path { tier, points, crossings: Vec::new(), heights: Vec::new() }
+    }
+
+    #[test]
+    fn a_long_way_between_areas_closes_to_a_slot() {
+        let areas = [area_at([0.0, 0.0]), area_at([600.0, 0.0])];
+        for (tier, slot, plain) in [(Tier::Track, 11.0, 15.0), (Tier::Footpath, 7.0, 11.0)] {
+            let path =
+                way(tier, vec![[0.0, 0.0], [100.0, 0.0], [200.0, 0.0], [300.0, 0.0], [400.0, 0.0], [600.0, 0.0]]);
+            let halves: Vec<f64> = (0..5).map(|index| canyon_half(&path, index, &path.points, &areas)).collect();
+            assert_eq!(halves, [plain, slot, slot, slot, plain], "{tier:?}: near an area stays plain");
+            assert!(slot > tier.width() + 3.0, "{tier:?}: a slot is wider than the way's walked width and 3 m");
+        }
+        let short = way(Tier::Track, vec![[0.0, 0.0], [100.0, 0.0]]);
+        assert_eq!(canyon_half(&short, 0, &short.points, &areas), 15.0, "a short way is no slot");
+    }
+
+    #[test]
+    fn a_bend_opens_to_a_bay() {
+        let areas = [area_at([0.0, 0.0])];
+        let path = way(Tier::Footpath, vec![[200.0, 0.0], [300.0, 0.0], [300.0, 100.0], [300.0, 200.0]]);
+        let halves: Vec<f64> = (0..3).map(|index| canyon_half(&path, index, &path.points, &areas)).collect();
+        assert_eq!(halves, [18.0, 18.0, 7.0], "the bend opens its two legs; the straight run on closes to a slot");
+        let mut wet = way(Tier::Track, vec![[200.0, 0.0], [300.0, 0.0], [400.0, 0.0], [500.0, 0.0]]);
+        wet.crossings.push([[300.0, 0.0], [305.0, 0.0]]);
+        let halves: Vec<f64> = (0..3).map(|index| canyon_half(&wet, index, &wet.points, &areas)).collect();
+        assert_eq!(halves, [22.0, 22.0, 11.0], "a crossing opens the segments by it");
     }
 
     #[test]

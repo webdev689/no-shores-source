@@ -261,9 +261,18 @@ pub fn plan(
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }
-    rocks::talus(&mut kit, &ring, &ways, &carved);
+    let gorges: Vec<Path> = exits
+        .iter()
+        .map(|&(from, way)| Path {
+            tier: Tier::Footpath,
+            points: vec![from, [from[0] + way[0] * 2000.0, from[1] + way[1] * 2000.0]],
+            crossings: Vec::new(),
+            heights: Vec::new(),
+        })
+        .collect();
+    rocks::talus(&mut kit, &ring, (&ways, &gorges), &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &ways, &carved);
-    skyline::rim(&mut kit, &ring, &ways, &carved);
+    skyline::rim(&mut kit, &ring, (&ways, &sculpt.outcrops), &carved);
     // Last of what stands, so a shelf's headstones keep out of all the rest.
     basins::graves(&mut kit, &terraces, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off

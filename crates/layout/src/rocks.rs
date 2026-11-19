@@ -13,6 +13,8 @@ const HEAP_EVERY_M: f64 = 11.0;
 const BARE_SHARE: f64 = 0.35;
 /// How far rock keeps from a path's line, metres.
 const PATH_CLEAR_M: f64 = 10.0;
+/// How far rock keeps from a gorge's line, metres: its half-width (carve.rs) with a heap's lie and a body's way beside.
+const GORGE_CLEAR_M: f64 = 22.0;
 /// Scree is lower than a body steps over (collide.rs STEPPED_OVER_M).
 const SCREE_TALLEST_M: f64 = 0.4;
 /// The carving raises the floor no more than this where a face meets it, metres: a face's foot.
@@ -66,8 +68,9 @@ fn foot_of(kit: &Kit, carved: &Sculpts, from: [f64; 2], way: [f64; 2], most: f64
     None
 }
 
-/// Talus along the section's edge, walked at even steps, a heap where each cliff's foot is; never on a path.
-pub fn talus(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts) {
+/// Talus along the section's edge, walked at even steps, a heap where each cliff's foot is; never on a path, nor at
+/// the foot of a gorge's walls (`gorges`, each a line out of its gate).
+pub fn talus(kit: &mut Kit, ring: &[[f64; 2]], (paths, gorges): (&[Path], &[Path]), carved: &Sculpts) {
     let mut carried = 0.0;
     for (at, &from) in ring.iter().enumerate() {
         let to = ring[(at + 1) % ring.len()];
@@ -90,7 +93,9 @@ pub fn talus(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts)
             } else {
                 [-normal[0], -normal[1]]
             };
-            if let Some(foot) = foot_of(kit, carved, edge, inward, 10.0) {
+            if let Some(foot) =
+                foot_of(kit, carved, edge, inward, 10.0).filter(|&foot| !near_path(gorges, foot, GORGE_CLEAR_M))
+            {
                 heap(kit, carved, foot, inward);
             }
         }
