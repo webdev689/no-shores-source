@@ -697,6 +697,28 @@ fn shot_list() {
                 views.push(view(entry, compass(entry, beat.at), "first", &format!("run_{}_{number}", slug(&run.name))));
             }
         }
+        // From a river's bank where it runs through the section, looking along it, at a body's height and from above.
+        let course: Vec<&land::ground::CoursePoint> =
+            ground.rivers.iter().flatten().filter(|point| ring_holds(&laid.ring, point.x, point.y)).collect();
+        if let [.., before, after] = course[..course.len().min(course.len() / 2 + 2)] {
+            let along = libm::hypot(after.x - before.x, after.y - before.y).max(1e-9);
+            let across = [-(after.y - before.y) / along, (after.x - before.x) / along];
+            let banks = [-1.0, 1.0].into_iter().flat_map(|side| {
+                [8.0, 16.0].map(|out| {
+                    let off = side * (before.width / 2.0 + out);
+                    [before.x + across[0] * off, before.y + across[1] * off]
+                })
+            });
+            let floor = |at: [f64; 2]| ground.height_at(at[0], at[1]);
+            let open = |at: [f64; 2]| {
+                laid.boxes.iter().all(|b| off_box(at, b) >= 0.6 || b[5] >= floor(at) + 1.9 || b[4] <= floor(at) + 0.3)
+            };
+            if let Some(stand) = banks.into_iter().find(|&at| ring_holds(&laid.ring, at[0], at[1]) && open(at)) {
+                let toward = [after.x, after.y];
+                views.push(view(stand, compass(stand, toward), "first", "river_0"));
+                views.push(view(stand, compass(stand, toward), "third,60,25", "river_1"));
+            }
+        }
         // From where a way enters an area, looking across the zone to its areas' middle.
         let count = laid.areas.len();
         let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);
