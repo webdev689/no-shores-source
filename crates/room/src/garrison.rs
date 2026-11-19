@@ -144,7 +144,7 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
 
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
 /// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
-/// its blocks and the open ground round them.
+/// its blocks and the open ground round them, or over the sea, its blocks' tops alone.
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     let (walked, middle, around): (&[Block], (f64, f64), f64) = match section {
         Some(section) => (&[], ground_middle(section, first), NODE_AROUND),
@@ -153,6 +153,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     let bounds = ground_around(walked, middle, around);
     match floor {
         Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
+        Floor::Sea => NavMesh::bake_over_sea(walked, bounds, &navmesh::AGENT),
         Floor::Land(_) => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
     }
 }

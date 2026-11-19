@@ -54,7 +54,8 @@ on Cloudflare.
   and no clock of its own: its host hands it each player's inputs, ticks it 60 times a second, and sends out what it
   sees.
 - **Its ground:** a node's room stands its bodies on the node's window of the [[Land]], among the boxes of its city a
-  body runs into ([[Movement]]). Any other room stands them on its course of blocks on open ground at 0 m.
+  body runs into ([[Movement]]). Any other room stands them on its course of blocks on open ground at 0 m, or, for a
+  course laid over open sea (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
 - **Joining:** a player gets a number no one else in the room has had. In a node's room they stand on the ground at
   the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn,
   on the top of the block under it (or the ground where none stands), and a respawn stands them there too.
@@ -75,9 +76,10 @@ on Cloudflare.
   called foes come the same way, at its level. Each
   tick the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
   routing and taking cover on a [[Navmesh]] the room bakes when it opens: a course's over its blocks and 30 m round
-  them; a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the middle of
-  its section's ring, where its garrison stands. The room tells each foe the noises made and its allies'
-  shouts, and keeps the fight's heat, fed where blows are settled.
+  them (over open sea, its blocks' tops alone, every part a body stands in kept); a node's over a 70 m square of its
+  land, its first spawn 15 m inside the square's edge toward the middle of its section's ring, where its garrison
+  stands. The room tells each foe the noises made and its allies' shouts, and keeps the fight's heat, fed where blows
+  are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
 - **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve

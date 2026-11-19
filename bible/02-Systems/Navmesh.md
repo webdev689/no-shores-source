@@ -24,11 +24,11 @@ code:
 ---
 # Navmesh
 
-Where a foe can walk, and the way there. A room bakes its course into a navmesh once, when it starts; foes then ask
-it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
-steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
-course and 30 m of ground about it; a node's room over a 70 m square of its own land by its first spawn, where its
-garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spots by it.
+Where a foe can walk, and the way there. A room bakes its course into a navmesh once, when it starts; foes then ask it
+for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same steps and
+numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its course and 30 m of
+ground about it (a course laid over open sea, its blocks' tops alone); a node's room over a 70 m square of its own land
+by its first spawn, where its garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spots by it.
 
 ## How it works
 
@@ -46,7 +46,8 @@ garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spot
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
    of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk joins is kept: a
-   block's top that no step reaches is dropped.
+   block's top that no step reaches is dropped. Over open sea (`bake_over_sea`) the water is no floor, so no ground
+   joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so

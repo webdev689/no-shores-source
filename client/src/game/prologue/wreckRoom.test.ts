@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { Snapshot } from '../../network/roomConnection.ts';
-import { courseOf, readWreck, topAt } from './wreckLayout.ts';
+import { glanceFrom, glanceView } from '../../rules/fighters.ts';
+import { courseOf, layoutAt, readWreck, topAt, type WreckLayout } from './wreckLayout.ts';
 
 const MODULE = new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -17,10 +19,25 @@ const layout = readWreck();
 const course = courseOf(layout);
 const [wakeX, wakeY] = layout.wake.at;
 
-/** A room on the wreck, alone in the page, and its last snapshot. */
-function wreckRoom(): { room: LocalRoom; last: () => Snapshot } {
+/** Origins far out in the world the wreck is laid at, where a sum lands a spot on a seam between deck blocks. */
+const FAR_OUT: readonly (readonly [number, number])[] = [
+  [500, 500],
+  [23817, -4120],
+  [12000.37, -8000.11],
+  [-30411.8, 19077.25],
+];
+/** Thule's roster type and rank, and the levels he stands over the player. */
+const THULE = { type: 12, rank: 5, level: 4 };
+/** How long a fight is watched, seconds. */
+const WATCHED_S = 40;
+
+/** A room on the wreck, alone in the page, the player at `at`, and its last snapshot. */
+function wreckRoom(
+  blocks: readonly CourseBlock[] = course,
+  [spawnX, spawnY]: readonly [number, number] = [wakeX, wakeY],
+): { room: LocalRoom; last: () => Snapshot } {
   let last: Snapshot | null = null;
-  const room = LocalRoom.open(compiled, { x: wakeX, y: wakeY }, course, (snapshot) => (last = snapshot));
+  const room = LocalRoom.openOverSea(compiled, { x: spawnX, y: spawnY }, blocks, (snapshot) => (last = snapshot));
   room.pump(ONE_TICK);
   return {
     room,
@@ -83,4 +100,73 @@ test("a zone's heap stood across the way stops the player, and taken once its wa
   room.putPlayer(x, y);
   room.pump(ONE_TICK);
   assert.equal(feet(last(), room.player)?.[2], topAt(course, x, y), 'and is gone');
+});
+
+test('every foe of every wave stands on the deck under it, at every origin the wreck is laid at', () => {
+  for (const origin of FAR_OUT) {
+    const placed = layoutAt(layout, origin);
+    const blocks = courseOf(placed);
+    const { room, last } = wreckRoom(blocks, placed.wake.at);
+    for (const foe of placed.zones.flatMap((zone) => zone.wave)) {
+      room.clearFoes();
+      const id = room.standFoe(foe.type, foe.rank, foe.at[0], foe.at[1], foe.facing, 1);
+      room.pump(ONE_TICK);
+      const stood = last().foes.find((seen) => seen.id === id)?.glance[2];
+      assert.equal(stood, topAt(blocks, ...foe.at), `a foe at ${foe.at.join(', ')} from ${origin.join(', ')}`);
+    }
+  }
+});
+
+/** The lowest health the player and each foe came to over a fight watched in a room on `placed`, the player standing
+ *  at `spot`, the foes the page stands in `stand`. */
+function watched(placed: WreckLayout, spot: readonly [number, number], stand: (room: LocalRoom) => void) {
+  const { room, last } = wreckRoom(courseOf(placed), spot);
+  stand(room);
+  let player = Infinity;
+  const foes = new Map<number, { lowest: number; most: number }>();
+  for (let tick = 0; tick < WATCHED_S * 60; tick++) {
+    room.pump(1 / 60);
+    const mine = last().players.find((seen) => seen.player === room.player)?.fighter;
+    if (mine) player = Math.min(player, glanceView(glanceFrom(mine)).health);
+    for (const foe of last().foes) {
+      const { health, healthMax } = glanceView(foe.glance);
+      const lowest = Math.min(foes.get(foe.id)?.lowest ?? Infinity, health);
+      foes.set(foe.id, { lowest, most: healthMax });
+    }
+  }
+  return { player, foes: [...foes.values()] };
+}
+
+/** A spot `apart` metres from (x, y) toward `toward`. */
+function short([x, y]: readonly [number, number], toward: readonly [number, number], apart: number): [number, number] {
+  const length = Math.hypot(toward[0] - x, toward[1] - y);
+  return [x + ((toward[0] - x) * apart) / length, y + ((toward[1] - y) * apart) / length];
+}
+
+test("each wave's two sides fight each other and the player standing by them, on the decks far out at sea", () => {
+  const placed = layoutAt(layout, FAR_OUT[1] ?? [0, 0]);
+  const blocks = courseOf(placed);
+  placed.zones.forEach((zone, index) => {
+    const [first] = zone.wave;
+    if (!first) return;
+    const spot = short(first.at, zone.checkpoint, 1.2);
+    assert.ok(topAt(blocks, ...spot) >= 2, `${zone.name}: the player stands on her deck`);
+    const fought = watched(placed, spot, (room) => {
+      for (const other of placed.zones) if (other.gate && other !== zone) room.standBlock(other.gate);
+      for (const foe of zone.wave) room.standFoe(foe.type, foe.rank, foe.at[0], foe.at[1], foe.facing, 1);
+    });
+    assert.ok(fought.player < 100, `${zone.name}: the player standing by is struck (${index})`);
+    // The player never strikes: a foe struck was struck by the other side.
+    assert.ok(
+      fought.foes.some((foe) => foe.lowest < foe.most),
+      `${zone.name}: its two sides fight: ${JSON.stringify(fought.foes)}`,
+    );
+  });
+});
+
+test('Thule strikes a player who stands before him in the arena', () => {
+  const placed = layoutAt(layout, FAR_OUT[2] ?? [0, 0]);
+  const [x, y] = placed.arena.thule;
+  const fought = watched(placed, [x, y - 2.7], (room) => room.standFoe(THULE.type, THULE.rank, x, y, 0, THULE.level));
+  assert.ok(fought.player < 100, `the player is struck: ${fought.player}`);
 });

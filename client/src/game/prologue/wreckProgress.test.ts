@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
-import { ALIVE_MOST, BOSS_SECONDS, BROUGHT_BACK_S, type Seen, WreckProgress } from './wreckProgress.ts';
+import { ALIVE_MOST, BOSS_SECONDS, BROUGHT_BACK_S, IN_THE_SEA_M, type Seen, WreckProgress } from './wreckProgress.ts';
 
 const layout = readWreck();
 const middle = (zone: number) => {
@@ -143,30 +143,27 @@ test('a wave stood this frame is not yet fallen, nor one with foes still waiting
   assert.deepEqual(crowded.frame(standing(0, { alive: [0, ALIVE_MOST] }), 0.016).open, [], 'its foes still wait');
 });
 
-test("a player backing along the arena's rails, anywhere on its deck, is never judged out of it", () => {
+test("a player anywhere aft of the arena's heap, on her deck or up on her rails, is never brought back", () => {
   const progress = atTheBoss();
   const course = courseOf(layout);
   const { gate } = layout.arena;
-  const [minX, , maxX, maxY] = layout.zones[layout.arena.zone]?.area ?? [0, 0, 0, 0];
-  for (let y = gate.maxY + 0.35; y <= maxY; y += 0.1)
-    for (let x = minX; x <= maxX; x += 0.05) {
+  const [, , , maxY] = layout.zones[layout.arena.zone]?.area ?? [0, 0, 0, 0];
+  let rails = 0;
+  for (let y = gate.maxY + 0.05; y <= maxY + 1; y += 0.1)
+    for (let x = -8; x <= 8; x += 0.05) {
       const z = topAt(course, x, y);
-      if (z < 2) continue;
+      if (z < IN_THE_SEA_M) continue;
+      if (z > topAt(course, 0, 34) + 0.5) rails += 1;
       assert.equal(progress.frame({ ...inArena(), x, y, z }, 0.016).bringBack, null, `at ${x.toFixed(2)}, ${y}`);
     }
+  assert.ok(rails > 100, `her rails are sampled: ${rails}`);
 });
 
-test('once the boss fight begins, a player over her rail on the channels outside it is brought back in', () => {
+test("once the boss fight begins, a player back over the arena's heap is brought back in; over her rail is the sea", () => {
   const course = courseOf(layout);
+  const { gate } = layout.arena;
   const checkpoint = layout.zones[layout.arena.zone]?.checkpoint;
-  for (const x of [-5.1, 5.0]) {
-    const z = topAt(course, x, 34);
-    assert.ok(z > 4, `her channel stands at ${x}`);
-    const progress = atTheBoss();
-    assert.deepEqual(
-      progress.frame({ ...inArena(), x, y: 34, z }, 0.016).bringBack,
-      checkpoint,
-      `over the rail at ${x}`,
-    );
-  }
+  const over = { ...inArena(), y: gate.minY - 0.5, z: topAt(course, 0, gate.minY - 0.5) };
+  assert.deepEqual(atTheBoss().frame(over, 0.016).bringBack, checkpoint, 'over the heap');
+  for (const x of [-5.6, 5.6]) assert.equal(topAt(course, x, 34), 0, `outboard of her rail at ${x}, the sea`);
 });

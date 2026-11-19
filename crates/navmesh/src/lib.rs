@@ -101,29 +101,38 @@ impl NavMesh {
         Self::bake_colliders(&colliders, bounds, agent)
     }
 
+    /// Bakes the walkable surface of blocks laid over open sea at 0 across `bounds`, as ships' decks are: the sea is
+    /// no floor, so the mesh is the blocks' tops alone, and every part of them a body could stand in is kept, since no
+    /// ground joins them into one.
+    #[must_use]
+    pub fn bake_over_sea(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        Self::baked(&colliders, None, bounds, agent, true)
+    }
+
     /// Bakes a course's blocks standing on a terrain, which may dip below 0, as a seabed does: its height is read at
     /// every cell's centre, and the ground is floor where its slope is within the agent's. A terrain that answers a
     /// height that is not a number is baked as open ground at 0.
     #[must_use]
     pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent)
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, false)
     }
 
     /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        Self::baked(colliders, None, bounds, agent)
+        Self::baked(colliders, None, bounds, agent, false)
     }
 
-    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent) -> Self {
+    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent, over_sea: bool) -> Self {
         let floor: &dyn Terrain = match &ground {
             Some(heights) => heights,
             None => &Flat,
         };
-        let solid = raster::voxelise(colliders, floor, bounds, agent);
+        let solid = raster::voxelise(colliders, floor, bounds, agent, !over_sea);
         let mut field = compact::build(&solid, agent);
-        regions::partition(&mut field);
+        regions::partition(&mut field, over_sea);
         let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
         let outlines = contours::build(&field);
         let grid = field.grid;

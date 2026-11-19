@@ -87,13 +87,19 @@ const KINDS: readonly SceneryKind[] = ['spar', 'planks', 'crate', 'debris'];
  *  block of no kind it draws, or an arena no gate closes. The arena's gate is the heap across the way into it. */
 export function readWreck(file: WreckFile = wreck): WreckLayout {
   const decks = ships.ships as Readonly<Record<string, { readonly deck: Parameters<typeof deckOf>[0] }>>;
-  const laid = file.ships.map((entry) => {
+  // Each ship is laid after those that follow her in the file, whose hulls stand in her where they broke through.
+  const laid = file.ships.reduceRight<{ ship: string; lying: Lying; blocks: CourseBlock[] }[]>((after, entry) => {
     const deck = decks[entry.ship]?.deck;
     if (!deck) throw new Error(`the ships manifest has no deck for "${entry.ship}"`);
     const [x, y] = pointOf(entry.at);
     const lying = { x, y, heading: entry.heading * RADIANS, scale: entry.scale, heave: 0, pitch: 0, roll: 0 };
-    return { ship: entry.ship, lying, blocks: deckBlocks(deckOf(deck), { lying, cuts: entry.cuts.map(areaOf) }) };
-  });
+    const blocks = deckBlocks(
+      deckOf(deck),
+      lying,
+      after.flatMap((ship) => ship.blocks),
+    );
+    return [{ ship: entry.ship, lying, blocks }, ...after];
+  }, []);
   const scenery = file.blocks.map((entry) => {
     const kind = KINDS.find((known) => known === entry.kind);
     if (!kind) throw new Error(`a wreck's block is of no kind it draws: "${entry.kind}"`);
