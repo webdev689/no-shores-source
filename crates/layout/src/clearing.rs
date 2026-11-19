@@ -63,35 +63,44 @@ pub(crate) fn end_at_rim(paths: &mut [Path], at: [f64; 2], rim: f64) {
 pub(crate) fn round_rooms(paths: &mut [Path], seating: &Seating) {
     let prints: Vec<[f64; 4]> =
         seating.buildings.iter().filter(|building| building.open).map(|building| building.footprint).collect();
+    let off_print = |point: [f64; 2], [west, north, east, south]: [f64; 4]| {
+        let nearest = [point[0].clamp(west, east), point[1].clamp(north, south)];
+        (distance(point, nearest), nearest)
+    };
     for path in paths {
         let reach = path.tier.width() / 2.0 + 0.3;
-        let mut at = 0;
-        while at + 1 < path.points.len() {
-            let (from, to) = (path.points[at], path.points[at + 1]);
-            let grazed = prints.iter().find_map(|&[west, north, east, south]| {
-                // The segment's point nearest the footprint, in tenths along it.
-                (0..=10).map(|tenth| f64::from(tenth) / 10.0).find_map(|share| {
-                    let point = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
-                    let nearest = [point[0].clamp(west, east), point[1].clamp(north, south)];
-                    let off = distance(point, nearest);
-                    (off > 1e-6 && off < reach && share > 0.0 && share < 1.0).then(|| {
-                        let push = reach / off;
+        // Where a segment's point, in tenths along it, comes within reach of a room: that point pushed out past it.
+        let grazed = |from: [f64; 2], to: [f64; 2]| {
+            (1..10).map(|tenth| f64::from(tenth) / 10.0).find_map(|share| {
+                let point = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
+                prints.iter().find_map(|&print| {
+                    let (off, nearest) = off_print(point, print);
+                    (off > 1e-6 && off < reach).then(|| {
+                        let push = (reach + 0.3) / off;
                         [nearest[0] + (point[0] - nearest[0]) * push, nearest[1] + (point[1] - nearest[1]) * push]
                     })
                 })
-            });
-            // A point pushed off one room into another's reach would only zig-zag between them: the way is left
-            // as it runs there.
-            let fits = |point: [f64; 2]| {
-                prints.iter().all(|&[west, north, east, south]| {
-                    distance(point, [point[0].clamp(west, east), point[1].clamp(north, south)]) >= reach - 0.01
-                })
-            };
-            match grazed {
-                Some(point) if fits(point) && path.points.len() < 4096 => path.points.insert(at + 1, point),
-                _ => at += 1,
+            })
+        };
+        // A point pushed off one room into another's reach would only zig-zag between them: the way is left as it
+        // runs there. A segment bends three times at the most.
+        let fits = |point: [f64; 2]| prints.iter().all(|&print| off_print(point, print).0 >= reach);
+        let mut bent = Vec::with_capacity(path.points.len());
+        bent.extend(path.points.first().copied());
+        for pair in path.points.windows(2) {
+            let mut from = pair[0];
+            for _ in 0..3 {
+                match grazed(from, pair[1]) {
+                    Some(point) if fits(point) => {
+                        bent.push(point);
+                        from = point;
+                    }
+                    _ => break,
+                }
             }
+            bent.push(pair[1]);
         }
+        path.points = bent;
     }
 }
 

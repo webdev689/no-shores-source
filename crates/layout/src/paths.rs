@@ -242,7 +242,15 @@ pub fn off_line(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
 pub fn clear_of<'a>(print: [f64; 4], ways: impl IntoIterator<Item = &'a Path>) -> bool {
     ways.into_iter().all(|way| {
         let reach = way.tier.width() / 2.0 + 0.3;
-        way.points.windows(2).all(|pair| rect_off_line(print, pair[0], pair[1]) > reach)
+        let [west, north, east, south] = [print[0] - reach, print[1] - reach, print[2] + reach, print[3] + reach];
+        way.points.windows(2).all(|pair| {
+            // Most segments lie far off: their bounds never come near the footprint.
+            let apart = pair[0][0].max(pair[1][0]) < west
+                || pair[0][0].min(pair[1][0]) > east
+                || pair[0][1].max(pair[1][1]) < north
+                || pair[0][1].min(pair[1][1]) > south;
+            apart || rect_off_line(print, pair[0], pair[1]) > reach
+        })
     })
 }
 

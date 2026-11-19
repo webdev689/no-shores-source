@@ -337,20 +337,18 @@ impl Sculpts {
         if coast <= 0.0 || self.sculpts.is_empty() {
             return 0.0;
         }
-        let near: Vec<usize> = (0..self.sculpts.len())
-            .filter(|&number| {
-                let reach = self.reaches[number];
-                x >= reach[0] && x <= reach[2] && y >= reach[1] && y <= reach[3]
-            })
-            .collect();
+        let reaches = |number: &usize| {
+            let reach = self.reaches[*number];
+            x >= reach[0] && x <= reach[2] && y >= reach[1] && y <= reach[3]
+        };
+        let near = || (0..self.sculpts.len()).filter(reaches);
         let strand = smooth(0.0, STRAND_M, coast);
-        near.iter()
-            .map(|&number| {
+        near()
+            .map(|number| {
                 let own = self.raised_by(number, x, y);
-                let held = near
-                    .iter()
-                    .filter(|&&other| other != number && own > 0.0)
-                    .fold(own, |height, &other| height.min(self.ceiling(other, x, y)));
+                let held = near()
+                    .filter(|&other| other != number && own > 0.0)
+                    .fold(own, |height, other| height.min(self.ceiling(other, x, y)));
                 held * strand
             })
             .fold(0.0, f64::max)

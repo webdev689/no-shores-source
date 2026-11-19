@@ -343,8 +343,8 @@ fn unit(to: [f64; 2], from: [f64; 2], otherwise: [f64; 2]) -> [f64; 2] {
     }
 }
 
-/// The cells a path may not cross: any reaching under a building, a set piece's solid or a large prop, or within
-/// a metre of it.
+/// The cells a path may not cross: under a building, a set piece's solid or a large prop, or within a metre of it,
+/// each at least a cell wide.
 fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     let mut blocked = vec![false; field.columns * field.rows];
     let solids = seating.solids.iter().map(|solid| {
@@ -356,13 +356,22 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         .iter()
         .map(|prop| prop.footprint)
         .filter(|print| (print[2] - print[0]) * (print[3] - print[1]) > 6.0);
-    let prints: Vec<[f64; 4]> =
-        seating.buildings.iter().map(|building| building.footprint).chain(solids).chain(large_props).collect();
-    // A cell is blocked where any of it stands under something, or a metre from it: a thin wall slips between the
-    // cells' middles.
-    let half = CELL_M / 2.0;
+    // A building walked into blocks every cell reaching under it, so no way runs through its walls.
+    let rooms = seating.buildings.iter().filter(|building| building.open).map(|building| {
+        let [west, north, east, south] = building.footprint;
+        let half = CELL_M / 2.0;
+        [west - half, north - half, east + half, south + half]
+    });
+    let closed = seating.buildings.iter().filter(|building| !building.open).map(|building| building.footprint);
+    let prints: Vec<[f64; 4]> = rooms.chain(closed).chain(solids).chain(large_props).collect();
+    // A cell is blocked where its middle stands under something, or a metre from it; a print thinner than a cell is
+    // taken as a cell wide, so a thin wall never slips between the cells' middles.
     for [west, north, east, south] in prints {
-        let [west, north, east, south] = [west - half, north - half, east + half, south + half];
+        let widen = |low: f64, high: f64| {
+            let short = ((CELL_M - (high - low)) / 2.0).max(0.0);
+            (low - short, high + short)
+        };
+        let ((west, east), (north, south)) = (widen(west, east), widen(north, south));
         let column_of = |x: f64| ((x - field.west) / CELL_M - 0.5).ceil().max(0.0) as usize;
         let row_of = |y: f64| ((y - field.north) / CELL_M - 0.5).ceil().max(0.0) as usize;
         for row in row_of(north - 1.0)..=row_of(south + 1.0).min(field.rows) {
