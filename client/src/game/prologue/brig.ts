@@ -25,7 +25,8 @@ interface Hand {
 }
 
 /** Her crew at work in the storm: the lookout up forward pointing, the bosun and hands hauling and sweeping, the
- *  gunner at a gun, the mate on the quarterdeck by the helm. */
+ *  gunner at a gun, the mate at the head of the quarterdeck, to port, out of the shot that shows the player at
+ *  the helm. */
 const CREW: readonly Hand[] = [
   { who: 'lookout', at: [0.4, -12.5], facing: 0, work: 'gesture', race: 'human', tone: 0.2, body: 'male' },
   { who: 'bosun', at: [-1.4, -5.5], facing: -1.4, work: 'hold', race: 'human', tone: 0.8, body: 'male' },
@@ -33,7 +34,7 @@ const CREW: readonly Hand[] = [
   { who: 'hand', at: [0.3, -2], facing: 0.4, work: 'sweep', race: 'human', tone: 0.45, body: 'female' },
   { who: 'gunner', at: [1.9, 1.5], facing: 1.57, work: 'chop', race: 'human', tone: 0.65, body: 'male' },
   { who: 'hand', at: [-0.8, 4], facing: 3.1, work: 'carry', race: 'anole', tone: 0.5, body: 'male' },
-  { who: 'mate', at: [-1.3, 10.6], facing: 0.3, work: 'idle', race: 'human', tone: 0.35, body: 'female' },
+  { who: 'mate', at: [-2.4, 9.6], facing: 0.3, work: 'idle', race: 'human', tone: 0.35, body: 'female' },
 ];
 
 /** The spot behind her wheel, in her deck's frame, and its height. */
