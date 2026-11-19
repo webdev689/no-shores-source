@@ -238,7 +238,11 @@ out past its edge.
   pillared vaults and a slab of stone for its door. The door stands at the foot of the face behind the end arena, iron-
   banded timber in a stone arch for the rest. A building's rooms stand square to the world and open wherever the way
   crosses a wall; a slanted wall is laid in lengths short enough that each piece's box stays within half a metre of it.
-  A keep's rooms reach 0.7 of their beat's, so their corners stand on its floor, short of the rock's face.
+  A keep's rooms reach 0.7 of their beat's, so their corners stand on its floor, short of the rock's face; their walls
+  are windowed (openings 1.0 m wide and 1.6 m tall over sills 1.2 m up, 6 m apart, none in the wall the ward's stair
+  climbs) and battlemented (merlons 0.9 m wide and 1.2 m tall every 2 m on the walls' outer halves, behind the
+  wall-walk), and a round turret 11 m tall, taller than the walls, stands at each corner of its ward that its way keeps
+  clear of.
 - **What a body climbs** (`run_climbs`), square to the world so each box is its piece: in a keep's ward a stair of 0.2 m
   risers up the inside of the wall its way keeps furthest from to a wall-walk along it 8.4 m up, a parapet's height
   under the wall's top, and at its end a short stair onto a round turret's top at the corner, 11 m up and ringed with

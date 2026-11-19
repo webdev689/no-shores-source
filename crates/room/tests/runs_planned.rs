@@ -305,6 +305,59 @@ fn a_ramparts_way_along_the_top_is_walled_on_both_sides() {
     });
 }
 
+#[test]
+fn a_keeps_walls_are_battlemented_and_windowed() {
+    each_run(&|laid, run, floor| {
+        if run.kind != layout::brief::RunKind::Keep {
+            return;
+        }
+        let climbed = layout::run_climbs::climb(run).and_then(|climb| climb.side);
+        for (number, beat) in run.beats.iter().enumerate() {
+            let ward = number + 1 == run.beats.len();
+            let ground = floor(beat.at);
+            // The middle of the room's walls, as far from the beat's middle along either axis.
+            let wall = beat.radius * layout::run_halls::ROOM_SHARE + 0.4;
+            let out = |at: [f64; 2]| (at[0] - beat.at[0]).abs().max((at[1] - beat.at[1]).abs());
+            let merlons: Vec<f64> = laid
+                .boxes
+                .iter()
+                .filter(|b| (b[4] - b[5] - 1.2).abs() < 0.05 && b[5] > ground + 5.0 && b[5] < ground + 10.0)
+                .map(|b| out([(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0]))
+                .filter(|off| (off - wall).abs() < 0.5)
+                .collect();
+            let room = format!("{}: {}'s room at {:?}", laid.id, run.name, beat.at);
+            assert!(merlons.len() as f64 >= 8.0 * wall / 2.0 * 0.8, "{room} has {} merlons", merlons.len());
+            assert!(merlons.iter().all(|off| *off > wall), "{room}: merlons stand on the walls' outer halves");
+            // A window: open at 2 m over the floor, walled under its sill, where the wall's middle runs.
+            let solid = |at: [f64; 2], z: f64| {
+                laid.boxes
+                    .iter()
+                    .any(|b| b[0] <= at[0] && at[0] <= b[2] && b[1] <= at[1] && at[1] <= b[3] && b[5] <= z && z <= b[4])
+            };
+            for (side, [x, y]) in [[0.0, -1.0], [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0]].into_iter().enumerate() {
+                let windows = (-40..=40)
+                    .map(|step| f64::from(step) / 40.0 * (wall - 1.0))
+                    .map(|along| [beat.at[0] + x * wall - y * along, beat.at[1] + y * wall + x * along])
+                    .filter(|&at| solid(at, ground + 0.6) && !solid(at, ground + 2.0))
+                    .count();
+                let blind = ward && climbed == Some(side);
+                assert!(blind || windows > 0, "{room} has no window in its wall {side}");
+            }
+            if ward {
+                for corner in [[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]] {
+                    let at = [beat.at[0] + corner[0] * wall, beat.at[1] + corner[1] * wall];
+                    let turret = laid.seating.solids.iter().any(|solid| {
+                        matches!(solid.shape, city::solids::Shape::Column { .. })
+                            && layout::field::distance([solid.at[0], solid.at[1]], at) < 0.5
+                            && solid.at[2] + solid.size[2] > ground + 9.6 + 1.0
+                    });
+                    assert!(turret, "{room}: a turret taller than the wall stands at its corner {corner:?}");
+                }
+            }
+        }
+    });
+}
+
 /// Compass degrees (0 north, a quarter turn east) from one point to another, rounded to a degree.
 fn compass(from: [f64; 2], to: [f64; 2]) -> f64 {
     libm::atan2(to[0] - from[0], from[1] - to[1]).to_degrees().rem_euclid(360.0).round()

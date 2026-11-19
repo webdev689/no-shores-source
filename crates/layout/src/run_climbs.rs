@@ -7,16 +7,15 @@ use crate::brief::RunKind;
 use crate::halls::{TURRET_M, WALL_M, stair, turret, wall};
 use crate::paths::off_line;
 use crate::pieces::Kit;
-use crate::run_halls::{ROOM_SHARE, WARD_M};
+use crate::run_halls::{ROOM_SHARE, TOWER_UP_M, WARD_M};
 use crate::runs::{Run, half_of};
 use crate::skyline::carved_at;
 use city::solids::{Material, Solid};
 use land::sculpts::Sculpts;
 
-/// A ward's wall-walk over its floor (a parapet's height under its wall's top), its turret's top, and the walk's and
-/// its stairs' width, metres.
+/// A ward's wall-walk over its floor (a parapet's height under its wall's top), and the walk's and its stairs' width,
+/// metres.
 const WALK_UP_M: f64 = WARD_M + 0.6 - 1.2;
-const TOWER_UP_M: f64 = 11.0;
 const WALK_WIDE_M: f64 = 2.0;
 /// A stair's tread, metres: with 0.2 m risers, a stair's length is 1.5 times its rise.
 const TREAD_PER_RISE: f64 = 1.5;

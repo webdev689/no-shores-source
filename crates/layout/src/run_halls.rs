@@ -1,13 +1,16 @@
 //! The large buildings a building run passes through, of the hall kit along its run's line: a keep (a gatehouse over its
-//! mouth, walled courts and roofed great halls over its beats in turn, roofed passages between, a walled ward and two
-//! towers at its door; what a body climbs in it is run_climbs'), a mine (a head-frame and its spoil at the mouth, timbered galleries boarded over, caverns roofed
-//! with rubble slabs on rock pillars) and an undercroft (a ruined chapel at its mouth, vaulted passages, pillared vaults,
-//! an ossuary at its end).
+//! mouth, walled courts and roofed great halls over its beats in turn, windowed and battlemented, roofed passages
+//! between, a walled ward with a turret at each corner and two towers at its door), a mine (a head-frame and its spoil
+//! at the mouth, timbered galleries boarded over, caverns roofed with rubble slabs on rock pillars) and an undercroft (a
+//! ruined chapel at its mouth, vaulted passages, pillared vaults, an ossuary at its end). What a body climbs in a keep's
+//! ward and at an undercroft's mouth is run_climbs'.
 
 use crate::brief::RunKind;
 use crate::field::distance;
-use crate::halls::{Room, WALL_M, corridor, room, wall};
+use crate::halls::{Room, TURRET_M, WALL_M, corridor, room, turret, wall};
+use crate::paths::off_line;
 use crate::pieces::{Kit, turn_along};
+use crate::run_climbs::Climb;
 use crate::runs::{Run, half_of};
 use crate::skyline::carved_at;
 use city::solids::{Material, Shape, Solid};
@@ -18,6 +21,8 @@ use land::sculpts::Sculpts;
 pub const ROOM_SHARE: f64 = 0.7;
 /// A building's ward's, courts' and halls' inner height, and its passages', metres.
 pub const WARD_M: f64 = 9.0;
+/// A ward's turrets' tops over its floor, metres: taller than its walls and their merlons.
+pub const TOWER_UP_M: f64 = 11.0;
 const HALL_M: f64 = 7.0;
 const COURT_M: f64 = 5.0;
 const PASSAGE_M: f64 = 4.0;
@@ -56,7 +61,15 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             room(
                 &mut out,
                 &run.way(),
-                Room { middle, floor: floor(kit, middle), half: reach, height: 5.5, roofed: true },
+                Room {
+                    middle,
+                    floor: floor(kit, middle),
+                    half: reach,
+                    height: 5.5,
+                    roofed: true,
+                    windows: [false; 4],
+                    battled: false,
+                },
                 Material::Stone,
             );
             for side in [1.0, -1.0] {
@@ -71,6 +84,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             for ends in passages(run).iter().skip(1) {
                 corridor(&mut out, *ends, [floor(kit, ends[0]), floor(kit, ends[1])], half, PASSAGE_M, Material::Stone);
             }
+            let climb = crate::run_climbs::climb(run);
             for (number, beat) in run.beats.iter().enumerate() {
                 let last = number + 1 == run.beats.len();
                 let hall = !last && number % 2 == 1;
@@ -82,9 +96,18 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                 } else {
                     COURT_M
                 };
+                // The ward's wall its stair climbs has none: the stair and the walk stand against it.
+                let mut windows = [true; 4];
+                if let Some(side) = climb.as_ref().and_then(|climb| climb.side).filter(|_| last) {
+                    windows[side] = false;
+                }
+                let (middle, ground) = (beat.at, floor(kit, beat.at));
                 let shape =
-                    Room { middle: beat.at, floor: floor(kit, beat.at), half: [reach, reach], height, roofed: hall };
+                    Room { middle, floor: ground, half: [reach; 2], height, roofed: hall, windows, battled: true };
                 room(&mut out, &run.way(), shape, Material::Stone);
+                if last {
+                    ward_turrets(&mut out, run, (middle, ground, reach), climb.as_ref());
+                }
             }
             let across = [-run.facing[1], run.facing[0]];
             for side in [1.0, -1.0] {
@@ -137,7 +160,15 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             room(
                 &mut out,
                 &run.way(),
-                Room { middle: chapel, floor: floor(kit, chapel), half: reach, height: 5.0, roofed: false },
+                Room {
+                    middle: chapel,
+                    floor: floor(kit, chapel),
+                    half: reach,
+                    height: 5.0,
+                    roofed: false,
+                    windows: [false; 4],
+                    battled: false,
+                },
                 Material::Stone,
             );
             // A ruin: a share of the chapel's wall has fallen.
@@ -161,6 +192,8 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                     half: [reach, reach],
                     height: 5.5,
                     roofed: true,
+                    windows: [false; 4],
+                    battled: false,
                 };
                 room(&mut out, &run.way(), shape, Material::Stone);
                 pillars(kit, &mut out, run, beat.at, beat.radius, carved, (Material::Stone, 1.3, 5.6));
@@ -169,6 +202,20 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         RunKind::Gorge | RunKind::Ledge | RunKind::Rampart => {}
     }
     kit.into.solids.extend(out);
+}
+
+/// A turret taller than the wall at each corner of a keep's ward (its middle, floor and inner half-width) but the one
+/// its climb comes onto, and any its way passes near.
+fn ward_turrets(out: &mut Vec<Solid>, run: &Run, (middle, ground, half): ([f64; 2], f64, f64), climb: Option<&Climb>) {
+    let way = run.way();
+    for corner in [[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]] {
+        let at = [middle[0] + corner[0] * (half + WALL_M / 2.0), middle[1] + corner[1] * (half + WALL_M / 2.0)];
+        let off_way = way.windows(2).map(|pair| off_line(at, pair[0], pair[1])).fold(f64::INFINITY, f64::min);
+        let climbed = climb.and_then(|climb| climb.walk.last()).is_some_and(|top| distance(*top, at) < 1.0);
+        if !climbed && off_way > TURRET_M / 2.0 + 1.5 {
+            turret(out, at, [ground - 1.0, ground + TOWER_UP_M], None, Material::Stone);
+        }
+    }
 }
 
 /// A mine's gallery along a passage: timber sets of two posts and a cap every 2.5 m, boards along both sides between
