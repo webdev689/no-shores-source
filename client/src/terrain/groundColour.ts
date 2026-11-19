@@ -9,8 +9,9 @@ export const TILE_LAYERS = ['grass', 'dirt', 'stone', 'snow', 'sand', 'paving'] 
 
 /**
  * What is laid on the land, painted for the terrain (game's groundPaint.ts): texels `texelM` metres square from the
- * north-west corner (`west`, `north`, window metres), four bytes a texel, the paths and dirt, the paving, then the chalk of a layout's claim, each a
- * distance from its edge (128 at the edge, 32 a metre, more inside).
+ * north-west corner (`west`, `north`, window metres), the paths and dirt, then the paving, then, where a chalk zone
+ * is painted, its claim (`channels` bytes a texel), each a distance from its edge (128 at the edge, 32 a metre, more
+ * inside).
  */
 export interface GroundPaint {
   /** Bytes a texel: 2, or 4 where a chalk layout is painted (its claim is the third). */

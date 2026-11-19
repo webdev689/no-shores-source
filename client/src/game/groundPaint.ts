@@ -1,7 +1,7 @@
 // What the layouts lay on the land, painted for the terrain to draw (groundColour.ts `painted`): the paths and a
-// block's dirt in one channel, its paving in the next, and, where a layout's brief gives it chalk, a third that holds
-// its claim and the fade band its cliffs stand in. Each is a signed distance from its edge, so the terrain draws the
-// edges where they lie between its texels, ragged and soft, in its own ground's grain.
+// block's dirt in one channel, its paving in the next, and, where a layout's brief gives it chalk and its zone meets
+// the window, a third that holds its claim and the fade band its cliffs stand in. Each is a signed distance from its
+// edge, so the terrain draws the edges where they lie between its texels, ragged and soft, in its own ground's grain.
 import { claimField, type Grid, type Wing } from './claimField.ts';
 import { tileUvs } from '../layout/layoutPlan.ts';
 import { layoutBounds, type LaidTile, type NodeLayout, PATH_WIDTH_M } from '../layout/layouts.ts';
@@ -13,7 +13,9 @@ const FINEST_M = 1;
 const MOST_TEXELS = 4096;
 /** How far past its claim a layout's cliffs stand, metres: where its carving fades back to the land (land's FADE_M). */
 const CHALK_FADE_M = 140;
-/** Bytes a texel: dirt, paving, chalk, and one spare (the texture's format has four). */
+/** The cell chalk's distances are worked in, metres: its fade is 140 m and its edge soft, so a few metres do. */
+const CHALK_CELL_M = 8;
+/** Bytes a texel where chalk is painted: dirt, paving, chalk, and one the texture's format needs. */
 const CHANNELS = 4;
 /** How far a distance reaches each way in a byte, metres: 128 at the edge, 32 a metre. */
 const REACH_M = 4;
@@ -58,14 +60,21 @@ export function paintOfLayouts(
   reach: number,
   corner: readonly [number, number],
 ): GroundPaint | null {
-  const near = layouts.filter((layout) => layout.paths.length || layout.tiles.length || chalkOf(layout));
+  const window = [centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach] as const;
+  const chalkBoxes = new Map(
+    layouts.flatMap((layout) => {
+      const box = chalkBox(layout)?.map((side, k) => side + (k < 2 ? -CHALK_FADE_M : CHALK_FADE_M));
+      const meets = box && box[0] < window[2] && box[2] > window[0] && box[1] < window[3] && box[3] > window[1];
+      return meets ? [[layout, box as [number, number, number, number]] as const] : [];
+    }),
+  );
+  const near = layouts.filter((layout) => layout.paths.length || layout.tiles.length || chalkBoxes.has(layout));
   if (!near.length) return null;
   const spare = REACH_M + 2;
   const bounds = near
     .map((layout) => {
-      const [west, north, east, south] = chalkBox(layout) ?? layoutBounds(layout);
-      const grow = chalkBox(layout) ? CHALK_FADE_M : 0;
-      return [west - grow, north - grow, east + grow, south + grow] as const;
+      const [west, north, east, south] = chalkBoxes.get(layout) ?? layoutBounds(layout);
+      return [west, north, east, south] as const;
     })
     .reduce(
       ([west, north, east, south], [wide, high, far, low]) => [
@@ -80,7 +89,7 @@ export function paintOfLayouts(
   if (!(east > west && south > north)) return null;
   const texelM = Math.max(FINEST_M, (east - west) / MOST_TEXELS, (south - north) / MOST_TEXELS);
   const [width, height] = [Math.ceil((east - west) / texelM), Math.ceil((south - north) / texelM)];
-  const channels = near.some(chalkOf) ? CHANNELS : 2;
+  const channels = chalkBoxes.size ? CHANNELS : 2;
   const texels = new Uint8Array(width * height * channels);
   // Each texel keeps the largest distance any feature gives it: the union of every path and street.
   const lay = (channel: number, column: number, row: number, metres: number) => {
@@ -91,7 +100,6 @@ export function paintOfLayouts(
   };
   const texelOf = (x: number, y: number) => [(x - west) / texelM - 0.5, (y - north) / texelM - 0.5] as const;
   for (const layout of near) {
-    if (chalkOf(layout)) paintChalk(layout, layouts, { west, north, texelM, width, height }, lay);
     for (const path of layout.paths) {
       const half = PATH_WIDTH_M[path.tier] / 2;
       for (let k = 0; k + 1 < path.points.length; k++) {
@@ -206,6 +214,8 @@ export function paintOfLayouts(
       }
     }
   }
+  for (const [layout, box] of chalkBoxes)
+    paintChalk(layout, box, layouts, { west, north, texelM, width, height }, [texels, channels]);
   return { west: west - corner[0], north: north - corner[1], texelM, width, height, texels, channels };
 }
 
@@ -241,41 +251,82 @@ function chalkBox(layout: NodeLayout): [number, number, number, number] | null {
   return [Math.min(...eastings), Math.min(...southings), Math.max(...eastings), Math.max(...southings)];
 }
 
-/** Lays a chalk layout's claim, its wings and the fade band past them in the chalk channel, except what lies in
- *  another layout's claim, so chalk never paints a neighbour. */
+/** Lays a chalk layout's claim, its wings and the fade band past them (its `box`) in the chalk channel, except what
+ *  lies in another layout's claim, so chalk never paints a neighbour. The distances are worked in coarse cells over
+ *  the box alone and read between their centres for each texel. */
 function paintChalk(
   layout: NodeLayout,
+  box: readonly [number, number, number, number],
   layouts: readonly NodeLayout[],
   whole: Grid,
-  lay: (channel: number, column: number, row: number, metres: number) => void,
+  [texels, channels]: readonly [Uint8Array, number],
 ) {
   const own = chalkOf(layout);
   if (!own) return;
-  const reach = CHALK_FADE_M + REACH_M;
-  const box = chalkBox(layout) ?? [0, 0, 0, 0];
-  const [low, high] = [
-    [box[0] - reach, box[1] - reach],
-    [box[2] + reach, box[3] + reach],
+  const [first, last] = [
+    [
+      Math.max(0, Math.floor((box[0] - whole.west) / whole.texelM)),
+      Math.max(0, Math.floor((box[1] - whole.north) / whole.texelM)),
+    ],
+    [
+      Math.min(whole.width, Math.ceil((box[2] - whole.west) / whole.texelM)),
+      Math.min(whole.height, Math.ceil((box[3] - whole.north) / whole.texelM)),
+    ],
   ];
-  const [column, row] = [
-    Math.max(0, Math.floor((low[0] - whole.west) / whole.texelM)),
-    Math.max(0, Math.floor((low[1] - whole.north) / whole.texelM)),
-  ];
+  if (last[0] <= first[0] || last[1] <= first[1]) return;
+  const cell = Math.max(CHALK_CELL_M, whole.texelM);
   const grid: Grid = {
-    ...whole,
-    west: whole.west + column * whole.texelM,
-    north: whole.north + row * whole.texelM,
-    width: Math.min(whole.width, Math.ceil((high[0] - whole.west) / whole.texelM)) - column,
-    height: Math.min(whole.height, Math.ceil((high[1] - whole.north) / whole.texelM)) - row,
+    west: whole.west + first[0] * whole.texelM,
+    north: whole.north + first[1] * whole.texelM,
+    texelM: cell,
+    width: Math.ceil(((last[0] - first[0]) * whole.texelM) / cell),
+    height: Math.ceil(((last[1] - first[1]) * whole.texelM) / cell),
   };
-  if (grid.width <= 0 || grid.height <= 0) return;
   const field = claimField([own.claim], own.wings, grid);
   const others = layouts
     .filter((other) => other !== layout && other.sculpt?.claim?.length)
     .map((other) => other.sculpt?.claim ?? []);
   const next = others.length ? claimField(others, [], grid) : null;
-  for (let k = 0; k < field.length; k++) {
-    const [across, down] = [k % grid.width, Math.floor(k / grid.width)];
-    lay(2, column + across, row + down, Math.min(field[k] + CHALK_FADE_M, next ? -next[k] : Infinity));
+  const values = new Float32Array(field.length);
+  for (let k = 0; k < values.length; k++) values[k] = Math.min(field[k] + CHALK_FADE_M, next ? -next[k] : Infinity);
+  const [lastColumn, lastRow] = [grid.width - 1, grid.height - 1];
+  const scale = 128 / REACH_M;
+  for (let row = first[1]; row < last[1]; row++) {
+    const down = Math.max(0, ((row - first[1] + 0.5) * whole.texelM) / cell - 0.5);
+    const above = Math.min(lastRow, Math.floor(down));
+    const [share, upper, lower] = [down - above, above * grid.width, Math.min(lastRow, above + 1) * grid.width];
+    // A run of texels between the same four cell centres: wholly outside or inside the painted reach it is skipped
+    // or filled, and only the band at an edge is read between the centres.
+    for (let column = first[0]; column < last[0];) {
+      const left = Math.min(
+        lastColumn,
+        Math.floor(Math.max(0, ((column - first[0] + 0.5) * whole.texelM) / cell - 0.5)),
+      );
+      const right = Math.min(lastColumn, left + 1);
+      const end =
+        left >= lastColumn
+          ? last[0]
+          : Math.min(last[0], first[0] + Math.ceil(((left + 1.5) * cell) / whole.texelM - 0.5));
+      const [northWest, northEast] = [values[upper + left], values[upper + right]];
+      const [southWest, southEast] = [values[lower + left], values[lower + right]];
+      const least = Math.min(northWest, northEast, southWest, southEast);
+      const most = Math.max(northWest, northEast, southWest, southEast);
+      if (most > -REACH_M)
+        for (; column < end; column++) {
+          const across = Math.max(0, ((column - first[0] + 0.5) * whole.texelM) / cell - 0.5);
+          const along = across - left;
+          const metres =
+            least >= REACH_M
+              ? REACH_M
+              : (northWest * (1 - along) + northEast * along) * (1 - share) +
+                (southWest * (1 - along) + southEast * along) * share;
+          const value = metres * scale + 128;
+          if (value <= 0) continue;
+          const index = (row * whole.width + column) * channels + 2;
+          const byte = value >= 255 ? 255 : Math.round(value);
+          if (byte > texels[index]) texels[index] = byte;
+        }
+      column = Math.max(column, end);
+    }
   }
 }

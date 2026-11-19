@@ -117,6 +117,11 @@ test('chalk paints its layout’s claim, its wings and the fade band past them, 
   assert.ok(reachAt(paint, 0, 100, 2) > 1, 'the fade band past the claim, where its cliffs stand, is chalk');
   assert.ok(reachAt(paint, 0, 195, 2) < -1, 'past the fade, the climate stone');
   assert.ok(reachAt(paint, 0, 0, 0) <= -3.9 && reachAt(paint, 0, 0, 1) <= -3.9, 'chalk is neither path nor paving');
+  assert.equal(
+    paintOfLayouts([layout([], [])], [0, 0], 2500, [0, 0]),
+    null,
+    'a layout with nothing laid paints nothing',
+  );
 });
 
 test('chalk stops at another layout’s claim, lying inside its band', () => {
@@ -145,4 +150,36 @@ test('the paint has two channels, and four only where a chalk layout is in it', 
   assert.ok(plain && white);
   assert.deepEqual([plain.channels, white.channels], [2, 4]);
   assert.deepEqual([paintFormat(plain.channels), paintFormat(white.channels)], ['rg8unorm', 'rgba8unorm']);
+});
+
+test('a chalk zone and its neighbours are painted in a few tens of milliseconds', () => {
+  const oval = (middle: number, wide: number, high: number) =>
+    Array.from({ length: 20 }, (_unused, k) => [
+      middle + wide * Math.cos((k / 20) * 2 * Math.PI),
+      high * Math.sin((k / 20) * 2 * Math.PI),
+    ]);
+  const zone = { ...chalky(1), sculpt: { claim: oval(0, 600, 500), wings: [[600, 0, 900, 100, 20]] } };
+  const next = (middle: number) => ({
+    ...chalky(1),
+    stone: undefined,
+    sculpt: { claim: oval(middle, 150, 150), wings: [] },
+  });
+  const layouts = [zone, next(-750), next(800)] as unknown as NodeLayout[];
+  paintOfLayouts(layouts, [0, 0], 2500, [0, 0]);
+  const before = performance.now();
+  const paint = paintOfLayouts(layouts, [0, 0], 2500, [0, 0]);
+  assert.ok(paint && reachAt(paint, 0, 0, 2) > 3 && reachAt(paint, -750, 0, 2) < -1);
+  assert.ok(performance.now() - before < 150, `took ${Math.round(performance.now() - before)} ms`);
+});
+
+test('the paint has four channels only where a chalk zone meets its window', () => {
+  const far = { ...chalky(50, [], [3000, 0]) } as NodeLayout;
+  const plain = layout([], [tile([0, 0], 1)]);
+  const [away, here] = [
+    paintOfLayouts([plain, far], [0, 0], 2500, [0, 0]),
+    paintOfLayouts([plain, chalky(50)], [0, 0], 2500, [0, 0]),
+  ];
+  assert.ok(away && here);
+  assert.deepEqual([away.channels, here.channels], [2, 4]);
+  assert.ok(away.width < 400, `the window stays about the tiles, not out to the far zone: ${away.width}`);
 });
