@@ -1,11 +1,11 @@
 //! Planning the traffic's routes round land: each port's roadstead, an A* path over a sea mask kept clear of every
-//! coast, then string-pulled into legs each checked exactly against every coast.
+//! coast, then string-pulled into legs each checked exactly to stay clear of every coast and isle.
 
-use super::{MASK_CELL_M, MASK_CLEAR_M, ROADSTEAD_CLEAR_M, ROADSTEAD_OUT_M, ROADSTEAD_STEP_M};
+use super::{LEG_CLEAR_M, MASK_CELL_M, MASK_CLEAR_M, ROADSTEAD_CLEAR_M, ROADSTEAD_OUT_M, ROADSTEAD_STEP_M};
 use crate::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
-use crate::geometry::{Point, edges, segments_meet};
+use crate::geometry::{Point, edges, segment_clear_of_circle, segments_meet};
 use crate::layout::Layout;
-use crate::waters::Waters;
+use crate::waters::{Waters, to_segment};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
@@ -16,56 +16,79 @@ const DIAGONAL_COST: u64 = 7_071;
 /// How many cells round a roadstead are searched for the clear cell its path starts from.
 const START_SEARCH_CELLS: i64 = 20;
 
+/// A point in whole metres.
 fn rounded(point: [f64; 2]) -> Point {
     Point::new(point[0].round() as i64, point[1].round() as i64)
 }
 
 /// Where a port's ships come and go: the nearest point of its own coast to its centre, 3 km out to sea away from the
-/// centre, then on outward in 500 m steps until it is at least 1 km clear of every coast.
-pub(super) fn roadstead(waters: &Waters, continent: usize, centre: [f64; 2]) -> Point {
+/// centre, then on outward in 500 m steps until it is at least 1 km clear of every coast. None when the way out leaves
+/// the frame before it is clear.
+pub(super) fn roadstead(waters: &Waters, continent: usize, centre: [f64; 2]) -> Option<Point> {
     let ring = waters.ring(continent);
-    let mut coast = ring[0];
+    let mut coast = *ring.first()?;
     let mut least = f64::INFINITY;
     for i in 0..ring.len() {
         let (a, b) = (ring[i], ring[(i + 1) % ring.len()]);
-        let (along_x, along_y) = (b[0] - a[0], b[1] - a[1]);
-        let length_squared = along_x * along_x + along_y * along_y;
-        let fraction = if length_squared == 0.0 {
-            0.0
-        } else {
-            (((centre[0] - a[0]) * along_x + (centre[1] - a[1]) * along_y) / length_squared).clamp(0.0, 1.0)
-        };
-        let near = [a[0] + fraction * along_x, a[1] + fraction * along_y];
-        let distance = (near[0] - centre[0]) * (near[0] - centre[0]) + (near[1] - centre[1]) * (near[1] - centre[1]);
+        let (distance, fraction) = to_segment(centre, a, b);
         if distance < least {
-            (least, coast) = (distance, near);
+            (least, coast) = (distance, [a[0] + fraction * (b[0] - a[0]), a[1] + fraction * (b[1] - a[1])]);
         }
     }
     let (away_x, away_y) = (coast[0] - centre[0], coast[1] - centre[1]);
     let length = (away_x * away_x + away_y * away_y).sqrt();
     let away = if length > 0.0 { [away_x / length, away_y / length] } else { [0.0, -1.0] };
     let mut out = ROADSTEAD_OUT_M;
-    let limit = (FRAME_WIDTH_M + FRAME_HEIGHT_M) as f64;
     loop {
         let point = rounded([coast[0] + out * away[0], coast[1] + out * away[1]]);
-        if waters.clearance([point.x as f64, point.y as f64]) >= ROADSTEAD_CLEAR_M || out > limit {
-            return point;
+        if !((0..=FRAME_WIDTH_M).contains(&point.x) && (0..=FRAME_HEIGHT_M).contains(&point.y)) {
+            return None;
+        }
+        if waters.clearance([point.x as f64, point.y as f64]) >= ROADSTEAD_CLEAR_M {
+            return Some(point);
         }
         out += ROADSTEAD_STEP_M;
     }
 }
 
-/// Every coast edge of a layout, as whole-metre segments.
-pub(super) fn coast_edges(layout: &Layout) -> Vec<(Point, Point)> {
-    layout.continents.iter().flat_map(|continent| edges(&continent.outline).collect::<Vec<_>>()).collect()
+/// The land a leg must keep clear of: every coast edge and every isle, in whole metres.
+pub(super) struct Land {
+    coast: Vec<(Point, Point)>,
+    isles: Vec<(Point, i64)>,
 }
 
-/// Whether a leg touches no coast anywhere.
-pub(super) fn leg_clear(coast: &[(Point, Point)], from: Point, to: Point) -> bool {
-    coast.iter().all(|&edge| !segments_meet((from, to), edge))
+impl Land {
+    pub(super) fn new(layout: &Layout) -> Self {
+        let coast =
+            layout.continents.iter().flat_map(|continent| edges(&continent.outline).collect::<Vec<_>>()).collect();
+        let isles = layout.isles.iter().map(|isle| (isle.centre, isle.radius_m)).collect();
+        Self { coast, isles }
+    }
+
+    /// Whether a leg stays more than `LEG_CLEAR_M` from every coast edge and every isle. Two segments that do not meet
+    /// are nearest at an end of one, so each end is held clear of the other segment.
+    pub(super) fn leg_clear(&self, from: Point, to: Point) -> bool {
+        let clear = LEG_CLEAR_M as i64;
+        let apart = |(a, b): (Point, Point)| {
+            a.x.max(b.x) + clear < from.x.min(to.x)
+                || from.x.max(to.x) + clear < a.x.min(b.x)
+                || a.y.max(b.y) + clear < from.y.min(to.y)
+                || from.y.max(to.y) + clear < a.y.min(b.y)
+        };
+        let edge_clear = |&edge: &(Point, Point)| {
+            apart(edge)
+                || (!segments_meet((from, to), edge)
+                    && segment_clear_of_circle((from, to), edge.0, clear)
+                    && segment_clear_of_circle((from, to), edge.1, clear)
+                    && segment_clear_of_circle(edge, from, clear)
+                    && segment_clear_of_circle(edge, to, clear))
+        };
+        self.coast.iter().all(edge_clear)
+            && self.isles.iter().all(|&(centre, radius)| segment_clear_of_circle((from, to), centre, radius + clear))
+    }
 }
 
-/// The sea mask: each 5 km cell whose middle is at least 3 km clear of every coast.
+/// The sea mask: each 5 km cell whose middle is at least 3 km clear of every coast and isle.
 pub(super) struct Mask {
     columns: usize,
     rows: usize,
@@ -96,7 +119,7 @@ impl Mask {
     }
 
     /// The nearest clear cell to a point that a straight leg reaches without touching land; ties to the lower cell.
-    fn start_cell(&self, coast: &[(Point, Point)], point: Point) -> Option<usize> {
+    fn start_cell(&self, land: &Land, point: Point) -> Option<usize> {
         let column = (point.x as f64 / MASK_CELL_M).floor() as i64;
         let row = (point.y as f64 / MASK_CELL_M).floor() as i64;
         let mut cells: Vec<(i128, usize)> = Vec::new();
@@ -111,7 +134,7 @@ impl Mask {
             }
         }
         cells.sort_unstable();
-        cells.into_iter().map(|(_, cell)| cell).find(|&cell| leg_clear(coast, point, self.point(cell)))
+        cells.into_iter().map(|(_, cell)| cell).find(|&cell| land.leg_clear(point, self.point(cell)))
     }
 
     fn guess(&self, cell: usize, goal: usize) -> u64 {
@@ -166,8 +189,8 @@ impl Mask {
     /// The route between two roadsteads: from each to its nearest reachable clear cell, A* between those cells, then
     /// string-pulled, each leg running as far ahead as it can without touching land. None when no path is found, or
     /// when even one step between neighbouring cells touches land (a rock smaller than a cell at its corner).
-    pub(super) fn route(&self, coast: &[(Point, Point)], from: Point, to: Point) -> Option<Vec<Point>> {
-        let cells = self.path(self.start_cell(coast, from)?, self.start_cell(coast, to)?)?;
+    pub(super) fn route(&self, land: &Land, from: Point, to: Point) -> Option<Vec<Point>> {
+        let cells = self.path(self.start_cell(land, from)?, self.start_cell(land, to)?)?;
         let mut points = vec![from];
         points.extend(cells.iter().map(|&cell| self.point(cell)));
         points.push(to);
@@ -175,10 +198,10 @@ impl Mask {
         let mut anchor = 0;
         while anchor + 1 < points.len() {
             let mut reach = anchor + 1;
-            if !leg_clear(coast, points[anchor], points[reach]) {
+            if !land.leg_clear(points[anchor], points[reach]) {
                 return None;
             }
-            while reach + 1 < points.len() && leg_clear(coast, points[anchor], points[reach + 1]) {
+            while reach + 1 < points.len() && land.leg_clear(points[anchor], points[reach + 1]) {
                 reach += 1;
             }
             pulled.push(points[reach]);

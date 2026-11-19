@@ -26,7 +26,7 @@ export interface PortInfo {
   readonly centre: Point;
 }
 
-/** A route between two ports (indices into the ports passed in), from roadstead to roadstead, in whole metres. */
+/** A route between two port cities (indices into the table's `ports`), from roadstead to roadstead, in whole metres. */
 export interface TrafficRoute {
   readonly fromPort: number;
   readonly toPort: number;
@@ -34,11 +34,20 @@ export interface TrafficRoute {
   readonly path: readonly Point[];
 }
 
-/** What opening answers: the waters, which waters touch, each port's roadstead, and the routes. */
+/** A port city the traffic sails from: its city's id and name, and its roadstead, where its ships come and go. */
+export interface TrafficPort {
+  readonly id: string;
+  readonly name: string;
+  readonly roadstead: Point;
+}
+
+/** What opening answers: the waters, which waters touch, the port cities' ids (every other city is desolate), those
+ *  of the ports passed in that are port cities, in the order given, and the routes between every pair of them. */
 export interface WatersTable {
   readonly waters: readonly WaterInfo[];
   readonly borders: readonly (readonly [number, number])[];
-  readonly roadsteads: readonly Point[];
+  readonly mainPorts: readonly string[];
+  readonly ports: readonly TrafficPort[];
   readonly routes: readonly TrafficRoute[];
 }
 
@@ -59,7 +68,7 @@ export interface WatersGrid {
 }
 
 /** A friendly ship at one moment. `hull` is 0 sloop, 1 schooner, 2 brig, 3 frigate; `direction` is the unit way she
- *  sails; ports are indices into the ports passed in. */
+ *  sails; ports are indices into the table's `ports`. */
 export interface TrafficShip {
   readonly id: number;
   readonly route: number;
@@ -105,7 +114,8 @@ interface TableAnswer {
   readonly error?: string;
   readonly waters: WaterInfo[];
   readonly borders: [number, number][];
-  readonly ports: { readonly roadstead: [number, number] }[];
+  readonly main_ports: string[];
+  readonly ports: TrafficPort[];
   readonly routes: { from_port: number; to_port: number; length_m: number; path: [number, number][] }[];
 }
 
@@ -163,7 +173,8 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
       return {
         waters: answer.waters,
         borders: answer.borders,
-        roadsteads: answer.ports.map((port) => port.roadstead),
+        mainPorts: answer.main_ports,
+        ports: answer.ports,
         routes: answer.routes.map((route) => ({
           fromPort: route.from_port,
           toPort: route.to_port,

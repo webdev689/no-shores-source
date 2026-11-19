@@ -26,8 +26,10 @@ fn the_table_names_each_water_its_holder_and_its_levels() {
     assert_eq!(waters[3]["holder"], "pirates");
     assert_eq!(waters[8]["levels"], json!([26, 30]));
     assert_eq!(table["borders"].as_array().unwrap().len(), 17);
-    assert_eq!(table["routes"].as_array().unwrap().len(), 17);
-    assert_eq!(table["ports"][0]["name"], "Overlook");
+    assert_eq!(table["routes"].as_array().unwrap().len(), 3);
+    assert_eq!(table["main_ports"], json!(["overlook", "sunspire", "rimeholt"]));
+    let ports: Vec<&Value> = table["ports"].as_array().unwrap().iter().map(|port| &port["id"]).collect();
+    assert_eq!(ports, [&json!("overlook"), &json!("sunspire"), &json!("rimeholt")], "only the port cities sail");
 }
 
 #[test]
@@ -40,7 +42,9 @@ fn the_door_answers_waters_grid_and_ships() {
     let columns = u32::from_le_bytes(grid[0..4].try_into().unwrap());
     let rows = u32::from_le_bytes(grid[4..8].try_into().unwrap());
     assert_eq!((columns, rows, grid.len()), (103, 64, 8 + 103 * 64));
-    assert!(grid_bytes(10.0).is_empty(), "too fine a grid is refused");
+    for cell in [10.0, f64::INFINITY, f64::NAN, -48_000.0] {
+        assert!(grid_bytes(cell).is_empty(), "a grid of {cell} m cells is refused");
+    }
     let time = 1_795_000_000.0;
     let ships = ships_near_bytes(overlook[0], overlook[1], 600_000.0, time);
     assert!(!ships.is_empty() && ships.len().is_multiple_of(SHIP_FLOATS * 8));

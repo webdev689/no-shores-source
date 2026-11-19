@@ -149,7 +149,7 @@ fn seam_points_are_contested_and_only_along_the_fourth_and_eighth() {
     let layout = world_layout();
     let waters = Waters::new(&layout);
     let (fourth, eighth) = (index_of(&layout, "continent-4"), index_of(&layout, "continent-8"));
-    let grid = waters.grid(20_000.0);
+    let grid = waters.grid(20_000.0).unwrap();
     let mut seen = [false; 2];
     for (cell, &byte) in grid.cells.iter().enumerate() {
         let middle = [((cell % grid.columns) as f64 + 0.5) * 20_000.0, ((cell / grid.columns) as f64 + 0.5) * 20_000.0];
@@ -194,7 +194,7 @@ fn land_has_no_water() {
 #[test]
 fn the_grid_agrees_with_water_at_at_its_cell_middles() {
     let waters = Waters::new(&world_layout());
-    let grid = waters.grid(48_000.0);
+    let grid = waters.grid(48_000.0).unwrap();
     assert_eq!((grid.columns, grid.rows), (103, 64));
     for row in 0..grid.rows {
         for column in 0..grid.columns {
@@ -210,7 +210,7 @@ fn the_grid_agrees_with_water_at_at_its_cell_middles() {
 
 #[test]
 fn the_held_map_grid_has_its_size() {
-    let grid = Waters::new(&world_layout()).grid(4_800.0);
+    let grid = Waters::new(&world_layout()).grid(4_800.0).unwrap();
     assert_eq!((grid.columns, grid.rows, grid.cells.len()), (1024, 640, 1024 * 640));
 }
 
@@ -238,5 +238,66 @@ fn a_point_nearest_a_corner_is_land_only_inside_the_corner() {
         assert!(waters.water_at(at(99.0, 1.0)).is_none(), "within a corner bulging out is land");
         assert!(waters.water_at(at(51.0, 51.0)).is_some(), "in the notch of a corner cut in is sea");
         assert!(waters.water_at(at(49.0, 49.0)).is_none(), "behind a corner cut in is land");
+        for along in [101.0, 150.0] {
+            assert!(waters.water_at(at(along, 0.0)).is_some(), "on the line running on from an edge is sea");
+            assert!((waters.clearance(at(along, 0.0)) - (along - 100.0) * 1_000.0).abs() < 1e-6);
+        }
+        assert!(waters.water_at(at(50.0, 101.0)).is_some(), "past the cut-in corner's far edge is sea");
     }
+}
+
+#[test]
+fn a_point_that_is_no_number_has_no_water() {
+    let waters = Waters::new(&world_layout());
+    for point in [[f64::NAN, f64::NAN], [f64::INFINITY, 0.0], [0.0, f64::NEG_INFINITY], [f64::NAN, 1_000_000.0]] {
+        assert_eq!(waters.water_at(point), None, "{point:?}");
+        assert_eq!(waters.clearance(point), 0.0, "{point:?}");
+    }
+}
+
+#[test]
+fn a_grid_of_no_size_is_refused() {
+    let waters = Waters::new(&world_layout());
+    for cell in [0.0, -4_800.0, f64::NAN, f64::INFINITY] {
+        assert!(waters.grid(cell).is_none(), "{cell}");
+    }
+}
+
+#[test]
+fn isles_are_land_and_keep_their_own_clearance() {
+    let mut layout = world_layout();
+    let plain = Waters::new(&layout);
+    let mut random = Seeded::new(13);
+    let mut isles = Vec::new();
+    while isles.len() < 40 {
+        let centre = [random.next() * FRAME_WIDTH_M as f64, random.next() * FRAME_HEIGHT_M as f64];
+        if plain.clearance(centre) > 60_000.0 {
+            let radius = 2_000.0 + random.next() * 30_000.0;
+            isles.push((centre, radius));
+            layout.isles.push(crate::layout::Isle {
+                id: format!("isle-{}", isles.len()),
+                centre: crate::geometry::Point::new(centre[0] as i64, centre[1] as i64),
+                radius_m: radius as i64,
+                seed: 1,
+                climate: None,
+            });
+        }
+    }
+    let waters = Waters::new(&layout);
+    for _ in 0..2_000 {
+        let point = [random.next() * FRAME_WIDTH_M as f64, random.next() * FRAME_HEIGHT_M as f64];
+        let to_isle = layout
+            .isles
+            .iter()
+            .map(|isle| {
+                let (dx, dy) = (point[0] - isle.centre.x as f64, point[1] - isle.centre.y as f64);
+                ((dx * dx + dy * dy).sqrt() - isle.radius_m as f64).max(0.0)
+            })
+            .fold(f64::INFINITY, f64::min);
+        assert_eq!(waters.clearance(point), plain.clearance(point).min(to_isle), "at {point:?}");
+        let expected = if to_isle == 0.0 { None } else { plain.water_at(point) };
+        assert_eq!(waters.water_at(point), expected, "at {point:?}");
+    }
+    let (centre, _) = isles[0];
+    assert_eq!(waters.water_at([centre[0].floor(), centre[1].floor()]), None, "inside an isle is land");
 }

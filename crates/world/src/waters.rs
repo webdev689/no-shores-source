@@ -124,11 +124,15 @@ pub struct Waters {
     rows: usize,
     nearest_lists: Vec<Vec<u32>>,
     seam_lists: Vec<[Vec<u32>; 2]>,
+    /// Each static isle's centre and radius: land, but no island's water.
+    isles: Vec<([f64; 2], f64)>,
+    /// For each bucket, the isles that can be the nearest land to some point in it.
+    isle_lists: Vec<Vec<u32>>,
 }
 
 /// The squared distance from a point to a segment, and how far along it the nearest point lies (0 at `from`, 1 at
 /// `to`).
-fn to_segment(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> (f64, f64) {
+pub(crate) fn to_segment(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> (f64, f64) {
     let (along_x, along_y) = (to[0] - from[0], to[1] - from[1]);
     let (off_x, off_y) = (point[0] - from[0], point[1] - from[1]);
     let length_squared = along_x * along_x + along_y * along_y;
@@ -206,6 +210,12 @@ impl Waters {
             rows,
             nearest_lists: Vec::new(),
             seam_lists: Vec::new(),
+            isles: layout
+                .isles
+                .iter()
+                .map(|isle| ([isle.centre.x as f64, isle.centre.y as f64], isle.radius_m as f64))
+                .collect(),
+            isle_lists: Vec::new(),
         };
         waters.fill_buckets();
         waters
@@ -213,7 +223,8 @@ impl Waters {
 
     /// Lists, for each bucket, every edge that can be nearest to some point in it. From the bucket's middle the
     /// nearest edge is `d` away, so every point in it has a coast within `d + h` (h the half diagonal), and an edge more
-    /// than `d + 2h` from the middle is farther than that from every point in it.
+    /// than `d + 2h` from the middle is farther than that from every point in it. Isles are judged the same way against
+    /// the nearest land of either kind.
     fn fill_buckets(&mut self) {
         let half_diagonal = BUCKET_M * std::f64::consts::FRAC_1_SQRT_2 + 1.0;
         let all: Vec<u32> = (0..self.edges.len() as u32).collect();
@@ -222,19 +233,27 @@ impl Waters {
                 all.iter().copied().filter(|&edge| self.edges[edge as usize].continent == continent).collect()
             })
         });
-        let within = |middle: [f64; 2], from: &[u32]| -> Vec<u32> {
+        // The edges that can be nearest to some point in the bucket, and the nearest one's distance from its middle.
+        let within = |middle: [f64; 2], from: &[u32]| -> (Vec<u32>, f64) {
             let distances: Vec<f64> = from
                 .iter()
                 .map(|&edge| to_segment(middle, self.edges[edge as usize].from, self.edges[edge as usize].to).0.sqrt())
                 .collect();
-            let reach = distances.iter().copied().fold(f64::INFINITY, f64::min) + 2.0 * half_diagonal;
-            from.iter().zip(&distances).filter(|&(_, &distance)| distance <= reach).map(|(&edge, _)| edge).collect()
+            let least = distances.iter().copied().fold(f64::INFINITY, f64::min);
+            let reach = least + 2.0 * half_diagonal;
+            let edges = from.iter().zip(&distances).filter(|&(_, &distance)| distance <= reach).map(|(&edge, _)| edge);
+            (edges.collect(), least)
         };
         for row in 0..self.rows {
             for column in 0..self.columns {
                 let middle = [(column as f64 + 0.5) * BUCKET_M, (row as f64 + 0.5) * BUCKET_M];
-                self.nearest_lists.push(within(middle, &all));
-                self.seam_lists.push([within(middle, &seam_edges[0]), within(middle, &seam_edges[1])]);
+                let (edges, coast) = within(middle, &all);
+                let reach = self.isle_gap(middle, 0..self.isles.len() as u32).min(coast) + 2.0 * half_diagonal;
+                let isles =
+                    (0..self.isles.len() as u32).filter(|&isle| self.isle_gap(middle, std::iter::once(isle)) <= reach);
+                self.isle_lists.push(isles.collect());
+                self.nearest_lists.push(edges);
+                self.seam_lists.push([within(middle, &seam_edges[0]).0, within(middle, &seam_edges[1]).0]);
             }
         }
     }
@@ -251,54 +270,94 @@ impl Waters {
     }
 
     /// The nearest of these edges to a point; ties go to the lower continent index, then the lower edge.
-    fn nearest_of(&self, point: [f64; 2], candidates: impl Iterator<Item = u32>) -> Option<(f64, Edge)> {
-        let mut best: Option<(f64, Edge)> = None;
+    /// The squared distance and how far along the edge its nearest point lies come with it.
+    fn nearest_of(&self, point: [f64; 2], candidates: impl Iterator<Item = u32>) -> Option<(f64, f64, Edge)> {
+        let mut best: Option<(f64, f64, Edge)> = None;
         for candidate in candidates {
             let edge = self.edges[candidate as usize];
-            let distance_squared = to_segment(point, edge.from, edge.to).0;
-            let better = best.is_none_or(|(least, held)| {
+            let (distance_squared, fraction) = to_segment(point, edge.from, edge.to);
+            let better = best.is_none_or(|(least, _, held)| {
                 distance_squared < least
                     || (distance_squared == least && (edge.continent, edge.index) < (held.continent, held.index))
             });
             if better {
-                best = Some((distance_squared, edge));
+                best = Some((distance_squared, fraction, edge));
             }
         }
         best
     }
 
-    /// Whether the point lies on the land side of its nearest edge's line. Where the nearest coast is a corner, the
-    /// point lies within the corner's outward or inward wedge, where both edges' lines agree, so either edge answers.
-    fn on_land(&self, point: [f64; 2], edge: Edge) -> bool {
-        cross(edge.from, edge.to, point) * self.orientation[edge.continent] >= 0.0
+    /// Whether a point off the coast lies on the land side of its nearest edge. Where the nearest coast is a corner, the
+    /// point lies in the corner's outward or inward wedge, where both edges' lines agree; on the line running on from
+    /// one edge that edge says nothing, so the two are summed and the other decides.
+    fn on_land(&self, point: [f64; 2], fraction: f64, edge: Edge) -> bool {
+        let sign = self.orientation[edge.continent];
+        if fraction > 0.0 && fraction < 1.0 {
+            return cross(edge.from, edge.to, point) * sign > 0.0;
+        }
+        let ring = &self.rings[edge.continent];
+        let corner = if fraction <= 0.0 { edge.index } else { (edge.index + 1) % ring.len() };
+        let (before, at, after) =
+            (ring[(corner + ring.len() - 1) % ring.len()], ring[corner], ring[(corner + 1) % ring.len()]);
+        (cross(before, at, point) + cross(at, after, point)) * sign > 0.0
     }
 
-    /// The nearest coast to a point, and whether the point is on land; none for a layout with no continent.
+    /// The distance from a point to the nearest of these isles' coasts, 0 inside one; infinite for none.
+    fn isle_gap(&self, point: [f64; 2], isles: impl Iterator<Item = u32>) -> f64 {
+        isles
+            .map(|isle| {
+                let (centre, radius) = self.isles[isle as usize];
+                let (dx, dy) = (point[0] - centre[0], point[1] - centre[1]);
+                ((dx * dx + dy * dy).sqrt() - radius).max(0.0)
+            })
+            .fold(f64::INFINITY, f64::min)
+    }
+
+    /// The distance from a point to the nearest isle's coast, 0 inside one; infinite for a layout with none.
+    fn nearest_isle(&self, point: [f64; 2]) -> f64 {
+        match self.bucket(point) {
+            Some(bucket) => self.isle_gap(point, self.isle_lists[bucket].iter().copied()),
+            None => self.isle_gap(point, 0..self.isles.len() as u32),
+        }
+    }
+
+    /// The nearest continent's coast to a point, and whether the point is on that continent; none for a layout with no
+    /// continent, or for a point that is not a finite number.
     #[must_use]
     pub fn nearest(&self, point: [f64; 2]) -> Option<Nearest> {
+        if !(point[0].is_finite() && point[1].is_finite()) {
+            return None;
+        }
         let found = match self.bucket(point) {
             Some(bucket) => self.nearest_of(point, self.nearest_lists[bucket].iter().copied()),
             None => self.nearest_of(point, 0..self.edges.len() as u32),
         };
-        found.map(|(distance_squared, edge)| Nearest {
+        found.map(|(distance_squared, fraction, edge)| Nearest {
             continent: edge.continent,
             distance_squared,
-            land: distance_squared == 0.0 || self.on_land(point, edge),
+            land: distance_squared == 0.0 || self.on_land(point, fraction, edge),
         })
     }
 
-    /// The distance from a point to the nearest coast, metres, as a ship would keep clear of it: 0 on land.
+    /// The distance from a point to the nearest coast of a continent or an isle, metres, as a ship would keep clear of
+    /// it: 0 on land, and 0 for a point that is not a finite number.
     #[must_use]
     pub fn clearance(&self, point: [f64; 2]) -> f64 {
-        self.nearest(point)
-            .map_or(f64::INFINITY, |nearest| if nearest.land { 0.0 } else { nearest.distance_squared.sqrt() })
+        if !(point[0].is_finite() && point[1].is_finite()) {
+            return 0.0;
+        }
+        let coast = self
+            .nearest(point)
+            .map_or(f64::INFINITY, |nearest| if nearest.land { 0.0 } else { nearest.distance_squared.sqrt() });
+        coast.min(self.nearest_isle(point))
     }
 
-    /// The water at a point; none on land (or for a layout with no continent).
+    /// The water at a point; none on land (a continent or an isle), for a layout with no continent, or for a point that
+    /// is not a finite number. An isle's sea belongs to the island whose coast is nearest.
     #[must_use]
     pub fn water_at(&self, point: [f64; 2]) -> Option<Water> {
         let nearest = self.nearest(point)?;
-        if nearest.land {
+        if nearest.land || self.nearest_isle(point) == 0.0 {
             return None;
         }
         let seam = self.on_seam(point, nearest);
@@ -341,9 +400,12 @@ impl Waters {
     }
 
     /// The waters judged at the middle of each `cell_m` cell over the frame: the continent index for sea, with
-    /// `SEAM_BIT` on the seam, and `LAND_CELL` for land.
+    /// `SEAM_BIT` on the seam, and `LAND_CELL` for land. None for a cell that is not a positive finite number.
     #[must_use]
-    pub fn grid(&self, cell_m: f64) -> Grid {
+    pub fn grid(&self, cell_m: f64) -> Option<Grid> {
+        if !(cell_m.is_finite() && cell_m > 0.0) {
+            return None;
+        }
         let columns = (FRAME_WIDTH_M as f64 / cell_m).ceil() as usize;
         let rows = (FRAME_HEIGHT_M as f64 / cell_m).ceil() as usize;
         let mut cells = Vec::with_capacity(columns * rows);
@@ -356,14 +418,14 @@ impl Waters {
                 });
             }
         }
-        Grid { columns, rows, cell_m, cells }
+        Some(Grid { columns, rows, cell_m, cells })
     }
 
     /// Which waters touch: each pair of continent indices, lower first, whose sea cells lie side by side on a
     /// `BORDER_CELL_M` grid.
     #[must_use]
     pub fn borders(&self) -> Vec<[usize; 2]> {
-        let grid = self.grid(BORDER_CELL_M);
+        let Some(grid) = self.grid(BORDER_CELL_M) else { return Vec::new() };
         let water = |cell: u8| (cell != LAND_CELL).then_some(usize::from(cell & !SEAM_BIT));
         let mut pairs = BTreeSet::new();
         for row in 0..grid.rows {
