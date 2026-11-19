@@ -8,6 +8,8 @@ import {
   courseAhead,
   declutter,
   DOCK_REACH_M,
+  easedNote,
+  easedPace,
   followed,
   heldNote,
   HELM,
@@ -19,7 +21,9 @@ import {
   pictureAt,
   shownScale,
   STANDING_EYE_M,
+  type SailedPace,
   timeText,
+  WORLD_PACE,
 } from './seaLaw.ts';
 
 /** The Sloop drawn 75 m long on the sea's view. */
@@ -112,44 +116,45 @@ test("ships are drawn at the Overworld's scale on the sea's view and at their ow
   assert.equal(shownScale(SEA_SCALE, { seaM: 240, shownM: 180, nearM: 180, share: 1 }), 1, 'a near view far off her');
 });
 
-test('coming in she never shrinks on the screen, nor looms past her size once her size shows her as large', () => {
+test("coming in she grows on the screen by the same ratio each step, from the sea's size to her own", () => {
   for (const [seaM, nearM] of [
     [380, 35],
     [240, 35],
     [240, 180],
   ] as const) {
-    const ownSizeFrom = seaM / SEA_SCALE;
-    let last = SEA_SCALE / seaM;
-    for (let step = 0; step <= 100; step++) {
+    const [seaFilled, ownFilled] = [SEA_SCALE / seaM, 1 / nearM];
+    let last = seaFilled;
+    for (let step = 1; step <= 100; step++) {
       const share = step / 100;
       const shownM = seaM + (nearM - seaM) * share;
       const scale = shownScale(SEA_SCALE, { seaM, shownM, nearM, share });
       const filled = scale / shownM;
-      assert.ok(scale >= 1 && scale <= SEA_SCALE, `${scale} times her size`);
-      if (nearM <= ownSizeFrom) assert.ok(filled >= last * (1 - 1e-12), `${seaM} m: shrank at ${share}`);
+      assert.ok(scale >= 1, `${scale} times her size`);
+      const even = seaFilled * (ownFilled / seaFilled) ** share;
+      assert.ok(Math.abs(filled - Math.max(even, 1 / shownM)) < 1e-12, `${seaM} m: ${filled} at ${share}`);
       // A near view that shows her smaller at her own size than the sea's: she eases to it, never under her size.
-      else assert.ok(filled <= last * (1 + 1e-12) && filled >= 1 / shownM, `${seaM} m: grew at ${share}`);
-      if (shownM <= ownSizeFrom) assert.equal(scale, 1, `${shownM} m: her size shows her as large`);
+      if (ownFilled >= seaFilled) assert.ok(filled > last, `${seaM} m: shrank at ${share}`);
+      else assert.ok(filled <= last * (1 + 1e-12), `${seaM} m: grew at ${share}`);
       last = filled;
     }
   }
 });
 
-test('down to the helm she is held at the size the sea shows her, then is her own size close by and at the wheel', () => {
+test('down to the helm she grows from the size the sea shows her to her own size at the wheel', () => {
   const ship = { x: 1000, y: 2000, heading: 0.4, scale: 1, heave: 0, pitch: 0, roll: 0 };
   const sea: Shot = { eye: [1150, 2260, 150], yaw: 2.6, pitch: 0.52, fov: 1.13, near: 2, far: 60_000 };
   const helm: Shot = { eye: helmEye(ship), yaw: ship.heading, pitch: HELM.pitch, fov: 1.13, near: 0.3, far: 60_000 };
   const her = [ship.x, ship.y, 0] as const;
   const seaM = pictureAt(sea, her);
   let last = SEA_SCALE / seaM;
-  for (let step = 0; step <= 50; step++) {
+  for (let step = 1; step <= 50; step++) {
     const shown = panShot(sea, helm, step / 50);
     const shownM = pictureAt(shown, her);
     const scale = shownScale(SEA_SCALE, { seaM, shownM, nearM: pictureAt(helm, her), share: step / 50 });
-    assert.ok(scale / shownM >= last * (1 - 1e-12), `shrank at ${step / 50}`);
-    if (shownM * SEA_SCALE <= seaM) assert.equal(scale, 1, `looms ${scale} times at ${shownM} m`);
+    assert.ok(scale / shownM > last, `shrank at ${step / 50}`);
     last = scale / shownM;
   }
+  assert.equal(last, 1 / pictureAt(helm, her), 'at the wheel, her own size');
 });
 
 test('at the helm the eye stands behind the wheel of the Sloop as she is drawn, riding the swell with her', () => {
@@ -180,4 +185,26 @@ test("the page sails its ship at the room's pace and draws her to where the room
   assert.equal(heldNote(60, held), ' · Held to ×1: a pirate near');
   assert.equal(heldNote(60, { ...held, pace: 60 }), '', 'sailing at the dial, nothing to say');
   assert.equal(heldNote(60, null), '');
+});
+
+test("the pace eases down DFO's ladder from the dial's step to the world's own time, and back up to the dial", () => {
+  const down: number[] = [];
+  for (let pace: SailedPace = 100; pace !== WORLD_PACE;) down.push((pace = easedPace(pace, 100, true)));
+  assert.deepEqual(down, [60, 40, 30, 20, 10, 5, 1]);
+  const up: number[] = [];
+  for (let pace: SailedPace = WORLD_PACE; pace !== 30;) up.push((pace = easedPace(pace, 30, false)));
+  assert.deepEqual(up, [5, 10, 20, 30], 'back up no further than the dial');
+  assert.equal(easedPace(30, 30, false), 30, 'at the dial, it stays');
+  assert.equal(easedPace(WORLD_PACE, 30, true), WORLD_PACE, "at the world's own time, it stays");
+  assert.equal(easedNote(WORLD_PACE, 60), ' · Sailing at true speed while you watch close.');
+  assert.equal(easedNote(60, 60), '');
+});
+
+test("at the world's own time, with no word from the room, she sails at her true speed", () => {
+  const voyage = voyageOf([
+    [0, 0],
+    [0, -10_000],
+  ]);
+  assert.equal(followed(voyage, 1_000, 1, WORLD_PACE, null), 1_000 + SHIP_SPEED, '12 m a second');
+  assert.equal(heldNote(WORLD_PACE, { x: 0, y: 0, pace: WORLD_PACE }), '', 'eased for the view, not held by a pirate');
 });

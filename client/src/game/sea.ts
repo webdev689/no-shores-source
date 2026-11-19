@@ -437,7 +437,7 @@ export class Sea {
     this.room?.pump(dt);
     this.meet(time);
     this.aboard.step(dt, time, input.controls, input.paused, this.room);
-    if (!this.combat) this.passage.advance(dt);
+    if (!this.combat) this.passage.advance(dt, this.close.eased > 0 || this.view.kind === 'helm' || this.aboard.active);
     this.close.step(dt);
     this.stepHelmView(dt);
     if (this.view.kind === 'sail' && !this.aboard.active)

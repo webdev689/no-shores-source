@@ -29,6 +29,9 @@ use world::layout::Layout;
 pub const SHIP_SPEED_M_S: f64 = 12.0;
 /// The paces a player may set a ship to, as multiples of its speed: DFO's steps.
 pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
+/// The world's own time, a pace of 1: the page sails its ship at it while the view is close on her, so she is seen
+/// at her true speed, and a voyage is held to it near a pirate.
+pub const WORLD_PACE: u16 = 1;
 /// The most points one course may hold.
 pub const COURSE_LIMIT: usize = 64;
 /// The fewest ticks between a player's courses: half a second, so even a full sea of sockets asking for the costliest
@@ -256,7 +259,7 @@ impl Sea {
         if self.fights.contains_key(&player) {
             return Err(CourseRefused::Fighting);
         }
-        if self.aboard.contains_key(&player) && !self.holds_her_heading(player, points, pace) {
+        if self.aboard.contains_key(&player) && !self.holds_her_heading(player, points) {
             return Err(CourseRefused::OffTheHelm);
         }
         let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
@@ -273,7 +276,7 @@ impl Sea {
             (sailing.ship.pace, sailing.ship.rate) = (0, 0);
             return Ok(());
         }
-        if !PACES.contains(&pace) {
+        if pace != WORLD_PACE && !PACES.contains(&pace) {
             return Err(CourseRefused::BadPace);
         }
         let start = match at_sea {
@@ -311,15 +314,16 @@ impl Sea {
         Ok(())
     }
 
-    /// Whether a course keeps the player's ship sailing straight on along her heading at her pace: one point ahead,
-    /// while she is under way.
-    fn holds_her_heading(&self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> bool {
+    /// Whether a course keeps the player's ship sailing straight on along her heading: one point ahead, while she is
+    /// under way. Its pace may differ from hers: the page eases it to the world's own time while the player walks her
+    /// deck in view, and back.
+    fn holds_her_heading(&self, player: PlayerId, points: &[[f64; 2]]) -> bool {
         let Some(ship) = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref()).map(|sailing| sailing.ship)
         else {
             return false;
         };
         let &[[x, y]] = points else { return false };
-        if ship.pace == 0 || pace != ship.pace {
+        if ship.pace == 0 {
             return false;
         }
         let bearing = libm::atan2(x - ship.x, -(y - ship.y));

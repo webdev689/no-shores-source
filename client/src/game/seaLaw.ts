@@ -1,6 +1,6 @@
 import type { HeightAt, Point2 } from '../overworld/ground.ts';
 import { coastDistance } from '../overworld/islandView.ts';
-import { alongNear, type Pace, SHIP_SPEED, sailSpeed, type Voyage } from '../overworld/voyage.ts';
+import { alongNear, PACE_STEPS, type Pace, SHIP_SPEED, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
 
@@ -53,14 +53,16 @@ export interface PictureAtHer {
   readonly share: number;
 }
 
-/** The scale ships are drawn at: as large as holds the Sloop on the screen at the size the sea's view shows her, or
- *  the near view shows her at her own size where that is smaller, and never under her own size. The eye coming in,
- *  she never shrinks on the screen, never looms larger than her own size once that shows her as large, and on the
- *  near view she and every ship round her are their own size. */
+/** The scale ships are drawn at: her share of the picture eased from the size the sea's view shows her to her own
+ *  size on the near view, by the same ratio each step of `share`, and never under her own size. Held at the sea's
+ *  size until her own shows her as large, she would stand still most of the way in, then treble in its last steps,
+ *  where the eye's distance falls fastest. The eye coming in, she grows a steady step a notch, and on the near view
+ *  she and every ship round her are their own size. */
 export function shownScale(overworldScale: number, picture: PictureAtHer): number {
+  const share = Math.min(1, Math.max(0, picture.share));
   const held = overworldScale * (picture.shownM / picture.seaM);
-  const near = Math.min(held, picture.shownM / picture.nearM);
-  return Math.max(1, (1 - picture.share) * held + picture.share * near);
+  const own = picture.shownM / picture.nearM;
+  return Math.max(1, held ** (1 - share) * own ** share);
 }
 
 /** Where the eye stands at the helm of a ship as she lies, at the size she lies at. */
@@ -180,24 +182,44 @@ export interface RoomWord {
 }
 
 /** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
- *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the dial's pace, held
- *  to the pace it last sailed her at (`held`) while she was under way. */
+ *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the pace she is sailed
+ *  at (`sailed`), held to the pace it last sailed her at (`held`) while she was under way. */
 export function followed(
   voyage: Voyage,
   travelledM: number,
   dt: number,
-  dial: Pace,
+  sailed: SailedPace,
   room: RoomWord | null,
   held: number | null = null,
 ): number {
   const seconds = Math.max(0, dt);
-  const asked = held !== null && held > 0 ? Math.min(sailSpeed(dial), SHIP_SPEED * held) : sailSpeed(dial);
+  const asked = SHIP_SPEED * (held !== null && held > 0 ? Math.min(sailed, held) : sailed);
   if (!room) return travelledM + asked * seconds;
   const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
   const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
   return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);
 }
 
-/** What the voyage's line adds while the room holds her under the dial's pace: a pirate near. */
-export const heldNote = (dial: Pace, room: RoomWord | null): string =>
-  room && room.pace > 0 && room.pace < dial ? ` · Held to ×${room.pace}: a pirate near` : '';
+/** What the voyage's line adds while the room holds her under the pace she is sailed at: a pirate near. */
+export const heldNote = (sailed: SailedPace, room: RoomWord | null): string =>
+  room && room.pace > 0 && room.pace < sailed ? ` · Held to ×${room.pace}: a pirate near` : '';
+
+/** The world's own time, a pace of 1 (crates/room/src/sea.rs `WORLD_PACE`): a ship is sailed at it while watched close,
+ *  so she is seen at her true speed. */
+export const WORLD_PACE = 1;
+/** The pace a ship is sailed at: her dial's step, or the world's own time while the view is close on her. */
+export type SailedPace = Pace | typeof WORLD_PACE;
+/** The ladder the sailed pace eases along, DFO's steps down to the world's own time, and the seconds each step takes. */
+const EASED_LADDER: readonly SailedPace[] = [WORLD_PACE, ...PACE_STEPS];
+export const PACE_EASE_S = 0.15;
+
+/** The next step of the sailed pace eased toward the view's: down the ladder to the world's own time while the view is
+ *  close on her (`watched`), back up to the dial's step while it is not. */
+export function easedPace(sailed: SailedPace, dial: Pace, watched: boolean): SailedPace {
+  const [from, to] = [EASED_LADDER.indexOf(sailed), EASED_LADDER.indexOf(watched ? WORLD_PACE : dial)];
+  return EASED_LADDER[from + Math.sign(to - from)] ?? dial;
+}
+
+/** What the voyage's line adds while the pace is eased under the dial's for the view. */
+export const easedNote = (sailed: SailedPace, dial: Pace): string =>
+  sailed < dial ? ' · Sailing at true speed while you watch close.' : '';

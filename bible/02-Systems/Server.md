@@ -134,7 +134,8 @@ on Cloudflare.
 ## The sea
 
 The room named `sea` holds every player's ship. A player sets their ship's course: the world points it sails through
-in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s.
+in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
+or 1, the world's own time, which the page sails her at while its view is close on her ([[Game]], "At sea").
 A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
 nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while she lies still. A player sets one course, facings among them, each half
@@ -146,7 +147,8 @@ will take it, by the room's own tick.
   to rest at the course's end. Its heading is the bearing of the leg it sails, clockwise from north.
 - A course is refused whole when any point lies on a continent, or any leg, from where the ship is on, crosses or
   touches a continent's coast in the layout ([[World Map]]). The coasts are judged in whole metres, in integer
-  arithmetic. A pace off the steps, a point outside the world's frame, and a course of more than 64 points are refused.
+  arithmetic. A pace neither one of the steps nor 1, a point outside the world's frame, and a course of more than 64
+  points are refused.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - Pirates and the Grey Tithe's ships sail among the players', each with her faction and rank, and a bold one that
   meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship
@@ -163,10 +165,10 @@ will take it, by the room's own tick.
   left the helm and 6 of slack, and 3 a tick at most to catch up; past 30 waiting the oldest is let go as taken. One
   whose steps stop coming is stood out a tick at a time once a view's lag (24 ticks) behind, as on land.
 - **Her helmsman** keeps her course meanwhile: under way she sails on, at rest she stays. A course is refused but one
-  that holds her heading straight on, at her pace (one point, within 0.01 radians of it): the page's course straight
-  on, set again as she nears its end, so she sails on. They take the helm again within 0.8 m of the spot behind her
-  wheel, standing, judged where their steps leave them once the steps the clock allows by then are taken; a bold
-  pirate that meets them calls them to it at once.
+  that holds her heading straight on (one point, within 0.01 radians of it), at any pace the room takes: the page's
+  course straight on, set again as she nears its end, so she sails on, at the pace the page eases her to for the view.
+  They take the helm again within 0.8 m of the spot behind her wheel, standing, judged where their steps leave them
+  once the steps the clock allows by then are taken; a bold pirate that meets them calls them to it at once.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
 ## A fleet
