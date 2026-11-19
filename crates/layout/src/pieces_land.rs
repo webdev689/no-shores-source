@@ -195,10 +195,17 @@ pub fn cave(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
 }
 
 /// A bridge deck's thickness, metres: thick enough to be a collider (a body stands on it, not in the water under it).
-const DECK_M: f64 = 0.5;
+pub const DECK_M: f64 = 0.5;
+/// How far a bridge's rails stand out past its walked width's edge, metres: a rail laid in lengths on a slant boxes up
+/// to 0.6 m wider than itself (halls.rs), so no rail's box reaches onto the way.
+const RAIL_OUT_M: f64 = 0.8;
+/// How far a deck reaches out along a lower bank to meet the land at the other's height, metres, at the most.
+const BANK_REACH_M: f64 = 12.0;
 
-/// A bridge over a river where a path crosses it: a timber deck from bank to bank at the higher bank's height, on
-/// piles, with rails either side.
+/// A bridge over a river from bank to bank, `width` the way's walked width over it: a timber deck 0.3 m over the land
+/// at its higher end, 3 m past each bank and on out along a lower bank (2 m at a time) until its two ends' land stands
+/// within 0.15 m, so a body steps onto it at either end; on piles, with rails either side. Each is recorded, so it is
+/// moved as a whole when the land under it settles.
 pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
     let [from, to] = banks;
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
@@ -207,17 +214,27 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
         return;
     }
     let way = [east / length, south / length];
-    let (start, end) = (ahead(from, way, -3.0, 0.0), ahead(to, way, 3.0, 0.0));
+    let (mut back, mut on) = (3.0, 3.0);
+    loop {
+        let (low_back, low_on) = (kit.height(ahead(from, way, -back, 0.0)), kit.height(ahead(to, way, on, 0.0)));
+        if low_back < low_on - 0.15 && back < 3.0 + BANK_REACH_M {
+            back += 2.0;
+        } else if low_on < low_back - 0.15 && on < 3.0 + BANK_REACH_M {
+            on += 2.0;
+        } else {
+            break;
+        }
+    }
+    let (start, end) = (ahead(from, way, -back, 0.0), ahead(to, way, on, 0.0));
     let deck = kit.height(start).max(kit.height(end)) + 0.3;
-    let span = length + 6.0;
+    let span = distance(start, end);
     let middle = [(start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0];
+    let rail_out = width / 2.0 + RAIL_OUT_M;
     // Deck and rails in lengths, so on a slant each length's box keeps close to it and a body walks the deck.
     let mut lengths = Vec::new();
-    crate::halls::wall(&mut lengths, start, end, deck - DECK_M, deck, width + 1.0, Material::Timber);
+    crate::halls::wall(&mut lengths, start, end, deck - DECK_M, deck, 2.0 * (rail_out + 0.1), Material::Timber);
     let across = [-way[1], way[0]];
-    let aside = |at: [f64; 2], side: f64| {
-        [at[0] + across[0] * (width / 2.0 + 0.4) * side, at[1] + across[1] * (width / 2.0 + 0.4) * side]
-    };
+    let aside = |at: [f64; 2], side: f64| [at[0] + across[0] * rail_out * side, at[1] + across[1] * rail_out * side];
     for side in [-1.0, 1.0] {
         crate::halls::wall(&mut lengths, aside(start, side), aside(end, side), deck, deck + 1.0, 0.2, Material::Timber);
     }
@@ -237,18 +254,13 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
             ));
         }
     }
+    kit.into.bridges.push([start[0], start[1], end[0], end[1], rail_out + 0.3]);
 }
 
-/// How far a footbridge reaches out along a lower bank to meet the land at the other's height, in 2 m steps.
-const BANK_STEPS: usize = 6;
-
 /// A footbridge wherever a gorge out of a claim (its capsule) meets a river on `field` inside the section (`ring`),
-/// along the gorge: out along the lower bank until the deck's ends, 3 m past each bank, stand within 0.15 m of each
-/// other, so a body steps onto it at either end.
+/// along the gorge.
 pub fn footbridges(kit: &mut Kit, field: &Field, [x1, y1, x2, y2, _]: [f64; 5], ring: &[[f64; 2]]) {
-    let length = distance([x1, y1], [x2, y2]);
-    let steps = (length / 2.0).ceil() as usize;
-    let way = [(x2 - x1) / length.max(1e-9), (y2 - y1) / length.max(1e-9)];
+    let steps = (distance([x1, y1], [x2, y2]) / 2.0).ceil() as usize;
     let along = |step: usize| {
         let share = step as f64 / steps.max(1) as f64;
         [x1 + (x2 - x1) * share, y1 + (y2 - y1) * share]
@@ -262,19 +274,7 @@ pub fn footbridges(kit: &mut Kit, field: &Field, [x1, y1, x2, y2, _]: [f64; 5], 
         match (wet(step - 1), wet(step), entered) {
             (false, true, _) => entered = Some(step - 1),
             (true, false, Some(bank)) => {
-                let end = |step: usize, out: f64| kit.height(ahead(along(step), way, 3.0 * out, 0.0));
-                let (mut west, mut east) = (bank, step);
-                loop {
-                    let (low_west, low_east) = (end(west, -1.0), end(east, 1.0));
-                    if low_west < low_east - 0.15 && west > 0 && bank - west < BANK_STEPS {
-                        west -= 1;
-                    } else if low_east < low_west - 0.15 && east < steps && east - step < BANK_STEPS {
-                        east += 1;
-                    } else {
-                        break;
-                    }
-                }
-                let banks = [along(west), along(east)];
+                let banks = [along(bank), along(step)];
                 if banks.iter().all(|at| ring_holds(ring, at[0], at[1])) {
                     bridge(kit, banks, crate::paths::Tier::Footpath.width());
                 }

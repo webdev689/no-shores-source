@@ -10,13 +10,28 @@ const CLIFF_FOOT_M: f64 = 4.0;
 /// How far the section keeps from the sea, metres, so its smoothed edge never reaches into the water.
 const SHORE_KEEP_M: f64 = 6.0;
 
-/// The cells inside a section: on the land its sculpt leaves as floor (a few metres onto its cliffs' feet), on land,
-/// in the claim, as one piece with no holes, so the section's edge is the foot of its bounds.
+/// The cells inside a section: on the land its sculpt leaves as floor (a few metres onto its cliffs' feet), on land or
+/// on a bridge (`bridges`, a capsule each) over the water, in the claim, as one piece with no holes, so the section's
+/// edge is the foot of its bounds.
 #[must_use]
-pub fn section_cells(field: &Field, floor_distance: &dyn Fn(f64, f64) -> f64, anchor: [f64; 2]) -> Vec<bool> {
+pub fn section_cells(
+    field: &Field,
+    floor_distance: &dyn Fn(f64, f64) -> f64,
+    anchor: [f64; 2],
+    bridges: &[[f64; 5]],
+) -> Vec<bool> {
     let (columns, rows) = (field.columns, field.rows);
     let count = columns * rows;
-    let land = |at: usize| !matches!(field.water[at], Water::Sea | Water::Lake) && field.to_sea[at] >= SHORE_KEEP_M;
+    // A bridge narrower than a cell is taken a cell wider either side, so its cells join across the water.
+    let bridged = |at: usize| {
+        let centre = field.centre(at % columns, at / columns);
+        bridges
+            .iter()
+            .any(|&[x1, y1, x2, y2, half]| crate::paths::off_line(centre, [x1, y1], [x2, y2]) <= half + CELL_M)
+    };
+    let land = |at: usize| {
+        (!matches!(field.water[at], Water::Sea | Water::Lake) && field.to_sea[at] >= SHORE_KEEP_M) || bridged(at)
+    };
     let mut kept: Vec<bool> = (0..count)
         .map(|at| {
             let [x, y] = field.centre(at % columns, at / columns);

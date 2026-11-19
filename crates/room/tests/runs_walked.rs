@@ -1,7 +1,7 @@
 //! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
 //! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every ramp, the instances'
-//! too, onto the terrace it serves; up every climb to its lookout on the massif's top; and over every footbridge
-//! where a gorge out of a zone meets a river.
+//! too, onto the terrace it serves; up every climb to its lookout on the massif's top; and over every bridge, a
+//! path's or a gorge's, both ways.
 
 use layout::field::distance;
 use layout::paths::off_line;
@@ -23,53 +23,87 @@ struct Zone {
     ring: Vec<[f64; 2]>,
     terraces: Vec<[f64; 7]>,
     climbs: Vec<[f64; 7]>,
-    /// Each footbridge over a gorge's river: its deck's top and its two ends, a few metres onto the banks.
-    bridges: Vec<(f64, [[f64; 2]; 2])>,
+    bridges: Vec<Bridge>,
 }
 
-/// The footbridges over a layout's gorges (a capsule of its floor out of an area's middle): the top of the deck laid in
-/// lengths along each, and its ends a few metres out past its first and last lengths.
-fn bridges_of(laid: &layout::Layout) -> Vec<(f64, [[f64; 2]; 2])> {
+/// A bridge over a path's or a gorge's river: its deck's top at its middle, its two ends a few metres onto the banks,
+/// the walked width of the way over it, and its rails' lengths (each a solid's bounds).
+struct Bridge {
+    deck: f64,
+    ends: [[f64; 2]; 2],
+    width: f64,
+    rails: Vec<[f64; 6]>,
+}
+
+/// A layout's bridges: over each path's crossing and over each gorge (a capsule of its floor out of an area's middle)
+/// where a deck is laid in lengths along it.
+fn bridges_of(laid: &layout::Layout) -> Vec<Bridge> {
+    let footpath = layout::paths::Tier::Footpath.width();
     let gorges = laid.sculpt.floors.iter().filter(|floor| {
         let from = [floor[0], floor[1]];
         distance(from, [floor[2], floor[3]]) > 1.0 && laid.areas.iter().any(|area| distance(area.at, from) < 1e-6)
     });
-    let decks: Vec<&city::solids::Solid> = laid
+    let gorges = gorges.map(|&[x1, y1, x2, y2, half]| ([[x1, y1], [x2, y2]], half, footpath));
+    // A path's crossing, its line drawn on well past its banks, for a deck reaching out along a lower bank.
+    let crossings = laid.paths.iter().flat_map(|path| path.crossings.iter().map(|banks| (*banks, path.tier.width())));
+    let crossings = crossings.map(|([from, to], width)| {
+        let length = distance(from, to).max(1e-9);
+        let way = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+        let out = |at: [f64; 2], side: f64| [at[0] + way[0] * 30.0 * side, at[1] + way[1] * 30.0 * side];
+        ([out(from, -1.0), out(to, 1.0)], 3.0, width)
+    });
+    let timber = |solid: &&city::solids::Solid| solid.material == city::solids::Material::Timber;
+    let decks: Vec<&city::solids::Solid> =
+        laid.seating.solids.iter().filter(timber).filter(|solid| (solid.size[2] - 0.5).abs() < 1e-9).collect();
+    let rails: Vec<&city::solids::Solid> = laid
         .seating
         .solids
         .iter()
-        .filter(|solid| solid.material == city::solids::Material::Timber && (solid.size[2] - 0.5).abs() < 1e-9)
+        .filter(timber)
+        .filter(|solid| solid.size[0] == 0.2 && solid.size[2] == 1.0)
         .collect();
-    gorges
-        .filter_map(|&[x1, y1, x2, y2, half]| {
-            let length = distance([x1, y1], [x2, y2]);
-            let way = [(x2 - x1) / length, (y2 - y1) / length];
-            let on: Vec<&&city::solids::Solid> =
-                decks.iter().filter(|deck| off_line([deck.at[0], deck.at[1]], [x1, y1], [x2, y2]) < half).collect();
-            let along = |deck: &&&city::solids::Solid| (deck.at[0] - x1) * way[0] + (deck.at[1] - y1) * way[1];
-            let first = on.iter().min_by(|one, other| along(one).total_cmp(&along(other)))?;
-            let last = on.iter().max_by(|one, other| along(one).total_cmp(&along(other)))?;
+    crossings
+        .chain(gorges)
+        .filter_map(|([from, to], half, width)| {
+            let length = distance(from, to);
+            let way = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+            let mut on: Vec<&&city::solids::Solid> =
+                decks.iter().filter(|deck| off_line([deck.at[0], deck.at[1]], from, to) < half).collect();
+            let along =
+                |deck: &&&city::solids::Solid| (deck.at[0] - from[0]) * way[0] + (deck.at[1] - from[1]) * way[1];
+            on.sort_by(|one, other| along(one).total_cmp(&along(other)));
+            let (first, last, middle) = (on.first()?, on.last()?, on[on.len() / 2]);
             let out = |deck: &&&city::solids::Solid, side: f64| {
                 let reach = (deck.size[1] / 2.0 + 3.0) * side;
                 [deck.at[0] + way[0] * reach, deck.at[1] + way[1] * reach]
             };
-            Some((first.at[2] + first.size[2], [out(first, -1.0), out(last, 1.0)]))
+            let ends = [out(first, -1.0), out(last, 1.0)];
+            let rails = rails
+                .iter()
+                .filter(|rail| off_line([rail.at[0], rail.at[1]], ends[0], ends[1]) < first.size[0] / 2.0 + 1.0)
+                .map(|rail| rail.bounds())
+                .collect();
+            Some(Bridge { deck: middle.at[2] + middle.size[2], ends, width, rails })
         })
         .collect()
 }
 
 fn zones() -> Vec<Zone> {
+    zones_of("continent-1")
+}
+
+fn zones_of(id: &str) -> Vec<Zone> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
-    let continent = layout.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
+    let continent = layout.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
+    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
     let builders = bake::builders(&root).expect("the builders read");
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
-    let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("continent-1 generates");
+    let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");
     let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
-    let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
+    let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("the continent bakes");
     layouts
         .iter()
         .map(|laid| {
@@ -189,37 +223,87 @@ fn every_climb_is_walked_to_its_lookout() {
 }
 
 #[test]
-fn every_footbridge_over_a_gorges_river_is_walked_over() {
-    let zones = zones();
+fn every_bridge_is_walked_over_both_ways() {
+    // Continent 3 holds the world's one path crossing a river, by the ironclad wreck.
+    let zones: Vec<Zone> = ["continent-1", "continent-3"].into_iter().flat_map(zones_of).collect();
     let (mut bridges, mut failed) = (0, Vec::new());
     for zone in &zones {
-        for &(deck, [from, to]) in &zone.bridges {
+        for &Bridge { deck, ends, .. } in &zone.bridges {
             bridges += 1;
-            // Across it from bank to bank, noting how high the body stands as it passes the deck's middle.
-            let middle = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
-            let mut body = standing_on(&zone.floor, &zone.blocks, from[0], from[1]);
-            let mut over = f64::NEG_INFINITY;
-            for _ in 0..(30.0 / TICK_SECONDS) as usize {
-                let (east, south) = (to[0] - body.x, to[1] - body.y);
-                if (east * east + south * south).sqrt() < THERE_M {
-                    break;
+            // Across it from bank to bank and back, noting how high the body stands as it passes the deck's middle.
+            let middle = [(ends[0][0] + ends[1][0]) / 2.0, (ends[0][1] + ends[1][1]) / 2.0];
+            for [from, to] in [ends, [ends[1], ends[0]]] {
+                let mut body = standing_on(&zone.floor, &zone.blocks, from[0], from[1]);
+                let mut over = f64::NEG_INFINITY;
+                for _ in 0..(40.0 / TICK_SECONDS) as usize {
+                    let (east, south) = (to[0] - body.x, to[1] - body.y);
+                    if (east * east + south * south).sqrt() < THERE_M {
+                        break;
+                    }
+                    let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
+                    body = step_body(&body, &controls, &zone.blocks, &zone.floor, TICK_SECONDS);
+                    if distance([body.x, body.y], middle) < 1.5 {
+                        over = over.max(body.z);
+                    }
                 }
-                let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
-                body = step_body(&body, &controls, &zone.blocks, &zone.floor, TICK_SECONDS);
-                if distance([body.x, body.y], middle) < 1.5 {
-                    over = over.max(body.z);
+                if distance([body.x, body.y], to) > THERE_M || over < deck - 0.1 {
+                    failed.push(format!(
+                        "{}: over the bridge at {:.0},{:.0} from {:.0},{:.0} the body stops at {:.0},{:.0}, {:.1} m at its \
+                         middle on a {deck:.1} m deck",
+                        zone.id, middle[0], middle[1], from[0], from[1], body.x, body.y, over
+                    ));
                 }
-            }
-            if distance([body.x, body.y], to) > THERE_M || over < deck - 0.1 {
-                failed.push(format!(
-                    "{}: over the bridge at {:.0},{:.0} the body stops at {:.0},{:.0}, {:.1} m at its middle on a {deck:.1} m deck",
-                    zone.id, middle[0], middle[1], body.x, body.y, over
-                ));
             }
         }
     }
-    assert!(bridges > 0, "a gorge on continent 1 crosses a river");
-    assert!(failed.is_empty(), "{failed:#?}");
+    assert!(bridges >= 2, "a path and a gorge cross rivers: {bridges} bridges");
+    assert!(failed.is_empty(), "{} of {bridges} bridges: {failed:#?}", failed.len());
+}
+
+#[test]
+fn no_bridge_rail_stands_on_its_walked_width_or_leaves_a_gap() {
+    let zones: Vec<Zone> = ["continent-1", "continent-3"].into_iter().flat_map(zones_of).collect();
+    let (mut rails, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for bridge in &zone.bridges {
+            let [from, to] = bridge.ends;
+            let length = distance(from, to);
+            let way = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
+            let mut sides: [Vec<f64>; 2] = [Vec::new(), Vec::new()];
+            for &[west, north, east, south, ..] in &bridge.rails {
+                rails += 1;
+                // How near the way's middle line the rail's box comes: it may not reach onto the walked width.
+                let corners = [[west, north], [east, north], [east, south], [west, south]];
+                let crossed = (0..4).any(|edge| {
+                    layout::paths::segments_apart([from, to], [corners[edge], corners[(edge + 1) % 4]]) == 0.0
+                });
+                let near = (0..4)
+                    .map(|edge| layout::paths::segments_apart([from, to], [corners[edge], corners[(edge + 1) % 4]]))
+                    .fold(f64::INFINITY, f64::min);
+                if crossed || near < bridge.width / 2.0 {
+                    failed.push(format!(
+                        "{}: a rail's box {:?} comes {near:.2} m from the way's middle",
+                        zone.id,
+                        [west, north, east, south]
+                    ));
+                }
+                let middle = [(west + east) / 2.0, (north + south) / 2.0];
+                let across = (middle[0] - from[0]) * -way[1] + (middle[1] - from[1]) * way[0];
+                sides[usize::from(across > 0.0)].push((middle[0] - from[0]) * way[0] + (middle[1] - from[1]) * way[1]);
+            }
+            // Each side's lengths run on with no length missing.
+            for side in &mut sides {
+                side.sort_by(f64::total_cmp);
+                let steps: Vec<f64> = side.windows(2).map(|pair| pair[1] - pair[0]).collect();
+                let usual = steps.iter().copied().fold(f64::INFINITY, f64::min);
+                if steps.iter().any(|&step| step > usual * 1.5) {
+                    failed.push(format!("{}: a rail of the bridge at {from:?} has a gap", zone.id));
+                }
+            }
+        }
+    }
+    assert!(rails > 0, "the bridges have rails");
+    assert!(failed.is_empty(), "{} of {rails} rail lengths: {failed:#?}", failed.len());
 }
 
 /// How far a point lies outside a ring, metres (negative inside).

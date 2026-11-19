@@ -212,7 +212,7 @@ pub fn plan(
     }
     let reach = wide.as_ref().unwrap_or(&field);
     let carved = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
-    let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor);
+    let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise, &carved);
