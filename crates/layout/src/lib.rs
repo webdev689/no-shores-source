@@ -232,7 +232,7 @@ pub fn plan(
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
-    works::build(&mut kit, &areas, &paths, rise, &carved);
+    works::build(&mut kit, &areas, &paths, (rise, &sculpt.outcrops), &carved);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
     for pair in carve::lookouts(&sculpt.climbs) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);

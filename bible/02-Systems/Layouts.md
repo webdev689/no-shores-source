@@ -179,15 +179,16 @@ from the sea, fresh water and the claim's edge), then:
    every climb past both edges and off every outcrop, and reaches most of the mass; else the climb that reaches most.
    On Saltmere the Downs take three climbs, the Vale three valleys across the rock round its keep and a climb, the
    Moors three valleys and two climbs.
-7. **The great works**, across and along the canyons, so they make the ways and the bounds: a colossal ruined wall of
-   ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed and
-   battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
-   top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing over a
-   third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and retaining
-   walls along part of the wider basins' feet, each length where the cliff really rises from the floor and clear of
-   every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every 130 to
-   210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand the
-   ruins of an older frontier: round towers broken off at their tops with a few merlons left, and runs of curtain
+7. **The great works**, across and along the canyons, so they make the ways and the bounds, each where a work as wide
+   as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
+   ruined wall of ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed
+   and battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from
+   cliff top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing
+   over a third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and
+   retaining walls along part of the wider basins' feet, each length where the cliff really rises from the floor and
+   clear of every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every
+   130 to 210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand
+   the ruins of an older frontier: round towers broken off at their tops with a few merlons left, and runs of curtain
    wall in lengths broken to different heights, some buttressed, so the bounds read as a border once held. They are
    laid once every layout is planned, on the land as all the sculpts leave it, which is the ground as settled: a
    neighbour's massif can rise over a rim or its floor hold one down.

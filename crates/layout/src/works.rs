@@ -62,13 +62,26 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
     areas.iter().all(|area| distance(area.at, at) > area.radius + 45.0)
 }
 
+/// Whether a work across a canyon at a run, reaching as far as the great wall's ends into the cliffs either side, keeps
+/// clear of every outcrop: the outcrops are placed before the works, which would otherwise stand into one.
+fn clear_of_outcrops(run: &Run, outcrops: &[Outcrop]) -> bool {
+    let (middle, way, _, half) = *run;
+    let reach = half * 1.35 + land::sculpts::CLIFF_RUN_M + 26.0;
+    let across = [-way[1], way[0]];
+    let ends = [ahead(middle, across, -reach, 0.0), ahead(middle, across, reach, 0.0)];
+    outcrops.iter().all(|outcrop| {
+        let ([first, last], within) = outcrop.footprint();
+        crate::paths::segments_apart(ends, [first, last]) > within + WALL_THICK_M + 3.0
+    })
+}
+
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
-/// longest path's and a natural arch over a third.
-pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &Sculpts) {
+/// longest path's and a natural arch over a third, each clear of the outcrops.
+pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], (rise, outcrops): (f64, &[Outcrop]), carved: &Sculpts) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
         .filter_map(|path| longest_run(path, areas).map(|run| (path.tier, run)))
-        .filter(|(_, run)| run.2 > 50.0 && between_areas(areas, run.0))
+        .filter(|(_, run)| run.2 > 50.0 && between_areas(areas, run.0) && clear_of_outcrops(run, outcrops))
         .collect();
     runs.sort_by(|first, second| second.1.2.total_cmp(&first.1.2));
     let wall = runs.iter().find(|(tier, _)| *tier == Tier::Track).or(runs.first()).copied();
