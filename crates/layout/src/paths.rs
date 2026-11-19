@@ -259,12 +259,12 @@ pub fn crossings(field: &Field, cells: &[usize]) -> Vec<[[f64; 2]; 2]> {
     let mut found = Vec::new();
     let mut entered: Option<usize> = None;
     for pair in cells.windows(2) {
-        let (dry, wet) = (field.water[pair[0]] == Water::River, field.water[pair[1]] == Water::River);
-        if !dry && wet {
+        let (was_river, is_river) = (field.water[pair[0]] == Water::River, field.water[pair[1]] == Water::River);
+        if !was_river && is_river {
             entered = Some(pair[0]);
         }
-        if dry
-            && !wet
+        if was_river
+            && !is_river
             && let Some(bank) = entered.take()
         {
             let centre = |at: usize| field.centre(at % field.columns, at / field.columns);

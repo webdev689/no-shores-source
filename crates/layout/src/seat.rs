@@ -167,8 +167,8 @@ pub fn fit(book: &Book, block: &RmbBlock, field: &Field, section: &[bool], at: [
         .sum()
 }
 
-/// Stands a block on the land at `at` turned `turns`, into `seating`; `clear` says where nothing may stand (a path,
-/// another block's building).
+/// Stands a block on the land at `at` turned `turns`, into `seating`; `section` says which of the field's cells it may
+/// stand on, and a building overlapping one already seated is left out.
 pub fn seat(
     seating: &mut Seating,
     book: &Book,
