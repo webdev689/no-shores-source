@@ -146,8 +146,8 @@ pub const BACK_TURNED: f64 = 110.0 * DEGREES;
 pub const CLOSING: f64 = 0.5;
 /// How fast a foe turns: DFO's 0.35 radians a classic tick of 1/16 s, a fighter squaring up.
 pub const TURN: f64 = 0.35 * 16.0 / 60.0;
-/// A target nearer than this across, and higher or lower than a blow reaches, is as far as the walk to it: the ring's
-/// width past the longest reach, so a foe beneath a ledge never takes a target on it for one in reach.
+/// A target nearer than this across, and higher or lower than a blow reaches, is as far as the walk to it: past the ring
+/// of the longest reach (a staff's 2.2 m, and 1.5 m more), so a foe beneath a ledge never takes one on it for in reach.
 pub const OFF_FLOOR_NEAR: f64 = 4.0;
 /// A foe crossing a climb or a drop steps only once it faces square to the block's side, to within this: walked
 /// slantwise into a side, a body slides along it rather than climb.

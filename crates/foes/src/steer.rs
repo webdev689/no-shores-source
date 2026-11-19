@@ -135,8 +135,8 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     }
     let whole = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt();
     let length = whole.min(1.0);
-    let share = [wish[0] / whole * length, wish[1] / whole * length];
-    let length = if length > 1e-9 && off_edge(here, share, ask.run) { 0.0 } else { length };
+    let held = length > 1e-9 && off_edge(here, [wish[0] / whole * length, wish[1] / whole * length], ask.run);
+    let length = if held { 0.0 } else { length };
     let (forward, sideways) = if length > 1e-9 {
         let relative = wrap(libm::atan2(wish[0], -wish[1]) - brain.heading);
         (libm::cos(relative) * length, libm::sin(relative) * length)
