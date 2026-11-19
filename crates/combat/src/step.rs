@@ -150,15 +150,13 @@ fn guards(fighter: &Fighter) -> bool {
 fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: bool) -> Option<Happening> {
     let input = &intent.combat;
     let countdown = |left: u32| left.saturating_sub(1);
-    let dodges = |next: &Fighter| next.kept.dodge > 0 && can_dodge(next, intent.controls, around);
+    if dodge_leaves(&next.action) && next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
+        return Some(dodge(next, intent.controls, around));
+    }
     match next.action {
         Action::Idle => begin(next, intent, around),
         Action::Attack(attack) => {
             let elapsed = attack.elapsed + 1;
-            // The blow's own tick is never cut short: a dodge pressed on it is kept for the next.
-            if elapsed != attack.strike && dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             // Once the blow has landed, the guard cuts the follow-through short, as the dodge does.
             if elapsed > attack.strike && (input.guard || next.kept.guard > 0) && guards(next) {
                 return Some(raise_guard(next));
@@ -173,9 +171,6 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: b
             (elapsed == attack.strike).then_some(Happening::Struck(attack))
         }
         Action::Guard { elapsed, window } => {
-            if dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             if next.kept.attack > 0 {
                 if elapsed < window {
                     next.missed_parry = 1;
@@ -196,9 +191,6 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: b
             None
         }
         Action::Parry { elapsed } => {
-            if dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             // The riposte: a swing held or pressed through the deflect strikes at once.
             if input.attack.is_some() || next.kept.attack > 0 {
                 next.action = Action::Idle;
@@ -224,9 +216,6 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: b
             None
         }
         Action::Flinch { left } => {
-            if FLINCH.saturating_sub(left) >= FLINCH_DODGE && dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             next.action = if left > 1 { Action::Flinch { left: countdown(left) } } else { Action::Idle };
             None
         }
@@ -247,13 +236,21 @@ fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: b
             None
         }
         Action::Telegraph(telegraph) => wind_up(next, telegraph, around),
-        Action::Draw { elapsed } => {
-            if dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
-            draw(next, elapsed, intent, pulled)
-        }
+        Action::Draw { elapsed } => draw(next, elapsed, intent, pulled),
         Action::Dead { .. } => None,
+    }
+}
+
+/// Whether a dodge may start out of what a fighter is doing as its tick begins: at rest, a swing (never on its blow's
+/// own tick: a dodge pressed then is kept for the next), a guard, a parry, a draw, or a flinch from its
+/// `FLINCH_DODGE`th tick; never a dodge, a stagger, a fall, an overreach, a reload or a wind-up.
+#[must_use]
+pub fn dodge_leaves(action: &Action) -> bool {
+    match *action {
+        Action::Idle | Action::Guard { .. } | Action::Parry { .. } | Action::Draw { .. } => true,
+        Action::Attack(attack) => attack.elapsed + 1 != attack.strike,
+        Action::Flinch { left } => FLINCH.saturating_sub(left) >= FLINCH_DODGE,
+        _ => false,
     }
 }
 

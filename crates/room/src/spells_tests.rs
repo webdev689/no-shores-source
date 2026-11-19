@@ -305,3 +305,32 @@ fn vanish_out_of_a_reload_veils_without_the_roll_and_the_reload_runs_on() {
     assert!(matches!(after.action, combat::fighter::Action::Reload { .. }), "{:?}", after.action);
     assert!(after.body.y.abs() < 1e-6, "no roll");
 }
+
+#[test]
+fn vanish_rolls_only_where_a_dodge_could_start_and_elsewhere_veils_without_the_roll() {
+    use combat::fighter::Action;
+    use combat::tuning::{FLINCH, FLINCH_DODGE};
+    for (action, rolls) in [
+        (Action::Dodge { elapsed: 4, toward: [1.0, 0.0] }, false),
+        (Action::Flinch { left: FLINCH }, false),
+        (Action::Flinch { left: FLINCH - FLINCH_DODGE }, true),
+        (Action::Guard { elapsed: 3, window: 0 }, true),
+    ] {
+        let (mut room, player) = room_with_player();
+        wearing(&mut room, player, 3, &[]);
+        room.ask_cast(player, Some(crate::arts::Cast { spell: VANISH, aim: None }));
+        for _ in 0..18 {
+            room.tick();
+        }
+        let mut fighter = *room.fighter(player).expect("in");
+        fighter.action = action;
+        room.set_fighter(player, fighter);
+        room.tick();
+        let after = room.fighter(player).expect("in");
+        assert!(has(&room, player, Status::Veiled) > 0, "veiled out of {action:?}");
+        assert_eq!(after.body.mode == movement::Mode::Air, rolls, "out of {action:?}: {:?}", after.action);
+        if !rolls {
+            assert_eq!(after.action, action, "what it was doing runs on");
+        }
+    }
+}

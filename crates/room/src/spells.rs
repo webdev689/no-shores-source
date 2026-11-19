@@ -364,10 +364,9 @@ impl Room {
         let Some(found) = self.players.get_mut(&caster) else { return };
         found.casting.hunting = true;
         let fighter = &mut found.fighter;
-        // A reload or an overreach is kept, since a dodge cannot leave them either: the veil falls without the roll.
-        if fighter.body.mode != Mode::Ground
-            || matches!(fighter.action, Action::Reload { .. } | Action::Overreach { .. })
-        {
+        // Only where a dodge could start: elsewhere (a dodge, an early flinch, a reload) the veil falls without the
+        // roll and what the caster was doing runs on.
+        if fighter.body.mode != Mode::Ground || !combat::step::dodge_leaves(&fighter.action) {
             return;
         }
         let moving = libm::hypot(fighter.body.vx, fighter.body.vy);
