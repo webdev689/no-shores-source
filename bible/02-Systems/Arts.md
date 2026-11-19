@@ -94,20 +94,25 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), and one set
   already in another slot of that Art (113). Only the worn Art's Core changes its spells.
-- **Charge.** The room keeps each player's Anima and Tenets while they are in it, as shares from 0 to 1. A new room
-  starts the Anima empty and the Tenets ready. Each share fills over its worn spell's recharge, a tick at a time. Each
+- **Charge.** The room keeps each player's Anima and Tenets while they are in it, as shares from 0 to 1, and an
+  account's for ten minutes after it leaves, as it left them: they are its again as it rejoins, or empty if it now
+  wears another Art. It keeps as many as it holds players, the oldest let go first. A first join starts the Anima
+  empty and the Tenets ready. Each share fills over its worn spell's recharge, a tick at a time. Each
   kill the player makes gives the Anima 2% more. Wearing another Art empties all three and lets go a cast on its way,
   so no recharge runs at another Art's pace.
 - **Casting.** An input names a spell by its number: its Art's number less one, times three, plus its ability (0 the
   Anima, 1 and 2 the Tenets), plus one, so 1 Tempest to 9 Vanish. The room takes it only if it is the worn Art's,
-  its share is full, no other cast is on its way, and the player is not staggered, Charged, dead or dead past a
-  section's edge. It releases 18 ticks (0.3 s) after the tick that took it. If the player is staggered, Charged or
-  dead by then, it is lost and costs nothing; else its share empties and the spell is cast.
+  its share is full, no other cast is on its way, and the player is on foot and not staggered, Charged, dead or dead
+  past a section's edge. It releases 18 ticks (0.3 s) after the tick that took it. If the player is staggered,
+  Charged, dead or dead past the edge by then, it is lost and costs nothing; else its share empties and the spell is
+  cast. Casting is attacking: any spell but Vanish ends the caster's veil as it is cast, though a spell already out,
+  a raven's bolt or a ring, does not.
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from a
   matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the Ranged
   one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is
   ([[Combat]]). No weapon's perk touches it or its kill. It is never parried or guarded; a dodge passes it whole, the
-  status it would give too. Its kills pay the caster as a weapon's do, to the weapon whose Attack it struck with.
+  status it would give too. Its kills pay the caster as a weapon's do, to the weapon whose Attack it struck with. It
+  never turns its caster's soft lock. A spell that reaches players passes by one dead past the section's edge.
 - **Gives back.** A Volt kill with Recharge set takes 4% off both Tenets; a Blaze kill while Linked, with Zeal, 5%;
   a weapon's kill with the perk Spellfeed on its loadout, 3% ([[Gear]], "Verbs"). A crit landed out of Vanish's veil,
   with Hunt, gives back half of Vanish's cooldown, once a Vanish. A Cosmic kill on an Exposed foe, with Dread, keeps
@@ -124,7 +129,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 | Dawnflare | A bird flies from 3 m behind the chest along the aim, burning each foe within 3 m of it once a pass | 24 m in 1.6 s, 14 damage | Wings: a second pass back. Searing: Exposes |
 | Duskraven | A raven at the right shoulder. On its first tick and every 0.8 s it fires a bolt at the foe nearest it within reach. The bolt flies at its foe, strikes, Exposes and heals the caster half the health it took, or fizzles if its foe falls first | 12 s, 22 m, 30 m/s, 7 damage | Hunger: heals all it took. Dread: see above |
 | Dusk Daggers | Aimed while held, then a ring where it was aimed, drawn in to the reach, always on the ground there. Every 0.5 s from its first tick, each foe inside is struck and Exposed | 16 m, 4 m ring, 5 s, 3 damage | Blades: 5.5 m ring, 7 s |
-| Vanish | On the ground, a dodge's hop the way the body moves, or back when still, landing the roll away, blows passing through it as a dodge's do. Then Veiled; out of a reload or an overreach, which a dodge cannot leave, the veil without the hop | 3 m, the veil's 4 s | Night: 6 s. Hunt: see above |
+| Vanish | On the ground, where a dodge could start, a dodge's hop the way the body moves, or back when still, landing the roll away, blows passing through it as a dodge's do. Then Veiled; out of what a dodge cannot leave (a dodge, a flinch's first 8 ticks, the tick before a blow lands, a reload, an overreach), the veil without the hop, and what the player was doing runs on | 3 m, the veil's 4 s | Night: 6 s. Hunt: see above |
 
 - **Seen by all.** Each spell that lasts or moves is an entity every player is sent: an orb, the Sunwell, the
   Dawnflare, the Duskraven, each bolt and the daggers' ring. Quicken, Arc Lash, Mend and Vanish each leave one for
@@ -208,4 +213,6 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - Another player's first cast shows the forge's own spark until the room sends a spell of theirs; after they change
   Art, their next cast shows the old Art's colour until its spell comes.
 - A spell's pictures stand upright, as the figures do: seen from straight above they are thin.
+- A cast is refused on horseback only as it is asked: one taken on foot still releases if the player mounts within
+  its 0.3 s.
 - A spell looks through walls: an orb, a bolt or an area finds a foe behind a block, and an orb flies through one.

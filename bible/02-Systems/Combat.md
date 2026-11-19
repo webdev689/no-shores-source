@@ -200,16 +200,18 @@ gives every one through one door, `Room::give`, for the status's own time unless
 |---|---|---|
 | Crit | Every blow and shot its fighter lands is a crit, which deals 1.5 times; what struck a blow may also mark it a crit | 5 s |
 | Expose | Its fighter takes 1.15 times from everyone | 6 s |
-| Charge | Cuts what its fighter was doing, as a stagger of its own cause, and holds it still: no action, no step. It counts as staggered, so it takes a quarter more. None begins while one holds, or for 3 s after it ends | By rank: Minor 2 s, Major 1.5, Elite 1, Miniboss 0.6, Boss 0.4; a player's as a Minor's |
+| Charge | Cuts what its fighter was doing, as a stagger of its own cause, and holds it still: no action, no step. It counts as staggered, so it takes a quarter more. Given while its fighter is staggered by another cause, down, overreached or reloading, it waits, still, for that to end, then holds for its whole time. None begins while one holds, or for 3 s after it has held | By rank: Minor 2 s, Major 1.5, Elite 1, Miniboss 0.6, Boss 0.4; a player's as a Minor's |
 | Haste | Its fighter moves 1.3 times as fast on the ground | 6 s |
 | Linked | Heals 5 health at each second of the room's clock, and its fighter deals 1.2 times | 3 s |
-| Veiled | Foes do not notice it, take it as a target or aim at it, and a foe fighting it lets it go; a wind-up already under way still lands. Its swing landing within 60 degrees of a fighter's back is a crit. Its own blow or shot ends it: the veil holds through the tick that blow lands, and is gone the next | 4 s |
+| Veiled | Foes do not notice it, take it as a target or aim at it, and a foe fighting it lets it go; a wind-up already under way still lands. Its swing landing within 60 degrees of a fighter's back is a crit. Its own blow or shot ends it, and so does casting any spell but Vanish: the veil holds through the tick that blow lands or that spell is cast, and is gone the next | 4 s |
 
 - **Weighing a blow.** The room weighs a blow's damage as it settles it, whatever struck it: a crit's 1.5, its
   striker's Linked (as the striker stands then) and its defender's Expose, each multiplying the others, before a foe's
   shield takes its share. Only a swing makes a Veiled backstab.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
   fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
+- **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
+  turns home, so its next fight is fresh ([[Foes]], "The leash").
 - **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,
   Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]).
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
@@ -244,5 +246,8 @@ human limits ([[Foes]]).
 - Gear's power and the rest of its perks reach a blow in the rooms ([[Gear]]): a fight stepped alone, with no room, has its trims but not those.
 - Running costs no stamina.
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).
+- Statuses run down as their fighter steps, a tick for each of its player's inputs, not by the room's clock: inputs
+  taken to catch up after a stall (three a tick at most) run them down faster for a moment. It stays bounded, and a
+  browser predicting its player runs them down alike.
 - No hit-stop: the rules step in fixed ticks for everyone, so a blow cannot pause them; the Test Ground holds only
   the drawing ([[Test Ground]], [[The Attack Feel Is Tried in the Test Ground]]).

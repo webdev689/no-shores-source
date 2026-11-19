@@ -147,7 +147,9 @@ number is one of [[Gear as Claude Shapes It]].
   either worn loadout, and a swap between them holds off blows and shots for 0.4 s.
 - **Perks.** A trait fits `melee`, `ranged`, `weapon` (either loadout), `armour` or `shield`. A shield's block perks
   fit only the loadouts with a shield: Bulwark is rolled onto no other piece, and Coral Guard is The Reefwall's own. A
-  worn piece gives a trait only where a roll could offer it (`gear::catalogue::trait_fits`).
+  worn piece gives a trait only where a roll could offer it (`gear::catalogue::trait_fits`). A node bought on a kept
+  piece whose trait does not fit it, such as armour with Bulwark, is given back once as the character is read, for the
+  Aurem and materials it cost, and a choice of it cleared (`gear::old_hands::unfit`).
 - **Named pieces.** One Legendary for each kind, in the harbour town's voice: Seawall the Sword & Shield, Tidegate the
   Dagger & Shield, Brinewhisper the Double Daggers, Harbourwarden the Sword, Crosscurrent the Double Swords,
   Beaconstaff, Anchorhead the Mace, The Bollards the Double Mace, Keeper's Watch the Mace & Shield, Wreckbreaker the
@@ -191,8 +193,10 @@ DFO's spoils ([[Pick - Loot Drops]]).
   (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
   Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
-  side, and come to rest 2 m out, on the ground or a block's top there, or at the body where a wall stands. A piece
-  flies 0.6 s and is taken only once it rests.
+  side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
+  high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
+  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once it
+  rests.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes.
 - **Seen.** Each piece arcs out of the body and bounces twice to rest, then stands upright as its own picture, the
@@ -209,7 +213,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Spent.** Each shot spends one shot's parts; at none the weapon will not fire ([[Combat]], "Shots"). Foes never run
   dry.
 - **Back.** An Ammo box gives back a quarter of the capacity, at least one shot of any kind. An Ammo crate, used
-  anywhere by a held press on its cell (an ask, refused with none or at full), fills it. Five crates are carried at
+  anywhere by a held press on its cell (an ask, refused with none, at full, or with no Ranged weapon worn: answer
+  120, "Wear a Ranged weapon first."), fills it. Five crates are carried at
   most; the Quartermaster sells one for 250 Aurem every day, besides the armour.
 - **Sent.** The gear message carries the shots left in the Ranged loadout worn, its capacity, the share and the
   crates; the fighter carries the shots left, which the browser predicts it by.
@@ -300,6 +305,4 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,
   and a Normal head or arms piece shows nothing over the figure.
 - No Breach items exist yet; cloaks belong to no faction.
-- A piece kept with a trait that no longer fits it, such as armour with Bulwark, still shows that node, which gives
-  nothing.
 - The traits' and items' words are English only.

@@ -35,17 +35,18 @@ their plates; a player sees their own buffs in a row by their health.
 |---|---|---|
 | **Crit** (verb) | A crit hit deals 1.5 times. While a fighter has Crit, every blow and shot it lands is a crit | 5 s unless its giver says |
 | **Expose** (verb, debuff) | The target takes 1.15 times damage from everyone (Destiny's Weaken, +15%); refreshed, never stacked | 6 s unless its giver says |
-| **Charge** (verb, debuff) | Paralysed: no action, no step; an action under way is cut, as a stagger with its own cause | Minor 2 s, Major 1.5 s, Elite 1 s, Miniboss 0.6 s, Boss 0.4 s; then 3 s in which it cannot be Charged again |
+| **Charge** (verb, debuff) | Paralysed: no action, no step; an action under way is cut, as a stagger with its own cause, so a Charged foe takes damage as a staggered one does (1.25 times). A stagger of another cause, a fall, an overreach or a reload is not cut: the Charge waits, held still, for it to end, then holds for its whole time. A foe walking home to its post sheds it | Minor 2 s, Major 1.5 s, Elite 1 s, Miniboss 0.6 s, Boss 0.4 s; then 3 s in which it cannot be Charged again |
 | Haste (buff) | Moves 1.3 times as fast | 6 s |
 | Linked (buff) | Heals 5 health a second and deals 1.2 times damage (Destiny's Empowering Rift, +20%) | While in the Sunwell, and 3 s after |
-| Veiled (buff) | Invisible: foes lose sight of the player and cannot aim at them (a wind-up already under way lands); others see them faint. A blow or shot ends it. A blow landing on a foe's back (within 60° of behind) while Veiled always crits | 4 s |
+| Veiled (buff) | Invisible: foes lose sight of the player and cannot aim at them (a wind-up already under way lands); others see them faint. A blow or shot ends it, and so does casting any spell but Vanish. A blow landing on a foe's back (within 60° of behind) while Veiled always crits | 4 s |
 
 ## Arts
 
 One Art is worn at a time; all three are open from the start, Storm first. Spells deal their Art's element (three
 times on a matching shield, half on another) and strike with the power of the Melee loadout's Attack (the Ranged
 one's when no Melee is worn), as weapons do. A cast takes 18 ticks (0.3 s) to release, plays the magic cast
-animation in the Art's colour, and cannot start while staggered, Charged or down.
+animation in the Art's colour, and cannot start while staggered, Charged, down or mounted. A spell never turns its
+caster's soft lock.
 
 - **The Anima** fills over its base time, as a Destiny Super does, and 2% more with each kill; it is cast when full.
 - **The Tenets** each recharge over their own cooldown, after Destiny's grenade and class abilities.
@@ -54,8 +55,8 @@ animation in the Art's colour, and cannot start while staggered, Charged or down
 - **A dodge** passes a spell whole: neither its harm nor the status it gives.
 - **Keys**: Anima `R`, first Tenet `Q`, second Tenet `G`: keys DFO's scheme leaves free, since the owner keeps its
   controls ([[The Player Plays as in DFO]]); `Q` was the cosmetic cast.
-- Charge and cooldowns are kept by the room while the player is in it; a new room starts the Anima empty and the
-  Tenets ready.
+- Charge and cooldowns are kept by the room while the player is in it, and for ten minutes after they leave, given
+  back as they rejoin; a first join starts the Anima empty and the Tenets ready.
 
 ### Storm (Volt): agile, and deals damage
 
@@ -79,7 +80,7 @@ animation in the Art's colour, and cannot start while staggered, Charged or down
 |---|---|---|
 | Anima: **Duskraven** | A raven follows at the player's shoulder for 12 s, firing a bolt every 0.8 s at the nearest foe within 22 m (30 m/s): 7 damage and Expose; the player heals half the damage it deals | 455 s (Destiny's tier 4) |
 | Tenet: **Dusk Daggers** | Held, it aims a ring on the ground up to 16 m away; let go, daggers whirl there for 5 s in a 4 m ring: every 0.5 s, 3 to each foe inside, and Expose | 121 s |
-| Tenet: **Vanish** | A 3 m dodge roll the way the player moves (back when still), then Veiled; out of a reload or an overreach, the veil without the roll | 38 s (Destiny's Gambler's Dodge) |
+| Tenet: **Vanish** | A 3 m dodge roll the way the player moves (back when still), then Veiled; where a dodge could not start (in a dodge, early in a flinch, a reload or an overreach), the veil without the roll | 38 s (Destiny's Gambler's Dodge) |
 
 ### The Core
 
@@ -117,7 +118,8 @@ is written here as it is built.
 
 ## Perks
 
-Shields' block perks (Bulwark, Coral Guard) fit loadouts with a shield, and only those. New perks bring the verbs to
+Shields' block perks (Bulwark, Coral Guard) fit loadouts with a shield, and only those; a node of one found bought on
+another piece is given back for what it cost. New perks bring the verbs to
 weapons, each in the column that keeps the pools growing alike (handling 3 to 4, finish 3 to 5, perks 5 to 8 for
 Melee and 4 to 6 for Ranged):
 
@@ -150,7 +152,7 @@ A loadout's perks, these and the rest, work while it is drawn, beside the armour
 | Capacity | Shots carried for the worn Ranged weapon: bow 60, crossbow 30, pistolet 24, double pistolet 36, thunderlock 16. Kept on the character as a share of the full capacity, so a different Ranged weapon worn keeps the same share |
 | Firing | A shot spends one; at none, the weapon will not fire and the crosshair says "No ammo". Reloads take as long as now. Foes' weapons never run dry |
 | Ammo box | Dropped on a kill for each player who earned it: Minor 20%, Major 35%, Elite 60%, Miniboss and Boss always. Taken, it gives back a quarter of the capacity, at least one shot |
-| Ammo crate | A consumable: held in the Consumables shelf, it fills the worn Ranged weapon's ammo at once. Five carried at most; the Quartermaster sells them for 250 Aurem; a Miniboss or Boss drops one for each player |
+| Ammo crate | A consumable: held in the Consumables shelf, it fills the worn Ranged weapon's ammo at once, and is refused and kept with none worn. Five carried at most; the Quartermaster sells them for 250 Aurem; a Miniboss or Boss drops one for each player |
 | Shown | The shots left beside the crosshair while the Ranged weapon is drawn, and under the Ranged slot on the Character page |
 
 ## Not now
