@@ -1,0 +1,55 @@
+//! The pace of a fight in numbers. Foes at one target land their blows one at a time: a foe begins a blow there only
+//! if it lands a beat after the latest another foe has begun there, so a player meets one blow, reads it and answers
+//! before the next, however many stand round them. Each foe's own blows keep their own rhythm, so one foe alone
+//! fights as it always did. project-final's strike token, one blow in flight at a time, kept by when each lands.
+
+use crate::board::Board;
+use crate::brain::Brain;
+use crate::senses::Here;
+use combat::arms::swing_ticks;
+use combat::fighter::Action;
+use combat::shapes::IRON_EXTRA;
+use combat::shots::foe_speed;
+use combat::sight::apart;
+use combat::{FighterId, Intent};
+
+/// The tick a swing begun now lands.
+#[must_use]
+pub fn swing_lands(here: &Here<'_, '_>) -> u64 {
+    here.tick() + u64::from(swing_ticks(here.fighter.arms.melee).0)
+}
+
+/// The tick a shot loosed now at `target` lands, after its flight.
+#[must_use]
+pub fn shot_lands(here: &Here<'_, '_>, target: [f64; 3]) -> u64 {
+    let speed = here.fighter.arms.ranged.map_or(0.0, foe_speed);
+    let flight = if speed > 0.0 { apart(here.at(), [target[0], target[1]]) / speed } else { 0.0 };
+    here.tick() + Here::ticks(flight)
+}
+
+/// Whether it may begin a blow at `target` that lands at `lands`: a beat, as the room's heat presses it, after the
+/// latest another foe has begun there.
+#[must_use]
+pub fn may(here: &Here<'_, '_>, board: &Board, target: FighterId, lands: u64) -> bool {
+    board.may_strike(target, here.me, lands, Here::ticks(here.world.director.pressed().beat))
+}
+
+/// Notes on the board the blow its intent begins this tick at its target, if it begins one: a swing from rest, a
+/// telegraphed blow, or a shot loosed.
+pub fn note(brain: &Brain, here: &Here<'_, '_>, board: &mut Board, intent: &Intent) {
+    let Some(target) = brain.target else { return };
+    let combat = &intent.combat;
+    let free = matches!(here.fighter.action, Action::Idle | Action::Guard { .. } | Action::Parry { .. });
+    let lands = if let Some(order) = combat.telegraph {
+        let iron = if order.iron { combat::ticks(IRON_EXTRA) } else { 0 };
+        here.tick() + u64::from(order.windup.max(1) + iron)
+    } else if combat.attack.is_some() && free && here.fighter.stamina > 0.0 {
+        swing_lands(here)
+    } else if combat.shoot && matches!(here.fighter.action, Action::Draw { .. }) {
+        let Some(at) = here.find(target).map(|other| [other.body.x, other.body.y, other.body.z]) else { return };
+        shot_lands(here, at)
+    } else {
+        return;
+    };
+    board.struck(target, here.me, lands);
+}

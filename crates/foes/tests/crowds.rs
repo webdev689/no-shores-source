@@ -72,7 +72,7 @@ fn foes_bunched_on_their_ring_spread_round_it() {
     let mut spread = 0.0;
     for seed in 1..=8 {
         let (mut room, ids) = ringed(cold(seed), RING, &[170.0, 175.0, 180.0, 185.0, 190.0, 195.0]);
-        room.run(240, &mut still(0.0));
+        room.run(480, &mut still(0.0));
         for _ in 0..120 {
             room.step(&mut still(0.0));
             let at = |id: &u32| [room.fighter(*id).body.x, room.fighter(*id).body.y];

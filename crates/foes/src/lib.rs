@@ -16,6 +16,7 @@ pub mod factions;
 mod flank;
 mod leash;
 pub mod noises;
+mod pace;
 pub mod ranks;
 mod react;
 pub mod roles;
@@ -180,5 +181,6 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
     };
     let ask = tactics::decide(&mut next, &here, board);
     let intent = steer::controls(&mut next, &here, &ask);
+    pace::note(&next, &here, board, &intent);
     (next, intent)
 }

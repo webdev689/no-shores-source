@@ -231,3 +231,13 @@ pub const DRAW_BOW: f64 = 1.0;
 pub const DRAW_CROSSBOW: f64 = 1.3;
 pub const DRAW_PISTOLET: f64 = 1.2;
 pub const DRAW_THUNDERLOCK: f64 = 1.5;
+
+/// A crowd's pace: a foe begins a blow at a target only if it lands this long after the latest another foe has begun
+/// there, so blows at one target come one at a time and a player can answer each.
+pub const BEAT: f64 = 1.2;
+/// The waiting hold a line before the group's side of their target, out to this either side of its middle, the
+/// rest on rings farther out; one foe at a time, the best suited, works round to the target's flank instead. The
+/// group's side is where its foes stand round the target, once the mean of their bearings leans this far one way;
+/// short of that the line forms before the target's face.
+pub const LINE_ARC: f64 = 60.0 * DEGREES;
+pub const LINE_LEAN: f64 = 0.25;
