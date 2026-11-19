@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { LaidPath, LaidTile, NodeLayout } from '../layout/layouts.ts';
+import { paintFormat } from '../terrain/groundColour.ts';
 import { paintOfLayouts, tileCorners } from './groundPaint.ts';
 
 const ring = [
@@ -21,7 +22,7 @@ const tile = (middle: readonly [number, number], byte: number): LaidTile => ({
 /** A channel's distance from its edge at a world point, metres (positive inside), as the terrain reads it. */
 function reachAt(paint: NonNullable<ReturnType<typeof paintOfLayouts>>, x: number, y: number, channel: number) {
   const [column, row] = [Math.floor((x - paint.west) / paint.texelM), Math.floor((y - paint.north) / paint.texelM)];
-  return (paint.texels[(row * paint.width + column) * 4 + channel] - 128) / 32;
+  return (paint.texels[(row * paint.width + column) * paint.channels + channel] - 128) / 32;
 }
 
 test('a path is painted to its width and not past it', () => {
@@ -92,18 +93,56 @@ test("a building run's floor is painted, a keep's paved and a mine's in earth, a
   assert.ok(reachAt(paved, 8, 6, 0) < 0, 'and the keep is not earth there');
 });
 
-test('a layout with chalk paints its claim chalk and nothing past it', () => {
-  const chalk = { ...layout([], []), stone: 'chalk' };
-  const paint = paintOfLayouts([chalk], [0, 0], 2500, [0, 0]);
+/** A chalk layout whose claim is the square about the origin of half-side `half`, with `wings` carrying it out. */
+const chalky = (half: number, wings: number[][] = [], middle: [number, number] = [0, 0]): NodeLayout =>
+  ({
+    ...layout([], []),
+    stone: 'chalk',
+    sculpt: {
+      claim: [
+        [middle[0] - half, middle[1] - half],
+        [middle[0] + half, middle[1] - half],
+        [middle[0] + half, middle[1] + half],
+        [middle[0] - half, middle[1] + half],
+      ],
+      wings,
+    },
+  }) as unknown as NodeLayout;
+
+test('chalk paints its layout’s claim, its wings and the fade band past them, and no further', () => {
+  const paint = paintOfLayouts([chalky(50, [[50, 0, 250, 0, 10]])], [0, 0], 2500, [0, 0]);
   assert.ok(paint);
-  assert.ok(reachAt(paint, 0, 0, 2) > 3, 'its middle is deep inside');
-  assert.ok(reachAt(paint, 47, 0, 2) > 1, 'near its edge, still chalk');
-  assert.ok(reachAt(paint, 70, 0, 2) > 1, 'its cliffs stand a little past its ring, and wear it too');
-  assert.ok(reachAt(paint, 93, 0, 2) < -1, 'well past its edge, the climate stone');
+  assert.ok(reachAt(paint, 0, 0, 2) > 3, 'its claim is deep inside');
+  assert.ok(reachAt(paint, 200, 0, 2) > 3, 'a wing, out past the claim, is chalk too');
+  assert.ok(reachAt(paint, 0, 100, 2) > 1, 'the fade band past the claim, where its cliffs stand, is chalk');
+  assert.ok(reachAt(paint, 0, 195, 2) < -1, 'past the fade, the climate stone');
   assert.ok(reachAt(paint, 0, 0, 0) <= -3.9 && reachAt(paint, 0, 0, 1) <= -3.9, 'chalk is neither path nor paving');
-  assert.equal(
-    paintOfLayouts([layout([], [])], [0, 0], 2500, [0, 0]),
-    null,
-    'a layout with nothing laid paints nothing',
-  );
+});
+
+test('chalk stops at another layout’s claim, lying inside its band', () => {
+  const next = { ...chalky(50, [], [150, 0]), stone: undefined } as NodeLayout;
+  const paint = paintOfLayouts([chalky(50), next], [0, 0], 2500, [0, 0]);
+  assert.ok(paint);
+  assert.ok(reachAt(paint, 75, 0, 2) > 1, 'the gap between the claims is chalk');
+  assert.ok(reachAt(paint, 150, 0, 2) < -1, 'a neighbour’s claim is not');
+});
+
+test('a claim of over a thousand points is painted in about a second, whatever its points', () => {
+  const circle = Array.from({ length: 1500 }, (_unused, k) => [
+    600 * Math.cos((k / 1500) * 2 * Math.PI),
+    600 * Math.sin((k / 1500) * 2 * Math.PI),
+  ]);
+  const round = { ...layout([], []), ring: circle, stone: 'chalk', sculpt: { claim: circle, wings: [] } };
+  const before = performance.now();
+  const paint = paintOfLayouts([round as unknown as NodeLayout], [0, 0], 2500, [0, 0]);
+  assert.ok(paint && reachAt(paint, 0, 0, 2) > 3);
+  assert.ok(performance.now() - before < 2000, `took ${Math.round(performance.now() - before)} ms`);
+});
+
+test('the paint has two channels, and four only where a chalk layout is in it', () => {
+  const plain = paintOfLayouts([layout([], [tile([0, 0], 1)])], [0, 0], 2500, [0, 0]);
+  const white = paintOfLayouts([chalky(50)], [0, 0], 2500, [0, 0]);
+  assert.ok(plain && white);
+  assert.deepEqual([plain.channels, white.channels], [2, 4]);
+  assert.deepEqual([paintFormat(plain.channels), paintFormat(white.channels)], ['rg8unorm', 'rgba8unorm']);
 });

@@ -72,6 +72,8 @@ export interface NodeLayout {
   readonly runs?: readonly LaidRun[];
   /** The stone its cliffs and rubble wear where it is not its climate's; none written when it is. */
   readonly stone?: string;
+  /** The land it carves: its claim, and the wings (capsules `[x1, y1, x2, y2, half]`) that carry it past its ring. */
+  readonly sculpt?: { readonly claim: readonly Point[]; readonly wings?: readonly (readonly number[])[] };
 }
 
 /** The track's and the footpath's widths, metres, as the layout crate lays them. */

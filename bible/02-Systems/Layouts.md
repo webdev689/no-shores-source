@@ -283,7 +283,9 @@ to hold them, with no plates. Nature keeps off the buildings' yards and each pla
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within
 2.5 km of the eye (`paintOfLayouts`) as a distance from their edges, a metre a texel at finest, the paths and a
-block's dirt in one channel, its paving in the next, and a third holds the claim of a layout whose `stone` is chalk and the 40 m past its ring where its cliffs stand. A block's tiles are read by their records'
+block's dirt in one channel, its paving in the next, and a third (only where a chalk layout is painted) holds that layout's claim, its wings and the 140 m fade band past them,
+where its cliffs stand, up to any other layout's claim; the claim is filled a row at a time and measured by a distance
+transform, so its cost is the texels, not the texels times its edges. A block's tiles are read by their records'
 classes at their corners, as Daggerfall's tile map lays them, across each tile and the next, so a street has no seam
 between its tiles and fades out across the first tile not laid. The terrain draws them in its dirt's and paving's
 grain, their edges wandering as trodden ones do, a path paler in its middle and darker where the grass is worn into
