@@ -31,14 +31,17 @@ import { HINTS } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
-import { nodeRoom } from './rooms.ts';
+import { dungeonRoom, nodeRoom } from './rooms.ts';
+import { dungeonPlace, Entrances, type InDungeon, standInDungeon, tripAt, type Trips } from './footTrips.ts';
+import { type Cache, cacheOf } from './dungeonChest.ts';
+import { type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
- *  ask a room in the page for (none but under `npm run dev`), and the session's token the rooms keep the player's
- *  character by (null for none). */
+ *  ask a room in the page for (none but under `npm run dev`), the session's token the rooms keep the player's
+ *  character by (null for none), and the ways into a patrol's dungeons and out. */
 export interface FootContext {
   readonly movement: MovementRules;
   readonly land: LandWorker;
@@ -49,6 +52,7 @@ export interface FootContext {
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
   readonly session: Promise<string | null>;
+  readonly trips: Trips;
 }
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
@@ -118,17 +122,71 @@ function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Bl
   return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
 }
 
+/** The fight's rules and roster on the context's room module, made once, and the module. */
+async function rulesOf(context: FootContext) {
+  const module = await context.roomModule;
+  const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
+  fightRules.set(module, rules);
+  return { module, rules };
+}
+
+/** Stands the player's body at (x, y) facing `facing`, keeping how they hold the camera; in a social space looking
+ *  over the parapet. */
+function stand(context: FootContext, x: number, y: number, facing: number, social: boolean): void {
+  const { walker, movement } = context;
+  const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
+  walker.player = social ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
+}
+
+/** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */
+export interface AtEntrance {
+  readonly number: number;
+  readonly x: number;
+  readonly y: number;
+  readonly facing: number;
+}
+
+/** What the page hears of a room it joins: its snapshots, the player's gear, and whether it takes asks for foes. */
+interface Heard {
+  readonly snapshot: (snapshot: Snapshot) => void;
+  readonly gear: (gear: GearState) => void;
+  readonly asks: boolean;
+}
+
+/** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, and the dungeon. */
+interface Opened {
+  readonly link: RoomLink;
+  readonly boxes: readonly Block[];
+  readonly text: string;
+  readonly dungeon: InDungeon | null;
+}
+
+/** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache. */
+interface Held {
+  gear: GearState | null;
+  readonly entrances: Entrances;
+  cache: Cache | null;
+}
+
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
  * whatever foes its room holds as the Test Ground fights. The node's room is the authority: alone, the room crate runs
  * in the page on the same ground; online, the server's. It judges the edge and the fight, and the page predicts the
  * player by its own rules and takes its word; every other player and foe is shown where it last saw them. Online, the
  * room keeps the player's gear, which their figure wears; its rings mark what E uses within reach: a station's counter
- * or a resource node. A social space's keepers and townsfolk walk it.
+ * or a resource node. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's door goes into
+ * its dungeon; in a dungeon, its floor is the ground, and E at its exit door goes out.
  */
 export class Foot {
   readonly node: NodeInfo;
   readonly boxes: readonly Block[];
+  /** The dungeon the player plays in, or null on a node's land. */
+  readonly dungeon: InDungeon | null;
+  /** The patrol's node file's text, which a room alone opens its dungeons from. */
+  readonly text: string;
+  /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
+  readonly groundAt: (x: number, y: number) => number | null;
+  private readonly module: WebAssembly.Module;
   private readonly context: FootContext;
   private readonly link: RoomLink;
   readonly fight: Fighting;
@@ -140,8 +198,8 @@ export class Foot {
   private readonly effects = new FightEffects();
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
-  /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
-  private readonly gearHeld: { gear: GearState | null };
+  /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
+  private readonly held: Held;
   private dressedIn: GearState | null = null;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
@@ -152,18 +210,22 @@ export class Foot {
   private constructor(
     context: FootContext,
     node: NodeInfo,
-    boxes: readonly Block[],
+    opened: Opened,
     parts: { link: RoomLink; fight: Fighting; combat: CombatRules; roster: readonly FoeType[] },
-    people: { otherPlayers: OtherPlayers; gear: { gear: GearState | null }; folk: Placed[] },
+    people: { otherPlayers: OtherPlayers; held: Held; folk: Placed[]; module: WebAssembly.Module },
   ) {
     this.context = context;
     this.node = node;
-    this.boxes = boxes;
+    [this.boxes, this.text, this.dungeon, this.module] = [opened.boxes, opened.text, opened.dungeon, people.module];
+    const layout = opened.dungeon?.layout;
+    this.groundAt = layout
+      ? (x, y) => (openAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell)) ? 0 : null)
+      : context.groundAt;
     this.link = parts.link;
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);
     this.steps = parts.fight.steps(context.movement);
-    [this.otherPlayers, this.gearHeld, this.folk] = [people.otherPlayers, people.gear, people.folk];
+    [this.otherPlayers, this.held, this.folk] = [people.otherPlayers, people.held, people.folk];
     this.foes = new FoeFigures(parts.roster);
     const hud = document.querySelector<HTMLElement>('#hud');
     this.prompt = hud ? new UsePrompt(hud) : null;
@@ -185,17 +247,75 @@ export class Foot {
   /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera, and joins its
    *  room: online the server's at the voyage's `seas`, signed in with the session's token; alone one in the page that
    *  may stand the foes the context asks for. */
-  static async enter(context: FootContext, node: NodeInfo, facing: number, seas: Difficulty = 'calm'): Promise<Foot> {
-    const { movement, walker, rooms, forge } = context;
-    const module = await context.roomModule;
-    const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
-    fightRules.set(module, rules);
-    const { combat } = rules;
+  /** Lands the player in a node at its first spawn, facing `facing`, or before entrance `at`'s door, keeping how they
+   *  hold the camera, and joins its room: online the server's at the voyage's `seas`, signed in with the session's
+   *  token; alone one in the page that may stand the foes the context asks for. */
+  static async enter(
+    context: FootContext,
+    node: NodeInfo,
+    facing: number,
+    seas: Difficulty = 'calm',
+    arriving?: AtEntrance,
+  ): Promise<Foot> {
+    const { module, rules } = await rulesOf(context);
     let rect = windowRect(node.ring);
-    let { boxes, ground } = await standOn(context, combat, rect);
-    const [x, y] = node.spawns[0] ?? node.centre;
-    const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
-    walker.player = node.kind === 'social' ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
+    let { boxes, ground } = await standOn(context, rules.combat, rect);
+    const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
+    stand(context, x, y, arriving?.facing ?? facing, node.kind === 'social');
+    const address =
+      context.rooms && `${context.rooms(nodeRoom(node, seas))}${arriving ? `?entrance=${arriving.number}` : ''}`;
+    return Foot.start(context, node, rules, async (heard, session) => {
+      const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
+      // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
+      const bounds = connection?.node?.bounds;
+      try {
+        if (bounds && bounds.some((value, index) => Math.abs(value - (rect[index] ?? 0)) > 0.5)) {
+          rect = [bounds[0] ?? 0, bounds[1] ?? 0, bounds[2] ?? 0, bounds[3] ?? 0];
+          ({ boxes, ground } = await standOn(context, rules.combat, rect));
+        }
+      } catch (error) {
+        connection?.close();
+        throw error;
+      }
+      const text = nodeText(node, rect, ground, boxes);
+      const local = { gear: heard.gear, entrance: arriving?.number };
+      const link = connection ?? LocalRoom.openNode(module, text, heard.snapshot, heard.asks, local);
+      return { link, boxes, text, dungeon: null };
+    });
+  }
+
+  /** Takes the player into dungeon `number` of the patrol `patrol` (its node and its node file's text, which a room
+   *  alone opens it from), at its way in, and joins its room: online the server's at `seas`, alone one in the page. */
+  static async enterDungeon(
+    context: FootContext,
+    patrol: { readonly node: NodeInfo; readonly text: string },
+    number: number,
+    layout: DungeonLayout,
+    seas: Difficulty = 'calm',
+  ): Promise<Foot> {
+    const { module, rules } = await rulesOf(context);
+    standInDungeon(context.movement, rules.combat, layout);
+    stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
+    const address = context.rooms?.(dungeonRoom(patrol.node, seas, number));
+    const dungeon = { patrol: patrol.node, number, layout };
+    return Foot.start(context, dungeonPlace(patrol.node, layout), rules, async (heard, session) => ({
+      link: address
+        ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
+        : LocalRoom.openDungeon(module, patrol.text, number, heard.snapshot, heard.gear),
+      boxes: seenBlocks(layout),
+      text: patrol.text,
+      dungeon,
+    }));
+  }
+
+  /** Joins the room `open` opens, handing it what the page hears of it, and stands the fight on it. */
+  private static async start(
+    context: FootContext,
+    node: NodeInfo,
+    rules: { combat: CombatRules; roster: readonly FoeType[] },
+    open: (heard: Heard, session: string | null) => Promise<Opened>,
+  ): Promise<Foot> {
+    const { forge } = context;
     const players = new OtherPlayers({
       place: (dress, x, y, facing) => ({
         id: nextOtherId++,
@@ -211,42 +331,42 @@ export class Foot {
       remove: () => undefined,
     });
     let fight: Fighting | null = null;
-    const received = (snapshot: Snapshot) => {
-      players.takeDresses(snapshot.dressed);
-      fight?.receive(snapshot);
-      // Before the fight stands there is no own number to tell the player from the others.
-      if (fight) players.seen(snapshot.players, fight.player, forge);
+    const held: Held = { gear: null, entrances: new Entrances(), cache: null };
+    const online = context.rooms !== null;
+    const asked = online || node.kind === 'dungeon' ? [] : context.foesAsked;
+    const heard: Heard = {
+      snapshot: (snapshot: Snapshot) => {
+        players.takeDresses(snapshot.dressed);
+        fight?.receive(snapshot);
+        held.cache = cacheOf(snapshot.cache);
+        // Before the fight stands there is no own number to tell the player from the others.
+        if (fight) players.seen(snapshot.players, fight.player, forge);
+      },
+      // Offline the room's word on the gear tells only of the patrol's entrances; the figure keeps its own dress.
+      gear: (sent: GearState) => {
+        if (online) held.gear = sent;
+        held.entrances.heard(sent.dungeons);
+      },
+      asks: asked.length > 0,
     };
-    const asked = rooms ? [] : context.foesAsked;
-    const gear: { gear: GearState | null } = { gear: null };
-    const session = await context.session;
-    const connection = rooms
-      ? await RoomConnection.open(rooms(nodeRoom(node, seas)), received, (sent) => (gear.gear = sent), session)
-      : null;
-    // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
-    const bounds = connection?.node?.bounds;
-    try {
-      if (bounds && bounds.some((value, index) => Math.abs(value - (rect[index] ?? 0)) > 0.5)) {
-        rect = [bounds[0] ?? 0, bounds[1] ?? 0, bounds[2] ?? 0, bounds[3] ?? 0];
-        ({ boxes, ground } = await standOn(context, combat, rect));
-      }
-    } catch (error) {
-      connection?.close();
-      throw error;
-    }
-    const link =
-      connection ?? LocalRoom.openNode(module, nodeText(node, rect, ground, boxes), received, asked.length > 0);
-    fight = new Fighting(combat, link);
+    const opened = await open(heard, await context.session);
+    fight = new Fighting(rules.combat, opened.link);
     for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
     // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
-    players.takeDresses(link.dressed);
-    return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
+    players.takeDresses(opened.link.dressed);
+    return new Foot(
+      context,
+      node,
+      opened,
+      { link: opened.link, fight, ...rules },
+      { otherPlayers: players, held, folk: [], module: await context.roomModule },
+    );
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
   private dressInGear(): void {
-    const gear = this.gearHeld.gear;
+    const gear = this.held.gear;
     if (!gear || gear === this.dressedIn) return;
     this.dressedIn = gear;
     const { walker, forge } = this.context;
@@ -260,12 +380,22 @@ export class Foot {
     const { link, fight } = this;
     const { forge, walker } = this.context;
     if (!(link instanceof RoomConnection) || !link.open) return null;
-    return { gear: this.gearHeld.gear, ask: (ask) => fight.askGear(ask), forge, dress: walker.you.dress };
+    return { gear: this.held.gear, ask: (ask) => fight.askGear(ask), forge, dress: walker.you.dress };
   }
 
   /** Whether the player has fallen and waits to respawn. */
   get fallen(): boolean {
     return this.standing.kind === 'dead' || this.fight.own?.action.kind === 'dead';
+  }
+
+  /** A dungeon's cache as its room last said, or null where there is none. */
+  get cache(): Cache | null {
+    return this.held.cache;
+  }
+
+  /** A patrol's entrances as its room last gave them. */
+  get entrances(): Entrances {
+    return this.held.entrances;
   }
 
   /** Does what E does where the player stands, if anything is within reach. */
@@ -294,7 +424,8 @@ export class Foot {
     clock: number,
     { paused, hands, aspect }: { paused: boolean; hands: boolean; aspect: number },
   ): FootFrame {
-    const { walker, movement, forge, groundAt } = this.context;
+    const { walker, movement, forge } = this.context;
+    const { groundAt } = this;
     const { fight, foes, effects } = this;
     this.dressInGear();
     this.plaza?.frame(seconds);
@@ -342,7 +473,11 @@ export class Foot {
     const able = !paused && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
-    this.using = able ? useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)) : null;
+    const here = { dungeon: this.dungeon, patrol: this.node, entrances: this.held.entrances, module: this.module };
+    this.using = able
+      ? (useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
+        tripAt(x, y, here, this.context.trips))
+      : null;
     this.prompt?.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {

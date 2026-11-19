@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountsFrom, nodeRoom, roomsFrom } from './rooms.ts';
+import { accountsFrom, dungeonRoom, nodeRoom, roomsFrom } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -38,4 +38,11 @@ test('a harder voyage to a patrol is a room of its own; a social space is one fo
   assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'calm'), 'node-saltgrass-downs');
   assert.equal(nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, 'storm'), 'node-saltgrass-downs--storm');
   assert.equal(nodeRoom({ id: 'overlook-social', kind: 'social' }, 'storm'), 'node-overlook-social');
+});
+
+test("a patrol's dungeon has one room at each sea, named for its patrol and its number", () => {
+  const patrol = { id: 'saltgrass-downs' };
+  assert.equal(dungeonRoom(patrol, 'calm', 0), 'node-saltgrass-downs--dungeon-0');
+  assert.equal(dungeonRoom(patrol, 'rough', 2), 'node-saltgrass-downs--rough--dungeon-2');
+  assert.equal(dungeonRoom(patrol, 'storm', 1), 'node-saltgrass-downs--storm--dungeon-1');
 });

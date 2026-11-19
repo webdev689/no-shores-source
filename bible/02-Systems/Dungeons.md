@@ -9,6 +9,14 @@ code:
   - crates/dungeon/src/block.rs#BlockLayout
   - crates/dungeon/src/lane.rs#Lane
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
+  - client/src/game/dungeonLayout.ts#askDungeon
+  - client/src/game/dungeonMesh.ts#dungeonMesh
+  - client/src/game/dungeonView.ts#DungeonView
+  - client/src/game/dungeonLight.ts#lightAt
+  - client/src/game/dungeonChest.ts#chestMesh
+  - client/src/game/dungeonScene.ts#DungeonScene
+  - client/src/game/entrances.ts#doorOf
+  - client/src/game/entranceView.ts#EntranceView
 ---
 # Dungeons
 
@@ -58,6 +66,23 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
   name and its number: its cells (-2 rock, -1 corridor, or a room's number), ceilings, rooms, way in, arrival, exit
   door, torches, frames, pillars and boxes.
+
+## In the Game
+
+The page reads a dungeon from the room module's own `room_dungeon` (`askDungeon`) and plays it as [[Game]] says ("A
+dungeon").
+
+- **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
+  ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
+  layout's `boxes`, trimmed pillars, torches' brackets and flames, and the exit door. Pictures by role from the
+  style's two sets, turned to the island's climate (`smallBook`) and painted by the city's painter.
+- **Its light** (`dungeonLight.ts`): each torch warm to `torchReach`, flickering, a faint cold light everywhere; the shader
+  and the figures sum the same light (`lightAt`).
+- **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
+- **The entrances** (`entrances.ts`, `EntranceView`): the forged models 42000, 42001, 43601 and 43602, lifted 2.5 m,
+  4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand them, turned by the room's yaw; E reaches a door within
+  2.5 m of its quad's middle.
+- **The ground inside** (`floorGrid`, `courseOf`): the grid of heights and the boxes, as the room stands bodies.
 
 ## Limits
 

@@ -13,6 +13,9 @@ code:
   - client/src/game/footGear.ts#groundRings
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
+  - client/src/game/footTrips.ts#tripAt
+  - client/src/game/dungeonDrawers.ts#dungeonTrips
+  - client/src/game/dungeonDrawers.ts#DungeonDrawers
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
@@ -55,6 +58,8 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
+| On foot in a patrol | E at an entrance's door, offered as "Enter" and the dungeon's name | The veil, "Entering" the dungeon, then on foot at its way in |
+| In a dungeon | E at its exit door, offered as "Leave" | The veil, "Leaving" the dungeon, then before its entrance's door, facing out |
 
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
 A way that fails stays on the veil, saying why, and Enter tries it again.
@@ -106,8 +111,53 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   rarity's colour, picked up by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
-  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
-  menu is up or the player lies dead, past the edge or felled by a foe.
+  vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it; on a patrol within 2.5 m of
+  an entrance's door it goes into its dungeon, and in a dungeon within 2.5 m of its exit door it goes out
+  ([[#A dungeon]]). None is offered while a menu is up or the player lies dead, past the edge or felled by a foe.
+
+## A dungeon
+
+A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's veil (`footTrips.ts`,
+`dungeonTrips`).
+
+- **The entrances.** The patrol's room says where each stands, among the player's gear (`Gear.dungeons`; alone too,
+  where the page's room tells nothing else of the gear). Each is drawn among the patrol's drawers as its forged
+  entrance model (`EntranceView`), lifted by the height its Daggerfall dungeon block stands it at and turned as an RMB
+  block's yaw turns a model, in the island's climate's pictures through the city's own pipelines, so the sun lights
+  it and it casts its shadow. Its door is its door quad's middle, turned and lifted.
+- **Going in.** Within 2.5 m of a door E offers "Enter" and the dungeon's name, the room module's own `room_dungeon`
+  asked with the patrol's id, its name and the entrance's number. Taken, the veil says "Entering" the dungeon; the page
+  leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--rough--` or
+  `--storm--` before `dungeon` at harder seas), alone a room opened in the page from the patrol's node file with
+  `room_open_dungeon`. The player stands at its way in, facing into its room.
+- **On foot inside.** The ground handed to the movement door is the dungeon's grid of heights, 0 m for an open cell and
+  none for rock, with its doorways' jambs and its pillars as the course, the same to the bit as its room's. The
+  camera keeps short of the rock beside each open cell, and the shots stop on it. The place's name on the heads-up
+  display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
+- **Going out.** Within 2.5 m of the exit door E offers "Leave". Taken, the veil says "Leaving" the dungeon, and the
+  patrol's room is joined at the entrance the player went in by: online its address with `?entrance=<number>`, alone
+  the patrol's room opened again in the page and joined with `room_join_at`. The player stands 1.5 m before the
+  entrance's door, facing away from it.
+
+**Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
+near-black. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
+wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
+wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
+lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; and the exit
+door. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
+style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
+is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the island's climate and painted by the
+procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to
+3.2 m. The exit door wears the door picture its entrance's model wears.
+
+- **The light.** The 32 torches nearest the eye each light 8 m round them, warm, flickering gently and none in step,
+  fading to nothing at their reach, a face turned from one catching half; a faint cold light lies everywhere, so a wall
+  past a torch still reads. Each torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as
+  the city's braziers glow.
+- **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
+  lit by the light where it stands, at its chest's height, in place of the sun.
+- **The cache** is a chest of boxes, wood in the island's timber and bands of iron, where the room's
+  `Snapshot.cache` stands it and facing its way, its lid shut, or thrown back while it stands open.
 
 ## The edge
 
@@ -287,5 +337,6 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.
+- In a dungeon nothing casts a shadow, and a torch lights through a wall a room on its other side within its reach.
 - Past the far square, about 2 km ahead of the camera, nothing is shadowed; the plants cast into the near square
   only.

@@ -1,5 +1,5 @@
 /**
- * Where the player is in the game's loop: on foot in a node, back at their ship on the sea, or over an island's side
+ * Where the player is in the game's loop: on foot in a node or a patrol's dungeon, back at their ship on the sea, or over an island's side
  * choosing where to land. Travel between them passes through a loading veil. On foot and at sea a menu may be open
  * over the play. Pure: the page feeds it what happened and draws what it answers.
  */
@@ -18,6 +18,8 @@ export type Happening =
   | { readonly kind: 'choose'; readonly node: string }
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
+  | { readonly kind: 'enter'; readonly node: string; readonly name: string }
+  | { readonly kind: 'leave'; readonly node: string; readonly name: string }
   | { readonly kind: 'back' };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
@@ -54,6 +56,13 @@ export function next(flow: Flow, happening: Happening): Flow {
         words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
+    case 'enter':
+    case 'leave': {
+      // Into a patrol's dungeon, or out of one to its patrol, on foot with no menu open.
+      if (flow.mode !== 'foot' || flow.menu) return flow;
+      const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
+      return { mode: 'loading', words, then: { mode: 'foot', node: happening.node, menu: false } };
+    }
     case 'back':
       if (flow.mode === 'landing') return { mode: 'sea', menu: false };
       return (flow.mode === 'foot' || flow.mode === 'sea') && flow.menu ? { ...flow, menu: false } : flow;

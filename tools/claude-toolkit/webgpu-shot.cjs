@@ -7,7 +7,7 @@
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
+// steps.json: { "url": "...", "size": [w, h], "scale": deviceScaleFactor (1 unless given), "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
@@ -103,7 +103,7 @@ async function main() {
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   });
   const [width, height] = plan.size ?? [1280, 800];
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: plan.scale ?? 1 });
   page.on('console', (message) => {
     if (message.type() === 'error') console.log('console:', message.text().slice(0, 300));
   });

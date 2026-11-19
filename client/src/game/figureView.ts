@@ -6,14 +6,19 @@ import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '.
 import { SAMPLES } from '../water/waterView.ts';
 
 const VIEW_BYTES = 80;
-const CARD_BYTES = 48;
+
+/** The light at a point, red, green and blue. */
+type Light = (point: readonly [number, number, number]) => readonly [number, number, number];
+const CARD_BYTES = 64;
+/** How far over a figure's feet the light it is lit by is taken, metres: about its chest. */
+const LIT_AT_M = 1.2;
 
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
-struct Card { feet: vec4f, size: vec4f, root: vec4f }
+struct Card { feet: vec4f, size: vec4f, root: vec4f, light: vec4f }
 @group(2) @binding(0) var<uniform> card: Card;
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
@@ -71,7 +76,9 @@ const SUN_ACROSS = 0.766;
   let sun = sunlit(in.from_eye + SUN * (behind / SUN_ACROSS + 0.15), SUN);
   // A figure a blow harms flashes white, the player red, for its share of a flash.
   let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
-  return vec4f(mix(texel.rgb * mix(SHADED, 1.0, sun), flash, card.root.z), 1.0);
+  // Where no sun shines (a dungeon), the light the page found where the figure stands.
+  let lit = select(texel.rgb * mix(SHADED, 1.0, sun), texel.rgb * card.light.rgb, card.light.w > 0.5);
+  return vec4f(mix(lit, flash, card.root.z), 1.0);
 }
 
 // A figure's contact shade: a soft dark disc on the ground at its feet. Where the near shadow map holds the figure's
@@ -229,12 +236,13 @@ export class FigureView implements CardMaker {
   }
 
   /** Writes the view's and each card's terms once a frame, for its shadow's pass and its own, and answers each card's
-   *  group. */
+   *  group; `light` lights each figure in place of the sun. */
   private groupsFor(
     fromEye: Float32Array,
     eye: readonly [number, number, number],
     yaw: number,
     figures: readonly CardAt[],
+    light?: Light,
   ): GPUBindGroup[] {
     if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
     const values = new Float32Array(VIEW_BYTES / 4);
@@ -249,6 +257,7 @@ export class FigureView implements CardMaker {
         ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
         ...[card.width * metres, card.height * metres, 0, 0],
         ...[rootX, card.root[1] * metres, flash?.share ?? 0, flash?.red ? 1 : 0],
+        ...(light ? [...light([x, y, z + LIT_AT_M]), 1] : [0, 0, 0, 0]),
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;
@@ -279,7 +288,8 @@ export class FigureView implements CardMaker {
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
-   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given. */
+   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given, or lit by `light` where
+   *  no sun shines. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -287,9 +297,10 @@ export class FigureView implements CardMaker {
     yaw: number,
     figures: readonly CardAt[],
     shadow?: ShadowMap,
+    light?: Light,
   ): void {
     if (figures.length === 0) return;
-    const groups = this.groupsFor(fromEye, eye, yaw, figures);
+    const groups = this.groupsFor(fromEye, eye, yaw, figures, light);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);

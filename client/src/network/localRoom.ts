@@ -25,11 +25,16 @@ export class LocalRoom implements RoomLink {
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
 
-  private constructor(door: RoomDoor, snapshot: (snapshot: Snapshot) => void, gear: (gear: GearMessage) => void) {
+  private constructor(
+    door: RoomDoor,
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void,
+    player = door.join(),
+  ) {
     this.door = door;
     this.snapshot = snapshot;
     this.gear = gear;
-    this.player = door.join();
+    this.player = player;
   }
 
   /** Opens a room on a course from the compiled `room-wasm` module, its player standing at `spawn`, with its stall and
@@ -51,16 +56,36 @@ export class LocalRoom implements RoomLink {
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
    *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
+  /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
+   *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. With
+   *  `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
     snapshot: (snapshot: Snapshot) => void,
     foeAsks = false,
+    { gear = () => undefined, entrance }: { gear?: (gear: GearMessage) => void; entrance?: number } = {},
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
     if (foeAsks) door.takeFoeAsks();
-    return new LocalRoom(door, snapshot, () => undefined);
+    const player = entrance === undefined ? door.join() : door.joinAt(entrance);
+    if (player === 0) throw new Error('the place has no such entrance');
+    return new LocalRoom(door, snapshot, gear, player);
+  }
+
+  /** Opens dungeon `number` of a patrol from the patrol's node file's text, from the compiled `room-wasm` module, its
+   *  player joined at its way in; the player's own gear goes to `gear`. */
+  static openDungeon(
+    module: WebAssembly.Module,
+    patrolText: string,
+    number: number,
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openDungeon(patrolText, number)) throw new Error('the dungeon is not one a room can stand in');
+    return new LocalRoom(door, snapshot, gear);
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player

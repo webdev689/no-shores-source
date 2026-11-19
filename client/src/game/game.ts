@@ -21,11 +21,12 @@ import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { DungeonDrawers, dungeonTrips } from './dungeonDrawers.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
-import { KIND_WORDS, type Standing } from './hudLaw.ts';
+import { ISLANDS, placeWords, REGION, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
@@ -45,10 +46,6 @@ import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 const FIRST_NODE = 'overlook-social';
 /** The most ships drawn at sea in a frame: the player's and those near it. */
 const SEA_SHIPS = 16;
-/** The islands' names the owner has given, by continent. */
-const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
-/** The region every island lies in. */
-const REGION = 'The Pale Expanse';
 /** The veil stays down until the exact ground round the player has come, or this long. */
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
@@ -58,12 +55,6 @@ const CHART_EVERY_S = 1;
 async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
-}
-
-/** The words under a place's name: its kind, and its island's name where it has one. */
-function placeWords(node: NodeInfo): string {
-  const island = ISLANDS[node.continent];
-  return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
 }
 
 /**
@@ -108,6 +99,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
+  const dungeons = new DungeonDrawers(gpu, figureView, cityAssets, biomeOf);
   const asked = new URLSearchParams(location.search).get('at');
   const start = (asked === null ? null : arrivalAt(world, asked)) ?? arrivalAt(world, FIRST_NODE);
   if (!start) throw new Error('the world has no Overlook to arrive at');
@@ -144,6 +136,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
+    trips: {
+      props: () => dungeons.props,
+      enter: (number, name) => trips.enter(number, name),
+      leave: () => trips.leave(),
+    },
   };
   const footView = new FootView(gpu, hudRoot);
   const closeSource = (left: number, top: number, step: number, samples: number) =>
@@ -195,13 +192,26 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     wasDead = false;
   };
 
-  const goFoot = async (node: NodeInfo, facing: number, seas = heldMap?.difficulty) => {
+  /** Leaves wherever the player was for the place `entering` stands them in. */
+  const goInto = async (entering: () => Promise<Foot>) => {
     leaveHere();
     foot?.leave();
     foot = null;
     sea?.leaveRoom();
-    foot = await Foot.enter(footContext, node, facing, seas);
+    foot = await entering();
   };
+  const goFoot = (node: NodeInfo, facing: number, seas = heldMap?.difficulty) =>
+    goInto(() => Foot.enter(footContext, node, facing, seas));
+
+  const trips = dungeonTrips({
+    foot: () => foot,
+    seas: () => heldMap?.difficulty,
+    travel: (happening, work) => travel(happening, work),
+    goInto,
+    context: footContext,
+    module: roomModule,
+    drawers: dungeons,
+  });
 
   const goSea = async () => {
     leaveHere();
@@ -419,6 +429,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const found: (Drawer | null | undefined)[] = [
       drawers.city,
       drawers.nature,
+      foot && dungeons.entrancesOf(foot),
       fight?.under,
       {
         drawInto: (pass, fromEye, shot, time) => {
@@ -443,20 +454,22 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
     const { body } = walker.player;
-    scene.keepClose([body.x, body.y], closeSource, () => undefined);
+    if (!here.dungeon) scene.keepClose([body.x, body.y], closeSource, () => undefined);
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
-    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
+    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: here.groundAt });
+    if (here.dungeon) dungeons.draw(here, shown, size, clock, fight, hands);
+    else scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);
     hud.note(here.roomNote);
-    return scene.closeReady(body.x, body.y);
+    // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
+    return !!here.dungeon || scene.closeReady(body.x, body.y);
   };
 
   const showStanding = (shown: Standing) => {

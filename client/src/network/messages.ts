@@ -159,6 +159,8 @@ export type FromRoomMessage =
       readonly ships: readonly SeenShip[];
       readonly pirates: readonly SeenPirate[];
       readonly fights: readonly SeenSeaFight[];
+      /** In a dungeon's room, its cache: x, y, z, the way it faces and 1 open or 0 shut; empty in any other. */
+      readonly cache: readonly number[];
     } & FleetPart)
   | ({ readonly kind: 'gear' } & GearState);
 
@@ -363,6 +365,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       ships,
       pirates,
       fights,
+      cache: Array.from(snapshot.cacheArray() ?? []),
       ...fleetOf(snapshot),
     };
   } catch {

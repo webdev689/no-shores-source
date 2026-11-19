@@ -142,6 +142,9 @@ export interface GearState {
   readonly emblems?: readonly number[];
   readonly emblem?: number;
   readonly emblemsSold?: readonly number[];
+  /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
+   *  of the four entrance models it is. */
+  readonly dungeons?: readonly number[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -241,6 +244,7 @@ export function gearOf(gear: Gear): GearState {
     emblems: Array.from(gear.emblemsArray() ?? []),
     emblem: gear.emblem(),
     emblemsSold: Array.from(gear.emblemsSoldArray() ?? []),
+    dungeons: Array.from(gear.dungeonsArray() ?? []),
   };
 }
 
