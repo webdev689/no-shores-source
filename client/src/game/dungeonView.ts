@@ -12,9 +12,9 @@ import { SAMPLES } from '../water/waterView.ts';
 import { PORTAL_FLAG, smallBook, type SmallBook, type Wanted } from './dungeonBook.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { FIXTURE_KINDS, LIGHT_KINDS, type Light, lightAt, MOODS } from './dungeonLight.ts';
+import { FIXTURE_KINDS, LIGHT_KINDS, type Light, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
 import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
-import { fixtureMesh } from './dungeonFixtures.ts';
+import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
@@ -134,7 +134,7 @@ export class DungeonView {
         const forged = propModel(props, id);
         if (forged) layModel(mesh, forged, [x, y, z], yaw);
       }
-      for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture);
+      for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
     });
     const end = lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0);
     const sets = new Set(layout.looks.flatMap((look) => look.pictures));
@@ -164,8 +164,7 @@ export class DungeonView {
       size: MOST_LIGHTS * LIGHT_FLOATS * 4,
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
     });
-    // Each cell's look for the shader's moods; rock takes the first.
-    const looks = Uint32Array.from(layout.cellLooks, (look) => Math.max(0, look));
+    const looks = moodLooks(layout);
     const cellLooks = device.createBuffer({
       size: Math.max(16, looks.byteLength),
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,

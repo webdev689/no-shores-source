@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { CAVE_BULGE_M } from './dungeonCeilings.ts';
 import { LIGHT_WGSL } from './dungeonLight.ts';
 import { DUNGEON_SHADER, LIGHT_FLOATS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
@@ -30,4 +31,9 @@ test("the view's buffer is laid out as the shader's View: each part where it sta
 
 test("a light's floats are the shader's Light", () => {
   assert.equal(fieldsOf(LIGHT_WGSL, 'Light').get('')?.start, LIGHT_FLOATS);
+});
+
+test("a surface's mood is looked up past the farthest a cave's wall bulges into the rock", () => {
+  const nudge = Number(/normal\.xy \* ([\d.]+)/.exec(DUNGEON_SHADER)?.[1]);
+  assert.ok(nudge > CAVE_BULGE_M && nudge < 0.5, `${nudge} m`);
 });

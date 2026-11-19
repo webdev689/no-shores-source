@@ -77,17 +77,21 @@ function candles(mesh: MeshBuilder, [x, y, z]: Point): void {
   }
 }
 
-/** Five to eight crystals grown from the floor round where the light stands, each leaning out from the cluster. */
-function crystals(mesh: MeshBuilder, [x, y]: Point): void {
+/** Five to eight crystals grown from the floor of their bed, each leaning out from its wall, all inside its box. */
+function crystals(mesh: MeshBuilder, [x, y]: Point, bed: Bed): void {
   const count = 5 + Math.floor(seeded(x, y, 0) * 4);
   for (let crystal = 0; crystal < count; crystal++) {
-    const turn = (crystal / count) * Math.PI * 2 + seeded(x, y, 1) * 4;
-    const out = seeded(x, y, crystal + 2) * 0.35;
-    const [footX, footY] = [x + Math.cos(turn) * out, y + Math.sin(turn) * out];
-    const tall = 0.35 + seeded(y, x, crystal + 2) * 0.9;
-    const lean = 0.15 + out * 0.6;
-    const tip: Point = [footX + Math.cos(turn) * lean, footY + Math.sin(turn) * lean, tall];
-    spike(mesh, [COLOUR.crystal, 0], [footX, footY, 0], tip, 0.05 + seeded(x, y, crystal + 20) * 0.06);
+    const half = 0.035 + seeded(x, y, crystal + 20) * 0.035;
+    const foot = footIn(bed, half, seeded(x, y, crystal + 2), seeded(y, x, crystal + 2));
+    const tall = 0.3 + seeded(y, x, crystal + 9) * (bed.box[4] - 0.35);
+    const lean = 0.05 + seeded(x, y, crystal + 30) * 0.2;
+    const aside = (seeded(y, x, crystal + 30) - 0.5) * 0.3;
+    const tip = within(
+      bed,
+      [foot[0] + bed.out[0] * lean - bed.out[1] * aside, foot[1] + bed.out[1] * lean + bed.out[0] * aside],
+      0.01,
+    );
+    spike(mesh, [COLOUR.crystal, 0], [foot[0], foot[1], 0], [tip[0], tip[1], tall], half);
   }
 }
 
@@ -121,28 +125,65 @@ function hearthFire(mesh: MeshBuilder, [x, y, z]: Point): void {
   }
 }
 
-/** Six to ten fungi grown from the floor round where the light stands, each a pale stalk under a glowing cap, the
- *  tallest nearest the middle. */
-function fungus(mesh: MeshBuilder, [x, y]: Point): void {
+/** Six to ten fungi grown from the floor of their bed, each a pale stalk under a glowing cap, all inside its box. */
+function fungus(mesh: MeshBuilder, [x, y]: Point, bed: Bed): void {
   const count = 6 + Math.floor(seeded(x, y, 0) * 5);
   for (let cap = 0; cap < count; cap++) {
-    const turn = (cap / count) * Math.PI * 2 + seeded(x, y, 1) * 4;
-    const out = cap === 0 ? 0 : 0.05 + seeded(x, y, cap + 2) * 0.2;
-    const [footX, footY] = [x + Math.cos(turn) * out, y + Math.sin(turn) * out];
-    const tall = (0.12 + seeded(y, x, cap + 2) * 0.3) * (1 - out);
     const wide = 0.04 + seeded(x, y, cap + 20) * 0.06;
+    const [footX, footY] = footIn(bed, wide, seeded(x, y, cap + 2), seeded(y, x, cap + 2));
+    const tall = 0.1 + seeded(y, x, cap + 9) * (bed.box[4] - wide * 0.6 - 0.12);
     box(mesh, [COLOUR.wax, 0], [footX - 0.012, footY - 0.012, 0], [footX + 0.012, footY + 0.012, tall]);
     spike(mesh, [COLOUR.fungus, 0], [footX, footY, tall - 0.01], [footX, footY, tall + wide * 0.6], wide);
   }
 }
 
-/** One fixture as the layout stands it: x, y, the light's height and its kind (`FIXTURE`). */
-export function fixtureMesh(mesh: MeshBuilder, [x, y, z, kind]: readonly number[]): void {
+/** Where a cluster of crystals or fungus grows: its solid's box (min x, min y, max x, max y, top), and the way out
+ *  from its wall into the room. */
+export interface Bed {
+  readonly box: readonly [number, number, number, number, number];
+  readonly out: readonly [number, number];
+}
+
+/** A point kept inside a bed's box, `margin` in from its sides. */
+function within({ box: [minX, minY, maxX, maxY] }: Bed, [x, y]: readonly [number, number], margin: number) {
+  return [Math.min(maxX - margin, Math.max(minX + margin, x)), Math.min(maxY - margin, Math.max(minY + margin, y))];
+}
+
+/** A foot `half` wide somewhere in a bed, by two numbers from 0 to 1, so it stands wholly inside the box. */
+function footIn({ box: [minX, minY, maxX, maxY] }: Bed, half: number, across: number, down: number) {
+  return [
+    minX + half + across * Math.max(0, maxX - minX - 2 * half),
+    minY + half + down * Math.max(0, maxY - minY - 2 * half),
+  ];
+}
+
+/** A fixture's bed: the solid among the layout's boxes that holds where its light burns, and the way from it to its
+ *  cell's middle, which is out from the wall it stands against; none for a fixture with no solid. */
+export function bedOf(
+  layout: { readonly cell: number; readonly boxes: readonly (readonly [number, number, number, number, number])[] },
+  [x = 0, y = 0]: readonly number[],
+): Bed | null {
+  const box = layout.boxes.find(([minX, minY, maxX, maxY]) => x > minX && x < maxX && y > minY && y < maxY);
+  if (!box) return null;
+  const [awayX, awayY] = [
+    (Math.floor(x / layout.cell) + 0.5) * layout.cell - x,
+    (Math.floor(y / layout.cell) + 0.5) * layout.cell - y,
+  ];
+  return { box, out: Math.abs(awayX) >= Math.abs(awayY) ? [Math.sign(awayX), 0] : [0, Math.sign(awayY)] };
+}
+
+/** One fixture as the layout stands it: x, y, the light's height and its kind (`FIXTURE`); a cluster grows in its bed,
+ *  or in one 0.6 m by 0.4 m round its light, against a wall to the north, when it is given none. */
+export function fixtureMesh(mesh: MeshBuilder, [x, y, z, kind]: readonly number[], given?: Bed | null): void {
   const where: Point = [x ?? 0, y ?? 0, z ?? 0];
+  const bed: Bed = given ?? {
+    box: [where[0] - 0.3, where[1] - 0.2, where[0] + 0.3, where[1] + 0.2, kind === FIXTURE.fungus ? 0.5 : 0.9],
+    out: [0, 1],
+  };
   if (kind === FIXTURE.brazier) brazier(mesh, where);
   else if (kind === FIXTURE.candles) candles(mesh, where);
-  else if (kind === FIXTURE.crystals) crystals(mesh, where);
+  else if (kind === FIXTURE.crystals) crystals(mesh, where, bed);
   else if (kind === FIXTURE.lantern) lantern(mesh, where);
   else if (kind === FIXTURE.hearth) hearthFire(mesh, where);
-  else if (kind === FIXTURE.fungus) fungus(mesh, where);
+  else if (kind === FIXTURE.fungus) fungus(mesh, where, bed);
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { falloff, FIXTURE_KINDS, flicker, LIGHT_KINDS, lightAt, MOODS } from './dungeonLight.ts';
-import { FIXTURE } from './dungeonLayout.ts';
+import { falloff, FIXTURE_KINDS, flicker, LIGHT_KINDS, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
+import { type DungeonLayout, FIXTURE } from './dungeonLayout.ts';
 
 test('a light is all there where it burns and gone at its reach', () => {
   assert.equal(falloff(0, 8), 1);
@@ -42,4 +42,15 @@ test('each fixture kind burns its own way, and each style its own mood', () => {
     const sum = mood[0] + mood[1] + mood[2];
     assert.ok(sum > 0.5 && sum < 0.75, 'each faint enough to keep the dark and bright enough to show a wall');
   }
+});
+
+test("rock takes the look of the open cell beside it, so a wall bulged into it keeps its room's mood", () => {
+  // Three columns by two rows: a look 0 cell, rock, a look 1 cell; and below, rock with no open cell beside it but one.
+  const layout = {
+    columns: 3,
+    rows: 2,
+    cells: [0, -2, 1, -2, -2, -2],
+    cellLooks: [0, -1, 1, -1, -1, -1],
+  } as unknown as DungeonLayout;
+  assert.deepEqual(Array.from(moodLooks(layout)), [0, 1, 1, 0, 0, 1]);
 });

@@ -3,6 +3,7 @@
 // cap glowing in its own colour.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, PORTAL_FLAG } from './dungeonBook.ts';
+import { CAVE_BULGE_M } from './dungeonCeilings.ts';
 import { LIGHT_WGSL } from './dungeonLight.ts';
 
 /** The most lights lighting one frame: the nearest to the eye. */
@@ -68,9 +69,10 @@ fn dungeon_vertex(
   return surface;
 }
 
-// The faint light of the cell a surface lies in: a wall faces into its cell, so a little along its normal is inside.
+// The faint light of the cell a surface lies in: a wall faces into its cell, so a little past the farthest a cave's
+// wall bulges into the rock, along its normal, is inside.
 fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
-  let inside = point.xy + normal.xy * 0.05;
+  let inside = point.xy + normal.xy * ${(CAVE_BULGE_M + 0.05).toFixed(2)};
   let column = floor(inside.x / view.grid.x);
   let row = floor(inside.y / view.grid.x);
   if column < 0.0 || row < 0.0 || column >= view.grid.y || row >= view.grid.z {

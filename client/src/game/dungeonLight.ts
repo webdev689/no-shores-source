@@ -1,7 +1,7 @@
 // A dungeon's light: no sky and no sun. Each light burns in its kind's colour and fades to nothing at its reach,
 // flickering as its kind does; a faint light lies everywhere, in the mood of the style of the cell, so a wall past
 // every light still reads. The page lights the figures by the same sums the shader lights the walls by (`LIGHT_WGSL`).
-import type { StyleKey } from './dungeonLayout.ts';
+import { type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 
 type Colour = readonly [number, number, number];
 type Point = readonly [number, number, number];
@@ -45,6 +45,17 @@ export const MOODS: Readonly<Record<StyleKey, Colour>> = {
   caverns: [0.13, 0.24, 0.26],
   mines: [0.25, 0.2, 0.15],
 };
+
+/** Each cell's look for its mood: an open cell's own, and rock the look of the first open cell beside it (east, south,
+ *  west, north), so a face that lies a little into the rock, as a cave's wall bulges, takes the mood of its room. */
+export function moodLooks(layout: DungeonLayout): Uint32Array {
+  return Uint32Array.from(layout.cellLooks, (look, cell) => {
+    if (look >= 0) return look;
+    const [column, row] = [cell % layout.columns, Math.floor(cell / layout.columns)];
+    const open = SIDE_STEPS.find(([east, south]) => openAt(layout, column + east, row + south));
+    return open ? Math.max(0, layout.cellLooks[(row + open[1]) * layout.columns + column + open[0]] ?? 0) : 0;
+  });
+}
 
 /** A flame's own glow, as the city's braziers glow; a crystal's, a fungus cap's, a lantern's glass and an ember's. */
 export const FLAME: Colour = [1.4, 1.0, 0.5];

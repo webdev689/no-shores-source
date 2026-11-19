@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { meshBuilder } from '../models/model.ts';
-import { fixtureMesh } from './dungeonFixtures.ts';
+import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { FIXTURE } from './dungeonLayout.ts';
 import { COLOUR, IRON } from './dungeonMesh.ts';
 
@@ -33,15 +33,25 @@ test('each fixture is drawn in its own colours: iron and fire, wax, crystal, lan
   assert.ok(has(FIXTURE.fungus, [COLOUR.fungus, 0]) && has(FIXTURE.fungus, [COLOUR.wax, 0]));
 });
 
-test("fungus grows low from the floor, under its cluster's half-metre top, close round where its light is", () => {
-  const mesh = meshBuilder();
-  fixtureMesh(mesh, [4, 6, 0.25, FIXTURE.fungus]);
-  const { positions } = mesh.model();
-  for (let vertex = 0; vertex < positions.length / 3; vertex++) {
-    const [x, y, z] = [positions[vertex * 3] ?? 0, positions[vertex * 3 + 1] ?? 0, positions[vertex * 3 + 2] ?? 0];
-    assert.ok(z >= -1e-6 && z <= 0.5, `${z} m up`);
-    assert.ok(Math.hypot(x - 4, y - 6) <= 0.35, 'within its cluster');
+test('crystals and fungus grow wholly inside their solid, from the floor to under its top, leaning out from the wall', () => {
+  const layout = { cell: 3.2, boxes: [[0.1, 1.3, 0.5, 1.9, 0.9] as const] };
+  const bed = bedOf(layout, [0.3, 1.6, 0.45]);
+  assert.deepEqual(bed?.out, [1, 0], 'its wall is to the west, so out is east');
+  for (const kind of [FIXTURE.crystals, FIXTURE.fungus]) {
+    const mesh = meshBuilder();
+    fixtureMesh(mesh, [0.3, 1.6, 0.45, kind], bed);
+    const { positions } = mesh.model();
+    let east = 0;
+    for (let vertex = 0; vertex < positions.length / 3; vertex++) {
+      const [x, y, z] = [positions[vertex * 3] ?? 0, positions[vertex * 3 + 1] ?? 0, positions[vertex * 3 + 2] ?? 0];
+      // A model keeps its points in single precision.
+      assert.ok(x >= 0.1 - 1e-5 && x <= 0.5 + 1e-5 && y >= 1.3 - 1e-5 && y <= 1.9 + 1e-5, `${x}, ${y} in its box`);
+      assert.ok(z >= -1e-5 && z <= 0.9 + 1e-5, `${z} m up`);
+      east += x - 0.3;
+    }
+    if (kind === FIXTURE.crystals) assert.ok(east > 0, 'the crystals lean out from the wall');
   }
+  assert.equal(bedOf(layout, [2, 2]), null, 'a light with no solid has no bed');
 });
 
 test('a brazier and crystals stand on the floor; a lantern hangs round where its light is', () => {

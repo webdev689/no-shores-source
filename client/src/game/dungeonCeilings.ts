@@ -18,7 +18,7 @@ const RISE_M = { vault: 1.6, dome: 2.2 };
 const RISE_SHARE = 0.6;
 /** A cave's ceiling rises this far over its walls at least and at most; its walls bulge this far either way. */
 const CAVE_RISE_M = [0.25, 1.1] as const;
-const CAVE_BULGE_M = 0.22;
+export const CAVE_BULGE_M = 0.22;
 /** The cave's lattice: its rough ceiling and its walls' bulges change this often (m). */
 const CAVE_GRAIN_M = 1.6;
 
