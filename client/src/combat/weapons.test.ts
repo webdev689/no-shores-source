@@ -4,7 +4,10 @@ import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { KINDS, WORN } from '../player/gear.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { findAll, onFakePage } from './page.test.ts';
-import { type ArmsShown, SWAP_SECONDS, WeaponRows, weaponsOf, weaponWords } from './weapons.ts';
+import type { Dress } from '../player/dressing.ts';
+import type { ItemPictures } from '../player/itemPictures.ts';
+import type { Picture } from '../player/picture.ts';
+import { type ArmsShown, SWAP_SECONDS, WeaponRows, weaponsCss, weaponsOf, weaponWords } from './weapons.ts';
 
 const item = (kind: string, slot: number, rarity = 0): GearItem => ({
   id: 10 + slot,
@@ -128,3 +131,101 @@ test('a swap trades the rows for the swap’s time, a reload fills its line, and
     assert.equal(rows.root.hidden, true, 'no gear, no rows');
   });
 });
+
+/** The forge's pictures, as `drawn` says: one weapon's picture, or none (still drawing, or never, as a 404 leaves it). */
+const forge = (drawn: () => Picture | null): ItemPictures => ({ pictureOf: drawn }) as unknown as ItemPictures;
+const blade: Picture = { width: 2, height: 2, pixels: new Uint8ClampedArray(16).fill(255) };
+/** Runs `run` on a screen of `ratio` device pixels to one, with the page's ImageData stood in. */
+function onScreen(ratio: number, run: () => void): void {
+  const holder = globalThis as { devicePixelRatio?: number; ImageData?: unknown };
+  const was = [holder.devicePixelRatio, holder.ImageData] as const;
+  holder.devicePixelRatio = ratio;
+  holder.ImageData = class {};
+  try {
+    run();
+  } finally {
+    [holder.devicePixelRatio, holder.ImageData] = was;
+  }
+}
+
+test('a weapon’s picture is drawn again when the screen’s pixel ratio changes, and not before', () =>
+  onFakePage((root) => {
+    const rows = new WeaponRows(
+      root,
+      forge(() => blade),
+    );
+    const dressed = { ...arms(0), dress: {} as Dress };
+    const pictureNow = () => findAll(root, 'weapon', 'hand')[0]?.children[1]?.children[0];
+    onScreen(1, () => rows.update(dressed, own, 1 / 60));
+    const first = pictureNow();
+    assert.ok(first, 'drawn');
+    onScreen(1, () => rows.update(dressed, own, 1 / 60));
+    assert.equal(pictureNow(), first, 'the same screen keeps it');
+    onScreen(2, () => rows.update(dressed, own, 1 / 60));
+    assert.notEqual(pictureNow(), first, 'a sharper screen draws it again');
+  }));
+
+test('a weapon whose picture never comes still says its name; one pictured lets the picture say it', () =>
+  onFakePage((root) => {
+    let drawn: Picture | null = null;
+    const rows = new WeaponRows(
+      root,
+      forge(() => drawn),
+    );
+    const dressed = { ...arms(1), dress: {} as Dress };
+    onScreen(1, () => rows.update(dressed, own, 1 / 60));
+    const hand = findAll(root, 'weapon', 'hand')[0];
+    assert.equal(hand?.classList.contains('bare'), true, 'no picture: the name shows');
+    drawn = blade;
+    onScreen(1, () => rows.update(dressed, own, 1 / 60));
+    assert.equal(hand?.classList.contains('bare'), false, 'the picture, late, takes its place');
+    assert.match(
+      weaponsCss(),
+      /\.weapon\.hand\.ranged:not\(\.bare\) \.name/,
+      'a Ranged weapon’s name hides only behind its picture',
+    );
+  }));
+
+test('a swap pressed during a swap trades the rows again from the start', () =>
+  onFakePage((root) => {
+    const rows = new WeaponRows(root, null);
+    const swapClass = () => ['swapping', 'swapping-again'].filter((name) => rows.root.classList.contains(name));
+    rows.update(arms(0), own, 1 / 60);
+    rows.update(arms(1), own, 1 / 60);
+    assert.deepEqual(swapClass(), ['swapping']);
+    rows.update(arms(1), own, SWAP_SECONDS / 2);
+    rows.update(arms(0), own, 1 / 60);
+    // A class of another name gives the rows' trade another animation, which a page starts afresh.
+    assert.deepEqual(swapClass(), ['swapping-again'], 'the second swap starts its own trade');
+    rows.update(arms(0), own, SWAP_SECONDS / 2);
+    assert.deepEqual(swapClass(), ['swapping-again'], 'and runs its whole time, not what the first had left');
+    rows.update(arms(0), own, SWAP_SECONDS / 2);
+    assert.deepEqual(swapClass(), []);
+    assert.match(weaponsCss(), /swapping-again \.weapon\.hand \{ animation: weapon-up-again/);
+  }));
+
+test('a magazine run dry reads as a large 0 in the loss colour, with No ammo said small beside it', () =>
+  onFakePage((root) => {
+    const rows = new WeaponRows(root, null);
+    rows.update(arms(1), { ...own, ammo: 0 }, 1 / 60);
+    const hand = findAll(root, 'weapon', 'hand')[0];
+    assert.ok(hand);
+    const words = (name: string) => findAll(hand as unknown as HTMLElement, name)[0]?.textContent;
+    assert.deepEqual([words('shots'), words('most'), hand.classList.contains('empty')], ['0', 'No ammo', true]);
+    const said = (hand as unknown as { ariaLabel: string }).ariaLabel;
+    assert.equal(said.endsWith('no ammo'), true, 'a screen reader is still told it has none');
+  }));
+
+test('a loadout pressed while the fighter is busy waits, as the rules do, until they rest to take it up', () =>
+  onFakePage((root) => {
+    const rows = new WeaponRows(root, null);
+    const busy: FighterView = { ...own, action: { kind: 'guard', elapsed: 4, window: 0 } };
+    const inHand = () => (findAll(root, 'weapon', 'hand')[0]?.classList.contains('ranged') ? 'Ranged' : 'Melee');
+    rows.update(arms(0), own, 1 / 60);
+    rows.update(arms(1), busy, 1 / 60);
+    assert.deepEqual([inHand(), rows.root.classList.contains('swapping')], ['Melee', false], 'the hands still hold it');
+    rows.update(arms(1, false), busy, 1 / 60);
+    assert.equal(rows.root.classList.contains('away'), false, 'nor is it put away mid-guard');
+    rows.update(arms(1), own, 1 / 60);
+    assert.deepEqual([inHand(), rows.root.classList.contains('swapping')], ['Ranged', true], 'taken up at rest');
+  }));

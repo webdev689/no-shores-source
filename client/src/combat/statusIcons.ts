@@ -6,7 +6,7 @@ import type { FoeStatuses } from '../network/messages.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { TONES } from '../plus/tones.ts';
 import type { StatusName, Statuses } from '../rules/fighters.ts';
-import { element } from './meter.ts';
+import { element, setStyle, showNode } from './meter.ts';
 
 /** Each status's glyph as rows of letters (a the outline, b the body, c its light, a dot none), 12 × 12. */
 const MAPS: Readonly<Record<StatusName, readonly string[]>> = {
@@ -186,12 +186,12 @@ export class StatusRow {
       const share = this.clock.share(`${owner}:${status.name}:${status.faded}`, status.left);
       if (icon.root.dataset['status'] !== status.name) icon.root.dataset['status'] = status.name;
       icon.root.classList.toggle('faded', status.faded);
-      icon.root.hidden = false;
+      showNode(icon.root, true);
       const words = statusWords(status);
       if (icon.root.ariaLabel !== words) icon.root.ariaLabel = words;
-      icon.time.style.width = `${Math.round(share * 1000) / 10}%`;
+      setStyle(icon.time, 'width', `${Math.round(share * 1000) / 10}%`);
     });
-    for (const icon of this.icons.slice(shown.length)) icon.root.hidden = true;
+    for (let index = shown.length; index < this.icons.length; index++) showNode(this.icons[index]!.root, false);
   }
 
   /** Forgets the fighters not in `present`, whose numbers may come again for others. */

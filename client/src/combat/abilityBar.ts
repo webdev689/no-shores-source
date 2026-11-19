@@ -220,7 +220,9 @@ export class AbilityBar {
       const frame = element('img', 'frame', root) as HTMLImageElement;
       const icon = element('div', 'icon', root);
       const pictures = icons.map((name) => element('img', name, icon) as HTMLImageElement);
-      element('kbd', '', holder, key);
+      // The ability's name says all of it, its key too: its pictures and keycap are not read again.
+      for (const picture of [frame, ...pictures]) picture.alt = '';
+      element('kbd', '', holder, key).ariaHidden = 'true';
       return { root, frame, icon: pictures[0] as HTMLImageElement, used: 0, pictures };
     };
     const anima = slot('anima', ABILITY_KEYS[0], ['unlit', 'outline', 'lit']);

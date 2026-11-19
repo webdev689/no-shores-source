@@ -36,7 +36,9 @@ function platesCss(): string {
   }).join('\n');
   const squares = Object.entries(SQUARE_SCALE).map(([place, scale]) => {
     const side = EMBLEM_PIXELS * scale + 4;
-    return `.fight-hud .${place} .level { width: ${side}px; height: ${side}px; font-size: ${Math.round(side / 2)}px; }`;
+    // Over a figure the plate scales with its distance; the plates that stand still keep the face's 22 px step.
+    const letters = place === 'overhead' ? Math.round(side / 2) : 22;
+    return `.fight-hud .${place} .level { width: ${side}px; height: ${side}px; font-size: ${letters}px; }`;
   });
   return `
 .fight-hud .plate { display: flex; gap: 5px; align-items: stretch; }
@@ -54,7 +56,8 @@ ${squares.join('\n')}
 .fight-hud .rank-mark { display: none; flex: none; background-size: 100% 100%; image-rendering: pixelated;
   filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
 ${marks.join('\n')}
-.fight-hud .alert { color: #ffd95a; font-size: 15px; font-weight: 800; }
+.fight-hud .alert { color: #ffd95a; font-size: 22px; font-weight: 800; }
+.fight-hud .overhead .alert { font-size: 15px; }
 .fight-hud .alert:empty { display: none; }
 .fight-hud .alert.now { color: #ff5a4a; }
 
@@ -112,13 +115,13 @@ ${wards}
 
 /* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
    show. */
-.fight-hud .target { width: min(340px, ${boss.share * 100}%); font-size: 14px; }
+.fight-hud .target { width: min(340px, ${boss.share * 100}%); font-size: 11px; }
 .fight-hud .target .body { flex: 1; gap: 3px; }
 .fight-hud .target .meter.health { height: 12px; }
 
 .fight-hud .boss { width: min(${boss.width}px, ${boss.share * 100}%); }
 .fight-hud .boss .body { flex: 1; }
-.fight-hud .boss .title { align-items: baseline; gap: 12px; font-size: 18px; }
+.fight-hud .boss .title { align-items: baseline; gap: 12px; font-size: 22px; }
 .fight-hud .boss .faction, .fight-hud .boss .phase { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
   color: ${TONES.wordDim}; }
 .fight-hud .boss .phase { margin-left: auto; }
