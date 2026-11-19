@@ -13,7 +13,7 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same node, script and fingerprint
  *  (crates/room-wasm/src/garrison_door_tests.rs). */
-const GARRISON_HASH = '45d8297e';
+const GARRISON_HASH = 'e780aa3a';
 const RUN_IN = 420;
 const SWING_EVERY = 30;
 const RUN_TICKS = 1500;
