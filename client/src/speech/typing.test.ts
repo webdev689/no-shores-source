@@ -81,3 +81,18 @@ test('finishing shows the whole line and sounds nothing more', () => {
   assert.equal(typing.visible, 'Three of them!');
   assert.equal(typing.step(1), false);
 });
+
+test('a slow frame inside a word never banks syllables to fire back to back after it', () => {
+  const typing = new Typing('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 0.08);
+  typing.step(0.001);
+  typing.step(0.4);
+  let heard = 0;
+  for (let clock = 0; clock < 0.08 - 0.001; clock += 1 / 60) heard += typing.step(1 / 60) ? 1 : 0;
+  assert.ok(heard <= 1, `${heard} syllables inside one syllable's length`);
+});
+
+test("a stop followed only by spaces is the line's last, and is not held", () => {
+  const typing = new Typing('Ha! ', 0.2);
+  typing.step(4 / CHARACTERS_PER_SECOND + 0.001);
+  assert.equal(typing.done, true);
+});

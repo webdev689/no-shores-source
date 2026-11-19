@@ -4,7 +4,7 @@
 // its words.
 import { motionReduced } from '../plus/kit.ts';
 import type { Cast, EmoteKind, Line } from './cast.ts';
-import type { VoiceOut } from './dialogue.ts';
+import { type VoiceOut, wordsNode } from './dialogue.ts';
 import { EMOTES, drawGlyph, glyphMotion, glyphSize } from './glyphs.ts';
 import { GAP_PX, barkOpacity, emoteOpacity, glyphScale, overheadPlace } from './place.ts';
 import { wearSpeech } from './sheet.ts';
@@ -53,14 +53,7 @@ export class Overheads {
   /** Its words over the head, typed and voiced, then fading; a new bark over the same head replaces the last. */
   bark(head: string, line: Line, cast: Cast): void {
     const voice = cast.voices[cast.speakers[line.who].voice];
-    const page = this.layer.ownerDocument;
-    const node = page.createElement('p');
-    node.className = 'speech-bark';
-    const typed = page.createTextNode('');
-    const unseen = page.createElement('span');
-    unseen.className = 'speech-unseen';
-    unseen.textContent = line.say;
-    node.append(typed, unseen);
+    const { node, typed, unseen } = wordsNode(this.layer.ownerDocument, 'speech-bark');
     node.hidden = true;
     const shown = this.headOf(head);
     shown.bark?.node.remove();

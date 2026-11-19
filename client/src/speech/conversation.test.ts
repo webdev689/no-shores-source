@@ -49,7 +49,8 @@ test('with auto, each line moves on once typed and held', () => {
   }
   const typedS = 'Brace!'.length / 28;
   assert.ok(clock >= typedS + AUTO_HOLD_S - 0.02 && clock <= typedS + AUTO_HOLD_S + 0.05, `moved on at ${clock}`);
-  while (!talk.finished) talk.step(1 / 60);
+  for (let frame = 0; frame < 600 && !talk.finished; frame += 1) talk.step(1 / 60);
+  assert.equal(talk.finished, true, 'the last line ends the cutscene by itself');
 });
 
 test("a line is voiced in its own speaker's voice, and a bark is leant on", () => {

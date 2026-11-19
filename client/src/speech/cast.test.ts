@@ -58,3 +58,17 @@ test('scenes that are not lists of lines are refused', () => {
   assert.throws(() => scenesOf({ scenes: { one: 'Brace!' } }, cast), /one/);
   assert.throws(() => scenesOf({}, cast), /scenes/);
 });
+
+test('a name every object carries is not a speaker or a voice', () => {
+  const cast = castOf(small());
+  assert.throws(() => scenesOf({ scenes: { one: [{ who: 'toString', say: 'Hi.' }] } }, cast), /toString/);
+  const json = small();
+  json.speakers.mate.voice = 'constructor';
+  assert.throws(() => castOf(json), /constructor/);
+});
+
+test('a syllable too short to swell and fall is refused', () => {
+  const json = small();
+  json.voices.mate.syllableS = 0.01;
+  assert.throws(() => castOf(json), /syllableS/);
+});

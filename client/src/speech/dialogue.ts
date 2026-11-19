@@ -11,7 +11,7 @@ import { speakSyllable } from './voice.ts';
 export type VoiceOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;
 
 /** A paragraph of typed words over the rest of the line laid out unseen, so the typed words never reflow. */
-function wordsNode(page: Document, className: string): { node: HTMLElement; typed: Text; unseen: HTMLElement } {
+export function wordsNode(page: Document, className: string): { node: HTMLElement; typed: Text; unseen: HTMLElement } {
   const node = page.createElement('p');
   node.className = className;
   const typed = page.createTextNode('');
@@ -113,6 +113,8 @@ export class DialogueBox {
       this.box.hidden = name === '';
       this.nowhere.node.hidden = name !== '';
       this.onLine?.(line, talk.index);
+      // The caller may have played or skipped from inside onLine: the page is then theirs, not this line's.
+      if (this.talk !== talk) return;
     }
     words.typed.data = talk.typing.visible;
     words.unseen.textContent = talk.typing.hidden;

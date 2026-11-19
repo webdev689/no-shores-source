@@ -65,7 +65,8 @@ export class Typing {
       this.voiceClock = Math.min(this.voiceClock, this.syllableS);
       return false;
     }
-    this.voiceClock -= this.syllableS;
+    // A slow frame's surplus is dropped rather than kept, so the next syllable is never sooner than a whole one.
+    this.voiceClock = 0;
     return true;
   }
 
@@ -92,9 +93,11 @@ export class Typing {
     }
   }
 
-  /** The next stop to hold on: a full stop, question or cry followed by a space, so a line's last is never held. */
+  /** The next stop to hold on: a full stop, question or cry followed by a space and more words, so a line's last is
+   *  never held. */
   private nextStop(): number {
-    for (let place = this.heldThrough + 1; place < this.text.length - 1; place += 1) {
+    const lastWord = this.text.trimEnd().length;
+    for (let place = this.heldThrough + 1; place < lastWord - 1; place += 1) {
       if (STOPS.includes(this.text.charAt(place)) && this.text.charAt(place + 1) === ' ') return place;
     }
     return -1;
