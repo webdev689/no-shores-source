@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { askDungeon, courseOf, type DungeonLayout, floorGrid, seenBlocks } from './dungeonLayout.ts';
+import { askDungeon, courseOf, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
 
 /** A room's cell and a corridor's in a row of three, rock past them. */
 const small = {
@@ -12,13 +12,7 @@ const small = {
   boxes: [[3.2, 0, 3.5, 0.7, 3.2]],
 } as unknown as DungeonLayout;
 
-test('the floor is a grid of heights from the north-west corner: 0 m open, NaN for rock', () => {
-  const grid = floorGrid(small);
-  assert.deepEqual(grid.slice(0, 7), [0, 0, 3.2, 3, 1, 0, 0]);
-  assert.ok(Number.isNaN(grid[7]));
-});
-
-test('a body runs into the boxes; the camera and the shots stop on the rock beside the open cells too', () => {
+test('the camera and the shots stop on the rock beside the open cells too', () => {
   assert.deepEqual(courseOf(small), [{ minX: 3.2, minY: 0, maxX: 3.5, maxY: 0.7, top: 3.2 }]);
   const seen = seenBlocks(small);
   // The box, the rock cell east of the corridor, and the cells round the two open ones past the grid's edge.

@@ -22,6 +22,15 @@ export interface DungeonLayout {
   readonly wayIn: { readonly cell: number; readonly side: number; readonly room: number };
   readonly arrival: { readonly x: number; readonly y: number; readonly bearing: number };
   readonly exitDoor: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+  /** The return portal on the end room's far wall: its foot's middle on the wall, its width and height, and the side
+   *  it stands on. */
+  readonly portal: {
+    readonly x: number;
+    readonly y: number;
+    readonly side: number;
+    readonly width: number;
+    readonly height: number;
+  };
   readonly torches: readonly (readonly [number, number, number, number])[];
   readonly torchReach: number;
   readonly frames: readonly Triple[];
@@ -57,14 +66,7 @@ export function openAt(layout: DungeonLayout, column: number, row: number): bool
   return inside && (layout.cells[row * layout.columns + column] ?? ROCK) !== ROCK;
 }
 
-/** The floor as the movement rules take a grid of heights (`Heights::to_floats`): its shape from the north-west
- *  corner, then each cell's height, 0 m where it is open and NaN for rock. */
-export function floorGrid(layout: DungeonLayout): number[] {
-  const heights = layout.cells.map((cell) => (cell === ROCK ? Number.NaN : 0));
-  return [0, 0, layout.cell, layout.columns, layout.rows, ...heights];
-}
-
-/** What a body runs into, as the movement rules' course: the doorways' jambs and the pillars. */
+/** The doorways' jambs and the pillars, as blocks. */
 export function courseOf(layout: DungeonLayout): Block[] {
   return layout.boxes.map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
 }

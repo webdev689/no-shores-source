@@ -8,6 +8,8 @@ type Torch = readonly [number, number, number, number];
 /** The faint cold light everywhere, and a torch's warm light at its foot. */
 export const COLD: Colour = [0.07, 0.08, 0.11];
 export const WARM: Colour = [1.5, 0.95, 0.5];
+/** An open portal's face, a cold bright light. */
+export const PORTAL: Colour = [0.85, 0.95, 1.4];
 /** A flame's own glow, as the city's braziers glow. */
 export const FLAME: Colour = [1.4, 1.0, 0.5];
 
@@ -47,6 +49,7 @@ export const LIGHT_WGSL = /* wgsl */ `
 const COLD = ${vector(COLD)};
 const WARM = ${vector(WARM)};
 const FLAME = ${vector(FLAME)};
+const PORTAL_LIGHT = ${vector(PORTAL)};
 
 fn flicker(time: f32, number: f32) -> f32 {
   return 0.88 + 0.07 * sin(time * 9.3 + number * 2.17) + 0.05 * sin(time * 15.1 + number * 4.41);

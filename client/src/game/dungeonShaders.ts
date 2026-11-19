@@ -1,6 +1,7 @@
 // The dungeon's WGSL: its floor's mesh and its cache in the dungeon's pictures, lit by its torches and its cold light
 // (`LIGHT_WGSL`), never by a sun; iron in the city's iron and each flame glowing as the city's braziers glow.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
+import { PORTAL_LAYER } from './dungeonBook.ts';
 import { LIGHT_WGSL } from './dungeonLight.ts';
 
 /** The most torches lighting one frame: the nearest to the eye. */
@@ -11,7 +12,7 @@ struct View {
   from_eye: mat4x4f,
   // the eye, and the time
   eye: vec4f,
-  // how many torches the frame holds, and how far each one's light reaches
+  // how many torches the frame holds, how far each one's light reaches, and 1 while the portal stands open
   torches: vec4f,
 };
 @group(0) @binding(0) var<uniform> view: View;
@@ -23,6 +24,7 @@ ${LIGHT_WGSL}
 
 const IRON = ${COLOUR_LAYERS.iron}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
+const PORTAL = ${PORTAL_LAYER}u;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -57,7 +59,14 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
     // Each flame by where it burns, so no two flicker in step.
     return vec4f(FLAME * flicker(time, surface.point.x * 0.7 + surface.point.y * 1.3), 1.0);
   }
-  let albedo = select(sampled, vec3f(0.24, 0.25, 0.27), surface.layer == IRON);
+  if surface.layer == PORTAL && view.torches.z > 0.5 {
+    // Open, a doorway of light that shimmers across its face.
+    let shimmer = 0.9 + 0.1 * sin(time * 2.3 + surface.uv.y * 9.0 + sin(surface.uv.x * 7.0 + time));
+    return vec4f(PORTAL_LIGHT * shimmer, 1.0);
+  }
+  var albedo = select(sampled, vec3f(0.24, 0.25, 0.27), surface.layer == IRON);
+  // Shut, a face of dark stone.
+  albedo = select(albedo, vec3f(0.05, 0.05, 0.06), surface.layer == PORTAL);
   return vec4f(albedo * torch_light(surface.point, normalize(surface.normal), time), 1.0);
 }
 `;

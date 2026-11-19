@@ -130,11 +130,12 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--rough--` or
   `--storm--` before `dungeon` at harder seas), alone a room opened in the page from the patrol's node file with
   `room_open_dungeon`. The player stands at its way in, facing into its room.
-- **On foot inside.** The ground handed to the movement door is the dungeon's grid of heights, 0 m for an open cell and
-  none for rock, with its doorways' jambs and its pillars as the course, the same to the bit as its room's. The
-  camera keeps short of the rock beside each open cell, and the shots stop on it. The place's name on the heads-up
+- **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
+  is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
+  0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the rock beside each open cell, and the shots stop on it. The place's name on the heads-up
   display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
-- **Going out.** Within 2.5 m of the exit door E offers "Leave". Taken, the veil says "Leaving" the dungeon, and the
+- **Going out.** Within 2.5 m of the exit door E offers "Leave", and within 2.5 m of the return portal on the end
+  room's far wall while it stands open (while the cache does, once the Reeve has fallen). Taken, the veil says "Leaving" the dungeon, and the
   patrol's room is joined at the entrance the player went in by: online its address with `?entrance=<number>`, alone
   the patrol's room opened again in the page and joined with `room_join_at`. The player stands 1.5 m before the
   entrance's door, facing away from it.
@@ -143,8 +144,9 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
 near-black. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
 wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
 wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
-lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; and the exit
-door. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
+lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
+door; and the return portal, an arch of the end room's trim standing off its wall round a face of dark stone, which
+while the portal stands open glows bright and shimmering and lights the room as a torch does. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
 style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
 is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the island's climate and painted by the
 procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to

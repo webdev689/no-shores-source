@@ -294,7 +294,7 @@ export class Foot {
     seas: Difficulty = 'calm',
   ): Promise<Foot> {
     const { module, rules } = await rulesOf(context);
-    standInDungeon(context.movement, rules.combat, layout);
+    standInDungeon(context.movement, rules.combat, patrol.node, number);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
     const address = context.rooms?.(dungeonRoom(patrol.node, seas, number));
     const dungeon = { patrol: patrol.node, number, layout };
@@ -473,7 +473,13 @@ export class Foot {
     const able = !paused && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
-    const here = { dungeon: this.dungeon, patrol: this.node, entrances: this.held.entrances, module: this.module };
+    const here = {
+      dungeon: this.dungeon,
+      portalOpen: this.held.cache?.open ?? false,
+      patrol: this.node,
+      entrances: this.held.entrances,
+      module: this.module,
+    };
     this.using = able
       ? (useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
         tripAt(x, y, here, this.context.trips))

@@ -20,6 +20,7 @@ const layout: DungeonLayout = {
   wayIn: { cell: 0, side: 2, room: 0 },
   arrival: { x: 0.4, y: 1.6, bearing: Math.PI / 2 },
   exitDoor: { x: 0.02, y: 1.6, width: 1.4, height: 2.4 },
+  portal: { x: 1.6, y: 3.18, side: 1, width: 1.4, height: 2.4 },
   torches: [[4.8, 0.35, 2.1, 3]],
   torchReach: 8,
   frames: [[0, 0, 3.2]],
@@ -154,4 +155,25 @@ test('a torch is an iron bracket off its wall and a glowing flame over it', () =
   assert.ok(near(Math.min(...ironY), 0), 'its plate stands on the wall');
   const flame = triangles.filter(({ picture }) => picture === `${COLOUR.glow}.0`);
   assert.equal(flame.length, 8);
+});
+
+test("the return portal is a face on the end room's wall inside an arch of its trim standing off the wall", () => {
+  const face = triangles.filter(({ picture }) => picture === `${COLOUR.portal}.0`);
+  assert.equal(face.length, 2);
+  for (const { corners, normal } of face) {
+    assert.deepEqual(
+      normal.map((value) => value + 0),
+      [0, -1, 0],
+      'facing into the room, north of its south wall',
+    );
+    assert.ok(corners.every(([, y]) => y < 3.18 && y > 3.1));
+  }
+  const arch = where('123.4', ({ corners }) => corners.every(([, y]) => y >= 3.18 - 0.18 - EPS && y <= 3.18 + EPS));
+  const across = arch.flatMap(({ corners }) => corners.map(([x]) => x));
+  assert.ok(
+    near(Math.min(...across), 1.6 - 0.7 - 0.3) && near(Math.max(...across), 1.6 + 0.7 + 0.3),
+    'posts either side',
+  );
+  const heights = arch.flatMap(({ corners }) => corners.map(([, , z]) => z));
+  assert.ok(near(Math.max(...heights), 2.7), 'a lintel over it');
 });

@@ -142,7 +142,7 @@ dungeon").
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
-  layout's `boxes`, trimmed pillars, torches' brackets and flames, and the exit door. Pictures by role from the
+  layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Pictures by role from the
   style's two sets, turned to the island's climate (`smallBook`) and painted by the city's painter.
 - **Its light** (`dungeonLight.ts`): each torch warm to `torchReach`, flickering, a faint cold light everywhere; the shader
   and the figures sum the same light (`lightAt`).
@@ -150,7 +150,10 @@ dungeon").
 - **The entrances** (`entrances.ts`, `EntranceView`): the forged models 42000, 42001, 43601 and 43602, lifted 2.5 m,
   4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand them, turned by the room's yaw; E reaches a door within
   2.5 m of its quad's middle.
-- **The ground inside** (`floorGrid`, `courseOf`): the grid of heights and the boxes, as the room stands bodies.
+- **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room
+  judges bodies; the jambs are drawn from the same `boxes`.
+- **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
+  and glowing, lighting the room, while it is open; E "Leave" within 2.5 m while it is open.
 
 ## Limits
 

@@ -45,14 +45,16 @@ const roomModule = (() => {
 
 test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entrance's door offers Enter and its name", (context) => {
   if (!roomModule) return context.skip('room.wasm is not built: run `npm run wasm`');
-  const layout = { exitDoor: { x: 10, y: 0.02 }, cell: 3.2 } as unknown as DungeonLayout;
+  const layout = { exitDoor: { x: 10, y: 0.02 }, portal: { x: 40, y: 6.38 }, cell: 3.2 } as unknown as DungeonLayout;
   const trips = noted();
   const entrances = new Entrances();
-  const inside = { dungeon: { patrol, number: 0, layout }, patrol, entrances, module: roomModule };
+  const inside = { dungeon: { patrol, number: 0, layout }, portalOpen: false, patrol, entrances, module: roomModule };
   assert.equal(tripAt(10, 2.4, inside, trips)?.words, 'Leave');
   assert.equal(tripAt(10, 2.6, inside, trips), null);
+  assert.equal(tripAt(40, 4.5, inside, trips), null, 'the return portal shut while the cache is');
+  assert.equal(tripAt(40, 4.5, { ...inside, portalOpen: true }, trips)?.words, 'Leave', 'and open while it is');
   entrances.heard([100, 100, 0, 0, 0]);
-  const outside = { dungeon: null, patrol, entrances, module: roomModule };
+  const outside = { dungeon: null, portalOpen: false, patrol, entrances, module: roomModule };
   const offer = tripAt(100, 102 + 2, outside, trips);
   assert.match(offer?.words ?? '', /^Enter The \w+ of the Saltgrass Downs$/);
   offer?.run();

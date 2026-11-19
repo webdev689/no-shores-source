@@ -14,10 +14,13 @@ import { type Cache, chestMesh } from './dungeonChest.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import { lightAt } from './dungeonLight.ts';
 import { dungeonMesh, ROLE } from './dungeonMesh.ts';
+import { SIDE_STEPS } from './dungeonLayout.ts';
 import { DUNGEON_SHADER, MOST_TORCHES } from './dungeonShaders.ts';
 
 const VIEW_BYTES = 96;
 const TORCH_BYTES = MOST_TORCHES * 16;
+/** How far out from its face the open portal's light stands, metres. */
+const PORTAL_OUT_M = 0.6;
 
 type Torch = readonly [number, number, number, number];
 type Buffers = { vertices: GPUBuffer; indices: GPUBuffer; count: number };
@@ -71,6 +74,8 @@ function pipelineOf(gpu: Gpu): GPURenderPipeline {
 type Drawn = {
   readonly layout: DungeonLayout;
   readonly torches: readonly Torch[];
+  /** The open portal's light, lit as a torch, half way up its face and a little out from it. */
+  readonly portalLight: Torch;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
@@ -154,8 +159,24 @@ export class DungeonView {
       ],
     });
     const torches = layout.torches.map(([x, y, z], number): Torch => [x, y, z, number]);
+    const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
+    const { x, y, height } = layout.portal;
+    const portalLight: Torch = [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, height / 2, torches.length];
     const floor = this.buffersOf(dungeonMesh(layout, door), book);
-    this.drawn = { layout, torches, book, wood, painter, view, lights, group, floor, chest: null, shown: null };
+    this.drawn = {
+      layout,
+      torches,
+      portalLight,
+      book,
+      wood,
+      painter,
+      view,
+      lights,
+      group,
+      floor,
+      chest: null,
+      shown: null,
+    };
   }
 
   /** The cache as the room last said, its chest built again only once it changes. */
@@ -174,7 +195,12 @@ export class DungeonView {
   /** The light a figure standing at a point is lit by at `time`, as the walls round it are. */
   lightAt(point: readonly [number, number, number], time: number): [number, number, number] {
     const drawn = this.drawn;
-    return drawn ? lightAt(drawn.torches, drawn.layout.torchReach, point, time) : [1, 1, 1];
+    return drawn ? lightAt(this.lights(drawn), drawn.layout.torchReach, point, time) : [1, 1, 1];
+  }
+
+  /** The torches, and the portal while it stands open, which is while the cache does. */
+  private lights(drawn: Drawn): readonly Torch[] {
+    return drawn.shown?.open ? [...drawn.torches, drawn.portalLight] : drawn.torches;
   }
 
   /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it. */
@@ -188,14 +214,14 @@ export class DungeonView {
     if (!drawn) return;
     const { device } = this.gpu;
     const away = ([x, y, z]: Torch) => (x - eye[0]) ** 2 + (y - eye[1]) ** 2 + (z - eye[2]) ** 2;
-    const nearest = [...drawn.torches].sort((a, b) => away(a) - away(b)).slice(0, MOST_TORCHES);
+    const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_TORCHES);
     const lights = new Float32Array(MOST_TORCHES * 4);
     nearest.forEach((torch, index) => lights.set(torch, index * 4));
     device.queue.writeBuffer(drawn.lights, 0, lights);
     const view = new Float32Array(VIEW_BYTES / 4);
     view.set(fromEye, 0);
     view.set([...eye, time], 16);
-    view.set([nearest.length, drawn.layout.torchReach, 0, 0], 20);
+    view.set([nearest.length, drawn.layout.torchReach, drawn.shown?.open ? 1 : 0, 0], 20);
     device.queue.writeBuffer(drawn.view, 0, view);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.group);

@@ -1,6 +1,6 @@
 // Going into a patrol's dungeons and out again on foot: what E offers at an entrance's door or a dungeon's exit
 // door, and the place a dungeon is played as.
-import { askDungeon, courseOf, type DungeonLayout, floorGrid } from './dungeonLayout.ts';
+import { askDungeon, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -42,14 +42,12 @@ export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo 
   };
 }
 
-/** Stands the movement rules and the fight's on a dungeon's floor, as its room stands its bodies: its grid of
- *  heights and its boxes. */
-export function standInDungeon(movement: MovementRules, combat: CombatRules, layout: DungeonLayout): void {
-  const course = courseOf(layout);
-  movement.setCourse(course);
-  combat.setCourse(course);
-  combat.setGround(null);
-  if (!movement.setHeights(floorGrid(layout))) throw new Error('the dungeon’s floor did not load');
+/** Stands the fight's rules on dungeon `number` of `patrol` as its room stands its bodies, on the dungeon's own
+ *  ground; the movement rules, which only find the floor, on open ground at 0 m with no course. */
+export function standInDungeon(movement: MovementRules, combat: CombatRules, patrol: NodeInfo, number: number): void {
+  movement.setCourse([]);
+  movement.setGround(null);
+  if (!combat.setDungeon(patrol.id, patrol.name, number)) throw new Error('the dungeon’s ground did not load');
 }
 
 /** A patrol's entrances as its room last gave them, and each one's dungeon's name, asked of the room's module once. */
@@ -76,17 +74,26 @@ export class Entrances {
 }
 
 /** What E offers about going in and out where a player stands at (x, y): in a dungeon, "Leave" within reach of its
- *  exit door; on a patrol, "Enter" and the dungeon's name within reach of an entrance's door. */
+ *  exit door, or of its return portal while that stands open; on a patrol, "Enter" and the dungeon's name within
+ *  reach of an entrance's door. */
 export function tripAt(
   x: number,
   y: number,
-  here: { dungeon: InDungeon | null; patrol: NodeInfo; entrances: Entrances; module: WebAssembly.Module },
+  here: {
+    dungeon: InDungeon | null;
+    portalOpen: boolean;
+    patrol: NodeInfo;
+    entrances: Entrances;
+    module: WebAssembly.Module;
+  },
   trips: Trips,
 ): Use | null {
   const { dungeon } = here;
   if (dungeon) {
-    const door = dungeon.layout.exitDoor;
-    return Math.hypot(door.x - x, door.y - y) <= DOOR_REACH_M ? { words: 'Leave', run: () => trips.leave() } : null;
+    const { exitDoor, portal } = dungeon.layout;
+    const reaches = (door: { x: number; y: number }) => Math.hypot(door.x - x, door.y - y) <= DOOR_REACH_M;
+    const out = reaches(exitDoor) || (here.portalOpen && reaches(portal));
+    return out ? { words: 'Leave', run: () => trips.leave() } : null;
   }
   const props = trips.props();
   if (here.patrol.kind !== 'patrol' || !props) return null;

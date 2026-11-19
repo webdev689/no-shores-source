@@ -32,6 +32,9 @@ export interface CombatRules {
   /** Keeps a node's window of the ground (its JSON, as the land's worker cuts it) for every later prediction to stand
    *  on, or open ground with none; false if the text is not ground. */
   setGround(windowJson: string | null): boolean;
+  /** Keeps dungeon `number` of a patrol (its id and name) as the ground every later prediction stands on, its jambs
+   *  and pillars its own walls and the course empty, as the dungeon's room judges bodies; false if there is none. */
+  setDungeon(patrol: string, name: string, number: number): boolean;
   /** The player's fighter one tick on under an intent, taking up `arms` as the room does, among the fighters they
    *  see, and the shot it let go. */
   predict(
@@ -55,6 +58,7 @@ interface FightExports {
   release(address: number, length: number): void;
   fighter_course(address: number, length: number): number;
   fighter_ground(address: number, length: number): number;
+  fighter_dungeon(address: number, length: number): number;
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
   fighter_sizes(): number;
@@ -94,6 +98,10 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     setGround: (windowJson) => {
       const text = new TextEncoder().encode(windowJson ?? '');
       return lend(text, (address) => exports.fighter_ground(address, text.length)) === 1;
+    },
+    setDungeon: (patrol, name, number) => {
+      const text = new TextEncoder().encode(JSON.stringify({ patrol, name, number }));
+      return lend(text, (address) => exports.fighter_dungeon(address, text.length)) === 1;
     },
     predict: (fighter, intent, id, arms, view) => {
       const floats = new Float64Array(sizes.fighter + sizes.intent + 2 + view.length * (sizes.glance + 1));

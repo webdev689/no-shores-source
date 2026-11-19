@@ -1,7 +1,7 @@
 // A dungeon's look, as DFO's Forge builds a floor's mesh (src/world/forge/forgeMesh.js): each open cell's floor and
 // ceiling; a wall with a trim band at its foot and head wherever it meets rock or the grid's edge; a wall from a lower
 // ceiling up to its own; each doorway's frame, a square pillar at each of a great room's corners, a bracket and a
-// flame at each torch, and the exit door. Points are the dungeon's own: x east, y south, z up from the floor. Each
+// flame at each torch, the exit door and the return portal. Points are the dungeon's own: x east, y south, z up from the floor. Each
 // face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
@@ -13,8 +13,11 @@ export const BASE_M = 0.4;
 export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
-/** Archives that stand for a plain colour rather than a picture: iron, and a flame's glow. */
-export const COLOUR = { iron: -1, glow: -2 } as const;
+/** Archives that stand for a plain colour rather than a picture: iron, a flame's glow, and the portal's face. */
+export const COLOUR = { iron: -1, glow: -2, portal: -3 } as const;
+/** The portal's arch, metres: each post's width, the lintel's height, how far both stand off the wall, and how far
+ *  off it the face stands, inside them. */
+const ARCH = { post: 0.3, lintel: 0.3, proud: 0.18, face: 0.04 };
 
 type Point = readonly [number, number, number];
 type Picture = readonly [number, number];
@@ -273,10 +276,12 @@ function torch(mesh: MeshBuilder, [x, y, z, side]: readonly [number, number, num
   });
 }
 
-/** The exit door's quad on its wall, facing into its room, wearing `door` once across it. */
-function exitDoor(mesh: MeshBuilder, layout: DungeonLayout, door: Picture): void {
-  const { x, y, width, height } = layout.exitDoor;
-  const [east, south] = SIDE_STEPS[layout.wayIn.side] ?? [0, 0];
+/** A door's opening on its wall: its foot's middle, its width and height, and the side of its cell it stands on. */
+type Opening = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+
+/** A quad over an opening on its wall, facing into its cell, wearing `picture` once across it. */
+function doorFace(mesh: MeshBuilder, { x, y, width, height }: Opening, side: number, picture: Picture): void {
+  const [east, south] = SIDE_STEPS[side] ?? [0, 0];
   // Looking at the door from the room is looking along its side; the viewer's right is a quarter turn clockwise.
   const [rightX, rightY] = [-south * (width / 2), east * (width / 2)];
   const corners: Point[] = [
@@ -291,10 +296,33 @@ function exitDoor(mesh: MeshBuilder, layout: DungeonLayout, door: Picture): void
     [1, 0],
     [0, 0],
   ];
-  mesh.quad(door, corners, [-east, -south, 0], mapping);
+  mesh.quad(picture, corners, [-east, -south, 0], mapping);
 }
 
-/** The whole floor's mesh, the exit door wearing `door`. */
+/** The return portal: a stone arch, two posts and a lintel standing off the end room's wall in its trim, round a face
+ *  the shader shows dark while it is shut and glowing while it is open. */
+function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
+  const opening = layout.portal;
+  const [east, south] = SIDE_STEPS[opening.side] ?? [0, 0];
+  const trim: Picture = [lookOf(layout, layout.end).set, ROLE.trim];
+  const [acrossX, acrossY] = [Math.abs(south), Math.abs(east)];
+  // A piece of the arch: from `from` to `to` along the wall from the opening's middle, off the wall by ARCH.proud.
+  const piece = (from: number, to: number, low: number, high: number) => {
+    const ends = [from, to].map((along) => [opening.x + acrossX * along, opening.y + acrossY * along]);
+    const off = [opening.x - east * ARCH.proud, opening.y - south * ARCH.proud];
+    const xs = [...ends.map(([x]) => x ?? 0), off[0] ?? 0];
+    const ys = [...ends.map(([, y]) => y ?? 0), off[1] ?? 0];
+    box(mesh, trim, [Math.min(...xs), Math.min(...ys), low], [Math.max(...xs), Math.max(...ys), high]);
+  };
+  const half = opening.width / 2;
+  piece(-half - ARCH.post, -half, 0, opening.height + ARCH.lintel);
+  piece(half, half + ARCH.post, 0, opening.height + ARCH.lintel);
+  piece(-half, half, opening.height, opening.height + ARCH.lintel);
+  const face = { ...opening, x: opening.x - east * ARCH.face, y: opening.y - south * ARCH.face };
+  doorFace(mesh, face, opening.side, [COLOUR.portal, 0]);
+}
+
+/** The whole floor's mesh, the exit door wearing `door`, and the return portal. */
 export function dungeonMesh(layout: DungeonLayout, door: Picture): ForgedModel {
   const mesh = meshBuilder();
   const { cell, columns, rows, cells, ceilings } = layout;
@@ -331,6 +359,7 @@ export function dungeonMesh(layout: DungeonLayout, door: Picture): ForgedModel {
     pillar(mesh, lookOf(layout, room), x, y, height, layout.pillarHalf);
   }
   for (const each of layout.torches) torch(mesh, each, cell);
-  exitDoor(mesh, layout, door);
+  doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
+  portal(mesh, layout);
   return mesh.model();
 }

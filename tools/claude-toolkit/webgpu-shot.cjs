@@ -11,7 +11,7 @@
 // "init": "js run before the page's own scripts", "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
-// { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
+// { "eval": "js" }, { "viewport": [w, h] } (a small one walks a long way faster), { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
@@ -127,6 +127,7 @@ async function main() {
       await page.keyboard.up(step.hold[0]);
     }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
+    else if (step.viewport) await page.setViewportSize({ width: step.viewport[0], height: step.viewport[1] });
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);
       await page.mouse.wheel(0, step.wheel[2]);
