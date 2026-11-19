@@ -64,6 +64,12 @@ fn saltmeres_three_zones_take_three_rock_shapes() {
 }
 
 #[test]
+fn only_the_downs_cliffs_wear_chalk() {
+    let stones: Vec<Option<&str>> = ZONES.into_iter().map(|id| zone(id).stone.as_deref()).collect();
+    assert_eq!(stones, [Some("chalk"), None, None], "the zones' stones: {stones:?}");
+}
+
+#[test]
 fn no_outcrop_is_a_spire() {
     for laid in continent_one() {
         for outcrop in &laid.sculpt.outcrops {

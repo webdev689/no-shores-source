@@ -72,6 +72,9 @@ pub struct Layout {
     /// The linear combat areas breaking off a patrol area.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub runs: Vec<runs::Run>,
+    /// The stone its cliffs and rubble wear where it is not its climate's.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stone: Option<String>,
     #[serde(flatten)]
     pub seating: Seating,
     /// How the layout carves its land.
@@ -305,6 +308,7 @@ pub fn plan(
         paths,
         sites,
         runs,
+        stone: brief.stone.clone(),
         seating,
         sculpt,
         basins,

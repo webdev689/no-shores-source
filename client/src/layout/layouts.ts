@@ -70,6 +70,8 @@ export interface NodeLayout {
   readonly pads: readonly Pad[];
   /** The linear combat areas breaking off a patrol area; none written when it has none. */
   readonly runs?: readonly LaidRun[];
+  /** The stone its cliffs and rubble wear where it is not its climate's; none written when it is. */
+  readonly stone?: string;
 }
 
 /** The track's and the footpath's widths, metres, as the layout crate lays them. */
