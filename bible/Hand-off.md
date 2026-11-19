@@ -123,7 +123,8 @@ Where the work stands now, for the next session. Each session rewrites this note
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
-- The enemy system, on pull request #61 from branch `claude/enemies-factions-ai-fiapxf`, tested offline and on the
+- The enemy system, merged to `main` with the owner's yes (#61), which deployed the page, the accounts and the rooms
+  (the first rooms deploy under the deploy filter, which made the `rooms` environment), tested offline and on the
   local Cloudflare runtime, as the owner decided it ([[Enemies Come in Five Ranks, After Destiny]],
   [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]],
   [[The Enemies as Claude Builds Them]], [[The Bars and the Fight Wear the Plus Kit]],
@@ -179,12 +180,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- #61, the enemy system: the owner's yes to merge it, which deploys the page and the rooms. The first rooms deploy
-  after it always runs and creates the `rooms` environment the next ones compare with; that side of GitHub is tested
-  offline only. Its open choices: whether the sea's pirates become the Grey Tithe; the roster's names and Corvane,
-  Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over time;
-  whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to change:
-  a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in [[Foes]].
+- The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
+  Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
+  time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
+  change: a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in
+  [[Foes]].
 - Pirates at sea: nothing stops them, on `main` or #61; they are rare by the numbers ported from DFO (a roll every
   60–140 s, 0.24 of rolls a pirate, the wait starting again at each return to the ship), so about half of players
   see none in their first 5–7 minutes. Measured options were offered and the owner skipped them for now: hostiles
@@ -242,7 +242,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   not yet known.
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
   choices in [[Gear as Claude Shapes It]]), is on `main` (#60, merged with the owner's yes); its patrols' camps give
-  way to #61's garrisons when #61 merges. On it: the `gear` crate ([[Gear]]); gear held by the
+  way to #61's garrisons, now on `main` too. On it: the `gear` crate ([[Gear]]); gear held by the
   rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
   ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
   Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the
