@@ -934,7 +934,7 @@
     {
       "id": "shield.break",
       "use": "A foe's element shield breaks",
-      "query": "crystal shatter",
+      "query": "breaking glass",
       "seconds": [
         0.2,
         2.0

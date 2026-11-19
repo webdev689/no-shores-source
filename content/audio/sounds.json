@@ -201,6 +201,26 @@
       "from": "DFO's synthesiser: its kill effect Voidrend, drawn again at 44.1 kHz",
       "changes": "Unchanged."
     },
+    "finish.volt": {
+      "key": "sounds/fa7938287ed65ac63e7a342353d1f371a9204e037a58eb118923ec314670922d.mp3",
+      "freesound": 127125,
+      "name": "SN-Thunder-1.wav",
+      "author": "westernsynthetics",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/westernsynthetics/sounds/127125/",
+      "changes": "Unchanged."
+    },
+    "foe.alert": {
+      "key": "sounds/2922ae7a19e220b24a8e322dffc227014516774fa508adfd98984e70a7149d0b.mp3",
+      "freesound": 858795,
+      "name": "Low Fractal Growl Pulse",
+      "author": "bassimat",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/bassimat/sounds/858795/",
+      "changes": "Unchanged."
+    },
     "guard.break": {
       "key": "sounds/48d47fdb27a4aa86f7bf66d42f0017dce59a20cde20e88072876314cd4e995fb.mp3",
       "freesound": 693582,
@@ -329,6 +349,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/LilMati/sounds/473846/",
+      "changes": "Unchanged."
+    },
+    "respawn": {
+      "key": "sounds/f56c0f0c7f6ec79142286ab212024590123370c08704e2f663a917eb5df6036f.mp3",
+      "freesound": 807391,
+      "name": "Magic - Finger snap",
+      "author": "Vrymaa",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Vrymaa/sounds/807391/",
       "changes": "Unchanged."
     },
     "roll": {
