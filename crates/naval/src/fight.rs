@@ -1,7 +1,7 @@
 //! A fight at sea: players' Sloops and captains of each faction in their ranks' hulls, the balls between them, and the
-//! harm they do, stepped together a tick at a time. Each player orders her own helm, a lay (the look's bearing off her bow and
-//! its range), the fire, the brace and the load; each captain decides for herself whom she fights, a player or a
-//! captain of another faction. A ball strikes only a ship under another flag. One seeded stream decides every chance,
+//! harm they do, stepped together a tick at a time. Each player orders her own helm, a lay (the look's bearing off her
+//! bow and its range), the fire, the brace and the load; each captain decides for herself whom she fights, a player or
+//! a captain of another faction. A ball strikes only a ship under another flag. One seeded stream decides every chance,
 //! in a fixed order, so a fight is the same on every machine.
 
 use crate::arms::{Arms, LARGE_BOAT, Side, arms_of, posed};
@@ -200,9 +200,9 @@ impl Hurts {
     }
 }
 
-/// A player's ship of `hull` stepped a tick by her helm, as her hurts let her: no sail sets on a wreck or with her rigging shot
-/// away, and her sails' and oars' pull is held back. Answers her and, when her helm climbed for sail it could not set,
-/// whether that was for her being a wreck.
+/// A player's ship of `hull` stepped a tick by her helm, as her hurts let her: no sail sets on a wreck or with her
+/// rigging shot away, and her sails' and oars' pull is held back. Answers her and, when her helm climbed for sail it
+/// could not set, whether that was for her being a wreck.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
@@ -321,8 +321,7 @@ impl Fight {
     }
 
     /// A captain of `commission` in her rank's hull under number `id` put to sea on the ring round `near`, where the
-    /// water floats her,
-    /// heading across its waters on a slant; or why none comes.
+    /// water floats her, heading across its waters on a slant; or why none comes.
     pub fn call_captain(
         &mut self,
         id: ShipId,

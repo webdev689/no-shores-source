@@ -90,8 +90,8 @@ pub fn bears_within(ship: &Ship, lead: [f64; 2], rel: [f64; 2], want_deg: f64, w
     (error.abs() - window) / rate.abs()
 }
 
-/// Whether the lay's middle gun (its aftmost middle one, of an even battery), unscattered, passes within `band` (heights, a hand under its foot allowed) where it
-/// comes abreast of `at`.
+/// Whether the lay's middle gun (its aftmost middle one, of an even battery), unscattered, passes within `band`
+/// (heights, a hand under its foot allowed) where it comes abreast of `at`.
 #[must_use]
 pub fn lay_passes(lay: &Lay, carry: [f64; 3], at: [f64; 2], band: [f64; 2]) -> bool {
     let start = lay.mouths[lay.mouths.len() / 2];

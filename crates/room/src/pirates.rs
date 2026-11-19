@@ -1,11 +1,11 @@
 //! Hostile ships at sea, pirates and the Grey Tithe's, from DFO's director trimmed to them alone. Each player at sea
 //! rolls for a ship half a minute after reaching the water and then every minute to two and a half; a roll that draws a
 //! hostile ship stands her on the ring round their ship, clear of every player, crossing their waters on a slant. Her
-//! seed is her temper, her faction and her rank, and her rank her hull. She sails on at a Sloop's way whatever her hull,
-//! on the clock of the player she sails by (their voyage's pace, real time where another player shares those waters),
-//! and goes once no player is near. A bold one that comes within sight of a player who is not fighting takes them on,
-//! and one in sight of a ship of another faction meets her. One stream, seeded as the sea opens, draws every chance in a fixed order, so a sea is the same
-//! given the same seed and courses.
+//! seed is her temper, her faction and her rank, and her rank her hull. She sails on at a Sloop's way whatever her
+//! hull, on the clock of the player she sails by (their voyage's pace, real time where another player shares those
+//! waters), and goes once no player is near. A bold one that comes within sight of a player who is not fighting takes
+//! them on, and one in sight of a ship of another faction meets her. One stream, seeded as the sea opens, draws every
+//! chance in a fixed order, so a sea is the same given the same seed and courses.
 
 use crate::PlayerId;
 use naval::captain::course::heading_to;

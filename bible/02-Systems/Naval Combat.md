@@ -99,10 +99,11 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
 
 ## The captain
 
-She sails her rank's hull under the player's own helm, so her pace is her hull's by the player's law. She sees every ship she may fight (each
-player's, and each afloat captain's of another faction) and keeps, for each, whether it struck her lately and whether
-she spares it. DFO's captain commands a swing and a share of sail; here the swing is a share of her rudder and the sail
-the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0.55 of her way, so she never tacks.
+She sails her rank's hull under the player's own helm, so her pace is her hull's by the player's law. She sees every
+ship she may fight (each player's, and each afloat captain's of another faction) and keeps, for each, whether it struck
+her lately and whether she spares it. DFO's captain commands a swing and a share of sail; here the swing is a share of
+her rudder and the sail the rung whose way is nearest. Under the ladder's law the wind's eye costs her 0.55 of her way,
+so she never tacks.
 
 - **Whom she fights.** A captain is bold one time in four by her seed, an Elite and above always. A bold one takes on a
   ship she may fight within 750 m; a wary one only a wreck, a hull nearly gone, or a ship she outguns 5 to 4 by DFO's
@@ -182,12 +183,12 @@ whole bring the Pirate Sloop to strike.
 
 ## In the World Editor
 
-While sailing, `F` calls a pirate captain, a Major in her Sloop, onto the ring 650 to 1000 m round the Sloop, where the water floats her,
-heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her helm's place.
-Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the look's bearing
-picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's lookReach), unless
-the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a left click holds
-fire, the wheel changes shot, and `C` braces.
+While sailing, `F` calls a pirate captain, a Major in her Sloop, onto the ring 650 to 1000 m round the Sloop, where the
+water floats her, heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her
+helm's place. Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the
+look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
+lookReach), unless the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a
+left click holds fire, the wheel changes shot, and `C` braces.
 
 Her Sloop is drawn darker from the same model, and the water cuts her footprint as it does the player's. The balls,
 the lay's arcs, and each event's flash and smoke, spray and ripples, splinters, dust, and fire aboard
@@ -254,12 +255,12 @@ browser by the same functions the room fires by (`preview`), among the ships the
 
 ## One crate, every machine
 
-Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders
-(up to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. A begin may
-name her captain's rank (a Major's unless it does), and she sails its hull; each ship's answer names her hull. Its state
+Alone, the fight lives in `land-wasm` beside the open landmass: a request begins it, steps it by the player's orders (up
+to a second's ticks, presses on the first alone) or ends it, and opening another landmass ends it too. A begin may name
+her captain's rank (a Major's unless it does), and she sails its hull; each ship's answer names her hull. Its state
 never crosses, so requests and answers are JSON. A scripted fight's fingerprint at the end of each leg is pinned
-natively and through WebAssembly, and the same fight's against each hull ([[Agree to the Bit]]). In a fleet room the room's crate holds the fight, and a
-browser predicts its own ship through `room-wasm` by the same steps.
+natively and through WebAssembly, and the same fight's against each hull ([[Agree to the Bit]]). In a fleet room the
+room's crate holds the fight, and a browser predicts its own ship through `room-wasm` by the same steps.
 
 ## Limits
 

@@ -1,6 +1,6 @@
-//! A captain who fights, as DFO's: whom she takes on (bold, or wary of a stronger ship), when she runs, chases,
-//! gives up or leaves a wreck, the course that brings her broadside to bear or keeps her station, and her helm. She
-//! sails her rank's hull under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of her
+//! A captain who fights, as DFO's: whom she takes on (bold, or wary of a stronger ship), when she runs, chases, gives
+//! up or leaves a wreck, the course that brings her broadside to bear or keeps her station, and her helm. She sails her
+//! rank's hull under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of her
 //! rudder, and its sail share the rung of her ladder whose way is nearest.
 
 pub mod aim;

@@ -149,14 +149,14 @@ will take it, by the room's own tick.
   arithmetic. A pace off the steps, a point outside the world's frame, and a course of more than 64 points are refused.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - Pirates and the Grey Tithe's ships sail among the players', each with her faction and rank, and a bold one that
-  meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship
-  of another faction fights her with no player (`clash.rs`): the room steps that fight each tick, the snapshot shows
-  its ships among the others at sea where the fight has them, and a player who comes within 750 m joins it. Each
-  captain sails her rank's hull ([[Hulls]]). The sea's snapshot carries each hostile ship's faction, rank and hull,
-  and each player's fight its captain's faction, rank and hull; a fight's view carries every ship's hull. While a player fights, the room takes their
-  orders and no course, and their ship is where the fight has her, at rest on the room's word. A ship sails at her
-  pace held down as a pirate comes near, and the snapshot's pace for her is the one she sailed at. The sea opens on a
-  seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number).
+  meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship of
+  another faction fights her with no player (`clash.rs`): the room steps that fight each tick, the snapshot shows its
+  ships among the others at sea where the fight has them, and a player who comes within 750 m joins it. Each captain
+  sails her rank's hull ([[Hulls]]). The sea's snapshot carries each hostile ship's faction, rank and hull, and each
+  player's fight its captain's faction, rank and hull; a fight's view carries every ship's hull. While a player fights,
+  the room takes their orders and no course, and their ship is where the fight has her, at rest on the room's word. A
+  ship sails at her pace held down as a pirate comes near, and the snapshot's pace for her is the one she sailed at. The
+  sea opens on a seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number).
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
@@ -190,8 +190,8 @@ rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
   four, or send every captain off. A captain who sinks, or lies past every ship she may fight (each player's, and
   each afloat captain's of another faction) and is not fighting, leaves the room.
 - **What it sees:** every ship (her hull, her helm's numbers and pose, hull, sail and men, state and fires, guns and
-  load, a captain's mode, target and sides run out, and a player's last order taken), the balls aloft, what happened in the
-  fight since it was last asked, and the fight's clock.
+  load, a captain's mode, target and sides run out, and a player's last order taken), the balls aloft, what happened in
+  the fight since it was last asked, and the fight's clock.
 - A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
   A room on land the servers host is given two seeds of its own, random and never sent: one its loot is drawn from,
   and one its foes' choices are, so what a player sees of the foes tells them nothing of the loot. A node's garrison

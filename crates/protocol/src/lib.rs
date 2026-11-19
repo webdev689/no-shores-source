@@ -449,10 +449,10 @@ fn spells_vector<'built>(
     builder.create_vector(&each)
 }
 
-/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction, rank and hull, each
-/// player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a field
-/// of their own) with its captain's commission and hull, and each player off the helm with the number of their last step taken
-/// and their body on deck.
+/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction, rank and hull,
+/// each player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a
+/// field of their own) with its captain's commission and hull, and each player off the helm with the number of their
+/// last step taken and their body on deck.
 #[must_use]
 pub fn sea_snapshot_bytes(
     tick: u64,

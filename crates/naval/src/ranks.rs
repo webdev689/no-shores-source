@@ -116,8 +116,8 @@ impl Rank {
         &SCALES[usize::from(self.number() - 1)]
     }
 
-    /// The hull a captain of this rank sails: the Sloop for a Minor and a Major, the Schooner for an Elite, the Brig for
-    /// a Miniboss and the Frigate for a Boss.
+    /// The hull a captain of this rank sails: the Sloop for a Minor and a Major, the Schooner for an Elite, the Brig
+    /// for a Miniboss and the Frigate for a Boss.
     #[must_use]
     pub fn hull(self) -> HullKind {
         match self {

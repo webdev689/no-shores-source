@@ -19,8 +19,8 @@ pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
 /// What no ship's numbers pass: a place a million kilometres out; a way (or her canvas's share of it) of 10 m/s, twice
-/// what the Sloop's rig makes in the strongest sea wind (another hull's as much more as her canvas); a swing of 45 degrees a second, twice her oars'; a world time past
-/// 30 years, where the swell's phases lose their bits.
+/// what the Sloop's rig makes in the strongest sea wind (another hull's as much more as her canvas); a swing of 45
+/// degrees a second, twice her oars'; a world time past 30 years, where the swell's phases lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
 const MOST_WAY: f64 = 10.0;
 const MOST_TURN_DEG: f64 = 45.0;

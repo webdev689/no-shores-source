@@ -72,9 +72,9 @@ sail the other hulls ([[Hulls]]) by the same laws.
   The swell rolls whole over any sea 15 m deep or more, so wherever a landmass's sea is that deep, its water is the
   open sea's to the bit.
 - **One crate, every machine.** The browser steps her through `land-wasm`'s door, over the open landmass, in ticks of
-  1/60 s, a second's at most a request, the Sloop unless the request names another hull. Its maths is exact or `libm`'s, so a voyage's fingerprint is the same natively
-  and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers no ship could have: a way over 10 m/s, a swing
-  over 45 degrees a second, a time past the world's.
+  1/60 s, a second's at most a request, the Sloop unless the request names another hull. Its maths is exact or `libm`'s,
+  so a voyage's fingerprint is the same natively and as WebAssembly ([[Agree to the Bit]]). The door refuses numbers no
+  ship could have: a way over 10 m/s, a swing over 45 degrees a second, a time past the world's.
 
 ## The Sloop
 
