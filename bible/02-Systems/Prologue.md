@@ -179,8 +179,8 @@ are the story's; the wreck is the level they run.
   waist to her stern and between her rails' inner faces, no wave in it. When the boss fight
   begins, its heap closes the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands
   on the quarterdeck facing the player, three levels over them: their blows land at 0.47 of their worth. A player who
-  climbs out into the waist is brought back in; anywhere on the quarterdeck, on her deck or up on her rails, is never
-  brought back.
+  leaves it, over the heap into the waist or over her rails onto the channels outside them, is brought back in;
+  anywhere from the heap's face aft, on her deck or up on her rails, is never brought back.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.

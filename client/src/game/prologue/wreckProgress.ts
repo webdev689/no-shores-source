@@ -1,4 +1,4 @@
-import { inArea, type WaveFoe, type WreckLayout } from './wreckLayout.ts';
+import { type Area, inArea, type WaveFoe, type WreckLayout } from './wreckLayout.ts';
 
 /** The most of the wreck's foes alive at once; a wave's others wait their turn. */
 export const ALIVE_MOST = 6;
@@ -44,7 +44,8 @@ export interface Seen {
  * The wreck's progress along its path, with no room or drawing: the zones the player has reached, each one's
  * checkpoint kept and the next zone's wave stood ahead of them (so its foes are already fighting each other when the
  * player comes), no more than `ALIVE_MOST` alive at once; the way on from each zone closed until its wave has fallen;
- * a fall into the sea, or a climb over a closed way, brought back to the last checkpoint; and the boss fight's end.
+ * a fall into the sea, a climb over a closed way, or once the boss fight begins any step off the arena, brought back
+ * to the last checkpoint; and the boss fight's end.
  */
 export class WreckProgress {
   private readonly layout: WreckLayout;
@@ -79,6 +80,14 @@ export class WreckProgress {
   private get furthest(): number {
     const first = this.closed.indexOf(true);
     return first < 0 ? this.layout.zones.length - 1 : first;
+  }
+
+  /** Where the boss fight is fought: the arena's area from the heap that closes it, so a body backed against the heap
+   *  is still in it, though one only enters the arena clear of where the heap will stand. */
+  private get arenaBounds(): Area {
+    const { zones, arena } = this.layout;
+    const [minX, , maxX, maxY] = zones[arena.zone]?.area ?? [0, 0, 0, 0];
+    return [minX, arena.gate.minY, maxX, maxY];
   }
 
   /** Whether the player may be in a zone: once the boss fight begins, only the arena. */
@@ -125,8 +134,13 @@ export class WreckProgress {
     const stand = this.waiting.splice(0, Math.max(0, ALIVE_MOST - alive));
     this.inSea = inSea && !seen.dead ? this.inSea + seconds : 0;
     const last = zones[Math.max(0, this.zone)]?.checkpoint ?? null;
-    // A player who climbs over a closed way, or out of the arena once the boss fight begins, is brought back.
-    const astray = !inSea && zones.some((zone, index) => !this.allowed(index) && inArea(zone.area, seen.x, seen.y));
+    // A player who climbs over a closed way is brought back; so, once the boss fight begins, is one anywhere off the
+    // arena (over its heap, or over her rails onto the channels), short of the sea, which brings them back itself.
+    const astray =
+      !inSea &&
+      (this.fighting
+        ? !inArea(this.arenaBounds, seen.x, seen.y)
+        : zones.some((zone, index) => !this.allowed(index) && inArea(zone.area, seen.x, seen.y)));
     const back = this.inSea >= BROUGHT_BACK_S || astray ? last : null;
     if (back) this.inSea = 0;
     if (this.bossFor !== null && !this.outcome) {

@@ -16,7 +16,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | Choice | Chosen | Why |
 |---|---|---|
 | The foe at the end | Captain Brannoc Thule, the Grey Tithe's Boss on deck, already in the roster ([[Enemies]]) | A foe the world already has, with three phases of his own; "your foe" needed a name the story could strike on a plate |
-| The ship that rams | Thule's ship, the Tithe Ram of [[The Ships as Claude Shapes Them]]; drawn as the Brig at 1.3 times her size until the Tithe Ram is built | The roster names it his flagship; the Frigate is not published |
+| The ship that rams | Thule's ship is the Frigate, at her own size, under sail in the shade the fight's captains wear; in the wreck she lies with her bow driven into the Brig's middle | [[Hulls]] gives the Frigate to Boss ships and a sea strike's flagship, and she is published; the Tithe Ram the roster names is not built |
 | The ships that attack first | Three pirate Sloops of Major rank | Pirates attack ships at sea already; the wreck's factions then fight each other, as factions do |
 | Where the story happens | A storm 24 km out past Saltmere's harbour, in open deep water | "deep into the ocean"; Saltmere is the island the story wakes on |
 | The intro's islands | A highland in mist, a green island in rain, a desert town with a fight on its plaza, a tundra town in snow, then Saltmere; only Saltmere named | "each island... different weather patterns... people fighting... towns"; the others' names are the owner's |

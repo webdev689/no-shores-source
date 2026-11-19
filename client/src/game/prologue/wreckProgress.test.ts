@@ -147,10 +147,26 @@ test("a player backing along the arena's rails, anywhere on its deck, is never j
   const progress = atTheBoss();
   const course = courseOf(layout);
   const { gate } = layout.arena;
-  for (let y = gate.maxY + 0.35; y <= 42; y += 0.1)
-    for (let x = -6; x <= 6; x += 0.05) {
+  const [minX, , maxX, maxY] = layout.zones[layout.arena.zone]?.area ?? [0, 0, 0, 0];
+  for (let y = gate.maxY + 0.35; y <= maxY; y += 0.1)
+    for (let x = minX; x <= maxX; x += 0.05) {
       const z = topAt(course, x, y);
       if (z < 2) continue;
       assert.equal(progress.frame({ ...inArena(), x, y, z }, 0.016).bringBack, null, `at ${x.toFixed(2)}, ${y}`);
     }
+});
+
+test('once the boss fight begins, a player over her rail on the channels outside it is brought back in', () => {
+  const course = courseOf(layout);
+  const checkpoint = layout.zones[layout.arena.zone]?.checkpoint;
+  for (const x of [-5.1, 5.0]) {
+    const z = topAt(course, x, 34);
+    assert.ok(z > 4, `her channel stands at ${x}`);
+    const progress = atTheBoss();
+    assert.deepEqual(
+      progress.frame({ ...inArena(), x, y: 34, z }, 0.016).bringBack,
+      checkpoint,
+      `over the rail at ${x}`,
+    );
+  }
 });

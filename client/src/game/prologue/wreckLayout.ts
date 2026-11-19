@@ -5,7 +5,7 @@ import { deckOf, type Lying } from '../../ships/deck.ts';
 import { deckBlocks } from './wreckDecks.ts';
 
 type Point = readonly [number, number];
-type Area = readonly [number, number, number, number];
+export type Area = readonly [number, number, number, number];
 
 /** What a block that shows is drawn as: a broken spar or mast, planks laid as a ramp or stair, a crate, or debris. */
 export type SceneryKind = 'spar' | 'planks' | 'crate' | 'debris';
