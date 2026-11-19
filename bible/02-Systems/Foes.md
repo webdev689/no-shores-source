@@ -191,8 +191,9 @@ phases) is [[Enemies]].
   1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
   does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s
   (thunderlock), so it can be read and dodged, where a player's reaches its mark at once. A ranged turn gates a shot
-  and a shot spends it; held 5 s unused it goes on. Drawn, it looses in the beat between its allies' blows (above). A
-  drawn shot strikes times the foe's might, as its blows do.
+  and a shot spends it; held 5 s unused it goes on, and a shot drawn with it goes too: the shooter lowers its weapon.
+  Drawn, it looses in the beat between its allies' blows (above). A drawn shot strikes times the foe's might, as its
+  blows do.
 - **Cover.** With cover near, a shooter takes a **post**: among the firing spots within 11 m that have cover, one where
   either the spot hides it from where it believes its target is and a step of 1.2 m aside has the line, or the other way
   round. It scores each by 1.5 a metre to walk there, 3 a metre outside its weapon's band of distance (bow 10 to 18 m,

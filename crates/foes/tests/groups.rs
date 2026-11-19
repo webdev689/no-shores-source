@@ -256,6 +256,24 @@ fn a_foe_throws_no_blow_of_reach_at_a_target_walking_out_of_it() {
 }
 
 #[test]
+fn a_shooter_holds_its_draw_only_while_it_holds_its_turn() {
+    // Two archers behind four foes hand to hand, in a cold fight with one ranged turn: the blows fill the beats, so a
+    // drawn archer may wait past its turn's lease, and then the turn goes on and its shot with it.
+    let foes = [(SWORDSMAN, -30.0), (BRUTE, -10.0), (SKIRMISHER, 10.0), (SWORDSMAN, 30.0), (ARCHER, 160.0)];
+    let mut room = group(3, 0.1, &[&foes[..], &[(ARCHER, -160.0)]].concat());
+    let mut drawn_without = 0;
+    for _ in 0..3600 {
+        room.step(&mut still(0.0));
+        drawn_without += [14, 15]
+            .into_iter()
+            .filter(|id| matches!(room.fighter(*id).action, Action::Draw { .. }))
+            .filter(|id| !room.board.holds(PLAYER, *id, true))
+            .count();
+    }
+    assert_eq!(drawn_without, 0, "ticks an archer stood drawn without its turn");
+}
+
+#[test]
 fn a_foe_with_no_shield_flanks_though_it_blocks_with_its_blade() {
     // The pirates' captain guards with its sword alone; their swordsmen carry shields.
     let ids = [10, 11, 12];

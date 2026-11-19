@@ -78,13 +78,14 @@ fn pitch(here: &Here<'_, '_>, sight: &Sight) -> f64 {
 }
 
 /// Holding its aim until it has drawn `drawn` ticks, then pulling the trigger once `loose` allows; and, from rest,
-/// raising its weapon when `may` allows. Answers the ask and whether it let a shot go this tick.
+/// raising its weapon when `may` allows. Its turn gone on (`held` false), the shot the turn gated goes with it: it
+/// lowers its weapon. Answers the ask and whether it let a shot go this tick.
 fn draw(
     brain: &mut Brain,
     here: &Here<'_, '_>,
     sight: &Sight,
     drawn: u64,
-    may: bool,
+    (held, may): (bool, bool),
     loose: impl FnOnce() -> bool,
 ) -> (Ask, bool) {
     let mut ask = Ask::facing(sight.toward);
@@ -93,8 +94,8 @@ fn draw(
     match here.fighter.action {
         Action::Draw { .. } => {
             // Counted from its raising, not the draw's own count, which a bow's full charge caps.
-            ask.combat.aim = true;
-            ask.combat.shoot = here.tick() > brain.bow.raised + drawn && loose();
+            ask.combat.aim = held;
+            ask.combat.shoot = held && here.tick() > brain.bow.raised + drawn && loose();
             if ask.combat.shoot {
                 brain.bow.shot_ready = here.tick() + Here::ticks(here.dice.between(Purpose::ShotGap, SHOT_GAP));
                 return (ask, true);
@@ -209,7 +210,8 @@ pub fn fire(
     let (may, loose) = if covered { (has && !aim, clear) } else { (has && clear, true) };
     // Drawn, it looses into the beat between its allies' blows at its target, not on top of one.
     let lands = pace::shot_lands(here, sight.spot);
-    let (ask, loosed) = draw(brain, here, sight, drawn, may, || loose && pace::may_shoot(here, board, sight.id, lands));
+    let loose = || loose && pace::may_shoot(here, board, sight.id, lands);
+    let (ask, loosed) = draw(brain, here, sight, drawn, (has, may), loose);
     if loosed {
         board.hand_on(sight.id, here.me, tick);
     }
