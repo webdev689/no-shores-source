@@ -98,8 +98,9 @@ from the sea, fresh water and the claim's edge), then:
    ways are laid, every prop whose footprint reaches onto a way's width, the set pieces' small solids in a way's
    path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way runs
    through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner of
-   a building walked into rather than graze it. Cells a way may not cross are any reaching under what stands, so a
-   thin wall never slips between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
+   a building walked into rather than graze it. A way may not cross a cell reaching under a building walked into,
+   nor one whose middle stands under anything else, each taken at least a cell wide so a thin wall never slips
+   between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
    boxes keep close to them, each kept off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and
    the great wall are.
 6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side
