@@ -656,3 +656,45 @@ fn every_shrine_stands_in_a_ring_of_standing_stones() {
     }
     assert!(seen > 0, "continent 1 has a shrine");
 }
+
+#[test]
+fn every_farm_keeps_a_fold_of_drystone() {
+    let ground = &laid_one().2;
+    let farms = continent_one()
+        .iter()
+        .flat_map(|laid| laid.areas.iter().filter(|area| area.kind == AreaKind::Farm).map(move |area| (laid, area)));
+    let mut seen = 0;
+    for (laid, area) in farms {
+        seen += 1;
+        // A fold's walls: drystone 0.7 m through (a track's walls are 0.8), standing on the ground.
+        let walls: Vec<&city::solids::Solid> = laid
+            .seating
+            .solids
+            .iter()
+            .filter(|solid| {
+                solid.material == Material::Rubble
+                    && solid.shape == SolidShape::Block
+                    && (solid.size[0] - 0.7).abs() < 1e-9
+                    && layout::field::distance([solid.at[0], solid.at[1]], area.at) <= area.radius + 40.0
+            })
+            .collect();
+        let length: f64 = walls.iter().map(|wall| wall.size[1]).sum();
+        let [west, north, east, south] = walls.iter().fold(
+            [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY],
+            |[west, north, east, south], wall| {
+                [west.min(wall.at[0]), north.min(wall.at[1]), east.max(wall.at[0]), south.max(wall.at[1])]
+            },
+        );
+        assert!(
+            length >= 30.0 && east - west >= 7.0 && south - north >= 7.0,
+            "{}: {} keeps {length:.0} m of fold wall",
+            laid.id,
+            area.name
+        );
+        for wall in walls {
+            let off = wall.at[2] + 0.25 - ground.height_at(wall.at[0], wall.at[1]);
+            assert!(off.abs() < 0.2, "{}: a fold's wall at {:?} stands {off:+.2} m off the ground", laid.id, wall.at);
+        }
+    }
+    assert!(seen > 0, "continent 1 has a farm");
+}

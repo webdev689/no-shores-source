@@ -92,8 +92,79 @@ pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path]) {
         along(kit, areas, path, &others);
     }
     let all: Vec<&Path> = paths.iter().collect();
-    for area in areas.iter().filter(|area| area.kind == AreaKind::Shrine) {
-        stone_ring(kit, area, &all);
+    for area in areas {
+        match area.kind {
+            AreaKind::Shrine => stone_ring(kit, area, &all),
+            AreaKind::Farm => fold(kit, area, &all),
+            _ => {}
+        }
+    }
+}
+
+/// How far from an area's middle what is seated about it reaches, metres.
+fn seated_rim(kit: &Kit, area: &Area) -> f64 {
+    let near = area.radius * 0.7;
+    let seats = kit.into.buildings.iter().chain(kit.into.props.iter()).map(|seated| seated.footprint);
+    seats
+        .filter(|&[west, north, east, south]| distance([(west + east) / 2.0, (north + south) / 2.0], area.at) < near)
+        .flat_map(|[west, north, east, south]| [[west, north], [east, north], [east, south], [west, south]])
+        .map(|corner| distance(corner, area.at))
+        .fold(0.0, f64::max)
+}
+
+/// A fold's length along its bearing from its farm and its width, its gate's width and its walls' thickness, metres.
+const FOLD_M: [f64; 2] = [12.0, 9.0];
+const FOLD_GATE_M: f64 = 2.4;
+const FOLD_WALL_M: f64 = 0.7;
+
+/// A farm's fold for its stock: a pen of drystone beyond what is seated at its middle, its gate toward the farm, on
+/// level ground clear of every way, of what is seated and of what stands; none where no such ground lies near.
+fn fold(kit: &mut Kit, area: &Area, ways: &[&Path]) {
+    let rim = seated_rim(kit, area);
+    let start = kit.draw() * TAU;
+    let [long, wide] = [FOLD_M[0] / 2.0, FOLD_M[1] / 2.0];
+    let spot = (0..24).find_map(|attempt| {
+        let toward = ahead([0.0, 0.0], [0.0, -1.0], 1.0, start + f64::from(attempt % 12) * TAU / 12.0);
+        let middle = ahead(area.at, toward, rim + 10.0 + f64::from(attempt / 12) * 10.0, 0.0);
+        let across = [-toward[1], toward[0]];
+        let at = |along: f64, side: f64| ahead(ahead(middle, toward, along, 0.0), across, side, 0.0);
+        let points = [-1.0, 0.0, 1.0].map(|along| [-1.0, 0.0, 1.0].map(|side| at(along * long, side * wide)));
+        let heights = points.as_flattened().iter().map(|&point| kit.height(point));
+        let (low, high) =
+            heights.fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), each| (low.min(each), high.max(each)));
+        let reach = long + 1.5;
+        let middle_off = |solid: &Solid| {
+            let [west, north, east, south, ..] = solid.bounds();
+            middle[0] < west - reach
+                || middle[0] > east + reach
+                || middle[1] < north - reach
+                || middle[1] > south + reach
+        };
+        let open = points.as_flattened().iter().all(|&point| clear(kit, ways, point, 3.0))
+            && kit.into.solids.iter().all(middle_off);
+        (high - low < 0.4 && open).then_some((across, at(-long, 0.0), at(long, 0.0)))
+    });
+    let Some((across, near, far)) = spot else { return };
+    let side = |from: [f64; 2], out: f64| ahead(from, across, out, 0.0);
+    let gate = FOLD_GATE_M / 2.0;
+    let sides = [
+        [side(near, -wide), side(near, -gate)],
+        [side(near, gate), side(near, wide)],
+        [side(far, -wide), side(far, wide)],
+        [side(near, -wide), side(far, -wide)],
+        [side(near, wide), side(far, wide)],
+    ];
+    let high = 1.0 + kit.draw() * 0.3;
+    for [from, to] in sides {
+        let mut lengths = Vec::new();
+        crate::halls::wall(&mut lengths, from, to, 0.0, high, FOLD_WALL_M, Material::Rubble);
+        for mut length in lengths {
+            let [west, north, east, south, ..] = length.bounds();
+            if crate::paths::clear_of([west, north, east, south], ways.iter().copied()) {
+                length.at[2] = kit.height([length.at[0], length.at[1]]) - 0.25;
+                kit.solid(length);
+            }
+        }
     }
 }
 
@@ -104,13 +175,7 @@ const RING_PAST_M: f64 = 6.0;
 /// A shrine's ring of standing stones round what is seated about its middle (a shrine is standing stones round an
 /// altar), a few leaning, every fifth fallen; none on a way or on what is seated.
 fn stone_ring(kit: &mut Kit, area: &Area, ways: &[&Path]) {
-    let near = area.radius * 0.7;
-    let seats = kit.into.buildings.iter().chain(kit.into.props.iter()).map(|seated| seated.footprint);
-    let rim = seats
-        .filter(|&[west, north, east, south]| distance([(west + east) / 2.0, (north + south) / 2.0], area.at) < near)
-        .flat_map(|[west, north, east, south]| [[west, north], [east, north], [east, south], [west, south]])
-        .map(|corner| distance(corner, area.at))
-        .fold(0.0, f64::max);
+    let rim = seated_rim(kit, area);
     let radius = (rim + RING_PAST_M).clamp(10.0, area.radius * 0.9);
     let start = kit.draw() * TAU;
     for number in 0..RING_STONES {
