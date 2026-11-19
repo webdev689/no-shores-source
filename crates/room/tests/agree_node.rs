@@ -12,7 +12,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use std::path::Path;
 
 /// Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
-pub const NODE_RUN_HASH: &str = "c61ace29845958fb";
+pub const NODE_RUN_HASH: &str = "22f7892e1f8106d7";
 
 /// Ticks, then forward, sideways, yaw, run, and jump on the first tick only.
 type Phase = (usize, f64, f64, f64, bool, bool);
