@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
-import type { FoeType } from '../../rules/roster.ts';
+import { type FoeType, rosterOf } from '../../rules/roster.ts';
+import { figureOf } from '../../player/dressing.ts';
+import type { Actor } from './actors.ts';
+import { armouredDress, FIRST_LOOK } from './look.ts';
 import { deckToWorld } from '../../ships/deck.ts';
 import { shipSails } from '../../ships/shipMesh.ts';
 import { onScreen, type Shot } from '../camera.ts';
@@ -21,19 +26,26 @@ const layout = readWreck();
 const SIZE = { width: 960, height: 540 };
 
 /** A story whose every part takes any call and writes it down, by its path and what it was handed; a call whose path
- *  `answers` names gives back what it holds there. */
-function recorded(answers: Readonly<Record<string, unknown>> = {}): { story: Story; calls: string[] } {
+ *  `answers` names gives back what it holds there, and a part `values` names is what it holds. Its player wears
+ *  `dress`. */
+function recorded(
+  answers: Readonly<Record<string, unknown>> = {},
+  values: Readonly<Record<string, unknown>> = {},
+  dress: unknown = { body: 'female' },
+): { story: Story; calls: string[] } {
   const calls: string[] = [];
   const part = (path: string): unknown =>
-    new Proxy(() => undefined, {
-      get: (target, key) => (key === 'then' ? undefined : part(`${path}.${String(key)}`)),
-      set: () => true,
-      apply: (target, self, args: unknown[]) => {
-        calls.push(`${path}(${args.filter((arg) => typeof arg !== 'object').join(', ')})`);
-        return answers[path];
-      },
-    });
-  const story = new Proxy({ dress: { body: 'female' } } as object, {
+    path in values
+      ? values[path]
+      : new Proxy(() => undefined, {
+          get: (target, key) => (key === 'then' ? undefined : part(`${path}.${String(key)}`)),
+          set: () => true,
+          apply: (target, self, args: unknown[]) => {
+            calls.push(`${path}(${args.filter((arg) => typeof arg !== 'object').join(', ')})`);
+            return answers[path];
+          },
+        });
+  const story = new Proxy({ dress } as object, {
     get: (target, key) => (key === 'dress' ? Reflect.get(target, key) : part(String(key))),
   });
   return { story: story as Story, calls };
@@ -302,4 +314,46 @@ test("the wake's staged fighters stand clear of what stands on the deck, its hea
         assert.ok(beside <= top + 0.5, `a fighter at ${x.toFixed(2)}, ${y.toFixed(2)} against ${beside.toFixed(2)} m`);
       }
     }
+});
+
+/** The layers the forge draws in each move, by body, from its keys (`<layer>_<move>`). */
+function drawnIn(body: string, moves: ReadonlySet<string>): Record<string, string[]> {
+  const keys = JSON.parse(
+    readFileSync(new URL(`../../../../tools/forge/tools/sprite-forge/keys/keys-${body}.json`, import.meta.url), 'utf8'),
+  ) as Record<string, unknown>;
+  const drawn: Record<string, string[]> = {};
+  for (const key of Object.keys(keys))
+    for (const move of moves) if (key.endsWith(`_${move}`)) (drawn[key.slice(0, -move.length - 1)] ??= []).push(move);
+  return drawn;
+}
+
+test('every figure the wake, the throw overboard and the deep stand is drawn clothed in the move it makes', async () => {
+  const compiled = new WebAssembly.Module(
+    await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
+  );
+  const roster = rosterOf(compiled);
+  const { story } = recorded(FOOT_VIEW, { 'stage.parts.roster': roster }, armouredDress(FIRST_LOOK));
+  const actors: Actor[] = [];
+  const wake = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
+  for (let since = 0; since < 24; since += 0.5) actors.push(...(wake.frame(tick(0.5)).actors ?? []));
+  const overboard = new Overboard(story, layout, scenery);
+  for (let since = 0; since < 6; since += 0.25) actors.push(...(overboard.frame(tick(0.25)).actors ?? []));
+  const deep = new Deep(story, layout, scenery);
+  for (let since = 0; since < 8; since += 0.25) actors.push(...(deep.frame(tick(0.25)).actors ?? []));
+  assert.ok(actors.length > 20, `${actors.length} figures`);
+  const moves = new Set(actors.map((actor) => actor.anim));
+  const drawn: Readonly<Record<string, Record<string, string[]>>> = {
+    male: drawnIn('male', moves),
+    female: drawnIn('female', moves),
+  };
+  for (const actor of actors) {
+    const layers = drawn[actor.dress.body] ?? {};
+    const { gear } = figureOf(actor.dress, layers, actor.anim);
+    const { garments, armour } = actor.dress.outfit;
+    const clothes = [...garments, ...Object.entries(armour).map(([piece, set]) => `${piece}_${set}`)];
+    const worn = gear.filter((layer) => clothes.some((cloth) => layer === cloth || layer.startsWith(`${cloth}_`)));
+    assert.ok(worn.length > 0, `figure ${actor.id} wears clothes in "${actor.anim}"`);
+    for (const layer of worn)
+      assert.ok(layers[layer]?.includes(actor.anim), `figure ${actor.id}'s ${layer} is not drawn in "${actor.anim}"`);
+  }
 });

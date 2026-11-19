@@ -1,5 +1,5 @@
 // The owner's eleventh beat: the screen, faded out on the fight, fades back in on the player thrown over the rammer's
-// rail, Thule and his crew crying out and dancing on her quarterdeck as the body arcs into the sea; a splash, and the
+// rail, Thule and his crew crying out and leaping on her quarterdeck as the body arcs into the sea; a splash, and the
 // fade again.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
@@ -23,9 +23,9 @@ const CELEBRANTS: readonly {
   readonly from: readonly [number, number];
 }[] = [
   { type: 12, anim: 'warcry', from: [0, 0] },
-  { type: 7, anim: 'dance', from: [-2.4, -1.6] },
+  { type: 7, anim: 'jump', from: [-2.4, -1.6] },
   { type: 8, anim: 'warcry', from: [-2.1, 1.8] },
-  { type: 10, anim: 'dance', from: [1.0, 1.8] },
+  { type: 10, anim: 'jump', from: [1.0, 1.8] },
 ];
 /** The throw: when it starts, how long the body is in the air, how far it is thrown east over the rail and how high. */
 const THROW_AT_S = 1.6;

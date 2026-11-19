@@ -72,7 +72,7 @@ takes them straight to Overlook's social space. While the story plays the menu (
 | `ram` | The lookout cries out on the deck the calm left; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side: Captain Brannoc Thule's Frigate at her own size, under sail, in the shade a captain's ship wears in the fight, her stem meeting the Brig's side as their middles come half the Brig's beam and half the Frigate's length apart; the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
 | `wreck` | Fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
-| `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and dancing on the drawn wreck | shown |
+| `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck | shown |
 | `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
@@ -201,8 +201,9 @@ are the story's; the wreck is the level they run.
   let go as the wreck's fight ends. The hints are foot's, without the menu: the story has none.
 - **Drawn** by `WreckScenery`, made once from the meshes the story loaded (the Brig's and the Frigate's, each ship by
   her own) and shown by the wake, the fight, the throw overboard and, from below, the deep: both ships with their canvas
-  struck, the blocks that show in the ships' own timber, and each heap while it stands. The fires burn in all four. It
-  lets go of its GPU buffers once the deep ends.
+  struck, the blocks that show in the ships' own timber, and each heap while it stands. The fires burn in all four.
+  Every figure the wake, the throw and the deep stand makes a move the forge draws its clothes in: the deep's fallen
+  crew lie in `fallen`, Thule's crew leap and cry out. It lets go of its GPU buffers once the deep ends.
 - **Each beat sets its world** at its start (the wreck's storm, fires and sounds, no lightning; the deep's water), so
   under `npm run dev`, `?prologue=wake`, `?prologue=wreck`, `?prologue=overboard` or `?prologue=deep` plays as the
   story does. Leaving the fight hands the HUD back clean (no death, hints, prompt, nameplate or fight's display) and

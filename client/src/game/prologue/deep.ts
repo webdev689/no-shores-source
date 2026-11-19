@@ -34,11 +34,11 @@ const FALLEN: readonly {
   readonly body: Dress['body'];
   readonly anim: string;
 }[] = [
-  { at: [3.2, 1.5, 2.5], race: 'human', tone: 0.8, body: 'male', anim: 'lie' },
+  { at: [3.2, 1.5, 2.5], race: 'human', tone: 0.8, body: 'male', anim: 'fallen' },
   { at: [-2.6, 3.4, -1.5], race: 'felid', tone: 0.5, body: 'male', anim: 'fallen' },
-  { at: [1.4, -3.8, 4.5], race: 'human', tone: 0.2, body: 'male', anim: 'lie' },
+  { at: [1.4, -3.8, 4.5], race: 'human', tone: 0.2, body: 'male', anim: 'fallen' },
   { at: [-4.5, -1.2, 6], race: 'anole', tone: 0.5, body: 'male', anim: 'fallen' },
-  { at: [5.5, -2.5, -3], race: 'human', tone: 0.45, body: 'female', anim: 'lie' },
+  { at: [5.5, -2.5, -3], race: 'human', tone: 0.45, body: 'female', anim: 'fallen' },
 ];
 
 export class Deep implements Beat {
