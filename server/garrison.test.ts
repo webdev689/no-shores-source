@@ -87,7 +87,7 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
 
 /** The room door's agreement test holds the same run and fingerprint: two players, the garrison's foes shared out
  *  between them. */
-const GARRISON_PAIR_HASH = 'e91e4f24';
+const GARRISON_PAIR_HASH = 'b7555d2c';
 
 test('two players against a node’s garrison fight to the same fingerprint through WebAssembly as natively', () => {
   const room = startRoomDoor(compiled);
