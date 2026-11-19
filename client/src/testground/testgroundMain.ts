@@ -40,6 +40,7 @@ import { Walker } from '../player/walker.ts';
 import { startAimPanel } from './aimPanel.ts';
 import { AttackFeel, type DrawnFigure } from './attackFeel.ts';
 import { startPanel } from './panel.ts';
+import { startStatusPanel } from './statusPanel.ts';
 import { SceneView } from './sceneView.ts';
 
 /** How fast a figure set turning round turns, in radians a second: a full turn in 8 seconds. */
@@ -156,6 +157,7 @@ async function start(): Promise<void> {
   startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
     [aimPlace, aimHeld] = [place, held];
   });
+  startStatusPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
   const feel = new AttackFeel(element<HTMLElement>('#panel'), combatRules, movement.tickSeconds);
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: Player) =>

@@ -1,16 +1,18 @@
 // A foe's plate, one layout for every bar of a foe: its faction's emblem in a square at the left and, to its right, its
-// name above a long thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge.
+// name above a long thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge; its
+// debuffs' icons beside the bar.
 import { ROLES } from '../plus/kit.ts';
-import type { FoeShield } from '../network/messages.ts';
+import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { element, Meter } from './meter.ts';
+import { foeDebuffs, StatusRow } from './statusIcons.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
- *  3 searching); its faction's number, which picks its emblem (none without it); and its shield, if it stands with
- *  one. */
+ *  3 searching); its faction's number, which picks its emblem (none without it); its shield, if it stands with one;
+ *  and its debuffs. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -21,6 +23,7 @@ export interface MarkedFoe {
   readonly alert: number;
   readonly factionNumber?: number;
   readonly shield?: FoeShield | null;
+  readonly statuses?: FoeStatuses;
 }
 
 /** A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, as long as the
@@ -42,7 +45,9 @@ export type PoiseState = 'empty' | 'filling' | 'iron' | 'staggered' | 'open';
  *  as any wind-up: the track tells no more than the ground does. */
 export function poiseTrackOf(view: FighterView): { state: PoiseState; fill: number; word: string } {
   const { action } = view;
-  if (action.kind === 'staggered') return { state: 'staggered', fill: 1, word: 'Staggered' };
+  if (action.kind === 'staggered') {
+    return { state: 'staggered', fill: 1, word: action.cause === 'charged' ? 'Charged' : 'Staggered' };
+  }
   if (action.kind === 'overreach') return { state: 'open', fill: 0, word: 'Open' };
   if (action.kind === 'telegraph' && action.iron) return { state: 'iron', fill: 1, word: 'Iron' };
   const fill = Math.max(0, Math.min(1, view.poise / Math.max(1, view.poiseMax)));
@@ -98,6 +103,7 @@ export class FoePlate {
   private readonly mark: HTMLElement;
   private readonly poise: PoiseTrack | null;
   private readonly ward: HTMLElement;
+  private readonly debuffs: StatusRow;
   /** The share of health the plate last showed of each foe it remembers, so a foe it turns back to loses from where
    *  its bar stood; and the share a foe first shown is taken at (null for as found). */
   private readonly seen: Map<number, number> | null;
@@ -118,6 +124,7 @@ export class FoePlate {
     this.ward = element('i', 'ward', this.health.root);
     this.ward.hidden = true;
     this.poise = parts.poise ? new PoiseTrack(body) : null;
+    this.debuffs = new StatusRow(this.root, 'Debuffs');
     this.seen = parts.remembers ? new Map() : null;
     this.firstSeen = parts.remembers === 'whole' ? 1 : null;
   }
@@ -147,10 +154,12 @@ export class FoePlate {
     }
     this.seen?.set(foe.id, Math.max(0, Math.min(1, share)));
     this.poise?.show(foe.id, foe.view);
+    this.debuffs.show(foe.id, foeDebuffs(foe.statuses));
   }
 
   /** Forgets the foes not in `present`, whose numbers may come again for others. */
   keep(present: ReadonlySet<number>): void {
     for (const id of this.seen?.keys() ?? []) if (!present.has(id)) this.seen?.delete(id);
+    this.debuffs.keep(present);
   }
 }

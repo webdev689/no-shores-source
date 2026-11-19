@@ -8,6 +8,7 @@ import { wearKit } from '../plus/kit.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { PLATE_SIZE } from './plateSight.ts';
+import { statusCss } from './statusIcons.ts';
 
 const SHEET_ID = 'fight-hud';
 /** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
@@ -238,7 +239,7 @@ ${shieldWords}
 
 /** The whole sheet. */
 export function fightSheetCss(): string {
-  return cuesCss() + platesCss() + vitalsCss();
+  return cuesCss() + platesCss() + vitalsCss() + statusCss();
 }
 
 /** Lays the kit's sheet, the compass's and then the display's on `page`, once each. */
