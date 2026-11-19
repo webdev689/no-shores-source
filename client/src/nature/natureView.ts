@@ -1,3 +1,4 @@
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { NEAR, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SLOW_CLOCK_S } from '../water/shore.ts';
@@ -90,7 +91,10 @@ export class NatureView {
     });
     const module = device.createShaderModule({ code: NATURE_SHADER });
     const shadows = shadowLayouts(device);
-    const layout = device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadows.receiver] });
+    const sky = skyUniformFor(device);
+    const layout = device.createPipelineLayout({
+      bindGroupLayouts: [this.layout, shadows.receiver, sky.empty, sky.layout],
+    });
     const mesh: GPUVertexBufferLayout = {
       arrayStride: VERTEX_BYTES,
       attributes: [
@@ -235,6 +239,7 @@ export class NatureView {
     pass.setPipeline(this.pipelines.shade);
     // Every pipeline here shares the shadow's layout, so one group serves them all.
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipelines.shade));
+    skyUniformFor(this.gpu.device).bindShared(pass, [2]);
     for (const { part, first, count } of this.draws) {
       if (!part.shaded) continue;
       pass.setBindGroup(0, bind, [part.block * FORM_BLOCK_BYTES]);

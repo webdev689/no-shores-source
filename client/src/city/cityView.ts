@@ -1,6 +1,7 @@
 // A port city drawn with the land: its blocks' forged models near the eye, its buildings' masses further out and
 // their hulls far off, dithered into each other; its landmark, works and plaza always; its ground plates at every
 // distance. A Drawer the game's scene draws into its own pass.
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
@@ -301,6 +302,7 @@ export class CityView implements CityDrawer {
     pass.setBindGroup(0, drawn.group);
     // The three pipelines share the shadow's layout, so one group serves them all.
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipelines.plates));
+    skyUniformFor(this.gpu.device).bindShared(pass, [2]);
 
     pass.setPipeline(this.pipelines.plates);
     pass.setVertexBuffer(0, drawn.plates);

@@ -1,3 +1,4 @@
+import { SKY_WGSL } from '../sky/skyUniform.ts';
 import { HULLS } from './hullMask.ts';
 import { FRESH_LEVEL_M, FRESH_SINK_M, SHORE } from './shore.ts';
 
@@ -51,10 +52,7 @@ export function wideTexels(
  */
 export const SHARED_WGSL = /* wgsl */ `
 const TAU = 6.2831853;
-const SUN = vec3f(-0.5417, 0.5417, 0.6428);
-const SUN_LIGHT = vec3f(1.0, 0.94, 0.82);
-const ZENITH = vec3f(0.20, 0.42, 0.80);
-const HORIZON = vec3f(0.70, 0.81, 0.92);
+${SKY_WGSL}
 
 fn hash2(cell: vec2f) -> vec2f {
   var bits = vec2u(vec2i(floor(cell)) & vec2i(255));
@@ -278,8 +276,10 @@ fn marked(marks: texture_2d<u32>, at: vec2f, first: u32, last: u32) -> f32 {
 // waves too small to draw gathers a cone of them, so the clouds' detail finer than that averages out.
 fn sky(direction: vec3f, slow_time: f32, blur: f32) -> vec3f {
   let up = direction.z;
-  var colour = mix(HORIZON, ZENITH, sqrt(clamp(up, 0.0, 1.0)));
-  colour = mix(colour, HORIZON * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
+  let zenith = sky_state.zenith.rgb;
+  let horizon = sky_state.horizon.rgb;
+  var colour = mix(horizon, zenith, sqrt(clamp(up, 0.0, 1.0)));
+  colour = mix(colour, horizon * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
   if (up > 0.0) {
     let plane = direction.xy / (up + 0.08) * 0.9 + vec2f(slow_time * 0.004, slow_time * 0.0013);
     // How far the blur moves a point on the clouds' plane, furthest near the horizon, and each octave's share kept.
@@ -293,8 +293,9 @@ fn sky(direction: vec3f, slow_time: f32, blur: f32) -> vec3f {
     let cover = smoothstep(0.52 - lost, 0.78 + lost, puff) * smoothstep(0.0, 0.25, up);
     colour = mix(colour, vec3f(0.97, 0.97, 0.99) * (0.86 + 0.14 * puff), cover * 0.9);
   }
-  let toward = max(dot(direction, SUN), 0.0);
-  return colour + SUN_LIGHT * (pow(toward, 900.0) * 16.0 + pow(toward, 14.0) * 0.16);
+  let toward = max(dot(direction, sky_state.sun.xyz), 0.0);
+  let sun_light = select(vec3f(0.0), sky_state.key_light.rgb, sky_state.sun.z > -0.02);
+  return colour + sun_light * (pow(toward, 900.0) * 16.0 + pow(toward, 14.0) * 0.16);
 }
 `;
 
@@ -552,7 +553,7 @@ fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
 // back, deeper blue the deeper it is, and the sun's shafts.
 fn underwater_light(fresh: bool, below: f32) -> vec3f {
   let body = select(SEA_BODY, FRESH_BODY, fresh);
-  return body * (2.4 + 1.2 * SUN.z) * exp(-0.045 * max(below, 0.0));
+  return body * (2.4 * sky_level() + 1.2 * key_toward().z * sky_state.key.w) * exp(-0.045 * max(below, 0.0));
 }
 
 fn through_water(colour: vec3f, fresh: bool, below: f32, distance_to: f32) -> vec3f {

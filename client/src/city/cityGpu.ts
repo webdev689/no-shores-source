@@ -1,5 +1,6 @@
 // The city's pipelines, made once a GPU and format: the models (and solids), the masses and the plates, all drawn
 // into the scene's pass (4x MSAA, depth reversed) and sharing one bind group layout.
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -40,7 +41,10 @@ export function cityPipelines(gpu: Gpu): CityPipelines {
     ],
   });
   const shadows = shadowLayouts(device);
-  const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [layout, shadows.receiver] });
+  const sky = skyUniformFor(device);
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [layout, shadows.receiver, sky.empty, sky.layout],
+  });
   const castLayout = device.createPipelineLayout({ bindGroupLayouts: [layout, shadows.caster] });
   // every face is wound so its (b - a) x (c - a) points out; through this projection that reads clockwise
   const primitive: GPUPrimitiveState = { topology: 'triangle-list', cullMode: 'back', frontFace: 'cw' };

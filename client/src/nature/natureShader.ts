@@ -56,7 +56,6 @@ struct Vertex {
 };
 
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-const AMBIENT = 0.35;
 const SNOW = vec3f(0.94, 0.95, 0.97);
 // The ambient's tint from below (light bounced off the ground) and from above (the sky).
 const BOUNCE = vec3f(0.95, 0.9, 0.76);
@@ -228,13 +227,14 @@ fn plant_fragment(shaded: Shaded, @builtin(front_facing) front: bool) -> Drawn {
   }
   // The sun as the shadow map lets it through: a tree under another's crown, or in a wall's shadow, is in shade.
   let sun = sunlit(shaded.from_eye, normal);
-  let direct = max(dot(normal, SUN), 0.0) * sun;
-  let ambient = AMBIENT * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
+  let direct = sky_direct(normal, sun);
+  let ambient = sky_ambient(normal) * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
-  let through = shaded.leaf * (0.2 + 0.3 * max(-dot(normal, SUN), 0.0) * sun);
-  var colour = shaded.colour * (ambient + (1.0 - AMBIENT) * direct) + shaded.colour * SUN_LIGHT * through;
+  let behind = 0.3 * max(-dot(normal, sky_state.key.xyz), 0.0) * sun;
+  let through = shaded.leaf * (0.2 * sky_level() + behind * sky_state.key.w);
+  var colour = shaded.colour * (ambient + direct) + shaded.colour * sky_state.key_light.rgb * through;
   let settled = shaded.snow * smoothstep(0.35, 0.75, normal.z);
-  colour = mix(colour, SNOW * (AMBIENT + (1.0 - AMBIENT) * direct), settled);
+  colour = mix(colour, SNOW * (sky_ambient(normal) + direct), settled);
   return Drawn(vec4f(colour, 1.0), mask);
 }
 
@@ -261,7 +261,7 @@ fn shade_vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) whic
   let corner = index % 3u;
   let angle = f32(index / 3u + select(0u, 1u, corner == 2u)) / ${SHADE_SEGMENTS}.0 * TAU;
   let rim = select(1.0, 0.0, corner == 0u);
-  let lean = -SUN.xy / SUN.z * form.shade.y * item.look.y * 0.35;
+  let lean = -key_toward().xy / key_toward().z * form.shade.y * item.look.y * 0.35;
   let offset = lean + vec2f(cos(angle), sin(angle)) * form.shade.x * item.look.x * rim;
   let ground = item.ground.w + dot(item.ground.xy, offset) + 0.12;
   let point = vec3f(foot.from_eye.xy + offset, ground * frame.anchor.w + frame.anchor.z);

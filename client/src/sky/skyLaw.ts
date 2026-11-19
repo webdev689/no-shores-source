@@ -24,6 +24,8 @@ export interface SkyReading {
   readonly temperatureC: number;
   /** The ground's wetness from the last twenty minutes' rain, 0 to 1. */
   readonly wetness: number;
+  /** The flow that carries the weather, m/s east. */
+  readonly steeringMS: number;
 }
 
 /** One lightning strike: where and when, whether it reaches the ground, and its power, a half to 1. */
@@ -54,7 +56,7 @@ interface SkyExports {
   land_climates(): bigint;
 }
 
-const SKY_ANSWER_FLOATS = 22;
+const SKY_ANSWER_FLOATS = 23;
 const STRIKE_FLOATS = 5;
 
 function take(exports: SkyExports, packed: bigint): Uint8Array {
@@ -109,6 +111,7 @@ export async function startSkyLaw(moduleBytes: BufferSource): Promise<SkyLaw> {
         gust: number(19),
         temperatureC: number(20),
         wetness: number(21),
+        steeringMS: number(22),
       };
     },
     strikes: (x, y, reachM, fromS, toS, climate) => {

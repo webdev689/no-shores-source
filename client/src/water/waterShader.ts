@@ -25,7 +25,7 @@ fn eye_below() -> f32 {
 // The sun's shafts down through the water along a ray from the eye: the light its rippling surface gathers, followed
 // back up toward the sun from points along the ray, fading with depth and distance.
 fn shafts(direction: vec3f, reach_to: f32, pixel: vec2f) -> vec3f {
-  let sun_under = normalize(vec3f(SUN.xy * 0.75, SUN.z));
+  let sun_under = normalize(vec3f(key_toward().xy * 0.75, key_toward().z));
   // An even scatter of start points (interleaved gradient noise) reads as fine grain, not static.
   let jitter = fract(52.9829189 * fract(dot(pixel, vec2f(0.06711056, 0.00583715))));
   var light = 0.0;
@@ -38,7 +38,7 @@ fn shafts(direction: vec3f, reach_to: f32, pixel: vec2f) -> vec3f {
     let net = cells(surface_point * 0.25, frame.eye.w * 0.5);
     light += (1.0 - smoothstep(0.0, 0.2, net.y - net.x)) * exp(-0.06 * below - 0.07 * along);
   }
-  return SEA_GLOW * SUN_LIGHT * light / 10.0 * 1.1 * min(reach_to, 30.0) / 30.0;
+  return SEA_GLOW * sky_state.key_light.rgb * light / 10.0 * 1.1 * min(reach_to, 30.0) / 30.0;
 }
 
 @vertex
@@ -222,25 +222,25 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   if (scene_distance(look) < water_distance) { look = pixel; }
   let behind = textureSampleLevel(scene_colour, smooth_sampler, look / frame.view.xy, 0.0).rgb;
   let kept = exp(-select(SEA_ABSORB, FRESH_ABSORB, fresh) * through);
-  let body = select(SEA_BODY, FRESH_BODY, fresh) * (0.6 + 0.6 * SUN.z);
+  let body = select(SEA_BODY, FRESH_BODY, fresh) * (0.6 * sky_level() + 0.6 * key_toward().z * sky_state.key.w);
   var colour = behind * kept + body * (1.0 - exp(-0.12 * through));
 
   // Light through a crest from behind it, as the sun shines through a wave's thin top.
-  let back_lit = pow(max(dot(normalize(-to_eye.xy + vec2f(1e-6, 0.0)), normalize(SUN.xy)), 0.0), 3.0);
+  let back_lit = pow(max(dot(normalize(-to_eye.xy + vec2f(1e-6, 0.0)), normalize(key_toward().xy + vec2f(1e-6, 0.0))), 0.0), 3.0);
   let thick = clamp(crest * 0.9 + 0.35, 0.0, 1.0) * select(1.0, 0.25, fresh);
-  colour += SEA_GLOW * thick * (0.06 + 0.35 * back_lit) * (0.6 + 0.4 * max(dot(normal, SUN), 0.0));
+  colour += SEA_GLOW * thick * (0.06 + 0.35 * back_lit) * (0.6 * sky_level() + 0.4 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w);
 
   let facing_eye = max(dot(normal, to_eye), 0.0);
   let shine = smoothstep(0.0, 0.35, through) * (0.02 + 0.98 * pow(1.0 - facing_eye, 5.0));
   let bounced = reflect(-to_eye, normal);
   colour = mix(colour, sky(vec3f(bounced.xy, max(bounced.z, 0.03)), frame.eye.w, rough), shine);
-  let half_way = normalize(to_eye + SUN);
+  let half_way = normalize(to_eye + key_toward());
   // Far off, where a pixel spans many small waves, the glints blur into the sun's glitter path.
   let sharpness = mix(900.0, 120.0, smoothstep(0.05, 2.0, footprint));
   let glint = pow(max(dot(normal, half_way), 0.0), sharpness) * sharpness / 90.0 + pow(max(dot(normal, half_way), 0.0), 60.0) * 0.3;
-  colour += SUN_LIGHT * glint * (1.0 - foam) * smoothstep(0.0, 0.2, through);
+  colour += sky_state.key_light.rgb * glint * (1.0 - foam) * smoothstep(0.0, 0.2, through);
 
-  let foam_light = FOAM * (0.62 + 0.38 * max(dot(normal, SUN), 0.0)) + ZENITH * 0.06;
+  let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w) + sky_state.zenith.rgb * 0.06;
   colour = mix(colour, foam_light, foam);
   // Past its edge the water gives way to what the backdrop drew there.
   let land = aerial(textureLoad(scene_colour, vec2i(pixel), 0).rgb, normalize(ray_through(pixel)), scene_distance(pixel));

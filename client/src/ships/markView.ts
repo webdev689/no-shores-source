@@ -1,3 +1,4 @@
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -98,7 +99,9 @@ fn vertex_main(@location(0) corner: vec3f, @location(1) place: vec4f, @location(
 
 @fragment
 fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
-  let light = AMBIENT + (1.0 - AMBIENT) * max(dot(normalize(drawn.normal), SUN), 0.0);
+  let normal = normalize(drawn.normal);
+  // Marks were lit a little brighter than the land: AMBIENT against the land's 0.35.
+  let light = sky_ambient(normal) * (AMBIENT / 0.35) + sky_direct(normal, 1.0) * ((1.0 - AMBIENT) / 0.65);
   return vec4f(drawn.colour * light, 1.0);
 }
 `;
@@ -184,6 +187,7 @@ export class MarkView {
     this.device.queue.writeBuffer(this.uniforms, 0, uniforms);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
+    skyUniformFor(this.device).bindAuto(pass, this.pipeline, [1, 2]);
     pass.setVertexBuffer(0, this.corners);
     pass.setVertexBuffer(1, this.instances);
     pass.setIndexBuffer(this.faces, 'uint16');

@@ -1,3 +1,4 @@
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { levelsOf } from '../textures/levels.ts';
 import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipPictures.ts';
@@ -43,7 +44,6 @@ const TEXELS_PER_METRE = 40;
 
 const SHIP_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
-const AMBIENT = 0.35;
 // Her UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});
 
@@ -88,7 +88,7 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   // Sails and planks are single faces seen from both sides: the side seen is lit.
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   let colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
-  return vec4f(colour * place.shade.x * (AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0)), 1.0);
+  return vec4f(colour * place.shade.x * (sky_ambient(normal) + sky_direct(normal, 1.0)), 1.0);
 }
 `;
 
@@ -293,6 +293,7 @@ export class ShipView {
     this.device.queue.writeBuffer(drawn.uniforms, 0, values);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.bindGroup);
+    skyUniformFor(this.device).bindAuto(pass, this.pipeline, [1, 2]);
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     pass.drawIndexed(this.indexCount);

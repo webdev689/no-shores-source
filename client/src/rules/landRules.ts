@@ -31,6 +31,8 @@ export interface LandView {
   /** The biome's low ground (red, green, blue, 0..1) and snow line in metres; absent for a landmass with no biome. */
   readonly ground?: readonly [number, number, number];
   readonly snowM?: number;
+  /** The biome's key, which the weather reads its air by; absent for a landmass with no biome. */
+  readonly climate?: string;
   /** The sea's swell, the same over every landmass. */
   readonly swell?: Swell;
 }
@@ -200,6 +202,7 @@ interface ViewHeader {
   readonly rect?: [number, number, number, number];
   readonly ground?: [number, number, number] | null;
   readonly snow_m?: number | null;
+  readonly climate?: string | null;
   readonly swell?: { waves: SeaWave[]; full_depth_m: number; gone_depth_m: number; bearing: number };
 }
 
@@ -237,6 +240,7 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       problems: header.problems ?? [],
       ...(header.ground ? { ground: header.ground } : {}),
       ...(typeof header.snow_m === 'number' ? { snowM: header.snow_m } : {}),
+      ...(typeof header.climate === 'string' ? { climate: header.climate } : {}),
       ...(header.swell
         ? {
             swell: {

@@ -1,5 +1,6 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { Swell } from '../rules/landRules.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { RippleField } from './ripples.ts';
 import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
 import { HULL_FIT, HULLS, type HullMask } from './hullMask.ts';
@@ -119,9 +120,10 @@ export class WaterView {
       ],
     });
     const module = device.createShaderModule({ code: WATER_SHADER });
+    const sky = skyUniformFor(device);
     const pipeline = (entry: 'backdrop' | 'surface', depthCompare: GPUCompareFunction) =>
       device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
+        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, sky.empty, sky.empty, sky.layout] }),
         vertex: { module, entryPoint: `${entry}_vertex` },
         fragment: { module, entryPoint: `${entry}_fragment`, targets: [{ format: gpu.format }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
@@ -203,6 +205,7 @@ export class WaterView {
       depthStencilAttachment: { view: scene.drawn.multidepth.createView(), depthReadOnly: true },
     });
     pass.setBindGroup(0, bindGroup);
+    skyUniformFor(this.gpu.device).bindShared(pass, [1, 2]);
     pass.setPipeline(this.backdrop);
     pass.draw(3);
     pass.setPipeline(this.surface);

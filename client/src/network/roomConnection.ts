@@ -1,5 +1,6 @@
 import type { ArtState } from './artMessages.ts';
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
+import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** A room's snapshot, as a link hands it on. */
@@ -100,7 +101,12 @@ export class RoomConnection implements RoomLink {
     socket: WebSocket,
     welcome: Welcome,
   ) {
-    [this.url, this.snapshot, this.gear, this.session] = [url, heard.snapshot, heard.gear, heard.session];
+    // Each snapshot's tick says the room's world time, which keeps the page's clock in step with the room's.
+    const told = (shot: Snapshot) => {
+      WORLD_CLOCK.heard(this.epoch + Number(shot.tick) * ROOM_TICK_S);
+      heard.snapshot(shot);
+    };
+    [this.url, this.snapshot, this.gear, this.session] = [url, told, heard.gear, heard.session];
     [this.connect, this.socket] = [connect, socket];
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     this.watch(socket);
@@ -131,7 +137,8 @@ export class RoomConnection implements RoomLink {
         made = new RoomConnection(url, { snapshot, gear, session }, connect, socket, welcome);
         resolve(made);
       };
-      hear(socket, { welcomed, snapshot, gear: (sent) => (made ? made.heard(sent) : gear(sent)) });
+      const told = (shot: Snapshot) => (made ? made.snapshot(shot) : snapshot(shot));
+      hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)) });
       socket.addEventListener('error', () => reject(new Error(`the room at ${url} could not be reached`)));
       socket.addEventListener('close', (event) =>
         reject(new Error(`the room at ${url} closed: ${event.reason || 'it gave no reason'}`)),

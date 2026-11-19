@@ -522,7 +522,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
         : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus };
+    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true };
     scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {

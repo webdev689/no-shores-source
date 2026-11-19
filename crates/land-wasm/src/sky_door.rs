@@ -2,6 +2,7 @@
 //! at a moment, and the lightning near it. A climate is its place among `Air::keys()`, the sea last.
 
 use sky::air::Air;
+use sky::drift::steering_m_s;
 use sky::heavens::heavens_at;
 use sky::lightning::strikes_near;
 use sky::weather::{weather_at, wetness_at};
@@ -9,8 +10,9 @@ use sky::weather::{weather_at, wetness_at};
 /// A sky request: x, y, height above the sea, world time, and the climate's number.
 pub const SKY_REQUEST_FLOATS: usize = 5;
 /// An answer: latitude; the sun; the moon, its phase and lit share; the stars' turn; the daylight; the cloud, the fall
-/// and its snow, the storm, the fog and the sand; the wind east and south, its gusts; the temperature; the wetness.
-pub const SKY_ANSWER_FLOATS: usize = 22;
+/// and its snow, the storm, the fog and the sand; the wind east and south, its gusts; the temperature; the wetness;
+/// the steering flow that carries the weather, m/s east.
+pub const SKY_ANSWER_FLOATS: usize = 23;
 /// A strikes request: x, y, the reach, from and to (world time) and the climate's number; and each strike's
 /// numbers: x, y, its moment, whether it reaches the ground, its power.
 pub const STRIKES_REQUEST_FLOATS: usize = 6;
@@ -43,6 +45,7 @@ pub fn sky_numbers(request: &[f64]) -> Vec<f64> {
     out.extend([weather.cloud, weather.falling, weather.snow_share, weather.storm, weather.fog, weather.sand]);
     out.extend(weather.wind);
     out.extend([weather.gust, weather.temperature_c, wetness_at(&air, x, y, world)]);
+    out.push(steering_m_s(heavens.latitude_deg));
     out
 }
 

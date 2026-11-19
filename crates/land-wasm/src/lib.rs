@@ -76,6 +76,8 @@ pub fn header_of(landmass: &Landmass) -> Value {
         // The biome's low ground (0..1) and snow line, metres; null for a landmass with no biome.
         "ground": landmass.biome.map(|biome| biome.ground.map(|channel| f64::from(channel) / 255.0)),
         "snow_m": landmass.biome.map(|biome| biome.snow_m().round()),
+        // The biome's key, which the weather reads its air by; null for a landmass with no biome.
+        "climate": landmass.biome.map(|biome| biome.key),
         "swell": swell_of(&Swell::default()),
     })
 }

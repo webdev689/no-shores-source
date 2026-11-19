@@ -7,7 +7,8 @@
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "steps": [ ... ] }, each
+// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "init": "js run before the
+// page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
 // { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
@@ -113,6 +114,7 @@ async function main() {
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   await page.addInitScript(OWN_TEXTURE);
+  if (plan.init) await page.addInitScript({ content: plan.init });
   await page.goto(plan.url);
   for (const step of plan.steps) {
     const started = Date.now();

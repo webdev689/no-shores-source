@@ -1,5 +1,6 @@
 import { BUFFER_USAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { SHADOW_WGSL, ShadowMap } from '../shadow.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SLOW_CLOCK_S, stillLevels } from '../water/shore.ts';
 import { ANCHOR_M, SHARED_WGSL, wideTexels } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -127,7 +128,6 @@ struct Surface {
 const QUADS = ${CLIPMAP_QUADS}u;
 const CORNERS = array<vec2u, 6>(vec2u(0u, 0u), vec2u(1u, 0u), vec2u(0u, 1u), vec2u(0u, 1u), vec2u(1u, 0u), vec2u(1u, 1u));
 const NOWHERE = vec4f(2.0, 2.0, 2.0, 1.0);
-const AMBIENT = 0.35;
 const SAND = vec3f(0.84, 0.76, 0.56);
 // Wet sand: the beach under the swash's reach, and the bed it runs on into.
 const WET = 0.78;
@@ -306,7 +306,7 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
 
   var wet = bed_colour(max(depth, 0.0), slope, fresh);
   let light = caustics(local, view.eye.w) * fine * exp(-max(depth, 0.0) / 9.0) * smoothstep(0.0, 0.4, depth);
-  wet += SUN_LIGHT * light * select(0.32, 0.12, fresh);
+  wet += sky_state.key_light.rgb * light * select(0.32, 0.12, fresh);
 
   var dry = wooded(land_colour(bed, slope, ground.w), view.world.xy + point, bed, slope, reach_to);
   let in_close = share > 0.5;
@@ -317,10 +317,10 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   dry = mix(mix(mix(dry, ROAD, road), TOWN, 0.6 * town), PORT, port);
 
   var colour = mix(dry, wet, under);
-  let direct = max(dot(normal, SUN), 0.0);
+  let direct = max(dot(normal, sky_state.key.xyz), 0.0);
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
   let sun = select(1.0, sunlit(on_ground, normal), direct > 0.0);
-  colour *= AMBIENT + (1.0 - AMBIENT) * direct * sun;
+  colour *= sky_ambient(normal) + sky_direct(normal, sun);
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
   colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));
 
@@ -507,6 +507,7 @@ export class TerrainView {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
+    skyUniformFor(this.gpu.device).bindAuto(pass, this.pipeline, [2]);
     pass.draw(CLIPMAP_QUADS * CLIPMAP_QUADS * 6, CLIPMAP_LEVELS);
   }
 }

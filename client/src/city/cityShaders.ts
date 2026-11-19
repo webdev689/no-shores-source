@@ -99,10 +99,11 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
     return vec3f(1.0, 0.72, 0.36) * 1.4;
   }
   let facing = normalize(normal);
+  // A clear noon's ambient was AMBIENT, more on a wall by the bounce, the sun lighting the rest.
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
-  let direct = max(dot(facing, SUN), 0.0);
+  let direct = max(dot(facing, sky_state.key.xyz), 0.0);
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0);
-  return albedo * (ambient + (1.0 - ambient) * direct * sun);
+  return albedo * (sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65));
 }
 
 struct Surface {

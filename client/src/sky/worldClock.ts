@@ -1,3 +1,5 @@
+/** A room's tick, seconds (crates/movement's TICK_SECONDS). */
+export const ROOM_TICK_S = 1 / 60;
 /** Real seconds a day of the game lasts, and the instant world time counts from (crates/sky/src/clock.rs). */
 export const DAY_S = 3600;
 export const EPOCH_UNIX_MS = 1_793_491_200_000;
@@ -40,3 +42,6 @@ export class WorldClock {
     this.told = true;
   }
 }
+
+/** The page's one world clock, which the rooms' snapshots set right and the sky reads. */
+export const WORLD_CLOCK = new WorldClock();
