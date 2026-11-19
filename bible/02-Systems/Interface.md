@@ -52,10 +52,10 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/combat/worldCues.ts#eventCues
   - client/src/game/gearCards.ts#cardOf
-  - client/src/game/itemPictures.ts#ItemPictures
+  - client/src/player/itemPictures.ts#ItemPictures
   - client/src/game/gearDom.ts#HoverCard
   - client/src/game/gearDom.ts#compareNode
-  - client/src/game/iconFit.ts#fitIcon
+  - client/src/player/iconFit.ts#fitIcon
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
   - client/src/game/accountTab.ts#accountPanel
   - client/src/game/menuPages.ts#shipPage
