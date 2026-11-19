@@ -14,18 +14,32 @@ import type { ShipCamera, ShipPlace } from '../../ships/shipView.ts';
 import { poseOnSwell } from '../../ships/swellPose.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import type { HullMask } from '../../water/hullMask.ts';
+import type { Founder } from './sailing.ts';
 import type { Shot } from '../camera.ts';
 import { SeaCombat } from '../seaCombat.ts';
 
 /** A captain the story sets upon her: her bearing off the player's bow (radians, to starboard), how far off (metres),
  *  her faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss), and her heading (radians clockwise from
- *  north; straight for the player when not given). */
+ *  north; straight for the player when not given), and her way (m/s) if she comes on under sail. */
 export interface Ambusher {
   readonly bearing: number;
   readonly distanceM: number;
   readonly faction: 1 | 2;
   readonly rank: number;
   readonly heading?: number;
+  readonly way?: number;
+}
+
+/** The rigs a fight's ships begin with, as another drawing left them: hers (else a new one), then each captain's. */
+export interface Rigs {
+  readonly own?: SailRig;
+  readonly captains: readonly SailRig[];
+}
+
+/** A captain's Sloop going down, as the rules last sent her: how she will lie once sunk, and in how many seconds. */
+export interface Going {
+  readonly sunk: Founder;
+  readonly inS: number;
 }
 
 /** What the story reacts to: a ball striking her, her ball striking a captain, a captain going down, one sunk. */
@@ -44,6 +58,8 @@ export interface StoryFightFrame {
     rig: SailRig;
     state: ShipState;
     sunk: boolean;
+    founder: Founder;
+    going: Going | null;
   }[];
   readonly hulls: readonly HullMask[];
   readonly bars: readonly ShipBar[];
@@ -77,7 +93,8 @@ export function ambushersAt(
     const y = ship.y - Math.cos(bearing) * ambusher.distanceM;
     const toward = Math.atan2(ship.x - x, y - ship.y);
     const heading = ambusher.heading ?? (toward + 2 * Math.PI) % (2 * Math.PI);
-    return { x, y, heading, faction: ambusher.faction, rank: ambusher.rank };
+    const way = ambusher.way ? { way: ambusher.way } : {};
+    return { x, y, heading, faction: ambusher.faction, rank: ambusher.rank, ...way };
   });
 }
 
@@ -100,8 +117,8 @@ export class StoryFight {
   private readonly heard: FightEvent[];
   private readonly answered: { latest: FightView };
   private readonly sloopSails: readonly SailCorners[];
-  private readonly ownRig = new SailRig(shipSails(OWN_HULL));
-  private readonly captainRigs: SailRig[] = [];
+  private readonly ownRig: SailRig;
+  private readonly captainRigs: SailRig[];
   private readonly waterlines: Readonly<Record<'own' | 'captain', Waterline>> = {
     own: shipWaterline(OWN_HULL),
     captain: shipWaterline(CAPTAIN_HULL),
@@ -113,26 +130,33 @@ export class StoryFight {
     combat: SeaCombat,
     rules: { heard: FightEvent[]; answered: { latest: FightView } },
     sloopSails: readonly SailCorners[],
+    rigs: Rigs,
   ) {
     this.land = land;
     this.combat = combat;
     this.heard = rules.heard;
     this.answered = rules.answered;
     this.sloopSails = sloopSails;
+    this.ownRig = rigs.own ?? new SailRig(shipSails(OWN_HULL));
+    this.captainRigs = [...rigs.captains];
   }
 
   /** Sets `ambushers` upon her `ship` on the land worker's open landmass at `now`, every captain's Sloop drawn with
-   *  `hull`'s sails and the fight's balls and arcs with its marks. */
+   *  `hull`'s sails and the fight's balls and arcs with its marks. A ship coming on with `way` (m/s) comes under
+   *  sail; each ship's sails go on from the rig `rigs` hands her (hers, then each ambusher's), as last drawn. */
   static async begin(
     land: LandWorker,
-    ship: { x: number; y: number; heading: number },
+    ship: { x: number; y: number; heading: number; way?: number },
     ambushers: readonly Ambusher[],
     hull: { sails: readonly SailCorners[]; marks: MarkDrawer },
     now: number,
+    rigs: Rigs = { captains: [] },
   ): Promise<StoryFight> {
     // The rules take a heading in [0, 2π) alone; the sea's may have turned past either end.
     const heading = ((ship.heading % TURN) + TURN) % TURN;
-    const floats = new Float64Array([ship.x, ship.y, heading < TURN ? heading : 0, 0, 0, 0, 0, 0]);
+    const way = Math.max(0, ship.way ?? 0);
+    const rung = way > 0 ? SAILS_RUNG : 0;
+    const floats = new Float64Array([ship.x, ship.y, heading < TURN ? heading : 0, way, 0, 0, way, rung]);
     const first = await land.fightBegin(floats, STORY_SEED, now, ambushersAt(ship, ambushers));
     const heard: FightEvent[] = [];
     // The sea fight lets go of the rules' last answer the frame it is over: the story keeps it.
@@ -148,7 +172,7 @@ export class StoryFight {
       fightEnd: () => land.fightEnd(),
     };
     const combat = new SeaCombat(source, first, hull.marks, hull.sails, now, 'Brig');
-    return new StoryFight(land, combat, { heard, answered }, hull.sails);
+    return new StoryFight(land, combat, { heard, answered }, hull.sails, rigs);
   }
 
   /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times her
@@ -195,7 +219,12 @@ export class StoryFight {
         scale,
       };
       const shade = hull === 'own' ? 1 : CAPTAIN_SHADE;
-      return { place, hull, shade, rig, state: vessel.state, sunk: vessel.state === 'sunk' };
+      const going =
+        'sunk_founder' in vessel && vessel.sunk_founder && vessel.sinks_in !== undefined
+          ? { sunk: vessel.sunk_founder, inS: vessel.sinks_in }
+          : null;
+      const founder: Founder = [settled, trim, list];
+      return { place, hull, shade, rig, state: vessel.state, sunk: vessel.state === 'sunk', founder, going };
     };
     const ships = [
       drawn(view.player, 'own', this.ownRig),

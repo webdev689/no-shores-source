@@ -243,11 +243,16 @@ The prologue's ambush ([[The Game Opens With a Story Mission at Sea]]) is the sa
 the player's Sloop put to sea as she lies, and each captain set where and how the story gives her, numbered from 1
 on, her temper drawn from her own seed. Every one comes to fight her at once: bold whatever her temper, and cruising
 straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
-land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank); its view
-carries every captain after the first in `others`, as the sea room's wire does. The game's `SeaCombat` steps a fight
+land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
+`way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
+first in `others`, as the sea room's wire does. A captain going down carries, besides her `founder`, how she will lie
+once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
+on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
+nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
 on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
 aim, lay, effects, panel and bars, the panel naming her ship (the Brig). The story places each captain by her
-bearing off the player's bow and her distance, heading for her unless told; hears from each step a ball striking
+bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
+sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
 her, hers striking a captain, a captain going down and one sunk; and tells the player how many are left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
 player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over

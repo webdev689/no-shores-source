@@ -4,7 +4,7 @@
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
-import { asWreck, Battle } from './battle.ts';
+import { asWreck, Battle, type Wreck } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
 import { Deep } from './deep.ts';
 import { Intro } from './intro.ts';
@@ -32,8 +32,8 @@ export type StoryEnd = 'played' | 'begun';
 interface Carried {
   shot: Shot | null;
   inbound: Sailed[];
-  /** The beaten ships the fight left, for the calm. */
-  wrecks: Sailed[] | null;
+  /** The beaten ships the fight left, as the calm and then the ram draw them on. */
+  wrecks: Wreck[] | null;
   meeting: { readonly x: number; readonly y: number } | null;
   layout: WreckLayout | null;
   scenery: WreckScenery | null;
@@ -82,6 +82,7 @@ export class Prologue {
   protected make(name: BeatName): Beat {
     const { story, carried } = this;
     const shot = () => carried.shot ?? seaShot(story);
+    const wrecks = () => carried.wrecks ?? inboundAt(story.brig).map(asWreck);
     switch (name) {
       case 'intro':
         return new Intro(story.stage, this.islands, story.sailing);
@@ -90,13 +91,13 @@ export class Prologue {
       case 'creation':
         return new Making(story);
       case 'sighted':
-        return new Sighted(story);
+        return new Sighted(story, carried.shot);
       case 'battle':
         return new Battle(story, carried.inbound.length ? carried.inbound : inboundAt(story.brig));
       case 'calm':
-        return new Calm(story, shot(), carried.wrecks ?? inboundAt(story.brig).map((ship) => asWreck(ship, false)));
+        return new Calm(story, shot(), wrecks());
       case 'ram':
-        return new Ram(story);
+        return new Ram(story, wrecks());
       case 'wake':
         return new Wake(story, this.wreck(), this.scenery(), this.openRun());
       case 'wreck':
@@ -169,7 +170,7 @@ export class Prologue {
   private carry(ended: Beat): void {
     ended.leave?.();
     if (ended instanceof Sighted) this.carried.inbound = ended.inbound;
-    if (ended instanceof Battle) this.carried.wrecks = ended.wrecks;
+    if (ended instanceof Battle || ended instanceof Calm) this.carried.wrecks = ended.wrecks;
     if (ended instanceof Ram) this.carried.meeting = ended.meeting;
     if (ended instanceof Ram) void this.openRun();
     if (ended instanceof Intro && this.played) {

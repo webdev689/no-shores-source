@@ -58,6 +58,9 @@ export interface FightCaptain extends FightVessel {
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
   readonly founder?: readonly [number, number, number];
+  /** While she goes down: how she will lie once sunk (as `founder`), and in how many seconds. */
+  readonly sunk_founder?: readonly [number, number, number];
+  readonly sinks_in?: number;
 }
 
 export type FightEvent =
@@ -122,13 +125,14 @@ export interface FightView {
 
 /** A captain a fight begins with, where she is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
  *  east and south, her heading (radians clockwise from north), her faction (1 the Grey Tithe, 2 pirates) and rank
- *  (1 Minor to 5 Boss). */
+ *  (1 Minor to 5 Boss), and her way (m/s) if she comes on under sail. */
 export interface CaptainAt {
   readonly x: number;
   readonly y: number;
   readonly heading: number;
   readonly faction: number;
   readonly rank: number;
+  readonly way?: number;
 }
 
 /** A fight's begin request: with `captains`, each set upon her where given; without, one called onto the ring. */
