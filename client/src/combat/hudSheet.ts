@@ -3,23 +3,19 @@
 // never a colour to a border the kit paints, only its width and style.
 import { PLATES } from '../plus/barLayout.ts';
 import { wearCompass } from '../plus/compass.ts';
-import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
+import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { wearKit } from '../plus/kit.ts';
 import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { PLATE_SIZE } from './plateSight.ts';
 
 const SHEET_ID = 'fight-hud';
-/** Each plate's emblem square, in CSS pixels: the emblem shown at a whole number of screen pixels a pixel inside a
- *  2 px edge. */
-const EMBLEM_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
+/** Each plate's level square, as large as a ship's emblem square at the same scale, inside a 2 px edge. */
+const SQUARE_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
 const { overhead, boss } = PLATES;
 
-/** The plates' sheet: an emblem square, a title line and the bars under it, sized for each place a plate stands. */
+/** The plates' sheet: a level square, a title line and the bars under it, sized for each place a plate stands. */
 function platesCss(): string {
-  const emblems = EMBLEM_FACTIONS.map(
-    (faction) => `.fight-hud .emblem[data-faction='${faction}'] { background-image: url("${emblemUrl(faction)}"); }`,
-  );
   const marks = (['elite', 'miniboss'] as const).map((mark) => {
     const { url, width, height } = markPicture(mark);
     return `.fight-hud .rank-mark[data-mark='${mark}'] { display: block; width: ${width * 2}px; height: ${height * 2}px;
@@ -33,18 +29,18 @@ function platesCss(): string {
       `.fight-hud .ward[data-element='${number}'] { --ward-dark: ${dark}; --ward: ${element.colour}; --ward-lit: ${lit}; }`,
     ];
   }).join('\n');
-  const squares = Object.entries(EMBLEM_SCALE).map(([place, scale]) => {
-    const side = EMBLEM_PIXELS * scale;
-    return `.fight-hud .${place} .emblem { width: ${side + 4}px; height: ${side + 4}px; background-size: ${side}px ${side}px; }`;
+  const squares = Object.entries(SQUARE_SCALE).map(([place, scale]) => {
+    const side = EMBLEM_PIXELS * scale + 4;
+    return `.fight-hud .${place} .level { width: ${side}px; height: ${side}px; font-size: ${Math.round(side / 2)}px; }`;
   });
   return `
 .fight-hud .plate { display: flex; gap: 5px; align-items: stretch; }
 .fight-hud .plate[data-band='red'] { --fill: ${FILLS.red}; }
 .fight-hud .plate[data-band='orange'] { --fill: ${FILLS.orange}; }
 .fight-hud .plate[data-band='yellow'] { --fill: ${FILLS.yellow}; }
-.fight-hud .emblem { display: block; flex: none; box-sizing: border-box; border-width: 2px; border-style: solid;
-  background-repeat: no-repeat; background-position: center; image-rendering: pixelated; }
-${emblems.join('\n')}
+.fight-hud .level { display: flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box;
+  border-width: 2px; border-style: solid; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
+  color: ${TONES.word}; text-shadow: ${HALO}; }
 ${squares.join('\n')}
 .fight-hud .plate .body { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .fight-hud .plate .title { display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden;

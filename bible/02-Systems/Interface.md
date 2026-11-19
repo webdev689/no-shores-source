@@ -95,8 +95,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **The palette** names each tone for what it is: the stone from lit to dark, the brass from lit to dark, the grounds
   and the words; and each bar's fill (`FILLS`): red, orange and yellow by rank, and the three vitals.
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
-  Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number; an
-  Elite's brass chevron and a Miniboss's two.
+  Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number, on
+  ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
 - **Bars over figures never overlap** (`BarLayout`). Each frame the nearest keeps its place over its figure, in front,
   and each farther one that would cover a bar already placed is lifted just above it. The order changes only when a
   figure comes 6% nearer, a lifted bar comes down only once it is 10 px further clear, and a bar eases to a new height,
@@ -170,9 +170,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The
   [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
-- **A foe's plate**, after the owner's reference: its faction's emblem in a chip square at the left; to its right its
-  name above a long thin track, the meter in its rank's colour. Over each foe, the soft lock's (with its poise under
-  the health) and the boss bar's are this one plate at three sizes. Ships' plates are drawn alike on an SVG, at the
+- **A foe's plate**, after the owner's reference: its level in a chip square at the left, the number half the square
+  high, the square empty for a foe of no level; to its right its name above a long thin track, the meter in its rank's
+  colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at three sizes. Ships' plates are drawn alike on an SVG, at the
   same sizes (`PLATES`): 140 by 26 px over a figure, and the boss bar 640 px wide at most, three quarters of a
   narrower screen, its faction after its name. A ship's hull reads its losses as a foe's health does, and her bar's
   edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first seen starts whole at her bar.
