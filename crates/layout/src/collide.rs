@@ -164,6 +164,9 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
             continue;
         }
         match solid.shape {
+            Shape::CaveRoof { .. } | Shape::Overhang { .. } | Shape::RockArch { .. } | Shape::TunnelMouth { .. } => {
+                boxes.extend(city::rock::boxes(solid));
+            }
             Shape::Arch { opening } if solid.lean == 0.0 && solid.roll == 0.0 => {
                 boxes.extend(arch_boxes(solid, opening))
             }
