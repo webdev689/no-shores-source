@@ -24,7 +24,7 @@ async function opened() {
   return { rules, table, ports, openMs };
 }
 
-test('the table names the nine waters, their holders and level bands, and plans 17 routes', async () => {
+test('the table names the nine waters and the three port cities, and plans a route between each pair', async () => {
   const { table, openMs } = await opened();
   assert.equal(table.waters.length, 9);
   assert.deepEqual(
@@ -34,11 +34,22 @@ test('the table names the nine waters, their holders and level bands, and plans 
   assert.equal(table.waters[2]?.name, 'The Elmwater');
   assert.deepEqual(table.waters[7]?.levels, [22, 26]);
   assert.equal(table.borders.length, 17);
-  assert.equal(table.routes.length, 17);
-  assert.equal(table.roadsteads.length, 9);
+  assert.deepEqual(table.mainPorts, ['overlook', 'sunspire', 'rimeholt']);
+  assert.deepEqual(
+    table.ports.map((port) => port.name),
+    ['Overlook', 'Sunspire', 'Rimeholt'],
+  );
+  assert.deepEqual(
+    table.routes.map((route) => [route.fromPort, route.toPort]),
+    [
+      [0, 1],
+      [0, 2],
+      [1, 2],
+    ],
+  );
   for (const route of table.routes) {
-    assert.deepEqual(route.path[0], table.roadsteads[route.fromPort]);
-    assert.deepEqual(route.path.at(-1), table.roadsteads[route.toPort]);
+    assert.deepEqual(route.path[0], table.ports[route.fromPort]?.roadstead);
+    assert.deepEqual(route.path.at(-1), table.ports[route.toPort]?.roadstead);
   }
   console.log(`open took ${openMs.toFixed(0)} ms in WebAssembly`);
 });
@@ -48,7 +59,7 @@ test('a city stands on land and the sea off it is its island water', async () =>
   const overlook = ports[0];
   assert.ok(overlook);
   assert.equal(rules.waterAt(overlook.centre), null);
-  assert.deepEqual(rules.waterAt(table.roadsteads[0] ?? [0, 0]), { continent: 0, holder: 'home', seam: false });
+  assert.deepEqual(rules.waterAt(table.ports[0]?.roadstead ?? [0, 0]), { continent: 0, holder: 'home', seam: false });
 });
 
 test('the held map grid has its cells, and agrees with the water at each cell middle', async () => {

@@ -31,10 +31,11 @@ struct OpenRequest {
 /// Opens the waters and the traffic from `{ "layout": <layout file>, "ports": [{ "id", "name", "continent",
 /// "centre": [x, y] }] }` and answers their table as JSON:
 /// `{ "waters": [{ "continent": <layout index>, "id", "name", "holder", "levels": [low, high] or null }],
-///    "borders": [[a, b]], "ports": [{ "id", "name", "roadstead": [x, y] }],
+///    "borders": [[a, b]], "main_ports": [<city id>], "ports": [{ "id", "name", "roadstead": [x, y] }],
 ///    "routes": [{ "from_port", "to_port", "length_m", "path": [[x, y]] }] }`, or `{ "error" }`.
-/// A holder is "home", "contested", "grey-tithe" or "pirates" (home for a continent the table does not name); ports
-/// and routes are in the order given and planned. A layout that breaks the world's rules is refused.
+/// A holder is "home", "contested", "grey-tithe" or "pirates" (home for a continent the table does not name).
+/// `main_ports` names the port cities; `ports` holds only those of the given ports that are, in the order given, and a
+/// ship's or route's port is an index into it. A layout that breaks the world's rules is refused.
 #[must_use]
 pub fn open_waters(request: &[u8]) -> String {
     let request: OpenRequest = match serde_json::from_slice(request) {
@@ -80,7 +81,8 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
             json!({ "from_port": route.from_port, "to_port": route.to_port, "length_m": route.length_m, "path": path })
         })
         .collect();
-    json!({ "waters": table, "borders": waters.borders(), "ports": ports, "routes": routes })
+    let main_ports = world::ports::MAIN_PORTS;
+    json!({ "waters": table, "borders": waters.borders(), "main_ports": main_ports, "ports": ports, "routes": routes })
 }
 
 /// The water at a point as one grid byte: its continent's layout index, with 0x80 set on the contested seam; 255 on
@@ -97,15 +99,14 @@ pub fn water_byte(x: f64, y: f64) -> u32 {
 
 /// The waters judged at the middle of each `cell_m` cell over the frame: its columns and rows as little-endian u32s,
 /// then one byte a cell, row by row from the north-west, as `water_byte` answers. Empty before the waters are opened
-/// or for a cell finer than `FINEST_GRID_M`.
+/// or for a cell that is not a finite number of at least `FINEST_GRID_M`.
 #[must_use]
 pub fn grid_bytes(cell_m: f64) -> Vec<u8> {
-    if cell_m.is_nan() || cell_m < FINEST_GRID_M {
+    if !(cell_m.is_finite() && cell_m >= FINEST_GRID_M) {
         return Vec::new();
     }
     OPEN.with(|open| {
-        open.borrow().as_ref().map_or_else(Vec::new, |(waters, _)| {
-            let grid = waters.grid(cell_m);
+        open.borrow().as_ref().and_then(|(waters, _)| waters.grid(cell_m)).map_or_else(Vec::new, |grid| {
             let mut bytes = Vec::with_capacity(8 + grid.cells.len());
             for count in [grid.columns, grid.rows] {
                 bytes.extend_from_slice(&u32::try_from(count).unwrap_or(u32::MAX).to_le_bytes());

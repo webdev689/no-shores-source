@@ -8,6 +8,7 @@ code:
   - crates/world/src/geometry.rs#doubled_area
   - crates/world/src/waters.rs#Waters
   - crates/world/src/traffic.rs#Traffic
+  - crates/world/src/ports.rs#MAIN_PORTS
   - client/src/rules/watersRules.ts#startWatersRules
 ---
 # World Map
@@ -88,7 +89,9 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 (`waters.rs`):
 
 - A point of sea belongs to the island whose coast (its continent's outline) is nearest, by straight-line distance in
-  metres; a tie goes to the lower continent index. A point inside an outline, or on it, is land and has no water.
+  metres; a tie goes to the lower continent index. A point inside an outline or a static isle's circle, or on its
+  coast, is land and has no water; an isle's sea belongs to the island nearest, as any sea does. A point that is not a
+  finite number has no water.
 - Each water's holder and name come from the table `WATERS`, by continent id. Claude named the waters; the owner can
   change any name.
 
@@ -113,25 +116,32 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 - `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
   continent's index for sea with bit 0x80 set on the seam, 255 for land. The [[Held Map]] tints from it.
 - Speed: a bucket grid of 32 km cells lists, for each bucket, every coast edge that can be nearest to some point in it,
-  so a query looks at a few dozen edges. `water_at` takes about 0.4 µs natively; `grid(4_800.0)`, 1024 × 640 cells,
-  about 80 ms natively in release and 120 ms in WebAssembly.
+  so a query looks at a few dozen edges; each bucket lists the isles that can be nearest the same way. `water_at`
+  takes about 0.4 µs natively; `grid(4_800.0)`, 1024 × 640 cells, about 80 ms natively in release and 100 ms in
+  WebAssembly. A cell that is not a positive finite number is refused.
 - Only + − × ÷ and square roots on 64-bit floats, so every machine gives the same answer ([[Agree to the Bit]]).
 
 ## Traffic
 
-Friendly ships sail between the ports all the time, seen from land and sea (`traffic.rs`, `traffic_routes.rs`). The
-numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
+Friendly ships sail between the port cities all the time, seen from land and sea (`traffic.rs`, `traffic_routes.rs`).
+The numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
 
-- **Ports.** One an island, its city, passed in by the caller (the crate reads no files).
+- **Main ports.** Three port cities remain: Overlook, Sunspire and Rimeholt, one for each holder of the waters
+  ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). `ports.rs` holds the list
+  (`MAIN_PORTS`, `is_main_port`) for the traffic, the city crate and the page; the other six cities are no ports.
+- **Ports.** The caller passes in the cities (the crate reads no files); the traffic keeps those that are port cities,
+  on a continent the layout holds, with a roadstead clear inside the frame, in the order given.
 - **Roadstead.** Where a port's ships come and go: the nearest point of its own coast to the city's centre, 3 km out
-  to sea away from the centre, then on outward in 500 m steps until it is at least 1 km clear of every coast, in whole
-  metres.
-- **Routes.** One between each pair of ports whose waters border, 17 in all, in `borders()`'s order. Each is planned
-  round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every coast (eight neighbours, no
-  corner cut past an unclear cell, ties to the lower cell), from each roadstead's nearest reachable clear cell; then
-  string-pulled, each leg running as far ahead as it can while it touches no coast edge, checked exactly in whole
-  metres with `segments_meet`. Today's routes run from 654 km (Elmhaven to Fenhallow) to 3,236 km (Cairnwatch to
-  Goldreach). Planning all of them takes about 0.6 s in WebAssembly.
+  to sea away from the centre, then on outward in 500 m steps until it is at least 1 km clear of every coast and isle,
+  in whole metres. A port whose way out leaves the frame first gets none, and no ships.
+- **Routes.** One between every pair of the port cities, first with second, first with third, second with third, so
+  each port trades with both others and the lanes cross the most waters. Each is planned round land: A* over a mask
+  of 5 km cells whose middles are at least 3 km clear of every coast and isle (eight neighbours, no corner cut past an
+  unclear cell, ties to the lower cell), from each roadstead's nearest clear cell it reaches by a clear leg; then
+  string-pulled, each leg running as far ahead as it can while it stays more than 800 m from every coast edge and isle,
+  checked exactly in whole metres (no edge met, and each end of either segment clear of the other), so a hull drawn on
+  it stays off the land. Today: Overlook to Sunspire 1,402 km, Overlook to Rimeholt 1,601 km, Sunspire to Rimeholt
+  2,950 km across the open sea. Opening the waters and planning them takes about 0.5 s in WebAssembly.
 - **Schedule.** On each route a ship leaves each end every 1,200 s of world time, departure n at n × 1,200 s, and sails
   at 5 m/s to the other end, where she is gone. World time is seconds since the Unix epoch, passed in, so every
   machine computes the same ships for the same time.
@@ -140,7 +150,7 @@ numbers are Claude's, under the owner's "Friendly ships should dynamically trave
   the unit way she sails along her leg, the metres sailed and her route's length.
 - `ships_near(centre, radius_m, time_s)` works in closed form: per route, the stretches of its path within the radius
   give the distances sailed that put a ship there, and those give the departures; each is then placed exactly.
-  `ship(id, time_s)` places one ship.
+  `ship(id, time_s)` places one ship. A time or radius that is not a finite number, or a negative radius, finds none.
 
 ### The doors
 
@@ -151,9 +161,9 @@ source of each.
 
 | Door | TypeScript | What it answers |
 |---|---|---|
-| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; each port's roadstead; each route's ports, length and path |
+| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; the port cities' ids; each port city's id, name and roadstead; each route's ports, length and path |
 | `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
-| `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m are refused |
+| `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m, or not a finite number, are refused |
 | `waters_ships` | `shipsNear(centre, radiusM, timeS)` | The ships near a point, 11 f64s each: id, route, from port, to port, hull, x, y, way x, way y, metres sailed, route length |
 | `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when she is not sailing |
 

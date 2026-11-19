@@ -1,5 +1,7 @@
-use super::routes::{coast_edges, leg_clear};
+use super::routes::Land;
 use super::*;
+use crate::geometry::Point;
+use crate::layout::{Continent, Isle};
 use crate::waters::tests::{Seeded, world_layout};
 use std::sync::OnceLock;
 
@@ -52,30 +54,97 @@ fn brute_force(traffic: &Traffic, centre: [f64; 2], radius_m: f64, time_s: f64) 
 }
 
 #[test]
-fn a_route_joins_each_pair_of_bordering_waters() {
-    let (layout, waters, traffic) = world();
-    assert_eq!(traffic.routes.len(), 17);
-    let index = |port: usize| {
-        layout.continents.iter().position(|continent| continent.id == traffic.ports[port].continent).unwrap()
-    };
-    let joined: Vec<[usize; 2]> =
-        traffic.routes.iter().map(|route| [index(route.from_port), index(route.to_port)]).collect();
-    assert_eq!(joined, waters.borders());
+fn a_route_joins_every_pair_of_the_three_port_cities() {
+    let (_, _, traffic) = world();
+    let ids: Vec<&str> = traffic.ports.iter().map(|port| port.id.as_str()).collect();
+    assert_eq!(ids, crate::ports::MAIN_PORTS, "the desolate cities are no ports");
+    let joined: Vec<[usize; 2]> = traffic.routes.iter().map(|route| [route.from_port, route.to_port]).collect();
+    assert_eq!(joined, [[0, 1], [0, 2], [1, 2]]);
+    for port in 0..3 {
+        let serving = joined.iter().filter(|pair| pair.contains(&port)).count();
+        assert_eq!(serving, 2, "{} trades with both others", traffic.ports[port].name);
+    }
     for route in &traffic.routes {
         let names = (&traffic.ports[route.from_port].name, &traffic.ports[route.to_port].name);
-        eprintln!("{} to {}: {:.0} km, {} legs", names.0, names.1, route.length_m / 1_000.0, route.path.len() - 1);
+        eprintln!("{} to {}: {:.1} km, {} legs", names.0, names.1, route.length_m / 1_000.0, route.path.len() - 1);
     }
 }
 
 #[test]
-fn no_leg_touches_land() {
-    let (layout, _, traffic) = world();
-    let coast = coast_edges(layout);
+fn every_leg_keeps_clear_of_land() {
+    let (layout, waters, traffic) = world();
+    let land = Land::new(layout);
     for route in &traffic.routes {
         for leg in route.path.windows(2) {
-            assert!(leg_clear(&coast, leg[0], leg[1]), "{:?} to {:?} touches land", leg[0], leg[1]);
+            assert!(land.leg_clear(leg[0], leg[1]), "{:?} to {:?} comes near land", leg[0], leg[1]);
+            let (from, to) = ([leg[0].x as f64, leg[0].y as f64], [leg[1].x as f64, leg[1].y as f64]);
+            let steps = ((to[0] - from[0]).abs() + (to[1] - from[1]).abs()) / 100.0;
+            for step in 0..=steps as usize {
+                let along = step as f64 / steps;
+                let point = [from[0] + along * (to[0] - from[0]), from[1] + along * (to[1] - from[1])];
+                assert!(waters.clearance(point) > LEG_CLEAR_M, "{point:?} lies within 800 m of land");
+            }
         }
     }
+}
+
+#[test]
+fn a_route_sails_round_an_isle_in_its_way() {
+    let (layout, _, traffic) = world();
+    let route = &traffic.routes[0];
+    let (from, to) = (route.path[0], route.path[1]);
+    let middle = Point::new((from.x + to.x) / 2, (from.y + to.y) / 2);
+    let mut with_isle = layout.clone();
+    with_isle.isles.push(Isle { id: "rock".to_owned(), centre: middle, radius_m: 20_000, seed: 1, climate: None });
+    let waters = Waters::new(&with_isle);
+    let centre = [middle.x as f64, middle.y as f64];
+    assert_eq!(waters.water_at(centre), None, "an isle is land");
+    assert!((waters.clearance([centre[0] + 25_000.0, centre[1]]) - 5_000.0).abs() < 1.0, "and has a coast");
+    let rerouted = Traffic::new(&with_isle, &waters, &world_ports());
+    assert_eq!(rerouted.routes.len(), 3);
+    assert_ne!(rerouted.routes[0].path, route.path, "the route changes for the isle");
+    let land = Land::new(&with_isle);
+    for leg in rerouted.routes.iter().flat_map(|route| route.path.windows(2)) {
+        assert!(land.leg_clear(leg[0], leg[1]));
+    }
+}
+
+#[test]
+fn a_port_with_no_clear_roadstead_inside_the_frame_is_skipped() {
+    let square = |west: i64, north: i64| {
+        let side = 400_000;
+        vec![
+            Point::new(west, north),
+            Point::new(west + side, north),
+            Point::new(west + side, north + side),
+            Point::new(west, north + side),
+        ]
+    };
+    let continent = |id: &str, outline| Continent { id: id.to_owned(), outline, climate: None };
+    let layout = Layout {
+        continents: vec![
+            continent("continent-1", square(0, 1_000_000)),
+            continent("continent-4", square(2_000_000, 1_000_000)),
+            continent("continent-9", square(3_000_000, 1_000_000)),
+        ],
+        isles: Vec::new(),
+    };
+    let port = |id: &str, continent: &str, centre| Port {
+        id: id.to_owned(),
+        name: id.to_owned(),
+        continent: continent.to_owned(),
+        centre,
+    };
+    let ports = [
+        port("overlook", "continent-1", [10_000.0, 1_200_000.0]),
+        port("sunspire", "continent-4", [2_390_000.0, 1_200_000.0]),
+        port("rimeholt", "continent-9", [3_010_000.0, 1_200_000.0]),
+        port("goldreach", "continent-4", [2_200_000.0, 1_390_000.0]),
+    ];
+    let traffic = Traffic::new(&layout, &Waters::new(&layout), &ports);
+    let kept: Vec<&str> = traffic.ports.iter().map(|port| port.id.as_str()).collect();
+    assert_eq!(kept, ["sunspire", "rimeholt"], "Overlook's way out leaves the frame; Goldreach is no port");
+    assert_eq!(traffic.routes.len(), 1);
 }
 
 #[test]
@@ -134,11 +203,11 @@ fn ships_near_finds_exactly_the_live_ships_in_the_radius() {
 #[test]
 fn a_ship_sails_five_metres_a_second_and_is_gone_once_she_arrives() {
     let (_, _, traffic) = world();
-    let route = &traffic.routes[3];
+    let route = &traffic.routes[1];
     let departure = 1_500_000_u64;
     let left = departure as f64 * DEPARTURE_EVERY_S;
     for direction in 0..2 {
-        let id = ship_id(3, direction, departure);
+        let id = ship_id(1, direction, departure);
         assert_eq!(traffic.ship(id, left - 0.5), None, "not yet left");
         let start = traffic.ship(id, left).unwrap();
         let start_port = if direction == 0 { route.from_port } else { route.to_port };
@@ -183,4 +252,18 @@ fn a_time_that_is_no_number_finds_no_ship() {
         assert!(traffic.ships_near([2_800_000.0, 1_300_000.0], 400_000.0, time).is_empty());
     }
     assert!(traffic.ships_near([2_800_000.0, 1_300_000.0], f64::INFINITY, 1_795_000_000.0).is_empty());
+    assert!(
+        traffic.ships_near([2_800_000.0, 1_300_000.0], -400_000.0, 1_795_000_000.0).is_empty(),
+        "nor a negative radius"
+    );
+}
+
+#[test]
+fn a_port_listed_twice_sails_once() {
+    let (layout, waters, _) = world();
+    let mut ports = world_ports();
+    ports.extend(world_ports());
+    let traffic = Traffic::new(layout, waters, &ports);
+    assert_eq!(traffic.ports.len(), 3);
+    assert_eq!(traffic.routes.len(), 3);
 }
