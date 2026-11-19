@@ -22,12 +22,13 @@ use crate::tuning::{
     FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RANK_GAP, RECOVER, RECOVER_HOP, RING_ROOM,
     RING_SLACK, RUN_FROM, SETTLED, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
-use combat::arms::{stroke_shape, weapon};
+use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, off, wrap};
-use combat::tuning::{BODY_RADIUS, guard_of};
+use combat::tuning::{ATTACK_PACE, BODY_RADIUS, guard_of};
 use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
+use movement::{TICK_SECONDS, TUNING};
 
 /// A foe's whole tick of thinking, before its controls: what it asks.
 pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask {
@@ -72,7 +73,12 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         if let Some(ask) = defend(brain, here) {
             return ask;
         }
-        return Ask::facing(sight.map_or(brain.heading, |sight| sight.toward));
+        let toward = sight.map_or(brain.heading, |sight| sight.toward);
+        // Its blow follows a target walking away from it, as far as a swing lets it move.
+        let chased = sight.filter(|sight| board.holds(sight.id, me, false) && speed_away(sight) > CLOSING);
+        return chased
+            .and_then(|sight| way_to(here, sight.spot))
+            .map_or_else(|| Ask::facing(toward), |way| Ask::stepping(way, 1.0, toward));
     }
     if brain.plan == Plan::Strike {
         recover(brain, here, board);
@@ -277,10 +283,10 @@ fn rank_ring(ring: f64, line: usize) -> f64 {
     }
 }
 
-/// In to strike: a holder may wind up a telegraphed blow; otherwise it walks into reach, squares up, waits its beat
-/// and swings, its beat kept while its target sways about the edge of its reach. Walled by a guard that blocked it
-/// twice, it steps round toward the guard's open side, and chops at it again once WALLED has passed. Out of stamina
-/// for a swing and its guard, it hands its turn on.
+/// In to strike: a holder may wind up a telegraphed blow; otherwise it walks into reach (runs, after a target walking
+/// away), squares up, waits its beat and swings, its beat kept while its target sways about the edge of its reach.
+/// Walled by a guard that blocked it twice, it steps round toward the guard's open side, and chops at it again once
+/// WALLED has passed. Out of stamina for a swing and its guard, it hands its turn on.
 fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight, reach: f64) -> Ask {
     let tick = here.tick();
     let fighter = &here.fighter;
@@ -307,16 +313,20 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
         brain.walled = None;
     }
     let pressed = here.world.director.pressed();
-    let way = (sight.distance > reach).then(|| way_to(here, sight.spot)).flatten();
+    // In its turn it runs after a target walking away from it, which at a walk it would never close on, and closes in
+    // nearer by as far as the target walks on while its blow comes round.
+    let chasing = board.holds(sight.id, here.me, false) && speed_away(sight) > CLOSING;
+    let lead = if chasing { lead(here, speed_away(sight)) } else { 0.0 };
+    let way = (sight.distance > reach - lead).then(|| way_to(here, sight.spot)).flatten();
     // Its beat begins in reach; a sway past the edge of its reach and back does not start it over.
     if sight.distance > reach + SWING_SLACK || (sight.distance > reach && brain.ready_at.is_none()) {
         brain.ready_at = None;
         let Some(way) = way else { return Ask::facing(sight.toward) };
         let near = sight.distance <= reach + pressed.ring_gap + RING_SLACK;
-        return if near {
+        return if near && !chasing {
             Ask::stepping(way, 1.0, sight.toward)
         } else {
-            Ask::walking(way, 1.0, sight.distance > RUN_FROM)
+            Ask::walking(way, 1.0, chasing || sight.distance > RUN_FROM)
         };
     }
     let reserve = if here.numbers.guards() { GUARD_RESERVE } else { 0.0 };
@@ -329,17 +339,31 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let ready_at =
         *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, delay)));
     let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
+    ask.run = chasing;
     if walled {
         ask = Ask::stepping(sight.toward + PI + side * FRAC_PI_2, STEP_PACE, sight.toward);
     }
     let stroke = stroke(here, sight);
-    let reaches = sight.distance <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
+    let reaches = sight.distance + lead <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
     let free = matches!(fighter.action, Action::Idle | Action::Guard { .. });
     if free && reaches && !walled && !pending && tick >= ready_at && off(brain.heading, sight.toward) <= SWING_FACE {
         ask.combat.attack = Some(stroke);
         brain.ready_at = None;
     }
     ask
+}
+
+/// How fast its target walks away from it.
+fn speed_away(sight: &Sight) -> f64 {
+    let body = sight.fighter.body;
+    body.vx * libm::sin(sight.toward) - body.vy * libm::cos(sight.toward)
+}
+
+/// How much farther a target walking away at `away` stands once a blow begun now lands, the foe following it at the
+/// pace a swing allows.
+fn lead(here: &Here<'_, '_>, away: f64) -> f64 {
+    let strike = f64::from(swing_ticks(here.fighter.arms.melee).0) * TICK_SECONDS;
+    (away - ATTACK_PACE * TUNING.walk).max(0.0) * strike
 }
 
 /// The side round its target toward which the target's guard faces away from it (1 clockwise, -1 not): a blow from
