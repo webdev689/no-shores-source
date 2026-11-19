@@ -133,7 +133,9 @@ function inSight(
   standing: Standing,
 ): boolean {
   const [awayX, awayY] = [standing.x - shot.eye[0], standing.y - shot.eye[1]];
-  const away = Math.hypot(awayX, awayY) || 1;
+  const away = Math.hypot(awayX, awayY);
+  // An eye inside her figure sees none of the points across her middle, yet she fills the view.
+  if (away <= HALF_BROAD_M + shot.near) return true;
   const [sideX, sideY] = [-awayY / away, awayX / away];
   for (let up = 0; up <= HEAD_M; up += SAMPLE_M)
     for (const side of [-HALF_BROAD_M, 0, HALF_BROAD_M]) {

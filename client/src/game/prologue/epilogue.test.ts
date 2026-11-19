@@ -149,6 +149,13 @@ test('she is kept while any of her is on the view, though her head has left it',
     epilogue.frame(close, VIEW, STEP_S, 0, YOU, false);
   }
   assert.equal(epilogue.done, false, 'not let go with her body in plain view');
+  // Her card stands 0.35 m from her toward the eye (figures.ts); the eye goes to her own place, inside her figure.
+  const [card] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  const [x, y] = [card?.x ?? 0, card?.y ?? 0];
+  const toEye = Math.hypot(BEHIND.eye[0] - x, BEHIND.eye[1] - y);
+  const herAt = [x - ((BEHIND.eye[0] - x) / toEye) * 0.35, y - ((BEHIND.eye[1] - y) / toEye) * 0.35] as const;
+  epilogue.frame({ ...BEHIND, eye: [herAt[0], herAt[1] + 0.02, 1.5 + (card?.z ?? 0)] }, VIEW, STEP_S, 0, YOU, false);
+  assert.equal(epilogue.done, false, 'not let go while the eye passes through her');
 });
 
 test("she is let go in the end though she stands in sight, held at the water or at the town's middle", async () => {
