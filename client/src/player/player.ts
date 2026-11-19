@@ -76,8 +76,7 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
  * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
  * readies it too; 1 draws the Melee loadout and 2 the Ranged; R casts the Art's Anima, Q and G its Tenets; comma
  * mounts or dismounts; the wheel and Mouse4 move between first and third person. A cast plays once the fight takes
- * one (`Walker.beginCast`).
- * The body moves in whole ticks of the movement rules; the view turns every frame.
+ * one (`Walker.beginCast`). The body moves in whole ticks of the movement rules; the view turns every frame.
  * `swinging` says a swing is under way, which turns the figure to the view; `toward` is the bearing to the soft lock's
  * target, which a figure on foot faces however it walks; `aiming` says a ranged weapon is held up to aim, which eases
  * the camera into aiming's view.

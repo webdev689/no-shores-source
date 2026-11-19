@@ -1,6 +1,6 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
-//! nodes, dismantling and feeding an item a Fruit of Dagon anywhere; identifying a Vestige, the vault and the vendors
-//! only in a social space. An ask refused changes nothing.
+//! nodes, dismantling, feeding an item a Fruit of Dagon and using an Ammo crate anywhere; identifying a Vestige, the
+//! vault and the vendors only in a social space. An ask refused changes nothing.
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
 use crate::dice::{Dice, Purpose};
@@ -68,6 +68,10 @@ pub enum Ask {
     BuyEmblem {
         emblem: u16,
     },
+    /// Uses an Ammo crate, filling the Ranged loadout's ammunition: anywhere.
+    UseCrate,
+    /// Buys an Ammo crate: at the Quartermaster's counter only.
+    BuyCrate,
 }
 
 /// Why an ask was refused.
@@ -105,6 +109,11 @@ pub enum Refusal {
     Kept,
     /// The Tailor does not sell it that day.
     NotSold,
+    NoCrate,
+    /// The Ranged loadout's ammunition is full already.
+    AmmoFull,
+    /// Five Ammo crates are carried already.
+    CratesFull,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -144,6 +153,8 @@ impl Character {
             Ask::Vend { vendor, ware } => self.vend(vendor, ware, here),
             Ask::WearEmblem { emblem } => self.wear_emblem(emblem),
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
+            Ask::UseCrate => self.use_crate(),
+            Ask::BuyCrate => self.buy_crate(here),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.

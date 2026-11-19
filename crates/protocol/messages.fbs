@@ -353,13 +353,17 @@ table GearVestige {
   vaulted: bool;
 }
 
-// A Vestige lying on the ground for this player alone: their number for it, its colour, its slot, and where it lies
-// (x, y, z).
+// A drop lying on the ground for this player alone: their number for it, a Vestige's colour and slot, and where it
+// lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate), where it was thrown from (x, y, z)
+// and how many ticks it has still to fly before it rests.
 table GearDrop {
   id: uint;
   rarity: ubyte;
   slot: ubyte;
   at: [double];
+  kind: ubyte;
+  from: [double];
+  flying: ubyte;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
@@ -411,6 +415,14 @@ table Gear {
   cores: [ubyte];
   anima: double;
   tenets: [double];
+  // The Ranged loadout's ammunition: the shots left in the one worn and its capacity (0 with none worn), and the share
+  // of a full capacity kept, 0 to 1, which any Ranged weapon worn holds. Then the Ammo crates carried, and in a social
+  // space the Quartermaster's price for one (0 elsewhere).
+  ammo: ushort;
+  ammo_most: ushort;
+  ammo_share: double;
+  crates: ubyte;
+  crate_price: uint;
 }
 
 // What a room sends: exactly one of these is present.

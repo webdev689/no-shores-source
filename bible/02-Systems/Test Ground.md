@@ -198,11 +198,12 @@ lying for them on the ground, and the vault; and the answer to their last ask.
   the vault is reached, as in a social space.
 - **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
   Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
-- **Vestiges** a kill leaves lie where the foe fell, ringed in their colour on the ground, and are picked up by walking
-  over them.
+- **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
+  pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
 - **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
 - **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
-  item of any kind, rarity and level, any named item, 50 of every material, and XP.
+  item of any kind, rarity and level, any named item, 50 of every material, and XP; and ammunition full or none, five
+  Ammo crates, and one used. The panel shows the shots left and the crates carried.
 
 The room in the page runs one tick as the page opens, so the gear is there before the player first plays.
 

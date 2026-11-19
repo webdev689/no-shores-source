@@ -1,7 +1,9 @@
 // The gear screens' glyphs, drawn pixel by pixel to sit with the forge's pixel figures and Enhanced Plus's carved
-// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a sealed Vestige and an empty
-// place. Enhanced Plus has no icons of its own for these, and the classic item art stays behind, so they are ours.
+// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a sealed Vestige, an Ammo box
+// and an Ammo crate (the pictures drops stand as on the ground), and an empty place. Enhanced Plus has no icons of its
+// own for these, and the classic item art stays behind, so they are ours.
 
+import { AMMO_BOX, AMMO_CRATE, OUTLINE, VESTIGE_ROWS } from '../combat/dropPictures.ts';
 import { RARITIES } from '../player/gear.ts';
 import type { Glyph } from './gearCards.ts';
 
@@ -91,20 +93,9 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string
     '...abbbba...',
     '....aaaa....',
   ],
-  vestige: [
-    '....aaaa....',
-    '...abbbba...',
-    '..abccccba..',
-    '.abcbddbcba.',
-    'abcbddddbcba',
-    'abcddbbddcba',
-    'abcddbbddcba',
-    'abcbddddbcba',
-    '.abcbddbcba.',
-    '..abccccba..',
-    '...abbbba...',
-    '....aaaa....',
-  ],
+  vestige: VESTIGE_ROWS,
+  'ammo-box': AMMO_BOX.rows,
+  'ammo-crate': AMMO_CRATE.rows,
   empty: [
     '............',
     '.....aa.....',
@@ -121,7 +112,6 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string
   ],
 };
 
-const OUTLINE = '#120e0a';
 /** Each glyph's colours, outline first; a Vestige's come from its rarity. */
 const PALETTES: Readonly<Record<string, readonly string[]>> = {
   aurem: [OUTLINE, '#c08a3e', '#f3cf86'],
@@ -130,6 +120,8 @@ const PALETTES: Readonly<Record<string, readonly string[]>> = {
   'weapon-essence': [OUTLINE, '#7a8b99', '#c9d6e0', '#6ba8e8'],
   'armor-essence': [OUTLINE, '#8a7a5e', '#d8c9a8', '#e08a3e'],
   fruit: [OUTLINE, '#8c2a2a', '#d86a5a', '#5a3a1e', '#4e7f3e'],
+  'ammo-box': AMMO_BOX.colours,
+  'ammo-crate': AMMO_CRATE.colours,
   empty: ['#6b665c'],
 };
 /** Each island's resource as a picture of its own, in the catalogue's order: its rows as `MAPS`' are, and its

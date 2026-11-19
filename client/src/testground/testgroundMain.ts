@@ -10,6 +10,7 @@ import { rosterOf } from '../rules/roster.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { Glides } from '../player/glide.ts';
 import { Fighting } from '../combat/fighting.ts';
+import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
@@ -226,6 +227,7 @@ async function start(): Promise<void> {
   const playerFight = new PlayerFight(fighting, combatRules, player);
   const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures);
   const effects = new FightEffects();
+  const dropsShown = new DropsShown();
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
   // snapshots.
   const foes = new FoeFigures(roster);
@@ -339,7 +341,10 @@ async function start(): Promise<void> {
         fpMuzzle
           ? screenMuzzle(camera, aspect, fpMuzzle)
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(shot.velocity[0], -shot.velocity[1])),
-      more: gearRings(STALL, RESOURCE_NODES, gear, clock),
+      more: [
+        ...gearRings(STALL, RESOURCE_NODES, gear, clock),
+        ...dropsShown.frame(gear?.drops ?? [], clock, cameraOf(camera).eye).marks,
+      ],
     });
     scene.setMarks(marks);
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
@@ -380,6 +385,7 @@ async function start(): Promise<void> {
         rejoining: link.rejoining,
         parryOpen: fighting.parryOpen,
         abilities: fighting.abilities,
+        ammo: shown.ranged ? (own?.ammo ?? null) : null,
         crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
       },
       seconds,

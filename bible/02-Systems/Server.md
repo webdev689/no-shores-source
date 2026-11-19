@@ -3,7 +3,7 @@ type: system
 status: live
 code:
   - crates/room/src/lib.rs#Room
-  - crates/room/src/lib.rs#Floor
+  - crates/room/src/floor.rs#Floor
   - crates/room/src/judging.rs#Event
   - crates/room/src/players.rs#VIEW_LAG
   - client/src/network/localRoom.ts#LocalRoom

@@ -8,7 +8,9 @@ mod arts;
 pub mod asks;
 pub mod clash;
 pub mod deck;
+mod drops;
 pub mod fleet;
+mod floor;
 mod foes;
 mod garrison;
 mod judging;
@@ -24,6 +26,8 @@ pub mod threat;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
+pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
+pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
 pub use perks::trim_of;
@@ -31,7 +35,7 @@ pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
-pub use power::{Drop, allowed_arms, arms_allowed, loadout_arms};
+pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
@@ -43,38 +47,13 @@ use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
-use land::ground::Ground;
 pub use land::sites::NodeKind;
-use movement::blocks::ground_at;
-use movement::{Block, Body, Terrain, standing};
+use movement::{Block, Body, standing};
 use players::Player;
 use reach::respawn_point;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
 use std::collections::{BTreeMap, VecDeque};
-
-/// The ground a room's fighters stand on: open ground at 0 m, or a node's window of the land.
-#[derive(Clone, Debug, PartialEq)]
-pub enum Floor {
-    Flat,
-    Land(Box<Ground>),
-}
-
-impl Terrain for Floor {
-    fn height_at(&self, x: f64, y: f64) -> f64 {
-        match self {
-            Floor::Flat => 0.0,
-            Floor::Land(ground) => ground.height_at(x, y),
-        }
-    }
-}
-
-/// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within
-/// a step of it.
-#[must_use]
-pub fn standing_on(floor: &Floor, blocks: &[Block], x: f64, y: f64) -> Body {
-    Body { z: ground_at(blocks, floor, x, y, floor.height_at(x, y)), ..standing(x, y) }
-}
 
 /// A player as the room last stepped them: their fighter, where it stands with the room's section, what their figure
 /// showed with it, and the number of their last input it took.
@@ -347,7 +326,7 @@ impl Room {
                         let body = self.stand_again(fallen.body.x, fallen.body.y);
                         let graced = self.clock + GRACE;
                         if let Some(found) = self.players.get_mut(&id) {
-                            found.fighter = Fighter { trim: found.trim, ..player(body, fallen.arms) };
+                            found.fighter = found.armed(player(body, fallen.arms));
                             found.standing = Standing::Inside;
                             found.graced = graced;
                         }
@@ -355,7 +334,7 @@ impl Room {
                     continue;
                 }
                 let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
-                let fighter = Fighter { trim: found.trim, ..held };
+                let fighter = found.armed(held);
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
                 found.fighter = next;
                 found.shown = input.shown;
@@ -468,6 +447,7 @@ impl Room {
             Some(Happening::Loosed(shot)) => {
                 let shot = Shot { owner: id, ..shot };
                 self.loosed.push(id);
+                self.spent_shot(id);
                 // A player's ball reaches its mark at once: judged among the foes as the player's screen showed them.
                 if self.players.contains_key(&id) && combat::shots::shot_numbers(shot.ranged).0 <= 0.0 {
                     let stop = self.shoot_seen(&shot, view);
@@ -496,7 +476,7 @@ impl Room {
             let body = self.stand_again(fighter.body.x, fighter.body.y);
             let graced = self.clock + GRACE;
             if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = Fighter { trim: found.trim, ..player(body, fighter.arms) };
+                found.fighter = found.armed(player(body, fighter.arms));
                 found.graced = graced;
                 raised.push(id);
             }

@@ -3,11 +3,12 @@ type: pick
 area: Gameplay
 verdict: Cut
 effort: M
-status: approved
+status: ported
 dfo_paths:
   - src/scenes/spoilsPool.js
   - src/render/spoilsGlow.js
-  - src/systems/lootLines.js
+  - src/scenes/lootLines.js
+  - src/world/gate/gateSpew.js
 dfo_commit: 1c0fd681
 ---
 # Pick - Loot Drops

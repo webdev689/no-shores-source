@@ -203,6 +203,8 @@ pub struct Fighter {
     pub trim: crate::trim::Trim,
     /// What it has been given: Crit, Expose, Charge, Haste, Linked and Veiled, each with its ticks left.
     pub statuses: crate::status::Statuses,
+    /// The shots its Ranged weapon has left, which its player's gear keeps; none for a foe, whose never run dry.
+    pub ammo: Option<u32>,
 }
 
 /// What a player's controls or a foe's brain asks of a fighter in a tick: the movement's controls and the fight's.
@@ -262,6 +264,7 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         might: 1.0,
         trim: crate::trim::Trim::PLAIN,
         statuses: crate::status::Statuses::NONE,
+        ammo: None,
     }
 }
 
@@ -317,6 +320,12 @@ impl Fighter {
     #[must_use]
     pub fn staggered(&self) -> bool {
         matches!(self.action, Action::Staggered { .. } | Action::Down { .. })
+    }
+
+    /// Whether its Ranged weapon has a shot to fire.
+    #[must_use]
+    pub fn loaded(&self) -> bool {
+        self.ammo.is_none_or(|left| left > 0)
     }
 
     /// Its chest, where blows and shots aim and a lock's mark stands.

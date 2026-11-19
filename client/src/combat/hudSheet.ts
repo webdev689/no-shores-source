@@ -188,6 +188,10 @@ function cuesCss(): string {
   mask: radial-gradient(circle, transparent 12px, #000 13px, #000 15px, transparent 16px); }
 .fight-hud .crosshair:not(.charging) .charge { display: none; }
 .fight-hud .crosshair.full { filter: drop-shadow(0 0 4px #ffd95a); }
+/* The shots left, beside the crosshair; none in the gear screen's loss colour. */
+.fight-hud .ammo { position: absolute; left: calc(50% + 20px); top: calc(50% + 8px); font-size: 15px; color: #f2f2f2;
+  font-variant-numeric: tabular-nums; }
+.fight-hud .ammo.empty { color: #e8968a; }
 .fight-hud .parry::before, .fight-hud .parry::after { content: ''; position: absolute; translate: -50% -50%;
   box-sizing: border-box; border-radius: 50%; border: 2px solid #f2f2f2; box-shadow: 0 0 3px #000c; }
 .fight-hud .parry::before { width: 14px; height: 14px; }

@@ -294,7 +294,7 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
     // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
     // swings a ranged holder's fists.
-    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot && next.swap == 0) {
+    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot && next.swap == 0 && next.loaded()) {
         let (chest, yaw) = (next.chest(), intent.controls.yaw);
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
@@ -419,7 +419,7 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
         next.action = Action::Idle;
         return None;
     };
-    if pulled {
+    if pulled && next.loaded() {
         let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
         let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
         // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone. A quicker draw reaches
@@ -434,9 +434,10 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     None
 }
 
-/// A shot leaving: the weapon reloads, its arms pointing the way the shot flies. A double pistolet's right shot waits
-/// only for its firing frames, the left's for the reload of both.
+/// A shot leaving: one of its ammunition spent, the weapon reloads, its arms pointing the way the shot flies. A double
+/// pistolet's right shot waits only for its firing frames, the left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
+    next.ammo = next.ammo.map(|left| left.saturating_sub(1));
     let right = shot.ranged == Ranged::DoublePistolet && !next.fired_right;
     next.fired_right = right;
     let reload = if right { f64::from(BRACE_GAP) } else { f64::from(shot_numbers(shot.ranged).3) * next.trim.reload };

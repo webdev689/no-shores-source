@@ -4,6 +4,7 @@ import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { Compass, headingOf } from '../plus/compass.ts';
 import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
+import { AmmoCounter } from './ammoCounter.ts';
 import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
@@ -33,6 +34,8 @@ export interface HudFrame {
   readonly rejoining?: boolean;
   /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
   readonly crosshair?: { readonly charge: number | null } | null;
+  /** The shots left while the Ranged loadout is drawn, null while it is not. */
+  readonly ammo?: number | null;
   /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
   readonly parryOpen?: boolean;
   /** The blocks of the place, which no plate over a figure is seen through. */
@@ -125,6 +128,7 @@ export class Hud {
   private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
   private readonly crosshair: HTMLElement;
+  private readonly ammo: AmmoCounter;
   private readonly foeBars: FoeBars;
   private readonly foeTarget = new FoeTarget();
   private readonly words: Words;
@@ -150,6 +154,7 @@ export class Hud {
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
+    this.ammo = new AmmoCounter(root);
     const column = element('div', 'compass-column', root);
     this.compass = new Compass(column);
     this.foeBars = new FoeBars(root, this.over, column);
@@ -173,6 +178,7 @@ export class Hud {
     this.crosshair.classList.toggle('charging', charge !== null);
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
     this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
+    this.ammo.update(frame.ammo);
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
       const spot = project(frame.matrix, point, frame.width, frame.height);

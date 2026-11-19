@@ -23,6 +23,8 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 3 }),
         Asked::Gear(Ask::WearEmblem { emblem: 12 }),
         Asked::Gear(Ask::BuyEmblem { emblem: 13 }),
+        Asked::Gear(Ask::UseCrate),
+        Asked::Gear(Ask::BuyCrate),
         Asked::Gather { node: 2 },
         Asked::Grant(Grant::Vestige { rarity: Rarity::Legendary, slot: Slot::Arms, level: 18 }),
         Asked::Grant(Grant::Named("gullwing".to_owned())),
@@ -34,6 +36,8 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::ArtsReady),
         Asked::Art(gear::arts::ArtAsk::Wear { art: 3 }),
         Asked::Art(gear::arts::ArtAsk::SetCore { art: 2, slot: 1, fragment: 5 }),
+        Asked::Grant(Grant::Ammo(360)),
+        Asked::Grant(Grant::Crates(2)),
     ]
 }
 
@@ -58,8 +62,8 @@ fn an_ask_the_room_does_not_know_reads_as_none() {
     assert_eq!(read_input(builder.finished_data()).map(|input| input.ask), Ok(None));
 }
 
-/// A room whose first player holds a granted Legendary sword worn, a Vestige carried and one lying for them, with a
-/// resource node spent.
+/// A room whose first player holds a granted Legendary sword worn, a Vestige carried, two Ammo crates and half their
+/// ammunition, with a resource node spent and an Ammo box lying for them.
 fn furnished() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.furnish(Some([0.0, 0.0]), vec![ResourceNode { x: 0.0, y: 1.0, resource: 4 }]);
@@ -78,6 +82,9 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 3, Asked::Gear(Ask::Wear { item: sword, slot: Slot::Melee }));
     ask(&mut room, 4, Asked::Gather { node: 0 });
     ask(&mut room, 5, Asked::Grant(Grant::Vestige { rarity: Rarity::Atheric, slot: Slot::Head, level: 20 }));
+    ask(&mut room, 6, Asked::Grant(Grant::Crates(2)));
+    ask(&mut room, 7, Asked::Grant(Grant::Ammo(gear::ammo::AMMO_FULL / 2)));
+    room.lay_drop(player, Dropped::AmmoBox, [1.0, 2.0, 0.0]);
     (room, player)
 }
 
@@ -88,7 +95,9 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
     let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
     let gear = message.gear().expect("the gear");
     assert!(message.snapshot().is_none() && message.joined().is_none());
-    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_reader()), (20, 5, 0, true));
+    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_reader()), (20, 7, 0, true));
+    assert_eq!((gear.ammo(), gear.ammo_most(), gear.ammo_share()), (0, 0, 0.5), "no Ranged worn, half kept");
+    assert_eq!((gear.crates(), gear.crate_price()), (2, gear::ammo::CRATE_PRICE), "sold at the stall");
     assert_eq!(gear.spent().map(|spent| spent.iter().collect::<Vec<_>>()), Some(vec![0]));
     assert_eq!(gear.resources().map(|resources| resources.get(4)), Some(3), "three gathered");
     let items: Vec<_> = gear.items().expect("items").iter().collect();
@@ -112,17 +121,22 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
 }
 
 #[test]
-fn a_vestige_lying_for_a_player_crosses_with_where_it_lies() {
+fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
     let vestige = Vestige { id: 3, rarity: Rarity::Rare, slot: Slot::Torso, level: 7 };
-    room.lay_drop(player, vestige, [4.0, -6.0, 0.5]);
+    room.lay_drop(player, Dropped::Vestige(vestige), [4.0, -6.0, 0.5]);
+    room.lay_drop(player, Dropped::Crate, [1.0, 1.0, 0.0]);
+    room.tick();
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     let drops: Vec<_> = gear.drops().expect("drops").iter().collect();
-    assert_eq!(drops.len(), 1);
-    assert_eq!((drops[0].id(), drops[0].rarity(), drops[0].slot()), (3, 2, Slot::Torso as u8));
+    assert_eq!(drops.len(), 2);
+    assert_eq!((drops[0].id(), drops[0].rarity(), drops[0].slot(), drops[0].kind()), (3, 2, Slot::Torso as u8, 0));
     assert_eq!(drops[0].at().map(|at| at.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
+    assert_eq!(drops[0].from().map(|from| from.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
+    let flying = u8::try_from(room::REST_TICKS - 1).expect("a tick");
+    assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 
 /// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit.

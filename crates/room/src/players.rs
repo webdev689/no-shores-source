@@ -173,8 +173,9 @@ pub struct Player {
 impl Player {
     #[must_use]
     pub fn new(fighter: Fighter, joined: u64) -> Self {
+        let character = Character::starting();
         Player {
-            fighter,
+            fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,
             shown: Shown::default(),
             dress: String::new(),
@@ -189,7 +190,7 @@ impl Player {
             graced: 0,
             dress_next: None,
             dressed_at: None,
-            character: Character::starting(),
+            character,
             gear_changed: true,
             placed_sent: (false, false),
             gear_sent: None,
@@ -204,6 +205,12 @@ impl Player {
             trim: combat::Trim::PLAIN,
             casting: crate::arts::Casting::default(),
         }
+    }
+
+    /// A fighter of theirs as their gear arms it: trimmed by it, its Ranged weapon holding the shots their gear keeps.
+    #[must_use]
+    pub fn armed(&self, fighter: Fighter) -> Fighter {
+        Fighter { trim: self.trim, ammo: Some(u32::from(self.character.shots())), ..fighter }
     }
 
     /// Keeps the fighter after an input that was seeing `seen`.
@@ -276,6 +283,9 @@ impl Room {
         found.character = character;
         found.gear_changed = true;
         self.retrim(player);
+        if let Some(found) = self.players.get_mut(&player) {
+            found.fighter = found.armed(found.fighter);
+        }
         true
     }
 

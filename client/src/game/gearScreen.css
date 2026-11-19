@@ -574,6 +574,14 @@ img.gear-glyph {
   text-transform: uppercase;
   color: var(--faint);
 }
+.gear-slot-ammo {
+  font-size: var(--type-xs);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.gear-slot-ammo.gear-short {
+  color: var(--loss);
+}
 .gear-slot-item {
   font-size: var(--type-m);
   white-space: nowrap;

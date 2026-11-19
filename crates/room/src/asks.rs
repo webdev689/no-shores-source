@@ -64,6 +64,10 @@ pub enum Grant {
     },
     /// The player's Anima full and their Tenets ready, to try every spell at once.
     ArtsReady,
+    /// The Ranged loadout's ammunition set to this share, in `gear::ammo::AMMO_FULL` parts: full, or none to run dry.
+    Ammo(u16),
+    /// This many Ammo crates more, up to the five carried.
+    Crates(u16),
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -102,6 +106,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
             Some(CounterKind::Vault)
         }
         Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
+        Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Quartermaster)),
         Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
         _ => None,
     }
@@ -216,6 +221,8 @@ impl Room {
         self.retrim(player);
         if let Some(found) = self.players.get_mut(&player) {
             found.gear_urgent |= before != (found.trim, crate::power::arms_allowed(&found.character));
+            // The shots an ask gave or took are the fighter's at once, so the next snapshot tells its browser.
+            found.fighter = found.armed(found.fighter);
         }
     }
 
@@ -294,6 +301,12 @@ impl Room {
                 }
             }
             Grant::Xp(xp) => character.earn_xp(xp, None),
+            Grant::Ammo(share) => character.ammo = share.min(gear::ammo::AMMO_FULL),
+            Grant::Crates(count) => {
+                for _ in 0..count.min(gear::ammo::CRATES_MOST) {
+                    character.take_crate();
+                }
+            }
             Grant::Status { .. } | Grant::ArtsReady => {}
         }
         0

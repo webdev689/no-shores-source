@@ -52,6 +52,9 @@ pub struct Materials {
     pub armor_essence: u16,
     pub fruit: u16,
     pub resources: Vec<u16>,
+    /// Ammo crates carried (`ammo.rs`).
+    #[serde(default)]
+    pub crates: u16,
 }
 
 impl Materials {
@@ -131,6 +134,9 @@ pub struct Character {
     /// The Art they wear and each Art's Core (`arts.rs`).
     #[serde(default)]
     pub arts: crate::arts::WornArts,
+    /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
+    #[serde(default = "crate::ammo::full")]
+    pub ammo: u16,
 }
 
 impl Character {
@@ -147,6 +153,7 @@ impl Character {
             emblems: Vec::new(),
             emblem: crate::emblems::starting(),
             arts: crate::arts::WornArts::default(),
+            ammo: crate::ammo::AMMO_FULL,
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -199,6 +206,8 @@ impl Character {
         {
             *stock = (*stock).min(STOCK_MOST);
         }
+        materials.crates = materials.crates.min(crate::ammo::CRATES_MOST);
+        character.ammo = character.ammo.min(crate::ammo::AMMO_FULL);
         let mut worn = Vec::new();
         for (id, (item, at)) in std::mem::take(&mut character.items) {
             let item = item.kept(id, resources);

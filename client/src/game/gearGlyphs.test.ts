@@ -24,6 +24,15 @@ test('each glyph is twelve pixels square, a Vestige in its rarity’s colour', (
   assert.ok(glyphSvg('vestige', 4).includes(RARITIES[4].colour), 'an Atheric Vestige is cyan');
 });
 
+test('an Ammo box and an Ammo crate are pictures of their own, inside the grid', () => {
+  const [box, crate] = [glyphSvg('ammo-box'), glyphSvg('ammo-crate')];
+  for (const svg of [box, crate]) {
+    assert.match(svg, /viewBox="0 0 12 12"/);
+    assert.ok(pixelsOf(svg).length > 60, 'mostly filled');
+  }
+  assert.notEqual(shapeOf(box), shapeOf(crate));
+});
+
 test('each island’s resource is a picture of its own, inside the grid, mostly in a colour of its own', () => {
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) => glyphSvg('resource', 0, index));
   for (const svg of materials) {

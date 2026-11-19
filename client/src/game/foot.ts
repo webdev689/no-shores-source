@@ -1,3 +1,4 @@
+import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -33,6 +34,7 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
+import { chime } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -139,6 +141,7 @@ export class Foot {
   private readonly otherGlides = new Glides();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
+  private readonly drops = new DropsShown();
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
@@ -344,7 +347,10 @@ export class Foot {
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
       origin: shot.eye,
       groundAt,
-      more: groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+      more: [
+        ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
+        ...this.dropMarks(clock, shot.eye),
+      ],
     });
     // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
     const able = !paused && !this.fallen;
@@ -371,6 +377,7 @@ export class Foot {
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
       abilities: fight.abilities,
+      ammo: shown.ranged ? (ownView?.ammo ?? null) : null,
       // While a ranged weapon aims, and whenever one is drawn in first person; a bow's draw rings it.
       crosshair:
         shown.aiming || (shown.ranged && firstPerson)
@@ -380,6 +387,14 @@ export class Foot {
     const edge = this.standing;
     const hints = edge.kind === 'dead' ? HINTS.dead : HINTS.foot;
     return { shot, figures, standing: edge, marks, fight: fought, hints };
+  }
+
+  /** The drops lying for the player, flying and standing, seen from `eye`; a Rare or finer chimes as it comes to rest. */
+  private dropMarks(clock: number, eye: readonly [number, number, number]): number[] {
+    const { marks, rested } = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye);
+    const rarest = Math.max(-1, ...rested);
+    if (rarest >= 2) chime(rarest);
+    return marks;
   }
 
   /** Every other player's figure, gliding toward where the room last saw them and flashing as it is struck. */

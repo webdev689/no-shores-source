@@ -1,12 +1,12 @@
 // The character page, after Destiny's: the player's own figure in the middle under their level and its meter, their
-// power beneath it; the Melee and Ranged loadouts and the cloak in slots to its left, under a place kept for the worn
-// Art, and the armour to its right, each slot its item's own
+// power beneath it; the Melee and Ranged loadouts (the Ranged with its shots left) and the cloak in slots to its left,
+// under a place kept for the worn Art, and the armour to its right, each slot its item's own
 // picture in a frame of its rarity. Hovering or focusing a slot shows its item's card; a click opens its flyout of the
 // nine it carries, toward the figure, each worn by a click; a right-click on any opens the item's page.
 
 import { make } from '../editor/dom.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { RARITIES, SLOTS, itemName } from '../player/gear.ts';
+import { RANGED_SLOT, RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
 import { cardOf, flyoutOf, wearIn } from './gearCards.ts';
@@ -85,6 +85,13 @@ function tileFor(context: PageContext, item: GearItem | null, box: number, class
   return tile;
 }
 
+/** The shots left in the Ranged loadout worn, of its capacity, or none; null with none worn. */
+export function ammoLine(gear: GearState): { readonly words: string; readonly none: boolean } | null {
+  const [left, most] = [gear.ammo ?? 0, gear.ammoMost ?? 0];
+  if (most === 0) return null;
+  return left > 0 ? { words: `${left} of ${most} shots`, none: false } : { words: 'No ammo', none: true };
+}
+
 /** A number of the player's power: its name over it. */
 function stat(label: string, value: string): HTMLElement {
   const shown = make('div', '', 'gear-stat');
@@ -128,6 +135,8 @@ export function characterPage(
       const named = make('span', itemName(worn), 'gear-slot-item');
       named.style.color = RARITIES[worn.rarity]?.colour ?? '';
       label.append(named);
+      const ammo = index === RANGED_SLOT ? ammoLine(gear) : null;
+      if (ammo) label.append(make('span', ammo.words, `gear-slot-ammo${ammo.none ? ' gear-short' : ''}`));
     }
     holder.append(tile, label);
     if (open === index) {

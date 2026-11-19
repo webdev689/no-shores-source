@@ -13,8 +13,9 @@ use movement::{Body, Controls};
 /// The fight's own numbers after the body's: side, arms, weight, health and its most, stamina and its rest, poise,
 /// its most, its rest and its immunity, aim, target (id + 1, 0 none), the lock's away and unseen counts, the riposte's
 /// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, the presses kept, the swap's ticks and a
-/// double pistolet's right shot gone, in one number), blows, might; then the action's kind and its numbers.
-pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS;
+/// double pistolet's right shot gone, in one number), blows, might; then the action's kind and its numbers; then the
+/// shots its Ranged weapon has left (+ 1, 0 for none counted: a foe's never run dry).
+pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS + 1;
 const ACTION_NUMBERS: usize = 10;
 /// A whole fighter: its body, the fight's numbers, its statuses, then its gear's trim.
 pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS + STATUS_FLOATS + TRIM_FLOATS;
@@ -236,6 +237,7 @@ impl Fighter {
         floats[BODY_FLOATS..BODY_FLOATS + combat.len()].copy_from_slice(&combat);
         let actions = BODY_FLOATS + combat.len();
         floats[actions..actions + numbers.len()].copy_from_slice(&numbers);
+        floats[actions + ACTION_NUMBERS] = self.ammo.map_or(0.0, |left| f64::from(left) + 1.0);
         let statuses = BODY_FLOATS + COMBAT_FLOATS;
         floats[statuses..statuses + STATUS_FLOATS].copy_from_slice(&self.statuses.to_floats());
         floats[FIGHTER_FLOATS - TRIM_FLOATS..].copy_from_slice(&self.trim.to_floats());
@@ -266,7 +268,7 @@ impl Fighter {
             poise_max: at(8),
             poise_rest: count(at(9)),
             poise_immune: count(at(10)),
-            action: action_from(at(23), &combat[24..COMBAT_FLOATS]),
+            action: action_from(at(23), &combat[24..24 + ACTION_NUMBERS]),
             aim: at(11),
             target: id_or_none(at(12)),
             lock_away: count(at(13)),
@@ -281,6 +283,7 @@ impl Fighter {
             swap: held >> 19 & SWAP_MOST,
             fired_right: held >> 25 & 1 != 0,
             might: at(22),
+            ammo: id_or_none(at(24 + ACTION_NUMBERS)),
             statuses: combat[COMBAT_FLOATS..COMBAT_FLOATS + STATUS_FLOATS]
                 .try_into()
                 .map_or(Statuses::NONE, Statuses::from_floats),
@@ -364,7 +367,7 @@ impl Fighter {
         let actions = BODY_FLOATS + combat.len();
         full[actions..actions + ACTION_NUMBERS].copy_from_slice(&floats[17..]);
         // A glance carries no statuses and no trim: the fighter seen reads as holding none, untrimmed.
-        full[actions + ACTION_NUMBERS + STATUS_FLOATS..].copy_from_slice(&crate::trim::Trim::PLAIN.to_floats());
+        full[FIGHTER_FLOATS - TRIM_FLOATS..].copy_from_slice(&crate::trim::Trim::PLAIN.to_floats());
         Fighter::from_floats(&full)
     }
 }

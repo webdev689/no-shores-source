@@ -7,7 +7,7 @@ use flatbuffers::{FlatBufferBuilder, WIPOffset};
 use gear::arts::ArtAsk;
 use gear::item::NONE_CHOSEN;
 use gear::{Ask, At, Item, Kind, Rarity, Slot};
-use room::{Asked, Drop, Grant, PlayerId, Room};
+use room::{Asked, Drop, Dropped, Grant, PlayerId, Room};
 
 /// The asks, by the number an input sends.
 pub const WEAR: u8 = 1;
@@ -24,6 +24,8 @@ pub const WITHDRAW_VESTIGE: u8 = 11;
 pub const VEND: u8 = 12;
 pub const WEAR_EMBLEM: u8 = 13;
 pub const BUY_EMBLEM: u8 = 14;
+pub const USE_CRATE: u8 = 15;
+pub const BUY_CRATE: u8 = 16;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -35,6 +37,9 @@ pub const GRANT_XP: u8 = 34;
 pub const GRANT_STATUS: u8 = 35;
 /// The Test Ground's grant of the Anima full and both Tenets ready.
 pub const GRANT_ARTS: u8 = 36;
+/// The Ranged loadout's ammunition set to `count` parts of `gear::ammo::AMMO_FULL`, and `count` Ammo crates more.
+pub const GRANT_AMMO: u8 = 37;
+pub const GRANT_CRATES: u8 = 38;
 /// An Art worn, by its number in `column`; a fragment set in its Core, the Art in `column`, the slot (0 to 2) in
 /// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
 pub const WEAR_ART: u8 = 40;
@@ -63,6 +68,8 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node }),
         WEAR_EMBLEM => Asked::Gear(Ask::WearEmblem { emblem: u16::try_from(item).ok()? }),
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
+        USE_CRATE => Asked::Gear(Ask::UseCrate),
+        BUY_CRATE => Asked::Gear(Ask::BuyCrate),
         GATHER => Asked::Gather { node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -85,6 +92,8 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         GRANT_ARTS => Asked::Grant(Grant::ArtsReady),
         WEAR_ART => Asked::Art(ArtAsk::Wear { art: column }),
         SET_CORE => Asked::Art(ArtAsk::SetCore { art: column, slot: ask.slot(), fragment: node }),
+        GRANT_AMMO => Asked::Grant(Grant::Ammo(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
+        GRANT_CRATES => Asked::Grant(Grant::Crates(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         _ => return None,
     })
 }
@@ -114,6 +123,8 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
                 args = messages::AskArgs { kind: WEAR_EMBLEM, item: u32::from(emblem), ..args };
             }
             Ask::BuyEmblem { emblem } => args = messages::AskArgs { kind: BUY_EMBLEM, item: u32::from(emblem), ..args },
+            Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
+            Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
@@ -146,6 +157,12 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Art(ArtAsk::SetCore { art, slot, fragment }) => {
             let (column, slot, node) = (*art, *slot, *fragment);
             args = messages::AskArgs { kind: SET_CORE, column, slot, node, ..args };
+        }
+        Asked::Grant(Grant::Ammo(count)) => {
+            args = messages::AskArgs { kind: GRANT_AMMO, count: u32::from(*count), ..args }
+        }
+        Asked::Grant(Grant::Crates(count)) => {
+            args = messages::AskArgs { kind: GRANT_CRATES, count: u32::from(*count), ..args };
         }
     }
     messages::Ask::create(builder, &args)
@@ -274,10 +291,14 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let drops: Vec<_> = drops
         .iter()
         .map(|drop| {
-            let at = Some(builder.create_vector(&drop.at));
-            let vestige = drop.vestige;
-            let args =
-                messages::GearDropArgs { id: vestige.id, rarity: vestige.rarity as u8, slot: vestige.slot as u8, at };
+            let (at, from) = (Some(builder.create_vector(&drop.at)), Some(builder.create_vector(&drop.from)));
+            let (kind, rarity, slot) = match drop.what {
+                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8),
+                Dropped::AmmoBox => (1, 0, 0),
+                Dropped::Crate => (2, 0, 0),
+            };
+            let flying = u8::try_from(drop.rests.saturating_sub(room.clock())).unwrap_or(u8::MAX);
+            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying };
             messages::GearDrop::create(&mut builder, &args)
         })
         .collect();
@@ -322,6 +343,11 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         cores: Some(builder.create_vector(&cores)),
         anima: casting.anima,
         tenets: Some(builder.create_vector(&casting.tenets)),
+        ammo: character.shots(),
+        ammo_most: character.ammo_most().unwrap_or(0),
+        ammo_share: f64::from(character.ammo) / f64::from(gear::ammo::AMMO_FULL),
+        crates: u8::try_from(held.crates).unwrap_or(u8::MAX),
+        crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =
