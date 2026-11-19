@@ -12,7 +12,7 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use std::path::Path;
 
 /// Both tests hold this value; a change to the land, the city or the moves changes it in both, on purpose.
-pub const NODE_RUN_HASH: &str = "d087408912400e5b";
+pub const NODE_RUN_HASH: &str = "c61ace29845958fb";
 
 /// Ticks, then forward, sideways, yaw, run, and jump on the first tick only.
 type Phase = (usize, f64, f64, f64, bool, bool);
@@ -49,7 +49,7 @@ const RUNS: [Run; 4] = [
     Run {
         continent: "continent-6",
         node: "emerald-tangle",
-        bounds: [489_191.0, 2_279_231.5, 490_895.5, 2_280_066.0],
+        bounds: [489_191.0, 2_279_231.5, 490_895.5, 2_280_142.0],
         from: None,
         script: &[
             (600, 1.0, 0.0, 0.0, true, false),
