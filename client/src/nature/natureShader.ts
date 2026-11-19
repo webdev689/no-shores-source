@@ -17,7 +17,7 @@ struct Frame {
   anchor: vec4f,
   // Seconds, the wind's way (east, south), and the gusts' phase at the anchor.
   wind: vec4f,
-  // The snow line, metres.
+  // The snow line, metres, how hard the wind bends the plants (1 a fresh breeze), and how gusty it is (0 to 1).
   land: vec4f,
   // The biome's low ground, and 1 when it is known.
   ground: vec4f,
@@ -131,9 +131,11 @@ fn standing_of(vertex: Vertex, which: u32) -> Standing {
   let tilt = select(0.0, fract(item.look.w * 13.7) * fract(item.look.w * 3.3) * 0.09, form.thin.z > 0.0);
   offset += vec2f(cos(tilt_way), sin(tilt_way)) * tilt * local.z;
   // Gusts roll downwind across the land; each plant also rocks on its own beat, its leaves trembling.
-  let gust = 0.6 + 0.4 * sin(frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S);
+  let gusting = 0.25 + 0.5 * frame.land.z;
+  let rolling = frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S;
+  let gust = 1.0 - gusting + gusting * sin(rolling);
   let sway = 0.35 * sin(frame.wind.x * 2.3 + item.look.w * 40.0);
-  let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway);
+  let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway) * frame.land.y;
   offset += frame.wind.yz * bend;
   let tremble = vertex.normal.w * 0.03 * sin(frame.wind.x * 7.0 + dot(vertex.position, vec3f(3.1, 2.3, 1.7)));
   out.point = foot.from_eye + vec3f(offset, local.z - abs(bend) * 0.2 + tremble);
@@ -226,15 +228,19 @@ fn plant_fragment(shaded: Shaded, @builtin(front_facing) front: bool) -> Drawn {
     normal = vec3f(-normal.xy, normal.z);
   }
   // The sun as the shadow map lets it through: a tree under another's crown, or in a wall's shadow, is in shade.
-  let sun = sunlit(shaded.from_eye, normal);
+  let sun = sunlit(shaded.from_eye, normal) * sky_dapple(shaded.from_eye);
   let direct = sky_direct(normal, sun);
   let ambient = sky_ambient(normal) * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
   let behind = 0.3 * max(-dot(normal, sky_state.key.xyz), 0.0) * sun;
   let through = shaded.leaf * (0.2 * sky_level() + behind * sky_state.key.w);
-  var colour = shaded.colour * (ambient + direct) + shaded.colour * sky_state.key_light.rgb * through;
+  let lamps = sky_lamps(shaded.from_eye, normal);
+  var colour = shaded.colour * (ambient + direct + lamps) + shaded.colour * sky_state.key_light.rgb * through;
   let settled = shaded.snow * smoothstep(0.35, 0.75, normal.z);
-  colour = mix(colour, SNOW * (sky_ambient(normal) + direct), settled);
+  colour = mix(colour, SNOW * (sky_ambient(normal) + direct + lamps), settled);
+  // Wet leaves glisten; bark only darkens.
+  let wet = sky_state.ambient_sky.w * (1.0 - settled);
+  colour = sky_soaked(colour, wet * (1.0 - shaded.leaf) * 0.6) + sky_sheen(normal, shaded.from_eye, wet * shaded.leaf);
   return Drawn(vec4f(colour, 1.0), mask);
 }
 

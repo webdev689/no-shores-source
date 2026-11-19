@@ -1,5 +1,11 @@
 /** The most lamps lit round the eye at once, the night's lights that reach the ground. */
 export const LAMPS_MOST = 16;
+/** The ground's noise repeats every NOISE_CELLS cells: the clouds' shadows' cells (as wide as a cloud's patch) and the
+ *  puddles' a 128th of them, so the eye's place and the clouds' shift are wrapped at WRAP_M with no seam. */
+const NOISE_CELLS = 1024;
+const DAPPLE_CELL_M = 384;
+const PUDDLE_CELL_M = DAPPLE_CELL_M / 128;
+export const WRAP_M = NOISE_CELLS * DAPPLE_CELL_M;
 /** The bind group every sunlit shader reads the sky at: past the frame (0), the shadow map (1) and a card's (2). */
 export const SKY_GROUP = 3;
 
@@ -46,6 +52,91 @@ fn sky_ambient(normal: vec3f) -> vec3f {
 // The key light on a surface facing 'normal', with 'shade' of it reaching there (0 in shadow).
 fn sky_direct(normal: vec3f, shade: f32) -> vec3f {
   return sky_state.key_light.rgb * (0.65 * max(dot(normal, sky_state.key.xyz), 0.0) * shade);
+}
+
+// A point's place on the world's plane, wrapped where the ground's noise repeats: the eye's wrapped place is
+// lamp_count.yz, and lamp_count.w is 1 once it is known (a view that never writes the sky has no place, and no dapple).
+fn sky_place(from_eye: vec3f) -> vec2f {
+  return sky_state.lamp_count.yz + from_eye.xy;
+}
+
+// How far the wind has carried the clouds' shadows, wrapped as the eye's place is: kept in the first two lamps' spare
+// fourth numbers, which a lamp's light leaves free.
+fn sky_cloud_shift() -> vec2f {
+  return vec2f(sky_state.lamps[1].w, sky_state.lamps[3].w);
+}
+
+// Value noise, 0 to 1, over cells that repeat every ${NOISE_CELLS}, so a wrapped place and the clouds' wrapped drift
+// never show a seam.
+fn sky_noise(at: vec2f) -> f32 {
+  let base = floor(at);
+  let share = smoothstep(vec2f(0.0), vec2f(1.0), at - base);
+  let cell = vec2i(base);
+  var corners: array<f32, 4>;
+  for (var corner = 0; corner < 4; corner++) {
+    let wrapped = ((cell + vec2i(corner & 1, corner >> 1)) % ${NOISE_CELLS} + ${NOISE_CELLS}) % ${NOISE_CELLS};
+    var hash = (u32(wrapped.x) * 0x8da6b343u) ^ (u32(wrapped.y) * 0xd8163841u);
+    hash = (hash ^ (hash >> 15u)) * 0x2c1b3c6du;
+    corners[corner] = f32(hash ^ (hash >> 12u)) / 4294967296.0;
+  }
+  return mix(mix(corners[0], corners[1], share.x), mix(corners[2], corners[3], share.x), share.y);
+}
+
+// The clouds' shadows on the ground, a share of the key light to multiply 'shade' by: patches under cloud as wide as
+// the cover, carried by the wind. Clear skies have none; under a whole deck the key light is already dimmed.
+fn sky_dapple(from_eye: vec3f) -> f32 {
+  let cover = sky_state.zenith.w;
+  let strength = 0.7 * smoothstep(0.05, 0.3, cover) * (1.0 - smoothstep(0.75, 0.97, cover)) * sky_state.lamp_count.w;
+  if (strength <= 0.0) {
+    return 1.0;
+  }
+  let at = (sky_place(from_eye) - sky_cloud_shift()) / ${DAPPLE_CELL_M}.0;
+  let cloud = 0.65 * sky_noise(at) + 0.35 * sky_noise(at * 2.0 + vec2f(17.0, 5.0));
+  return 1.0 - strength * (1.0 - smoothstep(cover - 0.12, cover + 0.12, cloud));
+}
+
+// The lamps' light on a surface at 'from_eye' facing 'normal': each falls smoothly to nothing at its reach, brightest
+// on a face turned to it, with no shadows.
+fn sky_lamps(from_eye: vec3f, normal: vec3f) -> vec3f {
+  var light = vec3f(0.0);
+  let count = min(u32(sky_state.lamp_count.x), ${LAMPS_MOST}u);
+  for (var lamp = 0u; lamp < count; lamp++) {
+    let place = sky_state.lamps[lamp * 2u];
+    let toward = place.xyz - from_eye;
+    let near = clamp(1.0 - dot(toward, toward) / (place.w * place.w), 0.0, 1.0);
+    let facing = 0.25 + 0.75 * max(dot(normal, toward * inverseSqrt(max(dot(toward, toward), 1e-4))), 0.0);
+    light += sky_state.lamps[lamp * 2u + 1u].rgb * (near * near * facing);
+  }
+  return light;
+}
+
+// A surface's colour darkened by the weather's wetness, 'wet' 0 dry to 1 soaked or a puddle.
+fn sky_soaked(albedo: vec3f, wet: f32) -> vec3f {
+  return albedo * (1.0 - 0.4 * wet);
+}
+
+// A wet surface's sheen, added to its lit colour: the sky's glare toward a grazing eye, and the key light's glint.
+fn sky_sheen(normal: vec3f, from_eye: vec3f, wet: f32) -> vec3f {
+  if (wet <= 0.0) {
+    return vec3f(0.0);
+  }
+  let toward_eye = -normalize(from_eye);
+  let glare = 0.04 + 0.96 * pow(1.0 - clamp(dot(normal, toward_eye), 0.0, 1.0), 5.0);
+  let glint = pow(max(dot(normal, normalize(toward_eye + sky_state.key.xyz)), 0.0), 60.0);
+  let lift = max(sky_state.key.z, 0.0);
+  // A puddle (wet 1) mirrors the sky; soaked stone only glazes it.
+  return wet * (sky_state.horizon.rgb * glare * (0.3 + 0.7 * wet) + sky_state.key_light.rgb * glint * lift * 0.8);
+}
+
+// Where rain stands in puddles on flat ground at 'from_eye' with 'slope' (rise a metre): in the hollows a noise lays
+// out, only once the ground is soaked.
+fn sky_puddle(from_eye: vec3f, slope: f32) -> f32 {
+  let soaked = smoothstep(0.45, 0.9, sky_state.ambient_sky.w);
+  if (soaked <= 0.0) {
+    return 0.0;
+  }
+  let hollow = sky_noise(sky_place(from_eye) / ${PUDDLE_CELL_M.toFixed(1)});
+  return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(0.62 - 0.1 * soaked, 0.68 - 0.1 * soaked, hollow);
 }
 `;
 
@@ -126,8 +217,18 @@ export const AFTERNOON: SkyLook = {
 
 const VEC4S = 13 + LAMPS_MOST * 2;
 
-/** The sky's numbers in the order SKY_WGSL lays them out. */
-export function skyNumbers(look: SkyLook, lamps: readonly Lamp[]): Float32Array {
+/** A world metre wrapped into [0, WRAP_M). */
+const wrapped = (metres: number): number => ((metres % WRAP_M) + WRAP_M) % WRAP_M;
+
+/** Where the ground's patterns lie: the eye's place, and how far the wind has carried the clouds' shadows (world metres
+ *  east and south). */
+export interface GroundPlace {
+  readonly eye: readonly [number, number];
+  readonly clouds: readonly [number, number];
+}
+
+/** The sky's numbers in the order SKY_WGSL lays them out, with where the ground's patterns lie when known. */
+export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], ground?: GroundPlace): Float32Array {
   const shown = lamps.slice(0, LAMPS_MOST);
   const numbers = new Float32Array(VEC4S * 4);
   const rows: readonly (readonly number[])[] = [
@@ -143,13 +244,17 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[]): Float32Array 
     [...look.wind, look.gust, look.falling],
     [look.sand, look.flash, look.stars, look.starTurn],
     [...look.drift, look.latitude, look.moonPhase],
-    [shown.length, 0, 0, 0],
+    ground ? [shown.length, wrapped(ground.eye[0]), wrapped(ground.eye[1]), 1] : [shown.length, 0, 0, 0],
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
       [...lamp.light, 0],
     ]),
   ];
   rows.forEach((row, index) => numbers.set(row, index * 4));
+  // The clouds' shift in the first two lamps' light rows' spare numbers (sky_cloud_shift).
+  const firstLamp = 13 * 4;
+  numbers[firstLamp + 7] = ground ? wrapped(ground.clouds[0]) : 0;
+  numbers[firstLamp + 15] = ground ? wrapped(ground.clouds[1]) : 0;
   return numbers;
 }
 
@@ -177,9 +282,9 @@ export class SkyUniform {
     this.write(AFTERNOON, []);
   }
 
-  write(look: SkyLook, lamps: readonly Lamp[]): void {
+  write(look: SkyLook, lamps: readonly Lamp[], ground?: GroundPlace): void {
     this.look = look;
-    this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps));
+    this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps, ground));
   }
 
   /** An empty group, for a gap below SKY_GROUP in a pipeline laid out by hand. */
