@@ -4,13 +4,15 @@ import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { CityPlan, Wreck } from '../city/plan.ts';
 import type { Gpu } from '../gpu.ts';
 import { loadShip, type ShipMesh, VERTEX_BYTES } from '../ships/shipMesh.ts';
+import type { ShipLook } from '../ships/dress.ts';
+import { HULL_NAMES, hullPaint } from '../ships/hulls.ts';
 import { type ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { Drawer } from './scene.ts';
 
 /** How far over her highest deck a wreck keeps anything: her masts broke off below this, metres. */
 const STUMP_OVER_DECK_M = 2;
-/** How light a wreck is drawn: weathered and waterlogged, darker than a ship afloat. */
-const WRECK_SHADE = 0.6;
+/** How a wreck is drawn: in her own paint, no side's colours, weathered and waterlogged darker than a ship afloat. */
+const WRECK_LOOK: ShipLook = { side: 'player', shade: 0.6 };
 
 type Hull = Wreck['ship'];
 
@@ -47,7 +49,9 @@ function viewOf(gpu: Gpu, ship: Hull): Promise<ShipView> {
   let view = views.get(ship);
   if (!view) {
     const stump = Math.max(...deckHeights(ship)) + STUMP_OVER_DECK_M;
-    view = loadShip(ship).then((mesh) => new ShipView(gpu, brokenMesh(mesh, stump), [], 1));
+    view = loadShip(ship).then((mesh) =>
+      ShipView.open(gpu, brokenMesh(mesh, stump), [], hullPaint(HULL_NAMES.indexOf(ship)), 1),
+    );
     views.set(ship, view);
   }
   return view;
@@ -81,7 +85,7 @@ export class Wrecks {
         pitch: 0,
         roll: wreck.heel,
       };
-      view.drawInto(pass, place, camera, 0, WRECK_SHADE);
+      view.drawInto(pass, place, camera, 0, WRECK_LOOK);
     }
   }
 }
