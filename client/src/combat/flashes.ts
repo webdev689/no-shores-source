@@ -13,11 +13,21 @@ type Rgb = readonly [number, number, number];
 
 /** A frame of the drawing, seconds: every timing here is held in whole frames. */
 const FRAME_S = 1 / 60;
-/** A struck foe's flash, in frames: its whole figure white, then its outline white, then its outline in the blow's
- *  element (steel for a plain one). The player's own: their outline red, after their whole figure only for a blow of
- *  more than a quarter of their health. */
-export const FLASH_FRAMES = { whole: 2, outline: 2, coloured: 1, ownWhole: 2, ownOutline: 4, heavy: 0.25 } as const;
+/** A struck foe's flash, in frames: its whole figure white, then its outline white (gold, and longer, for a crit),
+ *  then its outline in the blow's element (steel for a plain one). The player's own: their outline red, after their
+ *  whole figure only for a blow of more than a quarter of their health. */
+export const FLASH_FRAMES = {
+  whole: 2,
+  outline: 2,
+  critOutline: 4,
+  coloured: 1,
+  ownWhole: 2,
+  ownOutline: 4,
+  heavy: 0.25,
+} as const;
 const WHITE: Rgb = [1, 1, 1];
+/** A crit's gold, the HUD's #ffd95a. */
+const GOLD: Rgb = [1, 0.85, 0.35];
 const RED: Rgb = [1, 0.16, 0.1];
 const STEEL: Rgb = [0.81, 0.88, 1];
 /** How far a struck figure slides along the blow (metres): a hit, a stagger, a kill; out over this many frames, back
@@ -32,10 +42,15 @@ export const DISSOLVE_FRAMES: Readonly<Record<GlowLook, number>> = { 0: 36, 1: 4
 const DISSOLVE_STEP = 2;
 
 /** A flash `since` seconds after the blow (null once it is over): the player's `own`, `whole` for one heavy enough to
- *  fill them, else a foe's in the blow's element `look`. */
+ *  fill them, else a foe's in the blow's element `look`, its outline gold for a `crit`. */
 export function flashAt(
   since: number,
-  { own, whole, look }: { readonly own: boolean; readonly whole: boolean; readonly look: GlowLook },
+  {
+    own,
+    whole,
+    look,
+    crit = false,
+  }: { readonly own: boolean; readonly whole: boolean; readonly look: GlowLook; readonly crit?: boolean },
 ): { readonly stage: number; readonly colour: Rgb } | null {
   const frame = Math.floor(since / FRAME_S + 1e-6);
   if (frame < 0) return null;
@@ -44,9 +59,10 @@ export function flashAt(
     if (frame < filled) return { stage: FLASH.whole, colour: RED };
     return frame < filled + FLASH_FRAMES.ownOutline ? { stage: FLASH.outline, colour: RED } : null;
   }
-  const { whole: full, outline, coloured } = FLASH_FRAMES;
+  const { whole: full, coloured } = FLASH_FRAMES;
+  const outline = crit ? FLASH_FRAMES.critOutline : FLASH_FRAMES.outline;
   if (frame < full) return { stage: FLASH.whole, colour: WHITE };
-  if (frame < full + outline) return { stage: FLASH.outline, colour: WHITE };
+  if (frame < full + outline) return { stage: FLASH.outline, colour: crit ? GOLD : WHITE };
   if (frame < full + outline + coloured) return { stage: FLASH.outline, colour: look ? GLOW_RAMPS[look][2] : STEEL };
   return null;
 }
@@ -88,6 +104,7 @@ interface Flash {
   readonly own: boolean;
   readonly whole: boolean;
   readonly look: GlowLook;
+  readonly crit: boolean;
 }
 interface Knock {
   since: number;
@@ -134,7 +151,7 @@ export class Flashes {
       const spell = event.how === HOW.spell;
       const look = spell ? (told?.spellLook?.(event.striker) ?? 0) : event.striker === player ? (told?.look ?? 0) : 0;
       const whole = own && event.amount > (told?.healthMax ?? Infinity) * FLASH_FRAMES.heavy;
-      this.flashes.set(event.defender, { since: 0, own, whole, look });
+      this.flashes.set(event.defender, { since: 0, own, whole, look, crit: !!event.crit });
     }
     const kind: KnockKind | null =
       event.kind === EVENT.killed

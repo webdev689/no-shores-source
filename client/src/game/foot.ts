@@ -324,7 +324,7 @@ export class Foot {
       zoomOf: () => camera().zoom ?? 1,
     });
     effects.ownLook = walker.glowing[0];
-    const events = effects.events(fight, seconds);
+    const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
     const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);

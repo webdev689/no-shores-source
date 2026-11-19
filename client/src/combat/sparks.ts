@@ -1,6 +1,4 @@
-import { GLOW_BURSTS, type GlowElement, type GlowLook } from '../elementGlow.ts';
-import type { FightEvent } from '../network/messages.ts';
-import { EVENT, HOW } from './cues.ts';
+import { GLOW_BURSTS, type GlowElement } from '../elementGlow.ts';
 
 type Vector = readonly [number, number, number];
 
@@ -14,15 +12,6 @@ export interface Spark {
   readonly look?: GlowElement;
 }
 
-/** The sparks each clash of steel throws: a parry's, a block's, a guard broken. */
-const THROWN: Readonly<Record<number, number | undefined>> = {
-  [EVENT.parried]: 14,
-  [EVENT.blocked]: 8,
-  [EVENT.guardBroken]: 10,
-};
-/** Where steel meets steel: this high over the defender's feet and this far toward its striker (metres). */
-const CLASH_HEIGHT = 1.3;
-const CLASH_TOWARD = 0.45;
 /** A spark's speed (metres a second) and its life (seconds), each between these. */
 const SPEED = [2.5, 6] as const;
 const LIFE = [0.2, 0.45] as const;
@@ -32,40 +21,13 @@ const GRAVITY = 9.81;
 const TRAIL_MOTES = 30;
 const TRAIL_SLOW = 0.1;
 
-/** The sparks of the fight's clashes, thrown from where a guard met a blow and flown until they burn out. */
+/** The sparks of shots come to rest and the motes an element's shots trail, flown until they burn out. */
 export class Sparks {
   private readonly random: () => number;
   flying: Spark[] = [];
 
   constructor(random: () => number = Math.random) {
     this.random = random;
-  }
-
-  /** Throws each clash's sparks, toward its striker and up; `where` is a fighter's feet, or null for one unknown. A
-   *  blow that lands for harm struck by the `own` player, their weapon in an element, bursts in it; a spell that lands
-   *  bursts in its caster's Art's element (`spellLook`), whatever weapon is drawn. */
-  struck(
-    events: readonly FightEvent[],
-    where: (id: number) => Vector | null,
-    own?: { readonly player: number; readonly look: GlowLook; readonly spellLook?: (caster: number) => GlowLook },
-  ): void {
-    for (const event of events) {
-      const harms = event.kind === EVENT.hit && event.amount > 0;
-      const spell = harms && event.how === HOW.spell;
-      const landed = harms && !spell && event.striker === own?.player;
-      const look = spell ? (own?.spellLook?.(event.striker) ?? 0) : landed ? (own?.look ?? 0) : 0;
-      const count = look ? GLOW_BURSTS[look].count : (THROWN[event.kind] ?? 0);
-      const [defender, striker] = [where(event.defender), where(event.striker)];
-      if (count === 0 || !defender || !striker) continue;
-      const apart = Math.hypot(striker[0] - defender[0], striker[1] - defender[1]) || 1;
-      const toward = [(striker[0] - defender[0]) / apart, (striker[1] - defender[1]) / apart] as const;
-      const clash: Vector = [
-        defender[0] + toward[0] * CLASH_TOWARD,
-        defender[1] + toward[1] * CLASH_TOWARD,
-        defender[2] + CLASH_HEIGHT,
-      ];
-      this.burst(clash, toward, count, look || undefined);
-    }
   }
 
   /** Throws `count` sparks from `from`, up and along `toward` (a way over the ground, east and south): steel's, or
