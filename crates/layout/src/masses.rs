@@ -49,9 +49,10 @@ enum Answer {
 pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
     let mut cut = Vec::new();
     for _ in 0..MOST_ANSWERS {
-        let mut masses = dead_masses(field, &Sculpts::from(vec![sculpt.clone()]), sculpt.rise);
+        let carved = Sculpts::from(vec![sculpt.clone()]);
+        let mut masses = dead_masses(field, &carved, sculpt.rise);
         masses.sort_by(|first, second| second.area_m2.total_cmp(&first.area_m2));
-        match masses.iter().find_map(|mass| answer(field, sculpt, mass)) {
+        match masses.iter().find_map(|mass| answer(field, (sculpt, &carved), mass)) {
             Some(Answer::Climb(climb)) => {
                 let at = 2 * lookouts(&sculpt.climbs).count();
                 sculpt.climbs.splice(at..at, climb);
@@ -66,10 +67,7 @@ pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
 
 /// The answer that reaches the most of a mass: a climb if one leaves none of it dead, else the valley reaching most
 /// of it, else the climb that does.
-fn answer(field: &Field, sculpt: &Sculpt, mass: &Mass) -> Option<Answer> {
-    let carved = Sculpts::from(vec![sculpt.clone()]);
-    let bare = Sculpt { outcrops: Vec::new(), climbs: Vec::new(), runs: Vec::new(), ..sculpt.clone() };
-    let floors = Sculpts::from(vec![bare]);
+fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> Option<Answer> {
     let taken: Vec<[f64; 7]> = sculpt.climbs.iter().chain(&sculpt.runs).copied().collect();
     // Where a capsule runs through the rock, not on the floors a valley joins or a climb starts from, it keeps off the
     // climbs and runs; and all of it off the outcrops.
@@ -78,7 +76,7 @@ fn answer(field: &Field, sculpt: &Sculpt, mass: &Mass) -> Option<Answer> {
         let rock_clear = (0..=steps).all(|step| {
             let share = f64::from(step) / f64::from(steps);
             let at = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
-            floors.floor_distance(at[0], at[1]) <= 0.0
+            carved.floor_distance(at[0], at[1]) <= 0.0
                 || taken.iter().all(|capsule| {
                     off_line(at, [capsule[0], capsule[1]], [capsule[2], capsule[3]]) > capsule[4] + half + KEEP_OFF_M
                 })
@@ -108,8 +106,12 @@ fn answer(field: &Field, sculpt: &Sculpt, mass: &Mass) -> Option<Answer> {
             if !field.claimed[cell] {
                 return None;
             }
-            if floors.floor_distance(at[0], at[1]) <= 0.0 {
-                return Some((at, out));
+            if carved.floor_distance(at[0], at[1]) <= 0.0 {
+                // A floor, or a lookout's climb in the rock, which is no floor to join or climb from.
+                let on_climb = lookouts(&sculpt.climbs)
+                    .flatten()
+                    .any(|climb| off_line(at, [climb[0], climb[1]], [climb[2], climb[3]]) <= climb[4] + CELL_M);
+                return (!on_climb).then_some((at, out));
             }
             if walked && !field.walkable(cell) {
                 return None;
@@ -124,7 +126,7 @@ fn answer(field: &Field, sculpt: &Sculpt, mass: &Mass) -> Option<Answer> {
     });
     let climbs = ways.clone().filter_map(|way| {
         let (start, _) = floor_along(way, false)?;
-        let climb = climb_along(field, &carved, &taken, start, [-way[0], -way[1]], sculpt.rise)?;
+        let climb = climb_along(field, carved, &taken, start, [-way[0], -way[1]], sculpt.rise)?;
         let [[x1, y1, x2, y2, half, ..], lookout] = climb;
         let reached = reaches(&[[x1, y1, x2, y2, half], [lookout[0], lookout[1], lookout[2], lookout[3], lookout[4]]]);
         let ends = [[lookout[0], lookout[1]], [lookout[2], lookout[3]]];

@@ -177,7 +177,7 @@ pub fn plan(
     // brief names: its wings carry the claim along its course and its banks are floor.
     let claim = claim_of(node);
     let beyond = brief.runs.iter().any(|run| run.place == brief::RunPlace::Beyond);
-    let mut wide = (patrol && (beyond || brief.river)).then(|| Field::read(ground, &claim, RUNS_MARGIN_M));
+    let mut wide = (patrol && (beyond || brief.river)).then(|| field.widened(ground, &claim, RUNS_MARGIN_M));
     let river = wide.as_ref().filter(|_| brief.river).and_then(|wide| field::river_wing(wide, &claim, avoid));
     let meadows = river.as_ref().map_or(&[][..], |river| river.floors.as_slice());
     let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets, meadows };

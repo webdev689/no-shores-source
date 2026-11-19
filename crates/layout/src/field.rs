@@ -81,6 +81,17 @@ impl Field {
     /// Reads the ground over a claim's bounds and `margin` metres past them.
     #[must_use]
     pub fn read(ground: &Ground, claim: &[[f64; 2]], margin: f64) -> Self {
+        Self::read_over(ground, claim, margin, None)
+    }
+
+    /// Reads the ground over the same claim `margin` metres past it, a wider field than this one: where a cell's
+    /// centre is one of this field's, its land is taken from here rather than read again.
+    #[must_use]
+    pub fn widened(&self, ground: &Ground, claim: &[[f64; 2]], margin: f64) -> Self {
+        Self::read_over(ground, claim, margin, Some(self))
+    }
+
+    fn read_over(ground: &Ground, claim: &[[f64; 2]], margin: f64, inner: Option<&Self>) -> Self {
         let [west, north, east, south] = bounds_of(claim);
         let (west, north) = (west - margin, north - margin);
         let columns = ((east + margin - west) / CELL_M).ceil() as usize;
@@ -103,6 +114,16 @@ impl Field {
         for row in 0..rows {
             for column in 0..columns {
                 let [x, y] = field.centre(column, row);
+                let known = inner.and_then(|inner| {
+                    let (inner_column, inner_row) = inner.cell_of(x, y)?;
+                    (inner.centre(inner_column, inner_row) == [x, y]).then(|| inner.index(inner_column, inner_row))
+                });
+                if let Some((inner, at)) = inner.zip(known) {
+                    field.height.push(inner.height[at]);
+                    field.water.push(inner.water[at]);
+                    field.claimed.push(inner.claimed[at]);
+                    continue;
+                }
                 field.height.push(ground.height_at(x, y));
                 field.water.push(match ground.water_at(x, y) {
                     WaterAt::Dry => Water::Dry,
