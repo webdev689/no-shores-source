@@ -145,8 +145,8 @@ def hatch(piece, hull):
 
 
 def fife_rail(piece, hull, x):
-    """A rail round a mast's foot on four posts, with belaying pins through it."""
-    deck = hull.deck(x)
+    """A rail round a mast's foot on four posts, with belaying pins through it, on the deck the mast stands on."""
+    deck = hull.floor_at(x)
     for dx in (-0.55, 0.55):
         for dy in (-0.55, 0.55):
             piece.box((x + dx - 0.06, dy - 0.06, deck), (x + dx + 0.06, dy + 0.06, deck + 0.75), 'spar')
@@ -217,7 +217,8 @@ def companionway(piece, hull):
 
 
 def place_guns(hull, collection, sloop):
-    """Her guns: the Sloop's port and starboard cannon, one at each of her ports on each side, named as hers are."""
+    """Her guns: the Sloop's port and starboard cannon, one at each of her ports on each side, named as hers are,
+    numbered from her bow to her stern on her main deck and any lower gun deck together."""
     with bpy.data.libraries.load(sloop) as (source, wanted):
         wanted.objects = [name for name in source.objects if name in ('Cannon.Port.1', 'Cannon.Starboard.1')]
     models = {}
@@ -232,11 +233,12 @@ def place_guns(hull, collection, sloop):
         bpy.data.objects.remove(item)
     for side, side_name in ((1, 'Port'), (-1, 'Starboard')):
         mesh, rotation, scale, (muzzle, bottom) = models[side]
-        for number, x in enumerate(sorted(hull.numbers['ports'], reverse=True), start=1):
+        batteries = [(x, hull.deck(x)) for x in hull.numbers['ports']]
+        batteries += [(x, hull.numbers['lower_deck_m']) for x in hull.numbers.get('lower_ports', ())]
+        for number, (x, deck) in enumerate(sorted(batteries, reverse=True), start=1):
             gun = bpy.data.objects.new(f'Cannon.{side_name}.{number}', mesh.copy())
             gun.rotation_euler = rotation
             gun.scale = scale
-            deck = hull.deck(x)
             (_, out_y, _), _ = hull.surface(x, deck + bottom_to_muzzle(muzzle, bottom))
             gun.location = (x - muzzle[0], side * (out_y + MUZZLE_OUT_M) - muzzle[1], deck - bottom)
             collection.objects.link(gun)

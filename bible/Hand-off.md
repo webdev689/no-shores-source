@@ -259,11 +259,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The ships, one at a time** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner and the cabin have the
-  owner's yes, and the Schooner is published; the Brig is built and rendered, waiting for the owner's yes, then the
-  Frigate, the Tithe Ram and the Fluyt, each built in Blender (`bpy`, as the `ships` workflow installs it) in the
-  Sloop's style, rendered from four sides for the owner's yes, then UV-mapped and painted. Publishing the Brig needs
-  the export to know a square sail first, and no ship but the Sloop sails or opens her cabin in the game yet. Then the
+- **The ships, one at a time** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin and the
+  Brig have the owner's yes, and the Schooner and the Brig are published; the Frigate is built and rendered, waiting
+  for the owner's yes, which publishes her the same way (add her to the `ships` workflow's loop, then her manifest
+  entry and `tools/ships/deck.py frigate`). The owner asked for the Frigate as one more model "and call it there", so
+  the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her cabin in
+  the game yet, and the game sets no square sail ([[Hulls]], "What the code needs"). Then the
   sea as the owner approved it: waters with owners and levels, ships sighted on the horizon, sea fights paying into
   the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear, then merchantmen, bounties,
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]). Measured on the sea room as it is,

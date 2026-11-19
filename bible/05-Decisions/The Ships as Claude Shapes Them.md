@@ -12,6 +12,8 @@ status: in force
 
 > Shown the Schooner and the cabin after their detailed pass: "Approved. Onto the next ship"
 
+> Shown the Brig: "Approved. Let's do one more ship model and call it there"
+
 ## What it settles
 
 Claude's choice of every ship type, for the sea the owner approved

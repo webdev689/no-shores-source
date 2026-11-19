@@ -8,8 +8,8 @@ Standing rigging is tarred, so it wears the iron part; everything else wears the
 """
 import math
 
-from ship_hull import BODY_ROWS, PORT_LINTEL_M, inner
-from ship_mesh import Piece, normalised
+from ship_hull import BODY_ROWS, PORT_HALF_M, PORT_LINTEL_M, PORT_SILL_M, inner
+from ship_mesh import Piece, cross, normalised
 from ship_rig import along_x, headsail_stays, heights, mast_at, section_at, sprit_line, top_rim
 
 ROPE_M = 0.025
@@ -75,10 +75,13 @@ def wales(piece, hull):
 
 
 def port_lids(piece, hull):
-    """A lid over each gunport, hinged at its lintel and propped open, with two iron straps."""
+    """A lid over each gunport, hinged over it and propped open, with two iron straps; and any lower gun deck's ports,
+    framed on her side and dark within, their guns' muzzles out through them."""
     tilt = math.radians(LID_OPEN_DEG)
-    for x in hull.numbers['ports']:
-        lintel = hull.deck(x) + PORT_LINTEL_M + 0.03
+    lower = hull.numbers.get('lower_deck_m')
+    ports = [(x, hull.deck(x) + PORT_LINTEL_M + 0.03) for x in hull.numbers['ports']]
+    ports += [(x, lower + PORT_LINTEL_M + 0.09) for x in hull.numbers.get('lower_ports', ())]
+    for x, lintel in ports:
         for side in (1, -1):
             (px, py, pz), normal = outward(hull, x, lintel, side)
             out = normalised((normal[0] * math.cos(tilt), normal[1] * math.cos(tilt), normal[2] * math.cos(tilt)
@@ -90,6 +93,29 @@ def port_lids(piece, hull):
             for strap in (-0.26, 0.2):
                 corner = tuple((px + strap, py, pz)[axis] + depth[axis] for axis in range(3))
                 piece.slab(corner, ((0.06, 0, 0), reach, [value / 3 for value in depth]), 'iron')
+    for x in hull.numbers.get('lower_ports', ()):
+        lower_port(piece, hull, x, lower)
+
+
+def lower_port(piece, hull, x, deck):
+    """A port in her side for a gun on her lower deck, `deck` high: a dark pane within a timber frame standing proud
+    of her planks, square to her side there. Her hull stays whole behind it."""
+    middle, half_high = deck + (PORT_SILL_M + PORT_LINTEL_M) / 2, (PORT_LINTEL_M - PORT_SILL_M) / 2
+    bar = 0.08
+    for side in (1, -1):
+        centre, normal = outward(hull, x, middle, side)
+        across = normalised(cross((0.0, 0.0, 1.0), normal))
+        up = cross(normal, across)
+        at = lambda a, u, out: tuple(centre[axis] + a * across[axis] + u * up[axis] + out * normal[axis]  # noqa: E731
+                                     for axis in range(3))
+        piece.quad([at(a, u, 0.012) for a, u in ((-PORT_HALF_M, -half_high), (PORT_HALF_M, -half_high),
+                                                 (PORT_HALF_M, half_high), (-PORT_HALF_M, half_high))], 'iron', normal)
+        wide = 2 * (PORT_HALF_M + bar)
+        for a, u, length, height in ((-PORT_HALF_M - bar, half_high, wide, bar), (-PORT_HALF_M - bar, -half_high - bar,
+                                     wide, bar), (-PORT_HALF_M - bar, -half_high, bar, 2 * half_high),
+                                     (PORT_HALF_M, -half_high, bar, 2 * half_high)):
+            piece.slab(at(a, u, 0.0), ([value * length for value in across], [value * height for value in up],
+                                       [value * 0.06 for value in normal]), 'spar')
 
 
 def shrouds(piece, hull, mast):
@@ -184,22 +210,28 @@ def stays(piece, hull):
 
 def square_stays(piece, hull):
     """The stays of a square rig: those her headsails are bent to, her forestay from her fore lower masthead to her
-    bowsprit at her stem, her fore topgallant stay to her jibboom's end, and from her mainmast her mainstay to her
-    foremast's foot, her main topmast stay to her fore top, and her main topgallant stay to her fore crosstrees."""
-    fore, main = hull.numbers['masts'][0], hull.numbers['masts'][-1]
-    fore_deck, main_deck = hull.deck(fore['x']), hull.deck(main['x'])
+    bowsprit at her stem, her fore topgallant stay to her jibboom's end, and from each mast abaft another its stay to
+    that mast's foot, its topmast stay to that mast's top, and its topgallant stay to that mast's crosstrees."""
+    masts = hull.numbers['masts']
+    fore = masts[0]
+    fore_deck = hull.deck(fore['x'])
     start, end, _, tip = sprit_line(hull)
-    fore_lower, fore_upper, fore_highest = heights(fore)
-    main_lower, main_upper, main_highest = heights(main)
-    fore_foot = mast_at(fore, fore_deck, 1.2)
-    fore_top_aft, _, _, fore_top_z = top_rim(fore, fore_deck)
+    fore_lower, _, fore_highest = heights(fore)
     lines = headsail_stays(hull) + [
         (section_at(fore, fore_deck, fore_lower - 0.15, 0), along_x(start, end, hull.fore - 0.2)),
         (section_at(fore, fore_deck, fore_highest - 0.1, 2), tip or end),
-        (section_at(main, main_deck, main_lower - 0.15, 0), (fore_foot[0] - fore['radius_m'], 0.0, fore_foot[2])),
-        (section_at(main, main_deck, main_upper - 0.15, 1), (fore_top_aft, 0.0, fore_top_z - 0.06)),
-        (section_at(main, main_deck, main_highest - 0.1, 2), section_at(fore, fore_deck, fore_upper - 0.6, 1)),
     ]
+    for ahead, abaft in zip(masts, masts[1:]):
+        ahead_deck, abaft_deck = hull.deck(ahead['x']), hull.deck(abaft['x'])
+        _, ahead_upper, _ = heights(ahead)
+        lower, upper, highest = heights(abaft)
+        foot = mast_at(ahead, ahead_deck, hull.floor_at(ahead['x']) - ahead_deck + 1.2)
+        top_aft, _, _, top_z = top_rim(ahead, ahead_deck)
+        lines += [
+            (section_at(abaft, abaft_deck, lower - 0.15, 0), (foot[0] - ahead['radius_m'], 0.0, foot[2])),
+            (section_at(abaft, abaft_deck, upper - 0.15, 1), (top_aft, 0.0, top_z - 0.06)),
+            (section_at(abaft, abaft_deck, highest - 0.1, 2), section_at(ahead, ahead_deck, ahead_upper - 0.6, 1)),
+        ]
     for top, bottom in lines:
         piece.prism(top, bottom, ROPE_M, 'iron', sides=5)
 
@@ -236,7 +268,7 @@ def mast_hoops(piece, hull, mast, gear):
 
 def pin_rails(piece, hull, x):
     """A rail inside each bulwark by the mast, its belaying pins through it."""
-    deck = hull.deck(x)
+    deck = hull.floor_at(x)
     for side in (1, -1):
         inside = inner(hull.section(x), len(BODY_ROWS))
         y = inside[-1][0]
@@ -249,7 +281,7 @@ def pin_rails(piece, hull, x):
 
 def coils(piece, hull, x):
     """Coils of rope lying on deck by the mast's fife rail."""
-    deck = hull.deck(x)
+    deck = hull.floor_at(x)
     for side in (1, -1):
         for turn in range(3):
             piece.ring((x - 1.0, side * 1.0, deck + 0.03 + turn * 0.055), (0, 0, 1), 0.27 - turn * 0.03, 0.055,

@@ -108,7 +108,8 @@ def heights(mast):
 
 def square_mast(spars, sails, hull, mast):
     """A square mast: its lower mast with a top at its head, a topmast with a cap and crosstrees, a topgallant and
-    a truck; a yard for each square sail and the sails between them; and a spanker abaft it where it has one."""
+    a truck; a yard for each square sail and the sails between them, its lowest `bare_yards` yards without; and a
+    spanker abaft it where it has one."""
     deck = hull.deck(mast['x'])
     radius = mast['radius_m']
     lower, upper, highest = heights(mast)
@@ -136,6 +137,8 @@ def square_mast(spars, sails, hull, mast):
         spars.box((x - 0.18, -0.35, z - 0.12), (x + 0.18, 0.35, z + 0.12), 'spar')
     lean = math.tan(math.radians(mast['rake_deg']))
     for index, (x, z, reach) in enumerate(yards):
+        if index < mast.get('bare_yards', 0):
+            continue
         # Each sail hangs before its yard and leans aft with its mast, so it clears the top and caps below it.
         head_z, head_half = z - 0.2, reach - 0.35
         if index == 0:

@@ -1,10 +1,10 @@
 name: ships
 
-# Paints the Sloop's model with the game's pictures, and builds and paints the Schooner's, and publishes each with its
-# mesh to R2 with the repository's Cloudflare token, whenever the ship tools change. R2's objects are named by their
-# hashes, so a run changes nothing already published; the log ends with her manifest entry on one line, her deck left
-# out, which a commit then takes into content/ships/ships.json, and `tools/ships/deck.py sloop` measures her deck from
-# her published mesh.
+# Paints the Sloop's model with the game's pictures, and builds and paints the Schooner's and the Brig's, and publishes
+# each with its mesh to R2 with the repository's Cloudflare token, whenever the ship tools change. R2's objects are
+# named by their hashes, so a run changes nothing already published; the log ends with each manifest entry on one line,
+# her deck left out, which a commit then takes into content/ships/ships.json, and `tools/ships/deck.py <name>` measures
+# her deck from her published mesh.
 on:
   push:
     paths: [tools/ships/**, .github/workflows/ships.yml]
@@ -53,16 +53,19 @@ jobs:
             --pictures "$RUNNER_TEMP/pictures.bin"
           python -I tools/ships/export_ship.py "$RUNNER_TEMP/Sloop.blend" sloop --waterline 1.2
           node -p "const { deck, ...entry } = require('./content/ships/ships.json').ships.sloop; JSON.stringify(entry)"
-      # The Schooner, built from her numbers with the Sloop's own guns, then painted and published as the Sloop is.
-      # Her entry is printed with her helm alone of her deck, which tools/ships/deck.py then measures from her mesh.
-      - name: Build, paint and publish the Schooner
+      # The Schooner and the Brig, each built from her numbers with the Sloop's own guns, then painted and published
+      # as the Sloop is. Each entry is printed with her helm alone of her deck, which tools/ships/deck.py then
+      # measures from her mesh.
+      - name: Build, paint and publish the Schooner and the Brig
         if: steps.token.outputs.set == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: |
-          python -I tools/ships/build_ship.py schooner "$RUNNER_TEMP/schooner.blend" --sloop "$RUNNER_TEMP/sloop.blend"
-          python -I tools/ships/paint_ship.py -- "$RUNNER_TEMP/schooner.blend" "$RUNNER_TEMP/Schooner.blend" \
-            --pictures "$RUNNER_TEMP/pictures.bin"
-          python -I tools/ships/export_ship.py "$RUNNER_TEMP/Schooner.blend" schooner --waterline 1.2
-          node -p "const ship = require('./content/ships/ships.json').ships.schooner; \
-            JSON.stringify({ ...ship, deck: { helm: ship.deck.helm } })"
+          for ship in schooner brig; do
+            python -I tools/ships/build_ship.py "$ship" "$RUNNER_TEMP/$ship.blend" --sloop "$RUNNER_TEMP/sloop.blend"
+            python -I tools/ships/paint_ship.py -- "$RUNNER_TEMP/$ship.blend" "$RUNNER_TEMP/${ship^}.blend" \
+              --pictures "$RUNNER_TEMP/pictures.bin"
+            python -I tools/ships/export_ship.py "$RUNNER_TEMP/${ship^}.blend" "$ship" --waterline 1.2
+            node -p "const ship = require('./content/ships/ships.json').ships['$ship']; \
+              JSON.stringify({ ...ship, deck: { helm: ship.deck.helm } })"
+          done
