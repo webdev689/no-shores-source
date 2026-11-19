@@ -12,21 +12,22 @@ import { SAMPLES } from '../water/waterView.ts';
 import { PORTAL_FLAG, smallBook, type SmallBook, type Wanted } from './dungeonBook.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
-import { lightAt } from './dungeonLight.ts';
+import { FIXTURE_KINDS, LIGHT_KINDS, type Light, lightAt, MOODS } from './dungeonLight.ts';
 import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
+import { fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { PictureUse } from '../textures/picture.ts';
 import { SIDE_STEPS } from './dungeonLayout.ts';
-import { DUNGEON_SHADER, MOST_TORCHES } from './dungeonShaders.ts';
+import { DUNGEON_SHADER, MOST_LIGHTS, MOST_LOOKS } from './dungeonShaders.ts';
 
-const VIEW_BYTES = 96;
-const TORCH_BYTES = MOST_TORCHES * 16;
+const VIEW_BYTES = 96 + MOST_LOOKS * 16;
+/** A light's three vec4s: where it burns and its number, its colour and reach, and its flicker. */
+const LIGHT_FLOATS = 12;
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
 
-type Torch = readonly [number, number, number, number];
 type Buffers = { vertices: GPUBuffer; indices: GPUBuffer; count: number };
 
 const pipelines = new WeakMap<GPUDevice, Map<GPUTextureFormat, GPURenderPipeline>>();
@@ -45,6 +46,7 @@ function pipelineOf(gpu: Gpu): GPURenderPipeline {
       { binding: 1, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
       { binding: 2, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'float', viewDimension: '2d-array' } },
       { binding: 3, visibility: SHADER_STAGE.fragment, sampler: { type: 'filtering' } },
+      { binding: 4, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
     ],
   });
   const module = gpu.device.createShaderModule({ code: DUNGEON_SHADER });
@@ -77,14 +79,16 @@ function pipelineOf(gpu: Gpu): GPURenderPipeline {
 /** What one dungeon draws with, made when it is set. */
 type Drawn = {
   readonly layout: DungeonLayout;
-  readonly torches: readonly Torch[];
-  /** The open portal's light, lit as a torch, half way up its face and a little out from it. */
-  readonly portalLight: Torch;
+  /** The torches and the fixtures, each as it burns. */
+  readonly burning: readonly Light[];
+  /** The open portal's light, half way up its face and a little out from it. */
+  readonly portalLight: Light;
   readonly book: SmallBook;
   readonly wood: readonly [number, number];
   readonly painter: CityPainter;
   readonly view: GPUBuffer;
   readonly lights: GPUBuffer;
+  readonly cellLooks: GPUBuffer;
   readonly group: GPUBindGroup;
   readonly floor: Buffers;
   chest: Buffers | null;
@@ -133,11 +137,13 @@ export class DungeonView {
         const forged = propModel(props, id);
         if (forged) layModel(mesh, forged, [x, y, z], yaw);
       }
+      for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture);
     });
-    const end = lookOf(layout, layout.end);
+    const end = lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0);
+    const sets = new Set(layout.looks.flatMap((look) => look.pictures));
     // A set's record by its role; the exit door's picture as a door; the props' and the iron as a prop's.
     const useOf = (archive: number, record: number): PictureUse => {
-      if (!layout.pictures.includes(archive)) return archive === door[0] && record === door[1] ? 'door' : 'prop';
+      if (!sets.has(archive)) return archive === door[0] && record === door[1] ? 'door' : 'prop';
       return record === ROLE.floor ? 'floor' : record === ROLE.ceiling ? 'ceiling' : 'wall';
     };
     const wanted: Wanted[] = [
@@ -158,9 +164,16 @@ export class DungeonView {
       usage: CITY_BUFFER_USAGE.uniform | CITY_BUFFER_USAGE.copyDestination,
     });
     const lights = device.createBuffer({
-      size: TORCH_BYTES,
+      size: MOST_LIGHTS * LIGHT_FLOATS * 4,
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
     });
+    // Each cell's look for the shader's moods; rock takes the first.
+    const looks = Uint32Array.from(layout.cellLooks, (look) => Math.max(0, look));
+    const cellLooks = device.createBuffer({
+      size: Math.max(16, looks.byteLength),
+      usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
+    });
+    device.queue.writeBuffer(cellLooks, 0, looks);
     const sampler = device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
@@ -175,22 +188,36 @@ export class DungeonView {
         { binding: 1, resource: { buffer: lights } },
         { binding: 2, resource: painter.view },
         { binding: 3, resource: sampler },
+        { binding: 4, resource: { buffer: cellLooks } },
       ],
     });
-    const torches = layout.torches.map(([x, y, z], number): Torch => [x, y, z, number]);
+    const torch = { ...LIGHT_KINDS.torch, reach: layout.torchReach };
+    const burning: Light[] = [
+      ...layout.torches.map(([x, y, z], number): Light => ({ at: [x, y, z], number, burning: torch })),
+      ...layout.fixtures.map(([x, y, z, kind], index): Light => ({
+        at: [x, y, z],
+        number: layout.torches.length + index,
+        burning: FIXTURE_KINDS[kind] ?? torch,
+      })),
+    ];
     const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
     const { x, y, height } = layout.portal;
-    const portalLight: Torch = [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, height / 2, torches.length];
+    const portalLight: Light = {
+      at: [x - east * PORTAL_OUT_M, y - south * PORTAL_OUT_M, height / 2],
+      number: burning.length,
+      burning: LIGHT_KINDS.portal,
+    };
     const floor = this.buffersOf(model, book);
     this.drawn = {
       layout,
-      torches,
+      burning,
       portalLight,
       book,
       wood,
       painter,
       view,
       lights,
+      cellLooks,
       group,
       floor,
       chest: null,
@@ -211,15 +238,21 @@ export class DungeonView {
     drawn.chest = cache ? this.buffersOf(chestMesh(cache, drawn.wood), drawn.book) : null;
   }
 
-  /** The light a figure standing at a point is lit by at `time`, as the walls round it are. */
+  /** The light a figure standing at a point is lit by at `time`, as the walls round it are: its lights and the mood
+   *  of the cell it stands in. */
   lightAt(point: readonly [number, number, number], time: number): [number, number, number] {
     const drawn = this.drawn;
-    return drawn ? lightAt(this.lights(drawn), drawn.layout.torchReach, point, time) : [1, 1, 1];
+    if (!drawn) return [1, 1, 1];
+    const { layout } = drawn;
+    const [column, row] = [Math.floor(point[0] / layout.cell), Math.floor(point[1] / layout.cell)];
+    const inside = column >= 0 && row >= 0 && column < layout.columns && row < layout.rows;
+    const look = layout.looks[Math.max(0, inside ? (layout.cellLooks[row * layout.columns + column] ?? 0) : 0)];
+    return lightAt(this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
   }
 
-  /** The torches, and the portal while it stands open, which is while the cache does. */
-  private lights(drawn: Drawn): readonly Torch[] {
-    return drawn.shown?.open ? [...drawn.torches, drawn.portalLight] : drawn.torches;
+  /** The torches and the fixtures, and the portal while it stands open, which is while the cache does. */
+  private lights(drawn: Drawn): readonly Light[] {
+    return drawn.shown?.open ? [...drawn.burning, drawn.portalLight] : drawn.burning;
   }
 
   /** Draws the dungeon from an eye at `eye` (the dungeon's metres), lit by the torches nearest it. */
@@ -232,15 +265,21 @@ export class DungeonView {
     const drawn = this.drawn;
     if (!drawn) return;
     const { device } = this.gpu;
-    const away = ([x, y, z]: Torch) => (x - eye[0]) ** 2 + (y - eye[1]) ** 2 + (z - eye[2]) ** 2;
-    const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_TORCHES);
-    const lights = new Float32Array(MOST_TORCHES * 4);
-    nearest.forEach((torch, index) => lights.set(torch, index * 4));
+    // Nearest by how far each reaches past the eye, so a brazier's wide light outranks a candle's at one distance.
+    const away = ({ at: [x, y, z], burning }: Light) => Math.hypot(x - eye[0], y - eye[1], z - eye[2]) - burning.reach;
+    const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_LIGHTS);
+    const lights = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
+    nearest.forEach(({ at, number, burning }, index) =>
+      lights.set([...at, number, ...burning.colour, burning.reach, burning.flicker, 0, 0, 0], index * LIGHT_FLOATS),
+    );
     device.queue.writeBuffer(drawn.lights, 0, lights);
+    const { layout } = drawn;
     const view = new Float32Array(VIEW_BYTES / 4);
     view.set(fromEye, 0);
     view.set([...eye, time], 16);
-    view.set([nearest.length, drawn.layout.torchReach, drawn.shown?.open ? 1 : 0, 0], 20);
+    view.set([nearest.length, drawn.shown?.open ? 1 : 0, 0, 0], 20);
+    view.set([layout.cell, layout.columns, layout.rows, 0], 24);
+    layout.looks.slice(0, MOST_LOOKS).forEach((look, index) => view.set([...MOODS[look.style], 0], 28 + index * 4));
     device.queue.writeBuffer(drawn.view, 0, view);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.group);
@@ -260,6 +299,7 @@ export class DungeonView {
     for (const buffer of [
       drawn.view,
       drawn.lights,
+      drawn.cellLooks,
       drawn.floor.vertices,
       drawn.floor.indices,
       drawn.chest?.vertices,

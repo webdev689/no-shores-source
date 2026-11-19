@@ -5,6 +5,7 @@
 // face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
+import { besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 
 /** Metres one picture covers, and the trim bands' heights at a wall's foot and head. */
@@ -13,9 +14,9 @@ export const BASE_M = 0.4;
 export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
-/** Archives that stand for no picture of their own: a flame's glow, drawn as a colour, and the portal's face, which
- *  wears the end room's wall. */
-export const COLOUR = { glow: -2, portal: -3 } as const;
+/** Archives that stand for no picture of their own: a flame's glow, drawn as a colour; the portal's face, which wears
+ *  the end room's wall; candle wax; and an ember's, a lantern's glass and a crystal's glow. */
+export const COLOUR = { glow: -2, portal: -3, wax: -4, ember: -5, lanternGlass: -6, crystal: -7 } as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];
 /** The portal's arch, metres: each post's width, the lintel's height, how far both stand off the wall, and how far
@@ -81,11 +82,18 @@ export function box(mesh: MeshBuilder, picture: Picture, low: Point, high: Point
   );
 }
 
-/** The set a cell wears and its walls' record: a room whose number % 3 is 2 takes the style's second set, any other
- *  room and every corridor its main one; a room whose number is odd takes the second wall. */
-export function lookOf(layout: DungeonLayout, room: number): { set: number; wall: number } {
-  if (room === CORRIDOR) return { set: layout.pictures[0], wall: ROLE.wall };
-  return { set: layout.pictures[room % 3 === 2 ? 1 : 0], wall: room % 2 === 1 ? ROLE.wallAlt : ROLE.wall };
+/** The set a room or a corridor wears in a look (the first unless named) and its walls' record: a room whose number
+ *  % 3 is 2 takes the look's second set, any other room and every corridor its main one; a room whose number is odd
+ *  takes the second wall. */
+export function lookOf(layout: DungeonLayout, room: number, look = 0): { set: number; wall: number } {
+  const pictures = layout.looks[look]?.pictures ?? layout.pictures;
+  if (room === CORRIDOR) return { set: pictures[0], wall: ROLE.wall };
+  return { set: pictures[room % 3 === 2 ? 1 : 0], wall: room % 2 === 1 ? ROLE.wallAlt : ROLE.wall };
+}
+
+/** The set a cell wears, in its own look. */
+export function lookAt(layout: DungeonLayout, cell: number): { set: number; wall: number } {
+  return lookOf(layout, layout.cells[cell] ?? CORRIDOR, Math.max(0, layout.cellLooks[cell] ?? 0));
 }
 
 /** A wall on a cell's side from `low` up to `high`, facing into the cell, with trim at its foot and its head where
@@ -307,7 +315,7 @@ function doorFace(mesh: MeshBuilder, { x, y, width, height }: Opening, side: num
 function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
   const opening = layout.portal;
   const [east, south] = SIDE_STEPS[opening.side] ?? [0, 0];
-  const trim: Picture = [lookOf(layout, layout.end).set, ROLE.trim];
+  const trim: Picture = [lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0).set, ROLE.trim];
   const [acrossX, acrossY] = [Math.abs(south), Math.abs(east)];
   // A piece of the arch: from `from` to `to` along the wall from the opening's middle, off the wall by ARCH.proud.
   const piece = (from: number, to: number, low: number, high: number) => {
@@ -338,13 +346,20 @@ export function dungeonMesh(
 ): ForgedModel {
   const mesh = meshBuilder();
   const { cell, columns, rows, cells, ceilings } = layout;
+  const heightOf = ceilingHeights(layout);
+  // A cell whose ceiling is not flat over it: a vaulted or domed room's, or a cave's.
+  const curved = (index: number) => {
+    const room = cells[index] ?? CORRIDOR;
+    const form = room >= 0 ? layout.rooms[room]?.ceiling : undefined;
+    return form === 'vault' || form === 'dome' || isCave(layout, index);
+  };
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
       if (!openAt(layout, column, row)) continue;
-      const room = cells[index] ?? CORRIDOR;
-      const look = lookOf(layout, room);
+      const look = lookAt(layout, index);
       const ceiling = ceilings[index] ?? 0;
+      const height = heightOf(index);
       const [west, north] = [column * cell, row * cell];
       const square = (z: number): Point[] => [
         [west, north, z],
@@ -353,22 +368,46 @@ export function dungeonMesh(
         [west, north + cell, z],
       ];
       face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
-      face(mesh, [look.set, ROLE.ceiling], square(ceiling), [0, 0, -1], ceiling);
+      if (curved(index)) curvedCeiling(mesh, [look.set, ROLE.ceiling], west, north, cell, height);
+      else face(mesh, [look.set, ROLE.ceiling], square(ceiling), [0, 0, -1], ceiling);
       SIDE_STEPS.forEach(([east, south], side) => {
         const where = { column, row, side, cell };
         const trims = { foot: true, head: true, top: ceiling };
-        if (!openAt(layout, column + east, row + south)) return wall(mesh, look, where, [0, ceiling], trims);
-        const next = ceilings[(row + south) * columns + column + east] ?? ceiling;
-        if (next < ceiling) wall(mesh, look, where, [next, ceiling], { ...trims, foot: false });
+        const half = cell / 2;
+        const [edgeX, edgeY] = [(column + 0.5) * cell + east * half, (row + 0.5) * cell + south * half];
+        const edge = {
+          from: [edgeX - south * half, edgeY + east * half] as const,
+          to: [edgeX + south * half, edgeY - east * half] as const,
+          facing: [-east, -south, 0] as const,
+        };
+        const next = besideOf(layout, column, row, side);
+        if (next === null) {
+          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling);
+          else wall(mesh, look, where, [0, ceiling], trims);
+          // Over the wall's head, up to a vault, a dome or a cave's rock.
+          return closeEdge(mesh, [look.set, look.wall], edge, () => ceiling, height);
+        }
+        if (!curved(index) && !curved(next)) {
+          const lower = ceilings[next] ?? ceiling;
+          if (lower < ceiling) wall(mesh, look, where, [lower, ceiling], { ...trims, foot: false });
+          return;
+        }
+        closeEdge(mesh, [look.set, look.wall], edge, heightOf(next), height);
       });
     }
   layout.frames.forEach(([frameCell, , height], index) => {
-    const look = lookOf(layout, cells[frameCell] ?? CORRIDOR);
+    const look = lookAt(layout, frameCell);
     doorFrame(mesh, look, layout.boxes.slice(index * 2, index * 2 + 2), layout.doorway.lintel, height);
   });
   for (const [x, y, height] of layout.pillars) {
-    const room = cells[Math.floor(y / cell) * columns + Math.floor(x / cell)] ?? CORRIDOR;
-    pillar(mesh, lookOf(layout, room), x, y, height, layout.pillarHalf);
+    pillar(
+      mesh,
+      lookAt(layout, Math.floor(y / cell) * columns + Math.floor(x / cell)),
+      x,
+      y,
+      height,
+      layout.pillarHalf,
+    );
   }
   for (const each of layout.torches) torch(mesh, each, cell);
   doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);

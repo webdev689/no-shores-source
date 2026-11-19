@@ -22,6 +22,14 @@ export interface Trips {
   leave(): void;
 }
 
+/** The name of the room a point stands in, or null in a corridor or past the grid: "the Ossuary". */
+export function roomNameAt(layout: DungeonLayout, { x, y }: { readonly x: number; readonly y: number }): string | null {
+  const [column, row] = [Math.floor(x / layout.cell), Math.floor(y / layout.cell)];
+  if (column < 0 || row < 0 || column >= layout.columns || row >= layout.rows) return null;
+  const room = layout.cells[row * layout.columns + column] ?? -1;
+  return room >= 0 ? (layout.rooms[room]?.name ?? null) : null;
+}
+
 /** A dungeon as a place on foot: named for itself, its section the whole of its grid, its one spawn the way in. */
 export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo {
   const [east, south] = [layout.columns * layout.cell, layout.rows * layout.cell];

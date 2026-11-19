@@ -463,7 +463,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (here.dungeon) dungeons.draw(here, shown, size, clock, fight, hands);
     else scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
     showStanding(shown.standing);
-    hud.place(here.node.name, placeWords(here.node));
+    hud.place(here.node.name, placeWords(here.node, here.roomName));
     hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);

@@ -2,7 +2,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { startMovementRules } from '../rules/movementRules.ts';
-import { countdownText, distanceText, RESPAWN_SECONDS, standingOf, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import {
+  countdownText,
+  distanceText,
+  placeWords,
+  RESPAWN_SECONDS,
+  standingOf,
+  vignette,
+  WARNING_SECONDS,
+} from './hudLaw.ts';
 
 test('the warning counts down in whole seconds and stops at 0', () => {
   assert.equal(countdownText(9.2), '10');
@@ -55,4 +63,10 @@ test("the warning's count and the wait to respawn are the reach rules' own, read
   assert.equal(shown.kind === 'dead' && shown.canRespawn, true, 'Respawn is offered as the rules allow it');
   assert.deepEqual(standingOf('dead', dead - 1), { kind: 'dead', secondsDead: (dead - 1) / 60, canRespawn: false });
   assert.equal(dead, RESPAWN_SECONDS * 60);
+});
+
+test("in a dungeon's room the words under its name start with the room's", () => {
+  const dungeon = { kind: 'dungeon', continent: 'continent-1' } as const;
+  assert.ok(placeWords(dungeon, 'the Ossuary').startsWith('The Ossuary · Dungeon'));
+  assert.ok(placeWords(dungeon, null).startsWith('Dungeon'));
 });

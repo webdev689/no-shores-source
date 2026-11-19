@@ -38,7 +38,7 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { dungeonRoom, nodeRoom } from './rooms.ts';
-import { dungeonPlace, Entrances, type InDungeon, standInDungeon, tripAt } from './footTrips.ts';
+import { dungeonPlace, Entrances, type InDungeon, roomNameAt, standInDungeon, tripAt } from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
@@ -325,6 +325,11 @@ export class Foot {
   /** Does what E does where the player stands, if anything is within reach. */
   use(): void {
     this.using?.run();
+  }
+
+  /** The name of the dungeon's room the player stands in, or null in a corridor or on a node's land. */
+  get roomName(): string | null {
+    return this.dungeon && roomNameAt(this.dungeon.layout, this.context.walker.player.body);
   }
 
   /** Whether the room's socket closed and the page is joining it again. */

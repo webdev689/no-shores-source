@@ -33,6 +33,8 @@ const labels = (from: Roster, name: string, place: string | null = 'node-overloo
 test('where a player is reads as its place: a node by name and its seas, the sea, or away', () => {
   assert.equal(placeWords('node-overlook-social'), 'Overlook');
   assert.equal(placeWords('node-saltgrass-downs--rough'), 'Saltgrass Downs · Rough seas');
+  assert.equal(placeWords('node-saltgrass-downs--dungeon-0'), 'Saltgrass Downs · Dungeon');
+  assert.equal(placeWords('node-saltgrass-downs--storm--dungeon-2'), 'Saltgrass Downs · Dungeon · Storm seas');
   assert.equal(placeWords('sea'), 'At sea');
   assert.equal(placeWords(null), 'Away');
 });

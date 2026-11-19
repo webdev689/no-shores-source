@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
-import { dungeonPlace, Entrances, tripAt, type Trips } from './footTrips.ts';
+import { dungeonPlace, Entrances, roomNameAt, tripAt, type Trips } from './footTrips.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const patrol: NodeInfo = {
@@ -70,4 +70,18 @@ test('a dungeon is played as a place named for itself, its one spawn its way in'
   assert.equal(place.name, 'The Crypt of the Saltgrass Downs');
   assert.deepEqual(place.spawns, [[1, 2]]);
   assert.deepEqual(place.ring[2], [6.4, 3.2]);
+});
+
+test("a point is named for the dungeon's room it stands in, and nothing in a corridor or past the grid", () => {
+  const layout = {
+    cell: 3.2,
+    columns: 3,
+    rows: 1,
+    cells: [0, -1, 1],
+    rooms: [{ name: 'the Ossuary' }, { name: 'the Old Ossuary' }],
+  } as unknown as DungeonLayout;
+  assert.equal(roomNameAt(layout, { x: 1, y: 1 }), 'the Ossuary');
+  assert.equal(roomNameAt(layout, { x: 4, y: 1 }), null);
+  assert.equal(roomNameAt(layout, { x: 8, y: 1 }), 'the Old Ossuary');
+  assert.equal(roomNameAt(layout, { x: 12, y: 1 }), null);
 });

@@ -8,6 +8,10 @@ import { COLOUR } from './dungeonMesh.ts';
 /** Set in a vertex's layer for the return portal's face, over the layer of the picture it wears: past every layer. */
 export const PORTAL_FLAG = 256;
 
+/** The dungeon's own plain layers, below the city's: candle wax, lit as a surface; an ember's, a lantern's glass and
+ *  a crystal's glow, each drawn as its colour. A dungeon's pictures never reach them. */
+export const DUNGEON_LAYERS = { wax: 248, ember: 249, lanternGlass: 250, crystal: 251 } as const;
+
 /** A picture wanted: Daggerfall's archive and record (a negative archive for a glow drawn as a colour), what it is named for,
  *  and the factor each channel is painted at, if any. */
 export type Wanted = readonly [
@@ -51,6 +55,10 @@ export function smallBook(climate: CityClimate, wanted: Iterable<Wanted>): Small
     pictures,
     layerOf: (archive, record) => {
       if (archive === COLOUR.glow) return COLOUR_LAYERS.glow;
+      if (archive === COLOUR.wax) return DUNGEON_LAYERS.wax;
+      if (archive === COLOUR.ember) return DUNGEON_LAYERS.ember;
+      if (archive === COLOUR.lanternGlass) return DUNGEON_LAYERS.lanternGlass;
+      if (archive === COLOUR.crystal) return DUNGEON_LAYERS.crystal;
       return layers.get(`${archive}.${record}`) ?? 0;
     },
   };
