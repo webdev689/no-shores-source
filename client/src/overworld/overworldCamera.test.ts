@@ -261,17 +261,16 @@ test('a ray through any pixel meets the sea where that pixel shows it', () => {
   }
 });
 
-test('the haze and the lens reach out with the eye, never nearer than the ground own', () => {
-  const ground = { fogEndM: 4_000, nearM: 0.2, farM: 6_000 };
+test('the lens reaches out with the eye, never nearer than the ground own', () => {
+  const ground = { nearM: 0.2, farM: 6_000 };
   const near = horizonOf(ground, 330);
-  assert.equal(near.fogEndM, 28_000);
   assert.equal(near.nearM, 2);
   assert.equal(near.farM, 28_330);
   const high = horizonOf(ground, 150_000);
-  assert.equal(high.fogEndM, 450_000, 'from far up the haze reaches past the framed side');
+  assert.equal(high.farM, 600_000, 'from far up the lens reaches past the framed side');
   assert.equal(high.nearM, 150);
-  const clearDay = horizonOf({ fogEndM: 90_000, nearM: 0.2, farM: 100_000 }, 330);
-  assert.equal(clearDay.fogEndM, 90_000, 'never nearer than the ground own');
+  const farGround = horizonOf({ nearM: 0.2, farM: 100_000 }, 330);
+  assert.equal(farGround.farM, 100_000, 'never nearer than the ground own');
 });
 
 test('a turn between two bearings goes the short way round', () => {

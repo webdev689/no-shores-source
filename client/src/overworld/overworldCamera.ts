@@ -40,9 +40,9 @@ export const DRAG = { orbitPerPx: 0.005, tiltPerPx: 0.004 } as const;
  *  way down the picture, with the ship in its middle. */
 export const FIELD_OF_VIEW = degrees(65);
 
-/** From the air the haze reaches this far from the ship, or `perEyeM` times the eye's distance from it when that is
- *  farther; the lens's near plane is `nearShare` of that distance, never under `nearM`. */
-export const HAZE = { endM: 28_000, perEyeM: 3, nearM: 2, nearShare: 0.001 } as const;
+/** From the air the lens reaches past this far from the ship, or `perEyeM` times the eye's distance from it when that
+ *  is farther; its near plane is `nearShare` of that distance, never under `nearM`. */
+export const LENS = { reachM: 28_000, perEyeM: 3, nearM: 2, nearShare: 0.001 } as const;
 
 /** Where the camera looks at: the focus on the ground, the bearing it looks along, how steeply, and from how high. */
 export interface Rig {
@@ -295,19 +295,16 @@ export function rayThrough(pose: CameraPose, viewport: Viewport, x: number, y: n
 }
 
 /**
- * The haze's end and the lens's planes from the air, metres. The haze runs out to where the land meets the sky, the
- * far plane past it, and the near plane grows with the eye's distance so depth keeps its precision far out. None
- * comes nearer than the ground's own (`ground`).
+ * The lens's planes from the air, metres: the far plane past where the land meets the sky, and the near plane growing
+ * with the eye's distance so depth keeps its precision far out. Neither comes nearer than the ground's own (`ground`).
  */
 export function horizonOf(
-  ground: { readonly fogEndM: number; readonly nearM: number; readonly farM: number },
+  ground: { readonly nearM: number; readonly farM: number },
   eyeDistanceM: number,
-): { readonly fogEndM: number; readonly nearM: number; readonly farM: number } {
-  const fogEnd = Math.max(HAZE.endM, HAZE.perEyeM * eyeDistanceM);
-  const near = Math.max(HAZE.nearM, HAZE.nearShare * eyeDistanceM);
+): { readonly nearM: number; readonly farM: number } {
+  const reach = Math.max(LENS.reachM, LENS.perEyeM * eyeDistanceM);
   return {
-    fogEndM: Math.max(ground.fogEndM, fogEnd),
-    nearM: Math.max(ground.nearM, near),
-    farM: Math.max(ground.farM, fogEnd + eyeDistanceM),
+    nearM: Math.max(ground.nearM, LENS.nearM, LENS.nearShare * eyeDistanceM),
+    farM: Math.max(ground.farM, reach + eyeDistanceM),
   };
 }

@@ -42,8 +42,8 @@ The wheel scales the height by 1.18 a notch, a drag orbits and tilts, and the lo
 A press that moves under 6 px is a click (`overworldInput.ts`).
 
 Each frame gives a pose: the eye, its forward, right and up, and a 65-degree vertical field of view. From the air the
-haze reaches 28 km from the ship, or three times the eye's distance when that is farther, and the lens's planes grow
-with it (`horizonOf`).
+lens reaches past 28 km from the ship, or three times the eye's distance when that is farther, and its near plane grows
+with that distance (`horizonOf`).
 
 ## The pick
 
@@ -91,12 +91,13 @@ the climb reads as one steady zoom.
 ## What a page wires
 
 - **Each frame**: the ship's place, the frame's seconds, the cloud deck's base and the ground (`landHeightAt` over
-  the loaded land) into `stepCamera`; `flyRig` for the island's fly-in; then `poseOf`. The pose and `horizonOf` feed
-  the renderer; `placeMarks` feeds the marks' layer.
+  the loaded land) into `stepCamera`; `flyRig` for the island's fly-in; `horizonOf` for the lens's planes. The shot
+  goes to the renderer; its pose from `poseOf` goes to `pickAt` and to `placeMarks`, which lays the marks' layer.
 - **Input**: presses through `pressAt` and `pressMove` (a drag orbits by `dragCamera`), the wheel through
   `wheelNotches` into `zoomCamera`, the look keys into `keyTurn`.
-- **A click**: `pickAt`. On the sea, `planSeaRoute`, then `voyageOf`; each frame `shipAt`. On a mark, landing at that
-  node. Near a coast, `nearestIsland`, `sideNodes` and `frameSide`.
+- **A click at sea**: `pickAt`. On the sea, the land or a mark, the ship sails there: `planSeaRoute`, then `voyageOf`;
+  each frame `shipAt`. Near a coast, `nearestIsland`, `sideNodes` and `frameSide` frame the island's side, where a
+  node's mark is chosen and then clicked again, or Enter pressed, to land there.
 
 ## Limits
 
