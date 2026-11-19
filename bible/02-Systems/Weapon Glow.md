@@ -7,7 +7,7 @@ code:
   - client/src/elementGlow.ts#GLOW_BURSTS
   - client/src/player/glowCards.ts#GlowCards
   - client/src/player/cards.ts#Cards
-  - client/src/player/gear.ts#heldElement
+  - client/src/player/gear.ts#heldElements
   - client/src/firstperson/firstPerson.ts#glowOf
   - client/src/combat/sparks.ts#trail
   - client/src/combat/tracers.ts#ribbonsOf

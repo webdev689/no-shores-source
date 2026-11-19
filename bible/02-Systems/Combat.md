@@ -14,6 +14,7 @@ code:
   - crates/combat/src/arms.rs#arms_of
   - crates/combat/src/fighter.rs#holding
   - crates/combat/src/shots.rs#BRACE_GAP
+  - crates/combat/src/fighter.rs#loaded
   - crates/combat/src/tuning.rs#PARRY_WINDOW
   - crates/combat/src/status.rs#Statuses
   - crates/room/src/statuses.rs#give
@@ -171,6 +172,10 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   pistolet's 1.9, a thunderlock's 2.2. A double pistolet fires its right, then its left once the right's firing frames
   have played (0.5 s, the pistolet's in first person), and only then reloads both, for 2.85 s, half again a
   pistolet's. While it reloads, the weapon stays pointed where it fired.
+- **Ammunition.** A player's fighter carries the shots its Ranged weapon has left, which their gear keeps ([[Gear]],
+  "Ammo"); each shot spends one, a double pistolet's right and left one each, and at none a pull fires nothing, quick
+  or aimed, though the weapon is still raised. The room sets the count from the gear before each step and the browser
+  predicts it with the fighter, so both refuse the same shot. A foe's weapon never runs dry. Reloads are as above.
 - **In an element.** The player's own shots, and the blows they land for harm, take their weapon's element
   ([[Weapon Glow]]).
 

@@ -32,6 +32,9 @@ code:
   - crates/room/src/patrol.rs#keep_patrol
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
+  - crates/room/src/drops.rs#drop_spoils
+  - crates/gear/src/ammo.rs#capacity
+  - crates/gear/src/ammo.rs#box_chance
   - crates/room/src/asks.rs#answer
   - crates/protocol/src/gear_wire.rs#gear_bytes
   - client/src/player/gear.ts#gearHands
@@ -107,9 +110,8 @@ number is one of [[Gear as Claude Shapes It]].
   drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. A foe of level 0
   fights by combat's own numbers.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
-  levels below, a blow does nothing and shares nothing), and lays each one's
-  Vestige where it fell, seen by them alone, for two minutes, under a beam in its rarity's colour ([[Game]], "On
-  foot"). Walking within 1.5 m picks it up.
+  levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
+  for two minutes ("Drops", below).
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
   and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a
@@ -147,9 +149,41 @@ number is one of [[Gear as Claude Shapes It]].
   it is now, carried or in the vault where it was, its XP kept and what its nodes cost given back. Carried and vaulted
   pieces read the same way, and a Vestige for either hand is one for Melee.
 
+## Drops
+
+[[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
+DFO's spoils ([[Pick - Loot Drops]]).
+
+- **What drops.** For each player who earned a kill: their Vestige, if one dropped; an Ammo box by the foe's rank
+  (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
+  Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
+- **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
+  side, and come to rest 2 m out, on the ground or a block's top there, or at the body where a wall stands. A piece
+  flies 0.6 s and is taken only once it rests.
+- **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
+  the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes.
+- **Seen.** Each piece arcs out of the body and bounces twice to rest, then stands upright as its own picture, the
+  Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
+  Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs
+  it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it comes to rest ([[Interface]]).
+
+## Ammo
+
+- **Capacity.** A Ranged loadout carries shots: a bow 60, a crossbow 30, a pistolet 24, a double pistolet 36, a
+  thunderlock 16 (`gear::ammo`). The character keeps the ammunition as a share of the full capacity, in 720 parts
+  every capacity divides, so another Ranged weapon worn keeps the same share; a character kept before ammunition reads
+  full.
+- **Spent.** Each shot spends one shot's parts; at none the weapon will not fire ([[Combat]], "Shots"). Foes never run
+  dry.
+- **Back.** An Ammo box gives back a quarter of the capacity, at least one shot of any kind. An Ammo crate, used
+  anywhere by a held press on its cell (an ask, refused with none or at full), fills it. Five crates are carried at
+  most; the Quartermaster sells one for 250 Aurem every day, besides the armour.
+- **Sent.** The gear message carries the shots left in the Ranged loadout worn, its capacity, the share and the
+  crates; the fighter carries the shots left, which the browser predicts it by.
+
 ## Vendors
 
-- **The Quartermaster** sells armour (head, torso, arms, legs) and **the Armsmith** loadouts, two Melee to each
+- **The Quartermaster** sells armour (head, torso, arms, legs) and an Ammo crate, and **the Armsmith** loadouts, two Melee to each
   Ranged, in a social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three Magic, made at the
   buyer's
   level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The slots turn with the day,

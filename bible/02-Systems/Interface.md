@@ -242,7 +242,8 @@ never while a press is held. Each press is an ask the room answers.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
   Melee and Ranged Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
   emblem stand to its left, under a place kept for the worn Art, the armour to its right, each slot its item's picture
-  with its names. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows on hover or focus; a click opens its
+  with its names; under the Ranged slot's, the shots left of its capacity ("18 of 24 shots"), or "No ammo" in the loss
+  colour. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows on hover or focus; a click opens its
   flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those
   kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
@@ -257,8 +258,9 @@ never while a press is held. Each press is an ask the room answers.
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
 - **Inventory.** The currencies along the top; under them the Vestiges carried, "Vestiges 3/10" over ten places in
   two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
-  then shelves, each counting what it holds: Consumables, and Materials, a list by name and count. The gear is on the
-  Character page alone.
+  then shelves, each counting what it holds: Consumables, and Materials, a list by name and count. Consumables holds
+  the Fruit of Dagon and the Ammo crate, each with its count; the crate is held ("Hold to fill your ammo") to fill the
+  Ranged weapon's ammunition, and offers nothing with none or at full. The gear is on the Character page alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
@@ -270,7 +272,11 @@ never while a press is held. Each press is an ask the room answers.
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
-  claimed.
+  claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
+  used is spent, not gained.
+- **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair, counted
+  as the fight's rules count them on the player's own fighter, so a shot takes one at once; "No ammo" at none, in the
+  loss colour.
 - **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
   turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
   refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the
@@ -318,7 +324,8 @@ its Vestiges at the top. The room serves each ask only at its own counter ([[Gea
   an empty place a dark Vestige, as the inventory's.
 - **A vendor's stall**: the Quartermaster's armour or the Armsmith's loadouts of the day ([[Gear]], "Vendors"). Each
   ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
-  the player cannot pay it; its card shows what it changes over the piece worn.
+  the player cannot pay it; its card shows what it changes over the piece worn. After the Quartermaster's armour, an
+  Ammo crate every day, with how many of the five are carried; it cannot be held with five.
 - **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held
   to buy; one kept, too dear or for a higher level says so.
 
