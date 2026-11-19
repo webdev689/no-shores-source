@@ -100,7 +100,8 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   with their gear, and their browser puts it back before it predicts them. A fighter stood again after death keeps
   its trim.
 - **Numbers that are none.** A look, a push or a pitch that is not a number is never taken: the look keeps the aim.
-- **Death.** At no health a fighter dies and lies where it fell.
+- **Death.** At no health a fighter dies and lies where it fell. One killed on a wall or hanging from a lip lets go
+  and falls first.
 
 ## The soft lock
 
