@@ -66,3 +66,47 @@ test('a foe the room no longer holds is let go', () => {
   assert.deepEqual(figures.cards(gone, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes()), []);
   assert.equal(figures.placed.size, 0);
 });
+
+/** A Collector seen tick after tick, from `tick` on, at the places and in the modes `seen` gives, each kept with the
+ *  glance before; the frames each move was drawn at. */
+function watched(seen: (tick: number) => readonly [number, number, number, number], ticks: number) {
+  const figures = new FoeFigures(roster);
+  const drawn: (readonly [string, number])[] = [];
+  const watching = {
+    ...forge,
+    card: (...[, , anim, , frame]: Parameters<Cards['card']>) => (drawn.push([anim, frame]), card),
+  } as unknown as Cards;
+  let before: KeptFoe['before'] = null;
+  for (let tick = 0; tick <= ticks; tick++) {
+    const [east, south, up, mode] = seen(tick);
+    const view = glanceView(Object.assign(new Float64Array(GLANCE_FLOATS), { 0: east, 1: south, 2: up, 4: mode }));
+    const fight = fightWith(east, south, 100 + tick);
+    const kept = fight.foes.get(7);
+    if (kept) fight.foes.set(7, { ...kept, view, before });
+    figures.cards(fight, watching, { x: 0, y: 9 }, tick / 60, 1, 1 / 60, new Flashes());
+    before = view;
+  }
+  return drawn;
+}
+
+test('a foe mantling shows the mantle’s frames go by as it goes over, not its first held', () => {
+  // The climb run's mantle: 1.8 m up onto a ledge, (0.25 + 0.22 × 1.8) × 1.05 s, rising over its first 1 / 1.6.
+  const seconds = (0.25 + 0.22 * 1.8) * 1.05;
+  const MANTLE = 4;
+  const drawn = watched((tick) => {
+    const progress = Math.min(1, tick / 60 / seconds);
+    return [0, -0.65 * progress, 0.5 + 1.8 * Math.min(1, 1.6 * progress), MANTLE];
+  }, 40);
+  const frames = drawn.filter(([anim]) => anim === 'mantle').map(([, frame]) => frame);
+  assert.equal(frames.length, 41);
+  assert.deepEqual([...new Set(frames)], [0, 1, 2, 3], 'each of its four frames in turn');
+  assert.equal(frames.indexOf(2), 21, 'half way through at 0.34 s');
+});
+
+test('a foe strolling steps as slowly as it walks, not at a full walk’s pace', () => {
+  // A patrol's stroll at 1.53 m/s for two seconds: its steps go by 2.8 frames, where a full walk's would go by 8.
+  const drawn = watched((tick) => [(1.53 * tick) / 60, 0, 0, 0], 120);
+  const walked = drawn.slice(1).map(([, frame]) => frame);
+  const changes = walked.filter((frame, index) => index > 0 && frame !== walked[index - 1]).length;
+  assert.equal(changes, 2);
+});

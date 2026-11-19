@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { blowFrame, blowWay, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
+import { plainDress } from './dressing.ts';
+import type { Placed } from './figures.ts';
+import { blowFrame, blowWay, type Doing, FULL_WALK, likelyMoves, Loop, PlacedLoop, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -60,6 +62,50 @@ test('on foot: rest, walk, run and crouch, the weapon in hand choosing its own r
   assert.equal(shownMove({ ...doing, crouched: true, moving: true }, frames, classic).anim, 'crouch_walk');
   assert.equal(shownMove({ ...doing, right: 'bow_long_iron', moving: true }, frames, classic).anim, 'walk_bow');
   assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, classic).anim, 'guard');
+});
+
+test('a walk slower than a full walk steps as much slower, so the feet keep to the ground; never faster', () => {
+  const walking = (speed: number) => shownMove({ ...doing, moving: true, speed }, frames, classic).frameSeconds;
+  // A garrison's patrol strolls at about 1.53 m/s: its steps last 2.9 times a full walk's.
+  assert.ok(Math.abs(walking(1.53) - (0.25 * FULL_WALK) / 1.53) < 1e-12);
+  assert.equal(walking(FULL_WALK), 0.25);
+  assert.equal(walking(5.4), 0.25, 'faster than a full walk, short of a run, at the full walk’s pace');
+  const bow = { ...doing, right: 'bow_long_iron', moving: true, speed: FULL_WALK / 2 };
+  assert.deepEqual(shownMove(bow, frames, classic), { anim: 'walk_bow', frame: null, frameSeconds: 0.5 });
+  assert.equal(shownMove({ ...doing, speed: 1 }, frames, classic).frameSeconds, 0.25, 'the rest is not slowed');
+});
+
+test('a loop that slows goes on from the frame it shows, never jumping; it starts where the clock has it', () => {
+  const loop = new Loop();
+  const shown = (frameSeconds: number) => ({ anim: 'walk', frame: null, frameSeconds });
+  assert.equal(loop.frame(shown(0.25), 4, 1 / 60, 10.3), 1, 'the clock’s frame first: 41 frames in');
+  let was = 1;
+  for (let step = 1; step <= 240; step++) {
+    // Slowing from a full walk's frames to a stroll's half way through: a frame from the clock would jump back.
+    const now = loop.frame(shown(step < 120 ? 0.25 : 0.72), 4, 1 / 60, 10.3 + step / 60);
+    assert.ok(now === was || now === (was + 1) % 4, `frame ${was} to ${now} at step ${step}`);
+    was = now;
+  }
+  assert.equal(loop.frame({ anim: 'mantle', frame: 2, frameSeconds: 0 }, 4, 1 / 60, 20), 2, 'a fixed frame as it is');
+});
+
+test('a figure the page moves walks at the pace it moved: a townsperson’s stroll steps slower than a full walk', () => {
+  const dress = plainDress('human', 0.3);
+  const one: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'walk', frame: null, spin: false };
+  const loop = new PlacedLoop();
+  let changes = 0;
+  let was = loop.frame(one, 4, 1 / 60, 0, 6);
+  for (let step = 1; step <= 120; step++) {
+    one.y -= 1.25 / 60;
+    const now = loop.frame(one, 4, 1 / 60, step / 60, 6);
+    if (now !== was) changes++;
+    was = now;
+  }
+  // Two seconds at 1.25 m/s: 2.5 m, a frame each 1.1 m as a full walk's frames are drawn; at 6 a second, 12 frames.
+  assert.equal(changes, 2);
+  one.anim = 'idle';
+  const idle = [1, 2, 3].map((step) => loop.frame(one, 4, 1 / 6, 2 + step / 6, 6));
+  assert.equal(new Set(idle).size, 3, 'any other move loops at its own pace');
 });
 
 test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swings two-handed', () => {

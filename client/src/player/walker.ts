@@ -9,7 +9,7 @@ import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
-import { likelyMoves, type Shown, shownMove } from './playerMoves.ts';
+import { likelyMoves, Loop, type Shown, shownMove } from './playerMoves.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -74,6 +74,7 @@ export class Walker {
   private swingWas: number | null = null;
   private dress: Dress;
   private shown: Shown = { anim: 'idle', frame: null, frameSeconds: 0.25 };
+  private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
   private drawnBefore = false;
 
@@ -103,7 +104,7 @@ export class Walker {
   }
 
   /** One frame of play: the body stepped by `rules` while the pointer is held, the first person's weapon swung, and
-   *  the move the figure shows chosen. `clock` is the page's seconds, which loops a move's frames. */
+   *  the move the figure shows chosen. `clock` is the page's seconds, where the figure's first loop starts. */
   frame(controls: InputFrame, rules: MovementRules, seconds: number, clock: number): void {
     this.step(controls, rules, seconds);
     this.show(controls, seconds, clock);
@@ -207,7 +208,7 @@ export class Walker {
     );
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);
-    const index = this.shown.frame ?? Math.floor(clock / Math.max(this.shown.frameSeconds, 0.01)) % frames;
+    const index = this.loop.frame(this.shown, frames, seconds, clock);
     this.look = { anim: this.shown.anim, frame: index, facing: you.facing };
     this.dress = dress;
     this.lookDress = JSON.stringify(dress);

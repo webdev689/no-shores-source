@@ -1,11 +1,12 @@
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
-import { foeDoing } from '../player/fightMoves.ts';
+import { foeDoing, overProgress } from '../player/fightMoves.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
 import { foeDress } from '../player/foeDress.ts';
 import { Glides } from '../player/glide.ts';
-import { likelyMoves, shownMove } from '../player/playerMoves.ts';
+import { likelyMoves, Loop, shownMove } from '../player/playerMoves.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import type { Mode } from '../rules/movementRules.ts';
 import { type FoeType, shownType } from '../rules/roster.ts';
 import type { Fighting, KeptFoe } from './fighting.ts';
 import type { Flashes } from './flashes.ts';
@@ -34,6 +35,10 @@ export class FoeFigures {
   private readonly dresses: ReadonlyMap<number, Dress | null>;
   private readonly figures = new Map<number, Placed>();
   private readonly glides = new Glides();
+  private readonly loops = new Map<number, Loop>();
+  /** Each foe going over a lip, as its glances showed it begin: the mode, the room tick and height it began at, and the
+   *  most it has risen since. */
+  private readonly overs = new Map<number, { mode: Mode; tick: number; z: number; highest: number }>();
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -52,8 +57,9 @@ export class FoeFigures {
   }
 
   /** Every foe's card as an eye at `eye` sees it: gliding toward where the room last saw it (`frameTicks` the frame's
-   *  share of ticks, each `tickSeconds` long), showing the move its fight holds it to, flashing as `flashes` say, and
-   *  drawn as a page's attack feel has it (`feel`), if one. */
+   *  share of ticks, each `tickSeconds` long), showing the move its fight holds it to, its loops played on from where
+   *  the page's `clock` first had them, flashing as `flashes` say, and drawn as a page's attack feel has it (`feel`),
+   *  if one. */
   cards(
     fight: Fighting,
     forge: Cards,
@@ -76,11 +82,14 @@ export class FoeFigures {
       }
       // Its moves as its drawing shows them, held back while a blow landing holds it.
       const view = feel ? feel.held(kept.id, kept.view) : kept.view;
-      const doing = foeDoing(view, kept.before, dress, kept.ticks * tickSeconds);
+      const over = this.overOf(kept, fight.roomTick, tickSeconds);
+      const doing = { ...foeDoing(view, kept.before, dress, kept.ticks * tickSeconds), over };
       const draws = (anim: string, held: string | null) => forge.draws(dress.body, anim, held);
       const move = shownMove(doing, (anim) => forge.frames(dress.body, anim), draws);
       const moveFrames = forge.frames(dress.body, move.anim);
-      const frameShown = move.frame ?? Math.floor(clock / Math.max(move.frameSeconds, 0.01)) % moveFrames;
+      const loop = this.loops.get(kept.id) ?? new Loop();
+      this.loops.set(kept.id, loop);
+      const frameShown = loop.frame(move, moveFrames, frameTicks * tickSeconds, clock);
       const [x, y, z] = this.glides.follow(
         kept.id,
         [kept.view.x, kept.view.y, kept.view.z],
@@ -99,9 +108,26 @@ export class FoeFigures {
       const flash = { share: flashes.shareOf(kept.id), red: false };
       if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
-    for (const id of this.figures.keys()) if (!fight.foes.has(id)) this.figures.delete(id);
+    for (const kept of [this.figures, this.loops, this.overs])
+      for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));
     return cards;
+  }
+
+  /** How far through a mantle or a vault a foe is, 0 to 1, by the room's tick (`tick`) since its glances first showed
+   *  it going over, and how far it has risen; 0 in any other mode. A glance shows no progress, so it is reckoned by the
+   *  rules' own law, a frame late at most where several snapshots came in one. */
+  private overOf(kept: KeptFoe, tick: number, tickSeconds: number): number {
+    const { mode, z } = kept.view;
+    if (mode !== 'mantle' && mode !== 'vault') {
+      this.overs.delete(kept.id);
+      return 0;
+    }
+    const begun = this.overs.get(kept.id);
+    const over = begun?.mode === mode ? begun : { mode, tick, z, highest: 0 };
+    over.highest = Math.max(over.highest, z - over.z);
+    this.overs.set(kept.id, over);
+    return overProgress(mode, (tick - over.tick) * tickSeconds, z - over.z, over.highest);
   }
 
   /** Each foe as the display marks it: its type's name and faction from the roster, where its figure is drawn. */

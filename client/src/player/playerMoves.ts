@@ -1,6 +1,7 @@
 import type { Mode } from '../rules/movementRules.ts';
 import { STRIKE_PACE } from '../firstperson/weaponMachine.ts';
 import type { StrokeDirection } from '../rules/fighters.ts';
+import type { Placed } from './figures.ts';
 
 /** A swing's direction, as the first-person weapon draws it. */
 export type Direction = 'down' | 'downLeft' | 'left' | 'right' | 'downRight' | 'up';
@@ -54,8 +55,47 @@ export interface Shown {
 /** The jump's frame in the air, by how fast the body rises: rising, at the top, falling. */
 const jumpFrame = (rising: number) => (rising > 1.5 ? 0 : rising < -1.5 ? 2 : 1);
 
-/** How long a walking frame lasts; a run's is half, a crouch's double, a ride's a quarter of a run's. */
+/** How long a walking frame lasts at a full walk; a run's is half, a crouch's double, a ride's a quarter of a run's. */
 const WALK_FRAME = 0.25;
+/** The movement rules' full walk, metres a second, the pace the walk's frames are drawn for. */
+export const FULL_WALK = 4.43;
+
+/** How long a walking frame lasts at `speed`: slower than a full walk, as much longer as the walk is slower, so the
+ *  feet keep to the ground; never shorter. A speed not known (0) steps at a full walk's pace. */
+export function walkFrameSeconds(speed: number): number {
+  return speed > 0 ? WALK_FRAME * Math.max(1, FULL_WALK / speed) : WALK_FRAME;
+}
+
+/** A figure's looping moves, played on by the time passed: a loop that slows or quickens goes on from the frame it
+ *  shows, where a frame picked off the page's clock would jump. Its first loop starts where the clock has it. */
+export class Loop {
+  private phase: number | null = null;
+
+  /** The frame `shown` is at, `seconds` after the last frame, at the page's `clock`, for a move `frames` long. */
+  frame(shown: Shown, frames: number, seconds: number, clock: number): number {
+    if (shown.frame !== null) return shown.frame;
+    const each = Math.max(shown.frameSeconds, 0.01);
+    this.phase = this.phase === null ? clock / each : this.phase + seconds / each;
+    return Math.floor(this.phase) % frames;
+  }
+}
+
+/** The loop of a figure a page moves itself: its walk at the pace it moved since the last frame, any other move
+ *  round at `fps`. */
+export class PlacedLoop {
+  private readonly loop = new Loop();
+  private last: readonly [number, number] | null = null;
+
+  /** The frame `placed` shows, `seconds` after the last, at the page's `clock`, of a move `frames` long. */
+  frame(placed: Placed, frames: number, seconds: number, clock: number, fps: number): number {
+    const [x, y] = this.last ?? [placed.x, placed.y];
+    this.last = [placed.x, placed.y];
+    const speed = Math.hypot(placed.x - x, placed.y - y) / Math.max(seconds, 1e-6);
+    const frameSeconds = placed.anim === 'walk' ? walkFrameSeconds(speed) : 1 / fps;
+    const shown = { anim: placed.anim, frame: placed.frame, frameSeconds };
+    return Math.min(this.loop.frame(shown, frames, seconds, clock), frames - 1);
+  }
+}
 /** Each gun's shot's frame where it is aimed, before it fires (the forge's gunplay.py): a long gun's and a pistol's
  *  second, a brace's first, the right pistol up. */
 const AIMED_FRAME: Readonly<Record<string, number>> = { gunshot: 1, pistolshot: 1, braceshot: 0 };
@@ -205,8 +245,9 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
  * by rising or falling; mounted, the horse's walk or gallop; a cast; a blow, the owner's blow for the swing's stroke
  * and the weapon's hold where drawn, else one stroke of the weapon's attack (frames 0-2, the next blow 3-5), up a
  * thrust, down a chop, left or right a two-handed swing where the weapon draws them; a shot, its weapon's own move,
- * then its reload where drawn; crouching; running; else the weapon's own walk and rest, a bow's in its own holds.
- * `draws` says whether the forge draws a held thing in a move.
+ * then its reload where drawn; crouching; running; else the weapon's own walk and rest, a bow's in its own holds, the
+ * walk's steps slowed to the body's speed below a full walk. `draws` says whether the forge draws a held thing in a
+ * move.
  */
 export function shownMove(doing: Doing, frames: (anim: string) => number, draws: Draws): Shown {
   const byProgress = (anim: string, progress: number): Shown => ({
@@ -254,7 +295,8 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     if (draws('run', doing.drawn ? doing.right : null)) return loop('run', WALK_FRAME / 2);
   }
   const rest = doing.moving ? kit.walk : kit.idle;
-  return loop(draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle', WALK_FRAME);
+  const shown = draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle';
+  return loop(shown, doing.moving ? walkFrameSeconds(doing.speed) : WALK_FRAME);
 }
 
 /**

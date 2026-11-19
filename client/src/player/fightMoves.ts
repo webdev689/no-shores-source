@@ -16,6 +16,23 @@ const TELEGRAPH_STROKE: Readonly<Record<Shape, string>> = {
 };
 /** Faster than this on foot, a figure runs. */
 const RUNNING = 5.5;
+/** The movement rules' going over a lip: it takes (0.25 + 0.22 × rise) × 1.05 seconds; a mantle rises to the lip over
+ *  the first 1 / 1.6 of that, and a vault's arc tops the lip by 0.2 m halfway. */
+const OVER = { seconds: 0.25, perMetre: 0.22, pace: 1.05, rising: 1.6, clears: 0.2 } as const;
+const overSeconds = (rise: number) => (OVER.seconds + OVER.perMetre * Math.max(0, rise)) * OVER.pace;
+
+/**
+ * How far through a mantle or a vault a body is, 0 to 1, as its glances show it: `seconds` since it began, `risen`
+ * metres over where it began, its highest so far `highest`. A mantle's time and height give its progress exactly
+ * while it rises, and its time over its whole rise once at the lip: the smaller of the two is the true one. A vault's
+ * is its time over the rise its arc's top shows, a little ahead until its top.
+ */
+export function overProgress(mode: 'mantle' | 'vault', seconds: number, risen: number, highest: number): number {
+  if (!(seconds > 0)) return 0;
+  if (mode === 'vault') return Math.min(1, seconds / overSeconds(highest - OVER.clears));
+  const rising = (OVER.rising * seconds - OVER.pace * OVER.perMetre * risen) / (OVER.rising * OVER.pace * OVER.seconds);
+  return Math.max(0, Math.min(1, rising, seconds / overSeconds(risen)));
+}
 
 /** What the fight holds a fighter's figure to, or null when it holds it to nothing. */
 export function fightOf(view: FighterView): Fight | null {

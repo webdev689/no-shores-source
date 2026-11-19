@@ -17,6 +17,7 @@ import { gearOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { PlacedLoop } from '../player/playerMoves.ts';
 import { OtherPlayers, type Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
 import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
@@ -136,6 +137,7 @@ export class Foot {
   private readonly steps: MovementRules;
   private readonly otherPlayers: OtherPlayers;
   private readonly otherGlides = new Glides();
+  private readonly folkLoops = new WeakMap<Placed, PlacedLoop>();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
   /** The link's welcomes followed: one more means the player joined the room again. */
@@ -395,12 +397,14 @@ export class Foot {
       if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip, flash });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
-    // A social space's people, each keeping a step of its own.
+    // A social space's people, each keeping a step of its own, their walk's frames at the pace they walk.
+    const seconds = frameTicks * this.context.movement.tickSeconds;
     for (const one of this.folk) {
       const { view, flip } = viewOf(one.facing, one.x, one.y, eyeX, eyeY);
       const frames = forge.frames(one.dress.body, one.anim);
-      const own = clock + one.id * STRIDE_APART_S;
-      const frame = one.frame === null ? frameAt(own, frames, OTHERS_FPS) : Math.min(one.frame, frames - 1);
+      const loop = this.folkLoops.get(one) ?? new PlacedLoop();
+      this.folkLoops.set(one, loop);
+      const frame = loop.frame(one, frames, seconds, clock + one.id * STRIDE_APART_S, OTHERS_FPS);
       const card = forge.card(one.id, one.dress, one.anim, view, frame, flip);
       if (card) cards.push({ card, ...cardStand(one.x, one.y, eyeX, eyeY), z: one.z, flip });
     }
