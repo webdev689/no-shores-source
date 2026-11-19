@@ -30,7 +30,8 @@ pub const STAGGER_TAKEN: f64 = 1.25;
 /// A press is kept this many ticks: one made while the fighter is busy (a dodge in a swing's blow, a guard late in a
 /// wind-up) is acted on as soon as it can be.
 pub const PRESS_KEPT: u8 = 8;
-/// A swap between loadouts, the weapon held changed: no blow or shot starts for this long.
+/// A swap between loadouts, the weapon held changed: no blow or shot starts for this long. A click or a pull made in it
+/// is kept for its end.
 pub const SWAP_TICKS: u32 = 24;
 
 /// A swing: moving while it is struck, and how fast its aim turns after the soft lock's target.

@@ -96,14 +96,20 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   poise stagger can begin, blows do not fill the meter; an overreached foe staggers at the first blow whatever.
 - **Presses kept.** A press of the attack, the guard or the dodge is kept 8 ticks: one made while the fighter is busy
   (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as soon as it can
-  be. The newest press wins over a button only held: a click of the attack swings out of a held guard, and a
-  riposte is struck through one. The guard, held or pressed, cuts a swing's follow-through short once its blow has
-  landed, as the dodge does.
+  be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
+  button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. The guard,
+  held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
-  at once, but a swap begun as another was put away runs on.
+  at once, but a swap begun as another was put away runs on. A click made in a swap is kept until it ends, however
+  early, and its swing starts on the tick the swap ends, once, with the stroke the click rolled for the new weapon
+  ([[A Click During a Weapon Swap Swings as It Ends]]); the page predicts it by the same rules, so the first person
+  and the figure swing on that tick. A trigger pulled in a swap to a ranged weapon fires then if it is loaded, as a
+  pull at rest does, and does nothing if not. The newest press wins: a guard, a dodge or another swap pressed after
+  the click lets it go, and a click after them is kept. A blow that sets the fighter reeling (a flinch, a stagger, a
+  fall) stops the keeping: the click runs out in 8 ticks as any press does.
 - **Gear's trim.** A fighter carries what its armour and the loadout it has drawn trim of these numbers ([[Gear]],
   "Perks"; the other loadout trims nothing until it is drawn): what a swing, a dodge (and a dodge with a weapon drawn)
   and a guard's blow cost; how fast stamina comes back, and again below half health; a reload's time, a bow's draw to

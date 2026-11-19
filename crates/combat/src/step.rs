@@ -95,11 +95,24 @@ pub fn clean(intent: &Intent, aim: f64) -> Intent {
     }
 }
 
-/// The presses kept a tick on, and any new one: a press is kept PRESS_KEPT ticks or until it is acted on.
+/// The presses kept a tick on, and any new one: a press is kept PRESS_KEPT ticks or until it is acted on. A swap
+/// keeps a click, or a trigger pulled in it, for its end while nothing has the fighter reeling (struck, it runs out as
+/// any press); a guard or a dodge pressed in a swap is newer than either, and lets it go.
 fn kept(fighter: &Fighter, input: &CombatInput, now: Held) -> Kept {
     let age = |left: u8| left.saturating_sub(1);
     let was = fighter.kept;
-    let mut kept = Kept { attack: age(was.attack), stroke: was.stroke, guard: age(was.guard), dodge: age(was.dodge) };
+    let swapping = fighter.swap > 0;
+    let reeling = matches!(fighter.action, Action::Flinch { .. }) || fighter.staggered();
+    let held_on = |left: u8| if swapping && !reeling { left } else { age(left) };
+    let (attack, shoot) = (held_on(was.attack), held_on(was.shoot));
+    let mut kept = Kept { attack, stroke: was.stroke, guard: age(was.guard), dodge: age(was.dodge), shoot };
+    let overtaken = (now.guard && !fighter.held.guard) || (now.dodge && !fighter.held.dodge);
+    if swapping && overtaken {
+        (kept.attack, kept.shoot) = (0, 0);
+    }
+    if swapping && now.shoot && !fighter.held.shoot {
+        kept.shoot = PRESS_KEPT;
+    }
     if now.attack && !fighter.held.attack {
         kept.attack = PRESS_KEPT;
         kept.stroke = input.attack;
@@ -296,7 +309,8 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
     // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
     // swings a ranged holder's fists.
-    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot && next.swap == 0 && next.loaded()) {
+    let trigger = input.shoot || next.kept.shoot > 0;
+    if let Some(ranged) = next.arms.ranged.filter(|_| trigger && next.swap == 0 && next.loaded()) {
         let (chest, yaw) = (next.chest(), intent.controls.yaw);
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
@@ -440,6 +454,7 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
 /// pistolet's right shot waits only for its firing frames, the left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
     next.ammo = next.ammo.map(|left| left.saturating_sub(1));
+    next.kept.shoot = 0;
     let right = shot.ranged == Ranged::DoublePistolet && !next.fired_right;
     next.fired_right = right;
     let reload = if right { f64::from(BRACE_GAP) } else { f64::from(shot_numbers(shot.ranged).3) * next.trim.reload };

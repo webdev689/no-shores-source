@@ -8,21 +8,9 @@ use combat::arms::{Arms, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Action, Cause, Swing};
 use combat::judge::{Blow, BlowKind, suffer};
 use combat::tuning::{FLINCH, PARRY_WINDOW, PRESS_KEPT};
-use combat::{CombatInput, Fighter, Happening, Intent, Stroke, Surroundings, Verdict, step_fighter};
-use common::{asking, dodging, guarding, idle, player_at, run, swinging};
+use combat::{CombatInput, Happening, Intent, Stroke, Verdict};
+use common::{asking, dodging, guarding, idle, player_at, run, script, swinging};
 use movement::Controls;
-
-/// Steps a fighter through a list of intents, one a tick; gives it and every happening with its tick.
-fn script(mut fighter: Fighter, intents: &[Intent]) -> (Fighter, Vec<(usize, Happening)>) {
-    let mut happenings = Vec::new();
-    for (tick, intent) in intents.iter().enumerate() {
-        let (next, happening) =
-            step_fighter(&fighter, intent, &Surroundings { blocks: &[], terrain: &movement::Flat, target_at: None });
-        fighter = next;
-        happenings.extend(happening.map(|happening| (tick, happening)));
-    }
-    (fighter, happenings)
-}
 
 fn both(stroke: Stroke) -> Intent {
     asking(0.0, CombatInput { attack: Some(stroke), guard: true, ..CombatInput::default() })
