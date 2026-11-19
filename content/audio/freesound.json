@@ -916,7 +916,7 @@
     {
       "id": "status.linked",
       "use": "Linked: healed in the Sunwell",
-      "query": "healing aura",
+      "query": "magic heal",
       "seconds": [
         0.2,
         1.5
