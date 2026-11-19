@@ -187,7 +187,8 @@ phases) is [[Enemies]].
   ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring evens out. A
   waiting foe stands on its ring's own line, not merely within its give: inside the ring once it has held its ground
   after its blow, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather than for
-  its target, so the waiting come in spread round it.
+  its target, so the waiting come in spread round it; when a block stands between its target's chest and that place,
+  as a wall the target stands against, it makes for its target instead, and comes onto the ring on its own side.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
   the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each
