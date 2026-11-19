@@ -21,6 +21,7 @@ code:
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
+  - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
   - client/src/plus/barLoss.ts#pieceAt
@@ -126,8 +127,15 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
   writing its percentage inside: never 0% while anything is left. Health at a quarter or less flashes its edge to blood;
   the stamina flashes white for a swing or a dodge asked with none. Whole and untouched for 4 s (health and stamina
-  short of no whole point, no poise taken), with no foe on the target plate or the boss bar, the window rests out of
-  sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
+  short of no whole point, no poise taken), with no buff and no foe on the target plate or the boss bar, the window
+  rests out of sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
+- **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
+  colours (Crit a burst and Linked two rings in Blaze; Expose a cracked shield and Veiled a crescent in Cosmic; Charge
+  a crackling bolt and Haste two chevrons in Volt), over a thin line in the element's colour that shrinks from the
+  most time it held since it began or was refreshed. Each tells a screen reader what it is and the whole seconds it has
+  left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row over the vitals' health, 24 px each, and keep
+  the window awake while one holds. A foe's debuffs (Expose, then Charge, or the Charge's immunity as a faded Charge)
+  stand beside the bar of each of its plates: 24 px by the target's and the boss bar, 12 over a figure.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
   ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
@@ -142,9 +150,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   stood, and one first shown is taken as whole, the plate coming with the first blow. The boss bar remembers its
   Bosses alike, but takes one it first shows as it finds it, as it comes before any blow.
 - **The poise track**, a thin bar under the target's and the boss bar's health: the poise filling toward a break in
-  brass; an iron blow wound up, full and hatched in red, "Iron"; staggered, full and white, "Staggered", flashing as
-  the foe it shows breaks and never as the plate turns onto one already staggered; open after a blow that found no
-  one, a brass edge, "Open". With nothing to say it keeps its room unseen.
+  brass; an iron blow wound up, full and hatched in red, "Iron"; staggered, full and white, "Staggered" ("Charged"
+  for a Charge), flashing as the foe it shows breaks and never as the plate turns onto one already staggered; open
+  after a blow that found no one, a brass edge, "Open". With nothing to say it keeps its room unseen.
 - **A foe's shield** ([[Gear]], "Elements and shields") lies over its health on every plate (over a figure, the
   target's and the boss bar), as DFO's Enhanced HUD laid a boss's ward: from the bar's left end, as long as the share
   of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
