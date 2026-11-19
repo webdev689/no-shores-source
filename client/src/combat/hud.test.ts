@@ -95,6 +95,8 @@ test('the plates on foot are the sizes the sea draws its own at', () => {
     new RegExp(`width: ${overhead.width}px; height: ${overhead.height}px`),
   );
   assert.match(rule(css, '.fight-hud .boss'), new RegExp(`width: min\\(${boss.width}px, ${boss.share * 100}%\\)`));
+  // In a narrow view (the Test Ground's between its panels) the target's plate keeps to the boss bar's share of it.
+  assert.match(rule(css, '.fight-hud .target'), new RegExp(`width: min\\(340px, ${boss.share * 100}%\\)`));
 });
 
 test('the boss bar and the target’s plate stand in the compass’s column, and a Boss ship’s plate where the boss bar does', () => {

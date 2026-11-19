@@ -175,9 +175,10 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   high, the square empty for a foe of no level; to its right its name above a long thin track, the meter in its rank's
   colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
   three sizes. Ships' plates are drawn alike on an SVG, at the same sizes (`PLATES`): 140 by 26 px over a figure,
-  and the boss bar 640 px wide at most, three quarters of a narrower screen, its faction after its name. A ship's
-  hull reads its losses as a foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third
-  over 0.24 s; a ship first seen starts whole at her bar.
+  and the boss bar 640 px wide at most, three quarters of a narrower screen, its faction after its name. The soft
+  lock's is 340 px wide at most, and never wider than three quarters of the view. A ship's hull reads its losses as a
+  foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
+  seen starts whole at her bar.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.

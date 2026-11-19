@@ -7,6 +7,8 @@ import type { Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import type { GearState } from '../network/gearMessages.ts';
+import type { FighterView } from '../rules/fighters.ts';
+import { parryCue } from './cues.ts';
 import { Fighting } from './fighting.ts';
 import { KIND, wear } from './wornForTests.ts';
 
@@ -19,11 +21,22 @@ const compiled = new WebAssembly.Module(
 const TICK = 1 / 60;
 const SWORDSMAN = { type: 14, rank: 2 };
 /** The room's event numbers (crates/room/src/judging.rs) and its riposte's. */
-const EVENT = { parried: 3, perfect: 6, killed: 8 };
+const EVENT = { blocked: 2, parried: 3, perfect: 6, killed: 8 };
 const RIPOSTE = 2;
-/** How the player answers a blow: not at all, a guard pressed or a dodge aside, a few ticks before it lands. */
-type Answer = 'none' | 'guard' | 'dodge';
+/** How the player answers a blow: not at all, a guard pressed or a dodge aside, a few ticks before it lands; or a
+ *  guard pressed as the parry ring turns gold, or the tick before. */
+type Answer = 'none' | 'guard' | 'dodge' | 'gold' | 'early';
 const ANSWER_BEFORE = 5;
+
+/** Whether the parry ring over a foe is gold for `player`: a press now would parry its blow. */
+function gold(view: FighterView, player: number, open: boolean): boolean {
+  const cue = parryCue(view, player, open);
+  return cue !== null && cue !== 'iron' && cue.now;
+}
+
+/** A foe's view a tick on, its blow a tick nearer landing. */
+const later = (view: FighterView): FighterView =>
+  'elapsed' in view.action ? { ...view, action: { ...view.action, elapsed: view.action.elapsed + 1 } } : view;
 
 /** A minute of a player with a sword and shield against a swordsman, the player facing it and answering each blow
  *  they see coming, and striking back once one is parried; every event the room told the page, in words. */
@@ -72,9 +85,15 @@ function duel(answer: Answer): string[] {
           : action.kind === 'telegraph'
             ? action.windup - action.elapsed
             : 0;
-      if (answer !== 'none' && landsIn > 0 && landsIn <= ANSWER_BEFORE && tick - answeredAt > ANSWER_BEFORE) {
+      const ring = (view: FighterView) => gold(view, fighting.player, fighting.parryOpen);
+      const asked = answer === 'gold' ? ring(foe) : answer === 'early' && !ring(foe) && ring(later(foe));
+      const cued =
+        answer === 'gold' || answer === 'early'
+          ? asked && tick - answeredAt > 20
+          : answer !== 'none' && landsIn > 0 && landsIn <= ANSWER_BEFORE && tick - answeredAt > ANSWER_BEFORE;
+      if (cued) {
         answeredAt = tick;
-        guarding = answer === 'guard' ? 14 : 0;
+        guarding = answer === 'dodge' ? 0 : 14;
         dodge = answer === 'dodge';
       }
     }
@@ -108,4 +127,14 @@ test('a player who guards just as each blow lands parries it, and their riposte 
 test('a player who dodges aside just as each blow lands dodges it perfectly', () => {
   const told = duel('dodge');
   assert.ok(told.filter((word) => word === 'perfect on me').length >= 5, told.join(', '));
+});
+
+// The ring reads the player's own window: a foe's guard opens a shorter one, which the ring never times.
+test('the parry ring turns gold on the first tick a press parries the blow, and a press the tick before blocks it', () => {
+  const onGold = duel('gold');
+  assert.ok(onGold.filter((word) => word === 'parried on me').length >= 2, onGold.join(', '));
+  assert.ok(!onGold.includes('blocked on me'), onGold.join(', '));
+  const early = duel('early');
+  assert.ok(early.filter((word) => word === 'blocked on me').length >= 2, early.join(', '));
+  assert.ok(!early.includes('parried on me'), early.join(', '));
 });

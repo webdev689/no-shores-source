@@ -110,3 +110,18 @@ test('a foe strolling steps as slowly as it walks, not at a full walk’s pace',
   const changes = walked.filter((frame, index) => index > 0 && frame !== walked[index - 1]).length;
   assert.equal(changes, 2);
 });
+
+test('a foe the rules hold still a tick between steps walks on through them, and stands once it stops', () => {
+  // A waiting foe circling after its place on its ring: four ticks at 1.77 m/s, then one still; then it stops.
+  let east = 0;
+  const circling = watched((tick) => {
+    if (tick <= 60 && tick % 5 !== 0) east += 1.77 / 60;
+    return [east, 0, 0, 0];
+  }, 90);
+  const walk = circling[10]?.[0];
+  assert.deepEqual([...new Set(circling.slice(10, 61).map(([anim]) => anim))], [walk], 'the walk, through its pauses');
+  assert.notEqual(circling.at(-1)?.[0], walk, 'stopped, it stands');
+  // A turn's holder on the heels of a target walking away: a tick at a run, a tick still.
+  const heels = watched((tick) => [(7.59 * Math.ceil(tick / 2)) / 60, 0, 0, 0], 60);
+  assert.equal(new Set(heels.slice(10).map(([anim]) => anim)).size, 1, 'one move, at the pace it keeps');
+});
