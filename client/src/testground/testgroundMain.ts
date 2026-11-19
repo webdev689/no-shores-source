@@ -34,6 +34,7 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { COURSE, RESOURCE_NODES, STALL, START, WOODEN } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
+import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
@@ -158,15 +159,16 @@ async function start(): Promise<void> {
   });
   // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
   let gear: GearState | null = null;
-  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => fight?.askGear(ask));
+  const asks = new PanelAsks();
+  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => asks.ask(fight, ask));
   // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
   let aimPlace: AimPlace = AIM;
   let aimHeld = false;
   startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
     [aimPlace, aimHeld] = [place, held];
   });
-  startStatusPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
-  const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
+  startStatusPanel(element<HTMLElement>('#panel'), (ask) => asks.ask(fight, ask));
+  const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => asks.ask(fight, ask));
   const feel = new AttackFeel(combatRules, movement.tickSeconds);
   startFeelPanel(element<HTMLElement>('#panel'), (set) => {
     feel.set(set);
@@ -276,12 +278,17 @@ async function start(): Promise<void> {
     const aspect = canvas.width / Math.max(1, canvas.height);
     // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
     const running = roomUrl !== null || controls.locked;
-    // An ask made from the panel while the pointer is free still goes, carried by a tick of the player standing still.
+    // An ask made from a panel while the pointer is free still goes, carried by a tick of the player standing still;
+    // alone, the room in the page runs on so until it has answered.
     if (!controls.locked && fighting.asking) {
-      const { yaw, mounted, body: standingBody } = player.player;
+      const { yaw, mounted } = player.player;
       const still = { forward: 0, sideways: 0, yaw, run: false, jump: false, crouch: false, mounted };
-      player.player = { ...player.player, body: steps.step(standingBody, still) };
-      if (!roomUrl) fighting.pump(movement.tickSeconds);
+      const tick = () => {
+        player.player = { ...player.player, body: steps.step(player.player.body, still) };
+        if (!roomUrl) fighting.pump(movement.tickSeconds);
+      };
+      if (roomUrl) tick();
+      else asks.carry(fighting, () => gear?.answered ?? 0, tick);
     }
     const shown = playerFight.frame(controls, steps, seconds, clock, {
       running,
