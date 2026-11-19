@@ -283,6 +283,7 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
       const combat = fight();
       if (!combat) return;
       taken(event);
+      holdPointer(canvas, event.pointerId);
       if (event.button === 2) combat.aim(true);
       else if (combat.aimingNow) combat.holdFire();
       held = true;
@@ -310,6 +311,12 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     },
     { capture: true },
   );
+  // A pointer let go without its button coming up on the canvas lets the aim go unfired.
+  canvas.addEventListener('lostpointercapture', () => {
+    held = false;
+    const combat = fight();
+    if (combat?.aimingNow) combat.holdFire();
+  });
   canvas.addEventListener(
     'wheel',
     (event) => {
@@ -323,4 +330,14 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   canvas.addEventListener('contextmenu', (event) => {
     if (fight()) event.preventDefault();
   });
+}
+
+/** Holds the pointer to the canvas, so its button let go off the canvas still comes up there. A locked pointer is
+ *  held already, and the browser refuses to capture it. */
+export function holdPointer(canvas: HTMLCanvasElement, pointerId: number): void {
+  try {
+    canvas.setPointerCapture(pointerId);
+  } catch {
+    // A locked pointer, or one the browser no longer has: nothing to hold.
+  }
 }
