@@ -254,3 +254,15 @@ fn a_foe_throws_no_blow_of_reach_at_a_target_walking_out_of_it() {
         assert_eq!(reaching, 0, "seed {seed}: a slam or a sweep wound up at a player walking out of it");
     }
 }
+
+#[test]
+fn a_foe_with_no_shield_flanks_though_it_blocks_with_its_blade() {
+    // The pirates' captain guards with its sword alone; their swordsmen carry shields.
+    let ids = [10, 11, 12];
+    let foes = [(SWORDSMAN, -15.0), (CAPTAIN, 0.0), (SWORDSMAN, 15.0)];
+    let mut room = group(6, 0.1, &foes);
+    let samples = waiting_bearings(&mut room, &ids);
+    let wide = |id: u32| samples.iter().filter(|(by, toward)| *by == id && off(*toward, 0.0) > LINE_ARC + 0.2).count();
+    assert!(wide(11) > 300, "the captain stands out on the flank: {} samples", wide(11));
+    assert!(wide(10) + wide(12) < wide(11) / 10, "the shields hold the line: {} samples off it", wide(10) + wide(12));
+}

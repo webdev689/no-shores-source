@@ -9,6 +9,7 @@ use crate::brain::Brain;
 use crate::roles::Role;
 use crate::senses::{Here, Sight};
 use crate::tuning::{FLANK_ARC, LINE_ARC, LINE_LEAN, RANK_GAP, RING_ROOM, RING_SLACK, SLOT_TURN};
+use combat::arms::OffHand;
 use combat::sight::{apart, bearing, off, wrap};
 
 /// The ring a waiting foe stands on, the flank asked for on the way: a skirmisher before any other, and a foe with no
@@ -18,7 +19,7 @@ use combat::sight::{apart, bearing, off, wrap};
 pub fn ring_of(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight, ring: f64) -> f64 {
     let suits = match brain.role() {
         Role::Skirmisher => Some(0),
-        _ if here.numbers.block > 0.0 => None,
+        _ if here.fighter.arms.off_hand == OffHand::Shield => None,
         _ => Some(1),
     };
     brain.flanking = board.flank(sight.id, here.me, suits);

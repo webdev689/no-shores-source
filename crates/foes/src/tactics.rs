@@ -272,8 +272,8 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     }
     match brain.plan {
         // While another goes in, or waits in reach for the beat to strike, one in to fight keeps to the ring, not crowd
-        // in beside it.
-        Plan::Engage if !board.go_in(sight.id, me, tick) => hold_ring(brain, here, sight, ring),
+        // in beside it; one walked in on without a turn fights back where it stands.
+        Plan::Engage if !(open && inside) && !board.go_in(sight.id, me, tick) => hold_ring(brain, here, sight, ring),
         Plan::Engage => engage(brain, here, board, sight, reach),
         Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP),
         Plan::Wait => {

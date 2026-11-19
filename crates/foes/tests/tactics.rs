@@ -1,6 +1,6 @@
 //! The tactics: a lone foe walks to a player and swings in reach; four on one player take turns two at a time while
 //! the rest ring it and circle, and the turns pass on after each blow; a foe that waited past its patience goes in, one
-//! over the count at most; a hurt foe backs off; a coward runs.
+//! over the count at most; a foe walked in on fights back while another goes in; a hurt foe backs off; a coward runs.
 
 mod common;
 
@@ -84,6 +84,39 @@ fn the_turns_pass_on_after_each_blow_so_every_foe_fights_in_time() {
     for id in [10, 11, 12, 13] {
         let fought = !room.swings(id).is_empty() || !room.orders(id).is_empty();
         assert!(fought, "foe {id} had its turn");
+    }
+}
+
+#[test]
+fn a_foe_without_a_turn_that_the_player_walks_in_on_fights_back_while_another_goes_in() {
+    for seed in 1..=8 {
+        // A cold fight, one turn at a time: the swordsman 6 m north takes it and goes in; the one 3.3 m south waits.
+        let room = Room::new(seed).player(PLAYER, 0.0, 0.0, PI);
+        let mut room = room.foe(10, SWORDSMAN, Major, 0.0, -6.0, PI).foe(11, SWORDSMAN, Major, 0.0, 3.3, 0.0);
+        room.director = Director { heat: 0.1 };
+        let mut room = room.alert(10, PLAYER).alert(11, PLAYER);
+        // The player walks into the waiting one, to 1.6 m, and stands before it.
+        let mut stopped = false;
+        let mut walk_in = |room: &Room, me: u32| {
+            stopped = stopped || room.distance(me, 11) <= 1.6;
+            let forward = if stopped { 0.0 } else { 1.0 };
+            let controls = movement::Controls { forward, yaw: room.toward(me, 11), ..movement::Controls::default() };
+            combat::Intent { controls, ..combat::Intent::default() }
+        };
+        while room.distance(PLAYER, 11) > 1.6 {
+            room.step(&mut walk_in);
+        }
+        room.run(2, &mut walk_in);
+        assert!(room.board.holds(PLAYER, 10, false) && !room.board.holds(PLAYER, 11, false), "seed {seed}: one turn");
+        // Until it swings, it keeps where it stands rather than step back to the ring.
+        let (stood, from) = (room.distance(PLAYER, 11), room.tick);
+        let mut farthest = stood;
+        while !swinging(&room.fighter(11)) && room.tick < from + 150 {
+            room.step(&mut walk_in);
+            farthest = farthest.max(room.distance(PLAYER, 11));
+        }
+        assert!(farthest <= stood + 0.3, "seed {seed}: it stands its ground, {stood:.2} to {farthest:.2} m");
+        assert!(room.tick < from + 150, "seed {seed}: and strikes back");
     }
 }
 
