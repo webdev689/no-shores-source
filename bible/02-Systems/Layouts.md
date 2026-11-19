@@ -208,15 +208,16 @@ from the sea, fresh water and the claim's edge), then:
     the landing or the way in.
 11. **The plantings** (`plantings`), last, from the kinds the climate's nature already grows
     (`content/nature/flora.json`): its orchard tree and its shrub, the oak and the gorse on a temperate coast (no apple
-    or pear grows anywhere). Each farm named or themed an orchard is planted with the tree in rows along its field,
-    9 m apart in rows 10 m apart, 60 m either way along the field from its middle and 45 m across; each farm's tracks
-    have a hedgerow of the shrub every 2 m either side, 1.8 m behind where their drystone walls run; and each wilds
-    named or themed a moor holds eight thickets of the shrub, each reaching 5 to 10 m from its middle, a quarter to
-    most of the way out. A planting stands only in the section, on the floor by its reach (a tree 4 m, a shrub 1.6 m)
-    and as far off every climb, run and outcrop, on dry land no steeper than 0.4, and as far clear of every way, run,
-    building's 10 m yard, tile, pad, prop and solid. The tundra plants no orchard and the swamp nothing. On Saltmere
-    the Vale's Orchard Farm holds 96 oaks and 52 gorse in its hedgerows, the Downs' Ewe Fold 26 in its hedgerows, and
-    the Moors' Gorse Moor 388 gorse in its thickets.
+    or pear grows anywhere). A farm with "orchard" as a whole word of its name is planted with the tree in rows along
+    its field, 9 m apart in rows 10 m apart, 60 m either way along the field from its middle and 45 m across. Every
+    farm's tracks have a hedgerow of the shrub every 2 m either side, as far out as their drystone walls run, 2.2 m
+    behind each wall's line, so a bush clears the wall's half (0.4 m) by its reach. A wilds with "moor" as a whole word
+    of its name holds eight thickets of the shrub, each reaching 5 to 10 m from its middle, a quarter to most of the
+    way out. A planting stands only in the section, on the floor by its reach (a tree 4 m, a shrub 1.6 m) and as far
+    off every climb, run and outcrop, on dry land no steeper than 0.4. It also keeps that far clear of every way, a
+    run's way (at least 6 m) and beats (2 m past them), a building's 10 m yard, a tile, a pad and a prop, and of a solid
+    by its own turned footprint where it stands upright (by its box where it leans or rolls). The tundra plants no
+    orchard and the swamp nothing.
 
 ## Runs
 
