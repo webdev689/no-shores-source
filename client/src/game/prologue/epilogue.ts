@@ -63,6 +63,7 @@ export class Epilogue {
       return [];
     }
     const walking = this.phase === 'going' && this.walk(standing, seconds);
+    this.stage.tick(seconds);
     this.stage.parts.overheads.frame(seconds, new Map([['stranger', head]]));
     this.stage.parts.dialogue.frame(seconds);
     const stranger: Actor = {

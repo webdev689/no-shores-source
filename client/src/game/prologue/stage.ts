@@ -112,9 +112,26 @@ export class Stage {
     this.parts = parts;
   }
 
-  /** Every frame of the story, drawn or not: the beds and spot sounds move on. */
+  /** The scenes' own time: a bark's gap is counted in it, as each beat's moments are, never on the wall's clock. */
+  private clock = 0;
+  private waiting: { readonly until: number; readonly resolve: () => void }[] = [];
+
+  /** Every frame of the story, drawn or not: the beds and spot sounds move on, and the scenes' time. */
   step(seconds: number): void {
     this.parts.ambience.frame(seconds);
+    this.tick(seconds);
+  }
+
+  /** The scenes' time moves on by `seconds`, and every gap it has passed ends. */
+  tick(seconds: number): void {
+    this.clock += seconds;
+    const due = this.waiting.filter((each) => each.until <= this.clock);
+    this.waiting = this.waiting.filter((each) => each.until > this.clock);
+    for (const each of due) each.resolve();
+  }
+
+  private wait(seconds: number): Promise<void> {
+    return new Promise((resolve) => this.waiting.push({ until: this.clock + seconds, resolve }));
   }
 
   /** Stops whatever is being said: the scene playing, the dialogue box, and every bark and emote over a head. */
@@ -122,6 +139,10 @@ export class Stage {
     this.scenes += 1;
     this.parts.dialogue.skip();
     this.parts.overheads.clear();
+    // A scene waiting out a gap ends now, rather than when the story's time would have reached it.
+    const waiting = this.waiting;
+    this.waiting = [];
+    for (const each of waiting) each.resolve();
   }
 
   /** Gives the game back what the story laid over it: its own clear weather, silence from the story's sounds, its
@@ -235,7 +256,7 @@ export class Stage {
         if (line.emote) overheads.emote(head, line.emote);
         saying(line);
         index++;
-        await wait(BARK_GAP_S);
+        await this.wait(BARK_GAP_S);
         continue;
       }
       const run: Line[] = [];
@@ -253,5 +274,3 @@ export class Stage {
 
 /** The gap after a bark before the scene's next line, seconds. */
 const BARK_GAP_S = 1.1;
-
-const wait = (seconds: number) => new Promise<void>((resolve) => setTimeout(resolve, seconds * 1000));

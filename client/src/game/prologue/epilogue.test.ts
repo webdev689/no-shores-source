@@ -35,6 +35,7 @@ function epilogueOn(
     play: (scene: string) => play(scene, said),
     screenOpen: true,
     hush: () => void done.push('hushed'),
+    tick: () => undefined,
   } as unknown as Stage;
   const forge = {
     frames: () => 8,

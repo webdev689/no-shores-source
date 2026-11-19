@@ -6,7 +6,6 @@ import { CLEAR } from '../../cinema/weather.ts';
 import { HUD_VEIL_S, headOnView, Stage, type StageParts } from './stage.ts';
 
 test('a scene plays in order: barks over heads, runs of lines together in the box, each line its emote', async () => {
-  mock.timers.enable({ apis: ['setTimeout'] });
   const said: string[] = [];
   const lines: Line[] = [
     { who: 'lookout', say: 'Sails!', kind: 'bark', emote: 'alert' },
@@ -29,13 +28,13 @@ test('a scene plays in order: barks over heads, runs of lines together in the bo
       },
     },
   } as unknown as StageParts;
-  const playing = new Stage(parts).play('sighted', true, { gunner: 'gun-crew' });
+  const stage = new Stage(parts);
+  const playing = stage.play('sighted', true, { gunner: 'gun-crew' });
   for (let step = 0; step < 10; step++) {
     await Promise.resolve();
-    mock.timers.tick(1100);
+    stage.tick(1.1);
   }
   await playing;
-  mock.timers.reset();
   assert.deepEqual(said, [
     'bark lookout: Sails!',
     'emote lookout: alert',
@@ -60,7 +59,6 @@ test('a head off the edges of the view, or behind the eye, has no point, so its 
 });
 
 test('a hushed scene stops at once: no line after the hush is said, and the box and the heads are cleared', async () => {
-  mock.timers.enable({ apis: ['setTimeout'] });
   const said: string[] = [];
   const lines: Line[] = [
     { who: 'lookout', say: 'Sails!', kind: 'bark' },
@@ -84,12 +82,8 @@ test('a hushed scene stops at once: no line after the hush is said, and the box 
   const playing = stage.play('sighted');
   await Promise.resolve();
   stage.hush();
-  for (let step = 0; step < 5; step++) {
-    mock.timers.tick(1100);
-    await Promise.resolve();
-  }
+  // The hush ends the gap the scene was waiting out at once: no time has to pass for it to stop.
   await playing;
-  mock.timers.reset();
   assert.deepEqual(said, ['Sails!', 'box closed', 'heads cleared']);
 });
 
@@ -130,4 +124,31 @@ test("the veil's time is the page's own veil transition", () => {
   const page = readFileSync(new URL('../../../index.html', import.meta.url), 'utf8');
   const veil = /\n\s*\.veil \{[^}]*transition: opacity ([\d.]+)s/.exec(page);
   assert.equal(Number(veil?.[1]), HUD_VEIL_S);
+});
+
+test("a bark's gap is counted in the story's time, so a slow frame never lets the next line come early", async () => {
+  const said: string[] = [];
+  const lines: Line[] = [
+    { who: 'lookout', say: 'Sails!', kind: 'bark' },
+    { who: 'bosun', say: 'Three!', kind: 'bark' },
+  ];
+  const parts = {
+    scenes: { sighted: lines },
+    cast: { speakers: {}, voices: {} },
+    overheads: { bark: (_head: string, line: Line) => said.push(line.say), emote: () => undefined },
+    dialogue: {},
+  } as unknown as StageParts;
+  const stage = new Stage(parts);
+  const playing = stage.play('sighted');
+  await new Promise((settle) => setTimeout(settle, 1300));
+  assert.deepEqual(said, ['Sails!'], 'more than the gap passed on the wall, none in the story');
+  stage.tick(1.05);
+  await Promise.resolve();
+  assert.deepEqual(said, ['Sails!'], 'not yet the whole gap');
+  stage.tick(0.1);
+  await Promise.resolve();
+  assert.deepEqual(said, ['Sails!', 'Three!']);
+  // The scene ends once the last bark's own gap has passed too.
+  stage.tick(1.1);
+  await playing;
 });
