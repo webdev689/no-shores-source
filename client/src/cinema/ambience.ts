@@ -18,6 +18,7 @@ import {
   breakVoice,
   crashVoice,
   creakVoice,
+  disconnectAfter,
   flashVoice,
   groanVoice,
   gullVoice,
@@ -88,6 +89,8 @@ interface BedGraph {
   readonly gain: GainNode;
   readonly sources: readonly AudioScheduledSourceNode[];
   readonly nodes: readonly AudioNode[];
+  /** The level last written to the bed's gain. */
+  written: number;
 }
 
 interface Engine {
@@ -101,6 +104,11 @@ interface Engine {
 /** The noise buffers, made once for each context and shared by every bed and voice. */
 const kits = new WeakMap<BaseAudioContext, Omit<Kit, 'random'>>();
 
+/** Thunder farther than this is not heard at all. */
+const HEARD_KM = 20;
+/** How long `stop` takes to fade everything out, so it never clicks. */
+const FADE_S = 0.25;
+
 function bufferOf(audio: BaseAudioContext, samples: Float32Array<ArrayBuffer>): AudioBuffer {
   const buffer = audio.createBuffer(1, samples.length, audio.sampleRate);
   buffer.copyToChannel(samples, 0);
@@ -113,12 +121,21 @@ function kitFor(audio: AudioContext, random: () => number): Kit {
     const rate = audio.sampleRate;
     const noiseRandom = seededRandom(SEED);
     // Four seconds of noise, long enough that its loop is never heard, folded so it has no seam.
-    const loop = (samples: Float32Array<ArrayBuffer>) => bufferOf(audio, seamlessLoop(samples, Math.round(rate * 0.25)));
-    made = { audio, white: loop(whiteNoise(rate * 4, noiseRandom)), brown: loop(brownNoise(rate * 4, noiseRandom)) };
+    const loop = (samples: Float32Array<ArrayBuffer>) =>
+      bufferOf(audio, seamlessLoop(samples, Math.round(rate * 0.25)));
+    made = {
+      audio,
+      white: loop(whiteNoise(rate * 4, noiseRandom)),
+      brown: loop(brownNoise(rate * 4, noiseRandom)),
+      crackle: bufferOf(audio, seamlessLoop(crackle(rate * 4, rate, noiseRandom, 40), 256)),
+    };
     kits.set(audio, made);
   }
   return { ...made, random };
 }
+
+/** Seconds from a caller, with nonsense (NaN, Infinity, below zero) taken as none. */
+const finiteSeconds = (seconds: number): number => (Number.isFinite(seconds) ? Math.max(0, seconds) : 0);
 
 export class Ambience {
   private readonly output: SoundOut;
@@ -126,8 +143,8 @@ export class Ambience {
   private readonly glides = new Map<Bed, Glide>(
     BEDS.map((bed) => [bed, { from: 0, to: 0, elapsedS: 0, glideS: 0, value: 0 }]),
   );
-  private readonly nextSpotS = new Map<Bed, number>();
-  private clockS = 0;
+  /** Each spot sound's countdown, in seconds at its bed's full level: a quieter bed counts down slower. */
+  private readonly spotCountdownS = new Map<Bed, number>();
   private engine: Engine | null = null;
   private heart = false;
   private nextBeatAt = 0;
@@ -142,7 +159,7 @@ export class Ambience {
       const level = levels[bed];
       const glide = this.glides.get(bed);
       if (level === undefined || !glide) continue;
-      Object.assign(glide, { from: glide.value, to: clampLevel(level), elapsedS: 0, glideS: Math.max(0, glideS) });
+      Object.assign(glide, { from: glide.value, to: clampLevel(level), elapsedS: 0, glideS: finiteSeconds(glideS) });
       if (glide.glideS === 0) glide.value = glide.to;
     }
   }
@@ -155,6 +172,8 @@ export class Ambience {
   }
 
   thunder(distanceKm: number): void {
+    // NaN and Infinity fail this too: neither is a strike anyone hears.
+    if (!(distanceKm <= HEARD_KM)) return;
     this.shot((kit, out, when) => thunderVoice(kit, out, when, distanceKm));
   }
 
@@ -171,7 +190,7 @@ export class Ambience {
   }
 
   ringing(seconds: number): void {
-    this.shot((kit, out, when) => ringingVoice(kit, out, when, seconds));
+    this.shot((kit, out, when) => ringingVoice(kit, out, when, finiteSeconds(seconds)));
   }
 
   heartbeat(beating: boolean): void {
@@ -188,9 +207,9 @@ export class Ambience {
 
   /** Moves every glide on by `seconds`, writes the beds' gains, and plays the spot sounds and heartbeats now due. */
   frame(seconds: number): void {
-    this.clockS += Math.max(0, seconds);
+    const step = finiteSeconds(seconds);
     for (const glide of this.glides.values()) {
-      glide.elapsedS += Math.max(0, seconds);
+      glide.elapsedS += step;
       glide.value = glided(glide.from, glide.to, glide.elapsedS, glide.glideS);
     }
     const engine = this.live();
@@ -199,18 +218,22 @@ export class Ambience {
     for (const bed of BEDS) {
       const value = this.glides.get(bed)?.value ?? 0;
       const built = engine.beds.get(bed) ?? (value > 0 ? this.buildBed(engine, bed) : null);
-      built?.gain.gain.setTargetAtTime(value * BED_GAIN[bed], now, EASE_S);
+      // Written only when it moves: each write is another event on the parameter's timeline.
+      if (built && built.written !== value) {
+        built.gain.gain.setTargetAtTime(value * BED_GAIN[bed], now, EASE_S);
+        built.written = value;
+      }
     }
     for (const { bed, meanGapS, voice } of SPOTS) {
       const level = this.glides.get(bed)?.value ?? 0;
-      const due = this.nextSpotS.get(bed) ?? Number.POSITIVE_INFINITY;
-      if (level <= 0) this.nextSpotS.delete(bed);
-      else if (!Number.isFinite(due)) this.nextSpotS.set(bed, this.clockS + nextGapS(meanGapS, level, this.random()));
-      else if (this.clockS >= due) {
-        const bedGain = engine.beds.get(bed)?.gain;
-        if (bedGain) voice(engine.kit, bedGain, now);
-        this.nextSpotS.set(bed, this.clockS + nextGapS(meanGapS, level, this.random()));
+      if (level <= 0) continue;
+      let countdown = (this.spotCountdownS.get(bed) ?? nextGapS(meanGapS, this.random())) - step * level;
+      const bedGain = engine.beds.get(bed)?.gain;
+      if (countdown <= 0 && bedGain) {
+        voice(engine.kit, bedGain, now);
+        countdown = nextGapS(meanGapS, this.random());
       }
+      this.spotCountdownS.set(bed, countdown);
     }
     if (!this.heart) this.nextBeatAt = 0;
     else {
@@ -223,10 +246,10 @@ export class Ambience {
     }
   }
 
-  /** Silences everything at once and lets go of every node; the next sound builds them afresh. */
+  /** Fades everything out in a moment and lets go of every node; the next sound builds them afresh. */
   stop(): void {
     for (const glide of this.glides.values()) Object.assign(glide, { from: 0, to: 0, value: 0, glideS: 0 });
-    this.nextSpotS.clear();
+    this.spotCountdownS.clear();
     this.heart = false;
     this.teardown();
   }
@@ -250,13 +273,18 @@ export class Ambience {
   private teardown(): void {
     const engine = this.engine;
     this.engine = null;
+    // The heart's next beat was on the old clock; a new context's clock starts again near 0.
+    this.nextBeatAt = 0;
     if (!engine) return;
-    for (const { sources, nodes } of engine.beds.values()) {
-      for (const source of sources) source.stop();
-      for (const node of nodes) node.disconnect();
+    const { audio } = engine.kit;
+    const end = audio.currentTime + FADE_S;
+    engine.master.gain.setTargetAtTime(0, audio.currentTime, FADE_S / 5);
+    const nodes: AudioNode[] = [engine.shots, engine.master];
+    for (const bed of engine.beds.values()) {
+      for (const source of bed.sources) source.stop(end);
+      nodes.push(...bed.nodes);
     }
-    engine.shots.disconnect();
-    engine.master.disconnect();
+    disconnectAfter(engine.kit, end, nodes);
   }
 
   private shot(voice: (kit: Kit, out: AudioNode, when: number) => void): void {
@@ -304,9 +332,7 @@ export class Ambience {
     if (bed === 'rain') {
       // A downpour: hiss over a duller roar of drops on the sea.
       loop(white, filter('highpass', 600), filter('lowpass', 9000)).connect(gain);
-      const roar = audio.createGain();
-      roar.gain.value = 1;
-      loop(brown, filter('bandpass', 900, 0.6), roar).connect(gain);
+      loop(brown, filter('bandpass', 900, 0.6)).connect(gain);
     } else if (bed === 'wind') {
       // A gale: its pitch and its strength wander at unrelated slow rates, so the gusts never repeat.
       const howl = filter('bandpass', 450, 1.6);
@@ -325,18 +351,14 @@ export class Ambience {
     } else if (bed === 'fire') {
       // A blaze: a low roar under a loop of crackle.
       loop(brown, filter('lowpass', 600)).connect(gain);
-      const snaps = bufferOf(
-        audio,
-        seamlessLoop(crackle(audio.sampleRate * 4, audio.sampleRate, this.random, 40), 256),
-      );
       const crackleGain = audio.createGain();
       crackleGain.gain.value = 0.4;
-      loop(snaps, filter('highpass', 1200), crackleGain).connect(gain);
+      loop(engine.kit.crackle, filter('highpass', 1200), crackleGain).connect(gain);
     } else if (bed === 'deep') {
       // Under the water: a muffled pressure, all low notes.
       loop(brown, filter('lowpass', 120, 1.2)).connect(gain);
     }
-    const built = { gain, sources, nodes };
+    const built = { gain, sources, nodes, written: 0 };
     engine.beds.set(bed, built);
     return built;
   }

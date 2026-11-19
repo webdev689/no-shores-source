@@ -48,15 +48,15 @@ test('thunder comes later and duller the farther it is', () => {
   assert.deepEqual(thunderShape(-2), thunderShape(0));
 });
 
-test('spot sounds come by a seeded clock, more often the louder their bed', () => {
+test('spot sounds come by a seeded clock, at gaps that average their mean', () => {
   const first = seededRandom(7);
   const second = seededRandom(7);
   for (let draw = 0; draw < 10; draw++) assert.equal(first(), second());
-  assert.equal(nextGapS(4, 0, 0.5), Number.POSITIVE_INFINITY);
-  assert.ok(nextGapS(4, 1, 0.5) < nextGapS(4, 0.25, 0.5));
+  assert.ok(nextGapS(4, 0.2) < nextGapS(4, 0.8));
+  assert.ok(Number.isFinite(nextGapS(4, 1)));
   const random = seededRandom(3);
   let total = 0;
-  for (let draw = 0; draw < 4000; draw++) total += nextGapS(4, 1, random());
+  for (let draw = 0; draw < 4000; draw++) total += nextGapS(4, random());
   assert.ok(Math.abs(total / 4000 - 4) < 0.3, 'the gaps average their mean');
 });
 

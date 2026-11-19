@@ -8,14 +8,15 @@ export interface Kit {
   readonly audio: AudioContext;
   readonly white: AudioBuffer;
   readonly brown: AudioBuffer;
+  readonly crackle: AudioBuffer;
   readonly random: () => number;
 }
 
 type Points = readonly (readonly [number, number])[];
 type FilterShape = {
   readonly type: BiquadFilterType;
-  readonly hz: number;
-  readonly q?: number;
+  readonly frequency: number;
+  readonly quality?: number;
   readonly sweep?: Points;
 };
 
@@ -36,29 +37,36 @@ function releaseWhenDone(source: AudioScheduledSourceNode, nodes: readonly Audio
 const lengthOf = (points: Points): number => points.at(-1)?.[0] ?? 0;
 
 /** A burst of noise through one filter (its frequency swept if asked), under an envelope. */
-function noiseBurst(kit: Kit, dest: AudioNode, when: number, buffer: AudioBuffer, filter: FilterShape, points: Points) {
+function noiseBurst(
+  kit: Kit,
+  destination: AudioNode,
+  when: number,
+  buffer: AudioBuffer,
+  filter: FilterShape,
+  points: Points,
+) {
   const { audio } = kit;
   const source = audio.createBufferSource();
   source.buffer = buffer;
   source.loop = true;
   const biquad = audio.createBiquadFilter();
   biquad.type = filter.type;
-  biquad.frequency.value = filter.hz;
-  biquad.Q.value = filter.q ?? 0.7;
+  biquad.frequency.value = filter.frequency;
+  biquad.Q.value = filter.quality ?? 0.7;
   if (filter.sweep) shape(biquad.frequency, when, filter.sweep);
   const gain = audio.createGain();
   shape(gain.gain, when, points);
-  source.connect(biquad).connect(gain).connect(dest);
+  source.connect(biquad).connect(gain).connect(destination);
   // A different stretch of the buffer each time, so no two bursts sound the same.
   source.start(when, kit.random() * buffer.duration * 0.9);
   source.stop(when + lengthOf(points) + 0.05);
   releaseWhenDone(source, [source, biquad, gain]);
 }
 
-/** An oscillator whose pitch follows `hz` points, through an optional filter, under an envelope. */
+/** An oscillator whose pitch follows `pitch` points, through an optional filter, under an envelope. */
 function tone(
   kit: Kit,
-  dest: AudioNode,
+  destination: AudioNode,
   when: number,
   type: OscillatorType,
   pitch: Points,
@@ -75,19 +83,19 @@ function tone(
   if (filter) {
     const biquad = audio.createBiquadFilter();
     biquad.type = filter.type;
-    biquad.frequency.value = filter.hz;
-    biquad.Q.value = filter.q ?? 0.7;
+    biquad.frequency.value = filter.frequency;
+    biquad.Q.value = filter.quality ?? 0.7;
     oscillator.connect(biquad).connect(gain);
     nodes.push(biquad);
   } else oscillator.connect(gain);
-  gain.connect(dest);
+  gain.connect(destination);
   oscillator.start(when);
   oscillator.stop(when + Math.max(lengthOf(points), lengthOf(pitch)) + 0.05);
   releaseWhenDone(oscillator, nodes);
 }
 
 /** A crack then a long roll, `distanceKm` away: later, quieter and duller the farther. */
-export function thunderVoice(kit: Kit, dest: AudioNode, when: number, distanceKm: number): void {
+export function thunderVoice(kit: Kit, destination: AudioNode, when: number, distanceKm: number): void {
   const thunder = thunderShape(distanceKm);
   const start = when + thunder.delayS;
   if (thunder.crack > 0) {
@@ -98,10 +106,10 @@ export function thunderVoice(kit: Kit, dest: AudioNode, when: number, distanceKm
       points.push([time, thunder.crack * (1 - tear * 0.12)], [time + 0.02, thunder.crack * 0.25]);
     }
     points.push([0.5, 0]);
-    const crack = { type: 'highpass', hz: Math.min(thunder.brightnessHz, 2500) } as const;
+    const crack = { type: 'highpass', frequency: Math.min(thunder.brightnessHz, 2500) } as const;
     noiseBurst(
       kit,
-      dest,
+      destination,
       start,
       kit.white,
       crack,
@@ -120,22 +128,22 @@ export function thunderVoice(kit: Kit, dest: AudioNode, when: number, distanceKm
     roll.push([time - 0.15, thunder.gain * fall * 1.1], [time, thunder.gain * fall * (1.4 + kit.random() * 0.6)]);
   }
   roll.push([thunder.rollS, 0]);
-  const rollFilter = { type: 'lowpass', hz: thunder.brightnessHz, q: 0.5 } as const;
-  noiseBurst(kit, dest, start, kit.brown, rollFilter, roll);
+  const rollFilter = { type: 'lowpass', frequency: thunder.brightnessHz, quality: 0.5 } as const;
+  noiseBurst(kit, destination, start, kit.brown, rollFilter, roll);
 }
 
 /** Two hulls meeting: timber splitting, a deep boom, debris falling after. */
-export function crashVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function crashVoice(kit: Kit, destination: AudioNode, when: number): void {
   const split: [number, number][] = [[0, 0]];
   for (let snap = 0; snap < 12; snap++) {
     const time = 0.01 + snap * 0.06 + kit.random() * 0.03;
     split.push([time, 0.9 * Math.exp(-snap / 5)], [time + 0.025, 0.15 * Math.exp(-snap / 5)]);
   }
   split.push([0.95, 0]);
-  noiseBurst(kit, dest, when, kit.white, { type: 'bandpass', hz: 1400, q: 1.6 }, split);
+  noiseBurst(kit, destination, when, kit.white, { type: 'bandpass', frequency: 1400, quality: 1.6 }, split);
   tone(
     kit,
-    dest,
+    destination,
     when,
     'sine',
     [
@@ -144,13 +152,13 @@ export function crashVoice(kit: Kit, dest: AudioNode, when: number): void {
     ],
     hit(0.005, 2.2, 1),
   );
-  noiseBurst(kit, dest, when, kit.brown, { type: 'lowpass', hz: 260 }, hit(0.01, 1.8, 0.9));
+  noiseBurst(kit, destination, when, kit.brown, { type: 'lowpass', frequency: 260 }, hit(0.01, 1.8, 0.9));
   for (let piece = 0; piece < 12; piece++) {
     const time = 0.6 + kit.random() * 3;
-    const filter = { type: 'bandpass', hz: 400 + kit.random() * 2200, q: 2 } as const;
+    const filter = { type: 'bandpass', frequency: 400 + kit.random() * 2200, quality: 2 } as const;
     noiseBurst(
       kit,
-      dest,
+      destination,
       when + time,
       kit.white,
       filter,
@@ -160,7 +168,7 @@ export function crashVoice(kit: Kit, dest: AudioNode, when: number): void {
 }
 
 /** Something into the sea: `size` 0 a dropped plank to 1 a body overboard. */
-export function splashVoice(kit: Kit, dest: AudioNode, when: number, size: number): void {
+export function splashVoice(kit: Kit, destination: AudioNode, when: number, size: number): void {
   const length = 0.25 + size * 1.1;
   const sweep: Points = [
     [0, 2600],
@@ -168,21 +176,28 @@ export function splashVoice(kit: Kit, dest: AudioNode, when: number, size: numbe
   ];
   noiseBurst(
     kit,
-    dest,
+    destination,
     when,
     kit.white,
-    { type: 'bandpass', hz: 2600, q: 0.8, sweep },
+    { type: 'bandpass', frequency: 2600, quality: 0.8, sweep },
     hit(0.01, length, 0.45 + 0.25 * size),
   );
   if (size > 0.3)
-    noiseBurst(kit, dest, when, kit.brown, { type: 'lowpass', hz: 350 }, hit(0.02, length * 0.7, size * 0.7));
+    noiseBurst(
+      kit,
+      destination,
+      when,
+      kit.brown,
+      { type: 'lowpass', frequency: 350 },
+      hit(0.02, length * 0.7, size * 0.7),
+    );
 }
 
 /** A body hitting the deck. */
-export function thudVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function thudVoice(kit: Kit, destination: AudioNode, when: number): void {
   tone(
     kit,
-    dest,
+    destination,
     when,
     'sine',
     [
@@ -191,25 +206,25 @@ export function thudVoice(kit: Kit, dest: AudioNode, when: number): void {
     ],
     hit(0.003, 0.35, 0.8),
   );
-  noiseBurst(kit, dest, when, kit.brown, { type: 'lowpass', hz: 500 }, hit(0.003, 0.18, 0.6));
+  noiseBurst(kit, destination, when, kit.brown, { type: 'lowpass', frequency: 500 }, hit(0.003, 0.18, 0.6));
 }
 
 /** The ears ringing after the blow: a high, faintly beating tone fading over `seconds`. */
-export function ringingVoice(kit: Kit, dest: AudioNode, when: number, seconds: number): void {
+export function ringingVoice(kit: Kit, destination: AudioNode, when: number, seconds: number): void {
   const length = Math.max(0.5, seconds);
-  tone(kit, dest, when, 'sine', [[0, 3800]], hit(0.08, length, 0.07));
-  tone(kit, dest, when, 'sine', [[0, 3867]], hit(0.08, length, 0.04));
+  tone(kit, destination, when, 'sine', [[0, 3800]], hit(0.08, length, 0.07));
+  tone(kit, destination, when, 'sine', [[0, 3867]], hit(0.08, length, 0.04));
 }
 
 /** One heartbeat: the two beats, the second softer. */
-export function heartbeatVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function heartbeatVoice(kit: Kit, destination: AudioNode, when: number): void {
   for (const [offset, peak] of [
     [0, 0.6],
     [0.28, 0.42],
   ] as const)
     tone(
       kit,
-      dest,
+      destination,
       when + offset,
       'sine',
       [
@@ -217,12 +232,12 @@ export function heartbeatVoice(kit: Kit, dest: AudioNode, when: number): void {
         [0.15, 38],
       ],
       hit(0.01, 0.2, peak),
-      { type: 'lowpass', hz: 200 },
+      { type: 'lowpass', frequency: 200 },
     );
 }
 
 /** The bright flash in the deep: glassy partials swelling and rising an octave, with a shimmer above them. */
-export function flashVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function flashVoice(kit: Kit, destination: AudioNode, when: number): void {
   const swell: Points = [
     [0, 0],
     [2.2, 1],
@@ -234,7 +249,7 @@ export function flashVoice(kit: Kit, dest: AudioNode, when: number): void {
     const detune = 1 + (kit.random() - 0.5) * 0.004;
     tone(
       kit,
-      dest,
+      destination,
       when,
       'sine',
       [
@@ -247,7 +262,7 @@ export function flashVoice(kit: Kit, dest: AudioNode, when: number): void {
   }
   const shimmer = {
     type: 'highpass',
-    hz: 5000,
+    frequency: 5000,
     sweep: [
       [0, 3000],
       [2.4, 9000],
@@ -255,7 +270,7 @@ export function flashVoice(kit: Kit, dest: AudioNode, when: number): void {
   } as const;
   noiseBurst(
     kit,
-    dest,
+    destination,
     when,
     kit.white,
     shimmer,
@@ -264,7 +279,7 @@ export function flashVoice(kit: Kit, dest: AudioNode, when: number): void {
 }
 
 /** A fast camera move: air rushing past, rising and falling. */
-export function whooshVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function whooshVoice(kit: Kit, destination: AudioNode, when: number): void {
   const sweep: Points = [
     [0, 300],
     [0.35, 2400],
@@ -275,18 +290,18 @@ export function whooshVoice(kit: Kit, dest: AudioNode, when: number): void {
     [0.35, 0.9],
     [0.8, 0],
   ];
-  noiseBurst(kit, dest, when, kit.white, { type: 'bandpass', hz: 300, q: 1.4, sweep }, points);
+  noiseBurst(kit, destination, when, kit.white, { type: 'bandpass', frequency: 300, quality: 1.4, sweep }, points);
 }
 
 /** A gull crying somewhere over the water: nearer is louder and brighter, each bird to one side or the other. */
-export function gullVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function gullVoice(kit: Kit, destination: AudioNode, when: number): void {
   const { audio } = kit;
   const cry = gullCry(kit.random);
   const pan = audio.createStereoPanner();
   pan.pan.value = (kit.random() - 0.5) * 1.6;
-  pan.connect(dest);
+  pan.connect(destination);
   const loud = 0.35 * (1.2 - cry.distance);
-  const dull = { type: 'lowpass', hz: 9000 - 6500 * cry.distance } as const;
+  const dull = { type: 'lowpass', frequency: 9000 - 6500 * cry.distance } as const;
   const pitch = (call: GullCall): Points => [
     [call.startS, call.fromHz],
     [call.startS + call.durationS * 0.3, call.peakHz],
@@ -301,20 +316,20 @@ export function gullVoice(kit: Kit, dest: AudioNode, when: number): void {
   for (const call of cry.calls)
     tone(kit, pan, when, 'sawtooth', [[0, call.fromHz], ...pitch(call)], [[0, 0], ...level(call)], dull);
   const ends = cry.calls.at(-1);
-  disconnectAfter(kit, when + (ends ? ends.startS + ends.durationS : 0) + 0.1, pan);
+  disconnectAfter(kit, when + (ends ? ends.startS + ends.durationS : 0) + 0.1, [pan]);
 }
 
-/** Disconnects a node shared by several voices once they are all done, by a silent source ending on the clock. */
-function disconnectAfter(kit: Kit, when: number, node: AudioNode): void {
+/** Disconnects nodes shared by several voices once they are all done, by a silent source ending on the clock. */
+export function disconnectAfter(kit: Kit, when: number, nodes: readonly AudioNode[]): void {
   const marker = kit.audio.createConstantSource();
   marker.offset.value = 0;
   marker.start(when);
   marker.stop(when);
-  releaseWhenDone(marker, [marker, node]);
+  releaseWhenDone(marker, [marker, ...nodes]);
 }
 
 /** A ship's timbers working: a slow stick-slip grind through a hollow resonance. */
-export function creakVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function creakVoice(kit: Kit, destination: AudioNode, when: number): void {
   const length = 0.6 + kit.random() * 1;
   const rate = 25 + kit.random() * 20;
   const points: Points = [
@@ -323,10 +338,10 @@ export function creakVoice(kit: Kit, dest: AudioNode, when: number): void {
     [length * 0.75, 0.24],
     [length, 0],
   ];
-  const resonance = { type: 'bandpass', hz: 500 + kit.random() * 500, q: 6 } as const;
+  const resonance = { type: 'bandpass', frequency: 500 + kit.random() * 500, quality: 6 } as const;
   tone(
     kit,
-    dest,
+    destination,
     when,
     'sawtooth',
     [
@@ -339,7 +354,7 @@ export function creakVoice(kit: Kit, dest: AudioNode, when: number): void {
 }
 
 /** A wave breaking against the hull. */
-export function breakVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function breakVoice(kit: Kit, destination: AudioNode, when: number): void {
   const sweep: Points = [
     [0, 700],
     [0.5, 2800],
@@ -351,16 +366,23 @@ export function breakVoice(kit: Kit, dest: AudioNode, when: number): void {
     [1, 0.22],
     [2.3, 0],
   ];
-  noiseBurst(kit, dest, when, kit.white, { type: 'lowpass', hz: 700, sweep }, points);
+  noiseBurst(kit, destination, when, kit.white, { type: 'lowpass', frequency: 700, sweep }, points);
 }
 
 /** A pop in the blaze: a knot of sap bursting. */
-export function popVoice(kit: Kit, dest: AudioNode, when: number): void {
-  noiseBurst(kit, dest, when, kit.white, { type: 'highpass', hz: 900 }, hit(0.001, 0.05 + kit.random() * 0.06, 0.5));
+export function popVoice(kit: Kit, destination: AudioNode, when: number): void {
+  noiseBurst(
+    kit,
+    destination,
+    when,
+    kit.white,
+    { type: 'highpass', frequency: 900 },
+    hit(0.001, 0.05 + kit.random() * 0.06, 0.5),
+  );
 }
 
 /** A slow groan of the deep: the wreck's timbers or the sea itself, felt more than heard. */
-export function groanVoice(kit: Kit, dest: AudioNode, when: number): void {
+export function groanVoice(kit: Kit, destination: AudioNode, when: number): void {
   const length = 3 + kit.random() * 2;
   const pitch = 40 + kit.random() * 15;
   const points: Points = [
@@ -371,7 +393,7 @@ export function groanVoice(kit: Kit, dest: AudioNode, when: number): void {
   ];
   tone(
     kit,
-    dest,
+    destination,
     when,
     'sawtooth',
     [
@@ -379,6 +401,6 @@ export function groanVoice(kit: Kit, dest: AudioNode, when: number): void {
       [length, pitch * 0.75],
     ],
     points,
-    { type: 'lowpass', hz: 200, q: 3 },
+    { type: 'lowpass', frequency: 200, quality: 3 },
   );
 }

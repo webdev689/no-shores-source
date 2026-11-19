@@ -45,12 +45,10 @@ export function seededRandom(seed: number): () => number {
   };
 }
 
-/** Seconds to the next spot sound of a bed at `level`: random as rain on a roof (exponential gaps averaging
- *  `meanGapS` at full level), rarer as the bed quietens, never while it is silent. */
-export function nextGapS(meanGapS: number, level: number, roll: number): number {
-  if (level <= 0) return Number.POSITIVE_INFINITY;
-  return Math.max(0.05, (-Math.log(1 - Math.min(roll, 0.999999)) * meanGapS) / level);
-}
+/** Seconds to the next spot sound at its bed's full level: random as rain on a roof, exponential gaps averaging
+ *  `meanGapS`. The caller counts them down slower as the bed quietens. */
+export const nextGapS = (meanGapS: number, roll: number): number =>
+  Math.max(0.05, -Math.log(1 - Math.min(roll, 0.999999)) * meanGapS);
 
 /** A strike's envelope as [seconds, gain] points: a straight rise to `peak`, then a fall that slows as it goes,
  *  as a struck thing's ring does, to silence at `attackS + decayS`. */

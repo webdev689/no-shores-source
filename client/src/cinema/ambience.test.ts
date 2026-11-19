@@ -7,6 +7,7 @@ function fakeAudio() {
   const made: string[] = [];
   const live = new Set<object>();
   const endings: (() => void)[] = [];
+  const gains: { readonly gain: { readonly values: number[] } }[] = [];
   const param = () => {
     const values: number[] = [];
     const record = (value: number) => values.push(value);
@@ -44,7 +45,11 @@ function fakeAudio() {
   const audio = {
     currentTime: 0,
     sampleRate: 8000,
-    createGain: () => node('gain'),
+    createGain: () => {
+      const gain = node('gain');
+      gains.push(gain);
+      return gain;
+    },
     createBiquadFilter: () => node('filter'),
     createOscillator: () => node('oscillator'),
     createBufferSource: () => node('source'),
@@ -56,7 +61,7 @@ function fakeAudio() {
     }),
   };
   const out = node('out');
-  return { audio, out, made, live, endAll: () => endings.splice(0).forEach((end) => end()) };
+  return { audio, out, made, live, gains, endAll: () => endings.splice(0).forEach((end) => end()) };
 }
 
 const outputOf =
@@ -89,6 +94,10 @@ test('levels are clamped, and a bed builds only once it is heard', () => {
   ambience.frame(0.016);
   const sources = fake.made.filter((kind) => kind === 'source').length;
   assert.equal(sources, 2, 'rain alone: its hiss and its roar');
+  const writes = () => fake.gains.reduce((total, gain) => total + gain.gain.values.length, 0);
+  const steady = writes();
+  for (let frame = 0; frame < 60; frame++) ambience.frame(0.016);
+  assert.equal(writes(), steady, 'a level that holds is not written again');
 });
 
 test('one-shots let go of their nodes once they have played', () => {
@@ -105,6 +114,53 @@ test('one-shots let go of their nodes once they have played', () => {
   assert.ok(fake.live.size > before);
   fake.endAll();
   assert.equal(fake.live.size, before);
+});
+
+test('a bed faded in carries its spot sounds, fewer while it is quieter', () => {
+  const callsAt = (level: number, glideS: number) => {
+    const fake = fakeAudio();
+    const ambience = new Ambience(outputOf(fake, () => true));
+    ambience.set({ gulls: level }, glideS);
+    for (let frame = 0; frame < 1800; frame++) ambience.frame(1 / 60);
+    return fake.made.filter((kind) => kind === 'panner').length;
+  };
+  assert.ok(callsAt(1, 2) >= 10, 'thirty seconds of gulls faded in over two');
+  assert.ok(callsAt(0.2, 0) < callsAt(1, 0));
+});
+
+test('nonsense numbers are taken as nothing, and thunder too far away is not heard', () => {
+  const fake = fakeAudio();
+  const ambience = new Ambience(outputOf(fake, () => true));
+  ambience.set({ rain: 1 }, Number.NaN);
+  ambience.frame(Number.NaN);
+  ambience.frame(Number.POSITIVE_INFINITY);
+  assert.equal(ambience.levels().rain, 1);
+  const written = fake.gains.flatMap((gain) => gain.gain.values);
+  assert.ok(written.every(Number.isFinite));
+  const before = fake.made.length;
+  ambience.thunder(Number.POSITIVE_INFINITY);
+  ambience.thunder(Number.NaN);
+  ambience.thunder(500);
+  assert.equal(fake.made.length, before);
+  ambience.ringing(Number.NaN);
+  assert.ok(fake.made.length > before, 'a ringing of no length still rings briefly');
+});
+
+test('the output moving to a new context carries the beds and the heart over', () => {
+  const first = fakeAudio();
+  const second = fakeAudio();
+  let current = first;
+  const ambience = new Ambience(() => ({ audio: current.audio, out: current.out }) as unknown as ReturnType<SoundOut>);
+  ambience.set({ rain: 1 }, 0);
+  ambience.heartbeat(true);
+  first.audio.currentTime = 500;
+  ambience.frame(0.1);
+  current = second;
+  ambience.frame(0.1);
+  assert.equal(second.made.filter((kind) => kind === 'source').length, 2, 'the rain on the new context');
+  assert.ok(second.made.includes('oscillator'), 'the heart beats on the new clock at once');
+  first.endAll();
+  assert.equal(first.live.size, 0, 'the old context let go');
 });
 
 test('spot sounds fall on a seeded clock while their bed plays, and stop with it', () => {
@@ -147,5 +203,8 @@ test('stop silences every bed and the next sound starts afresh', () => {
   ambience.frame(0.1);
   ambience.stop();
   assert.deepEqual(Object.values(ambience.levels()), [0, 0, 0, 0, 0, 0, 0]);
-  assert.equal(fake.live.size, 0, 'nothing left connected');
+  const master = fake.gains[0];
+  assert.deepEqual(master?.gain.values, [0], 'it fades out rather than cutting off');
+  fake.endAll();
+  assert.equal(fake.live.size, 0, 'nothing left connected once the fade is done');
 });
