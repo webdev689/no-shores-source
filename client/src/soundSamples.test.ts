@@ -1,19 +1,36 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
-import { levelOf, soundCredits } from './soundSamples.ts';
+import { keysOf, levelOf, soundCredits, variantOf } from './soundSamples.ts';
 
-test('every recorded sound is kept under its hash and carries its whole credit', () => {
+test("every recorded sound is kept under its hash; Freesound's carry their whole credit, DFO's say where they came from", () => {
   const sounds = Object.entries(bank.sounds);
   assert.ok(sounds.length > 0);
   for (const [id, sound] of sounds) {
-    assert.match(sound.key, /^sounds\/[0-9a-f]{64}\.mp3$/, `${id}'s file is named by its hash`);
+    const keys = keysOf(sound);
+    assert.ok(keys.length > 0, `${id} has a file`);
+    for (const key of keys) assert.match(key, /^sounds\/[0-9a-f]{64}\.(mp3|wav)$/, `${id}'s file is named by its hash`);
+    if (!('freesound' in sound)) {
+      const own = sound as { readonly licence: string; readonly from?: string; readonly name: string };
+      assert.ok(['Ours', 'CC0'].includes(own.licence) && own.from && own.name, `${id} says what it is and whence`);
+      continue;
+    }
     assert.ok(['CC0', 'CC-BY'].includes(sound.licence), `${id} is under a licence the owner allows`);
     assert.match(sound.licenceUrl, /^https:\/\/creativecommons\.org\/(publicdomain\/zero|licenses\/by)\/\d\.\d\/$/);
     assert.match(sound.page, /^https:\/\/freesound\.org\/people\/[^/]+\/sounds\/\d+\/$/, `${id} links its source`);
     assert.ok(sound.name && sound.author && sound.changes, `${id} names itself, its author and what was changed`);
   }
-  assert.equal(soundCredits().length, sounds.length, 'Settings credits every one');
+  const recorded = sounds.filter(([, sound]) => 'freesound' in sound);
+  assert.equal(soundCredits().length, recorded.length, 'Settings credits every Freesound recording');
+});
+
+test('a cue with several files never plays the same one twice running, and reaches every one', () => {
+  for (let last = 0; last < 6; last++) {
+    const next = new Set(Array.from({ length: 50 }, (unused, step) => variantOf(6, last, step / 50)));
+    assert.ok(!next.has(last), `never ${last} after ${last}`);
+    assert.equal(next.size, 5, 'every other one');
+  }
+  assert.equal(variantOf(1, 0, 0.9), 0, 'a single file plays itself');
 });
 
 test('a held tone is levelled by its loudness, a click by its peak', () => {

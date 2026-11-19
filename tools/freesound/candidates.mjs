@@ -95,8 +95,9 @@ for (const cue of wanted.cues) {
     picks.push(await pickOf(cue));
     continue;
   }
-  // One kept or made by the game is searched no more; what the owner already heard is passed over.
-  if (cue.keep || cue.made) continue;
+  // One kept or made by the game, or whose sound comes from DFO's own, is searched no more; what the owner already
+  // heard is passed over.
+  if (cue.keep || cue.made || cue.dfo) continue;
   const heard = new Set((cue.skip ?? []).map(String));
   const [least, most] = cue.seconds;
   const search = (filter) =>

@@ -213,13 +213,13 @@ const SPELL_CUES: Readonly<Record<number, readonly string[]>> = {
   [SPELLS.sunwell]: ['spell.sunwell', 'anima.divine'],
   [SPELLS.mend]: ['spell.mend'],
   [SPELLS.dawnflare]: ['spell.dawnflare'],
-  [SPELLS.duskraven]: ['spell.duskraven', 'anima.shadow'],
+  [SPELLS.duskraven]: ['spell.duskraven', 'spell.duskraven.fire', 'anima.shadow'],
   [SPELLS.duskDaggers]: ['spell.daggers'],
   [SPELLS.vanish]: ['spell.vanish'],
   [SPELLS.bolt]: ['spell.ravenbolt'],
 };
 
-/** A spell as it first appears: its own cue, and an Anima's release with it. */
+/** A spell as it first appears: its own cue, the Duskraven's fire under its raven, and an Anima's release with it. */
 export const spellCues = (kind: number): readonly string[] => SPELL_CUES[kind] ?? [];
 
 /** Whether a spell kind is an Anima, whose cast gathers before it is released. */

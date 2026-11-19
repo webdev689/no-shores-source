@@ -2,6 +2,15 @@
   "about": "The owner's picks from Freesound, kept on R2 by their hash, each with its credit. Written by tools/freesound/publish.py; the game plays each in place of its synthesised cue.",
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
   "sounds": {
+    "finish.cosmic": {
+      "keys": [
+        "sounds/94540c01e4003564a2ad6d81f28ac30498e881c3b74e2d5f210e808990483a5a.wav"
+      ],
+      "name": "Voidrend",
+      "licence": "Ours",
+      "from": "DFO's synthesiser: its kill effect Voidrend, drawn again at 44.1 kHz",
+      "changes": "Unchanged."
+    },
     "hold.dismantle": {
       "key": "sounds/80500bd0bff2346cc03969e8f15d3a12fc1fa5d0b7d1112ebf478a5bbbfebae9.mp3",
       "freesound": 686849,

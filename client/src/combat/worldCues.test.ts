@@ -183,7 +183,7 @@ test('a status as it is given, not while it lasts', () => {
 test("a spell as it appears, an Anima with its Art's release, and an orb that bursts before its time", () => {
   assert.deepEqual(spellCues(SPELLS.tempest), ['spell.tempest', 'anima.storm']);
   assert.deepEqual(spellCues(SPELLS.sunwell), ['spell.sunwell', 'anima.divine']);
-  assert.deepEqual(spellCues(SPELLS.duskraven), ['spell.duskraven', 'anima.shadow']);
+  assert.deepEqual(spellCues(SPELLS.duskraven), ['spell.duskraven', 'spell.duskraven.fire', 'anima.shadow']);
   assert.deepEqual(spellCues(SPELLS.bolt), ['spell.ravenbolt']);
   assert.ok(orbBurst(SPELLS.tempest, 30, 240));
   assert.ok(!orbBurst(SPELLS.tempest, 239, 240), 'spent at its time');

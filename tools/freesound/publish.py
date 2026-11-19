@@ -78,9 +78,14 @@ def main():
             'page': pick['page'],
             'changes': VARIES if cue in VARIED else CHANGES,
         }
+    # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
+    with open(MANIFEST) as file:
+        before = json.load(file)['sounds']
+    sounds.update({cue: sound for cue, sound in before.items() if 'freesound' not in sound and cue not in sounds})
     manifest = {
-        'about': "The owner's picks from Freesound, kept on R2 by their hash, each with its credit. Written by "
-        'tools/freesound/publish.py; the game plays each in place of its synthesised cue.',
+        'about': "The owner's picks, kept on R2 by their hash: Freesound's, each with its credit, written by "
+        "tools/freesound/publish.py, and DFO's own, by tools/freesound/own.py. The game plays each in place of its "
+        'synthesised cue, or for its world cue.',
         'base': PUBLIC,
         'sounds': dict(sorted(sounds.items())),
     }
