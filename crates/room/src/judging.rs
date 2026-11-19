@@ -153,7 +153,9 @@ impl Room {
         if after.dead() && self.foes.contains_key(&defender) {
             self.pay_kill(defender);
         }
-        if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !striker.dead()) {
+        // A spell leaves its caster's soft lock alone: it is not their blade's.
+        let spell = matches!(blow.kind, BlowKind::Spell(_));
+        if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !spell && !striker.dead()) {
             self.set_fighter(blow.striker, answered(&striker, defender, &verdict));
         }
         let (kind, amount) = match verdict {

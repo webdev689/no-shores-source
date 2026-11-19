@@ -192,11 +192,12 @@ impl Room {
         living.filter(|(_, foe)| near(&foe.fighter.body)).map(|(id, _)| *id).collect()
     }
 
-    /// The living players within `radius` of `at`, across and up.
+    /// The living players within `radius` of `at`, across and up; one dead past the section's edge is not living.
     fn players_near(&self, at: [f64; 3], radius: f64) -> Vec<PlayerId> {
         let near =
             |body: &Body| libm::hypot(body.x - at[0], body.y - at[1]) <= radius && (body.z - at[2]).abs() <= radius;
-        let living = self.players.iter().filter(|(_, found)| !found.fighter.dead());
+        let fallen = |found: &crate::players::Player| matches!(found.standing, crate::Standing::Dead { .. });
+        let living = self.players.iter().filter(|(_, found)| !found.fighter.dead() && !fallen(found));
         living.filter(|(_, found)| near(&found.fighter.body)).map(|(id, _)| *id).collect()
     }
 
@@ -250,6 +251,12 @@ impl Room {
         let Some(fighter) = self.players.get(&caster).map(|found| found.fighter) else { return };
         let Some(art) = arts().art(cast.art()) else { return };
         let Some(def) = art.spell(cast.ability()) else { return };
+        // Casting is attacking, which ends the veil; Vanish's veil is what it casts.
+        if def.key != "vanish"
+            && let Some(found) = self.players.get_mut(&caster)
+        {
+            found.fighter.statuses.unveil();
+        }
         let (feet, chest, ahead) = (feet_of(&fighter), fighter.chest(), ahead_of(&fighter));
         let made = |at, life, radius| Spell::new(cast.spell, caster, art.id, def, at, life, radius);
         match def.key.as_str() {

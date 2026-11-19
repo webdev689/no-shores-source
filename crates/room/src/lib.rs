@@ -314,7 +314,7 @@ impl Room {
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }
-                self.ask_cast(id, input.cast);
+                self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };

@@ -135,9 +135,9 @@ impl Statuses {
         next
     }
 
-    /// The veil ended by its fighter's own blow or shot: it holds through this tick, so the blow it ends is judged
-    /// Veiled, and is gone by the next.
-    pub(crate) fn unveil(&mut self) {
+    /// The veil ended by its fighter's own blow, shot or spell: it holds through this tick, so the blow it ends is
+    /// judged Veiled, and is gone by the next.
+    pub fn unveil(&mut self) {
         let veil = &mut self.held[Status::Veiled as usize];
         veil.ticks = veil.ticks.min(1);
     }

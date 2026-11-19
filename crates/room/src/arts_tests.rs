@@ -122,6 +122,35 @@ fn a_cast_is_refused_unless_charged_of_the_worn_art_and_its_caster_able() {
 }
 
 #[test]
+fn a_body_dead_past_its_section_casts_nothing_and_takes_no_spell() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 1, &[]);
+    let fallen = room.join().expect("a room with space");
+    room.players.get_mut(&fallen).expect("in").standing = crate::Standing::Dead { ticks: 0 };
+    cast(&mut room, player, QUICKEN, None, 0);
+    assert!(room.fighter(player).expect("in").statuses.has(Status::Haste));
+    assert!(!room.fighter(fallen).expect("in").statuses.has(Status::Haste), "Quicken passes the section-dead by");
+    room.ready_arts(player);
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    room.players.get_mut(&player).expect("in").standing = crate::Standing::Dead { ticks: 0 };
+    for _ in 0..30 {
+        room.tick();
+    }
+    assert_eq!(casting(&room, player).tenets[0], 1.0, "dead past the edge before it released: it cost nothing");
+}
+
+#[test]
+fn a_cast_is_refused_while_mounted() {
+    let (mut room, player) = room_with_player();
+    let controls = movement::Controls { mounted: true, ..movement::Controls::default() };
+    let intent = combat::Intent { controls, combat: combat::CombatInput::default() };
+    let cast = Some(Cast { spell: QUICKEN, aim: None });
+    room.input(player, Input { sequence: 1, intent, cast, seen: room.clock(), ..Input::default() }).expect("in order");
+    room.tick();
+    assert_eq!(casting(&room, player).releasing, None, "on horseback");
+}
+
+#[test]
 fn a_kill_charges_the_anima_and_a_volt_kill_cuts_the_tenets_with_recharge() {
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 1, &[3]);

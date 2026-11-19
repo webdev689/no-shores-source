@@ -3,6 +3,7 @@
 //! of the Art worn, with the caster able to act, and released 18 ticks later; the kills and crits that give charge
 //! back; and the asks that wear an Art and set its Core. What each spell does is `spells.rs`'s.
 
+use crate::players::Player;
 use crate::{PlayerId, Room, Standing};
 use combat::judge::Blow;
 use combat::status::crits;
@@ -100,28 +101,23 @@ pub(crate) fn spell_power(character: &Character) -> (u32, Slot) {
         .unwrap_or((0, Slot::Melee))
 }
 
-/// Whether a fighter may act on a cast: neither down, staggered nor Charged.
-fn able(fighter: &Fighter) -> bool {
-    !fighter.dead() && !fighter.staggered() && !fighter.statuses.has(Status::Charge)
+/// Whether a player may act on a cast: neither dead (nor dead past the section's edge), staggered nor Charged.
+fn able(found: &Player) -> bool {
+    let fighter = &found.fighter;
+    let fallen = matches!(found.standing, Standing::Dead { .. });
+    !fallen && !fighter.dead() && !fighter.staggered() && !fighter.statuses.has(Status::Charge)
 }
 
 impl Room {
     /// A cast a player's input asks for, taken to release once its time comes if it is the worn Art's, charged, no
-    /// other is on its way, and the player may act; else let go.
+    /// other is on its way, and the player may act; else let go. The room is given none from a player on horseback.
     pub(crate) fn ask_cast(&mut self, player: PlayerId, cast: Option<Cast>) {
         let release = ticks(arts().cast.release_s);
         let Some((cast, found)) = cast.zip(self.players.get_mut(&player)) else { return };
-        let worn = found.character.art();
-        let standing = !matches!(found.standing, Standing::Dead { .. });
-        let known = cast.spell >= 1 && cast.art() == worn.id;
-        let casting = &mut found.casting;
-        if known
-            && standing
-            && casting.releasing.is_none()
-            && casting.share(cast.ability()) >= 1.0
-            && able(&found.fighter)
-        {
-            casting.releasing = Some((cast, release));
+        let known = cast.spell >= 1 && cast.art() == found.character.art().id;
+        let ready = found.casting.releasing.is_none() && found.casting.share(cast.ability()) >= 1.0;
+        if known && ready && able(found) {
+            found.casting.releasing = Some((cast, release));
         }
     }
 
@@ -147,7 +143,7 @@ impl Room {
             };
         }
         for (id, cast) in due {
-            let Some(found) = self.players.get_mut(&id).filter(|found| able(&found.fighter)) else { continue };
+            let Some(found) = self.players.get_mut(&id).filter(|found| able(found)) else { continue };
             found.casting.spend(cast.ability());
             found.gear_changed = true;
             found.gear_urgent = true;

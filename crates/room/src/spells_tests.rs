@@ -307,6 +307,34 @@ fn vanish_out_of_a_reload_veils_without_the_roll_and_the_reload_runs_on() {
 }
 
 #[test]
+fn casting_any_spell_but_vanish_ends_the_veil_and_a_spell_already_out_does_not() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 3, &[]);
+    let foe = stand_foe(&mut room, 0.0, -10.0, 1000.0);
+    cast(&mut room, player, DUSKRAVEN, None, 0);
+    room.give(player, Status::Veiled, None, Some(player));
+    for _ in 0..60 {
+        room.tick();
+    }
+    assert!(health(&room, foe) < 1000.0, "the raven's bolts strike");
+    assert!(has(&room, player, Status::Veiled) > 0, "and leave the veil");
+    cast(&mut room, player, DUSK_DAGGERS, Some([0.0, -10.0, 0.0]), 0);
+    assert!(has(&room, player, Status::Veiled) <= 1, "casting is attacking: the veil ends at its release");
+    room.tick();
+    assert_eq!(has(&room, player, Status::Veiled), 0);
+}
+
+#[test]
+fn a_spell_never_takes_its_caster_s_soft_lock() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 1, &[]);
+    let foe = stand_foe(&mut room, 0.0, -4.0, 1000.0);
+    cast(&mut room, player, ARC_LASH, None, 0);
+    assert!(health(&room, foe) < 1000.0, "Arc Lash strikes");
+    assert_eq!(room.fighter(player).expect("in").target, None, "and the lock is the player's own");
+}
+
+#[test]
 fn vanish_rolls_only_where_a_dodge_could_start_and_elsewhere_veils_without_the_roll() {
     use combat::fighter::Action;
     use combat::tuning::{FLINCH, FLINCH_DODGE};
