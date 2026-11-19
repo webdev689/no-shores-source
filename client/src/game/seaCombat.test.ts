@@ -5,7 +5,7 @@ import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
 import { BAR_OVER_M } from '../ships/shipBars.ts';
 import { panShot, type Shot } from './camera.ts';
-import { SeaCombat } from './seaCombat.ts';
+import { roomSource, SeaCombat } from './seaCombat.ts';
 import { pictureAt, shownScale } from './seaLaw.ts';
 import type { SeaRoom } from './seaRoom.ts';
 
@@ -49,7 +49,7 @@ const WATERLINE = { lengthM: 18.6775, beamM: 5.5684, draughtM: 1.8 };
 const SEA_SCALE = 75 / WATERLINE.lengthM;
 
 test('a fight draws every Sloop, her footprint, everyone aboard and each bar at the size the view shows her', () => {
-  const fight = new SeaCombat(ROOM, FIRST, MARKS, [], 0);
+  const fight = new SeaCombat(roomSource(ROOM, FIRST), FIRST, MARKS, [], 0);
   const ships = fight.ships(0.1, 0, 0, 3);
   assert.deepEqual(
     ships.map(({ place }) => [place.x, place.y, place.scale]),
@@ -67,7 +67,7 @@ test('a fight draws every Sloop, her footprint, everyone aboard and each bar at 
 });
 
 test("a fight begun at the sea's view keeps the size she is drawn at, and eases to her true size as it comes down", () => {
-  const fight = new SeaCombat(ROOM, FIRST, MARKS, [], 0);
+  const fight = new SeaCombat(roomSource(ROOM, FIRST), FIRST, MARKS, [], 0);
   const her = [5000, 6000, 0] as const;
   const { eye } = eyeFor(her, 2.6, (30 * Math.PI) / 180, HEIGHT.lowest);
   const sea: Shot = { eye, yaw: 2.6, pitch: (30 * Math.PI) / 180, fov: FIELD_OF_VIEW, near: 2, far: 60_000 };

@@ -22,6 +22,7 @@ code:
   - client/src/ships/sails.ts#SailRig
   - client/src/ships/sails.ts#sailWind
   - client/src/ships/sails.ts#gaffTrim
+  - client/src/ships/shipView.ts#shipViewNamed
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -118,6 +119,13 @@ canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
 - **Trimmed.** The gaff swings about its luff to leeward (`gaffTrim`): square off with the wind astern, 45 degrees
   with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
 - **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, the gaff home.
+- **Square sails** (the Brig's six). Each canvas hangs from its yard between its four corners, its columns from port to
+  starboard and its rows from its foot up to the yard; laced along its head and sheeted at its two foot corners, it
+  bellies forward, fullest amidst. Braced round, it is full (1.2 m) with the wind astern, half full abeam and hanging
+  (0.15 m) with the wind ahead, never aback. Furled, it is gathered up to its yard in loose folds.
+
+Any published hull is drawn by her name (`shipViewNamed`: her mesh and her sails' corners from `ships.json`), the
+Brig under her staysails, square sails and gaff, the Sloop as before.
 
 In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
 along the swell's bearing.

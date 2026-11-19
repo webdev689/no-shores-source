@@ -179,3 +179,38 @@ fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
         assert!(with_ray(bad).get("error").is_some(), "{bad}");
     }
 }
+
+#[test]
+fn a_fight_begun_with_captains_sets_each_where_it_is_given_and_shows_the_rest_in_others() {
+    opened();
+    let begun = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 1 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 3 },
+            { "x": 180000, "y": 359500, "heading": 3.1, "faction": 1, "rank": 2 } ] }"#,
+    ));
+    assert!(begun.get("error").is_none(), "{begun}");
+    assert_eq!(begun["captain"]["ship"][0], 180_400.0);
+    assert_eq!(begun["captain"]["rank"], 1);
+    let others = begun["others"].as_array().cloned().unwrap_or_default();
+    assert_eq!(others.len(), 2, "every captain after the first");
+    assert_eq!(others[0]["ship"][0], 179_600.0);
+    assert_eq!(others[0]["rank"], 3);
+    assert_eq!(others[1]["faction"], 1, "the Grey Tithe");
+    assert_eq!(others[1]["name"], "Tithe Sloop");
+}
+
+#[test]
+fn a_fight_begun_without_captains_has_no_others_and_bad_captains_are_refused() {
+    assert_eq!(begun(7)["others"], serde_json::json!([]));
+    let refused = |captains: &str| {
+        let request = format!(
+            r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": {captains} }}"#
+        );
+        answer(&fight_begin_json(request.as_bytes()))["error"].as_str().map(str::to_owned)
+    };
+    assert!(refused("[]").is_some(), "no captains in the list");
+    assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 2, "rank": 9 }]"#).is_some(), "no such rank");
+    assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 0, "rank": 1 }]"#).is_some(), "no such faction");
+    assert!(refused(r#"[{ "x": "a", "y": 1, "heading": 0, "faction": 2, "rank": 1 }]"#).is_some(), "not a number");
+}

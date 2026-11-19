@@ -117,9 +117,20 @@ export interface FightView {
   readonly fingerprint: string;
 }
 
-/** A fight's begin request. */
-export function beginRequest(ship: ShipFloats, seed: number, time: number): string {
-  return JSON.stringify({ ship: [...ship], seed, time });
+/** A captain a fight begins with, where she is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
+ *  east and south, her heading (radians clockwise from north), her faction (1 the Grey Tithe, 2 pirates) and rank
+ *  (1 Minor to 5 Boss). */
+export interface CaptainAt {
+  readonly x: number;
+  readonly y: number;
+  readonly heading: number;
+  readonly faction: number;
+  readonly rank: number;
+}
+
+/** A fight's begin request: with `captains`, each set upon her where given; without, one called onto the ring. */
+export function beginRequest(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): string {
+  return JSON.stringify({ ship: [...ship], seed, time, ...(captains ? { captains } : {}) });
 }
 
 /** A fight's step request. */

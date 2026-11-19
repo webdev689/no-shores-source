@@ -5,7 +5,7 @@ import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
-import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { loadShip, type ShipMesh, shipSails, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 
 /** Where a ship is drawn: her middle in window metres (her height as drawn), her heading (radians clockwise from
  *  north), her bow's rise and her heel to starboard (radians), and how many times her size (1 unless said). */
@@ -309,4 +309,10 @@ export class ShipView {
     pass.setIndexBuffer(this.canvasIndices, 'uint32');
     pass.drawIndexed(this.canvasIndexCount);
   }
+}
+
+/** A published ship drawn by her name (the Sloop, the Brig): her mesh fetched as the manifest names it, her sails'
+ *  corners from it, up to `slots` of her a frame. */
+export async function shipViewNamed(gpu: Gpu, name: string, slots = SHIP_SLOTS): Promise<ShipView> {
+  return new ShipView(gpu, await loadShip(name), shipSails(name), slots);
 }

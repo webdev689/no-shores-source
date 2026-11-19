@@ -33,6 +33,7 @@ import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
+import { ambushFrame } from './prologue/tryAmbush.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
@@ -468,6 +469,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
+    // For trying the ambush, under `npm run dev` with `?ambush=1` only (game/prologue/tryAmbush.ts).
+    if (import.meta.env.DEV && flow.mode === 'sea' && new URLSearchParams(location.search).get('ambush') === '1') {
+      const [x, y] = here.position;
+      const needs = { land, gpu, scene, standing: () => standing([], []), sloop };
+      if (ambushFrame(needs, { x, y, heading: here.heading }, { clock, seconds, size, swell: scene.land?.swell }))
+        return;
+    }
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();

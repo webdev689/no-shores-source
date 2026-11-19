@@ -50,7 +50,7 @@ class Fought {
 }
 
 /** A fight the sea room steps: each step sends the orders and answers the room's latest view, every event since. */
-function roomSource(room: SeaRoom, first: FightView): FightSource {
+export function roomSource(room: SeaRoom, first: FightView): FightSource {
   let latest = first;
   return {
     fightBegin: () => Promise.reject(new Error('the sea room begins its own fights')),
@@ -82,9 +82,10 @@ export class SeaCombat {
   private down = 0;
   private going: 1 | -1 = 1;
 
-  constructor(room: SeaRoom, first: FightView, marks: MarkDrawer, sails: readonly SailCorners[], now: number) {
+  /** The fight `source` steps (the sea room's, or the land worker's door), its first view `first`. */
+  constructor(source: FightSource, first: FightView, marks: MarkDrawer, sails: readonly SailCorners[], now: number) {
     this.naval = new Naval(marks);
-    this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
+    this.naval.join(Fighting.joined(source, 'sea', first, now));
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
     this.window = { leftM: Math.round(x), topM: Math.round(y) };
@@ -192,6 +193,11 @@ export class SeaCombat {
     const [x = 0, y = 0, heading = 0] = vessel.ship;
     const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
     return { x, y, heading, scale, heave, pitch, roll };
+  }
+
+  /** The fight as the rules last answered it. */
+  get view(): FightView {
+    return this.last;
   }
 
   /** Every captain in the fight: hers, then any other. */

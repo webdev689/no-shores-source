@@ -69,6 +69,16 @@ export function shipSails(name: string): SailCorners[] {
   return [...(entry?.sails ?? [])];
 }
 
+/** A published ship's waterline as her export measured it, known before her mesh comes. */
+export function shipWaterline(name: string): Waterline {
+  type Measured = {
+    readonly waterline?: { readonly length_m: number; readonly beam_m: number; readonly draught_m: number };
+  };
+  const measured = (ships.ships as unknown as Readonly<Record<string, Measured>>)[name]?.waterline;
+  if (!measured) throw new Error(`no ship is published as "${name}"`);
+  return { lengthM: measured.length_m, beamM: measured.beam_m, draughtM: measured.draught_m };
+}
+
 /** A published ship's mesh, fetched from R2 by the key the manifest names. */
 export async function loadShip(name: string): Promise<ShipMesh> {
   const entry = (ships.ships as Readonly<Record<string, { readonly mesh: string }>>)[name];

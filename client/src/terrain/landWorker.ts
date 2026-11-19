@@ -53,7 +53,7 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
   if (request.kind === 'fight-begin' || request.kind === 'fight-step') {
     const fight =
       request.kind === 'fight-begin'
-        ? rules.fightBegin(request.ship, request.seed, request.time)
+        ? rules.fightBegin(request.ship, request.seed, request.time, request.captains)
         : rules.fightStep(request.orders, request.time, request.ticks);
     scope.postMessage({ ticket, fight }, []);
     return;
