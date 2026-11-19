@@ -7,14 +7,25 @@ export const GAP_PX = 8;
 export const BARK_HOLD_S = 1;
 export const FADE_S = 0.2;
 
-/** The top-left corner, in CSS pixels, of something `size` wide and high standing over `head`, raised `lift` more. */
+/** The top-left corner, in CSS pixels, of something `size` wide and high standing over `head`, raised `lift` more,
+ *  and kept within a view `width` wide, so words over a head near a side are moved in rather than cut off. */
 export function overheadPlace(
   head: readonly [number, number],
   size: readonly [number, number],
   lift: number,
+  width = Infinity,
 ): [number, number] {
-  return [Math.round(head[0] - size[0] / 2), Math.round(head[1] - GAP_PX - lift - size[1])];
+  const left = Math.round(head[0] - size[0] / 2);
+  return [Math.max(0, Math.min(left, width - size[0])), Math.round(head[1] - GAP_PX - lift - size[1])];
 }
+
+/** A head point moved down just far enough that what stands over it, `above` pixels of it, is under the view's top. */
+export function underTheTop(head: readonly [number, number], above: number): readonly [number, number] {
+  return head[1] >= above ? head : [head[0], above];
+}
+
+/** A bark's height on the page: one line of 22 px words (sheet.ts). */
+export const BARK_PX = 22;
 
 /** The whole step a glyph is drawn at on a screen `height` CSS pixels tall: the tallest glyph about 1/16 of it, so it
  *  stands well over the 22 px words of a bark. */
