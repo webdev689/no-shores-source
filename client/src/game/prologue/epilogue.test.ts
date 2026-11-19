@@ -121,3 +121,57 @@ test('leaving the place ends it, words and all; before any arrival there is noth
   assert.deepEqual(done, ['hushed']);
   assert.deepEqual(epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false), [], 'nothing of her comes back');
 });
+
+/** Her words said, and the frames after them until she sets off. */
+async function walkingOff() {
+  const made = epilogueOn();
+  while (made.said.length === 0) made.epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  made.said[0]?.finish();
+  await settled();
+  return made;
+}
+
+test('she is kept while any of her is on the view, though her head has left it', async () => {
+  const { epilogue } = await walkingOff();
+  // Close behind her and looking down at her feet, as the player who walks up to her does: her head is past the
+  // view's top, her body fills it.
+  for (let frames = 0; frames < 60; frames++) {
+    const [stranger] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+    if (!stranger) break;
+    const close: Shot = {
+      eye: [stranger.x, stranger.y - 0.8, 1.6 + stranger.z],
+      yaw: Math.PI,
+      pitch: 0.9,
+      fov: 1,
+      near: 0.1,
+      far: 2000,
+    };
+    epilogue.frame(close, VIEW, STEP_S, 0, YOU, false);
+  }
+  assert.equal(epilogue.done, false, 'not let go with her body in plain view');
+  // Her card stands 0.35 m from her toward the eye (figures.ts); the eye goes to her own place, inside her figure.
+  const [card] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  const [x, y] = [card?.x ?? 0, card?.y ?? 0];
+  const toEye = Math.hypot(BEHIND.eye[0] - x, BEHIND.eye[1] - y);
+  const herAt = [x - ((BEHIND.eye[0] - x) / toEye) * 0.35, y - ((BEHIND.eye[1] - y) / toEye) * 0.35] as const;
+  epilogue.frame({ ...BEHIND, eye: [herAt[0], herAt[1] + 0.02, 1.5 + (card?.z ?? 0)] }, VIEW, STEP_S, 0, YOU, false);
+  assert.equal(epilogue.done, false, 'not let go while the eye passes through her');
+});
+
+test("she is let go in the end though she stands in sight, held at the water or at the town's middle", async () => {
+  for (const centre of [
+    [0, 60],
+    [0, -1],
+  ]) {
+    const { epilogue, stage, done } = await walkingOff();
+    (stage.parts as unknown as { landmass: () => unknown }).landmass = () => ({ plan: { centre }, nodes: [] });
+    const watching: Shot = { eye: [0, -8, 2.5], yaw: Math.PI, pitch: 0.05, fov: 1, near: 0.1, far: 2000 };
+    let frames = 0;
+    while (!epilogue.done && frames < 30 * 120) {
+      epilogue.frame(watching, VIEW, STEP_S, 0, YOU, false);
+      frames++;
+    }
+    assert.equal(epilogue.done, true, `let go though seen, the middle at ${centre.join(', ')}`);
+    assert.deepEqual(done, ['hushed']);
+  }
+});

@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { mock, test } from 'node:test';
+import { layersOf } from '../../forge/looks.ts';
+import { figureOf } from '../../player/dressing.ts';
+import { PX_PER_M } from '../../player/figures.ts';
 import { onScreen } from '../camera.ts';
 import type { Actor } from './actors.ts';
 import type { Tick } from './beat.ts';
-import { KNEELS_AT_S, Shore, STRANGER_ID, takeHandPrompt } from './shore.ts';
+import { KNEELS_AT_S, Shore, STRANGER_DRESS, STRANGER_HEAD, STRANGER_ID, takeHandPrompt } from './shore.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
@@ -157,5 +161,88 @@ test('a key before her hand is held out is not the hand taken', async () => {
   shore.press();
   for (let frames = 0; frames < 30; frames++) shore.frame(tick);
   assert.ok((shore.frame(tick)?.shot.eye[2] ?? 0) > lying, 'a tap takes it');
+  failed.mock.restore();
+});
+
+/** The forge's own tables for the female body: the layers it drew in each move, and each strip's cell and root. */
+const forge = new URL('../../../../tools/forge/tools/sprite-forge/', import.meta.url);
+const fitted = JSON.parse(readFileSync(new URL('fitted/female.json', forge), 'utf8')) as Record<
+  string,
+  Record<string, string[]>
+>;
+const keys = JSON.parse(readFileSync(new URL('keys/keys-female.json', forge), 'utf8')) as Record<
+  string,
+  { cell: [[number, number], [number, number]] }
+>;
+const drawn: Record<string, string[]> = {};
+for (const [anim, sets] of Object.entries(fitted))
+  for (const layer of Object.values(sets).flat()) if (!drawn[layer]?.includes(anim)) (drawn[layer] ??= []).push(anim);
+// The fitted table lists what is worn over the body; the body's own strips are in the keys.
+drawn.body = Object.keys(fitted).filter((anim) => keys[`body_${anim}`]);
+
+/** Every move the stranger makes through the whole shore, from her walk down the beach to the walk up the shore. */
+async function shoreMoves(): Promise<Set<string>> {
+  const failed = mock.method(console, 'error', () => undefined);
+  const { story, said } = shoreStory();
+  const shore = new Shore(story);
+  await settled();
+  const moves = new Set<string>();
+  const step = () => moves.add(strangerIn(shore.frame(tick) as StoryFrame).anim);
+  while (said.length === 0) step();
+  said[0]?.finish();
+  await settled();
+  shore.press();
+  while (said.length === 1) step();
+  said[1]?.finish();
+  await settled();
+  while (!shore.done) step();
+  failed.mock.restore();
+  return moves;
+}
+
+test("the stranger is clothed in every move the shore and the epilogue draw her in, by the forge's own table", async () => {
+  const moves = await shoreMoves();
+  assert.deepEqual([...moves].sort(), ['idle', 'kneel', 'walk']);
+  // The epilogue draws her standing and walking (epilogue.ts), moves the shore already holds.
+  for (const anim of moves) {
+    const figure = figureOf(STRANGER_DRESS, drawn, anim);
+    const layers = layersOf(figure, anim, { bodies: { female: { anims: {}, layers: drawn } } });
+    for (const worn of ['body', 'hair_braid', ...STRANGER_DRESS.outfit.garments])
+      assert.ok(layers.includes(worn), `${worn} is drawn in ${anim}: ${layers.join(', ')}`);
+  }
+});
+
+test("her head's heights are the forge's: the crown stands where the strip's root puts it", () => {
+  for (const [anim, pose] of [
+    ['kneel', STRANGER_HEAD.kneeling],
+    ['idle', STRANGER_HEAD.standing],
+  ] as const) {
+    const root = keys[`body_${anim}`]?.cell[1][1] ?? 0;
+    assert.ok(Math.abs(pose.crown - root / PX_PER_M) < 0.05, `${anim}: ${pose.crown} m against ${root} px`);
+    assert.ok(pose.face < pose.crown);
+  }
+});
+
+test('she rises with the player: down on her knee as they begin to rise, up before they stand', async () => {
+  const failed = mock.method(console, 'error', () => undefined);
+  const { story, said } = shoreStory();
+  const shore = new Shore(story);
+  await settled();
+  while (said.length === 0) shore.frame(tick);
+  said[0]?.finish();
+  await settled();
+  const lying = (shore.frame(tick) as StoryFrame).shot.eye[2];
+  shore.press();
+  const rise: { anim: string; eye: number }[] = [];
+  while (said.length === 1) {
+    const frame = shore.frame(tick) as StoryFrame;
+    rise.push({ anim: strangerIn(frame).anim, eye: frame.shot.eye[2] });
+  }
+  const standing = rise.at(-1)?.eye ?? 0;
+  assert.equal(rise[0]?.anim, 'kneel', 'still down as the hand is taken');
+  assert.equal(rise.at(-1)?.anim, 'idle', 'up by the time they stand');
+  const up = rise.find((frame) => frame.anim === 'idle');
+  const share = ((up?.eye ?? 0) - lying) / (standing - lying);
+  assert.ok(share > 0.3 && share < 0.7, `she is drawn up ${share.toFixed(2)} of the way through the rise`);
   failed.mock.restore();
 });

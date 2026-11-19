@@ -26,9 +26,20 @@ const ABOVE_ZERO = new Set<string>(['pitchHz', 'muffleHz', 'volume', 'syllableS'
 /** A syllable shorter than this cannot rise, hold and fall (voice.ts), and would sound every frame. */
 const SHORTEST_SYLLABLE_S = 0.04;
 
+/** The one key a plain object cannot hold as its own: set, it replaces the object's prototype, so a speaker, a voice or
+ *  a scene named so would vanish. The dialogue check (crates/xtask) refuses it too. */
+const PROTOTYPE_KEY = '__proto__';
+
 function record(value: unknown, what: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error(`${what} is not an object`);
   return value as Record<string, unknown>;
+}
+
+/** A record's own entries, refusing the key no record can keep. */
+function entriesOf(value: unknown, what: string): [string, unknown][] {
+  const entries = Object.entries(record(value, what));
+  if (entries.some(([key]) => key === PROTOTYPE_KEY)) throw new Error(`${what} cannot hold the key "${PROTOTYPE_KEY}"`);
+  return entries;
 }
 
 function voiceOf(value: unknown, key: string): VoiceProfile {
@@ -49,12 +60,11 @@ function voiceOf(value: unknown, key: string): VoiceProfile {
 /** The cast in `json`; throws when a speaker's voice is missing or a voice cannot be heard. */
 export function castOf(json: unknown): Cast {
   const file = record(json, 'the cast');
-  const listed = record(file.speakers, "the cast's speakers");
+  const listed = entriesOf(file.speakers, "the cast's speakers");
   const voices: Record<string, VoiceProfile> = {};
-  for (const [key, voice] of Object.entries(record(file.voices, "the cast's voices")))
-    voices[key] = voiceOf(voice, key);
+  for (const [key, voice] of entriesOf(file.voices, "the cast's voices")) voices[key] = voiceOf(voice, key);
   const speakers: Record<string, { name: string; voice: string }> = {};
-  for (const [key, value] of Object.entries(listed)) {
+  for (const [key, value] of listed) {
     const speaker = record(value, `speaker "${key}"`);
     if (typeof speaker.name !== 'string') throw new Error(`speaker "${key}" has no name`);
     if (typeof speaker.voice !== 'string' || !Object.hasOwn(voices, speaker.voice)) {
@@ -86,7 +96,7 @@ function lineOf(value: unknown, where: string, cast: Cast): Line {
 /** The scenes of a mission file, `{ scenes: { name: [line, ...] } }`, each line checked against `cast`. */
 export function scenesOf(json: unknown, cast: Cast): Record<string, readonly Line[]> {
   const scenes: Record<string, readonly Line[]> = {};
-  for (const [name, lines] of Object.entries(record(record(json, 'the mission').scenes, "the mission's scenes"))) {
+  for (const [name, lines] of entriesOf(record(json, 'the mission').scenes, "the mission's scenes")) {
     if (!Array.isArray(lines)) throw new Error(`scene "${name}" is not a list of lines`);
     scenes[name] = lines.map((line, place) => lineOf(line, `scene "${name}" line ${place + 1}`, cast));
   }

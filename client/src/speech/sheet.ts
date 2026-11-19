@@ -7,8 +7,9 @@ import { HALO, TONES } from '../plus/tones.ts';
 
 const SHEET_ID = 'speech';
 /** The fight's vitals take the bottom left up to 354 px across, so the box keeps to the middle, clear of them on both
- *  sides, and stands over the sea bar at the screen's foot. It stands over the marks above heads, as a speaker's head
- *  can be behind it. */
+ *  sides, and stands over the sea bar at the screen's foot. The box is laid first in the HUD (dialogue.ts), so every
+ *  HUD layer (the menu, a window, the veil) stands over it; the marks above heads stand under every layer, the box
+ *  among them, as a speaker's head can be behind it. */
 const CLEAR_OF_VITALS_PX = 380;
 const BOX_WIDTH_PX = 660;
 const BOX_FOOT_PX = 104;
@@ -19,7 +20,7 @@ export function speechCss(): string {
 .speech-box {
   position: absolute; left: 50%; bottom: ${BOX_FOOT_PX}px; transform: translateX(-50%);
   width: min(${BOX_WIDTH_PX}px, calc(100vw - ${2 * CLEAR_OF_VITALS_PX}px)); min-width: 330px; box-sizing: border-box;
-  border-width: 2px; border-style: solid; pointer-events: none; z-index: 1; }
+  border-width: 2px; border-style: solid; pointer-events: none; }
 .speech-name {
   font-size: 22px; line-height: 33px; padding: 4px 22px 2px; color: ${TONES.brassHi};
   border-bottom-width: 1px; border-bottom-style: solid; text-shadow: 1px 1px 0 ${TONES.outline}; }
@@ -31,7 +32,7 @@ export function speechCss(): string {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0;
   width: ${BOX_WIDTH_PX}px; max-width: calc(100vw - 44px); text-align: center; pointer-events: none;
   font-size: 22px; line-height: 33px; color: ${TONES.wordDim}; opacity: 0.7; text-shadow: ${HALO}; }
-.speech-overheads { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.speech-overheads { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: -1; }
 .speech-bark, .speech-emote { position: absolute; left: 0; top: 0; }
 .speech-bark { margin: 0; white-space: nowrap; font-size: 22px; line-height: 22px; color: ${TONES.word}; text-shadow: ${HALO}; }
 .speech-emote { image-rendering: pixelated; }
