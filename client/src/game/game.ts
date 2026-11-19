@@ -237,7 +237,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   if (flow.mode === 'loading')
     behindVeil(flow.words, () => goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, landmass.plan, null)));
 
-  installQaViews(window, location.search, !rooms, movement, walker, () => foot?.node.ring ?? null);
+  installQaViews(window, location.search, !rooms, { node: () => foot?.node ?? null, arrive: goFoot, walker });
   const landAt = (id: string) => {
     discovered.nodes([id]);
     const landing = sea?.landingOf(id);

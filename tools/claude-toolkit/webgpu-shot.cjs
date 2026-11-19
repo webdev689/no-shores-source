@@ -20,7 +20,7 @@
 // (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks for a spawn:
 // `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load), offline behind the
 // same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>[,<degrees down>]", "name"], ...] or "<list.json>",
-// "zone": "<key of the list>", "into": "<folder>", "settle": seconds } stands the body at each view in turn, inside
+// "zone": "<key of the list>", "into": "<folder>", "settle": seconds } arrives the body at each view in turn, inside
 // the node the page loaded, waits `settle` seconds (the ground and the sky come in) and writes `<into>/<name>.png`,
 // or `<into>/<number>.png` without a name. A view outside the node is said to be refused and skipped.
 const { chromium } = require('playwright');
@@ -161,12 +161,22 @@ async function main() {
       const listed = typeof step.views === 'string' ? JSON.parse(readFileSync(step.views, 'utf8'))[step.zone] : step.views;
       mkdirSync(step.into ?? '.', { recursive: true });
       for (const [number, view] of listed.entries()) {
-        const stood = await page.evaluate((one) => window.__qaView?.(one.slice(0, 4)), view);
-        if (!stood) {
+        // A foe may kill the body (the "dead" canvas) or the room may move it: the view is arrived at again, up to
+        // three times, until the body stands within 2 m of its point and is not fallen.
+        let where = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const stood = await page.evaluate((one) => window.__qaView?.(one.slice(0, 4)), view);
+          if (!stood) break;
+          await page.waitForTimeout((step.settle ?? 10) * 1000);
+          where = await page.evaluate(() => window.__qaWhere());
+          if (!where.dead && Math.hypot(where.x - view[0], where.y - view[1]) <= 2) break;
+          console.log(`view ${number} attempt ${attempt}: ${JSON.stringify(where)}`);
+        }
+        if (!where) {
           console.log(`view ${number} refused: ${JSON.stringify(view)}`);
           continue;
         }
-        await page.waitForTimeout((step.settle ?? 10) * 1000);
+        console.log(`view ${number}: body at ${where.x.toFixed(1)}, ${where.y.toFixed(1)}${where.dead ? ' (fallen)' : ''}`);
         const from = await page.evaluate(() => window.__shotFrames);
         await page.waitForFunction((until) => window.__shotFrames >= until, from + 2, { timeout: 600_000 });
         const why = await page.evaluate(() => window.__shotLay());

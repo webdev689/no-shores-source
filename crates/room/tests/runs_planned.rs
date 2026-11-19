@@ -339,8 +339,12 @@ fn shot_list() {
         let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
         let mut views = Vec::new();
         for (number, area) in laid.areas.iter().enumerate() {
-            let from = way_in(laid, area).unwrap_or([area.at[0], area.at[1] + 1.0]);
-            views.push(view(area.at, compass(from, area.at), "first", &format!("area{number}_{}", slug(&area.name))));
+            // Where the first way enters, a little inside the rim, looking at the middle; with no way, south of it.
+            let from = way_in(laid, area).unwrap_or([area.at[0], area.at[1] + area.radius]);
+            let reach = (libm::hypot(from[0] - area.at[0], from[1] - area.at[1])).min(area.radius * 0.9);
+            let along = reach / libm::hypot(from[0] - area.at[0], from[1] - area.at[1]).max(1e-9);
+            let stand = [area.at[0] + (from[0] - area.at[0]) * along, area.at[1] + (from[1] - area.at[1]) * along];
+            views.push(view(stand, compass(stand, area.at), "first", &format!("area{number}_{}", slug(&area.name))));
         }
         for run in &laid.runs {
             let mut before = run.mouth;
@@ -362,7 +366,7 @@ fn shot_list() {
         for index in [0, count / 2, count.saturating_sub(1)] {
             let area = &laid.areas[index];
             let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);
-            views.push(view(area.at, compass(area.at, middle), "third,60,45", &format!("high_{index}")));
+            views.push(view(area.at, compass(area.at, middle), "third,200,40", &format!("high_{index}")));
         }
         for entry in &views {
             let at = [entry[0].as_f64().unwrap_or(0.0), entry[1].as_f64().unwrap_or(0.0)];
