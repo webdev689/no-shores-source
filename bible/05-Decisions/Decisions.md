@@ -125,6 +125,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foes Fight With Intelligence, Not by Rushing]]
 - [[Foes Spread Across the Players They Fight]]
 - [[A Locked-On Dodge Rolls the Way It Goes]]
+- [[A Tall Wall Is Climbed Within 45° of Square]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
