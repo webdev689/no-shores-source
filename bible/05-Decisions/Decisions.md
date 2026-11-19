@@ -100,6 +100,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Flora Is Baked From Detailed Models]]
 - [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]
 - [[Patrol Zones Stay as Built and Gain Linear Combat Areas]]
+- [[Saltmere's Detail Pass Goes Deep]]
 - [[The World Editor Draws the Layouts' Buildings]]
 - [[The Well House's Roof Is Fixed]]
 - [[The Face Is Mended Whole, and the Gauge Counts Upgrades]]
