@@ -165,3 +165,29 @@ fn a_body_shoved_inside_a_prop_walks_out_of_it_toward_the_room() {
         assert!(out, "out of prop {} toward the room", prop.model);
     }
 }
+
+#[test]
+fn a_line_is_walled_by_the_rock_and_every_solid_but_crosses_bare_floor() {
+    for seed in 0..40 {
+        let (dungeon, ground) = forged(seed);
+        let solids = dungeon.boxes();
+        for &[min_x, min_y, max_x, max_y, _] in &solids {
+            let middle_y = (min_y + max_y) / 2.0;
+            assert!(ground.line_walled((min_x - 0.1, middle_y), (max_x + 0.1, middle_y)), "seed {seed}: a solid");
+        }
+        for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != dungeon::Cell::Rock) {
+            let [x, y] = dungeon.centre(cell);
+            let half = CELL_M / 2.0;
+            let bare = solids.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+                max_x < x - half || min_x > x + half || max_y < y - half || min_y > y + half
+            });
+            assert!(!bare || !ground.line_walled((x - half / 2.0, y), (x + half / 2.0, y)), "seed {seed}: bare floor");
+            for side in SIDES {
+                let rock = dungeon.beside(cell, side).is_none_or(|next| dungeon.cells[next] == dungeon::Cell::Rock);
+                let [dx, dy] = side.unit();
+                let into = (x + dx * CELL_M, y + dy * CELL_M);
+                assert!(!rock || ground.line_walled((x, y), into), "seed {seed}: the rock {side:?} of {cell}");
+            }
+        }
+    }
+}

@@ -7,7 +7,7 @@ use combat::lock::{choose, hold, take};
 use combat::tuning::{LOCK_AWAY_TICKS, LOCK_UNSEEN_TICKS};
 use common::{foe_at, player_at};
 use core::f64::consts::PI;
-use movement::Block;
+use movement::{Block, Flat};
 
 #[test]
 fn it_takes_the_foe_nearest_the_look_in_range_and_sight_and_never_a_friend_or_the_dead() {
@@ -23,11 +23,11 @@ fn it_takes_the_foe_nearest_the_look_in_range_and_sight_and_never_a_friend_or_th
         (6, foe_at(-8.0, 2.0, 0.0)),
         (7, player_at(0.0, -1.0)),
     ];
-    assert_eq!(choose(1, &me, 0.0, &fighters, &[]), Some(4), "nearer the look outweighs nearer by distance");
-    assert_eq!(choose(1, &me, 0.65, &fighters, &[]), Some(3));
-    assert_eq!(choose(1, &me, PI, &fighters, &[]), None, "nothing within the arc behind");
+    assert_eq!(choose(1, &me, 0.0, &fighters, &[], &Flat), Some(4), "nearer the look outweighs nearer by distance");
+    assert_eq!(choose(1, &me, 0.65, &fighters, &[], &Flat), Some(3));
+    assert_eq!(choose(1, &me, PI, &fighters, &[], &Flat), None, "nothing within the arc behind");
     let wall = [Block { min_x: -1.0, min_y: -5.5, max_x: 1.0, max_y: -5.0, top: 3.0 }];
-    assert_eq!(choose(1, &me, 0.0, &fighters, &wall), Some(3), "not through a wall");
+    assert_eq!(choose(1, &me, 0.0, &fighters, &wall, &Flat), Some(3), "not through a wall");
 }
 
 #[test]
@@ -35,18 +35,18 @@ fn it_lets_go_when_the_foe_dies_walks_away_is_lost_or_the_look_stays_turned_away
     let mut me = player_at(0.0, 0.0);
     me.target = Some(2);
     let near = vec![(2, foe_at(0.0, -4.0, PI))];
-    assert_eq!(hold(&me, 0.0, &near, &[]).target, Some(2));
-    assert_eq!(hold(&me, 0.0, &[(2, foe_at(0.0, -15.0, PI))], &[]).target, Some(2), "held to 15 m");
-    assert_eq!(hold(&me, 0.0, &[(2, foe_at(0.0, -15.5, PI))], &[]).target, None, "past 15 m");
+    assert_eq!(hold(&me, 0.0, &near, &[], &Flat).target, Some(2));
+    assert_eq!(hold(&me, 0.0, &[(2, foe_at(0.0, -15.0, PI))], &[], &Flat).target, Some(2), "held to 15 m");
+    assert_eq!(hold(&me, 0.0, &[(2, foe_at(0.0, -15.5, PI))], &[], &Flat).target, None, "past 15 m");
     let mut dead = foe_at(0.0, -4.0, PI);
     dead.action = combat::Action::Dead { elapsed: 0 };
-    assert_eq!(hold(&me, 0.0, &[(2, dead)], &[]).target, None);
-    let turned = (0..=LOCK_AWAY_TICKS).fold(me, |held, _| hold(&held, PI, &near, &[]));
+    assert_eq!(hold(&me, 0.0, &[(2, dead)], &[], &Flat).target, None);
+    let turned = (0..=LOCK_AWAY_TICKS).fold(me, |held, _| hold(&held, PI, &near, &[], &Flat));
     assert_eq!(turned.target, None, "turned away for half a second");
-    let glance = (0..LOCK_AWAY_TICKS).fold(me, |held, _| hold(&held, PI, &near, &[]));
-    assert_eq!(hold(&glance, 0.0, &near, &[]).target, Some(2), "a glance away keeps it");
+    let glance = (0..LOCK_AWAY_TICKS).fold(me, |held, _| hold(&held, PI, &near, &[], &Flat));
+    assert_eq!(hold(&glance, 0.0, &near, &[], &Flat).target, Some(2), "a glance away keeps it");
     let wall = [Block { min_x: -1.0, min_y: -2.5, max_x: 1.0, max_y: -2.0, top: 3.0 }];
-    let lost = (0..=LOCK_UNSEEN_TICKS).fold(me, |held, _| hold(&held, 0.0, &near, &wall));
+    let lost = (0..=LOCK_UNSEEN_TICKS).fold(me, |held, _| hold(&held, 0.0, &near, &wall, &Flat));
     assert_eq!(lost.target, None, "out of sight for a second");
 }
 
@@ -55,10 +55,10 @@ fn a_new_swing_keeps_a_target_in_the_arc_and_takes_another_when_the_look_has_mov
     let mut me = player_at(0.0, 0.0);
     me.target = Some(2);
     let fighters = vec![(2, foe_at(0.0, -4.0, PI)), (3, foe_at(4.0, 0.0, -PI / 2.0))];
-    assert_eq!(take(1, &me, 0.3, &fighters, &[]).target, Some(2));
-    assert_eq!(take(1, &me, PI / 2.0, &fighters, &[]).target, Some(3));
+    assert_eq!(take(1, &me, 0.3, &fighters, &[], &Flat).target, Some(2));
+    assert_eq!(take(1, &me, PI / 2.0, &fighters, &[], &Flat).target, Some(3));
     let alone = player_at(0.0, 0.0);
-    assert_eq!(take(1, &alone, PI, &fighters, &[]).target, None);
+    assert_eq!(take(1, &alone, PI, &fighters, &[], &Flat).target, None);
 }
 
 #[test]
@@ -67,10 +67,10 @@ fn a_swing_takes_the_foe_looked_at_over_one_off_to_the_side_but_keeps_a_near_tie
     me.target = Some(2);
     // 2 is 60 degrees east of the look north; 3 is straight ahead: the swing takes 3.
     let fighters = [(2, foe_at(3.464, -2.0, PI)), (3, foe_at(0.0, -4.0, PI))];
-    assert_eq!(take(1, &me, 0.0, &fighters, &[]).target, Some(3));
+    assert_eq!(take(1, &me, 0.0, &fighters, &[], &Flat).target, Some(3));
     // 2 is ten degrees off and a little nearer than 3 is: no better by enough, the lock keeps 2.
     let close = [(2, foe_at(0.6, -3.4, PI)), (3, foe_at(0.0, -4.0, PI))];
-    assert_eq!(take(1, &me, 0.0, &close, &[]).target, Some(2));
+    assert_eq!(take(1, &me, 0.0, &close, &[], &Flat).target, Some(2));
 }
 
 #[test]

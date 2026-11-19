@@ -447,7 +447,7 @@ impl Room {
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
-                for defender in struck(id, fighter, &attack, view, &self.blocks) {
+                for defender in struck(id, fighter, &attack, view, &self.blocks, &self.floor) {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {

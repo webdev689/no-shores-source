@@ -1,13 +1,14 @@
 //! A patrol's dungeon as a room: it opens for each of a patrol's three, its garrison standing where the Forge puts
 //! foes and no more than the room holds, its paths joining the way in to the Reeve, its rock and jambs stopping a body,
-//! its cache opening for everyone in it when the Reeve falls, and the dead standing again at the way in.
+//! its rock hiding a player from a band that sees one in its own room, its cache opening for everyone in it when the
+//! Reeve falls, and the dead standing again at the way in.
 
 use super::*;
 use crate::garrison::STAND_AGAIN;
 use crate::{Input, standing_on};
-use combat::Intent;
 use combat::fighter::Action;
 use combat::sight::{apart, off};
+use combat::{FighterId, Intent};
 use dungeon::{DOORWAY_HALF_M, Side};
 use movement::{Controls, Mode, TUNING};
 
@@ -222,4 +223,73 @@ fn the_dead_stand_again_at_the_way_in_facing_into_the_room() {
     let body = room.players[&player].fighter.body;
     assert_eq!([body.x, body.y], arrival);
     assert!(off(body.facing, bearing([0.0, 0.0], toward)) < 1e-9, "{body:?} {toward:?}");
+}
+
+/// Whether the straight line between two points crosses a rock cell, looked at every 2 cm along it.
+fn through_rock(dungeon: &Dungeon, from: [f64; 2], to: [f64; 2]) -> bool {
+    let looks = (apart(from, to) / 0.02).ceil() as u32;
+    (0..=looks).any(|look| {
+        let share = f64::from(look) / f64::from(looks);
+        let (x, y) = (from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share);
+        let cell = (y / CELL_M) as usize * dungeon.columns + (x / CELL_M) as usize;
+        dungeon.cells[cell] == dungeon::Cell::Rock
+    })
+}
+
+/// A band foe of a room, and two open cells' middles well inside its sight's range and arc: one of another place,
+/// with rock between, and one of its own room, with nothing between.
+fn band_foe_and_two_places(room: &Room, dungeon: &Dungeon) -> Option<(FighterId, [f64; 2], [f64; 2])> {
+    let Floor::Dungeon(ground) = &room.floor else { return None };
+    let ahead = |at: [f64; 2], aim: f64, there: [f64; 2], most: f64| {
+        let distance = apart(at, there);
+        distance > 2.0 && distance < most && off(aim, bearing(at, there)) < ::foes::tuning::SIGHT_ARC / 2.0
+    };
+    room.garrison[1..].iter().flat_map(|post| post.standing.iter()).find_map(|&id| {
+        let body = room.foes[&id].fighter.body;
+        let (at, aim) = ([body.x, body.y], room.foes[&id].fighter.aim);
+        let own = room_at(dungeon, [body.x, body.y, body.z]);
+        let open: Vec<[f64; 2]> = (0..dungeon.cells.len())
+            .filter(|&cell| dungeon.cells[cell] != dungeon::Cell::Rock)
+            .map(|cell| dungeon.centre(cell))
+            .collect();
+        let beyond = open.iter().copied().find(|&there| {
+            room_at(dungeon, [there[0], there[1], 0.0]) != own
+                && ahead(at, aim, there, ::foes::tuning::ENGAGE_RANGE - 2.0)
+                && through_rock(dungeon, at, there)
+        })?;
+        let near = open.iter().copied().find(|&there| {
+            room_at(dungeon, [there[0], there[1], 0.0]) == own
+                && ahead(at, aim, there, 8.0)
+                && ground.clear_between(at, there, 0.0)
+        })?;
+        Some((id, beyond, near))
+    })
+}
+
+#[test]
+fn a_band_foe_never_sees_a_player_beyond_the_rock_but_sees_one_in_its_own_room() {
+    let mut cases = 0;
+    for patrol in PATROLS {
+        for number in 0..dungeon::PER_PATROL {
+            let mut room = Room::dungeon(patrol, number, LEVELS).expect("a patrol's dungeon");
+            let dungeon = forged(patrol, number);
+            let Some((foe, beyond, near)) = band_foe_and_two_places(&room, &dungeon) else { continue };
+            cases += 1;
+            room.foes.retain(|id, _| *id == foe);
+            let player = room.join().expect("room for a player");
+            for _ in 0..240 {
+                stand_player(&mut room, player, beyond);
+                room.tick();
+                let alertness = room.foes[&foe].brain.alertness();
+                assert_eq!(alertness, ::foes::Alertness::Idle, "{patrol} {number}: {beyond:?} is beyond the rock");
+            }
+            let sees = (0..120).any(|_| {
+                stand_player(&mut room, player, near);
+                room.tick();
+                room.foes[&foe].brain.alertness() == ::foes::Alertness::Alert
+            });
+            assert!(sees, "{patrol} {number}: {near:?} stands in its own room");
+        }
+    }
+    assert!(cases >= 3, "{cases} dungeons with a band foe that faces the rock");
 }

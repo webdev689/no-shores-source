@@ -123,13 +123,18 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Its height is the
-  cells' (0 m open, a wall 10 m over the floor for rock) and 10 m inside a jamb, a pillar or a prop, so a shot or a
-  look meets them as it meets the rock. A move is walled where it crosses rock, or where it ends nearer than a body's
+  cells' (0 m open, a wall 10 m over the floor for rock) and 10 m inside a jamb, a pillar or a prop, so a shot meets
+  them as it meets the rock. A move is walled where it crosses rock, or where it ends nearer than a body's
   half-width (0.35 m) to rock, a jamb, a pillar or a prop and nearer than it began: a body slides along a wall, steps
   away from one, and never stands in its face. Inside a solid, as a shove might leave it, its nearness is less than
   nothing by its depth, so it walks out and never deeper. Movement climbs blocks, never a ground's walls, so no jamb or pillar is climbed and no body
   reaches a ceiling. Each cell keeps the jambs and pillars within a half-width of it, so a move looks at a few. The
   browser predicts on the same ground (`fighter_dungeon`).
+- **What a line meets**: the ground's walls stand to every ceiling, so a line that crosses rock or passes through a
+  jamb, a pillar or a prop is walled, as one through a block is (`line_walled`). Nothing is seen or struck through
+  them: not by a foe's eyes, a soft lock, a blow, a telegraphed shape, a charge's lane or a shooter's cover. A noise
+  through them carries half as loud and half as far. A kill's drop thrown across one rests where its foe fell, on the
+  floor.
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with the jambs and
   pillars as its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left
   out.

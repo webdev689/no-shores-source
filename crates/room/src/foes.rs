@@ -340,6 +340,7 @@ impl Room {
                 seed: self.world_seed,
                 fighters: &noticed,
                 blocks: &self.blocks,
+                terrain: &self.floor,
                 routes: &routes,
                 spots: &spots,
                 director: self.director,
@@ -428,7 +429,7 @@ impl Room {
             .filter(|(_, other)| other.fighter.side != foe.side && !other.fighter.dead())
             .filter(|(_, other)| {
                 let body = other.fighter.body;
-                telegraph.strikes([body.x, body.y, body.z], &self.blocks)
+                telegraph.strikes([body.x, body.y, body.z], &self.blocks, &self.floor)
             })
             .map(|(other, found)| (*other, found.fighter))
             .collect();

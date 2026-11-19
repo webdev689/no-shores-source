@@ -229,7 +229,8 @@ fn a_crossbowman_fights_from_behind_the_room_s_cover() {
                 "by the wall: {:?}",
                 crossbowman.body
             );
-            hidden += usize::from(!combat::sight::clear_line(&room.blocks, crossbowman.chest(), them.chest()));
+            hidden +=
+                usize::from(!combat::sight::clear_line(&room.blocks, &room.floor, crossbowman.chest(), them.chest()));
             watched += 1;
         }
     }

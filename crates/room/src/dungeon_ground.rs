@@ -160,6 +160,12 @@ impl Terrain for DungeonGround {
         let ends = self.clearance(to.0, to.1);
         ends < TUNING.radius && ends < self.clearance(from.0, from.1)
     }
+
+    /// A line is walled where it crosses rock, as a move is, or passes through a jamb, a pillar or a prop: each stands
+    /// to every ceiling, so nothing is seen, struck or thrown over one.
+    fn line_walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
+        self.heights.walled(from, to) || !self.clear_between([from.0, from.1], [to.0, to.1], 0.0)
+    }
 }
 
 #[cfg(test)]

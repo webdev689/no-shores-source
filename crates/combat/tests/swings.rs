@@ -8,7 +8,7 @@ use combat::fighter::{Action, Swing};
 use combat::strike::struck;
 use combat::{CombatInput, Happening, Intent, Stroke, Surroundings, step_fighter};
 use common::{SWORD, foe_at, idle, player_at, run, swinging};
-use movement::{Block, Controls};
+use movement::{Block, Controls, Flat};
 
 #[test]
 fn a_sword_swing_lands_its_blow_as_the_third_of_five_frames_begins_and_ends_at_the_fifth() {
@@ -109,20 +109,26 @@ fn a_blow_reaches_the_nearest_foes_in_its_arc_and_reach_up_to_its_strokes_count(
         swing: Swing::Plain,
         left_hand: false,
     };
-    assert_eq!(struck(1, &striker, &attack(Stroke::Up), &fighters, &[]), vec![2], "a thrust strikes one");
+    assert_eq!(struck(1, &striker, &attack(Stroke::Up), &fighters, &[], &Flat), vec![2], "a thrust strikes one");
     assert_eq!(
-        struck(1, &striker, &attack(Stroke::Left), &fighters, &[]),
+        struck(1, &striker, &attack(Stroke::Left), &fighters, &[], &Flat),
         vec![2, 4, 3],
         "a sweep three, nearest first"
     );
     assert!(
-        struck(1, &striker, &attack(Stroke::Down), &fighters, &[]).iter().all(|id| *id != 5 && *id != 6 && *id != 7)
+        struck(1, &striker, &attack(Stroke::Down), &fighters, &[], &Flat)
+            .iter()
+            .all(|id| *id != 5 && *id != 6 && *id != 7)
     );
     let wall = [Block { min_x: -2.0, min_y: -1.2, max_x: 2.0, max_y: -1.0, top: 3.0 }];
-    assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall).is_empty(), "nothing through a wall");
+    assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall, &Flat).is_empty(), "nothing through a wall");
     let mut locked = striker;
     locked.target = Some(3);
-    assert_eq!(struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[]), vec![3, 2], "the lock's target first");
+    assert_eq!(
+        struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[], &Flat),
+        vec![3, 2],
+        "the lock's target first"
+    );
 }
 
 #[test]

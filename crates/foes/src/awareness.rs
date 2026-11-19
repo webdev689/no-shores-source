@@ -88,7 +88,7 @@ pub fn strongest(best: Option<(f64, [f64; 3])>, next: (f64, [f64; 3])) -> Option
 /// believes the stir's place; with nothing stirring, bleeds it a tick's worth.
 pub fn stir(brain: &mut Brain, here: &Here<'_, '_>, glimpse: Option<(f64, [f64; 3])>, heard: &[Seen]) {
     let noises = heard.iter().filter_map(|seen| match seen {
-        Seen::Heard(noise) => Some((noise.heard_at(here.feet(), here.world.blocks), noise.at)),
+        Seen::Heard(noise) => Some((noise.heard_at(here.feet(), here.world.blocks, here.world.terrain), noise.at)),
         _ => None,
     });
     let awareness = &mut brain.awareness;

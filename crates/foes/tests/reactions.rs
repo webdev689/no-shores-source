@@ -158,6 +158,7 @@ fn dodge_pressed(seed: u64, speed: f64) -> Option<u64> {
             seed,
             fighters: &fighters,
             blocks: &[],
+            terrain: &movement::Flat,
             routes: &foes::Straight,
             spots: &foes::NoSpots,
             director: foes::Director::default(),

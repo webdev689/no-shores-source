@@ -76,7 +76,8 @@ phases) is [[Enemies]].
   facing), with nothing between their chests. Noises raise it by their loudness, less with distance, to nothing at their
   reach: a gunshot 2.0 to 40 m, a bow or crossbow 0.7 to 10 m, a swing or a blow landing 1.0 to 15 m (heard where it
   lands), a fighter running 0.42 to 8 m each half second. A noise whose line from it to the foe's chest passes through a
-  block carries half as loud and half as far. A foe pays no heed to its own side's noises. With no target, a foe hears
+  block or a dungeon's wall ([[Dungeons]]) carries half as loud and half as far. A foe pays no heed to its own side's
+  noises. With no target, a foe hears
   the stir of every foe of another faction, 0.2 a second at its feet to nothing at 60 m (halved through a block, as any
   noise), so two factions left apart beyond sight find each other; a player makes no such stir. With nothing stirring
   the level bleeds 0.16 a second, but not while it fights or hunts. Above 0.02 a foe is **suspicious**: it turns and

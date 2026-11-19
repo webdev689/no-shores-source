@@ -38,6 +38,14 @@ impl Terrain for Floor {
             Floor::Dungeon(ground) => ground.walled(from, to),
         }
     }
+
+    /// Only a dungeon's walls stand across a line: open ground has none, and a line passes over the land's rises.
+    fn line_walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
+        match self {
+            Floor::Flat | Floor::Land(_) => false,
+            Floor::Dungeon(ground) => ground.line_walled(from, to),
+        }
+    }
 }
 
 /// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within
