@@ -6,12 +6,15 @@
 use crate::board::Board;
 use crate::brain::Brain;
 use crate::senses::Here;
+use crate::shoot::aimed_shot;
 use combat::arms::swing_ticks;
 use combat::fighter::Action;
-use combat::shapes::IRON_EXTRA;
-use combat::shots::foe_speed;
-use combat::sight::apart;
+use combat::shapes::{IRON_EXTRA, Shape};
+use combat::shots::{Shot, by_foe, loose, toward};
+use combat::sight::{apart, bearing};
+use combat::tuning::BODY_RADIUS;
 use combat::{FighterId, Intent};
+use movement::TICK_SECONDS;
 
 /// The tick a swing begun now lands.
 #[must_use]
@@ -19,12 +22,24 @@ pub fn swing_lands(here: &Here<'_, '_>) -> u64 {
     here.tick() + u64::from(swing_ticks(here.fighter.arms.melee).0)
 }
 
-/// The tick a shot loosed now at `target` lands, after its flight.
+/// The tick a shot loosed now at a body standing at `target` lands, after its flight.
 #[must_use]
 pub fn shot_lands(here: &Here<'_, '_>, target: [f64; 3]) -> u64 {
-    let speed = here.fighter.arms.ranged.map_or(0.0, foe_speed);
-    let flight = if speed > 0.0 { apart(here.at(), [target[0], target[1]]) / speed } else { 0.0 };
-    here.tick() + Here::ticks(flight)
+    let Some(ranged) = here.fighter.arms.ranged else { return here.tick() };
+    let pitch = toward(ranged, here.feet(), target).1;
+    let way = bearing(here.at(), [target[0], target[1]]);
+    here.tick() + flight(&by_foe(&loose(here.me, ranged, here.fighter.chest(), way, pitch, 1.0)), target)
+}
+
+/// The ticks after the one it leaves in that a shot reaches the edge of a body standing at `target`: it leaves ahead
+/// of its shooter's chest, and takes its first step in the tick it is loosed.
+fn flight(shot: &Shot, target: [f64; 3]) -> u64 {
+    let step = libm::hypot(shot.velocity[0], shot.velocity[1]) * TICK_SECONDS;
+    let edge = apart([shot.at[0], shot.at[1]], [target[0], target[1]]) - BODY_RADIUS;
+    if step <= 0.0 || edge <= 0.0 {
+        return 0;
+    }
+    (libm::ceil(edge / step) as u64).saturating_sub(1)
 }
 
 /// Whether, ready to, it may begin a blow at `target` that lands at `lands`: a beat, as the room's heat presses it,
@@ -50,7 +65,12 @@ pub fn note(brain: &Brain, here: &Here<'_, '_>, board: &mut Board, intent: &Inte
     let free = matches!(here.fighter.action, Action::Idle | Action::Guard { .. } | Action::Parry { .. });
     let lands = if let Some(order) = combat.telegraph {
         let iron = if order.iron { combat::ticks(IRON_EXTRA) } else { 0 };
-        here.tick() + u64::from(order.windup.max(1) + iron)
+        let ended = here.tick() + u64::from(order.windup.max(1) + iron);
+        // An aimed shot leaves as its wind-up ends, and flies.
+        let at = here.find(target).map(|other| [other.body.x, other.body.y, other.body.z]);
+        let shot =
+            (order.shape == Shape::Aimed).then(|| aimed_shot(here.me, &here.fighter, order.bearing, order.ahead));
+        ended + shot.zip(at).map_or(0, |(shot, at)| flight(&shot, at))
     } else if combat.attack.is_some() && free && here.fighter.stamina > 0.0 {
         swing_lands(here)
     } else if combat.shoot && matches!(here.fighter.action, Action::Draw { .. }) {

@@ -20,8 +20,8 @@ use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
-    FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_ROOM, RING_SLACK,
-    RUN_FROM, SETTLED, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
+    FLEE_SHARE, FOLLOW, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_ROOM,
+    RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
@@ -272,8 +272,8 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
     }
     match brain.plan {
         // While another goes in, or waits in reach for the beat to strike, one in to fight keeps to the ring, not crowd
-        // in beside it.
-        Plan::Engage if !board.go_in(sight.id, me, tick) => hold_ring(brain, here, sight, ring),
+        // in beside it; one walked in on without a turn fights back where it stands.
+        Plan::Engage if !(open && inside) && !board.go_in(sight.id, me, tick) => hold_ring(brain, here, sight, ring),
         Plan::Engage => engage(brain, here, board, sight, reach),
         Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP),
         Plan::Wait => {
@@ -315,10 +315,14 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     }
     let pressed = here.world.director.pressed();
     // In its turn it runs after a target walking away from it, which at a walk it would never close on, and closes in
-    // nearer by as far as the target walks on while its blow comes round.
+    // nearer by as far as the target walks on while its blow comes round, but no nearer than their bodies touch: there
+    // it keeps the target's pace rather than run and stop by turns.
     let chasing = board.holds(sight.id, here.me, false) && speed_away(sight) > CLOSING;
     let lead = if chasing { lead(here, speed_away(sight)) } else { 0.0 };
-    let way = (sight.distance > reach - lead).then(|| way_to(here, sight.spot)).flatten();
+    let closest = (reach - lead).max(2.0 * BODY_RADIUS);
+    let way = (sight.distance > closest || chasing).then(|| way_to(here, sight.spot)).flatten();
+    let gap = (sight.distance - closest).max(0.0) / TICK_SECONDS;
+    let pace = if chasing { ((speed_away(sight) + gap) / TUNING.run).min(1.0) } else { 1.0 };
     // Its beat begins in reach; a sway past the edge of its reach and back does not start it over.
     if sight.distance > reach + SWING_SLACK || (sight.distance > reach && brain.ready_at.is_none()) {
         brain.ready_at = None;
@@ -339,7 +343,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let delay = pressed.swing_delay;
     let ready_at =
         *brain.ready_at.get_or_insert_with(|| tick + Here::ticks(here.dice.between(Purpose::SwingDelay, delay)));
-    let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
+    let mut ask = way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, pace, sight.toward));
     ask.run = chasing;
     if walled {
         ask = Ask::stepping(sight.toward + PI + side * FRAC_PI_2, STEP_PACE, sight.toward);
@@ -458,14 +462,12 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     }
     let slot = drift(here, sight, brain.slot.unwrap_or(away), ring, brain.flanking);
     brain.slot = Some(slot);
-    // Round the ring to its place and out or in to the ring's own line, not merely inside its give.
+    // Round the ring to its place and out or in to the ring's own line, not merely inside its give, the faster the
+    // farther it is from its place: a place drifting on draws it along, rather than by stops and starts.
     let (round, out) = (wrap(slot - away) * ring, ring - sight.distance);
-    let ask = if round.abs() < SETTLED && out.abs() < SETTLED {
-        Ask::facing(sight.toward)
-    } else {
-        // Far round from its place, as a foe joining the line is, it walks there; near it, it circles slowly.
-        let pace = if round.abs() > RING_ROOM { 1.0 } else { CIRCLE_PACE };
-        Ask::stepping(away + libm::atan2(round, out), pace, sight.toward)
-    };
-    ask.guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
+    // Far round from its place, as a foe joining the line is, it walks there; near it, it circles slowly.
+    let most = if round.abs() > RING_ROOM { 1.0 } else { CIRCLE_PACE };
+    let pace = (libm::hypot(round, out) * FOLLOW / TUNING.walk).min(most);
+    Ask::stepping(away + libm::atan2(round, out), pace, sight.toward)
+        .guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
 }

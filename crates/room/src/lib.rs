@@ -583,6 +583,8 @@ mod gear_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]
+mod pace_tests;
+#[cfg(test)]
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;

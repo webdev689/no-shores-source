@@ -77,10 +77,11 @@ pub fn taken(here: &Here<'_, '_>, place: [f64; 3]) -> bool {
 /// Its move, as shares of a walk east and south, steered clear of the foes of its side standing too near: inside
 /// SPACING each pushes it away, harder the nearer, and the part of its move that walks into one turns aside round it,
 /// all of it within CLEAR, so a foe pressing on toward its target slips past an ally rather than through it. It turns
-/// the way its move already leans, and dead on the side its number picks, the same on every machine.
-fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
+/// the way its move already leans, and dead on the side its number picks, the same on every machine. Each ally turns
+/// the move as asked, not as another already turned it, so a foe between two is held back, not tossed between them.
+fn spaced(here: &Here<'_, '_>, wish: [f64; 2]) -> [f64; 2] {
     let at = here.at();
-    let mut push = [0.0, 0.0];
+    let (mut push, mut bent) = ([0.0, 0.0], wish);
     for (id, other) in here.world.fighters {
         if !here.ally(*id, other) {
             continue;
@@ -106,13 +107,13 @@ fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
             let aside =
                 if length > 1e-9 { [across[0] / length, across[1] / length] } else { [-out[1] * side, out[0] * side] };
             let turned = -along * ((SPACING - distance) / (SPACING - CLEAR)).min(1.0);
-            wish = [wish[0] + (out[0] + aside[0]) * turned, wish[1] + (out[1] + aside[1]) * turned];
+            bent = [bent[0] + (out[0] + aside[0]) * turned, bent[1] + (out[1] + aside[1]) * turned];
         }
     }
     let length = libm::sqrt(push[0] * push[0] + push[1] * push[1]);
     let push =
         if length > SPACING_PACE { [push[0] / length * SPACING_PACE, push[1] / length * SPACING_PACE] } else { push };
-    [wish[0] + push[0], wish[1] + push[1]]
+    [bent[0] + push[0], bent[1] + push[1]]
 }
 
 /// Crossing a block: a foe on its side, or in the air, presses on the way it faces, so it goes up and over, or catches

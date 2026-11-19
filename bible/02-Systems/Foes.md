@@ -92,17 +92,19 @@ phases) is [[Enemies]].
   range, a target is pursued, not fought; a shooter pursuing one walks on until it stands 6 m inside its range. Out of
   sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it
   **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then
-  lets go, and its level bleeds back to idle. Hunting or searching, it stops short of the place behind an ally that
-  already stands nearer it, within 1.2 m. The foe's soft lock holds its target, but while it answers a blow, the
-  striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
+  lets go, and its level bleeds back to idle. Suspicious, hunting or searching, it stops short of the place behind an
+  ally that already stands nearer it, within 1.2 m. The foe's soft lock holds its target, but while it answers a blow,
+  the striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off, and, in its
   turn, after a target walking away from it faster than 0.5 m/s, which at a walk it would never close on: it closes in
-  by as far as the target walks on while its blow comes round, and follows it through its swing at a swing's pace, so
-  the blow lands. Foes without a turn keep their places on the ring. It finds its way by the room's routes, and stops by
-  its distance to the target, never to a route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed
-  at up to 0.7 of a walk, and the part of a foe's move that walks into an ally turns aside round it, all of it within
-  0.8 m, so a foe going in slips past an ally rather than through it. Nothing is moved but by its own controls.
+  by as far as the target walks on while its blow comes round, but no nearer than their bodies touch, and there keeps
+  the target's pace; it follows it through its swing at a swing's pace, so the blow lands. Foes without a turn keep
+  their places on the ring. It finds its way by the room's routes, and stops by its distance to the target, never to a
+  route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part
+  of a foe's move that walks into an ally turns aside round it, all of it within 0.8 m, so a foe going in slips past an
+  ally rather than through it. Each ally turns the move as asked, not as another already turned it, so a foe between
+  two is held back rather than tossed from one to the other. Nothing is moved but by its own controls.
 - **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
   [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
   steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
@@ -136,23 +138,26 @@ phases) is [[Enemies]].
   longest goes next, and one that has waited 6 s goes in, one over the count at most, so a crowd's patience never
   piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near the
   ring (the flanker, or one in the line), or walks in on one inside the ring's near edge, is open to it without a
-  turn, but to one such foe at a time. Like a holder it keeps to the ring, stepping back out to it, while another goes
-  in; then it goes in, and goes on fighting while the target stays that close. A back walking away is no such opening:
-  the one whose turn it is runs after it. A foe that blocks holds its guard up on the ring while it waits its turn, as
-  a shield-bearer does: it raises it within 0.3 m of the ring's line and keeps it up across the ring's give and the
-  step back in from just past it. A holder going in takes the shortest way.
+  turn, but to one such foe at a time. A foe walked in on fights back where it stands, though another goes in. One
+  open to a turned back keeps to the ring like a holder while another goes in, then goes in. Either goes on fighting
+  while the target stays that close. A back walking away is no such opening: the one whose turn it is runs after it.
+  A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: it raises it
+  within 0.3 m of the ring's line and keeps it up across the ring's give and the step back in from just past it. A
+  holder going in takes the shortest way.
 - **The beat.** Blows at one target land one at a time. A foe begins a swing, a telegraphed blow or a shot there only
   if it lands 1.2 s or more after the latest blow another foe has begun there lands, so a person can answer each
-  before the next. Of the foes ready in reach that the beat holds back, the first held strikes first. A shooter looses
-  only into a beat no foe ready in reach waits for, so its shots fill the gap while the next goes in. A foe's own last
-  blow never holds back its next, and its riposte and its counter are never held back, so one foe alone fights at its
-  own pace.
+  before the next. A shot lands after its flight from where it leaves, ahead of its shooter's chest, to the edge of
+  the body it strikes; an aimed shot leaves as its wind-up ends. Of the foes ready in reach that the beat holds back,
+  the first held strikes first. A shooter looses only into a beat no foe ready in reach waits for, so its shots fill
+  the gap while the next goes in. A foe's own last blow never holds back its next, and its riposte and its counter
+  are never held back, so one foe alone fights at its own pace.
 - **The line.** The waiting stand on a ring 1.5 m outside their reach, with 0.6 m of give, in a line before their
   group's side of the target: the bearing where the foes fighting it hand to hand stand round it, once the mean of
   their bearings leans a quarter of the way one way, else the way the target faces. A place more than 75 degrees off
   the line's middle moves to the line's nearer end, and the foe walks there while more than 2.5 m round, else circles
-  at 0.4 of a walk; in the line a place closes up toward the middle, stopping 2.5 m short of the next foe that way. So
-  a player facing a group sees every foe that waits, with a way out behind.
+  at up to 0.4 of a walk, three times its distance from its place a second, so a place drifting on draws it along
+  without a stop; in the line a place closes up toward the middle, stopping 2.5 m short of the next foe that way. So a
+  player facing a group sees every foe that waits, with a way out behind.
 - **The flanker.** One waiting foe at a time **flanks** instead: a skirmisher before any other, a foe with no shield
   before none, and a shield-bearer never, as it holds the line. Its place drifts 0.4 radians a second away from where
   the target faces, past the line, out to 100 degrees either side of its face, and it keeps flanking through its own
@@ -189,8 +194,9 @@ phases) is [[Enemies]].
   1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
   does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s
   (thunderlock), so it can be read and dodged, where a player's reaches its mark at once. A ranged turn gates a shot
-  and a shot spends it; held 5 s unused it goes on. Drawn, it looses in the beat between its allies' blows (above). A
-  drawn shot strikes times the foe's might, as its blows do.
+  and a shot spends it; held 5 s unused it goes on, and a shot drawn with it goes too: the shooter lowers its weapon.
+  Drawn, it looses in the beat between its allies' blows (above). A drawn shot strikes times the foe's might, as its
+  blows do.
 - **Cover.** With cover near, a shooter takes a **post**: among the firing spots within 11 m that have cover, one where
   either the spot hides it from where it believes its target is and a step of 1.2 m aside has the line, or the other way
   round. It scores each by 1.5 a metre to walk there, 3 a metre outside its weapon's band of distance (bow 10 to 18 m,

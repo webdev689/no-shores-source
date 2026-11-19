@@ -38,6 +38,7 @@ pub use noises::Noise;
 pub use ranks::{Call, Place, Rank};
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, in_role, spawn};
+pub use shoot::aimed_shot;
 
 use dice::Dice;
 use senses::Here;

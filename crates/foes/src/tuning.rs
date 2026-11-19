@@ -75,8 +75,9 @@ pub const FLANK_ARC: f64 = 100.0 * DEGREES;
 /// much farther out, and so on.
 pub const RING_ROOM: f64 = 2.5;
 pub const RANK_GAP: f64 = RING_ROOM;
-/// A waiting foe this near its place on its ring stands there.
-pub const SETTLED: f64 = 0.15;
+/// A waiting foe makes for its place on its ring at this many times its distance from it a second, at most its
+/// circling pace: near its place it slows, and a place drifting on draws it along without a stop.
+pub const FOLLOW: f64 = 3.0;
 /// Stepping back out of reach, at this share of a walk.
 pub const STEP_PACE: f64 = 0.7;
 /// After its blow a foe hops back at most this long, then holds its ground for between these before it waits again.
@@ -207,8 +208,9 @@ pub const CHAIN_LEAST: f64 = 0.55;
 /// A wind-up ended, a foe waits this long at most for the room's word on whether its blow landed: the room judges
 /// each player as their own screen showed it, which may lag.
 pub const WORD_WAIT: f64 = 0.5;
-/// An archer's shots aimed, one in this.
+/// An archer's shots aimed, one in this; an aimed shot flies this many times as fast as a plain one.
 pub const AIMED_SHARE: f64 = 1.0 / 3.0;
+pub const AIMED_SPEED: f64 = 1.3;
 
 /// Into each new phase, a roar this long, as an iron ring.
 pub const ROAR: f64 = 1.2;

@@ -8,11 +8,11 @@
 use crate::judging::{Check, Group, How, Pending};
 use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
-use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, foe_type, notice, spawn, think};
+use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, aimed_shot, foe_type, notice, spawn, think};
 use combat::fighter::{Action, FighterId, Side};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
-use combat::shots::{FALL, by_foe, foe_speed, loose, shot_numbers};
+use combat::shots::shot_numbers;
 use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_fighter};
 use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
@@ -38,8 +38,7 @@ pub const CLEAR_FOES: u8 = 255;
 const ON_MESH: f64 = 1.5;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
-/// An aimed shot leaves faster and strikes harder than a plain one.
-const AIMED_SPEED: f64 = 1.3;
+/// An aimed shot strikes harder than a plain one.
 const AIMED_DAMAGE: f64 = 1.4;
 
 /// A foe as the room keeps it: its fighter, its brain, which holds its type, rank and phase, the Boss that called it,
@@ -485,12 +484,7 @@ impl Room {
     /// a bolt aimed up for its fall over the line's length, as a drawn shot is; a ball straight.
     fn aimed_shot(&mut self, id: FighterId, foe: &Fighter, telegraph: &Telegraph) {
         let ranged = foe.arms.ranged.unwrap_or(Ranged::Bow);
-        let falls = shot_numbers(ranged).0 > 0.0;
-        let flight = telegraph.ahead / (foe_speed(ranged) * AIMED_SPEED);
-        let rise = if falls { 0.5 * FALL * flight * flight } else { 0.0 };
-        let pitch = libm::atan2(rise, telegraph.ahead.max(0.1));
-        let mut shot = by_foe(&loose(id, ranged, foe.chest(), telegraph.bearing, pitch, 1.0));
-        shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
+        let mut shot = aimed_shot(id, foe, telegraph.bearing, telegraph.ahead);
         shot.damage = shot_numbers(ranged).1 * AIMED_DAMAGE * foe.might;
         self.shots.push((shot, None));
         // Loosed like any shot: heard, and seen coming by the foes of other sides it may strike.
