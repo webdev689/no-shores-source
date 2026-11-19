@@ -284,7 +284,7 @@ async function start(): Promise<void> {
     const size = canvasSize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
     if (canvas.width !== size.width || canvas.height !== size.height) Object.assign(canvas, size);
     const inFirstPerson = player.inFirstPerson;
-    const sights = shown.aiming || aimHeld || (shown.ranged && inFirstPerson);
+    const sights = shown.aiming || aimHeld || (shown.rangedDrawn && inFirstPerson);
     const camera = feel.camera(aimView(player.player), fighting.player, own, inFirstPerson, sights);
     const eye = eyeOf(camera);
     // Each figure drawn off where it stands by the attack feel; each fighter's figure as drawn, which its arc follows.
@@ -390,7 +390,9 @@ async function start(): Promise<void> {
         rejoining: link.rejoining,
         parryOpen: fighting.parryOpen,
         abilities: fighting.abilities,
-        ammo: shown.ranged ? (own?.ammo ?? null) : null,
+        // The shots left stand beside the crosshair while the Ranged loadout is drawn.
+        ammo: sights && shown.rangedDrawn ? (own?.ammo ?? null) : null,
+        ammoMost: gear?.ammoMost ?? null,
         crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
       },
       seconds,

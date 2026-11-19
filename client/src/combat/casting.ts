@@ -15,9 +15,9 @@ type Point = readonly [number, number, number];
 export const ABILITY_ACTIONS = ['anima', 'tenetOne', 'tenetTwo'] as const;
 /** Dusk Daggers' ability: Shadow's first Tenet. */
 export const DAGGERS = 1;
-/** After a cast is sent, none is sent again until the room's word on the Arts has come since, nor before this long
- *  (seconds); past the longest, the keys open again all the same, as a cast the room let fall sends no word. */
-export const CAST_LOCKOUT_S = 0.6;
+/** After a cast is sent, none is sent again until the room's word shows it spent (its ability's share under full) or
+ *  another Art worn; past this long (seconds) the keys open again all the same, as a cast the room let fall sends no
+ *  word. */
 export const CAST_LOCKOUT_MOST_S = 2;
 /** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down, dead. */
 const UNABLE = new Set(['staggered', 'down', 'dead']);
@@ -108,8 +108,8 @@ export interface CastFrame {
 /** The casting keys, frame by frame: a press casts its ability once the room's word has it ready; Dusk Daggers' key
  *  held aims its ring, and let go casts it there. */
 export class CastKeys {
-  /** The last cast sent: the room's word on the Arts as it was then, and the seconds since. */
-  private sent: { readonly state: ArtState; seconds: number } | null = null;
+  /** The last cast sent: the Art it was cast in, its ability, and the seconds since. */
+  private sent: { readonly art: number; readonly ability: number; seconds: number } | null = null;
   private aiming = false;
 
   /** Forgets the last cast sent and any aim: the player joined a room afresh. */
@@ -141,7 +141,7 @@ export class CastKeys {
       floorAt: (x: number, y: number) => number;
     },
   ): CastFrame {
-    this.waited(state, seconds);
+    this.waited(state, abilities, seconds);
     const art = state && artOf(state.art);
     const element = art?.element;
     const unable = !hands || !state || !art || !abilities || !own || UNABLE.has(own.action.kind);
@@ -159,17 +159,20 @@ export class CastKeys {
       this.aiming = true;
       return this.aim(controls, aimed);
     }
-    this.sent = { state, seconds: 0 };
+    this.sent = { art: art.id, ability, seconds: 0 };
     return { cast: { spell, aim: null }, ring: null };
   }
 
-  /** Runs the wait after a cast on by `seconds`, and ends it once `state`, the room's word, has come since the cast
-   *  and the shortest wait is over, or the longest is. */
-  private waited(state: ArtState | null | undefined, seconds: number): void {
+  /** Runs the wait after a cast on by `seconds`, and ends it once the room's word shows the cast spent (its ability's
+   *  share in `abilities` under full) or another Art worn, or the longest wait is over. Any other word the room sends
+   *  meanwhile (a gear change, a kill's charge) leaves it waiting. */
+  private waited(state: ArtState | null | undefined, abilities: AbilityState | null, seconds: number): void {
     if (!this.sent) return;
     this.sent.seconds += seconds;
-    const heard = state !== this.sent.state && this.sent.seconds >= CAST_LOCKOUT_S;
-    if (heard || this.sent.seconds >= CAST_LOCKOUT_MOST_S) this.sent = null;
+    const shares = abilities ? [abilities.animaShare, ...abilities.tenets] : [];
+    const spent = (shares[this.sent.ability] ?? 1) < 1;
+    const changed = !!state && state.art !== this.sent.art;
+    if (spent || changed || this.sent.seconds >= CAST_LOCKOUT_MOST_S) this.sent = null;
   }
 
   /** Dusk Daggers aimed from where `own` stands: the mark asked as it is while the key is held, the ring drawn where
@@ -204,7 +207,7 @@ export class CastKeys {
       return { cast: { spell: 0, aim: asked }, ring };
     }
     this.aiming = false;
-    this.sent = { state, seconds: 0 };
+    this.sent = { art: state.art, ability: DAGGERS, seconds: 0 };
     return { cast: { spell: SPELLS.duskDaggers, aim: asked }, ring: null };
   }
 

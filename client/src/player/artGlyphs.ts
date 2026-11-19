@@ -1,13 +1,16 @@
 // The Arts' pictures, drawn pixel by pixel as the elements' and the gear's glyphs are: each Art's emblem in a diamond,
 // as Destiny frames a subclass (Storm a forked bolt, Divine a sun with wings, Shadow a crescent holding a raven's
-// eye), and an icon for each spell. Each is drawn in its Art's element: an outline, a deep shade, the body, its light
-// and a white heat. The fragments' icons are in `game/artFragments.ts`.
+// eye), the double diamond its screen frames it in, and an icon for each spell. Each is drawn in its Art's element: an
+// outline, a deep shade, the body, its light and a white heat, with brass for a frame's fittings. The fragments' icons
+// are in `game/artFragments.ts`.
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ELEMENTS } from './gear.ts';
 
 /** The letters a map draws with, each a colour of its Art's palette in turn; a dot is none. */
-export const PALETTE_LETTERS = 'abcde';
+export const PALETTE_LETTERS = 'abcdef';
+/** The menu's lit brass, for a frame's fittings. */
+const BRASS = '#f3cf86';
 /** Each element's deep shade and white heat, by the gear crate's numbers, beside its glyph's outline, body and light. */
 const DEEP: Readonly<Record<number, readonly [string, string]>> = {
   1: ['#b8441a', '#fff6d8'],
@@ -15,13 +18,13 @@ const DEEP: Readonly<Record<number, readonly [string, string]>> = {
   3: ['#5d2aa8', '#ffffff'],
 };
 
-/** An element's palette for the Arts' maps: its outline, deep shade, body, light and heat; empty for none. */
+/** An element's palette for the Arts' maps: its outline, deep shade, body, light and heat, then brass; empty for none. */
 export function artPalette(element: number): readonly string[] {
   const glyph = ELEMENTS[element]?.palette;
   const [deep, heat] = DEEP[element] ?? [];
   if (!glyph || !deep || !heat) return [];
   const [outline, body, light] = glyph;
-  return [outline, deep, body, light, heat];
+  return [outline, deep, body, light, heat, BRASS];
 }
 
 /** A map as an SVG picture in `element`'s colours, crisp at any whole size, each run of one colour along a row one
@@ -125,6 +128,18 @@ export const EMBLEM_MAPS: Readonly<Record<string, readonly string[]>> = {
     '...........cc...........',
   ],
 };
+
+/** The double diamond an Art's emblem stands in on its screen, 32 × 32, the emblem's 24 centred in it two cells clear:
+ *  a line in the element's body at its edge over a deeper one, bevelled as the kit's stone is, and a brass fitting at
+ *  each point. */
+export const EMBLEM_FRAME: readonly string[] = Array.from({ length: 32 }, (unused, row) =>
+  Array.from({ length: 32 }, (alsoUnused, column) => {
+    const [across, down] = [Math.abs(column - 15.5), Math.abs(row - 15.5)];
+    const point = (across < 1 && down > 14) || (down < 1 && across > 14);
+    const ring = across + down;
+    return point ? 'f' : ring === 16 ? 'c' : ring === 15 ? 'b' : '.';
+  }).join(''),
+);
 
 /** Each spell's icon by its key: an Anima 24 × 24, a Tenet 12 × 12. */
 export const SPELL_MAPS: Readonly<Record<string, readonly string[]>> = {
@@ -292,14 +307,25 @@ export const SPELL_MAPS: Readonly<Record<string, readonly string[]>> = {
   ],
 };
 
-/** The pictures the HUD's ability bar draws an Art with, by its id, as SVG: its emblem in its diamond and its two
- *  Tenets' icons; null for no Art. */
-export function abilityPictures(
-  id: number,
-): { readonly diamond: string; readonly tenets: readonly [string, string] } | null {
+/** The pictures the HUD's ability bar draws an Art with, by its id, as SVG: its Anima's icon, as the Art's screen shows
+ *  it, that icon's outline alone in the element's body colour, so the empty Anima still reads as the Art's, and its
+ *  two Tenets' icons; null for no Art. */
+export function abilityPictures(id: number): {
+  readonly anima: string;
+  readonly animaOutline: string;
+  readonly tenets: readonly [string, string];
+} | null {
   const art = arts.arts.find((each) => each.id === id);
   const [first, second] = art?.tenets ?? [];
   if (!art || !first || !second) return null;
   const icon = (key: string) => mapSvg(SPELL_MAPS[key], art.element);
-  return { diamond: mapSvg(EMBLEM_MAPS[art.key], art.element), tenets: [icon(first.key), icon(second.key)] };
+  const anima = SPELL_MAPS[art.anima.key];
+  return {
+    anima: mapSvg(anima, art.element),
+    animaOutline: mapSvg(
+      anima?.map((row) => row.replace(/[^a.]/g, '.').replaceAll('a', 'c')),
+      art.element,
+    ),
+    tenets: [icon(first.key), icon(second.key)],
+  };
 }

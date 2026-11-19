@@ -1,12 +1,17 @@
 // The keys the heads-up display lists for each mode of the game, one line each.
 
+import arts from '../../../content/arts/arts.json' with { type: 'json' };
+
+/** What the Arts' line adds for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */
+const AIMED: Readonly<Record<string, string>> = { duskDaggers: 'hold Q to aim Dusk Daggers' };
+
 /** The keys each mode lists, one line each. */
 export const HINTS = {
   foot: [
     'Click to look round · W A S D move · Shift run',
     'Space jump · C crouch · Wheel: third person · M menu',
     'Z weapon · 1 Melee · 2 Ranged · Right button swing or aim · Left button or F guard or fire · V dodge',
-    'R Anima · Q G Tenets · hold Q to aim Dusk Daggers',
+    'R Anima · Q G Tenets',
   ],
   dead: ['Enter or Respawn: back at the nearest spawn'],
   sea: [
@@ -23,6 +28,14 @@ export const HINTS = {
   map: ['Drag to pan · Wheel to zoom · Click a port or the sea', 'Enter set sail · Esc put the map away'],
   landing: ['Click a mark to choose it', 'Click it again or Enter to land · Esc back to sea'],
 } as const;
+
+/** The keys listed on foot with the Art worn (its id, 0 for none): the Arts' line names an aimed Tenet only while its
+ *  Art is worn. */
+export function footHints(worn: number): readonly string[] {
+  const aimed = AIMED[arts.arts.find((art) => art.id === worn)?.tenets[0]?.key ?? ''];
+  if (!aimed) return HINTS.foot;
+  return HINTS.foot.map((line, index) => (index === HINTS.foot.length - 1 ? `${line} · ${aimed}` : line));
+}
 
 /** What the player is doing at sea, for the keys listed: fighting (with the fight's own lines), choosing a landing, at
  *  the helm with the map, walking her deck, managing her, or sailing. */

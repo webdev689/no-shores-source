@@ -97,8 +97,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   perk will: the icons show on the foes' plates and over the vitals, and the rules act on them. Only a course's room
   grants them; a node's refuses.
 - **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
-  the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). The ability bar stands by
-  the vitals.
+  the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). After each ask the room's
+  next word sets every list back to what it holds, so a choice it refused does not stay shown. The ability bar stands
+  by the vitals.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
@@ -154,8 +155,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     but never turns it, so the crosshair stays where shots land. Its strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
-- **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
-  view's middle, where an aimed shot lands; a bow aiming rings it with its draw, gold once at full power.
+- **The crosshair.** While a ranged weapon aims, and whenever the Ranged loadout is drawn in first person (read from
+  the outfit shown, the pointer held or not), a crosshair marks the view's middle, where an aimed shot lands; a bow
+  aiming rings it with its draw, gold once at full power. The shots left stand beside it while it shows ([[Interface]]).
 - **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
   the view; health, stamina and poise in one window at the bottom left, each bar naming itself with its percentage
   inside, a faint strip holding what a loss took before it drains, the health's edge flashing blood at a quarter or less

@@ -157,6 +157,13 @@ export class FoePlate {
     this.debuffs.show(foe.id, foeDebuffs(foe.statuses));
   }
 
+  /** Scales the debuffs back up by as much as the plate is drawn smaller (`scale`), so each reads at its own size
+   *  however far its foe stands. */
+  scaled(scale: number): void {
+    const back = scale > 0 && scale < 1 ? (1 / scale).toFixed(3) : '';
+    if (this.debuffs.root.style.scale !== back) this.debuffs.root.style.scale = back;
+  }
+
   /** Forgets the foes not in `present`, whose numbers may come again for others. */
   keep(present: ReadonlySet<number>): void {
     for (const id of this.seen?.keys() ?? []) if (!present.has(id)) this.seen?.delete(id);

@@ -88,7 +88,7 @@ each Art keeps its own Core.
 
 | Art | Fragments |
 |---|---|
-| Storm | **Pursuit**: Tempest sends two more orbs. **Conduction**: Arc Lash's Charge lasts half as long again. **Momentum**: Quicken also gives the player Crit while it lasts. **Recharge**: each Volt kill takes 4% off the Tenets' cooldowns. **Overload**: foes Charged by the player are Exposed too. **Gale**: Quicken lasts 3 s longer and reaches 18 m |
+| Storm | **Pursuit**: Tempest sends two more orbs. **Conduction**: Arc Lash's Charge lasts 50% longer. **Momentum**: Quicken also gives the player Crit while it lasts. **Recharge**: each Volt kill takes 4% off the Tenets' cooldowns. **Overload**: foes Charged by the player are Exposed too. **Gale**: Quicken lasts 3 s longer and reaches 18 m |
 | Divine | **Radiance**: the Sunwell reaches 3 m further and lasts 4 s longer. **Mercy**: Mend also heals players within 8 m half as much. **Wings**: the Dawnflare makes a second pass back. **Zeal**: while Linked, each Blaze kill takes 5% off the Tenets' cooldowns. **Searing**: the Dawnflare Exposes what it burns. **Resolve**: Mend gives the player Crit |
 | Shadow | **Hunger**: the Duskraven heals the player all it deals, not half. **Night**: Vanish's veil lasts 2 s longer. **Blades**: Dusk Daggers reach 1.5 m further and last 2 s longer. **Hunt**: a crit out of Vanish gives back half its cooldown. **Dread**: each Cosmic kill on an Exposed foe keeps the Duskraven 2 s longer. **Cruelty**: the player's crits on Exposed foes deal 10% more |
 
@@ -104,11 +104,21 @@ one crackles.
 
 ### Where they are seen
 
-- **The Character page**: the Art's diamond above the weapons; pressed, it opens the Art's screen.
+- **The Character page**: the Art's diamond is the first row under "Weapons", the heading kept, so the two columns'
+  headings and rows stand level; pressed, it opens the Art's screen.
 - **The Art's screen**, after the owner's reference: the three Arts' diamonds to choose from; the worn Art's large
   diamond, name and element; ANIMA, TENETS and CORE in rows; each spell and fragment a card with its numbers.
-- **The HUD**: the Anima's diamond filling and the two Tenets' icons sweeping as they recharge, each with its key; the
-  player's buffs in a row by their health; a foe's debuffs as icons on its plate, each with the time it has left.
+- **The scene**: the Art's screen has a pixel picture of its own on the right, its centre of drama, as the reference
+  has its figure: made by the page in the Art's four colours at whole pixels, moving in hard steps a few times a
+  second, still with less motion asked for. Storm a stormy sky split by forked bolts striking in turn; Divine a sun
+  rising with wings of flame and drifting embers; Shadow a starfield round the crescent and a raven's eye, stars
+  lighting in crosses. The large emblem stands before it in a double diamond.
+- **The HUD**: the Anima's own icon (the one the Art's screen shows, as Destiny's HUD shows a Super's) filling and the
+  two Tenets' icons sweeping as they recharge, each with its key; the player's buffs in a row by their health; a foe's
+  debuffs as icons on its plate, each with the time it has left. The keys listed on foot stay; the Arts' line names
+  only the worn Art's own extra, the Dusk Daggers' aim while Shadow is worn.
+- **Cards**: every gear card's words, the Arts' and the gear's alike, stand at 22 px where the menu is wide, as the
+  menu's labels do.
 
 ### How attacks look
 

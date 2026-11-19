@@ -24,18 +24,19 @@ const MAPS: Readonly<Record<StatusName, readonly string[]>> = {
     '.a..abba..a.',
     '.....aa.....',
   ],
+  // A diamond cracked through, the mark the Arts' fragments give Expose.
   expose: [
-    '.aaaaa.aaaa.',
-    'acbbbbabbbba',
-    'acbbbabbbbba',
-    'acbbbabbbbba',
-    'acbbbbabbbba',
-    'acbbbbabbbba',
-    '.acbbabbbba.',
+    '.....aa.....',
+    '....abba....',
+    '...abcaba...',
+    '..abcbabba..',
+    '.abcbbbabba.',
+    'abcbbbbabbba',
+    'abbbbbabbbba',
     '.abbbabbbba.',
     '..abbbabba..',
-    '...abbbba...',
-    '....abba....',
+    '...abbaba...',
+    '....abaa....',
     '.....aa.....',
   ],
   charge: [
@@ -208,9 +209,9 @@ export class StatusRow {
   }
 }
 
-/** The icons' sheet: each a square of its glyph over its time's line in its element's colour, 24 px by the boss bar,
- *  the target's plate and the vitals, 12 over a figure; a Charge's immunity faded; a plate's row beside its bar and the
- *  player's over their health. */
+/** The icons' sheet: each a square of its glyph over its time's line in its element's colour, 24 px wherever it
+ *  stands, over a figure too, where the row is scaled back up as the plate shrinks with distance; a Charge's immunity
+ *  faded; a plate's row beside its bar and the player's over their health, 6 px apart. */
 export function statusCss(): string {
   const looks = (Object.keys(LOOKS) as StatusName[]).map((name) => {
     const colour = ELEMENTS[LOOKS[name].element]?.colour ?? '#fff';
@@ -228,8 +229,7 @@ export function statusCss(): string {
 ${looks.join('\n')}
 .fight-hud .target, .fight-hud .boss { position: relative; }
 .fight-hud .plate .statuses { position: absolute; left: calc(100% + 5px); bottom: 0; }
-.fight-hud .overhead .status { --size: 12px; gap: 1px; }
-.fight-hud .overhead .status .time { height: 1px; }
-.fight-hud .vitals > .statuses { position: absolute; left: 0; bottom: calc(100% + 8px); }
+.fight-hud .overhead .statuses { transform-origin: left bottom; }
+.fight-hud .vitals > .statuses { position: absolute; left: 0; bottom: calc(100% + 8px); gap: 6px; }
 `;
 }

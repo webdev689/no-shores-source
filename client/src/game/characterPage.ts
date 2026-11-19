@@ -1,6 +1,6 @@
 // The character page, after Destiny's: the player's own figure in the middle under their level and its meter, their
-// power beneath it; the Melee and Ranged loadouts (the Ranged with its shots left) and the cloak in slots to its left,
-// under a place kept for the worn Art, and the armour to its right, each slot its item's own
+// power beneath it; the worn Art's diamond, the Melee and Ranged loadouts (the Ranged with its shots left) and the cloak
+// in rows to its left, level with the armour's rows to its right, each slot its item's own
 // picture in a frame of its rarity. Hovering or focusing a slot shows its item's card; a click opens its flyout of the
 // nine it carries, toward the figure, each worn by a click; a right-click on any opens the item's page.
 
@@ -87,11 +87,11 @@ function tileFor(context: PageContext, item: GearItem | null, box: number, class
   return tile;
 }
 
-/** The shots left in the Ranged loadout worn, of its capacity, or none; null with none worn. */
+/** The ammunition left in the Ranged loadout worn, of its capacity, or none; null with none worn. */
 export function ammoLine(gear: GearState): { readonly words: string; readonly none: boolean } | null {
   const [left, most] = [gear.ammo ?? 0, gear.ammoMost ?? 0];
   if (most === 0) return null;
-  return left > 0 ? { words: `${left} of ${most} shots`, none: false } : { words: 'No ammo', none: true };
+  return left > 0 ? { words: `Ammo ${left} of ${most}`, none: false } : { words: 'No ammo', none: true };
 }
 
 /** A number of the player's power: its name over it. */
@@ -167,9 +167,9 @@ export function characterPage(
     }
     return holder;
   };
-  const side = (slots: readonly number[], label: string) => {
+  const side = (slots: readonly number[], label: string, first: HTMLElement[] = []) => {
     const column = make('div', '', 'gear-side');
-    column.append(make('h2', label, `gear-heading ${ROLES.rule}`), ...slots.map(slot));
+    column.append(make('h2', label, `gear-heading ${ROLES.rule}`), ...first, ...slots.map(slot));
     return column;
   };
   const middle = make('div', '', 'gear-figure');
@@ -202,10 +202,10 @@ export function characterPage(
     stat('Fruit of Dagon', String(character.fruit)),
   );
   middle.append(power, stand, stats);
-  const weapons = side(WEAPONS, 'Weapons');
+  // The worn Art is the weapons' first row, level with the head's, as Destiny stands a subclass over its weapons.
   const art = make('div', '', 'gear-art');
   if (context.art) art.append(context.art);
-  weapons.prepend(art);
+  const weapons = side(WEAPONS, 'Weapons', [art]);
   weapons.append(emblemSlot(context, open === EMBLEM_SLOT, () => choose(open === EMBLEM_SLOT ? null : EMBLEM_SLOT)));
   page.append(weapons, middle, side(ARMOUR, 'Armour'));
   return page;

@@ -476,6 +476,8 @@ export class HoverCard {
     return this.tip;
   }
   private anchor: HTMLElement | null = null;
+  /** What the pointer or the focus showed the card for, which may stand beside another (its row, its flyout). */
+  private source: HTMLElement | null = null;
 
   constructor(root: HTMLElement) {
     this.tip = make('div', '', 'gear-tip');
@@ -485,8 +487,9 @@ export class HoverCard {
     root.append(this.tip);
   }
 
-  show(anchor: HTMLElement, content: HTMLElement): void {
+  show(anchor: HTMLElement, content: HTMLElement, source: HTMLElement = anchor): void {
     this.anchor = anchor;
+    this.source = source;
     this.tip.replaceChildren(content);
     this.tip.hidden = false;
     const near = anchor.getBoundingClientRect();
@@ -507,6 +510,7 @@ export class HoverCard {
 
   hide(): void {
     this.anchor = null;
+    this.source = null;
     this.tip.hidden = true;
   }
 
@@ -519,11 +523,13 @@ export class HoverCard {
    *  unless given). */
   over(anchor: HTMLElement, content: () => HTMLElement, beside = anchor): void {
     // An open slot's flyout stands where its card would, so the card waits until it closes.
-    const show = () => anchor.getAttribute('aria-expanded') !== 'true' && this.show(beside, content());
+    const show = () => anchor.getAttribute('aria-expanded') !== 'true' && this.show(beside, content(), anchor);
     anchor.setAttribute('aria-describedby', 'gear-tip');
-    anchor.addEventListener('pointerenter', show);
+    // Only a pointer that moves shows it: a page built anew under a resting pointer opens no card over the focus.
+    anchor.addEventListener('pointermove', () => this.source !== anchor && show());
     anchor.addEventListener('pointerleave', () => this.hide());
-    anchor.addEventListener('focus', show);
+    // A focus the keys moved shows it; one a click or a page built anew left there does not.
+    anchor.addEventListener('focus', () => anchor.matches(':focus-visible') && show());
     anchor.addEventListener('blur', () => this.hide());
   }
 }

@@ -30,7 +30,7 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
-import { HINTS } from './hints.ts';
+import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
@@ -367,6 +367,8 @@ export class Foot {
     };
     const firstPerson = walker.inFirstPerson;
     const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    // While a ranged weapon aims, and whenever the Ranged loadout is drawn in first person; a bow's draw rings it.
+    const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const fought: FootFight = {
       own: ownView,
       foes: foes.marked(fight),
@@ -378,15 +380,15 @@ export class Foot {
       pressed: shown.pressed,
       parryOpen: fight.parryOpen,
       abilities: fight.abilities,
-      ammo: shown.ranged ? (ownView?.ammo ?? null) : null,
-      // While a ranged weapon aims, and whenever one is drawn in first person; a bow's draw rings it.
-      crosshair:
-        shown.aiming || (shown.ranged && firstPerson)
-          ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
-          : null,
+      // The shots left stand beside the crosshair, wherever it shows.
+      ammo: sights ? (ownView?.ammo ?? null) : null,
+      ammoMost: this.gear?.gear?.ammoMost ?? null,
+      crosshair: sights
+        ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
+        : null,
     };
     const edge = this.standing;
-    const hints = edge.kind === 'dead' ? HINTS.dead : HINTS.foot;
+    const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
     return { shot, figures, standing: edge, marks, fight: fought, hints };
   }
 

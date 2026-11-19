@@ -156,6 +156,14 @@ function vitalsCss(): string {
   .fight-hud .vital.low { animation: none; border-color: ${BEVELS.blood}; }
   .fight-hud .vital.stamina.flash { animation: none; }
 }
+/* Where the HUD is wide, the vitals' words stand at the face's next step, and their bars grow to hold them. */
+@media (min-width: 1500px) and (min-height: 900px) {
+  .fight-hud .vitals { width: 330px; gap: 8px; padding: 11px; }
+  .fight-hud .vital { height: 33px; }
+  .fight-hud .vital.poise { height: 22px; }
+  .fight-hud .vital .label, .fight-hud .vital .number { font-size: 22px; padding: 0 11px; }
+  .fight-hud .vital.poise .label, .fight-hud .vital.poise .number { font-size: 11px; }
+}
 `;
 }
 
@@ -188,9 +196,11 @@ function cuesCss(): string {
   mask: radial-gradient(circle, transparent 12px, #000 13px, #000 15px, transparent 16px); }
 .fight-hud .crosshair:not(.charging) .charge { display: none; }
 .fight-hud .crosshair.full { filter: drop-shadow(0 0 4px #ffd95a); }
-/* The shots left, beside the crosshair; none in the gear screen's loss colour. */
-.fight-hud .ammo { position: absolute; left: calc(50% + 20px); top: calc(50% + 8px); font-size: 15px; color: #f2f2f2;
-  font-variant-numeric: tabular-nums; }
+/* The shots left, beside the crosshair on the face's grid, outlined as the HUD's words are; few in brass, none in the
+   gear screen's loss colour. */
+.fight-hud .ammo { position: absolute; left: calc(50% + 22px); top: calc(50% + 11px); font-size: 22px; line-height: 22px;
+  font-weight: 500; color: #f2f2f2; text-shadow: ${HALO}; font-variant-numeric: tabular-nums; }
+.fight-hud .ammo.low { color: #f1c04f; }
 .fight-hud .ammo.empty { color: #e8968a; }
 .fight-hud .parry::before, .fight-hud .parry::after { content: ''; position: absolute; translate: -50% -50%;
   box-sizing: border-box; border-radius: 50%; border: 2px solid #f2f2f2; box-shadow: 0 0 3px #000c; }

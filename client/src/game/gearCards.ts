@@ -38,7 +38,7 @@ export interface Card {
   readonly rarity: number;
   readonly kind: string;
   /** Its main number and what it is. */
-  readonly big: { readonly label: string; readonly value: number } | null;
+  readonly big: { readonly label: string; readonly value: number | string } | null;
   readonly rows: readonly (readonly [string, string])[];
   /** A weapon's element, by the gear crate's numbers: 0 for none. */
   readonly element: number;

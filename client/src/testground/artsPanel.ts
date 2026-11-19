@@ -22,15 +22,22 @@ export const coreAsk = (art: number, slot: number, fragment: number): GearAsk =>
 export function startArtsPanel(root: HTMLElement, ask: (asked: GearAsk) => void): (state: ArtState | null) => void {
   const worn = make('select');
   worn.append(...arts.arts.map((art) => Object.assign(make('option', art.name), { value: String(art.id) })));
-  worn.addEventListener('change', () => ask({ kind: ASKS.wearArt, column: Number(worn.value) }));
   let shown: ArtState | null = null;
+  /** The Art and Core the lists were last built for; forgotten at each ask, so the room's next word, a refusal's
+   *  too, sets every list back to what it holds. */
+  let drawn = '';
+  const asked = (gearAsk: GearAsk) => {
+    drawn = '';
+    ask(gearAsk);
+  };
+  worn.addEventListener('change', () => asked({ kind: ASKS.wearArt, column: Number(worn.value) }));
   const slots = Array.from({ length: CORE_SLOTS }, (unused, slot) => {
     const select = make('select');
     select.addEventListener('change', () => {
       if (!shown) return;
       // A fragment is never taken out, only replaced: "—" goes back to what the room holds.
       if (select.value === '') select.value = String(shown.cores[shown.art - 1]?.[slot] ?? '');
-      else ask(coreAsk(shown.art, slot, Number(select.value)));
+      else asked(coreAsk(shown.art, slot, Number(select.value)));
     });
     return select;
   });
@@ -41,7 +48,6 @@ export function startArtsPanel(root: HTMLElement, ask: (asked: GearAsk) => void)
     button('Fill the Anima, ready the Tenets', () => ask({ kind: ASKS.grantArts })),
     make('p', 'R casts the Anima, Q and G the Tenets. A fragment set in another slot is refused.', 'hint'),
   );
-  let drawn = '';
   return (state) => {
     if (!state || state === shown) return;
     shown = state;

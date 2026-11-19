@@ -34,8 +34,10 @@ export interface HudFrame {
   readonly rejoining?: boolean;
   /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
   readonly crosshair?: { readonly charge: number | null } | null;
-  /** The shots left while the Ranged loadout is drawn, null while it is not. */
+  /** The shots left, beside the crosshair, while the Ranged loadout is drawn; null while they are not shown. */
   readonly ammo?: number | null;
+  /** The Ranged loadout's capacity, by which few shots left read as low; null unknown. */
+  readonly ammoMost?: number | null;
   /** Whether a press of the player's guard now could open a parry window (Fighting's parryOpen). */
   readonly parryOpen?: boolean;
   /** The blocks of the place, which no plate over a figure is seen through. */
@@ -178,7 +180,7 @@ export class Hud {
     this.crosshair.classList.toggle('charging', charge !== null);
     this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
     this.crosshair.style.setProperty('--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
-    this.ammo.update(frame.ammo);
+    this.ammo.update(frame.ammo, frame.ammoMost);
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
       const spot = project(frame.matrix, point, frame.width, frame.height);

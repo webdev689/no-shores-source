@@ -12,6 +12,11 @@ code:
   - client/src/game/artsCards.ts#spellCard
   - client/src/player/artGlyphs.ts#abilityPictures
   - client/src/player/artGlyphs.ts#mapSvg
+  - client/src/player/artGlyphs.ts#EMBLEM_FRAME
+  - client/src/game/artScenes.ts#sceneOf
+  - client/src/game/artScenes.ts#sceneStep
+  - client/src/game/artStage.ts#artStage
+  - client/src/game/artsCards.ts#rechargeWords
   - client/src/game/artFragments.ts#FRAGMENT_MAPS
   - client/src/game/arts.css
   - client/src/combat/abilityBar.ts#AbilityBar
@@ -49,42 +54,68 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 
 ## How it works
 
-- **The Art's diamond** stands on the Character page above the weapons, with the slots: the worn Art's emblem, "Art"
-  and its name in its element's colour. Its card names the Art, its spells and its words. Pressed, it opens the Art's
-  screen in the Character page's place, the footer's Back closing it as Escape does.
-- **The Art's screen**, after Destiny's subclass screen: a dark ground washed in the Art's colour, its emblem large and
-  faint behind. At the left, the worn Art's name, its element, its diamond large and its words; under them the three
-  Arts' diamonds, the worn one edged in brass. Pressing another asks the room to wear it. To the right, in rows under
-  engraved headings: ANIMA (one large tile, key R), TENETS (two tiles, keys Q and G), and CORE (three slots).
+- **The Art's diamond** is the first row under the Character page's Weapons heading, as tall as a slot's row, so the
+  weapons' rows stand level with the armour's: the worn Art's emblem, "Art" and its name in its element's colour. Its
+  card names the Art, its spells and its words. Pressed, it opens the Art's screen in the Character page's place, the
+  focus on its Anima, the footer's Back closing it as Escape does.
+- **The Art's screen**, after Destiny's subclass screen: the Art's scene behind it (below), its drama in the room right
+  of the rows, over a dark ground lit in the Art's colour, strongest at the right and darkened at the top and foot. At
+  the top left, the worn Art's name, its element, its emblem large in a double diamond of its colours with brass at
+  the points, the three Arts' diamonds, then its words, kept two lines tall so nothing moves as the Art changes. The
+  others stand subdued; the worn one is ringed in brass, a focused one in white, each 2 px over a dark pixel. Pressing
+  another asks the room to wear it. To the right, in rows under engraved headings tinted in the element and ticked at
+  their right ends: ANIMA (one large tile, key R), TENETS (two tiles, keys Q and G), and CORE (three slots), the Core's
+  heading counting what is set ("Core · 1 of 3") and its rule as long as the line above. Under the Core, each fragment
+  set is written out: its name in the element's light, what it does after it.
 - **Tiles** are the menu's gear tiles ([[Interface]]), their bevel and glow in the Art's element where an item's are in
-  its rarity. Each spell's tile carries its key on a keycap.
-- **Cards.** Each spell, fragment and Art shows a card on hover or focus, drawn as the gear's cards are, its band in
-  the element: the name, Anima, Tenet or fragment, the element's glyph and name, the picture, then for a spell its
-  recharge in seconds large over its numbers (damage, radius, reach, how long it lasts and the rest), and what it
-  does.
+  its rarity. A spell's tile is no press: it takes the focus for its card, and its key stands on a keycap centred
+  under it, half over its frame, as on the bar. An empty Core slot keeps its frame whole and its mark faint.
+- **Cards.** Each spell, fragment and Art shows a card beside its row (the Arts' diamonds, the Anima and Tenets, the
+  Core's slots, a flyout) so it never covers the next tile, drawn as the gear's cards are, its band in the element:
+  the name, Anima, Tenet or fragment, the element's glyph and name, the picture, then for a spell its recharge large
+  ("Recharge": under a minute in seconds, "38 s", else minutes and seconds, "8:20") over its numbers (damage, radius,
+  reach, how long it lasts and the rest), and what it does.
 - **The Core.** Pressing a slot opens its flyout beside it, as a gear slot's does: the Art's six fragments. The one
   set in this slot is set in brass. One set in another slot is dimmed, its slot's number in its corner, and refused
   with the refusal's sound: a fragment is never set twice. Choosing another asks the room to set it, and the flyout
-  closes.
+  closes; the slot stands in brass until the room's word comes, then flares white and in the element over 0.36 s with
+  a bell, as a gain chimes.
 - **Asks.** The screen changes nothing itself. It asks the room `{ kind: 'wearArt', art }` or
   `{ kind: 'setCore', art, slot, fragment }`, and shows the Art and Core the room last sent.
-- **Keys.** The arrows move to the nearest tile that way, and within an open flyout only among its fragments. Enter
-  chooses. Escape closes the flyout, then the screen, and the focus goes back to what opened it.
-- **Sizes.** The face keeps its grid: 11 for words, 22 for headings where the menu is wide, 33 for the Art's name. The
-  pictures stand at whole multiples of their cells: the large diamond at 8 (7 on a short screen, 11 on a wide one), the
-  three Arts' at 2 (3 wide), the Character page's at 4 (2 on a short screen and where the menu doubles), the Anima's
-  icon at 3, and the Tenets' and fragments' at 4. Past 1440p the menu doubles, the screen with it.
+- **Keys.** The footer lists them: Click, the arrows, Enter and Escape. The arrows move to the nearest tile that way,
+  and within an open flyout only among its fragments. Enter chooses. Escape closes the flyout, then the screen, and the
+  focus goes back to what opened it. The screen is a region named by the Art's name, so a screen reader reads it first.
+- **Sizes.** The face keeps its grid: 11 for words, 22 for headings, words and keycaps where the menu is wide, 33 for
+  the Art's name (55 where wide). The pictures stand at whole multiples of their cells: the large emblem's 24 cells
+  and its 32-cell frame at 8 (7 on a short screen, 11 on a wide one), the three Arts' at 2 (3 wide), the Character
+  page's at 4 everywhere, the Anima's icon at 3, and the Tenets' and fragments' at 4. The screen starts at its top,
+  66 px down (33 on a short screen, 88 wide), so nothing stands on half a pixel. Past 1440p the menu doubles, the
+  screen with it.
 - **Pictures** are drawn pixel by pixel in the Art's element: its outline, a deep shade, the body, its light and a
-  white heat. The emblems are 24 cells square in a diamond: Storm a forked bolt, Divine a sun with wings, Shadow a
-  crescent holding a raven's eye. An Anima's icon is 24 square, a Tenet's and a fragment's 12. Fragments share three
-  marks: a diamond broken open is Expose, a four-point spark is Crit, an arrow turning round the icon is a cooldown
-  given back.
-- **The ability bar** stands at the bottom left, right of the vitals, in a carved window of its own. The Anima is the
-  Art's diamond, unlit, filling with colour a row of cells at a time from the bottom as it charges; full, it glows in
-  steps. Each Tenet is a sunk square well with its icon, dimmed while it recharges, under a dark wedge that sweeps
-  away clockwise from the top in 6-degree steps; under ten seconds left, the seconds stand in it, rounded up. Ready,
-  its well is edged and lit in the element. Each key stands on a keycap. The bar is worked out from the Art worn,
-  the Anima's charge and each Tenet's recharge, as shares, and each frame writes only what changed.
+  white heat, and brass for a frame's points. The emblems are 24 cells square in a diamond: Storm a forked bolt,
+  Divine a sun with wings, Shadow a crescent holding a raven's eye. An Anima's icon is 24 square, a Tenet's and a
+  fragment's 12. Fragments share three marks: a diamond broken open is Expose, a four-point spark is Crit, an arrow
+  turning round the icon is a cooldown given back.
+- **The scene** is made by the page, cell by cell, each cell one of the four stops of the element's glow or none, at 4
+  px a cell (6 where the menu is wide). Storm is a stormy sky over a ridge, rain slanting under it, four forked bolts
+  striking in turn, each flickering twice and lighting the clouds round its root and the ground it strikes. Divine is
+  a sun rising over a sea, its twelve rays turning, two wings of flame flickering up from its flanks, embers drifting
+  and its light broken on the water. Shadow is stars and a dusky haze round a crescent, the rest of its disc faint, a
+  raven's eye in its hollow that glances about and blinks, stars lighting in crosses one after another. Its middle
+  stands in the room right of the rows, and it fades out toward the left in a dither. Its still cells are worked out
+  only when the Art or the screen's size changes; it steps six times a second round a loop of 48 steps, only while
+  shown. With less motion asked for, it stands still.
+- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle as a diamond and its glow swells
+  once, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
+  its emblem again. The Anima's tile breathes. With less motion asked for, none of it plays.
+- **The ability bar** stands at the bottom left, right of the vitals, in a carved window of its own. The Anima is its
+  own icon, the one the Art's screen shows, unlit but for its outline, filling with colour a row of cells at a time
+  from the bottom as it charges; full, it glows in steps. Each Tenet is a sunk square well with its icon, dimmed while
+  it recharges, under a dark wedge that sweeps away clockwise from the top in 6-degree steps; under ten seconds left,
+  the seconds stand in it, rounded up. Ready, its well is edged and lit in the element. Each key stands on a keycap
+  under its icon, the three on one line. Where the HUD is wide (1500 by 900 and up) the Anima stands at 4 times its
+  cells, the Tenets' icons at 4 in 52 px wells, and the keycaps at 22. The bar is worked out from the Art worn, the
+  Anima's charge and each Tenet's recharge, as shares, and each frame writes only what changed.
 
 ## In the rules
 
@@ -147,8 +178,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 
 - **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows
   its ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent
-  until the room's word on the Arts has come back since, 0.6 s at least and 2 s at most (a cast the room lets fall
-  sends no word). Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them. With the menu
+  until the room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast the
+  room lets fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them. With the menu
   open the game takes no keys, so `F` still dismantles a piece there.
 - **Dusk Daggers.** Pressed, `Q` aims: the input asks for the crosshair's point as it is, and a faint ring in
   Shadow's purple lies where the room will lay it: that point drawn in to 16 m, on the ground's height there, as
@@ -165,7 +196,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **The spells' view.** Every spell in the snapshot is kept, each with where it was the snapshot before, and drawn
   gliding between the two (below).
 - **The Test Ground** has an Arts panel: the Art worn, each Core slot, and a button that fills the Anima and readies
-  the Tenets, so every spell can be tried at once ([[Test Ground]]).
+  the Tenets, so every spell can be tried at once ([[Test Ground]]). After each ask, the room's next word sets every
+  list back to what it holds, so a refused choice does not stay shown.
 
 ## How they look
 
@@ -203,6 +235,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 ## Limits
 
 - An Art is looked at only once worn: its diamond's card names its spells.
+- The scene is the same for every player of an Art; it is not the player's figure, as Destiny's is.
 - A fragment cannot be taken out of a slot, only replaced by another.
 - The bar shows the Art's abilities alone, no buffs or debuffs.
 - Another player's first cast shows the forge's own spark until the room sends a spell of theirs; after they change
