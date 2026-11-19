@@ -1,0 +1,222 @@
+// Character creation at the brig's helm: the account step, then the look step, each a window of the Enhanced Plus kit
+// at the right of the screen so the figure standing at the left stays clear.
+import './creation.css';
+import { make } from '../../editor/dom.ts';
+import type { AccountLink } from '../../network/accounts.ts';
+import { ROLES } from '../../plus/kit.ts';
+import { type Race } from '../../player/dressing.ts';
+import { pressOf } from '../gearDom.ts';
+import { type AccountAsk, type AccountOutcome, askAccounts } from './accountAsk.ts';
+import { HAIR_COLOURS, type Look, hairStylesOf, withBody, withHair, withRace, withTone } from './look.ts';
+
+export type { AccountOutcome };
+
+/** Each hair colour as its swatch shows it. */
+const SWATCHES: Readonly<Record<string, string>> = {
+  black: '#1d1a18',
+  brown: '#5a3a22',
+  auburn: '#7a3520',
+  red: '#a8462a',
+  blond: '#d2b26a',
+  grey: '#8a8986',
+  white: '#e6e2da',
+};
+const RACE_WORDS: readonly (readonly [Race, string])[] = [
+  ['human', 'Human'],
+  ['felid', 'Felid'],
+  ['anole', 'Anole'],
+];
+const BODY_WORDS: readonly (readonly [Look['body'], string])[] = [
+  ['male', 'Male'],
+  ['female', 'Female'],
+];
+const capitalised = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
+
+/** A kit window at the right of the screen, named by its header; the window and the box its contents go in. */
+function windowIn(root: HTMLElement, title: string): [HTMLElement, HTMLElement] {
+  const frame = make('section', '', `creation ${ROLES.window}`);
+  frame.setAttribute('aria-label', title);
+  const contents = make('div', '', 'creation-body');
+  frame.append(make('h2', title, `creation-title ${ROLES.header}`), contents);
+  root.append(frame);
+  return [frame, contents];
+}
+
+function field(label: string, type: 'text' | 'password', complete: string): [HTMLElement, HTMLInputElement] {
+  const input = make('input', '', ROLES.well);
+  Object.assign(input, { type, autocomplete: complete, spellcheck: false });
+  const row = make('label', '', 'creation-field');
+  row.append(make('span', label, 'creation-label'), input);
+  return [row, input];
+}
+
+/**
+ * The first step: create an account, sign in, sign in with Discord, or play as a guest. A refusal shows in the
+ * accounts' own words and the step stays. With no accounts (playing alone) it says so and lets the player go on.
+ */
+export function accountStep(root: HTMLElement, link: AccountLink | null): Promise<AccountOutcome> {
+  const [frame, contents] = windowIn(root, 'Your account');
+  return new Promise((resolve) => {
+    const done = (outcome: AccountOutcome) => {
+      frame.remove();
+      resolve(outcome);
+    };
+    if (link === null) {
+      const goOn = pressOf('Go on', () => done({ kind: 'alone' }), 'primary');
+      contents.append(make('p', 'Accounts are kept when you play online.', 'creation-words'), goOn);
+      goOn.focus();
+      return;
+    }
+    const [nameRow, name] = field('Username', 'text', 'username');
+    const [passwordRow, password] = field('Password', 'password', 'current-password');
+    const said = make('p', link.said ?? '', 'creation-said');
+    said.setAttribute('role', 'status');
+    const presses: HTMLButtonElement[] = [];
+    // One ask at a time: every press waits while the accounts answer, and the focus comes back to the one pressed.
+    const waiting = async (asking: () => Promise<void>) => {
+      const pressed = document.activeElement;
+      for (const press of presses) press.disabled = true;
+      said.textContent = '';
+      try {
+        await asking();
+      } finally {
+        for (const press of presses) press.disabled = false;
+        if (pressed instanceof HTMLElement && frame.isConnected) pressed.focus();
+      }
+    };
+    const ask = (what: AccountAsk) =>
+      void waiting(async () => {
+        const answer = await askAccounts(link, what, name.value, password.value);
+        if (typeof answer === 'string') said.textContent = answer;
+        else done(answer);
+      });
+    presses.push(
+      pressOf('Create an account', () => ask('create'), 'primary'),
+      pressOf('Sign in', () => ask('sign in')),
+      pressOf(
+        'Sign in with Discord',
+        () => void waiting(async () => location.assign(await link.discord(location.href))),
+      ),
+      pressOf('Play as a guest', () => ask('guest')),
+    );
+    const row = make('div', '', 'creation-presses');
+    row.append(...presses);
+    contents.append(
+      make('p', 'An account keeps your character anywhere. A guest is kept in this browser.', 'creation-words'),
+      nameRow,
+      passwordRow,
+      row,
+      said,
+    );
+    name.focus();
+  });
+}
+
+/** A row of presses, one of them chosen, under its name. */
+function choices<T extends string>(
+  label: string,
+  options: readonly (readonly [T, string])[],
+  chosen: T | undefined,
+  pick: (value: T) => void,
+): HTMLElement {
+  const group = make('div', '', 'creation-group');
+  group.setAttribute('role', 'group');
+  group.setAttribute('aria-label', label);
+  const row = make('div', '', 'creation-presses');
+  for (const [value, words] of options) {
+    const press = pressOf(words, () => value !== chosen && pick(value));
+    press.dataset['choice'] = `${label}:${value}`;
+    press.classList.toggle('on', value === chosen);
+    press.setAttribute('aria-pressed', String(value === chosen));
+    row.append(press);
+  }
+  group.append(make('span', label, 'creation-label'), row);
+  return group;
+}
+
+/**
+ * The second step: the body, the race, a human's skin tone, the hair, turning the figure, and Done. Every change
+ * calls `changed` at once, so the figure at the helm is redressed as the player watches; `turn` turns the camera.
+ */
+export function lookStep(
+  root: HTMLElement,
+  start: Look,
+  changed: (look: Look) => void,
+  turn: (step: -1 | 1) => void,
+): Promise<Look> {
+  const [frame, contents] = windowIn(root, 'Your character');
+  let look = start;
+  return new Promise((resolve) => {
+    // The slider is made once and kept, so redrawing the rest never breaks a drag.
+    const tone = make('input', '', 'creation-tone');
+    Object.assign(tone, { type: 'range', min: '0', max: '100', step: '1', value: String(Math.round(look.tone * 100)) });
+    tone.setAttribute('aria-label', 'Skin tone');
+    tone.addEventListener('input', () => {
+      look = withTone(look, Number(tone.value) / 100);
+      changed(look);
+    });
+    const toneGroup = make('label', '', 'creation-group');
+    toneGroup.append(make('span', 'Skin tone', 'creation-label'), tone);
+
+    const set = (next: Look) => {
+      if (next === look) return;
+      look = next;
+      changed(look);
+      draw();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (target instanceof HTMLInputElement && target.type !== 'range') return;
+      if (target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable)) return;
+      if (event.code === 'KeyA') turn(-1);
+      else if (event.code === 'KeyD') turn(1);
+    };
+    const finish = () => {
+      removeEventListener('keydown', onKey);
+      frame.remove();
+      resolve(look);
+    };
+    const turning = make('div', '', 'creation-presses');
+    turning.append(
+      pressOf('Turn left', () => turn(-1), 'button', 'A'),
+      pressOf('Turn right', () => turn(1), 'button', 'D'),
+    );
+    const done = pressOf('Done', finish, 'primary');
+
+    const draw = () => {
+      // Each press is made anew, so the one that had the focus hands it to its successor.
+      const focused =
+        document.activeElement instanceof HTMLElement ? document.activeElement.dataset['choice'] : undefined;
+      const hair = look.hair;
+      const parts: HTMLElement[] = [
+        choices('Body', BODY_WORDS, look.body, (body) => set(withBody(look, body))),
+        choices('Race', RACE_WORDS, look.race, (race) => set(withRace(look, race))),
+      ];
+      toneGroup.hidden = look.race !== 'human';
+      parts.push(toneGroup);
+      if (hair) {
+        const styles = hairStylesOf(look.body).map((style) => [style, capitalised(style)] as const);
+        parts.push(choices('Hair', styles, hair.style, (style) => set(withHair(look, { ...hair, style }))));
+        const colours = choices(
+          'Hair colour',
+          HAIR_COLOURS.map((colour) => [colour, capitalised(colour)] as const),
+          hair.colour,
+          (colour) => set(withHair(look, { ...hair, colour })),
+        );
+        colours.classList.add('creation-swatches');
+        // The presses stand in the colours' order.
+        colours.querySelectorAll<HTMLButtonElement>('button').forEach((swatch, place) => {
+          swatch.style.setProperty('--swatch', SWATCHES[HAIR_COLOURS[place] ?? ''] ?? '#000');
+        });
+        parts.push(colours);
+      }
+      parts.push(turning, done);
+      contents.replaceChildren(...parts);
+      if (focused) contents.querySelector<HTMLElement>(`[data-choice="${focused}"]`)?.focus();
+    };
+    addEventListener('keydown', onKey);
+    draw();
+    contents.querySelector<HTMLElement>('button.on')?.focus();
+  });
+}

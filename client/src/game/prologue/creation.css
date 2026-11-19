@@ -1,0 +1,156 @@
+/* Character creation's windows (creation.ts). The kit (client/src/plus/) paints each surface by its role; this sheet
+   gives each its room. A window stands at the right of the screen and never past 45% from the left, where the figure
+   at the helm stands. */
+
+.creation {
+  --word: #efe8d6;
+  --faint: #a89f88;
+  --brass-lit: #f3cf86;
+  --stone-hi: #6d6252;
+  --stone-lo: #231e18;
+  --type-xs: 11px;
+  position: fixed;
+  /* Held from the top, not centred, so the window does not jump as a choice adds or takes away a row. */
+  top: 10vh;
+  right: 4vw;
+  z-index: 30;
+  box-sizing: border-box;
+  width: min(440px, 47vw);
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 0 0 18px;
+  border: 2px solid;
+  color: var(--word);
+  font: inherit;
+  pointer-events: auto;
+}
+
+.creation-title {
+  margin: 0 0 14px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 22px;
+  font-weight: inherit;
+  color: var(--brass-lit);
+}
+
+.creation-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 18px;
+}
+
+.creation-words,
+.creation-said {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.creation-said {
+  min-height: 1.5em;
+  color: #e8968a;
+}
+
+.creation-field,
+.creation-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.creation-group[hidden] {
+  display: none;
+}
+
+.creation-label {
+  color: var(--faint);
+}
+
+.creation-field input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 2px solid;
+  background: #101216;
+  font: inherit;
+  color: var(--word);
+}
+
+.creation-presses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.creation button {
+  padding: 6px 12px;
+  border: 2px solid;
+  font: inherit;
+  color: var(--word);
+  cursor: pointer;
+}
+
+.creation button:disabled {
+  cursor: default;
+}
+
+/* The focus is always seen, keyboard or not, as a brass ring outside the press. */
+.creation button:focus-visible,
+.creation input:focus-visible {
+  outline: 2px solid var(--brass-lit);
+  outline-offset: 2px;
+}
+
+/* A hair colour's press carries a chip of that colour before its name. */
+.creation-swatches button::before {
+  content: '';
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  /* A stone edge, so the black chip still shows on the dark press. */
+  border: 1px solid var(--stone-hi);
+  background: var(--swatch);
+}
+
+/* Lightest to deepest under the slider, so its ends say which way the tone goes. */
+.creation-tone {
+  width: 100%;
+  height: 14px;
+  background: linear-gradient(90deg, #f1d6c0, #c79a76, #8a5a3b, #4a2c1c, #2a180f);
+  appearance: none;
+  border: 1px solid #050608;
+}
+
+.creation-tone::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 22px;
+  border: 2px solid #050608;
+  background: var(--brass-lit);
+}
+
+.creation-tone::-moz-range-thumb {
+  width: 12px;
+  height: 22px;
+  border: 2px solid #050608;
+  border-radius: 0;
+  background: var(--brass-lit);
+}
+
+/* Keys on keycaps, as the menu shows them. */
+.creation kbd.gear-key {
+  margin-left: 8px;
+  min-width: 18px;
+  padding: 0 5px;
+  border: 1px solid;
+  border-color: var(--stone-hi) var(--stone-lo) var(--stone-lo) var(--stone-hi);
+  border-bottom-width: 2px;
+  background: #16181d;
+  font: inherit;
+  font-size: var(--type-xs);
+  line-height: 16px;
+  color: var(--word);
+}
