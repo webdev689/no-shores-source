@@ -269,13 +269,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
   deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
-- **Picturing a dungeon headless** needs no walk. In a scratch worktree (never committed), add two exports to
-  `room-wasm`: one that makes a land room's next join stand before entrance N (`join_at`), and one that stands every
-  player of the open room at (x, y). Build it into a target directory outside the repo and route `room.wasm` to it.
-  An `init` script wraps `WebAssembly.Instance` to call the first and keep the exports; `eval` steps call the second
-  and turn the view with `mousemove` (0.0025 rad a pixel). Stand in each room's cell farthest from its middle and
-  face the middle: one page load pictures a whole dungeon in about a minute. Take the garrison out, or it kills the
-  player first.
+- **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
+  `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
