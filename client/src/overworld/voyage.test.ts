@@ -7,7 +7,6 @@ import {
   PACE_DEFAULT,
   PACE_STEPS,
   pointAlong,
-  sail,
   sailSpeed,
   secondsLeft,
   SHIP_SPEED,
@@ -57,13 +56,13 @@ test('a voyage measures its route, and a point along it is held to its ends', ()
 
 test('a ship sails its route at its pace, heading along it, and arrives at its end', () => {
   const voyage = voyageOf(route);
-  const north = sail(voyage, 0, 5, 60);
+  const north = shipAt(voyage, 5 * sailSpeed(60));
   assert.deepEqual(north.position, [origin[0], origin[1] - 3_600]);
   close(north.heading ?? -1, 0, 1e-12, 'heading north');
   assert.equal(north.travelledM, 3_600);
   assert.equal(north.remainingM, 11_400);
   assert.equal(north.arrived, false);
-  const east = sail(voyage, north.travelledM, 10, 100);
+  const east = shipAt(voyage, north.travelledM + 10 * sailSpeed(100));
   close(east.heading ?? -1, Math.PI / 2, 1e-12, 'heading east');
   assert.equal(east.arrived, true, '15.6 km sailed: past the end');
   assert.deepEqual(east.position, route[2]);

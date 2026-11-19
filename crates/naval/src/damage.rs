@@ -161,11 +161,6 @@ impl Damage {
     }
 
     #[must_use]
-    pub fn sail_share(&self) -> f64 {
-        if self.max_sail > 0.0 { self.sail / self.max_sail } else { 1.0 }
-    }
-
-    #[must_use]
     pub fn crew_share(&self) -> f64 {
         if self.max_crew > 0.0 { self.crew / self.max_crew } else { 1.0 }
     }
@@ -186,12 +181,6 @@ impl Damage {
     #[must_use]
     pub fn fires(&self) -> usize {
         self.fires.len()
-    }
-
-    /// The seconds the longest fire aboard has left.
-    #[must_use]
-    pub fn fire_left(&self) -> f64 {
-        self.fires.iter().fold(0.0, |most, fire| fire.left.max(most))
     }
 
     /// Every number she holds, in a fixed order.

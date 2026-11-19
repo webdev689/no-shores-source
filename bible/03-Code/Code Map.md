@@ -17,6 +17,7 @@ decision, made in the same change as its entry here.
 | `client/` | The game in the browser, TypeScript ([[TypeScript and Rust]]). `index.html` and `src/` |
 | `client/index.html` | The [[Game]]'s page: its canvas, its heads-up display and their look |
 | `client/src/main.ts` | The entry point: fits the canvas, starts the GPU and hands both to the game layer |
+| `client/src/canvasSize.ts` | A canvas's drawing buffer in device pixels, from its size on the page and the screen's pixel ratio, for every page's canvas |
 | `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, then starts it |
 | `client/src/game/` | The game layer: the [[Game]]'s flow from arriving to landing, on foot in a node, at sea in the [[Overworld]], the scene every drawer draws into, and the heads-up display |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, and the crosshair |
@@ -59,10 +60,11 @@ decision, made in the same change as its entry here.
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick on its ground and judged against its section; the sea, its ships sailing their courses; and a fleet, its ships sailed by their helms and fighting at true scale |
+| `crates/city` | [[Cities]]: a port city's plan from its site, the same on the server and in every browser: its footprint, ways in, districts and terraces, its cells filled with Daggerfall's RMB blocks, its wall and harbour, its landmark and its social space |
 | `crates/bake` | The bake (`npm run bake`): each node's section, window of the ground and boxes, cut at build time for its room ([[Server]]) |
 | `crates/xtask` | The repository's own checks: `cargo xtask check` ([[Checks]]) |
 | `generated/` | What the tools make, never in git ([[Generated Files Stay Out of Git]]): `generated/messages/`, the messages' code `flatc` makes, and `generated/nodes/`, the bake's file for each node and their index, which the server's rooms read |
-| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too, and `content/gear/`, the [[Gear]]'s traits, named items, islands' resources, rolled items' names and emblems, built into the gear rules (the page reads the emblems too) |
+| `content/` | Authored game data, read by the tools, the server and the client: `content/world/layout.json`, each landmass's edits in `content/world/land/`, `content/forge/renders.json`, which names the forge's published renders, `content/ships/ships.json`, which names each ship's published mesh and holds her waterline, guns and hit boxes, `content/testground/course.json`, the Test Ground's course, which the server's rooms stand on too, and `content/gear/`, the [[Gear]]'s traits, named items, islands' resources, rolled items' names and emblems, built into the gear rules (the page reads the emblems too), and `content/audio/`, the cues searched on Freesound and `sounds.json`, the published sounds the game plays and credits |
 | `content/world/rmb/` | Daggerfall's RMB town blocks as data, for laying out towns: placements, ground tiles and flat counts ([[RMB Blocks]]) |
 | `tools/claude-toolkit/` | The co-dev's Claude Code toolkit, kept as shipped ([[Toolkit]]) |
 | `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
@@ -73,7 +75,9 @@ decision, made in the same change as its entry here.
 | `tools/ships/paint_ship.py` | Sorts a ship's faces into her parts and lays their UVs in metres, for the procedural painter's pictures ([[Sailing]]) |
 | `tools/ships/deck.py` | Measures a ship's deck from her published mesh, a grid of heights with walls where a body cannot walk, and the spot behind her wheel ([[Sailing]], "Her deck") |
 | `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh, with her waterline, guns, the boxes a ball can strike, her sails' corners and her deck, and publishes the model and mesh to R2 ([[Sailing]], [[Naval Combat]]) |
+| `tools/ships/ship_pictures.ts` | Writes the pictures a ship's parts wear, from the procedural painter, for `paint_ship.py` to pack into her model |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
+| `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]) |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
 | `bible/` | This vault |
 | `.github/workflows/` | CI (`ci.yml`), which runs `cargo xtask check` and on `main` then calls `pages.yml` to publish the client to GitHub Pages, while that commit is still `main`'s head; actions are pinned by commit |
@@ -112,7 +116,8 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
   `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
   `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
-  and `libm`; `reach`, which uses no other crate; and `gear`, which may use `serde`, `serde_json` and `libm`.
+  and `libm`; `reach`, which uses no other crate; `gear`, which may use `serde`, `serde_json` and `libm`; and `city`,
+  which may use `land`, `world`, `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
   own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `land`,
   `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use

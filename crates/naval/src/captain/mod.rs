@@ -72,10 +72,7 @@ pub const CHASE_MARGIN: f64 = 0.3;
 /// Keeping station: no less sail than this, closing on a lead drawn ahead by this share a second.
 pub const PRESENT_SAILS: f64 = 0.6;
 pub const PRESENT_GAIN: f64 = 0.08;
-/// A side's cost: a second a degree the wind forces her off it, this long if it cannot bear, and this much cheaper
-/// another must be to take her off the one she holds.
-pub const BEAR_COST_S: f64 = 1.0;
-pub const NO_BEAR_S: f64 = 90.0;
+/// How much cheaper, in seconds, another side must be to take her off the one she holds.
 pub const SIDE_HOLD_S: f64 = 8.0;
 /// Boxed in by the land, she shortens sail to this.
 pub const BOXED_SAILS: f64 = 0.3;

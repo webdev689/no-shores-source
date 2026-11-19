@@ -1,4 +1,4 @@
-import type { HeightAt, HeightGrid, Point2, Vec3 } from './ground.ts';
+import type { HeightAt, Point2, Vec3 } from './ground.ts';
 import {
   angleDelta,
   clearView,
@@ -46,20 +46,6 @@ export function ringCentre(ring: readonly Point2[]): Point2 {
     ];
   }
   return [x / (3 * area), y / (3 * area)];
-}
-
-/** The middle of a grid's land (its cells above the sea), or null when it holds none. */
-export function gridCentre(grid: HeightGrid): Point2 | null {
-  let [count, x, y] = [0, 0, 0];
-  for (let row = 0; row < grid.height; row++) {
-    for (let column = 0; column < grid.width; column++) {
-      if (!(grid.heights[row * grid.width + column] > 0)) continue;
-      count++;
-      x += grid.leftM + (column + 0.5) * grid.cellM;
-      y += grid.topM + (row + 0.5) * grid.cellM;
-    }
-  }
-  return count ? [x / count, y / count] : null;
 }
 
 /** How far a point is from an outline's nearest edge, metres. */
