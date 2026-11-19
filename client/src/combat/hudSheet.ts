@@ -186,8 +186,10 @@ function vitalsCss(): string {
 /* Whole and untouched, the vitals rest: they go in six steps, and come back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }
-/* Past 1440p the vitals stand at twice their first size, as the rest of the display does. */
+/* Past 1440p the vitals, and the compass's column with the boss bar and the target's plate, stand at twice their
+   first size, as the rest of the display does. */
 .fight-hud.double .vitals { zoom: 2; }
+.fight-hud.double .compass-column { zoom: 2; }
 ${vitalStepCss('.fight-hud', false)}
 ${vitalStepCss('.fight-hud.wide', true)}
 @media (prefers-reduced-motion: reduce) {

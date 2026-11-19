@@ -4,6 +4,7 @@ import { tipOf } from '../plus/barFrame.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { COMPASS, UNDER_COMPASS } from '../plus/compass.ts';
 import { barLength, compassWidth, EDGE, hudLayout, VITAL_SIZES } from './hudLayout.ts';
+import { fightSheetCss } from './hudSheet.ts';
 
 type Box = readonly [left: number, top: number, right: number, bottom: number];
 
@@ -16,6 +17,7 @@ const SCREENS = [
   [1440, 900],
   [1600, 900],
   [1920, 1080],
+  [2400, 1300],
   [2560, 1440],
 ] as const;
 const TEST_GROUND = [
@@ -60,15 +62,17 @@ function vitalsOf(width: number, height: number): Record<string, Box> {
   return { health, stamina, poise, word, buffs };
 }
 
-/** The compass's strip and the boss bar under it (its plate and its poise's word), as the layout stands them. */
+/** The compass's strip and the boss bar under it (its plate and its poise's word), as the layout stands them, at its
+ *  zoom past 1440p as the corners stand. */
 function columnOf(width: number, height: number): Record<string, Box> {
-  const { compassTop } = hudLayout(width, height);
-  const strip = compassWidth(width);
-  const boss = Math.min(PLATES.boss.width, PLATES.boss.share * width);
-  const bossTop = compassTop + UNDER_COMPASS - COMPASS.top;
+  const { compassTop, zoom } = hudLayout(width, height);
+  const strip = compassWidth(width, zoom);
+  const boss = Math.min(PLATES.boss.width * zoom, PLATES.boss.share * width);
+  const bossTop = compassTop + (UNDER_COMPASS - COMPASS.top) * zoom;
+  const stripBottom = compassTop + (COMPASS.height + COMPASS.rule) * zoom;
   return {
-    compass: [(width - strip) / 2, compassTop, (width + strip) / 2, compassTop + COMPASS.height + COMPASS.rule],
-    boss: [(width - boss) / 2, bossTop, (width + boss) / 2, bossTop + PLATES.boss.height + 18],
+    compass: [(width - strip) / 2, compassTop, (width + strip) / 2, stripBottom],
+    boss: [(width - boss) / 2, bossTop, (width + boss) / 2, bossTop + (PLATES.boss.height + 18) * zoom],
   };
 }
 
@@ -91,7 +95,7 @@ test('beside the compass the bars are a quarter of the view and grow with it; pa
   assert.deepEqual(hudLayout(960, 600), { wide: false, zoom: 1, length: 176, stacked: false, compassTop: 18 });
   assert.equal(hudLayout(1280, 720).length, 333);
   assert.deepEqual(hudLayout(1920, 1080), { wide: true, zoom: 1, length: 499, stacked: false, compassTop: 18 });
-  assert.deepEqual(hudLayout(2560, 1440), { wide: false, zoom: 2, length: 333, stacked: false, compassTop: 18 });
+  assert.deepEqual(hudLayout(2560, 1440), { wide: false, zoom: 2, length: 333, stacked: false, compassTop: 36 });
   assert.equal(hudLayout(2400, 1200).zoom, 1, 'short of 1300 tall, the larger step only');
 });
 
@@ -110,4 +114,10 @@ test('each bar is as long as what it holds: stamina as long as health, poise two
   assert.equal(barLength(333, 40, 100, 8), 133);
   assert.equal(barLength(20, 40, 100, 8), tipOf(8) * 2 + 8);
   assert.equal(barLength(333, 140, 100, 12), 333, 'never longer than health');
+});
+
+test('past 1440p the compass’s column, the boss bar and the target’s plate under it stand at twice their size', () => {
+  assert.match(fightSheetCss(), /\.fight-hud\.double \.compass-column \{ zoom: 2; \}/);
+  assert.equal(compassWidth(2560, 2), COMPASS.width * 2);
+  assert.equal(compassWidth(1100, 2), COMPASS.share * 1100, 'never past its share of the view');
 });

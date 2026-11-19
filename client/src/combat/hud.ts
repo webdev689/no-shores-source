@@ -222,7 +222,8 @@ export class Hud {
     this.root.classList.toggle('wide', next.wide);
     this.root.classList.toggle('double', next.zoom === 2);
     this.root.classList.toggle('stacked', next.stacked);
-    this.column.style.top = next.stacked ? `${next.compassTop}px` : '';
+    // The column's own pixels: past 1440p it stands zoomed, as the corners do.
+    this.column.style.top = next.stacked ? `${next.compassTop / next.zoom}px` : '';
     this.vitals.lay(next.length, next.wide);
     this.weapons.lay(next.wide, next.zoom);
   }

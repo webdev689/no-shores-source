@@ -225,10 +225,16 @@
           font-size: 22px;
         }
       }
-      /* Past 1440p the place's name stands at twice its size: the line stands under it. */
+      /* Past 1440p the place's name stands at twice its size: the line stands under it. The compass's column stands
+         doubled too, so the line keeps clear of it as of the single one, and under the doubled boss bar while one
+         shows. */
       @media (min-width: 2400px) and (min-height: 1300px) {
         #hud:has(> .fight:not([hidden])) > .status {
           top: 140px;
+          max-width: calc(50vw - min(520px, 30vw) - 60px);
+        }
+        #hud:has(> .fight.bossed:not([hidden])) > .status {
+          top: 232px;
         }
       }
       /* In a fight at sea the ships' plates hold the top, a Boss's under the compass: the line stands under it, and
