@@ -122,6 +122,7 @@ function tagShell(
   view: DataView,
   pointOf: (vertex: number) => Point,
   partOf: (vertex: number) => number,
+  pieces: readonly (readonly number[])[],
 ): void {
   const hull = SHIP_PARTS.indexOf('hull');
   const sliceOf = (across: number, z: number) => across * SLICES_UP + Math.floor(z / SLICE.upM);
@@ -135,7 +136,7 @@ function tagShell(
   // Her sides' planks and wales run long along her; her channels, chainplates, catheads and deckhouses are short,
   // and stand proud of her or inboard of her.
   const alongHer = new Uint8Array(mesh.vertexCount);
-  for (const piece of piecesOf(mesh)) {
+  for (const piece of pieces) {
     if (partOf(piece[0] ?? 0) !== hull) continue;
     const along = piece.map((vertex) => pointOf(vertex)[0]);
     const long = Math.max(...along) - Math.min(...along) >= PLANK_M ? 1 : 0;
@@ -202,9 +203,10 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
     [0, 4, 8].map((offset) => view.getFloat32(vertex * VERTEX_BYTES + offset, true)) as unknown as Point;
   const partOf = (vertex: number) => view.getUint8(vertex * VERTEX_BYTES + PART_BYTE);
   const spar = SHIP_PARTS.indexOf('spar');
-  tagShell(mesh, view, pointOf, partOf);
+  const pieces = piecesOf(mesh);
+  tagShell(mesh, view, pointOf, partOf, pieces);
   // Her yards, by the spar pieces along each square sail's head; a round spar across a mast that holds none is bare.
-  const sparPieces = piecesOf(mesh).filter((piece) => piece.every((vertex) => partOf(vertex) === spar));
+  const sparPieces = pieces.filter((piece) => piece.every((vertex) => partOf(vertex) === spar));
   const yards: Yard[] = [];
   const pivots: (Point | null)[] = sails.map(() => null);
   const taken = new Set<number[]>();
