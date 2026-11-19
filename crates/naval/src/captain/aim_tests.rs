@@ -13,7 +13,14 @@ fn heading_north() -> Ship {
 
 /// A still target `range` metres east of her: abeam to starboard, lying north-south.
 fn target_east(range: f64) -> Mark {
-    Mark { place: [range, 0.0], heading: Some(0.0), velocity: [0.0, 0.0], smoothed: [0.0, 0.0], level: 0.0 }
+    Mark {
+        place: [range, 0.0],
+        heading: Some(0.0),
+        velocity: [0.0, 0.0],
+        smoothed: [0.0, 0.0],
+        level: 0.0,
+        arms: &SLOOP_ARMS,
+    }
 }
 
 struct Deck {

@@ -52,7 +52,7 @@ fn her_mut(fight: &mut Fight) -> &mut Captain {
 }
 
 fn begun(seed: u32) -> Fight {
-    Fight::begin(sloop_at(0.0, 0.0), seed, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"))
+    Fight::begin(sloop_at(0.0, 0.0), Commission::default(), seed, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"))
 }
 
 /// A fight with the captain set `x` metres east of the player, still, heading north, of `temper`.
@@ -87,7 +87,7 @@ fn with_no_water_to_float_her_no_captain_comes() {
             Spot { bed: 5.0, surface: None }
         }
     }
-    assert!(Fight::begin(sloop_at(0.0, 0.0), 1, &Dry, 0.0).is_err());
+    assert!(Fight::begin(sloop_at(0.0, 0.0), Commission::default(), 1, &Dry, 0.0).is_err());
 }
 
 #[test]
@@ -248,7 +248,7 @@ fn a_look_on_her_hull_lays_on_that_point_and_its_unscattered_volley_strikes_her(
     let on = lay_on(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, met);
     let laid = fight.laid(PLAYER, &aim);
     // The look's point and the test's differ in their last bits, so the elevation is held to a hair of it.
-    let same = laid.is_some_and(|laid| {
+    let same = laid.clone().is_some_and(|laid| {
         (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
     });
     assert!(same, "laid for the point the look meets on her side, not the water's 300 m: {laid:?} against {on:?}");

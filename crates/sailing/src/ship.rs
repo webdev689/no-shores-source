@@ -211,3 +211,7 @@ pub fn step_pulled(
 #[cfg(test)]
 #[path = "ship_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "rig_tests.rs"]
+mod rig_tests;

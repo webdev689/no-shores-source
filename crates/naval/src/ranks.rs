@@ -1,11 +1,12 @@
-//! Whom a captain sails for and her rank: the factions by number, each one's Sloop, and what each rank makes of her
-//! ship over a Major's (her hull and men, her way, her guns' harm and reload, her gunners' aim, her boldness), kept in
-//! one table.
+//! Whom a captain sails for and her rank: the factions by number, each one's class, the hull each rank sails, and what
+//! each rank makes of her ship over a Major's (her hull and men, her way, her guns' harm and reload, her gunners' aim,
+//! her boldness), kept in one table.
 
 use crate::arms::{Build, PIRATE_SLOOP, TITHE_SLOOP};
 use crate::captain::PIRATE_RUNS_AT;
 use crate::damage::{Damage, STRUCK_AT};
 use crate::guns::Gun;
+use sailing::HullKind;
 
 /// The factions by number, as the foes number them: the players' own ships are 0.
 pub const PLAYERS: u8 = 0;
@@ -114,6 +115,18 @@ impl Rank {
     pub fn scale(self) -> &'static Scale {
         &SCALES[usize::from(self.number() - 1)]
     }
+
+    /// The hull a captain of this rank sails: the Sloop for a Minor and a Major, the Schooner for an Elite, the Brig for
+    /// a Miniboss and the Frigate for a Boss.
+    #[must_use]
+    pub fn hull(self) -> HullKind {
+        match self {
+            Rank::Minor | Rank::Major => HullKind::Sloop,
+            Rank::Elite => HullKind::Schooner,
+            Rank::Miniboss => HullKind::Brig,
+            Rank::Boss => HullKind::Frigate,
+        }
+    }
 }
 
 /// A captain's commission: the faction she sails for and her rank.
@@ -137,7 +150,13 @@ impl Commission {
         CAPTAIN_FACTIONS.contains(&faction).then_some(Commission { faction, rank })
     }
 
-    /// Her faction's Sloop, her hull as strong and her men as many as her rank makes them.
+    /// The hull she sails: her rank's.
+    #[must_use]
+    pub fn hull(&self) -> HullKind {
+        self.rank.hull()
+    }
+
+    /// Her faction's class, her hull as strong and her men as many as her rank makes them.
     #[must_use]
     pub fn build(&self) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };

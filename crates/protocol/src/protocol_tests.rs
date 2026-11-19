@@ -391,8 +391,10 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
     let commission = PIRATES[0].commission();
     assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
+    assert_eq!(pirate.hull(), commission.hull().number(), "she sails her rank's hull");
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
+    assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
     let numbers =
         |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
     let alone = sea.fights().unwrap().get(1);

@@ -10,7 +10,8 @@ use naval::shots::ShipId;
 use sailing::ship::{SAILS_SET, Ship};
 use sailing::waters::Waters;
 
-/// A Sloop at sea at a point, on a heading, at a rung of her ladder, lying still.
+/// A ship at sea at a point, on a heading, at a rung of her ladder, lying still: her hull is her captain's or the
+/// player's Sloop.
 #[must_use]
 pub fn sloop(x: f64, y: f64, heading: f64, rung: i8) -> Ship {
     Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung }

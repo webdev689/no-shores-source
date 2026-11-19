@@ -1,6 +1,6 @@
 //! A captain who fights, as DFO's: whom she takes on (bold, or wary of a stronger ship), when she runs, chases,
 //! gives up or leaves a wreck, the course that brings her broadside to bear or keeps her station, and her helm. She
-//! sails the Sloop under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of her
+//! sails her rank's hull under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of her
 //! rudder, and its sail share the rung of her ladder whose way is nearest.
 
 pub mod aim;
@@ -9,7 +9,7 @@ mod engage;
 pub mod land;
 pub mod odds;
 
-use crate::arms::{Arms, Build, Side};
+use crate::arms::{Arms, Build, Side, arms_of};
 use crate::damage::{Damage, State};
 use crate::gunnery::{Guns, lay};
 use crate::random::Mulberry32;
@@ -21,10 +21,10 @@ use course::{
 };
 use land::{Avoid, NAV_EVERY_S, avoid_land, course_clear};
 use odds::{Power, odds};
-use sailing::Hull;
 use sailing::helm::{HANDLING, PACE, canvas, point_of_sail, sea_wind, steerage};
 use sailing::pose::{Pose, frame};
 use sailing::ship::{Helm, SAILS_SET, Ship, length, off_run_deg};
+use sailing::{Hull, HullKind};
 use std::collections::BTreeMap;
 
 /// Who she sees (metres) and keeps on fighting out to this many times as far; whom she runs from within.
@@ -119,11 +119,12 @@ struct Chase {
     marks: Vec<[f64; 2]>,
 }
 
-/// A ship she may fight as she sees her, a player's or another faction's: her number, where she is and how she lies,
-/// her hurts and her power.
+/// A ship she may fight as she sees her, a player's or another faction's: her number, her hull, where she is and how
+/// she lies, her hurts and her power.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighting {
     pub id: ShipId,
+    pub hull: HullKind,
     pub ship: Ship,
     pub level: f64,
     pub hull_share: f64,
@@ -312,7 +313,7 @@ impl Captain {
         if self.temper == Temper::Bold || enemy.wrecked || enemy.hull_share < GRAPPLE_HULL {
             return true;
         }
-        odds(&self.power(her.damage), &enemy.power, her.arms) >= WARY_ODDS
+        odds(&self.power(her.damage), &enemy.power, [her.arms, arms_of(enemy.hull)]) >= WARY_ODDS
     }
 
     /// The share of her way her canvas gives her: what her hurts leave it, by her rank's way.
@@ -464,7 +465,8 @@ impl Captain {
         }
         seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
         let threat = self.threat(her, sightings);
-        let outgunned = threat.is_some_and(|threat| odds(&threat.power, &self.power(her.damage), her.arms) > 1.0);
+        let outgunned = threat
+            .is_some_and(|threat| odds(&threat.power, &self.power(her.damage), [arms_of(threat.hull), her.arms]) > 1.0);
         let runs = (her.damage.hull_share() < self.commission.rank.scale().runs_at && (threat.is_some() || seen))
             || (self.temper == Temper::Wary && outgunned);
         let enemy = chosen.filter(|_| seen).map(|(enemy, _)| enemy);
@@ -563,6 +565,7 @@ impl Captain {
             velocity: velocity_of(&enemy.ship),
             smoothed: self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship)),
             level: enemy.level,
+            arms: arms_of(enemy.hull),
         };
         let (ship, pose, arms, guns, build) = (her.ship, her.pose, her.arms, her.guns, &self.build);
         let aboard = Aboard { ship, pose, arms, guns, build, aim_error: self.commission.rank.scale().aim_error };

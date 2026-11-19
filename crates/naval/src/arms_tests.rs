@@ -1,4 +1,5 @@
 use super::*;
+use sailing::HullKind;
 use sailing::pose::Pose;
 use sailing::ship::Ship;
 
@@ -56,4 +57,46 @@ fn her_hull_box_turns_and_heels_with_her() {
     assert!((block.centre[1] - (200.0 - middle)).abs() < 1e-12);
     assert!((block.half[2] - (SLOOP_ARMS.hull[1][2] - SLOOP_ARMS.hull[0][2]) / 2.0).abs() < 1e-12);
     assert_eq!(sail_blocks(&ship_at(0.0), &LEVEL, &SLOOP_ARMS).len(), 2);
+}
+
+#[test]
+fn each_hulls_batteries_run_fore_to_aft_along_her_sides() {
+    let guns = [(HullKind::Sloop, 3), (HullKind::Schooner, 5), (HullKind::Brig, 7), (HullKind::Frigate, 10)];
+    for (kind, a_side) in guns {
+        let arms = arms_of(kind);
+        for side in Side::BOTH {
+            let battery = arms.battery(side);
+            assert_eq!(battery.len(), a_side, "{kind:?} {side:?}");
+            assert!(battery.iter().all(|mouth| mouth[1] * side.sign() > 0.0), "{kind:?}: along her {side:?} side");
+            assert!(battery.windows(2).all(|pair| pair[0][0] > pair[1][0]), "{kind:?}: fore to aft");
+        }
+        let [low, high] = arms.hull;
+        assert!(low[0] < 0.0 && high[0] > 0.0 && low[2] < 0.0 && high[2] > 0.0, "{kind:?}'s box about her middle");
+        assert_eq!(arms.sails.len(), kind.hull().sails.len(), "{kind:?}: a box for every sail");
+        assert_eq!(sail_blocks(&ship_at(0.0), &LEVEL, arms).len(), arms.sails.len());
+    }
+    // The Frigate's guns alternate between her two gun decks.
+    let decks: Vec<bool> = FRIGATE_ARMS.port.iter().map(|mouth| mouth[2] > 2.5).collect();
+    assert!(decks.windows(2).all(|pair| pair[0] != pair[1]), "{decks:?}");
+}
+
+#[test]
+fn a_sides_broadside_weighs_the_sloops_whatever_her_hull() {
+    use crate::gunnery::lay;
+    use crate::guns::{SWIVEL, Shot, loaded};
+    for shot in Shot::CYCLE {
+        let sloops = loaded(&SWIVEL, shot);
+        for kind in HullKind::ALL {
+            for side in Side::BOTH {
+                let laid = lay(&ship_at(0.0), &LEVEL, arms_of(kind), side, shot, 100.0, None);
+                let guns = laid.mouths.len() as f64;
+                assert_eq!(laid.mouths.len(), arms_of(kind).battery(side).len());
+                let whole = [laid.gun.hull * guns, laid.gun.sail * guns, laid.gun.crew * guns];
+                let sloop = [sloops.hull * 3.0, sloops.sail * 3.0, sloops.crew * 3.0];
+                assert!(whole.iter().zip(sloop).all(|(one, other)| (one - other).abs() < 1e-9), "{kind:?} {shot:?}");
+                assert_eq!([laid.gun.speed, laid.gun.yaw_spread_deg], [sloops.speed, sloops.yaw_spread_deg]);
+            }
+        }
+    }
+    assert_eq!(SLOOP_ARMS.gun_share(Side::Port), 1.0, "the Sloop's guns throw what they always did");
 }

@@ -2,7 +2,7 @@
 //! the look's ray meets (DFO's `lookOnShip`), else for the water's range; and where each gun's ball, unscattered,
 //! would stop. Free functions over the ships as numbers, so a browser lays the same lay the room fires.
 
-use crate::arms::{LARGE_BOAT, SLOOP_ARMS, hull_block, sail_blocks, side_for_bearing};
+use crate::arms::{LARGE_BOAT, arms_of, hull_block, sail_blocks, side_for_bearing};
 use crate::ballistics::{Block, segment_entry};
 use crate::damage::State;
 use crate::fight::{Aim, Fight, Refusal, Vessel, carry_of};
@@ -10,19 +10,20 @@ use crate::gunnery::{Lay, RIPPLE_S, aimed, lay, lay_on, zone_radius};
 use crate::guns::Shot;
 use crate::shots::{Flag, ShipId, Stop, Target, stop_of};
 
-use sailing::TICK_SECONDS;
 use sailing::pose::Pose;
 use sailing::ship::Ship;
 use sailing::waters::Waters;
+use sailing::{HullKind, TICK_SECONDS};
 
 /// A look meets a ship within this far past the laid gun's longest throw (metres): DFO's `LOOK_REACH_PAD`.
 pub const LOOK_REACH_PAD_M: f64 = 60.0;
 
-/// A ship as a lay sees her: her number and flag, her helm's numbers, how she lies, and whether she floats.
+/// A ship as a lay sees her: her number and flag, her hull, her helm's numbers, how she lies, and whether she floats.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Sighted {
     pub id: ShipId,
     pub flag: Flag,
+    pub hull: HullKind,
     pub ship: Ship,
     pub pose: Pose,
     pub afloat: bool,
@@ -32,7 +33,7 @@ impl Sighted {
     #[must_use]
     pub fn of(id: ShipId, vessel: &Vessel) -> Self {
         let afloat = vessel.damage.state != State::Sunk;
-        Self { id, flag: vessel.flag(), ship: vessel.ship, pose: vessel.pose, afloat }
+        Self { id, flag: vessel.flag(), hull: vessel.hull, ship: vessel.ship, pose: vessel.pose, afloat }
     }
 
     /// Her as a ball meets her.
@@ -41,8 +42,8 @@ impl Sighted {
         Target {
             id: self.id,
             flag: self.flag,
-            hull: hull_block(&self.ship, &self.pose, &SLOOP_ARMS),
-            rig: sail_blocks(&self.ship, &self.pose, &SLOOP_ARMS),
+            hull: hull_block(&self.ship, &self.pose, arms_of(self.hull)),
+            rig: sail_blocks(&self.ship, &self.pose, arms_of(self.hull)),
             alive: self.afloat,
         }
     }
@@ -54,13 +55,13 @@ impl Sighted {
 #[must_use]
 pub fn lay_for(shooter: &Sighted, load: Shot, aim: &Aim, ships: &[Sighted]) -> Option<Lay> {
     let side = side_for_bearing(aim.bearing_deg)?;
-    let (ship, pose) = (&shooter.ship, &shooter.pose);
-    let square = lay(ship, pose, &SLOOP_ARMS, side, load, 0.0, None);
+    let (ship, pose, arms) = (&shooter.ship, &shooter.pose, arms_of(shooter.hull));
+    let square = lay(ship, pose, arms, side, load, 0.0, None);
     if let Some(point) = aim.ray.and_then(|ray| look_on(shooter, &square, ray, ships)) {
-        return Some(lay_on(ship, pose, &SLOOP_ARMS, side, load, point));
+        return Some(lay_on(ship, pose, arms, side, load, point));
     }
     let out = (square.centre[0] - ship.x) * square.dir[0] + (square.centre[1] - ship.y) * square.dir[1];
-    Some(lay(ship, pose, &SLOOP_ARMS, side, load, (aim.range_m - out).max(0.0), None))
+    Some(lay(ship, pose, arms, side, load, (aim.range_m - out).max(0.0), None))
 }
 
 /// The point to lay on where the look's ray first meets a ship of another flag, her hull or her canvas, within the

@@ -229,6 +229,7 @@ export class FleetSession {
     const sighted = (vessel: SeenVessel): LaySighted => ({
       id: vessel.id,
       flag: vessel.faction,
+      ...(vessel.hull === undefined ? {} : { hull: vessel.hull }),
       ship: vessel.ship,
       pose: vessel.pose,
       afloat: vessel.state !== 'sunk',

@@ -2,7 +2,7 @@
 //! ship of another flag it meets with way on, by the ram's law.
 
 use super::{Event, Fight, Sailor, Vessel};
-use crate::arms::{SLOOP_ARMS, hull_block, posed};
+use crate::arms::{hull_block, posed};
 use crate::captain::course::velocity_of;
 use crate::damage::{BRACE_TAKEN, Hurt, SHIP_TOUGHNESS, State, founder, rounded};
 use crate::ram::{
@@ -10,7 +10,6 @@ use crate::ram::{
     ram_closing, ram_contact, ram_line, ram_men, ram_paid, ram_room, recoil_room,
 };
 use crate::shots::ShipId;
-use sailing::SLOOP;
 use sailing::pose::{Pose, frame, pose_of};
 use sailing::waters::Waters;
 use std::collections::{BTreeMap, VecDeque};
@@ -35,9 +34,9 @@ impl Stem {
     }
 }
 
-/// A Sloop on the flat: her hull's box (`SLOOP_ARMS`), its middle set forward of hers as the box is.
+/// A hull on the flat: her hull's box, its middle set forward of hers as the box is.
 fn flat_of(vessel: &Vessel) -> Flat {
-    let [low, high] = SLOOP_ARMS.hull;
+    let [low, high] = vessel.arms().hull;
     let (forward, starboard) = frame(vessel.ship.heading);
     let ahead = (high[0] + low[0]) / 2.0;
     Flat {
@@ -51,7 +50,7 @@ fn flat_of(vessel: &Vessel) -> Flat {
 
 /// Her pose on the water at `time`, a captain's as she founders.
 fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
-    let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
+    let afloat = pose_of(&vessel.ship, vessel.hull.hull(), waters, time);
     vessel.pose = match &vessel.sailor {
         Sailor::Captain(command) => {
             let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);
@@ -121,7 +120,8 @@ impl Fight {
     /// Her stem on the first ship of another flag it meets, if its way drives a blow home she can pay for.
     fn ram_from(&mut self, id: ShipId, events: &mut Vec<Event>) {
         let (Some(vessel), Some(stem)) = (self.ships.get(&id), self.stems.get(&id)) else { return };
-        let [_, high] = SLOOP_ARMS.hull;
+        // Her stem: the fore end of her own hull's box.
+        let [_, high] = vessel.arms().hull;
         let point = posed(&vessel.ship, &vessel.pose, [high[0], 0.0, 1.0]);
         let share = RECOIL_SHARE * if vessel.guns.braced { BRACE_TAKEN } else { 1.0 };
         let ways: Vec<[f64; 2]> = stem.ways.iter().map(|(_, way)| *way).collect();
@@ -131,7 +131,7 @@ impl Fight {
             if !fair || stem.rammed.contains_key(target) {
                 return None;
             }
-            let contact = ram_contact(&hull_block(&her.ship, &her.pose, &SLOOP_ARMS), point, RAM_REACH)?;
+            let contact = ram_contact(&hull_block(&her.ship, &her.pose, her.arms()), point, RAM_REACH)?;
             let closing = ram_closing(&ways, velocity_of(&her.ship), contact.normal);
             let blow = ram_blow(closing, contact.side, mine.max_hull, her.damage.max_hull);
             let blow = ram_paid(blow, recoil_room(mine), share);

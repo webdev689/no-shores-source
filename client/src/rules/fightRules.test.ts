@@ -76,6 +76,30 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   );
 });
 
+// Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: her captain's rank, the hull she
+// sails, and the last leg's fingerprint.
+const HULL_FIGHTS = [
+  [2, 0, '3ffe4b1dc14aa2f2'],
+  [3, 1, 'db32dd8e2a3be2f2'],
+  [4, 2, '3d910e311ef93da0'],
+  [5, 3, 'e1bbe847d399ac62'],
+] as const;
+
+test('a fight against each hull through WebAssembly fights to the same fingerprint as the door natively', async () => {
+  const rules = await openSquare();
+  for (const [rank, hull, print] of HULL_FIGHTS) {
+    let view = rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000, rank);
+    assert.deepEqual([view.captain.rank, view.captain.hull_kind, view.player.hull_kind], [rank, hull, 0]);
+    let time = 1000;
+    for (const leg of FIGHT_LEGS) {
+      const ticks = leg[7] ?? 0;
+      view = rules.fightStep(ordersOf(leg), time, ticks);
+      time += ticks / 60;
+    }
+    assert.equal(view.fingerprint, print, `rank ${rank}`);
+  }
+});
+
 test('the fight door refuses a step with no fight and a look past its reach', async () => {
   const rules = await openSquare();
   rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);

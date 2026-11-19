@@ -168,7 +168,7 @@ fn a_captain_sizes_up_another_by_her_whole_rank_her_guns_and_reload_too() {
     assert_eq!((boss.might, boss.reload), (scale.might, scale.reload));
     assert_eq!(boss.hull_hp, major.hull_hp, "one hull, told apart by her guns alone");
     assert!(
-        crate::captain::odds::odds(&boss, &major, &crate::arms::SLOOP_ARMS) > 1.0,
+        crate::captain::odds::odds(&boss, &major, [&crate::arms::SLOOP_ARMS, &crate::arms::SLOOP_ARMS]) > 1.0,
         "a Boss's guns outgun a Major's"
     );
 }
@@ -238,4 +238,37 @@ fn a_captain_of_a_higher_rank_runs_down_a_wary_one_sailing_away_at_the_same_poin
         }
     }
     panic!("the Boss never brought her guns to bear");
+}
+
+#[test]
+fn a_captain_of_each_rank_sails_and_fights_in_her_ranks_hull() {
+    for rank in Rank::ALL {
+        let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PIRATES));
+        let Some(vessel) = fight.vessel(FIRST) else { panic!("she is at sea") };
+        assert_eq!(vessel.hull, rank.hull(), "{rank:?}");
+        assert_eq!(vessel.arms(), crate::arms::arms_of(rank.hull()));
+        let target = crate::laying::Sighted::of(FIRST, vessel).target();
+        assert_eq!(target.rig.len(), rank.hull().hull().sails.len(), "{rank:?}: a ball meets each of her sails");
+        let seen = fight.sightings(SECOND).into_iter().find(|seen| seen.id == FIRST).map(|seen| seen.hull);
+        assert_eq!(seen, Some(rank.hull()), "the other captain sees her hull");
+    }
+}
+
+#[test]
+fn a_volley_from_any_hull_of_one_rank_throws_the_same_broadside() {
+    // Each rank's captain fights a Major: her first volley's balls, every gun of her side, weigh her rank's Sloop's.
+    for rank in Rank::ALL {
+        let mut fight = two_captains(Commission { faction: GREY_TITHE, rank }, Commission::default());
+        let guns = crate::arms::arms_of(rank.hull()).port.len();
+        let volley = (0..180 * 60).find_map(|_| {
+            tick(&mut fight);
+            let balls: Vec<_> = fight.balls.iter().filter(|ball| ball.shooter == FIRST).collect();
+            (!balls.is_empty()).then(|| balls.iter().map(|ball| ball.gun.hull).collect::<Vec<f64>>())
+        });
+        let Some(volley) = volley else { panic!("the {rank:?} never fired") };
+        assert_eq!(volley.len(), guns, "{rank:?}: a ball from every gun of her side");
+        let whole: f64 = volley.iter().sum();
+        let sloops = 3.0 * SWIVEL.hull * rank.scale().might;
+        assert!((whole - sloops).abs() < 1e-9, "{rank:?}: {whole} against her rank's Sloop's {sloops}");
+    }
 }

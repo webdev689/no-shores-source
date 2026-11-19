@@ -8,11 +8,12 @@ export interface FleetLook {
   readonly ray?: readonly number[];
 }
 
-/** A ship as a lay sees her: her number, her flag (0 a player's, else her faction's number), her helm's numbers and
- *  pose, whether she floats. */
+/** A ship as a lay sees her: her number, her flag (0 a player's, else her faction's number), her hull (0 the Sloop to
+ *  3 the Frigate, the Sloop unless named), her helm's numbers and pose, whether she floats. */
 export interface LaySighted {
   readonly id: number;
   readonly flag: number;
+  readonly hull?: number;
   readonly ship: ArrayLike<number>;
   readonly pose: ArrayLike<number>;
   readonly afloat: boolean;
@@ -70,6 +71,7 @@ const GUN_FLOATS = 16;
 const sightedFloats = (ship: LaySighted): number[] => [
   ship.id,
   ship.flag,
+  ship.hull ?? 0,
   ...Array.from(ship.ship),
   ...Array.from(ship.pose),
   ship.afloat ? 1 : 0,

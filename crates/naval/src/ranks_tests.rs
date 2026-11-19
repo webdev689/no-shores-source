@@ -57,3 +57,15 @@ fn a_rank_is_numbered_one_to_five() {
     }
     assert_eq!((Rank::numbered(0), Rank::numbered(6)), (None, None));
 }
+
+#[test]
+fn each_rank_sails_her_own_hull() {
+    use sailing::HullKind;
+    let hulls = [HullKind::Sloop, HullKind::Sloop, HullKind::Schooner, HullKind::Brig, HullKind::Frigate];
+    for (rank, hull) in Rank::ALL.into_iter().zip(hulls) {
+        assert_eq!(rank.hull(), hull, "{rank:?}");
+        for faction in CAPTAIN_FACTIONS {
+            assert_eq!(Commission { faction, rank }.hull(), hull);
+        }
+    }
+}

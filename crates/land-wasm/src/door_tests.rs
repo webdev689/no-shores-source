@@ -155,36 +155,51 @@ fn numbers_no_ship_could_have_are_refused_before_they_reach_the_rules() {
     assert!(answer.iter().all(|number| number.is_finite()), "{answer:?}");
 }
 
-#[test]
-fn the_sloop_sails_on_the_waterline_her_export_measured() {
+/// The ships manifest the game is built with.
+fn manifest() -> Value {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/ships/ships.json");
-    let ships: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let waterline = &ships["ships"]["sloop"]["waterline"];
-    let measured = |key: &str| waterline[key].as_f64().unwrap();
-    let hull = sailing::SLOOP;
-    assert_eq!(
-        [hull.half_length_m * 2.0, hull.half_beam_m * 2.0, hull.draught_m],
-        [measured("length_m"), measured("beam_m"), measured("draught_m")],
-        "re-exported at another waterline, the rules' Sloop must follow"
-    );
+    serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 
 #[test]
-fn the_sloops_guns_and_boxes_are_where_her_export_measured() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../content/ships/ships.json");
-    let ships: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
-    let sloop = &ships["ships"]["sloop"];
-    let triple = |value: &Value| -> [f64; 3] { [0, 1, 2].map(|axis| value[axis].as_f64().unwrap()) };
-    let arms = naval::arms::SLOOP_ARMS;
-    let guns = sloop["guns"].as_array().unwrap();
-    assert_eq!(guns.len(), 6);
-    for (gun, mouth) in guns.iter().zip(arms.mouths) {
-        assert_eq!(triple(&gun["mouth_m"]), mouth, "{}: re-exported, the rules' guns must follow", gun["name"]);
+fn each_hull_sails_on_the_waterline_and_rig_her_export_measured() {
+    let ships = manifest();
+    for kind in sailing::HullKind::ALL {
+        let entry = &ships["ships"][kind.name()];
+        let measured = |key: &str| entry["waterline"][key].as_f64().unwrap();
+        let hull = kind.hull();
+        assert_eq!(
+            [hull.half_length_m * 2.0, hull.half_beam_m * 2.0, hull.draught_m],
+            [measured("length_m"), measured("beam_m"), measured("draught_m")],
+            "{}: re-exported at another waterline, the rules' hull must follow",
+            kind.name()
+        );
+        let manifested: Vec<&str> =
+            entry["sails"].as_array().unwrap().iter().map(|sail| sail["kind"].as_str().unwrap()).collect();
+        let ruled: Vec<String> = hull.sails.iter().map(|sail| format!("{:?}", sail.kind).to_lowercase()).collect();
+        assert_eq!(ruled, manifested, "{}: her sails, kind for kind", kind.name());
     }
+}
+
+#[test]
+fn each_hulls_guns_and_boxes_are_where_her_export_measured() {
+    let ships = manifest();
+    let triple = |value: &Value| -> [f64; 3] { [0, 1, 2].map(|axis| value[axis].as_f64().unwrap()) };
     let corners = |value: &Value| [triple(&value[0]), triple(&value[1])];
-    assert_eq!(corners(&sloop["boxes"]["hull"]), arms.hull);
-    let sails = sloop["boxes"]["sails"].as_array().unwrap();
-    assert_eq!(sails.iter().map(corners).collect::<Vec<_>>(), arms.sails.to_vec());
+    for kind in sailing::HullKind::ALL {
+        let entry = &ships["ships"][kind.name()];
+        let arms = naval::arms::arms_of(kind);
+        let guns = entry["guns"].as_array().unwrap();
+        for (side, battery) in [("port", arms.port), ("starboard", arms.starboard)] {
+            let mouths: Vec<[f64; 3]> =
+                guns.iter().filter(|gun| gun["side"] == side).map(|gun| triple(&gun["mouth_m"])).collect();
+            assert_eq!(mouths, battery.to_vec(), "{} {side}: re-exported, the rules' guns must follow", kind.name());
+        }
+        assert_eq!(arms.port.len() + arms.starboard.len(), guns.len());
+        assert_eq!(corners(&entry["boxes"]["hull"]), arms.hull, "{}", kind.name());
+        let sails = entry["boxes"]["sails"].as_array().unwrap();
+        assert_eq!(sails.iter().map(corners).collect::<Vec<_>>(), arms.sails.to_vec(), "{}", kind.name());
+    }
 }
 
 /// A voyage onto the square's west shore and off it, the browser's test sails too: under sail for two minutes until
@@ -213,4 +228,27 @@ fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
     assert!(touched, "she took the ground: furthest east {furthest}");
     assert!(ship[0] < furthest - 5.0, "her oars took her off: {} from {furthest}", ship[0]);
     assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "47228ab3b66e850c");
+}
+
+#[test]
+fn a_request_naming_her_hull_sails_that_hull_and_one_naming_none_the_sloop() {
+    assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
+    let ship = [180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0];
+    let sailed = |hull: Option<f64>| {
+        let mut request = sail_request(&ship, &[0.0; 3], 1000.0, 60.0);
+        request.extend(hull.iter().flat_map(|number| number.to_le_bytes()));
+        sail_bytes(&request)
+    };
+    assert_eq!(sailed(None), sailed(Some(0.0)), "the Sloop's, named or not");
+    let (sloop, frigate) = (sail_answer(&sailed(None)), sail_answer(&sailed(Some(3.0))));
+    assert!(frigate[3] > sloop[3], "the Frigate's canvas gathers more way: {} against {}", frigate[3], sloop[3]);
+    for bad in [4.0, -1.0, 0.5] {
+        assert!(header(&sailed(Some(bad))).get("error").is_some(), "no hull is numbered {bad}");
+    }
+    // Faster than any Sloop could be, a Frigate's way the door lets through.
+    let fast = [180_000.0, 360_000.0, 0.0, 11.0, 0.0, 0.0, 11.0, 2.0];
+    let request = |hull: f64| [&fast[..], &[0.0; 3], &[1000.0, 1.0, hull]].concat();
+    let asked =
+        |hull: f64| sail_bytes(&request(hull).iter().flat_map(|number| number.to_le_bytes()).collect::<Vec<u8>>());
+    assert!(header(&asked(0.0)).get("error").is_some() && header(&asked(3.0)).get("error").is_none());
 }

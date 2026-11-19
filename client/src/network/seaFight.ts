@@ -46,9 +46,9 @@ export function ordersNumbers(orders: FightOrders): number[] {
   ];
 }
 
-/** Where a view's other captains sit (after its clock, its end, the player's Sloop, the captain's and her mind:
- *  crates/naval/src/wire.rs OTHERS_AT). */
-const OTHERS_AT = 2 + 2 * (SHIP_NUMBERS + POSE_NUMBERS + 14) + 4;
+/** Where a view's other captains sit (after its clock, its end, the player's Sloop, the captain's ship and her mind:
+ *  crates/naval/src/wire.rs OTHERS_AT); each ship's numbers end with her hull. */
+const OTHERS_AT = 2 + 2 * (SHIP_NUMBERS + POSE_NUMBERS + 15) + 4;
 
 /** A fight's numbers as `fightViewOf` reads them, from a room's view and its other captains, which the room sends apart
  *  so a page that knows one captain reads the view whole: their count and each one's numbers, or none. */
@@ -100,6 +100,7 @@ export function fightViewOf(
       load: named<ShotName>(SHOT_CYCLE),
       braced: next() === 1,
     },
+    hull_kind: next(),
   });
   // A captain's Sloop, then her mode, whether she is hostile to the player, and her sides run out.
   const commanded = (commission: Commissioned): FightCaptain => {

@@ -32,7 +32,7 @@ pub const FIRE_EXTENT_SKILL: f64 = 0.65;
 pub const LAY_ERR: f64 = 0.9;
 
 /// Her mark as her guns see it: where it is, its heading if it has way, its velocity now and smoothed over the last
-/// second, and the water under it.
+/// second, the water under it, and its arms (its hull's box).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Mark {
     pub place: [f64; 2],
@@ -40,6 +40,7 @@ pub struct Mark {
     pub velocity: [f64; 2],
     pub smoothed: [f64; 2],
     pub level: f64,
+    pub arms: &'static Arms,
 }
 
 /// Her ship as her guns work it, and how far her rank widens her gunners' error (1 a Major's).
@@ -89,11 +90,11 @@ pub fn bears_within(ship: &Ship, lead: [f64; 2], rel: [f64; 2], want_deg: f64, w
     (error.abs() - window) / rate.abs()
 }
 
-/// Whether the lay's middle gun, unscattered, passes within `band` (heights, a hand under its foot allowed) where it
+/// Whether the lay's middle gun (its aftmost middle one, of an even battery), unscattered, passes within `band` (heights, a hand under its foot allowed) where it
 /// comes abreast of `at`.
 #[must_use]
 pub fn lay_passes(lay: &Lay, carry: [f64; 3], at: [f64; 2], band: [f64; 2]) -> bool {
-    let start = lay.mouths[1];
+    let start = lay.mouths[lay.mouths.len() / 2];
     let launch = launch_velocity(lay.dir, lay.elevation, lay.gun.speed, carry);
     let along = launch[0] * lay.dir[0] + launch[1] * lay.dir[1];
     let out = (at[0] - start[0]) * lay.dir[0] + (at[1] - start[1]) * lay.dir[1];
@@ -163,7 +164,7 @@ impl RunOut {
 }
 
 /// What her guns did this step: a side run out (the tell), and a side fired, laid.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Battery {
     pub run_out: Option<Side>,
     pub fire: Option<Lay>,
@@ -176,7 +177,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
     let me = [ship.x, ship.y];
     let own = velocity_of(ship);
     let (rel, carry) = ([mark.velocity[0] - own[0], mark.velocity[1] - own[1]], [own[0], own[1], 0.0]);
-    let top = at.arms.hull[1][2];
+    let top = mark.arms.hull[1][2];
     let band = [mark.level, mark.level + top];
     let skill = at.build.skill;
     for (side, want) in [(Side::Starboard, 90.0), (Side::Port, -90.0)] {
@@ -195,7 +196,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             lay_on(ship, at.pose, at.arms, side, at.guns.load, target)
         };
         let strikes = || lay_passes(&lay_k(1.0), carry, lead, band);
-        let window = fire_window(me, lead, mark.heading, at.arms, skill);
+        let window = fire_window(me, lead, mark.heading, mark.arms, skill);
         let Some(since) = run.out[side.index()] else {
             if run.run_in[side.index()] > clock - RUN_IN_S {
                 continue;

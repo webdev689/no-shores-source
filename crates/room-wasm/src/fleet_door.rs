@@ -7,7 +7,7 @@ use naval::fight::{Aim, Hurts, sail_hurt};
 use naval::guns::Shot;
 use naval::laying::{Sighted, preview};
 use naval::shots::Flag;
-use sailing::SLOOP;
+use sailing::HullKind;
 use sailing::floats::{HELM_FLOATS, POSE_FLOATS, SHIP_FLOATS};
 use sailing::pose::{Pose, pose_of};
 use sailing::ship::{Helm, Ship};
@@ -57,24 +57,28 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let waters = OpenSea { swell: swell() };
     let wind = steady_wind(swell());
     // Out on the open sea a ship's step does not hang on the hour: only her pose does.
-    let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, *helm, hurts, &waters, wind, time).0);
-    let pose = pose_of(&ship, &SLOOP, &waters, time);
+    // A player sails the Sloop.
+    let hull = HullKind::Sloop.hull();
+    let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, hull, *helm, hurts, &waters, wind, time).0);
+    let pose = pose_of(&ship, hull, &waters, time);
     ship.to_floats().into_iter().chain(pose.to_floats()).collect()
 }
 
-/// The numbers of one other ship in a lay's request: her number, flag (0 a player's, else her faction's number),
-/// ship, pose and whether she floats.
-const OTHER_FLOATS: usize = 3 + SHIP_FLOATS + POSE_FLOATS;
+/// The numbers of one other ship in a lay's request: her number, flag (0 a player's, else her faction's number), hull
+/// (0 the Sloop to 3 the Frigate, as the snapshot numbers it), ship, pose and whether she floats.
+const OTHER_FLOATS: usize = 4 + SHIP_FLOATS + POSE_FLOATS;
 
 fn sighted_of(numbers: &[f64]) -> Option<Sighted> {
-    let (&[id, flag], rest) = numbers.split_first_chunk::<2>()?;
+    let (&[id, flag, hull], rest) = numbers.split_first_chunk::<3>()?;
     let ship = ship_of(rest.get(..SHIP_FLOATS)?)?;
     let pose = pose_from(rest.get(SHIP_FLOATS..SHIP_FLOATS + POSE_FLOATS)?)?;
     let afloat = *rest.get(SHIP_FLOATS + POSE_FLOATS)? != 0.0;
     let id = (id >= 0.0 && id <= f64::from(u32::MAX) && id == id.trunc()).then_some(id as u32)?;
     let flag = (flag >= 0.0 && flag <= f64::from(u8::MAX) && flag == flag.trunc()).then_some(flag as u8)?;
     let flag = Flag::numbered(flag);
-    Some(Sighted { id, flag, ship, pose, afloat })
+    let hull = (hull == hull.trunc() && (0.0..=f64::from(u8::MAX)).contains(&hull)).then_some(hull as u8)?;
+    let hull = HullKind::numbered(hull)?;
+    Some(Sighted { id, flag, hull, ship, pose, afloat })
 }
 
 /// Her look's lay as the fleet room would lay it: from her own ship as `sighted_of` reads one, her load (1 round to
