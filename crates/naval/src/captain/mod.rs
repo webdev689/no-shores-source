@@ -21,7 +21,7 @@ use course::{
 };
 use land::{Avoid, NAV_EVERY_S, avoid_land, course_clear};
 use odds::{Power, odds};
-use sailing::helm::{HANDLING, PACE, canvas, point_of_sail, sea_wind, steerage};
+use sailing::helm::{HANDLING, PACE, canvas_drive, point_of_sail, sea_wind, steerage};
 use sailing::pose::{Pose, frame};
 use sailing::ship::{Helm, SAILS_SET, Ship, length, off_run_deg};
 use sailing::{Hull, HullKind};
@@ -184,7 +184,7 @@ pub struct Captain {
 /// Her best way under sail with the wind on her quarter, left her by her canvas: the pace she reckons by.
 #[must_use]
 pub fn pace(hull: &Hull, wind: [f64; 2], way_share: f64) -> f64 {
-    canvas(hull) * sea_wind(length(wind[0], wind[1])) * PACE * HANDLING.move_speed_sail * way_share
+    canvas_drive(hull) * sea_wind(length(wind[0], wind[1])) * PACE * HANDLING.move_speed_sail * way_share
 }
 
 /// The most she swings at her way (degrees a second): her steerage under sail, her oars' swing on them.

@@ -6,11 +6,10 @@
 use super::{OPEN, error_view, view_bytes};
 use land::sea::Swell;
 use sailing::floats::{HELM_FLOATS, SHIP_FLOATS};
-use sailing::helm::canvas;
 use sailing::pose::pose_of;
 use sailing::ship::{Helm, SAILS_SET, Ship, step_ship};
 use sailing::waters::{LandWaters, steady_wind};
-use sailing::{Hull, HullKind, SLOOP, TICK_SECONDS};
+use sailing::{HullKind, TICK_SECONDS};
 use serde_json::json;
 use std::f64::consts::TAU;
 
@@ -19,8 +18,8 @@ pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
 /// What no ship's numbers pass: a place a million kilometres out; a way (or her canvas's share of it) of 10 m/s, twice
-/// what the Sloop's rig makes in the strongest sea wind (another hull's as much more as her canvas); a swing of 45
-/// degrees a second, twice her oars'; a world time past 30 years, where the swell's phases lose their bits.
+/// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice her oars'; a world time past
+/// 30 years, where the swell's phases lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
 const MOST_WAY: f64 = 10.0;
 const MOST_TURN_DEG: f64 = 45.0;
@@ -30,9 +29,9 @@ fn is_whole(number: f64) -> bool {
     number == number.trunc()
 }
 
-/// A ship's eight numbers, checked: finite, a place, heading, way and swing a ship of `hull` could have, and a whole
-/// rung on the ladder.
-pub(crate) fn ship_from(numbers: &[f64], hull: &Hull) -> Result<Ship, String> {
+/// A ship's eight numbers, checked: finite, a place, heading, way and swing a ship could have, and a whole rung on the
+/// ladder.
+pub(crate) fn ship_from(numbers: &[f64]) -> Result<Ship, String> {
     let [x, y, heading, ahead, abeam, turn, sail_way, rung] = numbers[..] else {
         return Err(format!("a ship is {SHIP_FLOATS} numbers"));
     };
@@ -40,9 +39,8 @@ pub(crate) fn ship_from(numbers: &[f64], hull: &Hull) -> Result<Ship, String> {
         return Err(format!("a ship is {SHIP_FLOATS} finite numbers"));
     }
     let placed = x.abs() <= MOST_PLACE_M && y.abs() <= MOST_PLACE_M && (0.0..TAU).contains(&heading);
-    let most_way = MOST_WAY * (canvas(hull) / canvas(&SLOOP)).max(1.0);
-    let moving = ahead.abs() <= most_way && abeam.abs() <= most_way && turn.abs() <= MOST_TURN_DEG;
-    if !placed || !moving || !(0.0..=most_way).contains(&sail_way) {
+    let moving = ahead.abs() <= MOST_WAY && abeam.abs() <= MOST_WAY && turn.abs() <= MOST_TURN_DEG;
+    if !placed || !moving || !(0.0..=MOST_WAY).contains(&sail_way) {
         return Err("her place, heading, way or swing is none a ship could have".into());
     }
     if !is_whole(rung) || !(-1.0..=f64::from(SAILS_SET)).contains(&rung) {
@@ -92,7 +90,7 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, HullKind), String> {
             .ok_or("her hull is a whole number from 0 to 3")?,
         _ => return Err(format!("a sail request is {REQUEST_FLOATS} numbers")),
     };
-    let ship = ship_from(&numbers[..SHIP_FLOATS], hull.hull())?;
+    let ship = ship_from(&numbers[..SHIP_FLOATS])?;
     let helm = helm_from(steer, crab, climb)?;
     let (time, ticks) = ticks_from(time, ticks)?;
     Ok((ship, helm, time, ticks, hull))

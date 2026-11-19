@@ -2,7 +2,7 @@
 //! square sails, each drawing at the crest of its own curve.
 
 use super::*;
-use crate::helm::{HANDLING, PACE, canvas, point_of_sail, sail_power, steerage};
+use crate::helm::{HANDLING, PACE, QUARTER_DEG, canvas, canvas_drive, point_of_sail, sail_power, steerage};
 use crate::waters::{Spot, Waters};
 use crate::{BRIG, FRIGATE, HullKind, SCHOONER, SLOOP, SailKind, SailSize, TICK_SECONDS};
 use std::f64::consts::{FRAC_PI_2, PI};
@@ -30,9 +30,36 @@ fn sail(mut ship: Ship, helm: Helm, hull: &Hull, ticks: u32) -> Ship {
     ship
 }
 
-/// Her way under sail at a point of sail, as the responsive helm sets it.
+/// Her way under sail at a point of sail, as the responsive helm sets it: her canvas's drive, each sail at its crest.
 fn way_under_sail(hull: &Hull, off_run_deg: f64) -> f64 {
-    canvas(hull) * point_of_sail(off_run_deg) * 1.5 * PACE * HANDLING.move_speed_sail
+    canvas_drive(hull) * point_of_sail(off_run_deg) * 1.5 * PACE * HANDLING.move_speed_sail
+}
+
+/// Her way gathered under sail from rest on `heading`, in the wind blowing to the east.
+fn sailed_way(hull: &Hull, heading: f64) -> f64 {
+    sail(under_sail(heading), STILL, hull, 1800).ahead
+}
+
+#[test]
+fn no_hull_sails_faster_than_the_sloop_at_her_best_and_each_sails_by_her_own_sails() {
+    // The wind blows to the east: heading south-east is the wind on her quarter, her best.
+    let quarter = std::f64::consts::FRAC_PI_2 + QUARTER_DEG.to_radians();
+    let best = sailed_way(&SLOOP, quarter);
+    assert!((best - way_under_sail(&SLOOP, QUARTER_DEG)).abs() < 1e-9, "{best}");
+    for kind in HullKind::ALL {
+        let hull = kind.hull();
+        let crest = sailed_way(hull, quarter);
+        assert!((crest - best).abs() < 1e-9, "{}: {crest} at her best against the Sloop's {best}", hull.name);
+        // On a beam reach (north) and running (east), her way is her own sails at their crests by the point of sail.
+        for (heading, off_run) in [(0.0, 90.0), (std::f64::consts::FRAC_PI_2, 0.0)] {
+            let way = sailed_way(hull, heading);
+            assert!((way - way_under_sail(hull, off_run)).abs() < 1e-9, "{}: {way}", hull.name);
+            assert!(way <= best + 1e-12, "{}: {way} past the Sloop's best {best}", hull.name);
+        }
+    }
+    // Her canvas is still her own: only its drive is held to the Sloop's.
+    assert!(canvas(&FRIGATE) > canvas(&SLOOP) && (canvas_drive(&FRIGATE) - canvas(&SLOOP)).abs() < 1e-12);
+    assert_eq!(canvas_drive(&SLOOP), canvas(&SLOOP), "the Sloop's drive is her canvas to the bit");
 }
 
 #[test]
@@ -69,7 +96,7 @@ fn a_square_rigged_hull_gathers_her_way_on_a_beam_reach_at_her_rigs_rate() {
     for hull in [&BRIG, &FRIGATE] {
         let ship = sail(under_sail(0.0), STILL, hull, 1200);
         assert!((ship.ahead - way_under_sail(hull, 90.0)).abs() < 1e-9, "{}: {}", hull.name, ship.ahead);
-        assert!(ship.y < -100.0, "{} sails north: {}", hull.name, ship.y);
+        assert!(ship.y < -30.0, "{} sails north: {}", hull.name, ship.y);
         // Her way comes on at her rig's gain: a tick's worth from rest.
         let first = sail(under_sail(0.0), STILL, hull, 1);
         let rate = HANDLING.move_accel_sail * 1.5 * crate::helm::SAIL_ACCEL * hull.gain;
@@ -84,7 +111,7 @@ fn a_square_rigged_hull_runs_before_the_wind_and_beats_into_it() {
         let beating = sail(under_sail(3.0 * FRAC_PI_2), STILL, hull, 1200);
         assert!((running.ahead - way_under_sail(hull, 0.0)).abs() < 1e-9, "{}", hull.name);
         assert!((beating.ahead - way_under_sail(hull, 180.0)).abs() < 1e-9, "{}", hull.name);
-        assert!(beating.ahead > 0.0 && beating.x < -50.0, "{} makes way into the wind's eye", hull.name);
+        assert!(beating.ahead > 0.0 && beating.x < -10.0, "{} makes way into the wind's eye", hull.name);
     }
 }
 

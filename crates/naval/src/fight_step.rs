@@ -172,7 +172,9 @@ impl Fight {
         let roll = self.draws.draw();
         let mut hurt = shot_harm(&gun, zone, braced, roll, tough);
         let burns = zone == Zone::Hull || (zone == Zone::Rig && rig_fire(shot));
-        hurt.fire = burns && self.draws.draw() < fire_chance(shot);
+        // A ball of a side of many guns takes her share of a Sloop's ball's harm and of its chance to set her alight.
+        hurt.fire = burns && self.draws.draw() < fire_chance(shot) * gun.share;
+        let hurt = vessel.damage.shared(hurt, gun.share);
         let state = vessel.damage.apply(hurt, clock, floor);
         if let Sailor::Captain(command) = &mut vessel.sailor {
             if state == Some(State::Struck) {

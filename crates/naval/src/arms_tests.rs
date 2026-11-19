@@ -83,7 +83,7 @@ fn each_hulls_batteries_run_fore_to_aft_along_her_sides() {
 #[test]
 fn a_sides_broadside_weighs_the_sloops_whatever_her_hull() {
     use crate::gunnery::lay;
-    use crate::guns::{SWIVEL, Shot, loaded};
+    use crate::guns::{Gun, SWIVEL, Shot, loaded};
     for shot in Shot::CYCLE {
         let sloops = loaded(&SWIVEL, shot);
         for kind in HullKind::ALL {
@@ -91,10 +91,9 @@ fn a_sides_broadside_weighs_the_sloops_whatever_her_hull() {
                 let laid = lay(&ship_at(0.0), &LEVEL, arms_of(kind), side, shot, 100.0, None);
                 let guns = laid.mouths.len() as f64;
                 assert_eq!(laid.mouths.len(), arms_of(kind).battery(side).len());
-                let whole = [laid.gun.hull * guns, laid.gun.sail * guns, laid.gun.crew * guns];
-                let sloop = [sloops.hull * 3.0, sloops.sail * 3.0, sloops.crew * 3.0];
-                assert!(whole.iter().zip(sloop).all(|(one, other)| (one - other).abs() < 1e-9), "{kind:?} {shot:?}");
-                assert_eq!([laid.gun.speed, laid.gun.yaw_spread_deg], [sloops.speed, sloops.yaw_spread_deg]);
+                // Each ball is the Sloop's, taking its share of her broadside: the side's shares make her three.
+                assert!((laid.gun.share * guns - 3.0).abs() < 1e-12, "{kind:?} {shot:?}");
+                assert_eq!(Gun { share: 1.0, ..laid.gun }, sloops, "{kind:?} {shot:?}");
             }
         }
     }

@@ -107,7 +107,7 @@ export class SeaRoom {
     this.words += 1;
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     if (own) {
-      const who = { name: shipName(own.faction), faction: own.faction, rank: own.rank };
+      const who = { name: shipName(own.faction, own.hull), faction: own.faction, rank: own.rank };
       this.fight = fightViewOf(own.view, who, shipName);
       this.events.push(...this.fight.events);
     } else if (this.fight?.over === null) this.fight = null;

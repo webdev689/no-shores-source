@@ -245,10 +245,10 @@ fn a_request_naming_her_hull_sails_that_hull_and_one_naming_none_the_sloop() {
     for bad in [4.0, -1.0, 0.5] {
         assert!(header(&sailed(Some(bad))).get("error").is_some(), "no hull is numbered {bad}");
     }
-    // Faster than any Sloop could be, a Frigate's way the door lets through.
+    // No hull sails faster than the Sloop's best, so the door holds every one to the same way.
     let fast = [180_000.0, 360_000.0, 0.0, 11.0, 0.0, 0.0, 11.0, 2.0];
     let request = |hull: f64| [&fast[..], &[0.0; 3], &[1000.0, 1.0, hull]].concat();
     let asked =
         |hull: f64| sail_bytes(&request(hull).iter().flat_map(|number| number.to_le_bytes()).collect::<Vec<u8>>());
-    assert!(header(&asked(0.0)).get("error").is_some() && header(&asked(3.0)).get("error").is_none());
+    assert!(header(&asked(0.0)).get("error").is_some() && header(&asked(3.0)).get("error").is_some());
 }

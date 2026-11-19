@@ -24,9 +24,14 @@ const { overhead: PLATE, boss: BOSS_PLATE } = PLATES;
 /** How far over her waterline a ship's bar stands, metres: over her masthead. */
 export const BAR_OVER_M = 16;
 
-/** Her Sloop's name, by the faction she sails for. */
-export function shipName(faction: number): string {
-  return SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Sloop';
+/** The hulls by their numbers (crates/sailing/src/hull.rs HullKind), as a captain's name says them. */
+const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
+
+/** Her ship's name, by the faction she sails for and her hull (the Sloop unless named): the Tithe's or the pirates'
+ *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names her. */
+export function shipName(faction: number, hull = 0): string {
+  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Sloop';
+  return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
 
 /** A rank's bar colour: Minor red, Major orange, Elite and Miniboss yellow; a Boss's bar yellow too. */

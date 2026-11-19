@@ -128,9 +128,10 @@ so she never tacks.
 ## Ranks and factions
 
 Every captain sails for a faction at a rank ([[Enemies Come in Five Ranks, After Destiny]],
-[[Enemy Factions Start With the Grey Tithe]], [[Enemies]]): the Grey Tithe's ship is the Tithe Sloop, the pirates'
-the Pirate Sloop. Her rank picks her hull ([[Hulls]]): a Minor and a Major sail the Sloop, an Elite the Schooner, a
-Miniboss the Brig and a Boss the Frigate. Her rank scales her, a Major at the numbers of the rest of this note:
+[[Enemy Factions Start With the Grey Tithe]], [[Enemies]]): she is named for her faction and her hull, on her plate
+and in the panel: the Tithe Sloop, Schooner, Brig or Frigate, or the Pirate Sloop, Schooner, Brig or Frigate. Her rank
+picks her hull ([[Hulls]]): a Minor and a Major sail the Sloop, an Elite the Schooner, a Miniboss the Brig and a Boss
+the Frigate. Her rank scales her, a Major at the numbers of the rest of this note:
 
 | Rank | Hull and men | Way | Gun damage | Reload | Aim error | Temper | Runs | Strikes |
 |---|---|---|---|---|---|---|---|---|
@@ -151,13 +152,15 @@ Elite's or a Miniboss's mark, above a bar of her hull, red, orange or yellow by 
 no plate covers another. A Boss's stands across the top of the screen with her faction's name.
 
 A hull changes her size, her boxes, her sails, her handling, her stem and how many guns she carries, never her
-strength: the table above is the whole of it. Her hull and men are her class's times her rank's at every hull. A side's
-broadside weighs the Sloop's times her rank's gun damage, spread evenly over that side's guns (each gun three times its
-harm over her guns a side: the Schooner's five, the Brig's seven, the Frigate's ten across her two gun decks); each gun
-reloads and scatters as the Sloop's. Her balls fly from her own mouths, a ball meets her own hull's and sails' boxes,
-and she rams, is rammed and is kept apart by her own hull's box. Her sails make her way by her canvas ([[Sailing]]):
-on a beam reach in the rated wind the Schooner makes about 4 m/s, the Brig 11 and the Frigate 13, before her rank's
-way. A captain sizing up a ship reckons her hit share against that ship's hull.
+strength: the table above is the whole of it. Her hull and men are her class's times her rank's at every hull, and her
+canvas drives her no harder than the Sloop's, so her rank's way alone sets her speed ([[Sailing]], "The other hulls").
+A side's broadside weighs the Sloop's times her rank's gun damage, spread evenly over that side's guns (the Schooner's
+five, the Brig's seven, the Frigate's ten across her two gun decks): each ball is the Sloop's, rounded as hers, and the
+ship it strikes takes its share of it, three over the guns a side, carrying the parts of a point or a man until they
+make one; its chance to set her alight is that share of the Sloop's ball's. So every broadside of one rank takes as
+much hull, canvas, men and fire from her, whatever hull fires it. Each gun reloads and scatters as the Sloop's. Her
+balls fly from her own mouths, a ball meets her own hull's and sails' boxes, and she rams, is rammed and is kept apart
+by her own hull's box. A captain sizing up a ship reckons her hit share against that ship's hull.
 
 ## Ramming
 
@@ -265,9 +268,7 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 ## Limits
 
 - Every captain sails her rank's hull, the Tithe's and the pirates' alike; there is no iron ram bow (the Tithe Ram)
-  and no Fluyt yet, no other classes, and no ambient traffic. A captain's name is her class's (the Pirate Sloop, the
-  Tithe Sloop) whatever her hull.
-- At sea a hostile ship sails on at a Sloop's way whatever her hull; only her fight sails her hull's.
+  and no Fluyt yet, no other classes, and no ambient traffic.
 - A captain bends round other hulls as if each were as long and broad as her own.
 - At sea a fight holds one player at most: a player joins only a fight among captains, and a ship at sea never joins
   a fight already under way. In the game's fight only the first captain's fires and DFO's messages show.

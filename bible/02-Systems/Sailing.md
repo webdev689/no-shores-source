@@ -82,24 +82,6 @@ The owner's Sloop sails as Come Sail Away's Large Boat II, whose rig is hers: a 
 Its handling is the mod's own, unscaled, and its gain (1.159) DFO's for that rig. Under sail on a beam reach she makes
 2.4 m/s.
 
-## The other hulls
-
-Each hull's waterline, draught and sails are her manifest's (`content/ships/ships.json`), every sail small as the
-Sloop's are, and a test holds each to it; her gain is DFO's for the Come Sail Away rig that matches hers. A hull is
-named by her key in the manifest (`HullKind`), numbered 0 to 3 on the wire.
-
-| Hull | Waterline | Draught | Sails | Gain (DFO's rig) | Beam reach |
-|---|---|---|---|---|---|
-| Sloop | 18.7 × 5.6 m | 1.8 m | a staysail, a gaff | 1.159 (Large Boat II) | 2.4 m/s |
-| Schooner | 25.2 × 4.3 m | 2.0 m | a staysail, two gaffs | 1.233 (Large Boat V: a staysail and two gaffs) | 4.0 m/s |
-| Brig | 30.7 × 5.3 m | 2.2 m | two staysails, six square sails, a gaff spanker | 1.643 (the galleon, a square-rigged two-master) | 10.8 m/s |
-| Frigate | 38.1 × 6.2 m | 2.4 m | two staysails, eight square sails, a gaff spanker | 1.798 (the Carrack, a square-rigged three-master) | 13.4 m/s |
-
-Her square sails pull by the same law as the rest: under the responsive helm each draws at its crest, so the point of
-sail alone says how her heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the
-wind's eye as the Sloop does, keeping her way. A bigger rig gathers and loses way faster and steers at her way over her
-gain. The game sets her square sails' trim only to draw them.
-
 Her model is a `.blend`. `tools/ships/shape_ship.py` first shapes the owner's model ([[The Sloop Is About 18 m Long]]):
 it brings her to three times its size about her origin, and opens the rail round her quarterdeck (raised 0.67 m over
 her deck about her wheel) at its two front corners, either side of her hatch, closing the cut ends and laying four
@@ -121,6 +103,27 @@ mesh lives on R2 under its hash ([[Generated Files Stay Out of Git]]); its key a
 ([[Ship Models Live on R2]]). Her cannons are the objects named `Cannon` in it, three a side, fore to aft: the export
 reads each one's mouth and bore, and the boxes a ball can strike (her hull, and each sail's canvas), into `ships.json`
 for [[Naval Combat]].
+
+## The other hulls
+
+Each hull's waterline, draught and sails are her manifest's (`content/ships/ships.json`), every sail small as the
+Sloop's are, and a test holds each to it; her gain is DFO's for the Come Sail Away rig that matches hers. A hull is
+named by her key in the manifest (`HullKind`), numbered 0 to 3 on the wire.
+
+| Hull | Waterline | Draught | Sails | Gain (DFO's rig) |
+|---|---|---|---|---|
+| Sloop | 18.7 × 5.6 m | 1.8 m | a staysail, a gaff | 1.159 (Large Boat II) |
+| Schooner | 25.2 × 4.3 m | 2.0 m | a staysail, two gaffs | 1.233 (Large Boat V: a staysail and two gaffs) |
+| Brig | 30.7 × 5.3 m | 2.2 m | two staysails, six square sails, a gaff spanker | 1.643 (the galleon, a square-rigged two-master) |
+| Frigate | 38.1 × 6.2 m | 2.4 m | two staysails, eight square sails, a gaff spanker | 1.798 (the Carrack, a square-rigged three-master) |
+
+No hull's rig drives her harder at its best than the Sloop's: her canvas is scaled by the Sloop's over her own, each
+sail at its crest (`canvas_drive`), so every hull makes the Sloop's way on every point of sail, 2.4 m/s on a beam
+reach, and her rank's way alone makes her faster ([[Naval Combat]]). Her square sails pull by the same law as the rest:
+under the responsive helm each draws at its crest (a square sail running dead before the wind), so the point of sail
+alone says how her heading takes it, and a Brig or a Frigate runs, reaches, beats and comes about through the wind's
+eye as the Sloop does, keeping her way. Her gain still shapes her: a bigger rig gathers and loses way faster and steers
+at her way over her gain. The game sets her square sails' trim only to draw them.
 
 ## Her look
 

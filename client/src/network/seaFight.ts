@@ -69,7 +69,7 @@ const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 }
 export function fightViewOf(
   numbers: ArrayLike<number>,
   who: Commissioned = PIRATE_MAJOR,
-  nameOf: (faction: number) => string = () => 'Sloop',
+  nameOf: (faction: number, hull: number) => string = () => 'Sloop',
 ): FightView {
   let read = 0;
   const next = (): number => {
@@ -115,7 +115,8 @@ export function fightViewOf(
   const captain = commanded(who);
   const others = Array.from({ length: next() }, () => {
     const [faction, rank] = [next(), next()];
-    return commanded({ name: nameOf(faction), faction, rank });
+    const other = commanded({ name: '', faction, rank });
+    return { ...other, name: nameOf(faction, other.hull_kind ?? 0) };
   });
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
   // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.

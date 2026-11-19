@@ -187,8 +187,7 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         .iter()
         .map(|value| value.as_f64().ok_or("a fight's ship is a list of numbers"))
         .collect::<Result<_, _>>()?;
-    // The player sails the Sloop.
-    let ship = ship_from(&numbers, &sailing::SLOOP)?;
+    let ship = ship_from(&numbers)?;
     let seed = request["seed"]
         .as_u64()
         .and_then(|seed| u32::try_from(seed).ok())

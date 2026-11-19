@@ -129,6 +129,22 @@ impl Rank {
     }
 }
 
+/// A captain's ship's name, by her faction and her hull: the Tithe's or the pirates' Sloop, Schooner, Brig or Frigate.
+#[must_use]
+pub fn ship_name(faction: u8, hull: HullKind) -> &'static str {
+    let tithe = faction == GREY_TITHE;
+    match hull {
+        HullKind::Sloop if tithe => "Tithe Sloop",
+        HullKind::Schooner if tithe => "Tithe Schooner",
+        HullKind::Brig if tithe => "Tithe Brig",
+        HullKind::Frigate if tithe => "Tithe Frigate",
+        HullKind::Sloop => "Pirate Sloop",
+        HullKind::Schooner => "Pirate Schooner",
+        HullKind::Brig => "Pirate Brig",
+        HullKind::Frigate => "Pirate Frigate",
+    }
+}
+
 /// A captain's commission: the faction she sails for and her rank.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Commission {
@@ -156,13 +172,15 @@ impl Commission {
         self.rank.hull()
     }
 
-    /// Her faction's class, her hull as strong and her men as many as her rank makes them.
+    /// Her faction's class, named for her faction and her hull, her hull as strong and her men as many as her rank
+    /// makes them.
     #[must_use]
     pub fn build(&self) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
         let scale = self.rank.scale().hull;
+        let name = ship_name(self.faction, self.hull());
         // Whole points and whole men, as every blow takes, so neither ever shows a fraction left.
-        Build { hull: (base.hull * scale).round(), crew: (base.crew * scale).round(), ..base }
+        Build { name, hull: (base.hull * scale).round(), crew: (base.crew * scale).round(), ..base }
     }
 
     /// Her ship's hurts, sound: her hull as strong as her rank makes it, striking where her rank strikes.

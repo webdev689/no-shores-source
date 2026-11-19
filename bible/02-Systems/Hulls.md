@@ -92,7 +92,10 @@ Done for the Schooner, the Brig and the Frigate:
   fore to aft, her hull's box and each sail's.
 - **Square sails** in the rules: a square-rigged hull sails, tacks and turns by her sails' kinds.
 - **A ship's hull, everywhere** in the rules: every ship in a fight carries her hull and sails, fights, is struck and
-  rams as it; a captain's rank picks it (`Rank::hull`); the snapshots, a fight's view and the doors carry it.
+  rams as it; a captain's rank picks it (`Rank::hull`) and names her (the Pirate Brig, the Tithe Frigate); the
+  snapshots, a fight's view and the doors carry it.
+- **Never her strength**: her canvas drives her no harder than the Sloop's, and her side's broadside takes as much
+  from a ship as the Sloop's, however many guns share it ([[Naval Combat]], "Ranks and factions").
 
 Left:
 

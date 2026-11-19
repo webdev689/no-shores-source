@@ -256,14 +256,15 @@ fn a_captain_of_each_rank_sails_and_fights_in_her_ranks_hull() {
 
 #[test]
 fn a_volley_from_any_hull_of_one_rank_throws_the_same_broadside() {
-    // Each rank's captain fights a Major: her first volley's balls, every gun of her side, weigh her rank's Sloop's.
+    // Each rank's captain fights a Major: her first volley's balls, every gun of her side, weigh her rank's Sloop's
+    // (each ball's harm by its share of the broadside).
     for rank in Rank::ALL {
         let mut fight = two_captains(Commission { faction: GREY_TITHE, rank }, Commission::default());
         let guns = crate::arms::arms_of(rank.hull()).port.len();
         let volley = (0..180 * 60).find_map(|_| {
             tick(&mut fight);
             let balls: Vec<_> = fight.balls.iter().filter(|ball| ball.shooter == FIRST).collect();
-            (!balls.is_empty()).then(|| balls.iter().map(|ball| ball.gun.hull).collect::<Vec<f64>>())
+            (!balls.is_empty()).then(|| balls.iter().map(|ball| ball.gun.hull * ball.gun.share).collect::<Vec<f64>>())
         });
         let Some(volley) = volley else { panic!("the {rank:?} never fired") };
         assert_eq!(volley.len(), guns, "{rank:?}: a ball from every gun of her side");

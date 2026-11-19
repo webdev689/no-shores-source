@@ -123,7 +123,9 @@ export class FleetScene {
     return this.play
       .others()
       .filter((vessel) => vessel.captain)
-      .map((vessel) => barOver({ ...vessel, ...vessel.hurts, name: shipName(vessel.faction) }, view, shown))
+      .map((vessel) =>
+        barOver({ ...vessel, ...vessel.hurts, name: shipName(vessel.faction, vessel.hull) }, view, shown),
+      )
       .filter((bar) => bar !== null);
   }
 

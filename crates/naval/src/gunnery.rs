@@ -143,7 +143,7 @@ pub struct Lay {
 /// water there, or onto a point `rise` metres above it. Each of its guns throws its share of the Sloop's broadside.
 #[must_use]
 pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range: f64, rise: Option<f64>) -> Lay {
-    let gun = spread(&loaded(&SWIVEL, shot), arms.gun_share(side));
+    let gun = Gun { share: arms.gun_share(side), ..loaded(&SWIVEL, shot) };
     let mouths: Vec<[f64; 3]> = arms.battery(side).iter().map(|mouth| posed(ship, pose, *mouth)).collect();
     let guns = mouths.len().max(1) as f64;
     let centre = [0, 1, 2].map(|axis| mouths.iter().map(|mouth| mouth[axis]).sum::<f64>() / guns);
@@ -153,12 +153,6 @@ pub fn lay(ship: &Ship, pose: &Pose, arms: &Arms, side: Side, shot: Shot, range:
     let (low, high) = (gun.min_el_deg * DEGREE, gun.max_el_deg * DEGREE);
     let elevation = elevation_for_range(range, gun.speed, above - rise.unwrap_or(0.0), low, high);
     Lay { side, mouths, centre, dir, elevation, gun, shot, reach: max_range(gun.speed, above, high) }
-}
-
-/// A gun throwing `share` of its harm to hull, canvas and men: one of a side whose guns split the Sloop's broadside.
-#[must_use]
-pub fn spread(gun: &Gun, share: f64) -> Gun {
-    Gun { hull: gun.hull * share, sail: gun.sail * share, crew: gun.crew * share, ..*gun }
 }
 
 /// `side` laid on a point in the world: its range along her fire, its height under her guns' middle.

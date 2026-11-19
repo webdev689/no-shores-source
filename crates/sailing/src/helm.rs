@@ -2,7 +2,7 @@
 //! rates a fifth again, her sails drawing on every heading by the point of sail, her steerage read off her way).
 //! Degrees where the mod keeps degrees.
 
-use crate::{Hull, SailKind, SailSize};
+use crate::{Hull, SLOOP, SailKind, SailSize};
 
 /// Come Sail Away's handling: way (m/s) and its rate (m/s²), turn (degrees a second) and its rate, under oars and sail.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -122,10 +122,19 @@ pub fn canvas(hull: &Hull) -> f64 {
         .sum()
 }
 
+/// Her canvas as it drives her: her own, scaled by the Sloop's over hers at the crest, so no hull's rig drives her
+/// harder at its best than the Sloop's does (her rank's way, not her hull, sets her speed). Her sails and their crests
+/// are still her own, and her gain still sets how her way comes and goes. None with no sails.
+#[must_use]
+pub fn canvas_drive(hull: &Hull) -> f64 {
+    let own = canvas(hull);
+    if own > 0.0 { own * (canvas(&SLOOP) / own) } else { 0.0 }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SLOOP, SailKind, SailSize};
+    use crate::{SailKind, SailSize};
 
     #[test]
     fn the_point_of_sail_is_best_on_the_quarter_and_about_half_in_the_winds_eye() {

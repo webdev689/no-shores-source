@@ -182,3 +182,54 @@ fn a_crew_struck_down_to_the_last_man_strikes_with_her_fires_still_burning() {
     assert_eq!(damage.apply(hurt(0.0, 0.0, 10.0), 1.0, 0.0), Some(State::Struck));
     assert_eq!(damage.fires(), 1, "nobody is left to fight them");
 }
+
+/// Many seeded broadsides of `guns` a side from a gun of `rank`'s Sloop's harm and `shot`, each ball into her hull
+/// (`zone`), as the fight takes them: her mean hull, canvas, men and fires lost a broadside.
+fn broadsides(guns: usize, rank: crate::ranks::Rank, shot: Shot, zone: Zone) -> [f64; 4] {
+    let commission = crate::ranks::Commission { faction: crate::ranks::PIRATES, rank };
+    let gun = Gun { share: crate::arms::SLOOP_GUNS_A_SIDE / guns as f64, ..commission.armed(loaded(&SWIVEL, shot)) };
+    let mut draws = crate::random::Mulberry32::new(91);
+    let mut target = Damage::new(&Build { hull: 1e9, sail: 1e9, crew: 1e9, ..PIRATE_SLOOP }, false);
+    let mut lost = [0.0; 4];
+    const BROADSIDES: usize = 40_000;
+    for _ in 0..BROADSIDES * guns {
+        let mut hurt = shot_harm(&gun, zone, false, draws.draw(), SHIP_TOUGHNESS);
+        hurt.fire = draws.draw() < crate::guns::fire_chance(shot) * gun.share;
+        let taken = target.shared(hurt, gun.share);
+        for (sum, part) in lost.iter_mut().zip([taken.hull, taken.sail, taken.crew, f64::from(u8::from(taken.fire))]) {
+            *sum += part;
+        }
+    }
+    lost.map(|sum| sum / BROADSIDES as f64)
+}
+
+#[test]
+fn a_broadside_takes_as_much_hull_canvas_men_and_fire_from_her_whatever_hull_fires_it() {
+    use crate::ranks::Rank;
+    for (rank, shot, zone) in [
+        (Rank::Major, Shot::Round, Zone::Hull),
+        (Rank::Boss, Shot::Round, Zone::Holed),
+        (Rank::Elite, Shot::Grape, Zone::Hull),
+        (Rank::Miniboss, Shot::Chain, Zone::Rig),
+        (Rank::Minor, Shot::Heated, Zone::Hull),
+    ] {
+        let sloop = broadsides(3, rank, shot, zone);
+        for guns in [5, 7, 10] {
+            let other = broadsides(guns, rank, shot, zone);
+            for (part, (mine, hers)) in ["hull", "canvas", "men", "fires"].iter().zip(other.iter().zip(sloop)) {
+                let near = (mine - hers).abs() <= 0.02 * hers.max(0.05);
+                assert!(near, "{guns} guns, {rank:?} {shot:?} {zone:?}: {part} {mine} against the Sloop's {hers}");
+            }
+        }
+    }
+}
+
+#[test]
+fn a_share_of_a_blow_carries_its_parts_until_they_make_a_whole_point() {
+    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    let third = |damage: &mut Damage| damage.shared(hurt(2.0, 1.0, 1.0), 1.0 / 3.0);
+    let taken: Vec<Hurt> = (0..3).map(|_| third(&mut damage)).collect();
+    assert_eq!(taken.iter().map(|each| each.hull).sum::<f64>(), 1.0, "{taken:?}");
+    let mut sound = Damage::new(&PIRATE_SLOOP, false);
+    assert_eq!(sound.shared(hurt(5.0, 2.0, 1.0), 1.0), hurt(5.0, 2.0, 1.0), "the Sloop's ball, whole");
+}

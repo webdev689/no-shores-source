@@ -38,12 +38,12 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
 }
 
 #[test]
-fn each_faction_sails_her_own_sloop_and_only_captains_factions_take_a_commission() {
+fn each_faction_sails_her_own_class_and_only_captains_factions_take_a_commission() {
     let minor = Commission { faction: PIRATES, rank: Rank::Minor }.build().hull;
     let elite = Commission { faction: PIRATES, rank: Rank::Elite }.build().hull;
     assert_eq!((minor, elite), (158.0, 475.0), "a Minor's and an Elite's hull in whole points");
     assert_eq!(Commission { faction: GREY_TITHE, rank: Rank::Major }.build().name, "Tithe Sloop");
-    assert_eq!(Commission { faction: PIRATES, rank: Rank::Boss }.build().name, "Pirate Sloop");
+    assert_eq!(Commission { faction: PIRATES, rank: Rank::Boss }.build().name, "Pirate Frigate");
     assert_eq!(Commission::of(GREY_TITHE, Rank::Elite), Some(Commission { faction: GREY_TITHE, rank: Rank::Elite }));
     assert_eq!(Commission::of(PLAYERS, Rank::Major), None, "the players' ships take no commission");
     assert_eq!(Commission::of(3, Rank::Major), None, "no third faction sails yet");
@@ -68,4 +68,11 @@ fn each_rank_sails_her_own_hull() {
             assert_eq!(Commission { faction, rank }.hull(), hull);
         }
     }
+}
+
+#[test]
+fn a_captain_is_named_for_her_faction_and_her_hull() {
+    let names = |faction: u8| Rank::ALL.map(|rank| Commission { faction, rank }.build().name);
+    assert_eq!(names(PIRATES), ["Pirate Sloop", "Pirate Sloop", "Pirate Schooner", "Pirate Brig", "Pirate Frigate"]);
+    assert_eq!(names(GREY_TITHE), ["Tithe Sloop", "Tithe Sloop", "Tithe Schooner", "Tithe Brig", "Tithe Frigate"]);
 }
