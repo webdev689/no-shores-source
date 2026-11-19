@@ -206,13 +206,15 @@ function markStreak(
   }
 }
 
-/** A ring on the ground about `centre` from radius `inner` to `outer`, in one colour: red, green, blue, opacity. */
+/** A ring on the ground about `centre` from radius `inner` to `outer`, in one colour: red, green, blue, opacity; only
+ *  the arc between two bearings (radians clockwise from north) with `arc`. */
 export function markRing(
   out: number[],
   centre: readonly [number, number, number],
   inner: number,
   outer: number,
   colour: readonly [number, number, number, number],
+  arc: readonly [number, number] = [0, 2 * Math.PI],
 ): void {
   const [x, y, z] = centre;
   const onGround = (radius: number, angle: number) => [
@@ -220,8 +222,10 @@ export function markRing(
     y - Math.cos(angle) * radius,
     z + LIFT,
   ];
-  for (let step = 0; step < CURVE_STEPS; step += 1) {
-    const [from, to] = [(step / CURVE_STEPS) * 2 * Math.PI, ((step + 1) / CURVE_STEPS) * 2 * Math.PI];
+  const [start, end] = arc;
+  const steps = Math.max(1, Math.ceil((CURVE_STEPS * Math.abs(end - start)) / (2 * Math.PI)));
+  for (let step = 0; step < steps; step += 1) {
+    const [from, to] = [start + ((end - start) * step) / steps, start + ((end - start) * (step + 1)) / steps];
     const corners = [onGround(inner, from), onGround(outer, from), onGround(outer, to), onGround(inner, to)];
     const [first, second, third, fourth] = corners;
     if (!first || !second || !third || !fourth) continue;

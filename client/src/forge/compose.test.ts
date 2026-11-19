@@ -86,6 +86,22 @@ test('a frame says which pixels are the weapon', async () => {
   assert.deepEqual([...(frame?.weapon ?? [])], [1, 0]);
 });
 
+test("a layer held counts as the weapon, whatever part the forge names: a cast's spark", async () => {
+  const casting: ForgeLooks = {
+    bodies: { male: { anims: { idle: cell }, layers: { body: ['idle'], spark: ['idle'] } } },
+  };
+  const spark: Record<string, Strip> = {
+    'forge/layers/male/spark_idle.png': strip([null, [250, 240, 100], null, null]),
+    'forge/layers/male/spark_idle_z.png': strip([null, [117, 30, PART.drape], null, null]),
+  };
+  const withSpark = (path: string) => Promise.resolve(spark[path] ?? strips[path] ?? null);
+  const sparked = { ...figure, gear: ['spark'] };
+  const plain = await composeFrame(sparked, 'idle', 0, 0, casting, colours, {}, withSpark);
+  assert.deepEqual([...(plain?.weapon ?? [])], [0, 0], 'it hangs free');
+  const held = await composeFrame(sparked, 'idle', 0, 0, casting, colours, {}, withSpark, new Set(['spark']));
+  assert.deepEqual([...(held?.weapon ?? [])], [0, 1]);
+});
+
 test('orders weigh on one part and for a drape over what it hangs on, never for a weapon or a horse', () => {
   assert.ok(ordersMeet(PART.torso, PART.torso));
   assert.ok(ordersMeet(PART.drape, PART.torso));

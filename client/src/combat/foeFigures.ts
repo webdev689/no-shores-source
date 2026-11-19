@@ -52,8 +52,8 @@ export class FoeFigures {
   }
 
   /** Every foe's card as an eye at `eye` sees it: gliding toward where the room last saw it (`frameTicks` the frame's
-   *  share of ticks, each `tickSeconds` long), showing the move its fight holds it to, flashing as `flashes` say, and
-   *  drawn as a page's attack feel has it (`feel`), if one. */
+   *  share of ticks, each `tickSeconds` long), showing the move its fight holds it to, flashing as `flashes` say, edged
+   *  while Exposed, and drawn as a page's attack feel has it (`feel`), if one. */
   cards(
     fight: Fighting,
     forge: Cards,
@@ -97,7 +97,9 @@ export class FoeFigures {
       feel?.drawn.set(kept.id, { feet: drawnAt, anim: move.anim, flip });
       const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
       const flash = { share: flashes.shareOf(kept.id), red: false };
-      if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
+      const exposed = (kept.statuses?.expose ?? 0) > 0;
+      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
+      if (card) cards.push({ card, ...stand, z: drawnAt[2], flip, flash, exposed });
     }
     for (const id of this.figures.keys()) if (!fight.foes.has(id)) this.figures.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));

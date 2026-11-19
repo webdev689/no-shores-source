@@ -27,6 +27,16 @@ code:
   - client/src/combat/casting.ts#CastKeys
   - client/src/combat/casting.ts#abilitiesAt
   - client/src/combat/spellEffects.ts#SpellEffects
+  - client/src/combat/spellLooks.ts#SpellLooks
+  - client/src/combat/spellLooks.ts#veiledIn
+  - client/src/combat/spellLooks.ts#castLookOf
+  - client/src/combat/spellPixels.ts#billboard
+  - client/src/combat/spellPixels.ts#birdSprite
+  - client/src/combat/spellLines.ts#boltLine
+  - client/src/combat/spellLines.ts#Tails
+  - client/src/combat/casting.ts#daggersAim
+  - client/src/player/glowCards.ts#STATUS_WGSL
+  - client/src/forge/compose.ts#composeFrame
   - client/src/testground/artsPanel.ts#startArtsPanel
 ---
 # Arts
@@ -35,7 +45,7 @@ The Arts are Overlook's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, 
 Anima, two Tenets and a Core of fragments ([[Arts and Loadouts as Claude Shapes Them]]). Every name, word and number
 the client shows comes from `content/arts/arts.json`, the file the rules read too, the fragments' numbers with it.
 This note covers what the player sees (the Art's screen in the menu, the Art's diamond on the Character page, the
-ability bar on the HUD), how the rules cast each spell, and how the browser asks for a cast.
+ability bar on the HUD), how the rules cast each spell, how the browser asks for a cast, and how each spell looks.
 
 ## How it works
 
@@ -135,27 +145,67 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 
 ## In the browser
 
-- **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows its
-  ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent for 0.6 s,
-  while the room's word comes back. Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them.
-  With the menu open the game takes no keys, so `F` still dismantles a piece there.
-- **Dusk Daggers.** Pressed, `Q` aims: a faint ring in Shadow's purple lies on the ground at the crosshair's point,
-  drawn in to 16 m, as wide as the ring will be. Let go, it casts there.
+- **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows
+  its ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent
+  until the room's word on the Arts has come back since, 0.6 s at least and 2 s at most (a cast the room lets fall
+  sends no word). Crouching stays on `C`, and the guard on the left button or `F`, as DFO has them. With the menu
+  open the game takes no keys, so `F` still dismantles a piece there.
+- **Dusk Daggers.** Pressed, `Q` aims: the input asks for the crosshair's point as it is, and a faint ring in
+  Shadow's purple lies where the room will lay it: that point drawn in to 16 m, on the ground's height there, as
+  wide as the ring will be. Let go, it casts there.
 - **The cast's look.** A cast sent plays the cast move: from outside the forge's `cast` with its `spark`, the spark
-  recoloured by its brightness to the Art's element and glowing in it; in first person both casting hands, under the
-  Art's light (Divine fire, Storm shock, Shadow magic) recoloured the same way.
+  recoloured by its brightness to the Art's element and glowing in it (the forge draws the spark as hanging free, so
+  the compositor is told to count it as the weapon); in first person both casting hands, under the Art's light
+  (Divine fire, Storm shock, Shadow magic) recoloured the same way. Another player's cast plays the same, in the Art
+  of the last spell of theirs the room sent.
+- **A room joined afresh** forgets a cast still waiting to be sent, the room's word on the Arts, the keys' wait and
+  any aim: nothing from the old room goes to the new one.
 - **The bar** is the fight display's, in the game and the Test Ground alike, written each frame from the room's word
   on the Arts. The game layer hands the combat layer its pictures.
-- **The spells' view.** Every spell in the snapshot is kept, each with where it was the snapshot before, for a drawer
-  to glide between (`SpellEffects`). Nothing draws them yet beyond the cast move and the aiming ring.
+- **The spells' view.** Every spell in the snapshot is kept, each with where it was the snapshot before, and drawn
+  gliding between the two (below).
 - **The Test Ground** has an Arts panel: the Art worn, each Core slot, and a button that fills the Anima and readies
   the Tenets, so every spell can be tried at once ([[Test Ground]]).
+
+## How they look
+
+- **Drawn as marks.** Every spell is drawn with the fight's marks, in its Art's element: Storm's in Volt, Divine's in
+  Blaze, Shadow's in Cosmic, in the Test Ground and the Game alike. Its pictures are made cell by cell, a cell two of
+  a figure's pixels across, each cell one of the element's four colours with nothing between, stood upright and
+  turned to the eye as a figure's card is. Its lines are flat colours too: lightning is a glow in the element's body
+  under a white-hot core, struck afresh 12 times a second. What bursts or trails throws the fight's sparks in the
+  element. A picture nearer the eye than 0.6 m is left out.
+- **Tempest.** Each orb is a white-hot heart in Volt's steps, its rim broken and three arcs thrown off it at each
+  strike, trailing a line that narrows and darkens in three steps over a quarter of a second, and Volt motes.
+- **Quicken.** A jagged ring of lightning on the ground at the caster's feet, swelling in three steps over its half
+  second, and a burst of sparks. A Hasted player leaves three streaks behind them as they move, each 0.3 s long.
+- **Arc Lash.** Five bolts fanned through the cone, reaching out over 0.1 s and thinning in three steps, with sparks
+  where they end.
+- **Sunwell.** A sun 2.8 m over its middle, bobbing a cell at a time, its eight rays turning; twelve dashes on the
+  ground at its radius, turning; and a beam from the sun to each Linked player inside it. A Linked player has six
+  motes rising off them, cooling a step as they rise.
+- **Mend.** Over the caster's chest, a white-hot flash with a cross through it, then a ring swelling and cooling in
+  four steps, and a burst of embers.
+- **Dawnflare.** A bird of fire facing the way it flies, its wings beating in four steps ten times a second, its
+  outline flickering, embers trailing behind it.
+- **Duskraven.** A raven of Cosmic light off its caster's right shoulder, its cells a figure's own pixels, its wings
+  beating six times a second; the player's own sits on their figure as the page predicts it. Each bolt is a star of
+  four points trailing glinting stars and Cosmic motes.
+- **Dusk Daggers.** The aiming ring stays on the ground where it was cast, lit for 4 ticks at each strike, with eight
+  blades whirling over it, each turning over in sixteenth-turns.
+- **Vanish.** A puff of dusk where the roll began, swelling and thinning in four steps, and a burst of Cosmic motes.
+- **Statuses.** An Exposed foe's figure has its outline lit a faint purple. A Veiled player's figure, their own from
+  outside and every other's, keeps 5 pixels of each 4 by 4, the kept ones moving on 8 times a second, tinted dusk,
+  and shows no weapon outline. A Charged foe crackles: two arcs across its figure struck afresh 12 times a second, and
+  24 Volt sparks a second.
+- **Hits.** A spell that lands bursts in its caster's Art's element, whatever weapon is drawn ([[Weapon Glow]]).
 
 ## Limits
 
 - An Art is looked at only once worn: its diamond's card names its spells.
 - A fragment cannot be taken out of a slot, only replaced by another.
 - The bar shows the Art's abilities alone, no buffs or debuffs.
-- The spells are not drawn yet beyond the cast move and Dusk Daggers' ring; another player's cast shows the forge's
-  own spark.
+- Another player's first cast shows the forge's own spark until the room sends a spell of theirs; after they change
+  Art, their next cast shows the old Art's colour until its spell comes.
+- A spell's pictures stand upright, as the figures do: seen from straight above they are thin.
 - A spell looks through walls: an orb, a bolt or an area finds a foe behind a block, and an orb flies through one.

@@ -123,7 +123,9 @@ export const GLOW_BURSTS: Readonly<
   3: { count: 14, speed: [0.6, 1.6], life: [0.6, 1.1], lift: 9.81 },
 };
 
-const wgslRgb = ([red, green, blue]: Rgb) => `vec3f(${red.toFixed(4)}, ${green.toFixed(4)}, ${blue.toFixed(4)})`;
+/** A colour as WGSL writes it. */
+export const wgslRgb = ([red, green, blue]: Rgb): string =>
+  `vec3f(${red.toFixed(4)}, ${green.toFixed(4)}, ${blue.toFixed(4)})`;
 
 /**
  * The outline's colour at a texel, premultiplied: `glow_colour(look, field, cell, time)` with `field` the texel of

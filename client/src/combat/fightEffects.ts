@@ -7,6 +7,7 @@ import { Flashes } from './flashes.ts';
 import { aimRingMesh } from './casting.ts';
 import { type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
+import { SpellLooks, castLookOf } from './spellLooks.ts';
 import { IMPACT_SPARKS, Tracers, othersArrows } from './tracers.ts';
 
 type Point = readonly [number, number, number];
@@ -22,11 +23,13 @@ export class FightEffects {
   ownLook: GlowLook = 0;
   private readonly sparks = new Sparks();
   private readonly tracers = new Tracers();
+  private readonly spellLooks = new SpellLooks(this.sparks);
   /** The seconds the effects have run, which a Volt tracer jumps by. */
   private clock = 0;
 
   /** Takes the fight's events since the last frame, `seconds` long, and hands them back for the display and the
-   *  blood: each struck figure flashes, and each clash throws its sparks from where `fight` has its fighters. */
+   *  blood: each struck figure flashes, and each clash and spell landed throws its sparks from where `fight` has its
+   *  fighters. */
   events(fight: Fighting, seconds: number): FightEvent[] {
     const events = fight.takeEvents();
     this.clock += seconds;
@@ -36,7 +39,8 @@ export class FightEffects {
       const fighter = id === fight.player ? fight.own : (fight.foes.get(id)?.view ?? fight.others.get(id)?.body);
       return fighter ? ([fighter.x, fighter.y, fighter.z] as const) : null;
     };
-    this.sparks.struck(events, where, { player: fight.player, look: this.ownLook });
+    const spellLook = (caster: number) => castLookOf(fight, caster);
+    this.sparks.struck(events, where, { player: fight.player, look: this.ownLook, spellLook });
     return events;
   }
 
@@ -44,7 +48,8 @@ export class FightEffects {
    * The marks to draw from an eye at `eye`, as `marksMesh` lays them from `origin`: every telegraphed blow, everyone
    * else's arrows, the sparks and the tracers. The player's own shots leave the weapon at `muzzleOf`'s point; the
    * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground or one of
-   * `bodies` (their feet) throwing sparks where it comes to rest; and Dusk Daggers' ring while it is aimed.
+   * `bodies` (their feet) throwing sparks where it comes to rest; Dusk Daggers' ring while it is aimed; and every
+   * spell in the room, with the statuses that show on the world.
    */
   marks(
     fight: Fighting,
@@ -72,6 +77,7 @@ export class FightEffects {
     const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);
     const arrows = othersArrows(fight.shots, fight.player);
     const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
-    return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...ring, ...more], origin);
+    const spells = this.spellLooks.marks(fight, eye, seconds, this.clock);
+    return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...ring, ...spells, ...more], origin);
   }
 }

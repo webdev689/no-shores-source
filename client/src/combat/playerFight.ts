@@ -27,12 +27,15 @@ export class PlayerFight {
   private readonly rules: CombatRules;
   private readonly walker: Walker;
   private readonly castKeys = new CastKeys();
+  /** The rooms the fight had joined when the keys last cast: a room joined afresh starts them afresh. */
+  private castJoins: number;
   private armsKey = '';
 
   constructor(fight: Fighting, rules: CombatRules, walker: Walker) {
     this.fight = fight;
     this.rules = rules;
     this.walker = walker;
+    this.castJoins = fight.joins;
   }
 
   /**
@@ -84,7 +87,8 @@ export class PlayerFight {
       shootPressed: ranged && controls.pressed('guard'),
       guardPressed: guards && controls.pressed('guard'),
     });
-    this.castFrame(controls, seconds, hands && free && !player.mounted, markOf);
+    const floorAt = (x: number, y: number) => steps.standing(x, y).z;
+    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
     const foe = fight.targetAt;
     const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
     walker.step(controls, steps, seconds, toward, aiming);
@@ -113,9 +117,18 @@ export class PlayerFight {
   }
 
   /** The casting keys: a cast sent to the room plays its move in its Art's colour, and Dusk Daggers' ring is laid while
-   *  it is aimed. */
-  private castFrame(controls: InputFrame, seconds: number, hands: boolean, markOf: () => Point | null): void {
+   *  it is aimed, on the ground `floorAt` gives. */
+  private castFrame(
+    controls: InputFrame,
+    seconds: number,
+    hands: boolean,
+    { markOf, floorAt }: { markOf: () => Point | null; floorAt: (x: number, y: number) => number },
+  ): void {
     const { fight, walker } = this;
+    if (fight.joins !== this.castJoins) {
+      this.castJoins = fight.joins;
+      this.castKeys.reset();
+    }
     const state = fight.arts;
     const { cast, ring } = this.castKeys.frame(controls, seconds, {
       hands,
@@ -124,6 +137,7 @@ export class PlayerFight {
       own: fight.own,
       yaw: walker.player.yaw,
       markOf,
+      floorAt,
     });
     fight.aimRing = ring;
     if (!cast) return;

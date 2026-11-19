@@ -4,6 +4,7 @@ import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import type { HudFrame } from '../combat/hud.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
+import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
@@ -329,7 +330,7 @@ export class Foot {
     const frameTicks = seconds / movement.tickSeconds;
     const figures: CardAt[] = [];
     const own = walker.figure(eyeX, eyeY, { share: effects.flashes.shareOf(fight.player), red: true });
-    if (own) figures.push(own);
+    if (own) figures.push({ ...own, veiled: veiledIn(fight, fight.player) });
     figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks));
     figures.push(
       ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, movement.tickSeconds, effects.flashes),
@@ -397,7 +398,8 @@ export class Foot {
     return marks;
   }
 
-  /** Every other player's figure, gliding toward where the room last saw them and flashing as it is struck. */
+  /** Every other player's figure, gliding toward where the room last saw them, flashing as it is struck, faint while
+   *  Veiled, and its cast's spark in its Art's colour. */
   private otherCards(eyeX: number, eyeY: number, clock: number, frameTicks: number): CardAt[] {
     const { forge } = this.context;
     const { fight, effects, otherGlides } = this;
@@ -414,9 +416,12 @@ export class Foot {
       const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eyeX, eyeY);
       const frames = forge.frames(placed.dress.body, placed.anim);
       const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
-      const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip);
+      // A cast's spark glows in the caster's Art, as the player's own does.
+      const glow = placed.anim === 'cast' ? castLookOf(fight, number) : 0;
+      const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow);
       const flash = { share: effects.flashes.shareOf(number), red: false };
-      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip, flash });
+      const veiled = veiledIn(fight, number);
+      if (card) cards.push({ card, ...cardStand(placed.x, placed.y, eyeX, eyeY), z: placed.z, flip, flash, veiled });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
     // A social space's people, each keeping a step of its own.
