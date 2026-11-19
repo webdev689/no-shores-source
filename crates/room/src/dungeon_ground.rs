@@ -142,12 +142,11 @@ impl DungeonGround {
             .fold(None, |highest: Option<f64>, solid| Some(highest.map_or(solid[4], |top| top.max(solid[4]))))
     }
 
-    /// The cells a straight line crosses, from its first end's to its last's, by each grid line it passes; empty when
-    /// an end lies off the grid.
+    /// The cells a straight line crosses, from its first end's to its last's or to the grid's edge, by each grid line it
+    /// passes; empty when its first end lies off the grid.
     fn cells_along(&self, from: [f64; 2], to: [f64; 2]) -> Vec<usize> {
-        let (Some(start), Some(end)) = (self.cell_at(from[0], from[1]), self.cell_at(to[0], to[1])) else {
-            return Vec::new();
-        };
+        let Some(start) = self.cell_at(from[0], from[1]) else { return Vec::new() };
+        let end = self.cell_at(to[0], to[1]).unwrap_or((usize::MAX, usize::MAX));
         // How far along the line (0 to 1) the next grid line lies on an axis, how far apart they lie, and the step.
         let crossing = |at: f64, index: usize, delta: f64| -> (f64, f64, isize) {
             if delta > 0.0 {
@@ -188,6 +187,24 @@ impl DungeonGround {
         }
         cells.iter().any(|&cell| self.near[cell].iter().any(below))
     }
+}
+
+/// How far along a segment (0 to 1) it enters a box from `low` to `high` (x, y, z), by the slabs between its faces.
+fn entry(low: [f64; 3], high: [f64; 3], from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+    let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
+    for axis in 0..3 {
+        let step = to[axis] - from[axis];
+        if step == 0.0 {
+            if from[axis] < low[axis] || from[axis] > high[axis] {
+                return None;
+            }
+        } else {
+            let (first, second) = ((low[axis] - from[axis]) / step, (high[axis] - from[axis]) / step);
+            enter = enter.max(first.min(second));
+            leave = leave.min(first.max(second));
+        }
+    }
+    (enter <= leave).then_some(enter)
 }
 
 /// Whether a line (x, y, z) passes through a box below its top: where it is inside the box's sides, by the slabs
@@ -233,6 +250,39 @@ impl Terrain for DungeonGround {
     /// top: a look, a blow or a throw passes over a low coffin, never through a shelf.
     fn line_walled(&self, from: [f64; 3], to: [f64; 3]) -> bool {
         self.heights.walled((from[0], from[1]), (to[0], to[1])) || self.solid_across(from, to)
+    }
+
+    /// A shot enters the first rock cell it crosses at that cell's side, the grid's edge as rock, or a jamb, a pillar
+    /// or a prop where it passes into the box below its top, whichever it meets first.
+    fn wall_entry(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        let cells = self.cells_along([from[0], from[1]], [to[0], to[1]]);
+        let (deep, high) = (-1.0e9, 1.0e9);
+        let square = |cell: usize| {
+            let (west, north) = ((cell % self.columns) as f64 * self.cell, (cell / self.columns) as f64 * self.cell);
+            entry([west, north, deep], [west + self.cell, north + self.cell, high], from, to)
+        };
+        let rock = cells.iter().find(|&&cell| !self.open[cell]).and_then(|&cell| square(cell));
+        // Past the grid is rock: a segment that leaves it enters rock where it does.
+        let (east, south) = (self.columns as f64 * self.cell, self.rows as f64 * self.cell);
+        let outside = (to[0] < 0.0 || to[1] < 0.0 || to[0] > east || to[1] > south)
+            .then(|| {
+                let along = [to[0] - from[0], to[1] - from[1]];
+                let leave = |start: f64, step: f64, edge: f64| {
+                    if step == 0.0 { 1.0 } else { ((if step > 0.0 { edge } else { 0.0 }) - start) / step }
+                };
+                leave(from[0], along[0], east).min(leave(from[1], along[1], south))
+            })
+            .filter(|share| *share <= 1.0)
+            .map(|share| share.max(0.0));
+        let solid = cells
+            .iter()
+            .flat_map(|&cell| &self.near[cell])
+            .filter_map(|&number| {
+                let [min_x, min_y, max_x, max_y, top] = self.solids[number];
+                entry([min_x, min_y, deep], [max_x, max_y, top], from, to)
+            })
+            .reduce(f64::min);
+        [rock, outside, solid].into_iter().flatten().reduce(f64::min)
     }
 }
 

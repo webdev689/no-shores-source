@@ -359,3 +359,30 @@ fn a_trimmed_bow_draws_sooner_strikes_harder_aimed_and_reloads_faster() {
     };
     assert_eq!(f64::from(quick), (f64::from(slow) * 0.85).round(), "Quick Hands");
 }
+
+/// A wall a tenth of a metre thin across the way 3 m north, 4 m high, which only `wall_entry` tells of.
+struct ThinWall;
+
+impl movement::Terrain for ThinWall {
+    fn height_at(&self, _x: f64, _y: f64) -> f64 {
+        0.0
+    }
+
+    fn wall_entry(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        let step = to[1] - from[1];
+        let share = if step == 0.0 { return None } else { (-3.0 - from[1]) / step };
+        ((0.0..=1.0).contains(&share) && from[2] + (to[2] - from[2]) * share < 4.0).then_some(share)
+    }
+}
+
+#[test]
+fn a_shot_stops_at_a_thin_wall_however_far_it_flies_in_a_tick() {
+    let mut shot = loose(1, Ranged::Crossbow, [0.0, 0.0, 1.1], 0.0, 0.0, 1.0);
+    let at = loop {
+        match fly(&shot, &[], &ThinWall, &[]) {
+            Flight::Flying(next) => shot = next,
+            Flight::Stopped { at, .. } => break at,
+        }
+    };
+    assert!((at[1] + 3.0).abs() < 1e-6, "stopped at the wall: {at:?}");
+}

@@ -46,6 +46,14 @@ impl Terrain for Floor {
             Floor::Dungeon(ground) => ground.line_walled(from, to),
         }
     }
+
+    /// Only a dungeon's walls stand in a shot's way: the land's rises are met by its height.
+    fn wall_entry(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        match self {
+            Floor::Flat | Floor::Land(_) => None,
+            Floor::Dungeon(ground) => ground.wall_entry(from, to),
+        }
+    }
 }
 
 /// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within

@@ -192,6 +192,7 @@ pub fn fly(shot: &Shot, blocks: &[Block], terrain: &dyn Terrain, bodies: &[(Figh
         shot.at[2] + velocity[2] * TICK_SECONDS,
     ];
     let wall = blocks.iter().filter_map(|block| entry(block, shot.at, to)).fold(f64::INFINITY, f64::min);
+    let wall = wall.min(terrain.wall_entry(shot.at, to).unwrap_or(f64::INFINITY));
     let ground = into_ground(terrain, shot.at, to).unwrap_or(f64::INFINITY);
     let body = bodies
         .iter()

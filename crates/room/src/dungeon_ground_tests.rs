@@ -214,3 +214,33 @@ fn a_line_passes_over_a_solid_lower_than_itself_and_meets_one_where_it_is_lower_
     }
     assert!(low_props > 0, "some solid stands lower than a chest, so a look passes over it");
 }
+
+#[test]
+fn a_shot_enters_rock_at_its_cell_side_and_a_solid_by_its_face_below_its_top_and_passes_over_it() {
+    for seed in 0..30 {
+        let (dungeon, ground) = forged(seed);
+        let solids = dungeon.boxes();
+        for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != dungeon::Cell::Rock).step_by(5) {
+            let [x, y] = dungeon.centre(cell);
+            for side in SIDES {
+                let rock = dungeon.beside(cell, side).is_none_or(|next| dungeon.cells[next] == dungeon::Cell::Rock);
+                let [dx, dy] = side.unit();
+                let entered = ground.wall_entry([x, y, 1.3], [x + dx * CELL_M, y + dy * CELL_M, 1.3]);
+                if rock {
+                    assert!(
+                        entered.is_some_and(|share| share <= 0.5 + 1e-9),
+                        "seed {seed}: the rock {side:?} of {cell}"
+                    );
+                }
+            }
+        }
+        for &[min_x, min_y, max_x, max_y, top] in &solids {
+            let (middle_y, z) = ((min_y + max_y) / 2.0, top / 2.0);
+            let across = ground.wall_entry([min_x - 1.0, middle_y, z], [min_x + 3.0, middle_y, z]);
+            assert!(across.is_some_and(|share| share <= 0.25 + 1e-9), "seed {seed}: stopped no later than its face");
+            let inset = (max_x - min_x) / 4.0;
+            let over = ground.wall_entry([min_x + inset, middle_y, top + 0.1], [max_x - inset, middle_y, top + 0.1]);
+            assert!(over.is_none(), "seed {seed}: a shot passes over a solid lower than itself");
+        }
+    }
+}

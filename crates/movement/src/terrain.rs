@@ -19,6 +19,12 @@ pub trait Terrain {
     fn line_walled(&self, _from: [f64; 3], _to: [f64; 3]) -> bool {
         false
     }
+
+    /// How far along the segment from `from` to `to` (0 to 1) it first enters a wall of the terrain below the wall's
+    /// top, if it does: where a shot meets a wall exactly, however thin. Open ground has none.
+    fn wall_entry(&self, _from: [f64; 3], _to: [f64; 3]) -> Option<f64> {
+        None
+    }
 }
 
 /// Open ground, level at 0 m everywhere.
