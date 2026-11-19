@@ -22,6 +22,13 @@ code:
   - client/src/ships/sails.ts#SailRig
   - client/src/ships/sails.ts#sailWind
   - client/src/ships/sails.ts#gaffTrim
+  - client/src/ships/sails.ts#squareBrace
+  - client/src/ships/shipModels.ts#ShipModels
+  - client/src/ships/hulls.ts#hullName
+  - client/src/ships/hulls.ts#hullPaint
+  - client/src/ships/dress.ts#DRESSES
+  - client/src/ships/flag.ts#flagGrid
+  - client/src/ships/flagPictures.ts#flagPictures
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -106,10 +113,35 @@ Each part wears a picture of the [[Procedural Textures]], repeating at 40 texels
 her hull's strakes and her deck's boards are Daggerfall's ship archive (50) as the painter files it, her spars one
 length of grain, her canvas 0.8 m cloths over a faint weave, her guns mottled iron (`shipPictures`).
 
+Every hull of [[Hulls]] is one model, fetched from R2 by her manifest entry the first time a ship of hers is drawn
+and kept (`ShipModels`), and dressed in her side's colours as she is drawn (`dress.ts`). A colour is laid over the
+picture's grain, the picture's lightness about its mean kept:
+
+| Side | Hull | Stripe | Canvas | Flag |
+|---|---|---|---|---|
+| A player's | As painted | None | As painted | Overlook's blue |
+| A friendly ship (merchantmen) | Natural timber, as painted | Overlook's blue | White | Overlook's blue |
+| The Grey Tithe | Slate grey | Bone | Grey | Dark slate, the balance |
+| The pirates | Black | Red | Dark | Black, the skull |
+
+- **Her hull's paint** covers the outside of her shell and all of her under her waterline: a face counts as outside
+  where it looks away from her middle, out past half her hull's box (`hullPaint`). Her deck, its fittings and the
+  insides of her bulwarks keep their timber.
+- **Her stripe** is 0.6 m deep along the line through the mouths of her upper tier of guns, rising with her sheer.
+- **Her flag** flies at the head of her tallest mast (the highest point of her spars), a tenth of her waterline's
+  length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
+  length, a crest and a half on it, running at 1.4 a second. Its picture is `flagPictures`, bearing the faction's
+  emblem where the [[Interface]]'s plates have one.
+
+Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
+`hullName`); a number with no model is drawn as the Sloop. Until the wire carries it, every ship is the Sloop
+(`hullOfCaptain`).
+
 ## Her sails
 
-DFO's sails ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), on her own corners (`SailRig`). Each
-canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large Boat's sizes:
+DFO's sails ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), on her own corners (`SailRig`), each
+hull's from her manifest entry. Each canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
+Boat's sizes; a spanker is a gaff sail:
 
 - **Filled.** A sail's wind walks one a second toward where the wind draws it (Come Sail Away's `sailWind`): a gaff
   fullest with the wind square across it, a staysail with it astern, to the side it blows toward. Full, the gaff
@@ -117,7 +149,13 @@ canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
 - **Luffing.** A sail more than 150 degrees off the wind flaps on a sine of the clock, a quarter full each way.
 - **Trimmed.** The gaff swings about its luff to leeward (`gaffTrim`): square off with the wind astern, 45 degrees
   with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
-- **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, the gaff home.
+- **Square sails.** A square sail is laid on its four corners, its columns from port to starboard. It bellies forward
+  as a gaff does sideways, 1.1 m full and 0.12 hanging, most a little under its middle, its head bent straight to its
+  yard; its wind is the cosine of the wind's way off its yard's face: full with the wind astern of it, empty along
+  it, aback past that. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
+  astern, 45 degrees with it abeam and held there closer to it, at the gaff's 100 degrees a second.
+- **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, a square sail
+  gathered in a bundle half a metre deep along its yard, the gaff and the yards home.
 
 In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
 along the swell's bearing.
@@ -136,7 +174,8 @@ rides the wave drawn under her ([[Naval Combat]]).
 ## Drawn at sea
 
 The Overworld's ships are drawn by the page, not stepped by the rules (`swellPose.ts`, `seaShips.ts`), with the World
-Editor's motion ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]):
+Editor's motion ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]), each in her own hull and her
+side's colours, her pose, her heel and her footprint on the water taken from her own hull's waterline:
 
 - **On the swell.** Each takes her pose as `pose_of` does, from the swell the page draws: the mean of the water under
   her bow, stern, sides and middle at her drawn size, and its slope along and across her. Off the charts the sea is

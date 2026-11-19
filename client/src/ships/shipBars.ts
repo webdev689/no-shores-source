@@ -21,7 +21,7 @@ export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
 const BOSS = 5;
 /** A ship's plate over her and a Boss's across the top: a foe's over its head and the boss bar, size for size. */
 const { overhead: PLATE, boss: BOSS_PLATE } = PLATES;
-/** How far over her waterline a ship's bar stands, metres: over her masthead. */
+/** How far over her waterline the Sloop's bar stands, metres: over her masthead. */
 export const BAR_OVER_M = 16;
 
 /** Her Sloop's name, by the faction she sails for. */
@@ -59,15 +59,17 @@ export interface Barred {
   readonly pose: ArrayLike<number>;
 }
 
-/** Her bar over her masthead, in a picture drawn from `view`'s corner with heights `shown` times; none once sunk. */
+/** Her bar over her masthead, `overM` over her waterline (the Sloop's unless said), in a picture drawn from `view`'s
+ *  corner with heights `shown` times; none once sunk. */
 export function barOver(
   captain: Barred,
   view: { readonly leftM: number; readonly topM: number },
   shown: number,
+  overM = BAR_OVER_M,
 ): ShipBar | null {
   if (captain.state === 'sunk') return null;
   const [x = 0, y = 0, heave = 0] = [captain.ship[0], captain.ship[1], captain.pose[0]];
-  const over = [x - view.leftM, y - view.topM, (heave + BAR_OVER_M) * shown] as const;
+  const over = [x - view.leftM, y - view.topM, (heave + overM) * shown] as const;
   const share = captain.hull / Math.max(1, captain.maxHull);
   return { key: captain.id ?? 0, name: captain.name, faction: captain.faction, rank: captain.rank, share, over };
 }

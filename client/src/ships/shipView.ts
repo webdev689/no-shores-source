@@ -1,8 +1,13 @@
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { levelsOf } from '../textures/levels.ts';
+import type { Picture } from '../textures/picture.ts';
 import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipPictures.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
+import { DRESSES, PLAYER_LOOK, SHIP_SIDES, type ShipLook } from './dress.ts';
+import { flagFlat, flagGrid } from './flag.ts';
+import { flagPictures } from './flagPictures.ts';
+import type { HullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
@@ -41,9 +46,16 @@ export function shipTurn(heading: number, pitch: number, roll: number): Float32A
 /** A part's picture repeats at this many texels a metre over her, as a forged model's do. */
 const TEXELS_PER_METRE = 40;
 
-const SHIP_SHADER = /* wgsl */ `
+/** Her stripe stands this far either side of the line of her upper gunports, metres. */
+export const STRIPE_HALF_M = 0.3;
+
+/** The shader, its parts' pictures' mean lightness given: a side's paint keeps a picture's grain about its colour. */
+const shipShader = (hullLight: number, sailLight: number) => /* wgsl */ `
 ${SHARED_WGSL}
 const AMBIENT = 0.35;
+const HULL_LIGHT = ${hullLight.toFixed(4)};
+const SAIL_LIGHT = ${sailLight.toFixed(4)};
+const LIGHTNESS = vec3f(0.299, 0.587, 0.114);
 // Her UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});
 
@@ -54,6 +66,14 @@ struct Place {
   offset: vec4f,
   // How light she is drawn: 1 as modelled, less for a darker ship.
   shade: vec4f,
+  // Her side's paint for her hull, her stripe and her canvas, each its colour and 1 where it is laid, 0 where not.
+  hull: vec4f,
+  stripe: vec4f,
+  canvas: vec4f,
+  // Her stripe's line in her frame: its height at her middle, its rise a metre toward her bow, and its half height.
+  band: vec4f,
+  // Her shell in her frame: her hull's middle along her, its half length and its half beam.
+  shell: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> place: Place;
@@ -65,6 +85,9 @@ struct Drawn {
   @location(0) normal: vec3f,
   @location(1) uv: vec2f,
   @location(2) @interpolate(flat) part: u32,
+  // Where on her it is and which way it faces, in her own frame.
+  @location(3) model: vec3f,
+  @location(4) facing: vec3f,
 };
 
 @vertex
@@ -80,6 +103,8 @@ fn vertex_main(
   drawn.normal = (place.turn * vec4f(normal.xyz, 0.0)).xyz;
   drawn.uv = uv * PICTURE_PER_M;
   drawn.part = part.x;
+  drawn.model = position;
+  drawn.facing = normal.xyz;
   return drawn;
 }
 
@@ -87,7 +112,22 @@ fn vertex_main(
 fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   // Sails and planks are single faces seen from both sides: the side seen is lit.
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
-  let colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
+  var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
+  let light = dot(colour, LIGHTNESS);
+  // A side paints her shell's outside and all of her under her waterline; her deck's fittings, the insides of her
+  // bulwarks and whatever stands inboard keep their timber.
+  let across = vec2f((drawn.model.x - place.shell.x) / place.shell.y, drawn.model.y / place.shell.z);
+  let outside = dot(drawn.facing.xy, across) > 0.0 && dot(across, across) > 0.5;
+  if (drawn.part == 0u && (outside || drawn.model.z < 0.3)) {
+    let line = place.band.x + place.band.y * drawn.model.x;
+    if (place.stripe.w > 0.0 && abs(drawn.model.z - line) < place.band.z) {
+      colour = place.stripe.rgb * clamp(light / HULL_LIGHT, 0.7, 1.3);
+    } else if (place.hull.w > 0.0) {
+      colour = place.hull.rgb * clamp(light / HULL_LIGHT, 0.6, 1.4);
+    }
+  } else if (drawn.part == 3u && place.canvas.w > 0.0) {
+    colour = place.canvas.rgb * clamp(light / SAIL_LIGHT, 0.75, 1.15);
+  }
   return vec4f(colour * place.shade.x * (AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0)), 1.0);
 }
 `;
@@ -106,8 +146,13 @@ function canvasIndices(sails: number): Uint32Array<ArrayBuffer> {
 }
 
 /** The canvas's vertices, as her mesh's are, from each sail's grid now: a point's normal across its neighbours (the
- *  side its triangles face on the screen, as the export keeps hers), its UV the metres of its sail laid flat. */
-export function canvasVertices(canvas: readonly Float32Array[], flat: readonly Float32Array[]): ArrayBuffer {
+ *  side its triangles face on the screen, as the export keeps hers), its UV the metres of its sail laid flat, its
+ *  picture the sail's but where `layers` names another (her flag's). */
+export function canvasVertices(
+  canvas: readonly Float32Array[],
+  flat: readonly Float32Array[],
+  layers: readonly number[] = [],
+): ArrayBuffer {
   const bytes = new ArrayBuffer(canvas.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES);
   const view = new DataView(bytes);
   const sailPart = SHIP_PARTS.indexOf('sail');
@@ -136,23 +181,57 @@ export function canvasVertices(canvas: readonly Float32Array[], flat: readonly F
         const laid = flat[sail];
         view.setFloat32(byte + 16, laid?.[grid] ?? 0, true);
         view.setFloat32(byte + 20, laid?.[grid + 2] ?? 0, true);
-        view.setUint8(byte + 24, sailPart);
+        view.setUint8(byte + 24, layers[sail] ?? sailPart);
       }
   });
   return bytes;
 }
 
-/** Her parts' pictures on the GPU: a layer a part, with every level. */
+let painted: Picture[] | null = null;
+/** Her parts' pictures, a layer a part in `SHIP_PARTS`' order, then a flag a side in `SHIP_SIDES`': painted once. */
+function pictures(): Picture[] {
+  painted ??= [...shipPictures(), ...flagPictures()];
+  return painted;
+}
+
+/** A picture's mean lightness, 0 to 1. */
+function lightnessOf(picture: Picture | undefined): number {
+  if (!picture) throw new Error("a ship's part has no picture");
+  let sum = 0;
+  for (let texel = 0; texel < picture.rgba.length; texel += 4)
+    sum +=
+      0.299 * (picture.rgba[texel] ?? 0) +
+      0.587 * (picture.rgba[texel + 1] ?? 0) +
+      0.114 * (picture.rgba[texel + 2] ?? 0);
+  return Math.max(0.05, sum / (picture.rgba.length / 4) / 255);
+}
+
+/** Where her tallest mast's head is, in her frame: the highest point of her spars. */
+export function mastheadOf(mesh: ShipMesh): [number, number, number] {
+  const view = new DataView(mesh.vertices);
+  const spar = SHIP_PARTS.indexOf('spar');
+  let top: [number, number, number] = [0, 0, -Infinity];
+  for (let vertex = 0; vertex < mesh.vertexCount; vertex++) {
+    const byte = vertex * VERTEX_BYTES;
+    const z = view.getFloat32(byte + 8, true);
+    if (view.getUint8(byte + 24) === spar && z > top[2])
+      top = [view.getFloat32(byte, true), view.getFloat32(byte + 4, true), z];
+  }
+  if (top[2] === -Infinity) throw new Error(`the ${mesh.name || 'ship'} has no spars to fly a flag from`);
+  return top;
+}
+
+/** Her parts' pictures and the sides' flags on the GPU: a layer each, with every level. */
 function picturesTexture(device: GPUDevice): GPUTexture {
   const side = SHIP_PICTURE_TEXELS;
   const levels = Math.log2(side) + 1;
   const texture = device.createTexture({
-    size: [side, side, SHIP_PARTS.length],
+    size: [side, side, pictures().length],
     format: 'rgba8unorm',
     mipLevelCount: levels,
     usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
   });
-  shipPictures().forEach((picture, layer) => {
+  pictures().forEach((picture, layer) => {
     if (picture.width !== side || picture.height !== side) throw new Error(`a ship's picture is not ${side} square`);
     levelsOf(picture.rgba, side).forEach((level, mipLevel) => {
       const width = side >> mipLevel;
@@ -169,7 +248,7 @@ function picturesTexture(device: GPUDevice): GPUTexture {
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
  *  captains'. */
 export const SHIP_SLOTS = 20;
-const PLACE_FLOATS = 40;
+const PLACE_FLOATS = 60;
 
 /** Draws a ship's mesh at her place, lit as the land is, into the land's pass so the water sees her, each part in its
  *  picture, and her sails' canvas as her rig sets it: one model, up to `slots` ships of it a frame, each with her own
@@ -182,21 +261,35 @@ export class ShipView {
   private readonly slots: {
     readonly uniforms: GPUBuffer;
     readonly bindGroup: GPUBindGroup;
-    readonly canvas: GPUBuffer | null;
+    readonly canvas: GPUBuffer;
   }[];
   private readonly indexCount: number;
-  private readonly canvasIndices: GPUBuffer | null;
+  private readonly canvasIndices: GPUBuffer;
   private readonly canvasIndexCount: number;
   /** Her waterline, for her footprint on the water and her wake. */
   readonly waterline: Waterline;
   /** Her sails' corners, for each ship's rig. */
   readonly sails: readonly SailCorners[];
+  /** Her tallest mast's head, where her flag flies, and where a side's paint goes on her (`hullPaint`). */
+  private readonly masthead: readonly [number, number, number];
+  private readonly paint: HullPaint;
+  private readonly flat: readonly Float32Array[];
 
-  constructor(gpu: Gpu, mesh: ShipMesh, sails: readonly SailCorners[], slots = SHIP_SLOTS) {
+  constructor(
+    gpu: Gpu,
+    mesh: ShipMesh,
+    sails: readonly SailCorners[],
+    slots = SHIP_SLOTS,
+    paint: HullPaint = { atM: 0, rise: 0, middleM: 0, halfLengthM: 1, halfBeamM: 1 },
+  ) {
     this.device = gpu.device;
     this.waterline = mesh.waterline;
     this.sails = sails;
-    const module = gpu.device.createShaderModule({ code: SHIP_SHADER });
+    this.masthead = mastheadOf(mesh);
+    this.paint = paint;
+    this.flat = [flagFlat()];
+    const [hullLight, sailLight] = [0, 3].map((layer) => lightnessOf(pictures()[layer])) as [number, number];
+    const module = gpu.device.createShaderModule({ code: shipShader(hullLight, sailLight) });
     this.pipeline = gpu.device.createRenderPipeline({
       layout: 'auto',
       vertex: {
@@ -230,17 +323,16 @@ export class ShipView {
     });
     gpu.device.queue.writeBuffer(this.indices, 0, mesh.indices);
     this.indexCount = mesh.indices.length;
-    const grid = canvasIndices(sails.length);
+    // Her sails' grids, then her flag's.
+    const grid = canvasIndices(sails.length + 1);
     this.canvasIndexCount = grid.length;
-    this.canvasIndices = sails.length
-      ? gpu.device.createBuffer({
-          size: grid.byteLength,
-          usage: BUFFER_USAGE.index | BUFFER_USAGE.copyDestination,
-        })
-      : null;
-    if (this.canvasIndices) gpu.device.queue.writeBuffer(this.canvasIndices, 0, grid);
-    const pictures = picturesTexture(gpu.device).createView({ dimension: '2d-array' });
-    const pictured = gpu.device.createSampler({
+    this.canvasIndices = gpu.device.createBuffer({
+      size: grid.byteLength,
+      usage: BUFFER_USAGE.index | BUFFER_USAGE.copyDestination,
+    });
+    gpu.device.queue.writeBuffer(this.canvasIndices, 0, grid);
+    const pictured = picturesTexture(gpu.device).createView({ dimension: '2d-array' });
+    const sampler = gpu.device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
       magFilter: 'nearest',
@@ -256,28 +348,27 @@ export class ShipView {
         layout: this.pipeline.getBindGroupLayout(0),
         entries: [
           { binding: 0, resource: { buffer: uniforms } },
-          { binding: 1, resource: pictures },
-          { binding: 2, resource: pictured },
+          { binding: 1, resource: pictured },
+          { binding: 2, resource: sampler },
         ],
       });
-      const canvas = sails.length
-        ? gpu.device.createBuffer({
-            size: sails.length * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES,
-            usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
-          })
-        : null;
+      const canvas = gpu.device.createBuffer({
+        size: (sails.length + 1) * SAIL_COLUMNS * SAIL_ROWS * VERTEX_BYTES,
+        usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
+      });
       return { uniforms, bindGroup, canvas };
     });
   }
 
   /** Draws her into a pass the land's pipelines draw into (its formats, samples and reversed depth), in her own
-   *  `slot` of the frame, `shade` as light as modelled, her canvas as `rig` sets it (none without a rig). */
+   *  `slot` of the frame, in her side's colours as light as `look` says, and her canvas and flag as `rig` sets them
+   *  (none without a rig). */
   drawInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
     camera: ShipCamera,
     slot = 0,
-    shade = 1,
+    look: ShipLook = PLAYER_LOOK,
     rig: SailRig | null = null,
   ): void {
     const drawn = this.slots[slot];
@@ -289,20 +380,31 @@ export class ShipView {
     for (let index = 0; index < 12; index++) turn[index] = (turn[index] ?? 0) * (place.scale ?? 1);
     values.set(turn, 16);
     values.set([place.x - camera.eye[0], place.y - camera.eye[1], place.z - camera.eye[2], 0], 32);
-    values.set([shade, 0, 0, 0], 36);
+    values.set([look.shade ?? 1, 0, 0, 0], 36);
+    const dress = DRESSES[look.side];
+    [dress.hull, dress.stripe, dress.canvas].forEach((colour, index) =>
+      values.set(colour ? [...colour, 1] : [0, 0, 0, 0], 40 + index * 4),
+    );
+    const { atM, rise, middleM, halfLengthM, halfBeamM } = this.paint;
+    values.set([atM, rise, STRIPE_HALF_M, 0, middleM, halfLengthM, halfBeamM, 0], 52);
     this.device.queue.writeBuffer(drawn.uniforms, 0, values);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.bindGroup);
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     pass.drawIndexed(this.indexCount);
-    if (!rig || !drawn.canvas || !this.canvasIndices) return;
+    if (!rig) return;
+    if (rig.sails.length !== this.sails.length)
+      throw new Error(`a rig of ${rig.sails.length} sails is not this ship's`);
+    const flag = flagGrid(this.masthead, this.waterline.lengthM, rig.offDeg, rig.time);
+    const flagLayer = SHIP_PARTS.length + SHIP_SIDES.indexOf(look.side);
     this.device.queue.writeBuffer(
       drawn.canvas,
       0,
       canvasVertices(
-        rig.canvas(),
-        rig.sails.map((sail) => sail.flat),
+        [...rig.canvas(), flag],
+        [...rig.sails.map((sail) => sail.flat), ...this.flat],
+        [...rig.sails.map(() => SHIP_PARTS.indexOf('sail')), flagLayer],
       ),
     );
     pass.setVertexBuffer(0, drawn.canvas);

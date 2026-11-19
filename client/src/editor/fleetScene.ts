@@ -2,21 +2,27 @@ import type { FightLay, FightLook } from '../rules/fightRules.ts';
 import type { FleetLay } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { Effects, type Mark, type Splash } from '../ships/effects.ts';
+import { factionSide } from '../ships/dress.ts';
+import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
+import { SailRig, windOff } from '../ships/sails.ts';
 import { barOver, type ShipBar, shipName } from '../ships/shipBars.ts';
-import type { Waterline } from '../ships/shipMesh.ts';
-import type { ShipCamera, ShipPlace, ShipView } from '../ships/shipView.ts';
+import type { DrawnShip } from '../ships/shipModels.ts';
+import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FleetInput, FleetVessel } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
-import { aimCameraOf, arcsOf, DECK_M, lookOf, type MarkDrawer } from './naval.ts';
+import { aimCameraOf, arcsOf, DECK_M, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
 import type { Orbit } from './orbit.ts';
+import { SAILS_RUNG } from './sailing.ts';
 
-/** A captain's Sloop is drawn this light, another player's this: the same model as hers. */
-const CAPTAIN_SHADE = 0.55;
+/** Another player's Sloop is drawn this light: the same model as hers. */
 const OTHER_SHADE = 0.85;
 /** A ball is drawn this many times its size, to be seen. */
 const BALL_DRAWN = 2;
 const BALL = [0.12, 0.12, 0.12] as const;
+
+/** The hull a ship the room shows sails: a captain's as the room names it, another player's the Sloop. */
+const hullOf = (vessel: FleetVessel): number => (vessel.captain ? hullOfCaptain(vessel) : SLOOP_HULL);
 
 /** A lay as the editor's arcs draw it. */
 function arcsLay(lay: FleetLay | null): FightLay | null {
@@ -40,6 +46,8 @@ export class FleetScene {
   private readonly marks: MarkDrawer;
   private readonly effects = new Effects(7);
   private lay: FleetLay | null = null;
+  /** Each other ship's rig by her number, for the hull she sails. */
+  private readonly rigs = new Map<number, { readonly hull: number; readonly rig: SailRig }>();
 
   constructor(play: FleetSloop, marks: MarkDrawer) {
     this.play = play;
@@ -74,13 +82,14 @@ export class FleetScene {
     return splashes;
   }
 
-  /** Every other ship's footprint on the water while she floats. */
-  hulls(view: LandView, waterline: Waterline): HullMask[] {
+  /** Every other ship's footprint on the water while she floats, at her hull's waterline. */
+  hulls(view: LandView): HullMask[] {
     return this.play
       .others()
       .filter((vessel) => vessel.state !== 'sinking' && vessel.state !== 'sunk')
       .map((vessel) => {
         const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
+        const waterline = hullWaterline(hullOf(vessel));
         return {
           x: x - view.leftM,
           y: y - view.topM,
@@ -92,25 +101,37 @@ export class FleetScene {
       });
   }
 
-  /** Draws every other ship (captains darker), the balls aloft, her lay's arcs and the effects, heights as drawn. */
-  draw(
-    pass: GPURenderPassEncoder,
+  /** Every other ship afloat, heights as drawn: a captain's in her hull and her faction's colours, another player's
+   *  Sloop a little darker than hers; each one's sails stepped `seconds` on in the wind blowing toward `bearing`. */
+  ships(
     view: LandView,
     shown: number,
-    camera: ShipCamera,
-    ship: ShipView | null,
+    wind: { readonly bearing: number; readonly seconds: number },
     now: number,
-  ): void {
-    this.play.others().forEach((vessel, index) => {
-      if (vessel.state === 'sunk') return;
-      ship?.drawInto(
-        pass,
-        placeOf(vessel, view, shown),
-        camera,
-        index + 1,
-        vessel.captain ? CAPTAIN_SHADE : OTHER_SHADE,
-      );
+  ): DrawnShip[] {
+    const others = this.play.others();
+    const sailing = new Set(others.map((vessel) => vessel.id));
+    for (const id of this.rigs.keys()) if (!sailing.has(id)) this.rigs.delete(id);
+    return others.flatMap((vessel) => {
+      if (vessel.state === 'sunk') return [];
+      const hull = hullOf(vessel);
+      let rigged = this.rigs.get(vessel.id);
+      if (!rigged || rigged.hull !== hull) {
+        rigged = { hull, rig: new SailRig(hullSails(hull)) };
+        this.rigs.set(vessel.id, rigged);
+      }
+      const place = placeOf(vessel, view, shown);
+      const set = vessel.ship[SHIP_RUNG] === SAILS_RUNG;
+      rigged.rig.step(wind.seconds, { offDeg: windOff(place.heading, wind.bearing), set }, now);
+      const look = vessel.captain
+        ? { side: factionSide(vessel.faction) }
+        : { side: 'player' as const, shade: OTHER_SHADE };
+      return [{ hull, place, rig: rigged.rig, look }];
     });
+  }
+
+  /** Draws the balls aloft, her lay's arcs and the effects, heights as drawn. */
+  draw(pass: GPURenderPassEncoder, view: LandView, shown: number, camera: ShipCamera, now: number): void {
     const marks: Mark[] = this.effects.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
     for (const [x, y, z, radius] of this.play.balls(now))
       marks.push({ x: x - view.leftM, y: y - view.topM, z: z * shown, radius: radius * BALL_DRAWN, colour: BALL });
@@ -118,12 +139,19 @@ export class FleetScene {
     this.marks.drawInto(pass, marks, camera);
   }
 
-  /** Each captain's bar over her masthead, heights as drawn. */
+  /** Each captain's bar over her hull's masthead, heights as drawn. */
   bars(view: LandView, shown: number): ShipBar[] {
     return this.play
       .others()
       .filter((vessel) => vessel.captain)
-      .map((vessel) => barOver({ ...vessel, ...vessel.hurts, name: shipName(vessel.faction) }, view, shown))
+      .map((vessel) =>
+        barOver(
+          { ...vessel, ...vessel.hurts, name: shipName(vessel.faction) },
+          view,
+          shown,
+          plateOverM(hullOf(vessel)),
+        ),
+      )
       .filter((bar) => bar !== null);
   }
 
