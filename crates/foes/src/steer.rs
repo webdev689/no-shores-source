@@ -8,7 +8,7 @@ use crate::senses::Here;
 use crate::tuning::{SPACING, SPACING_PACE, SQUARE, TURN, WALK_FACE};
 use combat::sight::{apart, bearing, off, turned, wrap};
 use combat::{CombatInput, Intent};
-use movement::{Controls, Mode};
+use movement::{Controls, Mode, TICK_SECONDS, TUNING};
 
 /// What a foe's thinking asks of its body and its arms this tick.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -81,13 +81,14 @@ fn spacing(here: &Here<'_, '_>) -> [f64; 2] {
     if length > SPACING_PACE { [push[0] / length * SPACING_PACE, push[1] / length * SPACING_PACE] } else { push }
 }
 
-/// Crossing a block: a foe on its side goes on up and over, as forward does; one whose way crosses a climb or a drop
-/// from where it stands turns square to the side, then walks on along its way, pressing jump to go over where the
-/// crossing says, never running nor steered apart. So the rules carry it across as they carry a player, or, struck
-/// or set down short, it finds its way again from wherever it stands.
+/// Crossing a block: a foe on its side, or in the air, presses on the way it faces, so it goes up and over, or catches
+/// a lip it jumped for; one whose way crosses a climb or a drop from where it stands turns square to the side, then
+/// walks on along its way, pressing jump to go over where the crossing says, never running nor steered apart. So the
+/// rules carry it across as they carry a player, or, struck or set down short, it finds its way again from wherever
+/// it stands.
 fn across(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Option<Controls> {
     let body = here.fighter.body;
-    if matches!(body.mode, Mode::Climb | Mode::Hang) {
+    if matches!(body.mode, Mode::Climb | Mode::Hang | Mode::Air) {
         brain.heading = body.facing;
         return Some(Controls { forward: 1.0, yaw: body.facing, ..Controls::default() });
     }
@@ -100,6 +101,15 @@ fn across(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Option<Controls>
     }
     let jump = square && crossing.jump && body.mode == Mode::Ground;
     Some(Controls { forward: if square { 1.0 } else { 0.0 }, yaw: brain.heading, jump, ..Controls::default() })
+}
+
+/// Whether this tick's step, a share of a walk (or a run) east and south, walks a foe on its feet off an edge more
+/// than a step high. Only a crossing drops a foe: its hop back from a blow, or its circling, holds at the edge.
+fn off_edge(here: &Here<'_, '_>, share: [f64; 2], run: bool) -> bool {
+    let feet = here.feet();
+    let pace = if run { TUNING.run } else { TUNING.walk } * TICK_SECONDS;
+    let to = [feet[0] + share[0] * pace, feet[1] + share[1] * pace, feet[2]];
+    here.fighter.body.mode == Mode::Ground && here.world.routes.drops(feet, to)
 }
 
 /// The intent an ask comes to: the heading turned toward what it faces, the move made relative to it.
@@ -123,7 +133,10 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
         let push = spacing(here);
         wish = [wish[0] + push[0], wish[1] + push[1]];
     }
-    let length = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt().min(1.0);
+    let whole = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt();
+    let length = whole.min(1.0);
+    let share = [wish[0] / whole * length, wish[1] / whole * length];
+    let length = if length > 1e-9 && off_edge(here, share, ask.run) { 0.0 } else { length };
     let (forward, sideways) = if length > 1e-9 {
         let relative = wrap(libm::atan2(wish[0], -wish[1]) - brain.heading);
         (libm::cos(relative) * length, libm::sin(relative) * length)

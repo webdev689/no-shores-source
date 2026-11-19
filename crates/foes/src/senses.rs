@@ -8,9 +8,10 @@ use crate::brain::Brain;
 use crate::dice::Dice;
 use crate::noises::stir_of;
 use crate::roles::Numbers;
-use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
+use crate::tuning::{ENGAGE_RANGE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
+use combat::tuning::STRIKE_HEIGHT;
 use combat::{Fighter, FighterId};
 
 /// A foe in its room this tick: its id, its fighter, the room, its numbers and its dice.
@@ -169,12 +170,17 @@ fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64)> {
 fn sight(here: &Here<'_, '_>, id: FighterId, other: &Fighter, seen: bool, last: Option<[f64; 3]>) -> Sight {
     let spot = last.unwrap_or_else(|| here.feet());
     let at = here.at();
+    let across = apart(at, [spot[0], spot[1]]);
+    // Near across but on a ledge over it or under it, out of a blow's height, a target is as far as the way there: the
+    // foe climbs or drops to it rather than swing at it in vain.
+    let off_floor = across <= OFF_FLOOR_NEAR && (spot[2] - here.feet()[2]).abs() > STRIKE_HEIGHT;
+    let walk = || here.world.routes.length(here.feet(), spot).map_or(across, |walk| walk.max(across));
     Sight {
         id,
         fighter: *other,
         seen,
         spot,
-        distance: apart(at, [spot[0], spot[1]]),
+        distance: if off_floor { walk() } else { across },
         toward: bearing(at, [spot[0], spot[1]]),
     }
 }

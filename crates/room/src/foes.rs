@@ -17,7 +17,7 @@ use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_figh
 use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::ground_at;
-use movement::{TICK_SECONDS, TUNING, Terrain};
+use movement::{Block, TICK_SECONDS, TUNING, Terrain};
 use navmesh::{NavMesh, Way};
 use std::collections::BTreeMap;
 
@@ -85,6 +85,7 @@ type Placed = ([f64; 3], Option<[f64; 3]>);
 struct MeshRoutes<'mesh> {
     mesh: &'mesh NavMesh,
     floor: &'mesh crate::Floor,
+    blocks: &'mesh [Block],
     /// The foe thinking now, whose way is walked.
     asking: Cell<FighterId>,
     ways: RefCell<BTreeMap<FighterId, Way>>,
@@ -93,8 +94,13 @@ struct MeshRoutes<'mesh> {
 }
 
 impl<'mesh> MeshRoutes<'mesh> {
-    fn new(mesh: &'mesh NavMesh, floor: &'mesh crate::Floor, ways: BTreeMap<FighterId, Way>) -> Self {
-        Self { mesh, floor, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
+    fn new(
+        mesh: &'mesh NavMesh,
+        floor: &'mesh crate::Floor,
+        blocks: &'mesh [Block],
+        ways: BTreeMap<FighterId, Way>,
+    ) -> Self {
+        Self { mesh, floor, blocks, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
     }
 
     /// The point to walk for along a path: a metre on square along the link the way crosses from `from`, if it stands
@@ -133,6 +139,10 @@ impl ::foes::Routes for MeshRoutes<'_> {
         }
         let path = self.mesh.find_path_kept(way, from, reachable);
         Some(path.map_or(to, |points| self.onward(way, &points, from, to)))
+    }
+
+    fn drops(&self, from: [f64; 3], to: [f64; 3]) -> bool {
+        ground_at(self.blocks, self.floor, to[0], to[1], from[2]) < from[2] - TUNING.step
     }
 
     fn crossing(&self, from: [f64; 3]) -> Option<::foes::Crossing> {
@@ -337,7 +347,7 @@ impl Room {
             .collect();
         let ids: Vec<FighterId> = self.foes.keys().copied().collect();
         let mut intents = Vec::with_capacity(ids.len());
-        let routes = MeshRoutes::new(&self.nav, &self.floor, std::mem::take(&mut self.ways));
+        let routes = MeshRoutes::new(&self.nav, &self.floor, &self.blocks, std::mem::take(&mut self.ways));
         {
             let spots = MeshSpots { mesh: &self.nav };
             let world = World {

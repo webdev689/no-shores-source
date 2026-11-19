@@ -62,6 +62,12 @@ pub trait Routes {
     fn crossing(&self, _from: [f64; 3]) -> Option<Crossing> {
         None
     }
+
+    /// Whether a body on its feet at `from` stepping to `to` drops off an edge more than a step high: never, unless the
+    /// routes know better.
+    fn drops(&self, _from: [f64; 3], _to: [f64; 3]) -> bool {
+        false
+    }
 }
 
 /// A climb or a drop on a foe's way, where it starts across: the bearing to face and walk along, square to a block's
