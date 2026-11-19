@@ -129,6 +129,19 @@ fn a_platform_with_no_step_up_is_climbed_onto_and_dropped_off() {
 }
 
 #[test]
+fn a_path_s_length_counts_each_link_at_its_cost() {
+    let navmesh = bake(&[block(2.0, -2.0, 6.0, 2.0, 2.0)]);
+    let (ground, top) = ([-5.0, 0.0, 0.0], [4.0, 0.0, 2.0]);
+    let route = path(&navmesh, ground, top);
+    let up = navmesh.links().find(|link| route.iter().any(|point| (point[0] - link.to[0]).abs() < 1e-9)).unwrap();
+    let measured = navmesh.path_length(ground, top).unwrap();
+    let leg = libm::hypot(up.to[0] - up.from[0], up.to[1] - up.from[1]);
+    assert!((measured - (length(&route) - leg + up.cost)).abs() < 1e-9, "{measured} for {route:?}");
+    let level = [8.0, 6.0, 0.0];
+    assert_eq!(navmesh.path_length(ground, level), Some(length(&path(&navmesh, ground, level))), "no link, no cost");
+}
+
+#[test]
 fn every_link_starts_square_to_a_side_and_costs_the_walk_of_its_crossing_time() {
     let navmesh = bake(&[block(2.0, -2.0, 6.0, 2.0, 2.0)]);
     let links: Vec<_> = navmesh.links().collect();

@@ -203,6 +203,24 @@ impl NavMesh {
         self.solve(from, to, Some(ignore))
     }
 
+    /// How far a path from `from` to `to` walks across the ground, each link counted at its cost rather than its leg
+    /// across; none where `find_path` finds no path.
+    #[must_use]
+    pub fn path_length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        if self.mesh.polys.is_empty() {
+            return None;
+        }
+        let corridor = self.search(self.locate(from)?, self.locate(to)?, None)?;
+        let points = self.walk(&corridor, from, to)?;
+        let across = |one: [f64; 3], other: [f64; 3]| {
+            let (east, south) = (other[0] - one[0], other[1] - one[1]);
+            (east * east + south * south).sqrt()
+        };
+        let legs: f64 = points.windows(2).map(|pair| across(pair[0], pair[1])).sum();
+        let links = corridor.iter().filter_map(|&node| self.mesh.link_of(node));
+        Some(links.fold(legs, |length, laid| length + laid.link.cost - across(laid.link.from, laid.link.to)))
+    }
+
     /// Lays a circle at (x, y) over the mesh that blocks every poly it touches, or moves the one with this id.
     pub fn add_obstacle(&mut self, id: ObstacleId, x: f64, y: f64, radius: f64) {
         let (grid_x, grid_y) = self.to_grid(x, y);

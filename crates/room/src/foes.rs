@@ -141,13 +141,7 @@ impl ::foes::Routes for MeshRoutes<'_> {
     }
 
     fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
-        let points = self.mesh.find_path(from, to)?;
-        Some(
-            points
-                .windows(2)
-                .map(|pair| combat::sight::apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]))
-                .sum(),
-        )
+        self.mesh.path_length(from, to)
     }
 
     fn walkable(&self, point: [f64; 3]) -> bool {
