@@ -18,7 +18,7 @@ DFO's raised, tilted travel camera over the real world ([[Pick - Overworld]]), f
 real speed ([[The World Map]]); and the bird's-eye view of the side of an island, its nodes marked by kind, where the
 player picks one to land at. Its core is pure, in the `overworld` layer, with no page or drawing; the [[Game]] wires
 and draws it. The sea's next shape, waters with owners, ships sighted on the horizon and free sailing at the helm, is
-decided and not yet built ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
+decided and not yet built ([[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]]).
 
 ## The frame
 

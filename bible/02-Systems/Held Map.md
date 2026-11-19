@@ -80,3 +80,5 @@ The player starts with the island they arrive on, its port, the place they arriv
 - The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
 - The route is inked through at most 128 of its points.
 - Quests are not tracked on the map yet.
+- The waters are not tinted yet: each water's owner, name and level band, and the contested seam, are decided and
+  not built ([[The Waters Come From the Islands]]).

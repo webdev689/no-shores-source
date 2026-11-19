@@ -14,7 +14,7 @@ code:
 
 The ships Overlook sails beyond the Sloop, chosen in her style for each rank of ship, the player's own hulls and the
 merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
-[[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
+[[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]]).
 Only the Sloop is built ([[Sailing]]): until the others are, both factions' captains sail her at every rank
 ([[Naval Combat]], "Ranks and factions").
 

@@ -259,15 +259,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The waters, next** ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): the owner asked to hear more and was
-  shown Claude's proposal, not yet decided: a water is a named stretch of sea with an owner and a level band; its band
-  follows the islands' (`crates/gear/src/world.rs` ISLANDS), a ship's level from her water and her hull by rank
-  (Minor and Major the Sloop, Elite the Schooner, Miniboss the Brig, Boss the Frigate); Overlook's home waters hold no
-  hostile ship, the Grey Tithe's hold its patrols and its flagship's sea strike, the pirates' wait by wrecks and coves,
-  contested waters hold both fighting each other; each water keeps its own ships on their own courses, sighted
-  kilometres out, in place of today's rolls near the player; the held map tints each water with its name and level.
-  Waiting on the owner: whether they draw the waters in the World Editor (Claude's pick) or they are generated from
-  the islands. The prologue session (`claude/loving-darwin-sw4eae`) works in the sea room and draws ships: coordinate.
+- **The waters, next** ([[The Waters Come From the Islands]]): decided by the owner and not built. Nine waters, each
+  the sea nearest one island, with its island's level band; owners by the table there (home safe, the second
+  contested, the third and seventh to ninth the Grey Tithe's, the fourth to sixth the pirates', and a contested seam
+  along the fourth and eighth's border); hull by rank; hostile ships sighted about 5 km out, farther with a voyage's
+  pace so each stays in sight at least 30 s; friendly ships on routes between ports, seen from land and sea, their
+  port factions later; the held map tinted by owner with Claude's names. Build order: the waters as a pure module
+  with tests, then the map's tint, then the hostile ships by water, then the friendly ships. The prologue session
+  (`claude/loving-darwin-sw4eae`) works in the sea room and draws ships: coordinate.
 - **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
   the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call it
   there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her

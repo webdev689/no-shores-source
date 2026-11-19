@@ -39,7 +39,8 @@ status: in force
 
 - The sea takes its place in the loop that [[Overlook Is a Shared World After Destiny 1]] sets: it is a patrol zone
   of its own, and the ship is a second set of gear.
-- The sea is divided into waters, each with a level and an owner. Overlook's home waters hold no hostile ship.
+- The sea is divided into waters, each with a level and an owner. Overlook's home waters hold no hostile ship
+  ([[The Waters Come From the Islands]]).
 - The voyage stays; free sailing at the helm joins it, at true scale, in any waters.
 - Ships are sighted on the horizon and chosen: chased, evaded or let pass. A bold ship that comes for the player
   still pans to the fight at once ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]).
