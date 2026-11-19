@@ -2,8 +2,7 @@
 // sweeps), the way its striker's figure is drawn swinging it, so the light goes where the blade goes; and how heavy
 // its weapon swings, by its class.
 import type { GlowLook } from '../elementGlow.ts';
-import { STRIKE_PACE } from '../firstperson/weaponMachine.ts';
-import { BLOW } from '../player/playerMoves.ts';
+import { BLOW_SWEEP } from '../player/playerMoves.ts';
 import type { StrokeDirection } from '../rules/fighters.ts';
 
 export type Vector = readonly [number, number, number];
@@ -76,11 +75,10 @@ const TIP_SHARE = 0.75;
 const TIP_M = [0.7, 2.2] as const;
 const BLADE_SHARE = 0.62;
 const BLADE_MOST = 0.8;
-/** The fast part of a swing is its figure's: from the last of a blow's wind-up frames, drawn through the last three
- *  quarters of the way to its landing, to the last of its follow-through frames. The head gathers speed to the landing
- *  as an ease-in of this power. */
-const SWING_FROM = 1 - STRIKE_PACE.windup / BLOW.lands;
-const SWEEP_ON = STRIKE_PACE.recover;
+/** The fast part of a swing is its figure's: from the last of a blow's wind-up frames to the last of its
+ *  follow-through frames. The head gathers speed to the landing as an ease-in of this power. */
+const SWING_FROM = BLOW_SWEEP.from;
+const SWEEP_ON = BLOW_SWEEP.on;
 const GATHER = 2.2;
 /** The pivot stands this far ahead of the chest, so a cut sweeps in front of the figure. */
 const AHEAD_M = 0.15;

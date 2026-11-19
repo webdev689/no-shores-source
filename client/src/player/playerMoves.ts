@@ -203,7 +203,7 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
 
 /** The owner's blows (the forge's blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
  *  the fifth. */
-export const BLOW = { frames: 9, lands: 4 } as const;
+const BLOW = { frames: 9, lands: 4 } as const;
 /** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`: at
  *  the first person's pace. */
 function woundUp(progress: number, lands: number): number {
@@ -265,6 +265,10 @@ export function blowFrame(progress: number, lands: number): number {
 
 /** How far through a swing its blow lands by DFO's swing law: as the third of five strike frames begins. */
 export const BLOW_LANDS = 2 / 5;
+
+/** How a blow's figure sweeps, as shares of the time to its landing: from its last wind-up frame (the fourth, run
+ *  through the last three quarters of that time) and on past the landing through its follow-through frames. */
+export const BLOW_SWEEP = { from: 1 - STRIKE_PACE.windup / BLOW.lands, on: STRIKE_PACE.recover } as const;
 
 /** Whether a blow `progress` through its swing, landing `lands` through it, has shown its last frame. */
 const blowPlayed = (progress: number, lands = BLOW_LANDS): boolean => progress >= lands * (1 + STRIKE_PACE.recover);
