@@ -120,7 +120,7 @@ ships within 1,000 m and the fight.
 - **The sea**: six songs for a band of fiddle, flute, whistle, accordion, harp and bodhran over strings, horns and
   timpani: the still sea (6/8, D Dorian), the open sea (G), the storm (D Aeolian), the sea at night (3/4, A Dorian),
   landfall (3/4 at 88, D Mixolydian: a homecoming, the fiddle's tune and the whistle's over held strings and horn,
-  the harp rolling each chord, the harbour's bell) and the sea fight (D minor).
+  the harp rolling each chord, the harbour's bell; [[Landfall Is Kept as Made Again]]) and the sea fight (D minor).
 - **The Wrath**: D minor on low brass, organ, choir, a tolled bell and low drums; three phases at 132, 138 and 150,
   the third on the Neapolitan; its fall turns to D major.
 - **The Reckoning**: C minor and a clock: a broken quarter chime, a harpsichord's escapement, wood blocks ticking;

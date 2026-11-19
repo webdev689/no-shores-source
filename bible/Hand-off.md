@@ -246,8 +246,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
 - **#73, the music and the ambience, waits on the owner's yes to merge**, which deploys the page and the rooms
   ([[Music and Ambience Come From DFO's Synthesiser]], [[Music]], [[Ambience]]). The owner kept every piece on the
-  sound sheet but Landfall ("Less jolly"), which is made again and on the sheet to judge, and picked the seven
-  recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
+  sound sheet, Landfall as made again after their "Less jolly" ([[Landfall Is Kept as Made Again]]), and picked the
+  seven recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
   the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
   nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
   risers).
