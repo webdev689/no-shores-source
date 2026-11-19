@@ -91,10 +91,13 @@ impl Character {
         true
     }
 
-    /// An Ammo crate used, anywhere: the Ranged weapon's ammunition filled.
+    /// An Ammo crate used, anywhere: the Ranged weapon's ammunition filled. Refused, kept, with none worn.
     pub(crate) fn use_crate(&mut self) -> Result<Option<Done>, Refusal> {
         if self.materials.crates == 0 {
             return Err(Refusal::NoCrate);
+        }
+        if self.ammo_most().is_none() {
+            return Err(Refusal::NoRanged);
         }
         if self.ammo >= AMMO_FULL {
             return Err(Refusal::AmmoFull);

@@ -84,6 +84,17 @@ fn an_ammo_crate_fills_the_ranged_weapon_and_five_are_carried_at_most() {
 }
 
 #[test]
+fn an_ammo_crate_is_refused_with_no_ranged_weapon_worn_and_kept() {
+    let mut character = Character::starting();
+    assert!(character.worn(Slot::Ranged).is_none(), "the starting kit wears none");
+    assert!(character.take_crate());
+    character.ammo = 30;
+    assert_eq!(character.ask(Ask::UseCrate, AFIELD, &DICE), Err(Refusal::NoRanged));
+    assert_eq!((character.ammo, character.materials.crates), (30, 1), "nothing spent");
+    assert_eq!(crate::asks::Refusal::NoRanged as u8 + 1, 120, "the room's answer 120");
+}
+
+#[test]
 fn the_quartermaster_sells_crates_at_the_counter_for_their_price() {
     let mut character = wearing(Kind::Bow);
     character.materials.aurem = CRATE_PRICE * 2;

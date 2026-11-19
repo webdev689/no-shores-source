@@ -114,6 +114,8 @@ pub enum Refusal {
     AmmoFull,
     /// Five Ammo crates are carried already.
     CratesFull,
+    /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
+    NoRanged = 119,
 }
 
 /// What an ask did, when it did more than its ask says.
