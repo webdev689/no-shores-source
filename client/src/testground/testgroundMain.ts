@@ -266,6 +266,7 @@ async function start(): Promise<void> {
       handsSeconds: feel.shownSeconds(fighting.player, seconds),
     });
     const own = fighting.own;
+    effects.ownLook = player.glowing[0];
     const events = effects.events(fighting, seconds);
     feel.frame(events, own, fighting.player, seconds, new Set(fighting.others.keys()));
     const frameTicks = seconds / movement.tickSeconds;

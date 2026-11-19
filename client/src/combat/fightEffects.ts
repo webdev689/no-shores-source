@@ -1,3 +1,4 @@
+import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
@@ -15,19 +16,26 @@ type Point = readonly [number, number, number];
  */
 export class FightEffects {
   readonly flashes = new Flashes();
+  /** The element the player's own weapon glows in while drawn, as the page reads it each frame: their blows that land
+   *  burst in it, and their shots' tracers and trails take it. */
+  ownLook: GlowLook = 0;
   private readonly sparks = new Sparks();
   private readonly tracers = new Tracers();
+  /** The seconds the effects have run, which a Volt tracer jumps by. */
+  private clock = 0;
 
   /** Takes the fight's events since the last frame, `seconds` long, and hands them back for the display and the
    *  blood: each struck figure flashes, and each clash throws its sparks from where `fight` has its fighters. */
   events(fight: Fighting, seconds: number): FightEvent[] {
     const events = fight.takeEvents();
+    this.clock += seconds;
     this.flashes.update(events, seconds);
     this.sparks.update(seconds);
-    this.sparks.struck(events, (id) => {
+    const where = (id: number) => {
       const fighter = id === fight.player ? fight.own : (fight.foes.get(id)?.view ?? fight.others.get(id)?.body);
-      return fighter ? [fighter.x, fighter.y, fighter.z] : null;
-    });
+      return fighter ? ([fighter.x, fighter.y, fighter.z] as const) : null;
+    };
+    this.sparks.struck(events, where, { player: fight.player, look: this.ownLook });
     return events;
   }
 
@@ -58,7 +66,9 @@ export class FightEffects {
     this.tracers.seen(fight.takeShots(), fight.player);
     for (const impact of this.tracers.update(seconds, blocks, bodies, groundAt))
       this.sparks.burst(impact.at, impact.back, IMPACT_SPARKS);
-    const traced = this.tracers.mesh(eye, fight.shots, fight.player);
+    const look = this.ownLook;
+    if (look) for (const head of this.tracers.ownHeads) this.sparks.trail(head, look, seconds);
+    const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);
     const arrows = othersArrows(fight.shots, fight.player);
     return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...more], origin);
   }

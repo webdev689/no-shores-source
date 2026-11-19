@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FlyingShot } from '../network/messages.ts';
+import { glowRampAt } from '../elementGlow.ts';
 import { MARK_FLOATS } from './marks.ts';
 import { Tracers, before, figureMuzzle, ribbon } from './tracers.ts';
 
@@ -202,4 +203,28 @@ test("on rising land the player's arrow stops where it goes under the ground, no
   assert.equal(impacts.length, 1);
   const [, y, z] = impacts[0]?.at ?? [0, 0, 0];
   assert.ok(y < -6.5 && y > -7.6 && Math.abs(z - rising(0, y)) < 1e-3, `${y}, ${z}`);
+});
+
+test("the player's own trail takes its element, another's keeps its own", () => {
+  // A ball just fired: its glow ribbon, then its core's, along the trace.
+  const vertex = (mesh: readonly number[], index: number) =>
+    mesh.slice(index * MARK_FLOATS + 3, (index + 1) * MARK_FLOATS);
+  const own = new Tracers();
+  own.fired([ball], () => [0, 0, 1.5]);
+  const [plain, volt] = [own.mesh(eye, [], 1), own.mesh(eye, [], 1, 2, 0.5)];
+  const core = vertex(volt, 6);
+  assert.deepEqual(core.slice(0, 3), [...glowRampAt(2, 0)]);
+  assert.equal(core[3], vertex(plain, 6)[3], "at the plain core's opacity");
+  assert.deepEqual(vertex(volt, 0).slice(0, 3), [...glowRampAt(2, 0.5)], 'its glow a step down the ramp');
+  const theirs: FlyingShot = {
+    owner: 2,
+    ranged: 4,
+    at: [0, 0, 1.5],
+    velocity: [0, -600, 0],
+    age: 0,
+    muzzle: [0, 0, 1.5],
+  };
+  const others = new Tracers();
+  others.seen([theirs], 1);
+  assert.deepEqual(others.mesh(eye, [], 1, 2, 0.5), others.mesh(eye, [], 1));
 });
