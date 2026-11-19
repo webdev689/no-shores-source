@@ -125,6 +125,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foes Spread Across the Players They Fight]]
 - [[A Locked-On Dodge Rolls the Way It Goes]]
 - [[A Tall Wall Is Climbed Within 45° of Square]]
+- [[A Full Ammo Box Says Ammo Full]]
 - [[A Click During a Weapon Swap Swings as It Ends]]
 - [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
 - [[The Display as Claude Lays It Out]]
