@@ -165,6 +165,11 @@ dungeon").
 - **Its light** (`dungeonLight.ts`): each torch warm to `torchReach`, flickering, a faint cold light everywhere; the shader
   and the figures sum the same light (`lightAt`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
+- **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
+  `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
+- **Its pictures**, every one painted by the procedural textures: the style's sets (122, 123, 124, records 0 to 4,
+  each turned to 22, 122, 322 or 422 and so on by the island's climate), the textures' ironwork (93, record 0), the
+  entrance's door picture (56 or 331, record 2), the climate's timber and the props' own.
 - **The entrances** (`entrances.ts`, `EntranceView`): the forged models 42000, 42001, 43601 and 43602, lifted 2.5 m,
   4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand them, turned by the room's yaw; E reaches a door within
   2.5 m of its quad's middle.

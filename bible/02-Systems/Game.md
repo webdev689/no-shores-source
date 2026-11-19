@@ -145,8 +145,11 @@ near-black. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): eac
 wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
 wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
 lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
-door; and the return portal, an arch of the end room's trim standing off its wall round a face of dark stone, which
-while the portal stands open glows bright and shimmering and lights the room as a torch does. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
+door; the return portal, an arch of the end room's trim standing off its wall round a face of its wall darkened, which
+while the portal stands open glows bright and shimmering and lights the room as a torch does; and the forged props the
+dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
+textures paint: the brackets and the cache's bands the textures' ironwork (archive 93), the cache's wood the island's
+timber; only a flame and the open portal glow in a colour, as the city's braziers do. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
 style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
 is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the island's climate and painted by the
 procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to
@@ -155,10 +158,10 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
 - **The light.** The 32 torches nearest the eye each light 8 m round them, warm, flickering gently and none in step,
   fading to nothing at their reach, a face turned from one catching half; a faint cold light lies everywhere, so a wall
   past a torch still reads. Each torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as
-  the city's braziers glow.
+  the city's braziers glow. The props are lit by the same light as the walls.
 - **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
   lit by the light where it stands, at its chest's height, in place of the sun.
-- **The cache** is a chest of boxes, wood in the island's timber and bands of iron, where the room's
+- **The cache** is a chest of boxes, wood in the island's timber and bands of the textures' ironwork, where the room's
   `Snapshot.cache` stands it and facing its way, its lid shut, or thrown back while it stands open.
 
 ## The edge

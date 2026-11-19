@@ -40,7 +40,7 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
     context.skip('room.wasm is not built: run `npm run wasm`');
     return;
   }
-  const module = await WebAssembly.compile(bytes);
+  const module = await WebAssembly.compile(new Uint8Array(bytes));
   const laid = askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0);
   assert.match(laid.name, / of the Saltgrass Downs$/);
   assert.equal(laid.cells.length, laid.columns * laid.rows);
