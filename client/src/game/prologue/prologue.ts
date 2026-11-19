@@ -97,19 +97,21 @@ export class Prologue {
     }
   }
 
-  /** The wreck, where the two ships met. */
+  /** Where the two ships met, and the wreck laid there. */
+  private meeting(): readonly [number, number] {
+    const { brig } = this.story;
+    const meeting = this.carried.meeting ?? { x: brig.x, y: brig.y };
+    return [meeting.x, meeting.y];
+  }
+
   private wreck(): WreckLayout {
-    if (!this.carried.layout) {
-      const { brig } = this.story;
-      const meeting = this.carried.meeting ?? { x: brig.x, y: brig.y };
-      this.carried.layout = layoutAt(readWreck(), [meeting.x, meeting.y]);
-    }
+    this.carried.layout ??= layoutAt(readWreck(), this.meeting());
     return this.carried.layout;
   }
 
   /** The wreck's run, opened once behind the wake's black. */
   private openRun(): Promise<WreckRun> {
-    const run = this.carried.run ?? WreckRun.open(this.wreckContext, this.wreck(), this.wreck().wake.at);
+    const run = this.carried.run ?? WreckRun.open(this.wreckContext, readWreck(), this.meeting());
     this.carried.run = run;
     return run;
   }

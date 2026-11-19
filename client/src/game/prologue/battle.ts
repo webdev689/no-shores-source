@@ -2,6 +2,7 @@
 // camera, its aim and its guns), the Brig drawn as hers with her crew at work, the crew crying out as she is struck,
 // as her balls strike home and as each ship goes down; it ends when every one has sunk.
 import { forwardOf, poseOf } from '../../overworld/overworldCamera.ts';
+import { shipSails } from '../../ships/shipMesh.ts';
 import { HINTS } from '../hints.ts';
 import type { Beat, Tick } from './beat.ts';
 import { type Ambusher, StoryFight, type StoryFightFrame } from './fightAtSea.ts';
@@ -51,7 +52,7 @@ export class Battle implements Beat {
       land,
       { x: brig.x, y: brig.y, heading: brig.heading },
       ambushersFrom(story, inbound),
-      { sails: [], marks },
+      { sails: shipSails('sloop'), marks },
       0,
     ).then((fight) => {
       this.fight = fight;
