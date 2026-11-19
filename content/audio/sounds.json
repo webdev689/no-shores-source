@@ -32,6 +32,16 @@
       "page": "https://freesound.org/people/Bisqo/sounds/855451/",
       "changes": "Unchanged."
     },
+    "anima.storm": {
+      "key": "sounds/bb856f95bda7ce3d2dfb4efab0ae835779c6df6387d36054b7759bb5b195b082.mp3",
+      "freesound": 871778,
+      "name": "Random Spell Design 1_Attack",
+      "author": "CAT-FOX_ALEX",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/CAT-FOX_ALEX/sounds/871778/",
+      "changes": "Unchanged."
+    },
     "arrow.hit": {
       "key": "sounds/f3f0a008f52be6858aa94f0bb046c2e7796baba1a1011cdadf7213edd2a94a08.mp3",
       "freesound": 384918,
@@ -142,7 +152,27 @@
       "page": "https://freesound.org/people/rottako/sounds/693583/",
       "changes": "Unchanged."
     },
+    "element.blaze": {
+      "key": "sounds/7b06f8d58cf108f8f513aa5deddeda4e9a177c2cf5944f86f98fcbb0de37a08a.mp3",
+      "freesound": 541478,
+      "name": "Magic Fire Spell Impact & Punch",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/541478/",
+      "changes": "Unchanged."
+    },
     "element.cosmic": {
+      "key": "sounds/223ffc1e5f98b4ba2e3e59ee347e636634ae567f0763cbd97cd1a5606f9af373.mp3",
+      "freesound": 541479,
+      "name": "Magic Ice Spell Impact & Punch",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/541479/",
+      "changes": "Unchanged."
+    },
+    "element.volt": {
       "key": "sounds/f8574216552856574477545db00f2cace3121100a225d6e405821f5553616e48.mp3",
       "freesound": 541480,
       "name": "Magic Lighting Spell Impact & Punch",
@@ -150,6 +180,16 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/EminYILDIRIM/sounds/541480/",
+      "changes": "Unchanged."
+    },
+    "finish.blaze": {
+      "key": "sounds/de9d01525e7b297b3c0188f21715e111cd67c52b3415a8e4722384bb22babe5e.mp3",
+      "freesound": 431174,
+      "name": "Fireball Explosion.wav",
+      "author": "Blankened",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Blankened/sounds/431174/",
       "changes": "Unchanged."
     },
     "finish.cosmic": {
@@ -309,6 +349,26 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
       "page": "https://freesound.org/people/CTCollab/sounds/223630/",
+      "changes": "Unchanged."
+    },
+    "shot.splash": {
+      "key": "sounds/061f490d945996e5b5c43400e76b0997e53e9338efbf7148c866d092cf45bf18.mp3",
+      "freesound": 404829,
+      "name": "Water splash",
+      "author": "nilbul",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/nilbul/sounds/404829/",
+      "changes": "Unchanged."
+    },
+    "spell.arclash": {
+      "key": "sounds/3e483a315dfdfc7e7f10d19caca9476a3857b8ae0686c9f1fb1d437333761235.mp3",
+      "freesound": 649360,
+      "name": "Sword_Thunder01.wav",
+      "author": "SonoFxAudio",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/SonoFxAudio/sounds/649360/",
       "changes": "Unchanged."
     },
     "spell.dawnflare": {

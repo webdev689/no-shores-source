@@ -648,7 +648,7 @@
     {
       "id": "spell.mend",
       "use": "Mend: a burst of healing",
-      "query": "healing spell",
+      "query": "healing",
       "seconds": [
         0.3,
         2.0
@@ -711,7 +711,7 @@
     {
       "id": "spell.daggers",
       "use": "Dusk Daggers strike in their ring",
-      "query": "dark magic burst",
+      "query": "magic explosion",
       "seconds": [
         0.1,
         1.2
