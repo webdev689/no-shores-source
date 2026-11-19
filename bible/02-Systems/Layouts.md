@@ -105,18 +105,18 @@ from the sea, fresh water and the claim's edge), then:
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
    along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
    drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
-   Round a shrine, 6 m past what is seated about its middle, a ring of twelve standing stones 2.6 to 4.2 m tall, a few
-   leaning and every fifth fallen, none within 2 m of a way. Beside a farm, 10 m or 20 m past what is seated about
-   its middle, a fold for its stock: a 12 by 9 m pen of drystone 0.7 m through, its gate toward the farm, on ground
-   level to 0.4 m and clear of every way, of what is seated and of what stands. Each keeps clear of its own way all along it, not only where it was set, so none stands on a bend; and once the
-   ways are laid, every prop whose footprint reaches onto a way's width, the set pieces' small solids in a way's
-   path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way runs
-   through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner of
-   a building walked into rather than graze it. A way may not cross a cell reaching under a building walked into,
-   nor one whose middle stands under anything else, each taken at least a cell wide so a thin wall never slips
-   between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
-   boxes keep close to them, each kept off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and
-   the great wall are.
+   Round the largest thing seated about a shrine's middle, 6 m past its corners, a ring of twelve standing stones 2.6 to
+   4.2 m tall, a few leaning and every fifth fallen, none within 2 m of a way. Beside a farm, 10 m or 20 m past what is
+   seated about its middle and by where its first way comes in where it can be, a fold for its stock: a 12 by 9 m pen of
+   drystone 0.7 m through, its gate toward the farm, on ground level to 0.4 m and clear of every way, of what is seated
+   and of what stands. Each keeps clear of its own way all along it, not only where it was set, so none stands on a
+   bend; and once the ways are laid, every prop whose footprint reaches onto a way's width, the set pieces' small solids
+   in a way's path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way
+   runs through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner
+   of a building walked into rather than graze it. A way may not cross a cell reaching under a building walked into, nor
+   one whose middle stands under anything else, each taken at least a cell wide so a thin wall never slips between the
+   grid's cells; and a work's or a wall's turned pieces are laid in lengths whose boxes keep close to them, each kept
+   off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and the great wall are.
 6. **The land carved.** Each area becomes a basin shaped by its kind, holding its reach and 32 m of floor round each of
    its buildings:
    - a farm: a straight-sided field along the run of its yards and buildings, 1.8 times as long as it is wide; a

@@ -117,14 +117,21 @@ const FOLD_M: [f64; 2] = [12.0, 9.0];
 const FOLD_GATE_M: f64 = 2.4;
 const FOLD_WALL_M: f64 = 0.7;
 
-/// A farm's fold for its stock: a pen of drystone beyond what is seated at its middle, its gate toward the farm, on
-/// level ground clear of every way, of what is seated and of what stands; none where no such ground lies near.
+/// A farm's fold for its stock: a pen of drystone beyond what is seated at its middle, by the way in where it can be,
+/// its gate toward the farm, on level ground clear of every way, of what is seated and of what stands; none where no
+/// such ground lies near.
 fn fold(kit: &mut Kit, area: &Area, ways: &[&Path]) {
     let rim = seated_rim(kit, area);
-    let start = kit.draw() * TAU;
+    // Tried first beside where the first way comes in, so it is seen on arriving, then round both ways from there.
+    let entry = ways.iter().find_map(|way| {
+        let inside = way.points.iter().filter(|&&at| distance(at, area.at) <= area.radius);
+        inside.copied().max_by(|first, second| distance(*first, area.at).total_cmp(&distance(*second, area.at)))
+    });
+    let start = entry.map_or_else(|| kit.draw() * TAU, |at| libm::atan2(at[0] - area.at[0], area.at[1] - at[1]));
     let [long, wide] = [FOLD_M[0] / 2.0, FOLD_M[1] / 2.0];
     let spot = (0..24).find_map(|attempt| {
-        let toward = ahead([0.0, 0.0], [0.0, -1.0], 1.0, start + f64::from(attempt % 12) * TAU / 12.0);
+        let turn = f64::from((attempt % 12 + 1) / 2) * if attempt % 2 == 1 { 1.0 } else { -1.0 };
+        let toward = ahead([0.0, 0.0], [0.0, -1.0], 1.0, start + turn * TAU / 12.0);
         let middle = ahead(area.at, toward, rim + 10.0 + f64::from(attempt / 12) * 10.0, 0.0);
         let across = [-toward[1], toward[0]];
         let at = |along: f64, side: f64| ahead(ahead(middle, toward, along, 0.0), across, side, 0.0);
@@ -168,19 +175,27 @@ fn fold(kit: &mut Kit, area: &Area, ways: &[&Path]) {
     }
 }
 
-/// How many stones a shrine's ring stands, and how far past what is seated about its middle, metres.
+/// How many stones a shrine's ring stands, and how far past the corners of what it rings, metres.
 const RING_STONES: u32 = 12;
 const RING_PAST_M: f64 = 6.0;
 
-/// A shrine's ring of standing stones round what is seated about its middle (a shrine is standing stones round an
-/// altar), a few leaning, every fifth fallen; none on a way or on what is seated.
+/// A shrine's ring of standing stones round the largest thing seated about its middle (a shrine is standing stones
+/// round an altar), a few leaning, every fifth fallen; none on a way or on what is seated.
 fn stone_ring(kit: &mut Kit, area: &Area, ways: &[&Path]) {
-    let rim = seated_rim(kit, area);
-    let radius = (rim + RING_PAST_M).clamp(10.0, area.radius * 0.9);
+    // Round the largest thing seated about the middle (the shrine's mound or altar), not the middle itself.
+    let near = area.radius * 0.7;
+    let seats = kit.into.buildings.iter().chain(kit.into.props.iter()).map(|seated| seated.footprint);
+    let middle_of = |[west, north, east, south]: [f64; 4]| [(west + east) / 2.0, (north + south) / 2.0];
+    let size = |[west, north, east, south]: [f64; 4]| (east - west) * (south - north);
+    let largest =
+        seats.filter(|&print| distance(middle_of(print), area.at) < near).max_by(|a, b| size(*a).total_cmp(&size(*b)));
+    let (centre, radius) = largest.map_or((area.at, 10.0), |print @ [west, north, east, south]| {
+        (middle_of(print), (0.5 * libm::hypot(east - west, south - north) + RING_PAST_M).min(area.radius * 0.6))
+    });
     let start = kit.draw() * TAU;
     for number in 0..RING_STONES {
         let angle = start + f64::from(number) * TAU / f64::from(RING_STONES) + (kit.draw() - 0.5) * 0.15;
-        let at = ahead(area.at, [0.0, -1.0], radius, angle);
+        let at = ahead(centre, [0.0, -1.0], radius, angle);
         let size = [1.1 + kit.draw() * 0.4, 0.7 + kit.draw() * 0.2, 2.6 + kit.draw() * 1.6];
         let lean = (kit.draw() - 0.5) * 0.12;
         if !clear(kit, ways, at, 2.0) {
