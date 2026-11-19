@@ -18,10 +18,10 @@ test('a resource node is gathered within reach, and not once spent', () => {
   assert.deepEqual(nodesInReach({ x: 5, y: 0 }, NODES, null), []);
 });
 
-test('the ground marks the stall, each node and each Vestige lying for the player', () => {
+test('the ground marks the stall and each node; a drop lying for the player is no ring', () => {
   const lying = { spent: [], drops: [{ id: 1, rarity: 3, slot: 0, at: [2, 2, 0] }] } as unknown as GearState;
   const ring = gearRings({ x: 0, y: 0 }, [], null, 0).length;
-  // The stall is two rings; each node and each Vestige one.
-  assert.equal(gearRings({ x: 0, y: 0 }, NODES, lying, 0).length, ring + (ring / 2) * 3);
+  // The stall is two rings; each node one.
+  assert.equal(gearRings({ x: 0, y: 0 }, NODES, lying, 0).length, ring + (ring / 2) * 2);
   assert.equal(ring % MARK_FLOATS, 0);
 });

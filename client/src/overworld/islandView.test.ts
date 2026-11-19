@@ -7,7 +7,6 @@ import {
   coastPoint,
   flyRig,
   frameSide,
-  gridCentre,
   nearestIsland,
   ringCentre,
   SIDE,
@@ -35,12 +34,6 @@ test('an outline knows its middle and how far a point is from its coast', () => 
   assert.equal(coastDistance(ship, island), 20_000);
   assert.equal(coastDistance([1_700_000, 1_200_000], island), Math.hypot(100_000, 100_000), 'off a corner');
   assert.equal(coastDistance(centre, island), 200_000, 'from inside, to the nearest coast');
-});
-
-test('a grid knows the middle of its land', () => {
-  const grid = { width: 4, height: 2, leftM: 10_000, topM: 0, cellM: 1_000, heights: [-5, 10, 10, -5, -5, -5, -5, -5] };
-  assert.deepEqual(gridCentre(grid), [12_000, 500]);
-  assert.equal(gridCentre({ ...grid, heights: grid.heights.map(() => -5) }), null);
 });
 
 test('the island nearest the ship is found within the view reach of its coast', () => {

@@ -158,7 +158,7 @@ mod tests {
         assert!((150..250).contains(&normal), "about one in ten: {normal}");
         assert!((900..1_100).contains(&legendary), "about one in two: {legendary}");
         assert_eq!(count(Kind::Torso, Rarity::Legendary), 0);
-        assert_eq!(count(Kind::Shield, Rarity::Legendary), 0);
+        assert_eq!(count(Kind::Cloak, Rarity::Legendary), 0);
         let each = |element: Element| {
             (0..3_000_u64)
                 .filter(|tick| {

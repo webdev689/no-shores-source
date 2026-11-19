@@ -39,12 +39,9 @@ export interface PlacedMark {
  */
 export const MARK = { worldM: 24, growHeightM: 260, minPx: 20, maxPx: 96, heldPx: 28, edgeMarginPx: 28 } as const;
 
-/** How many times its own size a mark is drawn with the eye `heightAboveM` over it. The blend is the view's (0 down,
- *  1 up): a mark grows from itself as the view rises and shrinks back as it falls. */
-export function markGrow(heightAboveM: number, blend: number = 1): number {
-  const share = Number.isFinite(blend) ? Math.max(0, Math.min(1, blend)) : 1;
-  const full = Number.isFinite(heightAboveM) ? Math.max(1, heightAboveM / MARK.growHeightM) : 1;
-  return 1 + (full - 1) * share;
+/** How many times its own size a mark is drawn with the eye `heightAboveM` over it. */
+export function markGrow(heightAboveM: number): number {
+  return Number.isFinite(heightAboveM) ? Math.max(1, heightAboveM / MARK.growHeightM) : 1;
 }
 
 /**
@@ -86,7 +83,6 @@ export function placeMarks(
   marks: readonly Mark[],
   pose: CameraPose,
   viewport: Viewport,
-  blend: number = 1,
   edges: { readonly top?: number; readonly foot?: number } = {},
 ): PlacedMark[] {
   const { width, height } = viewport;
@@ -97,7 +93,7 @@ export function placeMarks(
     const held = mark.edge ? edgeHold(shown, width, height, MARK.edgeMarginPx, edges.top, edges.foot) : null;
     const onPicture = shown.front && shown.x >= 0 && shown.x <= width && shown.y >= 0 && shown.y <= height;
     if (!held && !onPicture) continue;
-    const worldM = MARK.worldM * markGrow(pose.eye[2] - mark.at[2], blend);
+    const worldM = MARK.worldM * markGrow(pose.eye[2] - mark.at[2]);
     const sizePx = held ? MARK.heldPx : Math.max(MARK.minPx, Math.min(MARK.maxPx, (worldM * focal) / shown.depth));
     placed.push({
       id: mark.id,

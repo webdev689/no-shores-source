@@ -1,4 +1,5 @@
 import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer, Standing } from '../network/messages.ts';
+import type { ArtState, CastAsk } from '../network/artMessages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
 import { Prediction } from '../network/prediction.ts';
@@ -6,6 +7,9 @@ import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { CombatRules, Fired, Glanced } from '../rules/combatRules.ts';
 import { type Body, type Controls, type MovementRules, bodyOf, floatsOfControls } from '../rules/movementRules.ts';
 import { type FighterView, fighterView, glanceFrom, glanceView, trimmed } from '../rules/fighters.ts';
+import type { AbilityState } from './abilityBar.ts';
+import { type AimRing, abilitiesAt } from './casting.ts';
+import { SpellEffects } from './spellEffects.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
  *  and its action's kind (0 at rest, 12 for the dead). */
@@ -114,6 +118,10 @@ export class Fighting {
   private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
   private readonly spawnsQueued: { readonly foe: FoeAsk; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
+  /** A cast waiting for the next tick's input, and the room's word on the Arts with the room tick it came by. */
+  private castQueued: CastAsk | null = null;
+  private artsTaken: ArtState | null = null;
+  private artsAt = 0;
   private sentDress = '';
   private respawnAsked = false;
   /** Where the player stands with a node's section, as the room last said: dead past its edge, the room takes their
@@ -136,6 +144,12 @@ export class Fighting {
   readonly others = new Map<number, SeenPlayer>();
   events: FightEvent[] = [];
   shots: readonly FlyingShot[] = [];
+  /** Every spell in the room, as its snapshots send them, for a drawer to draw. */
+  readonly spells = new SpellEffects();
+  /** Dusk Daggers' ring while it is aimed, for the marks on the ground. */
+  aimRing: AimRing | null = null;
+  /** The last spell the player cast, with the room tick it was asked at: its look begins as it is asked. */
+  castSent: { readonly spell: number; readonly tick: number } | null = null;
   private shotsReceived: FlyingShot[] = [];
 
   constructor(rules: CombatRules, link: RoomLink, random: () => number = Math.random) {
@@ -147,17 +161,25 @@ export class Fighting {
   }
 
   /** Follows the link into the room it joined again: a new player there, standing where the room puts them, with
-   *  nothing of the old room kept but what the hands hold and the dress, sent again. */
+   *  nothing of the old room kept but what the hands hold and the dress, sent again. A cast waiting for the old room
+   *  is never sent into the new one. */
   private follow(): void {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;
     [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
+    [this.castQueued, this.castSent, this.artsTaken, this.artsAt] = [null, null, null, 0];
     this.foes.clear();
     this.others.clear();
+    this.spells.clear();
   }
 
   get player(): number {
     return this.link.player;
+  }
+
+  /** The rooms the fight has followed the link into: one more each time it joins its room again. */
+  get joins(): number {
+    return this.joined;
   }
 
   /** The room tick of the last snapshot taken. */
@@ -188,6 +210,22 @@ export class Fighting {
   /** Asks something of the player's gear: one ask an input, in the order asked. */
   askGear(ask: GearAsk): void {
     this.gearQueued.push(ask);
+  }
+
+  /** Casts a spell with the next tick's input (spell 0 carries only Dusk Daggers' aim, while it is held). */
+  cast(ask: CastAsk): void {
+    if (ask.spell > 0 || this.castQueued === null) this.castQueued = ask;
+    if (ask.spell > 0) this.castSent = { spell: ask.spell, tick: this.roomTick };
+  }
+
+  /** The room's last word on the player's Arts; none before it. */
+  get arts(): ArtState | null {
+    return this.link.arts ?? null;
+  }
+
+  /** The Arts as the ability bar shows them now: the room's last word, each share run on to the room's clock. */
+  get abilities(): AbilityState | null {
+    return abilitiesAt(this.artsTaken, this.artsAt, this.roomTick);
   }
 
   /** Asks the room, with the next tick's input, to stand the player again at the spawn nearest where they fell past
@@ -274,6 +312,8 @@ export class Fighting {
     const sequence = this.prediction.next(asked);
     const spawned = this.spawnsQueued.shift();
     const gear = this.gearQueued.shift();
+    const cast = this.castQueued;
+    this.castQueued = null;
     const parts = {
       intent,
       look: this.look,
@@ -283,6 +323,7 @@ export class Fighting {
       spawnLevel: spawned?.level ?? 0,
       respawn: this.respawnAsked,
       ...(gear === undefined ? {} : { ask: gear }),
+      ...(cast === null ? {} : { cast }),
     };
     this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
@@ -346,6 +387,10 @@ export class Fighting {
     }
     for (const id of this.foes.keys()) if (!present.has(id)) this.foes.delete(id);
     this.view = view;
+    this.spells.take(snapshot.spells);
+    // The room's word on the Arts holds from the snapshot it came with: a share runs on from that tick.
+    if (this.link.arts && this.link.arts !== this.artsTaken)
+      [this.artsTaken, this.artsAt] = [this.link.arts, this.roomTick];
     this.shots = snapshot.shots;
     // Kept only so many: a hidden tab draws no frame to take them, and on its return the newest are enough.
     this.shotsReceived = [...this.shotsReceived, ...snapshot.shots].slice(-QUEUED_MOST);

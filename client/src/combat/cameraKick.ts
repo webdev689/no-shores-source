@@ -1,6 +1,7 @@
 // The camera's kick: a punch as the player's blow lands, a jolt as one lands on them, a lean into their own swing. A
 // spring carries each push, overshooting a little and settling, and a struck player's view also shakes, as hard as
 // the blow, dying away. Only the view moves: where the player looks and aims is their own.
+import type { Orbit } from '../editor/orbit.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { type StrokeDirection, directionOf } from '../rules/fighters.ts';
 import { EVENT, HOW } from './cues.ts';
@@ -14,15 +15,6 @@ export interface Push {
   readonly up?: number;
 }
 const CHANNELS = ['yaw', 'pitch', 'ahead', 'aside', 'up'] as const;
-/** A view as a scene draws from it: the point it looks at, its turn and tilt, and how far back from it the eye is. */
-interface View {
-  readonly targetX: number;
-  readonly targetY: number;
-  readonly targetZ: number;
-  readonly yaw: number;
-  readonly pitch: number;
-  readonly distance: number;
-}
 
 const DEGREE = Math.PI / 180;
 /** The spring: how fast it swings back (radians a second) and how much it is damped; a push's peak is this share of the
@@ -53,11 +45,12 @@ const LANDED: Readonly<Record<number, number | undefined>> = {
 /** The pushes and the shake the fight's events give player `player`'s view: their blow landing punches it down and
  *  along the stroke, harder for a kill or a guard broken; their blow stopped by a guard knocks it back; a blow landing
  *  on them jolts it up and back and shakes it, as hard as the harm. A blow's events (a hit and the kill it made) push
- *  once, as hard as the hardest; a shot pushes nothing: the feel is the blows'. */
+ *  once, as hard as the hardest; a shot or a spell pushes nothing: the feel is the blows'. */
 export function kicksOf(events: readonly FightEvent[], player: number): { pushes: Push[]; trauma: number } {
   const blows = new Map<string, FightEvent[]>();
   for (const event of events) {
-    if (event.how === HOW.shot || (event.striker !== player && event.defender !== player)) continue;
+    const notABlow = event.how === HOW.shot || event.how === HOW.spell;
+    if (notABlow || (event.striker !== player && event.defender !== player)) continue;
     const key = `${event.tick}:${event.striker}:${event.defender}`;
     blows.set(key, [...(blows.get(key) ?? []), event]);
   }
@@ -152,7 +145,7 @@ export class CameraKick {
   }
 
   /** `orbit` kicked: turned about its own eye and moved, so the view moves and nothing it looks at. */
-  kicked<Seen extends View>(orbit: Seen, push: Push = this.now): Seen {
+  kicked<Seen extends Orbit>(orbit: Seen, push: Push = this.now): Seen {
     const forward = (yaw: number, pitch: number) =>
       [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)] as const;
     const was = forward(orbit.yaw, orbit.pitch);

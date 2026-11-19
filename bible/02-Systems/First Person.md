@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/firstperson/firstPerson.ts#FirstPerson
+  - client/src/firstperson/firstPerson.ts#contact
   - client/src/firstperson/hands.ts#Hands
   - client/src/firstperson/handsLaw.ts#handsPlan
   - client/src/firstperson/weaponMachine.ts#WeaponMachine
@@ -34,7 +35,11 @@ which hand, and reports the swing or shot under way, so the figure seen from out
 | A shield, a torch or a lantern in the left | It, beside a one-handed weapon or a fist |
 | Nothing | Both fists up |
 
-The two-handers are the staff, the warhammer, the battleaxe, the bows and the Thunderlock.
+The two-handers are the staff, the warhammer, the battleaxe, the bows and the Thunderlock. The hands hold the loadout
+drawn ([[Gear]], "Loadouts"): a pair's two blades or maces, an "& Shield"'s weapon and shield, a double pistolet's two
+Pistolets as a volley, the Great Axe the battleaxe's pictures, and a Greatsword the sword's, held as a sword is.
+
+A weapon in an element glows in it while drawn, each hand in its own weapon's ([[Weapon Glow]]).
 
 ### Swinging
 
@@ -61,6 +66,13 @@ looses it the same way; letting the aim go lowers it unloosed. The bow then relo
 
 While the guard is held, a weapon stands upright across the middle of the view, its left stroke's third frame held; a
 parry's deflect plays its right stroke's second to fourth frames over the deflect. A shield is raised whole for both.
+
+### A blow that meets something
+
+A blow of the player's own that lands lights the weapon's picture with a white rim for one frame, bursts its element
+off it ([[Weapon Glow]]) and jolts the hands 2 design pixels down for 3 frames; a blow of theirs blocked or parried,
+or one they block, jolts them 4. Never a trail ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn
+Blow]]).
 
 ### A pair
 
@@ -146,7 +158,8 @@ a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps b
 the right. A gun, or one crossbow, is carried across the chest at a run, from the forge's own carry frames in the
 gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both casting hands for 0.28 s and hides the
 weapon meanwhile. In an armour set's gauntlets each casting hand is the set's whole arm, dyed as its fists are, under
-the element's light; with none it is the linen sleeve and the leather glove. A new look's pictures are composed ahead
+the element's light; with none it is the linen sleeve and the leather glove. An Art's cast is lit by its light,
+Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its element's glow ([[Arts]]). A new look's pictures are composed ahead
 and kept on the GPU.
 
 ### Climbing
@@ -171,9 +184,10 @@ rein, not its fist up.
 
 ## Limits
 
-- No weapon shows wear, no gun's flash lights the room, and no enchanted weapon shimmers.
+- No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
-  feeling its weapon heavier.
+  feeling its weapon heavier. A Greatsword's swings are the sword's in first person, though the rules land its blows
+  at its own pace.
 - The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.

@@ -3,7 +3,7 @@ type: system
 status: live
 code:
   - client/src/overworld/overworldCamera.ts#stepCamera
-  - client/src/overworld/overworldInput.ts#stepLift
+  - client/src/overworld/overworldInput.ts#pressMove
   - client/src/overworld/overworldPick.ts#pickAt
   - client/src/overworld/overworldMarks.ts#placeMarks
   - client/src/game/seaMarks.ts#landingChoice
@@ -14,7 +14,7 @@ code:
 ---
 # Overworld
 
-DFO's raised, tilted travel camera over the real world, for two things
+DFO's raised, tilted travel camera over the real world ([[Pick - Overworld]]), for two things
 ([[Every Island Is Seen Whole and Reached by Nodes]]): sailing the sea, the player's ship seen from above, faster than
 real speed ([[The World Map]]); and the bird's-eye view of the side of an island, its nodes marked by kind, where the
 player picks one to land at. Its core is pure, in the `overworld` layer, with no page or drawing; the [[Game]] wires
@@ -40,12 +40,11 @@ looks more steeply instead. The focus eases onto the ship and trails it by at mo
 down without losing.
 
 The wheel scales the height by 1.18 a notch, a drag orbits and tilts, and the look keys orbit and tilt at fixed rates.
-A press that moves under 6 px is a click (`overworldInput.ts`). The view rises out of the player's own camera in
-1.2 s and falls back in 0.8 s, blended by smoothstep, its look turning by its angles so it never rolls.
+A press that moves under 6 px is a click (`overworldInput.ts`).
 
 Each frame gives a pose: the eye, its forward, right and up, and a 65-degree vertical field of view. From the air the
-haze reaches 28 km from the ship, or three times the eye's distance when that is farther, and the lens's planes grow
-with it; all three ease in with the rise (`horizonOf`).
+lens reaches past 28 km from the ship, or three times the eye's distance when that is farther, and its near plane grows
+with that distance (`horizonOf`).
 
 ## The pick
 
@@ -77,9 +76,9 @@ corner.
 
 `overworldMarks.ts` lays the nodes on the picture: social spaces, patrol areas, missions, dungeons, world bosses and
 ports. A mark is 24 m tall with the eye 260 m over it and grows with the eye's height from there, so it reads at one
-size from the sea camera and from the bird's-eye view. It grows from its own size as the view rises. On the screen it
-is held between 20 and 96 px. A mark that asks to be held stays at the picture's edge when off it, with an arrow
-pointing to it. Marks are laid farthest first, so a pointer picks the nearest.
+size from the sea camera and from the bird's-eye view. On the screen it is held between 20 and 96 px. A mark that asks
+to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
+pointer picks the nearest.
 
 A locked node's mark ([[World Map]], "Seen whole, reached by nodes") is grey, with a lock for its glyph and "Locked"
 for its distance. A click on it chooses nothing and the view's line says "<name> is locked" (`landingChoice`), so no
@@ -97,12 +96,13 @@ the climb reads as one steady zoom.
 ## What a page wires
 
 - **Each frame**: the ship's place, the frame's seconds, the cloud deck's base and the ground (`landHeightAt` over
-  the loaded land) into `stepCamera`; `stepLift` for the rise or the fly-in; `blendView` or `flyRig`, then `poseOf`.
-  The pose and `horizonOf` feed the renderer; `placeMarks` feeds the marks' layer.
-- **Input**: presses through `pressAt` and `pressMove` (a drag orbits), the wheel and pinches into `zoomCamera`, the
-  look keys into `keyTurn`.
-- **A click**: `pickAt`. On the sea, `planSeaRoute`, then `voyageOf`; each frame `sail`. On a mark, landing at that
-  node. Near a coast, `nearestIsland`, `sideNodes` and `frameSide`.
+  the loaded land) into `stepCamera`; `flyRig` for the island's fly-in; `horizonOf` for the lens's planes. The shot
+  goes to the renderer; its pose from `poseOf` goes to `pickAt` and to `placeMarks`, which lays the marks' layer.
+- **Input**: presses through `pressAt` and `pressMove` (a drag orbits by `dragCamera`), the wheel through
+  `wheelNotches` into `zoomCamera`, the look keys into `keyTurn`.
+- **A click at sea**: `pickAt`. On the sea, the land or a mark, the ship sails there: `planSeaRoute`, then `voyageOf`;
+  each frame `shipAt`. Near a coast, `nearestIsland`, `sideNodes` and `frameSide` frame the island's side, where a
+  node's mark is chosen and then clicked again, or Enter pressed, to land there.
 
 ## Limits
 

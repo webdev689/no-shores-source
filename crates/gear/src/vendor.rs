@@ -1,6 +1,6 @@
-//! The social space's vendors: the Quartermaster sells armour and the Armsmith weapons and shields, each six pieces a
-//! day, three Rare and three Magic at the buyer's level, the same for everyone that day. Their wares are paid in
-//! Aurem; Legendary and Atheric gear is never sold, only earned.
+//! The social space's vendors: the Quartermaster sells armour and the Armsmith loadouts, two Melee to each Ranged, each
+//! six pieces a day, three Rare and three Magic at the buyer's level, the same for everyone that day. Their wares are
+//! paid in Aurem; Legendary and Atheric gear is never sold, only earned.
 
 use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};
@@ -28,7 +28,7 @@ impl Vendor {
     fn slots(self) -> &'static [Slot] {
         match self {
             Vendor::Quartermaster => &[Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs],
-            Vendor::Armsmith => &[Slot::MainHand, Slot::MainHand, Slot::OffHand],
+            Vendor::Armsmith => &[Slot::Melee, Slot::Melee, Slot::Ranged],
         }
     }
 }

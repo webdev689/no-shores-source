@@ -1,3 +1,4 @@
+import type { ArtState } from './artMessages.ts';
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
@@ -23,6 +24,8 @@ export interface RoomLink {
   readonly trim?: readonly number[] | null;
   /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */
   readonly arms?: readonly number[] | null;
+  /** The player's Arts, from the room's last word on their gear; none until it sends it. */
+  readonly arts?: ArtState | null;
 }
 
 /** Opens a WebSocket to a room's address: the browser's own, or a test's stand-in. */
@@ -82,6 +85,7 @@ export class RoomConnection implements RoomLink {
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
+  arts: ArtState | null = null;
   private tries = 0;
   private closed = false;
   private waiting: ReturnType<typeof setTimeout> | null = null;
@@ -173,6 +177,7 @@ export class RoomConnection implements RoomLink {
   private heard(gear: GearMessage): void {
     if (gear.trim) this.trim = gear.trim;
     if (gear.arms) this.arms = gear.arms;
+    if (gear.arts) this.arts = gear.arts;
     this.gear(gear);
   }
 

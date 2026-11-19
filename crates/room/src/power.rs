@@ -1,23 +1,17 @@
 //! What gear's power does in the room: a player's blow on a foe rises with the Attack of the weapon that struck it up
 //! to the foe's level and falls away below it, and a foe's blow on a player falls short of their Defense. A foe of
-//! level 0 fights by combat's own numbers. A player holds only what their gear puts in their hands. A foe's kill pays
-//! everyone who struck it in its last seconds, each their own XP, Aurem and maybe a Vestige, laid where it fell for
-//! them alone; walked over, it is picked up.
+//! level 0 fights by combat's own numbers. A player holds only what a loadout they wear puts in their hands. A foe's
+//! kill pays
+//! everyone who struck it in its last seconds, each their own XP, Aurem and what it drops for them alone (`drops.rs`).
 
 use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
-use combat::fighter::FighterId;
-use combat::judge::Blow;
+use combat::fighter::{Fighter, FighterId};
+use combat::judge::{Blow, BlowKind};
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
-use gear::{Character, Kind, Slot, Vestige};
+use gear::{Character, Kind, Slot};
 
-/// How long a Vestige lies for its player, in the room's ticks of 1/60 s: two minutes.
-pub const DROP_TICKS: u64 = 7_200;
-/// How near a player walks to a Vestige to pick it up, across and up, in metres.
-pub const PICK_UP_REACH: f64 = 1.5;
-const PICK_UP_HEIGHT: f64 = 2.0;
-
-/// What a player's blow carries of its striker: the Attack and element of the hand it came from, and their trim. An
+/// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
 /// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Loosed {
@@ -26,58 +20,65 @@ pub struct Loosed {
     pub trim: combat::Trim,
 }
 
-/// A Vestige lying for one player.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Drop {
-    pub player: PlayerId,
-    pub vestige: Vestige,
-    pub at: [f64; 3],
-    pub until: u64,
-}
-
-/// What a player's gear puts in their hands, drawn: the main hand's weapon, and the off hand's shield or blade.
+/// What a loadout puts in a player's hands, drawn: a pair's second blade or mace and an "& Shield"'s shield in the
+/// left hand, a greatsword on its hilt, the great axe as the axe, a shooting weapon with the fists to fight with.
 #[must_use]
-pub fn gear_arms(character: &Character) -> Arms {
-    let main = character.worn(Slot::MainHand).map(|item| item.kind);
-    let melee = match main {
-        Some(Kind::Dagger) => WeaponClass::Dagger,
-        Some(Kind::Sword) => WeaponClass::Sword,
-        Some(Kind::Mace) => WeaponClass::Mace,
-        Some(Kind::Flail) => WeaponClass::Flail,
-        Some(Kind::Axe) => WeaponClass::Axe,
-        Some(Kind::Warhammer) => WeaponClass::Warhammer,
-        Some(Kind::Staff) => WeaponClass::Staff,
-        _ => WeaponClass::Fists,
-    };
-    let ranged = match main {
-        Some(Kind::Bow) => Some(Ranged::Bow),
-        Some(Kind::Crossbow) => Some(Ranged::Crossbow),
-        Some(Kind::Pistolet) => Some(Ranged::Pistolet),
-        Some(Kind::Thunderlock) => Some(Ranged::Thunderlock),
-        _ => None,
-    };
-    let off_hand = match character.worn(Slot::OffHand).map(|item| item.kind) {
-        _ if main.is_some_and(Kind::two_handed) => OffHand::Empty,
-        Some(Kind::Shield) => OffHand::Shield,
-        Some(Kind::Dagger | Kind::Sword | Kind::Mace | Kind::Flail) => OffHand::Weapon,
-        _ => OffHand::Empty,
+pub fn loadout_arms(kind: Kind) -> Arms {
+    use WeaponClass::{Axe, Dagger, Fists, Flail, Greatsword, Mace, Staff, Sword, Warhammer};
+    let (melee, ranged, off_hand) = match kind {
+        Kind::SwordAndShield => (Sword, None, OffHand::Shield),
+        Kind::DaggerAndShield => (Dagger, None, OffHand::Shield),
+        Kind::MaceAndShield => (Mace, None, OffHand::Shield),
+        Kind::DoubleDaggers => (Dagger, None, OffHand::Weapon),
+        Kind::DoubleSwords => (Sword, None, OffHand::Weapon),
+        Kind::DoubleMace => (Mace, None, OffHand::Weapon),
+        Kind::Sword => (Sword, None, OffHand::Empty),
+        Kind::Mace => (Mace, None, OffHand::Empty),
+        Kind::Flail => (Flail, None, OffHand::Empty),
+        Kind::Staff => (Staff, None, OffHand::Empty),
+        Kind::GreatAxe => (Axe, None, OffHand::Empty),
+        Kind::Greatsword => (Greatsword, None, OffHand::Empty),
+        Kind::Warhammer => (Warhammer, None, OffHand::Empty),
+        Kind::Bow => (Fists, Some(Ranged::Bow), OffHand::Empty),
+        Kind::Crossbow => (Fists, Some(Ranged::Crossbow), OffHand::Empty),
+        Kind::Pistolet => (Fists, Some(Ranged::Pistolet), OffHand::Empty),
+        Kind::DoublePistolet => (Fists, Some(Ranged::DoublePistolet), OffHand::Empty),
+        Kind::Thunderlock => (Fists, Some(Ranged::Thunderlock), OffHand::Empty),
+        Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak => return BARE_HANDS,
     };
     Arms { melee, ranged, off_hand }
 }
 
-/// The arms a player may take up: their gear's, and with a torch in an off hand the main hand leaves free.
+/// The arms a player may take up: either worn loadout's, the fists when no Melee is worn, and each with a torch where
+/// it leaves the left hand free.
 #[must_use]
 pub fn arms_allowed(character: &Character) -> Vec<Arms> {
-    let worn = gear_arms(character);
-    let free_left = !character.worn(Slot::MainHand).is_some_and(|item| item.kind.two_handed());
-    let torch = Arms { off_hand: OffHand::Torch, ..worn };
-    if free_left { vec![worn, torch] } else { vec![worn] }
+    let melee = character.worn(Slot::Melee).map(|item| item.kind);
+    let loadouts = [melee, character.worn(Slot::Ranged).map(|item| item.kind)];
+    let mut allowed = Vec::new();
+    for (arms, free) in loadouts.into_iter().flatten().map(|kind| (loadout_arms(kind), kind.left_hand_free())) {
+        allowed.push(arms);
+        if free {
+            allowed.push(Arms { off_hand: OffHand::Torch, ..arms });
+        }
+    }
+    if melee.is_none() {
+        allowed.extend([BARE_HANDS, Arms { off_hand: OffHand::Torch, ..BARE_HANDS }]);
+    }
+    allowed
 }
 
 /// The arms a player takes up of those they ask for: one allowed, or else bare hands, as with nothing drawn.
 #[must_use]
 pub fn allowed_arms(asked: Arms, character: &Character) -> Arms {
     if arms_allowed(character).contains(&asked) { asked } else { BARE_HANDS }
+}
+
+/// The loadout a player has drawn, which strikes their blows and whose perks are theirs with the armour's: the Ranged
+/// one while it is held, or while no Melee is worn; else Melee.
+#[must_use]
+pub(crate) fn drawn(character: &Character, fighter: &Fighter) -> Slot {
+    if fighter.arms.ranged.is_some() || character.worn(Slot::Melee).is_none() { Slot::Ranged } else { Slot::Melee }
 }
 
 /// The foe kinds as the gear's rewards know them, by the foes crate's numbers.
@@ -93,26 +94,42 @@ fn worth_of(kind: u8) -> Option<Worth> {
 }
 
 impl Room {
-    /// A blow as gear's power makes it against its defender: a player's on a foe by the Attack of the hand that struck
-    /// (`left_hand` for the off hand's blade; a shot is the main hand's), a foe's on a player by their Defense; both
-    /// by their levels. Its poise and the stamina it costs a guard are the weapon's own.
-    pub(crate) fn empower(&self, blow: Blow, defender: FighterId, left_hand: bool) -> Blow {
-        let hand = if left_hand { Slot::OffHand } else { Slot::MainHand };
-        // A swing with a bow or a gun worn is a blow of the fists: it carries none of the weapon's element.
-        let shooting = |striker: &crate::Player| striker.character.worn(hand).is_some_and(|item| item.kind.ranged());
-        let held = self.held(blow.striker, hand).map(|held| match self.players.get(&blow.striker) {
-            Some(striker) if shooting(striker) => Loosed { element: None, ..held },
-            _ => held,
-        });
+    /// A blow as gear's power makes it against its defender: a player's swing on a foe by the Attack of the loadout
+    /// it struck with (`striking`), a foe's on a player by their Defense; both by their levels. Its poise and the
+    /// stamina it costs a guard are the weapon's own.
+    pub(crate) fn empower(&self, blow: Blow, defender: FighterId) -> Blow {
+        // A blow of the fists, bare or beside a bow or a gun, carries none of a weapon's element.
+        let fists = |striker: &crate::Player| striker.fighter.arms.melee == WeaponClass::Fists;
+        let held =
+            self.held(blow.striker, self.striking(blow.striker)).map(|held| match self.players.get(&blow.striker) {
+                Some(striker) if fists(striker) => Loosed { element: None, ..held },
+                _ => held,
+            });
         self.empower_as(blow, defender, held)
     }
 
-    /// What a player strikes with now from `hand`; nothing for a foe.
-    pub(crate) fn held(&self, striker: FighterId, hand: Slot) -> Option<Loosed> {
+    /// The loadout a player strikes with now (`drawn`).
+    pub(crate) fn striking(&self, player: FighterId) -> Slot {
+        self.players.get(&player).map_or(Slot::Melee, |found| drawn(&found.character, &found.fighter))
+    }
+
+    /// Whether a player's blow takes a perk: one the armour or the loadout it came from gives, a shot's the Ranged
+    /// one, a swing's the one drawn. A spell takes no weapon's perk.
+    pub(crate) fn perk_on(&self, blow: &Blow, id: &str) -> bool {
+        let loadout = match blow.kind {
+            BlowKind::Shot(_) => Slot::Ranged,
+            BlowKind::Spell(_) => return false,
+            _ => self.striking(blow.striker),
+        };
+        self.players.get(&blow.striker).is_some_and(|found| found.character.has_drawn_trait(id, loadout))
+    }
+
+    /// What a player strikes with now from a loadout; nothing for a foe.
+    pub(crate) fn held(&self, striker: FighterId, loadout: Slot) -> Option<Loosed> {
         let player = self.players.get(&striker)?;
         let character = &player.character;
-        let element = character.worn(hand).and_then(|item| item.element);
-        Some(Loosed { attack: character.attack(hand).unwrap_or(0), element, trim: player.fighter.trim })
+        let element = character.worn(loadout).and_then(|item| item.element);
+        Some(Loosed { attack: character.attack(loadout).unwrap_or(0), element, trim: player.fighter.trim })
     }
 
     /// A blow as `empower` makes it, a player's by the Attack and trim `held` gives.
@@ -137,18 +154,18 @@ impl Room {
         }
     }
 
-    /// Notes that a player's blow by `hand` landed on a foe, so they share its kill.
-    pub(crate) fn mark_struck(&mut self, striker: PlayerId, defender: FighterId, hand: Slot) {
+    /// Notes that a player's blow by a loadout landed on a foe, so they share its kill.
+    pub(crate) fn mark_struck(&mut self, striker: PlayerId, defender: FighterId, loadout: Slot) {
         let clock = self.clock;
         if self.players.contains_key(&striker)
             && let Some(foe) = self.foes.get_mut(&defender)
         {
-            foe.struck_by.insert(striker, (clock, hand));
+            foe.struck_by.insert(striker, (clock, loadout));
         }
     }
 
-    /// Pays a foe's kill to every player who struck it within its last ten seconds, laying each one's Vestige where
-    /// it fell.
+    /// Pays a foe's kill to every player who struck it within its last ten seconds, throwing out what it drops for
+    /// each.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -161,54 +178,19 @@ impl Room {
             let Some(found) = self.players.get_mut(&player) else { continue };
             let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
             found.gear_changed = true;
-            if let Some(vestige) = reward.vestige {
-                self.lay_drop(player, vestige, at);
-            }
+            self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
         }
-    }
-
-    /// Picks up every Vestige a player has walked over, and lets go of those that have lain their time.
-    pub(crate) fn pick_up_drops(&mut self) {
-        let clock = self.clock;
-        let mut kept = Vec::with_capacity(self.drops.len());
-        for drop in std::mem::take(&mut self.drops) {
-            if clock >= drop.until {
-                continue;
-            }
-            let Some(found) = self.players.get_mut(&drop.player) else { continue };
-            let body = found.fighter.body;
-            let near = libm::hypot(body.x - drop.at[0], body.y - drop.at[1]) <= PICK_UP_REACH
-                && (body.z - drop.at[2]).abs() <= PICK_UP_HEIGHT;
-            if near && found.character.pick_up(drop.vestige) {
-                found.gear_changed = true;
-            } else {
-                kept.push(drop);
-            }
-        }
-        self.drops = kept;
-    }
-
-    /// The Vestiges lying for a player.
-    pub fn drops_for(&self, player: PlayerId) -> impl Iterator<Item = &Drop> {
-        self.drops.iter().filter(move |drop| drop.player == player)
     }
 }
 
-/// Wears a level 1 Normal weapon of this kind in a player's main hand, as their gear would put it there.
+/// Wears a level 1 Normal loadout of this kind, as their gear would put it on.
 #[cfg(test)]
 pub(crate) fn hold(room: &mut Room, player: PlayerId, kind: Kind) {
     let character = &mut room.players.get_mut(&player).expect("a player in the room").character;
     let id = character.take_id();
-    let item = gear::Item::new(id, kind, gear::Rarity::Normal, 1, Slot::MainHand);
+    let item = gear::Item::new(id, kind, gear::Rarity::Normal, 1, kind.slot());
     character.items.insert(id, (item, gear::At::Carried));
     let dice = gear::dice::Dice { seed: 0, tick: 0, player };
-    let worn = character.ask(gear::Ask::Wear { item: id, slot: Slot::MainHand }, gear::Here::default(), &dice);
+    let worn = character.ask(gear::Ask::Wear { item: id, slot: kind.slot() }, gear::Here::default(), &dice);
     assert_eq!(worn, Ok(gear::Done::Done));
-}
-
-impl Room {
-    /// Lays a Vestige for a player where it fell, for its time.
-    pub fn lay_drop(&mut self, player: PlayerId, vestige: Vestige, at: [f64; 3]) {
-        self.drops.push(Drop { player, vestige, at, until: self.clock + DROP_TICKS });
-    }
 }

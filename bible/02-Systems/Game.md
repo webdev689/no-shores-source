@@ -8,6 +8,9 @@ code:
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
+  - client/src/game/swingView.ts#SwingView
+  - client/src/combat/attackFeel.ts#AttackFeel
+  - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
   - client/src/game/footGear.ts#groundRings
@@ -19,8 +22,12 @@ code:
   - client/src/game/scene.ts#GameScene
   - client/src/game/groundTiles.ts#groundTiles
   - client/src/terrain/groundColour.ts#GROUND_COLOUR_WGSL
+  - client/src/combat/lightLayer.ts#LightLayer
   - client/src/shadow.ts#ShadowMap
   - client/src/game/figureView.ts#FigureView
+  - client/src/combat/flashes.ts#Flashes
+  - client/src/combat/foeFigures.ts#dissolveFoe
+  - client/src/combat/overheads.ts#overheadMarks
   - client/src/game/hud.ts#Hud
   - client/src/game/hudLaw.ts#standingOf
   - client/src/game/nodes.ts#windowRect
@@ -33,6 +40,7 @@ code:
   - client/src/game/aboard.ts#Aboard
   - client/src/game/shipPanel.ts#shipPanelOf
   - client/src/game/hints.ts#seaHints
+  - client/src/game/hints.ts#footHints
   - client/src/game/rooms.ts#roomsFrom
   - client/src/heldmap/heldMap.ts#HeldMap
 ---
@@ -86,22 +94,49 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   there, cut by the land's worker and handed to the movement door and the fight's rules, the same ground to the bit
   as the node's room ([[Movement]], [[Server]]). The scene draws the exact ground round the player, sampled every 4 m.
 - **The camera** is the player's ([[Player]]), its boom kept clear of the node's boxes and its ground, and held
-  0.3 m over the ground, with the Test Ground's 50-degree view.
+  0.3 m over the ground, with the Test Ground's 50-degree view. The player's own Anima pushes it in as it is
+  released, with a frame of its element round the screen ([[Arts]]).
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
 - **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
   on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
-  weapon, the right button swings or aims, the left button or F guards, parries or fires, V or Mouse5 dodges, and the
-  soft lock holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
+  weapon, 1 draws the Melee loadout and 2 the Ranged, the right button swings or aims, the left button or F guards,
+  parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock holds a
+  foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
-  name the fight's.
+  name the fight's, the Arts' line ("R Anima · Q G Tenets") adding how to aim Dusk Daggers only while Shadow is worn.
+  Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand at 22 px a line,
+  over the vitals and the buffs above them.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
   foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
-  tracers, the sparks, the blood and the flashes. The game's own display stands over it: the place, the keys (over
-  the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the top of the screen, and
-  the status line stands under the place's name, under the boss's bar ([[Interface]]).
+  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
+  place, the keys (over the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the
+  top of the screen, and the status line stands under the place's name, under the boss's bar ([[Interface]]).
+- **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
+  swing arc over its striker (none through the eyes), with the smear its strike leaves behind the striker's card; the
+  hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
+  crosshair shows); and the lunge driving a striker's figure into its blow. Only the drawing moves, never the rules or
+  their clock (`combat/attackFeel.ts`). A player who asks for reduced motion keeps a still view: no kick, no shake, no
+  lunge carrying the eye and no Anima push-in; the Anima's edge frame still shows. The feel's light is on too: the
+  brightest marks and arcs light what stands round them ("Drawing").
+- **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole figure
+  white for two, its outline white for two, then its outline for one in the blow's element's light (steel `#cfe0ff` for
+  a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames only for a blow of
+  more than a quarter of their health. A foe struck slides along the blow, away from its striker, in whole pixels: 0.12
+  m for a hit, 0.35 m for a stagger, out over 6 frames and back over 10 to where the room has it; 0.6 m for a kill,
+  which stays. A stagger shakes the figure a pixel either way for its first 6 frames, reels it through its hurt frames
+  forth and back every 0.4 s (a flinch plays them once), and circles three gold stars round its head in eighth-turns,
+  once a second; a Charge's stagger holds it still. A foe slain dissolves once its fall is over: plain, it greys and
+  crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in an element (the player's own in
+  their weapon's glow as their page shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
+  from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
+  A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
+  [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
+- **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
+  the drops landing and the player standing again, each where it happens, through the World volume once the first
+  press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
@@ -109,9 +144,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
   is found again only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player; at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
-  patrol, so a route can be planned through them; and at each Vestige lying for them, a ring and a beam in its
-  rarity's colour, picked up by walking over it.
+  player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
+  patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
+  rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter it opens its screen in the menu (the Reader the inventory's Vestiges, the vault and each
   vendor their own; [[Interface]]); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
@@ -247,7 +282,12 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 ## Drawing
 
 `GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
-drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]). The game adds the
+drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
+draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each tested by hand
+against the scene's depth, so the water's sky and its surface near a coast never cover them. The fight's solid marks
+write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the marks and arcs give
+their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The attack feel"), under
+the first person's hands. Off foot, or with no mark or arc to draw, it is not run. The game adds the
 open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
 its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
 `world/` folder; the blocks are kept for every later city. Its nodes' layouts within 4 km of the eye are drawn by another `CityView` ([[Layouts]], "In the browser"), and each drawn

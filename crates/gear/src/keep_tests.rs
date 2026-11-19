@@ -8,11 +8,36 @@ use crate::rarity::Rarity;
 #[test]
 fn a_character_kept_as_json_comes_back_as_it_was() {
     let mut character = Character::starting();
-    character.earn_xp(5_000, Some(Slot::MainHand));
+    character.earn_xp(5_000, Some(Slot::Melee));
     character.materials.add_aurem(1_234);
     let id = character.take_id();
-    character.items.insert(id, (Item::new(id, Kind::Pistolet, Rarity::Legendary, 20, Slot::OffHand), At::Vault));
+    character.items.insert(id, (Item::new(id, Kind::Pistolet, Rarity::Legendary, 20, Slot::Ranged), At::Vault));
     assert_eq!(Character::from_json(&character.to_json()), Some(character));
+}
+
+#[test]
+fn a_bought_node_whose_trait_no_longer_fits_its_piece_is_given_back_once_as_it_is_read() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    let mut helm = Item::new(id, Kind::Head, Rarity::Rare, 10, Slot::Head);
+    let pair = |first: &str, second: &str| vec![first.to_owned(), second.to_owned()];
+    helm.layout = vec![pair("bulwark", "hardy"), pair("unshaken", "scholar")];
+    helm.xp = helm.xp_most();
+    for node in [0, 1] {
+        helm.bought |= helm.node_bit(0, node).expect("the first column's nodes");
+    }
+    helm.chosen[0] = 0;
+    let cost = helm.cost_of(0);
+    character.items.insert(id, (helm, At::Carried));
+    let had = character.materials.clone();
+    let read = Character::from_json(&character.to_json()).expect("a character");
+    let helm = read.item(id).expect("kept");
+    assert!(!helm.has(0, 0) && helm.has(0, 1), "a shield's Bulwark on a helm is given back, Hardy kept");
+    assert_eq!(helm.chosen[0], crate::item::NONE_CHOSEN, "its choice cleared");
+    assert_eq!(read.materials.aurem, had.aurem + cost.aurem);
+    assert_eq!(read.materials.armor_fragments, had.armor_fragments + cost.fragments);
+    let again = Character::from_json(&read.to_json()).expect("a character");
+    assert_eq!(again.materials, read.materials, "given back once");
 }
 
 #[test]
@@ -34,7 +59,7 @@ fn a_kept_character_however_broken_is_made_whole_and_no_ask_fails_on_it() {
     use crate::dice::Dice;
     let mut character = Character::starting();
     let id = character.take_id();
-    let mut item = Item::new(id, Kind::Sword, Rarity::Legendary, 20, Slot::MainHand);
+    let mut item = Item::new(id, Kind::Sword, Rarity::Legendary, 20, Slot::Melee);
     item.xp = u32::MAX;
     item.chosen.clear();
     item.bought = u32::MAX;

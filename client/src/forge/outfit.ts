@@ -3,8 +3,8 @@ export const ARMOUR_PIECES = ['helm', 'pauldrons', 'cuirass', 'gauntlets', 'grea
 export type ArmourPiece = (typeof ARMOUR_PIECES)[number];
 
 /** What a figure wears and holds: a set for each armour piece, garments in the order they are put on with the dye of
- *  each, what is in each hand, and whether the weapons are out or put away. Hair is a style and a colour; null is
- *  bald. */
+ *  each, what is in each hand (`grip` 'hilt' for both on the right's sword, a greatsword), and whether the weapons are
+ *  out or put away. Hair is a style and a colour; null is bald. */
 export interface Outfit {
   readonly armour: Readonly<Partial<Record<ArmourPiece, string>>>;
   readonly garments: readonly string[];
@@ -12,6 +12,7 @@ export interface Outfit {
   readonly right: string | null;
   readonly left: string | null;
   readonly drawn: boolean;
+  readonly grip?: 'hilt' | null;
   readonly hair: { readonly style: string; readonly colour: string } | null;
 }
 

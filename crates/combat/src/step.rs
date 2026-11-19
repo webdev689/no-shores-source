@@ -1,11 +1,11 @@
-//! One tick of a fighter by its own hand: its stamina and poise resting, what it is doing carried on or ended, a new
-//! swing, guard, dodge, shot or telegraphed blow begun, its body moved by the movement rules as that allows, and its
-//! aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
+//! One tick of a fighter by its own hand: its stamina and poise resting, its statuses running down (a Charge holding it
+//! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
+//! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
-use crate::arms::{swing_ticks, weapon};
+use crate::arms::{Ranged, swing_ticks, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
 use crate::shapes::Telegraph;
-use crate::shots::{DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
+use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::tuning::{
     AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
@@ -14,7 +14,7 @@ use crate::tuning::{
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, pushed_out, slide};
-use movement::{Block, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body};
+use movement::{Block, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body, step_body_paced};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
 const LANDED: f64 = 1e-6;
@@ -69,7 +69,11 @@ pub fn step_fighter<B: Near + ?Sized>(
     let intent = &clean(intent, fighter.aim);
     let input = &intent.combat;
     let now = Held { attack: input.attack.is_some(), guard: input.guard, dodge: input.dodge, shoot: input.shoot };
-    let mut next = Fighter { held: now, kept: kept(fighter, input, now), ..*fighter };
+    // A Charge holds its fighter from the tick's start, so its stagger and its ticks run down together.
+    let mut held = *fighter;
+    crate::status::held_still(&mut held);
+    let statuses = held.statuses.ticked(&held.action);
+    let mut next = Fighter { held: now, kept: kept(fighter, input, now), statuses, ..held };
     if let Action::Dead { elapsed } = fighter.action {
         next.action = Action::Dead { elapsed: elapsed.saturating_add(1) };
         next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, around.terrain, TICK_SECONDS);
@@ -78,6 +82,10 @@ pub fn step_fighter<B: Near + ?Sized>(
     rest(&mut next);
     let pulled = input.shoot && !fighter.held.shoot;
     let happening = act(&mut next, intent, around, pulled);
+    if matches!(happening, Some(Happening::Struck(_) | Happening::Loosed(_))) {
+        next.statuses.unveil();
+    }
+    next.swap = next.swap.saturating_sub(1);
     move_body(&mut next, intent.controls, around);
     aim(&mut next, intent, around);
     (next, happening)
@@ -162,15 +170,13 @@ fn act<B: Near + ?Sized>(
 ) -> Option<Happening> {
     let input = &intent.combat;
     let countdown = |left: u32| left.saturating_sub(1);
-    let dodges = |next: &Fighter| next.kept.dodge > 0 && can_dodge(next, intent.controls, around);
+    if dodge_leaves(&next.action) && next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
+        return Some(dodge(next, intent.controls, around));
+    }
     match next.action {
         Action::Idle => begin(next, intent, around),
         Action::Attack(attack) => {
             let elapsed = attack.elapsed + 1;
-            // The blow's own tick is never cut short: a dodge pressed on it is kept for the next.
-            if elapsed != attack.strike && dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             // Once the blow has landed, the guard cuts the follow-through short, as the dodge does.
             if elapsed > attack.strike && (input.guard || next.kept.guard > 0) && guards(next) {
                 return Some(raise_guard(next));
@@ -185,9 +191,6 @@ fn act<B: Near + ?Sized>(
             (elapsed == attack.strike).then_some(Happening::Struck(attack))
         }
         Action::Guard { elapsed, window } => {
-            if dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             if next.kept.attack > 0 {
                 if elapsed < window {
                     next.missed_parry = 1;
@@ -208,9 +211,6 @@ fn act<B: Near + ?Sized>(
             None
         }
         Action::Parry { elapsed } => {
-            if dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             // The riposte: a swing held or pressed through the deflect strikes at once.
             if input.attack.is_some() || next.kept.attack > 0 {
                 next.action = Action::Idle;
@@ -236,9 +236,6 @@ fn act<B: Near + ?Sized>(
             None
         }
         Action::Flinch { left } => {
-            if FLINCH.saturating_sub(left) >= FLINCH_DODGE && dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
             next.action = if left > 1 { Action::Flinch { left: countdown(left) } } else { Action::Idle };
             None
         }
@@ -259,13 +256,21 @@ fn act<B: Near + ?Sized>(
             None
         }
         Action::Telegraph(telegraph) => wind_up(next, telegraph, around),
-        Action::Draw { elapsed } => {
-            if dodges(next) {
-                return Some(dodge(next, intent.controls, around));
-            }
-            draw(next, elapsed, intent, pulled)
-        }
+        Action::Draw { elapsed } => draw(next, elapsed, intent, pulled),
         Action::Dead { .. } => None,
+    }
+}
+
+/// Whether a dodge may start out of what a fighter is doing as its tick begins: at rest, a swing (never on its blow's
+/// own tick: a dodge pressed then is kept for the next), a guard, a parry, a draw, or a flinch from its
+/// `FLINCH_DODGE`th tick; never a dodge, a stagger, a fall, an overreach, a reload or a wind-up.
+#[must_use]
+pub fn dodge_leaves(action: &Action) -> bool {
+    match *action {
+        Action::Idle | Action::Guard { .. } | Action::Parry { .. } | Action::Draw { .. } => true,
+        Action::Attack(attack) => attack.elapsed + 1 != attack.strike,
+        Action::Flinch { left } => FLINCH.saturating_sub(left) >= FLINCH_DODGE,
+        _ => false,
     }
 }
 
@@ -300,7 +305,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
     if (input.guard || next.kept.guard > 0) && guards(next) {
         return Some(raise_guard(next));
     }
-    if next.arms.ranged.is_some() && input.aim {
+    if next.arms.ranged.is_some() && input.aim && next.swap == 0 {
         next.action = Action::Draw { elapsed: 0 };
         next.aim = aimed_bearing(next, intent);
         return None;
@@ -308,7 +313,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
     // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
     // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
     // swings a ranged holder's fists.
-    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot) {
+    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot && next.swap == 0 && next.loaded()) {
         let (chest, yaw) = (next.chest(), intent.controls.yaw);
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
@@ -327,10 +332,10 @@ fn raise_guard(next: &mut Fighter) -> Happening {
 }
 
 /// A swing begun with the stroke held, or the one a kept press was made with: a riposte at the foe it parried, a
-/// counter a perfect dodge earned, or a plain one. None without stamina, or riding off the ground.
+/// counter a perfect dodge earned, or a plain one. None without stamina, riding off the ground, or in a swap.
 fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
     let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
-    if next.stamina <= 0.0 || (intent.controls.mounted && next.body.mode != Mode::Ground) {
+    if next.stamina <= 0.0 || (intent.controls.mounted && next.body.mode != Mode::Ground) || next.swap > 0 {
         return None;
     }
     let (strike, end) = swing_ticks(next.arms.melee);
@@ -437,7 +442,7 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
         next.action = Action::Idle;
         return None;
     };
-    if pulled {
+    if pulled && next.loaded() {
         let (chest, heading) = (next.chest(), aimed_bearing(next, intent));
         let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
         // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone. A quicker draw reaches
@@ -452,9 +457,13 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     None
 }
 
-/// A shot leaving: the weapon reloads, its arms pointing the way the shot flies.
+/// A shot leaving: one of its ammunition spent, the weapon reloads, its arms pointing the way the shot flies. A double
+/// pistolet's right shot waits only for its firing frames, the left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
-    let reload = f64::from(shot_numbers(shot.ranged).3) * next.trim.reload;
+    next.ammo = next.ammo.map(|left| left.saturating_sub(1));
+    let right = shot.ranged == Ranged::DoublePistolet && !next.fired_right;
+    next.fired_right = right;
+    let reload = if right { f64::from(BRACE_GAP) } else { f64::from(shot_numbers(shot.ranged).3) * next.trim.reload };
     next.action = Action::Reload { left: reload.round().max(1.0) as u32 };
     next.aim = crate::sight::bearing([0.0, 0.0], [shot.velocity[0], shot.velocity[1]]);
     Happening::Loosed(shot)
@@ -473,10 +482,12 @@ fn slowed(controls: Controls, share: f64) -> Controls {
     Controls { forward: controls.forward * share, sideways: controls.sideways * share, ..still(controls) }
 }
 
-/// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck, and a
-/// charge or a leap carried to its landing at the end of its wind-up.
+/// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck or while
+/// a Charge holds (one waiting out a reload too), and a charge or a leap carried to its landing at the end of its
+/// wind-up.
 fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surroundings<'_, B>) {
     let allowed = match next.action {
+        _ if next.statuses.has(crate::Status::Charge) => still(controls),
         Action::Idle | Action::Reload { .. } => controls,
         Action::Attack(_) => slowed(controls, ATTACK_PACE),
         Action::Guard { .. } | Action::Parry { .. } => slowed(controls, GUARD_PACE),
@@ -490,7 +501,8 @@ fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &
         }
         _ => still(controls),
     };
-    let body = step_body(&next.body, &allowed, around.blocks, around.terrain, TICK_SECONDS);
+    let pace = crate::status::pace(next);
+    let body = step_body_paced(&next.body, &allowed, around.blocks, around.terrain, TICK_SECONDS, pace);
     let fighting = matches!(
         next.action,
         Action::Attack(_) | Action::Guard { .. } | Action::Parry { .. } | Action::Draw { .. } | Action::Telegraph(_)

@@ -45,16 +45,6 @@ export function frameAt(seconds: number, frames: number, fps: number): number {
   return frames > 0 ? Math.floor(Math.max(0, seconds) * fps) % frames : 0;
 }
 
-/** Where a ray from the eye meets the flat ground (z = 0), or null where it never does. */
-export function groundPoint(
-  origin: readonly [number, number, number],
-  direction: readonly [number, number, number],
-): { x: number; y: number } | null {
-  if (direction[2] >= -1e-6) return null;
-  const along = -origin[2] / direction[2];
-  return { x: origin[0] + direction[0] * along, y: origin[1] + direction[1] * along };
-}
-
 /** How far a figure's card stands in front of its body's centre, toward the eye: a body's radius in the movement
  *  rules. A card is flat, so standing at the centre, a wall the body touches or a lip it is going over would cut it. */
 const CARD_FORWARD_M = 0.35;

@@ -64,6 +64,7 @@ import props3p  # noqa: E402
 import shields3p  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 import sheaths  # noqa: E402
+import onthemove  # noqa: E402
 import rendercache  # noqa: E402
 import shape  # noqa: E402
 import stage  # noqa: E402
@@ -155,7 +156,7 @@ def class_records(archive):
 STAFF_ANIMS = {'walk_staff': 4, 'attack_staff': 6, 'hurt_staff': 1, 'idle_staff': 1, 'spell': 4}
 ANIMS = {'walk': 4, 'attack_axe': 6, 'attack_sword': 6, 'hurt': 1, 'idle': 1, 'bow': 4, **STAFF_ANIMS, **poses.OWN,
          **blows.BLOWS, **playing.PLAY, **onehand.ONEHAND, **riding.RIDE, **driving.DRIVE, **people.PEOPLE, **gunplay.GUNPLAY,
-         **agility.MOVES, **casting.CAST, **bowhold.ANIMS, **agility.ELSEWHERE}
+         **agility.MOVES, **casting.CAST, **bowhold.ANIMS, **agility.ELSEWHERE, **onthemove.MOVES}
 # the bow at rest in the left fist (poses.py `AT_REST`): each animation a carried weapon shows in, the right hand empty
 BOW_REST = {anim: ANIMS[base] for anim, base in poses.AT_REST.items()}
 ANIMS.update(BOW_REST)
@@ -211,6 +212,12 @@ def held_as(weapon):
 
 
 def weapon_anims(weapon):
+    """The animations a weapon's layer is drawn in (`held_anims`), and each one's own on the move (onthemove.py)."""
+    anims = held_anims(weapon)
+    return [*anims, *(name for name, (act, _) in onthemove.WALKS.items() if act in anims)]
+
+
+def held_anims(weapon):
     """The animations a weapon's layer is drawn in: the bow in its own, the spark in the spell, a staff in the staff's
     and the forge's own, an axe or a sword (and what is held as either, `HELD`) in all the rest but the other's attack,
     and of the blows its own holds' (blows.py `blows_of`).
@@ -242,8 +249,8 @@ def weapon_anims(weapon):
         return ['bow']
     if weapon == 'spark':   # and in the player's own cast (casting.py)
         return ['spell', *casting.CAST]
-    if weapon == 'staff' or weapon in STAFF_LAYERS:
-        return [*STAFF_ANIMS, *poses.OWN, *agility.HELD]
+    if weapon == 'staff' or weapon in STAFF_LAYERS:   # and its own blows, in both hands
+        return [*STAFF_ANIMS, *poses.OWN, *agility.HELD, *blows.blows_of(weapon)]
     held = held_as(weapon)
     return [a for a in ANIMS if a != 'bow' and a not in playing.PLAY and (a == 'spell' or a not in STAFF_ANIMS)
             and a != f"attack_{'sword' if held == 'axe' else 'axe'}"
@@ -255,6 +262,7 @@ def weapon_anims(weapon):
             and a not in agility.BARE   # a climber's hands are on the wall
             and a not in casting.CAST   # a player casts with the weapon put away
             and a not in agility.ELSEWHERE   # drawn for outside the game, the hands empty
+            and a not in onthemove.WALKS   # on the move as its action is (`weapon_anims`)
             and (a not in blows.BLOWS or a in blows.blows_of(weapon))]   # each its own holds' blows
 
 
@@ -1368,8 +1376,8 @@ def main():
     # the one-handed animations (onehand.py) and the guns' (gunplay.py) only when named: a run of every animation
     # draws them for no layer yet; and what is drawn for outside the game (agility.py `ELSEWHERE`)
     want_anims = (args.anims.split(',') if args.anims else
-                  [a for a in ANIMS if a not in onehand.ONEHAND and a not in gunplay.GUNPLAY
-                   and a not in agility.ELSEWHERE])
+                  [a for a in ANIMS if onthemove.act_of(a) not in onehand.ONEHAND
+                   and onthemove.act_of(a) not in gunplay.GUNPLAY and a not in agility.ELSEWHERE])
     if body_name in CHILDREN and not args.anims:   # a child draws only the poses the placed children take
         want_anims = [a for a in ANIMS if a in PEOPLE_WORN.get(body_name, {}).get('anims', ())]
     out = os.path.join(args.out, body_name)

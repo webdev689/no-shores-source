@@ -1,8 +1,14 @@
+import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
-import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
-import { MARK_FLOATS } from '../combat/marks.ts';
+import { type Orbit, REVERSED_DEPTH, cameraOf, viewProjection } from '../editor/orbit.ts';
+import { FEEL } from '../combat/attackFeel.ts';
+import { LIGHT_DEPTH, LIGHT_TARGET, LightLayer } from '../combat/lightLayer.ts';
+import { MarkDraw } from '../combat/markDraw.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
+import { SWING_ATTRIBUTES, SWING_WGSL } from '../combat/swingLook.ts';
+import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
+import { GlowCards } from '../player/glowCards.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Block } from '../rules/movementRules.ts';
 
@@ -11,7 +17,7 @@ const SKY = [0.55, 0.66, 0.78] as const;
  *  it, so the ground is drawn as many small ones. */
 const TILES = 100;
 const SCENE_BYTES = 96;
-const CARD_BYTES = 48;
+const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
 
 const SHADER = /* wgsl */ `
 struct Scene { viewProjection: mat4x4f, eye: vec4f, marker: vec4f }
@@ -55,74 +61,18 @@ fn gridLine(world: vec2f, spacing: f32) -> f32 {
   return vec4f(mix(colour, SKY, fog * fog), 1.0);
 }
 
-struct MarkOut { @builtin(position) position: vec4f, @location(0) colour: vec4f }
-
-@vertex fn markVertex(@location(0) position: vec3f, @location(1) colour: vec4f) -> MarkOut {
-  var out: MarkOut;
-  out.position = scene.viewProjection * vec4f(position, 1.0);
-  out.colour = colour;
-  return out;
-}
-
-@fragment fn markFragment(in: MarkOut) -> @location(0) vec4f {
-  return vec4f(in.colour.rgb * in.colour.a, in.colour.a);
-}
-
-struct SwingOut { @builtin(position) position: vec4f, @location(0) shape: vec4f, @location(1) tint: vec4f }
-
-@vertex fn swingVertex(@location(0) position: vec3f, @location(1) shape: vec4f, @location(2) tint: vec4f) -> SwingOut {
+@vertex fn swingVertex(
+  @location(0) position: vec3f,
+  @location(1) shape: vec4f,
+  @location(2) tint: vec4f,
+  @location(3) extra: vec2f,
+) -> SwingOut {
   var out: SwingOut;
   out.position = scene.viewProjection * vec4f(position, 1.0);
   out.shape = shape;
   out.tint = tint;
+  out.extra = extra;
   return out;
-}
-
-fn hash(n: f32) -> f32 {
-  return fract(sin(n * 127.1 + 311.7) * 43758.5453);
-}
-
-// A swing's streak (its shape: age along it, 0 at the head; across it; the blade's speed there; its part), in light
-// added over the scene with a little cover, so it shows over a bright sky too.
-@fragment fn swingFragment(in: SwingOut) -> @location(0) vec4f {
-  let age = clamp(in.shape.x, 0.0, 1.0);
-  let across = clamp(in.shape.y, 0.0, 1.0);
-  let speed = clamp(in.shape.z, 0.0, 1.0);
-  var light = 0.0;
-  var hot = 0.0;
-  var cover = 0.0;
-  if (in.shape.w < 0.5) {
-    // The blade's band, hilt to past the tip: the tip's edge a bright line, the blade behind it a glow in streaks
-    // that each trail their own length, and a dark rim just past the tip.
-    let fade = pow(1.0 - age, 1.6);
-    let edge = exp(-pow((across - 0.9) / 0.05, 2.0));
-    let lane = floor(across * 30.0);
-    let reach = mix(0.3, 1.0, hash(lane));
-    let streak = mix(0.45, 1.0, hash(lane + 17.0)) * (1.0 - smoothstep(reach * 0.55, reach, age));
-    let body = smoothstep(0.1, 0.85, across) * (1.0 - smoothstep(0.9, 0.95, across));
-    light = (edge * 1.3 + body * 0.95 * streak) * fade;
-    hot = edge * pow(1.0 - age, 3.0);
-    cover = exp(-pow((across - 0.975) / 0.022, 2.0)) * 0.3 * fade;
-  } else if (in.shape.w < 1.5) {
-    // A strip across the tip or a thrust's streak: brightest along its middle.
-    let middle = 1.0 - abs(across * 2.0 - 1.0);
-    let fade = pow(1.0 - age, 1.4);
-    light = pow(middle, 1.6) * fade * 1.2;
-    hot = pow(middle, 6.0) * pow(1.0 - age, 2.5);
-  } else {
-    // A flare (its age and across are its corner): a soft round glow with four thin rays, hottest at its heart.
-    let at = vec2f(age, across) * 2.0 - 1.0;
-    let radius = length(at);
-    let rays = max(0.0, 1.0 - abs(at.x) * 9.0) * max(0.0, 1.0 - abs(at.y))
-      + max(0.0, 1.0 - abs(at.y) * 9.0) * max(0.0, 1.0 - abs(at.x));
-    light = exp(-radius * radius * 7.0) + rays * 0.6 * (1.0 - smoothstep(0.6, 1.0, radius));
-    hot = exp(-radius * radius * 30.0);
-  }
-  // A streak burns by the blade's speed where it passed, so only the cut itself glows, not the slow wind-up.
-  let quick = select(smoothstep(0.03, 0.45, speed), 1.0, in.shape.w > 1.5);
-  let shine = light * in.tint.a * quick;
-  let colour = mix(in.tint.rgb, vec3f(1.0, 0.98, 0.94), clamp(hot * 1.3 + speed * 0.2 * light, 0.0, 1.0));
-  return vec4f(colour * shine, clamp(shine * 0.3 + cover * in.tint.a, 0.0, 1.0));
 }
 
 struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f, @location(1) world: vec3f }
@@ -146,7 +96,10 @@ struct BlockOut { @builtin(position) position: vec4f, @location(0) normal: vec3f
   return vec4f(mix(stone * shade, SKY, fog * fog), 1.0);
 }
 
-struct Card { feet: vec4f, side: vec4f, root: vec4f }
+${SWING_WGSL}
+${STATUS_WGSL}
+
+struct Card { feet: vec4f, side: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f }
 @group(1) @binding(0) var<uniform> card: Card;
 @group(1) @binding(1) var picture: texture_2d<f32>;
 
@@ -162,18 +115,26 @@ struct CardOut { @builtin(position) position: vec4f, @location(0) corner: vec2f 
   let world = vec3f(card.feet.xy + card.side.xy * across, card.feet.z + up);
   var out: CardOut;
   out.position = scene.viewProjection * vec4f(world, 1.0);
+  // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
+  if (card.tint.w > 0.5) { out.position.z = out.position.z * 0.999; }
   out.corner = corner;
   return out;
 }
 
 @fragment fn cardFragment(in: CardOut) -> @location(0) vec4f {
   let size = vec2f(textureDimensions(picture));
+  let flipped = card.feet.w > 0.5;
   var at = in.corner;
-  if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
-  let texel = textureLoad(picture, vec2i(min(at * size, size - 1.0)), 0);
+  if (flipped) { at.x = 1.0 - at.x; }
+  let rootAcross = card.root.x / card.side.z;
+  let root = vec2f(select(rootAcross, 1.0 - rootAcross, flipped), card.root.y / card.side.w) * size;
+  let place = card_texel(card.status, card.look, vec2i(min(at * size, size - 1.0)), vec2i(size), root);
+  if (place.x < 0) { discard; }
+  let texel = textureLoad(picture, place, 0);
   if (texel.a < 0.5) { discard; }
-  let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
-  return vec4f(mix(texel.rgb, flash, card.root.z), 1.0);
+  let shown = card_shade(card.status, card.look, card.tint, picture, place, texel.rgb, root);
+  if (shown.a < 0.5) { discard; }
+  return vec4f(shown.rgb, 1.0);
 }
 `;
 
@@ -187,16 +148,20 @@ export class SceneView implements CardMaker {
   private readonly cardLayout: GPUBindGroupLayout;
   private readonly blockPipeline: GPURenderPipeline;
   private blockVertices: { buffer: GPUBuffer; count: number } | null = null;
-  private readonly markPipeline: GPURenderPipeline;
-  private markBuffer: GPUBuffer | null = null;
-  private markCount = 0;
+  private readonly marks: MarkDraw;
+  private markVertices: Float32Array = new Float32Array(0);
   private readonly swingPipeline: GPURenderPipeline;
+  private readonly swingLight: GPURenderPipeline;
+  private readonly lights: LightLayer;
   private swingBuffer: GPUBuffer | null = null;
   private swingCount = 0;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
+  private readonly glows: GlowCards;
   private depth: GPUTexture | null = null;
   /** Draws into the scene's pass after the ground and blocks and before the cards, as blood does. */
   underCards: ((pass: GPURenderPassEncoder) => void) | null = null;
+  /** Whether the brightest effects light what stands round them (the attack feel's light). */
+  light = FEEL.light;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -245,40 +210,9 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil,
     });
-    // Marks lie over the ground, blended, tested against the scene's depth but writing none, so figures stand over
-    // them and they never hide one another.
-    this.markPipeline = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
-      vertex: {
-        module,
-        entryPoint: 'markVertex',
-        buffers: [
-          {
-            arrayStride: MARK_FLOATS * 4,
-            attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 12, format: 'float32x4' },
-            ],
-          },
-        ],
-      },
-      fragment: {
-        module,
-        entryPoint: 'markFragment',
-        targets: [
-          {
-            format: gpu.format,
-            blend: {
-              color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-              alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-            },
-          },
-        ],
-      },
-      primitive: { topology: 'triangle-list' },
-      depthStencil: { ...depthStencil, depthWriteEnabled: false },
-    });
-    // Swings' streaks the same way, over everything, light added with a little cover.
+    // The fight's marks: the solid ones writing depth with the figures, the see-through ones after them.
+    this.marks = new MarkDraw(gpu, 1);
+    // Swings' streaks the same way, over everything, each pixel of them solid.
     this.swingPipeline = device.createRenderPipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
       vertex: {
@@ -287,11 +221,7 @@ export class SceneView implements CardMaker {
         buffers: [
           {
             arrayStride: SWING_FLOATS * 4,
-            attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 12, format: 'float32x4' },
-              { shaderLocation: 2, offset: 28, format: 'float32x4' },
-            ],
+            attributes: [...SWING_ATTRIBUTES],
           },
         ],
       },
@@ -311,6 +241,19 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil: { ...depthStencil, depthWriteEnabled: false },
     });
+    this.swingLight = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
+      vertex: {
+        module,
+        entryPoint: 'swingVertex',
+        buffers: [{ arrayStride: SWING_FLOATS * 4, attributes: [...SWING_ATTRIBUTES] }],
+      },
+      fragment: { module, entryPoint: 'swingLight', targets: [LIGHT_TARGET] },
+      primitive: { topology: 'triangle-list' },
+      depthStencil: LIGHT_DEPTH,
+    });
+    this.lights = new LightLayer(gpu, 'depth');
+    this.glows = new GlowCards(gpu, gpu.format, REVERSED_DEPTH.format);
     this.sceneBuffer = device.createBuffer({
       size: SCENE_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -323,8 +266,7 @@ export class SceneView implements CardMaker {
 
   /** The marks the next frames draw: telegraphed blows on the ground and shots in flight, as `marksMesh` lays them. */
   setMarks(vertices: Float32Array): void {
-    this.markCount = vertices.length / MARK_FLOATS;
-    this.markBuffer = this.written(this.markBuffer, vertices);
+    this.markVertices = vertices;
   }
 
   /** The swings' streaks the next frames draw, as `SwingArcs` lays them. */
@@ -355,6 +297,11 @@ export class SceneView implements CardMaker {
     });
     this.gpu.device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width * 4 }, [width, height]);
     return { texture, width, height, root };
+  }
+
+  /** An outline's field as a texture its glow is drawn with. */
+  glow(field: GlowField): GPUTexture {
+    return this.card(field.data, field.width, field.height, [0, 0]).texture;
   }
 
   /** The card's uniform slot for the `index`th card drawn this frame, its bind group remade only for a new texture. */
@@ -466,7 +413,8 @@ export class SceneView implements CardMaker {
   }
 
   /** Draws the ground, the blocks and the cards as seen from `orbit` into the canvas, `width` by `height` device
-   *  pixels, with a ring round the chosen figure's feet; `after` may draw over the frame before it is shown. */
+   *  pixels, with a ring round the chosen figure's feet, and the light of the marks and arcs over them; `after` may
+   *  draw over the frame before it is shown. */
   draw(
     orbit: Orbit,
     width: number,
@@ -481,11 +429,12 @@ export class SceneView implements CardMaker {
       this.depth = device.createTexture({
         size: [width, height],
         format: REVERSED_DEPTH.format,
-        usage: TEXTURE_USAGE.renderAttachment,
+        usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.textureBinding,
       });
     }
     const values = new Float32Array(SCENE_BYTES / 4);
-    values.set(viewProjection(orbit, width / height));
+    const seen = viewProjection(orbit, width / height);
+    values.set(seen);
     const right = [Math.cos(orbit.yaw), Math.sin(orbit.yaw)] as const;
     values.set([orbit.targetX, orbit.targetY, orbit.targetZ, 0], 16);
     values.set([chosen?.x ?? 0, chosen?.y ?? 0, 0, chosen ? 1 : 0], 20);
@@ -520,24 +469,34 @@ export class SceneView implements CardMaker {
     this.underCards?.(pass);
     pass.setPipeline(this.cards);
     pass.setBindGroup(0, this.sceneGroup);
-    drawn.forEach(({ card, x, y, z, flip, flash }, index) => {
+    const time = statusClock();
+    // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back
+    // along the stroke and standing behind it.
+    const smeared = drawn.flatMap((shown) => (shown.smear ? [shown] : []));
+    [...drawn, ...smeared].forEach((shown, index) => {
+      const { card, x, y, z, flip } = shown;
+      const smear = index >= drawn.length ? shown.smear : null;
+      const [across, up] = smear ? [smear.across / PX_PER_M, smear.up / PX_PER_M] : [0, 0];
       const { buffer, group } = this.slot(index, card.texture);
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) / PX_PER_M;
       const cardValues = new Float32Array([
-        ...[x, y, z, flip ? 1 : 0],
+        ...[x + right[0] * across, y + right[1] * across, z + up, flip ? 1 : 0],
         ...[...right, card.width / PX_PER_M, card.height / PX_PER_M],
-        ...[rootX, card.root[1] / PX_PER_M, flash?.share ?? 0, flash?.red ? 1 : 0],
+        ...[rootX, card.root[1] / PX_PER_M, 0, 0],
+        ...cardLookValues(shown, time, !!smear),
       ]);
       device.queue.writeBuffer(buffer, 0, cardValues);
       pass.setBindGroup(1, group);
       pass.draw(6);
     });
-    if (this.markBuffer && this.markCount > 0) {
-      pass.setPipeline(this.markPipeline);
-      pass.setBindGroup(0, this.sceneGroup);
-      pass.setVertexBuffer(0, this.markBuffer);
-      pass.draw(this.markCount);
-    }
+    this.marks.set(this.markVertices, cameraOf(orbit).eye);
+    this.marks.drawSolid(pass, seen);
+    // A Veiled figure's weapon shows no outline: it is all but unseen.
+    const glowing = drawn.filter(({ card, veiled }) => card.glow && !veiled);
+    const metres = 1 / PX_PER_M;
+    const glows = glowing.map(({ card, x, y, z, flip, surge }) => ({ card, x, y, z, flip, metres, surge }));
+    this.glows.draw(pass, seen, right, performance.now() / 1000, glows);
+    this.marks.drawClear(pass, seen);
     if (this.swingBuffer && this.swingCount > 0) {
       pass.setPipeline(this.swingPipeline);
       pass.setBindGroup(0, this.sceneGroup);
@@ -545,6 +504,15 @@ export class SceneView implements CardMaker {
       pass.draw(this.swingCount);
     }
     pass.end();
+    if (this.light && (this.markVertices.length > 0 || this.swingCount > 0))
+      this.lights.encode(encoder, colourView, this.depth, (light) => {
+        this.marks.drawLight(light, seen);
+        if (!this.swingBuffer || this.swingCount === 0) return;
+        light.setPipeline(this.swingLight);
+        light.setBindGroup(0, this.sceneGroup);
+        light.setVertexBuffer(0, this.swingBuffer);
+        light.draw(this.swingCount);
+      });
     after?.(encoder, colourView);
     device.queue.submit([encoder.finish()]);
   }

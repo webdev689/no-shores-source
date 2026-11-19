@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 /// A character wearing a Legendary sword whose first trait column offers these, the one at `chosen` bought and chosen.
 fn wearing(traits: &[&str], chosen: u8) -> gear::Character {
     let mut character = gear::Character::starting();
-    let mut sword = Item::new(99, Kind::Sword, Rarity::Legendary, 20, Slot::MainHand);
+    let mut sword = Item::new(99, Kind::Sword, Rarity::Legendary, 20, Slot::Melee);
     sword.layout = vec![
         traits.iter().map(|id| (*id).to_owned()).collect(),
         vec!["bloodletter".into(), "executioner".into()],
@@ -20,18 +20,18 @@ fn wearing(traits: &[&str], chosen: u8) -> gear::Character {
     ];
     sword.bought |= sword.node_bit(0, chosen).expect("a node");
     sword.chosen[0] = chosen;
-    let main = character.worn(Slot::MainHand).expect("the starting sword").id;
+    let main = character.worn(Slot::Melee).expect("the starting sword").id;
     character.items.remove(&main);
-    character.items.insert(99, (sword, At::Worn(Slot::MainHand)));
+    character.items.insert(99, (sword, At::Worn(Slot::Melee)));
     character
 }
 
 #[test]
 fn worn_traits_trim_the_fight_and_only_chosen_bought_ones() {
-    assert_eq!(trim_of(&gear::Character::starting()), Trim::PLAIN, "the starting kit trims nothing");
-    let light = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 0));
+    assert_eq!(trim_of(&gear::Character::starting(), Slot::Melee), Trim::PLAIN, "the starting kit trims nothing");
+    let light = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 0), Slot::Melee);
     assert_eq!(light, Trim { swing_stamina: 0.85, ..Trim::PLAIN });
-    let keen = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 2));
+    let keen = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 2), Slot::Melee);
     assert_eq!(keen, Trim { guard_through: 1.5, ..Trim::PLAIN });
 }
 
@@ -94,22 +94,19 @@ fn a_blow_takes_on_its_strikers_perks_as_it_is_struck() {
     };
     let blow = combat::judge::swing_blow(player, &striker, &attack, brute);
     let close = |left: f64, right: f64| (left - right).abs() < 1e-9;
-    assert!(close(room.empower(blow, brute, false).damage, blow.damage * 1.05), "Honed");
+    assert!(close(room.empower(blow, brute).damage, blow.damage * 1.05), "Honed");
     let mut staggered = *room.fighter(brute).expect("standing");
     staggered.action = combat::Action::Staggered { left: 30, cause: Cause::Poise };
     staggered.health = staggered.health_max / 3.0;
     room.set_fighter(brute, staggered);
-    assert!(close(room.empower(blow, brute, false).damage, blow.damage * 1.05 * 1.15 * 1.3), "Executioner, Undertow");
+    assert!(close(room.empower(blow, brute).damage, blow.damage * 1.05 * 1.15 * 1.3), "Executioner, Undertow");
     let riposte = combat::judge::swing_blow(
         player,
         &striker,
         &combat::fighter::Attack { swing: combat::fighter::Swing::Riposte(brute), ..attack },
         brute,
     );
-    assert!(
-        close(room.empower(riposte, brute, false).damage, riposte.damage * 1.05 * 1.3),
-        "a riposte is no execution"
-    );
+    assert!(close(room.empower(riposte, brute).damage, riposte.damage * 1.05 * 1.3), "a riposte is no execution");
     let shot = combat::judge::Blow { kind: combat::BlowKind::Shot(combat::Ranged::Pistolet), ..blow };
     let trim = room.fighter(player).expect("in").trim;
     assert!(close(Room::at_range(shot, 4.0, &trim).damage, shot.damage * 1.2), "Point Blank");
@@ -155,7 +152,7 @@ fn an_arrow_strikes_with_what_it_was_loosed_with() {
         let (mut room, player, brute) = room_with_brute();
         room.foes.get_mut(&brute).expect("a brute").level = 1;
         trimmed(&mut room, player, Trim { damage: 1.05, ..Trim::PLAIN });
-        let mut loosed = room.held(player, Slot::MainHand).expect("a player");
+        let mut loosed = room.held(player, Slot::Melee).expect("a player");
         if let Some(trim) = loosed_with {
             loosed.trim = trim;
         }
@@ -173,7 +170,7 @@ fn an_arrow_strikes_with_what_it_was_loosed_with() {
         if changed_mid_flight {
             trimmed(&mut room, player, Trim::PLAIN);
             let found = room.players.get_mut(&player).expect("in");
-            let main = found.character.worn(Slot::MainHand).expect("a sword").id;
+            let main = found.character.worn(Slot::Melee).expect("a sword").id;
             found.character.items.remove(&main);
         }
         let before = room.fighter(brute).expect("standing").health;
