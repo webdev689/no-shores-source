@@ -157,11 +157,12 @@ impl Room {
     }
 
     /// What a player's blow that landed on `defender` (as it stood before it) gives back of their Arts: a crit out of
-    /// Vanish half its cooldown (Hunt); and, a kill, the Anima its share, 3% of the Tenets with the weapons' Spellfeed,
-    /// a Volt kill 4% of the Tenets (Recharge), a
-    /// Blaze kill while Linked 5% (Zeal), and a Cosmic kill on an Exposed foe 2 s more of the Duskraven (Dread).
+    /// Vanish half its cooldown (Hunt); and, a kill, the Anima its share, 3% of the Tenets for a weapon's kill with
+    /// Spellfeed on its loadout (`perk_on`), a Volt kill 4% of the Tenets (Recharge), a Blaze kill while Linked 5%
+    /// (Zeal), and a Cosmic kill on an Exposed foe 2 s more of the Duskraven (Dread).
     pub(crate) fn arts_after(&mut self, blow: &Blow, defender: &Fighter, verdict: &Verdict, killed: bool) {
         let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
+        let spellfeed = self.perk_on(blow, "spellfeed");
         let Some(striker) = self.players.get(&blow.striker).map(|found| found.fighter) else { return };
         let element = Element::from_number(blow.element);
         let mut dread = 0;
@@ -178,7 +179,7 @@ impl Room {
                 return;
             }
             casting.anima = filled(casting.anima, arts().cast.anima_kill_share);
-            if character.has_trait("spellfeed") {
+            if spellfeed {
                 casting.cut(SPELLFEED_SHARE);
             }
             let cut = |key: &str| character.fragment(key).map_or(0.0, |fragment| fragment.cooldown_share);

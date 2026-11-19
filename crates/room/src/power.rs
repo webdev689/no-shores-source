@@ -6,8 +6,8 @@
 
 use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
-use combat::fighter::FighterId;
-use combat::judge::Blow;
+use combat::fighter::{Fighter, FighterId};
+use combat::judge::{Blow, BlowKind};
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
 
@@ -74,6 +74,13 @@ pub fn allowed_arms(asked: Arms, character: &Character) -> Arms {
     if arms_allowed(character).contains(&asked) { asked } else { BARE_HANDS }
 }
 
+/// The loadout a player has drawn, which strikes their blows and whose perks are theirs with the armour's: the Ranged
+/// one while it is held, or while no Melee is worn; else Melee.
+#[must_use]
+pub(crate) fn drawn(character: &Character, fighter: &Fighter) -> Slot {
+    if fighter.arms.ranged.is_some() || character.worn(Slot::Melee).is_none() { Slot::Ranged } else { Slot::Melee }
+}
+
 /// The foe kinds as the gear's rewards know them, by the foes crate's numbers.
 fn worth_of(kind: u8) -> Option<Worth> {
     Some(match kind {
@@ -101,11 +108,20 @@ impl Room {
         self.empower_as(blow, defender, held)
     }
 
-    /// The loadout a player strikes with now: the Ranged one while it is held, or while no Melee is worn; else Melee.
+    /// The loadout a player strikes with now (`drawn`).
     pub(crate) fn striking(&self, player: FighterId) -> Slot {
-        let ranged =
-            |found: &crate::Player| found.fighter.arms.ranged.is_some() || found.character.worn(Slot::Melee).is_none();
-        if self.players.get(&player).is_some_and(ranged) { Slot::Ranged } else { Slot::Melee }
+        self.players.get(&player).map_or(Slot::Melee, |found| drawn(&found.character, &found.fighter))
+    }
+
+    /// Whether a player's blow takes a perk: one the armour or the loadout it came from gives, a shot's the Ranged
+    /// one, a swing's the one drawn. A spell takes no weapon's perk.
+    pub(crate) fn perk_on(&self, blow: &Blow, id: &str) -> bool {
+        let loadout = match blow.kind {
+            BlowKind::Shot(_) => Slot::Ranged,
+            BlowKind::Spell(_) => return false,
+            _ => self.striking(blow.striker),
+        };
+        self.players.get(&blow.striker).is_some_and(|found| found.character.has_drawn_trait(id, loadout))
     }
 
     /// What a player strikes with now from a loadout; nothing for a foe.

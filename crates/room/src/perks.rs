@@ -8,7 +8,7 @@ use combat::fighter::{Action, FighterId};
 use combat::judge::Blow;
 use combat::tuning::STAMINA;
 use combat::{BlowKind, Fighter, Ranged, Status, Trim, Verdict, ticks};
-use gear::Character;
+use gear::{Character, Slot};
 
 /// A shot within this of its target is point blank; past this, a long shot (metres).
 const POINT_BLANK_M: f64 = 5.0;
@@ -73,12 +73,13 @@ fn after_reload(ranged: Ranged, striker: &Fighter) -> bool {
     ranged != Ranged::DoublePistolet || striker.fired_right
 }
 
-/// The trim the traits a player's worn gear gives make: each trait's own, every one counted once however many pieces
-/// give it. Forager and Scholar trim nothing in a fight: the gear's own rules give their more.
+/// The trim the traits a player's worn gear gives make while a loadout is drawn: each trait's own, of the armour and
+/// that loadout, every one counted once however many pieces give it. Forager and Scholar trim nothing in a fight: the
+/// gear's own rules give their more.
 #[must_use]
-pub fn trim_of(character: &Character) -> Trim {
+pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
     let mut trim = Trim::PLAIN;
-    for id in character.traits() {
+    for id in character.traits(drawn) {
         match id {
             "light_grip" => trim.swing_stamina *= 0.85,
             "weighted" => trim.poise_given *= 1.2,
@@ -122,21 +123,19 @@ pub fn trim_of(character: &Character) -> Trim {
 }
 
 impl Room {
-    /// Sets a player's trim from their worn gear, after an ask that may have changed it.
+    /// Sets a player's trims from their worn gear, after an ask that may have changed it, their fighter taking the one
+    /// of the loadout it has drawn (`Player::armed`).
     pub(crate) fn retrim(&mut self, player: PlayerId) {
         if let Some(found) = self.players.get_mut(&player) {
-            let trim = trim_of(&found.character);
-            // A new trim goes to the player in their gear, which their browser predicts them by.
-            found.gear_changed |= trim != found.trim;
-            found.trim = trim;
-            found.fighter.trim = trim;
+            found.trims = [Slot::Melee, Slot::Ranged].map(|drawn| trim_of(&found.character, drawn));
+            found.fighter = found.armed(found.fighter);
         }
     }
 
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
     /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health,
-    /// Exploit marking a swing on an Exposed foe a crit, and Attuned on a blow in the worn Art's element (a spell's
-    /// never: no weapon's perk touches it).
+    /// Exploit marking a swing on an Exposed foe a crit, and Attuned on a blow in the worn Art's element (`perk_on`:
+    /// of the loadout the blow came from, never a spell's).
     pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, trim: &Trim) -> Blow {
         let Some(foe) = self.fighter(defender) else { return blow };
         let Some(player) = self.players.get(&blow.striker).filter(|_| self.foes.contains_key(&defender)) else {
@@ -144,12 +143,10 @@ impl Room {
         };
         let staggered = if foe.staggered() && !blow.riposte() { trim.on_staggered } else { 1.0 };
         let low = if foe.health < foe.health_max / 2.0 { trim.on_low } else { 1.0 };
-        let wears = |id: &str| player.character.has_trait(id);
         let swing = matches!(blow.kind, BlowKind::Swing(_));
-        let exploits = swing && foe.statuses.has(Status::Expose) && wears("exploit");
+        let exploits = swing && foe.statuses.has(Status::Expose) && self.perk_on(&blow, "exploit");
         let in_element = blow.element != 0 && blow.element == player.character.art().element;
-        let attuned = in_element && !matches!(blow.kind, BlowKind::Spell(_)) && wears("attuned");
-        let attuned = if attuned { ATTUNED_TIMES } else { 1.0 };
+        let attuned = if in_element && self.perk_on(&blow, "attuned") { ATTUNED_TIMES } else { 1.0 };
         Blow { damage: blow.damage * trim.damage * staggered * low * attuned, crit: blow.crit || exploits, ..blow }
     }
 
@@ -198,37 +195,38 @@ impl Room {
     /// What a player's blow on a foe sets off of their verbs, through the room's one door for statuses, so no browser
     /// predicts them: Exposing Strikes on the third swing in a row landed on one foe, Thunderclap on a guard a swing
     /// breaks, Marked Shot on a shot landed first after a reload, Shocking Rounds on every fifth shot landed, and Keen
-    /// Eye's Crit on a kill.
+    /// Eye's Crit on a kill; each the loadout's the blow came from (`perk_on`), none a spell's.
     pub(crate) fn verbs_after(&mut self, blow: &Blow, defender: FighterId, verdict: &Verdict, killed: bool) {
         if !self.foes.contains_key(&defender) {
             return;
         }
         let clock = self.clock;
+        let [rows, clap, marked, shocking, keen] =
+            ["exposing_strikes", "thunderclap", "marked_shot", "shocking_rounds", "keen_eye"]
+                .map(|id| self.perk_on(blow, id));
         let Some(found) = self.players.get_mut(&blow.striker) else { return };
-        let (character, counts, striker) = (&found.character, &mut found.counts, found.fighter);
-        let wears = |id: &str| character.has_trait(id);
         let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let mut given = Vec::new();
         match blow.kind {
             BlowKind::Swing(_) => {
-                if wears("exposing_strikes") && counts.in_row(defender, landed, clock) {
+                if rows && found.counts.in_row(defender, landed, clock) {
                     given.push(Status::Expose);
                 }
-                if wears("thunderclap") && matches!(verdict, Verdict::GuardBroken { .. }) {
+                if clap && matches!(verdict, Verdict::GuardBroken { .. }) {
                     given.push(Status::Charge);
                 }
             }
             BlowKind::Shot(ranged) if landed => {
-                if wears("marked_shot") && after_reload(ranged, &striker) {
+                if marked && after_reload(ranged, &found.fighter) {
                     given.push(Status::Expose);
                 }
-                if wears("shocking_rounds") && counts.shot_landed() {
+                if shocking && found.counts.shot_landed() {
                     given.push(Status::Charge);
                 }
             }
             _ => {}
         }
-        if killed && wears("keen_eye") {
+        if killed && keen {
             self.give(blow.striker, Status::Crit, Some(ticks(KEEN_EYE_S)), Some(blow.striker));
         }
         for status in given {

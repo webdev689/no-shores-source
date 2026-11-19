@@ -101,7 +101,8 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
   at once, but a swap begun as another was put away runs on.
-- **Gear's trim.** A fighter carries what its gear trims of these numbers ([[Gear]]): what a swing, a dodge (and a
+- **Gear's trim.** A fighter carries what its armour and the loadout it has drawn trim of these numbers ([[Gear]],
+  "Perks"; the other loadout trims nothing until it is drawn): what a swing, a dodge (and a
   dodge with a weapon drawn) and a guard's blow cost; how fast stamina comes back, and again below half health; a
   reload's time, a bow's draw to full power and the pace kept while aiming; what its blows do (a riposte, a counter,
   an aimed shot, the poise they fill, what a guard lets through and pays, how long a stagger they cause lasts); and how
@@ -213,8 +214,8 @@ gives every one through one door, `Room::give`, for the status's own time unless
   Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]).
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
   "Verbs"): Expose from Exposing Strikes and Marked Shot, Charge from Thunderclap and Shocking Rounds, Crit from Keen
-  Eye; Exploit marks a swing on an Exposed foe a crit. None is in the trim: a browser sees them only as the room
-  sends its player's statuses.
+  Eye; Exploit marks a swing on an Exposed foe a crit. Each is the perk of the loadout the blow came from, never of a
+  spell. None is in the trim: a browser sees them only as the room sends its player's statuses.
 - **On the wire.** A player's statuses travel in their fighter's numbers, after its action's: their browser predicts
   its own from them, and another browser reads a player's veil there. A foe's Expose, its Charge and the immunity after
   it cross with the foe ([[Server]]). Foes' plates and the player's vitals show them ([[Interface]]), and the

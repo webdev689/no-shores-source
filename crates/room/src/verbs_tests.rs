@@ -19,19 +19,25 @@ const WORN: u32 = 99;
 fn room_wearing(kind: Kind, perk: &str) -> (Room, PlayerId, [FighterId; 2]) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
+    wear(&mut room, player, WORN, kind, perk);
+    let fighter = *room.fighter(player).expect("in");
+    room.set_fighter(player, Fighter { arms: loadout_arms(kind), ..fighter });
+    room.retrim(player);
+    let foes = [stand(&mut room, 0.0, -1.5), stand(&mut room, 1.0, -1.5)];
+    (room, player, foes)
+}
+
+/// Wears item `id`, a Legendary of `kind` whose first column offers `perk`, bought and chosen, in its kind's slot.
+fn wear(room: &mut Room, player: PlayerId, id: u32, kind: Kind, perk: &str) {
     let character = &mut room.players.get_mut(&player).expect("in").character;
-    let mut item = Item::new(WORN, kind, Rarity::Legendary, 20, kind.slot());
+    let mut item = Item::new(id, kind, Rarity::Legendary, 20, kind.slot());
     item.layout = vec![vec![perk.to_owned()]];
     item.bought |= item.node_bit(0, 0).expect("a node");
     item.chosen[0] = 0;
     if let Some(worn) = character.worn(kind.slot()).map(|worn| worn.id) {
         character.items.remove(&worn);
     }
-    character.items.insert(WORN, (item, At::Worn(kind.slot())));
-    let fighter = *room.fighter(player).expect("in");
-    room.set_fighter(player, Fighter { arms: loadout_arms(kind), ..fighter });
-    let foes = [stand(&mut room, 0.0, -1.5), stand(&mut room, 1.0, -1.5)];
-    (room, player, foes)
+    character.items.insert(id, (item, At::Worn(kind.slot())));
 }
 
 fn stand(room: &mut Room, x: f64, y: f64) -> FighterId {
@@ -85,8 +91,53 @@ fn the_verbs_are_the_rooms_alone_and_trim_nothing_a_browser_predicts() {
     for (kind, perk) in worn.chain([(Kind::Bow, "marked_shot"), (Kind::Bow, "shocking_rounds")]) {
         let (room, player, _) = room_wearing(kind, perk);
         let character = &room.player(player).expect("in").character;
-        assert!(character.has_trait(perk), "{perk} is worn");
-        assert_eq!(trim_of(character), Trim::PLAIN, "{perk}");
+        assert!(character.has_drawn_trait(perk, kind.slot()), "{perk} is worn");
+        assert_eq!(trim_of(character, kind.slot()), Trim::PLAIN, "{perk}");
+    }
+}
+
+#[test]
+fn a_loadouts_perks_work_only_while_it_is_drawn() {
+    let (mut room, player, _) = room_wearing(Kind::Sword, "honed");
+    wear(&mut room, player, WORN + 1, Kind::Bow, "quick_hands");
+    room.retrim(player);
+    let trim = |room: &Room| room.fighter(player).expect("in").trim;
+    assert_eq!(trim(&room), Trim { damage: 1.05, ..Trim::PLAIN }, "the sword drawn: its Honed, not the bow's perk");
+    let _ = room.take_gear_change(player);
+    let bow = loadout_arms(Kind::Bow).code();
+    room.input(player, crate::Input { sequence: 1, arms: bow, seen: room.clock(), ..crate::Input::default() }).unwrap();
+    room.tick();
+    assert_eq!(trim(&room), Trim { reload: 0.85, ..Trim::PLAIN }, "the bow drawn: its Quick Hands alone");
+    assert_eq!(room.player(player).expect("in").trim, trim(&room), "the trim their gear carries");
+    assert!(room.take_gear_change(player), "sent at once, so their browser predicts them by it");
+
+    let (mut room, player, [exposed, other]) = room_wearing(Kind::Sword, "exploit");
+    wear(&mut room, player, WORN + 1, Kind::Bow, "keen_eye");
+    assert!(room.give(exposed, Status::Expose, None, None));
+    assert!(room.empower(blow(player, SWING), exposed).crit, "the sword's Exploit with the sword drawn");
+    swing(&mut room, player, &[other], Verdict::Hit { damage: 5_000.0, poise: 0.0 });
+    assert!(!has(&room, player, Status::Crit), "the bow's Keen Eye waits for the bow");
+    let fighter = *room.fighter(player).expect("in");
+    room.set_fighter(player, Fighter { arms: loadout_arms(Kind::Bow), ..fighter });
+    assert!(!room.empower(blow(player, SWING), exposed).crit, "the fists with the bow drawn take no Exploit");
+}
+
+#[test]
+fn no_weapons_perk_fires_on_a_spells_kill() {
+    let kill = Verdict::Hit { damage: 5_000.0, poise: 0.0 };
+    for perk in ["bloodletter", "keen_eye", "spellfeed"] {
+        let (mut room, player, [first, second]) = room_wearing(Kind::Sword, perk);
+        let found = room.players.get_mut(&player).expect("in");
+        found.casting.tenets = [0.5, 0.5];
+        found.fighter.stamina = 10.0;
+        room.settle(&blow(player, BlowKind::Spell(1)), How::Spell, first, kill, Some(Slot::Melee));
+        let found = room.player(player).expect("in");
+        let unmoved = (found.fighter.stamina, found.casting.tenets, found.fighter.statuses.has(Status::Crit));
+        assert_eq!(unmoved, (10.0, [0.5, 0.5], false), "{perk} on a spell's kill");
+        swing(&mut room, player, &[second], kill);
+        let found = room.player(player).expect("in");
+        let moved = (found.fighter.stamina, found.casting.tenets, found.fighter.statuses.has(Status::Crit));
+        assert_ne!(moved, unmoved, "{perk} on a swing's kill");
     }
 }
 

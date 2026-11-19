@@ -94,10 +94,10 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from
   a matching element and half from another. Its damage is weighed by the power of the player's best worn weapon's
   Attack against the foe's level, as a weapon's blow is, then by the statuses, as any blow is ([[Combat]]). No weapon's
-  perk touches it. It is never parried or guarded; a dodge passes it. Its kills pay the caster as a weapon's do, to
-  the weapon whose Attack it struck with.
+  perk touches it or its kill. It is never parried or guarded; a dodge passes it. Its kills pay the caster as a
+  weapon's do, to the weapon whose Attack it struck with.
 - **Gives back.** A Volt kill with Recharge set takes 4% off both Tenets; a Blaze kill while Linked, with Zeal, 5%;
-  any kill, a spell's too, with the weapons' perk Spellfeed worn, 3% ([[Gear]], "Verbs"). A crit landed out of
+  a weapon's kill with the perk Spellfeed on its loadout, 3% ([[Gear]], "Verbs"). A crit landed out of
   Vanish's veil, with Hunt, gives back half of Vanish's cooldown, once a Vanish. A Cosmic kill on an Exposed foe, with
   Dread, keeps the player's Duskraven 2 s longer. With Cruelty, the player's crits on Exposed foes deal 1.1 times.
   With Overload, every foe the player Charges, by any means, is Exposed too.

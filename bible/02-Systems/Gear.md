@@ -21,6 +21,9 @@ code:
   - crates/room/src/perks.rs#sharpened
   - crates/room/src/perks.rs#verbs_after
   - crates/room/src/perks.rs#PerkCounts
+  - crates/room/src/power.rs#drawn
+  - crates/room/src/power.rs#perk_on
+  - crates/gear/src/character.rs#has_drawn_trait
   - crates/gear/src/asks.rs#Ask
   - crates/gear/src/vestige.rs#dropped
   - crates/gear/src/vestige.rs#opens_to
@@ -119,7 +122,10 @@ number is one of [[Gear as Claude Shapes It]].
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
-  stamina a kill, a parry or a block gives back, with Last Light's reload, and the verbs ("Verbs", below).
+  stamina a kill, a parry or a block gives back, with Last Light's reload, and the verbs ("Verbs", below). A player's
+  perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing it
+  sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
+  touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
   Vestige opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
   serves them all within reach of its stall. The Test Ground alone hands out gear.
@@ -170,8 +176,8 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
   every shot of a weapon that reloads after each one, and a double pistolet's right. Shocking Rounds (perk) Charges
   the foe struck by every fifth shot to land, on any foe; a shot that does not land is not counted.
 - **Either loadout.** Keen Eye (perk) gives Crit for 4 s on a kill. Attuned (finish) makes a blow or shot 10% harder
-  while its element is the worn Art's; a spell never takes it. Spellfeed (finish) takes 3% off both Tenets'
-  cooldowns on a kill, a spell's kill too.
+  while its element is the worn Art's. Spellfeed (finish) takes 3% off both Tenets' cooldowns on a kill. Each counts
+  only its own loadout's blows and kills, never a spell's.
 - **The pools.** Each column's pool grows by about half with them: a Melee loadout is offered among 4 handling traits,
   5 finishes and 8 perks (9 with a shield), a Ranged one among 4, 5 and 6; armour among its 6 perks.
 
@@ -284,7 +290,9 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 ## Limits
 
 - A loadout's traits work whichever of its hands strikes, and every trait worn counts once however many pieces give
-  it.
+  it. Until a drawn loadout's new trim reaches the browser, the player's own screen predicts them by the old one.
+- A kill's stamina and Last Light's reload come from the loadout drawn as the kill lands: an arrow that kills after a
+  swap to Melee gives Melee's.
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).

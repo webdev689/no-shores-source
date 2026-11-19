@@ -164,8 +164,10 @@ pub struct Player {
     pub spent: Vec<u8>,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
-    /// What their worn gear trims of the fight's numbers, set whenever it may change.
+    /// What their worn gear trims of the fight's numbers with the loadout drawn; and with each drawn, Melee then
+    /// Ranged, set whenever their gear may change.
     pub trim: combat::Trim,
+    pub(crate) trims: [combat::Trim; 2],
     /// Their Anima's charge, their Tenets' recharge and a cast on its way, kept while they are in the room.
     pub casting: crate::arts::Casting,
     /// What their perks count from blow to blow, kept while they are in the room.
@@ -205,15 +207,24 @@ impl Player {
             spent: Vec::new(),
             owner: None,
             trim: combat::Trim::PLAIN,
+            trims: [combat::Trim::PLAIN; 2],
             casting: crate::arts::Casting::default(),
             counts: crate::perks::PerkCounts::default(),
         }
     }
 
-    /// A fighter of theirs as their gear arms it: trimmed by it, its Ranged weapon holding the shots their gear keeps.
+    /// A fighter of theirs as their gear arms it: trimmed by their armour and the loadout it has drawn, its Ranged
+    /// weapon holding the shots their gear keeps. A loadout drawn that changes the trim sends it to them at once, so
+    /// their browser predicts them by it.
     #[must_use]
-    pub fn armed(&self, fighter: Fighter) -> Fighter {
-        Fighter { trim: self.trim, ammo: Some(u32::from(self.character.shots())), ..fighter }
+    pub fn armed(&mut self, fighter: Fighter) -> Fighter {
+        let trim = self.trims[usize::from(crate::power::drawn(&self.character, &fighter) == gear::Slot::Ranged)];
+        if trim != self.trim {
+            self.trim = trim;
+            self.gear_changed = true;
+            self.gear_urgent = true;
+        }
+        Fighter { trim, ammo: Some(u32::from(self.character.shots())), ..fighter }
     }
 
     /// Keeps the fighter after an input that was seeing `seen`.

@@ -120,9 +120,11 @@ Melee and 4 to 6 for Ranged):
 | Exploit | Melee | Perk | Blows on an Exposed foe crit |
 | Marked Shot | Ranged | Handling | The first shot after a reload Exposes: every shot of a weapon that reloads after each one, a double pistolet's right |
 | Shocking Rounds | Ranged | Perk | Every fifth shot that lands Charges; a shot that does not land is not counted |
-| Keen Eye | Weapon | Perk | A kill gives Crit for 4 s |
+| Keen Eye | Weapon | Perk | A kill with the weapon gives Crit for 4 s |
 | Attuned | Weapon | Finish | While the worn Art's element is the weapon's, it deals 10% more |
-| Spellfeed | Weapon | Finish | Each kill takes 3% off the Tenets' cooldowns |
+| Spellfeed | Weapon | Finish | Each kill with the weapon takes 3% off the Tenets' cooldowns |
+
+A loadout's perks, these and the rest, work while it is drawn, beside the armour's; none touches a spell or its kill.
 
 ## Loot drops
 

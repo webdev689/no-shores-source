@@ -327,19 +327,32 @@ impl Character {
         self.worn(loadout).and_then(Item::attack)
     }
 
-    /// The traits the gear worn gives, each once however many items give it.
+    /// The traits the gear worn gives while a loadout is drawn (`Slot::Melee` or `Slot::Ranged`), each once however
+    /// many items give it: the armour's and that loadout's. A loadout is one item with one set of perks, so the other
+    /// one's wait until it is drawn.
     #[must_use]
-    pub fn traits(&self) -> Vec<&str> {
-        let mut traits: Vec<&str> = self.all_worn().flat_map(|(_, item)| item.active_traits()).collect();
+    pub fn traits(&self, drawn: Slot) -> Vec<&str> {
+        let mut traits: Vec<&str> = self.drawing(drawn).flat_map(Item::active_traits).collect();
         traits.sort_unstable();
         traits.dedup();
         traits
     }
 
-    /// Whether the gear worn gives a trait.
+    /// Whether the gear worn gives a trait while a loadout is drawn.
+    #[must_use]
+    pub fn has_drawn_trait(&self, id: &str, drawn: Slot) -> bool {
+        self.drawing(drawn).any(|item| item.active_traits().any(|active| active == id))
+    }
+
+    /// Whether the armour worn gives a trait, whichever loadout is drawn.
     #[must_use]
     pub fn has_trait(&self, id: &str) -> bool {
-        self.all_worn().any(|(_, item)| item.active_traits().any(|active| active == id))
+        self.all_worn().any(|(slot, item)| !slot.loadout() && item.active_traits().any(|active| active == id))
+    }
+
+    /// Everything worn that gives its traits while a loadout is drawn: all but the other loadout.
+    fn drawing(&self, drawn: Slot) -> impl Iterator<Item = &Item> {
+        self.all_worn().filter(move |(slot, _)| !slot.loadout() || *slot == drawn).map(|(_, item)| item)
     }
 
     /// Adds XP to the player and to the items that earn it, a tenth more with Scholar worn. Past level 20 every
