@@ -19,7 +19,7 @@
 // a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about 20 notches in
 // (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks for a spawn:
 // `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load), offline behind the
-// same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>", "name"], ...] or "<list.json>",
+// same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>[,<degrees down>]", "name"], ...] or "<list.json>",
 // "zone": "<key of the list>", "into": "<folder>", "settle": seconds } stands the body at each view in turn, inside
 // the node the page loaded, waits `settle` seconds (the ground and the sky come in) and writes `<into>/<name>.png`,
 // or `<into>/<number>.png` without a name. A view outside the node is said to be refused and skipped.

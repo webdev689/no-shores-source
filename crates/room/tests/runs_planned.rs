@@ -328,10 +328,10 @@ fn way_in(laid: &layout::Layout, area: &layout::areas::Area) -> Option<[f64; 2]>
 }
 
 /// Writes the views of each Saltmere zone for the picture driver's `views` step: every area's middle facing its first
-/// way in, every run beat from its entry, and three high views. Run it where the pictures are to be taken, so the
+/// way in, every run beat from its entry, and three high views looking down at the zone. It writes to `target/shots/saltmere.json`, or to `$SHOT_LIST`. Run it where the pictures are to be taken, so the
 /// views follow the runs as laid then: `cargo test -p room --test runs_planned shot_list -- --ignored`.
 #[test]
-#[ignore = "writes tools/claude-toolkit/shots/saltmere.json"]
+#[ignore = "writes target/shots/saltmere.json"]
 fn shot_list() {
     let (layouts, _, _) = continent_one(&briefs());
     let mut zones = serde_json::Map::new();
@@ -362,7 +362,7 @@ fn shot_list() {
         for index in [0, count / 2, count.saturating_sub(1)] {
             let area = &laid.areas[index];
             let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);
-            views.push(view(area.at, compass(area.at, middle), "third,60", &format!("high_{index}")));
+            views.push(view(area.at, compass(area.at, middle), "third,60,45", &format!("high_{index}")));
         }
         for entry in &views {
             let at = [entry[0].as_f64().unwrap_or(0.0), entry[1].as_f64().unwrap_or(0.0)];
@@ -370,7 +370,8 @@ fn shot_list() {
         }
         zones.insert(id.to_string(), serde_json::Value::Array(views));
     }
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tools/claude-toolkit/shots/saltmere.json");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let path = std::env::var_os("SHOT_LIST").map_or_else(|| root.join("target/shots/saltmere.json"), Into::into);
     std::fs::create_dir_all(path.parent().expect("a folder")).expect("the folder is made");
     let text = serde_json::to_string_pretty(&serde_json::Value::Object(zones)).expect("the list writes");
     std::fs::write(path, text + "\n").expect("the shot list is written");
