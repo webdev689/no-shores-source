@@ -228,10 +228,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)),
     );
   if (flow.mode === 'loading') arrive();
-  const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land, world };
-  const more = { rmbText, movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop };
-  const lands = { drawersOn, terrainFor, home: { landmass, drawers }, closeSource };
-  story?.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
+  if (story) {
+    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land, world };
+    const more = { rmbText, movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop };
+    const lands = { drawersOn, terrainFor, home: { landmass, drawers }, closeSource };
+    story.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
+  }
 
   const landAt = (id: string) => {
     discovered.nodes([id]);

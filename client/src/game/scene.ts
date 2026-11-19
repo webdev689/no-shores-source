@@ -1,4 +1,4 @@
-import { Atmosphere } from '../cinema/atmosphere.ts';
+import { Atmosphere, drawsNothing } from '../cinema/atmosphere.ts';
 import { CLEAR, swellGained, type Weather } from '../cinema/weather.ts';
 import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
@@ -269,14 +269,16 @@ export class GameScene {
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
       });
-    this.atmosphere.encode(encoder, target, targets.depth, {
-      weather: this.weather,
-      camera: { ...camera, eye: shot.eye },
-      tanHalfView: Math.tan(shot.fov / 2),
-      size: [size.width, size.height],
-      time,
-      motionReduced: motionReduced(),
-    });
+    // Clear weather, the game's own, lays nothing: no frame for the pass is made.
+    if (!drawsNothing(this.weather))
+      this.atmosphere.encode(encoder, target, targets.depth, {
+        weather: this.weather,
+        camera: { ...camera, eye: shot.eye },
+        tanHalfView: Math.tan(shot.fov / 2),
+        size: [size.width, size.height],
+        time,
+        motionReduced: motionReduced(),
+      });
     more.after?.(encoder, target);
     this.gpu.device.queue.submit([encoder.finish()]);
   }
