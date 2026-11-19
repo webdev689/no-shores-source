@@ -20,9 +20,10 @@ const PULL_S = 7;
 const RUN_S = 20;
 
 /** The run in the Brig's own frame (metres to her bow, to her starboard, up from her waterline), so it keeps with
- *  her as she sails: low over the swell astern and to port, up along her port side, over her deck aft to her helm. */
-function runKeys(): RailKey[] {
-  const creation = creationEye(0);
+ *  her as she sails: low over the swell astern and to port, up along her port side, over her deck aft to her helm,
+ *  where it ends on the creation's own shot for a view `aspect` wide to its height. */
+function runKeys(aspect: number): RailKey[] {
+  const creation = creationEye(0, aspect);
   return [
     { at: 0, eye: [-420, -260, 22], look: [0, 0, 6] },
     { at: 6, eye: [-150, -90, 14], look: [0, 0, 8] },
@@ -40,7 +41,6 @@ export class StormDive implements Beat {
   private readonly story: Story;
   private readonly from: Shot;
   private readonly cues: Cues;
-  private readonly run: RailKey[];
   private since = 0;
   private leapt = false;
   done = false;
@@ -48,7 +48,6 @@ export class StormDive implements Beat {
   constructor(story: Story, from: Shot) {
     this.story = story;
     this.from = from;
-    this.run = runKeys();
     const { stage, lightning } = story;
     const { ambience, screen } = stage.parts;
     storyCue('storm');
@@ -107,7 +106,8 @@ export class StormDive implements Beat {
       ? sailing.frame([brig.sailed()], tick.seconds, tick.clock, stage.windBearing(), swell)
       : [];
     const own = ships[0]?.place ?? this.place();
-    const shot = this.leapt ? this.runShot(own) : this.pullShot();
+    const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
+    const shot = this.leapt ? this.runShot(own, aspect) : this.pullShot();
     if (this.since >= PULL_S + RUN_S) this.done = true;
     const actors = this.leapt ? [...brig.crew(own, tick.clock), youAtHelm(story, own, 'idle')] : [];
     return {
@@ -144,9 +144,13 @@ export class StormDive implements Beat {
   }
 
   /** The run to the Brig, kept with her as she sails, a little of her rise and fall in it. */
-  private runShot(own: ShipPlace): Shot {
+  private runShot(own: ShipPlace, aspect: number): Shot {
     const calm: ShipPlace = { ...own, pitch: 0, roll: 0, z: own.z * 0.35 };
-    const carried = this.run.map((key) => ({ ...key, eye: onDeck(calm, ...key.eye), look: onDeck(calm, ...key.look) }));
+    const carried = runKeys(aspect).map((key) => ({
+      ...key,
+      eye: onDeck(calm, ...key.eye),
+      look: onDeck(calm, ...key.look),
+    }));
     return { ...LENS, ...railShot(carried, this.since - PULL_S, LENS.fov) };
   }
 }

@@ -119,3 +119,12 @@ test('a body change keeps the hair colour but takes a style that body has', () =
   assert.equal(withBody({ ...felid, race: 'anole', hair: null }, 'male').hair, null);
   assert.equal(withHair(male, { style: 'braid', colour: 'red' }), male);
 });
+
+test('a browser that keeps nothing still lets the look be chosen: keeping it never throws', () => {
+  const full = {
+    setItem: () => {
+      throw new Error('QuotaExceededError');
+    },
+  };
+  assert.doesNotThrow(() => keepLook(full, FIRST_LOOK));
+});

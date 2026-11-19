@@ -54,13 +54,16 @@ begins. With `?at=<node>` the page goes straight to that node, as before, and pl
 
 **The director** (`Prologue`) plays the beats in the owner's order, each a module of its own, handing each what the
 last left: the camera's shot, the ships sighted, where the two ships met. A cutscene's beat is skipped by holding
-Space for a second, its remaining moments run at once. Under `npm run dev`, `?prologue=<beat>` starts at that beat.
-A player who has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title,
-and Begin takes them straight to Overlook's social space.
+Space for a second, or a touch held on the screen as long, its remaining moments run at once; "Hold Space to skip"
+("Hold to skip" on a touch screen) shows faintly whenever there is something to skip, and brightens as the hold fills.
+The intro offers no skip once its flight has reached Saltmere. Each beat sets its own weather, sound and lightning at
+its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
+has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title, and Begin
+takes them straight to Overlook's social space. While the story plays the menu (I, O) does not open.
 
 | Beat | What happens | Played or shown |
 |---|---|---|
-| `intro` | First light over the cloud; then through the cloud to a highland island in mist, a green one in rain, a desert town where Grey Tithe and pirates fight on the plaza, a tundra town in snow, each with ships under sail off its harbour; last Saltmere, gulls over the harbour, the title, "Press any key to begin" | shown |
+| `intro` | First light over the cloud; then through the cloud to a highland island in mist, a green one in rain, a desert town where Grey Tithe and pirates fight on the plaza, a tundra town in snow, each with ships under sail off its harbour; last Saltmere, gulls over the harbour, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour with sword and shield | played |
 | `sighted` | The lookout and the bosun cry out with marks over their heads; the camera pulls out as three pirate Sloops come out of the dark; the mate and the gunner speak | shown |
@@ -83,7 +86,25 @@ nearest gentle strand to the plaza, low by the water, clear of the city's pads a
 
 **The intro's islands** open one at a time in the land's worker while the camera is in the cloud between them, the
 cloud whitened over the change (`Islands`); each shot is laid on its island's own town, harbour and plaza
-(`islandFrame`). Saltmere comes back as the game opened it, its drawers kept, and open in the worker again.
+(`islandFrame`). The worker takes one opening at a time, in the order asked, so it always ends holding the last one
+asked for; an island asked for before Saltmere is never drawn over it. Saltmere comes back as the game opened it, its
+drawers kept, and open in the worker again. An island that will not open is passed over for the next, behind the
+same white; if the first will not open, the dawn rises over Saltmere instead. A skip is final: the flight stops where
+it is, the view goes black, no island opens after it, and Saltmere's glide ends under the title. A Saltmere that will
+not open is the intro's failure, and the director goes on to the storm.
+
+**The intro's length.** First light 6 s, each of the four islands 13 s, Saltmere's glide 15 s and the prompt 2.4 s
+after the title: about 75 s, with a second or more in the cloud for each island to open.
+
+**The helm** (`Making`). The account step comes first ([[Accounts]]): create an account, sign in, sign in with
+Discord or play as a guest. A player already signed in is offered "Go on as" their username, or "Go on" for an account
+Discord alone keeps; with the accounts out of reach, "Go on without an account", as the game played before. Offline
+(no `?room=`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord
+comes back to the helm at the account step, not the story's start: the tab marks it (`overlook.story.helm`, read once).
+The rooms read the session as each connects, so the account signed in to at the helm is the one they keep.
+The camera stands far enough back that the whole figure fits the part of the screen the window leaves clear, and
+turns so the figure stands in its middle: the left on a screen wider than tall, with the window on the right; the top
+on one taller than wide, with the window along the bottom (`creationEye`).
 
 **The player** is dressed for the story in steel with no helm, a steel sword and a kite shield drawn (`armouredDress`).
 Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.

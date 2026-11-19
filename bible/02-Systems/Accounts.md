@@ -75,7 +75,8 @@ they play in holds it while they are there.
   under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
-  kept apart from any other's.
+  kept apart from any other's. A room reads the session's token as it connects, so a sign-in made after the page
+  opened (at the story's helm) is the one the rooms use.
 
 ## The character, kept
 

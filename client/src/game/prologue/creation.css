@@ -1,6 +1,7 @@
 /* Character creation's windows (creation.ts). The kit (client/src/plus/) paints each surface by its role; this sheet
-   gives each its room. A window stands at the right of the screen and never past 45% from the left, where the figure
-   at the helm stands. */
+   gives each its room, clear of the figure at the helm as helm.ts frames it: on a screen wider than tall a window
+   stands at the right, never nearer the left than 49% across; on one taller than wide it stands along the bottom,
+   never higher than 54% down. */
 
 .creation {
   --word: #efe8d6;
@@ -168,5 +169,17 @@
 
   .creation-field input {
     padding: 8px 11px;
+  }
+}
+
+/* Taller than wide, the window goes along the bottom, so the figure has the top of the screen whole. */
+@media (max-aspect-ratio: 1/1) {
+  .creation {
+    top: auto;
+    bottom: 3vh;
+    left: 4vw;
+    right: 4vw;
+    width: auto;
+    max-height: 43vh;
   }
 }
