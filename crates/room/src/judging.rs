@@ -104,13 +104,14 @@ impl Room {
         self.settle(blow, how, defender, verdict, hand);
     }
 
-    /// Does what a verdict does to the defender and its striker as they are now, and tells it. A player's blow that
-    /// lands on a foe shares its kill, which pays everyone who shares it.
+    /// Does what a verdict does to the defender and its striker as they are now, its damage weighed by their statuses,
+    /// and tells it. A player's blow that lands on a foe shares its kill, which pays everyone who shares it.
     pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict, hand: Option<Slot>) {
         let Some(before) = self.fighter(defender).copied() else { return };
         if before.dead() {
             return;
         }
+        let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);

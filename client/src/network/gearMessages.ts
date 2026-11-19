@@ -25,6 +25,8 @@ export const ASKS = {
   grantItem: 32,
   grantMaterials: 33,
   grantXp: 34,
+  /** A status (its number in `slot`) on the player (`node` 0) or every foe (1), for `count` ticks or its own time. */
+  grantStatus: 35,
 } as const;
 
 /** An ask of a player's gear: what, and what it names: an item or Vestige by the player's number for it, a slot, a

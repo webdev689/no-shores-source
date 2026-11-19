@@ -88,6 +88,7 @@ pub enum Cause {
     Poise = 0,
     Parried = 1,
     GuardBroken = 2,
+    Charged = 3,
 }
 
 /// What a fighter is doing. Every timer counts ticks.
@@ -196,6 +197,8 @@ pub struct Fighter {
     pub might: f64,
     /// What its gear trims of the fight's numbers: nothing for a foe.
     pub trim: crate::trim::Trim,
+    /// What it has been given: Crit, Expose, Charge, Haste, Linked and Veiled, each with its ticks left.
+    pub statuses: crate::status::Statuses,
 }
 
 /// What a player's controls or a foe's brain asks of a fighter in a tick: the movement's controls and the fight's.
@@ -252,6 +255,7 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         blows: 0,
         might: 1.0,
         trim: crate::trim::Trim::PLAIN,
+        statuses: crate::status::Statuses::NONE,
     }
 }
 

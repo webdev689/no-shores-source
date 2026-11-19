@@ -93,6 +93,16 @@ export interface SeenFoe {
   readonly level: number;
   /** Its shield, if it stands with one: its element (the gear crate's numbers), what it holds still and held whole. */
   readonly shield: FoeShield | null;
+  /** Its debuffs; none for a foe made by hand. */
+  readonly statuses?: FoeStatuses;
+}
+
+/** A foe's debuffs as the room keeps them: the ticks left of its Expose and its Charge, and of the immunity a Charge
+ *  leaves after it. */
+export interface FoeStatuses {
+  readonly expose: number;
+  readonly charge: number;
+  readonly chargeImmune: number;
 }
 
 /** A foe's shield: its element, what it holds still, and what it held whole. */
@@ -309,7 +319,9 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const element = foe.shieldElement();
       const shield = element > 0 ? { element, left: foe.shield(), most: foe.shieldMost() } : null;
       const named = { type: foe.type(), rank: foe.rank(), faction: foe.faction(), phase: foe.phase() };
-      return { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
+      const statuses = { expose: foe.expose(), charge: foe.charge(), chargeImmune: foe.chargeImmune() };
+      const read = { id: foe.id(), kind: foe.kind(), glance, level: foe.level(), shield, ...named, alert: foe.alert() };
+      return { ...read, statuses };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);

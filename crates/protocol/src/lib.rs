@@ -9,7 +9,7 @@ use combat::trim::TRIM_FLOATS;
 
 /// A fighter's numbers in a snapshot: all of them but its trim.
 pub const UNTRIMMED_FLOATS: usize = FIGHTER_FLOATS - TRIM_FLOATS;
-use combat::{Intent, Shot};
+use combat::{Intent, Shot, Status};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
 use naval::fight::Orders;
@@ -334,7 +334,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .iter()
         .map(|foe| {
             let glance = Some(builder.create_vector(&foe.fighter.glance()));
-            let shield = foe.shield;
+            let (shield, statuses) = (foe.shield, foe.fighter.statuses);
             let args = messages::FoeArgs {
                 id: foe.foe,
                 kind: foe.kind,
@@ -348,6 +348,9 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 shield_element: shield.map_or(0, |shield| shield.element as u8),
                 shield: shield.map_or(0.0, |shield| shield.left),
                 shield_most: shield.map_or(0.0, |shield| shield.most),
+                expose: statuses.left(Status::Expose),
+                charge: statuses.left(Status::Charge),
+                charge_immune: statuses.charge_immune,
             };
             messages::Foe::create(&mut builder, &args)
         })

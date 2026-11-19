@@ -33,6 +33,7 @@ fn blow(kind: BlowKind) -> Blow {
         through: 1.0,
         stagger: 1.0,
         element: 0,
+        crit: false,
     }
 }
 

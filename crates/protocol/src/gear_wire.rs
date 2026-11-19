@@ -29,6 +29,9 @@ pub const GRANT_NAMED: u8 = 31;
 pub const GRANT_ITEM: u8 = 32;
 pub const GRANT_MATERIALS: u8 = 33;
 pub const GRANT_XP: u8 = 34;
+/// A status granted: its number (combat's) in `slot`, on the player (0) or every foe (1) in `node`, and its ticks in
+/// `count`, 0 for its own time.
+pub const GRANT_STATUS: u8 = 35;
 
 /// An ask as the room takes it, or none for a number or a name it does not know.
 #[must_use]
@@ -65,6 +68,11 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         }),
         GRANT_MATERIALS => Asked::Grant(Grant::Materials(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_XP => Asked::Grant(Grant::Xp(ask.count())),
+        GRANT_STATUS => Asked::Grant(Grant::Status {
+            status: combat::Status::from_number(ask.slot())?,
+            on_foes: node == 1,
+            ticks: Some(ask.count()).filter(|ticks| *ticks > 0),
+        }),
         _ => return None,
     })
 }
@@ -117,6 +125,10 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             args = messages::AskArgs { kind: GRANT_MATERIALS, count: u32::from(*count), ..args };
         }
         Asked::Grant(Grant::Xp(count)) => args = messages::AskArgs { kind: GRANT_XP, count: *count, ..args },
+        Asked::Grant(Grant::Status { status, on_foes, ticks }) => {
+            let (slot, node, count) = (*status as u8, u8::from(*on_foes), ticks.unwrap_or(0));
+            args = messages::AskArgs { kind: GRANT_STATUS, slot, node, count, ..args };
+        }
     }
     messages::Ask::create(builder, &args)
 }

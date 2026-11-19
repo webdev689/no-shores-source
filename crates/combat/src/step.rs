@@ -1,6 +1,6 @@
-//! One tick of a fighter by its own hand: its stamina and poise resting, what it is doing carried on or ended, a new
-//! swing, guard, dodge, shot or telegraphed blow begun, its body moved by the movement rules as that allows, and its
-//! aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
+//! One tick of a fighter by its own hand: its stamina and poise resting, its statuses running down (a Charge holding it
+//! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
+//! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
 use crate::arms::{swing_ticks, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
@@ -14,7 +14,7 @@ use crate::tuning::{
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, pushed_out, slide};
-use movement::{Block, Body, Controls, Mode, TICK_SECONDS, Terrain, step_body};
+use movement::{Block, Body, Controls, Mode, TICK_SECONDS, Terrain, step_body, step_body_paced};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
 const LANDED: f64 = 1e-6;
@@ -54,15 +54,20 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
     let intent = &clean(intent, fighter.aim);
     let input = &intent.combat;
     let now = Held { attack: input.attack.is_some(), guard: input.guard, dodge: input.dodge, shoot: input.shoot };
-    let mut next = Fighter { held: now, kept: kept(fighter, input, now), ..*fighter };
+    let statuses = fighter.statuses.ticked();
+    let mut next = Fighter { held: now, kept: kept(fighter, input, now), statuses, ..*fighter };
     if let Action::Dead { elapsed } = fighter.action {
         next.action = Action::Dead { elapsed: elapsed.saturating_add(1) };
         next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, around.terrain, TICK_SECONDS);
         return (next, None);
     }
     rest(&mut next);
+    crate::status::held_still(&mut next);
     let pulled = input.shoot && !fighter.held.shoot;
     let happening = act(&mut next, intent, around, pulled);
+    if matches!(happening, Some(Happening::Struck(_) | Happening::Loosed(_))) {
+        next.statuses.unveil();
+    }
     move_body(&mut next, intent.controls, around);
     aim(&mut next, intent, around);
     (next, happening)
@@ -466,7 +471,8 @@ fn move_body(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) 
         }
         _ => still(controls),
     };
-    let body = step_body(&next.body, &allowed, around.blocks, around.terrain, TICK_SECONDS);
+    let pace = crate::status::pace(next);
+    let body = step_body_paced(&next.body, &allowed, around.blocks, around.terrain, TICK_SECONDS, pace);
     let fighting = matches!(
         next.action,
         Action::Attack(_) | Action::Guard { .. } | Action::Parry { .. } | Action::Draw { .. } | Action::Telegraph(_)
