@@ -1119,7 +1119,8 @@
       "seconds": [
         10.0,
         180.0
-      ]
+      ],
+      "picked": 249944
     },
     {
       "id": "amb.thunder.crack",
@@ -1128,7 +1129,8 @@
       "seconds": [
         2.0,
         25.0
-      ]
+      ],
+      "picked": 567945
     },
     {
       "id": "amb.thunder.roll",
@@ -1137,7 +1139,8 @@
       "seconds": [
         5.0,
         45.0
-      ]
+      ],
+      "picked": 581125
     }
   ]
 }

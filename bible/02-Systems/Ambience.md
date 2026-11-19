@@ -80,6 +80,10 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
 - **Recordings.** Gulls, a crow, a raven, a crowd, parrots, a heron and a lion are also cues on the sound sheet
   ([[Sounds Come From Freesound, Judged on a Test Sheet]]). Once the owner picks one, it plays in place of the
   synthesiser's call; parrots, the heron and the lion have no synthesised call and are silent until picked.
+  Saltmere's gutters and both thunders play the owner's picks too ([[The Weather's Gutters and Thunder Come From
+  Freesound]]), the synthesiser's until they come.
+- **Recordings stand in at the synthesiser's level.** A recorded bed is as loud as the whole of the bed it replaces,
+  and a recorded thunder as its loudest 0.4 s, never peaking past the synthesiser's sound in either.
 - **Volume.** Everything plays through the Ambience volume in Settings, under the music's duck ([[Interface]]).
   Each place is levelled to about -30 LUFS at the first volume.
 

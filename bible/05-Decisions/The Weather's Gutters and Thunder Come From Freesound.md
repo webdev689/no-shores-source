@@ -15,4 +15,8 @@ its drumming on the Sloop's deck; Redo for the gutters and for both near cracks 
 - The gutters and the thunder are made again from Freesound recordings, picked on the sheet
   ([[Sounds Come From Freesound, Judged on a Test Sheet]]).
 
+The owner then picked one of Freesound's first four for each and said "Done": for the gutters, IllusiaProductions'
+"Rain dripping from the rain gutter" (249944, CC BY); near thunder, TRP's "pretty close crack" (567945, CC0); far
+thunder, Fission9's "Distant Thunder 4" (581125, CC0).
+
 [[Ambience]], [[Weather and Day as Claude Shapes It]].

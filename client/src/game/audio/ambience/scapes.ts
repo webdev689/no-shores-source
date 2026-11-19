@@ -212,7 +212,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       bed('sea.rigging', 0.6, { gust: 0.6, at: 'harbour', breath: 0.3 }),
       bed('insects.crickets', 0.35, { when: evening(1) }),
       ...RAIN,
-      bed('rain.gutters', 1, { drive: 'rain', breath: 0.2 }),
+      bed('rain.gutters', 1, { drive: 'rain', breath: 0.2, recorded: 'amb.rain.gutters' }),
     ],
     voices: [
       voice('gull', 'plaza', byDay(2), {

@@ -2,7 +2,7 @@
 // round the listener at their spots, each on its own wandering clock. Everything it plays passes through its own
 // gain, which the engine (ambience.ts) fades as the player comes and goes.
 
-import { playSample } from '../../../soundSamples.ts';
+import { playSample, type SamplePlay } from '../../../soundSamples.ts';
 import type { Bank } from './bank.ts';
 import { type Random, between } from './dsp.ts';
 import { type Emitter, callChain, emitterOf, release, roomOf, toAudio } from './graph.ts';
@@ -64,9 +64,11 @@ const STEPS_HEARD_M = 24;
 const CRASH_HEARD_M = 140;
 /** The recorded bed's crossfade from one play of it into the next, seconds. */
 const RECORDED_FADE_S = 4;
-/** A recorded bed's gain over the synthesiser's at the same law, once the page has levelled the recording: Saltmere's
- *  market crowd, measured as it plays (K-weighted, gated), sits level with the crowd it stands in for. */
-const RECORDED_BED_LEVEL = 4.25;
+/** A recorded bed takes the loudness of the whole of the synthesiser's bed; a recorded thunder, of its loudest moment. */
+const BED_MATCHED_S = Infinity;
+const THUNDER_MATCHED_S = 0.4;
+/** The owner's Freesound pick for each of the synthesiser's thunders. */
+const THUNDER_RECORDED = { 'thunder.crack': 'amb.thunder.crack', 'thunder.roll': 'amb.thunder.roll' } as const;
 /** Every bed's share of the mix under the calls: a bed of gain 1 sits at -32 dBFS. */
 export const BED_LEVEL = 0.25;
 /** A recording not yet come is asked for again after this long, seconds. */
@@ -203,13 +205,11 @@ export class ScapePlayer {
     const pitch = thunder.pitch * between(this.random, [0.94, 1.04]);
     // The same in every place: a place's own level is taken back off it.
     const gain = thunder.gain / this.scape.level;
-    this.call(
-      thunder.sound,
-      point,
-      heard,
-      { gain, pitch, near: THUNDER_PLACED_M, drift: 0, corner: thunder.corner },
-      after,
-    );
+    const shape = { gain, pitch, near: THUNDER_PLACED_M, drift: 0, corner: thunder.corner };
+    const synth = this.bank.buffer({ kind: 'sound', key: thunder.sound, take: 0 });
+    const like = synth ? { sound: synth, windowS: THUNDER_MATCHED_S } : undefined;
+    if (like && this.recorded(THUNDER_RECORDED[thunder.sound], point, heard, shape, after, like)) return;
+    this.call(thunder.sound, point, heard, shape, after);
   }
 
   /** A step of the player's own on wooden planks: the recording once loaded, the synthesiser's until then. */
@@ -258,7 +258,7 @@ export class ScapePlayer {
     const corner = layer.brightens
       ? rainCorner(heard.weather.rain)
       : GUST_CORNER * 2 ** (GUST_OCTAVES * gust) * snowSoftening(heard.weather);
-    if (layer.recorded) law *= this.recordedBed(playing, now, law);
+    if (layer.recorded) law *= this.recordedBed(playing, now, law, buffer);
     playing.emitters.forEach((emitter, nth) => {
       const point = points?.[nth] ?? null;
       let gain = law;
@@ -323,21 +323,22 @@ export class ScapePlayer {
     return breakerAt(clock - emitter.wave, emitter.period);
   }
 
-  /** A bed played from its Freesound recording once picked, each play crossfading into the next; answers the share
-   *  of the synthesiser's bed still heard (none once the recording plays). */
-  private recordedBed(playing: BedPlaying, now: number, law: number): number {
+  /** A bed played from its Freesound recording once picked, as loud as the synthesiser's bed `synth`, each play
+   *  crossfading into the next; answers the share of the synthesiser's bed still heard (none once the recording plays). */
+  private recordedBed(playing: BedPlaying, now: number, law: number, synth: AudioBuffer): number {
     const cue = playing.layer.recorded;
     if (!cue) return 1;
     const playingNow = playing.recorded;
-    if (playingNow) playingNow.gain.gain.setTargetAtTime(law * RECORDED_BED_LEVEL, now, BED_FOLLOW_S);
+    if (playingNow) playingNow.gain.gain.setTargetAtTime(law, now, BED_FOLLOW_S);
     if (playingNow && now < playingNow.endsAt - RECORDED_FADE_S) return 0;
     const audio = liveContext(this.audio);
     if (!audio) return playingNow ? 0 : 1;
     const gain = audio.createGain();
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(law * RECORDED_BED_LEVEL, now + RECORDED_FADE_S);
+    gain.gain.linearRampToValueAtTime(law, now + RECORDED_FADE_S);
     gain.connect(this.gain);
-    const source = playSample(audio, gain, cue, between(this.random, [0.98, 1.02]));
+    const like = { sound: synth, windowS: BED_MATCHED_S };
+    const source = playSample(audio, gain, cue, between(this.random, [0.98, 1.02]), { like });
     if (!source?.buffer) {
       gain.disconnect();
       return playingNow ? 0 : 1;
@@ -384,17 +385,21 @@ export class ScapePlayer {
     });
   }
 
-  /** A recorded call through its own chain, once its recording has come. */
+  /** A recorded call through its own chain, `after` seconds from now, once its recording has come; as loud as `like`
+   *  where it stands in for that sound, else by its own levelling. */
   private recorded(
     cue: string,
     point: Point3,
     heard: Heard,
-    shape: { gain: number; pitch: number; near: number },
+    shape: { gain: number; pitch: number; near: number; corner?: number },
+    after = 0,
+    like?: SamplePlay['like'],
   ): boolean {
     const audio = liveContext(this.audio);
     if (!audio || (this.missing.get(cue) ?? -Infinity) > audio.currentTime) return false;
-    const chain = this.chain(point, heard, { ...shape, drift: 0 }, audio.currentTime, 0);
-    const source = playSample(audio, chain.input, cue, shape.pitch);
+    const when = audio.currentTime + after;
+    const chain = this.chain(point, heard, { ...shape, drift: 0 }, when, 0);
+    const source = playSample(audio, chain.input, cue, shape.pitch, { when, like });
     if (!source) {
       chain.done();
       this.missing.set(cue, audio.currentTime + RECORDING_AGAIN_S);
