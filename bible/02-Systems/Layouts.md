@@ -261,7 +261,9 @@ out past its edge.
   rib is under its edge, and a few beside the way are left out so light falls in shafts.
   A keep's rooms and an undercroft's vaults reach 0.7 of their beat's, so their corners stand on its floor, short of
   the rock's face; a beat's raised place stands inside its room, its cover 1.8 m or more off the room's walls, and a
-  vault's pillars 2 m or more inside them. A keep's rooms' walls
+  vault's pillars 2 m or more inside them. A keep's gatehouse (roofed 5.5 m up, to the way's first bend) and an
+  undercroft's chapel (open to the sky, 12 m long) are laid along the way in from the mouth, their walls 1 m and 2 m
+  past its passage's half-width, on the passage's flat floor short of the face. A keep's rooms' walls
   are windowed (openings 1.0 m wide and 1.6 m tall over sills 1.2 m up, 6 m apart, none in the wall the ward's stair
   climbs) and battlemented (merlons 0.9 m wide and 1.2 m tall every 2 m on the walls' outer halves, behind the
   wall-walk), and a round turret 11 m tall, taller than the walls, stands at each corner of its ward that its way keeps

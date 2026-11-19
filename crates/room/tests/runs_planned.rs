@@ -270,19 +270,12 @@ fn a_halls_rooms_and_pillars_stand_on_their_beats_floor() {
         for beat in &run.beats {
             let ground = floor(beat.at);
             // A piece is a beat's when its middle stands within half the face's run past the beat's rim, nearer it than
-            // another beat's or the door (set in the face), and not in the room over the way in from the mouth.
-            let mouth_room = layout::run_halls::mouth_room(run).map(|([x, y], [east, south])| {
-                let out = layout::halls::WALL_M + 0.05;
-                [x - east - out, y - south - out, x + east + out, y + south + out]
-            });
-            let ours = |at: [f64; 2], print: [f64; 4]| {
+            // another beat's or the door (set in the face).
+            let ours = |at: [f64; 2]| {
                 let off = past(at, beat);
                 off < land::sculpts::CLIFF_RUN_M / 2.0
                     && off <= layout::field::distance(at, run.door)
                     && run.beats.iter().all(|other| past(at, other) >= off)
-                    && !mouth_room.is_some_and(|room| {
-                        room[0] <= print[0] && room[1] <= print[1] && print[2] <= room[2] && print[3] <= room[3]
-                    })
             };
             // A room's walls and a pillar stand from 0.4 m under their beat's floor.
             let standing = laid.seating.solids.iter().filter(|solid| {
@@ -290,7 +283,7 @@ fn a_halls_rooms_and_pillars_stand_on_their_beats_floor() {
                 matches!(solid.shape, city::solids::Shape::Block | city::solids::Shape::Column { .. })
                     && (bottom - (ground - 0.4)).abs() < 0.15
                     && top > bottom + 3.0
-                    && ours([(west + east) / 2.0, (north + south) / 2.0], [west, north, east, south])
+                    && ours([(west + east) / 2.0, (north + south) / 2.0])
             });
             // Each stands on the beat's flat floor, short of the face, and a room's pillars stand inside its walls.
             for solid in standing {
@@ -322,6 +315,51 @@ fn a_halls_rooms_and_pillars_stand_on_their_beats_floor() {
                         beat.at
                     );
                 }
+            }
+        }
+    });
+}
+
+/// The point of a run's line nearest a point.
+fn nearest_on(line: &[[f64; 2]], at: [f64; 2]) -> [f64; 2] {
+    let on = |pair: &[[f64; 2]]| {
+        let span = [pair[1][0] - pair[0][0], pair[1][1] - pair[0][1]];
+        let length = (span[0] * span[0] + span[1] * span[1]).max(1e-12);
+        let share = (((at[0] - pair[0][0]) * span[0] + (at[1] - pair[0][1]) * span[1]) / length).clamp(0.0, 1.0);
+        [pair[0][0] + span[0] * share, pair[0][1] + span[1] * share]
+    };
+    line.windows(2).map(on).fold(line[0], |best, point| {
+        if layout::field::distance(point, at) < layout::field::distance(best, at) { point } else { best }
+    })
+}
+
+#[test]
+fn a_building_runs_walls_beside_its_way_stand_on_its_floor() {
+    each_run(&|laid, run, floor| {
+        if !run.kind.building() {
+            return;
+        }
+        // A wall beside the way stands from under the floor beside it (a passage's from under its lower end) and
+        // rises past head height; each of its corners stands on that floor, not up the face past it.
+        for solid in &laid.seating.solids {
+            let [west, north, east, south, bottom, top] = solid.bounds();
+            let middle = [(west + east) / 2.0, (north + south) / 2.0];
+            let on = nearest_on(&run.line, middle);
+            let local = floor(on);
+            let beside = layout::field::distance(middle, on) <= 8.0;
+            let standing = bottom <= local - 0.25 && bottom >= local - 3.5 && top > local + 3.0;
+            if !matches!(solid.shape, city::solids::Shape::Block) || !beside || !standing {
+                continue;
+            }
+            for corner in [[west, north], [east, north], [east, south], [west, south]] {
+                let up = floor(corner) - floor(nearest_on(&run.line, corner));
+                assert!(
+                    up <= 0.5,
+                    "{}: {}'s wall at {:?} stands {up:.2} m up the face at {corner:?}",
+                    laid.id,
+                    run.name,
+                    solid.at
+                );
             }
         }
     });

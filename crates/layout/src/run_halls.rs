@@ -45,6 +45,8 @@ const RIB: [f64; 2] = [1.2, 0.9];
 const SLAB_M: f64 = 1.6;
 /// How far past its beat's rim a rib may run to meet the rock, metres: one along a passage's mouth meets none.
 const SPRING_MOST_M: f64 = 24.0;
+/// How far an undercroft's chapel runs in from its mouth, metres: past its raised floor (run_climbs.rs).
+const CHAPEL_M: f64 = 12.0;
 /// How far a cavern's ribs keep from its run's door, metres: past the reach of the door's frame (run_kits.rs).
 const DOOR_CLEAR_M: f64 = 6.0;
 
@@ -63,24 +65,17 @@ fn passages(run: &Run) -> Vec<[[f64; 2]; 2]> {
     run.line.windows(2).filter(|pair| !(in_beat(pair[0]) && in_beat(pair[1]))).map(|pair| [pair[0], pair[1]]).collect()
 }
 
-/// The room over a building run's way in, its middle and inner half-widths east and south: a keep's gatehouse from its
-/// mouth to the way's first bend, an undercroft's chapel just past its mouth; none for the rest.
-#[must_use]
-pub fn mouth_room(run: &Run) -> Option<([f64; 2], [f64; 2])> {
+/// The hall along a building run's way in from its mouth, its ends and its inner half-width: a keep's gatehouse to the
+/// way's first bend, an undercroft's chapel a stretch in; none for the rest. Its walls stand on the passage's flat
+/// floor, which runs some 3.5 m past the passage's half-width before the face rises (land::sculpts' face).
+fn mouth_hall(run: &Run) -> Option<([[f64; 2]; 2], f64)> {
     let half = half_of(run.kind);
+    let bend = run.line.get(1).copied().unwrap_or(run.door);
     match run.kind {
-        RunKind::Keep => {
-            let gate = run.line.get(1).copied().unwrap_or(run.mouth);
-            let middle = [(run.mouth[0] + gate[0]) / 2.0, (run.mouth[1] + gate[1]) / 2.0];
-            let reach = [
-                ((gate[0] - run.mouth[0]).abs() / 2.0).max(half + 2.5),
-                ((gate[1] - run.mouth[1]).abs() / 2.0).max(half + 2.5),
-            ];
-            Some((middle, reach))
-        }
+        RunKind::Keep => Some(([run.mouth, bend], half + 1.0)),
         RunKind::Undercroft => {
-            let way_in = unit(run.mouth, run.line.get(1).copied().unwrap_or(run.door));
-            Some((ahead(run.mouth, way_in, 4.0), [half + 5.0; 2]))
+            let long = CHAPEL_M.min(distance(run.mouth, bend));
+            Some(([run.mouth, ahead(run.mouth, unit(run.mouth, bend), long)], half + 2.0))
         }
         _ => None,
     }
@@ -94,23 +89,10 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     let way_in = unit(run.mouth, run.line.get(1).copied().unwrap_or(run.door));
     match run.kind {
         RunKind::Keep => {
-            let (middle, reach) = mouth_room(run).unwrap_or_default();
-            room(
-                &mut out,
-                &run.way(),
-                Room {
-                    middle,
-                    floor: floor(kit, middle),
-                    half: reach,
-                    height: 5.5,
-                    roofed: true,
-                    windows: [false; 4],
-                    battled: false,
-                },
-                Material::Stone,
-            );
+            let (gate, reach) = mouth_hall(run).unwrap_or_default();
+            corridor(&mut out, gate, [floor(kit, gate[0]), floor(kit, gate[1])], reach, 5.5, Material::Stone);
             for side in [1.0, -1.0] {
-                let tower = ahead(run.mouth, [-way_in[1], way_in[0]], side * (reach[0].max(reach[1]) + 3.5));
+                let tower = ahead(run.mouth, [-way_in[1], way_in[0]], side * (reach + 3.5));
                 out.push(Solid::upright(
                     Shape::Column { sides: 10, top: 1.0 },
                     [tower[0], tower[1], floor(kit, tower) - 1.0],
@@ -192,21 +174,15 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             }
         }
         RunKind::Undercroft => {
-            let (chapel, reach) = mouth_room(run).unwrap_or_default();
-            room(
-                &mut out,
-                &run.way(),
-                Room {
-                    middle: chapel,
-                    floor: floor(kit, chapel),
-                    half: reach,
-                    height: 5.0,
-                    roofed: false,
-                    windows: [false; 4],
-                    battled: false,
-                },
-                Material::Stone,
-            );
+            // A nave open to the sky, its walls either side of the way.
+            let (nave, reach) = mouth_hall(run).unwrap_or_default();
+            let floors = [floor(kit, nave[0]), floor(kit, nave[1])];
+            let (low, high) = (floors[0].min(floors[1]), floors[0].max(floors[1]));
+            for side in [1.0, -1.0] {
+                let off = [-way_in[1] * side * (reach + WALL_M / 2.0), way_in[0] * side * (reach + WALL_M / 2.0)];
+                let [from, to] = nave.map(|end| [end[0] + off[0], end[1] + off[1]]);
+                wall(&mut out, from, to, low - 0.4, high + 5.6, WALL_M, Material::Stone);
+            }
             // A ruin: a share of the chapel's wall has fallen.
             let mut kept = Vec::new();
             for solid in out.drain(..) {
