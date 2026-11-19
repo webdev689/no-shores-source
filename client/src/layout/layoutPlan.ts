@@ -179,11 +179,11 @@ export function plantedOf(
 ): (tileX: number, tileY: number) => readonly { readonly kind: string; readonly at: readonly [number, number] }[] {
   const byTile = new Map<string, { kind: string; at: readonly [number, number] }[]>();
   for (const { kind, points } of layouts.flatMap((layout) => layout.plantings ?? [])) {
-    for (const at of points) {
-      const key = `${Math.floor(at[0] / tileM)},${Math.floor(at[1] / tileM)}`;
+    for (const point of points) {
+      const key = `${Math.floor(point[0] / tileM)},${Math.floor(point[1] / tileM)}`;
       const tile = byTile.get(key) ?? [];
       byTile.set(key, tile);
-      tile.push({ kind, at });
+      tile.push({ kind, at: point });
     }
   }
   return (tileX, tileY) => byTile.get(`${tileX},${tileY}`) ?? [];
