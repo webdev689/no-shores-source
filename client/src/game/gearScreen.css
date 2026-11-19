@@ -557,7 +557,10 @@ img.gear-glyph {
     height: 77px;
   }
   .gear-character .gear-side {
-    gap: 11px;
+    gap: 10px;
+  }
+  .gear-character .gear-side .gear-heading {
+    margin-bottom: 4px;
   }
 }
 .gear-character > .gear-side:first-child .gear-heading {

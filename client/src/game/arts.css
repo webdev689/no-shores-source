@@ -317,6 +317,17 @@
   }
 }
 
+/* Wide but no taller than 900 to 999, the side keeps its words above the foot: it starts higher, its emblem a step
+   smaller. */
+@media (min-width: 1500px) and (min-height: 900px) and (max-height: 999.98px) {
+  .arts-page {
+    padding-top: 44px;
+  }
+  .arts-emblem {
+    --cell: 10px;
+  }
+}
+
 /* What moves, moves in steps: the screen comes in as it opens, its emblem opening from its middle; the Anima breathes;
    a fragment the room has just set flares; another Art worn flashes the screen in its colour. */
 @media (prefers-reduced-motion: no-preference) {

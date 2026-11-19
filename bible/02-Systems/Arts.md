@@ -87,9 +87,10 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   focus goes back to what opened it. The screen is a region named by the Art's name, so a screen reader reads it first.
 - **Sizes.** The face keeps its grid: 11 for words, 22 for headings, words and keycaps where the menu is wide, 33 for
   the Art's name (55 where wide). The pictures stand at whole multiples of their cells: the large emblem's 24 cells
-  and its 32-cell frame at 8 (7 on a short screen, 11 on a wide one), the three Arts' at 2 (3 wide), the Character
-  page's at 4 everywhere, the Anima's icon at 3, and the Tenets' and fragments' at 4. The screen starts at its top,
-  66 px down (33 on a short screen, 88 wide), so nothing stands on half a pixel. Past 1440p the menu doubles, the
+  and its 32-cell frame at 8 (7 on a short screen, 11 on a wide one, 10 where wide but under 1000 px tall), the three
+  Arts' at 2 (3 wide), the Character page's at 4 everywhere, the Anima's icon at 3, and the Tenets' and fragments' at
+  4. The screen starts at its top, 66 px down (33 on a short screen, 88 wide, 44 wide but under 1000 px tall), so
+  nothing stands on half a pixel and its words stay above the foot. Past 1440p the menu doubles, the
   screen with it.
 - **Pictures** are drawn pixel by pixel in the Art's element: its outline, a deep shade, the body, its light and a
   white heat, and brass for a frame's points. The emblems are 24 cells square in a diamond: Storm a forked bolt,
