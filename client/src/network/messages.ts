@@ -133,6 +133,10 @@ export interface FightEvent {
   readonly amount: number;
   /** The stroke a swing came by, the combat crate's 1 to 6; 0 for anything else. */
   readonly stroke: number;
+  /** Whether the blow was a crit, and the element it carried (the gear's 1 to 3, 0 for none); a room that does not
+   *  say leaves them out. */
+  readonly crit?: boolean;
+  readonly element?: number;
 }
 
 /** A shot in flight, or a gun's ball in the tick it stopped: `age` is the ticks it has flown. A stopped ball's last
@@ -340,6 +344,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         defender: event?.defender() ?? 0,
         amount: event?.amount() ?? 0,
         stroke: event?.stroke() ?? 0,
+        crit: event?.crit() ?? false,
+        element: event?.element() ?? 0,
       };
     });
     const shots = Array.from({ length: snapshot.shotsLength() }, (unused, index) => {
