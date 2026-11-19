@@ -156,7 +156,8 @@ pub fn nodes_of(
     Ok(drawn.chain(social).collect())
 }
 
-/// Locks every node that `open`, the ids in `content/world/open.json`, leaves locked ([`land::sites::locked`]).
+/// Marks each node locked or not by the open list, `open` the ids in `content/world/open.json`
+/// ([`land::sites::locked`]).
 pub fn lock(nodes: &mut [NodeFile], open: &[String]) {
     for node in nodes {
         node.locked = land::sites::locked(node.kind, &node.id, open);
