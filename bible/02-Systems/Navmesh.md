@@ -73,12 +73,13 @@ it joins (step 3). Ramps are not blocks the rules know: no link is tried over on
 
 **A path** finds the poly under each end (by its height, where floors stand over each other, or the nearest within
 0.5 m), runs A* across the polys' neighbours and the links leaving them, each link at its cost, and pulls the line taut
-through the shared edges (the funnel), on either side of each link. Its waypoints run from the start to the goal, both
-included, each on the surface walked there; a link's start and end stand in it, one after the other. There is no path
-when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a link joins, so a
-goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts each link at its
-cost rather than its leg across. The search keeps its buffers from one path to the next, so a path costs the
-polys it visits, not the whole mesh.
+through the shared edges (the funnel), on either side of each link. A walker standing on a shared edge is already
+through it: the funnel opens past it, never back to the edge's far end. Its waypoints run from the start to the goal,
+both included, each on the surface walked there; a link's start and end stand in it, one after the other. There is no
+path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a link joins, so
+a goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts each link at its
+cost rather than its leg across. The search keeps its buffers from one path to the next, so a path costs the polys it
+visits, not the whole mesh.
 
 **Obstacles** are circles laid over the mesh while a room runs, such as a big foe's body. Each blocks every poly it
 touches. A path goes round them where it can, and through them where it must: they steer a path, they never sever

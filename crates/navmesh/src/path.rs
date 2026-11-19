@@ -221,6 +221,19 @@ fn same(a: (f64, f64), b: (f64, f64)) -> bool {
     (a.0 - b.0).abs() < 1e-6 && (a.1 - b.1).abs() < 1e-6
 }
 
+/// Whether a point stands on a portal's edge between its ends: a walker there is already through it. A funnel opened
+/// along the edge itself would point both ways at once, and turn back to the end behind the walker.
+fn on_edge(point: (f64, f64), portal: Portal) -> bool {
+    let (along_x, along_y) = (portal.left.0 - portal.right.0, portal.left.1 - portal.right.1);
+    let length = (along_x * along_x + along_y * along_y).sqrt();
+    if length < 1e-6 {
+        return false;
+    }
+    let across = triangle_area(portal.right, portal.left, point).abs() / length;
+    let reach = ((point.0 - portal.right.0) * along_x + (point.1 - portal.right.1) * along_y) / length;
+    across < 1e-6 && reach > 1e-6 && reach < length - 1e-6
+}
+
 /// The simple stupid funnel: pulls the line taut through the portals, the first and last of which are the start
 /// and the goal as points. Answers the corners, start and goal included.
 pub(crate) fn funnel(portals: &[Portal]) -> Vec<(f64, f64)> {
@@ -230,6 +243,10 @@ pub(crate) fn funnel(portals: &[Portal]) -> Vec<(f64, f64)> {
     let mut i = 1;
     while i < portals.len() {
         let Portal { left: next_left, right: next_right } = portals[i];
+        if on_edge(apex, portals[i]) {
+            i += 1;
+            continue;
+        }
         if triangle_area(apex, right, next_right) <= 0.0 {
             if same(apex, right) || triangle_area(apex, left, next_right) > 0.0 {
                 right = next_right;
@@ -276,3 +293,7 @@ pub(crate) fn portals(mesh: &Mesh, corridor: &[usize], start: (f64, f64), goal: 
     portals.push(Portal { left: goal, right: goal });
     Some(portals)
 }
+
+#[cfg(test)]
+#[path = "path_tests.rs"]
+mod path_tests;
