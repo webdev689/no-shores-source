@@ -2,6 +2,8 @@
 // sweeps), the way its striker's figure is drawn swinging it, so the light goes where the blade goes; and how heavy
 // its weapon swings, by its class.
 import type { GlowLook } from '../elementGlow.ts';
+import { STRIKE_PACE } from '../firstperson/weaponMachine.ts';
+import { BLOW } from '../player/playerMoves.ts';
 import type { StrokeDirection } from '../rules/fighters.ts';
 
 export type Vector = readonly [number, number, number];
@@ -74,10 +76,11 @@ const TIP_SHARE = 0.75;
 const TIP_M = [0.7, 2.2] as const;
 const BLADE_SHARE = 0.62;
 const BLADE_MOST = 0.8;
-/** The fast part of a swing begins this share of the way to its landing, and sweeps on through this share of the
- *  follow-through. The head gathers speed to the landing as an ease-in of this power. */
-const SWING_FROM = 0.55;
-const SWEEP_ON = 0.4;
+/** The fast part of a swing is its figure's: from the last of a blow's wind-up frames, drawn through the last three
+ *  quarters of the way to its landing, to the last of its follow-through frames. The head gathers speed to the landing
+ *  as an ease-in of this power. */
+const SWING_FROM = 1 - STRIKE_PACE.windup / BLOW.lands;
+const SWEEP_ON = STRIKE_PACE.recover;
 const GATHER = 2.2;
 /** The pivot stands this far ahead of the chest, so a cut sweeps in front of the figure. */
 const AHEAD_M = 0.15;
@@ -187,7 +190,11 @@ export function courseOf(swing: Swing): Course {
   const weight = weightOf(swing.arms);
   const hilt = tip * (1 - Math.min(BLADE_MOST, BLADE_SHARE * weight.wide));
   const strike = Math.max(swing.strike, 1e-3);
-  const timing = { from: strike * SWING_FROM, strike, to: strike + Math.max(swing.end - strike, 0) * SWEEP_ON };
+  const timing = {
+    from: strike * SWING_FROM,
+    strike,
+    to: Math.min(Math.max(swing.end, strike), strike * (1 + SWEEP_ON)),
+  };
   if (direction === 'up') {
     const land = unit(world(THRUST_ALONG));
     return {
@@ -244,7 +251,7 @@ export function headAt(course: Course, time: number): { readonly along: number; 
   const landing = (GATHER * Math.abs(landed - start)) / span;
   const sweep = Math.max(to - strike, 1e-6);
   const turn = Math.abs(finish - landed);
-  const power = turn > 1e-9 ? Math.min(6, Math.max(1.2, (landing * sweep) / turn)) : 1;
+  const power = turn > 1e-9 ? Math.min(12, Math.max(1.2, (landing * sweep) / turn)) : 1;
   const share = Math.min(1, (time - strike) / sweep);
   const left = (1 - share) ** power;
   return {

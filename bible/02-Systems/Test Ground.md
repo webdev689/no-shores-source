@@ -160,8 +160,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     way the striker's figure is drawn swinging
     ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). A blow goes its own way, whatever
     way the swing was asked: the overhead down, the thrust out, the side cut across to the left in every hold, from
-    the right shoulder, as the forge's captured clip draws it. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
-    so its arc is mirrored too, as it was when the swing began.
+    the right shoulder, as the forge's captured clip draws it. Any other move goes the rules' stroke. A figure drawn
+    mirrored swings left-handed, so its arc is mirrored too, as it was when the swing began. It sweeps as the figure is
+    drawn striking: from a blow's last wind-up frame, the weapon at the top of its raise, through the landing on the
+    rules' tick, to its last follow-through frame.
     An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
     cuts down and across, and a thrust drives out and flares where it lands. It is pixel art: whole figure pixels in the
     four stops of a ramp, never blended. Each part steps down its ramp by how long ago the blade passed it and is drawn

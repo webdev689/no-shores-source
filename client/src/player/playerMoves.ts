@@ -188,7 +188,7 @@ const STROKE_OF: Readonly<Partial<Record<Direction, string>>> = {
 
 /** The owner's blows (the forge's blows.py): a stroke for each way a weapon is held, nine frames, the weapon landing on
  *  the fifth. */
-const BLOW = { frames: 9, lands: 4 } as const;
+export const BLOW = { frames: 9, lands: 4 } as const;
 /** How far through its wind-up's frames, 0 to 1, a strike is at `progress` through its swing, landing at `lands`: at
  *  the first person's pace. */
 function woundUp(progress: number, lands: number): number {
