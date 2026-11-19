@@ -206,6 +206,17 @@ from the sea, fresh water and the claim's edge), then:
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, and the bridges over
     water a cell wider either side, in the claim, as one piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
     the landing or the way in.
+11. **The plantings** (`plantings`), last, from the kinds the climate's nature already grows
+    (`content/nature/flora.json`): its orchard tree and its shrub, the oak and the gorse on a temperate coast (no apple
+    or pear grows anywhere). Each farm named or themed an orchard is planted with the tree in rows along its field,
+    9 m apart in rows 10 m apart, 60 m either way along the field from its middle and 45 m across; each farm's tracks
+    have a hedgerow of the shrub every 2 m either side, 1.8 m behind where their drystone walls run; and each wilds
+    named or themed a moor holds eight thickets of the shrub, each reaching 5 to 10 m from its middle, a quarter to
+    most of the way out. A planting stands only in the section, on the floor by its reach (a tree 4 m, a shrub 1.6 m)
+    and as far off every climb, run and outcrop, on dry land no steeper than 0.4, and as far clear of every way, run,
+    building's 10 m yard, tile, pad, prop and solid. The tundra plants no orchard and the swamp nothing. On Saltmere
+    the Vale's Orchard Farm holds 96 oaks and 52 gorse in its hedgerows, the Downs' Ewe Fold 26 in its hedgerows, and
+    the Moors' Gorse Moor 388 gorse in its thickets.
 
 ## Runs
 
@@ -301,7 +312,8 @@ instance or "Return to" the patrol area (E), and goes through the veil to arrive
 The game draws the layouts within 4 km of the eye with the city layer ([[Cities]]), gathered again once the eye has
 moved 1.5 km: a plan of placed pieces (each building and prop where its layout stood it, a building walked into with
 its doorways open) and solids (plinths, set pieces, great works, rock, rooms), on a grid of cells just large enough
-to hold them, with no plates. Nature keeps off the buildings' yards and each place's open ground.
+to hold them, with no plates. Nature keeps off the buildings' yards and each place's open ground, and grows each
+layout's plantings where they were planted, as its own kind (`plantedOf`).
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within
 2.5 km of the eye (`paintOfLayouts`) as a distance from their edges, a metre a texel at finest, the paths and a
