@@ -55,8 +55,6 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
-   *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
-  /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
    *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. With
    *  `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
   static openNode(
@@ -69,8 +67,8 @@ export class LocalRoom implements RoomLink {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
     if (foeAsks) door.takeFoeAsks();
-    const player = entrance === undefined ? door.join() : door.joinAt(entrance);
-    if (player === 0) throw new Error('the place has no such entrance');
+    // An entrance the room does not have is an ordinary join, as the servers take it.
+    const player = (entrance === undefined ? 0 : door.joinAt(entrance)) || door.join();
     return new LocalRoom(door, snapshot, gear, player);
   }
 

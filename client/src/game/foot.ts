@@ -244,12 +244,9 @@ export class Foot {
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
   }
 
-  /** Lands the player in a node at its first spawn, facing `facing`, keeping how they hold the camera, and joins its
-   *  room: online the server's at the voyage's `seas`, signed in with the session's token; alone one in the page that
-   *  may stand the foes the context asks for. */
-  /** Lands the player in a node at its first spawn, facing `facing`, or before entrance `at`'s door, keeping how they
-   *  hold the camera, and joins its room: online the server's at the voyage's `seas`, signed in with the session's
-   *  token; alone one in the page that may stand the foes the context asks for. */
+  /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
+   *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
+   *  in with the session's token; alone one in the page that may stand the foes the context asks for. */
   static async enter(
     context: FootContext,
     node: NodeInfo,

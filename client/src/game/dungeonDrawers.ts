@@ -57,9 +57,10 @@ export function dungeonTrips(game: Game): { enter(number: number, name: string):
       const before = wentIn && props ? beforeDoor(wentIn, props) : null;
       const arriving = before ? { number, ...before } : undefined;
       const seas = game.seas();
-      game.travel({ kind: 'leave', node: patrol.id, name: layout.name }, () =>
-        game.goInto(() => Foot.enter(game.context, patrol, before?.facing ?? 0, seas, arriving)),
-      );
+      game.travel({ kind: 'leave', node: patrol.id, name: layout.name }, async () => {
+        await game.goInto(() => Foot.enter(game.context, patrol, before?.facing ?? 0, seas, arriving));
+        game.drawers.forget();
+      });
     },
   };
 }
@@ -109,6 +110,11 @@ export class DungeonDrawers {
   show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): void {
     const look = entrance && this.props?.[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook;
     this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR);
+  }
+
+  /** Lets go of the dungeon last drawn, once the player has left it. */
+  forget(): void {
+    this.view.clear();
   }
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and
