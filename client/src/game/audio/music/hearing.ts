@@ -1,13 +1,16 @@
 // What the music hears of the game: on foot, the fight the frame showed (the player's own fighter, every foe marked
 // with its rank, alert and health, and the blows since the last frame); at sea, the sea room's hostile ships and the
-// fight it began. Pure readings of what the game already has, for the director's law.
+// fight it began, the coast she may land on and the sky over her. Pure readings of what the game already has, for the
+// director's law.
 
 import type { MarkedFoe } from '../../../combat/foePlate.ts';
 import type { FightEvent, SeenPirate } from '../../../network/messages.ts';
 import type { FightCaptain, FightVessel } from '../../../rules/fightRules.ts';
 import type { FighterView } from '../../../rules/fighters.ts';
+import type { SkyReading } from '../../../sky/skyLaw.ts';
+import type { Landfall } from '../../seaLaw.ts';
 import { type Place, placeOf } from '../place.ts';
-import type { HeardFoe, Hearing } from './directorLaw.ts';
+import type { HeardFoe, HeardSky, Hearing } from './directorLaw.ts';
 
 /** The fight a frame on foot showed, as far as the music reads it. */
 export interface FootHeard {
@@ -17,9 +20,11 @@ export interface FootHeard {
   readonly foes: readonly MarkedFoe[];
 }
 
-/** The sea, as far as the music reads it: where the ship lies, the hostile ships round her, and her fight. */
+/** The sea, as far as the music reads it: where the ship lies, the hostile ships round her, her fight, and the
+ *  landfall she is offered off a coast. */
 export interface SeaHeard {
   readonly position: readonly [number, number];
+  readonly landfall?: Landfall;
   readonly sighted: { readonly pirates: readonly SeenPirate[] } | null;
   readonly fight: { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } | null;
 }
@@ -63,11 +68,23 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
     kills,
     foes,
     sea: null,
+    sky: null,
   };
 }
 
-/** The music's hearing at sea, from the ship's sea: the fight on screen, and the hostile ships round her. */
-export function hearSea(sea: SeaHeard): Hearing {
+/** The sky as the music hears it, from a reading; none before the sky has come. */
+export const heardSky = (reading: SkyReading | null): HeardSky | null =>
+  reading && {
+    falling: reading.falling,
+    storm: reading.storm,
+    fog: reading.fog,
+    windMS: Math.hypot(reading.wind[0], reading.wind[1]),
+    night: reading.daylight <= 0,
+  };
+
+/** The music's hearing at sea, from the ship's sea: the fight on screen, the hostile ships round her, the coast she
+ *  may land on, and the sky. */
+export function hearSea(sea: SeaHeard, sky: HeardSky | null = null): Hearing {
   const [x, y] = sea.position;
   const near = (sea.sighted?.pirates ?? []).filter((ship) => Math.hypot(ship.x - x, ship.y - y) <= SEA_NEAR_M);
   const fight = sea.fight;
@@ -86,6 +103,8 @@ export function hearSea(sea: SeaHeard): Hearing {
       strongest: Math.max(0, ...captains.map((captain) => captain.rank), ...near.map((ship) => ship.rank)),
       hull: vessel && vessel.max_hull > 0 ? vessel.hull / vessel.max_hull : 1,
       hostilesNear: near.length,
+      landfall: !!sea.landfall,
     },
+    sky,
   };
 }

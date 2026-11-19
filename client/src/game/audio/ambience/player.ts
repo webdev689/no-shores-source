@@ -22,9 +22,11 @@ import {
 import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
 import { type BedLayer, type Drive, SCAPES, type Scape, type Voice } from './scapes.ts';
 import { type Job, type SoundKey, takesOf } from './sounds.ts';
+import { type HeardWeather, SHELTERING, type Thunder, gustDepth, rainCorner, snowSoftening } from './weatherLaw.ts';
 
 /** What the ambience hears this frame: where the ear is and faces, the frame's origin (the ship at sea, so all rides
- *  with her), the land, the phases of the hour, the drives, and a social space's walking people. */
+ *  with her), the land, the phases of the hour, the drives, the weather and the share of the day's birds and insects
+ *  not gone to shelter from it, and a social space's walking people. */
 export interface Heard {
   readonly key: AmbienceKey;
   readonly ear: Point3;
@@ -33,6 +35,8 @@ export interface Heard {
   readonly lay: Lay;
   readonly phases: Readonly<Record<Phase, number>>;
   readonly drives: Readonly<Record<Drive, number>>;
+  readonly weather: HeardWeather;
+  readonly shelter: number;
   readonly folk: readonly {
     readonly id: number;
     readonly x: number;
@@ -41,6 +45,11 @@ export interface Heard {
     readonly anim: string;
   }[];
 }
+
+/** Thunder is placed this far along the way it comes from, metres, heard whole there: its level and its darkness are
+ *  its distance's own (weatherLaw.ts), never the panner's. */
+const THUNDER_PLACED_M = 800;
+const THUNDER_LIFT_M = 150;
 
 /** The most calls sounding at once in the whole ambience: past it, a new one waits for its next turn. */
 export const MOST_CALLS = 20;
@@ -55,8 +64,11 @@ const STEPS_HEARD_M = 24;
 const CRASH_HEARD_M = 140;
 /** The recorded bed's crossfade from one play of it into the next, seconds. */
 const RECORDED_FADE_S = 4;
+/** A recorded bed's gain over the synthesiser's at the same law, once the page has levelled the recording: Saltmere's
+ *  market crowd, measured as it plays (K-weighted, gated), sits level with the crowd it stands in for. */
+const RECORDED_BED_LEVEL = 4.25;
 /** Every bed's share of the mix under the calls: a bed of gain 1 sits at -32 dBFS. */
-const BED_LEVEL = 0.25;
+export const BED_LEVEL = 0.25;
 /** A recording not yet come is asked for again after this long, seconds. */
 const RECORDING_AGAIN_S = 5;
 /** How near a standing bed is heard whole, metres: a shore, a city's crowd and a harbour are wide sources. */
@@ -89,7 +101,8 @@ const liveContext = (audio: BaseAudioContext): AudioContext | null =>
 /** Every job a scape needs: its beds first, then every take of every sound its voices sing. */
 export function jobsOf(scape: Scape): Job[] {
   const beds = [...new Set(scape.beds.map((layer) => layer.bed))].map((key): Job => ({ kind: 'bed', key }));
-  const sounds = [...new Set(scape.voices.flatMap((voice) => voice.sounds)), 'surf.crash' as const, 'step' as const];
+  const always: SoundKey[] = ['surf.crash', 'step', 'thunder.crack', 'thunder.roll'];
+  const sounds = [...new Set([...scape.voices.flatMap((voice) => voice.sounds), ...always])];
   return [
     ...beds,
     ...sounds.flatMap((key) =>
@@ -175,8 +188,41 @@ export class ScapePlayer {
     this.gain.disconnect();
   }
 
-  private drive(drive: Drive | undefined, heard: Heard): number {
-    return drive ? heard.drives[drive] : 1;
+  private drive(drive: Drive | readonly Drive[] | undefined, heard: Heard): number {
+    if (!drive) return 1;
+    return typeof drive === 'string'
+      ? heard.drives[drive]
+      : drive.reduce((product, each) => product * heard.drives[each], 1);
+  }
+
+  /** A strike's thunder, `after` seconds from now, from the way it comes. */
+  thunder(thunder: Thunder, heard: Heard, after: number): void {
+    const [east, south] = thunder.toward;
+    const [x, y, z] = heard.ear;
+    const point: Point3 = [x + east * THUNDER_PLACED_M, y + south * THUNDER_PLACED_M, z + THUNDER_LIFT_M];
+    const pitch = thunder.pitch * between(this.random, [0.94, 1.04]);
+    // The same in every place: a place's own level is taken back off it.
+    const gain = thunder.gain / this.scape.level;
+    this.call(
+      thunder.sound,
+      point,
+      heard,
+      { gain, pitch, near: THUNDER_PLACED_M, drift: 0, corner: thunder.corner },
+      after,
+    );
+  }
+
+  /** A step of the player's own on wooden planks: the recording once loaded, the synthesiser's until then. */
+  footstep(heard: Heard): void {
+    const [x, y, z] = heard.ear;
+    const point: Point3 = [x, y, z - 1.5];
+    const shape = {
+      gain: between(this.random, [0.3, 0.42]),
+      pitch: between(this.random, [0.92, 1.08]),
+      near: 2,
+      drift: 0,
+    };
+    if (!this.recorded('step.wood', point, heard, shape)) this.call('step', point, heard, shape);
   }
 
   /** A bed's emitters made once its buffer has come, placed, and given their gains. */
@@ -190,7 +236,7 @@ export class ScapePlayer {
       emitterOf(
         this.audio,
         buffer,
-        { standing, gusty: !!layer.gust && !layer.bright, near: layer.near ?? NEAR_M[layer.at] },
+        { standing, gusty: (!!layer.gust && !layer.bright) || !!layer.brightens, near: layer.near ?? NEAR_M[layer.at] },
         this.random,
         this.gain,
         this.send,
@@ -202,9 +248,16 @@ export class ScapePlayer {
     const now = this.audio.currentTime;
     let law = layer.gain * byPhase(layer.when, heard.phases) * breathOf(clock, playing.seed, layer.breath);
     law *= this.drive(layer.drive, heard) * BED_LEVEL;
+    const weatherBed = [layer.drive].flat().some((drive) => drive === 'rain' || drive === 'sand');
+    if (!weatherBed) law *= snowSoftening(heard.weather);
+    if (SHELTERING.has(layer.bed)) law *= heard.shelter;
     if (layer.swell) law *= 0.45 + 0.55 * swellAt(clock - (layer.drive === 'way' ? 1.7 : 0));
     const gust = layer.gust ? gustOf(clock, playing.seed) : 0;
-    if (layer.gust) law *= 1 - layer.gust + layer.gust * gust;
+    const depth = layer.gust ? gustDepth(layer.gust, heard.weather) : 0;
+    if (layer.gust) law *= heard.drives.wind * (1 - depth + depth * gust);
+    const corner = layer.brightens
+      ? rainCorner(heard.weather.rain)
+      : GUST_CORNER * 2 ** (GUST_OCTAVES * gust) * snowSoftening(heard.weather);
     if (layer.recorded) law *= this.recordedBed(playing, now, law);
     playing.emitters.forEach((emitter, nth) => {
       const point = points?.[nth] ?? null;
@@ -223,7 +276,7 @@ export class ScapePlayer {
       }
       if (layer.breakers) gain *= this.breaker(emitter, clock, heard);
       emitter.gain.gain.setTargetAtTime(gain, now, BED_FOLLOW_S);
-      emitter.tone?.frequency.setTargetAtTime(GUST_CORNER * 2 ** (GUST_OCTAVES * gust), now, BED_FOLLOW_S);
+      emitter.tone?.frequency.setTargetAtTime(corner, now, BED_FOLLOW_S);
       // A gust raises the wind's voice a little, as a stronger wind whistles higher in the same edges.
       if (layer.gust)
         for (const source of emitter.sources)
@@ -276,13 +329,13 @@ export class ScapePlayer {
     const cue = playing.layer.recorded;
     if (!cue) return 1;
     const playingNow = playing.recorded;
-    if (playingNow) playingNow.gain.gain.setTargetAtTime(law * 4, now, BED_FOLLOW_S);
+    if (playingNow) playingNow.gain.gain.setTargetAtTime(law * RECORDED_BED_LEVEL, now, BED_FOLLOW_S);
     if (playingNow && now < playingNow.endsAt - RECORDED_FADE_S) return 0;
     const audio = liveContext(this.audio);
     if (!audio) return playingNow ? 0 : 1;
     const gain = audio.createGain();
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(law * 4, now + RECORDED_FADE_S);
+    gain.gain.linearRampToValueAtTime(law * RECORDED_BED_LEVEL, now + RECORDED_FADE_S);
     gain.connect(this.gain);
     const source = playSample(audio, gain, cue, between(this.random, [0.98, 1.02]));
     if (!source?.buffer) {
@@ -301,7 +354,12 @@ export class ScapePlayer {
   /** A voice's turn: once its time comes, a bout of its calls where it lives, then a gap by its density now. */
   private voiceTurn(each: VoiceClock, clock: number, heard: Heard): void {
     const { voice } = each;
-    const density = byPhase(voice.perMinute, heard.phases) * this.drive(voice.drive, heard) * moodOf(clock, each.seed);
+    const sheltering = voice.sounds.some((sound) => SHELTERING.has(sound));
+    const density =
+      byPhase(voice.perMinute, heard.phases) *
+      this.drive(voice.drive, heard) *
+      moodOf(clock, each.seed) *
+      (sheltering ? heard.shelter : 1);
     if (Number.isNaN(each.next) || density > each.density * 2.5) {
       each.next = clock + this.random() * Math.min(60, gapAfter(Math.max(density, 1e-6), this.random));
       each.density = density;
@@ -355,7 +413,7 @@ export class ScapePlayer {
     sound: SoundKey,
     point: Point3,
     heard: Heard,
-    shape: { gain: number; pitch: number; near: number; drift: number },
+    shape: { gain: number; pitch: number; near: number; drift: number; corner?: number },
     after = 0,
     lastTake = new Map<SoundKey, number>(),
   ): void {
@@ -386,7 +444,7 @@ export class ScapePlayer {
   private chain(
     point: Point3,
     heard: Heard,
-    shape: { gain: number; near: number; drift: number },
+    shape: { gain: number; near: number; drift: number; corner?: number },
     when: number,
     seconds: number,
   ) {

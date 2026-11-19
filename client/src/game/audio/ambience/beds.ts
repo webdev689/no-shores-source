@@ -23,6 +23,7 @@ import {
   tone,
 } from './dsp.ts';
 import { NOISES, murmurVoice } from './noises.ts';
+import { RAIN_BEDS } from './weatherSounds.ts';
 
 /** A layer's events, laid into its loop with `wrap`, so what runs past the end comes round to the start. */
 type Texture = (into: Float32Array, rate: number, random: Random) => void;
@@ -476,6 +477,7 @@ export const BEDS = {
       ),
     ],
   },
+  ...RAIN_BEDS,
 } satisfies Record<string, BedSpec>;
 
 export type BedKey = keyof typeof BEDS;
