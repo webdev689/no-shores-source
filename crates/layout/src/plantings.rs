@@ -11,6 +11,7 @@ use crate::field::{distance, ring_holds};
 use crate::paths::{Path, Tier, off_line};
 use crate::runs::{Run, half_of};
 use crate::seat::{Seating, TILE_M};
+use city::solids::Solid;
 use land::exact::{rand01, sin_cos};
 use land::ground::{Ground, WaterAt};
 use land::sculpts::{Sculpt, Sculpts};
@@ -59,8 +60,9 @@ const CLIMATES: [(&str, Option<&str>, Option<&str>); 9] = [
 const ORCHARD_TREE_M: f64 = 9.0;
 const ORCHARD_ROW_M: f64 = 10.0;
 const ORCHARD_REACH_M: [f64; 2] = [60.0, 45.0];
-/// How far a hedgerow's bushes stand out from the wall's middle, on the field's side of it (the wall is 0.8 m thick).
-const HEDGE_BEHIND_M: f64 = 1.8;
+/// How far a hedgerow's bushes stand out from its wall's line, on the field's side of it: past the wall's half (0.4 m)
+/// by a shrub's reach and a little more, so a bush still clears a stretch laid straight along a gentle bend.
+const HEDGE_BEHIND_M: f64 = 2.2;
 /// How many thickets a moor's wilds holds, how far its bushes stand apart in one, and the least and most a thicket
 /// reaches from its middle, metres; a share of its bushes is left out, so its edge is ragged.
 const THICKETS: u32 = 8;
@@ -191,11 +193,16 @@ fn hedgerows(areas: &[Area], paths: &[Path]) -> Vec<[f64; 2]> {
     bushes
 }
 
+/// An upright solid's footprint: its middle, half its width and depth, and its turn's sine and cosine.
+type Footprint = ([f64; 2], [f64; 2], (f64, f64));
+
 /// What a planting keeps clear of near where it may stand: the prints (west, north, east, south) of all a layout
-/// stands, a building's grown by its yard; its ways' and runs' stretches, each with how far either side of its line it
-/// is kept clear; and its runs' beats, each with its reach.
+/// stands, a building's grown by its yard, and a leaning or rolled solid's box; each upright solid's own footprint, so
+/// a bush stands close behind a wall on a slant whose box reaches far past it; its ways' and runs' stretches, each with
+/// how far either side of its line it is kept clear; and its runs' beats, each with its reach.
 struct Kept {
     prints: Vec<[f64; 4]>,
+    footprints: Vec<Footprint>,
     ways: Vec<([f64; 2], [f64; 2], f64)>,
     beats: Vec<([f64; 2], f64)>,
 }
@@ -214,18 +221,23 @@ impl Kept {
         let pads = seating.pads.iter().map(|pad| pad.bounds);
         let props = seating.props.iter().map(|prop| prop.footprint);
         // A solid turned or leaned any way stays within its box's diagonal of the middle of its base.
-        let solids = seating
+        let (upright, slanted): (Vec<&Solid>, Vec<&Solid>) = seating
             .solids
             .iter()
             .filter(|solid| {
                 let [east, south, up] = solid.size;
                 meets(&round([solid.at[0], solid.at[1]], (east * east + south * south + up * up).sqrt()))
             })
-            .map(|solid| {
-                let [west, north, east, south, ..] = solid.bounds();
-                [west, north, east, south]
-            });
-        let prints = yards.chain(tiles).chain(pads).chain(props).chain(solids).filter(meets).collect();
+            .partition(|solid| solid.lean == 0.0 && solid.roll == 0.0);
+        let boxes = slanted.iter().map(|solid| {
+            let [west, north, east, south, ..] = solid.bounds();
+            [west, north, east, south]
+        });
+        let footprints = upright
+            .iter()
+            .map(|solid| ([solid.at[0], solid.at[1]], [solid.size[0] / 2.0, solid.size[1] / 2.0], sin_cos(solid.turn)))
+            .collect();
+        let prints = yards.chain(tiles).chain(pads).chain(props).chain(boxes).filter(meets).collect();
         let lines = paths.iter().map(|path| (path.points.clone(), path.tier.width() / 2.0));
         let passages = runs.iter().map(|run| (run.way(), half_of(run.kind).max(RUN_CLEAR_M)));
         let ways = lines
@@ -236,14 +248,22 @@ impl Kept {
             })
             .collect();
         let beats = runs.iter().flat_map(|run| run.beats.iter().map(|beat| (beat.at, beat.radius + BEAT_CLEAR_M)));
-        Self { prints, ways, beats: beats.filter(|&(at, reach)| meets(&round(at, reach))).collect() }
+        Self { prints, footprints, ways, beats: beats.filter(|&(at, reach)| meets(&round(at, reach))).collect() }
     }
 
-    /// Whether a planting reaching `reach` round a point stands clear of every print, way and beat.
+    /// Whether a planting reaching `reach` round a point stands clear of every print, footprint, way and beat.
     fn clear(&self, at: [f64; 2], reach: f64) -> bool {
+        // How far past a footprint's sides the point lies, in the footprint's own frame (city/solids.rs `bounds`).
+        let off_footprint = |&([x, y], [half_width, half_depth], (sine, cosine)): &Footprint| {
+            let (east, south) = (at[0] - x, at[1] - y);
+            let across = ((east * cosine + south * sine).abs() - half_width).max(0.0);
+            let along = ((south * cosine - east * sine).abs() - half_depth).max(0.0);
+            across * across + along * along
+        };
         self.prints.iter().all(|&[west, north, east, south]| {
             at[0] < west - reach || at[0] > east + reach || at[1] < north - reach || at[1] > south + reach
-        }) && self.ways.iter().all(|&(from, to, half)| off_line(at, from, to) > half + reach)
+        }) && self.footprints.iter().all(|footprint| off_footprint(footprint) > reach * reach)
+            && self.ways.iter().all(|&(from, to, half)| off_line(at, from, to) > half + reach)
             && self.beats.iter().all(|&(middle, beat)| distance(middle, at) > beat + reach)
     }
 }
@@ -347,6 +367,41 @@ mod tests {
         assert_eq!(planted("The Gorse Moor").len(), 1, "a moor is planted with thickets");
         for name in ["Moorhold", "The Moored Boats", "The Water Meadows"] {
             assert!(planted(name).is_empty(), "{name} is no moor");
+        }
+    }
+
+    #[test]
+    fn a_hedgerow_stands_behind_the_walls_it_lines() {
+        let farm = Area { kind: AreaKind::Farm, name: "Ewe Fold".into(), at: AT, radius: 95.0, leads_to: None };
+        let end = [AT[0] + AXIS[0] * 400.0, AT[1] + AXIS[1] * 400.0];
+        let track = Path { tier: Tier::Track, points: vec![AT, end], crossings: Vec::new(), heights: Vec::new() };
+        // Its drystone walls either side in 8 m stretches past the farm's reach, as dressing.rs lays them, on a slant
+        // so each stretch is laid in short pieces whose boxes reach out past the wall.
+        let out = Tier::Track.width() / 2.0 + WALL_OFF_M;
+        let (mut stretches, mut walls) = (Vec::new(), Vec::new());
+        for step in 0..22 {
+            let at =
+                [AT[0] + AXIS[0] * (100.0 + 8.0 * f64::from(step)), AT[1] + AXIS[1] * (100.0 + 8.0 * f64::from(step))];
+            for side in [-1.0, 1.0] {
+                let middle = beside(at, AXIS, out * side);
+                let ends = [
+                    [middle[0] - AXIS[0] * 4.15, middle[1] - AXIS[1] * 4.15],
+                    [middle[0] + AXIS[0] * 4.15, middle[1] + AXIS[1] * 4.15],
+                ];
+                crate::halls::wall(&mut walls, ends[0], ends[1], 0.0, 1.2, 0.8, city::solids::Material::Rubble);
+                stretches.push(ends);
+            }
+        }
+        let seating = Seating { solids: walls, ..Seating::default() };
+        let basin = Basin { floors: vec![[AT[0], AT[1], end[0], end[1], 60.0]], terraces: Vec::new() };
+        let zone = Zone { biome: Some("temperate-coast"), seed: 7, takes: &|_, _| true };
+        let wanted = hedgerows(std::slice::from_ref(&farm), std::slice::from_ref(&track)).len();
+        let planted = plantings(&[farm], &[basin], &[track], &seating, &[], &zone);
+        let bushes = planted.iter().find(|planting| planting.kind == "gorse").map_or(&[][..], |hedge| &hedge.points);
+        assert!(wanted > 100 && bushes.len() * 10 >= wanted * 9, "{} of {wanted} hedge bushes stand", bushes.len());
+        for &at in bushes {
+            let off = stretches.iter().map(|&[from, to]| off_line(at, from, to)).fold(f64::INFINITY, f64::min);
+            assert!(off < 2.5, "a bush at {at:.1?} stands {off:.1} m off the walls it lines");
         }
     }
 }

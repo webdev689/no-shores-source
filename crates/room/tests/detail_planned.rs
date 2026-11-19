@@ -542,3 +542,55 @@ fn plantings_stand_off_ways_yards_runs_and_buildings() {
     }
     assert!(failed.is_empty(), "{} of {planted}: {:#?}", failed.len(), &failed[..failed.len().min(12)]);
 }
+
+#[test]
+fn a_farms_hedgerows_line_its_drystone_walls() {
+    use layout::field::distance;
+    for (id, name) in [("saltgrass-downs", "Ewe Fold"), ("gullwing-vale", "Orchard Farm")] {
+        let laid = zone(id);
+        let farm = laid.areas.iter().find(|area| area.name == name).expect("the farm is laid out");
+        // Out along the farm's tracks as far as its walls run (dressing.rs), outside every area.
+        let reached = |at: [f64; 2]| {
+            distance(at, farm.at) < farm.radius + 170.0
+                && laid.areas.iter().all(|area| distance(area.at, at) >= area.radius)
+        };
+        let tracks: Vec<&layout::paths::Path> =
+            laid.paths.iter().filter(|path| path.tier == layout::paths::Tier::Track).collect();
+        let by_track = |at: [f64; 2]| {
+            let off =
+                tracks.iter().flat_map(|path| path.points.windows(2).map(move |pair| off_line(at, pair[0], pair[1])));
+            (5.0..6.5).contains(&off.fold(f64::INFINITY, f64::min))
+        };
+        // Each piece of drystone wall, 0.8 m thick rubble standing 3.5 m off a track's edge, as the line along it.
+        let walls: Vec<[[f64; 2]; 2]> = laid
+            .seating
+            .solids
+            .iter()
+            .filter(|solid| solid.material == Material::Rubble && matches!(solid.shape, SolidShape::Block))
+            .filter(|solid| (solid.size[0] - 0.8).abs() < 1e-9 && solid.lean == 0.0 && solid.roll == 0.0)
+            .filter(|solid| reached([solid.at[0], solid.at[1]]) && by_track([solid.at[0], solid.at[1]]))
+            .map(|solid| {
+                let (sine, cosine) = land::exact::sin_cos(solid.turn);
+                let half = solid.size[1] / 2.0;
+                let [x, y, _] = solid.at;
+                [[x + sine * half, y - cosine * half], [x - sine * half, y + cosine * half]]
+            })
+            .collect();
+        let bushes: Vec<[f64; 2]> = laid
+            .plantings
+            .iter()
+            .filter(|planting| planting.kind == "gorse")
+            .flat_map(|planting| planting.points.iter().copied())
+            .filter(|&at| reached(at))
+            .collect();
+        let lined = bushes.iter().filter(|&&at| walls.iter().any(|&[from, to]| off_line(at, from, to) < 2.5)).count();
+        let hedged = walls.iter().filter(|&&[from, to]| bushes.iter().any(|&at| off_line(at, from, to) < 2.5)).count();
+        assert!(walls.len() > 20, "{name} has {} pieces of wall along its tracks", walls.len());
+        assert!(
+            lined * 4 >= bushes.len() * 3 && hedged * 3 >= walls.len() * 2,
+            "{name}: {lined} of {} hedge bushes line its walls, and {hedged} of {} pieces of wall are hedged",
+            bushes.len(),
+            walls.len()
+        );
+    }
+}
