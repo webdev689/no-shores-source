@@ -57,7 +57,10 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
     let mut next = Fighter { held: now, kept: kept(fighter, input, now), ..*fighter };
     if let Action::Dead { elapsed } = fighter.action {
         next.action = Action::Dead { elapsed: elapsed.saturating_add(1) };
-        next.body = step_body(&fighter.body, &still(intent.controls), around.blocks, around.terrain, TICK_SECONDS);
+        // The dead let go of a wall or a lip they held, as a crouch does, and fall.
+        let holding = matches!(fighter.body.mode, Mode::Hang | Mode::Climb);
+        let controls = Controls { crouch: holding, ..still(intent.controls) };
+        next.body = step_body(&fighter.body, &controls, around.blocks, around.terrain, TICK_SECONDS);
         return (next, None);
     }
     rest(&mut next);
