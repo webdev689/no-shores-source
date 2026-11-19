@@ -121,6 +121,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Exposed, Charged and Haste Make No Sound]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
+- [[Weather and Day and Night Come From DFO, Much Improved]]
+- [[A Day Lasts One Real Hour]]
+- [[Weather and Day as Claude Shapes It]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

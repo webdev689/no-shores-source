@@ -30,6 +30,7 @@ pub const CRATES: &[CrateRule] = &[
         outside: &["serde_json"],
         door: true,
     },
+    CrateRule { name: "sky", workspace: &["land", "world"], outside: &[], door: false },
     CrateRule { name: "sailing", workspace: &["land"], outside: &["libm"], door: false },
     CrateRule { name: "naval", workspace: &["sailing"], outside: &["libm"], door: false },
     CrateRule { name: "combat", workspace: &["movement"], outside: &["libm"], door: false },

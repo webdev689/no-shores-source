@@ -287,6 +287,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sky"
+version = "0.0.0"
+dependencies = [
+ "land",
+ "world",
+]
+
+[[package]]
 name = "syn"
 version = "3.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"

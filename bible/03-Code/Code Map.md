@@ -61,6 +61,7 @@ decision, made in the same change as its entry here.
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the paths across it, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
 | `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
+| `crates/sky` | The world's clock, its sun, moon and stars, and its weather: one field over the whole map from world time and place, with its wind, lightning and the ground's wetness ([[Sky]], [[Weather]]) |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems, the [[Arts]] a player wears, and what a player holds and shows others |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
