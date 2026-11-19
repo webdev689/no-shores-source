@@ -6,8 +6,10 @@ import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import { seaHints } from './hints.ts';
+import { sightOf } from './seaHostiles.ts';
 import type { Hud } from './hud.ts';
-import type { Sea, SeaFrame } from './sea.ts';
+import type { Sea } from './sea.ts';
+import type { SeaFrame } from './seaFrame.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 
@@ -27,7 +29,7 @@ export interface SeaHudState {
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once her colours are
  *  down and red while she would take the player, none going down; out of one, every other player's ship in bone and
- *  every hostile one in red. */
+ *  every hostile one in red, marked as far off as she is sighted. */
 export function seaShipMarks(
   captains: readonly FightCaptain[] | null,
   sighted: Pick<SeaRoom, 'others' | 'pirates'> | null,
@@ -40,7 +42,12 @@ export function seaShipMarks(
     });
   return [
     ...(sighted?.others ?? []).map((ship): ShipMark => ({ x: ship.x, y: ship.y, kind: 'ship' })),
-    ...(sighted?.pirates ?? []).map((pirate): ShipMark => ({ x: pirate.x, y: pirate.y, kind: 'hostile' })),
+    ...(sighted?.pirates ?? []).map((pirate): ShipMark => ({
+      x: pirate.x,
+      y: pirate.y,
+      kind: 'hostile',
+      rangeM: sightOf(pirate),
+    })),
   ];
 }
 
@@ -50,10 +57,10 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const atHelm = here.helmView;
   const { aboard } = here;
   if (state.landing) hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
-  else if (atHelm) hud.place('At the helm', region);
+  else if (atHelm) hud.place('At the helm', here.waterWords ?? region);
   else if (aboard.walking) hud.place('Aboard the Sloop', 'Off the helm');
   else if (aboard.managing) hud.place('Managing the Sloop', region);
-  else hud.place('At sea', shown.landfall && island ? `Off ${island}` : region);
+  else hud.place('At sea', shown.landfall && island ? `Off ${island}` : (here.waterWords ?? region));
   const fighting = here.fight?.lines(state.clock) ?? null;
   hud.hints(seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);

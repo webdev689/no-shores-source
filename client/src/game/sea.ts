@@ -21,20 +21,17 @@ import type { Mark, PlacedMark } from '../overworld/overworldMarks.ts';
 import { pickAt } from '../overworld/overworldPick.ts';
 import { type Pace, SHIP_SPEED } from '../overworld/voyage.ts';
 import { lookOf, panShot, type Shot } from './camera.ts';
-import type { ScreenMark } from './hud.ts';
 import type { Landmass } from './landmass.ts';
-import type { CardAt } from '../player/cards.ts';
-import type { InputFrame } from '../player/input.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
-import type { ShipBar } from '../ships/shipBars.ts';
 import { type Stir, wakeStirs } from '../ships/swellPose.ts';
-import type { HullMask } from '../water/hullMask.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
 import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
+import type { SeaFrame, SeaInput } from './seaFrame.ts';
+import { SeaWatch, type WaterNamed } from './seaHostiles.ts';
 import { seaMarks } from './seaMarks.ts';
-import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
+import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { HELM, helmEye, type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
@@ -69,47 +66,6 @@ type SeaView =
   /** Coming down to the helm, there, or going back up: `at` how far down, 0 the sea's view, 1 the helm. */
   | { readonly kind: 'helm'; readonly at: number; readonly going: 'down' | 'up' };
 
-/** What one frame at sea is handed: `seconds` on, at world time `time`, on a picture of `viewport` CSS pixels; the
- *  look keys' `turn` and `tilt`; the sea's `swell`, the steady wind blowing the way it runs; and the controls the
- *  player walks her deck by, none while `paused`. */
-export interface SeaInput {
-  readonly seconds: number;
-  readonly time: number;
-  readonly viewport: Viewport;
-  readonly turn: number;
-  readonly tilt: number;
-  readonly swell: Swell | undefined;
-  readonly controls: InputFrame;
-  readonly paused: boolean;
-}
-
-/** What one frame at sea shows: the shot, the ships, the marks, and the words and dial of the sea's bar. */
-export interface SeaFrame {
-  readonly shot: Shot;
-  readonly ships: readonly SeaShip[];
-  /** Each ship's footprint on the water, world metres: none inside her, foam round her bow under way. */
-  readonly hulls: readonly HullMask[];
-  /** In a fight, each captain's bar over her masthead as she is drawn. */
-  readonly bars: readonly ShipBar[];
-  readonly marks: readonly ScreenMark[];
-  readonly note: string;
-  /** What the ship is offered off the island's coast: to dock, to go ashore, or nothing. */
-  readonly landfall: Landfall;
-  /** Under way on a voyage; or stopped short of one, which can be resumed. */
-  readonly sailing: boolean;
-  readonly resumable: boolean;
-  readonly pace: Pace;
-  /** Whether the view stands over an island's side, its landings marked. */
-  readonly overSide: boolean;
-  /** Everyone aboard the player's Sloop once the view is down there, and whether the player sees through their own
-   *  eyes on her deck. */
-  readonly figures: readonly CardAt[];
-  readonly firstPerson: boolean;
-  /** Where her bow and quarters stir the water's ripples this frame, which follow her (`focus`, world metres). */
-  readonly stirs: readonly Stir[];
-  readonly focus: readonly [number, number];
-}
-
 /**
  * The player's ship on the Overworld's sea: DFO's raised camera over it, voyages planned round the land and sailed
  * at the pace dial, stopped and resumed, a port's icon over it once the ship is near, and the bird's-eye view of the
@@ -127,6 +83,9 @@ export class Sea {
   readonly aboard: Aboard;
   /** The fight the sea room began for the player, from the pan down to the pan back up. */
   private combat: SeaCombat | null = null;
+  /** The water at a point, once the page has opened the waters; and what the voyage's line says of them. */
+  waterAt: ((point: Point2) => WaterNamed | null) | null = null;
+  private readonly watch = new SeaWatch();
   /** Where she lies and heads, her voyage and pace dial, and her courses to the sea room. */
   private readonly passage: Passage;
   private camera: OverworldCamera;
@@ -200,7 +159,10 @@ export class Sea {
 
   /** Joins the sea room `open` makes, a server's or the page's own, the ship put to sea where it lies. */
   async enterRoom(open: Parameters<typeof SeaRoom.join>[0]): Promise<void> {
-    this.room = await SeaRoom.join(open, this.position, this.passage.pace);
+    // Every hull is made ready behind the veil, so the first of each seen never holds a frame; one that fails to come
+    // is drawn as the Sloop, as before.
+    const warmed = this.hull.warm?.().catch(() => undefined);
+    [this.room] = await Promise.all([SeaRoom.join(open, this.position, this.passage.pace), warmed]);
     [this.passage.room, this.roomLost] = [this.room, false];
     this.sendLie(this.room);
   }
@@ -505,7 +467,9 @@ export class Sea {
       pose,
       viewport,
       this.chosen,
+      pirates,
     );
+    this.watch.step(dt, combat ? [] : pirates, this.position, this.waterAt?.(this.position) ?? null);
     this.placed = marks.placed;
     return {
       shot: shown,
@@ -585,12 +549,17 @@ export class Sea {
     if (this.view.kind !== 'sail') return room.slice(3);
     // Off the helm, her helmsman has her while she sails on.
     const helmsman = this.aboard.walking && this.passage.sailing ? ' · Her helmsman has the helm' : '';
-    return this.passage.note + helmsman + room;
+    return this.voyageNote + helmsman + room;
   }
 
-  /** Where her voyage stands: under way, hove to short of it, or at anchor. */
+  /** Where her voyage stands: a hostile ship just sighted or other waters entered; under way, hove to, or at anchor. */
   get voyageNote(): string {
-    return this.passage.note;
+    return this.watch.words ?? this.passage.note;
+  }
+
+  /** The water she is in, as the status line names it; null before the waters are open. */
+  get waterWords(): string | null {
+    return this.watch.waterWords;
   }
 
   /** Her pace dial's step. */

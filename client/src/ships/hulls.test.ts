@@ -47,6 +47,12 @@ test('her stripe runs along the mouths of her upper guns, not a lower deck', () 
 });
 
 test("a fight captain's hull points are never read as her hull's number", () => {
-  // In a fight's view `hull` is her hull points and `hull_kind` her hull; until the page reads either, the Sloop.
-  assert.equal(hullOfCaptain({ hull: 240, max_hull: 240 }), SLOOP_HULL);
+  // In a fight's view `hull` is her hull points and `hull_kind` her hull.
+  assert.equal(hullOfCaptain({ hull: 240, max_hull: 240 }), SLOOP_HULL, 'a room that names no hull: the Sloop');
+  assert.equal(hullOfCaptain({ hull: 240, max_hull: 240, hull_kind: 2 }), 2, 'the Brig, by her hull_kind');
+});
+
+test('a ship at sea and a fleet vessel name their hull in `hull`', () => {
+  assert.equal(hullOfCaptain({ hull: 1 }), 1, "a Pirate's Schooner at sea");
+  assert.equal(hullOfCaptain({}), SLOOP_HULL, 'a room from before hulls: the Sloop');
 });

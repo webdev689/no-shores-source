@@ -28,6 +28,8 @@ export interface SeaHull {
   readonly waterline: Waterline;
   /** The hull a ship is drawn as: her own once her model has come, the Sloop until then. */
   readonly shown: (hull: number) => number;
+  /** Makes every hull's model and its shell tags ready; awaited behind the sea's veil. */
+  readonly warm?: () => Promise<unknown>;
   readonly marks: MarkDrawer;
 }
 

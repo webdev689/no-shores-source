@@ -37,7 +37,9 @@ code:
   - client/src/game/seaCombat.ts#SeaCombat
   - crates/naval/src/ranks.rs#SCALES
   - crates/naval/src/ranks.rs#Commission
-  - crates/room/src/pirates.rs#commission_at_sea
+  - crates/room/src/sighting.rs#rank_for
+  - crates/room/src/sighting.rs#sight_for
+  - crates/room/src/chart.rs#Charted
   - crates/room/src/clash.rs#Clash
   - crates/naval/src/fight.rs#among
   - client/src/ships/shipBars.ts#placeShipBars
@@ -213,21 +215,44 @@ The sea room ([[Server]]) sails hostile ships among the players' on the [[Overwo
 pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]), the Grey Tithe's beside them.
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
-  falls due while they fight comes as the fight ends. While fewer than two hostile ships sail within 1.9 km of them, a
-  roll brings a ship 0.8 of the time, and she is hostile 0.3 of that (DFO's open sea: 30 of its factions' 100); no other
-  ship sails yet. By her seed half of those sail for the Grey Tithe and half are pirates, a Minor 0.3 of the time, a
-  Major 0.5 and an Elite 0.2. The rolls wait real seconds, and are drawn from a seed the sea takes as it opens (the
-  server's from the runtime's random numbers, the page's from its own), so each sea sends its ships in an order of its
-  own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
-- **Where.** On the ring 650 to 1000 m round their ship, no nearer than 450 m to any player, where open water lies
-  between, heading across their waters on a slant; she sails on at 2.4 m/s, going about at land, and goes once no
-  player is within 1.9 km. Her seed sets her faction, rank and temper: an Elite is always bold, any other one in four.
+  falls due while they fight comes as the fight ends. While fewer than three hostile ships sail within their sight of
+  them, a roll brings a ship 0.8 of the time, and she is hostile 0.3 of that (DFO's open sea: 30 of its factions' 100).
+  The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
+  none in Overlook's home waters (the roll is spent), a pirate in the pirates' waters, a Tithe ship in the Grey Tithe's,
+  and either, half each, in a contested water or on the seam. Her rank comes by the lowest level of her water's band:
+
+  | Band starts at | Minor | Major | Elite | Miniboss |
+  |---|---|---|---|---|
+  | under 10 | 0.50 | 0.40 | 0.10 | 0 |
+  | 10 to 12 | 0.35 | 0.45 | 0.20 | 0 |
+  | 13 to 18 | 0.25 | 0.45 | 0.25 | 0.05 |
+  | 19 to 25 | 0.15 | 0.45 | 0.30 | 0.10 |
+  | 26 and up | 0.10 | 0.40 | 0.35 | 0.15 |
+
+  No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Her level is
+  drawn evenly from the band, as a garrison foe's is; it is carried and shown, and her strength in a fight stays her
+  rank's. Her faction and rank are drawn as she comes and kept on her (`sighting.rs`). The rolls wait real seconds, and
+  are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its
+  own), so each sea sends its ships in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
+- **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
+  rest counted as 1): 5 km at the helm, 8.6 km at ×20, 25.9 km at ×60, 43.2 km at ×100, so one met head-on stays in
+  sight half a minute and more. Each keeps the largest sight she has been given, from the pace of the player nearest
+  her, and goes once no player is within 1.1 times it.
+- **Where.** Between 0.9 and 1 of her sight out from the player, within 60 degrees of their heading while under way and
+  anywhere at rest, no nearer than 450 m to any player, where open water lies between and out of home waters. Of the
+  ten tries that fit, a pirate takes the one nearest a coast, keeping near coves; a Tithe ship the one nearest a
+  friendly lane (a leg of a route between the port cities, `world::traffic`) within 50 km, heading along it the way
+  nearer her slant toward the player. With no lane that near, she comes as a pirate does. Every other ship heads across
+  the player's waters on a slant. She sails at the Sloop's 2.4 m/s times her rank's way (Minor 0.9, Major 1, Elite 1.1,
+  Miniboss 1.2), going about at land and at the edge of home waters, which no hostile ship enters (one a fight among
+  captains left inside them may sail out). Her temper is her
+  seed's: an Elite and a Miniboss are always bold, any other one in four.
 - **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
   voyage's pace (144 m/s at ×60), the world's own while they lie at rest, and real time where another player sails
   within 1.2 km of that one, a shared sea.
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
   pace is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12
-  m/s and her 2.4, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
+  m/s and the fastest rank's 2.88, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
   sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a hostile ship of either
   temper, sailing or in a fight among captains, it is held to ×1, the world's own time (`threat.rs`). The room sails
   each ship at that pace and sends it as her pace; the page sails its own at the room's pace, drawn to where the room
@@ -236,8 +261,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   nearest: both leave the sea and fight there with no player, on the fight of many ships, which the room steps each
   tick. Each ship stays where the fight has her, and the snapshot shows her among the ships at sea there. The fight
   lasts while one of them fights on; then one who struck, sank or runs leaves the sea, and the rest sail on from where
-  it left them. Two that sailed on meet again only once out of each other's sight. A fight with no ship within 1.9 km
-  of a player leaves the sea, as a ship does. Ships of one faction never meet.
+  it left them. Two that sailed on meet again only once out of each other's sight. A fight with no ship a player keeps at
+  sea (within 1.1 times her sight) leaves the sea, as a ship does. Ships of one faction never meet.
 - **Joining.** A player not fighting who comes within 750 m of any ship of such a fight joins it: their Sloop heaves
   to there and is put into it, and its captains choose whom to fight by their own law, the one each fights reckoned
   nearer.
@@ -286,6 +311,9 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
   come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
 - Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
+- A hostile ship keeps her course from where she comes; none steers for the player, so a bold one meets only a player
+  who sails within 750 m of her, and fights at sea grow rare now that ships come kilometres out (measured: [[Server]],
+  "The sea"). The Grey Tithe keeps to lanes only where the room is opened with the ports.
 - A pirate sails on the clock of the player nearest her, while another player's voyage is held as if she closed on
   them at their own: for the few ticks one player is nearest while she bears down on another, she may close faster
   than that one's hold allows.

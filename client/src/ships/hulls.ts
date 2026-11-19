@@ -25,11 +25,15 @@ export function hullName(hull: number): HullName {
   return HULL_NAMES[hull] ?? 'sloop';
 }
 
-/** The hull a captain's ship sails, by the room's word on her: at sea her `Pirate`'s `hull`, in a fight's or a
- *  fleet's view her captain's `hull_kind` (`hull` there is her hull points). shortcut: the Sloop until those fields
- *  reach the page's records; the hostile ships' work reads them here. */
-export function hullOfCaptain(_pirateOrCaptain: object): number {
-  return SLOOP_HULL;
+/** The hull a captain's ship sails, by the room's word on her: at sea her `Pirate`'s `hull` and in a fleet her
+ *  vessel's; in a fight's view her `hull_kind`, since `hull` there is her hull points (a fight's vessel is told by its
+ *  `max_hull`). The Sloop where the room names none. */
+export function hullOfCaptain(ship: {
+  readonly hull?: number;
+  readonly hull_kind?: number;
+  readonly max_hull?: number;
+}): number {
+  return (ship.max_hull === undefined ? ship.hull : ship.hull_kind) ?? SLOOP_HULL;
 }
 
 /** Her waterline as her export measured it. */

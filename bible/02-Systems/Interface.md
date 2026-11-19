@@ -18,6 +18,7 @@ code:
   - client/src/plus/compass.ts#compassPlace
   - client/src/plus/compass.ts#markPlace
   - client/src/game/seaHud.ts#seaShipMarks
+  - client/src/game/seaHostiles.ts#hostileLook
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
@@ -101,6 +102,10 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
   Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number; an
   Elite's brass chevron and a Miniboss's two.
+- **A hostile ship's mark at sea** is a port's mark in her own dress (`hostileLook`): her faction's emblem in the
+  ring, the ring and its arrow in her rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
+  two chevrons over it as her plate bears them, her name under it and under that "Hostile", her level and her
+  distance.
 - **Bars over figures never overlap** (`BarLayout`). Each frame the nearest keeps its place over its figure, in front,
   and each farther one that would cover a bar already placed is lifted just above it. The order changes only when a
   figure comes 6% nearer, a lifted bar comes down only once it is 10 px further clear, and a bar eases to a new height,
@@ -122,7 +127,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
   larger) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
   an end. A brass needle marks its middle. Its column stands what comes under it 10 px under its rule, 56 px down:
-  a boss's bar, then the target's plate. At sea it marks each ship within 900 m on its top edge, a bow pointing up,
+  a boss's bar, then the target's plate. At sea it marks each hostile ship within her own sight (5 km at the helm,
+  farther with the voyage's pace, [[Naval Combat]], "At sea") and every other ship within 900 m on its top edge, a
+  bow pointing up,
   at her bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
   on the side to turn toward. She is red while she would take the player (a hostile ship, or a hostile captain in
   the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one

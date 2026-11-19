@@ -173,9 +173,8 @@ picture's grain, the picture's lightness about its mean kept:
   emblem where the [[Interface]]'s plates have one.
 
 Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
-`hullName`): a `Pirate`'s `hull` at sea, a captain's `hull_kind` in a fight's or a fleet's view. A number with no
-model is drawn as the Sloop. Until the page's records carry those fields, every captain is the Sloop
-(`hullOfCaptain`).
+`hullName`): a `Pirate`'s `hull` at sea and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`
+is her hull points (`hullOfCaptain`). A number with no model, or none sent, is drawn as the Sloop.
 
 ## Her sails
 

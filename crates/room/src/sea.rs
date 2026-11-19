@@ -8,9 +8,10 @@
 //! wheel.
 
 use crate::PlayerId;
+use crate::chart::{Charted, SeaChart};
 use crate::clash::{Clash, ship_at, sighted, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
-use crate::pirates::{Pirate, Pirates};
+use crate::pirates::{Pirate, Pirates, Voyager};
 use crate::threat::held_pace;
 use core::f64::consts::{PI, TAU};
 use land::sea::{FULL_DEPTH_M, Swell};
@@ -24,6 +25,7 @@ use std::collections::{BTreeMap, VecDeque};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::{Point, edges, ring_contains, segments_meet};
 use world::layout::Layout;
+use world::traffic::Port;
 
 /// A ship's speed at a pace of 1, metres a second.
 pub const SHIP_SPEED_M_S: f64 = 12.0;
@@ -90,12 +92,30 @@ pub struct Ship {
 
 /// A continent's coast, with its bounds to pass over it quickly.
 #[derive(Debug)]
-struct Coast {
+pub(crate) struct Coast {
     ring: Vec<Point>,
     west: i64,
     north: i64,
     east: i64,
     south: i64,
+}
+
+impl Coast {
+    /// Each continent's coast of a layout that has three corners or more.
+    pub(crate) fn of(layout: &Layout) -> Vec<Coast> {
+        let coast = |ring: &Vec<Point>| {
+            let (xs, ys) = (ring.iter().map(|point| point.x), ring.iter().map(|point| point.y));
+            let (west, east) = (xs.clone().min().unwrap_or(0), xs.max().unwrap_or(0));
+            let (north, south) = (ys.clone().min().unwrap_or(0), ys.max().unwrap_or(0));
+            Coast { ring: ring.clone(), west, north, east, south }
+        };
+        layout
+            .continents
+            .iter()
+            .filter(|continent| continent.outline.len() >= 3)
+            .map(|continent| coast(&continent.outline))
+            .collect()
+    }
 }
 
 #[derive(Debug)]
@@ -143,11 +163,12 @@ impl Waters for CoastWaters<'_> {
 }
 
 /// The sea: the continents' coasts, its clock in ticks, each player's ship once it has put to sea, the pirates, each
-/// player's fight and each fight among captains alone, the deck every ship has, and each player off the helm walking
-/// it.
+/// player's fight and each fight among captains alone, the deck every ship has, each player off the helm walking
+/// it, and the chart its hostile ships read.
 #[derive(Debug)]
 pub struct Sea {
     coasts: Vec<Coast>,
+    chart: Charted,
     deck: Deck,
     aboard: BTreeMap<PlayerId, Aboard>,
     swell: Swell,
@@ -160,29 +181,19 @@ pub struct Sea {
 }
 
 /// A point to the nearest whole metre, or None for one that is not a number or lies outside the world's frame.
-fn whole(&[x, y]: &[f64; 2]) -> Option<Point> {
+pub(crate) fn whole(&[x, y]: &[f64; 2]) -> Option<Point> {
     let within = |value: f64, limit: i64| value.is_finite() && value >= 0.0 && value <= limit as f64;
     (within(x, FRAME_WIDTH_M) && within(y, FRAME_HEIGHT_M)).then(|| Point::new(x.round() as i64, y.round() as i64))
 }
 
 impl Sea {
-    /// An empty sea round the layout's continents, every ship with `deck`, its pirates' chances drawn from `seed`.
+    /// An empty sea round the layout's continents, every ship with `deck`, its pirates' chances drawn from `seed`, the
+    /// Grey Tithe patrolling the lanes between those of `ports` that are port cities.
     #[must_use]
-    pub fn new(layout: &Layout, deck: Deck, seed: u32) -> Self {
-        let coasts = layout
-            .continents
-            .iter()
-            .filter(|continent| continent.outline.len() >= 3)
-            .map(|continent| {
-                let ring = continent.outline.clone();
-                let (xs, ys) = (ring.iter().map(|point| point.x), ring.iter().map(|point| point.y));
-                let (west, east) = (xs.clone().min().unwrap_or(0), xs.max().unwrap_or(0));
-                let (north, south) = (ys.clone().min().unwrap_or(0), ys.max().unwrap_or(0));
-                Coast { ring, west, north, east, south }
-            })
-            .collect();
+    pub fn new(layout: &Layout, deck: Deck, seed: u32, ports: &[Port]) -> Self {
         Sea {
-            coasts,
+            coasts: Coast::of(layout),
+            chart: Charted::new(layout, ports),
             deck,
             aboard: BTreeMap::new(),
             swell: Swell::default(),
@@ -390,31 +401,30 @@ impl Sea {
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
         step_clashes(&mut self.clashes, &mut self.pirates, &players, (&waters, wind, time));
         // Each player's waters run at the pace they sail, the world's own time at rest.
-        let ships: Vec<(PlayerId, [f64; 2], bool, f64)> = self
+        let ships: Vec<Voyager> = self
             .ships()
-            .map(|(player, ship)| {
-                (player, [ship.x, ship.y], self.fights.contains_key(&player), f64::from(ship.rate.max(1)))
+            .map(|(player, ship)| Voyager {
+                player,
+                at: [ship.x, ship.y],
+                heading: ship.heading,
+                pace: ship.pace,
+                fighting: self.fights.contains_key(&player),
+                clock: f64::from(ship.rate.max(1)),
             })
             .collect();
-        let coasts = &self.coasts;
-        let met = self.pirates.tick(TICK_SECONDS, &ships, |from, to| {
-            let ends = [from, to].map(|[x, y]| whole(&[x, y]));
-            match ends {
-                [Some(from), Some(to)] => !on_land(coasts, to) && !leg_meets_land(coasts, from, to),
-                _ => false,
-            }
-        });
+        let chart = SeaChart { coasts: &self.coasts, charted: &self.chart };
+        let met = self.pirates.tick(TICK_SECONDS, &ships, &chart);
         for (player, pirate) in met {
             let Some(own) = heave_to(&mut self.berths, &mut self.aboard, player) else { continue };
             // She has hove to: the player sets her sails; the pirate comes on under hers.
             let captain = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
-            let fight = Fight::meet(own, captain, pirate.commission(), pirate.seed, &waters, time);
+            let fight = Fight::meet(own, captain, pirate.commission, pirate.seed, &waters, time);
             self.fights.insert(player, SeaFight { fight, orders: QUIET, events: Vec::new() });
         }
         for met in self.pirates.meet_rivals() {
             self.clashes.push(Clash::begin(met, &waters, time));
         }
-        for &(player, at, _, _) in &ships {
+        for &Voyager { player, at, .. } in &ships {
             if self.fights.contains_key(&player) {
                 continue;
             }
@@ -487,7 +497,7 @@ fn heave_to(
 }
 
 /// Whether a point lies on a continent.
-fn on_land(coasts: &[Coast], point: Point) -> bool {
+pub(crate) fn on_land(coasts: &[Coast], point: Point) -> bool {
     coasts
         .iter()
         .filter(|coast| {
@@ -498,7 +508,7 @@ fn on_land(coasts: &[Coast], point: Point) -> bool {
 
 /// Whether a leg between two points meets a coast. A leg that never enters a coast's box, though its own box overlaps
 /// it (a long leg passing a continent's corner), is told so by the box's four sides, not the coast's thousands.
-fn leg_meets_land(coasts: &[Coast], from: Point, to: Point) -> bool {
+pub(crate) fn leg_meets_land(coasts: &[Coast], from: Point, to: Point) -> bool {
     let (west, east) = (from.x.min(to.x), from.x.max(to.x));
     let (north, south) = (from.y.min(to.y), from.y.max(to.y));
     coasts

@@ -12,6 +12,7 @@ import {
   courseAhead,
   easedNote,
   easedPace,
+  paceToAskAgain,
   followed,
   heldNote,
   PACE_EASE_S,
@@ -176,6 +177,8 @@ export class Passage {
     this.easePace(seconds, watched);
     if (!this.voyage) return;
     const settled = this.room?.settledShip ?? null;
+    // A step the room refused is asked again, once its word on the last has come, until the two agree.
+    if (paceToAskAgain(this.sailed, settled, this.room?.pirates ?? [])) this.sendVoyage();
     if (settled?.pace === 0) {
       this.restWhereTheRoomHasHer(this.voyage, settled);
       return;
@@ -234,7 +237,10 @@ export class Passage {
    *  anchor. */
   get note(): string {
     if (this.voyage) {
-      const held = heldNote(this.sailed, this.room?.settledShip ?? null) + easedNote(this.sailed, this.dial);
+      const settled = this.room?.settledShip ?? null;
+      // The eased pace is said only once the room sails her at it.
+      const eased = settled?.pace === this.sailed ? easedNote(this.sailed, this.dial) : '';
+      const held = heldNote(this.sailed, settled) + eased;
       if (this.straight) return `Sailing straight on${held}`;
       const remaining = this.voyage.lengthM - this.travelled;
       const left = timeText(secondsLeft(this.voyage, this.travelled, this.dial));

@@ -135,7 +135,17 @@ const SPELLS: [room::SpellSeen; 2] = [
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
 /// The ships the client's test expects in the sea's snapshot.
-const PIRATES: [Pirate; 1] = [Pirate { id: 4, seed: 9, x: 1_000.5, y: 2_000.25, heading: 1.5, bold: true }];
+const PIRATES: [Pirate; 1] = [Pirate {
+    id: 4,
+    seed: 9,
+    commission: Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Elite },
+    level: 23,
+    sight_m: 25_920.0,
+    x: 1_000.5,
+    y: 2_000.25,
+    heading: 1.5,
+    bold: true,
+}];
 
 /// Deep, still water everywhere.
 struct Open;
@@ -389,9 +399,10 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((sea.tick(), ships), (77, sent.to_vec()));
     let pirate = sea.pirates().unwrap().get(0);
     assert_eq!((pirate.id(), pirate.x(), pirate.y(), pirate.heading()), (4, 1_000.5, 2_000.25, 1.5));
-    let commission = PIRATES[0].commission();
+    let commission = PIRATES[0].commission;
     assert_eq!((pirate.faction(), pirate.rank()), (commission.faction, commission.rank.number()));
     assert_eq!(pirate.hull(), commission.hull().number(), "she sails her rank's hull");
+    assert_eq!((pirate.level(), pirate.sight()), (23, 25_920.0), "her level and the distance she is sighted from");
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
