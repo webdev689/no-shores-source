@@ -1,13 +1,14 @@
 //! How a foe moves: what its thinking asks (a way to go and how fast, a bearing to face, the fight's buttons) turned
 //! into its fighter's controls. It turns at its own pace; walking away it turns first and steps only once it faces
-//! its way; it steers apart from the foes beside it; and it finds its way by the routes the room hands in.
+//! its way; it steers apart from the foes beside it; and it finds its way by the routes the room hands in, climbing
+//! and dropping where they cross a block with the controls a player would use.
 
 use crate::brain::Brain;
 use crate::senses::Here;
-use crate::tuning::{CLEAR, SPACING, SPACING_PACE, TURN, WALK_FACE};
+use crate::tuning::{CLEAR, SPACING, SPACING_PACE, SQUARE, TURN, WALK_FACE};
 use combat::sight::{apart, bearing, off, turned, wrap};
 use combat::{CombatInput, Intent};
-use movement::Controls;
+use movement::{Controls, Mode, TICK_SECONDS, TUNING};
 
 /// What a foe's thinking asks of its body and its arms this tick.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -95,9 +96,43 @@ fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
     [wish[0] + push[0], wish[1] + push[1]]
 }
 
+/// Crossing a block: a foe on its side, or in the air, presses on the way it faces, so it goes up and over, or catches
+/// a lip it jumped for; one whose way crosses a climb or a drop from where it stands turns square to the side, then
+/// walks on along its way, pressing jump to go over where the crossing says, never running nor steered apart. So the
+/// rules carry it across as they carry a player, or, struck or set down short, it finds its way again from wherever
+/// it stands.
+fn across(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Option<Controls> {
+    let body = here.fighter.body;
+    if matches!(body.mode, Mode::Climb | Mode::Hang | Mode::Air) {
+        brain.heading = body.facing;
+        return Some(Controls { forward: 1.0, yaw: body.facing, ..Controls::default() });
+    }
+    let (way, _) = ask.way?;
+    let crossing = here.world.routes.crossing(here.feet()).filter(|crossing| off(way, crossing.bearing) <= SQUARE)?;
+    brain.heading = turned(brain.heading, crossing.bearing, TURN);
+    let square = off(brain.heading, crossing.bearing) <= SQUARE;
+    if square {
+        brain.heading = crossing.bearing;
+    }
+    let jump = square && crossing.jump && body.mode == Mode::Ground;
+    Some(Controls { forward: if square { 1.0 } else { 0.0 }, yaw: brain.heading, jump, ..Controls::default() })
+}
+
+/// Whether this tick's step, a share of a walk (or a run) east and south, walks a foe on its feet off an edge more
+/// than a step high. Only a crossing drops a foe: its hop back from a blow, or its circling, holds at the edge.
+fn off_edge(here: &Here<'_, '_>, share: [f64; 2], run: bool) -> bool {
+    let feet = here.feet();
+    let pace = if run { TUNING.run } else { TUNING.walk } * TICK_SECONDS;
+    let to = [feet[0] + share[0] * pace, feet[1] + share[1] * pace, feet[2]];
+    here.fighter.body.mode == Mode::Ground && here.world.routes.drops(feet, to)
+}
+
 /// The intent an ask comes to: the heading turned toward what it faces, the move made relative to it.
 #[must_use]
 pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
+    if let Some(controls) = across(brain, here, ask) {
+        return Intent { controls, combat: ask.combat };
+    }
     let way = ask.way.map(|(way, _)| way);
     let face = if ask.walk_facing { way.or(ask.face) } else { ask.face.or(way) };
     if let Some(face) = face {
@@ -112,7 +147,10 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     if !ask.unspaced {
         wish = spaced(here, wish);
     }
-    let length = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt().min(1.0);
+    let whole = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt();
+    let length = whole.min(1.0);
+    let held = length > 1e-9 && off_edge(here, [wish[0] / whole * length, wish[1] / whole * length], ask.run);
+    let length = if held { 0.0 } else { length };
     let (forward, sideways) = if length > 1e-9 {
         let relative = wrap(libm::atan2(wish[0], -wish[1]) - brain.heading);
         (libm::cos(relative) * length, libm::sin(relative) * length)

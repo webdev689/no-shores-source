@@ -56,6 +56,27 @@ pub trait Routes {
     fn walkable(&self, _point: [f64; 3]) -> bool {
         true
     }
+
+    /// The climb or drop the thinking foe's way crosses from where it stands, if it stands at one's start: none,
+    /// unless the routes know better.
+    fn crossing(&self, _from: [f64; 3]) -> Option<Crossing> {
+        None
+    }
+
+    /// Whether a body on its feet at `from` stepping to `to` drops off an edge more than a step high: never, unless the
+    /// routes know better.
+    fn drops(&self, _from: [f64; 3], _to: [f64; 3]) -> bool {
+        false
+    }
+}
+
+/// A climb or a drop on a foe's way, where it starts across: the bearing to face and walk along, square to a block's
+/// side, and whether to press jump to go over it, as a player would. Walked with no jump, the movement rules climb a
+/// side too high to go over, and drop a body off an edge.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Crossing {
+    pub bearing: f64,
+    pub jump: bool,
 }
 
 /// A straight line: open ground, and tests.
