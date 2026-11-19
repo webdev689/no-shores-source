@@ -162,7 +162,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   Her sails are set while she is under way and furled at rest, filled by the steady wind along the swell's bearing.
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times her length), so one reads from the raised
   view, and every hull the same four times her own, so a Frigate reads larger than a Sloop. Every other player's ship
-  is the Sloop too; a captain's is her own hull in her side's colours ([[Sailing]], "Her look"). At the helm every
+  is the Sloop too. A captain's ship is drawn as the hull the wire carries for her, in her side's colours, and as the
+  Sloop until the wire carries one ([[Sailing]], "Her look"). At the helm every
   ship is her true size ([[Held Map]]).
 - **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
   is laid on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large

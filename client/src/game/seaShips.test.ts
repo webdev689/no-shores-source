@@ -4,7 +4,7 @@ import type { SeenPirate, SeenShip } from '../network/messages.ts';
 import { hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { HULLS } from '../water/hullMask.ts';
-import { SeaShips } from './seaShips.ts';
+import { heelShare, SeaShips } from './seaShips.ts';
 
 const WATER = { swell: undefined, depthAt: () => Infinity };
 const OWN = {
@@ -50,4 +50,27 @@ test('every ship leaves her footprint on the water as she is drawn, pirates too,
   assert.equal(kept.length, HULLS, 'as many as the water holds');
   const farthestKept = 1000 - (many.length - (HULLS - 1)) * 50;
   assert.equal(Math.max(...kept.slice(1).map((hull) => hull.x)), farthestKept, 'the farthest left out');
+});
+
+test('in the same turn a narrow hull heels more than the Sloop and a broad one less, by beam', () => {
+  assert.equal(heelShare(SLOOP_HULL), 1);
+  assert.ok(Math.abs(heelShare(1) - 5.5684 / hullWaterline(1).beamM) < 1e-9);
+  assert.ok(heelShare(1) > 1 && heelShare(3) < 1, 'the Schooner more, the Frigate less');
+  const heelOf = (hull: number) => {
+    const ships = new SeaShips();
+    const lies = { x: 0, y: 0, heading: 0, underWay: true };
+    ships.placeOf('one', lies, 1, WATER, 1 / 60, 0, hull);
+    return ships.placeOf('one', { ...lies, heading: 0.002 }, 1, WATER, 1 / 60, 1 / 60, hull).roll;
+  };
+  assert.ok(heelOf(1) > heelOf(SLOOP_HULL) && heelOf(SLOOP_HULL) > heelOf(3));
+});
+
+test('a captain whose hull is still coming is drawn, her footprint laid, as the Sloop', () => {
+  const pirate: SeenPirate = { id: 3, x: 800, y: -300, heading: 1.2, faction: 2, rank: 1 };
+  const coming = new SeaShips(() => SLOOP_HULL);
+  const [, drawn] = coming.ships(1 / 60, 10, 0.4, OWN, [], [pirate], 4, WATER);
+  assert.equal(drawn?.hull, SLOOP_HULL);
+  assert.equal(drawn?.rig?.sails.length, hullSails(SLOOP_HULL).length);
+  const [, footprint] = coming.hulls(OWN.lies, [], [pirate], 1);
+  assert.equal(footprint?.halfLength, hullWaterline(SLOOP_HULL).lengthM / 2);
 });

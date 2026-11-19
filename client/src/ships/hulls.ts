@@ -16,7 +16,6 @@ interface Entry {
   readonly waterline: { readonly length_m: number; readonly beam_m: number; readonly draught_m: number };
   readonly sails: readonly SailCorners[];
   readonly guns: readonly { readonly mouth_m: Point }[];
-  readonly boxes: { readonly hull: readonly [Point, Point] };
 }
 // The manifest is the export's own, in the repository: its entries are as `Entry` says.
 const ENTRIES = ships.ships as unknown as Readonly<Record<HullName, Entry>>;
@@ -62,22 +61,15 @@ export function plateOverM(hull: number): number {
   return BAR_OVER_M + sailTop(hull) - sailTop(SLOOP_HULL);
 }
 
-/** Where a side's paint goes on her, in her frame: her stripe's line, its height over her waterline at her middle
- *  and its rise a metre toward her bow; and her shell, the middle of her hull's box along her and its half length
- *  and half beam, metres. */
+/** Her stripe's line in her frame: its height over her waterline at her middle and its rise a metre toward her bow,
+ *  metres. */
 export interface HullPaint {
   readonly atM: number;
   readonly rise: number;
-  readonly middleM: number;
-  readonly halfLengthM: number;
-  readonly halfBeamM: number;
 }
 
-/** Where a side's paint goes on her: her stripe fitted through the mouths of her highest tier of guns, so it follows
- *  her sheer, and her shell as her export's box of her hull measures it. */
+/** Her stripe, fitted through the mouths of her highest tier of guns, so it follows her sheer. */
 export function hullPaint(hull: number): HullPaint {
-  const [low, high] = ENTRIES[hullName(hull)].boxes.hull;
-  const shell = { middleM: (low[0] + high[0]) / 2, halfLengthM: (high[0] - low[0]) / 2, halfBeamM: high[1] };
   const mouths = ENTRIES[hullName(hull)].guns.map((gun) => gun.mouth_m);
   const highest = Math.max(...mouths.map((mouth) => mouth[2]));
   // A lower tier of guns stands a deck's height under the upper one; the upper tier's own mouths keep within a metre.
@@ -86,5 +78,5 @@ export function hullPaint(hull: number): HullPaint {
   const [meanX, meanZ] = [mean(tier.map((mouth) => mouth[0])), mean(tier.map((mouth) => mouth[2]))];
   const spread = tier.reduce((sum, mouth) => sum + (mouth[0] - meanX) ** 2, 0);
   const rise = spread > 0 ? tier.reduce((sum, mouth) => sum + (mouth[0] - meanX) * (mouth[2] - meanZ), 0) / spread : 0;
-  return { atM: meanZ - rise * meanX, rise, ...shell };
+  return { atM: meanZ - rise * meanX, rise };
 }
