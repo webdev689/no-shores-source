@@ -9,10 +9,13 @@ import { edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
-import { Words, wordsOf } from './hitWords.ts';
+import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
+import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
 import { element } from './meter.ts';
-import { cameraOf, SIGHT_SKIN_M } from './plateSight.ts';
+import { cameraOf, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
+import { PLATES } from '../plus/barLayout.ts';
+import { BOSS_RANK } from '../rules/roster.ts';
 import { Vitals } from './vitals.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
@@ -62,6 +65,8 @@ const RING_HEIGHT = 2.5;
 /** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall), under
  *  where its parry ring closes, so the plate reads as the foe's own and the ring stays clear above it. */
 const PLATE_OVER_M = 1.9;
+/** A word with no striker to meet stands this high over its fighter's feet (metres). */
+const WORD_HIGH_M = 1.2;
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
 function clipOf(matrix: ArrayLike<number>, point: readonly [number, number, number]): [number, number, number] {
@@ -132,6 +137,8 @@ export class Hud {
   private readonly foeBars: FoeBars;
   private readonly foeTarget = new FoeTarget();
   private readonly words: Words;
+  /** The side the next number with no stroke to follow is thrown to. */
+  private nextSide = 1;
   private readonly abilities: AbilityBar | null;
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
@@ -289,18 +296,23 @@ export class Hud {
     }
   }
 
-  /** The events' words, each rising and fading over where it happened (in first person, those on the player below the
-   *  crosshair), and a warning over a foe near the player as it begins an iron wind-up. */
+  /** The events' words, each where its blow met the body, thrown the way the stroke went, and clear of the plates (in
+   *  first person, those on the player below the crosshair); and a warning over a foe near the player as it begins an
+   *  iron wind-up. */
   private floatWords(frame: HudFrame, seconds: number): void {
     const holding = (id: number) => frame.foes.find((foe) => foe.id === id)?.view.action.kind === 'telegraph';
+    const projectWord = (point: readonly [number, number, number]) =>
+      project(frame.matrix, point, frame.width, frame.height);
     for (const said of wordsOf(frame.events, frame.player, holding)) {
       const place = frame.where(said.defender);
       if (!place) continue;
       const own = frame.firstPerson && said.defender === frame.player;
       // What a shield took is said in its element's colour.
       const shield = said.tone === 'shield' ? frame.foes.find((foe) => foe.id === said.defender)?.shield : null;
-      const told = shield ? { ...said, element: shield.element } : said;
-      this.words.say(told, own ? null : [place[0], place[1], place[2] + 1.9]);
+      const told = shield ? { ...said, shield: shield.element } : said;
+      const from = said.striker === undefined ? null : frame.where(said.striker);
+      const contact = from ? contactOf(place, from) : ([place[0], place[1], place[2] + WORD_HIGH_M] as const);
+      this.words.say(told, own ? null : contact, this.sideOf(said, place, from, contact, projectWord));
     }
     for (const { id, view } of frame.foes) {
       const iron = view.action.kind === 'telegraph' && view.action.iron;
@@ -308,11 +320,42 @@ export class Hud {
       if (!iron) this.ironTold.delete(id);
       else if (near && !this.ironTold.has(id)) {
         this.ironTold.add(id);
-        this.words.say({ text: 'Dodge!', tone: 'warn', tags: [] }, [view.x, view.y, view.z + 2.3], 0.5);
+        this.words.say({ text: 'Dodge!', tone: 'warn', tags: [] }, [view.x, view.y, view.z + 2.3], 0, 0.5);
       }
     }
-    const projectWord = (point: readonly [number, number, number]) =>
-      project(frame.matrix, point, frame.width, frame.height);
-    this.words.update(projectWord, frame.width, frame.height, seconds);
+    this.words.update(projectWord, frame.width, frame.height, seconds, platesOf(frame));
   }
+
+  /** The side of the screen a word is thrown to: the way its stroke's blade travelled as the eye sees it, else one
+   *  side and the other in turn for a number, and neither for a word alone. */
+  private sideOf(
+    said: Said,
+    place: readonly [number, number, number],
+    from: readonly [number, number, number] | null,
+    contact: readonly [number, number, number],
+    projectWord: (point: readonly [number, number, number]) => { readonly x: number; readonly y: number } | null,
+  ): number {
+    const travel = from && strokeTravel(said.stroke ?? 0, from, place);
+    const [here, there] = travel
+      ? [projectWord(contact), projectWord([contact[0] + travel[0], contact[1] + travel[1], contact[2] + travel[2]])]
+      : [null, null];
+    if (here && there && Math.abs(there.x - here.x) > 1) return Math.sign(there.x - here.x);
+    if (said.amount === undefined) return 0;
+    this.nextSide = -this.nextSide;
+    return this.nextSide;
+  }
+}
+
+/** Where each foe's plate may stand, as the bars lay it: a column as wide as the plate, above the point over its head
+ *  (a plate lifted clear of another stands higher still). */
+function platesOf(frame: HudFrame): Box[] {
+  const focal = cameraOf(frame.matrix)?.focal ?? Number.NaN;
+  return frame.foes.flatMap(({ view, rank }) => {
+    if (rank === BOSS_RANK || view.action.kind === 'dead') return [];
+    const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
+    const spot = project(frame.matrix, point, frame.width, frame.height);
+    if (!spot) return [];
+    const half = (PLATES.overhead.width * plateScale(clipOf(frame.matrix, point)[2], focal)) / 2;
+    return [{ left: spot.x - half, right: spot.x + half, top: -Infinity, bottom: spot.y }];
+  });
 }

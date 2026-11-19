@@ -120,12 +120,12 @@ test('what a vital lost is its own tone, faint; what a foe’s bar lost is pale'
   assert.match(rule(css, '.fight-hud .meter .lost'), /opacity: 0\.6/);
 });
 
-test('with reduced motion asked for, no piece falls, no word rises and the poise track does not flash', () => {
+test('with reduced motion asked for, no piece falls and the poise track does not flash; no sheet moves a word', () => {
   const css = fightSheetCss();
   const still = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
   assert.match(still, /\.meter \.piece \{ display: none !important; \}/);
   assert.match(still, /\.poise-flash \.poise-fill \{ animation: none; \}/);
-  assert.match(still, /\.word \.rise, \.fight-hud \.word\.great \.rise \{ animation-name: fight-word-still; \}/);
+  assert.doesNotMatch(css, /fight-word/, 'the display steps each word itself, still when asked');
 });
 
 test('the compass turns its points with the view and pools its marks: one no longer wanted is hidden, not removed', () => {
@@ -197,7 +197,7 @@ test('a shield’s ward and the words of what it took are drawn in its element�
   assert.ok(rule(css, ".fight-hud .ward[data-element='2']").includes('--ward: #5ccbff'), 'Volt’s blue');
   assert.ok(rule(css, ".fight-hud .word.shield[data-element='1'] .rise").includes('#ff8a3d'), 'Blaze’s orange');
   onFakePage((root) => {
-    new Words(root).say({ text: '12', tone: 'shield', tags: [], element: 3 }, [0, 0, 0]);
+    new Words(root).say({ text: '12', tone: 'shield', tags: [], shield: 3 }, [0, 0, 0]);
     assert.equal(findAll(root, 'word', 'shield')[0]?.dataset['element'], '3');
   });
 });
