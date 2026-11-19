@@ -1,0 +1,39 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+import { startRoomDoor } from '../../../server/roomDoor.ts';
+
+/** The room-wasm crate's dungeon door holds the same asks and hash (crates/room-wasm/src/dungeon_door.rs). */
+const AGREED_HASH = '07febb8228aaee0e';
+const AGREED_ASKS: readonly (readonly [string, string, number])[] = [
+  ['saltgrass-downs', 'The Saltgrass Downs', 0],
+  ['highwater-glen', 'The Highwater Glen', 1],
+  ['aurora-wastes', 'The Aurora Wastes', 2],
+];
+
+const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
+const compiled = new WebAssembly.Module(
+  await readFile(MODULE).catch(() => {
+    throw new Error('room_wasm.wasm is not built: run `npm run wasm` first');
+  }),
+);
+
+/** FNV-1a over bytes, as the crate takes it. */
+function fnv1a(bytes: Uint8Array): string {
+  let hash = 0xcbf29ce484222325n;
+  for (const byte of bytes) hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 0x100000001b3n);
+  return hash.toString(16).padStart(16, '0');
+}
+
+test('a dungeon laid through WebAssembly is the bytes the crate lays natively', () => {
+  const door = startRoomDoor(compiled);
+  const text = AGREED_ASKS.map(([patrol, name, number]) => door.dungeon(patrol, name, number)).join('');
+  assert.equal(fnv1a(new TextEncoder().encode(text)), AGREED_HASH);
+});
+
+test('a dungeon names its patrol, and an ask the door cannot read is null', () => {
+  const door = startRoomDoor(compiled);
+  const laid = JSON.parse(door.dungeon('saltgrass-downs', 'The Saltgrass Downs', 0)) as { name: string };
+  assert.match(laid.name, /^The \w+ of the Saltgrass Downs$/);
+  assert.equal(door.dungeon('saltgrass-downs', 'The Saltgrass Downs', 1.5), 'null');
+});

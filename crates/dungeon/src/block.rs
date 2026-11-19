@@ -17,6 +17,8 @@ const LEAST_PART: usize = 5;
 /// Tries at a sound layout before a block takes its simplest form, and the step between their seeds.
 const TRIES: u32 = 16;
 const TRY_STEP: u32 = 0x9e37_79b1;
+/// The simplest form's ceiling heights, the Forge's own default whatever the style.
+const SIMPLEST_HEIGHTS: (f64, f64) = (3.2, 5.6);
 
 /// A way through a block's edge: its side and its cell along it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -357,6 +359,10 @@ impl BlockLayout {
                 return block;
             }
         }
-        Self::laid(seed, openings, &Style { rooms: (1, 1), room_cells: (3, 3), ells: false, ..*style })
+        Self::laid(
+            seed,
+            openings,
+            &Style { rooms: (1, 1), room_cells: (3, 3), heights: SIMPLEST_HEIGHTS, ells: false, ..*style },
+        )
     }
 }

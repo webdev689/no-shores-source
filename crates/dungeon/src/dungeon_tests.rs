@@ -1,5 +1,5 @@
 use crate::dungeon::{DOORWAY_HALF_M, JAMB_DEPTH_M, TORCH_M};
-use crate::{BLOCK_CELLS, CELL_M, Cell, Dungeon, PER_PATROL, SIDES, STYLES, name, of_patrol};
+use crate::{BLOCK_CELLS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WayIn, name, of_patrol};
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
     (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
@@ -69,6 +69,11 @@ fn the_way_in_stands_its_door_on_rock_and_a_body_arrives_before_it_facing_in() {
         let column = (x / CELL_M) as usize + (y / CELL_M) as usize * dungeon.columns;
         assert_eq!(column, way.cell, "the arrival stands in the door's cell");
         assert!((door_x - x) * facing[0] + (door_y - y) * facing[1] < 0.0, "facing away from the door");
+        let [middle_x, middle_y] = dungeon.centre(way.cell);
+        let [dx, dy] = way.side.unit();
+        let out = (door_x - middle_x) * dx + (door_y - middle_y) * dy;
+        let along = (door_x - middle_x) * -dy + (door_y - middle_y) * dx;
+        assert!(out > CELL_M / 2.0 - 0.05 && out < CELL_M / 2.0 && along.abs() < 1e-9, "the door on its wall's middle");
     }
 }
 
@@ -94,7 +99,7 @@ fn torches_stand_on_rock_walls_over_head_height_never_on_the_exit_door() {
                 })
             })
             .count();
-        assert!(lit_rooms * 10 >= dungeon.rooms.len() * 9, "nearly every room carries a torch");
+        assert_eq!(lit_rooms, dungeon.rooms.len(), "every room carries a torch");
     }
 }
 
@@ -114,19 +119,143 @@ fn a_doorway_narrows_to_its_frame_and_its_jambs_stand_in_the_corridor() {
             assert!((gap - 2.0 * DOORWAY_HALF_M).abs() < 1e-9, "the way between the jambs is {gap}");
             assert!((deep(&pair[0]) - JAMB_DEPTH_M).abs() < 1e-9 && (deep(&pair[1]) - JAMB_DEPTH_M).abs() < 1e-9);
             assert!(pair.iter().all(|jamb| jamb[4] == frame.height));
+            let corridor = dungeon.beside(frame.cell, frame.side).unwrap();
+            let [middle_x, middle_y] = dungeon.centre(corridor);
+            let half = CELL_M / 2.0;
+            let mut spans: Vec<(f64, f64)> = pair
+                .iter()
+                .map(|jamb| {
+                    assert!(
+                        jamb[0] >= middle_x - half - 1e-9 && jamb[2] <= middle_x + half + 1e-9,
+                        "inside the corridor"
+                    );
+                    assert!(
+                        jamb[1] >= middle_y - half - 1e-9 && jamb[3] <= middle_y + half + 1e-9,
+                        "inside the corridor"
+                    );
+                    let [ex, ey] = frame.side.unit();
+                    let near = if ex != 0.0 {
+                        if ex > 0.0 { jamb[0] } else { jamb[2] }
+                    } else if ey > 0.0 {
+                        jamb[1]
+                    } else {
+                        jamb[3]
+                    };
+                    let edge = if ex != 0.0 { middle_x - ex * half } else { middle_y - ey * half };
+                    assert!((near - edge).abs() < 1e-9, "a jamb stands against the doorway's edge");
+                    if ex != 0.0 {
+                        (jamb[1] - middle_y, jamb[3] - middle_y)
+                    } else {
+                        (jamb[0] - middle_x, jamb[2] - middle_x)
+                    }
+                })
+                .collect();
+            spans.sort_by(|a, b| a.0.total_cmp(&b.0));
+            for ((low, high), (want_low, want_high)) in
+                spans.into_iter().zip([(-half, -DOORWAY_HALF_M), (DOORWAY_HALF_M, half)])
+            {
+                assert!(
+                    (low - want_low).abs() < 1e-9 && (high - want_high).abs() < 1e-9,
+                    "jambs from 0.9 m to 1.6 m out"
+                );
+            }
         }
     }
 }
 
 #[test]
-fn the_floor_is_open_cells_at_0_m_and_rock_none() {
-    for dungeon in every_dungeon(50) {
-        let heights = dungeon.heights();
-        assert_eq!(heights.len(), dungeon.columns * dungeon.rows);
-        for (height, cell) in heights.iter().zip(&dungeon.cells) {
-            assert_eq!(*height, (*cell != Cell::Rock).then_some(0.0));
+fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
+    // A row: the way in's room, two corridor cells, a room of two, rock; then a corridor turning down to a third room.
+    let room = |cells: Vec<usize>| Room {
+        x: 0,
+        y: 0,
+        width: 1,
+        depth: 1,
+        cells,
+        quiet: Vec::new(),
+        height: 3.2,
+        shape: Shape::Rectangle,
+        walk: 0,
+    };
+    let (rock, corridor) = (Cell::Rock, Cell::Corridor);
+    let mut laid = Dungeon {
+        style: STYLES[0],
+        squares: vec![(0, 0)],
+        columns: 6,
+        rows: 2,
+        cells: vec![
+            Cell::Room(0),
+            corridor,
+            corridor,
+            Cell::Room(1),
+            Cell::Room(1),
+            rock,
+            rock,
+            rock,
+            corridor,
+            rock,
+            rock,
+            Cell::Room(2),
+        ],
+        ceilings: vec![3.2; 12],
+        rooms: vec![room(vec![0]), room(vec![3, 4]), room(vec![11])],
+        way_in: WayIn { cell: 0, side: Side::West, room: 0 },
+        torches: Vec::new(),
+        frames: Vec::new(),
+        pillars: Vec::new(),
+    };
+    laid.walk();
+    assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
+    laid.cells[9] = corridor;
+    laid.cells[10] = corridor;
+    laid.walk();
+    assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, 6]);
+    assert_eq!(laid.end(), 2);
+}
+
+#[test]
+fn a_quiet_cell_is_a_rooms_cell_beside_no_corridor_and_every_other_is_beside_one() {
+    for dungeon in every_dungeon(200) {
+        for room in &dungeon.rooms {
+            for &cell in &room.cells {
+                let busy = SIDES
+                    .into_iter()
+                    .any(|side| dungeon.beside(cell, side).is_some_and(|next| dungeon.cells[next] == Cell::Corridor));
+                assert_eq!(room.quiet.contains(&cell), !busy);
+            }
         }
     }
+}
+
+#[test]
+fn pillars_stand_on_every_second_inner_corner_of_a_great_room_four_of_its_own_cells_round_each() {
+    let mut stood = 0;
+    for dungeon in every_dungeon(300) {
+        let own = |x: usize, y: usize| dungeon.room_at(y * dungeon.columns + x);
+        for (number, room) in dungeon.rooms.iter().enumerate() {
+            let mut want = Vec::new();
+            if room.width >= 4 && room.depth >= 4 {
+                for y in (room.y + 2..room.y + room.depth - 1).step_by(2) {
+                    for x in (room.x + 2..room.x + room.width - 1).step_by(2) {
+                        if [own(x, y), own(x - 1, y), own(x, y - 1), own(x - 1, y - 1)]
+                            .iter()
+                            .all(|&at| at == Some(number))
+                        {
+                            want.push([x as f64 * CELL_M, y as f64 * CELL_M, room.height]);
+                        }
+                    }
+                }
+            }
+            let inside = |pillar: &&[f64; 3]| {
+                let (x, y) = ((pillar[0] / CELL_M) as usize, (pillar[1] / CELL_M) as usize);
+                x > room.x && x < room.x + room.width && y > room.y && y < room.y + room.depth
+            };
+            let found: Vec<[f64; 3]> = dungeon.pillars.iter().filter(inside).copied().collect();
+            assert_eq!(found, want);
+            stood += want.len();
+        }
+    }
+    assert!(stood > 0, "some great rooms stand pillars");
 }
 
 #[test]

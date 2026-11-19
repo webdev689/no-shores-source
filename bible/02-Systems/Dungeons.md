@@ -9,6 +9,7 @@ code:
   - crates/dungeon/src/block.rs#BlockLayout
   - crates/dungeon/src/lane.rs#Lane
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
+  - client/src/rules/dungeonRules.test.ts
 ---
 # Dungeons
 
@@ -57,10 +58,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   cells of 3.2 m, as [[Movement]]'s grid of heights takes them; and the jambs and pillars as its blocks.
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
   name and its number: its cells (-2 rock, -1 corridor, or a room's number), ceilings, rooms, way in, arrival, exit
-  door, torches, frames, pillars and boxes.
+  door, torches, frames, pillars and boxes. The room door's `dungeon` asks it. Three dungeons' answers are pinned by
+  their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine.
 
 ## Limits
 
 - One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
   behind.
-- No room in a dungeon is closed off, but a room ringed by corridors has no wall for a torch and stands unlit.
+- A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
