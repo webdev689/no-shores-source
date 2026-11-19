@@ -64,9 +64,9 @@ const ORCHARD_REACH_M: [f64; 2] = [60.0, 45.0];
 const HEDGE_BEHIND_M: f64 = 1.8;
 /// How many thickets a moor's wilds holds, how far its bushes stand apart in one, and the least and most a thicket
 /// reaches from its middle, metres; a share of its bushes is left out, so its edge is ragged.
-const THICKETS: u32 = 5;
+const THICKETS: u32 = 8;
 const THICKET_BUSH_M: f64 = 1.8;
-const THICKET_REACH_M: [f64; 2] = [4.0, 7.0];
+const THICKET_REACH_M: [f64; 2] = [5.0, 10.0];
 const THICKET_KEPT: f64 = 0.75;
 /// How far round its foot a tree and a shrub reach, metres: what each keeps clear by.
 const TREE_REACH_M: f64 = 4.0;
