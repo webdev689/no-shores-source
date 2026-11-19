@@ -250,3 +250,58 @@ fn a_shot_enters_rock_at_its_cell_side_and_a_solid_by_its_face_below_its_top_and
         }
     }
 }
+
+/// Where a crossbow bolt loosed from `from` at `bearing`, level, comes to rest on the ground alone, and what it struck.
+fn bolt(ground: &DungeonGround, from: [f64; 3], bearing: f64, bodies: &[(u32, [f64; 3])]) -> ([f64; 3], Option<u32>) {
+    use combat::shots::{Flight, fly, loose};
+    let mut shot = loose(9, combat::arms::Ranged::Crossbow, from, bearing, 0.0, 1.0);
+    loop {
+        match fly(&shot, &[], ground, bodies) {
+            Flight::Flying(next) => shot = next,
+            Flight::Stopped { at, struck } => return (at, struck),
+        }
+    }
+}
+
+#[test]
+fn a_bolt_stops_at_the_face_of_rock_or_a_tall_solid_and_strikes_a_foe_pressed_to_the_wall() {
+    for seed in 0..12 {
+        let (dungeon, ground) = forged(seed);
+        for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != dungeon::Cell::Rock).step_by(3) {
+            let [x, y] = dungeon.centre(cell);
+            for side in SIDES {
+                if dungeon.beside(cell, side).is_some_and(|next| dungeon.cells[next] != dungeon::Cell::Rock) {
+                    continue;
+                }
+                let [dx, dy] = side.unit();
+                // Loosed 0.6 m back from the cell's middle, with no solid between it and the rock's face.
+                let back = [x - dx * 0.6, y - dy * 0.6, 1.3];
+                let face = [x + dx * (CELL_M / 2.0 - 0.01), y + dy * (CELL_M / 2.0 - 0.01), 1.3];
+                if ground.line_walled(back, face) || ground.clearance(back[0], back[1]) <= 0.0 {
+                    continue;
+                }
+                let (at, _) = bolt(&ground, back, side.bearing(), &[]);
+                let short = CELL_M / 2.0 - ((at[0] - x) * dx + (at[1] - y) * dy);
+                assert!(short.abs() < 1e-6, "seed {seed}: {short} m short of the {side:?} rock of {cell}");
+                let foe = [x + dx * (CELL_M / 2.0 - 0.36), y + dy * (CELL_M / 2.0 - 0.36), 0.0];
+                assert_eq!(bolt(&ground, back, side.bearing(), &[(4, foe)]).1, Some(4), "seed {seed}: the foe");
+            }
+        }
+        for &[min_x, min_y, _, max_y, top] in ground.solids().iter().filter(|solid| solid[4] > 1.6) {
+            let middle_y = (min_y + max_y) / 2.0;
+            let from = [min_x - 1.0, middle_y, 1.3];
+            // Loosed from open floor clear of every solid, with nothing between it and the solid's face.
+            let open = ground
+                .cell_at(from[0], from[1])
+                .is_some_and(|(column, row)| ground.open[row * ground.columns + column]);
+            if !open
+                || ground.clearance(from[0], from[1]) <= 0.0
+                || ground.line_walled(from, [min_x - 0.01, middle_y, 1.3])
+            {
+                continue;
+            }
+            let (at, _) = bolt(&ground, from, Side::East.bearing(), &[]);
+            assert!((at[0] - min_x).abs() < 1e-6, "seed {seed}: {} m short of a solid {top} m tall", min_x - at[0]);
+        }
+    }
+}

@@ -229,10 +229,15 @@ fn crosses_below(solid: &[f64; 5], from: [f64; 3], to: [f64; 3]) -> bool {
 }
 
 impl Terrain for DungeonGround {
-    /// The floor, or a solid's top over it: a body is kept out of a solid by `walled` all the same, and a shot passes
-    /// over one lower than itself.
+    /// The floor, or a solid's top over it, where a thrown drop comes to rest: a body is kept out of a solid by
+    /// `walled` all the same.
     fn height_at(&self, x: f64, y: f64) -> f64 {
         self.solid_top(x, y).unwrap_or_else(|| self.heights.height_at(x, y))
+    }
+
+    /// The one floor, under the rock and the solids as well: `wall_entry` meets a shot at their faces.
+    fn floor_at(&self, _x: f64, _y: f64) -> f64 {
+        dungeon::FLOOR_M
     }
 
     /// A move is walled when it crosses rock, or ends nearer than a body's half-width to rock, a jamb, a pillar or a

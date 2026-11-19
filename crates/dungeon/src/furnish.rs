@@ -18,8 +18,8 @@ const FREE_MARGIN_M: f64 = 0.4;
 const ALONG_WALL_M: f64 = CELL_M - 0.1;
 const MOST_INTO_M: f64 = 2.0;
 const FLAME_CLEAR_M: f64 = 0.5;
-/// How far every solid keeps from the Reeve's post: past his cache, 1.6 m out and clear by 0.5 m, with floor round
-/// him to fight on.
+/// How far every piece and fixture with a solid keeps from the Reeve's post: past his cache, 1.6 m out and clear by
+/// 0.5 m, with floor round him to fight on.
 const POST_CLEAR_M: f64 = CELL_M;
 
 /// A room while it is furnished: the cells a piece may take, the cells and walls taken, the solids' cells, the flames

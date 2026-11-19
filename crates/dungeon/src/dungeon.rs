@@ -23,6 +23,8 @@ pub const JAMB_DEPTH_M: f64 = 0.3;
 pub const LINTEL_M: f64 = 2.8;
 /// A pillar's half width, and the room that stands them: at least this many cells each way.
 pub const PILLAR_HALF_M: f64 = 0.35;
+/// The one floor every open cell stands at, metres up.
+pub const FLOOR_M: f64 = 0.0;
 const PILLAR_ROOM_CELLS: usize = 4;
 /// The exit door's width and height, how far off its wall it stands, and how far past its cell's middle, away from it,
 /// a body arrives (m), as the Forge stands a body in front of its exit door.
@@ -416,7 +418,7 @@ impl Dungeon {
     /// row from the north-west, in cells of CELL_M.
     #[must_use]
     pub fn heights(&self) -> Vec<Option<f64>> {
-        self.cells.iter().map(|&cell| (cell != Cell::Rock).then_some(0.0)).collect()
+        self.cells.iter().map(|&cell| (cell != Cell::Rock).then_some(FLOOR_M)).collect()
     }
 
     /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up

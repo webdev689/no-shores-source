@@ -140,7 +140,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   than wide; free-standing 0.4 m inside its cell's edges, clear of every pillar. Each is a solid, but a hanging, which
   hangs over head height and fills nothing. None stands on a doorway's cell (one beside a corridor, so no frame is
   blocked), the way in's cell, the portal's or the Reeve's post, against a torch's wall, or within 0.5 m of a torch's
-  flame; and no solid stands within 3.2 m of the Reeve's post, so his cache and the fight round him find open floor. A piece stands only where the room's free cells, those holding no solid, stay one
+  flame; and no prop or fixture with a solid stands within 3.2 m of the Reeve's post, so his cache and the fight round
+  him find open floor (a doorway's jambs and a great room's pillars stand where the Forge lays them). A piece stands only where the room's free cells, those holding no solid, stay one
   walk and number as many as its band of foes (`posts_for`: one for each ten cells, two to four).
 - **Lights.** Beside its torches a purpose lights its room: braziers (a solid 0.6 m square and 1 m high) either side
   of the end's door or the way on, or nearest the middle; candles on its tables', lecterns', altars' and coffins'
@@ -184,8 +185,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   soft lock, a blow, a telegraphed shape, a charge's lane and a shooter's cover are stopped by them and see over a
   low coffin or table. A noise through them carries half as loud and half as far. A kill's drop thrown across a wall
   or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top. A shot stops where it first
-  enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, and passes
-  over a solid lower than itself.
+  enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, passes over a
+  solid lower than itself, and falls onto the floor alone (`floor_at`).
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with the jambs and
   pillars as its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left
   out.

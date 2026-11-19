@@ -160,12 +160,12 @@ fn into_ground(terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> Option<f6
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     let across = (east * east + south * south).sqrt();
     let probes = (across / GROUND_STEP).ceil().clamp(1.0, GROUND_PROBES) as u32;
-    let ground = terrain.height_at(from[0], from[1]);
+    let ground = terrain.floor_at(from[0], from[1]);
     let mut before = (0.0, ground, from[2] - ground);
     for probe in 1..=probes {
         let share = f64::from(probe) / f64::from(probes);
         let at = if probe == probes { to } else { [0, 1, 2].map(|axis| from[axis] + (to[axis] - from[axis]) * share) };
-        let ground = terrain.height_at(at[0], at[1]);
+        let ground = terrain.floor_at(at[0], at[1]);
         let above = at[2] - ground;
         if above < 0.0 && before.2 > above {
             // The ground's line across this stretch, carried out to the segment's ends.

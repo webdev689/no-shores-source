@@ -54,6 +54,14 @@ impl Terrain for Floor {
             Floor::Dungeon(ground) => ground.wall_entry(from, to),
         }
     }
+
+    /// A shot falls onto the land's height, or onto a dungeon's floor under its walls.
+    fn floor_at(&self, x: f64, y: f64) -> f64 {
+        match self {
+            Floor::Flat | Floor::Land(_) => self.height_at(x, y),
+            Floor::Dungeon(ground) => ground.floor_at(x, y),
+        }
+    }
 }
 
 /// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within
