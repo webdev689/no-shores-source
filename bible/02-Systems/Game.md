@@ -194,10 +194,26 @@ is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the islan
 procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to
 3.2 m. The exit door wears the door picture its entrance's model wears.
 
-- **The light.** The 32 torches nearest the eye each light 8 m round them, warm, flickering gently and none in step,
-  fading to nothing at their reach, a face turned from one catching half; a dim cold light lies everywhere, enough
-  that a room past every torch's reach still shows its walls. Each torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as
-  the city's braziers glow. The props are lit by the same light as the walls.
+- **The light.** The 32 lights that reach nearest the eye each light round them in their kind's own colour, reach
+  and flicker, none in step, fading to nothing at their reach, a face turned from one catching half: a torch warm to
+  8 m, a brazier deep orange to 9 m, candles pale to 4.5 m, crystals a steady blue-green to 7 m, a lantern warm to
+  8 m, a hearth's fire to 9.5 m, and the open portal cold. A faint light lies everywhere in the mood of the style of
+  each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
+  the caverns' teal and the mines' dusty brown, enough that a room past every light still shows its walls. Each
+  torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as the city's braziers glow;
+  the props and the fixtures are lit by the same light as the walls.
+- **The fixtures** (`dungeonFixtures.ts`), each shaped by where it stands: a brazier, an iron bowl on three legs heaped
+  with embers under flames; three to five candles of wax, each with its small flame; five to eight crystals leaning
+  out from where they grow, glowing; a lantern of glowing glass in an iron frame on its chain; a hearth's embers and
+  flames.
+- **The ceilings** (`dungeonCeilings.ts`): a room's ceiling flat; a barrel vault across its narrower side, rising up to
+  1.6 m over its walls; a dome over its middle, up to 2.2 m; or a cave's rough rock a quarter to over a metre over its
+  walls, as are the corridors of the caverns. Where two cells' ceilings differ along their edge, the higher one's side
+  is closed up to it. A cave's walls bulge in and out by up to 0.22 m between their edges and meet each edge exactly.
+- **The looks.** Each cell wears its own look's pictures (`cellLooks`), so a dungeon whose last block lies in the style
+  below changes as the player goes down.
+- **Names.** The words under the place's name start with the room the player stands in: "The Ossuary · Dungeon ·
+  Saltmere".
 - **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
   lit by the light where it stands, at its chest's height, in place of the sun.
 - **The cache** is a chest of boxes, wood in the island's timber and bands of the textures' ironwork, where the room's
@@ -386,6 +402,6 @@ In death the world drains to grey, and comes back in colour on respawn or on lea
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.
-- In a dungeon nothing casts a shadow, and a torch lights through a wall a room on its other side within its reach.
+- In a dungeon nothing casts a shadow, and a light lights through a wall a room on its other side within its reach.
 - Past the far square, about 2 km ahead of the camera, nothing is shadowed; the plants cast into the near square
   only.
