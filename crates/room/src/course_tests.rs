@@ -123,3 +123,23 @@ fn a_block_stood_after_the_room_opened_stops_a_player() {
     let body = room.players[&player].fighter.body;
     assert!(body.y > -1.5, "the block stands in the way: {body:?}");
 }
+
+#[test]
+fn a_block_taken_from_the_course_lets_a_player_through_and_only_a_block_it_holds_is_taken() {
+    let mut room = Room::new(vec![deck()], (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let gate = Block { min_x: -5.0, min_y: -2.0, max_x: 5.0, max_y: -1.5, top: 5.0 };
+    room.stand_block(gate);
+    assert!(room.take_block(gate));
+    assert!(!room.take_block(gate), "it is gone");
+    let north = combat::Intent {
+        controls: movement::Controls { forward: 1.0, yaw: 0.0, ..movement::Controls::default() },
+        ..combat::Intent::default()
+    };
+    for sequence in 1..=30 {
+        room.input(player, Input { sequence, intent: north, ..Input::default() }).unwrap();
+        room.tick();
+    }
+    let body = room.players[&player].fighter.body;
+    assert!(body.y < -2.0, "the way is open: {body:?}");
+}

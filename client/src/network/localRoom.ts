@@ -107,6 +107,11 @@ export class LocalRoom implements RoomLink {
     this.door.standBlock(block);
   }
 
+  /** Takes a block from the course at once, as a way opening once the foes holding it have fallen. */
+  takeBlock(block: CourseBlock): void {
+    this.door.takeBlock(block);
+  }
+
   /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */
   pump(seconds: number): void {
     this.carry += seconds;
