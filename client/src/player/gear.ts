@@ -2,6 +2,7 @@ import items from '../../../content/gear/items.json' with { type: 'json' };
 import resources from '../../../content/gear/resources.json' with { type: 'json' };
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import traits from '../../../content/gear/traits.json' with { type: 'json' };
+import type { GlowLook } from '../elementGlow.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
 
@@ -219,6 +220,13 @@ export function wearAsks(item: GearItem): readonly { readonly label: string; rea
 /** The item worn in a slot. */
 export function worn(state: GearState, slot: number): GearItem | undefined {
   return state.items.find((item) => item.at === WORN + slot);
+}
+
+/** The element the weapon worn in a hand (0 the main, 1 the off) glows in: 0 for none, no weapon, or no gear. */
+export function heldElement(state: GearState | null, hand: 0 | 1): GlowLook {
+  const item = state && worn(state, hand);
+  const element = item && isWeapon(item.kind) ? item.element : 0;
+  return element === 1 || element === 2 || element === 3 ? element : 0;
 }
 
 /** The metals a rarity's weapon is drawn in, best liked first, until each item names its own look. */

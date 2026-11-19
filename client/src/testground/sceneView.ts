@@ -1,8 +1,10 @@
+import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
+import { GlowCards } from '../player/glowCards.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Block } from '../rules/movementRules.ts';
 
@@ -194,6 +196,7 @@ export class SceneView implements CardMaker {
   private swingBuffer: GPUBuffer | null = null;
   private swingCount = 0;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
+  private readonly glows: GlowCards;
   private depth: GPUTexture | null = null;
   /** Draws into the scene's pass after the ground and blocks and before the cards, as blood does. */
   underCards: ((pass: GPURenderPassEncoder) => void) | null = null;
@@ -311,6 +314,7 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil: { ...depthStencil, depthWriteEnabled: false },
     });
+    this.glows = new GlowCards(gpu, gpu.format, REVERSED_DEPTH.format);
     this.sceneBuffer = device.createBuffer({
       size: SCENE_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -355,6 +359,11 @@ export class SceneView implements CardMaker {
     });
     this.gpu.device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width * 4 }, [width, height]);
     return { texture, width, height, root };
+  }
+
+  /** An outline's field as a texture its glow is drawn with. */
+  glow(field: GlowField): GPUTexture {
+    return this.card(field.data, field.width, field.height, [0, 0]).texture;
   }
 
   /** The card's uniform slot for the `index`th card drawn this frame, its bind group remade only for a new texture. */
@@ -474,7 +483,8 @@ export class SceneView implements CardMaker {
       });
     }
     const values = new Float32Array(SCENE_BYTES / 4);
-    values.set(viewProjection(orbit, width / height));
+    const seen = viewProjection(orbit, width / height);
+    values.set(seen);
     const right = [Math.cos(orbit.yaw), Math.sin(orbit.yaw)] as const;
     values.set([orbit.targetX, orbit.targetY, orbit.targetZ, 0], 16);
     values.set([chosen?.x ?? 0, chosen?.y ?? 0, 0, chosen ? 1 : 0], 20);
@@ -521,6 +531,10 @@ export class SceneView implements CardMaker {
       pass.setBindGroup(1, group);
       pass.draw(6);
     });
+    const glowing = drawn.filter(({ card }) => card.glow);
+    const metres = 1 / PX_PER_M;
+    const glows = glowing.map(({ card, x, y, z, flip }) => ({ card, x, y, z, flip, metres }));
+    this.glows.draw(pass, seen, right, performance.now() / 1000, glows);
     if (this.markBuffer && this.markCount > 0) {
       pass.setPipeline(this.markPipeline);
       pass.setBindGroup(0, this.sceneGroup);

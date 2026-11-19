@@ -102,12 +102,14 @@ export function looksAsked(own: string | null, left: boolean): (string | null)[]
  *  aligned. */
 export type FramesTable = Readonly<Record<string, { readonly at: readonly [number, number]; readonly box?: unknown }>>;
 
-/** A composed first-person picture: RGBA top row first, all or nothing in alpha, and its corner on the design screen. */
+/** A composed first-person picture: RGBA top row first, all or nothing in alpha, and its corner on the design screen.
+ *  A blade laid over its hand says which pixels are the blade's (a byte a pixel, 1 for the blade's). */
 export interface Picture {
   readonly width: number;
   readonly height: number;
   readonly pixels: Uint8Array;
   readonly at: readonly [number, number];
+  readonly weapon?: Uint8Array;
 }
 
 /** The sets drawn in their own colours: leather and chain have no metal to dye, steel is the forge's grey already,
@@ -176,8 +178,14 @@ export function layOver(base: Uint8Array, top: Uint8Array): void {
 }
 
 /** The hand and the weapon laid together by depth (red the high byte, green the low; nearer is smaller): at each
- *  texel the one drawn, and where both are, the nearer. */
-export function layByDepth(hand: Uint8Array, handDepth: Strip, weapon: Uint8Array, weaponDepth: Strip): Uint8Array {
+ *  texel the one drawn, and where both are, the nearer. `mask`, a byte a texel, is set to 1 where the weapon's is. */
+export function layByDepth(
+  hand: Uint8Array,
+  handDepth: Strip,
+  weapon: Uint8Array,
+  weaponDepth: Strip,
+  mask?: Uint8Array,
+): Uint8Array {
   const pixels = new Uint8Array(hand.length);
   const depthAt = (strip: Strip, texel: number) => (strip.data[texel] ?? 0) * 256 + (strip.data[texel + 1] ?? 0);
   for (let texel = 0; texel < pixels.length; texel += 4) {
@@ -186,6 +194,7 @@ export function layByDepth(hand: Uint8Array, handDepth: Strip, weapon: Uint8Arra
     const weaponNearer = depthAt(weaponDepth, texel) < depthAt(handDepth, texel);
     const from = weaponDrawn && (!handDrawn || weaponNearer) ? weapon : handDrawn ? hand : null;
     if (from) pixels.set(from.subarray(texel, texel + 4), texel);
+    if (mask && from === weapon) mask[texel / 4] = 1;
   }
   return pixels;
 }
@@ -219,9 +228,17 @@ export async function firstOf(
   return null;
 }
 
-function placed(source: FrameSource, path: string, strip: Strip, pixels: Uint8Array): Picture | null {
+function placed(
+  source: FrameSource,
+  path: string,
+  strip: Strip,
+  pixels: Uint8Array,
+  weapon?: Uint8Array,
+): Picture | null {
   const corner = source.frames[path]?.at;
-  return corner ? { width: strip.width, height: strip.height, pixels, at: corner } : null;
+  return corner
+    ? { width: strip.width, height: strip.height, pixels, at: corner, ...(weapon ? { weapon } : {}) }
+    : null;
 }
 
 async function whole(
@@ -268,13 +285,15 @@ async function layered(
     hand.colour.height === weapon.colour.height &&
     cornerOf(hand.path) === cornerOf(weapon.path);
   if (!oneCanvas) return left ? layered(source, archive, [record, frame], wielded, hands, false) : null;
+  const blade = new Uint8Array(hand.colour.width * hand.colour.height);
   const pixels = layByDepth(
     source.painter.paint(hand.colour, setRamp(source.dyes, hands, 'Iron')),
     hand.depth,
     source.painter.paint(weapon.colour, metalRamp(source.dyes, wielded.metal)),
     weapon.depth,
+    blade,
   );
-  return placed(source, hand.path, hand.colour, pixels);
+  return placed(source, hand.path, hand.colour, pixels, blade);
 }
 
 /** A bow in its type and metal, with the hands that hold it laid over it in the gauntlets worn. */

@@ -73,6 +73,19 @@ test('the nearest texel is drawn, armour over the clothes it lies on by its orde
   assert.ok(Math.abs((bare.depth[0] ?? 0) - (117 * 256 + 40) / 10000 + 3) < 1e-4);
 });
 
+test('a frame says which pixels are the weapon', async () => {
+  const armed: ForgeLooks = {
+    bodies: { male: { anims: { idle: cell }, layers: { body: ['idle'], sword: ['idle'] } } },
+  };
+  const sword: Record<string, Strip> = {
+    'forge/layers/male/sword_idle.png': strip([[180, 190, 210], null, null, null]),
+    'forge/layers/male/sword_idle_z.png': strip([[117, 30, PART.weapon], null, null, null]),
+  };
+  const withSword = (path: string) => Promise.resolve(sword[path] ?? strips[path] ?? null);
+  const frame = await composeFrame({ ...figure, gear: ['sword'] }, 'idle', 0, 0, armed, colours, {}, withSword);
+  assert.deepEqual([...(frame?.weapon ?? [])], [1, 0]);
+});
+
 test('orders weigh on one part and for a drape over what it hangs on, never for a weapon or a horse', () => {
   assert.ok(ordersMeet(PART.torso, PART.torso));
   assert.ok(ordersMeet(PART.drape, PART.torso));

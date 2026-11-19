@@ -36,6 +36,8 @@ which hand, and reports the swing or shot under way, so the figure seen from out
 
 The two-handers are the staff, the warhammer, the battleaxe, the bows and the Thunderlock.
 
+A weapon in an element glows in it while drawn, each hand in its own weapon's ([[Weapon Glow]]).
+
 ### Swinging
 
 A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
@@ -171,7 +173,7 @@ rein, not its fist up.
 
 ## Limits
 
-- No weapon shows wear, no gun's flash lights the room, and no enchanted weapon shimmers.
+- No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
   feeling its weapon heavier.
 - The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.

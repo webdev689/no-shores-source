@@ -1,4 +1,5 @@
 import { type Orbit, rayAt } from '../editor/orbit.ts';
+import { type GlowLook, glowRampAt } from '../elementGlow.ts';
 import type { FlyingShot } from '../network/messages.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import type { Fired } from '../rules/combatRules.ts';
@@ -30,6 +31,10 @@ const CORE = { width: 0.03, colour: [1, 0.96, 0.8, 1] as Colour };
 const GLOW = { width: 0.13, colour: [1, 0.6, 0.2, 0.5] as Colour };
 const ARROW_CORE = { width: 0.022, colour: [0.96, 0.98, 1, 0.9] as Colour };
 const ARROW_GLOW = { width: 0.08, colour: [0.75, 0.86, 1, 0.32] as Colour };
+/** A Volt trail's points jump aside this far on each axis at most (metres, 0.04 m in all), struck again this often a
+ *  second. */
+const JOLT_M = 0.023;
+const JOLT_HZ = 12;
 
 /** Where a shot came to rest, and the way back over the ground it came from. */
 export interface Impact {
@@ -115,6 +120,35 @@ export function ribbon(out: number[], eye: Point, points: readonly { at: Point; 
 
 /** A colour with its opacity scaled. */
 const faded = (colour: Colour, share: number): Colour => [colour[0], colour[1], colour[2], colour[3] * share];
+
+/** A tracer's ribbons, its glow then its core, in the player's own element: the element's colours `share` of the way
+ *  down its ramp, at the plain ribbons' opacities. */
+function ribbonsOf(
+  glow: { readonly width: number; readonly colour: Colour },
+  core: { readonly width: number; readonly colour: Colour },
+  look: GlowLook,
+): { readonly width: number; readonly colour: Colour }[] {
+  if (!look) return [glow, core];
+  const tinted = (layer: typeof glow, share: number) => ({
+    width: layer.width,
+    colour: [...glowRampAt(look, share), layer.colour[3]] as Colour,
+  });
+  return [tinted(glow, 0.5), tinted(core, 0)];
+}
+
+/** A Volt tracer's points, each jolted aside by a hash struck again JOLT_HZ times a second at `time` seconds. */
+function jolted<Shown extends { readonly at: Point }>(points: readonly Shown[], look: GlowLook, time: number): Shown[] {
+  if (look !== 2) return [...points];
+  const strike = Math.floor(time * JOLT_HZ);
+  const hash = (index: number, axis: number) => {
+    const value = Math.sin(index * 12.9898 + strike * 78.233 + axis * 37.719) * 43758.5453;
+    return (value - Math.floor(value)) * 2 - 1;
+  };
+  return points.map((point, index) => ({
+    ...point,
+    at: [0, 1, 2].map((axis) => (point.at[axis] ?? 0) + hash(index, axis) * JOLT_M) as unknown as Point,
+  }));
+}
 
 /** How far along one tick's flight (`from` plus shares of `along`) an arrow goes under the ground `groundAt` gives (0
  *  where it gives none): 1 when it stays over it, or starts under it. */
@@ -252,10 +286,11 @@ export class Tracers {
   }
 
   /** The tracers' triangles as seen from `eye`, with the player's own arrows and everyone else's arrows' trails (from
-   *  the room's `shots`, the player's own left out). */
-  mesh(eye: Point, shots: readonly FlyingShot[], player: number): number[] {
+   *  the room's `shots`, the player's own left out). The player's own take their weapon's element `own`, a Volt one
+   *  jumping as `time` (seconds) runs. */
+  mesh(eye: Point, shots: readonly FlyingShot[], player: number, own: GlowLook = 0, time = 0): number[] {
     const out: number[] = [];
-    for (const line of this.lines) this.lineMesh(out, eye, line);
+    for (const line of this.lines) this.lineMesh(out, eye, line, line.owner === null ? own : 0, time);
     for (const flight of this.flights) {
       const fade = flight.stopped === null ? 1 : 1 - flight.stopped / ARROW.linger;
       // Out of the drawn weapon, joining the true flight within ARROW.converge.
@@ -264,20 +299,30 @@ export class Tracers {
         const true_ = before(flight.at, flight.velocity, flight.flown - flown);
         return add(true_, offset, Math.max(0, 1 - flown / ARROW.converge));
       };
-      this.trailMesh(out, eye, shown, flight.flown, fade);
+      this.trailMesh(out, eye, shown, flight.flown, fade, own, time);
       if (flight.stopped === null) markArrow(out, shown(flight.flown), flight.velocity);
     }
     for (const shot of shots) {
       if (shot.owner === player || BALLS.has(shot.ranged)) continue;
       const flown = shot.age * TICK;
-      this.trailMesh(out, eye, (time) => before(shot.at, shot.velocity, flown - time), flown, 1);
+      this.trailMesh(out, eye, (when) => before(shot.at, shot.velocity, flown - when), flown, 1);
     }
     return out;
   }
 
+  /** Where the player's own shots in flight are now: each arrow's or bolt's head, and each ball's racing out. */
+  get ownHeads(): Point[] {
+    const balls = this.lines.filter((line) => line.owner === null && line.age < this.arrival(line));
+    const ballHeads = balls.map((line) => {
+      const length = Math.hypot(...minus(line.to, line.from)) || 1;
+      return add(line.from, minus(line.to, line.from), Math.min(1, (line.age * line.speed) / length));
+    });
+    return [...this.flights.filter((flight) => flight.stopped === null).map((flight) => flight.at), ...ballHeads];
+  }
+
   /** A ball's line: its head raced out with a streak behind it, a faint trace along the whole of it, both fading once
    *  the head arrives, and a flash at the muzzle. */
-  private lineMesh(out: number[], eye: Point, line: Line): void {
+  private lineMesh(out: number[], eye: Point, line: Line, look: GlowLook, time: number): void {
     const length = Math.hypot(...minus(line.to, line.from));
     if (length < 1e-6) return;
     const along = (distance: number) => add(line.from, minus(line.to, line.from), distance / length);
@@ -289,10 +334,12 @@ export class Tracers {
       width: ribbonOf.width,
       colour: faded(ribbonOf.colour, share * fade),
     });
-    for (const layer of [GLOW, CORE]) {
-      ribbon(out, eye, [point(0, layer, BALL.trace), point(head, layer, BALL.trace)]);
-      if (head > tail)
-        ribbon(out, eye, [point(tail, layer, 0), point((tail + head) / 2, layer, 0.6), point(head, layer, 1)]);
+    for (const layer of ribbonsOf(GLOW, CORE, look)) {
+      ribbon(out, eye, jolted([point(0, layer, BALL.trace), point(head, layer, BALL.trace)], look, time));
+      if (head > tail) {
+        const streak = [point(tail, layer, 0), point((tail + head) / 2, layer, 0.6), point(head, layer, 1)];
+        ribbon(out, eye, jolted(streak, look, time));
+      }
     }
     if (line.age < BALL.flash) {
       const size = BALL.flashSize * (1 - line.age / BALL.flash);
@@ -307,12 +354,21 @@ export class Tracers {
     }
   }
 
-  /** A trail along a flight `shown` at each second flown, over its last ARROW.trail behind `flown`. */
-  private trailMesh(out: number[], eye: Point, shown: (flown: number) => Point, flown: number, fade: number): void {
+  /** A trail along a flight `shown` at each second flown, over its last ARROW.trail behind `flown`, in the element
+   *  `look` (none by default) at `time`. */
+  private trailMesh(
+    out: number[],
+    eye: Point,
+    shown: (flown: number) => Point,
+    flown: number,
+    fade: number,
+    look: GlowLook = 0,
+    time = 0,
+  ): void {
     const start = Math.max(0, flown - ARROW.trail);
     if (flown - start < 1e-4) return;
     const steps = 10;
-    for (const layer of [ARROW_GLOW, ARROW_CORE]) {
+    for (const layer of ribbonsOf(ARROW_GLOW, ARROW_CORE, look)) {
       const points = Array.from({ length: steps + 1 }, (unused, step) => {
         const share = step / steps;
         return {
@@ -321,7 +377,7 @@ export class Tracers {
           colour: faded(layer.colour, share * fade),
         };
       });
-      ribbon(out, eye, points);
+      ribbon(out, eye, jolted(points, look, time));
     }
   }
 }

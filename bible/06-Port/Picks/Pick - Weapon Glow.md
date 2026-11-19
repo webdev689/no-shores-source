@@ -3,7 +3,7 @@ type: pick
 area: Gameplay
 verdict: Cut
 effort: M
-status: approved
+status: ported
 dfo_paths:
   - src/systems/weaponGlow.js
   - src/systems/weaponGlowLooks.js

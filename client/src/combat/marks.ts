@@ -1,3 +1,4 @@
+import { glowRampAt } from '../elementGlow.ts';
 import type { FlyingShot } from '../network/messages.ts';
 import type { Spark } from './sparks.ts';
 import type { Action, Shape } from '../rules/fighters.ts';
@@ -34,11 +35,14 @@ const LIFT = 0.03;
 const ARROW_M = 0.75;
 const ARROW_THICK = 0.035;
 const ARROW_COLOUR = [0.52, 0.38, 0.22, 1] as const;
-/** A spark's streak: as long as this much of its flight (seconds), this thick (metres), white hot cooling to orange. */
+/** A spark's streak: as long as this much of its flight (seconds), this thick (metres), white hot cooling to orange,
+ *  or down its element's ramp. */
 const SPARK_STREAK_S = 0.03;
 const SPARK_THICK = 0.012;
 const SPARK_HOT = [1, 0.92, 0.6] as const;
 const SPARK_COOL = [1, 0.38, 0.06] as const;
+/** An element's mote is a streak at least this long (metres), so a slow one still shows. */
+const MOTE_M = 0.025;
 const CURVE_STEPS = 24;
 /** Each vertex's numbers: x, y, z, then red, green, blue, opacity. */
 export const MARK_FLOATS = 7;
@@ -58,12 +62,12 @@ export function marksMesh(
   const out: number[] = [];
   for (const telegraph of telegraphs) markTelegraph(out, telegraph);
   for (const shot of shots) markArrow(out, shot.at, shot.velocity);
-  for (const { at, velocity, age, life } of sparks) {
+  for (const { at, velocity, age, life, look } of sparks) {
     const cooled = Math.min(1, age / life);
-    const colour = [0, 1, 2].map(
-      (part) => (SPARK_HOT[part] ?? 1) + ((SPARK_COOL[part] ?? 1) - (SPARK_HOT[part] ?? 1)) * cooled,
-    );
-    const length = Math.hypot(...velocity) * SPARK_STREAK_S;
+    const colour = look
+      ? glowRampAt(look, cooled)
+      : [0, 1, 2].map((part) => (SPARK_HOT[part] ?? 1) + ((SPARK_COOL[part] ?? 1) - (SPARK_HOT[part] ?? 1)) * cooled);
+    const length = Math.max(look ? MOTE_M : 0, Math.hypot(...velocity) * SPARK_STREAK_S);
     markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1 - cooled * cooled]);
   }
   for (const value of more) out.push(value);

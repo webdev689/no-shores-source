@@ -13,6 +13,7 @@ import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomCon
 import type { CardAt, Cards } from '../player/cards.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
+import { heldElement } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
@@ -244,7 +245,8 @@ export class Foot {
     return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
   }
 
-  /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
+  /** Dresses the player's figure in their gear as their room last sent it, once it changes, its weapons glowing in
+   *  their elements. */
   private dressInGear(): void {
     const gear = this.gearHeld.gear;
     if (!gear || gear === this.dressedIn) return;
@@ -253,6 +255,7 @@ export class Foot {
     const wardrobe = forge.wardrobe(walker.you.dress.body);
     if (wardrobe)
       walker.you.dress = { ...walker.you.dress, outfit: gearOutfit(gear, wardrobe, walker.you.dress.outfit) };
+    walker.glow = [heldElement(gear, 0), heldElement(gear, 1)];
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
@@ -312,6 +315,7 @@ export class Foot {
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
     });
+    effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds);
     const shot = shotOfOrbit(camera(), LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;

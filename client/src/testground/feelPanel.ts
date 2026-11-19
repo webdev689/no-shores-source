@@ -1,11 +1,12 @@
 // The Test Ground's attack feel: each effect laid over the fight's blows switched on or off and set stronger or weaker,
 // kept in this browser, with its numbers shown to copy into the game's own.
 import { button, make } from '../editor/dom.ts';
-import { labelled } from './dressPanel.ts';
+import { choice, labelled } from './dressPanel.ts';
 
 const KEPT_KEY = 'overlook.testground.feel';
 
-/** Each effect on or off, and its sliders: 1 each as made. */
+/** Each effect on or off, and its sliders: 1 each as made. The weapon's glow shows the gear's own element (`glowLook`
+ *  0) or the element chosen in its place. */
 export interface Feel {
   readonly arc: boolean;
   readonly arcBrightness: number;
@@ -16,6 +17,8 @@ export interface Feel {
   readonly kickStrength: number;
   readonly lunge: boolean;
   readonly lungeDistance: number;
+  readonly glow: boolean;
+  readonly glowLook: number;
 }
 
 export const FEEL: Feel = {
@@ -28,10 +31,15 @@ export const FEEL: Feel = {
   kickStrength: 1,
   lunge: true,
   lungeDistance: 1,
+  glow: true,
+  glowLook: 0,
 };
 
-type Switch = 'arc' | 'stop' | 'kick' | 'lunge';
-type Slider = Exclude<keyof Feel, Switch>;
+/** What the glow may show: the gear's own element, or one chosen, by the gear crate's numbers. */
+const GLOW_CHOICES = ['Own gear', 'Blaze', 'Volt', 'Cosmic'] as const;
+
+type Switch = 'arc' | 'stop' | 'kick' | 'lunge' | 'glow';
+type Slider = Exclude<keyof Feel, Switch | 'glowLook'>;
 
 /** Each effect: its switch and name, and its sliders' names, labels, least and most. */
 const EFFECTS: readonly (readonly [Switch, string, readonly (readonly [Slider, string, number, number])[]])[] = [
@@ -46,6 +54,7 @@ const EFFECTS: readonly (readonly [Switch, string, readonly (readonly [Slider, s
   ['stop', 'Hit-stop', [['stopLength', 'Length', 0, 2.5]]],
   ['kick', 'Camera kick', [['kickStrength', 'Strength', 0, 2.5]]],
   ['lunge', 'Lunge', [['lungeDistance', 'Distance', 0, 2.5]]],
+  ['glow', 'Element glow', []],
 ];
 
 /** The feel kept as `text`, each number held to its slider's range; as made where anything is missing. */
@@ -65,15 +74,20 @@ export function feelOf(text: string | null): Feel {
       if (typeof value === 'number' && Number.isFinite(value)) feel[key] = Math.min(most, Math.max(least, value));
     }
   }
+  const look = kept['glowLook'];
+  if (typeof look === 'number' && Number.isInteger(look) && look >= 0 && look < GLOW_CHOICES.length)
+    feel['glowLook'] = look;
   return feel as unknown as Feel;
 }
 
 /** The feel's numbers as a line to copy. */
 export const feelLine = (feel: Feel): string =>
   EFFECTS.map(([name, label, sliders]) =>
-    feel[name]
-      ? `${label}: ${sliders.map(([key, slider]) => `${slider.toLowerCase()} ${feel[key]}`).join(', ')}`
-      : `${label}: off`,
+    !feel[name]
+      ? `${label}: off`
+      : name === 'glow'
+        ? `${label}: ${(GLOW_CHOICES[feel.glowLook] ?? '').toLowerCase()}`
+        : `${label}: ${sliders.map(([key, slider]) => `${slider.toLowerCase()} ${feel[key]}`).join(', ')}`,
   ).join('; ');
 
 function kept(): Feel {
@@ -127,6 +141,14 @@ export function startFeelPanel(root: HTMLElement, onChange: (feel: Feel) => void
     });
     const card = make('div', '', 'feel');
     card.append(head, ...sliders.map((each) => each.row));
+    // The glow's card chooses what it shows.
+    const options = GLOW_CHOICES.map((text, look) => [String(look), text] as const);
+    const pick = (look: string) => {
+      feel = { ...feel, glowLook: Number(look) };
+      changed();
+    };
+    const shown = name === 'glow' ? choice(options, String(feel.glowLook), pick) : null;
+    if (shown) card.append(labelled('Shows', shown));
     // The card as the feel has it: its switch, its sliders and numbers, and dimmed while it is off.
     const show = () => {
       box.checked = feel[name];
@@ -135,6 +157,7 @@ export function startFeelPanel(root: HTMLElement, onChange: (feel: Feel) => void
         Object.assign(slider, { value: String(feel[key]), disabled: !feel[name] });
         number.textContent = times(feel[key]);
       }
+      if (shown) Object.assign(shown, { value: String(feel.glowLook), disabled: !feel[name] });
     };
     box.addEventListener('change', () => {
       feel = { ...feel, [name]: box.checked };

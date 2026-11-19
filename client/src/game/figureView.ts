@@ -1,7 +1,9 @@
+import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
+import { GlowCards } from '../player/glowCards.ts';
 import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
@@ -136,6 +138,7 @@ export class FigureView implements CardMaker {
   private readonly viewBuffer: GPUBuffer;
   private readonly viewGroup: GPUBindGroup;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
+  private readonly glows: GlowCards;
   /** The frame the cards' uniforms were last written for, and their groups. */
   private written: { fromEye: Float32Array; figures: readonly CardAt[]; groups: GPUBindGroup[] } | null = null;
 
@@ -184,6 +187,7 @@ export class FigureView implements CardMaker {
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
     });
+    this.glows = new GlowCards(gpu, gpu.format, REVERSED_DEPTH.format, SAMPLES);
     this.viewBuffer = device.createBuffer({
       size: VIEW_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -203,6 +207,11 @@ export class FigureView implements CardMaker {
     });
     this.gpu.device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width * 4 }, [width, height]);
     return { texture, width, height, root };
+  }
+
+  /** An outline's field as a texture its glow is drawn with. */
+  glow(field: GlowField): GPUTexture {
+    return this.card(field.data, field.width, field.height, [0, 0]).texture;
   }
 
   private slot(index: number, texture: GPUTexture): { buffer: GPUBuffer; group: GPUBindGroup } {
@@ -279,7 +288,8 @@ export class FigureView implements CardMaker {
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
-   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given. */
+   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given; then the outlines of the
+   *  weapons that glow. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -302,5 +312,16 @@ export class FigureView implements CardMaker {
       pass.setBindGroup(2, group);
       pass.draw(6);
     }
+    const glowing = figures.filter(({ card }) => card.glow);
+    this.glows.draw(
+      pass,
+      fromEye,
+      [Math.cos(yaw), Math.sin(yaw)],
+      performance.now() / 1000,
+      glowing.map(({ card, x, y, z, flip, scale = 1 }) => {
+        const [fromX, fromY, fromZ] = [x - eye[0], y - eye[1], z - eye[2]];
+        return { card, x: fromX, y: fromY, z: fromZ, flip, metres: scale / PX_PER_M };
+      }),
+    );
   }
 }

@@ -45,3 +45,45 @@ test('a clash between fighters the page does not know throws nothing', () => {
   sparks.struck([{ ...clash(EVENT.parried), striker: 99 }], where);
   assert.equal(sparks.flying.length, 0);
 });
+
+const landed = (striker: number): FightEvent => ({ ...clash(EVENT.hit), striker, amount: 5 });
+
+test("the player's own landed blow bursts in its element", () => {
+  const sparks = new Sparks(() => 0.5);
+  sparks.struck([landed(STRIKER)], where, { player: STRIKER, look: 1 });
+  assert.equal(sparks.flying.length, 12);
+  assert.ok(sparks.flying.every((spark) => spark.look === 1));
+  assert.ok(
+    sparks.flying.every((spark) => spark.at[2] > 1 && spark.at[0] > 0 && spark.at[0] < 2),
+    'at the clash',
+  );
+});
+
+test("another's blow and a plain weapon burst nothing", () => {
+  const sparks = new Sparks(() => 0.5);
+  sparks.struck([landed(DEFENDER)], where, { player: STRIKER, look: 1 });
+  sparks.struck([landed(STRIKER)], where, { player: STRIKER, look: 0 });
+  sparks.struck([{ ...landed(STRIKER), amount: 0 }], where, { player: STRIKER, look: 2 });
+  assert.equal(sparks.flying.length, 0);
+});
+
+test('embers rise and motes hang', () => {
+  const still = [0, 0, 0] as const;
+  const sparks = new Sparks(() => 0.5);
+  sparks.flying = [
+    { at: still, velocity: still, age: 0, life: 1 },
+    { at: still, velocity: still, age: 0, life: 1, look: 1 },
+    { at: still, velocity: still, age: 0, life: 1, look: 3 },
+  ];
+  sparks.update(0.1);
+  const [plain, ember, mote] = sparks.flying;
+  assert.ok((ember?.velocity[2] ?? 0) > (plain?.velocity[2] ?? 0), 'an ember is held up');
+  assert.equal(mote?.at[2], 0, 'a cosmic mote hangs');
+});
+
+test('a shot in an element trails motes of it, about thirty a second', () => {
+  const sparks = new Sparks(() => 0.5);
+  sparks.trail([0, 0, 1], 2, 1);
+  assert.equal(sparks.flying.length, 30);
+  assert.ok(sparks.flying.every((spark) => spark.look === 2 && Math.hypot(...spark.velocity) < 1));
+});

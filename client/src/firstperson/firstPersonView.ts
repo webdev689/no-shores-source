@@ -1,9 +1,11 @@
+import { GLOW_PAD, GLOW_WGSL, type GlowElement, type GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 
 /** A picture on the screen: its texture and its rectangle on the 320 by 200 design screen, mirrored or not. `part`
  *  draws only that share of the picture across (one frame of a strip); `reach` runs the rectangle that many times the
- *  picture's height down it, its last row carried down past its foot. */
+ *  picture's height down it, its last row carried down past its foot. A weapon that glows carries its outline's field
+ *  and element, and is drawn whole. */
 export interface ScreenQuad {
   readonly texture: GPUTexture;
   readonly x: number;
@@ -13,9 +15,45 @@ export interface ScreenQuad {
   readonly flip: boolean;
   readonly part?: readonly [left: number, right: number];
   readonly reach?: number;
+  readonly glow?: { readonly texture: GPUTexture; readonly look: GlowElement };
 }
 
 const QUAD_BYTES = 32;
+/** The glow's clock wraps here, every rate in its shader whole over it. */
+const CLOCK_WRAP_S = 240;
+
+/** A weapon's outline: its quad grown by the pad, each texel of its field lit by `glow_colour` at the picture's own
+ *  pixel. */
+const GLOW_SHADER = /* wgsl */ `
+${GLOW_WGSL}
+
+// The corners in clip space; whether it is mirrored, its element and the glow's clock.
+struct Glow { corners: vec4f, drawn: vec4f }
+@group(0) @binding(0) var<uniform> glow: Glow;
+@group(0) @binding(1) var glow_field: texture_2d<f32>;
+
+struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
+
+@vertex fn glowVertex(@builtin(vertex_index) index: u32) -> Out {
+  let corners = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
+  let corner = corners[index];
+  var out: Out;
+  out.position = vec4f(mix(glow.corners.xy, glow.corners.zw, corner), 0.0, 1.0);
+  out.corner = corner;
+  return out;
+}
+
+@fragment fn glowFragment(in: Out) -> @location(0) vec4f {
+  let size = vec2f(textureDimensions(glow_field));
+  var across = in.corner.x;
+  if (glow.drawn.x > 0.5) { across = 1.0 - across; }
+  let texel = min(floor(vec2f(across, in.corner.y) * size), size - 1.0);
+  let field = textureLoad(glow_field, vec2i(texel), 0);
+  let colour = glow_colour(u32(glow.drawn.y), field, texel - floor(size / 2.0), glow.drawn.z);
+  if (colour.a <= 0.0) { discard; }
+  return colour;
+}
+`;
 
 const SHADER = /* wgsl */ `
 // The corners in clip space; whether it is mirrored, the share of the picture across it draws, and how far down.
@@ -54,6 +92,9 @@ export class FirstPersonView {
   private readonly pipeline: GPURenderPipeline;
   private readonly layout: GPUBindGroupLayout;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
+  /** The outlines' pipeline, made when a weapon first glows, and their slots. */
+  private glowPipeline: GPURenderPipeline | null = null;
+  private readonly glowSlots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -84,13 +125,36 @@ export class FirstPersonView {
     return texture;
   }
 
-  /** The uniform slot of the `index`th quad drawn, its bind group remade only for a new texture. */
-  private slot(index: number, texture: GPUTexture): { buffer: GPUBuffer; group: GPUBindGroup } {
-    let slot = this.slots[index];
+  /** An outline's field as a texture its glow is drawn with. */
+  glow(field: GlowField): GPUTexture {
+    return this.texture(field.data, field.width, field.height);
+  }
+
+  /** The outlines' pipeline: blended premultiplied over what is drawn. */
+  private glowing(): GPURenderPipeline {
+    if (this.glowPipeline) return this.glowPipeline;
+    const module = this.gpu.device.createShaderModule({ code: GLOW_SHADER });
+    const premultiplied = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
+    this.glowPipeline = this.gpu.device.createRenderPipeline({
+      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
+      vertex: { module, entryPoint: 'glowVertex' },
+      fragment: {
+        module,
+        entryPoint: 'glowFragment',
+        targets: [{ format: this.gpu.format, blend: { color: premultiplied, alpha: premultiplied } }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
+    return this.glowPipeline;
+  }
+
+  /** The uniform slot of the `index`th quad drawn (of `slots`), its bind group remade only for a new texture. */
+  private slot(index: number, texture: GPUTexture, slots = this.slots): { buffer: GPUBuffer; group: GPUBindGroup } {
+    let slot = slots[index];
     if (!slot) {
       const usage = BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination;
       slot = { buffer: this.gpu.device.createBuffer({ size: QUAD_BYTES, usage }), texture: null, group: null };
-      this.slots[index] = slot;
+      slots[index] = slot;
     }
     if (slot.texture !== texture || !slot.group) {
       slot.texture = texture;
@@ -107,12 +171,13 @@ export class FirstPersonView {
 
   /** Forgets a texture's bind group, before the texture is let go. */
   forget(texture: GPUTexture): void {
-    for (const slot of this.slots) {
+    for (const slot of [...this.slots, ...this.glowSlots]) {
       if (slot.texture === texture) [slot.texture, slot.group] = [null, null];
     }
   }
 
-  /** Draws `quads` in order into `colourView`, `width` by `height` pixels, keeping what is drawn there already. */
+  /** Draws `quads` in order into `colourView`, `width` by `height` pixels, keeping what is drawn there already; a
+   *  glowing one's outline straight after it, so a picture drawn later lies over it. */
   draw(
     encoder: GPUCommandEncoder,
     colourView: GPUTextureView,
@@ -129,6 +194,8 @@ export class FirstPersonView {
     // (-1, 1), its bottom right (1, -1).
     const clipX = (designX: number) => (Math.round((designX * width) / DESIGN_WIDTH) / width) * 2 - 1;
     const clipY = (designY: number) => 1 - (Math.round((designY * height) / DESIGN_HEIGHT) / height) * 2;
+    let glows = 0;
+    const time = (performance.now() / 1000) % CLOCK_WRAP_S;
     quads.forEach((quad, index) => {
       const { buffer, group } = this.slot(index, quad.texture);
       const values = new Float32Array([
@@ -144,6 +211,26 @@ export class FirstPersonView {
       this.gpu.device.queue.writeBuffer(buffer, 0, values);
       pass.setBindGroup(0, group);
       pass.draw(6);
+      if (!quad.glow) return;
+      // The pad in design pixels: a texel of the picture is this much of the screen.
+      const padX = (GLOW_PAD * quad.width) / quad.texture.width;
+      const padY = (GLOW_PAD * quad.height) / quad.texture.height;
+      const glow = this.slot(glows++, quad.glow.texture, this.glowSlots);
+      const glowValues = new Float32Array([
+        clipX(quad.x - padX),
+        clipY(quad.y - padY),
+        clipX(quad.x + quad.width + padX),
+        clipY(quad.y + quad.height + padY),
+        quad.flip ? 1 : 0,
+        quad.glow.look,
+        time,
+        0,
+      ]);
+      this.gpu.device.queue.writeBuffer(glow.buffer, 0, glowValues);
+      pass.setPipeline(this.glowing());
+      pass.setBindGroup(0, glow.group);
+      pass.draw(6);
+      pass.setPipeline(this.pipeline);
     });
     pass.end();
   }
