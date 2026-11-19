@@ -161,8 +161,7 @@ impl Item {
     }
 
     /// The traits it gives while worn: the one chosen in each trait column, if bought and if it fits the item as a
-    /// roll would offer it (a kept piece whose node holds a trait that does not fit it keeps the node, which gives
-    /// nothing).
+    /// roll would offer it (a kept piece's node whose trait does not fit it is given back as it is read).
     pub fn active_traits(&self) -> impl Iterator<Item = &str> {
         let content = crate::catalogue::catalogue();
         self.chosen.iter().enumerate().filter_map(move |(column, &node)| {

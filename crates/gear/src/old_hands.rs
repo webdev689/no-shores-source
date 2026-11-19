@@ -3,13 +3,14 @@
 //! it becomes its "& Shield", beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great axe. A
 //! named weapon becomes its named kind's. An off-hand weapon left over is carried as its new kind. A shield is refunded as its dismantle materials, unless it is
 //! a named one, which is made again as the named loadout it is now, with what its nodes cost given back. Carried and
-//! vaulted pieces are read the same way, and a Vestige for either hand is one for Melee.
+//! vaulted pieces are read the same way, and a Vestige for either hand is one for Melee. A node bought on a piece whose
+//! trait no longer fits it, as a shield's Bulwark on armour, is given back as it is read.
 
 use crate::catalogue::catalogue;
 use crate::character::{At, Character, Stuff};
 use crate::dice::Dice;
 use crate::grid::Cost;
-use crate::item::Item;
+use crate::item::{Item, NONE_CHOSEN};
 use crate::kinds::Kind;
 use crate::vestige::named_item;
 use serde_json::{Map, Value};
@@ -122,7 +123,7 @@ impl Shields {
                 character.salvage(&shield, &Dice { seed: 0, tick: u64::from(shield.id), player: 0 });
                 continue;
             };
-            give_back(character, &shield);
+            give_back(character, &shield, |_, _| true);
             let mut item = named_item(shield.id, def, def.kind.slot());
             item.xp = shield.xp.min(item.xp_most());
             character.items.insert(item.id, (item, at));
@@ -130,13 +131,33 @@ impl Shields {
     }
 }
 
-/// Gives back what the nodes bought on an item cost.
-fn give_back(character: &mut Character, item: &Item) {
+/// An item read with bought nodes whose traits no longer fit it, as armour kept with a shield's Bulwark from before
+/// the loadouts: each such node given back once, for what it cost, and a choice of it cleared.
+pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
+    let content = catalogue();
+    let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref());
+    let misfits: Vec<(usize, u8)> = (item.columns().iter().enumerate())
+        .flat_map(|(column, kind)| (0..kind.nodes()).map(move |node| (column, node)))
+        .filter(|&(column, node)| item.has(column, node))
+        .filter(|&(column, node)| item.traits_of(column).get(usize::from(node)).is_some_and(|id| !fits(id)))
+        .collect();
+    give_back(character, &item, |column, node| misfits.contains(&(column, node)));
+    for (column, node) in misfits {
+        item.bought &= !item.node_bit(column, node).unwrap_or(0);
+        if item.chosen.get(column) == Some(&node) {
+            item.chosen[column] = NONE_CHOSEN;
+        }
+    }
+    item
+}
+
+/// Gives back what the nodes bought on an item cost, of those `which` picks by column and node.
+fn give_back(character: &mut Character, item: &Item, which: impl Fn(usize, u8) -> bool) {
     let stock = item.kind.stock();
     let mut spent = Cost::default();
     for column in 0..item.columns().len() {
         let cost = item.cost_of(column);
-        for _ in (0..item.columns()[column].nodes()).filter(|node| item.has(column, *node)) {
+        for _ in (0..item.columns()[column].nodes()).filter(|node| item.has(column, *node) && which(column, *node)) {
             spent.aurem = spent.aurem.saturating_add(cost.aurem);
             spent.fragments = spent.fragments.saturating_add(cost.fragments);
             spent.essence = spent.essence.saturating_add(cost.essence);

@@ -182,7 +182,8 @@ impl Character {
 
     /// A character kept between sessions, or none when the text is not one. Read, it is made whole: it gains a stock
     /// of each island's resource added since it was kept, its stocks stay within their caps, each item is as an item
-    /// should be (`Item::kept`), one worn in a slot it does not fit or that another fills is carried, and its next
+    /// should be (`Item::kept`), a node bought whose trait no longer fits its piece is given back
+    /// (`old_hands::unfit`), one worn in a slot it does not fit or that another fills is carried, and its next
     /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it. One
     /// kept before the loadouts is read into them (`old_hands.rs`).
     #[must_use]
@@ -210,7 +211,7 @@ impl Character {
         character.ammo = character.ammo.min(crate::ammo::AMMO_FULL);
         let mut worn = Vec::new();
         for (id, (item, at)) in std::mem::take(&mut character.items) {
-            let item = item.kept(id, resources);
+            let item = crate::old_hands::unfit(&mut character, item.kept(id, resources));
             let at = match at {
                 At::Worn(slot) if !item.kind.fits(slot) || worn.contains(&slot) => At::Carried,
                 At::Worn(slot) => {
