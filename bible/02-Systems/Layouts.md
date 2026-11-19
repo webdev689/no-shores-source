@@ -184,7 +184,9 @@ from the sea, fresh water and the claim's edge), then:
    every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every 130 to
    210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand the
    ruins of an older frontier: round towers broken off at their tops with a few merlons left, and runs of curtain
-   wall in lengths broken to different heights, some buttressed, so the bounds read as a border once held.
+   wall in lengths broken to different heights, some buttressed, so the bounds read as a border once held. They are
+   laid once every layout is planned, on the land as all the sculpts leave it, which is the ground as settled: a
+   neighbour's massif can rise over a rim or its floor hold one down.
 8. **The rock.** Rock fallen from the faces lies on the floor where each face meets it, never up the face, so every
    stone rests on level ground as if it had rolled there: along the section's edge every 11 m, a third of the way
    left bare and never by a path, a heap of a boulder or two against the foot, smaller stones by them and scree spilt

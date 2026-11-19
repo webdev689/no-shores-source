@@ -25,7 +25,8 @@ pub(crate) fn carved_at(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
     kit.height(at) + carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
 }
 
-/// Ruins along the cliff tops round the section, walked at even steps, each where the massif stands over it.
+/// Ruins along the cliff tops round the section, walked at even steps, each where the massif stands over it. Laid by
+/// settle on `carved` with every layout's sculpt in it, so each stands on the ground as settled.
 pub fn rim(kit: &mut Kit, ring: &[[f64; 2]], (paths, outcrops): (&[Path], &[Outcrop]), carved: &Sculpts) {
     let mut carried = RUIN_EVERY_M / 2.0;
     for (at, &from) in ring.iter().enumerate() {

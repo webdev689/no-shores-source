@@ -105,6 +105,15 @@ pub fn middle_of(node: &Node) -> [f64; 2] {
     [x / count, y / count]
 }
 
+/// A layout's ways: its paths, and each run's on past its end beat's middle to its door.
+fn ways_of(paths: &[Path], runs: &[runs::Run]) -> Vec<Path> {
+    let doors = runs.iter().filter_map(|run| {
+        let points = vec![*run.line.last()?, run.door];
+        Some(Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() })
+    });
+    paths.iter().cloned().chain(doors).collect()
+}
+
 /// Plans a node's layout on the ground from its brief: for a patrol area, `links` are the instances its gates lead
 /// to; for an instance, the patrol area it is entered from. `biome` is its landmass's, which sets how high its massif
 /// stands and the shape of its outcrops where its brief names none. `avoid` are the other nodes' claims, which its
@@ -267,15 +276,7 @@ pub fn plan(
         sites.push(sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named });
     }
     // What comes after keeps off the ways, a run's on past its end beat's middle to its door too.
-    let ways: Vec<Path> = paths
-        .iter()
-        .cloned()
-        .chain(runs.iter().filter_map(|run| {
-            let end = *run.line.last()?;
-            let points = vec![end, run.door];
-            Some(paths::Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() })
-        }))
-        .collect();
+    let ways = ways_of(&paths, &runs);
     works::retaining_walls(&mut kit, &areas, &ways, &sculpt.outcrops, &carved);
     let built = kit.into.solids.len();
     for run in &runs {
@@ -299,7 +300,6 @@ pub fn plan(
     rocks::talus(&mut kit, &ring, (&ways, &gorges), &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &ways, &carved);
     rocks::keep_off(kit.into, fallen, &runs_stone);
-    skyline::rim(&mut kit, &ring, (&ways, &sculpt.outcrops), &carved);
     // Last of what stands, so a shelf's headstones keep out of all the rest.
     basins::graves(&mut kit, &terraces, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off

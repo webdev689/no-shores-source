@@ -8,7 +8,7 @@ use crate::book::Book;
 use crate::brief::Briefs;
 use crate::collide::boxes_of;
 use crate::seat::Seating;
-use crate::{Layout, Link, middle_of, plan};
+use crate::{Layout, Link, middle_of, plan, ways_of};
 use land::landmass::Landmass;
 use land::pads::{Pad, Pads};
 use land::sculpts::Sculpts;
@@ -152,7 +152,16 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
             plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book, biome, &avoid)
         })
         .collect();
-    landmass.surface.sculpts = Sculpts::from(layouts.iter().map(|layout| layout.sculpt.clone()).collect::<Vec<_>>());
+    let sculpts = Sculpts::from(layouts.iter().map(|layout| layout.sculpt.clone()).collect::<Vec<_>>());
+    // The ruins along each layout's cliff tops stand on the land as every sculpt leaves it, the ground settled here: a
+    // neighbour's massif may rise over a rim, or its floor hold one down.
+    for layout in &mut layouts {
+        let ways = ways_of(&layout.paths, &layout.runs);
+        let seed = land::exact::seed_of(0x1A70, &layout.id) ^ 0x3A11;
+        let mut kit = crate::pieces::Kit { ground: &landmass.surface, book, seed, draws: 0, into: &mut layout.seating };
+        crate::skyline::rim(&mut kit, &layout.ring, (&ways, &layout.sculpt.outcrops), &sculpts);
+    }
+    landmass.surface.sculpts = sculpts;
     // Every piece was planned on the carved ground (the carving keeps off the floor the pieces stand on, and rock
     // stands on the carved faces), so it is that ground the pads and roads are measured from.
     let planned: Vec<Planned> = layouts

@@ -300,15 +300,49 @@ fn every_fallen_stone_rests_on_the_carved_ground() {
         });
         for solid in rubble {
             stones += 1;
-            // A stone is sunk a quarter of its height; one sunk further was heighted on the ground before the carving.
-            let sunk = laid.ground.height_at(solid.at[0], solid.at[1]) - (solid.at[2] + solid.size[2] * 0.25);
-            if sunk > 0.5 {
+            // A stone is sunk a quarter of its height; one sunk further was heighted on the ground before the carving, or
+            // on a ground another layout's sculpt has since raised; one whose foot shows floats.
+            let ground = laid.ground.height_at(solid.at[0], solid.at[1]);
+            let sunk = ground - (solid.at[2] + solid.size[2] * 0.25);
+            if sunk > 0.5 || solid.at[2] > ground + 0.05 {
                 failed.push(format!("{}: a stone {:?} at {:?} sunk {sunk:.1} m", layout.id, solid.size, solid.at));
             }
         }
     }
     assert!(stones > 1000, "{stones}");
     assert!(failed.is_empty(), "{} of {stones}: {:#?}", failed.len(), &failed[..failed.len().min(20)]);
+}
+
+#[test]
+fn every_ruin_stands_on_the_ground_as_settled() {
+    let laid = laid();
+    let (mut ruins, mut failed) = (0, Vec::new());
+    for layout in &laid.layouts {
+        for solid in &layout.seating.solids {
+            // How deep each was sunk where it was laid: a broken tower's stump 1.5 m, a length of the rim's curtain
+            // wall (outside the section, on the cliff tops) 1.2 m.
+            let rim_wall = solid.shape == Shape::Block
+                && solid.material == Material::Stone
+                && (solid.size[0] - 1.6).abs() < 1e-9
+                && (6.2..=9.2).contains(&solid.size[1])
+                && !layout::field::ring_holds(&layout.ring, solid.at[0], solid.at[1]);
+            let sunk = match solid.shape {
+                Shape::Column { sides: 12, top } if (top - 0.92).abs() < 1e-9 => 1.5,
+                _ if rim_wall => 1.2,
+                _ => continue,
+            };
+            ruins += 1;
+            let off = solid.at[2] + sunk - laid.ground.height_at(solid.at[0], solid.at[1]);
+            if off.abs() > 0.15 {
+                failed.push(format!(
+                    "{}: a ruin {:?} at {:?} stands {off:+.2} m off the ground",
+                    layout.id, solid.size, solid.at
+                ));
+            }
+        }
+    }
+    assert!(ruins > 100, "{ruins}");
+    assert!(failed.is_empty(), "{} of {ruins}: {:#?}", failed.len(), &failed[..failed.len().min(20)]);
 }
 
 #[test]
