@@ -82,6 +82,9 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
 const PART_FLOATS = 12;
 const SMOKE_COLOUR = [0.13, 0.12, 0.12] as const;
 const EMBER_COLOUR = [1, 0.55, 0.15] as const;
+/** How far a fire's glow reaches, in times its height: the light layer cuts each channel to three levels, so a wider
+ *  glow lays its steps as coloured rings across all it reaches; this far, it lights what stands by the fire. */
+const GLOW_REACH = 2;
 /** The glow's colour, bright enough that the light layer takes it as light. */
 const GLOW_COLOUR = [1, 0.85, 0.6] as const;
 const PREMULTIPLIED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
@@ -187,7 +190,7 @@ export class Flames {
         add(shown, ember.position, PART.ember, [fire.sizeM * 0.025, 0, 0, 0], [...EMBER_COLOUR, ember.brightness]);
       const flicker = Math.max(...parts.tongues.map((tongue) => tongue.height)) / fire.sizeM;
       const middle: Point = [fire.at[0], fire.at[1], fire.at[2] + fire.sizeM * 0.5];
-      add(glows, middle, PART.glow, [fire.sizeM * 3.5, 0, 0, 0], [...GLOW_COLOUR, flicker]);
+      add(glows, middle, PART.glow, [fire.sizeM * GLOW_REACH, 0, 0, 0], [...GLOW_COLOUR, flicker]);
     }
     this.counts = { shown: shown.length / PART_FLOATS, glows: glows.length / PART_FLOATS };
     if (shown.length === 0) return;

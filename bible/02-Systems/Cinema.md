@@ -112,7 +112,7 @@ the scene's pass with depth, and never smaller than a speck however far off.
 fire's parts come from its seed and the clock: five tongues of flame whose height wanders within a band and leans a
 little downwind, twelve puffs of smoke that rise, grow, thin and lean with `Flames.wind`, and ten embers that fly up
 and burn out. Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the
-water never covers a fire burning above it. Each fire also throws a glow into the light layer ([[Weapon Glow]]),
+water never covers a fire burning above it. Each fire also throws a glow twice its height into the light layer ([[Weapon Glow]]),
 which lights what stands round it in the game's stepped halo.
 
 ### Trying it
