@@ -162,6 +162,7 @@ export class Walker {
     if (fight && ((own && !shooter && own.action.kind !== 'attack') || (shooter && fight.dropped)))
       firstPerson.cancel();
     const free = swings && !(own && HELD.has(own.action.kind));
+    firstPerson.glow = outfit.drawn ? this.glow : NO_GLOW;
     firstPerson.update(fight?.handsSeconds ?? seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,
       left: outfit.left,
