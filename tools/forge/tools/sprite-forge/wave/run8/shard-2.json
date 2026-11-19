@@ -1,0 +1,603 @@
+{
+ "runs": [
+  {
+   "body": "male",
+   "set": "wardrobe",
+   "material": null,
+   "layers": [
+    "anticlere_surcoat_drape",
+    "casual_cloak_hooded_drape",
+    "casual_pants",
+    "day_gown",
+    "day_gown_drape",
+    "dwynnen_surcoat_drape",
+    "eodoric_drape",
+    "formal_cloak_drape",
+    "formal_tunic",
+    "long_skirt_slit_drape",
+    "mage_loincloth",
+    "mage_robes_drape",
+    "plain_robes_drape",
+    "priest_robes",
+    "sash",
+    "shirt_long_v",
+    "straps"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 792.0
+  },
+  {
+   "body": "male",
+   "set": "hair",
+   "material": null,
+   "layers": [
+    "hair_tied"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 80.0
+  },
+  {
+   "body": "female",
+   "set": "wardrobe",
+   "material": null,
+   "layers": [
+    "breeches",
+    "casual_cloak_hooded_skirted",
+    "casual_dress",
+    "casual_dress_drape",
+    "eodoric",
+    "formal_cloak_skirted",
+    "formal_eodoric_drape",
+    "mage_loincloth_drape",
+    "open_tunic",
+    "plain_robes_hooded_drape",
+    "reversible_tunic",
+    "shirt_long_deep",
+    "short_tunic_drape",
+    "straps_disc",
+    "toga_drape",
+    "waist_sash",
+    "wrap_drape"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 792.0
+  },
+  {
+   "body": "female",
+   "set": "hair",
+   "material": null,
+   "layers": [
+    "hair_short_cloaked",
+    "hair_tails_cloaked"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 160.0
+  },
+  {
+   "body": "male",
+   "set": "classic",
+   "material": null,
+   "layers": [
+    "coif",
+    "dagger_daedric",
+    "dagger_iron",
+    "dagger_silver_l",
+    "flail_silver",
+    "mace_iron_l",
+    "mace_mithril",
+    "mace_orcish_l",
+    "scabbard_dagger_adamantium",
+    "scabbard_dagger_ebony_l",
+    "scabbard_dagger_elven_l",
+    "scabbard_dagger_silver",
+    "scabbard_sword",
+    "scabbard_sword_l",
+    "sheath_bow_long_iron",
+    "sheath_bow_long_orcish",
+    "sheath_bow_short_adamantium",
+    "sheath_crossbow_iron",
+    "sheath_crossbow_iron_round",
+    "sheath_crossbow_steel_buckler",
+    "sheath_pistolet_l",
+    "sheath_staff_silver",
+    "shield_kite_daedric",
+    "shield_kite_ebony",
+    "shield_kite_elven",
+    "shield_kite_mithril",
+    "shield_kite_plain",
+    "shield_kite_steel",
+    "slung_shield_buckler_elven",
+    "slung_shield_kite_daedric",
+    "slung_shield_kite_steel",
+    "slung_shield_round_silver",
+    "slung_shield_tower_iron",
+    "slung_shield_tower_orcish",
+    "sword_mithril_l",
+    "warhammer_ebony"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 324.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Leather",
+   "layers": [
+    "under_leather"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Chain",
+   "layers": [
+    "face_chain"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Iron",
+   "layers": [
+    "face_iron"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Steel",
+   "layers": [
+    "face_steel"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Silver",
+   "layers": [
+    "face_silver"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Elven",
+   "layers": [
+    "face_elven"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Dwarven",
+   "layers": [
+    "face_dwarven"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Mithril",
+   "layers": [
+    "face_mithril"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Adamantium",
+   "layers": [
+    "face_adamantium"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Ebony",
+   "layers": [
+    "face_ebony"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Orcish",
+   "layers": [
+    "face_orcish"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Daedric",
+   "layers": [
+    "face_daedric"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Thieves",
+   "layers": [
+    "face_thieves"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Brotherhood",
+   "layers": [
+    "face_brotherhood"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Mages",
+   "layers": [
+    "face_mages"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Fighters",
+   "layers": [
+    "face_fighters"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "armour",
+   "material": "Knights",
+   "layers": [
+    "face_knights"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "male",
+   "set": "beast",
+   "material": null,
+   "layers": [
+    "face_hooded_argonian"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "classic",
+   "material": null,
+   "layers": [
+    "axe_elven",
+    "cuffed_boots",
+    "dagger_daedric",
+    "dagger_iron",
+    "dagger_silver_l",
+    "flail_silver",
+    "mace_iron_l",
+    "mace_mithril",
+    "mace_orcish_l",
+    "scabbard_dagger_adamantium",
+    "scabbard_dagger_ebony_l",
+    "scabbard_dagger_elven_l",
+    "scabbard_dagger_silver",
+    "scabbard_sword",
+    "scabbard_sword_l",
+    "sheath_bow_long_iron",
+    "sheath_bow_long_orcish",
+    "sheath_bow_short_adamantium",
+    "sheath_crossbow_iron",
+    "sheath_crossbow_iron_round",
+    "sheath_crossbow_steel_buckler",
+    "sheath_pistolet_l",
+    "sheath_staff_silver",
+    "shield_kite_daedric",
+    "shield_kite_ebony",
+    "shield_kite_elven",
+    "shield_kite_mithril",
+    "shield_kite_plain",
+    "shield_kite_steel",
+    "slung_shield_buckler_elven",
+    "slung_shield_kite_daedric",
+    "slung_shield_kite_steel",
+    "slung_shield_round_silver",
+    "slung_shield_tower_iron",
+    "slung_shield_tower_orcish",
+    "staff_iron",
+    "staff_orcish",
+    "sword_adamantium",
+    "sword_mithril_l",
+    "warhammer_ebony"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 360.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Leather",
+   "layers": [
+    "face_leather"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Iron",
+   "layers": [
+    "helm_iron"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Steel",
+   "layers": [
+    "helm_steel"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Silver",
+   "layers": [
+    "helm_silver"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Elven",
+   "layers": [
+    "helm_elven"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Dwarven",
+   "layers": [
+    "helm_dwarven"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Mithril",
+   "layers": [
+    "helm_mithril"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Adamantium",
+   "layers": [
+    "helm_adamantium"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Ebony",
+   "layers": [
+    "helm_ebony"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Orcish",
+   "layers": [
+    "helm_orcish"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Daedric",
+   "layers": [
+    "helm_daedric"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Thieves",
+   "layers": [
+    "helm_thieves"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Brotherhood",
+   "layers": [
+    "helm_brotherhood"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Mages",
+   "layers": [
+    "helm_mages"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Fighters",
+   "layers": [
+    "helm_fighters"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "armour",
+   "material": "Knights",
+   "layers": [
+    "helm_knights"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "beast",
+   "material": null,
+   "layers": [
+    "body_khajiit"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  }
+ ]
+}

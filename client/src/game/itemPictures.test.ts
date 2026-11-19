@@ -54,7 +54,10 @@ const strips: Record<string, Strip> = {
 };
 const store = { strip: (path: string) => Promise.resolve(strips[path] ?? null) } as unknown as ForgeStore;
 const forge = new Cards(
-  { card: () => assert.fail('a page’s picture never asks the scene for a card') },
+  {
+    card: () => assert.fail('a page’s picture never asks the scene for a card'),
+    glow: () => assert.fail('nor for a glow'),
+  },
   store,
   looks,
   { skins: { bodies: {} }, hair: { bodies: {} } },

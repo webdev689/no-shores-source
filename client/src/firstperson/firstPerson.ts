@@ -1,3 +1,4 @@
+import { type GlowElement, type GlowLook, glowField } from '../elementGlow.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
@@ -64,6 +65,8 @@ export interface FirstPersonState {
   readonly casting: boolean;
   readonly climbing: number;
   readonly element?: string;
+  /** The element a cast's light is recoloured to: its Art's. */
+  readonly castGlow?: GlowElement | null;
   readonly mounted?: boolean;
   readonly yaw?: number;
   readonly blocking?: boolean;
@@ -73,16 +76,31 @@ export interface FirstPersonState {
   readonly zoom?: number;
 }
 
-/** What the first person draws with: a texture a picture, and the quads over the scene. */
-export type QuadDrawer = Pick<FirstPersonView, 'texture' | 'forget' | 'draw'>;
+/** What a blow of the player's own met, as the first person shows it: it landed, or it was blocked (or blocked one). */
+export type Contact = 'landed' | 'blocked';
+/** A landed blow jolts the hands down this many design pixels, a block this many, for this many seconds (three
+ *  frames at 60 a second, whatever the screen's rate); a landed blow's white rim lights the weapon for one such frame,
+ *  and always for the first frame drawn after it. */
+const JOLT = { landed: 2, blocked: 4, seconds: 3 / 60, rim: 1 / 60 } as const;
 
-/** A picture wanted on the screen: what names it, how it is composed, where it lies once it is, and where on it a
- *  ranged weapon's muzzle (or its arrow's head) is. */
+/** What the first person draws with: a texture a picture or an outline's field, and the quads over the scene. */
+export type QuadDrawer = Pick<FirstPersonView, 'texture' | 'glow' | 'forget' | 'draw'>;
+
+/** A picture wanted on the screen: what names it, how it is composed, where it lies once it is, where on it a
+ *  ranged weapon's muzzle (or its arrow's head) is, and for a weapon the hand that holds it, which may glow. */
 interface Wanted {
   readonly key: string;
   readonly ask: () => Promise<Picture | null>;
   readonly place: (picture: Picture) => Omit<ScreenQuad, 'texture'>;
   readonly tip?: readonly [number, number];
+  readonly hand?: Hand;
+}
+
+/** A composed picture kept on the GPU: its texture, and its outline's field in each element it has glowed in. */
+interface Kept {
+  readonly texture: GPUTexture;
+  readonly picture: Picture;
+  readonly glows: Partial<Record<GlowElement, GPUTexture>>;
 }
 
 /** Where on each ranged weapon's picture its muzzle is, or its arrow's head drawn, in its own pixels, in the frame its
@@ -181,11 +199,20 @@ export class FirstPerson {
   private shown: ScreenQuad[] = [];
   private drawnMuzzle: readonly [number, number] | null = null;
   private zoom = 1;
-  private readonly kept = new Map<string, { texture: GPUTexture; picture: Picture } | null>();
+  private readonly kept = new Map<string, Kept | null>();
   private readonly loading = new Set<string>();
   /** Picks each swing's direction as a share of DFO's six, as each swing begins; a fight's rules may choose it, and
    *  may be set to once the first person is open. */
   strokes: () => number;
+  /** The element each hand's weapon glows in (the right, then the left), as the one who sees it sets it. */
+  glow: readonly [GlowLook, GlowLook] = [0, 0];
+  /** How hard the weapons' glow surges (1 at rest), as the one who sees it sets it each frame. */
+  surge = 1;
+  /** The hands' jolt from the last contact (design pixels, and when it came, page seconds), whether the weapon's rim
+   *  is still to be drawn once, and when a landed blow last threw the element off the blade. */
+  private jolt = { pixels: 0, at: -Infinity };
+  private rimOwed = false;
+  private burstAt: number | null = null;
 
   constructor(view: QuadDrawer, source: FrameSource, random: () => number = Math.random, strokes = random) {
     this.view = view;
@@ -207,6 +234,15 @@ export class FirstPerson {
    *  threw it and whether the hands take turns as a pair; null at rest. */
   get swing(): Swing | null {
     return this.hands.swing;
+  }
+
+  /** A blow of the player's own met something: landed, the weapon takes a white rim for a frame and throws its
+   *  element off as a burst, and the hands jolt down 2 design pixels for 3 frames; blocked, they jolt 4. Never a
+   *  trail: the first person strikes without one. */
+  contact(kind: Contact): void {
+    const now = performance.now() / 1000;
+    this.jolt = { pixels: JOLT[kind], at: now };
+    if (kind === 'landed') [this.rimOwed, this.burstAt] = [true, now];
   }
 
   /** Ends any swing or draw under way at once, with no blow and no arrow: the fight's rules ended it (a dodge, a
@@ -268,8 +304,9 @@ export class FirstPerson {
     if (this.castClock !== null) {
       const record = CAST_SEQUENCE[Math.floor(this.castClock / CAST_STEP)] ?? 0;
       const element = state.element ?? 'magic';
-      const ask = () => castPicture(this.source, element, record, worn.hands);
-      const key = `cast|${element}|${record}|${worn.hands}`;
+      const glow = state.castGlow ?? null;
+      const ask = () => castPicture(this.source, element, record, worn.hands, glow);
+      const key = `cast|${element}|${glow}|${record}|${worn.hands}`;
       return [
         { key, ask, place: castPlace(record, element, false) },
         { key, ask, place: castPlace(record, element, true) },
@@ -307,7 +344,7 @@ export class FirstPerson {
         shooter.kind === 'crossbow' && view.record === 0
           ? () => crossbowPicture(this.source, shooter, view.frame, view.pairArt)
           : () => gunPicture(this.source, shooter, worn.hands, view.record, view.frame);
-      return { key, ask, place, ...(tip ? { tip } : {}) };
+      return { key, ask, place, hand: view.hand, ...(tip ? { tip } : {}) };
     }
     if (holding.kind !== 'weapon') return this.heldWanted(holding, worn, drop);
     const { wielded } = holding;
@@ -315,7 +352,8 @@ export class FirstPerson {
     if (wielded.kind === 'flail' && record === 0) [record, frame] = [SWAY_RECORD, swayFrame(sway, SWAY_FRAMES)];
     const key = `weapon|${wielded.kind}|${wielded.make}|${wielded.bow}|${worn.hands}|${worn.feet}|${record}-${frame}|${view.flip}`;
     const ask = () => weaponPicture(this.source, wielded, worn, record, frame, view.flip);
-    return { key, ask, place, ...(tip ? { tip } : {}) };
+    const hand = wielded.kind === 'fists' ? {} : { hand: view.hand };
+    return { key, ask, place, ...hand, ...(tip ? { tip } : {}) };
   }
 
   /** A shield's frame is its pose's, raised to lowered; a light's its flame's. */
@@ -385,7 +423,7 @@ export class FirstPerson {
       .then((picture) => {
         if (!this.loading.delete(wanted.key)) return;
         const texture = picture && this.view.texture(picture.pixels, picture.width, picture.height);
-        this.kept.set(wanted.key, picture && texture ? { texture, picture } : null);
+        this.kept.set(wanted.key, picture && texture ? { texture, picture, glows: {} } : null);
       })
       // A picture that would not load is asked again the next time it is wanted.
       .catch(() => this.loading.delete(wanted.key));
@@ -395,8 +433,10 @@ export class FirstPerson {
   private letGo(): void {
     for (const kept of this.kept.values()) {
       if (!kept) continue;
-      this.view.forget(kept.texture);
-      kept.texture.destroy();
+      for (const texture of [kept.texture, ...Object.values(kept.glows)]) {
+        this.view.forget(texture);
+        texture.destroy();
+      }
     }
     this.kept.clear();
     this.loading.clear();
@@ -415,25 +455,51 @@ export class FirstPerson {
     return muzzle && zoomedOnScreen(muzzle[0], muzzle[1], this.zoom);
   }
 
+  /** A kept weapon picture's outline field in `look`, made the first time it glows in it: its blade where a blade is
+   *  laid over its hand, else all it draws; a picture standing on the screen's foot has no rim along it. */
+  private glowOf(kept: Kept, look: GlowElement): GPUTexture {
+    const made = kept.glows[look];
+    if (made) return made;
+    const { picture } = kept;
+    const mask =
+      picture.weapon ??
+      Uint8Array.from({ length: picture.width * picture.height }, (_unused, texel) =>
+        picture.pixels[texel * 4 + 3] ? 1 : 0,
+      );
+    const bottom = picture.at[1] + picture.height >= DESIGN_HEIGHT;
+    const texture = this.view.glow(glowField(mask, picture.width, picture.height, look, { bottom }));
+    kept.glows[look] = texture;
+    return texture;
+  }
+
   /** Draws the first person over what `colourView` holds, `width` by `height` pixels. Until every picture wanted is
    *  composed, the last whole set stays on the screen. */
   draw(encoder: GPUCommandEncoder, colourView: GPUTextureView, width: number, height: number): void {
     const quads: ScreenQuad[] = [];
     let ready = true;
     let muzzle: readonly [number, number] | null = null;
+    const now = performance.now() / 1000;
+    const rim = this.rimOwed || (this.burstAt !== null && now - this.burstAt < JOLT.rim);
+    this.rimOwed = false;
+    const burst = this.burstAt === null ? null : now - this.burstAt;
     for (const wanted of this.wanted) {
       const kept = this.kept.get(wanted.key);
       if (kept === undefined) ready = false;
       else if (kept) {
         const quad = wanted.place(kept.picture);
-        quads.push({ texture: kept.texture, ...quad });
+        const look = wanted.hand ? this.glow[wanted.hand === 'right' ? 0 : 1] : 0;
+        // A plain weapon takes a blow's rim on an outline measured round, as Cosmic's is.
+        const lit = !!wanted.hand && (look !== 0 || rim);
+        const glow = lit ? { texture: this.glowOf(kept, look || 3), look, surge: this.surge, rim, burst } : null;
+        quads.push({ texture: kept.texture, ...quad, ...(glow ? { glow } : {}) });
         if (wanted.tip) muzzle = [quad.x + wanted.tip[0], quad.y + wanted.tip[1]];
       }
     }
     if (ready) [this.shown, this.drawnMuzzle] = [quads, muzzle];
     const zoom = this.zoom;
+    const jolt = now - this.jolt.at < JOLT.seconds ? this.jolt.pixels : 0;
     const zoomed = this.shown.map((quad) => {
-      const [x, y] = zoomedOnScreen(quad.x, quad.y, zoom);
+      const [x, y] = zoomedOnScreen(quad.x, quad.y + jolt, zoom);
       return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
     });
     this.view.draw(encoder, colourView, width, height, zoomed);

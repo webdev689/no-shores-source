@@ -158,6 +158,7 @@ fn turns_at(dominating: bool) -> (usize, f64, f64) {
                 through: 1.0,
                 stagger: 1.0,
                 element: 0,
+                crit: false,
             };
             room.settle(&blow, How::Swing, brute, Verdict::Hit { damage: 25.0, poise: 0.0 }, None);
             room.foes.get_mut(&brute).unwrap().fighter.health = room.foes[&brute].fighter.health_max;

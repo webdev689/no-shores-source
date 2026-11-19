@@ -28,6 +28,7 @@ function firstPerson(drawn: (path: string) => boolean) {
   let quads: readonly ScreenQuad[] = [];
   const view: QuadDrawer = {
     texture: () => ({}) as GPUTexture,
+    glow: () => ({}) as GPUTexture,
     forget: () => undefined,
     draw: (_encoder, _colour, _width, _height, drawnQuads) => {
       quads = drawnQuads;
@@ -38,7 +39,8 @@ function firstPerson(drawn: (path: string) => boolean) {
     const events = person.update(seconds, input, state);
     await new Promise((resolve) => setImmediate(resolve));
     person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 640, 400);
-    return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })) };
+    const glows = quads.map((quad) => quad.glow?.look ?? 0);
+    return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })), glows };
   };
   return { frame, asked, person };
 }
@@ -97,6 +99,16 @@ test('a drawn sword rests 60 design pixels below and 40 right of its own place, 
   // Only a sword is lowered; every other weapon keeps its own place.
   const mace = await frame(0.016, { ...standing, right: 'mace_iron' });
   assert.deepEqual(mace.quads, [{ x: 10, y: 20, width: 2, height: 1, flip: false }]);
+});
+
+test("a glowing weapon's quad carries its glow, a plain one none", async () => {
+  const { frame, person } = firstPerson(wholeFrames);
+  person.glow = [3, 0];
+  assert.deepEqual((await frame(0.016, standing)).glows, [3]);
+  person.glow = [0, 3];
+  assert.deepEqual((await frame(0.016, standing)).glows, [0], 'the left hand glows, the right holds the sword');
+  person.glow = [0, 0];
+  assert.deepEqual((await frame(0.016, standing)).glows, [0]);
 });
 
 test('a weapon in the left hand alone is mirrored about the middle, from its left-hand twin', async () => {

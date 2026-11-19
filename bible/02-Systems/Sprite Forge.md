@@ -22,10 +22,18 @@ The [[Test Ground]] shows them.
   own; every other race is the bare body with its skin coloured as a frame is composed.
 - **Layers**: 660 on the man and 666 on the woman. Clothes, armour sets, helms, hair, worn and held weapons, bows,
   staffs, shields, instruments, tools and the horse a rider sits on.
-- **Moves**: 100 on each adult body. They include walking, running, fighting with each weapon, the owner's blows (an
-  overhead, a side cut and a thrust in each of four holds: one hand, a haft, a long hilt and a pair), the bow's own
-  hold, walk and sprint, casting, dying, climbing, riding, driving a wagon's bench and playing each instrument. Some
-  moves turn the body by CC0 motion: Quaternius's libraries and KayKit's clips.
+- **Moves**: 125 on each adult body. They include walking, running, fighting with each weapon, the owner's blows (an
+  overhead, a side cut and a thrust in each of five holds: one hand, a haft, a long hilt, a pair, and a staff in both
+  hands a forearm apart), the bow's own hold, walk and sprint, casting, dying, climbing, riding, driving a wagon's
+  bench and playing each instrument. Some moves turn the body by CC0 motion: Quaternius's libraries and KayKit's clips.
+- **The blows**: each captured whole from Quaternius's sword clips, the body stepping, turning and crouching into it:
+  the overhead raised behind the shoulder and brought down across the body, the side cut a low lunge sweeping across
+  the front, the thrust a crouched charge with the arm driven straight ahead. Both hands stay on a two-handed weapon;
+  a pair's left blade holds at guard while the right strikes.
+- **Actions on the move**: each blow, the bow's shot, a gun's and the braced pistols' shots, the reloads and the cast
+  drawn again with the walk's hips and legs under the action's chest, which keeps the action's turn and half its lean
+  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk` and so on). The sprint's fists close thumb up, the
+  wrist straight.
 - **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and what they wear, but
   no weapon, held or worn: a weapon is not seen through a roll
   ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
@@ -37,7 +45,8 @@ folder as its site's art; they are published with the rest. So are the instrumen
 pictures of things the forge renders from models of its own: items, props and the light set's pieces
 ([[The Audit Branch's Forge Renders Come Over]]).
 
-Each strip is a layer in one move: a row for each view, a cell for each frame, at 62 pixels a metre. Its twin, `_z`,
+Each strip is a layer in one move: a row for each view, a cell for each frame, at 62 pixels a metre. A strip may be
+2304 texels wide (nine cells of 256, as a standing thrust's reach needs) and 2048 tall. Its twin, `_z`,
 holds the depth of each pixel in red and green, and the part of the body (torso, arm, head, foot, weapon, drape,
 horse, hair) in blue. The forge's index (`forgeLooks.json`) gives each move's cell and the root, where the feet stand.
 It also holds each layer's moves, and the order, cover and under values that decide which layer shows where two meet.

@@ -19,10 +19,10 @@ code:
 ---
 # Procedural Textures
 
-DFO Online's procedural textures, brought over whole ([[Every Island Is Seen Whole and Reached by Nodes]]). They paint
-every picture the forged buildings, props and room kit wear, and the ground's twelve tile sets, in code. The pictures
-are filed as Daggerfall files its textures, by archive and record, at Daggerfall's sizes and in its palette, so every
-model's mapping holds. No texture file is read.
+DFO Online's procedural textures, brought over whole ([[Pick - Procedural Textures]],
+[[Every Island Is Seen Whole and Reached by Nodes]]). They paint every picture the forged buildings, props and room kit
+wear, and the ground's twelve tile sets, in code. The pictures are filed as Daggerfall files its textures, by archive
+and record, at Daggerfall's sizes and in its palette, so every model's mapping holds. No texture file is read.
 
 ## The public calls
 

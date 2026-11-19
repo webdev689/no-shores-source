@@ -1,16 +1,52 @@
-// The attack feel over the Test Ground's fight: the swings' arcs, the hit-stops, the camera's kick and the lunge, each
-// switched and set in the panel's Attack feel. Only the drawing moves: the fight's rules and their clock never do.
-import { CameraKick, kicksOf, leanOf } from '../combat/cameraKick.ts';
-import { EVENT } from '../combat/cues.ts';
-import { HitStops, heldBack } from '../combat/hitStop.ts';
-import { lungeOf } from '../combat/lunge.ts';
-import { type Swing, SwingArcs, type Vector, weaponTint } from '../combat/swingArcs.ts';
+// The attack feel over a fight, the game's and the Test Ground's alike: the swings' arcs, the hit-stops, the camera's
+// kick and the lunge, each at its default here and switched and set in the Test Ground's panel. Only the drawing moves:
+// the fight's rules and their clock never do.
+import { CameraKick, kicksOf, leanOf } from './cameraKick.ts';
+import { EVENT, HOW } from './cues.ts';
+import { HitStops, heldBack } from './hitStop.ts';
+import { lungeOf } from './lunge.ts';
+import { type Smear, type Swing, SwingArcs, type Vector, weaponTint } from './swingArcs.ts';
 import type { Orbit } from '../editor/orbit.ts';
+import { motionReduced } from '../plus/kit.ts';
+import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { blowWay } from '../player/playerMoves.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import { type FighterView, STROKE_DIRECTIONS, directionOf } from '../rules/fighters.ts';
-import { FEEL, type Feel, startFeelPanel } from './feelPanel.ts';
+
+/** Each effect on or off, and its sliders: 1 each as made. The weapon's glow shows the gear's own element (`glowLook`
+ *  0) or the element chosen in its place. The light is the light layer's: the brightest effects lighting what stands
+ *  round them (`LightLayer`). */
+export interface Feel {
+  readonly arc: boolean;
+  readonly arcBrightness: number;
+  readonly arcTrail: number;
+  readonly stop: boolean;
+  readonly stopLength: number;
+  readonly kick: boolean;
+  readonly kickStrength: number;
+  readonly lunge: boolean;
+  readonly lungeDistance: number;
+  readonly glow: boolean;
+  readonly glowLook: number;
+  readonly light: boolean;
+}
+
+/** The feel as made: what the game plays with, and the Test Ground's panel starts from. */
+export const FEEL: Feel = {
+  arc: true,
+  arcBrightness: 1,
+  arcTrail: 1,
+  stop: true,
+  stopLength: 1,
+  kick: true,
+  kickStrength: 1,
+  lunge: true,
+  lungeDistance: 1,
+  glow: true,
+  glowLook: 0,
+  light: true,
+};
 
 /** How brightly a blow's arc flares as it meets something, by what came of it: a kill brightest, a block least. */
 const ARC_FLARE: Readonly<Record<number, number | undefined>> = {
@@ -25,12 +61,14 @@ const ARC_FLARE: Readonly<Record<number, number | undefined>> = {
 const OWN_LUNGE_EYE = 0.5;
 const STILL = { yaw: 0, pitch: 0, ahead: 0, aside: 0, up: 0 } as const;
 
-/** A fighter whose blow may be struck: its number, its view as the rules have it, and what its hands hold. */
+/** A fighter whose blow may be struck: its number, its view as the rules have it, what its hands hold, and the
+ *  element each hand's weapon glows in (none unless said). */
 export interface Striker {
   readonly id: number;
   readonly view: FighterView | null;
   readonly right: string | null;
   readonly left: string | null;
+  readonly looks?: readonly [GlowLook, GlowLook];
 }
 
 /** A fighter's figure as drawn this frame: where its feet are, its move, and whether it is drawn mirrored. */
@@ -40,7 +78,7 @@ export interface DrawnFigure {
   readonly flip: boolean;
 }
 
-/** The Test Ground's attack feel, as its panel sets it. */
+/** A fight's attack feel, as made or as the Test Ground's panel sets it. */
 export class AttackFeel {
   private feel: Feel = FEEL;
   private readonly arcs = new SwingArcs();
@@ -56,13 +94,15 @@ export class AttackFeel {
   /** Fighters whose drawing is not this page's to hold (other players, drawn from their own looks). */
   private unheld: ReadonlySet<number> = new Set();
 
-  /** Adds the feel's panel to `panel`; `rules` reach and width each stroke, and a tick is `tickSeconds`. */
-  constructor(panel: HTMLElement, rules: CombatRules, tickSeconds: number) {
+  /** `rules` reach and width each stroke, and a tick is `tickSeconds`. */
+  constructor(rules: CombatRules, tickSeconds: number) {
     this.rules = rules;
     this.tick = tickSeconds;
-    startFeelPanel(panel, (set) => {
-      this.feel = set;
-    });
+  }
+
+  /** Plays with `feel` from the next frame. */
+  set(feel: Feel): void {
+    this.feel = feel;
   }
 
   /** Takes a frame of `seconds`: each blow landing holds its fighters still from the next frame (so its landing is what
@@ -87,6 +127,8 @@ export class AttackFeel {
     [this.ownKind, this.ownClock] = [kind, clock];
     this.stops.struck(events, feel.stop ? feel.stopLength : 0);
     for (const event of events) {
+      // Only a blade's own blow flares its arc: a spell or a shot landing mid-swing never touched it.
+      if (event.how === HOW.shot || event.how === HOW.spell) continue;
       const flare = event.kind === EVENT.hit && event.amount <= 0 ? 0 : (ARC_FLARE[event.kind] ?? 0);
       if (flare > 0) this.arcs.struck(event.striker, flare, this.lag(event.striker));
     }
@@ -105,6 +147,15 @@ export class AttackFeel {
   /** How far behind the rules a fighter's drawing is held, seconds. */
   private lag(id: number): number {
     return this.unheld.has(id) ? 0 : this.stops.lagOf(id);
+  }
+
+  /** What each hand glows in, as the panel has it: the gear's `own` elements, the element chosen in their place, or
+   *  nothing. */
+  glow(own: readonly [GlowLook, GlowLook]): readonly [GlowLook, GlowLook] {
+    const { glow, glowLook } = this.feel;
+    const chosen = glowLook === 1 || glowLook === 2 || glowLook === 3 ? glowLook : 0;
+    if (!glow) return [0, 0];
+    return chosen ? [chosen, chosen] : own;
   }
 
   /** A fighter's view as its drawing shows it, held back while a blow landing holds it. */
@@ -140,8 +191,10 @@ export class AttackFeel {
     eyes: boolean,
     aiming: boolean,
   ): Seen {
-    const push = this.feel.kick ? this.kick.now : STILL;
-    const lunge = eyes ? this.lunge(player, own).ahead * OWN_LUNGE_EYE : 0;
+    // A player who asked for reduced motion keeps a still view: no kick, no shake, no lunge carrying the eye.
+    const still = motionReduced();
+    const push = this.feel.kick && !still ? this.kick.now : STILL;
+    const lunge = eyes && !still ? this.lunge(player, own).ahead * OWN_LUNGE_EYE : 0;
     const turn = aiming ? { yaw: 0, pitch: 0 } : {};
     return this.kick.kicked(orbit, { ...push, ...turn, ahead: push.ahead + lunge });
   }
@@ -168,10 +221,11 @@ export class AttackFeel {
     drawn: ReadonlyMap<number, DrawnFigure>,
     eye: Vector,
     eyes: boolean,
+    origin: Vector = [0, 0, 0],
   ): Float32Array {
     const { tick } = this;
     const swung: Swing[] = [];
-    for (const { id, view, right, left } of eyes ? [] : strikers) {
+    for (const { id, view, right, left, looks } of eyes ? [] : strikers) {
       const action = view?.action;
       const figure = drawn.get(id);
       if (!view || !figure || action?.kind !== 'attack') continue;
@@ -192,10 +246,18 @@ export class AttackFeel {
         mirrored: figure.flip,
         special: action.swing !== 'plain',
         tint: weaponTint(action.leftHand ? left : right),
+        look: looks?.[action.leftHand ? 1 : 0] ?? 0,
+        arms: view.arms,
       });
     }
     this.arcs.seen(clock, swung, (id) => drawn.get(id)?.feet ?? null);
     const look = { brightness: this.feel.arc && !eyes ? this.feel.arcBrightness : 0, trail: this.feel.arcTrail };
-    return this.arcs.mesh(eye, look, (id) => this.lag(id));
+    return this.arcs.mesh(eye, look, (id) => this.lag(id), origin);
+  }
+
+  /** The smear behind a striker's card as its strike is first drawn, for an eye whose right is `right`; none while the
+   *  arcs are off. */
+  smearOf(id: number, right: readonly [number, number]): Smear | null {
+    return this.feel.arc ? this.arcs.smearOf(id, right, this.lag(id)) : null;
   }
 }

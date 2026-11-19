@@ -281,6 +281,25 @@ fn a_garrison_foe_whose_search_finds_no_one_walks_home_healing_and_stands_idle_t
 }
 
 #[test]
+fn a_garrison_foe_turning_home_sheds_its_expose_and_the_immunity_after_a_charge() {
+    let (mut room, posted) = searching();
+    let (first, _, _) = posted[0];
+    let fighter = &mut room.foes.get_mut(&first).unwrap().fighter;
+    fighter.statuses.held[combat::Status::Expose as usize].ticks = 100_000;
+    fighter.statuses.charge_immune = 100_000;
+    for _ in 0..2400 {
+        if room.foes[&first].brain.returning() {
+            break;
+        }
+        run(&mut room, 1);
+    }
+    assert!(room.foes[&first].brain.returning(), "on its way home");
+    run(&mut room, 1);
+    let statuses = room.foes[&first].fighter.statuses;
+    assert!(!statuses.has(combat::Status::Expose) && statuses.charge_immune == 0, "{statuses:?}");
+}
+
+#[test]
 fn a_garrison_foe_walking_home_from_its_search_takes_a_player_it_sees_on_the_way() {
     let (mut room, posted) = searching();
     let (first, place, _) = posted[0];

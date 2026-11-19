@@ -1,0 +1,29 @@
+{
+ "first": true,
+ "runs": [
+  {
+   "body": "male",
+   "set": "classic",
+   "material": null,
+   "layers": [
+    "body"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  },
+  {
+   "body": "female",
+   "set": "classic",
+   "material": null,
+   "layers": [
+    "body"
+   ],
+   "anims": [
+    "run"
+   ],
+   "cost": 9.0
+  }
+ ]
+}

@@ -522,10 +522,11 @@ img.gear-glyph {
   color: var(--rar-hi, var(--word));
 }
 
-/* The character page: the weapons and cloak, the figure, the armour, their headings level. */
+/* The character page: the weapons and cloak, the figure, the armour, their headings level. The figure's column takes
+   the room its five stats need in one row. */
 .gear-character {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.25fr) minmax(220px, 1fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.6fr) minmax(220px, 1fr);
   gap: 24px;
   align-items: start;
   align-content: center;
@@ -541,6 +542,26 @@ img.gear-glyph {
 }
 .gear-side .gear-heading {
   align-self: stretch;
+}
+/* The worn Art's row, the first under the heading, as tall as a slot's so the two columns' rows stand level; kept
+   while none is worn, so the slots stand where they will. */
+.gear-art {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 88px;
+}
+/* On a short screen the rows close up, so the Emblem's slot under the Art and the three loadouts stays above the foot. */
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
+  .gear-art {
+    height: 77px;
+  }
+  .gear-character .gear-side {
+    gap: 10px;
+  }
+  .gear-character .gear-side .gear-heading {
+    margin-bottom: 4px;
+  }
 }
 .gear-character > .gear-side:first-child .gear-heading {
   text-align: right;
@@ -569,6 +590,14 @@ img.gear-glyph {
   letter-spacing: round(up, calc(3em / 22), 1px);
   text-transform: uppercase;
   color: var(--faint);
+}
+.gear-slot-ammo {
+  font-size: var(--type-xs);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.gear-slot-ammo.gear-short {
+  color: var(--loss);
 }
 .gear-slot-item {
   font-size: var(--type-m);
@@ -666,7 +695,7 @@ img.gear-glyph {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2px 16px;
+  padding: 2px 8px;
 }
 .gear-stat + .gear-stat {
   border-left: 1px solid rgba(255, 255, 255, 0.08);
@@ -1468,6 +1497,7 @@ img.gear-glyph {
 @media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
   (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
   .gear-character .gear-slot-name,
+  .gear-character .gear-slot-ammo,
   .gear-character .gear-power-label,
   .gear-character .gear-power-next,
   .gear-character .gear-stat-label,
@@ -1489,8 +1519,28 @@ img.gear-glyph {
       .gear-trait-words span,
       .gear-heading
     ),
-  .gear-item-kind {
+  .gear-item-kind,
+  .gear-tip
+    :is(
+      .gear-card-words,
+      .gear-card-meta,
+      .gear-card-stats dt,
+      .gear-card-stats dd,
+      .gear-card-big span,
+      .gear-trait-words,
+      .gear-trait-words span,
+      .gear-compare-label,
+      .gear-compare-value,
+      .gear-card-hint
+    ) {
     font-size: var(--type-l);
+  }
+  /* A card's words at the names' size take a wider card, and its comparison's labels the room they need. */
+  .gear-tip {
+    width: min(440px, 80vw);
+  }
+  .gear-tip .gear-compare-row {
+    grid-template-columns: 110px 1fr 96px;
   }
   .gear-foot kbd.gear-key,
   #hud .gear-tab kbd.gear-key {

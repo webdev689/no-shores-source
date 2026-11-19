@@ -66,7 +66,7 @@ export function seaMarks(
       : view === 'landing'
         ? side
         : [];
-  const laid = placeMarks(marks, pose, viewport, 1, view === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side);
+  const laid = placeMarks(marks, pose, viewport, view === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side);
   const placed = view === 'sail' ? declutter(laid, MARK_GAP_PX) : laid;
   const named = namesShown(placed);
   const shown = placed.map((each) => {

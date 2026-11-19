@@ -29,8 +29,13 @@ pub fn shot_numbers(ranged: Ranged) -> (f64, f64, f64, u32) {
         Ranged::Crossbow => (55.0, 26.0, 0.6, 96),
         Ranged::Pistolet => (0.0, 30.0, 0.8, 114),
         Ranged::Thunderlock => (0.0, 45.0, 1.0, 132),
+        Ranged::DoublePistolet => (0.0, 30.0 * 0.85, 0.8, 114 * 3 / 2),
     }
 }
+
+/// A double pistolet's right shot is followed by its left once the right's firing frames have played: the pistolet's
+/// in first person, 6 at 12 a second. Only after the left does it reload.
+pub const BRACE_GAP: u32 = 30;
 
 /// An arrow or a bolt falls this fast; a ball reaches this far.
 pub const FALL: f64 = 6.0;
@@ -41,7 +46,7 @@ pub const BALL_REACH: f64 = 60.0;
 #[must_use]
 pub fn foe_speed(ranged: Ranged) -> f64 {
     match ranged {
-        Ranged::Pistolet => 70.0,
+        Ranged::Pistolet | Ranged::DoublePistolet => 70.0,
         Ranged::Thunderlock => 110.0,
         Ranged::Bow | Ranged::Crossbow => shot_numbers(ranged).0,
     }

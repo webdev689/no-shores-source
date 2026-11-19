@@ -6,7 +6,7 @@ node_modules
 dist/
 generated
 client/public/*.wasm
-# The forge's renders, its tables and its packs: published to R2 by tools/forge/publish.py.
+# The forge's renders, its tables and its packs: published to R2 by tools/forge_publish.py.
 tools/forge/public/
 tools/forge/src/systems/
 tools/forge/packs/

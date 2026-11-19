@@ -1,0 +1,429 @@
+/* The Art's screen and its diamond on the Character page (client/src/game/artsPage.ts), in the menu's own look
+   (gearScreen.css): its tiles are the gear's tiles, framed and lit in the Art's element where the gear's are in a
+   rarity, its words keep the face's grid, and its pixel pictures stand at whole multiples of their cells. */
+
+/* A dark ground lit in the Art's colour, strongest at the right where its scene stands, darkened top and foot as
+   Destiny letterboxes its screens. Everything starts at the top, on whole pixels. */
+.arts-page {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(264px, auto) minmax(0, 1fr);
+  gap: 44px;
+  align-items: start;
+  padding: 66px 44px 22px;
+  overflow: auto;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(180deg, rgba(5, 6, 8, 0.6), transparent 22%, transparent 78%, rgba(5, 6, 8, 0.6)),
+    radial-gradient(ellipse 55% 90% at 80% 50%, rgba(var(--rar-rgb), 0.32), transparent 70%),
+    radial-gradient(ellipse 36% 64% at 16% 46%, rgba(var(--rar-rgb), 0.2), transparent 72%), var(--ground);
+  image-rendering: pixelated;
+}
+/* The scene, behind everything on the screen, each of its cells a whole square of pixels. */
+.arts-stage {
+  --stage-cell: 4;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.arts-stage-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  image-rendering: pixelated;
+}
+.arts-side,
+.arts-rows {
+  position: relative;
+  z-index: 1;
+}
+.arts-glyph,
+.arts-emblem-img,
+.arts-frame-img,
+.arts-pick-img,
+.arts-diamond-img,
+.arts-card-icon {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* The worn Art: its name over its diamond, as Destiny names a subclass, then the three Arts and its words. */
+.arts-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+}
+.arts-name {
+  margin: 0;
+  font-size: var(--type-xl);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: round(up, calc(5em / 22), 1px);
+  text-transform: uppercase;
+}
+.arts-kind {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: var(--type-xs);
+  letter-spacing: round(up, calc(3em / 22), 1px);
+  text-transform: uppercase;
+  color: var(--rar-hi);
+}
+/* The emblem in its double diamond: 24 cells in 32, each cell the same whole number of pixels. */
+.arts-emblem {
+  --cell: 8px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(32 * var(--cell));
+  height: calc(32 * var(--cell));
+}
+.arts-frame-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.arts-emblem-img {
+  position: relative;
+  width: calc(24 * var(--cell));
+  height: calc(24 * var(--cell));
+  filter: drop-shadow(0 0 12px rgba(var(--rar-rgb), 0.45));
+}
+/* The words keep two lines' room, so changing Art never moves what stands above or beside them. */
+.arts-blurb {
+  margin: 0;
+  max-width: 264px;
+  min-height: 2lh;
+  line-height: 14px;
+  text-align: center;
+  color: var(--faint);
+}
+.arts-picks {
+  display: flex;
+  gap: 11px;
+}
+/* An Art's diamond is pressed in its own shape: the focus's white and the worn Art's brass follow its edge, each two
+   pixels wide over a dark pixel, so they read on any emblem. The others stand in their colours, a little subdued. */
+#hud .arts-pick,
+#hud .arts-diamond {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+#hud .arts-pick {
+  filter: saturate(0.6) brightness(0.8);
+}
+.arts-pick-img {
+  width: 48px;
+  height: 48px;
+}
+#hud .arts-pick:hover {
+  filter: none;
+}
+#hud .arts-pick.arts-worn {
+  cursor: default;
+  filter: drop-shadow(2px 0 0 var(--brass-lit)) drop-shadow(-2px 0 0 var(--brass-lit))
+    drop-shadow(0 2px 0 var(--brass-lit)) drop-shadow(0 -2px 0 var(--brass-lit)) drop-shadow(1px 0 0 #050608)
+    drop-shadow(-1px 0 0 #050608) drop-shadow(0 1px 0 #050608) drop-shadow(0 -1px 0 #050608);
+}
+#hud .gear-screen .arts-pick:focus-visible,
+#hud .gear-screen .arts-diamond:focus-visible {
+  outline: none;
+  filter: drop-shadow(2px 0 0 #f2efe6) drop-shadow(-2px 0 0 #f2efe6) drop-shadow(0 2px 0 #f2efe6)
+    drop-shadow(0 -2px 0 #f2efe6) drop-shadow(1px 0 0 #050608) drop-shadow(-1px 0 0 #050608)
+    drop-shadow(0 1px 0 #050608) drop-shadow(0 -1px 0 #050608);
+}
+
+/* Its abilities, after Destiny's rows: the Anima and the Tenets on one line, the Core under them as wide, its rules
+   tinted in the element and ticked at their ends. */
+.arts-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-self: start;
+  gap: 22px;
+  min-width: 0;
+}
+.arts-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 22px 44px;
+}
+.arts-group {
+  min-width: 220px;
+}
+/* The Core takes the line's width and gives none: its written fragments wrap within it. */
+.arts-rows > .arts-core {
+  contain: inline-size;
+}
+.arts-page .gear-heading {
+  position: relative;
+  border-bottom-color: rgba(var(--rar-rgb), 0.45);
+}
+.arts-page .gear-heading::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  width: 2px;
+  height: 5px;
+  background: rgba(var(--rar-rgb), 0.9);
+}
+.arts-tiles {
+  display: flex;
+  align-items: flex-end;
+  gap: 11px;
+}
+#hud .arts-page .gear-cell .arts-glyph {
+  width: 48px;
+  height: 48px;
+}
+#hud .arts-page .gear-slot .arts-glyph {
+  width: 72px;
+  height: 72px;
+}
+/* A spell's key on a keycap under its tile, half over its frame, as the HUD's bar stands its keys. */
+#hud .arts-page kbd.arts-key {
+  position: absolute;
+  left: 50%;
+  bottom: -11px;
+  translate: -50% 0;
+  margin: 0;
+}
+/* An empty Core slot keeps its frame whole, so it reads as a place to fill; only its mark is faint. */
+#hud .arts-core .gear-vacant {
+  opacity: 1;
+}
+#hud .arts-core .gear-vacant img.gear-glyph {
+  opacity: 0.6;
+}
+/* The fragments set, written out: each name in the element's light, what it does after it. */
+.arts-build {
+  display: grid;
+  gap: 5px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.arts-build:empty {
+  display: none;
+}
+.arts-build b {
+  margin-right: 11px;
+  font-weight: 500;
+  color: var(--rar-hi);
+}
+.arts-build span {
+  color: var(--faint);
+}
+/* The Core's flyout opens beside its slots, over nothing the screen needs. */
+.arts-core .arts-tiles {
+  position: relative;
+  width: max-content;
+}
+#hud .arts-flyout {
+  top: -11px;
+  left: calc(100% + 11px);
+  background: var(--ground);
+}
+/* The open slot, the fragment set in it, and a slot whose ask waits on the room are set in brass, as an open gear
+   slot is. */
+#hud .arts-page .gear-cell.gear-open,
+#hud .arts-page .gear-cell[aria-busy='true'] {
+  border-color: var(--brass-lit) var(--brass) var(--brass) var(--brass-lit);
+  box-shadow:
+    0 0 0 1px var(--outline),
+    0 0 12px rgba(var(--rar-rgb), 0.55),
+    inset 0 0 0 1px rgba(var(--rar-rgb), 0.45);
+}
+#hud .arts-page .arts-taken {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.arts-card-icon {
+  width: 72px;
+  height: 72px;
+}
+
+/* On the Character page, the Art's diamond stands with the slots, its name beside it. */
+.arts-diamond-img {
+  width: 96px;
+  height: 96px;
+}
+#hud .arts-diamond:hover .arts-diamond-img {
+  filter: drop-shadow(0 0 8px rgba(var(--rar-rgb), 0.7));
+}
+/* On a short screen, and where the menu doubles, the screen's emblem takes a step less. */
+@media (max-height: 800px), (min-width: 2400px) and (min-height: 1300px) {
+  .arts-emblem {
+    --cell: 7px;
+  }
+  .arts-page {
+    padding-top: 33px;
+  }
+}
+/* Where the menu is wide, the screen's labels and words stand at the names' size, the name at the face's largest
+   step, and the pictures and the scene's cells grow a step. */
+@media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+  (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+  .arts-page .gear-heading,
+  .arts-page .gear-flyout-head,
+  .arts-kind,
+  .arts-blurb,
+  .arts-build {
+    font-size: var(--type-l);
+  }
+  .arts-name {
+    font-size: var(--type-xxl);
+    letter-spacing: round(up, calc(3em / 22), 1px);
+  }
+  .arts-blurb {
+    max-width: 352px;
+    line-height: 28px;
+  }
+  .arts-emblem {
+    --cell: 11px;
+  }
+  .arts-stage {
+    --stage-cell: 6;
+  }
+  /* A spell's key reads at the footer's keycaps' size. */
+  #hud .arts-page kbd.arts-key {
+    bottom: -14px;
+    font-size: var(--type-l);
+    line-height: 24px;
+  }
+  .arts-pick-img {
+    width: 72px;
+    height: 72px;
+  }
+  .arts-page {
+    grid-template-columns: minmax(352px, auto) minmax(0, 1fr);
+    padding: 88px 88px 33px;
+  }
+  .arts-page .arts-group {
+    min-width: 330px;
+  }
+}
+
+/* Wide but no taller than 900 to 999, the side keeps its words above the foot: it starts higher, its emblem a step
+   smaller. */
+@media (min-width: 1500px) and (min-height: 900px) and (max-height: 999.98px) {
+  .arts-page {
+    padding-top: 44px;
+  }
+  .arts-emblem {
+    --cell: 10px;
+  }
+}
+
+/* What moves, moves in steps: the screen comes in as it opens, its emblem opening from its middle; the Anima breathes;
+   a fragment the room has just set flares; another Art worn flashes the screen in its colour. */
+@media (prefers-reduced-motion: no-preference) {
+  .arts-open .arts-stage {
+    animation: arts-fade-in 240ms steps(4, end) both;
+  }
+  .arts-open .arts-emblem-img,
+  .arts-wear .arts-emblem-img {
+    animation:
+      arts-emblem-open 240ms steps(6, end) backwards,
+      arts-emblem-glow 320ms steps(4, end) 240ms both;
+  }
+  .arts-open .arts-group {
+    animation: arts-rise 160ms steps(4, end) backwards;
+  }
+  .arts-open .arts-line > .arts-group:first-child {
+    animation-delay: 80ms;
+  }
+  .arts-open .arts-line > .arts-group:last-child {
+    animation-delay: 120ms;
+  }
+  .arts-open .arts-core {
+    animation-delay: 160ms;
+  }
+  #hud .arts-page .gear-slot {
+    animation: arts-breathe 2.4s steps(6, end) infinite alternate;
+  }
+  #hud .arts-page .arts-just-set {
+    animation: arts-set 360ms steps(6, end);
+  }
+  #hud .arts-page .arts-just-set .arts-glyph {
+    animation: arts-set-glyph 360ms steps(6, end);
+  }
+  .arts-wear::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: rgba(var(--rar-rgb), 0.35);
+    animation: arts-flash 300ms steps(5, end) forwards;
+  }
+}
+@keyframes arts-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes arts-rise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes arts-emblem-open {
+  from {
+    clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%);
+  }
+  to {
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+}
+@keyframes arts-emblem-glow {
+  from {
+    filter: drop-shadow(0 0 24px rgba(var(--rar-rgb), 0.8));
+  }
+}
+@keyframes arts-breathe {
+  from {
+    box-shadow:
+      0 0 0 1px var(--outline),
+      0 0 4px rgba(var(--rar-rgb), 0.35),
+      inset 0 0 12px rgba(var(--rar-rgb), 0.2);
+  }
+  to {
+    box-shadow:
+      0 0 0 1px var(--outline),
+      0 0 12px rgba(var(--rar-rgb), 0.6),
+      inset 0 0 12px rgba(var(--rar-rgb), 0.3);
+  }
+}
+@keyframes arts-set {
+  from {
+    box-shadow:
+      0 0 0 1px var(--outline),
+      0 0 24px rgba(var(--rar-rgb), 0.9),
+      inset 0 0 0 2px #f2efe6;
+  }
+}
+@keyframes arts-set-glyph {
+  from {
+    filter: brightness(2);
+  }
+}
+@keyframes arts-flash {
+  to {
+    opacity: 0;
+  }
+}

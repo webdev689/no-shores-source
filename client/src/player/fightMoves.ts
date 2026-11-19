@@ -2,8 +2,20 @@ import type { Dress } from './dressing.ts';
 import type { Doing, Fight } from './playerMoves.ts';
 import { type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
 
-/** How long a dodge and a parry's deflect last, and a death's fall, in ticks, as the combat crate times them. */
-export const FIGHT_TICKS = { dodge: 26, parry: 18, death: 48, drawFull: 60 } as const;
+/** How long a dodge, a parry's deflect and a flinch last, and a death's fall, in ticks, as the combat crate times
+ *  them. */
+export const FIGHT_TICKS = { dodge: 26, parry: 18, flinch: 15, death: 48, drawFull: 60 } as const;
+/** A stagger reels: its figure's hurt frames play forth and back over this many ticks while it lasts. */
+const REEL_TICKS = 24;
+
+/** How far through its hurt frames a struck figure is with `left` ticks of it to go: a flinch plays them once, a
+ *  stagger reels through them forth and back; a Charge's holds it still. */
+export function struckProgress(kind: 'flinch' | 'staggered', left: number, charged = false): number {
+  if (charged) return 0;
+  if (kind === 'flinch') return Math.min(1, Math.max(0, 1 - left / FIGHT_TICKS.flinch));
+  const phase = (((-left % REEL_TICKS) + REEL_TICKS) % REEL_TICKS) / REEL_TICKS;
+  return Math.min(0.999, 1 - Math.abs(phase * 2 - 1));
+}
 /** The forge's stroke each telegraphed blow is struck with. */
 const TELEGRAPH_STROKE: Readonly<Record<Shape, string>> = {
   lunge: 'thrust',
@@ -26,8 +38,9 @@ export function fightOf(view: FighterView): Fight | null {
     case 'down':
       return { kind: 'down', progress: 0 };
     case 'staggered':
+      return { kind: 'struck', progress: struckProgress('staggered', action.left, action.cause === 'charged') };
     case 'flinch':
-      return { kind: 'struck', progress: 0 };
+      return { kind: 'struck', progress: struckProgress('flinch', action.left) };
     case 'dodge':
       return { kind: 'dodge', progress: actionProgress(action, FIGHT_TICKS) };
     case 'parry':
@@ -71,6 +84,7 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
     drawn: dress.outfit.drawn,
     right: dress.outfit.right,
     left: dress.outfit.left,
+    grip: dress.outfit.grip ?? null,
     blow,
     cast: null,
     act: null,

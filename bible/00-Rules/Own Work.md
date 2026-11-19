@@ -16,7 +16,9 @@ Daggerfall measures, texture archives and palette they are built on
 ([[Every Island Is Seen Whole and Reached by Nodes]]); DFO's blood with DaggerBlood's numbers and Daggerfall's
 blood red ([[Struck Figures Flash, and DFO's Blood Comes Over]]); the face Pixelify Sans, under the SIL Open Font
 Licence ([[Pixelify Sans Is Overlook's Font]]); and sounds and music from Freesound under CC0 or CC-BY, each CC-BY one
-credited in the game ([[Sounds Come From Freesound, Judged on a Test Sheet]]).
+credited in the game ([[Sounds Come From Freesound, Judged on a Test Sheet]]); and DFO's own sounds, made by its
+synthesiser, with the CC0 and public-domain recordings the owner chose for its steps
+([[DFO's Own Sounds Join the Sound Sheet]]).
 
 **Why.** DFO Online ported other authors' mods and later spent months replacing them with its own work, and one ship
 system came from a decompiled mod with no licence. Overlook starts where DFO ended up ([[Overlook Is Our Own Game]]).

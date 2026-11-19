@@ -461,7 +461,7 @@ export class Sea {
     } else if (this.view.kind === 'landing' && this.sideRig) shot = shotOf(this.sideRig);
     const look = lookOf(shot.forward);
     const fromShip = Math.hypot(shot.eye[0] - ship.x, shot.eye[1] - ship.y, shot.eye[2]);
-    const lens = horizonOf({ fogEndM: 28_000, nearM: 2, farM: 60_000 }, 1, fromShip);
+    const lens = horizonOf({ nearM: 2, farM: 60_000 }, fromShip);
     const overworld: Shot = { eye: shot.eye, ...look, fov: FIELD_OF_VIEW, near: lens.nearM, far: lens.farM };
     const overShip = this.view.kind !== 'landing';
     const seaShot = overShip ? this.close.shot(overworld, trueLying, this.camera.yaw, this.camera.tilt) : overworld;

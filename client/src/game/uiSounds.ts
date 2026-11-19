@@ -3,16 +3,18 @@
 // The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), or one the browser's own
 // synthesiser makes here, which also stands in while a recording loads. One listener hears every press, as DFO's
 // click does, and plays the press only where no sound of its own already played. The volume is the player's, kept in
-// this browser.
+// this browser, as is the world's, whose sounds (combat/worldSounds.ts) play through this engine's output.
 
-import { loadSamples, playSample } from './soundSamples.ts';
+import { loadSamples, playSample } from '../soundSamples.ts';
 
 /** The sounds the interface makes. */
 export type Cue = 'hover' | 'press' | 'tab' | 'open' | 'close' | 'back' | 'dismantle' | 'feed' | 'refused';
 
-/** Where the player's volume is kept, 0 to 1. */
+/** Where the player's volumes are kept, 0 to 1: the interface's and the world's. */
 const VOLUME_KEY = 'overlook.interfaceVolume';
 const VOLUME_FIRST = 0.6;
+const WORLD_KEY = 'overlook.worldVolume';
+const WORLD_FIRST = 0.8;
 /** How loud the whole interface stands at full volume, under the game's own sounds. */
 const LEVEL = 0.35;
 /** The least time between two ticks, so a sweep across a grid is a patter, not a buzz. */
@@ -35,6 +37,7 @@ const TICKED = `${PRESSABLE}, .gear-cell, .gear-material`;
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
+let world: GainNode | null = null;
 let noise: AudioBuffer | null = null;
 /** Two seconds of pink noise, softer at the top than white, the stuff of a hold's air. */
 let air: AudioBuffer | null = null;
@@ -42,29 +45,54 @@ let air: AudioBuffer | null = null;
 let lastCueAt = -Infinity;
 let lastTickAt = -Infinity;
 
-/** The player's volume once set in this page, so a browser that keeps nothing still shows what it plays at. */
-let chosen: number | null = null;
+/** Each volume once set in this page, so a browser that keeps nothing still shows what it plays at. */
+const chosen = new Map<string, number>();
 
-/** The player's volume, 0 to 1. */
-export function interfaceVolume(): number {
-  if (chosen !== null) return chosen;
+/** A volume kept under `key`, 0 to 1. */
+function volumeOf(key: string, first: number): number {
+  const set = chosen.get(key);
+  if (set !== undefined) return set;
   try {
-    const kept = Number(localStorage.getItem(VOLUME_KEY) ?? VOLUME_FIRST);
-    return Number.isFinite(kept) ? Math.min(1, Math.max(0, kept)) : VOLUME_FIRST;
+    const kept = Number(localStorage.getItem(key) ?? first);
+    return Number.isFinite(kept) ? Math.min(1, Math.max(0, kept)) : first;
   } catch {
-    return VOLUME_FIRST;
+    return first;
   }
 }
 
-export function setInterfaceVolume(volume: number): void {
+function keepVolume(key: string, volume: number): number {
   const kept = Math.min(1, Math.max(0, volume));
-  chosen = kept;
+  chosen.set(key, kept);
   try {
-    localStorage.setItem(VOLUME_KEY, String(kept));
+    localStorage.setItem(key, String(kept));
   } catch {
     // A browser that keeps nothing still hears the change until the page closes.
   }
+  return kept;
+}
+
+/** The interface's volume, 0 to 1. */
+export const interfaceVolume = (): number => volumeOf(VOLUME_KEY, VOLUME_FIRST);
+
+export function setInterfaceVolume(volume: number): void {
+  const kept = keepVolume(VOLUME_KEY, volume);
   if (master) master.gain.value = kept * LEVEL;
+}
+
+/** The world's volume, 0 to 1. */
+export const worldVolume = (): number => volumeOf(WORLD_KEY, WORLD_FIRST);
+
+export function setWorldVolume(volume: number): void {
+  const kept = keepVolume(WORLD_KEY, volume);
+  if (world) world.gain.value = kept;
+}
+
+/** Where the world's sounds play: this engine's context, through the world's volume; null before the first press or
+ *  key wakes it, or with the world silenced. */
+export function worldOutput(): { readonly audio: AudioContext; readonly out: AudioNode } | null {
+  if (!context || !world || worldVolume() === 0) return null;
+  if (context.state === 'suspended') void context.resume();
+  return { audio: context, out: world };
 }
 
 /** The synthesiser, woken by the player's first press or key, as a browser lets sound start only then; woken again by
@@ -79,6 +107,9 @@ function wake(): void {
   master = context.createGain();
   master.gain.value = interfaceVolume() * LEVEL;
   master.connect(context.destination);
+  world = context.createGain();
+  world.gain.value = worldVolume();
+  world.connect(context.destination);
   loadSamples(context);
   // A second of white noise, the stuff of every crunch and swish.
   noise = context.createBuffer(1, context.sampleRate, context.sampleRate);

@@ -1,11 +1,13 @@
 // The player's vitals as one panel at the bottom left, in DFO's Enhanced HUD manner: a carved window holding three
 // labelled bars, each with its name and its percentage written inside it, the health's frame flashing blood when it
-// runs low and the stamina's when a swing or a dodge is asked of it with none. Full and untouched, with no foe on the
-// target plate, the panel rests out of sight, and the first point lost or spent brings it back at once.
+// runs low and the stamina's when a swing or a dodge is asked of it with none, and the player's buffs in a row over the
+// health. Full and untouched, with no buff and no foe on the target plate, the panel rests out of sight, and the first
+// point lost or spent brings it back at once.
 import { ROLES } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { element, Meter } from './meter.ts';
+import { ownBuffs, StatusRow } from './statusIcons.ts';
 
 /** Health at or under this share of the whole warns. */
 export const LOW_HEALTH = 0.25;
@@ -55,6 +57,7 @@ export const calmFor = (was: number, whole: boolean, targeted: boolean, seconds:
 export class Vitals {
   readonly root: HTMLElement;
   private readonly rows: Record<VitalName, { meter: Meter; number: HTMLElement }>;
+  private readonly buffs: StatusRow;
   private calm = 0;
 
   constructor(parent: HTMLElement) {
@@ -71,6 +74,7 @@ export class Vitals {
       return [name, { meter, number: element('span', 'number', meter.root) }] as const;
     };
     this.rows = Object.fromEntries(VITALS.map(row)) as Record<VitalName, { meter: Meter; number: HTMLElement }>;
+    this.buffs = new StatusRow(panel, 'Your buffs');
   }
 
   /** Shows `own`'s vitals `seconds` on; `flashing` while the stamina flashes for a press with none, and `targeted`
@@ -84,7 +88,9 @@ export class Vitals {
     }
     this.rows.health.meter.root.classList.toggle('low', healthLow(own));
     this.rows.stamina.meter.root.classList.toggle('flash', flashing);
-    this.calm = calmFor(this.calm, vitalsWhole(own) && !flashing, targeted, seconds);
+    const buffs = ownBuffs(own?.statuses);
+    this.buffs.show(0, buffs);
+    this.calm = calmFor(this.calm, vitalsWhole(own) && !flashing && buffs.length === 0, targeted, seconds);
     this.root.classList.toggle('rest', this.calm >= REST_SECONDS);
   }
 }

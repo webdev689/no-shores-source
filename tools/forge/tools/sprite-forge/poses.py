@@ -681,9 +681,11 @@ def in_hand(pose, side='R'):
     return frame_matrix(H.translation + knuckles * FIST, thumb, knuckles)
 
 
-def held(pose, haft, side='R', blades=(-0.7, 0.1, 0.7)):
+def held(pose, haft, side='R', blades=(-0.7, 0.1, 0.7), upright=True, knuckles=None):
     """The weapon in `side`'s fist where the captured hand is, its haft along `haft` (body space): a hand captured
-    empty and at rest has a turn no weapon would follow. The arm is solved again to the same fist, its elbow kept."""
+    empty and at rest has a turn no weapon would follow. The arm is solved again to the same fist, its elbow kept, the
+    knuckles toward `knuckles` if given. A staff carried is stood head up (`upright`); one struck with goes where the
+    blow takes it."""
     W = pose.world()
     R = root_matrix(pose)
     H = W[f'hand_{side}']
@@ -693,14 +695,16 @@ def held(pose, haft, side='R', blades=(-0.7, 0.1, 0.7)):
     pole = (elbow - shoulder) - (elbow - shoulder).project(line)
     # its far end never through the floor: a point aimed lower is raised, its heading kept, until it clears
     h = (R.to_3x3() @ Vector(haft)).normalized()
-    if WEAPON[0] == 'staff':   # a staff is held head up, and stands on its foot where the fist is too low for it
+    if WEAPON[0] == 'staff' and upright:   # a staff is held head up, and stands on its foot where the fist is too low
         h = h if h.z > 0 else -h
-        at_w, haft_w, _ = grip(pose, side, R.inverted() @ fist, R.inverted().to_3x3() @ h, R.inverted().to_3x3() @ pole)
+        at_w, haft_w, _ = grip(pose, side, R.inverted() @ fist, R.inverted().to_3x3() @ h, R.inverted().to_3x3() @ pole,
+                               knuckles)
         foot = at_w - haft_w * (STAFF_POLE - STAFF_TOP)
         rise = max(0.0, (0.02 - foot.z) / max(haft_w.z, 0.2))
         return frame_matrix(at_w + haft_w * rise, haft_w, R.to_3x3() @ Vector(blades))
     h = _off_floor(fist, h)
-    at_w, haft_w, _ = grip(pose, side, R.inverted() @ fist, R.inverted().to_3x3() @ h, R.inverted().to_3x3() @ pole)
+    at_w, haft_w, _ = grip(pose, side, R.inverted() @ fist, R.inverted().to_3x3() @ h, R.inverted().to_3x3() @ pole,
+                           knuckles)
     return frame_matrix(at_w, haft_w, R.to_3x3() @ Vector(blades))
 
 

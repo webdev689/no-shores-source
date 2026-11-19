@@ -1,48 +1,4 @@
-import { orbitBy, turnCamera, zoomTarget, ZOOM_STEP, type OverworldCamera, type Rig } from './overworldCamera.ts';
-
-/** The view's rise and fall, seconds. */
-export const LIFT_SECONDS = { rise: 1.2, fall: 0.8 } as const;
-
-/** Where the view stands: down, rising out of the player's own camera, up, or falling back into it. */
-export type LiftPhase = 'off' | 'rising' | 'up' | 'falling';
-
-/** The phase and the blend between the player's camera (0) and the raised one (1). */
-export interface Lift {
-  readonly phase: LiftPhase;
-  readonly blend: number;
-}
-
-/** The view down. A window, a death or a door cuts the view straight to this, with no fall nobody would see. */
-export const LIFT_OFF: Lift = { phase: 'off', blend: 0 };
-
-/** The view asked up: it rises from wherever it stands, so a view caught falling turns round mid-way. */
-export function raiseLift(lift: Lift): Lift {
-  return lift.phase === 'off' || lift.phase === 'falling' ? { phase: 'rising', blend: lift.blend } : lift;
-}
-
-/** The view asked down: it falls from wherever it stands. */
-export function lowerLift(lift: Lift): Lift {
-  return lift.phase === 'up' || lift.phase === 'rising' ? { phase: 'falling', blend: lift.blend } : lift;
-}
-
-/** One frame of the rise or the fall; it ends up or off. The seconds default to the view's, and the island's
- *  fly-in passes its own. */
-export function stepLift(
-  lift: Lift,
-  dt: number,
-  riseSeconds: number = LIFT_SECONDS.rise,
-  fallSeconds: number = LIFT_SECONDS.fall,
-): Lift {
-  if (lift.phase === 'rising') {
-    const blend = Math.min(1, lift.blend + Math.max(0, dt) / riseSeconds);
-    return blend >= 1 ? { phase: 'up', blend: 1 } : { phase: 'rising', blend };
-  }
-  if (lift.phase === 'falling') {
-    const blend = Math.max(0, lift.blend - Math.max(0, dt) / fallSeconds);
-    return blend <= 0 ? LIFT_OFF : { phase: 'falling', blend };
-  }
-  return lift.phase === 'up' ? { phase: 'up', blend: 1 } : LIFT_OFF;
-}
+import { orbitBy, turnCamera, zoomTarget, type OverworldCamera, type Rig } from './overworldCamera.ts';
 
 /** A press that moves further than this many pixels before it lifts is a drag that orbits, not a click that picks. */
 export const CLICK_SLOP_PX = 6;
@@ -85,11 +41,6 @@ export function wheelNotches(deltaY: number, deltaMode: number, pageHeight: numb
   const delta = Number.isFinite(deltaY) ? deltaY : 0;
   const pixels = deltaMode === 1 ? delta * WHEEL.lineHeightPx : deltaMode === 2 ? delta * (pageHeight || 800) : delta;
   return Math.max(-WHEEL.mostNotches, Math.min(WHEEL.mostNotches, -pixels / WHEEL.pixelsPerNotch));
-}
-
-/** Two fingers moving apart zoom in: the notches between their last gap and this one. */
-export function pinchNotches(previousGapPx: number, gapPx: number): number {
-  return previousGapPx > 0 && gapPx > 0 ? Math.log(gapPx / previousGapPx) / Math.log(ZOOM_STEP) : 0;
 }
 
 /** The camera's height target after some zoom notches under the ceiling. */

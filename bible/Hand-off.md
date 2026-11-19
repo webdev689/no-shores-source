@@ -124,7 +124,8 @@ Where the work stands now, for the next session. Each session rewrites this note
     `overlook-source` environment;
   - the owner's blows, the bow's own holds and the roll, played by the player and foes alike, and strikes about
     twice as fast, landing with the blow; [[Own Work]] widened to the forge's CC0 motion from Quaternius and KayKit.
-- The enemy system, on pull request #61 from branch `claude/enemies-factions-ai-fiapxf`, tested offline and on the
+- The enemy system, merged to `main` with the owner's yes (#61), which deployed the page, the accounts and the rooms
+  (the first rooms deploy under the deploy filter, which made the `rooms` environment), tested offline and on the
   local Cloudflare runtime, as the owner decided it ([[Enemies Come in Five Ranks, After Destiny]],
   [[Enemy Factions Start With the Grey Tithe]], [[project-final's AI Comes Over Onto DFO's]],
   [[The Enemies as Claude Builds Them]], [[The Bars and the Fight Wear the Plus Kit]],
@@ -218,12 +219,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- #61, the enemy system: the owner's yes to merge it, which deploys the page and the rooms. The first rooms deploy
-  after it always runs and creates the `rooms` environment the next ones compare with; that side of GitHub is tested
-  offline only. Its open choices: whether the sea's pirates become the Grey Tithe; the roster's names and Corvane,
-  Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over time;
-  whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to change:
-  a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in [[Foes]].
+- The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
+  Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
+  time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
+  change: a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in
+  [[Foes]].
 - Pirates at sea: nothing stops them, on `main` or #61; they are rare by the numbers ported from DFO (a roll every
   60–140 s, 0.24 of rolls a pirate, the wait starting again at each return to the ship), so about half of players
   see none in their first 5–7 minutes. Measured options were offered and the owner skipped them for now: hostiles
@@ -234,7 +234,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
   a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
   left out: its pictures are another person's ([[Own Work]]).
-- Which of the attack feel's effects go into the game, and at what settings, is the owner's to say.
+- The attack feel plays in the game on #69 at the [[Test Ground]]'s defaults, with the light layer on, as Claude's call
+  under the owner's "Attack visuals should go beyond the limits" ([[Attack Visuals Go Beyond the Limits]]). Which
+  effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
@@ -264,8 +266,23 @@ Where the work stands now, for the next session. Each session rewrites this note
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
-  blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
-  while; and which foes beyond the patrols' carry them.
+  shield comes back after a while; and which foes beyond the patrols' carry them.
+- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
+  call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
+  cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
+  Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
+  caster's aim, the Armsmith's wares, the seven named armour pieces that gave Bulwark and now give another armour
+  perk, and how every attack looks ("How attacks look"): a crit's 0.11 s hold and a kill's 0.16 s, the chips'
+  leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
+  slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
+  (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
+- **Every world sound on #69 is the owner's pick**, over seven passes on the sound sheet
+  ([[The World Sounds From the Sound Picker]]): 63 Freesound recordings, DFO's own steps and Voidrend
+  ([[DFO's Own Sounds Join the Sound Sheet]]), the Duskraven's fire
+  ([[The Duskraven Sounds With Fire Under Its Raven]]); Exposed, Charged and Haste make none
+  ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
+  owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
+  [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -273,6 +290,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
+- The cleanup audit (#70): dead code out of the overworld, naval and player, and the Overworld note, its pick and the
+  [[Code Map]] brought in line with the code, in files no open pull request changes. Its description lists what it
+  found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
+  Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
 
 - From a worker branch (`wt-bodies`), tested offline: the movement rules find a body's blocks through a grid
   ([[Movement]], "The blocks near a body"), every answer the same to the bit, a tick among a patrol area's boxes
@@ -308,12 +329,38 @@ Where the work stands now, for the next session. Each session rewrites this note
   is the terrain's only), and the land texts and the city's assets fetch the same files twice.
 - The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
   that will stand on the sites (public events, beacons, resource nodes, foes).
+- **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
+  renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+  layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
+  heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
+- **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
+  `picked` in `content/audio/freesound.json`, and a redone cue's heard numbers in its `skip`; let the `freesound`
+  workflow run, then `tools/freesound/publish.py <download>`. A pick of DFO's own (`dfo:<name>` on the sheet) sets
+  the cue's `dfo` to its name and goes in by `tools/freesound/own.py`. DFO's steps are in DFO's `vendor/cc0-sounds`
+  at its commit `b59b6d2` (branch `ccr-301db909-jfymaq`): a surface's six files go in as one cue's variants. DFO's
+  synthesised sounds come from its `tools/{climb,gather,lock,storefront,naval}Sfx.mjs`: import their `CLIPS` and
+  render each `make()` at 44.1 kHz 16-bit, from a scratch folder, since `navalSfx.mjs` writes `public/sfx` on import.
+
+- **The Arts round (#69)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and verbs with
+  foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar, the verb
+  perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not yet
+  seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a live
+  room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
+- **Its second round, attack visuals beyond the limits (#69)**, tested offline in the Test Ground, and the game's own
+  page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers, damage
+  words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
+  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view
+  with the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's
+  0.4-0.5 ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the
+  marks still copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light;
+  `camera.ts` `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or
+  gun drawn can punch, and in what element.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
 - **The gear loop**, which the owner handed over in full ([[Gear and Power Follow Destiny 1 Vanilla]], with Claude's
   choices in [[Gear as Claude Shapes It]]), is on `main` (#60, merged with the owner's yes); its patrols' camps give
-  way to #61's garrisons when #61 merges. On it: the `gear` crate ([[Gear]]); gear held by the
+  way to #61's garrisons, now on `main` too. On it: the `gear` crate ([[Gear]]); gear held by the
   rooms, blows by Attack, level and Defense, kills paying XP, Aurem and Vestiges; perks trimming the fight
   ([[Combat]]); accounts on Cloudflare D1 keeping a character between visits ([[Accounts]]); the gear screens after
   Destiny on Enhanced Plus ([[The Gear Screens Follow Destiny, on Enhanced Plus]], [[Interface]]); gear on the

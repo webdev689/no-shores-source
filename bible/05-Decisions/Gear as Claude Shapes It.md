@@ -86,7 +86,7 @@ A Fruit of Dagon gives an item 5,000 XP.
 | Balanced | Finish | While drawn, a dodge costs 10% less stamina |
 | Steady | Finish | While drawn, blows fill the player's poise 10% less |
 | Honed | Finish | Its blows and shots strike 5% harder |
-| Bloodletter | Perk, any weapon | A kill gives back 20 stamina |
+| Bloodletter | Perk, any weapon | A kill with the weapon gives back 20 stamina |
 | Executioner | Perk, any weapon | Blows on a staggered foe strike 15% harder; a riposte, the stagger's own answer, is not counted, as combat does not count the stagger in it |
 | Riposte Master | Perk, melee | A riposte strikes 25% harder |
 | Opportunist | Perk, melee | A counter, after a perfect dodge, strikes 25% harder |
@@ -95,7 +95,7 @@ A Fruit of Dagon gives an item 5,000 XP.
 | Long Shot | Perk, ranged | A shot at a foe past 20 m strikes 15% harder |
 | Second Wind | Perk, armour | Stamina comes back 15% faster |
 | Sure Footing | Perk, armour | A dodge costs 15% less stamina |
-| Bulwark | Perk, armour | A guard pays 15% less stamina for a blow |
+| Bulwark | Perk, a loadout with a shield | A guard pays 15% less stamina for a blow |
 | Unshaken | Perk, armour | Poise holds 15% more |
 | Hardy | Perk, armour | Telegraphed blows strike 10% softer, the share a guard lets through as well |
 | Forager | Perk, armour | Gathering takes one more of a resource |

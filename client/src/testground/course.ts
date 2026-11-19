@@ -8,6 +8,8 @@ export const START: { readonly x: number; readonly y: number } = course.start;
  *  mantle, a ledge to catch on a jump and shimmy along, a tall wall to climb, and a platform reached by stairs. The
  *  server's rooms stand on the same course, so it is content both read. */
 export const COURSE: readonly Block[] = course.blocks;
+/** The course's wooden blocks, its crate, which a footstep sounds on as wood. */
+export const WOODEN: readonly Block[] = course.blocks.filter((block) => block.what.includes('crate'));
 
 /** The stall south-east of the start, where Vestiges are identified and the vault is reached, as in a social space:
  *  the room answers those asks within reach of it. */
