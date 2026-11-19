@@ -31,6 +31,19 @@ fn a_body_run_at_a_wall_stops_its_half_width_off_it_on_the_floor() {
                 let body = run(&ground, dungeon.centre(cell), side, 90);
                 let into = past(&dungeon, cell, side, &body);
                 let wall = CELL_M / 2.0 - TUNING.radius;
+                let furnished = dungeon.props.iter().any(|prop| {
+                    let [min_x, min_y, max_x, max_y, _] = prop.solid;
+                    let [x, y] = dungeon.centre(cell);
+                    (min_x + max_x) / 2.0 - x < CELL_M / 2.0
+                        && x - (min_x + max_x) / 2.0 < CELL_M / 2.0
+                        && (min_y + max_y) / 2.0 - y < CELL_M / 2.0
+                        && y - (min_y + max_y) / 2.0 < CELL_M / 2.0
+                });
+                // A prop may stand over the cell's middle: the props' own test runs at them.
+                if furnished {
+                    continue;
+                }
+                // A doorway's jamb stops it sooner.
                 if dungeon.frames.iter().any(|frame| frame.cell == cell) {
                     assert!(into <= wall + 1e-9, "seed {seed}: never nearer the rock than its half-width");
                 } else {
@@ -97,4 +110,58 @@ fn a_body_run_slantwise_into_a_wall_slides_along_it() {
     let body = (0..40).fold(standing(x, y), |body, _| step_body(&body, &controls, &[], &ground, TICK_SECONDS));
     assert!(body.x > x + 0.5, "it slid east along the wall, {} m", body.x - x);
     assert!(past(&dungeon, cell, Side::North, &body) <= CELL_M / 2.0 - TUNING.radius + 1e-9);
+}
+
+#[test]
+fn a_body_run_at_a_prop_stops_its_half_width_off_it() {
+    let (dungeon, ground) = forged(5);
+    assert!(!dungeon.props.is_empty());
+    for prop in &dungeon.props {
+        let [min_x, min_y, max_x, max_y, _] = prop.solid;
+        let middle = [(min_x + max_x) / 2.0, (min_y + max_y) / 2.0];
+        let cell = (middle[1] / CELL_M) as usize * dungeon.columns + (middle[0] / CELL_M) as usize;
+        // From the cell's middle toward the wall the prop stands against.
+        let wall = SIDES
+            .into_iter()
+            .find(|&side| {
+                let [dx, dy] = side.unit();
+                let [x, y] = dungeon.centre(cell);
+                (middle[0] - x) * dx + (middle[1] - y) * dy > 0.0
+            })
+            .unwrap();
+        let [x, y] = dungeon.centre(cell);
+        let [dx, dy] = wall.unit();
+        let back = 0.6_f64.max(0.0);
+        let start = [x - dx * back, y - dy * back];
+        let body = run(&ground, start, wall, 120);
+        let [near_x, near_y] = [body.x.clamp(min_x, max_x), body.y.clamp(min_y, max_y)];
+        let apart = ((body.x - near_x) * (body.x - near_x) + (body.y - near_y) * (body.y - near_y)).sqrt();
+        assert!(apart >= TUNING.radius - 1e-9, "{apart} m from the prop");
+        assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground, "never on it");
+    }
+}
+
+#[test]
+fn a_body_shoved_inside_a_prop_walks_out_of_it_toward_the_room() {
+    let (dungeon, ground) = forged(5);
+    for prop in &dungeon.props {
+        let [min_x, min_y, max_x, max_y, _] = prop.solid;
+        let middle = [(min_x + max_x) / 2.0, (min_y + max_y) / 2.0];
+        let cell = (middle[1] / CELL_M) as usize * dungeon.columns + (middle[0] / CELL_M) as usize;
+        let [x, y] = dungeon.centre(cell);
+        // The way into the room: from the prop's middle toward its cell's.
+        let toward = SIDES
+            .into_iter()
+            .max_by(|a, b| {
+                let along = |side: Side| {
+                    let [dx, dy] = side.unit();
+                    (x - middle[0]) * dx + (y - middle[1]) * dy
+                };
+                along(*a).total_cmp(&along(*b))
+            })
+            .unwrap();
+        let body = run(&ground, middle, toward, 60);
+        let out = body.x < min_x || body.x > max_x || body.y < min_y || body.y > max_y;
+        assert!(out, "out of prop {} toward the room", prop.model);
+    }
 }

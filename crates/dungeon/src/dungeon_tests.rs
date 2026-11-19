@@ -109,7 +109,7 @@ fn torches_stand_on_rock_walls_over_head_height_never_on_the_exit_door() {
 fn a_doorway_narrows_to_its_frame_and_its_jambs_stand_in_the_corridor() {
     for dungeon in every_dungeon(100) {
         let boxes = dungeon.boxes();
-        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len());
+        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + dungeon.props.len());
         for (frame, pair) in dungeon.frames.iter().zip(boxes.chunks(2)) {
             assert!(dungeon.room_at(frame.cell).is_some());
             assert_eq!(dungeon.cells[dungeon.beside(frame.cell, frame.side).unwrap()], Cell::Corridor);
@@ -207,6 +207,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         torches: Vec::new(),
         frames: Vec::new(),
         pillars: Vec::new(),
+        props: Vec::new(),
     };
     let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);

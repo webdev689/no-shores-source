@@ -22,8 +22,9 @@ pub struct DungeonGround {
     near: Vec<Vec<usize>>,
 }
 
-/// The square of the distance from a point to a rectangle, 0 inside it.
-fn apart_squared(x: f64, y: f64, min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> f64 {
+/// How far a point stands from a rectangle: outside, the distance to it; inside, less than nothing by the distance to
+/// its nearest side, so a body inside one can only move out.
+fn apart_from(x: f64, y: f64, min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> f64 {
     let dx = if x < min_x {
         min_x - x
     } else if x > max_x {
@@ -38,7 +39,11 @@ fn apart_squared(x: f64, y: f64, min_x: f64, min_y: f64, max_x: f64, max_y: f64)
     } else {
         0.0
     };
-    dx * dx + dy * dy
+    if dx == 0.0 && dy == 0.0 {
+        -(x - min_x).min(max_x - x).min(y - min_y).min(max_y - y)
+    } else {
+        (dx * dx + dy * dy).sqrt()
+    }
 }
 
 impl DungeonGround {
@@ -82,12 +87,11 @@ impl DungeonGround {
         inside.then_some((column as usize, row as usize))
     }
 
-    /// The square of how far a point stands from the nearest rock, jamb or pillar: 0 inside one, and no more than a
-    /// body's half-width is ever asked, so only the cells round it are looked at.
-    fn clearance_squared(&self, x: f64, y: f64) -> f64 {
+    /// How far a point stands from the nearest rock, jamb, pillar or prop, less than nothing inside one; no more than
+    /// a body's half-width is ever asked, so only the cells round it are looked at.
+    fn clearance(&self, x: f64, y: f64) -> f64 {
         let Some((column, row)) = self.cell_at(x, y) else { return 0.0 };
-        let reach = TUNING.radius;
-        let mut nearest = reach * reach;
+        let mut nearest = TUNING.radius;
         for (step_column, step_row) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
             // Past the grid on any side is rock, as a cell holding none is.
             let (next_column, next_row) = (column as isize + step_column, row as isize + step_row);
@@ -97,12 +101,12 @@ impl DungeonGround {
                 && (next_row as usize) < self.rows;
             if !inside || !self.open[next_row as usize * self.columns + next_column as usize] {
                 let (west, north) = (next_column as f64 * self.cell, next_row as f64 * self.cell);
-                nearest = nearest.min(apart_squared(x, y, west, north, west + self.cell, north + self.cell));
+                nearest = nearest.min(apart_from(x, y, west, north, west + self.cell, north + self.cell));
             }
         }
         for &number in &self.near[row * self.columns + column] {
             let [min_x, min_y, max_x, max_y, _] = self.solids[number];
-            nearest = nearest.min(apart_squared(x, y, min_x, min_y, max_x, max_y));
+            nearest = nearest.min(apart_from(x, y, min_x, min_y, max_x, max_y));
         }
         nearest
     }
@@ -146,15 +150,15 @@ impl Terrain for DungeonGround {
         if self.in_solid(x, y) { SOLID_TOP_M } else { self.heights.height_at(x, y) }
     }
 
-    /// A move is walled when it crosses rock, or ends nearer than a body's half-width to rock, a jamb or a pillar and
-    /// nearer than it began: a body slides along a wall and steps away from one, but never into its face.
+    /// A move is walled when it crosses rock, or ends nearer than a body's half-width to rock, a jamb, a pillar or a
+    /// prop and nearer than it began: a body slides along a wall and steps away from one, but never into its face,
+    /// and one shoved inside a solid can only move out of it.
     fn walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
         if self.heights.walled(from, to) {
             return true;
         }
-        let reach = TUNING.radius;
-        let ends = self.clearance_squared(to.0, to.1);
-        ends < reach * reach && ends < self.clearance_squared(from.0, from.1)
+        let ends = self.clearance(to.0, to.1);
+        ends < TUNING.radius && ends < self.clearance(from.0, from.1)
     }
 }
 

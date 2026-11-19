@@ -24,6 +24,9 @@ status: in force
 > slighty linear thing with a clear beginning, middle, end and an easy navigation path out of the dungeon, like a
 > return portal"
 
+> "Do a comprehensive and detailed pass on this. Ensure everything recieves our texture system, props are laid, and
+> everything is perfection"
+
 ## What it settles
 
 - **Dungeons 2.0 comes over** as far as it fits what Overlook is building: the Forge, DFO's own dungeon generator, and
@@ -32,6 +35,8 @@ status: in force
   "our own propritarty dungeon generation".
 - **A dungeon is not a labyrinth.** It runs slightly linear, with a clear beginning, middle and end, and an easy way
   out, like a return portal.
+- **Props are laid in the dungeons, and everything in them wears the procedural textures** ([[Procedural
+  Textures]]): the owner asked for both.
 - **Forged dungeons stand within the patrol areas**, the "procedural dungeons" the owner's Patrol already holds
   ([[Gear and Power Follow Destiny 1 Vanilla]]).
 - **Done properly, with time taken, and built out in full** before it comes back to the owner. How it works in

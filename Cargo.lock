@@ -41,6 +41,9 @@ dependencies = [
 [[package]]
 name = "dungeon"
 version = "0.0.0"
+dependencies = [
+ "serde_json",
+]
 
 [[package]]
 name = "flatbuffers"

@@ -22,7 +22,7 @@ const CACHE_CLEAR_M: f64 = 0.5;
 const VESTIGE_BEFORE_M: f64 = 0.8;
 /// A band's foes: one for each this many of its room's cells, rounded, and at least and at most so many.
 const CELLS_A_FOE: usize = 10;
-const BAND: (usize, usize) = (2, 4);
+const BAND: (usize, usize) = (2, dungeon::POSTS_A_ROOM);
 
 /// A dungeon's cache: where it stands (x, y, z), the way it faces, the post of the Reeve it lies by, and whether it
 /// stands open.
@@ -61,22 +61,6 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
         }
         Floor::Flat | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),
     }
-}
-
-/// A room's cells nearest its middle, its quiet cells (none of whose sides meets a corridor) when it has `count` of
-/// them, else any of its cells; nearest first, of two as near the first laid.
-fn nearest_middle(dungeon: &Dungeon, room: usize, count: usize) -> Vec<usize> {
-    let found = &dungeon.rooms[room];
-    let middle =
-        [(found.x as f64 + found.width as f64 / 2.0) * CELL_M, (found.y as f64 + found.depth as f64 / 2.0) * CELL_M];
-    let mut cells = if found.quiet.len() >= count { found.quiet.clone() } else { found.cells.clone() };
-    let from_middle = |cell: &usize| {
-        let [x, y] = dungeon.centre(*cell);
-        (x - middle[0]) * (x - middle[0]) + (y - middle[1]) * (y - middle[1])
-    };
-    cells.sort_by(|first, second| from_middle(first).total_cmp(&from_middle(second)));
-    cells.truncate(count);
-    cells
 }
 
 /// A room's band size: one foe for each CELLS_A_FOE of its cells, rounded, within BAND.
@@ -159,7 +143,8 @@ impl Room {
 
     /// Where `count` foes stand in a room: its cells nearest its middle, each on the navmesh.
     fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
-        nearest_middle(dungeon, room, count)
+        dungeon
+            .nearest_middle(room, count)
             .into_iter()
             .map(|cell| {
                 let [x, y] = dungeon.centre(cell);
