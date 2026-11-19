@@ -7,7 +7,9 @@ import {
   artOf,
   coreChoices,
   coreOf,
+  coresOf,
   fragmentCard,
+  gearAskOf,
   keyOf,
   spellCard,
   spellNumbers,
@@ -95,4 +97,31 @@ test('the HUD is given each Art’s diamond and Tenets as pictures, and none for
     for (const tenet of pictures?.tenets ?? []) assert.match(tenet, /viewBox="0 0 12 12"/);
   }
   assert.equal(abilityPictures(0), null);
+});
+
+test('the room’s word on the Arts reads as each Art’s Core by its id, and the screen’s asks go as the room numbers them', () => {
+  const cores = coresOf({
+    art: 3,
+    cores: [
+      [4, null, null],
+      [null, null, null],
+      [0, 2, null],
+    ],
+    anima: 0,
+    tenets: [1, 1],
+  });
+  assert.deepEqual(
+    [coreOf(cores, 1), coreOf(cores, 3)],
+    [
+      [4, null, null],
+      [0, 2, null],
+    ],
+  );
+  assert.deepEqual(gearAskOf({ kind: 'wearArt', art: 2 }), { kind: 40, column: 2 });
+  assert.deepEqual(gearAskOf({ kind: 'setCore', art: 3, slot: 1, fragment: 5 }), {
+    kind: 41,
+    column: 3,
+    slot: 1,
+    node: 5,
+  });
 });

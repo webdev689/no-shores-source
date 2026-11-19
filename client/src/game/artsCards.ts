@@ -6,6 +6,8 @@ import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ABILITY_KEYS } from '../combat/abilityBar.ts';
 import { FRAGMENT_MAPS } from './artFragments.ts';
 import { EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
+import type { ArtState } from '../network/artMessages.ts';
+import { ASKS, type GearAsk } from '../network/gearMessages.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -50,6 +52,18 @@ export type ArtsAsk =
 export type Cores = Readonly<Record<number, readonly (number | null)[]>>;
 
 export const artOf = (id: number): Art | undefined => ARTS.find((art) => art.id === id);
+
+/** The room's word on the Arts as the screen reads it: each Art's Core by its id. */
+export function coresOf(state: ArtState): Cores {
+  return Object.fromEntries(state.cores.map((core, index) => [ARTS[index]?.id ?? index + 1, core]));
+}
+
+/** The screen's ask as an input carries it to the room. */
+export function gearAskOf(ask: ArtsAsk): GearAsk {
+  return ask.kind === 'wearArt'
+    ? { kind: ASKS.wearArt, column: ask.art }
+    : { kind: ASKS.setCore, column: ask.art, slot: ask.slot, node: ask.fragment };
+}
 
 /** An Art's Core as its slots: three, each a fragment or null, whatever the room sent. */
 export function coreOf(cores: Cores, art: number): (number | null)[] {
