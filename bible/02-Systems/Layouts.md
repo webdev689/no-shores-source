@@ -10,6 +10,7 @@ code:
   - crates/layout/src/seat.rs#seat
   - crates/layout/src/paths.rs#find
   - crates/layout/src/carve.rs#carve
+  - crates/layout/src/carve.rs#shape_of
   - crates/land/src/sculpts.rs#Sculpts
   - crates/layout/src/pieces.rs#build
   - crates/layout/src/works.rs#build
@@ -44,7 +45,10 @@ bounded by rock and walls rather than open ground. How it is laid out is Claude'
 order they are placed: a hamlet (one to four RMB blocks), a farm, a ruin, a keep, a graveyard, a coven, a shrine, a
 camp, a watchtower, a lighthouse, open wilds, a dock, a mill, a quarry, a wreck, a graveyard of ships, the bones of
 something enormous, a causeway, a cave's mouth, and an instance's way in and the arena it ends in. A node with no brief
-is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own.
+is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
+`rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
+Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
+and `river`, that a river runs through it (the Vale). Nothing reads `stone` or `river` yet.
 
 ## How a layout is planned
 
@@ -107,8 +111,16 @@ from the sea, fresh water and the claim's edge), then:
    of a track, 11 of a footpath), their edges wandering outward with a noise; a gorge runs out of the claim from
    each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised into a
    massif whose faces fall to the floor over 16 m in four ledges of strata, its top rough, as high as the biome's
-   land stands (38 m in the highland, 12 m in the swamp). Mesas and spires stand up in the wilds and arenas and at
-   the rims of the wider basins, for cover and to break the long views. The carving is the land crate's sculpt
+   land stands (38 m in the highland, 12 m in the swamp). Outcrops stand up in the wilds and arenas (up to five) and
+   at the rims of the wider basins (two), for cover and to break the long views, all of one shape ([[Land]]): the
+   brief's `rock`, or else the climate's (mesas in the desert, steppe and savanna, tors on the temperate coast and in
+   the woodland, crags in the highland and tundra, knolls in the rainforest, hummocks in the swamp). Each is as large
+   as the room round it lets it be, each later try smaller: a mesa 18 to 52 m in radius (two faces from 49 m), a tor
+   11 to 26 m, a crag 14 to 34 m, a knoll 12 to 26 m, a hummock 10 to 22 m, a whaleback 8 to 12 m and about seven
+   times that long. A tor or crag stands up to its radius tall, a knoll 0.9 of it, a mesa and a whaleback 0.7, a
+   hummock 0.4, and none over 0.8 of the massif's height. Each is turned across the view from its area's middle,
+   give or take 17 degrees, so a whaleback shows its flank and a tor leans aside, and its footprint keeps off every
+   way, climb, building, prop, solid and other outcrop. The carving is the land crate's sculpt
    (`Sculpts`), applied after the land is made and before the towns, rivers and roads; it never raises the sea or a
    35 m strand inland from the coast, and fades back into the natural land over 140 m past the claim.
    Out of the larger basins (two at most), a climb is cut up the massif's face to a lookout on its top: from where
@@ -123,16 +135,17 @@ from the sea, fresh water and the claim's edge), then:
    top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing over a
    third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and retaining
    walls along part of the wider basins' feet, each length where the cliff really rises from the floor and clear of
-   every way, the climbs' and runs' too. Along the cliff tops round the section, every 130 to 210 m where the
-   massif stands over the floor, its top level enough to hold one and no way runs out, stand the ruins of an older
-   frontier: round towers broken off at their tops with a few merlons left, and runs of curtain wall in lengths
-   broken to different heights, some buttressed, so the bounds read as a border once held.
+   every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every 130 to
+   210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand the
+   ruins of an older frontier: round towers broken off at their tops with a few merlons left, and runs of curtain
+   wall in lengths broken to different heights, some buttressed, so the bounds read as a border once held.
 8. **The rock.** Rock fallen from the faces lies on the floor where each face meets it, never up the face, so every
    stone rests on level ground as if it had rolled there: along the section's edge every 11 m, a third of the way
    left bare and never by a path, a heap of a boulder or two against the foot, smaller stones by them and scree spilt
-   out onto the floor too low to trip on; and a few such heaps round each mesa's and spire's foot. A face's foot is
-   found by walking in from the section's edge to where the carving no longer raises the floor. All of it is the
-   solids' rubble, which wears the ground's stone in the grey the terrain draws its cliffs in.
+   out onto the floor too low to trip on; and such heaps all round each outcrop's foot, a whaleback's ends too, more
+   the longer its footprint is round. A face's foot is found by walking in from the section's edge to where the
+   carving no longer raises the floor. All of it is the solids' rubble, which wears the ground's stone in the grey the
+   terrain draws its cliffs in.
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), each beacon and resource
@@ -240,6 +253,8 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 ## Limits
 
 - Only Saltmere's three zones have runs; the other 24 zones' briefs name none yet.
+- Few mesas show their ledges: a second face needs a radius of 49 m, which only a wide basin's rim has room for, so
+  most stand in one face under their flat top.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.
 - Missions are single player with invites, but an instance's room is still a node's shared room: private instances
   wait on the server.

@@ -114,15 +114,27 @@ impl Outcrop {
         self.terraces().0 as u32
     }
 
-    /// Its bounds (west, north, east, south), past which it never raises the land: its spine's ends and its radius,
-    /// wandered out.
+    /// Its spine's two ends along its angle (one point but for a whaleback), and how far from that spine it raises
+    /// the land at most, metres: its radius, wandered out.
     #[must_use]
-    pub fn reach(&self) -> [f64; 4] {
+    pub fn footprint(&self) -> ([[f64; 2]; 2], f64) {
         let (sine, cosine) = sin_cos(self.angle);
         let spine = self.radius * self.shape.form().spine;
-        let (along_x, along_y) = ((sine * spine).abs(), (cosine * spine).abs());
-        let out = self.radius * (1.0 + WANDER);
-        [self.at[0] - along_x - out, self.at[1] - along_y - out, self.at[0] + along_x + out, self.at[1] + along_y + out]
+        let (along_x, along_y) = (sine * spine, -cosine * spine);
+        let [x, y] = self.at;
+        ([[x - along_x, y - along_y], [x + along_x, y + along_y]], self.radius * (1.0 + WANDER))
+    }
+
+    /// Its bounds (west, north, east, south), past which it never raises the land: its footprint's.
+    #[must_use]
+    pub fn reach(&self) -> [f64; 4] {
+        let ([first, last], out) = self.footprint();
+        [
+            first[0].min(last[0]) - out,
+            first[1].min(last[1]) - out,
+            first[0].max(last[0]) + out,
+            first[1].max(last[1]) + out,
+        ]
     }
 
     /// How high it stands at a point, metres; `seed` wanders its edge, the sculpt's seed mixed with its place.

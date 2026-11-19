@@ -1,6 +1,8 @@
 {
  "saltgrass-downs": {
   "theme": "Chalk downland over the sea: sheep walks, salt wind, an old beacon tower on the heights, and the Grey Tithe camped in the chalk pits.",
+  "rock": "whaleback",
+  "stone": "chalk",
   "areas": [
    {
     "kind": "landing",
@@ -39,6 +41,8 @@
  },
  "gullwing-vale": {
   "theme": "A river vale of water meadows and mills under a guarded keep, its old stones older than anyone remembers.",
+  "rock": "knoll",
+  "river": true,
   "areas": [
    {
     "kind": "landing",
@@ -77,6 +81,7 @@
  },
  "driftwood-moors": {
   "theme": "Gorse moor above a wreck-strewn strand, a lighthouse on the point and the drowned buried where the sea gave them back.",
+  "rock": "tor",
   "areas": [
    {
     "kind": "landing",

@@ -135,7 +135,8 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   either way along its angle; a knoll a steep-sided hill of up to three faces, each easing onto a soft shoulder; a
   hummock one low face under a flat top over up to half its radius. Each edge wanders out by up to 35 % over three
   quarters of its radius, so a broad outcrop's faces are no steeper than a small one's. An outcrop never rises past
-  its tall or its reach (its spine's ends and its radius, wandered out), by which the sculpt's buckets find it.
+  its tall or its footprint (`footprint`: its radius, wandered out, round its spine), whose bounds, its reach, are
+  how the sculpt's buckets find it.
 
 The land's WebAssembly door gives the browser the same answers.
 

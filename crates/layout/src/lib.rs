@@ -93,8 +93,9 @@ pub fn middle_of(node: &Node) -> [f64; 2] {
 }
 
 /// Plans a node's layout on the ground from its brief: for a patrol area, `links` are the instances its gates lead
-/// to; for an instance, the patrol area it is entered from. `avoid` are the other nodes' claims, which its runs past
-/// its edge keep clear of.
+/// to; for an instance, the patrol area it is entered from. `biome` is its landmass's, which sets how high its massif
+/// stands and the shape of its outcrops where its brief names none. `avoid` are the other nodes' claims, which its
+/// runs past its edge keep clear of.
 #[must_use]
 pub fn plan(
     node: &Node,
@@ -102,9 +103,10 @@ pub fn plan(
     brief: &Brief,
     links: &[Link],
     book: &Book,
-    rise: f64,
+    biome: Option<&str>,
     avoid: &[Vec<[f64; 2]>],
 ) -> Layout {
+    let (rise, shape) = (carve::rise_of(biome), carve::shape_of(brief, biome));
     let seed = seed_of(0x1A70, &node.id);
     let field = Field::read(ground, &claim_of(node), MARGIN_M);
     let patrol = node.kind == NodeKind::Patrol;
@@ -167,7 +169,7 @@ pub fn plan(
     let pockets: Vec<[f64; 2]> =
         sites.iter().filter(|site| site.kind == sites::SiteKind::Resource).map(|site| site.at).collect();
     let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets };
-    let mut sculpt = carve::carve(&field, claim_of(node), network, &seating, rise, seed);
+    let mut sculpt = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // The runs are cut into the rock the carving left, and a run past the edge is read on a wider field, the claim
     // carried out round it by its wing.
     let claim = claim_of(node);
@@ -244,7 +246,7 @@ pub fn plan(
             Some(paths::Path { tier: Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() })
         }))
         .collect();
-    works::retaining_walls(&mut kit, &areas, &ways, &carved);
+    works::retaining_walls(&mut kit, &areas, &ways, &sculpt.outcrops, &carved);
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }

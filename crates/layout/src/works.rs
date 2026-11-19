@@ -10,7 +10,7 @@ use crate::field::distance;
 use crate::paths::{Path, Tier, off_line, simplified};
 use crate::pieces::{Kit, ahead, turn_along};
 use city::solids::{Material, Shape, Solid};
-use land::sculpts::Sculpts;
+use land::sculpts::{Outcrop, Sculpts};
 
 /// The great wall's thickness and how far it stands over the massif's top, metres.
 const WALL_THICK_M: f64 = 9.0;
@@ -87,12 +87,12 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &
     }
 }
 
-/// The retaining walls along the wider basins' feet, clear of every way (the climbs' too).
-pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], carved: &Sculpts) {
+/// The retaining walls along the wider basins' feet, clear of every way (the climbs' too) and every outcrop.
+pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: &[Outcrop], carved: &Sculpts) {
     for area in
         areas.iter().filter(|area| area.radius >= 60.0 && !matches!(area.kind, AreaKind::Wilds | AreaKind::Arena))
     {
-        retaining(kit, area, paths, carved);
+        retaining(kit, area, (paths, outcrops), carved);
     }
 }
 
@@ -241,8 +241,8 @@ fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64
 
 /// Retaining walls along part of a basin's edge, where its floor meets the cliff: ashlar four metres high in lengths
 /// following the curve, each found by walking out from the basin's middle to the cliff's real foot, and broken where
-/// a way runs by.
-fn retaining(kit: &mut Kit, area: &Area, paths: &[Path], carved: &Sculpts) {
+/// a way runs by or an outcrop stands at the rim, its foot not the cliff's.
+fn retaining(kit: &mut Kit, area: &Area, (paths, outcrops): (&[Path], &[Outcrop]), carved: &Sculpts) {
     let edge = area.radius + 30.0;
     let start = kit.draw() * std::f64::consts::TAU;
     let arc = 1.2 + kit.draw() * 1.6;
@@ -268,7 +268,11 @@ fn retaining(kit: &mut Kit, area: &Area, paths: &[Path], carved: &Sculpts) {
         let on_path = paths.iter().any(|path| {
             path.points.windows(2).any(|pair| off_line(at, pair[0], pair[1]) < path.tier.width() / 2.0 + 4.1)
         });
-        if on_path {
+        let in_rock = outcrops.iter().any(|outcrop| {
+            let ([first, last], reach) = outcrop.footprint();
+            off_line(at, first, last) < reach + 4.0
+        });
+        if on_path || in_rock {
             continue;
         }
         kit.stand(Shape::Block, at, [1.4, 7.2, 4.2], turn_along(tangent), Material::Stone, 1.0);

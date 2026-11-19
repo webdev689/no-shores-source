@@ -362,6 +362,7 @@ fn a_shape_never_rises_past_its_tall_or_off_its_reach() {
             let outcrop = Outcrop { at: [-14.6, 9.2], radius, tall: 10.0, shape, angle };
             let sculpts = standing(outcrop);
             let [west, north, east, south] = outcrop.reach();
+            let ([first, last], out) = outcrop.footprint();
             let mut highest = 0.0_f64;
             for column in 0..=((east - west + 40.0) as i32) {
                 for row in 0..=((south - north + 40.0) as i32) {
@@ -370,6 +371,8 @@ fn a_shape_never_rises_past_its_tall_or_off_its_reach() {
                     assert!((0.0..=outcrop.tall).contains(&height), "{shape:?}: {height} m at {x},{y}");
                     let off = x < west || x > east || y < north || y > south;
                     assert!(!off || height == 0.0, "{shape:?} rises {height} m off its reach at {x},{y}");
+                    let beyond = to_segment(x, y, first, last) > out;
+                    assert!(!beyond || height == 0.0, "{shape:?} rises {height} m off its footprint at {x},{y}");
                     highest = highest.max(height);
                 }
             }

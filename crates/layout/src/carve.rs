@@ -1,13 +1,13 @@
 //! How a layout carves its land (the land crate's sculpt): each area a basin a little wider than its reach, each path
 //! a canyon as wide as its tier wants, a gorge out of the claim at each gate and toward the sea from the landing, and
-//! mesas and spires standing up in its open ground for cover and to break the long views, the rest raised into a
-//! massif whose stepped cliffs are the layout's bounds. How high the massif stands is the biome's: tall in the
-//! highland and the desert, low in the swamp.
+//! outcrops standing up in its open ground for cover and to break the long views, the rest raised into a massif
+//! whose stepped cliffs are the layout's bounds. How high the massif stands is the biome's: tall in the highland and
+//! the desert, low in the swamp; and its outcrops' shape is its brief's, or its climate's.
 
 use crate::areas::Area;
-use crate::brief::AreaKind;
+use crate::brief::{AreaKind, Brief};
 use crate::field::{Field, distance};
-use crate::paths::{Path, Tier, simplified};
+use crate::paths::{Path, Tier, off_line, rect_off_line, segments_apart, simplified};
 use crate::seat::Seating;
 use land::exact::rand01;
 use land::sculpts::{Outcrop, Sculpt, Sculpts, Shape};
@@ -33,6 +33,18 @@ pub fn rise_of(biome: Option<&str>) -> f64 {
         Some("swamp") => 12.0,
         _ => 26.0,
     }
+}
+
+/// The shape a layout's outcrops stand in: its brief's, or else its biome's.
+#[must_use]
+pub fn shape_of(brief: &Brief, biome: Option<&str>) -> Shape {
+    brief.rock.unwrap_or(match biome {
+        Some("desert" | "steppe" | "savanna") => Shape::Mesa,
+        Some("highland" | "tundra") => Shape::Crag,
+        Some("rainforest") => Shape::Knoll,
+        Some("swamp") => Shape::Hummock,
+        _ => Shape::Tor,
+    })
 }
 
 /// The capsule from a point to the claim's edge along a way, and on past it.
@@ -80,9 +92,17 @@ fn nearest_on(paths: &[Path], at: [f64; 2]) -> Option<[f64; 2]> {
         .min_by(|first, second| distance(*first, at).total_cmp(&distance(*second, at)))
 }
 
-/// A layout's sculpt: its claim, its floors, its outcrops, its massif's height and seed.
+/// A layout's sculpt: its claim, its floors, its outcrops of a shape, its massif's height and seed.
 #[must_use]
-pub fn carve(field: &Field, claim: Vec<[f64; 2]>, network: Network, seating: &Seating, rise: f64, seed: u32) -> Sculpt {
+pub fn carve(
+    field: &Field,
+    claim: Vec<[f64; 2]>,
+    network: Network,
+    seating: &Seating,
+    shape: Shape,
+    rise: f64,
+    seed: u32,
+) -> Sculpt {
     let Network { areas, paths, exits, pockets } = network;
     let mut floors: Vec<[f64; 5]> =
         areas.iter().map(|area| [area.at[0], area.at[1], area.at[0], area.at[1], area.radius + BASIN_ROOM_M]).collect();
@@ -99,7 +119,6 @@ pub fn carve(field: &Field, claim: Vec<[f64; 2]>, network: Network, seating: &Se
         let mouth = nearest_on(paths, pocket).unwrap_or(pocket);
         floors.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
     }
-    let outcrops = outcrops(areas, paths, seating, seed);
     let bare = Sculpts::from(vec![Sculpt {
         claim: claim.clone(),
         floors: floors.clone(),
@@ -111,6 +130,7 @@ pub fn carve(field: &Field, claim: Vec<[f64; 2]>, network: Network, seating: &Se
         wings: Vec::new(),
     }]);
     let climbs = climbs(field, areas, &bare, rise, seed);
+    let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
     Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new() }
 }
 
@@ -198,9 +218,38 @@ fn climb_clear(
     true
 }
 
-/// The mesas and spires of a layout's open ground: three to five in each wilds and arena, a pair at the rim of each
-/// other wide basin, never on a path, a building or another outcrop.
-fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<Outcrop> {
+/// How an outcrop of a shape is sized: its radius at least and at most, metres, and its tall, a share of its radius
+/// at least and at most. A mesa is broad, wide enough at its largest for two faces and their ledge; a tor, a crag
+/// and a knoll are as wide as they are tall or wider; a whaleback is low, and about seven times its radius long; a
+/// hummock is low and wide. None is so small that its band is narrower than `BAND_M`.
+const fn size_of(shape: Shape) -> (f64, f64, f64, f64) {
+    match shape {
+        Shape::Mesa => (18.0, 52.0, 0.45, 0.7),
+        Shape::Tor => (11.0, 26.0, 0.6, 1.0),
+        Shape::Whaleback => (8.0, 12.0, 0.45, 0.7),
+        Shape::Crag => (14.0, 34.0, 0.6, 1.0),
+        Shape::Knoll => (12.0, 26.0, 0.55, 0.9),
+        Shape::Hummock => (10.0, 22.0, 0.25, 0.4),
+    }
+}
+
+/// How tall an outcrop stands at most, a share of the massif's height: under the cliffs round it.
+const UNDER_RISE: f64 = 0.8;
+
+/// What a layout's outcrops keep off: its paths, and its climbs and their lookouts.
+#[derive(Clone, Copy)]
+struct Ways<'layout> {
+    paths: &'layout [Path],
+    climbs: &'layout [[f64; 7]],
+}
+
+/// The outcrops of a layout's open ground, of its shape and sized to it: three to five in each wilds and arena, a pair
+/// at the rim of each other wide basin, each turned across the view from its area's middle (the way a whaleback runs
+/// and a tor leans), its footprint never on a way, a building, a prop, a solid or another outcrop. Each later try is
+/// smaller, so an outcrop is as large as the room left round it lets it be.
+fn outcrops(areas: &[Area], ways: Ways, seating: &Seating, (shape, rise): (Shape, f64), seed: u32) -> Vec<Outcrop> {
+    let Ways { paths, climbs } = ways;
+    let (least, most, low, high) = size_of(shape);
     let mut found: Vec<Outcrop> = Vec::new();
     let mut draw = 0_i64;
     let mut next = || {
@@ -219,30 +268,44 @@ fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec
         let mut tries = 0;
         let mut placed = 0;
         while placed < count && tries < 40 {
+            let room = 1.0 - f64::from(tries) / 40.0;
             tries += 1;
-            let angle = next() * std::f64::consts::TAU;
-            let (sine, cosine) = land::exact::sin_cos(angle);
+            let bearing = next() * std::f64::consts::TAU;
+            let (sine, cosine) = land::exact::sin_cos(bearing);
             let out = area.radius * (inner + next() * (outer - inner));
             let at = [area.at[0] + sine * out, area.at[1] - cosine * out];
-            let spire = next() < 0.4;
-            let radius = if spire { 4.0 + next() * 3.0 } else { 7.0 + next() * 8.0 };
-            let tall = if spire { 12.0 + next() * 10.0 } else { 5.0 + next() * 9.0 };
+            let radius = least + (most - least) * room * (0.8 + 0.2 * next());
+            let tall = (radius * (low + (high - low) * next())).min(rise * UNDER_RISE);
+            let angle = bearing + std::f64::consts::FRAC_PI_2 + (next() - 0.5) * 0.6;
+            let outcrop = Outcrop { at, radius, tall, shape, angle };
+            let ([first, last], reach) = outcrop.footprint();
             let clear_of_paths = paths.iter().all(|path| {
                 let half = if path.tier == Tier::Track { TRACK_HALF_M } else { FOOTPATH_HALF_M };
                 path.points
                     .windows(2)
-                    .all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > half * 0.5 + radius * 1.4 + 3.0)
+                    .all(|pair| segments_apart([first, last], [pair[0], pair[1]]) > half * 0.5 + reach + 3.0)
             });
-            let clear_of_buildings = seating.buildings.iter().chain(seating.props.iter()).all(|seated| {
-                let [west, north, east, south] = seated.footprint;
-                let margin = radius * 1.4 + 3.0;
-                at[0] < west - margin || at[0] > east + margin || at[1] < north - margin || at[1] > south + margin
+            let clear_of_climbs = climbs.iter().all(|climb| {
+                segments_apart([first, last], [[climb[0], climb[1]], [climb[2], climb[3]]]) > climb[4] + reach + 3.0
             });
-            let clear_of_others =
-                found.iter().all(|other| distance(other.at, at) > (other.radius + radius) * 1.5 + 6.0);
-            let clear_of_middle = distance(at, area.at) > radius * 1.4 + 10.0;
-            if clear_of_paths && clear_of_buildings && clear_of_others && clear_of_middle {
-                found.push(Outcrop { at, radius, tall, shape: Shape::Mesa, angle: 0.0 });
+            let clear_of_buildings = seating
+                .buildings
+                .iter()
+                .chain(seating.props.iter())
+                .all(|seated| rect_off_line(seated.footprint, first, last) > reach + 3.0);
+            // A solid by the distance its corners reach from its middle, however it is turned.
+            let clear_of_solids = seating.solids.iter().all(|solid| {
+                let corner = 0.5 * (solid.size[0] * solid.size[0] + solid.size[1] * solid.size[1]).sqrt();
+                off_line([solid.at[0], solid.at[1]], first, last) > reach + corner + 3.0
+            });
+            let clear_of_others = found.iter().all(|other| {
+                let ([other_first, other_last], other_reach) = other.footprint();
+                segments_apart([first, last], [other_first, other_last]) > (reach + other_reach) * 1.1 + 6.0
+            });
+            let clear_of_middle = off_line(area.at, first, last) > reach + 10.0;
+            let clear = clear_of_paths && clear_of_climbs && clear_of_buildings && clear_of_solids;
+            if clear && clear_of_others && clear_of_middle {
+                found.push(outcrop);
                 placed += 1;
             }
         }
@@ -264,6 +327,33 @@ mod tests {
         };
         assert_eq!(nearest_on(std::slice::from_ref(&path), [40.0, 35.0]), Some([40.0, 0.0]));
         assert_eq!(nearest_on(&[path], [130.0, 80.0]), Some([100.0, 80.0]));
+    }
+
+    #[test]
+    fn the_brief_names_a_zones_rock_and_the_climate_the_rest() {
+        let briefs = crate::brief::Briefs::parse(
+            r#"{ "downs": { "theme": "", "areas": [], "rock": "whaleback", "stone": "chalk" },
+                 "vale": { "theme": "", "areas": [], "river": true } }"#,
+        )
+        .unwrap();
+        let (downs, vale) = (&briefs.0["downs"], &briefs.0["vale"]);
+        assert_eq!((downs.stone.as_deref(), downs.river, vale.river), (Some("chalk"), false, true));
+        assert_eq!(shape_of(downs, Some("desert")), Shape::Whaleback, "the brief's rock over its climate's");
+        let climates = [
+            ("desert", Shape::Mesa),
+            ("steppe", Shape::Mesa),
+            ("savanna", Shape::Mesa),
+            ("temperate-coast", Shape::Tor),
+            ("woodland", Shape::Tor),
+            ("highland", Shape::Crag),
+            ("tundra", Shape::Crag),
+            ("rainforest", Shape::Knoll),
+            ("swamp", Shape::Hummock),
+        ];
+        for (biome, shape) in climates {
+            assert_eq!(shape_of(vale, Some(biome)), shape, "{biome}");
+        }
+        assert_eq!(shape_of(vale, None), Shape::Tor);
     }
 
     #[test]

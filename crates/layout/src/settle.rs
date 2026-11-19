@@ -109,7 +109,7 @@ fn dense(points: &[[f64; 2]], step: f64) -> Vec<(f64, f64)> {
 pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layout> {
     let nodes: Vec<Node> = landmass.edits.nodes.iter().filter(|node| node.kind != NodeKind::Social).cloned().collect();
     let links = links_of(&nodes);
-    let rise = crate::carve::rise_of(landmass.biome.map(|biome| biome.key));
+    let biome = landmass.biome.map(|biome| biome.key);
     let claims: Vec<Vec<[f64; 2]>> =
         nodes.iter().map(|node| node.ring.iter().map(|point| [point.x as f64, point.y as f64]).collect()).collect();
     let mut layouts: Vec<Layout> = nodes
@@ -123,7 +123,7 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
                 .filter(|&(other, _)| other != number)
                 .map(|(_, claim)| claim.clone())
                 .collect();
-            plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book, rise, &avoid)
+            plan(node, &landmass.surface, &briefs.of(&node.id, node.kind), linked, book, biome, &avoid)
         })
         .collect();
     landmass.surface.sculpts = Sculpts::from(layouts.iter().map(|layout| layout.sculpt.clone()).collect::<Vec<_>>());

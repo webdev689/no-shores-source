@@ -340,6 +340,16 @@ pub fn network(points: &[[f64; 2]], loops: usize) -> (Links, Links) {
     (tree, closing)
 }
 
+/// How far apart two segments lie, metres: 0 where they cross.
+#[must_use]
+pub fn segments_apart(first: [[f64; 2]; 2], second: [[f64; 2]; 2]) -> f64 {
+    if segments_cross(first[0], first[1], second[0], second[1]) {
+        return 0.0;
+    }
+    let ends = [(first[0], second), (first[1], second), (second[0], first), (second[1], first)];
+    ends.iter().map(|&(end, [from, to])| off_line(end, from, to)).fold(f64::INFINITY, f64::min)
+}
+
 /// Whether two segments cross at a point inside both.
 fn segments_cross(a1: [f64; 2], a2: [f64; 2], b1: [f64; 2], b2: [f64; 2]) -> bool {
     let side = |from: [f64; 2], to: [f64; 2], point: [f64; 2]| {
@@ -368,6 +378,13 @@ mod tests {
     fn crossing_segments_are_found_and_touching_ones_are_not() {
         assert!(segments_cross([0.0, 0.0], [10.0, 10.0], [0.0, 10.0], [10.0, 0.0]));
         assert!(!segments_cross([0.0, 0.0], [10.0, 0.0], [10.0, 0.0], [10.0, 10.0]));
+    }
+
+    #[test]
+    fn two_segments_are_as_far_apart_as_their_nearest_points() {
+        assert!(segments_apart([[0.0, 0.0], [10.0, 0.0]], [[5.0, -5.0], [5.0, 5.0]]) == 0.0, "crossing");
+        assert!((segments_apart([[0.0, 0.0], [10.0, 0.0]], [[5.0, 3.0], [20.0, 9.0]]) - 3.0).abs() < 1e-9);
+        assert!((segments_apart([[0.0, 0.0], [0.0, 0.0]], [[3.0, 4.0], [3.0, 4.0]]) - 5.0).abs() < 1e-9, "points");
     }
 
     #[test]

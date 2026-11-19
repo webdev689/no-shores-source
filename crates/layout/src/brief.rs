@@ -115,6 +115,15 @@ pub struct Brief {
     pub areas: Vec<AreaBrief>,
     #[serde(default)]
     pub runs: Vec<RunBrief>,
+    /// The shape its outcrops stand in, where its climate's would not suit it (`carve::shape_of`).
+    #[serde(default)]
+    pub rock: Option<land::sculpts::Shape>,
+    /// The stone its cliffs and rubble wear, where it is not its climate's.
+    #[serde(default)]
+    pub stone: Option<String>,
+    /// Whether a river runs through it.
+    #[serde(default)]
+    pub river: bool,
 }
 
 /// Every node's brief, by node id.
@@ -142,7 +151,7 @@ fn plain(kind: land::sites::NodeKind) -> Brief {
         NodeKind::Patrol => vec![area(AreaKind::Landing, "The Landing"), area(AreaKind::Wilds, "The Wilds")],
         _ => vec![area(AreaKind::Entrance, "The Way In"), area(AreaKind::Arena, "The Heart")],
     };
-    Brief { theme: String::new(), areas, runs: Vec::new() }
+    Brief { theme: String::new(), areas, runs: Vec::new(), rock: None, stone: None, river: false }
 }
 
 #[cfg(test)]

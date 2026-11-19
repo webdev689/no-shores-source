@@ -122,15 +122,37 @@ fn heap(kit: &mut Kit, carved: &Sculpts, foot: [f64; 2], inward: [f64; 2]) {
     }
 }
 
-/// Boulders fallen at each outcrop's foot (the sculpt's), on the floor where its face meets it; none on a path.
+/// A point 0.9 of an outcrop's radius out from its spine, `share` of the way round it, and the way out there: along a
+/// side of its spine, or round one of its ends.
+fn round_footprint(outcrop: &Outcrop, share: f64) -> ([f64; 2], [f64; 2]) {
+    let ([first, last], _) = outcrop.footprint();
+    let length = distance(first, last);
+    let (sine, cosine) = land::exact::sin_cos(outcrop.angle);
+    let (along, across) = ([sine, -cosine], [cosine, sine]);
+    let round = share * (2.0 * length + std::f64::consts::TAU * outcrop.radius);
+    let (middle, outward) = if round < 2.0 * length {
+        let side = if round < length { 1.0 } else { -1.0 };
+        let on = round % length;
+        ([first[0] + along[0] * on, first[1] + along[1] * on], [across[0] * side, across[1] * side])
+    } else {
+        let turn = (round - 2.0 * length) / outcrop.radius;
+        let (turn_sine, turn_cosine) = land::exact::sin_cos(turn);
+        let end = if turn < std::f64::consts::PI { last } else { first };
+        (end, [across[0] * turn_cosine + along[0] * turn_sine, across[1] * turn_cosine + along[1] * turn_sine])
+    };
+    let out = outcrop.radius * 0.9;
+    ([middle[0] + outward[0] * out, middle[1] + outward[1] * out], outward)
+}
+
+/// Boulders fallen at each outcrop's foot (the sculpt's), on the floor where its face meets it, all round its
+/// footprint (a whaleback's ends too), as many as its footprint is long round; none on a path.
 pub fn clad(kit: &mut Kit, outcrops: &[Outcrop], paths: &[Path], carved: &Sculpts) {
-    for &Outcrop { at: [x, y], radius, .. } in outcrops {
-        for _ in 0..3 + (kit.draw() * 3.0) as u32 {
-            let angle = kit.draw() * std::f64::consts::TAU;
-            let (sine, cosine) = land::exact::sin_cos(angle);
-            let outward = [sine, -cosine];
-            let from = [x + sine * radius * 0.9, y - cosine * radius * 0.9];
-            let Some(foot) = foot_of(kit, carved, from, outward, radius) else { continue };
+    for outcrop in outcrops {
+        let ([first, last], _) = outcrop.footprint();
+        let round = 1.0 + 2.0 * distance(first, last) / (std::f64::consts::TAU * outcrop.radius);
+        for _ in 0..((3.0 + kit.draw() * 3.0) * round) as u32 {
+            let (from, outward) = round_footprint(outcrop, kit.draw());
+            let Some(foot) = foot_of(kit, carved, from, outward, outcrop.radius) else { continue };
             if near_path(paths, foot, PATH_CLEAR_M) {
                 continue;
             }
