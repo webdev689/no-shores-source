@@ -155,27 +155,42 @@ function kitOf(right: string | null, left: string | null, draws: Draws): Kit {
 }
 
 /** The moves a figure with these hands is likeliest to show next, to compose ahead of need: its rest and walk; its
- *  blows where every swing strikes one, else its attack and a weapon held alone's strokes; a gun's reload, running,
- *  the roll, jumping and crouching. */
+ *  blows where every swing strikes one, else its attack and a weapon held alone's strokes; a gun's reload; each of
+ *  those on the move where `walking` names one; running, the roll, its guard or a shield's block, its hurt, jumping and
+ *  crouching. A move first asked for unwarmed keeps the figure on its last frame while its strips arrive. */
 export function likelyMoves(
   right: string | null,
   left: string | null,
   draws: Draws,
   grip: 'hilt' | null = null,
+  walking: Walking = () => null,
 ): string[] {
   const kit = kitOf(right, left, draws);
   const blows = (['down', 'left', 'up'] as const).map((way) => blowOf(way, right, left, draws, grip));
   const struck = blows.filter((blow): blow is string => blow !== null);
   const strokes = right && !left ? [kit.attack, 'thrust', 'chop', 'swing2h'] : [kit.attack];
+  const acts = [...(struck.length === blows.length ? struck : strokes), ...(kit.reload ? [kit.reload] : [])];
+  const parry = ownMove('parry', right, draws);
+  const guard = left?.startsWith('shield_') && draws('block', left) ? 'block' : draws(parry, right) ? parry : 'guard';
   const own = [
     kit.idle,
     kit.walk,
-    ...(struck.length === blows.length ? struck : strokes),
-    ...(kit.reload ? [kit.reload] : []),
+    ...acts,
+    ...acts.flatMap((act) => walking(act) ?? []),
     ...(kit.run ? [kit.run] : []),
     'roll',
+    guard,
+    ownMove('hurt', right, draws),
   ];
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
+}
+
+/** A move as the right hand's bow, crossbow or staff plays it, where the forge draws its own (`hurt_bow`); else the
+ *  move itself. */
+function ownMove(anim: string, right: string | null, draws: Draws): string {
+  const kind = right?.split('_')[0];
+  const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
+  return special && draws(special, right) ? special : anim;
 }
 
 /** The forge's own strokes the owner gave the player, by the swing's direction. */
@@ -350,11 +365,7 @@ function fightMove(
   const right = doing.drawn ? doing.right : null;
   const left = doing.drawn ? doing.left : null;
   const holds = (anim: string) => draws(anim, right) && (!left || draws(anim, left));
-  const own = (anim: string) => {
-    const kind = right?.split('_')[0];
-    const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
-    return special && draws(special, right) ? special : anim;
-  };
+  const own = (anim: string) => ownMove(anim, right, draws);
   const shield = !!left?.startsWith('shield_') && draws('block', left);
   const still = (anim: string, frame = 0): Shown => ({
     anim,

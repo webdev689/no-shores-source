@@ -262,8 +262,10 @@ export class Walker {
         hands[1] ?? null,
         (anim, drawn) => forge.draws(dress.body, anim, drawn),
         outfit.drawn ? (outfit.grip ?? null) : null,
+        (action) => forge.walking(dress, action),
       ),
       outfit.drawn ? this.glow[0] : 0,
+      you.id,
     );
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);

@@ -272,6 +272,16 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
   assert.ok(!likely.includes('chop') && !likely.includes('attack_sword'));
 });
 
+test('what a fight holds a figure to, and its blows on the move, are composed ahead too', () => {
+  const onTheMoveOf = (action: string) => `${action}walk`;
+  const likely = likelyMoves('sword_iron', null, everything, null, onTheMoveOf);
+  for (const anim of ['over1hwalk', 'side1hwalk', 'thrust1hwalk', 'parry', 'hurt', 'roll'])
+    assert.ok(likely.includes(anim), anim);
+  assert.ok(likelyMoves('sword_iron', 'shield_kite_iron', everything).includes('block'), "a shield's block");
+  const staff = likelyMoves('staff_iron', null, everything);
+  assert.ok(staff.includes('hurt_staff') && staff.includes('parry_staff'), "a staff's own");
+});
+
 test('a bow drawn stands, walks and sprints in its own holds; undrawn there, it rests in the left fist', () => {
   const bow = { ...doing, right: 'bow_long_iron' };
   assert.equal(shownMove(bow, frames, everything).anim, 'bowready');

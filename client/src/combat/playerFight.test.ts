@@ -52,6 +52,7 @@ function fightingPlayer() {
     frames: () => 4,
     draws: () => true,
     warm: () => undefined,
+    walking: () => null,
     pump: () => undefined,
     card: () => null,
   } as unknown as Cards;

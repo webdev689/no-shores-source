@@ -44,6 +44,7 @@ const forge = {
   frames: () => 4,
   draws: () => true,
   warm: () => undefined,
+  walking: () => null,
   card: () => card,
 } as unknown as Cards;
 

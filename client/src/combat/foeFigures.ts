@@ -131,7 +131,8 @@ export class FoeFigures {
       Object.assign(placed, { x, y, z, facing, anim: move.anim, frame: frameShown });
       const [right, left] = dress.outfit.drawn ? [dress.outfit.right, dress.outfit.left] : [null, null];
       // Its likeliest moves, the telegraphed blows' strokes and what a fight holds it to.
-      forge.warm(dress, [...likelyMoves(right, left, draws), 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death']);
+      const likely = likelyMoves(right, left, draws, dress.outfit.grip ?? null, walking);
+      forge.warm(dress, [...likely, 'thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death'], 0, placed.id);
       const moved = feel ? feel.shift(kept.id, kept.view) : ([0, 0, 0] as const);
       const alive = kept.view.action.kind !== 'dead';
       const knocked = flashes.knockOf(kept.id, alive);
