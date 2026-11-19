@@ -172,14 +172,14 @@ const HOLD_OF: Readonly<Record<string, string>> = {
 /** One of the owner's blows by name: its stroke and its hold, standing or on the move. */
 const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair|staff)(walk)?$/;
 
-/** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down and the thrust
- *  out; the side cut to the right with one hand or a pair (its right blade), to the left with a hilt or a haft, whatever
- *  way the swing was asked. Null for any other move. */
+/** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down, the thrust out,
+ *  and the side cut, captured from one clip in every hold, from the right shoulder across to the left, whatever way the
+ *  swing was asked. Null for any other move. */
 export function blowWay(anim: string): StrokeDirection | null {
-  const [, stroke, hold] = BLOW_NAME.exec(anim) ?? [];
+  const [, stroke] = BLOW_NAME.exec(anim) ?? [];
   if (stroke === 'over') return 'down';
   if (stroke === 'thrust') return 'up';
-  if (stroke === 'side') return hold === 'haft' || hold === 'hilt' ? 'left' : 'right';
+  if (stroke === 'side') return 'left';
   return null;
 }
 

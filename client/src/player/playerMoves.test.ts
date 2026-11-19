@@ -233,12 +233,13 @@ test('a dodge rolls through its span, on the ground and in the air; with no roll
   assert.equal(shownMove({ ...dodging, mounted: true }, frames, everything).anim, 'horseidle', 'mounted, the horse');
 });
 
-test("a blow's blade goes the way the forge draws it: down, out, a hand's side cut right and a two-hander's left", () => {
-  assert.deepEqual(['over1h', 'thrustpair', 'side1h', 'sidepair', 'sidehilt', 'sidehaft'].map(blowWay), [
+test("a blow's blade goes the way the forge draws it: down, out, and every hold's side cut across to the left", () => {
+  assert.deepEqual(['over1h', 'thrustpair', 'side1h', 'sidepair', 'sidehilt', 'sidehaft', 'sidestaff'].map(blowWay), [
     'down',
     'up',
-    'right',
-    'right',
+    'left',
+    'left',
+    'left',
     'left',
     'left',
   ]);

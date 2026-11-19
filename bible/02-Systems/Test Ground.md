@@ -156,8 +156,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   - *Swing arc.* A streak of light along each blow's path, laid from the rules' own landing, reach and width, going the
     way the striker's figure is drawn swinging
     ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). A blow goes its own way, whatever
-    way the swing was asked: the overhead down, the thrust out, the side cut to the right with one hand or a pair, to
-    the left with a hilt or a haft. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
+    way the swing was asked: the overhead down, the thrust out, the side cut across to the left in every hold, from
+    the right shoulder, as the forge's captured clip draws it. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
     so its arc is mirrored too, as it was when the swing began.
     An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
     cuts down and across, and a thrust drives out and flares where it lands. It is pixel art: whole figure pixels in
