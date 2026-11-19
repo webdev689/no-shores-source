@@ -11,8 +11,8 @@ export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as c
 /** Every picture is resampled to this square, so one array holds them all. */
 export const LAYER_SIZE = 128;
 
-/** The materials with a picture of their climate's own; rubble wears RUBBLE in every climate. */
-type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble'>;
+/** The materials with a picture of their climate's own; rubble wears RUBBLE in every climate, and chalk's CHALK. */
+type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble' | 'chalk'>;
 type Tint = readonly [number, number, number];
 type Choice = readonly [archive: number, record: number, use: PictureUse, tint?: Tint];
 
@@ -76,6 +76,9 @@ const RUBBLE: Readonly<Record<Climate, Choice>> = {
   mountain: [102, 3, 'floor', [1.81, 1.78, 1.8]],
   swamp: [402, 3, 'floor', [2.37, 2.05, 2.48]],
 };
+
+/** The rubble of a chalk zone's cliffs: the temperate stone tile brought to chalk's white (groundColour.ts CHALK). */
+const CHALK: Choice = [302, 3, 'floor', [2.7, 2.65, 2.55]];
 
 const CLIMATE_OF_BASE: readonly [number, Climate][] = [
   [400, 'swamp'],
@@ -188,6 +191,7 @@ export function pictureBook(
     materialKeys.set(material, chosen(choice));
   const terraceKey = chosen(TERRACES[climate.climate]);
   const rubbleKey = chosen(RUBBLE[climate.climate]);
+  const chalkKey = chosen(CHALK);
   const turnOf = (archive: number, record: number): string =>
     `${climateArchive(archive, record, climate.climate, climate.season)}.${record}`;
   for (const each of wants) {
@@ -220,6 +224,7 @@ export function pictureBook(
   const materials = { ...COLOUR_LAYERS } as Record<SolidMaterial, number>;
   for (const [material, key] of materialKeys) materials[material] = layerAt(key);
   materials.rubble = layerAt(rubbleKey);
+  materials.chalk = layerAt(chalkKey);
   return {
     pictures,
     layerOf: (archive, record) => layerAt(turnOf(archive, record)),

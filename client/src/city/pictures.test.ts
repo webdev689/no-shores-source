@@ -59,7 +59,10 @@ test('a city wanting more pictures than the array holds loses only its rarest, w
     for (let record = 0; record < 32; record++) wants.push(want(archive, record, 10_000 - wants.length, ['prop']));
   const book = pictureBook(TEMPERATE, wants, [2], noUses);
   assert.equal(book.pictures.length, PICTURE_LAYERS);
-  assert.equal(new Set(book.pictures.map((picture) => `${picture.archive}.${picture.record}`)).size, PICTURE_LAYERS);
+  assert.equal(
+    new Set(book.pictures.map((picture) => `${picture.archive}.${picture.record}.${picture.tint}`)).size,
+    PICTURE_LAYERS,
+  );
   assert.equal(book.pictures[book.layerOf(506, 0)].archive, 506, 'the most worn is kept');
   assert.equal(book.layerOf(511, 31), 0, 'the rarest falls back');
 });

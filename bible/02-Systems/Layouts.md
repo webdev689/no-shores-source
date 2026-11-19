@@ -49,8 +49,8 @@ something enormous, a causeway, a cave's mouth, and an instance's way in and the
 is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). Nothing
-reads `stone` yet.
+and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). A layout
+carries its `stone` out with it, and the client wears it (below).
 
 ## How a layout is planned
 
@@ -191,7 +191,8 @@ from the sea, fresh water and the claim's edge), then:
    out onto the floor too low to trip on; and such heaps all round each outcrop's foot, a whaleback's ends too, more
    the longer its footprint is round. A face's foot is found by walking in from the section's edge to where the
    carving no longer raises the floor. All of it is the solids' rubble, which wears the ground's stone in the grey the
-   terrain draws its cliffs in.
+   terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears chalk's white instead (the client
+   turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), each beacon and resource
@@ -282,11 +283,12 @@ to hold them, with no plates. Nature keeps off the buildings' yards and each pla
 
 The paths and a block's streets are the terrain's own ground ([[Game]], "The ground's pictures"): painted within
 2.5 km of the eye (`paintOfLayouts`) as a distance from their edges, a metre a texel at finest, the paths and a
-block's dirt in one channel and its paving and stone in the other. A block's tiles are read by their records'
+block's dirt in one channel, its paving in the next, and a third holds the claim of a layout whose `stone` is chalk and the 40 m past its ring where its cliffs stand. A block's tiles are read by their records'
 classes at their corners, as Daggerfall's tile map lays them, across each tile and the next, so a street has no seam
 between its tiles and fades out across the first tile not laid. The terrain draws them in its dirt's and paving's
 grain, their edges wandering as trodden ones do, a path paler in its middle and darker where the grass is worn into
-it. The terrain lays carved cliffs in strata of rock, and draws the land's carving as far as the layouts are drawn
+it. The terrain lays carved cliffs in strata of rock, white in a chalk claim and only on its raised, steep ground, so
+its floors keep their grass, and draws the land's carving as far as the layouts are drawn
 (the middle ground, [[Game]]).
 
 ## In the World Editor

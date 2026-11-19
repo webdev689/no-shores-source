@@ -9,7 +9,7 @@ export const TILE_LAYERS = ['grass', 'dirt', 'stone', 'snow', 'sand', 'paving'] 
 
 /**
  * What is laid on the land, painted for the terrain (game's groundPaint.ts): texels `texelM` metres square from the
- * north-west corner (`west`, `north`, window metres), two bytes a texel, the paths and dirt then the paving, each a
+ * north-west corner (`west`, `north`, window metres), four bytes a texel, the paths and dirt, the paving, then the chalk of a layout's claim, each a
  * distance from its edge (128 at the edge, 32 a metre, more inside).
  */
 export interface GroundPaint {
@@ -38,6 +38,8 @@ const MUD = vec3f(0.33, 0.30, 0.21);
 const HIGHLAND = vec3f(0.50, 0.40, 0.27);
 const ROCK = vec3f(0.48, 0.47, 0.45);
 const SNOW = vec3f(0.94, 0.95, 0.97);
+// The white of chalk, the stone of a zone whose brief names it, in place of the climate's.
+const CHALK = vec3f(0.93, 0.92, 0.88);
 const TILE_M = ${TILE_M};
 const WIDE_TILE_M = ${WIDE_TILE_M};
 const TURN = mat2x2f(${Math.cos(TILE_TURN)}, ${Math.sin(TILE_TURN)}, ${-Math.sin(TILE_TURN)}, ${Math.cos(TILE_TURN)});
@@ -100,13 +102,13 @@ fn stone_grain(at: vec2f, bed: f32, normal: vec3f) -> vec3f {
 
 // Bare rock: layered in strata a few metres thick that wander with the face, dark seams between them, each layer its
 // own tone, gritty close up, and leaning toward the biome's own ground colour, so a carved cliff reads as stone.
-fn rock_colour(at: vec2f, bed: f32) -> vec3f {
+fn rock_colour(at: vec2f, bed: f32, chalk: f32) -> vec3f {
   let wobble = fine_noise(at, 32.0, 53) * 1.6 + fine_noise(at, 8.0, 59) * 0.5;
   let layer = fract(bed / 3.4 + wobble);
   let seam = smoothstep(0.0, 0.07, layer) * (1.0 - smoothstep(0.88, 1.0, layer));
   let tone = mix(0.8, 1.14, grove_noise(vec2f(bed * 0.29 + wobble, 0.5), 1.0, 61));
   let grit = mix(0.86, 1.08, fine_noise(at, 2.0, 67));
-  let tint = mix(stone_tint(), view.ground.rgb * 1.2, 0.07);
+  let tint = mix(mix(stone_tint(), view.ground.rgb * 1.2, 0.07), CHALK, chalk);
   return tint * tone * grit * mix(0.55, 1.0, seam);
 }
 
@@ -115,14 +117,14 @@ fn rock_colour(at: vec2f, bed: f32) -> vec3f {
 // Each class wears its ground tile's grain (tile_grain), the rock its stone cast on the face (stone_grain), and one
 // class gives way to the next by their grains' heights (meet): stones show through the grass first as a slope
 // steepens, snow settles in the hollows before it covers the rises.
-fn land_colour(bed: f32, slope: f32, coast: f32, at: vec2f, normal: vec3f, dirt_grain: vec3f) -> vec3f {
+fn land_colour(bed: f32, slope: f32, coast: f32, at: vec2f, normal: vec3f, dirt_grain: vec3f, chalk: f32) -> vec3f {
   let grass_grain = tile_grain(GRASS_TILE, at);
   let stone = stone_grain(at, bed, normal);
   let snow_grain = tile_grain(SNOW_TILE, at);
   let sand_grain = tile_grain(SAND_TILE, at);
   var land = vec4f(view.ground.rgb * grass_grain, raised(grass_grain));
   land = meet(land, vec4f(HIGHLAND * dirt_grain, raised(dirt_grain)), smoothstep(200.0, 1600.0, bed));
-  land = meet(land, vec4f(rock_colour(at, bed) * stone, raised(stone) + ROCK_STANDS), smoothstep(0.3, 0.55, slope));
+  land = meet(land, vec4f(rock_colour(at, bed, chalk) * stone, raised(stone) + ROCK_STANDS), smoothstep(0.3, 0.55, slope));
   let snow_line = smoothstep(view.ground.w - 200.0, view.ground.w, bed);
   land = meet(land, vec4f(SNOW * snow_grain, SNOW_SETTLES - raised(snow_grain)), snow_line);
   let low = 1.0 - smoothstep(1.5, 3.0, bed);
@@ -147,6 +149,15 @@ fn meet(first: vec4f, next: vec4f, share: f32) -> vec4f {
   let first_weight = max(first.w + 1.0 - share - top, 0.0);
   let next_weight = max(next.w + share - top, 0.0);
   return (first * first_weight + next * next_weight) / max(first_weight + next_weight, 1e-4);
+}
+
+// How far a point lies in a chalk claim (GroundPaint's third channel): 0 outside, 1 a metre in. Only the rock class
+// reads it, so a chalk zone's floors keep their grass.
+fn chalk_share(point: vec2f) -> f32 {
+  let uv = (point - view.paint.xy) * view.paint.z / vec2f(textureDimensions(ground_paint));
+  let held = view.paint.w > 0.5 && all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0));
+  let reach = (textureSampleLevel(ground_paint, paint_sampler, uv, 0.0).b * 255.0 - 128.0) / 32.0;
+  return select(0.0, smoothstep(-1.0, 1.0, reach), held);
 }
 
 // The paths and streets painted on the land (GroundPaint): each channel's distance from its edge, with a noise on it so

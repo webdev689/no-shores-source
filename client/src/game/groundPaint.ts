@@ -1,6 +1,8 @@
 // What the layouts lay on the land, painted for the terrain to draw (groundColour.ts `painted`): the paths and a
-// block's dirt in one channel, its paving and stone in the other, each as a signed distance from its edge, so the
-// terrain draws their edges where they lie between its texels, ragged and soft, in its own ground's grain.
+// block's dirt in one channel, its paving in the next, and in a third the claim of a layout whose cliffs wear chalk
+// (and the skirt of land past its ring where they stand),
+// each as a signed distance from its edge, so the terrain draws their edges where they lie between its texels,
+// ragged and soft, in its own ground's grain.
 import { tileUvs } from '../layout/layoutPlan.ts';
 import { layoutBounds, type LaidTile, type NodeLayout, PATH_WIDTH_M } from '../layout/layouts.ts';
 import type { GroundPaint } from '../terrain/groundColour.ts';
@@ -9,6 +11,10 @@ import { CORNERS, ISLES } from '../textures/recipes/ground.ts';
 /** The finest a texel is and the most texels a side, so a window of layouts stays a few tens of megabytes. */
 const FINEST_M = 1;
 const MOST_TEXELS = 4096;
+/** How far past its ring a chalk layout's cliffs stand and wear chalk, metres: the land its carving reads. */
+const CHALK_SKIRT_M = 40;
+/** Bytes a texel: dirt, paving, chalk, and one spare (the texture's format has four). */
+const CHANNELS = 4;
 /** How far a distance reaches each way in a byte, metres: 128 at the edge, 32 a metre. */
 const REACH_M = 4;
 /** The runs through a building, whose floors are laid, and how far either side of their way, metres. */
@@ -52,11 +58,15 @@ export function paintOfLayouts(
   reach: number,
   corner: readonly [number, number],
 ): GroundPaint | null {
-  const near = layouts.filter((layout) => layout.paths.length || layout.tiles.length);
+  const near = layouts.filter((layout) => layout.paths.length || layout.tiles.length || layout.stone === 'chalk');
   if (!near.length) return null;
   const spare = REACH_M + 2;
   const bounds = near
-    .map(layoutBounds)
+    .map((layout) => {
+      const grow = layout.stone === 'chalk' ? CHALK_SKIRT_M : 0;
+      const [west, north, east, south] = layoutBounds(layout);
+      return [west - grow, north - grow, east + grow, south + grow] as const;
+    })
     .reduce(
       ([west, north, east, south], [wide, high, far, low]) => [
         Math.max(Math.min(west, wide - spare), centre[0] - reach),
@@ -70,16 +80,20 @@ export function paintOfLayouts(
   if (!(east > west && south > north)) return null;
   const texelM = Math.max(FINEST_M, (east - west) / MOST_TEXELS, (south - north) / MOST_TEXELS);
   const [width, height] = [Math.ceil((east - west) / texelM), Math.ceil((south - north) / texelM)];
-  const texels = new Uint8Array(width * height * 2);
+  const texels = new Uint8Array(width * height * CHANNELS);
   // Each texel keeps the largest distance any feature gives it: the union of every path and street.
   const lay = (channel: number, column: number, row: number, metres: number) => {
     if (column < 0 || row < 0 || column >= width || row >= height) return;
     const value = Math.max(0, Math.min(255, Math.round(128 + metres * (128 / REACH_M))));
-    const index = (row * width + column) * 2 + channel;
+    const index = (row * width + column) * CHANNELS + channel;
     if (value > texels[index]) texels[index] = value;
   };
   const texelOf = (x: number, y: number) => [(x - west) / texelM - 0.5, (y - north) / texelM - 0.5] as const;
   for (const layout of near) {
+    if (layout.stone === 'chalk')
+      paintClaim(layout.ring, [west, north, texelM, width, height], (column, row, metres) =>
+        lay(2, column, row, metres + CHALK_SKIRT_M),
+      );
     for (const path of layout.paths) {
       const half = PATH_WIDTH_M[path.tier] / 2;
       for (let k = 0; k + 1 < path.points.length; k++) {
@@ -204,4 +218,40 @@ function offLine(point: readonly [number, number], from: readonly [number, numbe
   const along =
     length > 0 ? Math.min(1, Math.max(0, ((point[0] - from[0]) * spanX + (point[1] - from[1]) * spanY) / length)) : 0;
   return Math.hypot(point[0] - from[0] - spanX * along, point[1] - from[1] - spanY * along);
+}
+
+/** Calls `lay` for each texel of a ring's claim and the metres past it that chalk reaches, with its distance from the
+ *  ring's edge (positive inside), as the grid `[west, north, texelM, width, height]` has its texels. */
+function paintClaim(
+  ring: readonly (readonly [number, number])[],
+  [west, north, texelM, width, height]: readonly [number, number, number, number, number],
+  lay: (column: number, row: number, metres: number) => void,
+) {
+  const [lowX, lowY, highX, highY] = [
+    Math.min(...ring.map((point) => point[0])) - CHALK_SKIRT_M - REACH_M,
+    Math.min(...ring.map((point) => point[1])) - CHALK_SKIRT_M - REACH_M,
+    Math.max(...ring.map((point) => point[0])) + CHALK_SKIRT_M + REACH_M,
+    Math.max(...ring.map((point) => point[1])) + CHALK_SKIRT_M + REACH_M,
+  ];
+  for (
+    let row = Math.max(0, Math.floor((lowY - north) / texelM));
+    row < Math.min(height, Math.ceil((highY - north) / texelM));
+    row++
+  )
+    for (
+      let column = Math.max(0, Math.floor((lowX - west) / texelM));
+      column < Math.min(width, Math.ceil((highX - west) / texelM));
+      column++
+    ) {
+      const [x, y] = [west + (column + 0.5) * texelM, north + (row + 0.5) * texelM];
+      let near = Infinity;
+      let inside = false;
+      for (let k = 0; k < ring.length; k++) {
+        const [from, to] = [ring[k], ring[(k + 1) % ring.length]];
+        near = Math.min(near, offLine([x, y], from, to));
+        if (from[1] > y !== to[1] > y && x < from[0] + ((y - from[1]) * (to[0] - from[0])) / (to[1] - from[1]))
+          inside = !inside;
+      }
+      lay(column, row, inside ? near : -near);
+    }
 }

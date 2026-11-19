@@ -100,7 +100,12 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
       yaw: seated.yaw,
     })),
   );
-  const solids = layouts.flatMap((layout) => [...layout.solids, ...layout.rooms]);
+  // Rubble wears the zone's own stone where its brief names one (pictures.ts CHALK).
+  const solids = layouts.flatMap((layout) =>
+    [...layout.solids, ...layout.rooms].map((solid) =>
+      layout.stone === 'chalk' && solid.material === 'rubble' ? { ...solid, material: 'chalk' as const } : solid,
+    ),
+  );
   const spots = [
     ...pieces.map((piece) => [piece.at[0], piece.at[1]] as const),
     ...layouts.flatMap((layout) => layout.tiles.map((tile) => tile.at)),

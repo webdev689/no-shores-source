@@ -21,7 +21,7 @@ const tile = (middle: readonly [number, number], byte: number): LaidTile => ({
 /** A channel's distance from its edge at a world point, metres (positive inside), as the terrain reads it. */
 function reachAt(paint: NonNullable<ReturnType<typeof paintOfLayouts>>, x: number, y: number, channel: number) {
   const [column, row] = [Math.floor((x - paint.west) / paint.texelM), Math.floor((y - paint.north) / paint.texelM)];
-  return (paint.texels[(row * paint.width + column) * 2 + channel] - 128) / 32;
+  return (paint.texels[(row * paint.width + column) * 4 + channel] - 128) / 32;
 }
 
 test('a path is painted to its width and not past it', () => {
@@ -90,4 +90,20 @@ test("a building run's floor is painted, a keep's paved and a mine's in earth, a
   assert.ok(reachAt(paved, 8, 6, 1) > 1, "the keep's beat is paved off its line");
   assert.ok(reachAt(earthen, 8, 6, 0) > 1, "the mine's beat is earth off its line");
   assert.ok(reachAt(paved, 8, 6, 0) < 0, 'and the keep is not earth there');
+});
+
+test('a layout with chalk paints its claim chalk and nothing past it', () => {
+  const chalk = { ...layout([], []), stone: 'chalk' };
+  const paint = paintOfLayouts([chalk], [0, 0], 2500, [0, 0]);
+  assert.ok(paint);
+  assert.ok(reachAt(paint, 0, 0, 2) > 3, 'its middle is deep inside');
+  assert.ok(reachAt(paint, 47, 0, 2) > 1, 'near its edge, still chalk');
+  assert.ok(reachAt(paint, 70, 0, 2) > 1, 'its cliffs stand a little past its ring, and wear it too');
+  assert.ok(reachAt(paint, 93, 0, 2) < -1, 'well past its edge, the climate stone');
+  assert.ok(reachAt(paint, 0, 0, 0) <= -3.9 && reachAt(paint, 0, 0, 1) <= -3.9, 'chalk is neither path nor paving');
+  assert.equal(
+    paintOfLayouts([layout([], [])], [0, 0], 2500, [0, 0]),
+    null,
+    'a layout with nothing laid paints nothing',
+  );
 });

@@ -40,3 +40,36 @@ test('nothing wild grows on a run: its beats and its way are cleared', () => {
   assert.ok(covers(12, 4) && covers(27, -4), 'the way along its line');
   assert.ok(!covers(20, 30), 'not the rock beside it');
 });
+
+test("a chalk zone's rubble is chalk, and its other solids are as they were", () => {
+  const solid = (material: string) => ({
+    shape: 'block',
+    at: [0, 0, 0],
+    size: [1, 1, 1],
+    turn: 0,
+    lean: 0,
+    roll: 0,
+    material,
+  });
+  const laid = (stone?: string) =>
+    ({
+      id: 'z',
+      ring: [],
+      buildings: [],
+      props: [],
+      tiles: [],
+      rooms: [],
+      pads: [],
+      areas: [],
+      stone,
+      solids: [solid('rubble'), solid('stone')],
+    }) as unknown as NodeLayout;
+  assert.deepEqual(
+    planOfLayouts([laid('chalk')])?.works.map((each) => each.material),
+    ['chalk', 'stone'],
+  );
+  assert.deepEqual(
+    planOfLayouts([laid()])?.works.map((each) => each.material),
+    ['rubble', 'stone'],
+  );
+});
