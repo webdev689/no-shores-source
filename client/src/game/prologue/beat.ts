@@ -18,7 +18,8 @@ export interface Beat {
   readonly name: BeatName;
   /** Whether holding Space may cut it short: cutscenes, never play. */
   readonly skippable: boolean;
-  /** What to show this frame, or null while it waits behind the screen's black. */
+  /** What to show this frame, or null while it waits behind the screen's black. A beat whose work has failed (a load,
+   *  a room, a fight's rules) throws it here, and the director goes on to the next beat. */
   frame(tick: Tick): StoryFrame | null;
   /** Ends a skippable beat at once, its moments run. */
   skip?(): void;

@@ -68,7 +68,7 @@ export class StoryHost {
     const ended = story.prologue.end;
     if (!ended) return null;
     this.story = null;
-    story.stage.parts.screen.clear();
+    story.stage.leave();
     return { epilogue: ended === 'played' ? story.epilogue : null, dress: plainDressOf(story.look()) };
   }
 }

@@ -15,6 +15,7 @@ import { Overboard } from './overboard.ts';
 import { Calm, Ram } from './ram.ts';
 import type { Sailed } from './sailing.ts';
 import { Shore } from './shore.ts';
+import type { StoryFrame } from './stage.ts';
 import { Sighted } from './sighted.ts';
 import { StormDive } from './storm.ts';
 import type { Story } from './story.ts';
@@ -64,7 +65,7 @@ export class Prologue {
   }
 
   /** The beat named, made from what the beats before it left. */
-  private make(name: BeatName): Beat {
+  protected make(name: BeatName): Beat {
     const { story, carried } = this;
     const shot = () => carried.shot ?? seaShot(story);
     switch (name) {
@@ -164,7 +165,8 @@ export class Prologue {
     return this.beat instanceof Battle ? this.beat.fighting : null;
   }
 
-  /** One frame of the story: the beat played, drawn, and moved on once it is done. */
+  /** One frame of the story: the beat played, drawn, and moved on once it is done. A beat that fails is left for the
+   *  next, so the story never stops on a failure. */
   frame(
     controls: InputFrame,
     seconds: number,
@@ -174,21 +176,39 @@ export class Prologue {
     if (this.end) return;
     this.clock += seconds;
     const { stage } = this.story;
+    stage.step(seconds);
     const beat = this.beat;
     if (beat.skippable && beat.skip) {
       const holding = controls.held('jump');
       const skipped = this.skipping.step(seconds, holding);
       stage.parts.screen.showSkip(holding ? this.skipping.share : null);
       if (skipped) {
+        // A skipped cutscene's world is left as its end leaves it, but none of its words are said.
         beat.skip();
+        stage.hush();
         this.skipping.step(0, false);
       }
     } else stage.parts.screen.showSkip(null);
-    const shown = beat.frame({ seconds, clock: this.clock, controls, size, viewport });
+    let shown: StoryFrame | null;
+    try {
+      shown = beat.frame({ seconds, clock: this.clock, controls, size, viewport });
+    } catch (error) {
+      this.failed(beat, error);
+      return;
+    }
     if (shown) {
       this.carried.shot = shown.shot;
       stage.draw(shown, size, this.clock, seconds);
     }
     if (beat.done) this.next();
+  }
+
+  /** A beat that cannot go on: what it said and laid over the view is cleared, and the story goes on past it. */
+  private failed(beat: Beat, error: unknown): void {
+    console.error(`the story's ${beat.name} could not go on:`, error);
+    const { stage } = this.story;
+    stage.hush();
+    stage.parts.screen.clear();
+    this.next();
   }
 }

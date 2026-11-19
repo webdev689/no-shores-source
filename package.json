@@ -19,7 +19,7 @@
     "server:bundle": "npm run -s schema && npm run -s wasm && npm run -s bake && wrangler deploy --dry-run --config server/wrangler.jsonc --outdir ../target/server && wrangler deploy --dry-run --config server/accounts/wrangler.jsonc --outdir ../../target/accounts",
     "accounts": "wrangler d1 migrations apply overlook-accounts --local --config server/accounts/wrangler.jsonc && wrangler dev --config server/accounts/wrangler.jsonc --port 8788 --var 'PAGES:http://localhost:5173/ http://127.0.0.1:5173/'",
     "wasm": "cargo build -q -p world-wasm -p land-wasm -p movement-wasm -p room-wasm --target wasm32-unknown-unknown --release && node -e \"const fs=require('node:fs');fs.mkdirSync('client/public',{recursive:true});for(const name of ['world','land','movement','room'])fs.copyFileSync('target/wasm32-unknown-unknown/release/'+name+'_wasm.wasm','client/public/'+name+'.wasm')\"",
-    "test": "node --test \"client/**/*.test.ts\" \"server/**/*.test.ts\"",
+    "test": "node --import ./tools/testStyles.mjs --test \"client/**/*.test.ts\" \"server/**/*.test.ts\"",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

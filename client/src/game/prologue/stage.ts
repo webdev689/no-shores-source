@@ -80,6 +80,16 @@ export interface StageParts {
 /** How many ships of one hull a frame draws at most: each has a slot of its own. */
 const SLOTS_A_HULL = 16;
 
+/** A head's point as speech uses it: on the view, or null, so words off its edges are neither shown nor heard. */
+export function headOnView(
+  point: readonly [number, number] | null,
+  view: { readonly width: number; readonly height: number },
+): readonly [number, number] | null {
+  if (!point) return null;
+  const [across, down] = point;
+  return across >= 0 && across <= view.width && down >= 0 && down <= view.height ? point : null;
+}
+
 export class Stage {
   readonly parts: StageParts;
   /** The weather now, and the weather it eases toward over the rest of its glide. */
@@ -87,9 +97,40 @@ export class Stage {
   private weatherFrom: Weather = CLEAR;
   private weatherTo: Weather = CLEAR;
   private glide = { seconds: 0, done: 0 };
+  /** Counts the scenes begun and hushed: a scene stops at its next line once a later one begins or it is hushed. */
+  private scenes = 0;
 
   constructor(parts: StageParts) {
     this.parts = parts;
+  }
+
+  /** Every frame of the story, drawn or not: the beds and spot sounds move on. */
+  step(seconds: number): void {
+    this.parts.ambience.frame(seconds);
+  }
+
+  /** Stops whatever is being said: the scene playing, the dialogue box, and every bark and emote over a head. */
+  hush(): void {
+    this.scenes += 1;
+    this.parts.dialogue.skip();
+    this.parts.overheads.clear();
+  }
+
+  /** Gives the game back what the story laid over it: its own clear weather, silence from the story's sounds, its
+   *  HUD without a death or a fight's panel, and no birds, fire or prompt of the story's. */
+  leave(): void {
+    this.hush();
+    const { ambience, scene, birds, flames, objective, hud, footView, screen } = this.parts;
+    ambience.stop();
+    this.weatherTowards(CLEAR, 0);
+    scene.weather = CLEAR;
+    birds.clear();
+    flames.clear();
+    objective.clear();
+    hud.reach({ kind: 'inside' });
+    hud.hints([]);
+    footView.hide();
+    screen.clear();
   }
 
   get weather(): Weather {
@@ -154,7 +195,7 @@ export class Stage {
     });
     const view = { width: canvas.clientWidth, height: canvas.clientHeight };
     const heads = new Map<string, readonly [number, number] | null>();
-    for (const [name, point] of frame.heads ?? []) heads.set(name, onScreen(shot, view, point));
+    for (const [name, point] of frame.heads ?? []) heads.set(name, headOnView(onScreen(shot, view, point), view));
     overheads.frame(seconds, heads);
     dialogue.frame(seconds);
   }
@@ -165,8 +206,9 @@ export class Stage {
   async play(scene: string, auto = true, heads: Readonly<Record<string, string>> = {}): Promise<void> {
     const lines = this.parts.scenes[scene] ?? [];
     const { overheads, dialogue, cast } = this.parts;
+    const playing = ++this.scenes;
     let index = 0;
-    while (index < lines.length) {
+    while (index < lines.length && playing === this.scenes) {
       const line = lines[index];
       if (!line) break;
       const head = heads[line.who] ?? line.who;
