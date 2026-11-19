@@ -151,8 +151,10 @@ export class WeaponRows {
     // The rules take up another loadout, or put one away, only at rest: while the fighter is busy (a swing, a guard,
     // a draw, a reload) the rows keep what the hands still hold.
     const resting = !own || own.action.kind === 'idle' || own.action.kind === 'dead';
-    const kept = resting || this.loadout === null || this.drawn === null;
-    const arms = kept ? asked : { ...asked, loadout: this.loadout ?? asked.loadout, drawn: this.drawn ?? asked.drawn };
+    const takenUp = resting || this.loadout === null || this.drawn === null;
+    const arms = takenUp
+      ? asked
+      : { ...asked, loadout: this.loadout ?? asked.loadout, drawn: this.drawn ?? asked.drawn };
     const { hand, next } = weaponsOf(arms, own?.ammo ?? null);
     showNode(this.root, !!hand || !!next);
     if (!hand && !next) return;
