@@ -8,6 +8,7 @@ import {
   FINE_SQUARE_M,
   GROUND_COLOUR_WGSL,
   type GroundPaint,
+  paintFormat,
   TILE_LAYERS,
   TILE_M,
   TILE_TURN,
@@ -283,14 +284,16 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   let world = view.world.xy + point;
   // The dirt's grain is read once a pixel: the land, the roads and the paths all wear it.
   let dirt_grain = tile_grain(DIRT_TILE, local);
-  var dry = wooded(land_colour(bed, slope, ground.w, local, normal, dirt_grain, chalk_share(point)), world, bed, slope, reach_to);
+  let laid = paint_at(point);
+  let land = land_colour(bed, slope, ground.w, local, normal, dirt_grain, chalk_share(laid));
+  var dry = wooded(land, world, bed, slope, reach_to);
   let in_close = share > 0.5;
   dry = mix(dry, RIVER, 0.7 * select(marked(wide_marks, wide, 1u, 2u), 0.0, in_close));
   let road = select(marked(wide_marks, wide, 3u, 3u), marked(close_marks, close, 3u, 3u), in_close);
   let town = select(marked(wide_marks, wide, 4u, 4u), marked(close_marks, close, 4u, 4u), in_close);
   let port = select(marked(wide_marks, wide, 5u, 5u), marked(close_marks, close, 5u, 5u), in_close);
   dry = mix(mix(mix(dry, ROAD * dirt_grain, road), TOWN, 0.6 * town), PORT, port);
-  dry = painted(dry, point, local, footprint, dirt_grain);
+  dry = painted(dry, laid, local, footprint, dirt_grain);
 
   var colour = mix(dry, wet, under);
   let direct = max(dot(normal, SUN), 0.0);
@@ -383,7 +386,7 @@ export class TerrainView {
       [1, 1, TILE_LAYERS.length],
     );
     this.tiles = this.plainTiles.createView({ dimension: '2d-array' });
-    this.paint = this.texture(1, 1, 'rgba8unorm');
+    this.paint = this.texture(1, 1, 'rg8unorm');
     this.middle = this.texture(1, 1, 'r32float');
     this.paintSampler = gpu.device.createSampler({ magFilter: 'linear', minFilter: 'linear' });
     this.tileSampler = gpu.device.createSampler({
@@ -508,10 +511,10 @@ export class TerrainView {
   /** Draws what is laid on the land as painted from now on, or nothing painted. */
   paintGround(paint: GroundPaint | null): void {
     this.paint.destroy();
-    this.paint = this.texture(paint?.width ?? 1, paint?.height ?? 1, 'rgba8unorm');
+    this.paint = this.texture(paint?.width ?? 1, paint?.height ?? 1, paintFormat(paint?.channels ?? 2));
     if (paint) {
       const { queue } = this.gpu.device;
-      queue.writeTexture({ texture: this.paint }, paint.texels, { bytesPerRow: paint.width * 4 }, [
+      queue.writeTexture({ texture: this.paint }, paint.texels, { bytesPerRow: paint.width * paint.channels }, [
         paint.width,
         paint.height,
       ]);

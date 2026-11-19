@@ -155,13 +155,14 @@ export type PictureWant = {
 /**
  * The city's pictures, in one array of at most PICTURE_LAYERS layers. `wants` are the models' pictures as their
  * tables file them, with how much the city wears each; `usesOf` says what a turned picture is named for. The ground
- * and the solids' pictures come first, then the rest by how much the city wears them.
+ * and the solids' pictures come first (chalk's only where `chalky`: the plan holds chalk solids), then the rest by how much the city wears them.
  */
 export function pictureBook(
   climate: CityClimate,
   wants: Iterable<PictureWant>,
   groundRecords: Iterable<number>,
   usesOf: (archive: number, record: number) => readonly PictureUse[],
+  chalky = false,
 ): PictureBook {
   const terrain = terrainArchive(climate);
   const turned = new Map<string, PictureWant>();
@@ -191,7 +192,7 @@ export function pictureBook(
     materialKeys.set(material, chosen(choice));
   const terraceKey = chosen(TERRACES[climate.climate]);
   const rubbleKey = chosen(RUBBLE[climate.climate]);
-  const chalkKey = chosen(CHALK);
+  const chalkKey = chalky ? chosen(CHALK) : rubbleKey;
   const turnOf = (archive: number, record: number): string =>
     `${climateArchive(archive, record, climate.climate, climate.season)}.${record}`;
   for (const each of wants) {

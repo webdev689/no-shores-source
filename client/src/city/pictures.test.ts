@@ -92,3 +92,13 @@ test('a picture is resampled square texel for texel and halved down to one texel
   assert.equal(levels[3][0], 128, "the last level is the whole picture's mean");
   assert.equal(levelCount(LAYER_SIZE), Math.log2(LAYER_SIZE) + 1);
 });
+
+test('a chalk picture is in the book only for a city that plans chalk solids', () => {
+  const stoneLayers = (book: ReturnType<typeof pictureBook>) =>
+    book.pictures.filter((picture) => picture.archive === 302 && picture.record === 3).length;
+  const without = pictureBook(TEMPERATE, [], [2], noUses);
+  const chalky = pictureBook(TEMPERATE, [], [2], noUses, true);
+  assert.equal(stoneLayers(chalky), stoneLayers(without) + 1);
+  assert.equal(without.materials.chalk, without.materials.rubble, 'with none planned it falls back to rubble');
+  assert.notEqual(chalky.materials.chalk, chalky.materials.rubble);
+});

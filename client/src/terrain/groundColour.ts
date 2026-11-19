@@ -13,6 +13,8 @@ export const TILE_LAYERS = ['grass', 'dirt', 'stone', 'snow', 'sand', 'paving'] 
  * distance from its edge (128 at the edge, 32 a metre, more inside).
  */
 export interface GroundPaint {
+  /** Bytes a texel: 2, or 4 where a chalk layout is painted (its claim is the third). */
+  readonly channels: 2 | 4;
   readonly west: number;
   readonly north: number;
   readonly texelM: number;
@@ -20,6 +22,8 @@ export interface GroundPaint {
   readonly height: number;
   readonly texels: Uint8Array;
 }
+/** The texture format a paint of `channels` bytes a texel is held in. */
+export const paintFormat = (channels: 2 | 4): 'rg8unorm' | 'rgba8unorm' => (channels === 4 ? 'rgba8unorm' : 'rg8unorm');
 /** A ground tile's side in metres, as Daggerfall laid them, and the second, wider and turned, reading of it that
  *  breaks up its repeats. */
 export const TILE_M = 6.4;
@@ -151,24 +155,29 @@ fn meet(first: vec4f, next: vec4f, share: f32) -> vec4f {
   return (first * first_weight + next * next_weight) / max(first_weight + next_weight, 1e-4);
 }
 
-// How far a point lies in a chalk claim (GroundPaint's third channel): 0 outside, 1 a metre in. Only the rock class
-// reads it, so a chalk zone's floors keep their grass.
-fn chalk_share(point: vec2f) -> f32 {
+// The painting at a point (GroundPaint), read once a pixel: each channel's distance from its edge in metres (a channel
+// the paint lacks reads as outside), and in w whether a painting lies there.
+fn paint_at(point: vec2f) -> vec4f {
   let uv = (point - view.paint.xy) * view.paint.z / vec2f(textureDimensions(ground_paint));
   let held = view.paint.w > 0.5 && all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0));
-  let reach = (textureSampleLevel(ground_paint, paint_sampler, uv, 0.0).b * 255.0 - 128.0) / 32.0;
-  return select(0.0, smoothstep(-1.0, 1.0, reach), held);
+  let reach = (textureSampleLevel(ground_paint, paint_sampler, uv, 0.0).rgb * 255.0 - 128.0) / 32.0;
+  return vec4f(reach, select(0.0, 1.0, held));
+}
+
+// How far in a chalk claim a painting puts a point: 0 outside, 1 a metre in. Only the rock class reads it, so a chalk
+// zone's floors keep their grass.
+fn chalk_share(laid: vec4f) -> f32 {
+  return select(0.0, smoothstep(-1.0, 1.0, laid.z), laid.w > 0.5);
 }
 
 // The paths and streets painted on the land (GroundPaint): each channel's distance from its edge, with a noise on it so
 // an edge wanders as a trodden one does, soft across a pixel; a path paler in its middle and darker at its edges,
 // where the grass is worn into it. Read only where a painting lies (view.paint.w), and only on dry land.
-fn painted(colour: vec3f, point: vec2f, at: vec2f, footprint: f32, dirt_grain: vec3f) -> vec3f {
+fn painted(colour: vec3f, laid: vec4f, at: vec2f, footprint: f32, dirt_grain: vec3f) -> vec3f {
   let earth = PATH_EARTH * dirt_grain;
   let stones = PAVING_STONE * tile_grain(PAVING_TILE, at);
-  let uv = (point - view.paint.xy) * view.paint.z / vec2f(textureDimensions(ground_paint));
-  let held = view.paint.w > 0.5 && all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0));
-  let reach = (textureSampleLevel(ground_paint, paint_sampler, uv, 0.0).rg * 255.0 - 128.0) / 32.0;
+  let reach = laid.xy;
+  let held = laid.w > 0.5;
   let ragged = (fine_noise(at, 1.0, 83) - 0.5) * 0.9 + (fine_noise(at, 0.5, 89) - 0.5) * 0.35;
   // The edge stays well inside the 4 m the paint reaches, so ground no path is near never takes its colour; a way
   // fades out where it is thinner than a pixel's footprint rather than shimmering.

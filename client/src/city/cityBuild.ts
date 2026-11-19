@@ -173,9 +173,14 @@ export function buildCity(
     roomkit: tables.roomkit ?? {},
   } as unknown as ForgedTables;
   const uses = pictureUses(forged);
-  const book = pictureBook(climate, wants.values(), groundRecords, (archive, record) => [
-    ...(uses.get(`${archive}.${record}`) ?? []),
-  ]);
+  const chalky = [...plan.landmark, ...plan.works, ...plan.social.solids].some((solid) => solid.material === 'chalk');
+  const book = pictureBook(
+    climate,
+    wants.values(),
+    groundRecords,
+    (archive, record) => [...(uses.get(`${archive}.${record}`) ?? [])],
+    chalky,
+  );
 
   const near = new Map<number, NearInstance[]>();
   for (const piece of placedPieces) {
