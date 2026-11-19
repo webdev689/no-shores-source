@@ -269,10 +269,9 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
         brain.plan = Plan::Wait;
     }
     match brain.plan {
-        // While another waits in reach for the beat to strike, one in to fight keeps to the ring, not crowd in behind.
-        Plan::Engage if sight.distance > reach + SWING_SLACK && !board.first(sight.id, me, tick) => {
-            hold_ring(brain, here, sight, ring)
-        }
+        // While another goes in, or waits in reach for the beat to strike, one in to fight keeps to the ring, not crowd
+        // in beside it.
+        Plan::Engage if !board.go_in(sight.id, me, tick) => hold_ring(brain, here, sight, ring),
         Plan::Engage => engage(brain, here, board, sight, reach),
         Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP),
         Plan::Wait => {

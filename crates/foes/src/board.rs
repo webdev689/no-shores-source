@@ -131,11 +131,15 @@ impl Board {
         first && fight.due.is_none_or(|(by, at)| by == foe || lands >= at + beat)
     }
 
-    /// Whether no other foe waits, ready, for the beat at `target` to strike it hand to hand.
-    #[must_use]
-    pub fn first(&self, target: FighterId, foe: FighterId, tick: u64) -> bool {
-        let next = self.fights.get(&target).and_then(|fight| fight.next);
-        next.is_none_or(|(next, asked)| next == foe || asked + 1 < tick)
+    /// Whether a foe in to fight `target` hand to hand may go in to strike at `tick`: no other is going in or waits in
+    /// reach for the beat. If it may, it is the one going in, as long as it asks each tick.
+    pub fn go_in(&mut self, target: FighterId, foe: FighterId, tick: u64) -> bool {
+        let fight = self.fights.entry(target).or_default();
+        let first = fight.next.is_none_or(|(next, asked)| next == foe || asked + 1 < tick);
+        if first {
+            fight.next = Some((foe, tick));
+        }
+        first
     }
 
     /// A foe began a blow at `target` that lands at `lands`.

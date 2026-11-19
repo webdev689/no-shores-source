@@ -67,14 +67,19 @@ pub fn in_place(here: &Here<'_, '_>, sight: &Sight, flanking: bool) -> bool {
 }
 
 /// Its place on the ring this tick, a bearing from its target, drifted on from `place` on a ring `ring` metres round.
-/// Holding the line, outside LINE_ARC of the line's middle its place is the line's nearer end. Nearer than RING_ROOM to the
-/// next foe of its side on its ring, it moves toward the middle of the room between the next each way. Flanking, or
-/// alone at its target, within FLANK_ARC of its target's face it drifts away from the face up to RING_ROOM short of
-/// the next.
+/// Flanking, it drifts away from where its target faces, out past the line to FLANK_ARC. Holding the line, outside
+/// LINE_ARC of the line's middle its place is the line's nearer end. Nearer than RING_ROOM to the next foe of its side
+/// on its ring, it moves toward the middle of the room between the next each way; else, in the line, it closes up
+/// toward the line's middle, RING_ROOM short of the next. Alone at its target, within FLANK_ARC of its target's face it
+/// drifts away from the face up to RING_ROOM short of the next.
 #[must_use]
 pub fn drift(here: &Here<'_, '_>, sight: &Sight, place: f64, ring: f64, flanking: bool) -> f64 {
     let step = SLOT_TURN / 60.0;
-    let line = if flanking { None } else { front(here, sight) };
+    let from_face = wrap(place - sight.fighter.aim);
+    if flanking {
+        return if from_face.abs() < FLANK_ARC { wrap(place + here.way_round(from_face) * step) } else { place };
+    }
+    let line = front(here, sight);
     if let Some(front) = line {
         let from_front = wrap(place - front);
         if from_front.abs() > LINE_ARC {
@@ -104,8 +109,14 @@ pub fn drift(here: &Here<'_, '_>, sight: &Sight, place: f64, ring: f64, flanking
         }
         return wrap(place + if clockwise > counter { step } else { -step });
     }
-    let from_face = wrap(place - sight.fighter.aim);
-    if line.is_some() || from_face.abs() >= FLANK_ARC {
+    if let Some(front) = line {
+        // Holding the line, it closes up toward the line's middle, RING_ROOM short of the next that way.
+        let from_front = wrap(place - front);
+        let way = -here.way_round(from_front);
+        let room = if way > 0.0 { clockwise } else { counter };
+        return if from_front.abs() > step && room >= gap + step { wrap(place + way * step) } else { place };
+    }
+    if from_face.abs() >= FLANK_ARC {
         return place;
     }
     let way = here.way_round(from_face);

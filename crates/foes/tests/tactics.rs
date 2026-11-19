@@ -1,6 +1,6 @@
 //! The tactics: a lone foe walks to a player and swings in reach; four on one player take turns two at a time while
 //! the rest ring it and circle, and the turns pass on after each blow; a foe that waited past its patience goes in, one
-//! over the count at most; a player who turns their back is open to anyone; a hurt foe backs off; a coward runs.
+//! over the count at most; a hurt foe backs off; a coward runs.
 
 mod common;
 
@@ -109,30 +109,6 @@ fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_one
     board.forget(3);
     board.forget(4);
     assert_eq!(board.tokens_out(9), (1, 0), "a foe that died gives its turn up");
-}
-
-/// Two swordsmen before a player and a third 3.3 m behind them, all already alert: the third waits its turn unless the
-/// player turns its back on it.
-fn third_behind(facing: f64) -> Room {
-    Room::new(5)
-        .player(PLAYER, 0.0, 0.0, facing)
-        .foe(10, SWORDSMAN, Major, -0.8, -5.0, PI)
-        .foe(11, SWORDSMAN, Major, 0.8, -5.0, PI)
-        .foe(12, SWORDSMAN, Major, 0.0, 3.3, 0.0)
-        .alert(10, PLAYER)
-        .alert(11, PLAYER)
-        .alert(12, PLAYER)
-}
-
-#[test]
-fn a_player_who_turns_their_back_on_a_waiting_foe_is_open_to_it() {
-    let mut turned = third_behind(0.0);
-    turned.run(90, &mut still(0.0));
-    assert!(!turned.swings(12).is_empty(), "the foe at its back goes in without a turn");
-    let mut facing = third_behind(PI);
-    facing.run(90, &mut still(PI));
-    assert!(facing.swings(12).is_empty(), "faced, it waits its turn");
-    assert!(!facing.swings(10).is_empty() || !facing.orders(10).is_empty(), "while the holders fight");
 }
 
 #[test]

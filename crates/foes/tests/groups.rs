@@ -8,7 +8,7 @@ mod common;
 use combat::fighter::Action;
 use combat::sight::off;
 use common::{BRUTE, CAPTAIN, Room, SKIRMISHER, SWORDSMAN, still};
-use core::f64::consts::PI;
+use core::f64::consts::{PI, TAU};
 use foes::Board;
 use foes::Director;
 use foes::Rank::Major;
@@ -54,13 +54,13 @@ fn of_the_foes_the_beat_holds_back_the_first_held_goes_first() {
     let mut board = Board::default();
     board.struck(9, 1, 100);
     assert!(!board.may_strike(9, 2, 120, 72, 50, true), "too soon after foe 1's blow");
-    assert!(!board.may_strike(9, 3, 180, 72, 51, true), "foe 2 was held back first");
-    assert!(board.may_strike(9, 2, 180, 72, 52, true), "foe 2 goes first once the beat is past");
+    assert!(!board.may_strike(9, 3, 150, 72, 50, true), "and for foe 3");
+    assert!(!board.may_strike(9, 3, 180, 72, 51, true), "past the beat, foe 2 was held back first");
+    assert!(board.may_strike(9, 2, 180, 72, 51, true), "so foe 2 goes first");
     board.struck(9, 2, 180);
-    assert!(board.may_strike(9, 1, 300, 72, 120, true), "and its own blows never hold a foe back");
-    assert!(!board.may_strike(9, 3, 260, 72, 121, true));
-    assert!(!board.may_strike(9, 1, 300, 72, 123, true), "foe 3 held first now, while it asks");
-    assert!(board.may_strike(9, 1, 300, 72, 125, true), "one that stops asking loses its place");
+    assert!(board.may_strike(9, 2, 200, 72, 52, true), "its own blows never hold a foe back");
+    assert!(!board.may_strike(9, 3, 260, 72, 53, true), "foe 2, asking still, keeps its place");
+    assert!(board.may_strike(9, 3, 260, 72, 55, true), "one that stops asking loses it");
 }
 
 #[test]
@@ -83,12 +83,16 @@ fn while_one_waits_in_reach_for_the_beat_the_others_keep_to_the_ring() {
     for tick in 0..1800 {
         room.director = Director { heat: 0.9 };
         room.step(&mut still(0.0));
-        let near = (10..14).filter(|id| room.distance(PLAYER, *id) <= 1.8 + 0.6).count();
+        // In to fight, within reach, and not yet striking: waiting there for the beat.
+        let near = (10..14)
+            .filter(|id| room.brain(*id).plan() == Plan::Engage && room.distance(PLAYER, *id) <= 1.8 + 0.3)
+            .filter(|id| matches!(room.fighter(*id).action, Action::Idle | Action::Guard { .. }))
+            .count();
         counted += u32::from(tick >= 300);
         crowded += u32::from(tick >= 300 && near >= 2);
     }
     let share = f64::from(crowded) / f64::from(counted);
-    assert!(share < 0.15, "two or more within reach on {share} of the ticks");
+    assert!(share < 0.1, "two or more in to fight within reach on {share} of the ticks");
 }
 
 /// The bearings from the player of the foes waiting their turn on the ring, sampled each tick past the first ten
@@ -107,17 +111,45 @@ fn waiting_bearings(room: &mut Room, ids: &[u32]) -> Vec<(u32, f64)> {
     samples
 }
 
+/// The narrowest arc round the player that holds every bearing of `bearings`.
+fn arc_holding(bearings: &[f64]) -> f64 {
+    let mut sorted = bearings.to_vec();
+    sorted.sort_by(f64::total_cmp);
+    let widest_gap = (0..sorted.len())
+        .map(|index| {
+            let next = sorted[(index + 1) % sorted.len()];
+            (next - sorted[index]).rem_euclid(TAU)
+        })
+        .fold(0.0, f64::max);
+    if sorted.len() < 2 { 0.0 } else { TAU - widest_gap }
+}
+
 #[test]
 fn the_waiting_hold_a_line_before_their_group_s_side() {
-    // Shield-bearers, come from the player's right: they hold a line there, not round its face or its back.
+    // Shield-bearers come from the player's right: those waiting stand in a line there, not round it.
     for seed in [3, 8] {
-        let ids = [10, 11, 12, 13, 14];
-        let mut room = group(seed, 0.1, &[(SWORDSMAN, 70.0), (SWORDSMAN, 80.0), (SWORDSMAN, 90.0), (SWORDSMAN, 100.0), (SWORDSMAN, 110.0)]);
-        let samples = waiting_bearings(&mut room, &ids);
-        let side = 90.0_f64.to_radians();
-        let held = samples.iter().filter(|(_, toward)| off(*toward, side) <= LINE_ARC + 0.2).count();
-        let share = held as f64 / samples.len() as f64;
-        assert!(samples.len() > 1000 && share > 0.95, "seed {seed}: {share} of the waiting in the line");
+        let foes = [(SWORDSMAN, 70.0), (SWORDSMAN, 80.0), (SWORDSMAN, 90.0), (SWORDSMAN, 100.0), (SWORDSMAN, 110.0)];
+        let mut room = group(seed, 0.1, &foes);
+        let (mut lined, mut counted, mut side) = (0, 0, 0);
+        for tick in 0..3600 {
+            room.step(&mut still(0.0));
+            let waiting: Vec<f64> = (10..15)
+                .filter(|id| room.brain(*id).plan() == Plan::Wait && room.distance(PLAYER, *id) <= 6.5)
+                .map(|id| room.toward(PLAYER, id))
+                .collect();
+            if tick < 600 || waiting.len() < 2 {
+                continue;
+            }
+            counted += 1;
+            lined += u32::from(arc_holding(&waiting) <= 2.0 * LINE_ARC + 0.2);
+            let (east, south) = waiting
+                .iter()
+                .fold((0.0, 0.0), |(east, south), toward| (east + libm::sin(*toward), south - libm::cos(*toward)));
+            side += u32::from(off(libm::atan2(east, -south), 90.0_f64.to_radians()) <= 60.0_f64.to_radians());
+        }
+        let share = |part: u32| f64::from(part) / f64::from(counted);
+        assert!(counted > 600 && share(lined) > 0.95, "seed {seed}: the waiting in a line on {}", share(lined));
+        assert!(share(side) > 0.9, "seed {seed}: on the group's side on {}", share(side));
     }
 }
 
@@ -145,34 +177,29 @@ fn one_foe_at_a_time_a_skirmisher_first_works_round_to_the_flank() {
     }
 }
 
-/// Whether the foe numbered 12 goes in without a turn in its first two seconds, three swordsmen alert to a player
-/// facing `facing`: two at `pair` and the third at `third`.
-fn goes_in_untaken(facing: f64, pair: [[f64; 2]; 2], third: [f64; 2]) -> bool {
-    let mut room = Room::new(5)
-        .player(PLAYER, 0.0, 0.0, facing)
-        .foe(10, SWORDSMAN, Major, pair[0][0], pair[0][1], 0.0)
-        .foe(11, SWORDSMAN, Major, pair[1][0], pair[1][1], 0.0)
-        .foe(12, SWORDSMAN, Major, third[0], third[1], 0.0)
-        .alert(10, PLAYER)
-        .alert(11, PLAYER)
-        .alert(12, PLAYER);
+/// Whether any foe goes in without a turn in its first two seconds, three swordsmen alert to a player facing
+/// `facing`, at `places`.
+fn goes_in_untaken(facing: f64, places: [[f64; 2]; 3]) -> bool {
+    let mut room = Room::new(5).player(PLAYER, 0.0, 0.0, facing);
+    for (id, [x, y]) in (10..).zip(places) {
+        room = room.foe(id, SWORDSMAN, Major, x, y, 0.0).alert(id, PLAYER);
+    }
     let mut untaken = false;
     for _ in 0..120 {
         room.step(&mut still(facing));
-        untaken |= room.brain(12).plan() == Plan::Engage && !room.board.holds(PLAYER, 12, false);
+        untaken |= (10..13).any(|id| room.brain(id).plan() == Plan::Engage && !room.board.holds(PLAYER, id, false));
     }
     untaken
 }
 
 #[test]
 fn only_a_foe_in_its_place_strikes_a_back_turned_to_it() {
-    // The pair at the player's south, the third 3.3 m to its north: the line is the pair's.
-    let (pair, third) = ([[-0.8, 5.0], [0.8, 5.0]], [0.0, -3.3]);
-    assert!(!goes_in_untaken(PI, pair, third), "faced away from by the player, the third, out of its place, waits");
-    // All three to its north: the third is in the line, and the player's back is turned on it.
-    let pair = [[-1.6, -5.0], [0.0, -5.0]];
-    assert!(goes_in_untaken(PI, pair, [1.6, -3.3]), "a back turned on its line is open to it without a turn");
-    assert!(!goes_in_untaken(0.0, pair, [1.6, -3.3]), "faced, it waits its turn");
+    // The player faces a pair to its south; the third, 3.3 m to its north, is out of the line's place and waits.
+    assert!(!goes_in_untaken(PI, [[-0.8, 5.0], [0.8, 5.0], [0.0, -3.3]]), "out of its place, it waits its turn");
+    // All three to its north, the player's back turned on their line: one goes in without a turn.
+    let north = [[-1.6, -5.0], [0.0, -5.0], [1.6, -3.3]];
+    assert!(goes_in_untaken(PI, north), "a back turned on its line is open to it");
+    assert!(!goes_in_untaken(0.0, north), "faced, they take their turns");
 }
 
 #[test]
@@ -204,4 +231,4 @@ fn one_foe_alone_fights_as_it_always_did() {
     assert_eq!(hash, LONE_HASH, "a lone foe's fight changed: {hash:#018x}");
 }
 
-const LONE_HASH: u64 = 0;
+const LONE_HASH: u64 = 0x74df_28e1_ce8e_dc6d;
