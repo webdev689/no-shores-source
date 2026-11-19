@@ -21,7 +21,8 @@ import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
-import { DungeonDrawers, dungeonTrips } from './dungeonDrawers.ts';
+import { DungeonDrawers } from './dungeonDrawers.ts';
+import { dungeonTrips } from './dungeonTrips.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
@@ -199,17 +200,20 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot = null;
     sea?.leaveRoom();
     foot = await entering();
+    // A dungeon's pictures and targets are let go wherever the player goes that is no dungeon.
+    if (!foot.dungeon) dungeons.forget();
   };
   const goFoot = (node: NodeInfo, facing: number, seas = heldMap?.difficulty) =>
     goInto(() => Foot.enter(footContext, node, facing, seas));
 
   const trips = dungeonTrips({
     foot: () => foot,
-    seas: () => heldMap?.difficulty,
     travel: (happening, work) => travel(happening, work),
-    goInto,
-    context: footContext,
     module: roomModule,
+    intoDungeon: (patrol, number, layout, seas) =>
+      goInto(() => Foot.enterDungeon(footContext, patrol, number, layout, seas)),
+    ontoPatrol: (patrol, facing, seas, arriving) =>
+      goInto(() => Foot.enter(footContext, patrol, facing, seas, arriving)),
     drawers: dungeons,
   });
 
@@ -217,6 +221,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     leaveHere();
     foot?.leave();
     foot = null;
+    dungeons.forget();
     if (!sea) {
       const plan = landmass.plan;
       const social = landmass.nodes[0]?.centre ?? [0, 0];
@@ -260,7 +265,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  /** Joins a company member where they play: a node of this landmass at their seas, the ship left where she lies. */
+  /** Joins a company member where they play: a node of this landmass, or one of its patrol's dungeons, at their
+   *  seas, the ship left where she lies. */
   const joinAt = (place: string): string | null => {
     // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
     // deck, landing, or while another landmass opens.
@@ -274,8 +280,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const node = where && landmass.nodes.find((each) => each.id === where.id);
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
-    const facing = arrivalFacing(node, landmass.plan, null);
     discovered.nodes([node.id]);
+    if (where.dungeon !== null) {
+      trips.join(node, where.dungeon, where.seas);
+      return null;
+    }
+    const facing = arrivalFacing(node, landmass.plan, null);
     travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
     return null;
   };

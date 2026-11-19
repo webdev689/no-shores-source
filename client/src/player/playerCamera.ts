@@ -85,8 +85,9 @@ export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number
 }
 
 /** The camera as an orbit the scene draws from: at the head in first person; behind it and up in third, pulled in
- *  short of any block between; and `aim` (0 to 1) of the way into aiming's view, at `place` over the shoulder and
- *  zoomed. `pitch` is how far it looks down, negative looking up. */
+ *  short of any block between, and of the ceiling `roof` gives over a point (null where there is none); and `aim`
+ *  (0 to 1) of the way into aiming's view, at `place` over the shoulder and zoomed. `pitch` is how far it looks down,
+ *  negative looking up. */
 export function cameraOrbit(
   head: Point,
   yaw: number,
@@ -95,6 +96,7 @@ export function cameraOrbit(
   blocks: readonly Block[],
   aim = 0,
   place: AimPlace = AIM,
+  roof: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
   const forward: Point = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
   const up: Point = [Math.sin(pitch) * Math.sin(yaw), -Math.sin(pitch) * Math.cos(yaw), Math.cos(pitch)];
@@ -112,8 +114,14 @@ export function cameraOrbit(
     const length = Math.hypot(want[0] - head[0], want[1] - head[1], want[2] - head[2]);
     const hit = rayHit(head, want, blocks);
     // Short of a wall by the clearance; with none in the way, all the way out.
-    const share = hit >= 1 ? 1 : Math.max(0, hit - CAMERA.clearance / Math.max(length, 1e-6));
-    eye = [0, 1, 2].map((axis) => head[axis] + (want[axis] - head[axis]) * share) as unknown as Point;
+    const walled = hit >= 1 ? 1 : Math.max(0, hit - CAMERA.clearance / Math.max(length, 1e-6));
+    const along = (share: number) =>
+      [0, 1, 2].map((axis) => head[axis] + (want[axis] - head[axis]) * share) as unknown as Point;
+    const reach = along(walled);
+    // Under a ceiling by the clearance too, along the same line, so the player stays in the middle of the view.
+    const ceiling = Math.min(roof?.(head[0], head[1]) ?? Infinity, roof?.(reach[0], reach[1]) ?? Infinity);
+    const [over, rise] = [ceiling - CAMERA.clearance, want[2] - head[2]];
+    eye = reach[2] > over && rise > 0 ? along(Math.max(0, (over - head[2]) / rise)) : reach;
   }
   const zoom = aimZoom(view.shown, aim, place);
   return {

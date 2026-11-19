@@ -22,7 +22,7 @@ import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
-import type { InputFrame } from '../player/input.ts';
+import { IDLE, type InputFrame } from '../player/input.ts';
 import { playerCamera, shownBody } from '../player/player.ts';
 import { OtherPlayers, type Others } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -40,7 +40,7 @@ import { PlazaLife } from './plazaLife.ts';
 import { dungeonRoom, nodeRoom } from './rooms.ts';
 import { dungeonPlace, Entrances, type InDungeon, standInDungeon, tripAt } from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
-import { type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
+import { ceilingAt, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
 import {
@@ -69,16 +69,6 @@ const STRIDE_APART_S = 0.37;
 /** Other players' figures are numbered from here, clear of the player's own, and never twice in the page's life: the
  *  forge keeps each figure's last card by its number, so a number used again would first show another node's figure. */
 let nextOtherId = 100;
-/** A frame with nothing pressed: what the body is stepped by while a menu is open, so the world goes on. */
-export const IDLE: InputFrame = {
-  held: () => false,
-  pressed: () => false,
-  released: () => false,
-  lookX: 0,
-  lookY: 0,
-  wheel: 0,
-  locked: true,
-};
 
 /** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
  *  tells of that). */
@@ -113,8 +103,12 @@ export class Foot {
   readonly dungeon: InDungeon | null;
   /** The patrol's node file's text, which a room alone opens its dungeons from. */
   readonly text: string;
+  /** The seas of the room the player joined, which a trip into or out of its dungeons keeps. */
+  readonly seas: Difficulty;
   /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
   readonly groundAt: (x: number, y: number) => number | null;
+  /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
+  private readonly roof: ((x: number, y: number) => number | null) | null;
   private readonly module: WebAssembly.Module;
   private readonly context: FootContext;
   private readonly link: RoomLink;
@@ -150,11 +144,13 @@ export class Foot {
   ) {
     this.context = context;
     this.node = node;
-    [this.boxes, this.text, this.dungeon, this.module] = [opened.boxes, opened.text, opened.dungeon, people.module];
+    [this.boxes, this.text, this.dungeon, this.seas] = [opened.boxes, opened.text, opened.dungeon, opened.seas];
+    this.module = people.module;
     const layout = opened.dungeon?.layout;
     this.groundAt = layout
       ? (x, y) => (openAt(layout, Math.floor(x / layout.cell), Math.floor(y / layout.cell)) ? 0 : null)
       : context.groundAt;
+    this.roof = layout ? (x, y) => ceilingAt(layout, x, y) : null;
     this.link = parts.link;
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);
@@ -212,7 +208,7 @@ export class Foot {
       const text = nodeText(node, rect, ground, boxes);
       const local = { gear: heard.gear, entrance: arriving?.number };
       const link = connection ?? LocalRoom.openNode(module, text, heard.snapshot, heard.asks, local);
-      return { link, boxes, text, dungeon: null };
+      return { link, boxes, text, dungeon: null, seas };
     });
   }
 
@@ -237,6 +233,7 @@ export class Foot {
       boxes: seenBlocks(layout),
       text: patrol.text,
       dungeon,
+      seas,
     }));
   }
 
@@ -265,7 +262,7 @@ export class Foot {
     let fight: Fighting | null = null;
     const held: Held = { gear: null, entrances: new Entrances(), cache: null };
     const online = context.rooms !== null;
-    const asked = online || node.kind === 'dungeon' ? [] : context.foesAsked;
+    const asked = online ? [] : context.foesAsked;
     const heard: Heard = {
       snapshot: (snapshot: Snapshot) => {
         players.takeDresses(snapshot.dressed);
@@ -283,7 +280,7 @@ export class Foot {
     };
     const opened = await open(heard, await context.session);
     fight = new Fighting(rules.combat, opened.link);
-    for (const foe of asked) fight.ask(foe);
+    if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
     // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
     players.takeDresses(opened.link.dressed);
@@ -364,7 +361,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, this.boxes);
+    const aimed = () => playerCamera(walker.player, movement, this.boxes, undefined, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,

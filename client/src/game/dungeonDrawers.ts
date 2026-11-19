@@ -1,69 +1,21 @@
 // What the game draws of the patrols' dungeons: a patrol's entrances among its land's drawers, and a dungeon as its own
 // scene, its figures lit by its torches.
 import { cityClimate } from '../city/plan.ts';
-import { beforeDoor, ENTRANCE_MODELS, type Entrance } from './entrances.ts';
+import { ENTRANCE_MODELS, type Entrance } from './entrances.ts';
 import { EntranceView } from './entranceView.ts';
-import { askDungeon, type DungeonLayout } from './dungeonLayout.ts';
-import type { Difficulty } from '../heldmap/heldMap.ts';
+import type { DungeonLayout } from './dungeonLayout.ts';
 import { DungeonScene } from './dungeonScene.ts';
 import { DungeonView } from './dungeonView.ts';
 import type { Gpu } from '../gpu.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { FigureView } from './figureView.ts';
-import { Foot, type FootContext, type FootFrame } from './foot.ts';
-import type { Happening } from './flow.ts';
+import type { Foot, FootFrame } from './foot.ts';
 import type { CityAssets } from './landDrawers.ts';
 import type { Drawer } from './scene.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The door picture of Daggerfall's dungeon doors, where the props' table has not come. */
 const PLAIN_DOOR = [56, 2] as const;
-
-/** What going in and out asks of the game: the player's place on foot and the voyage's seas, its way behind the veil,
- *  its way of leaving one place for another, the foot's context and the room's module, and the dungeons' drawers. */
-interface Game {
-  readonly foot: () => Foot | null;
-  readonly seas: () => Difficulty | undefined;
-  readonly travel: (happening: Happening, work: () => Promise<void>) => void;
-  readonly goInto: (entering: () => Promise<Foot>) => Promise<void>;
-  readonly context: FootContext;
-  readonly module: Promise<WebAssembly.Module>;
-  readonly drawers: DungeonDrawers;
-}
-
-/** The ways into a patrol's dungeon and out again: in, behind the veil, at its way in; out, before the door of the
- *  entrance the player went in by, facing away from it. */
-export function dungeonTrips(game: Game): { enter(number: number, name: string): void; leave(): void } {
-  /** The entrance the player last went in by. */
-  let wentIn: Entrance | undefined;
-  return {
-    enter: (number, name) => {
-      const from = game.foot();
-      if (!from || from.dungeon) return;
-      const [patrol, text, seas] = [from.node, from.text, game.seas()];
-      const entrance = from.held.entrances.entrances[number];
-      game.travel({ kind: 'enter', node: `${patrol.id}--dungeon-${number}`, name }, async () => {
-        const layout = askDungeon(await game.module, patrol.id, patrol.name, number);
-        await game.goInto(() => Foot.enterDungeon(game.context, { node: patrol, text }, number, layout, seas));
-        game.drawers.show(layout, patrol, entrance);
-        wentIn = entrance;
-      });
-    },
-    leave: () => {
-      const inside = game.foot()?.dungeon;
-      if (!inside) return;
-      const { patrol, number, layout } = inside;
-      const props = game.drawers.props;
-      const before = wentIn && props ? beforeDoor(wentIn, props) : null;
-      const arriving = before ? { number, ...before } : undefined;
-      const seas = game.seas();
-      game.travel({ kind: 'leave', node: patrol.id, name: layout.name }, async () => {
-        await game.goInto(() => Foot.enter(game.context, patrol, before?.facing ?? 0, seas, arriving));
-        game.drawers.forget();
-      });
-    },
-  };
-}
 
 export class DungeonDrawers {
   private readonly scene: DungeonScene;
@@ -112,9 +64,10 @@ export class DungeonDrawers {
     this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, this.props ?? {});
   }
 
-  /** Lets go of the dungeon last drawn, once the player has left it. */
+  /** Lets go of the dungeon last drawn and the scene's targets, once the player is somewhere that is no dungeon. */
   forget(): void {
     this.view.clear();
+    this.scene.release();
   }
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and

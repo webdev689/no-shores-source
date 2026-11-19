@@ -194,6 +194,7 @@ dungeon").
   about half a metre.
 - A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end
   nearer is refused whole before each axis is tried alone.
-- Returning to the ship from inside a dungeon keeps its pictures on the GPU, a few dozen small layers, until the next
-  dungeon is drawn or the page closes; leaving by its door or portal lets them go.
-- The third-person camera keeps short of the rock, so in a narrow room or a corridor it sits close behind the player.
+- The third-person camera keeps short of the rock and under the ceiling, so in a narrow room, a corridor or a low room
+  it sits close behind the player.
+- A player who joins a company member in a dungeon came by no entrance, so leaving by its door or portal stands them
+  at the patrol's first spawn.

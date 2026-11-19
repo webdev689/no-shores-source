@@ -164,10 +164,13 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   asked with the patrol's id, its name and the entrance's number. Taken, the veil says "Entering" the dungeon; the page
   leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--rough--` or
   `--storm--` before `dungeon` at harder seas), alone a room opened in the page from the patrol's node file with
-  `room_open_dungeon`. The player stands at its way in, facing into its room.
+  `room_open_dungeon`. The player stands at its way in, facing into its room. A trip in or out keeps the seas of the
+  room the player stands in, so a company stays together at its seas. "Go to them" for a member in a dungeon goes
+  into that dungeon, at their seas, the veil saying "Joining your company at" its name.
 - **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
-  0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the rock beside each open cell, and the shots stop on it. The place's name on the heads-up
+  0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the
+  rock beside each open cell and under the ceiling over it, and the shots stop on the rock. The place's name on the heads-up
   display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
 - **Going out.** Within 2.5 m of the exit door E offers "Leave", and within 2.5 m of the return portal on the end
   room's far wall while it stands open (while the cache does, once the Reeve has fallen). Taken, the veil says "Leaving" the dungeon, and the
@@ -176,7 +179,8 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   entrance's door, facing away from it.
 
 **Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
-near-black. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
+near-black, then the blows' arcs, the see-through marks and their light over the picture, as the game's scene draws
+them. Wherever the player goes that is no dungeon, its pictures and the scene's targets are let go. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
 wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
 wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
 lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit

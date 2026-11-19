@@ -3,6 +3,7 @@
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearState } from '../network/gearMessages.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
@@ -94,12 +95,14 @@ export interface Heard {
   readonly asks: boolean;
 }
 
-/** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, and the dungeon. */
+/** A room joined: its link, what is seen to stand in the place, the patrol's node file's text, the dungeon, and the
+ *  seas the room stands at. */
 export interface Opened {
   readonly link: RoomLink;
   readonly boxes: readonly Block[];
   readonly text: string;
   readonly dungeon: InDungeon | null;
+  readonly seas: Difficulty;
 }
 
 /** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache. */

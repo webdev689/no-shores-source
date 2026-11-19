@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { askDungeon, courseOf, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
+import { askDungeon, ceilingAt, courseOf, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
 
 /** A room's cell and a corridor's in a row of three, rock past them. */
 const small = {
@@ -49,4 +49,12 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   assert.ok(laid.boxes.length >= furnished, 'two jambs a frame, then the pillars, then the props’ solids');
   assert.equal(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid, 'laid once, kept');
   assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
+});
+
+test("the ceiling over a point is its open cell's, and none over rock or off the grid", () => {
+  const layout = { ...small, ceilings: [3.6, 3.2, 0] } as unknown as DungeonLayout;
+  assert.deepEqual(
+    [ceilingAt(layout, 1, 1), ceilingAt(layout, 4, 1), ceilingAt(layout, 7, 1), ceilingAt(layout, -1, 1)],
+    [3.6, 3.2, null, null],
+  );
 });

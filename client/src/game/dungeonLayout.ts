@@ -80,6 +80,12 @@ export function openAt(layout: DungeonLayout, column: number, row: number): bool
   return inside && (layout.cells[row * layout.columns + column] ?? ROCK) !== ROCK;
 }
 
+/** The ceiling over a point (m): its cell's, null over rock or off the grid. */
+export function ceilingAt(layout: DungeonLayout, x: number, y: number): number | null {
+  const [column, row] = [Math.floor(x / layout.cell), Math.floor(y / layout.cell)];
+  return openAt(layout, column, row) ? (layout.ceilings[row * layout.columns + column] ?? null) : null;
+}
+
 /** The doorways' jambs and the pillars, as blocks. */
 export function courseOf(layout: DungeonLayout): Block[] {
   return layout.boxes.map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
