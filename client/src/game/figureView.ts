@@ -1,3 +1,4 @@
+import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { PX_PER_M } from '../player/figures.ts';
@@ -203,6 +204,11 @@ export class FigureView implements CardMaker {
     });
     this.gpu.device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width * 4 }, [width, height]);
     return { texture, width, height, root };
+  }
+
+  /** An outline's field as a texture its glow is drawn with. */
+  glow(field: GlowField): GPUTexture {
+    return this.card(field.data, field.width, field.height, [0, 0]).texture;
   }
 
   private slot(index: number, texture: GPUTexture): { buffer: GPUBuffer; group: GPUBindGroup } {

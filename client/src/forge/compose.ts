@@ -9,14 +9,15 @@ export interface Strip {
   readonly data: Uint8ClampedArray | Uint8Array;
 }
 
-/** A composed frame: RGBA top row first, its size, the root (the feet) on it, and each pixel's depth in metres
- *  (nearer is smaller; NaN where nothing is drawn). */
+/** A composed frame: RGBA top row first, its size, the root (the feet) on it, each pixel's depth in metres (nearer is
+ *  smaller; NaN where nothing is drawn), and a byte a pixel that is 1 where the weapon is drawn. */
 export interface Frame {
   readonly width: number;
   readonly height: number;
   readonly root: readonly [number, number];
   readonly pixels: Uint8Array;
   readonly depth: Float32Array;
+  readonly weapon: Uint8Array;
 }
 
 /** The colour tables a frame is composed with: each race's skin and each hair colour, and the palette a finished
@@ -177,5 +178,6 @@ export async function composeFrame(
   colours.snap?.snap(pixels);
   const base = looks.depth?.base ?? -3;
   const metres = Float32Array.from(best, (lies) => (lies === FAR ? Number.NaN : lies / scale + base));
-  return { width, height, root: box.root, pixels, depth: metres };
+  const weapon = Uint8Array.from(bestPart, (part) => (part === PART.weapon ? 1 : 0));
+  return { width, height, root: box.root, pixels, depth: metres, weapon };
 }
