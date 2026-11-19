@@ -31,7 +31,7 @@ pub fn reaches(striker: &Fighter, attack: &Attack, feet: [f64; 3], blocks: &[Blo
 }
 
 /// The fighters a swing's blow lands on, from `fighters` (`(id, fighter)`): those it reaches on another side, alive,
-/// the striker's soft-lock target first and then the nearest, up to its stroke's count.
+/// the striker's soft-lock target first and then the nearest.
 #[must_use]
 pub fn struck(
     striker_id: FighterId,
@@ -52,5 +52,5 @@ pub fn struck(
     reached.sort_by(|first, second| {
         first.0.cmp(&second.0).then(first.1.total_cmp(&second.1)).then(first.2.cmp(&second.2))
     });
-    reached.into_iter().take(stroke_shape(attack.stroke).targets).map(|(_, _, id)| id).collect()
+    reached.into_iter().map(|(_, _, id)| id).collect()
 }

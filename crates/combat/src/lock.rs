@@ -1,6 +1,6 @@
 //! The soft lock, as Soulframe has it: no button. A fighter's lock takes the foe it swings at, raises its guard to or
 //! shoots at from the hip, and the one that strikes it; it steers that fighter's swings, guard and quick shots while
-//! it holds. It lets go when the foe dies, walks out of range, is lost from sight, the fighter turns its look away, or
+//! it holds. It lets go when the foe dies, walks out of range, is lost from sight, the fighter looks past its arc, or
 //! the fighter aims a ranged weapon. The camera stays its player's.
 
 use crate::fighter::{Fighter, FighterId};

@@ -34,12 +34,12 @@ fn tick_of(happenings: &[(usize, Happening)], wanted: fn(&Happening) -> bool) ->
 
 #[test]
 fn a_dodge_pressed_on_a_blows_own_tick_is_kept_and_taken_the_tick_after() {
-    // A sword's blow lands 24 ticks after the swing begins; the dodge is pressed on that very tick and held.
-    let mut intents = vec![swinging(0.0, Stroke::Down); 24];
+    // A sword's blow lands 18 ticks after the swing begins; the dodge is pressed on that very tick and held.
+    let mut intents = vec![swinging(0.0, Stroke::Down); 18];
     intents.extend(vec![dodging(0.0, 0.0, 1.0); 3]);
     let (_, happenings) = script(player_at(0.0, 0.0), &intents);
-    assert_eq!(tick_of(&happenings, |each| matches!(each, Happening::Struck(_))), Some(24), "the blow lands");
-    assert_eq!(tick_of(&happenings, |each| *each == Happening::Dodged), Some(25), "then the dodge");
+    assert_eq!(tick_of(&happenings, |each| matches!(each, Happening::Struck(_))), Some(18), "the blow lands");
+    assert_eq!(tick_of(&happenings, |each| *each == Happening::Dodged), Some(19), "then the dodge");
 }
 
 #[test]
@@ -83,15 +83,15 @@ fn the_guard_cuts_a_swings_follow_through_short_but_never_its_wind_up() {
     // Pressed in the wind-up and held: the guard rises the tick after the blow lands, its window spent waiting.
     let early = [vec![swinging(0.0, Stroke::Down); 10], vec![guarding(0.0); 20]].concat();
     let (_, happenings) = script(player_at(0.0, 0.0), &early);
-    assert_eq!(tick_of(&happenings, |each| matches!(each, Happening::Struck(_))), Some(24));
+    assert_eq!(tick_of(&happenings, |each| matches!(each, Happening::Struck(_))), Some(18));
     assert_eq!(
         happenings.iter().find(|(_, each)| matches!(each, Happening::Guarded { .. })).map(|pair| pair.1),
         Some(Happening::Guarded { window: false })
     );
     // Pressed just before the blow lands: kept, it opens a parry window as the follow-through is cut.
-    let late = [vec![swinging(0.0, Stroke::Down); 20], vec![guarding(0.0); 10]].concat();
+    let late = [vec![swinging(0.0, Stroke::Down); 14], vec![guarding(0.0); 10]].concat();
     let (_, happenings) = script(player_at(0.0, 0.0), &late);
-    assert!(happenings.contains(&(25, Happening::Guarded { window: true })), "{happenings:?}");
+    assert!(happenings.contains(&(19, Happening::Guarded { window: true })), "{happenings:?}");
 }
 
 #[test]

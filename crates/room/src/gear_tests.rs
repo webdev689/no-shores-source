@@ -131,6 +131,8 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let sword = paid.worn(Slot::MainHand).expect("the sword");
     assert_eq!(sword.xp, 90, "the weapon that struck earns it");
 
+    // The brute's own drop is a roll of the room's dice, so the captain's is counted from what the player holds.
+    let held = room.player(player).expect("in").character.vestiges_held(false);
     let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
     room.mark_struck(player, captain, Slot::MainHand);
     room.pay_kill(captain);
@@ -138,10 +140,10 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     assert_eq!(lying.len(), 1, "a captain always leaves a Vestige");
     assert_eq!(room.drops_for(onlooker).count(), 0);
     room.tick();
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0, "it lies 8 m away");
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held, "it lies 8 m away");
     move_to(&mut room, player, 0.0, -7.0);
     room.tick();
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 1, "walked over, it is taken");
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held + 1, "walked over, it is taken");
     assert_eq!(room.drops_for(player).count(), 0);
 }
 
