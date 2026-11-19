@@ -1,7 +1,7 @@
 //! What a layout plants, from the kinds its climate's nature already grows (content/nature/flora.json), so worked
-//! land reads as worked: an orchard's trees in rows in a farm named or themed an orchard, a hedgerow behind the
-//! drystone walls along each farm's tracks, and thickets in a moor's wilds. The client grows each where it is planted,
-//! as nature's own kind (client/src/nature/scatter.ts).
+//! land reads as worked: an orchard's trees in rows in a farm named an orchard, a hedgerow behind the drystone walls
+//! along each farm's tracks, and thickets in a wilds named a moor. The client grows each where it is planted, as
+//! nature's own kind (client/src/nature/scatter.ts).
 
 use crate::areas::Area;
 use crate::basins::Basin;
@@ -24,10 +24,9 @@ pub struct Planting {
     pub points: Vec<[f64; 2]>,
 }
 
-/// What a zone plants with and where: its brief's theme, its climate (its landmass's biome), its seed, and whether
-/// its land takes a planting at a point that reaches so far round it.
+/// What a zone plants with and where: its climate (its landmass's biome), its seed, and whether its land takes a
+/// planting at a point that reaches so far round it.
 pub struct Zone<'a> {
-    pub theme: &'a str,
     pub biome: Option<&'a str>,
     pub seed: u32,
     pub takes: &'a dyn Fn([f64; 2], f64) -> bool,
@@ -82,8 +81,8 @@ const LEVEL_M: f64 = 1.5;
 const STEEPEST: f64 = 0.4;
 
 /// A layout's plantings, each kept where its land takes it and clear of every way, yard, run, building, prop and
-/// solid: an orchard in each farm named or themed one, thickets in each wilds named or themed a moor, and the
-/// hedgerows behind the walls along the farms' tracks.
+/// solid: an orchard in each farm named one, thickets in each wilds named a moor, and the hedgerows behind the walls
+/// along the farms' tracks.
 #[must_use]
 pub fn plantings(
     areas: &[Area],
@@ -96,8 +95,10 @@ pub fn plantings(
     let Some(&(_, tree, shrub)) = CLIMATES.iter().find(|(climate, ..)| Some(*climate) == zone.biome) else {
         return Vec::new();
     };
-    let theme = zone.theme.to_lowercase();
-    let named = |area: &Area, word: &str| area.name.to_lowercase().contains(word) || theme.contains(word);
+    // A whole word of the area's own name, so Moorhold is no moor.
+    let named = |area: &Area, word: &str| {
+        area.name.split(|letter: char| !letter.is_alphanumeric()).any(|each| each.eq_ignore_ascii_case(word))
+    };
     let mut wanted: Vec<(&str, f64, Vec<[f64; 2]>)> = Vec::new();
     for (number, (area, basin)) in areas.iter().zip(basins).enumerate() {
         let (kind, reach, points) = match area.kind {
@@ -298,7 +299,7 @@ mod tests {
             crossings: Vec::new(),
             heights: Vec::new(),
         };
-        let zone = Zone { theme: "", biome: Some("temperate-coast"), seed: 7, takes: &|_, _| true };
+        let zone = Zone { biome: Some("temperate-coast"), seed: 7, takes: &|_, _| true };
         let planted = plantings(&[farm], &[basin], std::slice::from_ref(&track), &Seating::default(), &[], &zone);
         let trees = planted.iter().find(|planting| planting.kind == "oak").map_or(&[][..], |orchard| &orchard.points);
         // Each tree's place along the field and across it, from the farm's middle.
@@ -332,6 +333,20 @@ mod tests {
         for at in trees {
             let off = off_line(*at, track.points[0], track.points[1]);
             assert!(off > Tier::Track.width() / 2.0, "a tree at {at:?} stands on the track, {off:.1} m off its middle");
+        }
+    }
+
+    #[test]
+    fn only_an_area_named_a_moor_is_planted_with_thickets() {
+        let wilds =
+            |name: &str| Area { kind: AreaKind::Wilds, name: name.into(), at: AT, radius: 65.0, leads_to: None };
+        let floor = Basin { floors: vec![[AT[0], AT[1], AT[0], AT[1], 120.0]], terraces: Vec::new() };
+        let zone = Zone { biome: Some("temperate-coast"), seed: 7, takes: &|_, _| true };
+        let planted =
+            |name: &str| plantings(&[wilds(name)], std::slice::from_ref(&floor), &[], &Seating::default(), &[], &zone);
+        assert_eq!(planted("The Gorse Moor").len(), 1, "a moor is planted with thickets");
+        for name in ["Moorhold", "The Moored Boats", "The Water Meadows"] {
+            assert!(planted(name).is_empty(), "{name} is no moor");
         }
     }
 }

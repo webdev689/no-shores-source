@@ -307,7 +307,7 @@ pub fn plan(
     clearing::keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));
     // Last, so what is planted keeps off all that stands.
     let takes = |at: [f64; 2], reach: f64| plantings::takes(ground, &sculpt, &carved, &ring, at, reach);
-    let zone = plantings::Zone { theme: &brief.theme, biome, seed, takes: &takes };
+    let zone = plantings::Zone { biome, seed, takes: &takes };
     let plantings = plantings::plantings(&areas, &basins, &paths, &seating, &runs, &zone);
     let spawns = spawns_round(&field, anchor);
     Layout {
