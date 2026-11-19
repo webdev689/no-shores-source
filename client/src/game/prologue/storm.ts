@@ -104,7 +104,7 @@ export class StormDive implements Beat {
     stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
     const swell = stage.swell();
     const ships = this.leapt
-      ? sailing.frame([brig.sailed()], tick.seconds, tick.clock, story.places.heading + 2.6, swell)
+      ? sailing.frame([brig.sailed()], tick.seconds, tick.clock, stage.windBearing(), swell)
       : [];
     const own = ships[0]?.place ?? this.place();
     const shot = this.leapt ? this.runShot(own) : this.pullShot();

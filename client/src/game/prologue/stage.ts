@@ -104,6 +104,12 @@ export class Stage {
     if (seconds <= 0) this.weatherNow = to;
   }
 
+  /** Where the weather's wind blows toward, radians clockwise from north: the sails fill and the rain slants by it. */
+  windBearing(): number {
+    const [east, south] = this.weatherNow.wind;
+    return Math.atan2(east, -south);
+  }
+
   /** The sea's swell as the scene draws it now: the land's own, gained by the weather. */
   swell(): Swell | undefined {
     const swell = this.parts.scene.land?.swell;
@@ -184,4 +190,4 @@ export class Stage {
 /** The gap after a bark before the scene's next line, seconds. */
 const BARK_GAP_S = 1.1;
 
-const wait = (seconds: number) => new Promise<void>((resolve) => window.setTimeout(resolve, seconds * 1000));
+const wait = (seconds: number) => new Promise<void>((resolve) => setTimeout(resolve, seconds * 1000));

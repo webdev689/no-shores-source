@@ -58,7 +58,7 @@ export class Making implements Beat {
     brig.step(tick.seconds);
     const strike = lightning.step(tick.seconds, [brig.x, brig.y]);
     stage.stepWeather(tick.seconds, strike.flash * 0.6, strike.bolt);
-    const ships = sailing.frame([brig.sailed()], tick.seconds, tick.clock, story.places.heading + 2.6, stage.swell());
+    const ships = sailing.frame([brig.sailed()], tick.seconds, tick.clock, stage.windBearing(), stage.swell());
     const own = ships[0]?.place;
     if (!own) throw new Error('the Brig is not sailing');
     this.turn += (this.turnTo - this.turn) * Math.min(1, tick.seconds * TURN_EASE);

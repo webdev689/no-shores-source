@@ -63,6 +63,8 @@ export class Intro implements Beat {
   private lastShot: Shot | null = null;
   private begun = false;
   private skipping = false;
+  /** Counts the passages begun: an island that opens after a later passage (or a skip) began is not shown. */
+  private passage = 0;
   done = false;
 
   constructor(stage: Stage, islands: Islands, sailing: Sailing) {
@@ -76,7 +78,9 @@ export class Intro implements Beat {
   private async openFirst(): Promise<void> {
     const first = PASSING[0];
     if (!first) return;
+    const passage = this.passage;
     await this.islands.open(first.id);
+    if (passage !== this.passage) return;
     await this.islands.show();
     this.stage.weatherTowards(OVER_CLOUD, 0);
     this.stage.parts.ambience.set({ wind: 0.35, waves: 0, rain: 0, gulls: 0, fire: 0, deep: 0, creak: 0 }, 0.5);
@@ -98,15 +102,17 @@ export class Intro implements Beat {
     ambience.whoosh();
     this.stage.parts.birds.clear();
     this.enter({ kind: 'cloud', next });
+    const passage = ++this.passage;
     const passing = PASSING[next];
     const opening = opened ? Promise.resolve() : passing ? this.islands.open(passing.id) : this.islands.home();
-    void opening.then(() => this.cleared(next, !opened));
+    void opening.then(() => this.cleared(next, !opened, passage));
   }
 
-  private async cleared(next: number, swap: boolean): Promise<void> {
-    if (this.skipping) return;
+  private async cleared(next: number, swap: boolean, passage: number): Promise<void> {
+    if (this.skipping || passage !== this.passage) return;
     const passing = PASSING[next];
     if (passing && swap) await this.islands.show();
+    if (passage !== this.passage) return;
     const frame = islandFrame(this.islands.landmass);
     // The white has had its second to cover the swap before it lifts.
     window.setTimeout(() => this.stage.parts.screen.fade(0, 1.6, 'white'), Math.max(0, 1100 - this.since * 1000));
@@ -152,6 +158,7 @@ export class Intro implements Beat {
   skip(): void {
     if (this.phase.kind === 'title' || this.phase.kind === 'home' || this.skipping) return;
     this.skipping = true;
+    this.passage++;
     const { screen } = this.stage.parts;
     screen.fade(1, 0.4);
     void this.islands.home().then(() => {
@@ -164,9 +171,9 @@ export class Intro implements Beat {
     });
   }
 
-  key(_key: string, down: boolean): boolean {
+  key(key: string, down: boolean): boolean {
     // Any key once the prompt shows begins; Space held is the skip's, not a beginning.
-    if (down && this.phase.kind === 'title' && this.since > PROMPT_AFTER_S && _key !== ' ') this.begin();
+    if (down && this.phase.kind === 'title' && this.since > PROMPT_AFTER_S && key !== ' ') this.begin();
     return this.phase.kind === 'title';
   }
 
@@ -232,11 +239,12 @@ export class Intro implements Beat {
         return { ...this.lastShot, eye };
       }
       case 'home': {
+        const glide = lens(railShot(phase.rail, this.since, LENS.fov, 'out'));
         if (this.since >= HOME_S) {
           this.enter({ kind: 'title', frame: phase.frame });
           this.stage.parts.screen.showTitle(true);
         }
-        return lens(railShot(phase.rail, this.since, LENS.fov, 'out'));
+        return glide;
       }
       case 'title': {
         if (this.since > PROMPT_AFTER_S) this.stage.parts.screen.showPrompt('Press any key to begin');
@@ -253,14 +261,7 @@ export class Intro implements Beat {
     if (phase.kind !== 'island' && phase.kind !== 'home' && phase.kind !== 'title') return [];
     const seconds = phase.kind === 'title' ? HOME_S + this.since : this.since;
     const placed: Sailed[] = shipsOff(phase.frame, seconds).map((ship, index) => ({ ...ship, who: `intro-${index}` }));
-    const weather = this.stage.weather;
-    return this.sailing.frame(
-      placed,
-      tick.seconds,
-      tick.clock,
-      Math.atan2(weather.wind[0], -weather.wind[1]),
-      this.stage.swell(),
-    );
+    return this.sailing.frame(placed, tick.seconds, tick.clock, this.stage.windBearing(), this.stage.swell());
   }
 
   private actors(tick: Tick): StoryFrame['actors'] {

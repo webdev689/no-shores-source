@@ -154,3 +154,19 @@
   line-height: 16px;
   color: var(--word);
 }
+
+/* On a wide screen the words go to the names' size, as the menu's do there; the window widens to hold them. */
+@media (min-width: 1500px) and (min-height: 900px) {
+  .creation {
+    width: min(660px, 40vw);
+    font-size: 22px;
+  }
+
+  .creation-title {
+    font-size: 33px;
+  }
+
+  .creation-field input {
+    padding: 8px 11px;
+  }
+}

@@ -65,7 +65,7 @@ export class Calm implements Beat {
     this.since += tick.seconds;
     const strike = lightning.step(tick.seconds, [brig.x, brig.y]);
     stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
-    const ships = sailing.frame([brig.sailed()], tick.seconds, tick.clock, story.places.heading + 2.6, stage.swell());
+    const ships = sailing.frame([brig.sailed()], tick.seconds, tick.clock, stage.windBearing(), stage.swell());
     const own = ships[0]?.place;
     if (!own) throw new Error('the Brig is not sailing');
     // Down from where the fight left the camera to her deck, over three seconds.
@@ -178,7 +178,7 @@ export class Ram implements Beat {
       [brig.sailed({ heel: -0.32 * lurch }), this.rammer(this.since)],
       tick.seconds,
       tick.clock,
-      story.places.heading + 2.6,
+      stage.windBearing(),
       stage.swell(),
     );
     const own = ships[0]?.place;
