@@ -237,3 +237,51 @@ fn a_bridge_over_a_bodys_head_is_walked_under_and_a_wall_from_the_ground_is_not(
     let low = Block { bottom: AGENT.height - 0.1, ..bridge };
     assert!(bake(&[low]).find_path([-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]).is_none(), "a body's head meets it");
 }
+
+/// Two upper floors 3 m up either side of a way running north and south, a bridge between them over the way, and
+/// stairs of eight steps up onto the western floor from the south.
+fn decks() -> Vec<Block> {
+    let deck = |min_x: f64, max_x: f64| Block { bottom: 2.5, ..block(min_x, -3.0, max_x, 3.0, 3.0) };
+    let mut blocks = vec![deck(-8.0, -1.0), deck(1.0, 8.0), Block { bottom: 2.5, ..block(-1.0, -1.0, 1.0, 1.0, 3.0) }];
+    blocks.extend((0..8).map(|step| {
+        let north = -3.0 - 0.5 * f64::from(step);
+        block(-6.0, north - 0.5, -3.0, north, 3.0 - 0.375 * f64::from(step))
+    }));
+    blocks
+}
+
+#[test]
+fn a_path_climbs_stairs_onto_an_upper_floor_and_crosses_a_bridge_over_a_way() {
+    let navmesh = bake(&decks());
+    let goal = [5.0, 0.0, 3.0];
+    let route = path(&navmesh, [-4.5, -9.0, 0.0], goal);
+    ends_at(&route, goal);
+    assert!(route.iter().any(|point| point[2] > 0.0 && point[2] < 3.0), "up the stairs: {route:?}");
+    let across = path(&navmesh, [-5.0, 0.0, 3.0], goal);
+    ends_at(&across, goal);
+    assert!(across.iter().all(|point| (point[2] - 3.0).abs() < 1e-9), "across on the floors: {across:?}");
+}
+
+#[test]
+fn a_path_along_the_way_runs_under_the_bridge_and_under_the_floors() {
+    let navmesh = bake(&decks());
+    let under = path(&navmesh, [0.0, -9.0, 0.0], [0.0, 9.0, 0.0]);
+    assert_eq!(under.len(), 2, "straight along the way: {under:?}");
+    assert!(under.iter().all(|point| point[2].abs() < 1e-9), "on the ground: {under:?}");
+    let beneath = path(&navmesh, [5.0, -9.0, 0.0], [5.0, 0.0, 0.0]);
+    ends_at(&beneath, [5.0, 0.0, 0.0]);
+    assert!(beneath.iter().all(|point| point[2].abs() < 1e-9), "under the eastern floor: {beneath:?}");
+}
+
+#[test]
+fn a_path_that_runs_under_the_bridge_and_climbs_onto_it_ends_on_its_deck() {
+    let goal = [0.0, 0.0, 3.0];
+    let route = path(&bake(&decks()), [0.0, 9.0, 0.0], goal);
+    ends_at(&route, goal);
+}
+
+#[test]
+fn a_slab_thinner_than_a_voxel_at_a_body_s_chest_is_no_way_under() {
+    let slab = Block { bottom: 1.05, ..block(-1.0, -10.0, 1.0, 10.0, 1.2) };
+    assert!(bake(&[slab]).find_path([-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]).is_none(), "a body's chest meets it");
+}

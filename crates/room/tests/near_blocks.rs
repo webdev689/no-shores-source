@@ -3,7 +3,7 @@
 //! once over the plain list and once over the grid, and every tick must agree to the bit.
 
 use movement::{Block, Blocks, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body};
-use room::{Floor, standing_on};
+use room::{Floor, Room, standing_on};
 use std::path::Path;
 
 /// A patrol area laid out with walk-in buildings, rock, walls and great works.
@@ -100,4 +100,33 @@ fn a_ticks_cost_among_a_patrol_areas_boxes() {
         list.len(),
         built.as_secs_f64() * 1e3
     );
+}
+
+/// A node room's bake, with the Saltgrass Downs' boxes and without them, the quickest of three each, its first spawn
+/// moved to where the boxes stand thickest so its square holds the most of them: `cargo test --release -p room --test
+/// near_blocks -- --ignored --nocapture`. Navmesh.md quotes it. Its boxes may cost the bake no more than as much again.
+#[test]
+#[ignore = "a measurement, not a check"]
+#[allow(clippy::disallowed_methods, clippy::print_stdout, reason = "it times the bakes and reports them")]
+fn a_node_rooms_bake_among_its_boxes_costs_at_most_twice_its_bake_without() {
+    let node = saltgrass();
+    let floor = Floor::Land(Box::new(node.ground.clone()));
+    let list: Vec<Block> = node.boxes.iter().map(Block::from_floats).collect();
+    let near = |(x, y): (f64, f64)| {
+        list.iter().filter(|block| (block.min_x - x).abs() < 35.0 && (block.min_y - y).abs() < 35.0).count()
+    };
+    let thickest = starts(&node).into_iter().max_by_key(|&start| near(start)).expect("the node has starts");
+    let section = reach::Section { ring: node.ring.clone(), spawns: vec![[thickest.0, thickest.1]] };
+    let time = |blocks: &[Block]| {
+        (0..3)
+            .map(|_| {
+                let started = std::time::Instant::now();
+                drop(Room::node(floor.clone(), blocks.to_vec(), section.clone()));
+                started.elapsed().as_secs_f64() * 1e3
+            })
+            .fold(f64::INFINITY, f64::min)
+    };
+    let (bare, boxed) = (time(&[]), time(&list));
+    println!("a node room opens in {bare:.1} ms bare, {boxed:.1} ms among the {} boxes by its spawn", near(thickest));
+    assert!(boxed <= 2.0 * bare, "{boxed:.1} ms among its boxes against {bare:.1} ms bare");
 }

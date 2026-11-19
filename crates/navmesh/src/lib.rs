@@ -93,13 +93,12 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
-    /// Bakes the walkable surface of a course: its blocks on open ground at 0 across `bounds`. A block whose underside
-    /// is a body's height or more over the ground is overhead, walked under, and no obstacle. The parts of it that no
-    /// walk joins to the largest are left out.
+    /// Bakes the walkable surface of a course: its blocks on open ground at 0 across `bounds`. Each block is solid
+    /// from its underside to its top, so floors stand over each other: the ground under a deck a body's height or more
+    /// up is walked, and so is the deck. The parts of it that no walk joins to the largest are left out.
     #[must_use]
     pub fn bake(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
-        let colliders: Vec<Collider> =
-            blocks.iter().filter(|block| block.bottom < agent.height).copied().map(Collider::from).collect();
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
         Self::bake_colliders(&colliders, bounds, agent)
     }
 
@@ -225,15 +224,19 @@ impl NavMesh {
         corridor
     }
 
-    /// The line from one point to another pulled taut through a corridor, each corner on the surface walked there.
+    /// The line from one point to another pulled taut through a corridor, each corner on the surface walked there: of
+    /// the corridor's polys under a corner, the one nearest the last corner's level, as a corridor may pass under a
+    /// deck it later climbs onto.
     fn walk(&self, corridor: &[usize], from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
         let portals = path::portals(&self.mesh, corridor, self.to_grid(from[0], from[1]), self.to_grid(to[0], to[1]))?;
+        let mut level = from[2];
         let points = path::funnel(&portals)
             .into_iter()
             .map(|grid| {
-                let poly = self.mesh.scan(grid.0, grid.1, corridor, None);
+                let poly = self.mesh.scan(grid.0, grid.1, corridor, Some(level));
                 let (x, y) = self.to_world(grid);
-                [x, y, self.height_on(poly, x, y)]
+                level = self.height_on(poly, x, y);
+                [x, y, level]
             })
             .collect();
         Some(points)

@@ -74,9 +74,9 @@ on Cloudflare.
   called foes come the same way, at its level. Each
   tick the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
   routing and taking cover on a [[Navmesh]] the room bakes when it opens: a course's over its blocks and 30 m round
-  them; a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the middle of
-  its section's ring, where its garrison stands. The room tells each foe the noises made and its allies'
-  shouts, and keeps the fight's heat, fed where blows are settled.
+  them; a node's over a 70 m square of its land and its layout's boxes there, its first spawn 15 m inside the
+  square's edge toward the middle of its section's ring, where its garrison stands. The room tells each foe the
+  noises made and its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
 - **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
@@ -383,7 +383,7 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
-- A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
+- A node's room bakes its foes' navmesh over a 70 m square of its land and the boxes in it, never its whole section;
   a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
   and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out

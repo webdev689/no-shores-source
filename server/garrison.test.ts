@@ -13,13 +13,13 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same node, script and fingerprint
  *  (crates/room-wasm/src/garrison_door_tests.rs). */
-const GARRISON_HASH = '0e9683df';
+const GARRISON_HASH = 'bcc9eeb1';
 const RUN_IN = 420;
 const SWING_EVERY = 30;
 const RUN_TICKS = 1500;
 
 /** A mission's node: a section 400 m square on land rising 300 m a kilometre east and south, its two spawns near its
- *  southern edge. */
+ *  southern edge, and in the square its room bakes a wall from below the ground up and a roof 4 m or more over it. */
 const grid = (data: readonly number[]) => ({
   width: 4,
   height: 4,
@@ -46,7 +46,10 @@ const NODE = {
     [15, 185],
   ],
   bounds: [-300, -300, 300, 300],
-  boxes: [],
+  boxes: [
+    [-10, 152, 10, 153, 970, 900],
+    [15, 145, 25, 160, 962.5, 962],
+  ],
   ground: {
     land: grid(Array.from({ length: 16 }, (unused, cell) => ((cell % 4) + Math.floor(cell / 4)) * 300)),
     lake_level: Array.from({ length: 16 }, () => 0),
