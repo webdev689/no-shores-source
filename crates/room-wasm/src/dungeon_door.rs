@@ -191,7 +191,7 @@ mod tests {
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
     ];
-    const AGREED_HASH: u64 = 0x7233_f058_c3cd_fe3d;
+    const AGREED_HASH: u64 = 0x59a0_33c6_4d95_5038;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {

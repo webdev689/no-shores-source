@@ -1,12 +1,13 @@
 //! A room furnished by its purpose: each lay's pieces stood by its pattern, every one inside its own cell and under
 //! the ceiling. A piece never stands on a doorway's cell (one beside a corridor, so no frame is ever blocked), on the
-//! way in's cell, the portal's, the Reeve's post or the eight cells round it, against a torch's wall, or within half
-//! a metre of a flame; and once it stands, the room's free cells are still one walk and as many as its foes take.
+//! way in's cell, the portal's or the Reeve's post, against a torch's wall, within half a metre of a flame, or as a
+//! solid within a cell's length of the Reeve's post; and once it stands, the room's free cells are still one walk and
+//! as many as its foes take.
 
 use crate::fixtures::Fixture;
 use crate::lane::Lane;
 use crate::models::{Piece, PropModel};
-use crate::props::{HUNG_M, Prop, clockwise, posts_for};
+use crate::props::{HUNG_M, Prop, posts_for};
 use crate::purposes::{Facing, Lay, Pattern};
 use crate::{CELL_M, Cell, Dungeon, SIDES, Side};
 
@@ -17,6 +18,9 @@ const FREE_MARGIN_M: f64 = 0.4;
 const ALONG_WALL_M: f64 = CELL_M - 0.1;
 const MOST_INTO_M: f64 = 2.0;
 const FLAME_CLEAR_M: f64 = 0.5;
+/// How far every solid keeps from the Reeve's post: past his cache, 1.6 m out and clear by 0.5 m, with floor round
+/// him to fight on.
+const POST_CLEAR_M: f64 = CELL_M;
 
 /// A room while it is furnished: the cells a piece may take, the cells and walls taken, the solids' cells, the flames
 /// a solid keeps clear of, and what has been laid.
@@ -30,6 +34,8 @@ pub(crate) struct Fitting {
     pub solid: Vec<usize>,
     pub walls: Vec<(usize, Side)>,
     pub flames: Vec<[f64; 2]>,
+    /// The Reeve's post, in the end room.
+    pub post: Option<[f64; 2]>,
     /// How many of the room's cells stay free.
     pub keep: usize,
     /// The room's cell first reached from the way in, and the wall a Flank stands by.
@@ -87,7 +93,9 @@ impl Fitting {
         let open = self.open.contains(&cell) && !self.taken.contains(&cell);
         let wall_free = wall.is_none_or(|side| !self.walls.contains(&(cell, side)) && dungeon.rock_beside(cell, side));
         let clear = solid.is_none_or(|solid| {
-            self.flames.iter().all(|&flame| apart(flame, solid) >= FLAME_CLEAR_M) && self.walk_holds(dungeon, cell)
+            self.flames.iter().all(|&flame| apart(flame, solid) >= FLAME_CLEAR_M)
+                && self.post.is_none_or(|post| apart(post, solid) >= POST_CLEAR_M)
+                && self.walk_holds(dungeon, cell)
         });
         open && wall_free && clear
     }
@@ -314,8 +322,9 @@ impl Fitting {
 }
 
 impl Dungeon {
-    /// The room's fitting as furnishing begins: its quiet cells but those kept, its torches' walls and flames.
-    fn fitting(&self, room: usize, kept: &[usize], steps: &[u32]) -> Fitting {
+    /// The room's fitting as furnishing begins: its quiet cells but those kept, its torches' walls and flames, and the
+    /// Reeve's post if he stands in it.
+    fn fitting(&self, room: usize, kept: &[usize], post: Option<usize>, steps: &[u32]) -> Fitting {
         let found = &self.rooms[room];
         let open: Vec<usize> = found.quiet.iter().copied().filter(|cell| !kept.contains(cell)).collect();
         let mut walls = vec![(self.way_in.cell, self.way_in.side), (self.portal.cell, self.portal.side)];
@@ -341,6 +350,7 @@ impl Dungeon {
             solid: Vec::new(),
             walls,
             flames,
+            post: post.filter(|_| room == self.end).map(|cell| self.centre(cell)),
             keep: posts_for(found.cells.len()),
             entry,
             anchor,
@@ -349,21 +359,14 @@ impl Dungeon {
         }
     }
 
-    /// Furnishes and lights every room by its purpose, each on lanes of its own. The Reeve's post and the cells round
-    /// it, where his cache and its Vestiges lie, are kept clear.
+    /// Furnishes and lights every room by its purpose, each on lanes of its own. The Reeve's post, and the floor round
+    /// it where his cache and its Vestiges lie, are kept clear.
     pub(crate) fn furnish(&mut self, seed: u32, steps: &[u32]) {
+        let post = self.nearest_middle(self.end, 1).first().copied();
         let mut kept = vec![self.way_in.cell, self.portal.cell];
-        for post in self.nearest_middle(self.end, 1) {
-            kept.push(post);
-            for side in SIDES {
-                if let Some(next) = self.beside(post, side) {
-                    kept.push(next);
-                    kept.extend(self.beside(next, clockwise(side)));
-                }
-            }
-        }
+        kept.extend(post);
         for room in 0..self.rooms.len() {
-            let mut fitting = self.fitting(room, &kept, steps);
+            let mut fitting = self.fitting(room, &kept, post, steps);
             let purpose = self.rooms[room].purpose;
             let mut lane = Lane::named(&format!("props:{seed}:{room}"));
             for lay in purpose.lays {

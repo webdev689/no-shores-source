@@ -99,7 +99,7 @@ fn each_piece_stands_inside_its_cell_on_the_floor_under_the_ceiling_its_box_its_
 }
 
 #[test]
-fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_ring_or_a_torchs_wall() {
+fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_post_or_a_torchs_wall_nor_a_solid_near_the_post() {
     for dungeon in every_dungeon(600) {
         let post = dungeon.nearest_middle(dungeon.end(), 1)[0];
         let [post_x, post_y] = dungeon.centre(post);
@@ -107,20 +107,25 @@ fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_ring_or_a_torch
             dungeon.torches.iter().map(|torch| (cell_at(&dungeon, torch.at[0], torch.at[1]), torch.wall)).collect();
         let mut cells = Vec::new();
         let mut walls = Vec::new();
-        let pieces = dungeon.props.iter().map(|prop| (plan(prop), prop.solid.is_some()));
+        let pieces = dungeon.props.iter().map(|prop| (plan(prop), prop.solid));
         let fixtures = dungeon
             .fixtures
             .iter()
             .filter_map(|fixture| fixture.solid)
-            .map(|solid| ([solid[0], solid[1], solid[2], solid[3]], true));
+            .map(|solid| ([solid[0], solid[1], solid[2], solid[3]], Some(solid)));
         for ([min_x, min_y, max_x, max_y], solid) in pieces.chain(fixtures) {
             let cell = cell_at(&dungeon, (min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
             let room = dungeon.room_at(cell).expect("in a room");
             assert!(dungeon.rooms[room].quiet.contains(&cell), "never on a doorway's cell");
             assert!(cell != dungeon.way_in.cell && cell != dungeon.portal.cell, "never at the way in or the portal");
             let [x, y] = dungeon.centre(cell);
-            let off = (x - post_x).abs().max((y - post_y).abs());
-            assert!(off > CELL_M * 1.5 - 1e-9, "a piece {off} m from the Reeve's post");
+            assert!(cell != post, "never on the Reeve's post");
+            if let Some([low_x, low_y, high_x, high_y, _]) = solid.filter(|_| room == dungeon.end()) {
+                let (dx, dy) =
+                    ((low_x - post_x).max(post_x - high_x).max(0.0), (low_y - post_y).max(post_y - high_y).max(0.0));
+                let apart = (dx * dx + dy * dy).sqrt();
+                assert!(apart >= CELL_M - 1e-9, "a solid {apart} m from the Reeve's post");
+            }
             assert!(!cells.contains(&cell), "one piece to a cell");
             cells.push(cell);
             let half = CELL_M / 2.0;
@@ -137,7 +142,7 @@ fn no_piece_stands_on_a_doorway_the_way_in_the_portal_the_reeves_ring_or_a_torch
                     walls.push((cell, side));
                 }
             }
-            if solid {
+            if solid.is_some() {
                 for torch in &dungeon.torches {
                     let dx = (min_x - torch.at[0]).max(torch.at[0] - max_x).max(0.0);
                     let dy = (min_y - torch.at[1]).max(torch.at[1] - max_y).max(0.0);

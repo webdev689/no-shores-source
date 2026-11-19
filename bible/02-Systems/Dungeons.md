@@ -139,8 +139,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   top at least 0.3 m under the ceiling: against a wall its back 0.1 m off it, turned a quarter where it is deeper
   than wide; free-standing 0.4 m inside its cell's edges, clear of every pillar. Each is a solid, but a hanging, which
   hangs over head height and fills nothing. None stands on a doorway's cell (one beside a corridor, so no frame is
-  blocked), the way in's cell, the portal's, the Reeve's post or the eight cells round it, against a torch's wall, or
-  within 0.5 m of a torch's flame. A piece stands only where the room's free cells, those holding no solid, stay one
+  blocked), the way in's cell, the portal's or the Reeve's post, against a torch's wall, or within 0.5 m of a torch's
+  flame; and no solid stands within 3.2 m of the Reeve's post, so his cache and the fight round him find open floor. A piece stands only where the room's free cells, those holding no solid, stay one
   walk and number as many as its band of foes (`posts_for`: one for each ten cells, two to four).
 - **Lights.** Beside its torches a purpose lights its room: braziers (a solid 0.6 m square and 1 m high) either side
   of the end's door or the way on, or nearest the middle; candles on its tables', lecterns', altars' and coffins'
@@ -257,9 +257,8 @@ dungeon").
 - One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
   behind.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
-- An end room of nine cells or fewer lays no props: the Reeve's post and the eight cells round it, kept for his
-  cache, take all of it. Over 2,000 dungeons, 597 end rooms lay none, against 32 of the 19,439 other rooms; over the
-  27 patrols' 81 dungeons, 22 end rooms and 1 other room.
+- A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
+  rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
 - No fountain or cart is laid: each is wider than a cell. Glowing fungus has no kind of its own; it is a crystals
   fixture.
 - Movement has no ceilings: a dungeon's are never reached because nothing in it can be climbed, and a jump rises
