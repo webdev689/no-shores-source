@@ -101,10 +101,11 @@ export class PlayerFight {
       own: fight.own,
       begun: fight.swingsBegun > 0,
       dropped: fight.drawsDropped > 0,
+      loosed: fight.shotsLoosed > 0,
       aiming,
       handsSeconds,
     };
-    [fight.swingsBegun, fight.drawsDropped] = [0, 0];
+    [fight.swingsBegun, fight.drawsDropped, fight.shotsLoosed] = [0, 0, 0];
     walker.show(controls, seconds, clock, shown, zoomOf());
     const { outfit } = walker.shownDress;
     // A greatsword's left hand is on its hilt, which combat's arms read as the left hand's own.

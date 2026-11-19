@@ -92,7 +92,9 @@ it while it reloads is the blade's.
 ### Shooting
 
 The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not while
-aiming, where each shot takes a fresh pull as the rules ask. Aiming zooms the weapon with the view, about the middle of
+aiming, where each shot takes a fresh pull as the rules ask. In a fight, any weapon, a bow too, plays a shot only as
+the fight's rules let one go, so a pull they refuse (no ammunition, a reload, a swap of loadouts) plays nothing; a gun
+with no shot left clicks dry ([[Combat]], "Shots"). Aiming zooms the weapon with the view, about the middle of
 the screen, and its muzzle with it, so a tracer starts where it is drawn
 ([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames at its own rate, then the weapon
 reloads:
