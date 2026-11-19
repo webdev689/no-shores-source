@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import ships from '../../../../content/ships/ships.json' with { type: 'json' };
-import { deckToWorld } from '../../ships/deck.ts';
+import { type Deck, deckToWorld } from '../../ships/deck.ts';
+import { deckBlocks } from './wreckDecks.ts';
 import { courseOf, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
@@ -41,6 +42,26 @@ test('both ships lie as decks of blocks, the brig east to west and the frigate n
 
 test('her decks are only what lies inside her rails: no square of them is lower than her deck, as her channels are', () => {
   for (const block of decks) assert.ok(block.top >= LOWEST_DECK_M, `a block at ${block.minX}, ${block.minY}`);
+});
+
+test('a row outboard of a rail loses its channel; one with no rail, its deck rising inward, keeps every square', () => {
+  // One row of 0.3 m squares, west to east, as heights: a channel, a rail, deck and the rail and channel again.
+  const row = (heights: readonly number[]): Deck => ({
+    west: 0,
+    north: 0,
+    cell: 0.1,
+    columns: heights.length * 3,
+    rows: 3,
+    heights: [0, 1, 2].flatMap(() => heights.flatMap((height) => [height, height, height])),
+    helm: [0, 0],
+  });
+  const lying = { x: 0, y: 0, heading: 0, scale: 1, heave: 0, pitch: 0, roll: 0 };
+  const railed = deckBlocks(row([1.8, 3.4, 2.4, 2.4, 2.4, 3.4, 1.8]), lying);
+  assert.equal(topAt(railed, 0.15, 0.15), 0, 'the channel is the sea');
+  assert.ok(Math.abs(topAt(railed, 0.45, 0.15) - 3.4) < 1e-9, 'the rail stands');
+  const rising = deckBlocks(row([2.4, 2.55, 2.7, 2.85, 2.7, 2.55, 2.4]), lying);
+  for (let square = 0; square < 7; square++)
+    assert.ok(topAt(rising, square * 0.3 + 0.15, 0.15) > 2, `square ${square} is deck`);
 });
 
 test('every block that shows lies on the ships: each over one of their decks, but planks, laid from deck to deck', () => {

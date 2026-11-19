@@ -148,7 +148,7 @@ are the story's; the wreck is the level they run.
   taken in squares 0.3 m across, each the highest of her cells there, so her rails and bulwarks stand as walls; a
   square inside a row her grid has no height in (a mast, a gun, a spar, an opening into her hold) a wall a jump does
   not top, as her deck walks at sea; her channels outboard of her rails (her rail the highest of the five squares
-  in from each end of a row) left out, so a body over her rail falls to the sea; runs of one height joined into one
+  in from each end of a row, a step over its lowest) left out, so a body over her rail falls to the sea; runs of one height joined into one
   block. Where the Frigate's bow stands in the Brig, the Brig's deck gives way to hers. These blocks are hidden under
   the ships as drawn, and both ships are drawn whole, so what is drawn is what holds a body.
 - **The layout** is `content/prologue/wreck.json`: where each ship lies, the blocks that show (a spar fallen from

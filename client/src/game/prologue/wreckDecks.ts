@@ -12,6 +12,8 @@ const HEIGHT_STEP = 0.05;
 /** How many squares in from each end of a row her rail stands at most (a metre and a half): outboard of it are her
  *  channels. */
 const RAIL_WITHIN = 5;
+/** The rise a body steps up, metres (crates/movement's TUNING): a rail stands more than this over her deck. */
+const STEP_M = 0.5;
 /** How far a square her deck has no height in stands over the lowest of its row, metres: past what a jump reaches. */
 const WALL_RISE_M = 1.9;
 
@@ -30,11 +32,13 @@ function square(deck: Deck, row: number, column: number): number | null {
 
 /** The squares of a row outboard of her rail, from one end: her channels and chains, lower than the rail, which a
  *  body over the rail would stand on in no part of the level. Her rail is the highest of the first `RAIL_WITHIN`
- *  squares held; a row with no rail higher than its deck keeps them all. */
+ *  squares held, and only one standing more than a step over the row's lowest; a row without one keeps them all. */
 function channels(heights: readonly (number | null)[], from: 1 | -1): number[] {
   const held = heights.flatMap((height, column) => (height === null ? [] : [column]));
+  const lowest = Math.min(...held.map((column) => heights[column] ?? Infinity));
   const outer = (from === 1 ? held : held.reverse()).slice(0, RAIL_WITHIN);
   const highest = Math.max(...outer.map((column) => heights[column] ?? -Infinity));
+  if (highest <= lowest + STEP_M) return [];
   return outer.slice(
     0,
     outer.findIndex((column) => heights[column] === highest),
