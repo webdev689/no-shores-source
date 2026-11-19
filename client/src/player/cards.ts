@@ -78,8 +78,9 @@ const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
  *  is named to count as the weapon. */
 const CAST = 'cast';
 const SPARK: ReadonlySet<string> = new Set(['spark']);
-/** The forge's views of a figure. */
+/** The forge's views of a figure, and those also drawn mirrored for the other side (`viewOf`). */
 const VIEWS = 5;
+const MIRRORED: ReadonlySet<number> = new Set([1, 2, 3]);
 /** Warming starts at most this many frames a tick, and none while this many are under way. */
 const WARM_A_TICK = 2;
 const WARM_UNDER_WAY = 6;
@@ -90,7 +91,16 @@ export class Cards {
   private readonly kept = new Map<string, Card | null>();
   private readonly composing = new Set<string>();
   private readonly last = new Map<number, Card>();
-  private readonly queued: { dress: Dress; anim: string; view: number; frame: number; glow: GlowLook }[] = [];
+  private readonly queued: {
+    dress: Dress;
+    anim: string;
+    view: number;
+    frame: number;
+    flip: boolean;
+    glow: GlowLook;
+    owner: number | string;
+    key: string;
+  }[] = [];
   private readonly warmed = new Set<string>();
   private readonly scene: CardMaker;
   private readonly store: ForgeStore;
@@ -220,19 +230,24 @@ export class Cards {
     return card ?? this.last.get(id) ?? null;
   }
 
-  /** Queues every view and frame of a dress's moves to be composed ahead of need, its weapon glowing in `glow`, once
-   *  for each dress; they replace whatever is still queued, as only the newest dress will be shown. */
-  warm(dress: Dress, anims: readonly string[], glow: GlowLook = 0): void {
+  /** Queues every view and frame of a dress's moves to be composed ahead of need, as drawn and as mirrored, its weapon
+   *  glowing in `glow`, once for each dress; they replace whatever is still queued for the same figure (`owner`), as
+   *  only its newest dress will be shown, and leave every other figure's queued. */
+  warm(dress: Dress, anims: readonly string[], glow: GlowLook = 0, owner: number | string = 0): void {
     const key = JSON.stringify([dress, anims, glow]);
     if (this.warmed.has(key)) return;
     this.warmed.add(key);
-    this.queued.length = 0;
+    // A dress replaced before all of it was composed is warmed again if it is worn again.
+    for (const dropped of this.queued) if (dropped.owner === owner) this.warmed.delete(dropped.key);
+    const others = this.queued.filter((queued) => queued.owner !== owner);
+    this.queued.splice(0, this.queued.length, ...others);
     const kept = structuredClone(dress);
     for (const anim of anims) {
       if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
       for (let view = 0; view < VIEWS; view++)
         for (let frame = 0; frame < this.frames(dress.body, anim); frame++)
-          this.queued.push({ dress: kept, anim, view, frame, glow });
+          for (const flip of MIRRORED.has(view) ? [false, true] : [false])
+            this.queued.push({ dress: kept, anim, view, frame, flip, glow, owner, key });
     }
   }
 
@@ -261,7 +276,7 @@ export class Cards {
     for (let started = 0; started < WARM_A_TICK && this.composing.size < WARM_UNDER_WAY; started++) {
       const next = this.queued.shift();
       if (!next) return;
-      this.ask(next.dress, next.anim, next.view, next.frame, false, next.glow);
+      this.ask(next.dress, next.anim, next.view, next.frame, next.flip, next.glow);
     }
   }
 }

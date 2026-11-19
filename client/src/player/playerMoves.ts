@@ -165,27 +165,42 @@ function kitOf(right: string | null, left: string | null, draws: Draws): Kit {
 }
 
 /** The moves a figure with these hands is likeliest to show next, to compose ahead of need: its rest and walk; its
- *  blows where every swing strikes one, else its attack and a weapon held alone's strokes; a gun's reload, running,
- *  the roll, jumping and crouching. */
+ *  blows where every swing strikes one, else its attack and a weapon held alone's strokes; a gun's reload; each of
+ *  those on the move where `walking` names one; running, the roll, its guard or a shield's block, its hurt, jumping and
+ *  crouching. A move first asked for unwarmed keeps the figure on its last frame while its strips arrive. */
 export function likelyMoves(
   right: string | null,
   left: string | null,
   draws: Draws,
   grip: 'hilt' | null = null,
+  walking: Walking = () => null,
 ): string[] {
   const kit = kitOf(right, left, draws);
   const blows = (['down', 'left', 'up'] as const).map((way) => blowOf(way, right, left, draws, grip));
   const struck = blows.filter((blow): blow is string => blow !== null);
   const strokes = right && !left ? [kit.attack, 'thrust', 'chop', 'swing2h'] : [kit.attack];
+  const acts = [...(struck.length === blows.length ? struck : strokes), ...(kit.reload ? [kit.reload] : [])];
+  const parry = ownMove('parry', right, draws);
+  const guard = left?.startsWith('shield_') && draws('block', left) ? 'block' : draws(parry, right) ? parry : 'guard';
   const own = [
     kit.idle,
     kit.walk,
-    ...(struck.length === blows.length ? struck : strokes),
-    ...(kit.reload ? [kit.reload] : []),
+    ...acts,
+    ...acts.flatMap((act) => walking(act) ?? []),
     ...(kit.run ? [kit.run] : []),
     'roll',
+    guard,
+    ownMove('hurt', right, draws),
   ];
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
+}
+
+/** A move as the right hand's bow, crossbow or staff plays it, where the forge draws its own (`hurt_bow`); else the
+ *  move itself. */
+function ownMove(anim: string, right: string | null, draws: Draws): string {
+  const kind = right?.split('_')[0];
+  const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
+  return special && draws(special, right) ? special : anim;
 }
 
 /** The forge's own strokes the owner gave the player, by the swing's direction. */
@@ -261,6 +276,13 @@ export function blowFrame(progress: number, lands: number): number {
 /** How far through a swing its blow lands by DFO's swing law: as the third of five strike frames begins. */
 export const BLOW_LANDS = 2 / 5;
 
+/** How a blow's figure sweeps, as shares of the time to its landing: from its last wind-up frame (the fourth, run
+ *  through the last three quarters of that time) and on past the landing through its follow-through frames. */
+export const BLOW_SWEEP = { from: 1 - STRIKE_PACE.windup / BLOW.lands, on: STRIKE_PACE.recover } as const;
+
+/** Whether a blow `progress` through its swing, landing `lands` through it, has shown its last frame. */
+const blowPlayed = (progress: number, lands = BLOW_LANDS): boolean => progress >= lands * (1 + STRIKE_PACE.recover);
+
 /** The frame (whole part) of a stroke `span` frames long at `progress` through its swing: the frames run through the
  *  wind-up to land the last on the blow (`lands` through the swing), held through the follow-through, so the figure
  *  strikes fast and shows itself open while it recovers. */
@@ -311,9 +333,14 @@ export function shownMove(
   const kit = kitOf(doing.drawn ? doing.right : null, doing.drawn ? doing.left : null, draws);
   const { blow } = doing;
   if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(moved(kit.reload), blow.progress);
-  if (blow && !blow.reload) {
-    const struck =
-      blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
+  const struck =
+    blow?.direction &&
+    !blow.reload &&
+    doing.drawn &&
+    blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
+  // Its frames played, a blow struck on the move walks on while the swing runs out, rather than stand mid-stride.
+  const walkedOn = !!struck && doing.moving && doing.mode === 'ground' && blowPlayed(blow.progress, blow.lands);
+  if (blow && !blow.reload && !walkedOn) {
     if (struck)
       return { anim: moved(struck), frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
     const stroke = blow.direction && STROKE_OF[blow.direction];
@@ -365,11 +392,7 @@ function fightMove(
   const right = doing.drawn ? doing.right : null;
   const left = doing.drawn ? doing.left : null;
   const holds = (anim: string) => draws(anim, right) && (!left || draws(anim, left));
-  const own = (anim: string) => {
-    const kind = right?.split('_')[0];
-    const special = kind === 'bow' || kind === 'crossbow' ? `${anim}_bow` : kind === 'staff' ? `${anim}_staff` : null;
-    return special && draws(special, right) ? special : anim;
-  };
+  const own = (anim: string) => ownMove(anim, right, draws);
   const shield = !!left?.startsWith('shield_') && draws('block', left);
   const still = (anim: string, frame = 0): Shown => ({
     anim,

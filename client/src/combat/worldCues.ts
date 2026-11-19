@@ -113,12 +113,23 @@ function hitCue(how: number, striker: number): string {
   return BLADES.has(melee) ? 'hit.blade' : 'hit.blunt';
 }
 
-/** The cue a fighter's action calls for as it changes from `before` to `now`: a swing begun (another begun at once
- *  counts), a foe's wound-up blow landing (a feint or an aimed shot does not swing), a dodge's roll, a bow drawn and a
- *  reload. */
-export function actionCue(before: Action | null, now: Action, arms: number): string | null {
+/** The cue a fighter's action calls for as it changes from `before` to `now`: a swing as its blade sweeps to its blow,
+ *  `rush(cue)` ticks before it lands so its recording's rush meets the blow (another begun at once counts; one cut
+ *  short before then is not heard), a foe's wound-up blow landing (a feint or an aimed shot does not swing), a dodge's
+ *  roll, a bow drawn and a reload. */
+export function actionCue(
+  before: Action | null,
+  now: Action,
+  arms: number,
+  rush: (cue: string) => number = () => 0,
+): string | null {
   const began = before?.kind !== now.kind;
-  if (now.kind === 'attack' && (before?.kind !== 'attack' || now.elapsed < before.elapsed)) return swingCue(arms);
+  if (now.kind === 'attack') {
+    const cue = swingCue(arms);
+    const due = Math.max(0, now.strike - rush(cue));
+    const heard = before?.kind === 'attack' && now.elapsed >= before.elapsed ? before.elapsed : -1;
+    if (heard < due && now.elapsed >= due && now.elapsed <= now.strike + LANDED_TICKS) return cue;
+  }
   if (before?.kind === 'telegraph' && began && before.shape !== 'aimed' && before.feintAt === null)
     return before.elapsed + LANDED_TICKS >= before.windup ? swingCue(arms) : null;
   if (!began) return null;
@@ -129,7 +140,8 @@ export function actionCue(before: Action | null, now: Action, arms: number): str
   return null;
 }
 
-/** A wound-up blow last seen this near its end, in ticks, had landed: snapshots come a few ticks apart. */
+/** A wound-up blow last seen this near its end, in ticks, had landed, and a swing first seen this far past its blow is
+ *  not heard: snapshots come a few ticks apart. */
 const LANDED_TICKS = 6;
 
 /** A body's time in the air, as kept from frame to frame: the height it left the ground from, the highest it reached,

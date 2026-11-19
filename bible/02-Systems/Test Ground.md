@@ -162,8 +162,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     way the striker's figure is drawn swinging
     ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]). A blow goes its own way, whatever
     way the swing was asked: the overhead down, the thrust out, the side cut across to the left in every hold, from
-    the right shoulder, as the forge's captured clip draws it. Any other move goes the rules' stroke. A figure drawn mirrored swings left-handed,
-    so its arc is mirrored too, as it was when the swing began.
+    the right shoulder, as the forge's captured clip draws it. Any other move goes the rules' stroke. A figure drawn
+    mirrored swings left-handed, so its arc is mirrored too, as it was when the swing began. It sweeps as the figure is
+    drawn striking: from a blow's last wind-up frame, the weapon at the top of its raise, through the landing on the
+    rules' tick, to its last follow-through frame.
     An overhead comes down slanting from the striking shoulder, a sweep crosses a little wider than it strikes, a slant
     cuts down and across, and a thrust drives out and flares where it lands. It is pixel art: whole figure pixels in the
     four stops of a ramp, never blended. Each part steps down its ramp by how long ago the blade passed it and is drawn
@@ -294,8 +296,9 @@ The player's figure shows the move the forge draws for what the body does:
   stroke by the swing (down the overhead, up the thrust, any other the side cut) and its hold by the weapon (a sword,
   dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair; a staff in
   both hands). A blow's nine frames hold the first until a quarter of the way to the blow, run the first four through
-  the last three quarters of that time, show the fifth as it lands, and run the rest over a little over half that time
-  after ([[Third-Person Strikes Run Faster Than DFO's]]). Where no blow is drawn, a swing plays one stroke of the
+  the last three quarters of that time, show the fifth as it lands on the rules' tick, and run the rest over a little
+  over half that time after ([[Third-Person Strikes Run Faster Than DFO's]]); while the swing runs out, a figure
+  standing holds the last, and one on the move walks on. Where no blow is drawn, a swing plays one stroke of the
   weapon's attack, frames 0 to 2, and the next swing frames 3 to 5. The stroke's frames run through the last three
   quarters of the swing's wind-up so its last lands with the blow, two fifths of the way through a swing by the swing
   law (a sword's in 0.3 s, [[Combat]]), and it is held through the follow-through: the figure strikes fast and shows
@@ -322,7 +325,9 @@ the frame it shows, so a walk that slows never jumps a frame. On the ground a fo
 so a tick the rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge
 the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
 the soft lock holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
-([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks.
+([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
+figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
+though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
 
 ## Dressing
 
@@ -377,8 +382,11 @@ picture.
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
 - Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.
-- The player's likeliest moves are composed ahead, two frames a tick: its rest, walk and attack, its strokes, the run,
-  the jump and the crouch. A move not composed yet shows the last frame until it is.
+- Each figure's likeliest moves are composed ahead, two frames a tick, each figure's in a queue of its own, every view
+  as drawn and as mirrored: its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or
+  a shield's block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap
+  shows it at once. A move not composed yet shows the last frame until it is: its strips take most of a second to come
+  the first time.
 
 ## First person
 

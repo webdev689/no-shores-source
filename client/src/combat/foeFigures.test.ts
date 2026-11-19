@@ -44,6 +44,7 @@ const forge = {
   frames: () => 4,
   draws: () => true,
   warm: () => undefined,
+  walking: () => null,
   card: () => card,
 } as unknown as Cards;
 
@@ -169,4 +170,16 @@ test('a struck foe is drawn slid along the blow and back, its feet where the roo
   assert.ok(drawnY() > still + 0.05, 'pushed south, away from its striker');
   flashes.update([], 20 / 60);
   assert.ok(Math.abs(drawnY() - still) < 1e-9, 'and back');
+});
+
+test('a foe dodging is drawn facing the way its hop goes, not the fighter it faces', () => {
+  const figures = new FoeFigures(roster);
+  const fight = fightWith(3, -4, 10);
+  const foes = fight.foes as Map<number, KeptFoe>;
+  const kept = foes.get(7);
+  assert.ok(kept);
+  const dodging = { kind: 'dodge', elapsed: 3, toward: [1, 0] } as const;
+  foes.set(7, { ...kept, view: { ...kept.view, facing: 0, action: dodging } });
+  figures.cards(fight, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
+  assert.equal(figures.placed.get(7)?.facing, Math.PI / 2);
 });

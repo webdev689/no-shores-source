@@ -6,7 +6,7 @@ import { LocalRoom } from '../network/localRoom.ts';
 import { ASKS } from '../network/gearMessages.ts';
 import type { GearMessage, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
-import { plainDress } from '../player/dressing.ts';
+import { type Dress, plainDress } from '../player/dressing.ts';
 import { KINDS } from '../player/gear.ts';
 import type { Action, InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
@@ -39,22 +39,28 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
 }
 
 /** The player with a sword drawn (or `right`, once the room's gear wears it) in a fight in a room in the page, the first
- *  person's hands standing in: each frame's button and pose are kept, and the room's last word on the gear. */
+ *  person's hands standing in: each frame's button, pose, pace and spare are kept, what the forge warms, and the room's
+ *  last word on the gear. */
 function fightingPlayer(right = 'sword_iron') {
-  const shown: { attackPressed: boolean; pose: unknown }[] = [];
+  type State = { pose?: unknown; pace?: unknown; spare?: unknown };
+  const shown: { attackPressed: boolean; pose: unknown; pace: unknown; spare: unknown }[] = [];
   const said: { gear: GearMessage | null } = { gear: null };
   const hands = {
     swing: null,
     muzzle: null,
     cancel: () => undefined,
-    update: (_seconds: number, button: { attackPressed: boolean }, state: { pose?: unknown }) => {
-      shown.push({ attackPressed: button.attackPressed, pose: state.pose ?? null });
+    update: (_seconds: number, button: { attackPressed: boolean }, state: State) => {
+      const { pose = null, pace = null, spare = null } = state;
+      shown.push({ attackPressed: button.attackPressed, pose, pace, spare });
     },
   } as unknown as ConstructorParameters<typeof Walker>[2];
+  const warmed: { right: string | null; owner: unknown }[] = [];
   const forge = {
     frames: () => 4,
     draws: () => true,
-    warm: () => undefined,
+    warm: (dress: Dress, _anims: unknown, _glow: unknown, owner: unknown) =>
+      warmed.push({ right: dress.outfit.right, owner }),
+    walking: () => null,
     pump: () => undefined,
     card: () => null,
   } as unknown as Cards;
@@ -82,8 +88,23 @@ function fightingPlayer(right = 'sword_iron') {
     clock += TICK;
     return player.frame(input, steps, TICK, clock, { running: true, hands: true, markOf: () => null, zoomOf: () => 1 });
   };
-  return { fighting, walker, shown, frame, said };
+  return { fighting, walker, shown, frame, said, warmed };
 }
+
+test("the other loadout's weapon is composed ahead of a swap, for the figure and for the hands", () => {
+  const { walker, shown, frame, warmed } = fightingPlayer();
+  walker.spare = { ...walker.you.dress.outfit, right: 'bow_long_iron', left: null };
+  frame(controls());
+  assert.ok(
+    warmed.some((each) => each.right === 'bow_long_iron' && each.owner !== walker.you.id),
+    'the figure',
+  );
+  assert.ok(
+    warmed.some((each) => each.right !== 'bow_long_iron' && each.owner === walker.you.id),
+    'its own apart',
+  );
+  assert.deepEqual(shown.at(-1)?.spare, { right: 'bow_long_iron', left: null }, 'the hands');
+});
 
 test('a swing pressed reaches the fight, and the first person swings as the rules begin it, the arms told to the room', () => {
   const { fighting, walker, shown, frame } = fightingPlayer();
@@ -93,10 +114,13 @@ test('a swing pressed reaches the fight, and the first person swings as the rule
   assert.equal(pressed.pressed, true);
   frame(controls(['swing']));
   assert.equal(fighting.own?.action.kind, 'attack');
-  assert.ok(
-    shown.some((each) => each.attackPressed),
-    'swung in the first person once the rules began it',
-  );
+  const begun = shown.find((each) => each.attackPressed);
+  assert.ok(begun, 'swung in the first person once the rules began it');
+  // The hands are paced by the rules' own swing: a sword's blow lands at 18 ticks of 45.
+  const action = fighting.own?.action;
+  assert.ok(action?.kind === 'attack');
+  assert.deepEqual(begun.pace, { strike: action.strike * TICK, end: action.end * TICK, at: 0 });
+  assert.deepEqual([action.strike, action.end], [18, 45]);
   assert.deepEqual(fighting.look, walker.look, 'the room is told what the figure shows');
   assert.equal(fighting.dress, walker.lookDress);
 });
@@ -134,4 +158,21 @@ test('a gun fires in the first person only as the rules let its shot go: with no
   assert.equal(fighting.own?.ammo, 0);
   assert.equal(pull(), 0, 'empty, the rules let none go and none plays');
   assert.equal(fighting.own?.action.kind, 'idle');
+});
+
+test('locked on, a dodge is drawn rolling the way it goes, while the rules keep the fighter facing its foe', () => {
+  const { fighting, walker, frame } = fightingPlayer();
+  fighting.ask({ type: 14, rank: 2 });
+  for (let tick = 0; tick < 20; tick += 1) frame(controls());
+  frame(controls(['swing'], ['swing']));
+  for (let tick = 0; tick < 50; tick += 1) frame(controls());
+  assert.notEqual(fighting.own?.target ?? null, null, 'locked on a foe');
+  frame(controls(['dodge', 'right'], ['dodge']));
+  frame(controls(['right']));
+  const own = fighting.own;
+  assert.equal(own?.action.kind, 'dodge');
+  const east = Math.PI / 2;
+  assert.ok(Math.abs((own?.aim ?? east) - east) > 0.5, `the rules face the foe: ${own?.aim}`);
+  assert.ok(Math.abs(walker.you.facing - east) < 1e-9, `the figure rolls east: ${walker.you.facing}`);
+  assert.equal(walker.look.facing, walker.you.facing, 'the room is told it so');
 });

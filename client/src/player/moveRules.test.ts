@@ -59,7 +59,14 @@ test('the player’s figure sliding along a wall steps as slowly as it goes, nev
   // A wall too tall to step onto and too low to climb, so pressing into it off square slides along it.
   rules.setCourse([{ minX: -50, minY: -5, maxX: 50, maxY: -1, top: 1.5 }]);
   const hands = { swing: null, muzzle: null, cancel: () => undefined, update: () => undefined };
-  const forge = { frames: () => 4, draws: () => true, warm: () => undefined, pump: () => undefined, card: () => null };
+  const forge = {
+    frames: () => 4,
+    draws: () => true,
+    warm: () => undefined,
+    walking: () => null,
+    pump: () => undefined,
+    card: () => null,
+  };
   const dress = plainDress('human', 0.3);
   const you = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // A full walk along the wall for 0.75 s, then half a radian off it into it: along it at under half a full walk.

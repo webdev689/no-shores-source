@@ -36,7 +36,7 @@ import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
-import { gearOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, spareOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
@@ -270,6 +270,7 @@ async function start(): Promise<void> {
       const wardrobe = wardrobeOf(you.dress.body, bodyLayers);
       const outfit = gearOutfit(ownGear, wardrobe, you.dress.outfit, player.player.loadout);
       you.dress = { ...you.dress, outfit };
+      player.spare = spareOutfit(ownGear, wardrobe, outfit, player.player.loadout);
     }
     player.glow = feel.glow(heldElements(ownGear, player.player.loadout));
     const bodies = [...foes.placed.values(), ...others.values()].map(
