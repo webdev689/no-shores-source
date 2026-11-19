@@ -38,9 +38,10 @@ pub(crate) struct Model {
 /// under the ground in every biome; DUNGAA00's boulder and DUNGAA01's great tree stand by their numbers on the wire.
 pub(crate) const MOUNDS: [usize; 2] = [2, 3];
 
-/// The four entrances Daggerfall's dungeon blocks stand: DUNGAA00's and DUNGAA01's, and the two the other blocks do.
+/// The entrances Daggerfall's blocks stand: DUNGAA00's and DUNGAA01's, the two mounds the other dungeon blocks do,
+/// and the two cave mouths its ruins do.
 #[allow(clippy::approx_constant, reason = "the forged props' own numbers, as they are written there")]
-pub(crate) const MODELS: [Model; 4] = [
+pub(crate) const MODELS: [Model; 6] = [
     Model {
         id: 42000,
         door: [[-0.634, 0.045, -1.692], [-0.634, -2.205, -1.692], [0.616, -2.205, -1.692]],
@@ -64,6 +65,18 @@ pub(crate) const MODELS: [Model; 4] = [
         door: [[-0.589, -0.326, 1.213], [-0.589, 1.578, 0.232], [0.611, 1.578, 0.232]],
         normal: [0.0, 0.458, 0.8889],
         lift: 0.475,
+    },
+    Model {
+        id: 43603,
+        door: [[-0.562, -1.204, 0.442], [-0.785, 0.699, -0.215], [0.837, 0.699, -0.215]],
+        normal: [0.0, 0.3261, 0.9453],
+        lift: 1.2,
+    },
+    Model {
+        id: 43604,
+        door: [[-0.648, -1.226, 1.52], [-0.648, 0.974, 1.52], [0.552, 0.974, 1.52]],
+        normal: [0.0, 0.0, 1.0],
+        lift: 1.225,
     },
 ];
 

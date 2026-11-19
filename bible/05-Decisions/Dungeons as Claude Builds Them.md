@@ -63,7 +63,7 @@ Claude's choices for the variety, each open to change. They replace the rows abo
 | The light | Torches as before, and by purpose: braziers, candles on altars and tables, a hearth's fire, lanterns in the mines, glowing crystals and fungus in the caverns, each its own colour and reach. Every room has a light | Light tells a room's purpose as much as its props |
 | The mood | Each style its own faint light everywhere: the crypt's cold grey-blue, the halls' plain grey, the cells' sickly green, the sanctum's pale gold, the caverns' deep teal, the mines' dusty brown | DFO's moods by type |
 | Ceilings | Flat; a barrel vault along a long room; a dome over a square room or an octagon; rough rock over a cave | The rooms differ above as well as around |
-| Entrances | By style: a temple ruin (43137 to 43141) for a sanctum, a cave mouth (43603, 43604) for the caverns and the mines, the two mounds for the crypt, the halls and the cells | The way in says what lies below |
+| Entrances | By style: a cave mouth (43603, 43604, as Daggerfall's ruin blocks stand them) for the caverns and the mines, the two mounds for the crypt, the halls, the cells and the sanctum | The way in says what lies below. The temple ruins stay out: no Daggerfall block stands one, and their doors stand 1.4 m up |
 | Where foes stand | On a room's free cells nearest its middle, its quiet cells first, once its props are laid. A room's props always leave every doorway open and its free cells one walk | The props come first, and the fight finds room round them |
 
 The purposes, by style (the way in's room first, the end room last):

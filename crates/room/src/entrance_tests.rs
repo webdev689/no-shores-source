@@ -156,7 +156,7 @@ fn the_entrance_models_are_the_forged_props_doors_raised_as_the_dungeon_blocks_r
         assert!(model.normal.iter().zip(normal).all(|(own, theirs)| near(*own, theirs)), "{}'s normal", model.id);
         let mut stood = 0;
         for block in places.as_array().expect("blocks") {
-            if !block["name"].as_str().is_some_and(|name| name.starts_with("DUNG")) {
+            if !block["name"].as_str().is_some_and(|name| name.starts_with("DUNG") || name.starts_with("RUIN")) {
                 continue;
             }
             for row in ["buildings", "props"].iter().flat_map(|rows| block[rows].as_array().into_iter().flatten()) {
@@ -166,7 +166,7 @@ fn the_entrance_models_are_the_forged_props_doors_raised_as_the_dungeon_blocks_r
                 }
             }
         }
-        assert!(stood > 0, "a dungeon block stands {}", model.id);
+        assert!(stood > 0, "a dungeon or a ruin block stands {}", model.id);
     }
     let first = |name: &str| {
         let block = places.as_array().expect("blocks").iter().find(|block| block["name"] == name).expect(name);

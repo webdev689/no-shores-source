@@ -3,11 +3,11 @@
 import type { ForgedModel, MeshBuilder } from '../models/model.ts';
 import type { PropTable } from '../models/tables.ts';
 
-/** The four entrance models by their number (0 to 3), and the height each one's Daggerfall block stands it at: DUNGAA00
- *  stands 42000 at 2.5 m, DUNGAA01 42001 at 4.8 m, and the blocks stand 43601 at 0.775 m and 43602 at 0.475 m
- *  (content/world/rmb/places.json). */
-export const ENTRANCE_MODELS: readonly number[] = [42000, 42001, 43601, 43602];
-export const ENTRANCE_LIFTS_M: readonly number[] = [2.5, 4.8, 0.775, 0.475];
+/** The entrance models by their number (0 to 5), and the height each one's Daggerfall block stands it at: DUNGAA00
+ *  stands 42000 at 2.5 m, DUNGAA01 42001 at 4.8 m, the dungeon blocks stand 43601 at 0.775 m and 43602 at 0.475 m, and
+ *  the ruins stand the cave mouths 43603 at 1.2 m and 43604 at 1.225 m (content/world/rmb/places.json). */
+export const ENTRANCE_MODELS: readonly number[] = [42000, 42001, 43601, 43602, 43603, 43604];
+export const ENTRANCE_LIFTS_M: readonly number[] = [2.5, 4.8, 0.775, 0.475, 1.2, 1.225];
 /** How near a door's middle E reaches it, metres across the ground. */
 export const DOOR_REACH_M = 2.5;
 /** How far before an entrance's door a player leaving its dungeon stands, metres, as the patrol's room stands them. */
