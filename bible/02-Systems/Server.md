@@ -72,9 +72,9 @@ on Cloudflare.
   cleared; the room holds at most 24 ([[Enemies]]). A Boss's called foes come the same way, at its level. Each tick
   the fight's heat eases and every foe thinks over the room as it stands and steps by the same rules ([[Foes]]),
   routing, taking cover, and climbing and dropping where its links say, on a [[Navmesh]] the room bakes when it
-  opens: a course's over its blocks and 30 m round them; a node's over a 70 m square of its land, its first spawn 15 m inside the square's edge toward the middle of
-  its section's ring, where its garrison stands. The room tells each foe the noises made and its allies'
-  shouts, and keeps the fight's heat, fed where blows are settled.
+  opens: a course's over its blocks and 30 m round them; a node's over a 70 m square of its land, its first spawn
+  15 m inside the square's edge toward the middle of its section's ring, where its garrison stands. The room tells
+  each foe the noises made and its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
 - **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
