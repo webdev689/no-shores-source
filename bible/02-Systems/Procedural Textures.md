@@ -13,6 +13,9 @@ code:
   - client/src/textures/recipes/walls.ts#paintWall
   - client/src/textures/recipes/rooms.ts#paintRoom
   - client/src/textures/recipes/things.ts#paintThing
+  - client/src/textures/recipes/dungeons.ts#paintDungeon
+  - client/src/textures/recipes/dungeonRock.ts#paintDungeonRock
+  - client/src/textures/rock.ts#hewn
   - client/src/textures/recipes/ground.ts#paintTerrain
   - client/src/textures/shipPictures.ts#shipPictures
   - content/forged/buildings.json
@@ -51,11 +54,30 @@ The finish lights the surface from the top left with cast shadows, darkens hollo
 tone over its palette shades, and averages each texel's sub-texels to the nearest shade. A picture's seed is its
 archive and record.
 
+## The dungeons' sets
+
+The painter paints five dungeon sets in each climate, each with the same five records: two wall strips, a floor, a
+ceiling and a trim. Sets 22, 23 and 24 are masonry: rubble and brick walls, flagstones, framed slabs and cobbles.
+
+- **Set 19, the mines**: rock hewn by picks, its chip scars and pick marks lit. One wall has a squared timber post
+  spiked to the rock, the other is plain rock. The floor is packed earth with gravel and a few stones. The ceiling
+  is lagging boards under a cap beam, with rock showing where boards are missing. The trim is a beam with iron nails
+  and an iron strap.
+- **Set 20, the caverns**: natural rock. One wall is layered beds, the other the same beds broken into tilted
+  planes along fractures; both have a mineral vein and damp streaks. The floor is worn rock, sand and pebbles. The
+  ceiling is rough rock with stalactite stubs along a crack. The trim is a rounded rock ledge.
+
+Each climate has its own stone, as for the other sets: sandstone and grey timber in the desert, grey stone and dark
+timber in the mountains, warm rubble and brown timber in temperate lands, green and dark stone in the swamp. The
+caverns' veins are red in the desert, white in the mountains, rust in temperate lands and teal in the swamp, and
+only the swamp's streaks run with slime.
+
 ## Same bytes everywhere
 
 The maths is IEEE arithmetic only. Sine, cosine, exp, log, atan2, pow and hypot are written out (`portableMath.ts`)
-as V8 computes them, since ECMAScript lets each engine round its own. The pictures are the bytes DFO Online's own
-painter gives: the tests pin 78 of them.
+as V8 computes them, since ECMAScript lets each engine round its own. The pictures DFO Online also paints are the
+bytes its own painter gives: the tests pin 78 of them. The mines and the caverns are Overlook's own: the tests pin
+all 40 of their pictures.
 
 ## Limits
 
