@@ -17,7 +17,8 @@ export function element(tag: string, className: string, parent: HTMLElement, tex
 /** What each node's style was last set to here, so a frame that changes nothing writes nothing to the page. */
 const written = new WeakMap<HTMLElement, Map<string, string>>();
 
-/** Sets `node`'s style property `name` (as CSS spells it) to `value`, only when that changes it. */
+/** Sets `node`'s style property `name` (as CSS spells it, `z-index` not `zIndex`) to `value`, only when that changes
+ *  it. Whatever sets that property on that node must set it here, or this would think it unchanged. */
 export function setStyle(node: HTMLElement, name: string, value: string): void {
   const last = written.get(node) ?? new Map<string, string>();
   if (last.get(name) === value) return;

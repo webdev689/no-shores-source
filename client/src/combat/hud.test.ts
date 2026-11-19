@@ -239,6 +239,9 @@ test('a settled display writes nothing more to the page and reads no layout, wit
     const ours = counted.writes.filter((write) => !/^(plate overhead|plate boss|ward)/.test(write));
     assert.deepEqual(ours, [], 'nothing written that did not change');
     assert.equal(counted.reads, 0, 'no layout read');
+    // A taller view moves the Arts and weapons, which stand from its foot, without changing their size or step.
+    hud.update({ ...frame, height: 800 }, 1 / 60);
+    assert.ok(counted.reads > 0, 'where the corners stand is read again');
   }));
 
 test('every word the display stands still on the screen is a whole step of the face’s 11 px grid, so it draws sharp', () => {
@@ -290,4 +293,9 @@ test('a resize across the display’s steps lays its corners again each way, and
     assert.deepEqual(laid(2560, 1440), [['double'], '333px']);
     assert.deepEqual(laid(692, 720), [['stacked'], '346px'], 'the Test Ground’s view between its panels');
     assert.deepEqual(laid(1280, 720), [[], '333px'], 'and back');
+    assert.match(
+      fightSheetCss(),
+      /\.fight-hud\.stacked \.arms \{ flex-direction: column-reverse;/,
+      'the weapons over the Arts',
+    );
   }));

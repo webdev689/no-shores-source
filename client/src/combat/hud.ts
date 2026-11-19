@@ -160,9 +160,10 @@ export class Hud {
   private readonly abilities: AbilityBar | null;
   private readonly weapons: WeaponRows;
   private layout: HudLayout | null = null;
-  /** Where the vitals and the Arts and weapons stand, read from the page once and again only after they change size or
-   *  the display is laid again, never each frame. */
+  /** Where the vitals and the Arts and weapons stand, read from the page once and again only after they or the view
+   *  change size (`viewed`, the view's last), never each frame. */
   private corners: Box[] | null = null;
+  private viewed: readonly [number, number] = [0, 0];
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
@@ -199,20 +200,22 @@ export class Hud {
     this.target = new FoePlate(this.column, 'target', { poise: true, remembers: 'whole' });
     this.words = new Words(this.over);
     this.veil = element('div', 'veil', root);
-    if (typeof ResizeObserver === 'undefined') return;
-    const resized = new ResizeObserver(() => (this.corners = null));
-    resized.observe(this.vitals.root);
-    resized.observe(this.arms);
+    if (typeof ResizeObserver !== 'undefined') {
+      const resized = new ResizeObserver(() => (this.corners = null));
+      resized.observe(this.vitals.root);
+      resized.observe(this.arms);
+    }
   }
 
   /** Lays the corner pieces for a view `width` by `height`, only when that changes what they need. */
   private lay(width: number, height: number): void {
+    // Any change of the view's size may move the corners, even one that lays nothing again.
+    if (width !== this.viewed[0] || height !== this.viewed[1]) [this.viewed, this.corners] = [[width, height], null];
     const next = hudLayout(width, height);
     const was = this.layout;
     const same = was?.wide === next.wide && was.zoom === next.zoom && was.length === next.length;
     if (same && was?.compassTop === next.compassTop) return;
     this.layout = next;
-    this.corners = null;
     this.root.classList.toggle('wide', next.wide);
     this.root.classList.toggle('double', next.zoom === 2);
     this.root.classList.toggle('stacked', next.stacked);
