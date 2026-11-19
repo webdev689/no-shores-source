@@ -35,42 +35,58 @@ fn read(path: &Path) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
 }
 
-/// Each continent's nodes, generated a few continents at a time; the nodes come back in the layout's order.
 fn every_node(
     continents: Vec<(Continent, String)>,
     blocks: &Blocks,
     builders: &Builders,
 ) -> Result<Vec<NodeFile>, String> {
-    let count = continents.len();
-    let queue = Mutex::new(continents.into_iter().enumerate().collect::<VecDeque<_>>());
-    let baked = Mutex::new(Vec::with_capacity(count));
     let threads = std::thread::available_parallelism().map_or(1, usize::from).min(AT_ONCE);
-    std::thread::scope(|scope| {
-        for _ in 0..threads {
-            scope.spawn(|| {
-                loop {
-                    let next = queue.lock().ok().and_then(|mut queue| queue.pop_front());
-                    let Some((order, (continent, text))) = next else { break };
-                    let nodes = land::edits::parse(&text)
-                        .map_err(|error| format!("{}: {error}", continent.id))
-                        .and_then(|edits| nodes_of(&continent, edits, blocks, builders));
-                    if let Ok(mut baked) = baked.lock() {
-                        baked.push((order, nodes));
-                    }
-                }
-            });
-        }
-    });
-    let mut baked = baked.into_inner().map_err(|_| "a continent's bake panicked".to_owned())?;
-    if baked.len() != count {
-        return Err("a continent's bake panicked".to_owned());
-    }
-    baked.sort_by_key(|(order, _)| *order);
+    let baked = in_turn(continents, threads, &|(continent, text): (Continent, String)| {
+        land::edits::parse(&text)
+            .map_err(|error| format!("{}: {error}", continent.id))
+            .and_then(|edits| nodes_of(&continent, edits, blocks, builders))
+    })?;
     let mut nodes = Vec::new();
-    for (_, each) in baked {
+    for each in baked {
         nodes.extend(each?);
     }
     Ok(nodes)
+}
+
+/// Works through `items` on `threads` threads, each taking the next item left, and gives back what each made in the
+/// items' order, or an error if a thread panicked.
+fn in_turn<Item: Send, Made: Send>(
+    items: Vec<Item>,
+    threads: usize,
+    work: &(dyn Fn(Item) -> Made + Sync),
+) -> Result<Vec<Made>, String> {
+    let count = items.len();
+    let queue = Mutex::new(items.into_iter().enumerate().collect::<VecDeque<_>>());
+    let mut made = std::thread::scope(|scope| {
+        let handles: Vec<_> = (0..threads.max(1))
+            .map(|_| {
+                scope.spawn(|| {
+                    let mut made = Vec::new();
+                    loop {
+                        let next = queue.lock().ok().and_then(|mut queue| queue.pop_front());
+                        let Some((order, item)) = next else { break };
+                        made.push((order, work(item)));
+                    }
+                    made
+                })
+            })
+            .collect();
+        let mut made = Vec::with_capacity(count);
+        for handle in handles {
+            made.extend(handle.join().map_err(|_| "a continent's bake panicked".to_owned())?);
+        }
+        Ok::<_, String>(made)
+    })?;
+    if made.len() != count {
+        return Err("a continent's bake panicked".to_owned());
+    }
+    made.sort_by_key(|(order, _)| *order);
+    Ok(made.into_iter().map(|(_, each)| each).collect())
 }
 
 #[allow(
@@ -115,4 +131,24 @@ fn bake() -> Result<String, String> {
     let seconds = started.elapsed().as_secs_f64();
     let megabytes = bytes as f64 / 1_000_000.0;
     Ok(format!("baked {} nodes of {landmasses} landmasses in {seconds:.1} s: {megabytes:.2} MB", nodes.len()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn work_done_in_turn_comes_back_in_order() {
+        let made = in_turn((0..9).collect(), 3, &|number: i32| number * 2);
+        assert_eq!(made, Ok((0..9).map(|number| number * 2).collect::<Vec<_>>()));
+    }
+
+    #[test]
+    fn a_panic_in_a_thread_is_an_error_not_a_panic() {
+        let made = in_turn((0..4).collect(), 2, &|number: i32| {
+            assert!(number != 2, "this continent cannot be baked");
+            number
+        });
+        assert_eq!(made, Err("a continent's bake panicked".to_owned()));
+    }
 }
