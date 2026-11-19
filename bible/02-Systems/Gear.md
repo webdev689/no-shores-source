@@ -17,6 +17,13 @@ code:
   - crates/gear/src/kinds.rs#Kind
   - crates/room/src/power.rs#loadout_arms
   - crates/room/src/power.rs#arms_allowed
+  - crates/gear/src/catalogue.rs#trait_fits
+  - crates/room/src/perks.rs#sharpened
+  - crates/room/src/perks.rs#verbs_after
+  - crates/room/src/perks.rs#PerkCounts
+  - crates/room/src/power.rs#drawn
+  - crates/room/src/power.rs#perk_on
+  - crates/gear/src/character.rs#has_drawn_trait
   - crates/gear/src/asks.rs#Ask
   - crates/gear/src/vestige.rs#dropped
   - crates/gear/src/vestige.rs#opens_to
@@ -113,9 +120,12 @@ number is one of [[Gear as Claude Shapes It]].
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below).
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
-  their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner
-  and Undertow as a blow is struck, Point Blank and Long Shot by the ground a shot covered, and the stamina a kill, a
-  parry or a block gives back, with Last Light's reload.
+  their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
+  Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
+  stamina a kill, a parry or a block gives back, with Last Light's reload, and the verbs ("Verbs", below). A player's
+  perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing it
+  sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
+  touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
   Vestige opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
   serves them all within reach of its stall. The Test Ground alone hands out gear.
@@ -135,8 +145,9 @@ number is one of [[Gear as Claude Shapes It]].
   long reload.
 - **Drawn.** Melee is drawn first; `1` draws Melee and `2` Ranged ([[Interface]]). The room takes up the arms of
   either worn loadout, and a swap between them holds off blows and shots for 0.4 s.
-- **Perks.** A trait fits `melee`, `ranged`, `weapon`, `armour` or `shield`: a shield's block perk, Bulwark, fits
-  armour and the loadouts with a shield, and Coral Guard is The Reefwall's own.
+- **Perks.** A trait fits `melee`, `ranged`, `weapon` (either loadout), `armour` or `shield`. A shield's block perks
+  fit only the loadouts with a shield: Bulwark is rolled onto no other piece, and Coral Guard is The Reefwall's own. A
+  worn piece gives a trait only where a roll could offer it (`gear::catalogue::trait_fits`).
 - **Named pieces.** One Legendary for each kind, in the harbour town's voice: Seawall the Sword & Shield, Tidegate the
   Dagger & Shield, Brinewhisper the Double Daggers, Harbourwarden the Sword, Crosscurrent the Double Swords,
   Beaconstaff, Anchorhead the Mace, The Bollards the Double Mace, Keeper's Watch the Mace & Shield, Wreckbreaker the
@@ -149,6 +160,27 @@ number is one of [[Gear as Claude Shapes It]].
   new kind. A shield is given back as its dismantle materials; a named one is made again as the named loadout
   it is now, carried or in the vault where it was, its XP kept and what its nodes cost given back. Carried and vaulted
   pieces read the same way, and a Vestige for either hand is one for Melee.
+
+## Verbs
+
+The weapons' perks that give a status ([[Combat]], "Statuses") or give back the Tenets ([[Arts]]), in
+[[Arts and Loadouts as Claude Shapes Them]]'s shape. The room alone applies them, its statuses through its one door, as
+a blow lands or a foe falls; none is in the trim, so no browser predicts them. What they count is the room's, for each
+player while they are in it (`room::perks`). A blow lands when it strikes, is blocked or breaks a guard.
+
+- **Melee**, on a swing. Exposing Strikes (perk) Exposes a foe on the third swing in a row to land on it, and the
+  count starts again. A swing that lands on other foes and not on it ends its row, as does one it parries or dodges;
+  a sweep that strikes it beside others keeps it. A swing that lands on no one leaves the other foes' rows as they
+  were. Thunderclap (handling) Charges a foe whose guard a swing breaks. Exploit (perk) makes every swing on an
+  Exposed foe a crit.
+- **Ranged**, on a shot that lands. Marked Shot (handling) Exposes a foe on the player's first shot to land on it:
+  each player marks a foe once, and forgets it when it dies or leaves the room. Shocking Rounds (perk) Charges
+  the foe struck by every fifth shot to land, on any foe; a shot that does not land is not counted.
+- **Either loadout.** Keen Eye (perk) gives Crit for 4 s on a kill. Attuned (finish) makes a blow or shot 10% harder
+  while its element is the worn Art's. Spellfeed (finish) takes 3% off both Tenets' cooldowns on a kill. Each counts
+  only its own loadout's blows and kills, never a spell's.
+- **The pools.** Each column's pool grows by about half with them: a Melee loadout is offered among 4 handling traits,
+  5 finishes and 8 perks (9 with a shield), a Ranged one among 4, 5 and 6; armour among its 6 perks.
 
 ## Drops
 
@@ -259,11 +291,15 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 ## Limits
 
 - A loadout's traits work whichever of its hands strikes, and every trait worn counts once however many pieces give
-  it.
+  it. Until a drawn loadout's new trim reaches the browser, the player's own screen predicts them by the old one.
+- A kill's stamina and Last Light's reload come from the loadout drawn as the kill lands: an arrow that kills after a
+  swap to Melee gives Melee's.
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
 - A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,
   and a Normal head or arms piece shows nothing over the figure.
 - No Breach items exist yet; cloaks belong to no faction.
+- A piece kept with a trait that no longer fits it, such as armour with Bulwark, still shows that node, which gives
+  nothing.
 - The traits' and items' words are English only.

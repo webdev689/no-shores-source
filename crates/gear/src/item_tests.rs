@@ -113,3 +113,27 @@ fn a_legendarys_last_three_nodes_ask_for_six_essence_each() {
     assert_eq!(cost(Rarity::Normal, columns(Rarity::Normal, true), 0).aurem, 100);
     assert_eq!(node_offsets(weapon).1, 14, "a Legendary weapon's nodes fit its bits");
 }
+
+#[test]
+fn a_shields_block_perk_rolls_and_counts_only_on_a_loadout_with_a_shield() {
+    let pooled = |kind: Kind| {
+        crate::catalogue::catalogue().pool(Column::Perk(2), kind).iter().any(|found| found.id == "bulwark")
+    };
+    for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
+        assert_eq!(pooled(kind), kind.shielded(), "{kind:?}");
+    }
+    // A piece offering it, as a kept one may: its node bought and chosen.
+    let worn = |kind: Kind, layout: Vec<Vec<String>>, column: usize| {
+        let mut item = Item::new(1, kind, Rarity::Rare, 10, kind.slot());
+        item.layout = layout;
+        item.bought |= item.node_bit(column, 0).expect("bulwark's node");
+        item.chosen[column] = 0;
+        item.active_traits().map(str::to_owned).collect::<Vec<_>>()
+    };
+    let pair = |first: &str, second: &str| vec![first.to_owned(), second.to_owned()];
+    let helm = vec![pair("bulwark", "hardy"), pair("unshaken", "scholar")];
+    assert!(worn(Kind::Head, helm, 0).is_empty(), "armour gives no Bulwark");
+    let sword = vec![pair("light_grip", "weighted"), pair("bulwark", "executioner"), pair("honed", "steady")];
+    assert!(worn(Kind::Sword, sword.clone(), 2).is_empty(), "nor a loadout with no shield");
+    assert_eq!(worn(Kind::SwordAndShield, sword, 2), ["bulwark"]);
+}

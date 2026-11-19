@@ -112,18 +112,22 @@ one crackles.
 
 ## Perks
 
-Shields' block perks (Bulwark, Coral Guard) fit loadouts with a shield. New perks bring the verbs to weapons:
+Shields' block perks (Bulwark, Coral Guard) fit loadouts with a shield, and only those. New perks bring the verbs to
+weapons, each in the column that keeps the pools growing alike (handling 3 to 4, finish 3 to 5, perks 5 to 8 for
+Melee and 4 to 6 for Ranged):
 
-| Perk | Fits | What it does |
-|---|---|---|
-| Exposing Strikes | Melee | A third blow in a row on one foe Exposes it |
-| Thunderclap | Melee | A blow that breaks a guard Charges the foe |
-| Opportunist | Melee | Blows on an Exposed foe crit |
-| Marked Shot | Ranged | The first shot after a reload Exposes |
-| Shocking Rounds | Ranged | Every fifth shot that lands Charges |
-| Keen Eye | Weapon | A kill gives Crit for 4 s |
-| Attuned | Weapon | While the worn Art's element is the weapon's, it deals 10% more |
-| Spellfeed | Weapon | Each kill takes 3% off the Tenets' cooldowns |
+| Perk | Fits | Column | What it does |
+|---|---|---|---|
+| Exposing Strikes | Melee | Perk | A third swing in a row landed on one foe Exposes it, and the count starts again. A swing landing on others and not on it, or one it parries or dodges, ends the row; a sweep that strikes it beside others keeps it |
+| Thunderclap | Melee | Handling | A blow that breaks a guard Charges the foe |
+| Exploit | Melee | Perk | Blows on an Exposed foe crit |
+| Marked Shot | Ranged | Handling | The player's first shot to land on a foe Exposes it: each player marks a foe once, forgotten when it dies or leaves |
+| Shocking Rounds | Ranged | Perk | Every fifth shot that lands Charges; a shot that does not land is not counted |
+| Keen Eye | Weapon | Perk | A kill with the weapon gives Crit for 4 s |
+| Attuned | Weapon | Finish | While the worn Art's element is the weapon's, it deals 10% more |
+| Spellfeed | Weapon | Finish | Each kill with the weapon takes 3% off the Tenets' cooldowns |
+
+A loadout's perks, these and the rest, work while it is drawn, beside the armour's; none touches a spell or its kill.
 
 ## Loot drops
 

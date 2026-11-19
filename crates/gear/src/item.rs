@@ -160,12 +160,16 @@ impl Item {
         self.layout.get(place).map_or(&[], Vec::as_slice)
     }
 
-    /// The traits it gives while worn: the one chosen in each trait column, if bought.
+    /// The traits it gives while worn: the one chosen in each trait column, if bought and if it fits the item as a
+    /// roll would offer it (a kept piece whose node holds a trait that does not fit it keeps the node, which gives
+    /// nothing).
     pub fn active_traits(&self) -> impl Iterator<Item = &str> {
-        self.chosen.iter().enumerate().filter_map(|(column, &node)| {
+        let content = crate::catalogue::catalogue();
+        self.chosen.iter().enumerate().filter_map(move |(column, &node)| {
             (node != NONE_CHOSEN && self.has(column, node))
                 .then(|| self.traits_of(column).get(usize::from(node)).map(String::as_str))
                 .flatten()
+                .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref()))
         })
     }
 

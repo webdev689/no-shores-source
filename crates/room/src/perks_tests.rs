@@ -28,10 +28,10 @@ fn wearing(traits: &[&str], chosen: u8) -> gear::Character {
 
 #[test]
 fn worn_traits_trim_the_fight_and_only_chosen_bought_ones() {
-    assert_eq!(trim_of(&gear::Character::starting()), Trim::PLAIN, "the starting kit trims nothing");
-    let light = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 0));
+    assert_eq!(trim_of(&gear::Character::starting(), Slot::Melee), Trim::PLAIN, "the starting kit trims nothing");
+    let light = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 0), Slot::Melee);
     assert_eq!(light, Trim { swing_stamina: 0.85, ..Trim::PLAIN });
-    let keen = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 2));
+    let keen = trim_of(&wearing(&["light_grip", "weighted", "keen_edge"], 2), Slot::Melee);
     assert_eq!(keen, Trim { guard_through: 1.5, ..Trim::PLAIN });
 }
 
