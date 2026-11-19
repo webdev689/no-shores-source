@@ -121,7 +121,8 @@ fn route_at(world: vec2f) -> f32 {
   let over = max(alpha, 0.9 * course);
   let colour = mix(INK_RGB, ROUTE_RGB, step(alpha, course));
   let shown = over + under * (1.0 - over);
-  let mixed = (colour * over + tint.rgb * under * (1.0 - over)) / max(shown, 1e-4);
+  let washed = tint.rgb / max(tint.a, 1e-4);
+  let mixed = (colour * over + washed * under * (1.0 - over)) / max(shown, 1e-4);
   return vec4f(mixed, shown);
 }
 `;

@@ -77,15 +77,12 @@ export interface FriendlyWater {
   depthAt(x: number, y: number): number;
 }
 
-/** A ship between answers: her last answer and when it came, how far she is drawn off where it reckons her (closing
- *  as frames go), and where she was drawn last. */
+/** A ship between answers: her last answer and when it came, and how far she is drawn off where it reckons her,
+ *  closing as frames go. */
 interface Track {
   answer: TrafficShip;
   answeredS: number;
   offset: { x: number; y: number; heading: number };
-  x: number;
-  y: number;
-  heading: number;
 }
 
 const headingOf = ([east, south]: readonly [number, number]) => Math.atan2(east, -south);
@@ -120,11 +117,16 @@ export class FriendlyShips {
         const track = this.tracks.get(id);
         const heading = headingOf(answer.direction);
         // A ship already drawn keeps where she was drawn: the gap to her new answer is closed over the next frames.
-        const offset = track
-          ? { x: track.x - answer.position[0], y: track.y - answer.position[1], heading: track.heading - heading }
-          : { x: 0, y: 0, heading: 0 };
-        const [x, y] = answer.position;
-        this.tracks.set(id, { answer, answeredS: nowS, offset, x, y, heading });
+        const drawnNow = track && reckoned(track.answer, track.answeredS, nowS);
+        const offset =
+          track && drawnNow
+            ? {
+                x: drawnNow[0] + track.offset.x - answer.position[0],
+                y: drawnNow[1] + track.offset.y - answer.position[1],
+                heading: headingOf(track.answer.direction) + track.offset.heading - heading,
+              }
+            : { x: 0, y: 0, heading: 0 };
+        this.tracks.set(id, { answer, answeredS: nowS, offset });
       }
     }
     const keep = Math.exp(-seconds * EASE_RATE);
@@ -134,9 +136,8 @@ export class FriendlyShips {
       [offset.x, offset.y] = [offset.x * keep, offset.y * keep];
       offset.heading = Math.atan2(Math.sin(offset.heading), Math.cos(offset.heading)) * keep;
       const [x, y] = reckoned(track.answer, track.answeredS, nowS);
-      [track.x, track.y] = [x + offset.x, y + offset.y];
-      track.heading = headingOf(track.answer.direction) + offset.heading;
-      sailing.push({ id, hull: track.answer.hull, x: track.x, y: track.y, heading: track.heading });
+      const heading = headingOf(track.answer.direction) + offset.heading;
+      sailing.push({ id, hull: track.answer.hull, x: x + offset.x, y: y + offset.y, heading });
     }
     const away = (ship: FriendlySailing) => Math.hypot(ship.x - centre[0], ship.y - centre[1]);
     return sailing.sort((one, other) => away(one) - away(other));
@@ -241,8 +242,8 @@ export class FriendlyTraffic {
   constructor(module: Promise<WebAssembly.Module>, world: WorldData, opened: (waters: OpenWaters) => void) {
     const open = () =>
       module
-        .then((compiled) => opened((this.waters = openWaters(compiled, world))))
-        .catch((error: unknown) => console.error('the waters could not be opened:', error));
+        .then((compiled) => (this.waters = openWaters(compiled, world)))
+        .then(opened, (error: unknown) => console.error('the waters could not be opened:', error));
     requestAnimationFrame(() => setTimeout(open));
   }
 

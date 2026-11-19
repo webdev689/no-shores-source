@@ -59,7 +59,8 @@ test('the wash lies only on charted sea, and blends across a border rather than 
   const charted = Uint8Array.from([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
   const wash = washOf(grid, charted);
   const alpha = (index: number) => wash.colour[index * 4 + 3];
-  const red = (index: number) => wash.colour[index * 4] ?? 0;
+  // The colour is kept multiplied by its alpha: divided back out, as the map's shader does.
+  const red = (index: number) => ((wash.colour[index * 4] ?? 0) * 255) / (alpha(index) ?? 1);
   // A land cell far from any sea would have none; here every cell touches sea, but a cell next to land holds less.
   assert.ok((alpha(8) ?? 0) < (alpha(1) ?? 0), 'land dims the wash beside it');
   const [home, pirates] = [rgba(HOLDER_COLOURS.home, 0)[0] ?? 0, rgba(HOLDER_COLOURS.pirates, 0)[0] ?? 0];

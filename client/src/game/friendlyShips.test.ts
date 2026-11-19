@@ -3,7 +3,10 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { labelPoints } from '../heldmap/watersWash.ts';
 import { Compass, SHIP_MARK_COLOURS } from '../plus/compass.ts';
+import type { Swell } from '../rules/landRules.ts';
 import { startWatersRules, type TrafficShip } from '../rules/watersRules.ts';
+import { hullWaterline } from '../ships/hulls.ts';
+import { poseOnSwell } from '../ships/swellPose.ts';
 import {
   ASK_EVERY_S,
   FRIENDLY_SPEED_M_S,
@@ -66,13 +69,17 @@ test('the ships are those the door places at the given world time, and run on at
     const asked = door.find((each) => each.id === ship.id);
     assert.deepEqual([ship.x, ship.y], asked?.position, 'first seen where the door places her');
   }
-  const one = door[0];
-  assert.ok(one);
-  const later = rules.ship(one.id, time + 10);
-  const run = reckoned(one, time, time + 10);
-  // Unless she turned onto her next leg within those 10 s, the door has her 50 m on along her way.
-  if (later && Math.abs(later.direction[0] - one.direction[0]) < 1e-9)
-    assert.ok(Math.hypot(run[0] - later.position[0], run[1] - later.position[1]) < 0.01);
+  // A ship that keeps her leg for the next 10 s is reckoned 50 m on along it, where the door has her then.
+  const onLeg = door.filter((ship) => {
+    const later = rules.ship(ship.id, time + 10);
+    return later && Math.abs(later.direction[0] - ship.direction[0]) < 1e-9;
+  });
+  assert.ok(onLeg.length > 0);
+  for (const ship of onLeg) {
+    const later = rules.ship(ship.id, time + 10);
+    const run = reckoned(ship, time, time + 10);
+    assert.ok(later && Math.hypot(run[0] - later.position[0], run[1] - later.position[1]) < 0.01);
+  }
 });
 
 test('between answers a ship moves on smoothly along her way, and eases onto a new leg', () => {
@@ -126,9 +133,21 @@ test('at sea they are drawn as their hulls in friendly colours, sails set, at th
 test('on foot they are drawn at their true size, posed on the swell', () => {
   const fleet = new FriendlyShips(() => [shipAt(0, [3_000, 0], [1, 0])]);
   const view = { centre: [0, 0] as const, radiusM: 15_000, scale: 1 };
-  const swell = { bearing: 0, waves: [] } as unknown as Parameters<typeof friendlyFrame>[2]['swell'];
-  const frame = friendlyFrame(fleet, view, { swell, depthAt: () => 50 }, [], 0.1, 3);
-  assert.equal(frame.ships[0]?.place.scale, 1);
+  const swell: Swell = {
+    waves: [{ direction: [0, -1], number: (2 * Math.PI) / 60, frequency: 0.8, amplitude: 1, shift: 0, phase: 0 }],
+    fullDepthM: 20,
+    goneDepthM: 2,
+    bearing: 0,
+  };
+  const deep = () => 50;
+  const frame = friendlyFrame(fleet, view, { swell, depthAt: deep }, [], 0.1, 3);
+  const place = frame.ships[0]?.place;
+  assert.equal(place?.scale, 1);
+  const { lengthM, beamM } = hullWaterline(0);
+  const lies = { x: 3_000, y: 0, heading: Math.PI / 2, underWay: true };
+  const pose = poseOnSwell(swell, deep, lies, lengthM / 2, beamM / 2, 3);
+  assert.ok(Math.abs(pose.heave) + Math.abs(pose.pitch) + Math.abs(pose.roll) > 0, 'the swell moves her');
+  assert.deepEqual([place?.z, place?.pitch, place?.roll], [pose.heave, pose.pitch, pose.roll]);
   assert.equal(frame.hulls.length, 1);
 });
 

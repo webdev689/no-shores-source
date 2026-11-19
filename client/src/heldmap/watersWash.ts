@@ -43,7 +43,8 @@ export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [
 ];
 
 /** The wash a cell at a time: `colour` RGBA, its colour the holders' of the sea round it blended over the cells either
- *  side, its alpha the share of them that is charted sea; `hatch` the share of them that is contested. */
+ *  side, its alpha the share of them that is charted sea, the colour multiplied by it; `hatch` the share of them that
+ *  is contested. */
 export interface WatersWash {
   readonly colour: Uint8Array;
   readonly hatch: Uint8Array;
@@ -89,7 +90,12 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
         }
       const index = row * columns + column;
       if (sea === 0) continue;
-      colour.set([red / sea, green / sea, blue / sea, (sea / 9) * 255].map(Math.round), index * 4);
+      // Kept premultiplied by its alpha, so the map's sampling between a washed cell and a bare one never darkens it.
+      const share = sea / 9;
+      colour.set(
+        [(red / sea) * share, (green / sea) * share, (blue / sea) * share, share * 255].map(Math.round),
+        index * 4,
+      );
       hatch[index] = Math.round((contested / sea) * 255);
     }
   return { colour, hatch };
