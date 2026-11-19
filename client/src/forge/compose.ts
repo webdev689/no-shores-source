@@ -18,6 +18,8 @@ export interface Frame {
   readonly pixels: Uint8Array;
   readonly depth: Float32Array;
   readonly weapon: Uint8Array;
+  /** A byte a pixel that is 1 where a layer in `held` is drawn, and nothing else of the weapon. */
+  readonly held: Uint8Array;
 }
 
 /** The colour tables a frame is composed with: each race's skin and each hair colour, and the palette a finished
@@ -183,5 +185,5 @@ export async function composeFrame(
   const base = looks.depth?.base ?? -3;
   const metres = Float32Array.from(best, (lies) => (lies === FAR ? Number.NaN : lies / scale + base));
   const weapon = Uint8Array.from(bestPart, (part, spot) => (part === PART.weapon || bestHeld[spot] ? 1 : 0));
-  return { width, height, root: box.root, pixels, depth: metres, weapon };
+  return { width, height, root: box.root, pixels, depth: metres, weapon, held: bestHeld };
 }

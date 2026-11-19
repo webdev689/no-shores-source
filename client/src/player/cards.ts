@@ -177,7 +177,7 @@ export class Cards {
     composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, strip, anim === CAST ? SPARK : undefined)
       .then((composed) => {
         // A cast's spark takes its Art's colour, as the weapon's glow takes the weapon's.
-        if (composed && glow && anim === CAST) recolourToGlow(composed.pixels, glow, composed.weapon);
+        if (composed && glow && anim === CAST) recolourToGlow(composed.pixels, glow, composed.held);
         const card = composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root);
         if (!card || !composed || !glow || !composed.weapon.includes(1)) {
           this.kept.set(key, card);

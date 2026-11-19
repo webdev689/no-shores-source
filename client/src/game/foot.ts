@@ -1,3 +1,4 @@
+import { pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
@@ -316,7 +317,7 @@ export class Foot {
     }
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
-    const camera = () => playerCamera(walker.player, movement, this.boxes);
+    const camera = () => pushedIn(playerCamera(walker.player, movement, this.boxes), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !paused,
@@ -352,12 +353,14 @@ export class Foot {
           : figureMuzzle([body.x, body.y, body.z], Math.atan2(fired.velocity[0], -fired.velocity[1])),
       origin: shot.eye,
       groundAt,
+      drawn: { foes: foes.placed, others: this.otherPlayers.placed },
       more: [
         ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
         ...this.dropMarks(clock, shot.eye),
         ...foes.overheads(shot.eye, clock),
       ],
     });
+    showAnimaEdge(effects.anima);
     // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
     const able = !paused && !this.fallen;
     const gear = this.gear;

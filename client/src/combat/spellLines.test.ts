@@ -2,12 +2,25 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { GLOW_RAMPS } from '../elementGlow.ts';
 import { MARK_FLOATS } from './marks.ts';
-import { Tails, boltLine, colourOf, groundStrip, jagged, risingMotes, trailLine } from './spellLines.ts';
-import { DARK, HOT } from './spellPixels.ts';
+import {
+  Tails,
+  boltLine,
+  colourOf,
+  groundRing,
+  groundStrip,
+  groundWidth,
+  jagged,
+  lineRibbon,
+  risingMotes,
+  runeRing,
+  trailLine,
+} from './spellLines.ts';
+import { BODY, DARK, HOT, LIGHT, Laid } from './spellPixels.ts';
 
 type Point = readonly [number, number, number];
 
-const colours = (out: readonly number[]) => {
+const colours = (laid: Laid) => {
+  const out = laid.laid();
   const found = new Set<string>();
   for (let start = 0; start < out.length; start += MARK_FLOATS) found.add(out.slice(start + 3, start + 6).join(','));
   return found;
@@ -30,7 +43,7 @@ test('a jagged line keeps its ends and throws each joint aside no further than i
 });
 
 test("lightning is a glow in the element's body under a white-hot core, nothing else between", () => {
-  const out: number[] = [];
+  const out = new Laid();
   const points: Point[] = [
     [0, -5, 1],
     [1, -5, 1],
@@ -42,9 +55,9 @@ test("lightning is a glow in the element's body under a white-hot core, nothing 
 });
 
 test('a line on the ground lies just over it, as wide as asked', () => {
-  const out: number[] = [];
+  const laid = new Laid();
   groundStrip(
-    out,
+    laid,
     [
       [0, 0, 2],
       [4, 0, 2],
@@ -52,6 +65,7 @@ test('a line on the ground lies just over it, as wide as asked', () => {
     0.2,
     colourOf(3, DARK, 0.5),
   );
+  const out = laid.laid();
   assert.equal(out.length, 6 * MARK_FLOATS);
   for (let start = 0; start < out.length; start += MARK_FLOATS) {
     assert.ok((out[start + 2] ?? 0) > 2 && (out[start + 2] ?? 0) < 2.1, 'over the ground');
@@ -65,10 +79,10 @@ test('a trail is laid in three steps of its age, each a flat colour of its own; 
     at: [index * 0.3, -5, 1] as Point,
     age: index * 0.03,
   }));
-  const out: number[] = [];
+  const out = new Laid();
   trailLine(out, [0, 0, 1], points, 1, 0.3);
   assert.equal(colours(out).size, 3);
-  const none: number[] = [];
+  const none = new Laid();
   trailLine(none, [0, 0, 1], points.slice(0, 1), 1, 0.3);
   assert.equal(none.length, 0);
 });
@@ -99,4 +113,77 @@ test("a Linked player's motes rise round them and cool a stop at a time as they 
     assert.equal(stop, HOT - Math.min(2, Math.floor(rise * 3)));
   }
   assert.notDeepEqual(risingMotes(7, feet, 12.7), motes, 'they move on with the clock');
+});
+
+test('a tail keeps one place a room tick, however fast the frames come, and answers where its thing is now first', () => {
+  const tails = new Tails();
+  for (let frame = 0; frame <= 24; frame++) tails.add(1, [frame, 0, 0], frame / 240, 0.25);
+  const kept = tails.add(1, [25, 0, 0], 25 / 240, 0.25);
+  assert.deepEqual(kept[0], { at: [25, 0, 0], age: 0 });
+  assert.ok(kept.length <= 8, `a tenth of a second at 240 frames a second keeps ${kept.length}`);
+});
+
+test('a line is never thinner on the screen than its least, however far off', () => {
+  const across = (eye: Point) => {
+    const out = new Laid();
+    lineRibbon(
+      out,
+      eye,
+      [
+        [0, 0, 1],
+        [1, 0, 1],
+      ],
+      0.01,
+      colourOf(2, HOT, 1),
+      0.0024,
+    );
+    const values = out.laid();
+    // The first vertex and the last of the first quad stand either side of the line's start.
+    const last = 5 * MARK_FLOATS;
+    return Math.hypot(
+      (values[0] ?? 0) - (values[last] ?? 0),
+      (values[1] ?? 0) - (values[last + 1] ?? 0),
+      (values[2] ?? 0) - (values[last + 2] ?? 0),
+    );
+  };
+  assert.ok(Math.abs(across([0.5, -1, 1]) - 0.01) < 1e-6, 'near, as wide as asked');
+  assert.ok(across([0.5, -40, 1]) > 0.09, 'at 40 m, a pixel and a half');
+  assert.ok(groundWidth([0, -20, 2], [0, 0, 0], 0.05) > 0.4, 'a line on the ground far off is widened');
+  assert.equal(groundWidth([0, -2, 2], [0, 0, 0], 0.1), 0.1, 'near, as wide as asked');
+});
+
+test('a ring lies on the ground between its radii, whole or only its arc', () => {
+  const out = new Laid();
+  groundRing(out, [0, 0, 1], 1, 2, colourOf(1, LIGHT, 1));
+  const values = out.laid();
+  for (let start = 0; start < values.length; start += MARK_FLOATS) {
+    const apart = Math.hypot(values[start] ?? 0, values[start + 1] ?? 0);
+    assert.ok(apart > 0.99 && apart < 2.01 && (values[start + 2] ?? 0) > 1, 'between its radii, just over the ground');
+  }
+  const arc = new Laid();
+  groundRing(arc, [0, 0, 1], 1, 2, colourOf(1, LIGHT, 1), [0, Math.PI / 2]);
+  assert.ok(arc.length * 3 < values.length, 'a quarter is a quarter of the ring');
+});
+
+test("a rune ring is its element's stops alone: a dithered dark floor, a dotted body circle, an edge in light", () => {
+  const out = new Laid();
+  runeRing(out, [0, 0, 0], 4, 3);
+  const ramp = GLOW_RAMPS[3];
+  assert.deepEqual(colours(out), new Set([ramp[DARK], ramp[BODY], ramp[LIGHT]].map((colour) => colour.join(','))));
+  const struck = new Laid();
+  runeRing(struck, [0, 0, 0], 4, 3, { struck: true });
+  assert.ok(colours(struck).has(ramp[HOT].join(',')), 'its edge white-hot as it strikes');
+  const floor = (out.length / MARK_FLOATS / 6) * (0.1 * 0.1);
+  assert.ok(floor < Math.PI * 4 * 4 * 0.25, 'its floor mostly bare');
+});
+
+test('laid vertices are written over in place each frame and cut to what was laid', () => {
+  const out = new Laid();
+  out.quad(0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, [0.5, 0.5, 0.5], 1);
+  const kept = out.laid();
+  assert.equal(kept.length, 6 * MARK_FLOATS);
+  out.clear();
+  out.vertex(9, 9, 9, [1, 1, 1], 1);
+  assert.equal(out.laid(), kept, 'the same array');
+  assert.deepEqual(kept, [9, 9, 9, 1, 1, 1, 1]);
 });

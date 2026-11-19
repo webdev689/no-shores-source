@@ -101,7 +101,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   grants them; a node's refuses.
 - **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
   the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). The ability bar stands by
-  the vitals.
+  the vitals. An Anima's release pushes the view in and frames the screen in its element, as in the game.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's

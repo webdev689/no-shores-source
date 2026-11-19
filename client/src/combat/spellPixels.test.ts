@@ -10,10 +10,12 @@ import {
   FIRE_BIRD,
   HOT,
   LIGHT,
+  Laid,
   RAVEN,
   STAR,
   billboard,
   birdSprite,
+  groundSprite,
   bladeSprite,
   hashOf,
   novaSprite,
@@ -30,10 +32,12 @@ import {
 type Point = readonly [number, number, number];
 
 const cellsAt = (picture: Sprite, stop: number) => picture.cells.filter((cell) => cell === stop).length;
-const vertices = (out: readonly number[]) =>
-  Array.from({ length: out.length / MARK_FLOATS }, (unused, index) =>
+const vertices = (laid: Laid) => {
+  const out = laid.laid();
+  return Array.from({ length: out.length / MARK_FLOATS }, (unused, index) =>
     out.slice(index * MARK_FLOATS, (index + 1) * MARK_FLOATS),
   );
+};
 /** The rows of a sprite at or above its middle that hold any cell. */
 const litAbove = (picture: Sprite) =>
   Array.from({ length: Math.ceil(picture.height / 2) - 1 }, (unused, row) => row).filter((row) =>
@@ -79,7 +83,7 @@ test('a point is within a polygon only inside it', () => {
 
 test("a picture stands upright at its middle, turned square to the eye, in its element's own stops", () => {
   const picture = sprite(3, 3, (across, up) => (across === 0 || up === 0 ? LIGHT : CLEAR));
-  const out: number[] = [];
+  const out = new Laid();
   const middle: Point = [10, 0, 1];
   billboard(out, picture, 2, middle, [0, 0, 1]);
   const corners = vertices(out);
@@ -94,26 +98,28 @@ test("a picture stands upright at its middle, turned square to the eye, in its e
 
 test("each row's run of one stop is one quad, and a mirrored picture is laid the other way across", () => {
   const picture = sprite(4, 1, (across) => (across < 0 ? DARK : HOT));
-  const out: number[] = [];
+  const out = new Laid();
   billboard(out, picture, 1, [0, -10, 0], [0, 0, 0]);
   assert.equal(out.length, 2 * 6 * MARK_FLOATS, 'two runs, each two triangles');
-  const mirrored: number[] = [];
+  const mirrored = new Laid();
   billboard(mirrored, picture, 1, [0, -10, 0], [0, 0, 0], { flip: true });
   const firstX = (vertex: readonly number[] | undefined) => vertex?.[0] ?? 0;
   assert.equal(firstX(vertices(out)[0]), -firstX(vertices(mirrored)[0]));
 });
 
 test('a picture nearer the eye than a body is not drawn', () => {
-  const out: number[] = [];
+  const out = new Laid();
   billboard(out, STAR, 3, [0.2, 0, 1.6], [0, 0, 1.6]);
   assert.equal(out.length, 0);
 });
 
 test('an orb is white-hot at its heart and dark at its rim, and its crackle is struck afresh', () => {
   const orb = orbSprite(4);
-  assert.equal(stopOf(orb, 7, 7), HOT);
-  assert.equal(stopOf(orb, 7, 3), DARK, 'its rim');
+  assert.equal(orb.width, 21);
+  assert.equal(stopOf(orb, 10, 10), HOT);
+  assert.equal(stopOf(orb, 10, 6), BODY);
   assert.notDeepEqual(orb.cells, orbSprite(5).cells);
+  assert.equal(orbSprite(4), orbSprite(20), 'made once, its crackle repeating every sixteen strikes');
   assert.ok(orb.cells.every((cell) => cell >= CLEAR && cell <= HOT));
 });
 
@@ -123,7 +129,7 @@ test("the sun's rays turn with it, a sixteenth of a turn at a time", () => {
   assert.equal(stopOf(sun, 18 + 15, 18), BODY, 'a long ray points along its turn');
   assert.equal(stopOf(sun, 18 + 15, 18 + 2), CLEAR, 'and is narrow');
   assert.notDeepEqual(sunSprite(Math.PI / 8).cells, sun.cells);
-  assert.deepEqual(sunSprite(0.01).cells, sun.cells, 'a turn less than a step shows no change');
+  assert.equal(sunSprite(0.01), sun, 'a turn less than a step is the same picture, made once');
 });
 
 test("a bird's wings beat: up over its back, then down below its belly", () => {
@@ -154,4 +160,19 @@ test("Vanish's puff swells as it goes and thins; Mend's ring swells and cools", 
   assert.ok(cellsAt(novaSprite(0), HOT) > 0);
   assert.equal(cellsAt(novaSprite(0.99), HOT), 0);
   assert.ok(cellsAt(novaSprite(0.99), BODY) > cellsAt(novaSprite(0), BODY));
+});
+
+test('a picture laid on the ground lies flat at its middle, a cell a run', () => {
+  const out = new Laid();
+  groundSprite(out, STAR, 1, [5, 5, 2], 0.1);
+  for (const [x = 0, y = 0, z = 0] of vertices(out)) {
+    assert.ok(Math.abs(x - 5) <= 0.25 + 1e-9 && Math.abs(y - 5) <= 0.25 + 1e-9, 'within the picture');
+    assert.ok(z > 2 && z < 2.1, 'just over the ground');
+  }
+});
+
+test("a bird's flicker is one of a few, each made once, and its outline alone flickers", () => {
+  assert.equal(birdSprite(FIRE_BIRD, 1, 3), birdSprite(FIRE_BIRD, 1, 11));
+  const [still, flickered] = [birdSprite(FIRE_BIRD, 1, 0), birdSprite(FIRE_BIRD, 1, 1)];
+  assert.equal(cellsAt(still, HOT), cellsAt(flickered, HOT));
 });
