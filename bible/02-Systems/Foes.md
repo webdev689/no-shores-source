@@ -18,6 +18,10 @@ code:
   - crates/foes/src/leash.rs#unoccupied
   - crates/foes/src/brain.rs#keep_to
   - crates/foes/src/flank.rs#drift
+  - crates/foes/src/flank.rs#ring_of
+  - crates/foes/src/pace.rs#may
+  - crates/foes/src/board.rs#go_in
+  - crates/foes/src/tuning.rs#BEAT
   - crates/foes/src/react.rs#defend
   - crates/foes/src/tell.rs#throw
   - crates/foes/src/shoot.rs#ranged
@@ -126,32 +130,47 @@ phases) is [[Enemies]].
   group walks its beat it keeps up with its place, walking at the share of a walk that its distance behind is of 2 m,
   a full walk at most, and faces its way.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
-  three shoot at it (the director, below). A holder walks in to its reach, squares up within 22.5 degrees, waits 0.3
-  to 0.9 s and swings once; then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn
-  on: the foe that has waited longest goes next, and one that has waited 6 s goes in, one over the count at most, so
-  a crowd's patience never piles it onto its target. The rest stand on a ring 1.5 m outside their reach, with 0.6 m of
-  give, and circle it slowly toward their own place on it, which starts where each stood and **flanks**: it drifts 0.4
-  radians a second away from where the target faces, out to 100 degrees either side of its face, and stops 2.5 m short
-  of the next foe on the ring (dead ahead, it takes a side by its number). A target who turns its back on a waiting
-  foe (more than 110 degrees) near the ring, or walks in on one inside the ring's near edge, is open to it without a
-  turn, but to one such foe at a time, and it goes on fighting while the target stays that close. A foe that blocks
-  holds its guard up on the ring while it waits its turn, as a shield-bearer does: it raises it within 0.3 m of the
-  ring's line and keeps it up across the ring's give and the step back in from just past it. A holder going in takes
-  the shortest way.
-- **Room on the ring.** The waiting keep apart. A ring holds as many as stand 2.5 m apart round it; the rest, in the
-  order they wait, stand on a ring 2.5 m farther out, and so on, so the next to go in stand nearest. Nearer than 2.5 m
-  to the next on its ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring
-  evens out. A waiting foe stands on its ring's own line, not merely within its give: inside the ring once the beat
-  after its blow is over, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather
-  than for its target, so the waiting come in spread round it.
+  three shoot at it (the director, below). One of those with a turn goes in at a time, the rest keeping to the ring
+  until it has struck: it walks in to its reach, squares up within 22.5 degrees, waits 0.3 to 0.9 s and swings once;
+  then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn on: the foe that has waited
+  longest goes next, and one that has waited 6 s goes in, one over the count at most, so a crowd's patience never
+  piles it onto its target. A target who turns its back (more than 110 degrees) on a waiting foe in its place near the
+  ring (the flanker, or one in the line), or walks in on one inside the ring's near edge, is open to it without a
+  turn, but to one such foe at a time, and it goes on fighting while the target stays that close. A back walking away
+  is no such opening: the one whose turn it is runs after it. A foe that blocks holds its guard up on the ring while
+  it waits its turn, as a shield-bearer does: it raises it within 0.3 m of the ring's line and keeps it up across the
+  ring's give and the step back in from just past it. A holder going in takes the shortest way.
+- **The beat.** Blows at one target land one at a time. A foe begins a swing, a telegraphed blow or a shot there only
+  if it lands 1.2 s or more after the latest another foe has begun there, so a person can answer each before the
+  next. Of the foes ready in reach that the beat holds back, the first held strikes first. A shooter looses only into
+  a beat no foe ready in reach waits for, so its shots fill the gap while the next goes in. A foe's own blows, its
+  riposte and its counter are never held back, so one foe alone fights at its own pace.
+- **The line.** The waiting stand on a ring 1.5 m outside their reach, with 0.6 m of give, in a line before their
+  group's side of the target: the bearing where the foes fighting it hand to hand stand round it, once the mean of
+  their bearings leans a quarter of the way one way, else the way the target faces. A place more than 75 degrees off
+  the line's middle moves to the line's nearer end, and the foe walks there while more than 2.5 m round, else circles
+  at 0.4 of a walk; in the line a place closes up toward the middle, stopping 2.5 m short of the next foe that way. So
+  a player facing a group sees every foe that waits, with a way out behind.
+- **The flanker.** One waiting foe at a time **flanks** instead: a skirmisher before any other, a foe with no shield
+  before none, and a shield-bearer never, as it holds the line. Its place drifts 0.4 radians a second away from where
+  the target faces, past the line, out to 100 degrees either side of its face, and it keeps flanking through its own
+  turn. A foe alone at its target keeps no line: its place flanks the same way, stopping 2.5 m short of the next foe on
+  the ring (dead ahead, it takes a side by its number).
+- **Room on the ring.** The waiting keep apart. The nearest ring holds as many as stand 2.5 m apart along the line;
+  the rest, in the order they wait, stand on a ring 2.5 m farther out, holding as many again along its own line, and
+  so on, so the next to go in stand nearest; the flanker stands on the nearest. Nearer than 2.5 m to the next on its
+  ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring evens out. A
+  waiting foe stands on its ring's own line, not merely within its give: inside the ring once the beat after its blow
+  is over, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather than for its
+  target, so the waiting come in spread round it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
   the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each
   foe they kill, falls 0.006 for each point a player loses (three
   times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
   hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
-  turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay and the ring's
-  gap by its share. A dominating player meets more foes at once; one being beaten, fewer.
+  turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay, the beat and
+  the ring's gap by its share. A dominating player meets more foes at once; one being beaten, fewer.
 - **Swings.** A chop into a raised guard, a sweep when two or more stand in reach before it, a thrust at the edge of
   reach, otherwise a slash, chop or thrust by chance. Its wait before a swing begins in reach and runs on while its
   target sways out to 0.3 m past it. A foe that guards keeps 30 stamina for its guard; short of a swing and that, it
@@ -168,7 +187,8 @@ phases) is [[Enemies]].
   1.5 s, aiming up for a bolt's or arrow's fall, 0.5 to 1.5 s between shots; its shots strike as a player's quick shot
   does ([[Combat]], [[Ranged Weapons Aim and Fire]]). A foe's gun ball flies at 70 m/s (pistolet) or 110 m/s
   (thunderlock), so it can be read and dodged, where a player's reaches its mark at once. A ranged turn gates a shot
-  and a shot spends it; held 5 s unused it goes on. A drawn shot strikes times the foe's might, as its blows do.
+  and a shot spends it; held 5 s unused it goes on. Drawn, it looses in the beat between its allies' blows (above). A
+  drawn shot strikes times the foe's might, as its blows do.
 - **Cover.** With cover near, a shooter takes a **post**: among the firing spots within 11 m that have cover, one where
   either the spot hides it from where it believes its target is and a step of 1.2 m aside has the line, or the other way
   round. It scores each by 1.5 a metre to walk there, 3 a metre outside its weapon's band of distance (bow 10 to 18 m,
@@ -215,18 +235,20 @@ these answers count the same at any lag.
 ## Telegraphed blows
 
 DFO's TELL. A holder of a melee turn, free, off its cooldown and seen to its target, with no other wind-up within 20 m
-of that target, winds one up with DFO's one in ten a classic tick of 1/16 s, here 2.8% a tick (81% a second). In reach
-(and half a metre) it picks among its blows of reach; out of it, a charge from 5 to 12 m along a lane clear of blocks or
-a leap from 3 to 9 m at its target's feet. Its wind-up is the shape's times 0.9 to 1.25, an elite's times 0.9, never
-under 0.6 s; the combat rules add iron's 0.2 s. A heavy body's slam and ring are iron, and an elite's blow is iron one
-time in three. Its cooldown is 8 to 15 s, an elite's 6 to 11, from the end of the wind-up. A Miniboss's or a Boss's
-blades feint one wind-up in five, cut at 0.55 of it and never two within three wind-ups, and swing at once after; a
-gap-closer, a chain or a shot never feints. Once the room says the blow landed on someone (it judges each player as
-their screen showed it, so the foe stands its ground up to half a second for the word), it is followed, 35% of the time
-for an elite, by a chained blow: a sweep then a lunge, a lunge or a slam then a sweep, a ring then a slam, wound up 0.6
-s, an elite's ×0.9 as any wind-up, and never under 0.55: long enough for a person who was just struck to react. A blow
-that ends without a chain is the holder's turn, spent; one that missed leaves it overreached, and it hands its turn on.
-A shooter's shot is aimed one in three, its line as long as its target is far.
+of that target, winds one up with DFO's one in ten a classic tick of 1/16 s, here 2.8% a tick (81% a second), when it
+would land in the beat (above). In reach (and half a metre) it picks among its blows of reach, each only at a target
+that, moving as it moves now, still stands in reach as the blow's shortest wind-up ends; out of it, a charge from 5 to
+12 m along a lane clear of blocks or a leap from 3 to 9 m at its target's feet. Its wind-up is the shape's times 0.9 to
+1.25, an elite's times 0.9, never under 0.6 s; the combat rules add iron's 0.2 s. A heavy body's slam and ring are iron,
+and an elite's blow is iron one time in three. Its cooldown is 8 to 15 s, an elite's 6 to 11, from the end of the
+wind-up. A Miniboss's or a Boss's blades feint one wind-up in five, cut at 0.55 of it and never two within three
+wind-ups, and swing at once after; a gap-closer, a chain or a shot never feints. Once the room says the blow landed on
+someone (it judges each player as their screen showed it, so the foe stands its ground up to half a second for the
+word), it is followed, 35% of the time for an elite, by a chained blow: a sweep then a lunge, a lunge or a slam then a
+sweep, a ring then a slam, wound up 0.6 s, an elite's ×0.9 as any wind-up, and never under 0.55: long enough for a
+person who was just struck to react. A blow that ends without a chain is the holder's turn, spent; one that missed
+leaves it overreached, and it hands its turn on. A shooter's shot is aimed one in three, its line as long as its target
+is far.
 
 A Minor throws none, and a Major only some of its role's ([[Enemies]]). A Miniboss's two phases (its first throws
 more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]'.
@@ -237,6 +259,8 @@ more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
 - Flanking stops at 100 degrees, short of a turned back.
+- The line's middle follows where its own foes stand, so in a long fight against a still target it wanders slowly.
+- Several foes parrying one sweep each riposte at once: a riposte is never held back by the beat.
 - A foe with no post, only stirred and never alert, walks up to 3 m toward the stir and stays where it stopped.
 - Walking back to its post after a leash a foe heeds no one, so another player may walk beside it unopposed until they
   strike it.
