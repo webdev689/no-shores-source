@@ -80,3 +80,15 @@ pub fn run_on(
     }
     (fighter, happenings)
 }
+
+/// Steps a fighter through a list of intents, one a tick, on open ground; gives it and every happening with its tick.
+pub fn script(mut fighter: Fighter, intents: &[Intent]) -> (Fighter, Vec<(usize, combat::Happening)>) {
+    let mut happenings = Vec::new();
+    for (tick, intent) in intents.iter().enumerate() {
+        let (next, happening) =
+            step_fighter(&fighter, intent, &Surroundings { blocks: &[], terrain: &movement::Flat, target_at: None });
+        fighter = next;
+        happenings.extend(happening.map(|happening| (tick, happening)));
+    }
+    (fighter, happenings)
+}

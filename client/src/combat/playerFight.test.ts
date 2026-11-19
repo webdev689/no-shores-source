@@ -160,6 +160,38 @@ test('a gun fires in the first person only as the rules let its shot go: with no
   assert.equal(fighting.own?.action.kind, 'idle');
 });
 
+test('a swing clicked early in a weapon swap plays in the first person on the very tick the swap ends', () => {
+  const { fighting, walker, shown, frame, said } = fightingPlayer();
+  const ask = (gear: Parameters<Fighting['askGear']>[0]) => {
+    fighting.askGear(gear);
+    for (let tick = 0; tick < 20; tick++) frame(controls());
+  };
+  ask({ kind: ASKS.grantItem, itemKind: KINDS.indexOf('pistolet'), rarity: 0, level: 1 });
+  ask({ kind: ASKS.wear, item: said.gear?.items.find((item) => KINDS[item.kind] === 'pistolet')?.id ?? 0, slot: 1 });
+  const take = (right: string) => {
+    walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, right } };
+    frame(controls());
+  };
+  take('pistolet');
+  for (let tick = 0; tick < 40; tick++) frame(controls());
+  assert.equal(fighting.own?.arms, startCombatRules(compiled).armsCode('pistolet', null, true), 'the gun taken up');
+  take('sword_iron');
+  // The sword's arms reach the next tick's input, the swap's first; the click lands on it and is let go at once.
+  shown.length = 0;
+  frame(controls(['swing'], ['swing']));
+  const stroke = fighting.stroke;
+  for (let tick = 0; tick < 40; tick++) frame(controls());
+  const swap = 24;
+  assert.deepEqual(
+    shown.map((each) => each.attackPressed).indexOf(true),
+    swap,
+    'the swing plays on the tick the swap ends, the first a blow may start',
+  );
+  assert.equal(shown.filter((each) => each.attackPressed).length, 1, 'once');
+  const action = fighting.own?.action;
+  assert.ok(action?.kind === 'attack' && action.stroke === stroke, 'with the stroke the click rolled');
+});
+
 test('locked on, a dodge is drawn rolling the way it goes, while the rules keep the fighter facing its foe', () => {
   const { fighting, walker, frame } = fightingPlayer();
   fighting.ask({ type: 14, rank: 2 });
