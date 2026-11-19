@@ -82,10 +82,18 @@ export class SeaCombat {
   private down = 0;
   private going: 1 | -1 = 1;
 
-  /** The fight `source` steps (the sea room's, or the land worker's door), its first view `first`. */
-  constructor(source: FightSource, first: FightView, marks: MarkDrawer, sails: readonly SailCorners[], now: number) {
+  /** The fight `source` steps (the sea room's, or the land worker's door), its first view `first`; `own` names her
+   *  ship's kind on the panel. */
+  constructor(
+    source: FightSource,
+    first: FightView,
+    marks: MarkDrawer,
+    sails: readonly SailCorners[],
+    now: number,
+    own?: string,
+  ) {
     this.naval = new Naval(marks);
-    this.naval.join(Fighting.joined(source, 'sea', first, now));
+    this.naval.join(Fighting.joined(source, 'sea', first, now, own));
     this.last = first;
     const [x = 0, y = 0, heading = 0] = first.player.ship;
     this.window = { leftM: Math.round(x), topM: Math.round(y) };

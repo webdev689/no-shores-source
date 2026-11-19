@@ -10,8 +10,8 @@ use land::sea::Swell;
 use naval::arms::Side;
 use naval::ballistics::flight;
 use naval::captain::Mode;
-use naval::damage::{State, Zone};
-use naval::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
+use naval::damage::{State, Zone, founder};
+use naval::fight::{Aim, CAPTAIN, Command, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
@@ -136,17 +136,21 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
     })
 }
 
-/// The editor's fight's two ships: her Sloop and the captain's, with the captain's mind.
-fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &naval::captain::Captain), String> {
+/// The editor's fight's two ships: her Sloop and the captain's, with the captain's command.
+fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &Command), String> {
     let player = fight.vessel(PLAYER).ok_or("the fight has no player's ship")?;
     let captain = fight.vessel(CAPTAIN).ok_or("the fight has no captain")?;
     let Sailor::Captain(command) = &captain.sailor else { return Err("a captain sails the captain's ship".into()) };
-    Ok((player, captain, &command.her))
+    Ok((player, captain, command))
 }
 
-/// A captain's Sloop as the browser shows her: her hurts, her commission, her mind and her sides run out.
-fn captain_json(vessel: &Vessel, her: &naval::captain::Captain) -> Value {
+/// A captain's Sloop as the browser shows her: her hurts, her commission, her mind, her sides run out, and what her
+/// hurts and her going down do to her pose (settled metres, trim, list), for a drawing on a swell of its own.
+fn captain_json(vessel: &Vessel, command: &Command) -> Value {
+    let her = &command.her;
     let mut captain = vessel_json(vessel);
+    let (settled, trim, list) = founder(&vessel.damage, her.seed, command.under);
+    captain["founder"] = json!([settled, trim, list]);
     captain["name"] = json!(her.build.name);
     captain["faction"] = json!(her.commission.faction);
     captain["rank"] = json!(her.commission.rank.number());
@@ -158,16 +162,27 @@ fn captain_json(vessel: &Vessel, her: &naval::captain::Captain) -> Value {
     captain
 }
 
+/// How the fight is over, if it is: an ambush beaten, or its last captain sunk or gone.
+fn over_name(fight: &Fight) -> Option<&'static str> {
+    if fight.beaten() {
+        return Some("beaten");
+    }
+    fight.over().map(|end| match end {
+        End::Sunk => "sunk",
+        End::Gone => "gone",
+    })
+}
+
 /// The fight as the browser shows it, its lay over `waters` at `time`: every captain after the first goes in
 /// `others`, by number, as the sea room's wire carries them.
 fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
-    let Ok((player, captain_ship, her)) = the_two(fight) else {
+    let Ok((player, captain_ship, command)) = the_two(fight) else {
         return json!({ "error": "the fight has lost its ships" });
     };
     let others: Vec<Value> = fight
         .ships
         .range(CAPTAIN + 1..)
-        .filter_map(|(_, vessel)| vessel.command().map(|command| captain_json(vessel, &command.her)))
+        .filter_map(|(_, vessel)| vessel.command().map(|command| captain_json(vessel, command)))
         .collect();
     let balls: Vec<[f64; 4]> = fight
         .balls
@@ -181,12 +196,12 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
     json!({
         "clock": fight.clock,
         "player": vessel_json(player),
-        "captain": captain_json(captain_ship, her),
+        "captain": captain_json(captain_ship, command),
         "others": others,
         "balls": balls,
         "lay": lay_json(fight, aim, waters, time),
         "events": events.iter().filter_map(event_json).collect::<Vec<_>>(),
-        "over": fight.over().map(|end| match end { End::Sunk => "sunk", End::Gone => "gone" }),
+        "over": over_name(fight),
         "fingerprint": format!("{:016x}", fingerprint(fight.numbers())),
     })
 }
@@ -303,7 +318,7 @@ fn step(request: &[u8]) -> Result<Value, String> {
             let mut events = Vec::new();
             for tick in 0..ticks {
                 // A fight over is stepped no more.
-                if fight.over().is_some() {
+                if over_name(fight).is_some() {
                     break;
                 }
                 // A climb, a load and a release are presses: they act on the first tick alone.
