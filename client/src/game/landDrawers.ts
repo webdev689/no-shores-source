@@ -9,6 +9,7 @@ import type { Landmass } from './landmass.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { Shot } from './camera.ts';
 import type { Drawer, GameScene } from './scene.ts';
+import { withWrecks } from './wrecks.ts';
 
 /** The forged models' tables and the RMB blocks read so far, shared by every landmass's city. */
 export interface CityAssets {
@@ -129,7 +130,7 @@ export function landDrawers(
     },
   };
   return {
-    city,
+    city: plan && city && withWrecks(gpu, city, plan),
     nature: natureDrawer,
     release: () => {
       released = true;

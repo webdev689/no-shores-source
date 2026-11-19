@@ -1,7 +1,7 @@
 //! A port city's plan from its site, the same on the server and in every browser: World 2.0's settlement stages at a
 //! city's scale (footprint, ways in, districts, terraces), its cells filled with Daggerfall's RMB blocks for the
 //! forged models, its wall and harbour, its landmark, and its social space. Only the social space is walked; the rest
-//! is seen.
+//! is seen. A city that is not a port is planned the same way and then laid in ruins (`ruins`).
 
 pub mod articulation;
 pub mod collision;
@@ -12,6 +12,7 @@ pub mod grid;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod rmb;
+pub mod ruins;
 pub mod social;
 pub mod solids;
 pub mod stations;
@@ -81,11 +82,20 @@ pub struct Plan {
     pub social: Social,
     /// The levels the city sets the land to, in order: later pads stand over earlier ones.
     pub pads: Vec<Pad>,
+    /// Whether the city is a ruin, desolate and destroyed: every city but the port cities (`ruins`).
+    pub ruined: bool,
+    /// The wrecks settled in a ruin's harbour; none in a port city's.
+    pub wrecks: Vec<ruins::Wreck>,
 }
 
 /// Plans a city on the land as the generator and the owner left it, before any city's pads. Fails for a motif the
 /// planner does not know, or a site the sea surrounds.
 pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, String> {
+    plan_as(city, ground, blocks, ruins::is_ruined(&city.id))
+}
+
+/// Plans a city as `plan` does, as a port city or as a ruin as asked: the same site, cells, ways and pads either way.
+pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> Result<Plan, String> {
     let centre = [city.centre.x as f64, city.centre.y as f64];
     let seed = seed_of(0x0C17, &city.id);
     let grid = Grid::round(centre);
@@ -123,7 +133,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     let site = Site { level, ..first };
     let built =
         landmark(&city.motif, &site, ground).ok_or_else(|| format!("{}: no motif called {}", city.id, city.motif))?;
-    let social = plaza(ground, centre, level, seaward, &built);
+    let social = plaza(ground, centre, level, seaward, &built, ruined);
     // Only the cells under the landmark's base rise to the platform and are kept for it. The cells under the plaza keep
     // their own levels and are built on as any other: the plaza's pad stands over its own footprint, its parapet for a
     // wall, so what is built beneath it is hidden and the city runs right up to its foot, as round the Tower.
@@ -157,8 +167,8 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         }
     }
     fill(&grid, &cell_footings, &mut uses, &footprint, blocks, seed);
-    let mut works = walls::city_wall(ground, &footprint, &gate_rays);
-    works.extend(walls::harbour_works(&footprint));
+    let mut works = walls::city_wall(ground, &footprint, &gate_rays, ruined);
+    works.extend(walls::harbour_works(&footprint, ruined));
     // The plaza's pad stands over the cells under it: no terrace wall of theirs may cross it.
     works.extend(walls::retaining_walls(ground, &grid, &cell_footings).into_iter().filter(|wall| {
         let [west, north, east, south, _, _] = wall.bounds();
@@ -180,9 +190,16 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
     pads.push(Pad { bounds: social.bounds, level });
     let reach = built.reach;
     pads.push(Pad { bounds: [centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach], level });
+    let (name, landmark_solids, wrecks) = if ruined {
+        works.extend(ruins::street_rubble(&grid, &cells, social.bounds, seed));
+        let wrecks = harbour.map(|at| ruins::wrecks(ground, &footprint, at, seed)).unwrap_or_default();
+        (ruins::ruined_name(&city.name), ruins::broken_landmark(built.solids, level), wrecks)
+    } else {
+        (city.name.clone(), built.solids, Vec::new())
+    };
     Ok(Plan {
         id: city.id.clone(),
-        name: city.name.clone(),
+        name,
         motif: city.motif.clone(),
         centre,
         grid,
@@ -190,10 +207,12 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         cells,
         gates,
         harbour,
-        landmark: built.solids,
+        landmark: landmark_solids,
         works,
         social,
         pads,
+        ruined,
+        wrecks,
     })
 }
 

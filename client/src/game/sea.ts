@@ -23,6 +23,7 @@ import { type Pace, SHIP_SPEED } from '../overworld/voyage.ts';
 import { lookOf, panShot, type Shot } from './camera.ts';
 import type { ScreenMark } from './hud.ts';
 import type { Landmass } from './landmass.ts';
+import { portOf } from './nodes.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { Swell } from '../rules/landRules.ts';
@@ -189,7 +190,7 @@ export class Sea {
       const place: Vec3 = [node.centre[0], node.centre[1], Math.max(0, ground) + MARK_RISE_M];
       return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true };
     });
-    const harbour = landmass.plan?.harbour;
+    const harbour = portOf(landmass.plan)?.harbour;
     if (landmass.plan && harbour) {
       const port = { id: `${landmass.plan.id}-port`, kind: 'port', name: landmass.plan.name, edge: true } as const;
       marks.push({ ...port, at: [harbour[0], harbour[1], MARK_RISE_M] });
@@ -232,7 +233,7 @@ export class Sea {
     if (this.view.kind !== 'sail' || this.combat || this.aboard.active) return null;
     const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
     const { plan } = this.landmass;
-    return landfallOf(this.position, offCoast, plan?.harbour ? { name: plan.name, harbour: plan.harbour } : null);
+    return landfallOf(this.position, offCoast, portOf(plan));
   }
 
   /** Where the ship lies and heads, as the held map shows it. */

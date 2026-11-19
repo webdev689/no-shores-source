@@ -9,6 +9,7 @@ import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
 import { PAVED_TILE } from './cityGround.ts';
 import { SOLID_TEXELS_PER_METRE } from './solidMesh.ts';
+import { MASS_RUIN } from './cityMasses.ts';
 
 /** How much nearer in depth (not on screen) the city is drawn than it stands: a few centimetres, and a share of the
  *  distance, so its terraces win over the land's coarser rings and its pads' own ground. */
@@ -16,6 +17,8 @@ export const PULL_M = 0.05;
 export const PULL_SHARE = 0.012;
 /** How far under its level a plate is drawn. */
 const PLATE_DROP_M = 0.03;
+/** How dark a ruin's walls are scorched at their break: a share of their light taken. */
+const SCORCH = 0.78;
 
 const VIEW = /* wgsl */ `
 ${SHARED_WGSL}
@@ -113,15 +116,25 @@ struct Surface {
   @location(3) @interpolate(flat) tier: u32,
   @location(4) @interpolate(flat) fades: vec2f,
   @location(5) from_eye: vec3f,
+  // in a ruin, the height over the building's origin and the height it is broken off at; (0, 0) standing whole
+  @location(6) ruin: vec2f,
 };
 
 @fragment
-fn surface_fragment(surface: Surface) -> @location(0) vec4f {
+fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
     discard;
   }
-  return vec4f(lit(surface.layer, colour_of(surface.layer, sampled), surface.normal, surface.from_eye), 1.0);
+  let broken = surface.ruin.y > 0.0;
+  if broken && surface.ruin.x > surface.ruin.y {
+    discard;
+  }
+  // a ruin's open shell is drawn from inside too, lit from the side seen
+  let normal = select(-surface.normal, surface.normal, facing);
+  let scorch = select(0.0, ${SCORCH} * pow(clamp(surface.ruin.x / max(surface.ruin.y, 1e-3), 0.0, 1.0), 1.5), broken);
+  let albedo = colour_of(surface.layer, sampled) * (1.0 - scorch);
+  return vec4f(lit(surface.layer, albedo, normal, surface.from_eye), 1.0);
 }
 `;
 
@@ -137,6 +150,8 @@ struct Vertex {
   @location(4) place: vec4f,
   // its cell, and its tier
   @location(5) about: vec2u,
+  // in a ruin, the height over its origin it is broken off at; 0 standing whole
+  @location(6) cut: f32,
 };
 
 // A model's x right and z forward, turned by its yaw clockwise from north, into the world's east and south.
@@ -149,6 +164,13 @@ fn turned(point: vec3f, yaw: f32) -> vec3f {
 fn placed(vertex: Vertex) -> vec3f {
   let solid = vertex.about.y == 0u;
   return select(turned(vertex.position, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
+}
+
+// Placed as drawn, but a broken model's corners above its break brought down to it, so its shadow is the ruin's.
+fn placed_broken(vertex: Vertex) -> vec3f {
+  var broken = vertex;
+  broken.position.y = select(vertex.position.y, min(vertex.position.y, vertex.cut), vertex.cut > 0.0);
+  return placed(broken);
 }
 `;
 
@@ -169,6 +191,7 @@ fn model_vertex(vertex: Vertex) -> Surface {
   surface.layer = vertex.layer;
   surface.tier = vertex.about.y;
   surface.fades = select(fades_of(vertex.about.x), vec2f(0.0), solid);
+  surface.ruin = select(vec2f(0.0), vec2f(vertex.position.y, vertex.cut), vertex.cut > 0.0);
   return surface;
 }
 `;
@@ -257,6 +280,10 @@ fn mass_vertex(@builtin(vertex_index) index: u32, mass: Mass) -> Surface {
   surface.normal = vec3f(normal.x * cosine - normal.y * sine, normal.x * sine + normal.y * cosine, normal.z);
   surface.tier = mass.about.w & 6u;
   surface.fades = fades_of(mass.about.z);
+  // a ruin's mass is cut already: its walls scorched up to their top, which is its break, and its top left open
+  let ruined = (mass.about.w & ${MASS_RUIN}u) != 0u;
+  let open_top = select(vec2f(here.z, mass.size.z + 0.01), vec2f(1.0, 0.5), roofed || face >= 6u);
+  surface.ruin = select(vec2f(0.0), open_top, ruined);
   return surface;
 }
 `;
@@ -312,7 +339,7 @@ ${MODEL_PLACE}
 
 @vertex
 fn model_cast(vertex: Vertex) -> @builtin(position) vec4f {
-  return shadow.from_eye * vec4f(placed(vertex) - view.eye.xyz, 1.0);
+  return shadow.from_eye * vec4f(placed_broken(vertex) - view.eye.xyz, 1.0);
 }
 `;
 

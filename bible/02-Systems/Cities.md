@@ -16,6 +16,10 @@ code:
   - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
+  - crates/city/src/ruins.rs#is_ruined
+  - crates/city/src/ruins.rs#broken_landmark
+  - crates/city/src/ruins.rs#street_rubble
+  - crates/city/src/ruins.rs#wrecks
   - crates/land/src/pads.rs#Pads
   - crates/land/src/sites.rs#City
   - client/src/city/cityView.ts#CityView
@@ -30,13 +34,16 @@ code:
   - client/src/city/pictures.ts#pictureBook
   - client/src/city/painter.ts#CityPainter
   - client/src/city/cityShaders.ts#PULL_SHARE
+  - client/src/city/ruins.ts#buildingRuin
+  - client/src/game/wrecks.ts#withWrecks
 ---
 # Cities
 
 Each of the nine continents has one city, the same size, each with its own motif
 ([[Every Island Is Seen Whole and Reached by Nodes]], [[The World as Claude Shapes It]]). Three of them are port
-cities, Overlook, Sunspire and Rimeholt; the other six are desolate and destroyed, which is decided and not yet built
-([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). A city is planned from its
+cities, Overlook, Sunspire and Rimeholt; the other six, Cairnwatch, Elmhaven, Goldreach, Mistfall, Windmere and
+Fenhallow, are ruins, desolate and destroyed ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]],
+"Ruins" below). A city is planned from its
 site by the same rules on the server and in every browser. From the sea and the Overworld it is seen whole; a player
 walks only its social space, a plaza the size of Destiny 1's Tower beside its landmark.
 
@@ -173,7 +180,7 @@ whose shadow at the far map's 1.2 m texels is the same; every face and plate is 
 | Timber | boards (364.1) | plain boards (67.0) | plain boards (67.0) | dark boards (426.1) |
 | Plaster | sandstone plaster (312.1) | white plaster (38.1) | sandstone plaster (126.1) | plaster with vines (442.1) |
 | Paving | crazy-paved flags (324.2, warmed) | sandstone cobbles (17.1) | square flags (323.2) | crazy-paved flags (324.2) |
-| Terrace walls | brown rubble (335.1) | sandstone rubble (17.1) | dark rubble (112.1) | mossy rubble (409.1) |
+| Terrace walls, a ruin's rubble | brown rubble (335.1) | sandstone rubble (17.1) | dark rubble (112.1) | mossy rubble (409.1) |
 
 Winter takes each picture's snowed turn where its set has one, unlightened.
 
@@ -189,6 +196,44 @@ SwiftShader at 1280 x 720:
 | The sea, 3 km off the harbour | 413,188 | 3 |
 | 400 m up, 8 km out | 415,338 | 3 |
 
+## Ruins
+
+Which cities are ports has one source, the world crate's `MAIN_PORTS` (`is_main_port`); every other city is a ruin
+(`ruins::is_ruined`), and its plan says so (`ruined`). A ruin is planned by the same rules as a port city, on the same
+site: its footprint, cells, terraces, ways, districts, landmark's place and social space are where a port city's would
+be, so its land, its nodes and its plaza's floor stand as they would. Then what stands on it is broken:
+
+- **Its name** is "Ruins of" and the city's name (`ruined_name`): its social space's node, its title on arriving and
+  landing, and the landing list name it so.
+- **Its landmark** is broken off at a third of its height over the platform: a solid wholly above the break is gone,
+  a block, column or frustum through it ends there with the taper it had, a dome, gable or arch through it falls
+  whole, and a light it carried is out, iron where it glowed.
+- **Its wall** is breached at one piece in three and at every gate: each breach is a heap of rubble 4.5 m high where
+  the piece stood, a gate's arch gone into one across the gateway. Its towers and gatehouses stand to half their
+  height, roofless.
+- **Its harbour's** piers are broken off at 40 % of their length from the quay. Two wrecks lie in it (`wrecks`): a
+  Sloop 70 m one side of the harbour's way out and a Schooner 80 m the other, each where the water first lies more
+  than 4 m deep from 170 m out, heeled 25 degrees, one to each side, her heading across the way out turned a little
+  by the city's seed. The page draws each with the ships layer's mesh, every face more than 2 m over her highest
+  deck left out (her masts and spars), settled in the water to her deck's middle height and shaded 0.6 as light as a
+  ship afloat, in no side's colours.
+- **Its ways** are strewn with rubble: four heaps in each avenue's cell, each 3 to 7 m by 2 to 5 m and 0.8 to 2 m
+  high, turned at random, seeded by the cell; none within 110 m of the plaza, so its room's boxes are only what the
+  plaza and the landmark stand.
+- **Its plaza** is walkable and empty: its counters stand bare, without their goods, and no station is kept, so no
+  keeper or townsfolk stand there, no counter is served by its room, and nothing is offered (`stations`).
+- **Its buildings** are broken where the page stands them (`ruins.ts`), each by its place to the centimetre, the same
+  on every machine: one in four has fallen to a heap of rubble over its hull's footprint, a quarter of its walls'
+  height and at least 1.5 m; the rest are broken off at 35 to 75 % of their height, roofless, their walls darkened
+  toward the break, at the break 78 % darker. Near, the forged model is cut at the break in the shader and drawn
+  from both faces, an open shell; its shadow is cast as if every corner above the break stood at it. Its masses and
+  hull end at the break with a flat top, so a ruin reads as one at every distance, from the sea and the Overworld
+  too. A ruin's windows are as dark as a port city's: lit windows are not drawn.
+
+Every heap is a frustum of rubble, its top 0.3 of its base, dressed in the climate's terrace rubble. At sea a ruin
+shows no port icon over its harbour and offers no docking there; its island's other landings stay ([[Game]],
+"Landings").
+
 ## Limits
 
 - Only the social space is walked; the city's blocks stand no colliders.
@@ -198,3 +243,6 @@ SwiftShader at 1280 x 720:
   250 m out, and all of it only from the parapet itself.
 - Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
 - The depth pull lets the city show through land within its share of the distance in front of it.
+- A ruin's building is cut level at its break, not jagged; inside its open shell the forged model's own faces show,
+  lit from the side seen. Fallen buildings' heaps and the ways' rubble are not walked against: only the plaza is.
+- A wreck is drawn only once her ship's mesh has come from the ships' bucket, and casts no shadow.

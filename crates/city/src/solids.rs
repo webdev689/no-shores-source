@@ -38,6 +38,8 @@ pub enum Material {
     Bone,
     /// Glows at night: a beacon's fire, a lantern.
     Glow,
+    /// The broken stone heaped in a ruined city: a breach's fall, the rubble along its ways.
+    Rubble,
 }
 
 /// One solid: its shape, the middle of its base in world metres (z up), its size (width, depth, height), its turn
