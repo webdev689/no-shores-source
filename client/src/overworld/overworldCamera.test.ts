@@ -4,7 +4,6 @@ import type { HeightAt, Vec3 } from './ground.ts';
 import {
   angleDelta,
   anglesOf,
-  blendView,
   ceilingFor,
   CLEAR,
   clearHeight,
@@ -19,7 +18,6 @@ import {
   heightBand,
   horizonOf,
   initialCamera,
-  keysHeading,
   orbitBy,
   poseOf,
   projectPoint,
@@ -28,7 +26,6 @@ import {
   stepCamera,
   TILT,
   turnCamera,
-  turnHeading,
   upOf,
   ZOOM_STEP,
   zoomTarget,
@@ -220,27 +217,6 @@ test('a ship at the top pace is followed at a held lag, never jumped, even at a 
   }
 });
 
-test('the rise and fall blend the shots, smoothstepped, turning the short way and never rolling', () => {
-  const from = { eye: ship, forward: forwardOf(0, 0) };
-  const to = { eye: [ship[0], ship[1] + 200, 300] as Vec3, forward: forwardOf(Math.PI - 0.05, -TILT.initial) };
-  assert.deepEqual(blendView(from, to, 0).eye, from.eye);
-  const end = blendView(from, to, 1);
-  for (let axis = 0; axis < 3; axis++) {
-    close(end.eye[axis], to.eye[axis], 1e-9, 'eye');
-    close(end.forward[axis], to.forward[axis], 1e-9, 'look');
-  }
-  close(blendView(from, to, 0.5).eye[2], 150, 1e-9, 'a half at a half');
-  let previous = anglesOf(from.forward);
-  let biggest = 0;
-  for (let i = 1; i <= 60; i++) {
-    const angles = anglesOf(blendView(from, to, i / 60).forward);
-    biggest = Math.max(biggest, Math.abs(angleDelta(previous.yaw, angles.yaw)));
-    assert.ok(angles.pitch >= -TILT.initial - 1e-9 && angles.pitch <= 1e-9, 'pitch between the two ends');
-    previous = angles;
-  }
-  assert.ok(biggest < 0.1, `no whip: ${biggest} rad a frame at most`);
-});
-
 test('the focus projects to the middle of the picture, and the ray through the middle is the look', () => {
   const viewport = { width: 1600, height: 900 };
   const { eye, forward } = eyeFor(ship, 2, TILT.initial, 260);
@@ -285,29 +261,18 @@ test('a ray through any pixel meets the sea where that pixel shows it', () => {
   }
 });
 
-test('the haze and the lens are the ground own with the view down and reach out with the eye as it rises', () => {
-  const ground = { fogEndM: 4_000, nearM: 0.2, farM: 6_000 };
-  assert.deepEqual(horizonOf(ground, 0, 330), ground);
-  const risen = horizonOf(ground, 1, 330);
-  assert.equal(risen.fogEndM, 28_000);
-  assert.equal(risen.nearM, 2);
-  assert.equal(risen.farM, 28_330);
-  const high = horizonOf(ground, 1, 150_000);
-  assert.equal(high.fogEndM, 450_000, 'from far up the haze reaches past the framed side');
+test('the lens reaches out with the eye, never nearer than the ground own', () => {
+  const ground = { nearM: 0.2, farM: 6_000 };
+  const near = horizonOf(ground, 330);
+  assert.equal(near.nearM, 2);
+  assert.equal(near.farM, 28_330);
+  const high = horizonOf(ground, 150_000);
+  assert.equal(high.farM, 600_000, 'from far up the lens reaches past the framed side');
   assert.equal(high.nearM, 150);
-  const halfway = horizonOf(ground, 0.5, 330);
-  assert.equal(halfway.fogEndM, 16_000);
-  const clearDay = horizonOf({ fogEndM: 90_000, nearM: 0.2, farM: 100_000 }, 1, 330);
-  assert.equal(clearDay.fogEndM, 90_000, 'never nearer than the ground own');
+  const farGround = horizonOf({ nearM: 0.2, farM: 100_000 }, 330);
+  assert.equal(farGround.farM, 100_000, 'never nearer than the ground own');
 });
 
-test('the keys point the way they are pressed from the camera, and a heading turns the short way at 6 rad/s', () => {
-  assert.equal(keysHeading(1, 0, 0), null);
-  close(keysHeading(1, 1, 0) ?? 0, 1, 1e-12, 'forward');
-  close(keysHeading(1, 0, 1) ?? 0, 1 + Math.PI / 2, 1e-12, 'right');
-  close(keysHeading(1, -1, 0) ?? 0, 1 + Math.PI, 1e-12, 'back');
-  close(turnHeading(0, 1, 0.1), 0.6, 1e-12, 'a step');
-  assert.equal(turnHeading(0, 0.3, 0.1), 0.3, 'arrived');
-  assert.ok(turnHeading(degrees(170), degrees(-170), 0.01) > degrees(170), 'across the seam');
-  close(angleDelta(degrees(170), degrees(-170)), degrees(20), 1e-12, 'the short way');
+test('a turn between two bearings goes the short way round', () => {
+  close(angleDelta(degrees(170), degrees(-170)), degrees(20), 1e-12, 'across the seam');
 });

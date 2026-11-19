@@ -1,3 +1,5 @@
+import type { Orbit } from '../editor/orbit.ts';
+
 /**
  * The game's one camera, whatever drives it (a player's shoulder on foot, the Overworld's raised eye at sea): where
  * the eye is in world metres (x east, y south, z up), the bearing it looks along and how far down, and how near and
@@ -112,15 +114,7 @@ export function onScreen(
  *  orbit's zoom), held `clearance` over the ground under the eye where the ground is known, so a camera pulled back up
  *  a slope never looks out from under it. */
 export function shotOfOrbit(
-  orbit: {
-    readonly targetX: number;
-    readonly targetY: number;
-    readonly targetZ: number;
-    readonly yaw: number;
-    readonly pitch: number;
-    readonly distance: number;
-    readonly zoom?: number;
-  },
+  orbit: Orbit,
   lens: { readonly fov: number; readonly near: number; readonly far: number },
   groundAt: (x: number, y: number) => number | null,
   clearance: number,

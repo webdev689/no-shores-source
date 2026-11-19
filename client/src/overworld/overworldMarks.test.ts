@@ -13,13 +13,11 @@ test('the nodes are marked by kind: social spaces, patrol areas, missions, dunge
   assert.deepEqual([...MARK_KINDS], ['social', 'patrol', 'mission', 'dungeon', 'boss', 'port']);
 });
 
-test('a mark grows with the eye height over it from its own size at 260 m, by the view blend', () => {
+test('a mark grows with the eye height over it from its own size at 260 m', () => {
   assert.equal(markGrow(260), 1);
   assert.equal(markGrow(100), 1, 'never smaller than itself');
   assert.equal(markGrow(520), 2);
   assert.equal(markGrow(26_000), 100);
-  assert.equal(markGrow(520, 0), 1, 'with the view down it is its own size');
-  assert.equal(markGrow(520, 0.5), 1.5);
   assert.equal(markGrow(Number.NaN), 1);
 });
 
@@ -76,8 +74,6 @@ test('a node at the focus reads at one size from the sea camera and from the bir
   const fromAbove = placeMarks([node], highPose, viewport)[0];
   assert.ok(Math.abs(fromAbove.sizePx / fromSea.sizePx - 1) < 1e-9, `${fromSea.sizePx} px and ${fromAbove.sizePx} px`);
   assert.ok(fromAbove.worldM > 9_000, 'it stands kilometres tall to read from up there');
-  const rising = placeMarks([node], highPose, viewport, 0)[0];
-  assert.equal(rising.worldM, MARK.worldM, 'with the view down it is its own size');
 });
 
 test('a pointer picks the nearest mark whose square holds it, and nothing off them', () => {

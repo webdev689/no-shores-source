@@ -6,55 +6,11 @@ import {
   dragCamera,
   keyTurn,
   KEY_RATE,
-  LIFT_OFF,
-  LIFT_SECONDS,
-  lowerLift,
-  pinchNotches,
   pressAt,
   pressMove,
-  raiseLift,
-  stepLift,
   wheelNotches,
   zoomCamera,
-  type Lift,
 } from './overworldInput.ts';
-
-function run(lift: Lift, seconds: number, dt = 1 / 60): Lift {
-  let now = lift;
-  for (let i = 0; i < Math.round(seconds / dt); i++) now = stepLift(now, dt);
-  return now;
-}
-
-test('the view rises over 1.2 s, stays up, and falls back over 0.8 s to off', () => {
-  assert.deepEqual(LIFT_SECONDS, { rise: 1.2, fall: 0.8 });
-  const rising = raiseLift(LIFT_OFF);
-  assert.deepEqual(rising, { phase: 'rising', blend: 0 });
-  const halfway = run(rising, 0.6);
-  assert.equal(halfway.phase, 'rising');
-  assert.ok(Math.abs(halfway.blend - 0.5) < 1e-9);
-  const up = run(halfway, 0.7);
-  assert.deepEqual(up, { phase: 'up', blend: 1 });
-  assert.deepEqual(stepLift(up, 1), up, 'it stays up');
-  const falling = lowerLift(up);
-  assert.equal(falling.phase, 'falling');
-  assert.equal(run(falling, 0.4).phase, 'falling');
-  assert.deepEqual(run(falling, 0.85), LIFT_OFF);
-});
-
-test('a view caught falling rises again from where it stands, and asking twice changes nothing', () => {
-  const caught = run(lowerLift(run(raiseLift(LIFT_OFF), 1.5)), 0.4);
-  assert.equal(caught.phase, 'falling');
-  const again = raiseLift(caught);
-  assert.deepEqual(again, { phase: 'rising', blend: caught.blend });
-  assert.deepEqual(raiseLift(again), again);
-  assert.deepEqual(lowerLift(LIFT_OFF), LIFT_OFF, 'a view down stays down');
-  assert.deepEqual(stepLift(LIFT_OFF, 1), LIFT_OFF);
-});
-
-test('the island fly-in steps by its own seconds', () => {
-  const flying = stepLift(raiseLift(LIFT_OFF), 1, 2.5, 2.5);
-  assert.ok(Math.abs(flying.blend - 0.4) < 1e-12);
-});
 
 test('a press that stays within 6 px is a click and orbits nothing; past it, a drag orbits by each move', () => {
   assert.equal(CLICK_SLOP_PX, 6);
@@ -81,12 +37,6 @@ test('a wheel zooms by its size: 100 px a notch, lines of 16 px, pages, at most 
   assert.equal(wheelNotches(-3, 1), 0.48);
   assert.equal(wheelNotches(1, 2, 800), -3, 'a page is clamped');
   assert.ok(wheelNotches(Number.NaN, 0) === 0, 'a broken event zooms nothing');
-});
-
-test('fingers moving apart zoom in by the notches their gap grew', () => {
-  assert.ok(Math.abs(pinchNotches(100, 118) - 1) < 1e-12);
-  assert.ok(Math.abs(pinchNotches(118, 100) + 1) < 1e-12);
-  assert.equal(pinchNotches(0, 100), 0);
 });
 
 test('zooming moves the height target under the ceiling; the look keys orbit and tilt by their rates', () => {

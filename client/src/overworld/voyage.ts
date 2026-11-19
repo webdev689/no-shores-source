@@ -109,10 +109,6 @@ export function alongNear(voyage: Voyage, point: Point2, nearM: number, windowM:
   return best?.along ?? null;
 }
 
-/** The ship after `dt` more seconds at a pace, from `travelledM` along. */
-export const sail = (voyage: Voyage, travelledM: number, dt: number, pace: number): ShipFix =>
-  shipAt(voyage, travelledM + sailSpeed(pace) * Math.max(0, dt));
-
 /** Seconds left to arrive from `travelledM` along at a pace. */
 export const secondsLeft = (voyage: Voyage, travelledM: number, pace: number) =>
   Math.max(0, voyage.lengthM - travelledM) / sailSpeed(pace);
