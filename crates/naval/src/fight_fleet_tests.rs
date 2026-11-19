@@ -197,7 +197,8 @@ fn two_captains_balls_pass_each_other_by() {
 fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_on_her() {
     let pirate = |x: f64, y: f64| (Ship { heading: 1.0, ..sloop_at(x, y) }, Commission::default(), 0);
     let captains = [pirate(380.0, 0.0), pirate(-300.0, 200.0), pirate(0.0, -400.0)];
-    let mut fight = Fight::ambush(sloop_at(0.0, 0.0), &captains, 9, &Open, 0.0);
+    let mut fight =
+        Fight::ambush(sloop_at(0.0, 0.0), &captains, 9, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
     let ids: Vec<ShipId> = (CAPTAIN..).take(3).collect();
     for id in &ids {
         let Some(Sailor::Captain(command)) = fight.vessel(*id).map(|vessel| &vessel.sailor) else { panic!("{id}") };

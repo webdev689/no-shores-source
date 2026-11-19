@@ -5,7 +5,7 @@
 import type { FightSource } from '../../editor/fighting.ts';
 import type { MarkDrawer } from '../../editor/naval.ts';
 import { SAILS_RUNG } from '../../editor/sailing.ts';
-import type { CaptainAt, FightEvent, FightVessel } from '../../rules/fightRules.ts';
+import type { CaptainAt, FightEvent, FightVessel, FightView } from '../../rules/fightRules.ts';
 import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import type { ShipBar } from '../../ships/shipBars.ts';
@@ -33,7 +33,7 @@ export type Happening = 'hit-taken' | 'hit-given' | 'sinking' | 'sunk';
 
 /** One frame of the ambush: the camera's shot, every ship as drawn (hers first, the Brig; then each captain's Sloop,
  *  darker), their footprints, the captains' bars, the panel's lines, what happened since the last frame, how many
- *  captains are still afloat, and whether every one has sunk. */
+ *  captains are still afloat, and whether the fight is over: every captain sunk, or gone out of it. */
 export interface StoryFightFrame {
   readonly shot: Shot;
   readonly ships: readonly {
@@ -51,6 +51,8 @@ export interface StoryFightFrame {
   readonly over: boolean;
 }
 
+/** A whole turn, radians. */
+const TURN = 2 * Math.PI;
 /** The story's fight is the same every time it is fought. */
 const STORY_SEED = 1;
 /** A captain's Sloop is drawn darker, as in the World Editor. */
@@ -94,6 +96,7 @@ export class StoryFight {
   private readonly land: LandWorker;
   private readonly combat: SeaCombat;
   private readonly heard: FightEvent[];
+  private readonly answered: { latest: FightView };
   private readonly sloopSails: readonly SailCorners[];
   private readonly ownRig = new SailRig(shipSails(OWN_HULL));
   private readonly captainRigs: SailRig[] = [];
@@ -103,10 +106,16 @@ export class StoryFight {
   };
   private failure: unknown = null;
 
-  private constructor(land: LandWorker, combat: SeaCombat, heard: FightEvent[], sloopSails: readonly SailCorners[]) {
+  private constructor(
+    land: LandWorker,
+    combat: SeaCombat,
+    rules: { heard: FightEvent[]; answered: { latest: FightView } },
+    sloopSails: readonly SailCorners[],
+  ) {
     this.land = land;
     this.combat = combat;
-    this.heard = heard;
+    this.heard = rules.heard;
+    this.answered = rules.answered;
     this.sloopSails = sloopSails;
   }
 
@@ -119,19 +128,25 @@ export class StoryFight {
     hull: { sails: readonly SailCorners[]; marks: MarkDrawer },
     now: number,
   ): Promise<StoryFight> {
-    const floats = new Float64Array([ship.x, ship.y, ship.heading, 0, 0, 0, 0, 0]);
+    // The rules take a heading in [0, 2π) alone; the sea's may have turned past either end.
+    const heading = ((ship.heading % TURN) + TURN) % TURN;
+    const floats = new Float64Array([ship.x, ship.y, heading < TURN ? heading : 0, 0, 0, 0, 0, 0]);
     const first = await land.fightBegin(floats, STORY_SEED, now, ambushersAt(ship, ambushers));
     const heard: FightEvent[] = [];
+    // The sea fight lets go of the rules' last answer the frame it is over: the story keeps it.
+    const answered = { latest: first };
     const source: FightSource = {
       fightBegin: () => Promise.reject(new Error('the story begins its own fight')),
       fightStep: async (_id, orders, time, ticks) => {
         const view = await land.fightStep(orders, time, ticks);
         heard.push(...view.events);
+        answered.latest = view;
         return view;
       },
       fightEnd: () => land.fightEnd(),
     };
-    return new StoryFight(land, new SeaCombat(source, first, hull.marks, hull.sails, now), heard, hull.sails);
+    const combat = new SeaCombat(source, first, hull.marks, hull.sails, now);
+    return new StoryFight(land, combat, { heard, answered }, hull.sails);
   }
 
   /** One frame, `seconds` on at `time`: the fight steps, drawing to `far`, every ship drawn `drawnScale` times her
@@ -148,8 +163,8 @@ export class StoryFight {
     const shot = this.combat.frame(input.seconds, input.time, input.far, (error) => {
       this.failure = error;
     });
-    const view = this.combat.view;
-    const captains = this.combat.captains;
+    const view = this.answered.latest;
+    const captains = [view.captain, ...(view.others ?? [])];
     while (this.captainRigs.length < captains.length) this.captainRigs.push(new SailRig(this.sloopSails));
     const windBearing = input.swell?.bearing ?? 0;
     const drawn = (vessel: FightVessel, hull: 'own' | 'captain', rig: SailRig) => {
@@ -165,10 +180,10 @@ export class StoryFight {
         (beamM / 2) * scale,
         input.time,
       );
-      // Going down, she settles and lists as the rules have her, on the swell's heave.
+      // Going down, she settles and lists as the rules have her: their heave already rides their own swell.
       const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
       const going = vessel.state === 'sinking' || vessel.state === 'sunk';
-      const pose = going ? { heave: swell.heave + heave, pitch, roll } : swell;
+      const pose = going ? { heave, pitch, roll } : swell;
       const place = { x, y, z: pose.heave, heading, pitch: pose.pitch, roll: pose.roll, scale };
       const shade = hull === 'own' ? 1 : CAPTAIN_SHADE;
       return { place, hull, shade, rig, sunk: vessel.state === 'sunk' };
@@ -187,7 +202,7 @@ export class StoryFight {
       lines: this.combat.lines(input.time),
       happened,
       afloat,
-      over: captains.every((captain) => captain.state === 'sunk'),
+      over: view.over !== null,
     };
   }
 

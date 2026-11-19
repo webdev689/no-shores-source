@@ -164,7 +164,8 @@ export interface LandRules {
   cityPlan(): string | null;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
+  /** A fight begun round the ship: a pirate captain put to sea, or `captains` set upon her where given, every chance
+   *  drawn from `seed`. */
   fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
   fightStep(orders: FightOrders, time: number, ticks: number): FightView;

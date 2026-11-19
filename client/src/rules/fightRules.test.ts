@@ -92,3 +92,18 @@ test('the fight door refuses a look whose ray is not numbers', async () => {
   assert.equal(rules.fightStep(looked([5, 3, 6, 1, 0, -0.1]), 1000, 1).lay?.side, 'starboard');
   assert.throws(() => rules.fightStep(looked([5, 3, 6, 1, 0, Number.NaN]), 1000, 1), /ray/);
 });
+
+test('a fight begun through WebAssembly with captains sets each where given and shows the rest in others', async () => {
+  const rules = await openSquare();
+  const captains = [
+    { x: 180_300, y: 360_000, heading: 4.7, faction: 2, rank: 1 },
+    { x: 179_700, y: 360_000, heading: 1.5, faction: 1, rank: 3 },
+  ];
+  const view = rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000, captains);
+  assert.equal(view.captain.ship[0], 180_300);
+  assert.deepEqual(
+    view.others?.map((other) => [other.ship[0], other.faction, other.rank]),
+    [[179_700, 1, 3]],
+  );
+  rules.fightEnd();
+});

@@ -195,11 +195,6 @@ export class SeaCombat {
     return { x, y, heading, scale, heave, pitch, roll };
   }
 
-  /** The fight as the rules last answered it. */
-  get view(): FightView {
-    return this.last;
-  }
-
   /** Every captain in the fight: hers, then any other. */
   get captains(): readonly FightCaptain[] {
     return [this.last.captain, ...(this.last.others ?? [])];

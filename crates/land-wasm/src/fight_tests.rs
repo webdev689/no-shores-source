@@ -214,3 +214,13 @@ fn a_fight_begun_without_captains_has_no_others_and_bad_captains_are_refused() {
     assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 0, "rank": 1 }]"#).is_some(), "no such faction");
     assert!(refused(r#"[{ "x": "a", "y": 1, "heading": 0, "faction": 2, "rank": 1 }]"#).is_some(), "not a number");
 }
+
+#[test]
+fn a_captain_set_aground_is_refused() {
+    opened();
+    let refused = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 260000, "y": 360000, "heading": 0, "faction": 2, "rank": 1 } ] }"#,
+    ));
+    assert!(refused["error"].as_str().is_some_and(|error| error.contains("does not float")), "{refused}");
+}
