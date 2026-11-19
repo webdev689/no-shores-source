@@ -234,10 +234,15 @@ out past its edge.
   coffins), and a stone shelf 1.6 m high with steps along the rim up to it; a gorge's fallen bridge, a ledge's broken
   watch post, a rampart's wall along its drop. A keep has walled courts and roofed great halls over its beats in turn,
   roofed passages and two towers at its door; a mine has timbered galleries boarded over, caverns roofed with rubble
-  slabs on rock pillars (light falling in shafts beside the way) and an iron grate; an undercroft has vaulted passages,
+  slabs on rock ribs and an iron grate; an undercroft has vaulted passages,
   pillared vaults and a slab of stone for its door. The door stands at the foot of the face behind the end arena, iron-
   banded timber in a stone arch for the rest. A building's rooms stand square to the world and open wherever the way
   crosses a wall; a slanted wall is laid in lengths short enough that each piece's box stays within half a metre of it.
+  A cavern's rock pillars stand on an 11 m lattice clear of the way; its rock ribs, 1.2 m wide and 0.9 m deep under
+  its roof 7 m up, run both ways 5.5 m apart, over the pillars on every other one, each springing from the rock where
+  the face rises to it on either side (one that meets no rock within 24 m past the rim, along a passage's mouth, or
+  that would run into the door's frame, is left out); a rubble slab spans each bay from rib to rib, laid only where a
+  rib is under its edge, and a few beside the way are left out so light falls in shafts.
   A keep's rooms reach 0.7 of their beat's, so their corners stand on its floor, short of the rock's face; their walls
   are windowed (openings 1.0 m wide and 1.6 m tall over sills 1.2 m up, 6 m apart, none in the wall the ward's stair
   climbs) and battlemented (merlons 0.9 m wide and 1.2 m tall every 2 m on the walls' outer halves, behind the

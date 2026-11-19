@@ -1,7 +1,7 @@
 //! The large buildings a building run passes through, of the hall kit along its run's line: a keep (a gatehouse over its
 //! mouth, walled courts and roofed great halls over its beats in turn, windowed and battlemented, roofed passages
 //! between, a walled ward with a turret at each corner and two towers at its door), a mine (a head-frame and its spoil
-//! at the mouth, timbered galleries boarded over, caverns roofed with rubble slabs on rock pillars) and an undercroft (a
+//! at the mouth, timbered galleries boarded over, caverns roofed with rubble slabs on rock ribs) and an undercroft (a
 //! ruined chapel at its mouth, vaulted passages, pillared vaults, an ossuary at its end). What a body climbs in a keep's
 //! ward and at an undercroft's mouth is run_climbs'.
 
@@ -28,6 +28,20 @@ const COURT_M: f64 = 5.0;
 const PASSAGE_M: f64 = 4.0;
 /// How far apart a mine's timber sets stand, metres.
 const SET_EVERY_M: f64 = 2.5;
+/// A cavern's roof's underside over its floor, metres: what carries it comes up to here.
+pub const ROOF_UP_M: f64 = 7.0;
+/// How far apart a beat's pillars stand, on a lattice, metres.
+const PILLAR_EVERY_M: f64 = 11.0;
+/// A cavern's bay: its ribs run both ways this far apart, over its pillars on every other one, and a slab spans each
+/// bay from rib to rib, metres.
+const BAY_M: f64 = PILLAR_EVERY_M / 2.0;
+/// A cavern's ribs' width and depth, and its slabs' thickness, metres.
+const RIB: [f64; 2] = [1.2, 0.9];
+const SLAB_M: f64 = 1.6;
+/// How far past its beat's rim a rib may run to meet the rock, metres: one along a passage's mouth meets none.
+const SPRING_MOST_M: f64 = 24.0;
+/// How far a cavern's ribs keep from its run's door, metres: past the reach of the door's frame (run_kits.rs).
+const DOOR_CLEAR_M: f64 = 6.0;
 
 fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
     [from[0] + way[0] * out, from[1] + way[1] * out]
@@ -262,15 +276,39 @@ fn gallery(kit: &Kit, out: &mut Vec<Solid>, ends: [[f64; 2]; 2], half: f64, carv
     wall(out, ends[0], ends[1], high + 3.22, high + 3.42, 2.0 * half + 1.0, Material::Timber);
 }
 
-/// A cavern over a beat: rock pillars on a lattice clear of the line, and a roof of rubble slabs over them with a few
-/// left out, so light falls in shafts.
+/// A cavern over a beat: rock pillars on a lattice clear of the line; rock ribs both ways a bay apart, each springing
+/// from the rock walls either side and running over the pillars on every other one; and a roof of rubble slabs over
+/// the bays, each on the ribs at its edges, with a few left out so light falls in shafts.
 fn cavern(kit: &mut Kit, out: &mut Vec<Solid>, run: &Run, middle: [f64; 2], radius: f64, carved: &Sculpts) {
-    pillars(kit, out, run, middle, radius, carved, (Material::Rubble, 2.6, 7.0));
-    let ground = carved_at(kit, carved, middle);
-    let slabs = (radius / 6.0).ceil() as i32;
-    for column in -slabs..=slabs {
-        for row in -slabs..=slabs {
-            let at = [middle[0] + f64::from(column) * 6.0, middle[1] + f64::from(row) * 6.0];
+    pillars(kit, out, run, middle, radius, carved, (Material::Rubble, 2.6, ROOF_UP_M));
+    let underside = carved_at(kit, carved, middle) + ROOF_UP_M;
+    let mut ribs = Vec::new();
+    let lines = ((radius + 2.0) / BAY_M).floor() as i32;
+    for line in -lines..=lines {
+        let off = f64::from(line) * BAY_M;
+        // From the beat's rim, where its floor ends, on either way to the rock.
+        let rim = (radius * radius - off * off).max(0.0).sqrt();
+        for (along, across) in [([1.0, 0.0], [0.0, 1.0]), ([0.0, 1.0], [1.0, 0.0])] {
+            let on = ahead(middle, across, off);
+            let reach = [1.0, -1.0]
+                .map(|side| springs(kit, carved, (on, [along[0] * side, along[1] * side]), rim, underside - RIB[1]));
+            let [Some(on_ahead), Some(behind)] = reach else { continue };
+            let at = ahead(on, along, (on_ahead - behind) / 2.0);
+            let length = on_ahead + behind;
+            let size = [along[0] * length + across[0] * RIB[0], along[1] * length + across[1] * RIB[0], RIB[1]];
+            let rib = Solid::upright(Shape::Block, [at[0], at[1], underside - RIB[1]], size, Material::Rubble);
+            let [west, north, east, south, ..] = rib.bounds();
+            // None runs into the door's frame, set in the rock past the end.
+            if crate::run_climbs::off_print([west, north, east, south], run.door) >= DOOR_CLEAR_M {
+                ribs.push([west, north, east, south]);
+                out.push(rib);
+            }
+        }
+    }
+    let bays = ((radius + 2.0) / BAY_M).ceil() as i32;
+    for column in -bays..bays {
+        for row in -bays..bays {
+            let at = [middle[0] + (f64::from(column) + 0.5) * BAY_M, middle[1] + (f64::from(row) + 0.5) * BAY_M];
             let off = run
                 .line
                 .windows(2)
@@ -280,9 +318,28 @@ fn cavern(kit: &mut Kit, out: &mut Vec<Solid>, run: &Run, middle: [f64; 2], radi
             if distance(at, middle) > radius + 2.0 || (off > 5.0 && kit.draw() < 0.3) {
                 continue;
             }
-            out.push(Solid::upright(Shape::Block, [at[0], at[1], ground + 7.0], [6.2, 6.2, 1.6], Material::Rubble));
+            let wide = BAY_M + 0.2;
+            let slab = Solid::upright(Shape::Block, [at[0], at[1], underside], [wide, wide, SLAB_M], Material::Rubble);
+            // None hangs on nothing where no rib reached the rock, over a passage's mouth.
+            let [west, north, east, south, ..] = slab.bounds();
+            if ribs.iter().any(|rib| rib[0] < east && west < rib[2] && rib[1] < south && north < rib[3]) {
+                out.push(slab);
+            }
         }
     }
+}
+
+/// How far along a way from a point a rib meets the rock at its underside (`bottom`), walked from `rim` metres out to
+/// SPRING_MOST_M past it, and half a metre on into it; none where it meets none.
+fn springs(kit: &Kit, carved: &Sculpts, (from, way): ([f64; 2], [f64; 2]), rim: f64, bottom: f64) -> Option<f64> {
+    let mut out = rim;
+    while out <= rim + SPRING_MOST_M {
+        if carved_at(kit, carved, ahead(from, way, out)) >= bottom {
+            return Some(out + 0.5);
+        }
+        out += 0.5;
+    }
+    None
 }
 
 /// Pillars over a beat on an 11 m lattice, each 3 m or more off the run's line: `look` is their material, their width
@@ -297,10 +354,13 @@ fn pillars(
     look: (Material, f64, f64),
 ) {
     let (material, across, tall) = look;
-    let steps = (radius / 11.0).floor() as i32;
+    let steps = (radius / PILLAR_EVERY_M).floor() as i32;
     for column in -steps..=steps {
         for row in -steps..=steps {
-            let at = [middle[0] + f64::from(column) * 11.0 + 5.5, middle[1] + f64::from(row) * 11.0 + 5.5];
+            let at = [
+                middle[0] + (f64::from(column) + 0.5) * PILLAR_EVERY_M,
+                middle[1] + (f64::from(row) + 0.5) * PILLAR_EVERY_M,
+            ];
             let off = run
                 .line
                 .windows(2)

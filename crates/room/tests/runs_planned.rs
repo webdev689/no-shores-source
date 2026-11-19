@@ -259,6 +259,78 @@ fn a_building_runs_ceilings_stand_clear_and_its_passages_are_roofed() {
     });
 }
 
+/// Whether two footprints (west, north, east, south first) overlap.
+fn overlapping(first: &[f64], second: &[f64]) -> bool {
+    first[0] < second[2] && second[0] < first[2] && first[1] < second[3] && second[1] < first[3]
+}
+
+#[test]
+fn every_cavern_slab_is_carried() {
+    each_run(&|laid, run, floor| {
+        if run.kind != layout::brief::RunKind::Mine {
+            return;
+        }
+        for beat in &run.beats {
+            let underside = floor(beat.at) + layout::run_halls::ROOF_UP_M;
+            let near: Vec<&[f64; 6]> = laid.boxes.iter().filter(|b| off_box(beat.at, b) <= beat.radius + 8.0).collect();
+            let slabs: Vec<&[f64; 6]> = near
+                .iter()
+                .copied()
+                .filter(|b| (b[5] - underside).abs() < 0.2 && b[2] - b[0] >= 4.0 && b[3] - b[1] >= 4.0)
+                .collect();
+            let cavern = format!("{}: {}'s cavern at {:?}", laid.id, run.name, beat.at);
+            assert!(!slabs.is_empty(), "{cavern} is roofed");
+            // Points 0.25 m inside a box's footprint along its edges, every half metre.
+            let edges = |b: &[f64; 6]| {
+                let ([west, north], [east, south]) = ([b[0] + 0.25, b[1] + 0.25], [b[2] - 0.25, b[3] - 0.25]);
+                let mut points = Vec::new();
+                let (across, down) = (((east - west) / 0.5).ceil() as i32, ((south - north) / 0.5).ceil() as i32);
+                for step in 0..=across {
+                    let x = west + (east - west) * f64::from(step) / f64::from(across);
+                    points.extend([[x, north], [x, south]]);
+                }
+                for step in 0..=down {
+                    let y = north + (south - north) * f64::from(step) / f64::from(down);
+                    points.extend([[west, y], [east, y]]);
+                }
+                points
+            };
+            for slab in slabs {
+                // A rib's or a pillar's top at the slab's underside, under its edge: in its footprint, not wholly
+                // half a metre inside its edge.
+                let inner = [slab[0] + 0.5, slab[1] + 0.5, slab[2] - 0.5, slab[3] - 0.5];
+                let carried = near.iter().any(|b| {
+                    (b[4] - slab[5]).abs() <= 0.5
+                        && b[5] < slab[5] - 0.3
+                        && overlapping(&b[..], &slab[..])
+                        && !(b[0] >= inner[0] && b[1] >= inner[1] && b[2] <= inner[2] && b[3] <= inner[3])
+                });
+                let on_rock = edges(slab).into_iter().any(|at| floor(at) >= slab[5] - 0.5);
+                assert!(carried || on_rock, "{cavern}: the roof slab {slab:?} has no rib, pillar or rock under its edge");
+            }
+            // A rib (a beam under the roof, not a pillar from the floor) springs at either end from the rock or a
+            // pillar.
+            for rib in near.iter().filter(|b| (b[4] - underside).abs() < 0.2 && b[5] > underside - 3.0) {
+                let (long, wide) = ((rib[2] - rib[0]).max(rib[3] - rib[1]), (rib[2] - rib[0]).min(rib[3] - rib[1]));
+                if long < 3.0 || wide > 2.0 {
+                    continue;
+                }
+                let middle = [(rib[0] + rib[2]) / 2.0, (rib[1] + rib[3]) / 2.0];
+                let ends = if rib[2] - rib[0] > rib[3] - rib[1] {
+                    [[rib[0] + 0.25, middle[1]], [rib[2] - 0.25, middle[1]]]
+                } else {
+                    [[middle[0], rib[1] + 0.25], [middle[0], rib[3] - 0.25]]
+                };
+                for end in ends {
+                    let on_rock = floor(end) >= rib[5] - 0.5;
+                    let on_pillar = near.iter().any(|b| b[5] < rib[5] - 3.0 && b[4] >= rib[5] && off_box(end, b) < 0.5);
+                    assert!(on_rock || on_pillar, "{cavern}: the rib {rib:?} springs from nothing at {end:?}");
+                }
+            }
+        }
+    });
+}
+
 #[test]
 fn a_ramparts_way_along_the_top_is_walled_on_both_sides() {
     each_run(&|laid, run, floor| {
