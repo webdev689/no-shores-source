@@ -44,17 +44,41 @@ fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &
             at[0] >= pad.bounds[0] && at[0] <= pad.bounds[2] && at[1] >= pad.bounds[1] && at[1] <= pad.bounds[3]
         })
     };
+    // A bridge's timbers move together, by as far as the land under its deck's higher end has moved, so its deck
+    // never steps where one length stood on a bank and the next over the water.
+    let bridges = seating.bridges.clone();
+    let bridge_of = |solid: &city::solids::Solid| {
+        (solid.material == city::solids::Material::Timber)
+            .then(|| {
+                bridges.iter().position(|&[x1, y1, x2, y2, half]| {
+                    crate::paths::off_line([solid.at[0], solid.at[1]], [x1, y1], [x2, y2]) <= half
+                })
+            })
+            .flatten()
+    };
     // A solid's place to the centimetre: a stack's pieces stand on the same point.
     let place = |at: [f64; 3]| ((at[0] * 100.0).round() as i64, (at[1] * 100.0).round() as i64);
     let bases: std::collections::BTreeSet<(i64, i64)> = seating
         .solids
         .iter()
         .zip(&was.solids)
-        .filter(|(solid, before)| stood_on(solid.at[2], **before) && !under_pad(solid.at))
+        .filter(|(solid, before)| stood_on(solid.at[2], **before) && !under_pad(solid.at) && bridge_of(solid).is_none())
         .map(|(solid, _)| place(solid.at))
         .collect();
+    let shifts: Vec<f64> = bridges
+        .iter()
+        .zip(&was.bridges)
+        .map(|(&[x1, y1, x2, y2, _], &before)| height(x1, y1).max(height(x2, y2)) - before)
+        .collect();
     for (solid, &before) in seating.solids.iter_mut().zip(&was.solids) {
-        if bases.contains(&place(solid.at)) {
+        if let Some(bridge) = bridge_of(solid) {
+            // A pile keeps its foot in the river's bed and reaches up to the deck.
+            if matches!(solid.shape, city::solids::Shape::Column { .. }) {
+                solid.size[2] += shifts[bridge];
+            } else {
+                solid.at[2] += shifts[bridge];
+            }
+        } else if bases.contains(&place(solid.at)) {
             solid.at[2] += moved(solid.at, before);
         }
     }
@@ -64,6 +88,8 @@ fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &
 struct Planned {
     props: Vec<f64>,
     solids: Vec<f64>,
+    /// The ground under each bridge's higher end.
+    bridges: Vec<f64>,
 }
 
 /// Which nodes each node's layout links to: a patrol area to the instances nearer it than any other patrol area, an
@@ -136,6 +162,12 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
             Planned {
                 props: layout.seating.props.iter().map(|prop| under(prop.at)).collect(),
                 solids: layout.seating.solids.iter().map(|solid| under(solid.at)).collect(),
+                bridges: layout
+                    .seating
+                    .bridges
+                    .iter()
+                    .map(|&[x1, y1, x2, y2, _]| under([x1, y1, 0.0]).max(under([x2, y2, 0.0])))
+                    .collect(),
             }
         })
         .collect();
@@ -226,7 +258,7 @@ mod tests {
             solids: vec![solid([1.0, 1.0, 9.7]), solid([1.0, 1.0, 12.4]), solid([3.0, 3.0, -8.0])],
             ..Seating::default()
         };
-        let was = Planned { props: vec![10.0, 10.0], solids: vec![10.0, 10.0, 10.0] };
+        let was = Planned { props: vec![10.0, 10.0], solids: vec![10.0, 10.0, 10.0], bridges: Vec::new() };
         // The road's bed lowered the ground 0.2 m everywhere.
         follow_ground(&mut seating, &|_, _| 9.8, &was);
         let heights = |list: &[[f64; 3]]| list.iter().map(|at| (at[2] * 100.0).round() / 100.0).collect::<Vec<_>>();
@@ -244,7 +276,7 @@ mod tests {
             pads: vec![Pad { bounds: [0.0, 0.0, 10.0, 10.0], level: 10.0 }],
             ..Seating::default()
         };
-        let was = Planned { props: Vec::new(), solids: vec![9.0] };
+        let was = Planned { props: Vec::new(), solids: vec![9.0], bridges: Vec::new() };
         // A road's bed beside it raised the ground under the plinth's middle.
         follow_ground(&mut seating, &|_, _| 9.4, &was);
         let top = seating.solids[0].at[2] + seating.solids[0].size[2];
@@ -256,5 +288,35 @@ mod tests {
         let points = dense(&[[0.0, 0.0], [10.0, 0.0]], 4.0);
         assert_eq!(points.len(), 4);
         assert_eq!(points.last(), Some(&(10.0, 0.0)));
+    }
+
+    #[test]
+    fn a_bridge_moves_with_the_land_under_its_higher_end_as_a_whole() {
+        use city::solids::{Material, Shape, Solid};
+        // A deck in lengths from x 0 to 20 over a river, its ends on banks 4.7 m high, its top 0.3 m over them, a rail
+        // on it and a pile under it standing in the river's bed 2 m down.
+        let deck = |x: f64| Solid::upright(Shape::Block, [x, 0.0, 4.5], [3.6, 2.0, 0.5], Material::Timber);
+        let rail = Solid::upright(Shape::Block, [10.0, 1.7, 5.0], [0.2, 2.0, 1.0], Material::Timber);
+        let pile =
+            Solid::upright(Shape::Column { sides: 6, top: 1.0 }, [10.0, 1.7, 0.5], [0.4, 0.4, 5.6], Material::Timber);
+        let mut solids: Vec<Solid> = [1.0, 3.0, 10.0, 17.0, 19.0].map(deck).to_vec();
+        solids.extend([rail, pile]);
+        let mut seating = Seating { solids, bridges: vec![[0.0, 0.0, 20.0, 0.0, 3.0]], ..Seating::default() };
+        let land = |x: f64| if x <= 4.0 || x >= 16.0 { 4.7 } else { 2.0 };
+        let was = Planned {
+            props: Vec::new(),
+            solids: seating.solids.iter().map(|solid| land(solid.at[0])).collect(),
+            bridges: vec![4.7],
+        };
+        // A road's bed raised the western bank 0.2 m, under the deck's first two lengths and its end.
+        follow_ground(&mut seating, &|x, _| if x <= 4.0 { 4.9 } else { land(x) }, &was);
+        let tops: Vec<f64> =
+            seating.solids.iter().map(|solid| ((solid.at[2] + solid.size[2]) * 100.0).round() / 100.0).collect();
+        assert_eq!(
+            tops,
+            [5.2, 5.2, 5.2, 5.2, 5.2, 6.2, 6.3],
+            "deck, rail and pile risen together, the pile's foot kept"
+        );
+        assert_eq!(seating.solids[6].at[2], 0.5);
     }
 }

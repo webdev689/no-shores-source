@@ -72,6 +72,10 @@ pub struct Seating {
     #[serde(skip)]
     pub walls: Vec<crate::collide::Box3>,
     pub pads: Vec<Pad>,
+    /// Each bridge, from its deck's one end to the other and how far either side its pieces stand, so it is moved as
+    /// a whole.
+    #[serde(skip)]
+    pub bridges: Vec<[f64; 5]>,
 }
 
 /// A block a layout stood: its name, its middle and its quarter turns.
