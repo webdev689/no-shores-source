@@ -86,6 +86,8 @@ export const BOW_TICK = 0.0625;
 export const BOW_HELD_FRAME = 3;
 export const BOW_LOOSE_FRAME = 5;
 const BOW_FRAMES = 7;
+/** How far through a bow's shot, as `progress` counts it, its arrow leaves: on its loose frame. */
+export const BOW_LOOSED = 0.5 + (0.5 * (BOW_LOOSE_FRAME - BOW_HELD_FRAME)) / (BOW_FRAMES - BOW_HELD_FRAME);
 /** A bow reloads in what is left of a five-frame swing once the draw and the loose have played. */
 export const BOW_RELOAD = Math.max(0, STRIKE_FRAMES * swingFrameSeconds('bow') - (4 + BOW_LOOSE_FRAME) * BOW_TICK);
 

@@ -118,7 +118,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the jump);
   the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed
   blow's stroke raised through its wind-up and held at its end when it overreaches; a gun aimed, its shot's aimed frame,
-  before it fires. A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
+  before it fires; a crossbow aimed, raised as its shot's first frame; a bow aimed, drawn over the first half of its
+  shot's frames and held fully drawn on the last of them, loosing and lowering over the rest only as its arrow leaves.
+  A foe's swings are its stroke's frames, by its weapon, landing their last with the blow.
 - **The ground.** A telegraphed blow's shape is marked on the ground where it lies: gold, red when iron, its edge
   drawn at once, four figure pixels wide with a dark line outside it, and its fill growing with the wind-up, a
   quarter of its cells dithered whole on the ground, each cell four figure pixels square. In its last fifth of a second the fill keeps half its cells, and for its first
