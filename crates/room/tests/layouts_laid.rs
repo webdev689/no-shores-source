@@ -267,8 +267,7 @@ fn every_fallen_stone_rests_on_the_carved_ground() {
             // A stone is sunk a quarter of its height; one sunk further was heighted on the ground before the carving.
             let sunk = laid.ground.height_at(solid.at[0], solid.at[1]) - (solid.at[2] + solid.size[2] * 0.25);
             if sunk > 0.5 {
-                failed
-                    .push(format!("{}: a stone at {:.0},{:.0} sunk {sunk:.1} m", layout.id, solid.at[0], solid.at[1]));
+                failed.push(format!("{}: a stone {:?} at {:?} sunk {sunk:.1} m", layout.id, solid.size, solid.at));
             }
         }
     }

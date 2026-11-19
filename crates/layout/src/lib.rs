@@ -187,7 +187,7 @@ pub fn plan(
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor);
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
-    works::build(&mut kit, &areas, &paths, rise);
+    works::build(&mut kit, &areas, &paths, rise, &carved);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
     let laid = paths.len();
     for pair in sculpt.climbs.chunks_exact(2) {

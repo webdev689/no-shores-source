@@ -200,7 +200,7 @@ pub fn kerb(kit: &mut Kit, from: [f64; 2], to: [f64; 2], half: f64, carved: &Scu
 
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet in the cliffs either
 /// side, its crown a little over the massif's top, boulders fallen at its feet; the way runs under it.
-pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64) {
+pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, carved: &Sculpts) {
     let half = if tier == Tier::Track { 15.0 } else { 11.0 };
     // The arch's opening is its middle four-fifths (the city's arch), so its jambs stand on the cliffs' feet.
     let span = 2.0 * (half + 6.0) / 0.9;
@@ -221,8 +221,7 @@ pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, 
             let along = (kit.draw() - 0.5) * depth * 1.5;
             let at = [middle[0] + across[0] * out + way[0] * along, middle[1] + across[1] * out + way[1] * along];
             let size = [1.5 + kit.draw() * 2.5, 1.3 + kit.draw() * 2.0, 1.0 + kit.draw() * 2.0];
-            let ground = kit.height(at);
-            stone(kit, Shape::Dome { sides: 6 }, [at[0], at[1], ground], size, 0.3);
+            crate::rocks::fallen(kit, carved, Shape::Dome { sides: 6 }, at, size, 0.3);
         }
     }
 }

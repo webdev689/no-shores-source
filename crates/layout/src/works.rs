@@ -10,6 +10,7 @@ use crate::field::distance;
 use crate::paths::{Path, Tier, simplified};
 use crate::pieces::{Kit, ahead, turn_along};
 use city::solids::{Material, Shape, Solid};
+use land::sculpts::Sculpts;
 
 /// The great wall's thickness and how far it stands over the massif's top, metres.
 const WALL_THICK_M: f64 = 9.0;
@@ -45,7 +46,7 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
 /// longest path's, a natural arch over a third, and the retaining walls.
-pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64) {
+pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &Sculpts) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
         .filter_map(|path| longest_run(path).map(|run| (path.tier, run)))
@@ -68,7 +69,7 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64) {
     if let Some((tier, (middle, way, _))) =
         runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
     {
-        crate::skyline::natural_arch(kit, *middle, *way, *tier, rise);
+        crate::skyline::natural_arch(kit, *middle, *way, *tier, rise, carved);
     }
     for area in
         areas.iter().filter(|area| area.radius >= 60.0 && !matches!(area.kind, AreaKind::Wilds | AreaKind::Arena))
