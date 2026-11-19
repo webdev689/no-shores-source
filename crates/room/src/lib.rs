@@ -20,6 +20,7 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+pub mod sea_weather;
 mod spells;
 mod statuses;
 pub mod threat;

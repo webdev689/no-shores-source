@@ -1,14 +1,15 @@
 //! A ship sailed over the open landmass. The request is little-endian 64-bit numbers: a ship, her helm, the world's
 //! time at her first tick, how many ticks to step, and her hull if it names one (0 the Sloop to 3 the Frigate; the
 //! Sloop without it). The answer is a header (`{}`, or `{ "error" }`) and then her numbers after the last tick and her
-//! pose then, as 64-bit numbers too. She sails in the steady wind.
+//! pose then, as 64-bit numbers too. She sails in the weather's wind where she starts, its landmass's points and the
+//! time read as the world's (`world::weather`); its swell stays a moderate sea's, as the editor draws it.
 
 use super::{OPEN, error_view, view_bytes};
 use land::sea::Swell;
 use sailing::floats::{HELM_FLOATS, SHIP_FLOATS};
 use sailing::pose::pose_of;
 use sailing::ship::{Helm, SAILS_SET, Ship, step_ship};
-use sailing::waters::{LandWaters, steady_wind};
+use sailing::waters::{LandWaters, weather_wind};
 use sailing::{HullKind, TICK_SECONDS};
 use serde_json::json;
 use std::f64::consts::TAU;
@@ -105,7 +106,7 @@ pub fn sail_bytes(request: &[u8]) -> Vec<u8> {
             let landmass = open.as_ref().ok_or("no landmass is open")?;
             let swell = Swell::default();
             let waters = LandWaters { ground: &landmass.surface, swell: &swell };
-            let wind = steady_wind(&swell);
+            let wind = weather_wind(world::weather::air_at(ship.x, ship.y, time).wind);
             let mut ship = ship;
             for tick in 0..ticks {
                 // A rung's climb is a press: it acts on the first tick alone.

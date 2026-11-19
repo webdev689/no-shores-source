@@ -36,9 +36,10 @@ export interface RoomDoor {
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
-  /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`; false if the
-   *  text is not a layout. */
-  openSea(layoutText: string, seed: number): boolean;
+  /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`, its clock
+   *  started at `worldStartS` (seconds since the Unix epoch, which sets its fights' weather); false if the text is not
+   *  a layout. */
+  openSea(layoutText: string, seed: number, worldStartS?: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(): boolean;
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
@@ -92,6 +93,7 @@ interface RoomExports {
   room_open_node(address: number, length: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
+  room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
   room_join(): number;
   room_joined(player: number): bigint;
@@ -147,8 +149,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
-    openSea: (layoutText, seed) =>
-      openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText),
+    openSea: (layoutText, seed, worldStartS = 0) => {
+      const opened = openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText);
+      exports.room_world_start(worldStartS);
+      return opened;
+    },
     openFleet: () => exports.room_open_fleet() === 1,
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),

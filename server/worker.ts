@@ -114,7 +114,11 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
     if (name === 'sea')
-      return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);
+      return this.room.openSea(
+        JSON.stringify(layout),
+        crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
+        Date.now() / 1000,
+      );
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
     // Every room on land rolls its loot from a seed of its own that no player sees.

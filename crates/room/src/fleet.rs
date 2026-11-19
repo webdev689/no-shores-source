@@ -5,6 +5,7 @@
 //! It has no network and no clock: whatever hosts it hands it orders and ticks, and sends out what it sees.
 
 use crate::players::{CATCH_UP, PLAYERS_MOST, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
+use crate::sea_weather::open_sea_at;
 use crate::{PlayerId, Refused};
 use land::sea::Swell;
 use naval::fight::{Aim, End, Event, Fight, Orders};
@@ -12,7 +13,7 @@ use naval::ranks::Commission;
 use naval::shots::ShipId;
 use sailing::TICK_SECONDS;
 use sailing::ship::{Helm, Ship};
-use sailing::waters::{OpenSea, steady_wind};
+use sailing::waters::OpenSea;
 use std::collections::{BTreeMap, VecDeque};
 use std::f64::consts::TAU;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
@@ -23,6 +24,8 @@ pub const CAPTAINS_MOST: usize = 4;
 const SEED: u32 = 0x464c_4545;
 /// The farthest a look may lay, metres: past every gun's reach.
 pub const MOST_RANGE_M: f64 = 1e5;
+/// Where a fleet room's open sea lies in the weather: the world frame's middle, metres east and south.
+pub const FLEET_AT: [f64; 2] = [FRAME_WIDTH_M as f64 / 2.0, FRAME_HEIGHT_M as f64 / 2.0];
 
 /// A captain asked for with a player's orders: one of a faction and rank called onto the ring round her ship, or
 /// every one sent off.
@@ -102,13 +105,19 @@ impl Default for Fleet {
 }
 
 impl Fleet {
-    /// An empty fleet room on the open sea under the world's swell, in the steady wind.
+    /// An empty fleet room on the open sea at `FLEET_AT`, under the weather there at world time 0 until its host sets
+    /// the time it opened (`set_world_start`).
     #[must_use]
     pub fn new() -> Self {
-        let swell = Swell::default();
-        let wind = steady_wind(&swell);
+        let (swell, wind) = open_sea_at(FLEET_AT, 0.0);
         let fight = Fight::new(SEED);
         Self { clock: 0, swell, wind, fight, players: BTreeMap::new(), next_ship: 1, events: Vec::new() }
+    }
+
+    /// Sets the world time the room's clock started at, seconds since the Unix epoch: its sea takes the weather then,
+    /// and keeps it while the room lasts.
+    pub fn set_world_start(&mut self, seconds: f64) {
+        (self.swell, self.wind) = open_sea_at(FLEET_AT, seconds + self.time());
     }
 
     /// The room's time, seconds: what the swell rolls by.

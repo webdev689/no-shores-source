@@ -166,9 +166,8 @@ fn a_player_whose_orders_stop_lies_still_a_views_lag_then_her_helm_stands() {
 #[test]
 fn her_ship_is_her_orders_stepped_by_the_rules_to_the_bit() {
     let (fleet, player) = rowing(120);
-    let swell = Swell::default();
-    let waters = OpenSea { swell: &swell };
-    let wind = steady_wind(&swell);
+    let (swell, wind) = fleet.weather();
+    let waters = OpenSea { swell };
     let sail = naval::arms::LARGE_BOAT.sail;
     let whole = naval::fight::Hurts::from_numbers(false, sail, sail);
     let mut ship =
