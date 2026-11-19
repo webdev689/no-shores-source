@@ -1,5 +1,6 @@
-//! Saltmere's runs as the bake lays them, walked by the movement rules: a body walks each run from its mouth along its
-//! line to its door, and pressing on past the door gets it nowhere; and up each ramp onto the terrace it serves.
+//! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
+//! its mouth along its line to its door, and pressing on past the door gets it nowhere; and up every ramp, the
+//! instances' too, onto the terrace it serves.
 
 use layout::field::distance;
 use layout::paths::off_line;
@@ -9,7 +10,6 @@ use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
 
-const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 /// How near a waypoint a body counts as there, and the door as reached, metres.
 const THERE_M: f64 = 1.5;
 const AT_DOOR_M: f64 = 3.0;
@@ -35,13 +35,12 @@ fn zones() -> Vec<Zone> {
     city::settle(&mut landmass, &city).expect("its city settles");
     let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
     let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
-    ZONES
+    layouts
         .iter()
-        .map(|id| {
-            let laid = layouts.iter().find(|layout| layout.id == *id).expect("the zone lays out");
-            let node = nodes.iter().find(|node| node.id == *id).expect("the zone bakes");
+        .map(|laid| {
+            let node = nodes.iter().find(|node| node.id == laid.id).expect("the node bakes");
             Zone {
-                id: (*id).to_owned(),
+                id: laid.id.clone(),
                 floor: Floor::Land(Box::new(node.ground.clone())),
                 blocks: Blocks::new(node.boxes.iter().map(Block::from_floats).collect()),
                 runs: laid.runs.clone(),
@@ -126,7 +125,7 @@ fn every_terrace_is_walked_up_its_ramps() {
             }
         }
     }
-    assert!(ramps > 0, "Saltmere's zones have terraces");
+    assert!(ramps > 0, "continent 1 has terraces");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 

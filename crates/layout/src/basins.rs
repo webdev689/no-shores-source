@@ -388,31 +388,76 @@ fn platform(
     terraces
 }
 
-/// Rows of headstones along each of a graveyard's shelves, on the land as carved, weathered askew and a few fallen
-/// away, a lane left down the shelf's middle from where its ramp arrives: every shelf holds graves, whatever its block
-/// stood there.
+/// Rows of headstones along each of a graveyard's shelves, on the land as carved (`headstones`): every shelf holds
+/// graves, whatever its block stood there.
 pub fn graves(kit: &mut Kit, terraces: &[[f64; 7]], carved: &Sculpts) {
+    let ramps: Vec<[[f64; 2]; 2]> =
+        terraces.iter().filter(|terrace| terrace[5] == 0.0).map(|ramp| ends(*ramp)).collect();
     let shelves = terraces.iter().filter(|terrace| terrace[5] == SHELF_SHARE && terrace[6] == SHELF_SHARE);
     for &shelf in shelves {
-        let [first, last] = ends(shelf);
-        let length = distance(first, last);
-        let along = [(last[0] - first[0]) / length, (last[1] - first[1]) / length];
-        let across = [-along[1], along[0]];
-        let mut step = GRAVE_EVERY_M / 2.0;
-        while step < length {
-            for row in GRAVE_ROWS_M {
-                if kit.draw() < 0.25 {
-                    continue;
-                }
-                let at = [first[0] + along[0] * step + across[0] * row, first[1] + along[1] * step + across[1] * row];
-                let base = carved_at(kit, carved, at) - 0.25;
-                let stone = Solid::upright(Shape::Block, [at[0], at[1], base], [0.7, 0.22, 1.1], Material::Stone);
-                let lean = (kit.draw() - 0.5) * 0.16;
-                kit.solid(Solid { lean, ..stone.turned(turn_along(across)) });
-            }
-            step += GRAVE_EVERY_M;
+        let (seed, mut draws) = (kit.seed, kit.draws);
+        let stones = {
+            let mut draw = || {
+                draws += 1;
+                land::exact::rand01(seed, &[draws])
+            };
+            headstones(shelf, &ramps, kit.into, &mut draw)
+        };
+        kit.draws = draws;
+        for mut stone in stones {
+            stone.at[2] = carved_at(kit, carved, [stone.at[0], stone.at[1]]) - 0.25;
+            kit.solid(stone);
         }
     }
+}
+
+/// A shelf's headstones, their bases at 0: rows along it either side of a lane down its middle from where its ramp
+/// arrives, weathered askew and a few fallen away, none standing in a building, a prop, a solid or on a ramp.
+fn headstones(
+    shelf: [f64; 7],
+    ramps: &[[[f64; 2]; 2]],
+    seating: &Seating,
+    draw: &mut impl FnMut() -> f64,
+) -> Vec<Solid> {
+    let [first, last] = ends(shelf);
+    let length = distance(first, last);
+    let along = [(last[0] - first[0]) / length, (last[1] - first[1]) / length];
+    let across = [-along[1], along[0]];
+    let solids =
+        seating.solids.iter().filter(|solid| off_line([solid.at[0], solid.at[1]], first, last) < shelf[4] + 30.0).map(
+            |solid| {
+                let [west, north, east, south, ..] = solid.bounds();
+                [west, north, east, south]
+            },
+        );
+    let footprints = seating.buildings.iter().chain(&seating.props).map(|seated| seated.footprint);
+    let standing: Vec<[f64; 4]> =
+        footprints.chain(solids).filter(|&print| rect_off_line(print, first, last) < shelf[4] + 1.0).collect();
+    let clear = |stone: &Solid| {
+        let [west, north, east, south, ..] = stone.bounds();
+        let meets = |print: &[f64; 4]| print[0] < east && print[2] > west && print[1] < south && print[3] > north;
+        let on_ramp =
+            |&[foot, top]: &[[f64; 2]; 2]| off_line([stone.at[0], stone.at[1]], foot, top) <= RAMP_HALF_M + 0.5;
+        !standing.iter().any(meets) && !ramps.iter().any(on_ramp)
+    };
+    let mut stones = Vec::new();
+    let mut step = GRAVE_EVERY_M / 2.0;
+    while step < length {
+        for row in GRAVE_ROWS_M {
+            if draw() < 0.25 {
+                continue;
+            }
+            let at = [first[0] + along[0] * step + across[0] * row, first[1] + along[1] * step + across[1] * row];
+            let stone = Solid::upright(Shape::Block, [at[0], at[1], 0.0], [0.7, 0.22, 1.1], Material::Stone);
+            let lean = (draw() - 0.5) * 0.16;
+            let stone = Solid { lean, ..stone.turned(turn_along(across)) };
+            if clear(&stone) {
+                stones.push(stone);
+            }
+        }
+        step += GRAVE_EVERY_M;
+    }
+    stones
 }
 
 /// Lifts what stands on a terrace or its ramp (or within its edge's fall) onto the land as carved there, `raised` being

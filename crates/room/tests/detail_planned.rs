@@ -244,3 +244,31 @@ fn what_stands_on_a_terrace_stands_on_its_level() {
     assert!(standing > 0, "something stands on a terrace");
     assert!(failed.is_empty(), "{} of {standing}: {:#?}", failed.len(), &failed[..failed.len().min(12)]);
 }
+
+#[test]
+fn no_headstone_stands_in_anything() {
+    let headstone = |solid: &city::solids::Solid| {
+        solid.material == Material::Stone && matches!(solid.shape, SolidShape::Block) && solid.size == [0.7, 0.22, 1.1]
+    };
+    let (mut stones, mut failed) = (0, Vec::new());
+    for laid in continent_one() {
+        let solids = laid.seating.solids.iter().filter(|solid| !headstone(solid)).map(|solid| {
+            let [west, north, east, south, ..] = solid.bounds();
+            ("a solid", [west, north, east, south])
+        });
+        let buildings = laid.seating.buildings.iter().map(|building| ("a building", building.footprint));
+        let props = laid.seating.props.iter().map(|prop| ("a prop", prop.footprint));
+        let others: Vec<(&str, [f64; 4])> = solids.chain(buildings).chain(props).collect();
+        for stone in laid.seating.solids.iter().filter(|solid| headstone(solid)) {
+            stones += 1;
+            let [west, north, east, south, ..] = stone.bounds();
+            for (what, print) in &others {
+                if print[0] < east && print[2] > west && print[1] < south && print[3] > north {
+                    failed.push(format!("{}: a headstone at {:?} stands in {what} {print:?}", laid.id, stone.at));
+                }
+            }
+        }
+    }
+    assert!(stones > 0, "the shelves hold headstones");
+    assert!(failed.is_empty(), "{} of {stones}: {:#?}", failed.len(), &failed[..failed.len().min(12)]);
+}

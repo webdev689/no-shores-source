@@ -119,7 +119,8 @@ from the sea, fresh water and the claim's edge), then:
    - a graveyard: a bowl 32 m wider than its reach, with one or two shelves along its rim at 0.14 of the massif's
      height, 24 m wide and 64 m long, each as far out as it fits clear of the ways, the other shelf and every solid,
      cutting through no building. A ramp runs on from one of its ends along the rim down to the floor, and rows of
-     headstones stand on the shelf, askew, a few gone, either side of a lane down its middle;
+     headstones stand on the shelf, askew, a few gone, either side of a lane down its middle, the last pieces stood,
+     none in a building, a prop, a solid or on a ramp;
    - a keep and a camp: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
      short of it. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
      camp's reaches 6 m past its palisade, at 0.12;

@@ -208,7 +208,6 @@ pub fn plan(
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise, &carved);
-    basins::graves(&mut kit, &terraces, &carved);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
     for pair in carve::lookouts(&sculpt.climbs) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
@@ -265,6 +264,8 @@ pub fn plan(
     rocks::talus(&mut kit, &ring, &ways, &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &ways, &carved);
     skyline::rim(&mut kit, &ring, &ways, &carved);
+    // Last of what stands, so a shelf's headstones keep out of all the rest.
+    basins::graves(&mut kit, &terraces, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
     // them all again. A run keeps its own pieces off its line (run_kits.rs).
     clearing::keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));

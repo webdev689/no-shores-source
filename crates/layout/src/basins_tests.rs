@@ -292,3 +292,44 @@ fn what_stands_on_a_terrace_is_lifted_with_it() {
     assert_eq!([seating.walls[0][4], seating.walls[0][5]], [16.5, 14.0]);
     assert_eq!(seating.props.iter().map(|prop| prop.at[2]).collect::<Vec<_>>(), [13.0, 10.0]);
 }
+
+#[test]
+fn headstones_keep_out_of_what_stands_on_their_shelf() {
+    let shelf = [AT[0] - 20.0, AT[1], AT[0] + 20.0, AT[1], SHELF_HALF_M, SHELF_SHARE, SHELF_SHARE];
+    let ramp = [offset(44.0, 0.0), offset(18.0, 0.0)];
+    let chapel = building(offset(-4.0, 6.0), 4.5);
+    let lantern = Solid::upright(Shape::Block, [AT[0] + 5.0, AT[1] - 8.5, 0.0], [0.4, 0.4, 2.0], Material::Timber);
+    let seating = Seating {
+        buildings: vec![chapel],
+        props: vec![Seated {
+            footprint: [AT[0] + 9.5, AT[1] + 4.0, AT[0] + 10.5, AT[1] + 5.0],
+            ..prop(offset(10.0, 4.5))
+        }],
+        solids: vec![lantern],
+        ..Seating::default()
+    };
+    let stones = headstones(shelf, &[ramp], &seating, &mut draws());
+    assert!(stones.len() > 20, "{} headstones", stones.len());
+    let standing: Vec<[f64; 4]> = seating
+        .buildings
+        .iter()
+        .chain(&seating.props)
+        .map(|seated| seated.footprint)
+        .chain(seating.solids.iter().map(|solid| {
+            let [west, north, east, south, ..] = solid.bounds();
+            [west, north, east, south]
+        }))
+        .collect();
+    for stone in &stones {
+        let [west, north, east, south, ..] = stone.bounds();
+        for print in &standing {
+            let meets = print[0] < east && print[2] > west && print[1] < south && print[3] > north;
+            assert!(!meets, "a headstone at {:?} stands in {print:?}", stone.at);
+        }
+        assert!(
+            off_line([stone.at[0], stone.at[1]], ramp[0], ramp[1]) > RAMP_HALF_M,
+            "a headstone on the ramp at {:?}",
+            stone.at
+        );
+    }
+}
