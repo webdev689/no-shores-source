@@ -173,6 +173,9 @@ export class Wake implements Beat {
     const { screen } = this.story.stage.parts;
     screen.lids(0);
     screen.blur(0);
+    // The director frames a beat once more after its skip: that frame is the flight's last, eyes open.
+    this.since = CONTROL_S;
+    this.cried = true;
     this.done = true;
   }
 

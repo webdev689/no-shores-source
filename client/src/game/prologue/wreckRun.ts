@@ -48,8 +48,8 @@ const THULE = { type: 12, rank: 5, over: 3 } as const;
 const OVER_THE_HEAD_M = 2.1;
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 const CAMERA_CLEARANCE_M = 0.3;
-/** The menu's key on foot's hints: the story has no menu, so M does nothing in it. */
-const STORY_HAS_NO_MENU = ' · M menu';
+/** The menu's key as foot's hints list it: the story has no menu, so its hints leave it out. */
+const MENU_HINT = ' · M menu';
 
 /**
  * The wreck played, as `Foot` plays a node: the player on both ships' decks in a room of the page's own on the
@@ -143,7 +143,7 @@ export class WreckRun {
   }
 
   /** The room, while the run is played. */
-  private get playing(): LocalRoom {
+  private get openRoom(): LocalRoom {
     if (!this.room) throw new Error('the wreck has been left');
     return this.room;
   }
@@ -161,7 +161,7 @@ export class WreckRun {
     const gate = this.layout.zones[zone]?.gate;
     if (!gate) return;
     this.scenery.standing.add(zone);
-    this.playing.standBlock(gate);
+    this.openRoom.standBlock(gate);
     this.relay();
   }
 
@@ -169,7 +169,7 @@ export class WreckRun {
   private openGate(zone: number): void {
     const gate = this.layout.zones[zone]?.gate;
     if (!gate || !this.scenery.standing.delete(zone)) return;
-    this.playing.takeBlock(gate);
+    this.openRoom.takeBlock(gate);
     this.relay();
   }
 
@@ -188,7 +188,7 @@ export class WreckRun {
   beginBoss(): void {
     if (this.progress.fighting) return;
     this.standGate(this.layout.arena.zone - 1);
-    const room = this.playing;
+    const room = this.openRoom;
     room.clearFoes();
     this.unseen.clear();
     this.progress.beginBoss();
@@ -233,7 +233,7 @@ export class WreckRun {
   /** The level's progress this frame: heaps cleared, checkpoints kept, waves stood, a fall into the sea brought
    *  back. */
   private advance(seconds: number): void {
-    const room = this.playing;
+    const room = this.openRoom;
     const { body } = this.context.walker.player;
     const dead = this.fight.own?.action.kind === 'dead';
     const alive = this.aliveByZone();
@@ -379,7 +379,7 @@ export class WreckRun {
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).map((line) => line.replace(STORY_HAS_NO_MENU, ''));
+    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).map((line) => line.replace(MENU_HINT, ''));
     return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
   }
 

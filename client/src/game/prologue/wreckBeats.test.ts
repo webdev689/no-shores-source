@@ -98,8 +98,10 @@ test('the deep shows the wreck above and the Brig her own hands, and speaks on i
 test('the deep cut short says nothing more and flashes no more', () => {
   const { story, calls } = recorded();
   const beat = new Deep(story, layout, scenery);
-  beat.frame(tick(5));
+  beat.frame(tick(17.05));
+  calls.length = 0;
   beat.skip();
+  beat.frame(tick(0.1));
   assert.ok(beat.done);
   assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('flash')));
 });
@@ -120,4 +122,13 @@ test("the wake's flight draws the wreck and the player, and ends on the shot pla
   assert.ok(beat.done);
   rest.eye.forEach((value, axis) => assert.ok(Math.abs((handed.shot.eye[axis] ?? 0) - value) < 1e-6));
   assert.ok(Math.abs(handed.shot.yaw - rest.yaw) < 1e-6 && Math.abs(handed.shot.pitch - rest.pitch) < 1e-6);
+});
+
+test('the wake cut short leaves the eyes open, though the director frames it once more', () => {
+  const { story, calls } = recorded();
+  const beat = new Wake(story, layout, scenery, new Promise(() => undefined));
+  beat.frame(tick(2));
+  beat.skip();
+  beat.frame(tick(0.016));
+  assert.equal(calls.filter((call) => call.startsWith('stage.parts.screen.lids')).at(-1), 'stage.parts.screen.lids(0)');
 });

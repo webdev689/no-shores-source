@@ -104,8 +104,11 @@ export class Deep implements Beat {
 
   frame(tick: Tick): StoryFrame {
     const { stage } = this.story;
-    this.since += tick.seconds;
-    this.cues.step(this.since);
+    // The director frames a beat once more after its skip: nothing of it may run then.
+    if (!this.done) {
+      this.since += tick.seconds;
+      this.cues.step(this.since);
+    }
     // The fire above flickers through the water.
     const flicker = 0.75 + 0.25 * Math.sin(this.since * 7.3) * Math.sin(this.since * 3.1);
     stage.stepWeather(tick.seconds);
@@ -113,7 +116,7 @@ export class Deep implements Beat {
       ...stage.parts.scene.weather,
       glow: { colour: [1, 0.5, 0.18], strength: 0.8 * flicker },
     };
-    const eyes = this.since >= EYES_S && this.since < FLASH_S;
+    const eyes = !this.done && this.since >= EYES_S && this.since < FLASH_S;
     if (eyes) stage.parts.screen.lids(Math.min(0.85, (this.since - EYES_S) / (FLASH_S - EYES_S - 0.5)));
     const body = this.body();
     const actors: Actor[] = FALLEN.map((one, index) => ({
