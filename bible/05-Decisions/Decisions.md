@@ -109,6 +109,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Sounds Come From Freesound, Judged on a Test Sheet]]
 - [[Garrisons Take the Gear Loop's Levels and Shields]]
 - [[Foes Show Their Level, Patrol in Groups and Climb]]
+- [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]]
+- [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
