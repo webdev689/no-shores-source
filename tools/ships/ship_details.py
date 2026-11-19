@@ -14,8 +14,9 @@ from ship_rig import along_x, headsail_stays, heights, mast_at, section_at, spri
 
 ROPE_M = 0.025
 RATLINE_EVERY_M = 0.42
-# A port's lid stands open this far above level, degrees.
+# A port's lid stands open this far above level, degrees, and is this half as wide.
 LID_OPEN_DEG = 20
+LID_HALF_M = 0.42
 
 
 def build_details(hull, collection):
@@ -89,7 +90,7 @@ def port_lids(piece, hull):
             thick = normalised((0.0, -out[2] * side, abs(out[1])))
             reach = [value * 0.7 for value in out]
             depth = [value * 0.06 for value in thick]
-            piece.slab((px - 0.42, py, pz), ((0.84, 0, 0), reach, depth), 'hull')
+            piece.slab((px - LID_HALF_M, py, pz), ((2 * LID_HALF_M, 0, 0), reach, depth), 'hull')
             for strap in (-0.26, 0.2):
                 corner = tuple((px + strap, py, pz)[axis] + depth[axis] for axis in range(3))
                 piece.slab(corner, ((0.06, 0, 0), reach, [value / 3 for value in depth]), 'iron')
@@ -126,7 +127,7 @@ def shrouds(piece, hull, mast):
     square = mast.get('rig') == 'square'
     if square:
         _, _, half, top_z = top_rim(mast, deck)
-    places = (mast['x'] + 0.35, mast['x'] - 0.35, mast['x'] - 1.05)
+    places = chain_places(hull, mast)
     for side in (1, -1):
         rail_y, rail_z = rail(hull, mast['x'])
         board_z = rail_z - 0.3
@@ -144,6 +145,16 @@ def shrouds(piece, hull, mast):
             piece.prism(eye, top, ROPE_M, 'iron', sides=5)
             lines.append((eye, top))
         ratlines(piece, lines, lines[0][0][2] + 0.6, lines[0][1][2] - 0.8)
+
+
+def chain_places(hull, mast):
+    """Where a mast's three deadeyes stand along her channel, fore to aft: about the mast, moved forward until no
+    chainplate crosses a gunport or its open lid."""
+    places = [mast['x'] + offset for offset in (0.35, -0.35, -1.05)]
+    clear = LID_HALF_M + 0.05
+    shift = max((port + clear - place for port in hull.numbers['ports'] for place in places
+                 if abs(place - port) < clear), default=0.0)
+    return [place + shift for place in places]
 
 
 def ratlines(piece, lines, low, high):
@@ -167,7 +178,7 @@ def upper_shrouds(piece, hull, mast):
     tree_x, _, tree_z = section_at(mast, deck, upper - 0.7, 1)
     head = section_at(mast, deck, highest - 0.4, 2)
     rail_y, rail_z = rail(hull, mast['x'])
-    channel = (mast['x'] - 1.05, rail_y + 0.33, rail_z - 0.12)
+    channel = (chain_places(hull, mast)[-1], rail_y + 0.33, rail_z - 0.12)
     for side in (1, -1):
         lines = []
         for share in (0.15, 0.45, 0.75):
@@ -224,12 +235,12 @@ def square_stays(piece, hull):
     for ahead, abaft in zip(masts, masts[1:]):
         ahead_deck, abaft_deck = hull.deck(ahead['x']), hull.deck(abaft['x'])
         _, ahead_upper, _ = heights(ahead)
-        lower, upper, highest = heights(abaft)
+        lower, _, highest = heights(abaft)
         foot = mast_at(ahead, ahead_deck, hull.floor_at(ahead['x']) - ahead_deck + 1.2)
         top_aft, _, _, top_z = top_rim(ahead, ahead_deck)
         lines += [
             (section_at(abaft, abaft_deck, lower - 0.15, 0), (foot[0] - ahead['radius_m'], 0.0, foot[2])),
-            (section_at(abaft, abaft_deck, upper - 0.15, 1), (top_aft, 0.0, top_z - 0.06)),
+            (section_at(abaft, abaft_deck, abaft['yards'][1][0] + 0.5, 1), (top_aft, 0.0, top_z - 0.06)),
             (section_at(abaft, abaft_deck, highest - 0.1, 2), section_at(ahead, ahead_deck, ahead_upper - 0.6, 1)),
         ]
     for top, bottom in lines:

@@ -62,10 +62,11 @@ The Sloop, built and the smallest, sails as Minor and Major ships and is the pla
    shrouds with ratlines, stays, a bobstay and dolphin striker, mast hoops, a rudder, catheads with anchors, hawse
    holes, a stern lantern, a windlass, a bell, a binnacle, a skylight, boom gallows, a ship's boat, pin rails, stores
    and coils of rope. Each gun is placed by its own muzzle, measured from its mesh: its wheels on her deck and its
-   barrel through the middle of a port cut round it. No face shares a plane with another facing the same way where
-   either shows: Cycles renders such a spot black.
+   barrel through the middle of a port cut round it. A mast's channel moves forward until its chainplates clear every
+   port. No face shares a plane with another facing the same way where either shows: Cycles renders such a spot black.
+   No sail is cut by a spar, a rope or a fitting: each stay leaves its mast between the sails above and below it.
 2. It is painted and rendered from four sides, on deck and beside the Sloop, for the owner's yes. The Schooner has
-   it, and the cabin and the Brig; the Frigate waits for it.
+   it, and the cabin, the Brig and the Frigate.
 
 The cabin is one room for every ship ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]):
 `tools/ships/build_cabin.py` builds it: spacious, about 10 m by 6.4 m with a 3 m ceiling, its middle and forward
@@ -76,9 +77,8 @@ weapon rack, lanterns, and stores by the stairs. `Cabin.Inside` marks
 where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, where they go back up.
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
-   entry in `content/ships/ships.json`. The `ships` workflow does this for the Sloop, the Schooner and the Brig. A
-   square sail is measured by its four corners, each named by its side; the game sets it on them ([[Sailing]], "Her
-   sails").
+   entry in `content/ships/ships.json`. The `ships` workflow does this for every ship built. A square sail is
+   measured by its four corners, each named by its side; the game sets it on them ([[Sailing]], "Her sails").
 
 ## What the code needs
 

@@ -14,6 +14,8 @@ status: in force
 
 > Shown the Brig: "Approved. Let's do one more ship model and call it there"
 
+> Shown the Frigate: "Yes, frigate published also"
+
 ## What it settles
 
 Claude's choice of every ship type, for the sea the owner approved

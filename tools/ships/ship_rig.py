@@ -19,7 +19,9 @@ ROUND = 16
 AHEAD = (0.0, 1.4, 2.25)
 # Each spar's radius at its head, as a share of its lower mast's: a yard is slung just before it.
 HEAD_RADIUS = (0.8, 0.5, 0.3)
-DOUBLING_M = 1.6
+# A topmast's and a topgallant's heel stands this far below the head of the spar below it: just under its top or its
+# crosstrees, above the yard slung there.
+DOUBLING_M = 0.85
 
 
 def mast_at(mast, deck, height):
@@ -51,7 +53,7 @@ def build_rig(hull, collection):
         fore = numbers['masts'][0]
         head = mast_at(fore, hull.deck(fore['x']), stay['head_m'])
         sprit_end = sprit_line(hull)[1]
-        stay_tack = (sprit_end[0] - 0.6, 0.0, sprit_end[2] - 0.1)
+        stay_tack = (sprit_end[0] - 1.0, 0.0, sprit_end[2] + 0.35)
         stay_clew = (fore['x'] + stay['clew_ahead_m'], 0.0, hull.deck(fore['x']) + stay['clew_m'])
         corners = (stay_tack, stay_clew, (head[0] + 0.35, 0.0, head[2]))
         sails.face([sails.point(corner) for corner in corners], 'sail')
@@ -95,7 +97,9 @@ def gaff_sail(spars, sails, hull, mast, gear):
     aft = -1 if boom_end[0] < boom_start[0] else 1
     tack = (boom_start[0] + aft * (mast['radius_m'] + 0.1), 0.0, boom_start[2] + SAIL_OFF_M)
     clew = (boom_end[0] - aft * 0.3, 0.0, boom_end[2] + SAIL_OFF_M)
-    head = (peak[0] - aft * 0.3, 0.0, peak[2] - SAIL_OFF_M)
+    # Its head stands off the gaff where the gaff is, which slopes: off its peak alone it would cut the gaff.
+    head_x = peak[0] - aft * 0.3
+    head = (head_x, 0.0, along_x(throat, peak, head_x)[2] - SAIL_OFF_M)
     jaws = (throat[0] + aft * (mast['radius_m'] + 0.1), 0.0, throat[2] - SAIL_OFF_M)
     sails.face([sails.point(corner) for corner in (tack, clew, head, jaws)], 'sail')
 
