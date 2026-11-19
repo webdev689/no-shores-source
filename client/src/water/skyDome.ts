@@ -124,6 +124,20 @@ fn deck_noise(plane: vec2f, keep: vec4f) -> f32 {
   return sum;
 }
 
+// The deck's noise at a point of its plane, carried the steering flow's way: the spell's pattern, and the next fading
+// in over the spell's end.
+fn deck_drifted(plane: vec2f, keep: vec4f) -> f32 {
+  let now = deck_noise(plane - sky_state.drift.xy, keep);
+  if (sky_state.drift_next.z <= 0.0) { return now; }
+  return sky_spell_mix(now, deck_noise(plane - sky_state.drift_next.xy, keep), 0.5);
+}
+
+// The cirrus's streaks at a point of their high plane, drifting twice as fast as the deck, about 0.325 on the mean.
+fn wisps_at(high: vec2f, drift: vec2f, keep: f32) -> f32 {
+  let at = high - vec2f(drift.x * 2.0, drift.y);
+  return value_noise(at * vec2f(1.0, 4.0)) * 0.65 + (value_noise(at * vec2f(2.25, 9.0) + vec2f(5.0, 3.0)) - 0.5) * 0.35 * keep;
+}
+
 // The clouds along an upward direction, their colour and alpha: high thin cirrus streaked along the drift and the
 // cumulus deck by the weather's cover, lower and darker in a storm. Both are lit by the key light, brighter on their
 // side toward it, a silver edge round the sun, darker underneath; a lightning flash lights them from within.
@@ -141,18 +155,21 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
   let silver = pow(toward_key, 12.0) * 1.4 + pow(toward_key, 3.0) * 0.25;
 
   // Cirrus, far up: streaks long along the drift (east), drifting twice as fast as the deck.
-  let high = direction.xy / (up + 0.02) * 0.3 + vec2f(sky_state.drift.x * 2.0, 0.0);
+  let high = direction.xy / (up + 0.02) * 0.3;
   let wisp_keep = 1.0 - smoothstep(0.25, 1.0, blur * 0.3 / ((up + 0.02) * (up + 0.02)) * 4.0);
-  let wisps = value_noise(high * vec2f(1.0, 4.0)) * 0.65 + (value_noise(high * vec2f(2.25, 9.0) + vec2f(5.0, 3.0)) - 0.5) * 0.35 * wisp_keep;
+  var wisps = wisps_at(high, sky_state.drift.xy, wisp_keep);
+  if (sky_state.drift_next.z > 0.0) {
+    wisps = sky_spell_mix(wisps, wisps_at(high, sky_state.drift_next.xy, wisp_keep), 0.325);
+  }
   let wisp = smoothstep(0.5, 0.85, wisps) * (0.18 + 0.3 * cover) * smoothstep(0.02, 0.2, up);
   let wisp_colour = grey * 0.9 + key_light * (0.45 + silver) + twilight_glow() * 0.35;
 
   // The deck: lower in a storm, so its cells loom larger.
   let reach_scale = 0.9 / (1.0 - 0.4 * storm);
-  let plane = direction.xy / (up + 0.08) * reach_scale + sky_state.drift.xy;
+  let plane = direction.xy / (up + 0.08) * reach_scale;
   let reach = blur * reach_scale / ((up + 0.08) * (up + 0.08));
   let keep = vec4f(1.0) - smoothstep(vec4f(0.25), vec4f(1.0), reach * DECK_OCTAVES);
-  let puff = deck_noise(plane, keep);
+  let puff = deck_drifted(plane, keep);
   // The detail averaged away softens the edge, so however blurred the deck keeps its mean cover.
   let lost = length((vec4f(1.0) - keep) * DECK_WEIGHTS) * 0.5;
   let threshold = 0.74 - 0.66 * cover;
@@ -161,11 +178,11 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
   var out = vec4f(wisp_colour, wisp);
   if (alpha > 0.0) {
     let toward_plane = normalize(key.xy + vec2f(1e-5, 0.0)) * 0.3;
-    let lit = clamp(0.55 + (puff - deck_noise(plane + toward_plane, keep * vec4f(1.0, 1.0, 1.0, 0.0))) * 4.0, 0.0, 1.0);
+    let lit = clamp(0.55 + (puff - deck_drifted(plane + toward_plane, keep * vec4f(1.0, 1.0, 1.0, 0.0))) * 4.0, 0.0, 1.0);
     let thick = smoothstep(threshold, threshold + 0.45, puff);
     let shade = (1.2 - 0.75 * thick) * (1.0 - 0.6 * storm);
     var colour = grey * shade + key_light * (0.2 + 0.55 * lit + silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
-    colour += vec3f(0.75, 0.8, 1.0) * flash * (0.5 + 1.5 * thick) * (0.6 + 0.8 * value_noise(plane * 0.5));
+    colour += vec3f(0.75, 0.8, 1.0) * flash * (0.5 + 1.5 * thick) * (0.6 + 0.8 * value_noise((plane - sky_state.drift.xy) * 0.5));
     out = vec4f(mix(out.rgb * out.a, colour, alpha) / max(mix(out.a, 1.0, alpha), 1e-4), mix(out.a, 1.0, alpha));
   }
   return out;

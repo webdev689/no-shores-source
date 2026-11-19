@@ -51,6 +51,22 @@ const NIGHT_FLOOR: Colour = [0.06, 0.07, 0.1];
 /** The clouds' drift on their plane, cells a second at a steering flow of 30 m/s, and where their pattern repeats. */
 const DRIFT_CELLS_S = 0.004;
 const DRIFT_WRAP = 1024;
+/** A cloud pattern is carried only from the start of its spell, world seconds, so a steering flow that changes from one
+ *  latitude to the next never sets it racing; over the spell's last share the next pattern fades in. */
+const CLOUD_SPELL_S = 600;
+const CLOUD_FADE = 0.25;
+
+/** The clouds' two patterns on their plane, in noise cells: the spell's now and the next, each carried from its own
+ *  spell's start and set apart by a whole number of cells, and how far the next has faded in. */
+export function cloudDrift(steeringMS: number, worldS: number): Pick<SkyLook, 'drift' | 'driftNext' | 'driftFade'> {
+  const spells = worldS / CLOUD_SPELL_S;
+  const index = Math.floor(spells);
+  const placed = (spell: number): [number, number] => [
+    (steeringMS / 30) * DRIFT_CELLS_S * (worldS - spell * CLOUD_SPELL_S),
+    (((spell * 157) % DRIFT_WRAP) + DRIFT_WRAP) % DRIFT_WRAP,
+  ];
+  return { drift: placed(index), driftNext: placed(index + 1), driftFade: smooth(1 - CLOUD_FADE, 1, spells - index) };
+}
 /** The fog's density, per metre, in a thick bank, a heavy fall and a sandstorm. */
 const FOG_BANK = 0.004;
 const FALL_HAZE = 0.0012;
@@ -84,7 +100,7 @@ export function sunLight(up: number): Colour {
  * How the sky looks for a reading: the sun's light by its height and the cloud over it; the moon's by its phase; the
  * sky's colours from day through twilight to night, greyed under cloud and darkened in a storm; the light from above
  * and below; the fog; and the clouds' drift, carried by the steering flow through world time, so it is the same in
- * every browser. `flash` is lightning's, 0 to 1.
+ * every browser (cloudDrift). `flash` is lightning's, 0 to 1.
  */
 export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyLook {
   const { sun, moon, cloud, storm, fog, sand, falling, daylight } = reading;
@@ -118,8 +134,6 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
   const ambientGround = add(scale(sunAtGround, 0.12 * smooth(0, 0.2, sun[2])), scale(ambientSky, 0.7));
   const fogDensity = FOG_BANK * fog + FALL_HAZE * falling + SAND_HAZE * sand;
   const fogColour = mix(horizon, scale(grey, 0.95), clamp01(fog * 0.8 + falling * 0.5));
-  const steer = (reading.steeringMS / 30) * DRIFT_CELLS_S * worldS;
-  const drift: [number, number] = [((steer % DRIFT_WRAP) + DRIFT_WRAP) % DRIFT_WRAP, 0];
   return {
     key,
     keyBright: clamp01(luminance(keyLight) / luminance(sunLight(1))),
@@ -146,7 +160,7 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
     // The stars come out as twilight ends; a bright moon washes out the faint ones.
     stars: smooth(-0.02, -0.25, sun[2]) * (1 - 0.6 * moonShown) * (1 - 0.5 * cover),
     starTurn: reading.starTurn,
-    drift,
+    ...cloudDrift(reading.steeringMS, worldS),
     latitude: (reading.latitudeDeg * Math.PI) / 180,
     moonPhase: reading.moonPhase,
   };

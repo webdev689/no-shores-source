@@ -1,10 +1,12 @@
 /** The most lamps lit round the eye at once, the night's lights that reach the ground. */
 export const LAMPS_MOST = 16;
 /** The ground's noise repeats every NOISE_CELLS cells: the clouds' shadows' cells (as wide as a cloud's patch) and the
- *  puddles' a 128th of them, so the eye's place and the clouds' shift are wrapped at WRAP_M with no seam. */
+ *  puddles' a 128th of them, so the eye's place is wrapped at WRAP_M with no seam. A cell of the clouds' own drift
+ *  (some 7.5 km) is a whole number of shadow cells, so the shadows move as the clouds do. */
 const NOISE_CELLS = 1024;
 const DAPPLE_CELL_M = 384;
 const PUDDLE_CELL_M = DAPPLE_CELL_M / 128;
+const DRIFT_TO_DAPPLE = 20;
 export const WRAP_M = NOISE_CELLS * DAPPLE_CELL_M;
 /** The bind group every sunlit shader reads the sky at: past the frame (0), the shadow map (1) and a card's (2). */
 export const SKY_GROUP = 3;
@@ -28,6 +30,7 @@ struct Sky {
   wind: vec4f,
   weather: vec4f,
   drift: vec4f,
+  drift_next: vec4f,
   lamp_count: vec4f,
   lamps: array<vec4f, ${LAMPS_MOST * 2}>,
 }
@@ -60,10 +63,17 @@ fn sky_place(from_eye: vec3f) -> vec2f {
   return sky_state.lamp_count.yz + from_eye.xy;
 }
 
-// How far the wind has carried the clouds' shadows, wrapped as the eye's place is: kept in the first two lamps' spare
-// fourth numbers, which a lamp's light leaves free.
-fn sky_cloud_shift() -> vec2f {
-  return vec2f(sky_state.lamps[1].w, sky_state.lamps[3].w);
+// A cloud field read where the pattern lies now ('now') and where the next lies ('next'), the next faded in over a
+// spell's end; its spread about 'mean' held through the fade, so the cover neither thins nor thickens.
+fn sky_spell_mix(now: f32, next: f32, mean: f32) -> f32 {
+  let fade = sky_state.drift_next.z;
+  return mean + ((now - mean) * (1.0 - fade) + (next - mean) * fade) / sqrt((1.0 - fade) * (1.0 - fade) + fade * fade);
+}
+
+// The clouds' shadows' noise at a place on the ground, its cells shifted by a pattern's drift in the sky's cells.
+fn sky_dapple_cloud(place: vec2f, drift: vec2f) -> f32 {
+  let at = place / ${DAPPLE_CELL_M}.0 - drift * ${DRIFT_TO_DAPPLE}.0;
+  return 0.65 * sky_noise(at) + 0.35 * sky_noise(at * 2.0 + vec2f(17.0, 5.0));
 }
 
 // Value noise, 0 to 1, over cells that repeat every ${NOISE_CELLS}, so a wrapped place and the clouds' wrapped drift
@@ -90,8 +100,11 @@ fn sky_dapple(from_eye: vec3f) -> f32 {
   if (strength <= 0.0) {
     return 1.0;
   }
-  let at = (sky_place(from_eye) - sky_cloud_shift()) / ${DAPPLE_CELL_M}.0;
-  let cloud = 0.65 * sky_noise(at) + 0.35 * sky_noise(at * 2.0 + vec2f(17.0, 5.0));
+  let place = sky_place(from_eye);
+  var cloud = sky_dapple_cloud(place, sky_state.drift.xy);
+  if (sky_state.drift_next.z > 0.0) {
+    cloud = sky_spell_mix(cloud, sky_dapple_cloud(place, sky_state.drift_next.xy), 0.5);
+  }
   return 1.0 - strength * (1.0 - smoothstep(cover - 0.12, cover + 0.12, cloud));
 }
 
@@ -169,8 +182,10 @@ export interface SkyLook {
   readonly flash: number;
   readonly stars: number;
   readonly starTurn: number;
-  /** The clouds' drift on their plane, in noise cells, wrapped where the pattern repeats. */
+  /** The clouds' pattern on their plane now and the next, in noise cells, and how far the next has faded in. */
   readonly drift: readonly [number, number];
+  readonly driftNext: readonly [number, number];
+  readonly driftFade: number;
   /** The place's latitude, radians: how high the pole the stars wheel about stands, due north. */
   readonly latitude: number;
   /** The moon's month, 0 new to a half full and back to 1. */
@@ -211,24 +226,20 @@ export const AFTERNOON: SkyLook = {
   stars: 0,
   starTurn: 0,
   drift: [0, 0],
+  driftNext: [0, 0],
+  driftFade: 0,
   latitude: 0.5,
   moonPhase: 0.5,
 };
 
-const VEC4S = 13 + LAMPS_MOST * 2;
+const VEC4S = 14 + LAMPS_MOST * 2;
 
 /** A world metre wrapped into [0, WRAP_M). */
 const wrapped = (metres: number): number => ((metres % WRAP_M) + WRAP_M) % WRAP_M;
 
-/** Where the ground's patterns lie: the eye's place, and how far the wind has carried the clouds' shadows (world metres
- *  east and south). */
-export interface GroundPlace {
-  readonly eye: readonly [number, number];
-  readonly clouds: readonly [number, number];
-}
-
-/** The sky's numbers in the order SKY_WGSL lays them out, with where the ground's patterns lie when known. */
-export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], ground?: GroundPlace): Float32Array {
+/** The sky's numbers in the order SKY_WGSL lays them out, with the eye's place (world metres east and south) where
+ *  known, which the ground's patterns lie by. */
+export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], eye?: readonly [number, number]): Float32Array {
   const shown = lamps.slice(0, LAMPS_MOST);
   const numbers = new Float32Array(VEC4S * 4);
   const rows: readonly (readonly number[])[] = [
@@ -244,17 +255,14 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], ground?: Groun
     [...look.wind, look.gust, look.falling],
     [look.sand, look.flash, look.stars, look.starTurn],
     [...look.drift, look.latitude, look.moonPhase],
-    ground ? [shown.length, wrapped(ground.eye[0]), wrapped(ground.eye[1]), 1] : [shown.length, 0, 0, 0],
+    [...look.driftNext, look.driftFade, 0],
+    eye ? [shown.length, wrapped(eye[0]), wrapped(eye[1]), 1] : [shown.length, 0, 0, 0],
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
       [...lamp.light, 0],
     ]),
   ];
   rows.forEach((row, index) => numbers.set(row, index * 4));
-  // The clouds' shift in the first two lamps' light rows' spare numbers (sky_cloud_shift).
-  const firstLamp = 13 * 4;
-  numbers[firstLamp + 7] = ground ? wrapped(ground.clouds[0]) : 0;
-  numbers[firstLamp + 15] = ground ? wrapped(ground.clouds[1]) : 0;
   return numbers;
 }
 
@@ -282,9 +290,9 @@ export class SkyUniform {
     this.write(AFTERNOON, []);
   }
 
-  write(look: SkyLook, lamps: readonly Lamp[], ground?: GroundPlace): void {
+  write(look: SkyLook, lamps: readonly Lamp[], eye?: readonly [number, number]): void {
     this.look = look;
-    this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps, ground));
+    this.device.queue.writeBuffer(this.buffer, 0, skyNumbers(look, lamps, eye));
   }
 
   /** An empty group, for a gap below SKY_GROUP in a pipeline laid out by hand. */

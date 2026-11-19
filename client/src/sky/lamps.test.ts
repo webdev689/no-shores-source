@@ -50,6 +50,17 @@ test('only the nearest LAMPS_MOST are lit, a carried light among them', () => {
   assert.deepEqual(lamps.at(-1)?.fromEye, [(LAMPS_MOST - 2) * 7, 0, 2]);
 });
 
+test('a lamp at the cut fades as the first left out nears it, so neither switches on or off at the swap', () => {
+  const crowd = Array.from({ length: LAMPS_MOST - 1 }, () => place(0));
+  const brightOf = (x: number) => lampsRound([0, 0, 0], [...crowd, place(50), place(x)], null, 0, 0).at(-1)?.light[0];
+  assert.ok(Math.abs((brightOf(100) ?? 0) / (brightOf(1000) ?? 1) - 1) < 1e-9, 'whole when well ahead');
+  assert.ok(
+    (brightOf(55) ?? 1) < (brightOf(60) ?? 0) && (brightOf(60) ?? 0) < (brightOf(100) ?? 0),
+    'dimmer as it nears',
+  );
+  assert.ok((brightOf(50.001) ?? 1) < 1e-3, 'all but out at the swap');
+});
+
 test('a great fire farther off is lit before a nearer lantern whose light falls short of the eye', () => {
   const fire: LampPlace = { at: [70, 0, 0], reachM: 60, light: [1, 0.6, 0.3], seed: 0 };
   const lamps = lampsRound([0, 0, 0], [place(40), fire], null, 0, 0);
@@ -59,11 +70,10 @@ test('a great fire farther off is lit before a nearer lantern whose light falls 
   );
 });
 
-test("the eye's place and the clouds' shift go to the uniform wrapped, marked known; without them, unknown", () => {
-  const known = skyNumbers(AFTERNOON, [], { eye: [WRAP_M + 5, -3], clouds: [-2, WRAP_M * 3 + 7] });
-  const row = 12 * 4;
+test("the eye's place goes to the uniform wrapped, marked known; without it, unknown", () => {
+  const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3]);
+  const row = 13 * 4;
   assert.deepEqual([...known.slice(row, row + 4)], [0, 5, WRAP_M - 3, 1]);
-  assert.deepEqual([known[row + 4 + 7], known[row + 4 + 15]], [WRAP_M - 2, 7]);
   const unknown = skyNumbers(AFTERNOON, []);
   assert.deepEqual([...unknown.slice(row, row + 4)], [0, 0, 0, 0]);
 });

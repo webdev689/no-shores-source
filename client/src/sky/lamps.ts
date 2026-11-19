@@ -24,6 +24,8 @@ const CARRIED = {
 } as const;
 /** The carried light is held at the hand, this high over the carrier's feet. */
 const HAND_M = 1.1;
+/** A lamp is whole once it leads the first lamp left out by this much, metres, and fades to nothing as that one nears. */
+const CUT_FADE_M = 10;
 
 /** A light carried by someone standing with their feet at `feet` (world metres). */
 export interface Carried {
@@ -78,12 +80,14 @@ export function lampsRound(
     const hand = fromEye([carried.feet[0], carried.feet[1], carried.feet[2] + HAND_M]);
     lamps.push({ fromEye: hand, reachM: held.reachM, light: held.light.map((part) => part * shown) as Rgb });
   }
-  const nearest = places
+  const ranked = places
     .map((place) => ({ place, away: Math.hypot(...fromEye(place.at)) - place.reachM }))
-    .sort((one, other) => one.away - other.away)
-    .slice(0, LAMPS_MOST - lamps.length);
-  for (const { place } of nearest) {
-    const shown = lit * flicker(place.seed, seconds);
+    .sort((one, other) => one.away - other.away);
+  const room = LAMPS_MOST - lamps.length;
+  // A lamp near the cut fades by how far it leads the first left out, so none switches on or off as the eye moves.
+  const cut = ranked[room]?.away ?? Infinity;
+  for (const { place, away } of ranked.slice(0, room)) {
+    const shown = lit * flicker(place.seed, seconds) * Math.min(1, (cut - away) / CUT_FADE_M);
     lamps.push({
       fromEye: fromEye(place.at),
       reachM: place.reachM,

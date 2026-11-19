@@ -43,8 +43,6 @@ export class SkyDriver {
   private readonly uniform: SkyUniform;
   private asked = Number.NEGATIVE_INFINITY;
   private strikes: Strike[] = [];
-  /** How far the wind has carried the clouds' shadows here, metres east and south, summed frame by frame. */
-  private clouds: [number, number] = [0, 0];
 
   constructor(law: Promise<SkyLaw>, uniform: SkyUniform) {
     this.uniform = uniform;
@@ -62,8 +60,6 @@ export class SkyDriver {
     // A window of world time is asked once: a long frame asks a little more, a jump in the clock starts afresh.
     const from = worldS - this.asked > 2 || worldS < this.asked ? worldS - 0.05 : this.asked;
     if (worldS > from) this.strikes.push(...law.strikes(eye[0], eye[1], STRIKE_REACH_M, from, worldS, climate));
-    const step = Math.min(1, Math.max(0, worldS - this.asked));
-    this.clouds = [this.clouds[0] + reading.wind[0] * step, this.clouds[1] + reading.wind[1] * step];
     this.asked = worldS;
     this.strikes = this.strikes.filter((strike) => worldS - strike.atS <= STRIKE_KEPT_S);
     const flash = Math.min(
@@ -74,7 +70,7 @@ export class SkyDriver {
       ),
     );
     const look = lookOf(reading, worldS, flash);
-    this.uniform.write(look, lamps, { eye: [eye[0], eye[1]], clouds: this.clouds });
+    this.uniform.write(look, lamps, [eye[0], eye[1]]);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes };
     return SKY_NOW.current;
   }

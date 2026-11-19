@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SkyReading } from './skyLaw.ts';
-import { lookOf, sunLight } from './skyLook.ts';
+import { cloudDrift, lookOf, sunLight } from './skyLook.ts';
 import { AFTERNOON, skyNumbers } from './skyUniform.ts';
 
 const luminance = (colour: readonly number[]): number =>
@@ -69,13 +69,25 @@ test('a storm darkens the sky and the day; noon keeps the clear afternoon the ga
   assert.ok(Math.abs(luminance(noon.ambientSky) - luminance(AFTERNOON.ambientSky)) < 0.05, 'noon ambient as drawn');
 });
 
-test('the clouds drift with world time, wrapped at 1024 cells; the pole and the phase reach the uniform', () => {
+test('the clouds are carried only through their spell, so a steering flow that changes never sets them racing', () => {
   for (const worldS of [0, 1e5, 1e9, -3e7]) {
-    const [driftX] = lookOf(readingAt(0.5), worldS, 0).drift;
-    assert.ok(driftX >= 0 && driftX < 1024, `${driftX}`);
+    const { drift, driftNext } = cloudDrift(30, worldS);
+    // A spell (600 s) carries a pattern 2.4 cells at 30 m/s; the next comes from no more than that behind.
+    assert.ok(drift[0] >= 0 && drift[0] <= 2.4 + 1e-9 && driftNext[0] <= 0 && driftNext[0] >= -2.4 - 1e-9, `${worldS}`);
+    assert.ok([drift[1], driftNext[1]].every((cells) => Number.isInteger(cells) && cells >= 0 && cells < 1024));
   }
-  const look = lookOf(readingAt(-0.4, { latitudeDeg: 30, moonPhase: 0.25 }), 0, 0);
+  // From the westerlies into the trades at one moment, the pattern moves by no more than a spell's carry.
+  const [west, trades] = [cloudDrift(30, 1e9 + 100), cloudDrift(-18, 1e9 + 100)];
+  assert.ok(Math.abs(west.drift[0] - trades.drift[0]) <= 48 * (0.004 / 30) * 600 + 1e-9);
+  // A spell's end shows the next pattern whole, and the new spell begins from that pattern where it stood.
+  const ending = cloudDrift(30, 1200 - 1e-6);
+  const begun = cloudDrift(30, 1200);
+  assert.ok(ending.driftFade > 0.999999 && begun.driftFade === 0);
+  assert.ok(Math.abs(ending.driftNext[0] - begun.drift[0]) < 1e-6 && ending.driftNext[1] === begun.drift[1]);
+  assert.equal(cloudDrift(30, 1200 + 300).driftFade, 0, "no second pattern before the spell's last quarter");
+  const look = lookOf(readingAt(-0.4, { latitudeDeg: 30, moonPhase: 0.25 }), 1350, 0);
   const numbers = skyNumbers(look, []);
   assert.ok(Math.abs((numbers[11 * 4 + 2] ?? 0) - Math.PI / 6) < 1e-6, 'drift.z: the latitude, radians');
   assert.ok(Math.abs((numbers[11 * 4 + 3] ?? 0) - 0.25) < 1e-6, 'drift.w: the moon phase');
+  assert.ok(Math.abs((numbers[12 * 4 + 2] ?? 0) - look.driftFade) < 1e-6, 'drift_next.z: how far the next has come');
 });
