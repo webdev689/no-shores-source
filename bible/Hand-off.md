@@ -200,9 +200,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   of sixteen; a lone crossbowman drawn long; a foe under a ledge; a flanker changing hands; ripostes not held to the
   beat; patience at one over the cap; sixteen foes about 1.4 m apart; node rooms baking no boxes; no height cap on
   climbs. `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the owner. Its known
-  limits, left open with reasons in the description: figures composed ahead in a mixed crowd evicting each other
-  (needs a GPU measurement), a foe on its ring drifting behind a wall (no failing case), an arrow over the game's
-  hints, the compass not zoomed past 1440p, small objects made each frame, and the Test Ground's panels running the
+  limits, left open with reasons in the description: a crowd of many dresses composed ahead only as room comes
+  (keeping more needs a GPU measurement), small objects made each frame, and the Test Ground's panels running the
   room on while the pointer is free.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
