@@ -4,7 +4,7 @@ import { passageAt } from '../layout/passage.ts';
 import type { Happening } from './flow.ts';
 import type { Landmass } from './landmass.ts';
 import { bearingTo } from './nodes.ts';
-import type { NodeInfo } from './worldData.ts';
+import { lockedWords, type NodeInfo } from './worldData.ts';
 
 type Point = readonly [number, number];
 
@@ -16,23 +16,23 @@ export function askedArrival(node: NodeInfo, search: string): { node: NodeInfo; 
   return { node: { ...node, spawns: [[asked[0], asked[1]]] }, facing };
 }
 
-/** The way through a gate the player stands at: its offer's words, the flow's happening, and the node to arrive
- *  in with its spawn at the far side, facing into it. */
+/** The way through a gate the player stands at: its offer's words, the flow's happening (null for a gate shut on a
+ *  locked node, which takes no one), and the node to arrive in with its spawn at the far side, facing into it. */
 export interface GateWay {
   readonly offer: string;
-  readonly happening: Happening;
+  readonly happening: Happening | null;
   readonly node: NodeInfo;
   readonly facing: number;
 }
 
 /** The way through the gate or way in at a point of a node, or null. */
-export function gateWay(landmass: Landmass, here: string, spot: Point): GateWay | null {
+export function gateWay(landmass: Pick<Landmass, 'layouts' | 'nodes'>, here: string, spot: Point): GateWay | null {
   const passage = passageAt(landmass.layouts, landmass.nodes, here, spot);
   const node = passage && landmass.nodes.find((each) => each.id === passage.to);
   if (!passage || !node) return null;
   return {
-    offer: `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  E`,
-    happening: { kind: 'pass', node: node.id, name: node.name, into: passage.into },
+    offer: node.locked ? lockedWords(node.name) : `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  E`,
+    happening: node.locked ? null : { kind: 'pass', node: node.id, name: node.name, into: passage.into },
     node: { ...node, spawns: [passage.arrive] },
     facing: bearingTo(passage.arrive, node.centre),
   };

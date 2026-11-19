@@ -441,7 +441,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let through: GateWay | null = null;
   const goThrough = () => {
     const way = through;
-    if (way && flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
+    // A gate shut on a locked node takes no one: its offer only says so.
+    if (way?.happening && flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
   };
   hud.onPassage(goThrough);
 
