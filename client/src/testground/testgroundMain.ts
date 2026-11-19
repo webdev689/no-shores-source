@@ -237,11 +237,13 @@ async function start(): Promise<void> {
     // The figure wears what the gear wears, and the hands hold it: the room takes no other arms.
     const ownGear = gear;
     const gearWorn =
-      ownGear && JSON.stringify([you.dress.body, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
+      ownGear &&
+      JSON.stringify([you.dress.body, player.player.loadout, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
     const bodyLayers = looks.bodies[you.dress.body]?.layers;
     if (ownGear && gearWorn && gearWorn !== gearWornKey && bodyLayers) {
       gearWornKey = gearWorn;
-      const outfit = gearOutfit(ownGear, wardrobeOf(you.dress.body, bodyLayers), you.dress.outfit);
+      const wardrobe = wardrobeOf(you.dress.body, bodyLayers);
+      const outfit = gearOutfit(ownGear, wardrobe, you.dress.outfit, player.player.loadout);
       you.dress = { ...you.dress, outfit };
     }
     const bodies = [...foes.placed.values(), ...others.values()].map(

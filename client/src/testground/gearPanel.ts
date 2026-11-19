@@ -15,6 +15,7 @@ import {
   itemName,
   itemNumbers,
   itemWords,
+  kindName,
   nodeShown,
   resourceName,
   wearAsks,
@@ -118,7 +119,9 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       grant.level = Math.min(20, Math.max(1, Number(level.value) || 1));
     });
     const slots = SLOTS.slice(0, 6).map((slot, index) => [String(index), slot] as const);
-    const kinds = KINDS.slice(1, 17).map((kind, index) => [String(index + 1), kind] as const);
+    const kinds = KINDS.map((kind, index) => [String(index), kindName(index)] as const).filter(
+      ([number, name]) => name && number !== String(KINDS.indexOf('cloak')),
+    );
     const lesser = RARITIES.slice(0, 3).map((rarity, index) => [String(index), rarity.name] as const);
     return [
       make('h2', 'Hand out'),

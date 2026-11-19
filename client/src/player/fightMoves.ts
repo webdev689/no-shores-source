@@ -71,6 +71,7 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
     drawn: dress.outfit.drawn,
     right: dress.outfit.right,
     left: dress.outfit.left,
+    grip: dress.outfit.grip ?? null,
     blow,
     cast: null,
     act: null,

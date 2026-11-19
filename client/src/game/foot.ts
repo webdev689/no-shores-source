@@ -143,6 +143,7 @@ export class Foot {
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
   private readonly gearHeld: { gear: GearState | null };
   private dressedIn: GearState | null = null;
+  private dressedLoadout = 0;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   private readonly folk: Placed[];
@@ -244,15 +245,19 @@ export class Foot {
     return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
   }
 
-  /** Dresses the player's figure in their gear as their room last sent it, once it changes. */
+  /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
+   *  changes. */
   private dressInGear(): void {
     const gear = this.gearHeld.gear;
-    if (!gear || gear === this.dressedIn) return;
-    this.dressedIn = gear;
     const { walker, forge } = this.context;
+    const { loadout } = walker.player;
+    if (!gear || (gear === this.dressedIn && loadout === this.dressedLoadout)) return;
+    [this.dressedIn, this.dressedLoadout] = [gear, loadout];
     const wardrobe = forge.wardrobe(walker.you.dress.body);
-    if (wardrobe)
-      walker.you.dress = { ...walker.you.dress, outfit: gearOutfit(gear, wardrobe, walker.you.dress.outfit) };
+    if (wardrobe) {
+      const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
+      walker.you.dress = { ...walker.you.dress, outfit };
+    }
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */

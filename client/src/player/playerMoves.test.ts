@@ -183,6 +183,14 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
   assert.equal(blow('down', 'axe_iron').anim, 'overhaft');
   assert.equal(blow('down', 'warhammer_iron').anim, 'overhaft');
   assert.equal(blow('up', 'dagger_iron', 'dagger_iron_l').anim, 'thrustpair');
+  const greatsword = {
+    ...doing,
+    right: 'sword_iron',
+    grip: 'hilt',
+    blow: { direction: 'left', second: false, progress: 0 },
+  };
+  assert.equal(shownMove(greatsword as Doing, frames, everything).anim, 'sidehilt', 'a greatsword on its hilt');
+  assert.ok(likelyMoves('sword_iron', null, everything, 'hilt').includes('overhilt'));
   // A shield is drawn in no blow: the weapon's own attack plays.
   const shieldless = (anim: string, held: string | null) => !(held?.startsWith('shield_') && NEXT.test(anim));
   const guarded = {

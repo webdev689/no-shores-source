@@ -1,5 +1,6 @@
 // The character page, after Destiny's: the player's own figure in the middle under their level and its meter, their
-// power beneath it; the weapons and cloak in slots to its left and the armour to its right, each slot its item's own
+// power beneath it; the Melee and Ranged loadouts and the cloak in slots to its left, under a place kept for the worn
+// Art, and the armour to its right, each slot its item's own
 // picture in a frame of its rarity. Hovering or focusing a slot shows its item's card; a click opens its flyout of the
 // nine it carries, toward the figure, each worn by a click; a right-click on any opens the item's page.
 
@@ -137,7 +138,7 @@ export function characterPage(
       for (const item of cells) {
         const cell = tileFor(context, item, CELL_PX, 'gear-cell');
         if (item) {
-          const wear = wearIn(item, index);
+          const wear = wearIn(item);
           cell.setAttribute('aria-label', tileLabel(itemName(item), item.rarity));
           cell.addEventListener('click', () => {
             tip.hide();
@@ -181,16 +182,17 @@ export function characterPage(
   const drawn = context.figure ? pictureCanvas(context.figure, box, LARGE_CAP) : make('span', 'Drawing…', 'gear-hint');
   stand.append(drawn);
   const stats = make('div', '', 'gear-stats');
-  const [main, off] = character.attack;
+  const [melee, ranged] = character.attack;
   stats.append(
-    stat('Attack', main === null || main === undefined ? '—' : String(main)),
-    ...(off === null || off === undefined ? [] : [stat('Off hand', String(off))]),
+    stat('Melee Attack', melee === null || melee === undefined ? '—' : String(melee)),
+    stat('Ranged Attack', ranged === null || ranged === undefined ? '—' : String(ranged)),
     stat('Defense', String(character.defense)),
     stat('Prestige', String(character.prestige)),
     stat('Fruit of Dagon', String(character.fruit)),
   );
   middle.append(power, stand, stats);
   const weapons = side(WEAPONS, 'Weapons');
+  weapons.prepend(make('div', '', 'gear-art'));
   weapons.append(emblemSlot(context, open === EMBLEM_SLOT, () => choose(open === EMBLEM_SLOT ? null : EMBLEM_SLOT)));
   page.append(weapons, middle, side(ARMOUR, 'Armour'));
   return page;

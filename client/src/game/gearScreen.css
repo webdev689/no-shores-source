@@ -542,6 +542,10 @@ img.gear-glyph {
 .gear-side .gear-heading {
   align-self: stretch;
 }
+/* The worn Art's place, over the loadouts. */
+.gear-art {
+  min-height: 96px;
+}
 .gear-character > .gear-side:first-child .gear-heading {
   text-align: right;
 }
