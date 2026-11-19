@@ -318,7 +318,7 @@ fn fly_list() {
             let share = (next - walked) / length.max(1e-9);
             let at = [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share];
             let ahead = line[(index + 3).min(line.len() - 1)];
-            let bearing = (ahead[0] - at[0]).atan2(-(ahead[1] - at[1])).to_degrees().rem_euclid(360.0);
+            let bearing = libm::atan2(ahead[0] - at[0], at[1] - ahead[1]).to_degrees().rem_euclid(360.0);
             let name = format!("fly{:03}", views.len());
             views.push(serde_json::json!([at[0], at[1], bearing.round(), "third,45,22", name]));
             next += 40.0;
