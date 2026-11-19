@@ -247,7 +247,8 @@ out past its edge.
 - **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone
-  coffins), and a stone shelf 1.6 m high with steps along the rim up to it; a gorge's fallen bridge, a ledge's broken
+  coffins; a ledge's and a rampart's masonry in three forms, about a third each: lengths of wall along the way with a
+  course fallen from one end, squared blocks, and heaps of rubble), and a stone shelf 1.6 m high with steps along the rim up to it; a gorge's fallen bridge, a ledge's broken
   watch post, a rampart's wall along its drop. A keep has walled courts and roofed great halls over its beats in turn,
   roofed passages and two towers at its door; a mine has timbered galleries boarded over, caverns roofed with rubble
   slabs on rock ribs and an iron grate; an undercroft has vaulted passages,

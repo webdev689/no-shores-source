@@ -27,6 +27,14 @@ const STEP_M: f64 = 0.4;
 /// How far a room's stores (a keep's crates, an undercroft's coffins) reach from where they stand, turned any way,
 /// metres: a coffin's half-diagonal.
 const STORE_REACH_M: f64 = 1.4;
+/// The share of a ledge's or a rampart's cover that is lengths of wall, and as much again squared blocks; the rest is
+/// heaps of rubble.
+const WALL_SHARE: f64 = 0.35;
+
+/// Whether a run's cover is broken masonry: a ledge's and a rampart's, in the open.
+const fn masonry(kind: RunKind) -> bool {
+    matches!(kind, RunKind::Ledge | RunKind::Rampart)
+}
 /// A length of a rampart's wall, metres.
 const WALL_LENGTH_M: f64 = 5.0;
 
@@ -188,10 +196,12 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, kept: (Option<
                 beat.at[0] + f64::from(column) * COVER_EVERY_M + shift + jitter[0],
                 beat.at[1] + f64::from(row) * row_step + jitter[1],
             ];
-            if distance(at, beat.at) > reach || raised.is_some_and(|shelf| distance(at, shelf) < 5.0) {
+            // Broken masonry takes one of three forms by a draw: a length of wall, a squared block, a heap of rubble.
+            let form = if masonry(run.kind) { kit.draw() } else { 0.5 };
+            let across = if form < WALL_SHARE { 2.8 + kit.draw() * 1.4 } else { 1.6 + kit.draw() * 0.8 };
+            if distance(at, beat.at) > reach || raised.is_some_and(|shelf| distance(at, shelf) < 4.2 + across / 2.0) {
                 continue;
             }
-            let across = 1.6 + kit.draw() * 0.8;
             let wanted = LINE_CLEAR_M + across / 2.0;
             let off = off_run(run, at);
             if off < wanted {
@@ -230,11 +240,29 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, kept: (Option<
                     Solid::upright(Shape::Block, [at[0], at[1], ground - 0.2], [2.4, 1.1, 1.5], Material::Stone)
                         .turned(turn),
                 );
-            } else {
+            } else if form < WALL_SHARE {
+                // A length of wall along the way, a course fallen from one end of its top.
+                let way = way_at(run, at);
+                let turn = turn_along(way) + (kit.draw() - 0.5) * 0.3;
+                let base = ground - 0.3;
+                kit.solid(
+                    Solid::upright(Shape::Block, [at[0], at[1], base], [0.9, across, tall], Material::Stone)
+                        .turned(turn),
+                );
+                let end = ahead(at, way, across * 0.25 * if kit.draw() < 0.5 { 1.0 } else { -1.0 });
+                let course = [0.9, across * 0.45, 0.5];
+                kit.solid(
+                    Solid::upright(Shape::Block, [end[0], end[1], base + tall + 0.3], course, Material::Stone)
+                        .turned(turn),
+                );
+            } else if form < 2.0 * WALL_SHARE {
                 let size = [across, 0.9, tall];
                 let block = Solid::upright(Shape::Block, [at[0], at[1], ground - 0.3], size, Material::Stone);
                 let turn = kit.draw() * std::f64::consts::TAU;
                 kit.solid(block.turned(turn));
+            } else {
+                let size = [across * 1.2, across, tall];
+                stone(kit, Shape::Dome { sides: 7 }, [at[0], at[1], ground], size, 0.1);
             }
         }
     }

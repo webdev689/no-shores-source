@@ -151,6 +151,36 @@ fn cover_stands_within_ten_metres_on_every_beat() {
 }
 
 #[test]
+fn a_ledges_and_a_ramparts_cover_is_broken_masonry_of_more_than_one_form() {
+    each_run(&|laid, run, floor| {
+        if !matches!(run.kind, layout::brief::RunKind::Ledge | layout::brief::RunKind::Rampart) {
+            return;
+        }
+        // Each piece of cover on the run's beats by its form: its shape, its stone and its length to the metre.
+        let mut forms: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+        for solid in &laid.seating.solids {
+            let [west, north, east, south, bottom, top] = solid.bounds();
+            let middle = [(west + east) / 2.0, (north + south) / 2.0];
+            let on = run.beats.iter().any(|beat| layout::field::distance(middle, beat.at) < beat.radius - 1.0);
+            let under = floor(middle);
+            if !on || bottom > under || !(under + 0.9..under + 2.6).contains(&top) {
+                continue;
+            }
+            let long = solid.size[0].max(solid.size[1]).round();
+            *forms.entry(format!("{:?} {:?} {long}", solid.shape, solid.material)).or_default() += 1;
+        }
+        let pieces: usize = forms.values().sum();
+        let most = forms.values().copied().max().unwrap_or(0);
+        assert!(
+            pieces >= 6 && most * 2 <= pieces,
+            "{}: {}'s cover is one form over half its {pieces} pieces: {forms:?}",
+            laid.id,
+            run.name
+        );
+    });
+}
+
+#[test]
 fn every_beat_has_a_raised_place() {
     each_run(&|laid, run, floor| {
         for beat in &run.beats {
