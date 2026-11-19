@@ -1035,7 +1035,8 @@
       ],
       "skip": [
         49437
-      ]
+      ],
+      "picked": 166703
     },
     {
       "id": "amb.social.crowd",
@@ -1044,7 +1045,8 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 260727
     },
     {
       "id": "amb.woodland.crow",
@@ -1056,7 +1058,8 @@
       ],
       "skip": [
         813117
-      ]
+      ],
+      "picked": 70194
     },
     {
       "id": "amb.highland.raven",
@@ -1065,7 +1068,8 @@
       "seconds": [
         0.4,
         10.0
-      ]
+      ],
+      "picked": 824995
     },
     {
       "id": "amb.rainforest.parrot",
@@ -1077,7 +1081,8 @@
       ],
       "skip": [
         384373
-      ]
+      ],
+      "picked": 875522
     },
     {
       "id": "amb.swamp.heron",
@@ -1089,7 +1094,8 @@
       ],
       "skip": [
         15025
-      ]
+      ],
+      "picked": 65264
     },
     {
       "id": "amb.savanna.lion",
@@ -1098,7 +1104,8 @@
       "seconds": [
         1.5,
         30.0
-      ]
+      ],
+      "picked": 559600
     }
   ]
 }
