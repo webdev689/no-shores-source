@@ -82,10 +82,11 @@ distance, never reached. Each island has one major port city; Saltmere's is Over
 
 Patrol areas and missions open as a pass is done on each ([[Patrol Zones and Missions Open as Their Pass Is Done]]).
 `content/world/open.json` lists the open ones by id. Every other patrol area and mission is locked; social spaces,
-dungeons and world bosses never are. A locked node still shows where
-the player picks a landing, greyed with a lock ([[Overworld]]), but neither a click on it nor a gate toward it
-([[Layouts]], "Gates") takes anyone there, and its room turns every player away ([[Server]]). A pass opens a node by
-adding its id to the list; a test holds the list to patrol and mission nodes of the edits files, each once.
+dungeons and world bosses never are. A locked node still shows where the player picks a landing, greyed with a lock
+([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there, and its room
+turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the list to
+patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
+reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
 
 A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
 `&view=` picture it ([[Toolkit]], "Browser QA").

@@ -213,10 +213,10 @@ city terraces and the layouts' carving included; the boxes of the city and the l
 with its top and its underside; for a social space, the counters that serve a player's gear (the Reader's, the
 vaults', the Quartermaster's, the Armsmith's and the Tailor's); and whether it is locked: each patrol area and mission
 the open list, `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"). The bake
-takes about 15 s for the nine continents' 99
-nodes, a few at a time, and writes about 14.9 MB in all, a patrol area's file the largest at about 0.46 MB (its rooms'
-and rock's boxes). `server`, `server:bundle` and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
-called `index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
+takes about 15 s for the nine continents' 99 nodes, a few at a time, and writes about 14.9 MB in all, a patrol area's
+file the largest at about 0.46 MB (its rooms' and rock's boxes). `server`, `server:bundle` and `server:deploy` run it
+first. It fails, writing nothing, when two nodes of the world share an id, when one is called `index`, or when an id
+is too long for its room's name, `node-<id>`, of at most 40 characters.
 
 ## Messages
 
@@ -293,8 +293,8 @@ so every decision is Rust and the shell only carries bytes and time.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). A locked
   node's room takes no one, at any seas: the room answers every join with none and says why (`refusal`), and the host
   closes the socket with 4003 and those words, "<name> is locked". A landing, a gate and a company's join all come in
-  as a join, so none gets in. Should the
-  room's WebAssembly ever trap, every socket is closed and the object starts over.
+  as a join, so none gets in. Should the room's WebAssembly ever trap, every socket is closed and the object starts
+  over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
   sends every player the snapshot after each tick, and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
   still get the tick. When the last player leaves it stops, and the room goes with the object.
