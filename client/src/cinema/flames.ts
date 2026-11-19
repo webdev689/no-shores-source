@@ -174,6 +174,15 @@ export class Flames {
     this.fires.clear();
   }
 
+  /** Lets go of the fires' buffers on the GPU; with no fire left, nothing is drawn again. */
+  destroy(): void {
+    this.fires.clear();
+    this.view.destroy();
+    this.instances?.destroy();
+    this.instances = null;
+    this.bound = null;
+  }
+
   /** Works out the fires' parts at `time`, measured from the eye of `shot`; they are drawn over the water. */
   drawInto(_pass: GPURenderPassEncoder, fromEye: Float32Array, shot: { readonly eye: Point }, time: number): void {
     const shown: number[] = [];

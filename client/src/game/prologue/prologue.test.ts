@@ -191,3 +191,21 @@ test('a hold on Space begun on a cutscene that ends by itself does not carry ove
   for (let frame = 0; frame < 3; frame++) director.frame(controls(true), 0.1, SIZE, SIZE);
   assert.equal(made.get('wake')?.skipped, false, 'three tenths more is not a skip of the next cutscene');
 });
+
+test("a last beat that fails keeps the story's screen, so its black lifts only once the game's veil is up", () => {
+  const made = new Map<BeatName, Played>();
+  const { director, asked } = directed(made, 'shore');
+  const shore = made.get('shore');
+  assert.ok(shore);
+  shore.failing = new Error('the shore could not go on');
+  const logged = console.error;
+  console.error = () => undefined;
+  try {
+    director.frame(controls(false), 0.1, SIZE, SIZE);
+  } finally {
+    console.error = logged;
+  }
+  assert.ok(director.end, 'the story ends');
+  assert.ok(asked.includes('hush'));
+  assert.ok(!asked.includes('clear'), 'the screen is left for the end of the story to lift');
+});

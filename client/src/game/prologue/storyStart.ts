@@ -1,6 +1,8 @@
 // The story made from the game's own parts once they have loaded: the stage's drawers, voices, sounds and screen, the
 // Brig's and Thule's Frigate's models beside the Sloop's, the islands the intro flies over, the storm's place off
-// Saltmere, the player's look as kept, and the director that runs it all from the beat asked for.
+// Saltmere, the player's look as kept, and the director that runs it all from the beat asked for. Thule's Frigate is
+// drawn only from the sea fight on, so its view is made the first time a beat draws it: a player who has played the
+// story through and sees only the intro never makes it.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/prologue.json' with { type: 'json' };
 import { Ambience } from '../../cinema/ambience.ts';
@@ -72,20 +74,29 @@ export interface StoryGame {
   readonly closeSource: (left: number, top: number, step: number, size: number) => ReturnType<LandWorker['ground']>;
 }
 
-/** The story, its stage and the epilogue it leaves for the game to play on foot. */
+/** The story and the epilogue it leaves for the game to play on foot. */
 export interface Started {
   readonly prologue: Prologue;
   readonly epilogue: Epilogue;
-  readonly stage: Stage;
   /** The look the player has made themselves, as it stands now. */
   look(): Look;
+  /** The story's end: the stage gives the game back, and what the story alone drew with is let go on the GPU. */
+  leave(): void;
 }
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {
   const { gpu, scene, hudRoot } = game;
   const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
   const brigView = new ShipView(gpu, brigMesh, shipSails('brig'));
-  const frigateView = new ShipView(gpu, frigateMesh, shipSails('frigate'));
+  let frigateView: ShipView | null = null;
+  const hulls = {
+    brig: brigView,
+    sloop: game.sloop,
+    get frigate(): ShipView {
+      frigateView ??= new ShipView(gpu, frigateMesh, shipSails('frigate'));
+      return frigateView;
+    },
+  };
   const islands = new Islands({
     open: (id) => openLandmass(game.land, game.world, game.rmbText, id),
     scene,
@@ -94,6 +105,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     home: game.home,
   });
   const readCast = castOf(cast);
+  const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
   const stage = new Stage({
     gpu,
     canvas: game.canvas,
@@ -104,9 +116,9 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     footView: game.footView,
     forge: game.forge,
     firstPerson: game.firstPerson,
-    hulls: { brig: brigView, sloop: game.sloop, frigate: frigateView },
-    birds: new Birds(gpu),
-    flames: new Flames(gpu),
+    hulls,
+    birds,
+    flames,
     screen: new Screen(hudRoot, game.canvas),
     dialogue: new DialogueBox(hudRoot, worldOutput),
     overheads: new Overheads(hudRoot, worldOutput),
@@ -155,5 +167,13 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     hulls: { brig: brigMesh, frigate: frigateMesh },
   };
   const prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
-  return { prologue, epilogue: new Epilogue(stage, game.forge), stage, look: () => story.look };
+  const leave = () => {
+    stage.leave();
+    prologue.leave();
+    // The Sloop is the game's own, drawn after the story too; the rest was the story's alone.
+    for (const view of [brigView, frigateView]) view?.destroy();
+    birds.destroy();
+    flames.destroy();
+  };
+  return { prologue, epilogue: new Epilogue(stage, game.forge), look: () => story.look, leave };
 }

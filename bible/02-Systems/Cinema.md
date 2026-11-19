@@ -39,11 +39,16 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   rail keeps moving. A rail laid in a ship's own frame is carried into the world each frame as she sails.
 - **Moments** (`Cues`). What happens once at given seconds into a cutscene (a line, a sound, a flash) runs in time
   order, exactly once, however long the frames are; a skipped cutscene runs every moment left at once, so the world
-  is left as its end would leave it. Holding Space (or a touch on the screen) for a second skips (`HoldToSkip`):
+  is left as its end would leave it. Holding Space (or a touch anywhere on the view) for a second skips (`HoldToSkip`):
   the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
 - **The screen** (`Screen`), laid over the canvas: fades to black or white over any time, a white flash, the
   letterbox's bars, eyelids that close from above and below for waking, a blur over the whole view, the title (the
-  game's name over a brass rule, sized to fit a phone's width) and a prompt that breathes under it.
+  game's name over a brass rule, sized to fit a phone's width) and a prompt that breathes under it. Each layer eases
+  by its own transition except the eyelids and the blur, which the story sets frame by frame: while the screen stands
+  the canvas's own ease (kept for the death's grey) is held off, so the blur follows each frame and clears at once.
+  While it stands a touch on the canvas or the HUD is the story's (`touch-action: none`), so no drag pans the page or
+  pulls it to reload and a held touch is never cut short. Once the story's black has gone after its end, the screen
+  is taken away and the canvas and the HUD have their own ease and touches back.
 - **Lightning** (`Lightning`). Strikes come by themselves at seeded moments, 4 to 11 s apart, 0.4 to 4.5 km round the
   eye, or where a story calls one. Each is two flashes and a fading glow over a second, brighter the nearer it falls,
   its bolt shown for 0.22 s, and its thunder heard as late as its distance makes it.
