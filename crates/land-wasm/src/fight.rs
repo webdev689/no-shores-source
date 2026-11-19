@@ -4,19 +4,19 @@
 //! are JSON: the fight's own numbers never cross, so a request carries only the player's orders.
 
 use super::OPEN;
-use super::sail::{helm_from, ship_from, ticks_from};
+use super::sail::{MOST_WAY, helm_from, ship_from, ticks_from};
 use land::exact::fingerprint;
 use land::sea::Swell;
 use naval::arms::Side;
 use naval::ballistics::flight;
 use naval::captain::Mode;
-use naval::damage::{State, Zone, founder};
+use naval::damage::{SINK_SECONDS, State, Zone, founder};
 use naval::fight::{Aim, CAPTAIN, Command, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
-use sailing::ship::Ship;
+use sailing::ship::{SAILS_SET, Ship};
 use sailing::waters::{LandWaters, Waters, steady_wind};
 use serde_json::{Value, json};
 use std::cell::RefCell;
@@ -151,6 +151,15 @@ fn captain_json(vessel: &Vessel, command: &Command) -> Value {
     let mut captain = vessel_json(vessel);
     let (settled, trim, list) = founder(&vessel.damage, her.seed, command.under);
     captain["founder"] = json!([settled, trim, list]);
+    // A drawing that lets go of the fight while she goes down carries her on under from these: how she will lie
+    // once sunk, and in how many seconds.
+    if vessel.damage.state == State::Sinking {
+        let mut gone = vessel.damage.clone();
+        gone.state = State::Sunk;
+        let (settled, trim, list) = founder(&gone, her.seed, command.under);
+        captain["sunk_founder"] = json!([settled, trim, list]);
+        captain["sinks_in"] = json!((SINK_SECONDS - vessel.damage.sink_t).max(0.0));
+    }
     captain["name"] = json!(her.build.name);
     captain["faction"] = json!(her.commission.faction);
     captain["rank"] = json!(her.commission.rank.number());
@@ -226,7 +235,16 @@ fn captains_of(request: &Value, seed: u32) -> Result<Option<Vec<Enlisted>>, Stri
         let commission = whole("faction")
             .and_then(|faction| Commission::of(faction, rank))
             .ok_or("a captain's faction is one whose captains sail")?;
-        let ship = Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+        // A captain given her way comes on under sail at it, as she was seen coming; else she lies at rest.
+        let way = match &captain["way"] {
+            Value::Null => 0.0,
+            way => number(way, "a captain's way")?,
+        };
+        if !(0.0..=MOST_WAY).contains(&way) {
+            return Err("a captain's way is none a ship could have".into());
+        }
+        let rung = if way > 0.0 { SAILS_SET } else { 0 };
+        let ship = Ship { x, y, heading, ahead: way, abeam: 0.0, turn: 0.0, sail_way: way, rung };
         Ok((ship, commission, seed.wrapping_add(u32::try_from(at).unwrap_or(0)).wrapping_add(1)))
     };
     captains.iter().enumerate().map(captain).collect::<Result<_, String>>().map(Some)
