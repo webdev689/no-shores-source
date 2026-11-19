@@ -30,7 +30,8 @@ import { Aboard, type AboardContext } from './aboard.ts';
 import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
 import type { SeaFrame, SeaInput } from './seaFrame.ts';
-import { SeaWatch, type WaterNamed } from './seaHostiles.ts';
+import { Chase } from './seaChase.ts';
+import { HOSTILE_PREFIX, SeaWatch, type WaterNamed } from './seaHostiles.ts';
 import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
@@ -87,6 +88,7 @@ export class Sea {
   /** The water at a point, once the page has opened the waters; and what the voyage's line says of them. */
   waterAt: ((point: Point2) => WaterNamed | null) | null = null;
   private readonly watch = new SeaWatch();
+  private readonly chase = new Chase();
   /** Where she lies and heads, her voyage and pace dial, and her courses to the sea room. */
   private readonly passage: Passage;
   private camera: OverworldCamera;
@@ -265,11 +267,13 @@ export class Sea {
 
   /** Stops the ship where it is; the voyage's destination is kept, to be resumed. */
   stop(): void {
+    this.chase.stop();
     this.passage.stop();
   }
 
   /** Sets sail again, straight on or for the destination of the voyage last stopped, from wherever the ship lies. */
   resume(): void {
+    this.chase.stop();
     if (this.resumable) this.passage.resume();
   }
 
@@ -278,6 +282,7 @@ export class Sea {
    *  sailing straight on; `heaveTo` (S pressed) heaves her to. */
   helm(steer: number, ahead: boolean, heaveTo: boolean, seconds: number): void {
     if (this.combat || this.aboard.active || this.view.kind !== 'sail') return;
+    if (steer || ahead || heaveTo) this.chase.stop();
     if (heaveTo) this.passage.stop();
     if (steer) this.passage.steer(steer, seconds);
     if (ahead && !heaveTo) this.passage.straightOn();
@@ -285,6 +290,7 @@ export class Sea {
 
   /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
   sailTo(point: Point2): void {
+    this.chase.stop();
     this.passage.sailTo(point);
   }
 
@@ -294,10 +300,26 @@ export class Sea {
     if (!this.aboard.walking) this.passage.stepPace(direction);
   }
 
-  /** A mark chosen at sea: the ship sails for it, to the water nearest it. */
+  /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a hostile ship's, she chases her, the
+   *  mark kept chosen so Enter chases her again. */
   sailToMark(id: string): void {
+    const pirate = this.room?.pirates.find((each) => `${HOSTILE_PREFIX}${each.id}` === id);
+    if (pirate) {
+      this.chosen = id;
+      this.passage.sailTo(this.chase.start(pirate, this.position));
+      return;
+    }
     const mark = this.islandMarks.find((each) => each.id === id);
     if (mark) this.sailTo([mark.at[0], mark.at[1]]);
+  }
+
+  /** Chases the hostile ship whose mark is chosen, if one is: true then. */
+  chaseChosen(): boolean {
+    const chosen = this.chosen;
+    const sighted = this.room?.pirates.some((each) => `${HOSTILE_PREFIX}${each.id}` === chosen) ?? false;
+    if (chosen === null || !sighted || this.view.kind !== 'sail') return false;
+    this.sailToMark(chosen);
+    return true;
   }
 
   /** Docks or goes ashore as the landfall offers: flies the view up over the island's side the ship lies off, its
@@ -471,6 +493,8 @@ export class Sea {
       pirates,
     );
     this.watch.step(dt, combat ? [] : pirates, this.position, this.waterAt?.(this.position) ?? null);
+    const toward = combat ? null : this.chase.step(dt, pirates, this.position);
+    if (toward) this.passage.sailTo(toward);
     this.placed = marks.placed;
     return {
       shot: shown,
@@ -520,6 +544,7 @@ export class Sea {
     const first = this.room.takeFight();
     if (!first) return;
     this.aboard.drop();
+    this.chase.stop();
     this.passage.stop();
     if (this.view.kind === 'helm') this.view = { kind: 'sail' };
     this.combat = new SeaCombat(this.room, first, this.hull.marks, time, this.hull.shown);
@@ -555,7 +580,7 @@ export class Sea {
 
   /** Where her voyage stands: a hostile ship just sighted or other waters entered; under way, hove to, or at anchor. */
   get voyageNote(): string {
-    return this.watch.words ?? this.passage.note;
+    return this.watch.words ?? this.chase.words ?? this.passage.note;
   }
 
   /** The water she is in, as the status line names it; null before the waters are open. */

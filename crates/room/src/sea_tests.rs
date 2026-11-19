@@ -297,7 +297,7 @@ fn a_bold_pirate_in_sight_begins_a_fight_where_she_and_the_ship_lie() {
     assert_eq!(fighting, player);
     assert!(sea.pirates().is_empty(), "she left the sea for the fight");
     let captain = sailed(&fought.fight, CAPTAIN);
-    assert!((captain.y - (50_000.0 - 700.0)).abs() < 1.0 && (captain.x - 50_000.0).abs() < 1e-6, "{captain:?}");
+    assert!((captain.y - (50_000.0 - 700.0)).abs() < 1.0 && (captain.x - 50_000.0).abs() < 0.01, "{captain:?}");
     assert_eq!((sailed(&fought.fight, PLAYER).rung, captain.rung), (0, SAILS_SET), "hove to, she under sail");
     assert_eq!(sea.course(player, &[[60_000.0, 50_000.0]], 10), Err(CourseRefused::Fighting));
 }

@@ -68,6 +68,14 @@ export function sitesOf(continent: string, editsText: string): { city: CityInfo 
   return { city, nodes };
 }
 
+/** The ports the sea's waters and its room are opened with: each continent's city, as the waters' door takes them
+ *  (crates/world/src/traffic.rs `Port`). The page and the server read them alike, from the land files. */
+export function portsOf(
+  cities: readonly CityInfo[],
+): { readonly id: string; readonly name: string; readonly continent: string; readonly centre: Point }[] {
+  return cities.map(({ id, name, continent, centre }) => ({ id, name, continent, centre }));
+}
+
 /** Loads the world from the pages' `world/` folder. */
 export async function loadWorld(base: string): Promise<WorldData> {
   const text = async (path: string) => {

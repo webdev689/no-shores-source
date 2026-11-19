@@ -3,6 +3,7 @@
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { CityPlan, Wreck } from '../city/plan.ts';
 import type { Gpu } from '../gpu.ts';
+import { HULL_NAMES, hullPaint } from '../ships/hulls.ts';
 import { loadShip, type ShipMesh, VERTEX_BYTES } from '../ships/shipMesh.ts';
 import { type ShipCamera, ShipView } from '../ships/shipView.ts';
 import type { Drawer } from './scene.ts';
@@ -47,7 +48,8 @@ function viewOf(gpu: Gpu, ship: Hull): Promise<ShipView> {
   let view = views.get(ship);
   if (!view) {
     const stump = Math.max(...deckHeights(ship)) + STUMP_OVER_DECK_M;
-    view = loadShip(ship).then((mesh) => new ShipView(gpu, brokenMesh(mesh, stump), [], 1));
+    const paint = hullPaint(HULL_NAMES.indexOf(ship));
+    view = loadShip(ship).then((mesh) => ShipView.open(gpu, brokenMesh(mesh, stump), [], paint, 1));
     views.set(ship, view);
   }
   return view;
@@ -81,7 +83,7 @@ export class Wrecks {
         pitch: 0,
         roll: wreck.heel,
       };
-      view.drawInto(pass, place, camera, 0, WRECK_SHADE);
+      view.drawInto(pass, place, camera, 0, { side: 'player', shade: WRECK_SHADE });
     }
   }
 }
