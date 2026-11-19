@@ -7,7 +7,7 @@ code:
   - client/src/elementGlow.ts#GLOW_BURSTS
   - client/src/player/glowCards.ts#GlowCards
   - client/src/player/cards.ts#Cards
-  - client/src/player/gear.ts#heldElement
+  - client/src/player/gear.ts#heldElements
   - client/src/firstperson/firstPerson.ts#glowOf
   - client/src/combat/sparks.ts#trail
   - client/src/combat/tracers.ts#ribbonsOf
@@ -15,7 +15,8 @@ code:
 # Weapon Glow
 
 The player's own weapon glows in its element while it is drawn: Blaze, Volt or Cosmic, the [[Gear]]'s element on the
-weapon in that hand ([[Your Weapon Glows in Its Element]], [[Pick - Weapon Glow]]). It glows in [[First Person]] and on
+loadout drawn, in both hands for a pair and in the right alone otherwise, since a shield is no weapon ([[Your Weapon
+Glows in Its Element]], [[Pick - Weapon Glow]]). It glows in [[First Person]] and on
 the player's own figure; the player's shots and landed blows take the element too. Other players' figures, foes and
 the menu's pictures stay plain.
 
@@ -51,5 +52,5 @@ the menu's pictures stay plain.
 
 ## Limits
 
-- The figure takes one element, its main hand's: every weapon pixel on it glows in that.
+- The figure takes one element, the drawn loadout's: every weapon pixel on it glows in that, a shield's too.
 - A first-person picture at the screen's side keeps its light along that side.
