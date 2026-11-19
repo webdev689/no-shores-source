@@ -50,4 +50,7 @@ The owner's answers to the questions that followed:
 - [[The World Editor Draws the Layouts' Buildings]], [[The Well House's Roof Is Fixed]] and the flora workflow's
   publishing ([[Flora Is Baked From Detailed Models]]) stand.
 
+Its design kept a zone's areas, paths and gates as built: replaced by
+[[Zones Rise and Fall, Above and Below Ground]].
+
 It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]].

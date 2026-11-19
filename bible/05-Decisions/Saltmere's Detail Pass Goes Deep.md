@@ -34,3 +34,5 @@ The owner's answers to the questions that followed:
 
 It builds on [[Patrol Zones Stay as Built and Gain Linear Combat Areas]], whose limits stand: the pass reshapes
 basins, canyons, outcrops and great works, not a zone's areas, paths and gates.
+Keeping a zone's areas, paths and gates as built is replaced by
+[[Zones Rise and Fall, Above and Below Ground]].
