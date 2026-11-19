@@ -30,7 +30,7 @@ import { Hud } from './hud.ts';
 import { ISLANDS, placeWords, REGION, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
-import { arrivalFacing, bearingTo } from './nodes.ts';
+import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
@@ -39,7 +39,7 @@ import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
-import { continentToOpen, offshore } from './seaLaw.ts';
+import { continentToOpen, firstAnchorage } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
@@ -200,7 +200,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot = null;
     sea?.leaveRoom();
     foot = await entering();
-    // A dungeon's pictures and targets are let go wherever the player goes that is no dungeon.
     if (!foot.dungeon) dungeons.forget();
   };
   const goFoot = (node: NodeInfo, facing: number, seas = heldMap?.difficulty) =>
@@ -223,12 +222,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot = null;
     dungeons.forget();
     if (!sea) {
-      const plan = landmass.plan;
-      const social = landmass.nodes[0]?.centre ?? [0, 0];
-      const [from, through] = plan ? [plan.centre, plan.harbour ?? social] : [social, social];
-      const anchorage = offshore(landmass.heightAt, from, through);
-      // The ship first lies facing the city, so the view over it looks at the island.
-      const heading = bearingTo(anchorage, from);
+      const { anchorage, heading } = firstAnchorage(landmass);
       sea = new Sea(
         landmass,
         continents.map((each) => each.outline),
@@ -265,8 +259,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  /** Joins a company member where they play: a node of this landmass, or one of its patrol's dungeons, at their
-   *  seas, the ship left where she lies. */
+  /** Joins a company member where they play, a node of this landmass or its dungeon, at their seas; the ship stays. */
   const joinAt = (place: string): string | null => {
     // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
     // deck, landing, or while another landmass opens.
@@ -281,12 +274,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     discovered.nodes([node.id]);
-    if (where.dungeon !== null) {
-      trips.join(node, where.dungeon, where.seas);
-      return null;
-    }
     const facing = arrivalFacing(node, landmass.plan, null);
-    travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
+    if (where.dungeon !== null) trips.join(node, where.dungeon, where.seas);
+    else travel({ kind: 'join', node: node.id, name: node.name }, () => goFoot(node, facing, where.seas));
     return null;
   };
 

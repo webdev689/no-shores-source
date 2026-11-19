@@ -17,7 +17,7 @@ code:
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/footTrips.ts#tripAt
-  - client/src/game/dungeonDrawers.ts#dungeonTrips
+  - client/src/game/dungeonTrips.ts#dungeonTrips
   - client/src/game/dungeonDrawers.ts#DungeonDrawers
   - client/src/game/sea.ts#Sea
   - client/src/game/landmass.ts#openLandmass

@@ -10,7 +10,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The scaffold: the TypeScript client on WebGPU, the Rust repo checks, CI, this vault.
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP and Context7 keys are
-  network secrets on the Default environment. Kit fixes are logged with task-observer for the co-dev; the log lives
+  network secrets the session's environment must hold: in one that holds none, check-tools fails SkillsMP and
+  Context7 runs on its anonymous tier. Kit fixes are logged with task-observer for the co-dev; the log lives
   in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
@@ -180,11 +181,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#72, the dungeons, is not finished yet**: DFO's Dungeons 2.0 within the patrol areas
-  ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]], Claude's calls in [[Dungeons as Claude Builds Them]],
-  [[Dungeons]]). Built, tested offline, CI green: linear runs with a way in, a Reeve's end room and a return portal,
-  props, torches, the procedural pictures, three mound entrances a patrol, each dungeon its own room. When it is
-  finished it waits on the owner's yes to merge.
+- **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
+  areas ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]], Claude's calls in
+  [[Dungeons as Claude Builds Them]], [[Dungeons]]). Linear runs with a way in, a Reeve's end room and a return
+  portal, props, torches, the procedural pictures, three mound entrances a patrol, each dungeon its own room. Tested
+  offline: `cargo xtask check`, and headless pictures of all four styles, the cache shut and open. A whole-diff
+  review's findings are fixed, each with a test. Not tested live: a deployed dungeon room.
 
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
@@ -264,18 +266,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **Finish #72's pass** (paused at the usage limit). Done, headless at 800x500: the Cells dungeon's mound entrance,
-  its prompt, the way in, a corridor's doorway and the furnished room all look right. Dying inside and standing
-  again at the way in works. Still to do:
-  - Picture the end room, cache and portal shut and open. The garrison kills a headless player first, so build
-    room.wasm in a scratch worktree with the Reeve's post empty and no bands (never committed). Route it in with
-    webgpu-shot's `routes`.
-  - Picture Halls, Sanctum and Crypt.
-  - Run a whole-diff review (`git diff origin/main...HEAD`) and fix what holds up.
-  - Bring the PR body up to date: it still reads as the opening draft.
-  - Then report to the owner.
-  The planner that writes the steps was `/tmp/claude-0/qa/plan4.ts`, which a new container loses: it walks a BFS
-  path from `arrival` to the cache and faces each shot.
+- **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
+  deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out. Unchecked: a
+  shot might slip through a 0.3 m jamb between the ground samples of its flight.
+- **Picturing a dungeon headless** needs no walk. In a scratch worktree (never committed), patch the room so a
+  patrol's player joins before entrance N, a dungeon's player joins in its end room facing the portal, and no
+  garrison stands; build `room-wasm` into a target directory of its own and route `room.wasm` to it. An `init`
+  script that reports the canvas locked lets `eval` steps turn the view with `mousemove` (0.0025 rad a pixel).
 
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
