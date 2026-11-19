@@ -31,6 +31,9 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::Xp(12_345)),
         Asked::Grant(Grant::Status { status: combat::Status::Expose, on_foes: true, ticks: Some(150) }),
         Asked::Grant(Grant::Status { status: combat::Status::Veiled, on_foes: false, ticks: None }),
+        Asked::Grant(Grant::ArtsReady),
+        Asked::Art(gear::arts::ArtAsk::Wear { art: 3 }),
+        Asked::Art(gear::arts::ArtAsk::SetCore { art: 2, slot: 1, fragment: 5 }),
     ]
 }
 
@@ -100,6 +103,11 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
     assert_eq!(columns[1].resource(), 10);
     let vestiges: Vec<_> = gear.vestiges().expect("Vestiges").iter().collect();
     assert_eq!((vestiges.len(), vestiges[0].rarity(), vestiges[0].slot()), (1, 4, Slot::Head as u8));
+    let cores: Vec<u8> = gear.cores().expect("the Cores").iter().collect();
+    assert_eq!((gear.art(), cores), (1, vec![NO_FRAGMENT; 9]), "Storm worn, every Core empty");
+    assert!(gear.anima() > 0.0 && gear.anima() < 0.01, "a new room's Anima, charging");
+    let tenets = gear.tenets().map(|tenets| tenets.iter().collect::<Vec<_>>());
+    assert_eq!(tenets, Some(vec![1.0, 1.0]), "both Tenets ready");
     assert!(gear_bytes(&room, 99).is_none());
 }
 

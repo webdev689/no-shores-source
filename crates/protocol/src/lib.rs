@@ -17,7 +17,9 @@ use naval::ranks::Commission;
 use naval::wire::{orders_from, orders_numbers};
 use room::pirates::Pirate;
 use room::sea::Ship;
-use room::{CLEAR_FOES, Event, FoeSeen, Input, PlayerId, SHIELD_SHIFT, Seen, Shown, SpawnAsk, Standing};
+use room::{
+    CLEAR_FOES, Cast, Event, FoeSeen, Input, PlayerId, SHIELD_SHIFT, Seen, Shown, SpawnAsk, SpellSeen, Standing,
+};
 
 /// The code flatc makes from the schema, into `generated/`, which git leaves out (`npm run schema`).
 #[allow(
@@ -73,7 +75,16 @@ pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
     };
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
     let ask = input.ask().and_then(|ask| gear_wire::asked_of(&ask));
-    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level: input.spawn_level() })
+    let spawn_level = input.spawn_level();
+    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level, cast: cast_of(&input) })
+}
+
+/// The cast an input carries, if it carries one: its aim only when it is three numbers, every one a number.
+fn cast_of(input: &messages::Input<'_>) -> Option<Cast> {
+    let aim: Option<Vec<f64>> = input.cast_aim().map(|aim| aim.iter().collect());
+    let aim =
+        aim.and_then(|aim| <[f64; 3]>::try_from(aim).ok()).filter(|aim| aim.iter().all(|number| number.is_finite()));
+    (input.cast() > 0).then_some(Cast { spell: input.cast(), aim })
 }
 
 /// An input as its bytes: what a browser sends, written from Rust for tests.
@@ -87,6 +98,7 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
     let anim = Some(builder.create_string(&input.shown.anim));
     let dress = input.dress.as_ref().map(|dress| builder.create_string(dress));
     let ask = input.ask.as_ref().map(|asked| gear_wire::ask_offset(&mut builder, asked));
+    let cast_aim = input.cast.and_then(|cast| cast.aim).map(|aim| builder.create_vector(&aim));
     let args = messages::InputArgs {
         sequence: input.sequence,
         controls,
@@ -113,6 +125,8 @@ pub fn input_bytes(input: &Input) -> Vec<u8> {
             Some(SpawnAsk::Foe { rank, .. }) => rank,
             _ => 0,
         },
+        cast: input.cast.map_or(0, |cast| cast.spell),
+        cast_aim,
     };
     let message = messages::Input::create(&mut builder, &args);
     builder.finish(message, None);
@@ -304,6 +318,7 @@ pub struct Snapshot<'snapshot> {
     pub shots: &'snapshot [Shot],
     /// The balls that stopped since the last snapshot, each sent among the shots as its last segment and its muzzle.
     pub lines: &'snapshot [Line],
+    pub spells: &'snapshot [SpellSeen],
 }
 
 /// Every player as the room saw them after its tick, the dresses that changed since the last snapshot, every foe,
@@ -388,10 +403,48 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         })
         .collect();
     let shots = Some(builder.create_vector(&shots));
+    // Left out when there are none, so a snapshot carries no more than it needs.
+    let spells = (!snapshot.spells.is_empty()).then(|| spells_vector(&mut builder, snapshot.spells));
     let tick = snapshot.tick;
-    let args =
-        messages::SnapshotArgs { tick, players, dressed, foes, events, shots, ..messages::SnapshotArgs::default() };
+    let args = messages::SnapshotArgs {
+        tick,
+        players,
+        dressed,
+        foes,
+        events,
+        shots,
+        spells,
+        ..messages::SnapshotArgs::default()
+    };
     finish_snapshot(builder, &args)
+}
+
+/// Every spell, as the snapshot carries them.
+fn spells_vector<'built>(
+    builder: &mut flatbuffers::FlatBufferBuilder<'built>,
+    spells: &[SpellSeen],
+) -> flatbuffers::WIPOffset<flatbuffers::Vector<'built, flatbuffers::ForwardsUOffset<messages::Spell<'built>>>> {
+    let each: Vec<_> = spells
+        .iter()
+        .map(|spell| {
+            let at = Some(builder.create_vector(&spell.at));
+            let heads = spell.heads.map(|heads| builder.create_vector(&heads));
+            let args = messages::SpellArgs {
+                id: spell.id,
+                kind: spell.kind,
+                caster: spell.caster,
+                art: spell.art,
+                at,
+                heads,
+                seeks: spell.seeks.unwrap_or(0),
+                age: spell.age,
+                life: spell.life,
+                radius: spell.radius,
+            };
+            messages::Spell::create(builder, &args)
+        })
+        .collect();
+    builder.create_vector(&each)
 }
 
 /// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction and rank, each
