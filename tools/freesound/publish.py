@@ -3,14 +3,18 @@
     python3 -I tools/freesound/publish.py <download>   # the freesound workflow's download, unzipped
 
 The download holds `picks.json`, each pick read from its own Freesound page (its title, author and licence link), and
-`picks/<cue>.mp3`, its preview. Each preview is put on R2 under the SHA-256 of its bytes, unchanged, and
+`picks/<cue>.mp3`, its preview. Each preview is put on R2 under the SHA-256 of its bytes, unchanged unless its cue
+names a `cut` (a long one cut to the stretch the game plays, with ffmpeg, the credit saying so), and
 content/audio/sounds.json is written for the game, which plays each in place of its synthesised cue and lists each
 credit in Settings. A pick that was not read whole stops the publish: no sound goes in without its credit.
 """
 import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
@@ -34,6 +38,26 @@ LICENCES = {
 }
 
 
+# A cut recording fades in and out over its ends, so a loop's seam or its first play never clicks.
+EDGE_S = 0.05
+
+
+def cut(data, start, seconds, mono):
+    """The stretch of a recording its cue asks for, as an MP3: a long one is cut, so the game fetches and holds less."""
+    if not shutil.which('ffmpeg'):
+        sys.exit('ffmpeg is needed to cut a recording')
+    with tempfile.TemporaryDirectory() as here:
+        source, out = os.path.join(here, 'in.mp3'), os.path.join(here, 'out.mp3')
+        with open(source, 'wb') as file:
+            file.write(data)
+        fades = f'afade=t=in:d={EDGE_S},afade=t=out:st={seconds - EDGE_S}:d={EDGE_S}'
+        channels = ['-ac', '1'] if mono else []
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', str(start), '-t', str(seconds), '-i', source, *channels,
+                        '-af', fades, '-codec:a', 'libmp3lame', '-b:a', '160k', out], check=True)
+        with open(out, 'rb') as file:
+            return file.read()
+
+
 def is_mp3(data):
     """Whether the bytes open as an MP3 does: its tags, or a frame's sync."""
     return data[:3] == b'ID3' or (len(data) > 1 and data[0] == 0xFF and data[1] >= 0xE0)
@@ -46,7 +70,8 @@ def main():
     with open(os.path.join(download, 'picks.json')) as file:
         picks = json.load(file)
     with open(WANTED) as file:
-        wanted = {cue['id']: cue.get('picked') for cue in json.load(file)['cues']}
+        cues = {cue['id']: cue for cue in json.load(file)['cues']}
+    wanted = {cue: each.get('picked') for cue, each in cues.items()}
     picked = {cue for cue, sound in wanted.items() if sound}
     # Every pick the list names, and no other: an older download would drop one from the game unsaid.
     if {pick['id'] for pick in picks} != picked:
@@ -69,6 +94,12 @@ def main():
             data = file.read()
         if not is_mp3(data):
             sys.exit(f'{cue}: {pick["file"]} is not an MP3')
+        changes = VARIES if VARIED.fullmatch(cue) else CHANGES
+        if cues[cue].get('cut'):
+            start, seconds = cues[cue]['cut']
+            mono = cues[cue].get('mono', False)
+            data = cut(data, start, seconds, mono)
+            changes = f'Cut to {seconds:g} s from {start:g} s in{", made mono" if mono else ""}, its ends faded.'
         sounds[cue] = {
             'key': put(data, 'sounds', 'mp3', 'audio/mpeg'),
             'freesound': pick['freesound'],
@@ -77,7 +108,7 @@ def main():
             'licence': licence['name'],
             'licenceUrl': licence['url'],
             'page': pick['page'],
-            'changes': VARIES if VARIED.fullmatch(cue) else CHANGES,
+            'changes': changes,
         }
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
     with open(MANIFEST) as file:

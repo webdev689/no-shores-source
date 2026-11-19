@@ -1,5 +1,5 @@
 {
-  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there. `offer` names Freesound numbers shown as candidates before the search's own, such as the recordings DFO plays. `dfo` marks a cue whose sound comes from DFO's own: the name of the one picked, or true while the owner chooses among them on the sheet; such a cue is searched no more.",
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there. `offer` names Freesound numbers shown as candidates before the search's own, such as the recordings DFO plays. `dfo` marks a cue whose sound comes from DFO's own: the name of the one picked, or true while the owner chooses among them on the sheet; such a cue is searched no more. `cut` names the stretch of a long pick the game plays, its start and its length in seconds, and `mono` makes it one channel; the credit says so.",
   "cues": [
     {
       "id": "ui.hover",
@@ -1046,7 +1046,12 @@
         20.0,
         300.0
       ],
-      "picked": 260727
+      "picked": 260727,
+      "cut": [
+        200,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "amb.woodland.crow",
