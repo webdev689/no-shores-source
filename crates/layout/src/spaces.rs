@@ -1,5 +1,5 @@
-//! A layout's map: the spaces a body stands in (its areas, the lookouts its climbs reach, its runs' beats) and the
-//! connections between them (its ways, its climbs, its runs' passages). Each space's level and roof are read off the
+//! A layout's map: the spaces a body stands in (its areas, the lookouts its climbs reach, its runs' beats, its
+//! caverns) and the connections between them (its ways, its climbs, its runs' passages, its tunnels). Each space's level and roof are read off the
 //! land and the solids as laid, so the map says what a body finds there. Missions, events and raids place their
 //! fights, checkpoints and bosses on it.
 
@@ -24,6 +24,8 @@ pub enum SpaceKind {
     Lookout,
     /// A fight of a run, the last its end arena.
     Beat,
+    /// A hollow under the rock beside a coven or a cave.
+    Cavern,
 }
 
 /// A place a body stands in: its middle and reach, its floor's level (a share of the massif's height: 0 the land's
@@ -51,6 +53,8 @@ pub enum Joined {
     Climb,
     /// A run's passage into its first beat or on to the next.
     Run,
+    /// A roofed tunnel through the rock, into a cavern.
+    Tunnel,
 }
 
 /// A connection between two spaces, by their places in the map: how it is walked, its walked width and its line.
@@ -91,6 +95,7 @@ pub struct Drawn<'a> {
     pub ways: &'a [(Path, [usize; 2])],
     pub climbs: &'a [&'a [[f64; 7]]],
     pub runs: &'a [Run],
+    pub caverns: &'a [crate::caverns::Cavern],
     pub solids: &'a [Solid],
 }
 
@@ -150,6 +155,11 @@ pub fn map(drawn: &Drawn, land: &Land) -> Map {
             map.connections.push(Connection { from, to, joined: Joined::Run, width, points: vec![start, beat.at] });
             (from, start) = (to, beat.at);
         }
+    }
+    for cavern in drawn.caverns {
+        map.spaces.push(space(SpaceKind::Cavern, &drawn.areas[cavern.area].name, cavern.middle, cavern.reach));
+        let (to, points) = (map.spaces.len() - 1, vec![cavern.mouth, cavern.middle]);
+        map.connections.push(Connection { from: cavern.area, to, joined: Joined::Tunnel, width: 12.0, points });
     }
     map
 }

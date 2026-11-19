@@ -27,6 +27,7 @@ code:
   - crates/layout/src/collide.rs#boxes_of
   - crates/layout/src/spaces.rs#map
   - crates/layout/src/heights.rs#graded
+  - crates/layout/src/caverns.rs#find
   - content/world/briefs.json
   - client/src/layout/layoutPlan.ts#planOfLayouts
   - client/src/game/groundPaint.ts#paintOfLayouts
@@ -191,8 +192,9 @@ from the sea, fresh water and the claim's edge), then:
    and battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from
    cliff top to cliff top on piers and arches, one span fallen into the gorge, a pier that would stand on a way moved
    out from the middle until it stands clear (half a span at most) or left out, so each arch spans two piers that
-   stand; a natural arch of rock left standing
-   over a third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and
+   stand; a natural arch of rock (the rock arch,
+   [[Cities]]) left standing over a third canyon, its feet on the canyon's floor either side of the way and out into
+   its cliffs, its opening the way and 6 m either side, its crown over the massif's top, the way running under it; and
    retaining walls along part of the wider basins' feet, each length where the cliff really rises from the floor and
    clear of every way, the climbs' and runs' too, and of every outcrop. Along the cliff tops round the section, every
    130 to 210 m where the massif stands over the floor, its top level enough to hold one and no way runs out, stand
@@ -341,6 +343,15 @@ was stood on the land before the carving is lifted onto it. A retaining wall sta
 floor: past a raised floor's edge the land may fall away instead. In the Vale every way and climb is walked without a
 step a body cannot take (`crates/room/tests/map_planned.rs`), its keep highest, then its shrine, its hamlet and its
 farm, its mill, meadows and coven by the river.
+
+With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,
+and once the land is carved its palisade runs on from its last stakes, a stake every 1.1 m, until each side meets the
+rock. A coven or a cave at the land's own level opens into a cavern (`caverns`): from the first bearing of sixteen
+along which its floor gives onto rock well inside the claim and dry, a tunnel 12 to 36 m long and 12 m wide into a
+hollow of 20 m reach, both cut into the rock at its level before the climbs, runs and dead rock are found; each roofed
+with rock (a cave roof, [[Cities]]) 7 m over the hollow's floor and 5 m over the tunnel's, its edges resting 5 m on
+the rock round it and its top at the massif's, and a tunnel mouth of rock where the tunnel opens onto the floor. The
+map takes the cavern as a roofed space joined to its area by a tunnel. In the Vale the Hollow Coven opens into one.
 
 ## The map
 

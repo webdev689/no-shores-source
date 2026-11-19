@@ -75,11 +75,25 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
 
 /// Whether a solid's box stands within 1.2 m of a run's way (its line and on to its door) under head height (2.2 m over `floor`).
 fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
-    let [west, north, east, south, bottom, _] = solid.bounds();
-    // An arch is boxed as its jambs and head (collide.rs), and the kits stand its jambs clear of the line.
-    if bottom >= floor + 2.2 || matches!(solid.shape, Shape::Arch { .. }) {
+    // An arch is boxed as its jambs and head (collide.rs), and the kits stand its jambs clear of the line; rock by its
+    // parts' boxes.
+    if matches!(solid.shape, Shape::Arch { .. }) {
         return false;
     }
+    if city::rock::is_rock(solid.shape) {
+        return city::rock::boxes(solid).iter().any(|&[west, north, east, south, _, bottom]| {
+            bottom < floor + 2.2 && near_way(run, [west, north, east, south])
+        });
+    }
+    let [west, north, east, south, bottom, _] = solid.bounds();
+    if bottom >= floor + 2.2 {
+        return false;
+    }
+    near_way(run, [west, north, east, south])
+}
+
+/// Whether a footprint comes within 1.2 m of a run's way (its line and on to its door).
+fn near_way(run: &Run, [west, north, east, south]: [f64; 4]) -> bool {
     let near =
         |at: [f64; 2]| at[0] >= west - 1.2 && at[0] <= east + 1.2 && at[1] >= north - 1.2 && at[1] <= south + 1.2;
     run.way().windows(2).any(|pair| {

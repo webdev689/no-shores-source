@@ -97,10 +97,10 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], (rise, outcrops): (f
     // A natural arch over a third canyon, apart from both.
     let clear_of =
         |work: Option<(Tier, Run)>, at: [f64; 2]| work.is_none_or(|(_, run)| distance(run.0, at) > WORKS_APART_M);
-    if let Some((_, (middle, way, _, half))) =
+    if let Some((_, (middle, way, ..))) =
         runs.iter().find(|(_, run)| clear_of(wall, run.0) && clear_of(viaduct_at, run.0))
     {
-        crate::skyline::natural_arch(kit, (*middle, *way, *half), rise, carved);
+        crate::skyline::natural_arch(kit, (*middle, *way), rise, carved);
     }
 }
 

@@ -181,6 +181,32 @@ fn gate(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     kit.prop(sign, ahead(middle, toward, -7.0, 0.35), yaw + 180.0);
 }
 
+/// A gate's palisade run on from its last stakes until each side meets the rock (`carved`), a stake every 1.1 m while
+/// the floor lasts, 40 m out at the most, so it closes the cleft it stands in.
+pub fn gate_to_rock(kit: &mut Kit, middle: [f64; 2], toward: [f64; 2], carved: &land::sculpts::Sculpts) {
+    let across = [-toward[1], toward[0]];
+    let turn = turn_along(across);
+    for side in [-1.0, 1.0] {
+        let mut along = 3.4 + 9.0 * 1.1;
+        while along < 40.0 {
+            let at = [middle[0] + across[0] * along * side, middle[1] + across[1] * along * side];
+            if carved.floor_distance(at[0], at[1]) > 0.0 {
+                break;
+            }
+            let height = 3.0 + kit.draw() * 0.9;
+            let base = crate::skyline::carved_at(kit, carved, at) - 0.4;
+            let stake = Solid::upright(
+                Shape::Column { sides: 6, top: 0.55 },
+                [at[0], at[1], base],
+                [0.55, 0.55, height],
+                Material::Timber,
+            );
+            kit.solid(stake.turned(turn));
+            along += 1.1;
+        }
+    }
+}
+
 /// A lantern on a post: a timber post, an iron foot, a small flame-lit glass and an iron cap over it.
 pub fn lantern(kit: &mut Kit, at: [f64; 2], height: f64) {
     kit.stand(Shape::Column { sides: 6, top: 1.0 }, at, [0.16, 0.16, height], 0.0, Material::Timber, 0.3);

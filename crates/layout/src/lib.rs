@@ -9,6 +9,7 @@ pub mod basins;
 pub mod book;
 pub mod brief;
 pub mod carve;
+pub mod caverns;
 mod clearing;
 pub mod collide;
 pub mod compose;
@@ -211,7 +212,7 @@ pub fn plan(
         levels: &levels,
         joined: &joined,
     };
-    let (mut sculpt, basins) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
+    let (mut sculpt, basins, caverns) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // What stands on a terrace or a raised floor (a place at a height, a way graded between places) was stood on the
     // land before it was carved: lift it onto the land's level there.
     let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
@@ -248,6 +249,16 @@ pub fn plan(
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, (rise, &sculpt.outcrops), &carved);
+    for cavern in &caverns {
+        caverns::build(&mut kit, cavern, &carved, rise);
+    }
+    if brief.heights {
+        for area in areas.iter().filter(|area| area.kind == AreaKind::Gate) {
+            if let Some(&(middle, toward)) = exits.iter().find(|(at, _)| *at == area.at) {
+                pieces::gate_to_rock(&mut kit, middle, toward, &carved);
+            }
+        }
+    }
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
     for pair in carve::lookouts(&sculpt.climbs) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
@@ -329,7 +340,14 @@ pub fn plan(
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land { floor: &|at| ground.height_at(at[0], at[1]) + raise(at), level: &|at| raise(at) / rise };
     let climbs: Vec<&[[f64; 7]]> = carve::lookouts(&sculpt.climbs).collect();
-    let drawn = spaces::Drawn { areas: &areas, ways: &ways, climbs: &climbs, runs: &runs, solids: &seating.solids };
+    let drawn = spaces::Drawn {
+        areas: &areas,
+        ways: &ways,
+        climbs: &climbs,
+        runs: &runs,
+        caverns: &caverns,
+        solids: &seating.solids,
+    };
     let map = spaces::map(&drawn, &land);
     Layout {
         id: node.id.clone(),

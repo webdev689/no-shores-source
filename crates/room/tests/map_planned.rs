@@ -214,3 +214,72 @@ fn the_vales_places_stand_at_their_heights() {
     heights.dedup();
     assert!(heights.len() >= 4, "the Vale's places stand at {heights:?} tenths of its massif");
 }
+
+#[test]
+fn the_vales_coven_opens_into_a_roofed_cavern_by_a_tunnel() {
+    let (layouts, ground) = laid_one();
+    let laid = layouts.iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let coven = laid.areas.iter().position(|area| area.name == "Hollow Coven").expect("the coven is laid out");
+    let cavern =
+        laid.map.spaces.iter().position(|space| space.kind == SpaceKind::Cavern).expect("the coven has a cavern");
+    let space = &laid.map.spaces[cavern];
+    assert!(space.roofed, "the cavern is roofed");
+    assert!(space.level < 0.05, "the cavern lies at the coven's level: {}", space.level);
+    let tunnel = laid
+        .map
+        .connections
+        .iter()
+        .any(|joined| joined.joined == Joined::Tunnel && joined.from == coven && joined.to == cavern);
+    assert!(tunnel, "a tunnel joins the coven to its cavern");
+    // Under the roof at its middle, room to stand and fight.
+    let floor = ground.height_at(space.at[0], space.at[1]);
+    let over: Vec<f64> = laid
+        .seating
+        .solids
+        .iter()
+        .filter(|solid| city::rock::is_rock(solid.shape))
+        .flat_map(city::rock::boxes)
+        .filter(|&[west, north, east, south, ..]| {
+            space.at[0] >= west && space.at[0] <= east && space.at[1] >= north && space.at[1] <= south
+        })
+        .map(|rock| rock[5] - floor)
+        .collect();
+    assert!(!over.is_empty(), "rock roofs the cavern's middle");
+    assert!(over.iter().all(|&headroom| headroom >= 5.0), "the cavern's headroom: {over:?}");
+}
+
+#[test]
+fn each_of_the_vales_gates_closes_its_cleft_from_rock_to_rock() {
+    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
+    let gates = laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Gate);
+    let mut seen = 0;
+    for gate in gates {
+        seen += 1;
+        // Its palisade's stakes: timber posts of a stake's girth within 45 m of its middle.
+        let stakes: Vec<[f64; 2]> = laid
+            .seating
+            .solids
+            .iter()
+            .filter(|solid| solid.material == city::solids::Material::Timber && (solid.size[0] - 0.55).abs() < 1e-9)
+            .map(|solid| [solid.at[0], solid.at[1]])
+            .filter(|&at| distance(at, gate.at) < 45.0)
+            .collect();
+        // The line they stand along, from the farthest of them to the farthest from that.
+        let far =
+            |from: [f64; 2]| stakes.iter().copied().max_by(|a, b| distance(*a, from).total_cmp(&distance(*b, from)));
+        let (Some(first), Some(second)) = (far(gate.at), far(far(gate.at).unwrap_or(gate.at))) else {
+            panic!("{}'s gate at {:?} has a palisade", laid.id, gate.at)
+        };
+        for end in [first, second] {
+            let off = carved.floor_distance(end[0], end[1]);
+            assert!(
+                off > -2.5,
+                "the gate at {:?}: its palisade ends {:.1} m short of the rock at {end:?}",
+                gate.at,
+                -off
+            );
+        }
+    }
+    assert!(seen >= 3, "the Vale has its three gates");
+}

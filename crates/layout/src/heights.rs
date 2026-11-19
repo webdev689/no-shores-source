@@ -149,6 +149,24 @@ pub fn graded(paths: &[Path], joined: &[[usize; 2]], basins: &[Basin], (levels, 
     paths.iter().zip(&starts).map(|(path, &start)| level[start..start + path.points.len()].to_vec()).collect()
 }
 
+/// The level of the floor under a point, as a share of the massif's height: the raised floor's there where one is
+/// nearer than any floor at the land's own level, else 0.
+pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -> f64 {
+    let floor = floors
+        .iter()
+        .map(|&[x1, y1, x2, y2, half]| off_line(at, [x1, y1], [x2, y2]) - half)
+        .fold(f64::INFINITY, f64::min);
+    let nearest = raised.iter().map(|&[x1, y1, x2, y2, half, from, to]| {
+        let (from_end, to_end) = (distance(at, [x1, y1]), distance(at, [x2, y2]));
+        let along = if from_end + to_end > 0.0 { from_end / (from_end + to_end) } else { 0.0 };
+        (off_line(at, [x1, y1], [x2, y2]) - half, from + (to - from) * along)
+    });
+    nearest
+        .filter(|&(off, _)| off < floor)
+        .min_by(|first, second| first.0.total_cmp(&second.0))
+        .map_or(0.0, |(_, share)| share)
+}
+
 /// A point's level waiting to be spread, highest first, ties by its place.
 #[derive(Debug, Clone, Copy)]
 struct Raised(f64, usize);

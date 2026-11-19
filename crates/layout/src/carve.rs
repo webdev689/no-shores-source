@@ -147,6 +147,8 @@ pub struct Network<'layout> {
     pub joined: &'layout [[usize; 2]],
 }
 
+/// A gate's cleft's reach where the brief asks for heights, metres: its arch and palisade's, with a little to spare.
+const GATE_CLEFT_M: f64 = 14.0;
 /// A pocket's half-width, metres: room round a resource and a way into it from the path.
 const POCKET_HALF_M: f64 = 9.0;
 
@@ -186,8 +188,8 @@ pub fn lookouts(climbs: &[[f64; 7]]) -> impl Iterator<Item = &[[f64; 7]]> {
     climbs.chunks_exact(2).take_while(|pair| pair[1][5] >= 1.0)
 }
 
-/// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed) and
-/// each of its areas' basins.
+/// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed), each of
+/// its areas' basins, and the caverns cut beside them.
 #[must_use]
 pub fn carve(
     field: &Field,
@@ -197,16 +199,24 @@ pub fn carve(
     shape: Shape,
     rise: f64,
     seed: u32,
-) -> (Sculpt, Vec<Basin>) {
+) -> (Sculpt, Vec<Basin>, Vec<crate::caverns::Cavern>) {
     let Network { areas, paths, exits, pockets, meadows, levels, joined } = network;
     let mut drawn = 0_i64;
     let mut draw = || {
         drawn += 1;
         rand01(seed ^ 0xBA51, &[drawn])
     };
+    let heights = levels.iter().any(|&level| level > 0.0);
     let basins: Vec<Basin> = areas
         .iter()
         .map(|area| {
+            // With heights, a gate stands in a cleft of the rock its palisade runs across, not a bowl it stands in.
+            if heights && area.kind == AreaKind::Gate {
+                return Basin {
+                    floors: vec![[area.at[0], area.at[1], area.at[0], area.at[1], GATE_CLEFT_M]],
+                    terraces: Vec::new(),
+                };
+            }
             let water = (area.kind == AreaKind::Mill).then(|| along_water(field, area.at)).flatten();
             basin(area, seating, paths, water, &mut draw)
         })
@@ -265,10 +275,17 @@ pub fn carve(
     for (basin, &level) in basins.iter().zip(levels) {
         let lifted = |share: f64| (share + level).min(1.0);
         terraces.extend(basin.terraces.iter().map(|&[x1, y1, x2, y2, half, from, to]| {
-            let foot = if from == 0.0 { share_at(&floors, &raised, [x1, y1]) } else { lifted(from) };
+            let foot = if from == 0.0 { crate::heights::share_at(&floors, &raised, [x1, y1]) } else { lifted(from) };
             [x1, y1, x2, y2, half, foot, lifted(to)]
         }));
     }
+    // A coven's or a cave's cavern is cut into the rock beside its floor, before the climbs, runs and dead rock are found.
+    let caverns = if grades.is_empty() {
+        Vec::new()
+    } else {
+        crate::caverns::find(field, areas, levels, (&claim, &floors, &terraces, &raised), (rise, seed))
+    };
+    floors.extend(caverns.iter().flat_map(crate::caverns::Cavern::floors));
     let bare = Sculpts::from(vec![Sculpt {
         claim: claim.clone(),
         floors: floors.clone(),
@@ -285,25 +302,7 @@ pub fn carve(
     let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
     let sculpt =
         Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new(), levels: raised };
-    (sculpt, basins)
-}
-
-/// The level of the floor under a point, as a share of the massif's height: the raised floor's there where one is
-/// nearer than any floor at the land's own level, else 0.
-fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -> f64 {
-    let floor = floors
-        .iter()
-        .map(|&[x1, y1, x2, y2, half]| off_line(at, [x1, y1], [x2, y2]) - half)
-        .fold(f64::INFINITY, f64::min);
-    let nearest = raised.iter().map(|&[x1, y1, x2, y2, half, from, to]| {
-        let (from_end, to_end) = (distance(at, [x1, y1]), distance(at, [x2, y2]));
-        let along = if from_end + to_end > 0.0 { from_end / (from_end + to_end) } else { 0.0 };
-        (off_line(at, [x1, y1], [x2, y2]) - half, from + (to - from) * along)
-    });
-    nearest
-        .filter(|&(off, _)| off < floor)
-        .min_by(|first, second| first.0.total_cmp(&second.0))
-        .map_or(0.0, |(_, share)| share)
+    (sculpt, basins, caverns)
 }
 
 /// How steep a climb rises at most (a rise a metre, for the massif's tallest), its half-width, its lookout's reach,

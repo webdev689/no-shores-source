@@ -164,12 +164,42 @@ fn pulled_in(seed: u32, on_box: [f64; 3], middle: [f64; 3], half: [f64; 3]) -> [
     core::array::from_fn(|at| middle[at] + (on_box[at] - middle[at]) / reach - normal[at] / norm * depth)
 }
 
+/// Whether a shape is natural rock, met by its parts' boxes rather than its whole box.
+#[must_use]
+pub const fn is_rock(shape: Shape) -> bool {
+    matches!(
+        shape,
+        Shape::CaveRoof { .. } | Shape::Overhang { .. } | Shape::RockArch { .. } | Shape::TunnelMouth { .. }
+    )
+}
+
+/// How long a slice of a turned part runs at most, metres: a part turned off the world's axes is boxed in slices along
+/// its longer side, so each slice's box, square to the world round its turned corners, keeps close to the rock.
+const SLICE_M: f64 = 2.0;
+
 /// What a body runs into of a rock: each part's box, square to the world round its turned corners (west, north,
-/// east, south, top, bottom, as the city's boxes).
+/// east, south, top, bottom, as the city's boxes); a part turned off the world's axes in slices along its longer side.
 #[must_use]
 pub fn boxes(solid: &Solid) -> Vec<Box2> {
+    let square = (solid.turn / std::f64::consts::FRAC_PI_2 - (solid.turn / std::f64::consts::FRAC_PI_2).round()).abs()
+        < 1e-9
+        && solid.lean == 0.0
+        && solid.roll == 0.0;
     parts(solid.shape, solid.size)
         .into_iter()
+        .flat_map(|[west, north, bottom, east, south, top]| {
+            let (long, along_x) =
+                if east - west >= south - north { (east - west, true) } else { (south - north, false) };
+            let count = if square { 1 } else { (long / SLICE_M).ceil().max(1.0) as usize };
+            (0..count).map(move |slice| {
+                let (from, to) = (slice as f64 / count as f64, (slice + 1) as f64 / count as f64);
+                if along_x {
+                    [west + (east - west) * from, north, bottom, west + (east - west) * to, south, top]
+                } else {
+                    [west, north + (south - north) * from, bottom, east, north + (south - north) * to, top]
+                }
+            })
+        })
         .map(|part| {
             let [west, north, east, south, bottom, top] = solid.bounds_of(part);
             [west, north, east, south, top, bottom]

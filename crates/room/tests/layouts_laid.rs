@@ -242,14 +242,24 @@ fn no_way_ends_inside_a_solid() {
             for &point in &path.points {
                 let floor = laid.ground.height_at(point[0], point[1]);
                 for solid in &layout.seating.solids {
-                    let [west, north, east, south, bottom, top] = solid.bounds();
-                    let inside = point[0] > west && point[0] < east && point[1] > north && point[1] < south;
-                    if inside
-                        && bottom < floor + HEAD_M
-                        && top > floor + STEPPED_OVER_M
-                        && solid.material != Material::Paving
-                        && !matches!(solid.shape, Shape::Arch { .. })
-                    {
+                    // A body meets an arch by its jambs and head, and rock by its parts.
+                    let boxes: Vec<[f64; 6]> = if city::rock::is_rock(solid.shape) {
+                        city::rock::boxes(solid)
+                            .iter()
+                            .map(|&[west, north, east, south, top, bottom]| [west, north, east, south, bottom, top])
+                            .collect()
+                    } else {
+                        vec![solid.bounds()]
+                    };
+                    let met = boxes.iter().any(|&[west, north, east, south, bottom, top]| {
+                        point[0] > west
+                            && point[0] < east
+                            && point[1] > north
+                            && point[1] < south
+                            && bottom < floor + HEAD_M
+                            && top > floor + STEPPED_OVER_M
+                    });
+                    if met && solid.material != Material::Paving && !matches!(solid.shape, Shape::Arch { .. }) {
                         failed.push(format!(
                             "{}: a way's point {point:?} inside {:?} {:?}",
                             layout.id, solid.shape, solid.size

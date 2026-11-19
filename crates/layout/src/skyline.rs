@@ -226,16 +226,22 @@ pub fn kerb(kit: &mut Kit, from: [f64; 2], to: [f64; 2], half: f64, carved: &Scu
     }
 }
 
-/// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet in the cliffs either
-/// side, its crown a little over the massif's top, boulders fallen at its feet; the way runs under it.
-pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64), rise: f64, carved: &Sculpts) {
-    // The arch's opening is its middle four-fifths (the city's arch), so its jambs stand on the cliffs' feet.
-    let span = 2.0 * (half + 6.0) / 0.9;
+/// Half the opening between a natural arch's feet, metres: a track's half and 6 m past it.
+const ARCH_OPEN_M: f64 = 8.5;
+
+/// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet on the canyon's floor
+/// either side of the way and out into its cliffs, its crown a little over the massif's top, boulders fallen at its
+/// feet; the way runs under it.
+pub fn natural_arch(kit: &mut Kit, (middle, way): ([f64; 2], [f64; 2]), rise: f64, carved: &Sculpts) {
+    // Between its feet a rock arch stands open over the middle 0.28 of its span (city's rock.rs): the way and 6 m
+    // either side of it.
+    let span = 2.0 * ARCH_OPEN_M / 0.28;
     let depth = 7.0 + kit.draw() * 5.0;
     let tall = rise + 3.0 + kit.draw() * 4.0;
-    let floor = kit.height(middle);
+    let floor = carved_at(kit, carved, middle);
+    let seed = (kit.draw() * f64::from(u32::MAX)) as u32;
     let arch = Solid::upright(
-        Shape::Arch { opening: 0.72 },
+        Shape::RockArch { seed },
         [middle[0], middle[1], floor - 1.0],
         [span, depth, tall],
         Material::Rubble,
@@ -244,7 +250,7 @@ pub fn natural_arch(kit: &mut Kit, (middle, way, half): ([f64; 2], [f64; 2], f64
     let across = [way[1], -way[0]];
     for side in [-1.0, 1.0] {
         for _ in 0..3 + (kit.draw() * 3.0) as u32 {
-            let out = side * (half + 1.0 + kit.draw() * 4.0);
+            let out = side * (ARCH_OPEN_M - 1.0 - kit.draw() * 2.0);
             let along = (kit.draw() - 0.5) * depth * 1.5;
             let at = [middle[0] + across[0] * out + way[0] * along, middle[1] + across[1] * out + way[1] * along];
             let size = [1.5 + kit.draw() * 2.5, 1.3 + kit.draw() * 2.0, 1.0 + kit.draw() * 2.0];
