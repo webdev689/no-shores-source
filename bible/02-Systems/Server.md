@@ -398,8 +398,10 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
-- A dungeon's room bakes its navmesh over the dungeon's whole rectangle: the largest, 153.6 m by 102.4 m, opens
-  in about 0.15 s natively, the bake holding about 22 MB at its peak (tested offline). Movement has no ceilings; a
+- A dungeon's room bakes its navmesh over the dungeon's whole rectangle. Of the 81 dungeons, the slowest opens in
+  0.15 s of WebAssembly, and the largest takes 22.2 MB of its memory against 18.4 MB for a patrol's own room (tested
+  offline). Each of the 27 patrols lays all three entrances; a dungeon's room opens for its number whether or not its
+  patrol's land found room for its entrance. Movement has no ceilings; a
   dungeon's are never reached, as nothing in it can be climbed.
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
