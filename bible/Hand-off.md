@@ -315,14 +315,20 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- The detail pass's findings on Saltmere's zones, from the pictures and the plans, not yet done:
-  - the mesas and spires read as pointed tents (in every zone): too steep for the land's sampling to hold, so they
-    want broader stepped mesas and rounded tors by climate;
-  - the zones share one grammar of round basins and even canyons: basins and canyons could take their shape from
-    the area's kind (long fields, lobed hamlets) and canyons could narrow and widen;
-  - the Gullwing Vale: a large massif in its middle is never reached but by one dead-end spur, and its river runs
-    outside its section, though the vale is a river's;
-  - a keep run's walls are plain (no battlements or windows), and a mine's cavern roof reads as slabs afloat.
+- **Saltmere's detail pass ([[Saltmere's Detail Pass Goes Deep]]) is paused at its picture pass, at the owner's
+  usage limit.** Built and reviewed on PR #63: rock shapes by brief, basins by area kind, canyons that vary, dead rock
+  answered, the Gullwing Vale's river in its section, chalk on the Downs, the keep's stair, battlements, windows and
+  turrets, the mine's ribs, plantings. The picture pass committed its first fixes (mouth rooms off the face, rim
+  ruins on the settled ground, shot views in the open, folds, shrine rings, wilds cover, masonry cover, great works
+  off outcrops) but was stopped before its pictures' notes were finished or reviewed. To resume:
+  - finish the picture pass: picture every area and run beat of the three zones, note each against the design's
+    list (a focal point, cover, the zone's character, repeats, nothing floating or stuck), fix, re-picture, and send
+    the owner a before-and-after montage per zone; then review it;
+  - judge from the pictures: the keep's rooms at 0.7 of their beat, ribs over passage mouths, gorse in the wilds'
+    open half, the chalk's shaded faces reading grey under the world's ambient light (the owner's call);
+  - then the last task: budgets (continent 1's settle is about 1.47-1.6 s against 1.5 s; loose rock's keep-off
+    scales with stones times run solids), notes, the full check, the pull request's body;
+  - then the second audit of this branch's work the owner asked for ("This PR's work again") and one fix pass.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
