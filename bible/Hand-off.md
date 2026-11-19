@@ -186,7 +186,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[Dungeons as Claude Builds Them]], [[Dungeons]]). Linear runs with a way in, a Reeve's end room and a return
   portal, props, torches, the procedural pictures, three mound entrances a patrol, each dungeon its own room. Tested
   offline: `cargo xtask check`, and headless pictures of all four styles, the cache shut and open. A whole-diff
-  review's findings are fixed, each with a test. Not tested live: a deployed dungeon room.
+  review's findings are fixed; #72 says how each was checked. Not tested live: a deployed dungeon room.
 
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
