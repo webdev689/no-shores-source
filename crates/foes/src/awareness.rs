@@ -126,7 +126,8 @@ pub fn latch(brain: &mut Brain, here: &Here<'_, '_>, woken: Option<[f64; 3]>) {
 }
 
 /// What a foe with no one to fight asks: idle, nothing; suspicious, to turn to the place that stirred it and walk a few
-/// metres toward it; searching, to walk to the place it last knew, look about there, then let go.
+/// metres toward it; searching, to walk to the place it last knew, look about there, then let go. Either stops short
+/// behind an ally already nearer the place.
 pub fn look(brain: &mut Brain, here: &Here<'_, '_>) -> Ask {
     let tick = here.tick();
     let awareness = &mut brain.awareness;
@@ -142,7 +143,9 @@ pub fn look(brain: &mut Brain, here: &Here<'_, '_>) -> Ask {
             return Ask::default();
         }
         let from = *awareness.stirred_from.get_or_insert(at);
-        let way = (apart(from, at) < SUSPICIOUS_WALK).then(|| way_to(here, place)).flatten();
+        // It stops behind an ally already nearer the place, as a search does, rather than press into it.
+        let walks = apart(from, at) < SUSPICIOUS_WALK && !taken(here, place);
+        let way = walks.then(|| way_to(here, place)).flatten();
         return way.map_or_else(|| Ask::facing(bearing(at, spot)), |way| Ask::walking(way, 1.0, false));
     }
     let look = match awareness.look {

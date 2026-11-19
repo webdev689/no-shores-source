@@ -164,6 +164,35 @@ fn foes_hunting_and_searching_one_place_stand_behind_the_first_there_rather_than
     assert!(reversals <= 20, "they stand, not jostle at the place: {reversals} turns about");
 }
 
+#[test]
+fn foes_stirred_by_one_noise_stand_behind_the_first_near_it_rather_than_shove_it() {
+    // Ten foes in two rings round a place, the player far behind them, hear a noise there that stirs them short of
+    // alert: four 1.6 m off, six 2.8 m off behind them.
+    let mut room = Room::new(5).player(PLAYER, 0.0, 40.0, 0.0);
+    let ids: Vec<u32> = (10..20).collect();
+    for (index, id) in ids.iter().enumerate() {
+        let (count, distance, nth) = if index < 4 { (4.0, 1.6, index) } else { (6.0, 2.8, index - 4) };
+        let turn = f64::from(u8::try_from(nth).expect("a few")) * TAU / count + 0.3;
+        room = room.foe(*id, SWORDSMAN, Major, distance * libm::sin(turn), -distance * libm::cos(turn), turn + PI);
+    }
+    let noise = foes::Noise { at: [0.0, 0.0, 0.0], side: combat::fighter::Side::Players, loudness: 0.5, reach: 10.0 };
+    room.hear(noise);
+    let mut was: std::collections::BTreeMap<u32, [f64; 2]> = std::collections::BTreeMap::new();
+    let mut reversals = 0;
+    for _ in 0..600 {
+        room.step(&mut still(0.0));
+        for id in &ids {
+            assert!(room.brain(*id).alertness() != foes::Alertness::Alert, "stirred, not alert");
+            let body = room.fighter(*id).body;
+            let (now, then) = ([body.vx, body.vy], was.get(id).copied().unwrap_or_default());
+            let (speed, was_speed) = (libm::hypot(now[0], now[1]), libm::hypot(then[0], then[1]));
+            reversals += usize::from(speed > 0.3 && was_speed > 0.3 && now[0] * then[0] + now[1] * then[1] < 0.0);
+            was.insert(*id, now);
+        }
+    }
+    assert!(reversals <= 10, "they stand, not jostle near the place: {reversals} turns about");
+}
+
 /// Eight foes of four kinds come at a still player from before it, its fight at rest, over four half-minutes: how
 /// often a foe's move turns about from one tick to the next, a foe-second, and how often a waiting foe on the move
 /// stops dead, a waiting foe-second.
