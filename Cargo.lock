@@ -91,6 +91,7 @@ dependencies = [
  "naval",
  "sailing",
  "serde_json",
+ "sky",
  "world",
 ]
 
@@ -197,6 +198,7 @@ dependencies = [
  "reach",
  "sailing",
  "serde_json",
+ "sky",
  "world",
 ]
 
@@ -217,6 +219,7 @@ dependencies = [
  "sailing",
  "serde",
  "serde_json",
+ "sky",
  "world",
 ]
 
@@ -235,6 +238,7 @@ version = "0.0.0"
 dependencies = [
  "land",
  "libm",
+ "sky",
 ]
 
 [[package]]

@@ -18,7 +18,7 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "land", workspace: &["world"], outside: &["serde", "serde_json"], door: false },
     CrateRule {
         name: "land-wasm",
-        workspace: &["city", "land", "naval", "sailing", "world"],
+        workspace: &["city", "land", "naval", "sailing", "sky", "world"],
         outside: &["serde_json"],
         door: true,
     },
@@ -31,7 +31,7 @@ pub const CRATES: &[CrateRule] = &[
         door: true,
     },
     CrateRule { name: "sky", workspace: &["land", "world"], outside: &[], door: false },
-    CrateRule { name: "sailing", workspace: &["land"], outside: &["libm"], door: false },
+    CrateRule { name: "sailing", workspace: &["land", "sky"], outside: &["libm"], door: false },
     CrateRule { name: "naval", workspace: &["sailing"], outside: &["libm"], door: false },
     CrateRule { name: "combat", workspace: &["movement"], outside: &["libm"], door: false },
     CrateRule { name: "navmesh", workspace: &["movement"], outside: &["libm"], door: false },
@@ -40,7 +40,9 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "gear", workspace: &[], outside: &["serde", "serde_json", "libm"], door: false },
     CrateRule {
         name: "room",
-        workspace: &["combat", "foes", "gear", "land", "movement", "naval", "navmesh", "reach", "sailing", "world"],
+        workspace: &[
+            "combat", "foes", "gear", "land", "movement", "naval", "navmesh", "reach", "sailing", "sky", "world",
+        ],
         outside: &["libm"],
         door: false,
     },
@@ -52,7 +54,9 @@ pub const CRATES: &[CrateRule] = &[
     },
     CrateRule {
         name: "room-wasm",
-        workspace: &["combat", "foes", "gear", "land", "movement", "naval", "protocol", "room", "sailing", "world"],
+        workspace: &[
+            "combat", "foes", "gear", "land", "movement", "naval", "protocol", "room", "sailing", "sky", "world",
+        ],
         outside: &["serde", "serde_json"],
         door: true,
     },

@@ -11,6 +11,8 @@ code:
   - crates/sailing/src/pose.rs#pose_of
   - crates/sailing/src/waters.rs#LandWaters
   - crates/sailing/src/waters.rs#steady_wind
+  - crates/sailing/src/waters.rs#sail_wind
+  - crates/sailing/src/waters.rs#sea_wind_at
   - crates/sailing/src/waters.rs#OpenSea
   - crates/land/src/exact.rs#fingerprint
   - crates/land-wasm/src/sail.rs#sail_bytes
@@ -46,14 +48,19 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
   helm. Her way under sail is her canvas (each sail at the crest of its curve) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail her rudder
   swings her at her steerage, read at her way over her rig's gain: 3 degrees a second at no way, about 12 at her best
-  way in the steady wind. On her oars she swings at 20.
+  way in the usual breeze. On her oars she swings at 20.
 - **The ladder.** W climbs a rung, S comes down one: oars astern, oars at rest, oars ahead, sails set. A and D steer;
   backing water, the helm answers the other way. Shift with A or D pulls her sideways on her oars.
 - **A step.** Her swing and her way move toward what her rung asks, at the mod's rates under DFO's responsive helm.
   With her sails struck and her oars at rest, she coasts to a stop, faster for the share of her way her canvas made.
   She moves in her own frame, then swings, as the mod's boat did. Her heading stays in [0, 2π).
-- **The wind.** One steady wind blows where the swell runs, at a ship's rated wind (1.5 m/s), until weather drives
-  both.
+- **The wind.** The [[Weather]]'s wind where she is, held for a minute of world time at a time and read at the
+  minute's start. Her sails feel it scaled so the weather's usual breeze (6.5 m/s) is her rated wind (1.5 m/s), and the
+  helm holds it between 0.3 and 2 times that: a gale drives her at most twice as hard, a near calm still gives way. A
+  fight at sea sails in the wind at its player's ship; a fight among captains alone in the wind at its first ship; a
+  fleet room in the wind over the map's middle. A room's world time is its host's wall at its first tick, which its
+  welcome carries, so a browser predicting its ship reads the room's wind exactly. The long swell stays the world's one
+  swell ([[Water]]).
 - **Her pose.** She takes the mean of the water under her bow, stern, sides and middle as her height, and its slope
   along and across her as her pitch and roll. The swell replaces the mod's sine bob over a flat sea. She heels into a
   turn as the mod's boat did, once she makes a wake (0.5 m/s). On a lake or river she floats at its level.

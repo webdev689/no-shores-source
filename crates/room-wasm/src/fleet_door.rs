@@ -7,11 +7,12 @@ use naval::fight::{Aim, Hurts, sail_hurt};
 use naval::guns::Shot;
 use naval::laying::{Sighted, preview};
 use naval::shots::Flag;
+use room::fleet::fleet_wind;
 use sailing::SLOOP;
 use sailing::floats::{HELM_FLOATS, POSE_FLOATS, SHIP_FLOATS};
 use sailing::pose::{Pose, pose_of};
 use sailing::ship::{Helm, Ship};
-use sailing::waters::{OpenSea, steady_wind};
+use sailing::waters::OpenSea;
 use std::sync::OnceLock;
 
 /// The room's swell: the world's.
@@ -39,14 +40,17 @@ fn helm_of(numbers: &[f64]) -> Option<Helm> {
 }
 
 /// Her ship stepped by each helm in turn, as the fleet room steps a player's ship: from her ship's numbers, whether
-/// she is a wreck, her sail and her whole sail, the room's time for her pose, then three numbers a helm. Answers her
-/// ship's numbers and her pose at that time; none for numbers that are not that.
+/// she is a wreck, her sail and her whole sail, the room's time for her pose and its wind, the room's world time at its
+/// first tick, then three numbers a helm. Answers her ship's numbers and her pose at that time; none for numbers that
+/// are not that.
 #[must_use]
 pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let (Some(ship), Some(rest)) = (numbers.get(..SHIP_FLOATS).and_then(ship_of), numbers.get(SHIP_FLOATS..)) else {
         return Vec::new();
     };
-    let Some((&[wrecked, sail, max_sail, time], helms)) = rest.split_first_chunk::<4>() else { return Vec::new() };
+    let Some((&[wrecked, sail, max_sail, time, epoch], helms)) = rest.split_first_chunk::<5>() else {
+        return Vec::new();
+    };
     if !numbers.iter().all(|number| number.is_finite()) || !helms.len().is_multiple_of(HELM_FLOATS) {
         return Vec::new();
     }
@@ -55,7 +59,7 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     };
     let hurts = Hurts::from_numbers(wrecked != 0.0, sail, max_sail);
     let waters = OpenSea { swell: swell() };
-    let wind = steady_wind(swell());
+    let wind = fleet_wind(epoch, time);
     // Out on the open sea a ship's step does not hang on the hour: only her pose does.
     let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, *helm, hurts, &waters, wind, time).0);
     let pose = pose_of(&ship, &SLOOP, &waters, time);

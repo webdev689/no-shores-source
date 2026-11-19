@@ -156,11 +156,12 @@ export interface LandRules {
   /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
   cityPlan(): string | null;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
-  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
+  /** Her ship sailed `ticks` from the swell's `time`, in the weather's wind at world time `world` (seconds). */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
   /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
   fightBegin(ship: ShipFloats, seed: number, time: number): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
-  fightStep(orders: FightOrders, time: number, ticks: number): FightView;
+  fightStep(orders: FightOrders, time: number, ticks: number, world: number): FightView;
   /** The fight ended. */
   fightEnd(): void;
 }
@@ -326,13 +327,13 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     },
     fightBegin: (ship, seed, time) =>
       readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time)))),
-    fightStep: (orders, time, ticks) =>
-      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks)))),
+    fightStep: (orders, time, ticks, world) =>
+      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world)))),
     fightEnd: () => {
       exports.land_fight_end();
     },
-    sail: (ship, helm, time, ticks) => {
-      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks]);
+    sail: (ship, helm, time, ticks, world) => {
+      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks, world]);
       const packed = send(exports.land_sail, new Uint8Array(request.buffer));
       const address = Number(packed >> 32n);
       const length = Number(packed & 0xffff_ffffn);

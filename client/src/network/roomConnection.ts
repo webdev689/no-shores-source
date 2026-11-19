@@ -18,6 +18,8 @@ export interface RoomLink {
   readonly joins: number;
   readonly rejoining: boolean;
   readonly lost: string | null;
+  /** World time at the room's first tick, seconds, from its last welcome; none from a stand-in that never says. */
+  readonly epoch?: number;
   send(bytes: Uint8Array<ArrayBuffer>): void;
   pump(seconds: number): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
@@ -80,6 +82,7 @@ export class RoomConnection implements RoomLink {
   node: JoinedNode | null;
   joins = 1;
   rejoining = false;
+  epoch: number;
   /** Why the room sent the player away, in its words where it gave them; null while the link holds or rejoins. */
   lost: string | null = null;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
@@ -99,7 +102,7 @@ export class RoomConnection implements RoomLink {
   ) {
     [this.url, this.snapshot, this.gear, this.session] = [url, heard.snapshot, heard.gear, heard.session];
     [this.connect, this.socket] = [connect, socket];
-    [this.player, this.dressed, this.node] = [welcome.player, welcome.dressed, welcome.node];
+    [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     this.watch(socket);
   }
 
@@ -169,7 +172,7 @@ export class RoomConnection implements RoomLink {
       return;
     }
     if (this.session !== null) socket.send(this.session);
-    [this.player, this.dressed, this.node] = [welcome.player, welcome.dressed, welcome.node];
+    [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
   }
 

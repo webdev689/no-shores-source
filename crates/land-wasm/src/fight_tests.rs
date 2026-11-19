@@ -34,7 +34,7 @@ fn step_request(leg: [f64; 8], time: f64) -> String {
     };
     let (fire, brace) = (fire == 1.0, brace == 1.0);
     format!(
-        r#"{{ "time": {time}, "ticks": {ticks}, "helm": {{ "steer": {steer}, "crab": false, "climb": {climb} }}, "aim": {aim}, "fire": {fire}, "brace": {brace}, "load": {load} }}"#
+        r#"{{ "time": {time}, "ticks": {ticks}, "world": 0, "helm": {{ "steer": {steer}, "crab": false, "climb": {climb} }}, "aim": {aim}, "fire": {fire}, "brace": {brace}, "load": {load} }}"#
     )
 }
 
@@ -152,7 +152,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "f7ba7663f1a5a8f5 32cf95fe62a0a453 e4ab140683ed4d79 a3c91988b6f46a93 b6429b7c94d58b60 36f3fdf574d0a3bc 59a9408c4c2455d0 23017c1a3a61a784 3ffe4b1dc14aa2f2"
+        "4bb765dcf1e0dcb7 c28d66ee0fb858c4 e51c336ea1ffd843 25e0f75bef29a2fc 6772eef1d126fa01 fd7e918c66b09a58 e82b2c6f6d182c98 7032864dd8bd96c0 a2abdb1049ad4105"
     );
 }
 

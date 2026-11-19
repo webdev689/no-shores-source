@@ -159,7 +159,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures. Like the World Editor's, she rides the
   swell the sea draws and heels into her turns ([[Sailing]], "Drawn at sea"). Her sails are set while she is under way
-  and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
+  and furled at rest, filled by the weather's wind ([[Weather]]). The Overworld is not to scale: a ship is
   drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
   too. At the helm every ship is her true size ([[Held Map]]).
 - **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
