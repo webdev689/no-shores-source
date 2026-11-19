@@ -102,6 +102,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Patrol Zones Stay as Built and Gain Linear Combat Areas]]
 - [[Saltmere's Detail Pass Goes Deep]]
 - [[A Run on the Rock's Top Is Held by Out of Bounds]]
+- [[Patrol Zones and Missions Open as Their Pass Is Done]]
 - [[The World Editor Draws the Layouts' Buildings]]
 - [[The Well House's Roof Is Fixed]]
 - [[The Face Is Mended Whole, and the Gauge Counts Upgrades]]
