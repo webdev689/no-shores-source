@@ -58,7 +58,8 @@ The Grey Tithe holds the land: a garrison of its foes stands in every node but t
 
 Each type fights as one of five roles (the behaviour and numbers of [[Foes]]) with its own weapons, and comes in the
 ranks listed. Its numbers are its role's as a Major; its rank scales them. In a group a skirmisher is the one that
-works round to its target's flank, and a shield-bearer holds the line ([[Foes]]).
+works round to its target's flank, and a shield-bearer holds the line; a group that sees several players shares itself
+out among them ([[Foes]]).
 
 | No. | Type | Role | Right hand | Left hand | Ranks |
 |---|---|---|---|---|---|

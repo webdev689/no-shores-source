@@ -7,6 +7,9 @@ code:
   - crates/foes/src/roles.rs#numbers
   - crates/foes/src/board.rs#Board
   - crates/foes/src/senses.rs#sense
+  - crates/foes/src/share.rs#share
+  - crates/foes/src/share.rs#sooner
+  - crates/foes/src/tuning.rs#SHARE_HOLD
   - crates/foes/src/awareness.rs#stir
   - crates/foes/src/awareness.rs#latch
   - crates/foes/src/awareness.rs#look
@@ -88,16 +91,27 @@ phases) is [[Enemies]].
   noise), so two factions left apart beyond sight find each other; a player makes no such stir. With nothing stirring
   the level bleeds 0.16 a second, but not while it fights or hunts. Above 0.02 a foe is **suspicious**: it turns and
   walks up to 3 m toward what stirred it. At 1 it is **alert**: it shouts once, waking allies within 12 m toward that
-  place, and takes the nearest it sees, or the one that strikes it (a blow alerts at once). Seen farther off than its
-  range, a target is pursued, not fought; a shooter pursuing one walks on until it stands 6 m inside its range. Out of
-  sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it
-  **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then
-  lets go, and its level bleeds back to idle. Suspicious, hunting or searching, it stops short of the place behind an
-  ally that already stands nearer it, within 1.2 m. The foe's soft lock holds its target, but while it answers a blow,
-  the striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
+  place, and takes the nearest it sees (or another, sharing out: below), or the one that strikes it (a blow alerts at
+  once). Seen farther off than its range, a target is pursued, not fought; a shooter pursuing one walks on until it
+  stands 6 m inside its range. Out of sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s
+  (DFO's stale lease); then it **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second
+  out and back for 2.6 s, then lets go, and its level bleeds back to idle. Suspicious, hunting or searching, it stops
+  short of the place behind an ally that already stands nearer it, within 1.2 m. The foe's soft lock holds its target,
+  but while it answers a blow, the striker. A player just stood again is left be for 3 s, unless they strike first, and
+  their feet make no noise.
 - **The veil.** A Veiled fighter ([[Combat]], "Statuses") is not one a foe sees, takes as a target, answers or aims at:
   a foe fighting one lets it go at once and swings or winds up at it no more, though a wind-up already under way still
   lands. Its noises still stir a foe. Its own blow ends the veil, and the foe it strikes takes it as its target.
+- **Sharing out.** Foes that see several fighters of another side share themselves out among them. A foe goes for
+  the one it could strike soonest: its run there, and a beat for each other foe already fighting that one, as blows
+  at one target land a beat apart. It leaves the nearest, or the one it fights, only for one it would strike half a
+  beat sooner, and only for one its leash lets it fight. Alert with no target, it weighs every fighter it sees.
+  Fighting, it weighs again only while it waits its turn on the ring, free, every 0.27 s (DFO's target timer), and
+  only once it has fought its target 5 s. A fighter that strikes it draws it at once, unless the one it fights stands
+  within its reach and 0.3 m (as DFO's foes keep a target in sight within 2 m), or a blow drew it in the last 5 s.
+  Backing off or running, no blow draws it; mid-blow, winding up or reeling, it turns once free. With one fighter in
+  sight a foe fights as it always did; turns, the beat, the line, the flanker, the chase and the leash stay each
+  target's own.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off, and, in its
   turn, after a target walking away from it faster than 0.5 m/s, which at a walk it would never close on: it closes in
@@ -271,6 +285,8 @@ more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
 - Flanking stops at 100 degrees, short of a turned back.
+- Foes share themselves out only among the fighters they see, within their range and their arc: a player 25 m from a
+  group's fight draws none of it until they come nearer or strike a foe.
 - The line's middle follows where its own foes stand, so in a long fight against a still target it wanders slowly.
 - Several foes parrying one sweep each riposte at once: a riposte is never held back by the beat.
 - A foe with no post, only stirred and never alert, walks up to 3 m toward the stir and stays where it stopped.
