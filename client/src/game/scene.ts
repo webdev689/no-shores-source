@@ -1,7 +1,9 @@
 import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
-import { SkyDriver } from '../sky/skyDriver.ts';
+import { BoltView } from '../sky/bolts.ts';
+import { FallView } from '../sky/fall.ts';
+import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
@@ -63,6 +65,8 @@ export class GameScene {
   private readonly light: LightLayer;
   /** The sky over the eye, read from the sky's law each frame. */
   readonly sky: SkyDriver;
+  private readonly fall: FallView;
+  private readonly bolts: BoltView;
   private terrain: { view: LandView; drawn: TerrainView } | null = null;
   private close: CloseUp | null = null;
   private shownClose: CloseUp | null = null;
@@ -79,6 +83,8 @@ export class GameScene {
       .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`land.wasm: ${answer.status}`))))
       .then(startSkyLaw);
     this.sky = new SkyDriver(law, skyUniformFor(gpu.device));
+    this.fall = new FallView(gpu);
+    this.bolts = new BoltView(gpu);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.copy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -268,6 +274,12 @@ export class GameScene {
       target,
     });
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
+    // The weather over all of it: what falls round the eye, and lightning's bolts while they flash.
+    const over = { target, depth: targets.depth, size: [size.width, size.height] as const };
+    this.fall.encode(encoder, over, { fromEye, eye: shot.eye, aboveM: above }, look, time);
+    const { strikes, worldS } = SKY_NOW.current;
+    const baseM = 900 - 400 * look.storm;
+    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundM: ground });
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
