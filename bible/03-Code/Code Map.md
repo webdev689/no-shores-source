@@ -38,7 +38,8 @@ decision, made in the same change as its entry here.
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
-| `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, panned, zoomed and clicked for a destination ([[Held Map]]) |
+| `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, the waters tinted by holder, lettered and keyed, the ruins marked, panned, zoomed and clicked for a destination ([[Held Map]]) |
+| `client/src/game/friendlyShips.ts` | The waters opened once a page, and the friendly ships round the eye at sea and on foot: asked at world time, eased between answers, drawn and marked on the compass ([[Game]]) |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |

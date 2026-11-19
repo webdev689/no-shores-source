@@ -125,8 +125,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   a boss's bar, then the target's plate. At sea it marks each ship within 900 m on its top edge, a bow pointing up,
   at her bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
   on the side to turn toward. She is red while she would take the player (a hostile ship, or a hostile captain in
-  the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one
-  going down has no mark. The compass hides with the view while the held map is up at the helm.
+  the fight), bone for another player's or a captain who is not hostile, Overlook's blue (`#2f5d9a`) for a
+  friendly ship of the traffic, and grey once her colours are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
   writing its percentage inside: never 0% while anything is left. Where the HUD is wide (1500 by 900 and up) the window
   is 330 px wide, health and stamina 33 px tall and their words at 22, and the ability bar beside it grows with it. Health at a quarter or less flashes its edge to blood;
