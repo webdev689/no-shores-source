@@ -28,7 +28,8 @@ Where a foe can walk, and the way there. A room bakes its course into a navmesh 
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
 steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
 course and 30 m of ground about it; a node's room over a 70 m square of its own land by its first spawn, where its
-garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spots by it.
+garrison stands ([[Enemies]]), among the boxes of its layout inside that square, which its node file holds. Its
+[[Foes]] find their way and their firing spots by it.
 
 ## How it works
 
@@ -37,13 +38,15 @@ garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spot
 1. **Voxels.** The ground across the room's bounds, and every block (or ramp) standing on it, is cut into columns of
    0.25 m cells. The ground is the room's own terrain, read at each cell's centre (open ground stands at 0 m); the
    voxels start one below its lowest point, which may be a seabed under 0, and reach over its highest. Each column
-   holds its solid spans, in voxels of 0.25 m up, the ground's reaching up to its height there. A block or ramp
-   stands solid from the ground beneath it; a top below the ground is buried. Each marks every cell its footprint
-   touches, so a thin wall never leaks. On open ground a block whose underside is a body's height (1.8 m) or more
-   over the ground is overhead, a bridge or an upper floor a foe walks under, and is left out ([[Movement]]); on a
-   terrain every block stands solid from the ground beneath it.
+   holds its solid spans, in voxels of 0.25 m up, the ground's reaching up to its height there. A block is solid
+   from its underside to its top, on open ground as on a terrain, or from the ground where its underside is lower; a
+   ramp stands solid from the ground beneath it; a top below the ground is buried. An underside over the ground rounds
+   up to its voxel, so a body fits under one at its own height (1.8 m), as it moves under it ([[Movement]]). So the
+   space under a roof, a deck, a lintel or a bridge stays open. Each marks every cell its footprint touches, so a thin
+   wall never leaks.
 2. **Walkable floor.** The top of each solid span is floor where a body has 1.8 m of headroom and the slope (on the
-   ground, measured from the cells either side) is 0.7 or less. Floor links to the floor beside it within a step
+   ground, measured from the cells either side) is 0.7 or less: the ground under a roof and a deck's top over it
+   alike, so floors stand over each other, joined by stairs and ramps. Floor links to the floor beside it within a step
    (0.5 m, two voxels). The floor is then eroded by the body's radius (0.35 m), so a path's centre keeps clear of
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
@@ -54,15 +57,16 @@ garrison stands ([[Enemies]]). Its [[Foes]] find their way and their firing spot
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
    no poly is larger than 12 m², and merged, the longest shared edge first, into convex polys of up to six corners.
    Polys that share an edge are neighbours, across regions too.
-6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground, blended
-   between cell centres.
+6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground where no block
+   stands on it, blended between cell centres.
 
 **A path** finds the poly under each end (by its height, where floors stand over each other, or the nearest within
 0.5 m), runs A* across the polys' neighbours, and pulls the line taut through the shared edges (the funnel). Its
-waypoints run from the start to the goal, both included, each on the surface walked there. There is no path when an
-end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk joins, so a goal on another
-island has no path without a search. The search keeps its buffers from one path to the next, so a path costs the
-polys it visits, not the whole mesh.
+waypoints run from the start to the goal, both included, each on the surface walked there: on the poly nearest the
+level of the waypoint before it, so a path that runs under a bridge and climbs onto it ends on its deck. There is
+no path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk joins, so a
+goal on another island has no path without a search. The search keeps its buffers from one path to the next, so a
+path costs the polys it visits, not the whole mesh.
 
 **Obstacles** are circles laid over the mesh while a room runs, such as a big foe's body. Each blocks every poly it
 touches. A path goes round them where it can, and through them where it must: they steer a path, they never sever
@@ -85,7 +89,8 @@ off the mesh as the mesh reaches walks on to it straight, so a player past the m
 
 **Firing spots** are baked with the mesh, for shooters to fight from ([[Foes]]). On a lattice of 1.6 m over the
 walkable surface, each point is probed along 16 bearings (each a sixteenth of a turn, clockwise from north) at an eye
-1.6 m over the surface: covered from a bearing where something taller than the eye stands within 2.4 m, an open lane
+1.6 m over the surface: covered from a bearing where something taller than the eye, its underside below it, stands
+within 2.4 m, an open lane
 down it where it is clear for 14 m inside the bounds (their edge shuts a lane and gives no cover). What stands in the
 way is a block, a ramp, or the ground's own rise, read every 0.125 m along the line. A spot with neither is dropped.
 The room answers the spots within a radius of a point, in the bake's order: rows from the north, each from the west,
@@ -101,13 +106,14 @@ over the [[Test Ground]]'s course by its fingerprint.
 ## Limits
 
 - A node's room bakes a 70 m square of its [[Land]], its first spawn 15 m inside the square's edge toward the middle
-  of its section, without the city's blocks; a larger square would hold more of a node, at a bake's cost.
-- On open ground an overhead block is left out whole, so a foe walks under an upper floor but never paths onto it;
-  on a terrain an overhead block is baked solid to the ground, which no room does yet, as a node's room bakes none of
-  its boxes.
+  of its section, and only the boxes that reach into it; a larger square would hold more of a node, at a bake's cost.
+- An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
+  stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
-  offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course bakes in about 60 and 90 ms, a node's
-  60 m square in 40 to 60 and 70 to 80 ms, and an open field 200 m across in about 0.9 and 1.2 s, needing some
-  170 MB while it bakes.
+  offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course bakes in about 60 and 90 ms, a 70 m
+  square of open ground natively in about 60 ms, and an open field 200 m across in about 0.9 and 1.2 s, needing some
+  170 MB while it bakes. A node's room on the Saltgrass Downs' land, its square where the layout's boxes stand
+  thickest (417 of them), opens natively in 330 to 430 ms bare and 360 to 430 ms among its boxes (tested offline,
+  `near_blocks`'s measurement): the land's heights cost the bake more than its boxes.

@@ -52,8 +52,8 @@ fn to_edge(bounds: Bounds, x: f64, y: f64, (east, south): (f64, f64)) -> f64 {
 }
 
 /// Whether a level line at height `eye`, from (x, y) the way `(east, south)` for `reach` metres, meets a collider that
-/// stands higher than the eye where the line crosses it. A ramp's top is a plane, so its highest over the crossing is
-/// at one end of it.
+/// stands higher than the eye where the line crosses it, its underside below the eye. A ramp's top is a plane, so
+/// its highest over the crossing is at one end of it.
 fn over_eye(collider: &Collider, x: f64, y: f64, (east, south): (f64, f64), reach: f64, eye: f64) -> bool {
     let [min_x, min_y, max_x, max_y] = collider.footprint();
     let (mut enter, mut leave) = (0.0_f64, reach);
@@ -69,7 +69,7 @@ fn over_eye(collider: &Collider, x: f64, y: f64, (east, south): (f64, f64), reac
         leave = leave.min(first.max(second));
     }
     let height = |along: f64| collider.surface(x + east * along, y + south * along);
-    enter < leave && height(enter).max(height(leave)) > eye
+    enter < leave && height(enter).max(height(leave)) > eye && collider.underside() < eye
 }
 
 /// The course as the probes read it, filed on a coarse grid over the bounds and a cover's reach past them: the

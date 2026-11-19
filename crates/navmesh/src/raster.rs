@@ -158,9 +158,21 @@ pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bou
                 let sample_x = centre_x.clamp(min_x, max_x);
                 let sample_y = centre_y.clamp(min_y, max_y);
                 let column = ix + iy * cells_x;
-                // A block or ramp stands solid from the ground beneath it; a top below the ground is buried in it.
-                let top = collider.surface(sample_x, sample_y);
-                let base = if top < heights[column] { min_z } else { heights[column] };
+                // A block or ramp is solid from its underside, or the ground where that is lower, so the space under
+                // a roof or a deck stays open; a top below the ground is buried in it. An underside over the ground
+                // rounds up to its voxel, so a body walks under one at its own height, as it moves under it, unless
+                // that leaves a thin slab no voxel; mid-voxel, so the floor taken again lands on the same one.
+                let (top, underside) = (collider.surface(sample_x, sample_y), collider.underside());
+                let (rounded, top_voxel) = (((underside - min_z) / voxel).ceil(), ((top - min_z) / voxel).ceil());
+                let base = if top < heights[column] {
+                    min_z
+                } else if underside <= heights[column] {
+                    heights[column]
+                } else if rounded < top_voxel {
+                    min_z + (rounded + 0.5) * voxel
+                } else {
+                    underside
+                };
                 field.add_span(column, base, top, walkable);
             }
         }
