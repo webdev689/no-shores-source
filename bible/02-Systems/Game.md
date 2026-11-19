@@ -169,12 +169,15 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   helm every
   ship is her true size ([[Held Map]]).
 - **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
-  is laid on her at her true size, and the view eases down to it from the sea's. On the way every ship is drawn as large
-  as holds the Sloop on the screen at the size the sea's view shows her, and never under her true size. So she never
-  shrinks on the screen as the eye comes in, and she is her true size as soon as that shows her as large: from about 75
-  m off with the camera at its lowest, looking 30 degrees down. A view near her that shows her smaller at her true size
-  (Manage with its wheel taken out) is eased to instead. On each view near her every ship is her true size, her pose on
-  the swell, her footprint on the water and everyone aboard with her.
+  is laid on her at her true size, and the view eases down to it from the sea's. On the way her share of the picture
+  eases from the size the sea's view shows her to her true size on the view near her, by the same ratio each step of
+  the way, and every ship is drawn at the scale that gives, never under her true size. So as the eye comes in she grows
+  a steady step each notch and never shrinks or jumps: with the camera at its lowest, looking 30 degrees down, the Sloop
+  grows from 141 to 157, 201, 270, 346 and 383 pixels long on a 720-pixel picture over the five notches in. Every hull
+  grows so, whatever size the sea's view draws her at, while her true size at the closest shows her at least as large
+  as the sea's view did. A view near her that shows her smaller at her true size (Manage with its wheel taken out) is
+  eased down to instead. On each view near her every ship is her true size, her pose on the swell, her footprint on the
+  water and everyone aboard with her.
 - **The camera** is DFO's raised one over the ship (`stepCamera`): drag to orbit, the wheel to zoom, the arrow keys
   to turn. The ship first lies facing the island, and the view looks 30 degrees down, so the island stands in it.
 - **Close in** (`seaClose.ts`, [[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]). Past the camera's
@@ -182,6 +185,14 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   25 m from the point 4.5 m over her waterline that the World Editor looks at, every ship drawn as her size coming in
   has it. Out goes back from close first; going ashore, it eases out as the view flies off. Clicks and marks are taken
   on the picture as shown.
+- **The pace follows the view** (`easedPace`). From the raised view a voyage sails at the dial's pace. Once the eye
+  comes in past the camera's lowest, and at the helm, in Manage and walking the deck, the pace she is sailed at eases
+  down DFO's ladder, the dial's step, then 60, 40, 30, 20, 10 and 5, to 1, the world's own time, a step each 0.15 s, so
+  she sails at her true speed, 12 m/s, while watched close; as the view rises it eases back up to the dial the same way.
+  The dial itself is not changed, and the voyage's time left is read at it. Each step goes to the sea room with her
+  course; the room takes one course each half second, so it sails her at the latest step it has, and the page sails
+  her at the room's pace until it takes the next. While the pace is eased the voyage's line adds "Sailing at true
+  speed while you watch close."
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be

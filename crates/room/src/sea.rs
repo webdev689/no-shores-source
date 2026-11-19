@@ -31,6 +31,9 @@ use world::traffic::Port;
 pub const SHIP_SPEED_M_S: f64 = 12.0;
 /// The paces a player may set a ship to, as multiples of its speed: DFO's steps.
 pub const PACES: [u16; 7] = [5, 10, 20, 30, 40, 60, 100];
+/// The world's own time, a pace of 1: the page sails its ship at it while the view is close on her, so she is seen
+/// at her true speed.
+pub const WORLD_PACE: u16 = 1;
 /// The most points one course may hold.
 pub const COURSE_LIMIT: usize = 64;
 /// The fewest ticks between a player's courses: half a second, so even a full sea of sockets asking for the costliest
@@ -261,13 +264,13 @@ impl Sea {
     /// ship not yet at sea puts to sea at the first point; one at sea starts it from where it is, to the nearest
     /// metre, so the legs it sails are the legs judged. An empty course brings a ship at sea to rest. A course is
     /// refused whole when any point lies on a continent or any leg meets a coast. A player sets one course a tick. Off
-    /// the helm, only one that holds her heading straight on is taken: her helmsman sails on as she was.
+    /// the helm, only one that keeps her way is taken: her helmsman sails on, at the pace the page eases her to.
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
         if self.fights.contains_key(&player) {
             return Err(CourseRefused::Fighting);
         }
-        if self.aboard.contains_key(&player) && !self.holds_her_heading(player, points, pace) {
+        if self.aboard.contains_key(&player) && !self.keeps_her_way(player, points) {
             return Err(CourseRefused::OffTheHelm);
         }
         let berth = self.berths.get_mut(&player).ok_or(CourseRefused::NoSuchPlayer)?;
@@ -284,7 +287,7 @@ impl Sea {
             (sailing.ship.pace, sailing.ship.rate) = (0, 0);
             return Ok(());
         }
-        if !PACES.contains(&pace) {
+        if pace != WORLD_PACE && !PACES.contains(&pace) {
             return Err(CourseRefused::BadPace);
         }
         let start = match at_sea {
@@ -322,17 +325,27 @@ impl Sea {
         Ok(())
     }
 
-    /// Whether a course keeps the player's ship sailing straight on along her heading at her pace: one point ahead,
-    /// while she is under way.
-    fn holds_her_heading(&self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> bool {
-        let Some(ship) = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref()).map(|sailing| sailing.ship)
-        else {
+    /// Whether a course keeps the player's ship on her way while she is under way: the course she sails, its points to
+    /// the whole metre, or one point straight on along her heading. Its pace may differ from hers: the page eases it to
+    /// the world's own time while the player walks her deck in view, and back.
+    fn keeps_her_way(&self, player: PlayerId, points: &[[f64; 2]]) -> bool {
+        let Some(sailing) = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref()) else {
             return false;
         };
-        let &[[x, y]] = points else { return false };
-        if ship.pace == 0 || pace != ship.pace {
+        let ship = sailing.ship;
+        if ship.pace == 0 {
             return false;
         }
+        let as_held = |point: &[f64; 2], held: &[f64; 2]| {
+            #[allow(clippy::cast_precision_loss)]
+            whole(point).is_some_and(|at| [at.x as f64, at.y as f64] == *held)
+        };
+        if points.len() == sailing.course.len()
+            && points.iter().zip(&sailing.course).all(|(at, held)| as_held(at, held))
+        {
+            return true;
+        }
+        let &[[x, y]] = points else { return false };
         let bearing = libm::atan2(x - ship.x, -(y - ship.y));
         ((bearing - ship.heading + PI).rem_euclid(TAU) - PI).abs() <= HOLD_RAD
     }

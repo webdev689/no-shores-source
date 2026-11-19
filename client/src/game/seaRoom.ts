@@ -17,6 +17,7 @@ import type { Pace } from '../overworld/voyage.ts';
 import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Body } from '../rules/movementRules.ts';
 import { shipName } from '../ships/shipBars.ts';
+import type { SailedPace } from './seaLaw.ts';
 
 /** A room link that may be closed: a server's socket is; the room in the page has nothing to close. */
 type Closable = RoomLink & { close?(): void };
@@ -153,7 +154,7 @@ export class SeaRoom {
 
   /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. One set sooner after the last than
    *  the sea takes waits for a later snapshot, and a newer course takes its place. */
-  course(points: readonly Point2[], pace: Pace): void {
+  course(points: readonly Point2[], pace: SailedPace): void {
     [this.waitingCourse, this.waitingFacing] = [courseBytes(points, pace), false];
     this.sendCourse();
   }

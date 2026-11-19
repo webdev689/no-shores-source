@@ -289,7 +289,7 @@ export class Sea {
 
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
-    // Off the helm the room takes no course, so the dial waits for the player's return to it.
+    // Off the helm the room takes no new course, so the dial waits for the player's return to it.
     if (!this.aboard.walking) this.passage.stepPace(direction);
   }
 
@@ -400,7 +400,7 @@ export class Sea {
     this.room?.pump(dt);
     this.meet(time);
     this.aboard.step(dt, time, input.controls, input.paused, this.room);
-    if (!this.combat) this.passage.advance(dt);
+    if (!this.combat) this.passage.advance(dt, this.close.eased > 0 || this.view.kind === 'helm' || this.aboard.active);
     this.close.step(dt);
     this.stepHelmView(dt);
     if (this.view.kind === 'sail' && !this.aboard.active)
