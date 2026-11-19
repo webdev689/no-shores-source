@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ANIMA_ROWS, abilityBarOf, tenetShown } from './abilityBar.ts';
+import { AbilityBar, ANIMA_ROWS, abilityBarOf, spentBetween, tenetShown, USED_SECONDS } from './abilityBar.ts';
+import { findAll, onFakePage } from './page.test.ts';
 
 const STORM = 1;
 const SHADOW = 3;
@@ -41,4 +42,34 @@ test('shares out of range or unknown are held to the bar', () => {
   assert.equal(shown.animaRows, ANIMA_ROWS);
   assert.equal(shown.tenets[0].sweep, 360);
   assert.equal(shown.tenets[1].sweep, 360);
+});
+
+test('an ability is spent when it falls from full; one changing Art, or merely charging, is not', () => {
+  const full = { art: STORM, animaShare: 1, tenets: [1, 0.4] as const };
+  assert.deepEqual(spentBetween(full, { art: STORM, animaShare: 0, tenets: [1, 0.41] }), [true, false, false]);
+  assert.deepEqual(spentBetween(full, { art: STORM, animaShare: 1, tenets: [0, 0.41] }), [false, true, false]);
+  assert.deepEqual(spentBetween(full, { art: SHADOW, animaShare: 0, tenets: [0, 0] }), [false, false, false]);
+  assert.deepEqual(spentBetween(null, full), [false, false, false]);
+});
+
+test('on the display a spell just cast flashes, a Tenet counting its last seconds steps back, and none can be cast while unable', () => {
+  onFakePage((root) => {
+    const pictures = () => ({ anima: '', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+    const bar = new AbilityBar(root, pictures);
+    const [anima, quicken, arcLash] = ['anima', 'tenet'].flatMap((kind) => findAll(root, kind));
+    bar.update({ art: STORM, animaShare: 1, tenets: [0.96, 1] }, 1 / 60);
+    assert.equal(bar.root.hidden, false);
+    assert.equal(anima?.classList.contains('full'), true);
+    assert.equal(quicken?.classList.contains('counting'), true, 'Quicken has 4 s left');
+    assert.equal(arcLash?.classList.contains('ready'), true);
+    assert.equal((arcLash as unknown as Record<string, string>)['ariaLabel'], 'Arc Lash (G), ready');
+    bar.update({ art: STORM, animaShare: 0, tenets: [0.97, 1] }, 1 / 60);
+    assert.equal(anima?.classList.contains('used'), true, 'the Tempest just cast');
+    assert.equal((anima as unknown as Record<string, string>)['ariaLabel'], 'Tempest (R), charging, 0%');
+    bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, USED_SECONDS);
+    assert.equal(anima?.classList.contains('used'), false, 'its flash over');
+    bar.update({ art: STORM, animaShare: 0, tenets: [0.98, 1] }, 1 / 60, true);
+    assert.equal(bar.root.classList.contains('unable'), true);
+    assert.equal((arcLash as unknown as Record<string, string>)['ariaLabel'], 'Arc Lash (G), cannot be cast now');
+  });
 });

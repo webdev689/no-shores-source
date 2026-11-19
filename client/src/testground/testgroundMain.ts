@@ -243,7 +243,7 @@ async function start(): Promise<void> {
   otherPlayers.takeDresses(link.dressed);
   const steps = fighting.steps(movement);
   const playerFight = new PlayerFight(fighting, combatRules, player);
-  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures);
+  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures, forge);
   const effects = new FightEffects();
   const dropsShown = new DropsShown();
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
@@ -451,6 +451,7 @@ async function start(): Promise<void> {
         ammoMost: gear?.ammoMost ?? null,
         ammoFull: !!own && dropsShown.ammoFull(gear?.drops ?? [], [own.x, own.y, own.z], (gear?.ammoShare ?? 1) >= 1),
         crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
+        arms: { gear, loadout: player.player.loadout, drawn: you.dress.outfit.drawn, dress: you.dress },
       },
       seconds,
     );

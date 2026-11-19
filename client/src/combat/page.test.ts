@@ -7,10 +7,12 @@ export interface FakeElement {
   className: string;
   textContent: string;
   hidden: boolean;
-  readonly style: Record<string, string>;
+  readonly style: Record<string, string> & { setProperty(name: string, value: string): void };
   readonly dataset: Record<string, string>;
   readonly children: FakeElement[];
   parent: FakeElement | null;
+  /** A page whose sheets are all laid already. */
+  readonly ownerDocument: { getElementById(id: string): unknown };
   readonly classList: {
     toggle(name: string, wanted?: boolean): boolean;
     add(name: string): void;
@@ -18,18 +20,23 @@ export interface FakeElement {
     contains(name: string): boolean;
   };
   append(...children: FakeElement[]): void;
+  replaceChildren(...children: FakeElement[]): void;
   remove(): void;
 }
 
 function fakeElement(tag: string): FakeElement {
   const classes = (made: FakeElement) => new Set(made.className.split(/\s+/).filter(Boolean));
+  const style: FakeElement['style'] = Object.defineProperty({} as FakeElement['style'], 'setProperty', {
+    value: (name: string, value: string) => (style[name] = value),
+  });
   const made: FakeElement = {
     tagName: tag.toUpperCase(),
     className: '',
     textContent: '',
     hidden: false,
-    style: {},
+    style,
     dataset: {},
+    ownerDocument: { getElementById: () => true },
     children: [],
     parent: null,
     classList: {
@@ -51,6 +58,10 @@ function fakeElement(tag: string): FakeElement {
         child.parent = made;
         made.children.push(child);
       }
+    },
+    replaceChildren(...children) {
+      for (const child of [...made.children]) child.remove();
+      made.append(...children);
     },
     remove() {
       if (!made.parent) return;

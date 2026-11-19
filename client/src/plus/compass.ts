@@ -138,7 +138,7 @@ export function compassCss(): string {
   return `
 .compass-column { position: absolute; left: 0; right: 0; top: ${top}px; display: flex; flex-direction: column;
   align-items: center; gap: ${gap}px; pointer-events: none; }
-.compass { position: relative; flex: none; width: min(${width}px, ${share * 100}vw); height: ${height}px;
+.compass { position: relative; flex: none; width: min(${width}px, ${share * 100}%); height: ${height}px;
   border-bottom: ${rule}px solid color-mix(in srgb, ${TONES.stoneMid} 55%, transparent); pointer-events: none;
   font-weight: 600; }
 .compass [hidden] { display: none !important; }

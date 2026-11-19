@@ -141,6 +141,27 @@ export const EMBLEM_FRAME: readonly string[] = Array.from({ length: 32 }, (unuse
   }).join(''),
 );
 
+/** The diamond the HUD stands an Anima's icon in, as a Super stands in Destiny's, 34 × 34, the icon's 24 centred in
+ *  it: an outline over a line in the element's body over a deeper one and an inner outline, with a brass fitting at
+ *  each point, so it reads over any sky. */
+export const ANIMA_FRAME: readonly string[] = Array.from({ length: 34 }, (unused, row) =>
+  Array.from({ length: 34 }, (alsoUnused, column) => {
+    const [across, down] = [Math.abs(column - 16.5), Math.abs(row - 16.5)];
+    const ring = across + down;
+    const point = ring >= 15 && ring <= 17 && (across < 1 || down < 1);
+    return point ? 'f' : ring === 17 || ring === 14 ? 'a' : ring === 16 ? 'c' : ring === 15 ? 'b' : '.';
+  }).join(''),
+);
+
+/** The ring the HUD stands a Tenet's icon in, as Destiny circles its abilities, 22 × 22, the icon's 12 centred in it:
+ *  an outline, the element's body, a deeper line and an inner outline round a clear middle seven cells across. */
+export const TENET_RING: readonly string[] = Array.from({ length: 22 }, (unused, row) =>
+  Array.from({ length: 22 }, (alsoUnused, column) => {
+    const out = Math.hypot(column - 10.5, row - 10.5);
+    return out >= 11 ? '.' : out >= 10 ? 'a' : out >= 9 ? 'c' : out >= 8 ? 'b' : out >= 7 ? 'a' : '.';
+  }).join(''),
+);
+
 /** Each spell's icon by its key: an Anima 24 × 24, a Tenet 12 × 12. */
 export const SPELL_MAPS: Readonly<Record<string, readonly string[]>> = {
   tempest: [
@@ -308,12 +329,14 @@ export const SPELL_MAPS: Readonly<Record<string, readonly string[]>> = {
 };
 
 /** The pictures the HUD's ability bar draws an Art with, by its id, as SVG: its Anima's icon, as the Art's screen shows
- *  it, that icon's outline alone in the element's body colour, so the empty Anima still reads as the Art's, and its
- *  two Tenets' icons; null for no Art. */
+ *  it, that icon's outline alone in the element's body colour, so the empty Anima still reads as the Art's, its two
+ *  Tenets' icons, and the Anima's diamond and a Tenet's ring in its colours; null for no Art. */
 export function abilityPictures(id: number): {
   readonly anima: string;
   readonly animaOutline: string;
   readonly tenets: readonly [string, string];
+  readonly diamond: string;
+  readonly ring: string;
 } | null {
   const art = arts.arts.find((each) => each.id === id);
   const [first, second] = art?.tenets ?? [];
@@ -327,5 +350,7 @@ export function abilityPictures(id: number): {
       art.element,
     ),
     tenets: [icon(first.key), icon(second.key)],
+    diamond: mapSvg(ANIMA_FRAME, art.element),
+    ring: mapSvg(TENET_RING, art.element),
   };
 }
