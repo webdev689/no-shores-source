@@ -34,9 +34,13 @@ pub(crate) struct Model {
     pub lift: f64,
 }
 
-/// The entrances a patrol's dungeons take: the two mounds with a door the other dungeon blocks stand, which read as a way
-/// under the ground in every biome; DUNGAA00's boulder and DUNGAA01's great tree stand by their numbers on the wire.
-pub(crate) const MOUNDS: [usize; 2] = [2, 3];
+/// Which of `MODELS` a dungeon's entrance is: one of its style's (a mound with a door for a built dungeon, a cave mouth
+/// for the caverns and the mines), drawn by its seed. DUNGAA00's boulder and DUNGAA01's great tree are never drawn and
+/// stand only by their numbers on the wire.
+pub(crate) fn model_of(style: &dungeon::Style, seed: u32) -> usize {
+    let id = style.entrances.get(seed as usize % style.entrances.len().max(1)).copied().unwrap_or(0);
+    MODELS.iter().position(|model| model.id == u32::from(id)).unwrap_or(2)
+}
 
 /// The entrances Daggerfall's blocks stand: DUNGAA00's and DUNGAA01's, the two mounds the other dungeon blocks do,
 /// and the two cave mouths its ruins do.
@@ -166,8 +170,8 @@ pub(crate) fn laid(
             && dry(x, y)
             && level(floor, x, y);
         if clear {
-            let (seed, _) = dungeon::of_patrol(node, found.len());
-            let model = MOUNDS[seed as usize % MOUNDS.len()];
+            let (seed, style) = dungeon::of_patrol(node, found.len());
+            let model = model_of(&style, seed);
             let Model { normal, .. } = MODELS[model];
             let yaw = bearing([x, y], middle) - libm::atan2(normal[0], normal[2]);
             found.push(Entrance { at: [x, y, floor.height_at(x, y)], yaw, model });

@@ -25,6 +25,7 @@ code:
   - crates/room/src/dungeon_room.rs#keep_cache
   - crates/room/src/floor.rs#Floor
   - crates/room/src/entrances.rs#laid
+  - crates/room/src/entrances.rs#model_of
   - crates/room/src/entrances.rs#MODELS
   - crates/room/src/entrances.rs#join_at
   - crates/navmesh/src/lib.rs#bake_anchored
@@ -197,9 +198,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot
   carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
-  the node's id, drawn apart from its resource spots. Each is the mound with a door its dungeon's seed draws, 43601
-  or 43602, which read as a way under the ground in every biome; the four Daggerfall's dungeon blocks stand keep
-  their numbers on the wire (0 to 3), raised as those blocks raise them:
+  the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
+  draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
+  the Caverns and the Mines. The six Daggerfall's blocks stand keep their numbers on the wire (0 to 5), raised as
+  those blocks raise them:
 
 | Model | Stood by | Raised (m) |
 |---|---|---|
@@ -207,6 +209,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | 42001 | DUNGAA01 | 4.8 |
 | 43601 | the other dungeon blocks | 0.775 |
 | 43602 | the other dungeon blocks | 0.475 |
+| 43603 | the ruin blocks | 1.2 |
+| 43604 | the ruin blocks | 1.225 |
 
   Its yaw turns the model's +z as an RMB block's does, so its door (the forged props' `doors` quad) faces the ring's
   middle. Every player of the patrol's room is sent them in their gear. A player joins the patrol's room 1.5 m before
@@ -241,10 +245,8 @@ dungeon").
 - **Its pictures**, every one painted by the procedural textures: each look's sets (records 0 to 4, each turned by
   the island's climate), the textures' ironwork (93, record 0), the
   entrance's door picture (56 or 331, record 2), the climate's timber and the props' own.
-- **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the forged 42000, 42001, 43601
-  and 43602 (the rooms lay only the two mounds), lifted 2.5 m, 4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand
-  them, turned by the room's yaw; E reaches a door within
-  2.5 m of its quad's middle.
+- **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the six above, lifted as the
+  table says, turned by the room's yaw; E reaches a door within 2.5 m of its quad's middle.
 - **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room
   judges bodies; the jambs are drawn from the same `boxes`.
 - **The return portal** (`layout.portal`): an arch of the end room's trim round a face, dark while the cache is shut
@@ -260,8 +262,6 @@ dungeon").
   27 patrols' 81 dungeons, 22 end rooms and 1 other room.
 - No fountain or cart is laid: each is wider than a cell. Glowing fungus has no kind of its own; it is a crystals
   fixture.
-- The rooms lay the two mounds for every style: a style's own entrances, the cave mouths for the Caverns and the
-  Mines, are named but not yet laid.
 - Movement has no ceilings: a dungeon's are never reached because nothing in it can be climbed, and a jump rises
   about half a metre.
 - A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end

@@ -32,9 +32,8 @@ fn keeps_its_distances(room: &Room) {
         }
         let (door, facing) = entrance.door();
         assert!(off(facing, bearing(door, [0.0, 0.0])) < 0.05, "entrance {number}'s door faces the middle");
-        let (seed, _) = dungeon::of_patrol("saltgrass-downs", number);
-        let mounds = crate::entrances::MOUNDS;
-        assert_eq!(entrance.model, mounds[seed as usize % mounds.len()], "its model is its dungeon's seed's mound");
+        let (seed, style) = dungeon::of_patrol("saltgrass-downs", number);
+        assert_eq!(entrance.model, crate::entrances::model_of(&style, seed), "its model is its dungeon's style's");
     }
 }
 
@@ -47,10 +46,9 @@ fn a_patrol_lays_its_three_entrances_the_same_every_time_keeping_their_distances
     let laid = [
         (-219.78015985926243, -86.68886922122908, 1.946495638220125, 3),
         (-91.1984168814954, -715.9114353242533, 3.8002854059612905, 2),
-        (-573.2086510065137, -182.53261888435497, 1.8790836256484815, 3),
+        (-573.2086510065137, -182.53261888435497, 1.8790836256484815, 5),
     ];
     for (entrance, (x, y, yaw, model)) in room.entrances().iter().zip(laid) {
-        assert!(crate::entrances::MOUNDS.contains(&entrance.model), "a mound with a door");
         assert_eq!(
             [entrance.at[0].to_bits(), entrance.at[1].to_bits(), entrance.yaw.to_bits()],
             [f64::to_bits(x), f64::to_bits(y), f64::to_bits(yaw)]
@@ -173,4 +171,19 @@ fn the_entrance_models_are_the_forged_props_doors_raised_as_the_dungeon_blocks_r
         block["buildings"][0][0].as_u64()
     };
     assert_eq!((first("DUNGAA00.RMB"), first("DUNGAA01.RMB")), (Some(42000), Some(42001)));
+}
+
+#[test]
+fn every_style_lays_entrances_of_its_own_kind_each_a_model_with_a_door() {
+    use crate::entrances::{MODELS, model_of};
+    for style in dungeon::STYLES {
+        let caves = matches!(style.key, "caverns" | "mines");
+        for &id in style.entrances {
+            assert!(MODELS.iter().any(|model| model.id == u32::from(id)), "{} {id} has a door", style.key);
+            assert_eq!([43603, 43604].contains(&id), caves, "{}: a cave mouth only for a cave or a mine", style.key);
+        }
+        let drawn: std::collections::BTreeSet<u32> = (0..64).map(|seed| MODELS[model_of(&style, seed)].id).collect();
+        let own: std::collections::BTreeSet<u32> = style.entrances.iter().map(|&id| u32::from(id)).collect();
+        assert_eq!(drawn, own, "{} draws each of its own", style.key);
+    }
 }
