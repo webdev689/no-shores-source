@@ -208,7 +208,8 @@
         641895,
         812518,
         877746
-      ]
+      ],
+      "picked": 223630
     },
     {
       "id": "parry",
@@ -295,7 +296,8 @@
       "skip": [
         341869,
         649337
-      ]
+      ],
+      "picked": 536067
     },
     {
       "id": "bow.shot",
@@ -330,7 +332,8 @@
         384919,
         561475,
         752211
-      ]
+      ],
+      "picked": 812058
     },
     {
       "id": "pistol.shot",
@@ -407,7 +410,8 @@
         259563,
         443575,
         521552
-      ]
+      ],
+      "picked": 384918
     },
     {
       "id": "arrow.stick",
@@ -419,7 +423,8 @@
       ],
       "skip": [
         205938
-      ]
+      ],
+      "picked": 387479
     },
     {
       "id": "ball.hit",
@@ -434,7 +439,8 @@
         394184,
         523403,
         661794
-      ]
+      ],
+      "picked": 96629
     },
     {
       "id": "shot.splash",
@@ -549,12 +555,17 @@
     {
       "id": "cast.charge",
       "use": "An Anima gathering as it is cast",
-      "query": "charge up",
+      "query": "magic power",
       "seconds": [
         0.3,
         3.0
       ],
-      "skip": []
+      "skip": [
+        443955,
+        588242,
+        592573,
+        610562
+      ]
     },
     {
       "id": "spell.tempest",
@@ -569,20 +580,25 @@
         87040,
         582631,
         585798
-      ]
+      ],
+      "picked": 715784
     },
     {
       "id": "spell.orb",
       "use": "A Tempest orb bursts on what it seeks",
-      "query": "magic hit",
+      "query": "orb",
       "seconds": [
         0.1,
         1.0
       ],
       "skip": [
         136542,
+        148772,
         232885,
         512471,
+        683181,
+        789632,
+        808849,
         878329
       ]
     },
@@ -683,7 +699,8 @@
       ],
       "skip": [
         827627
-      ]
+      ],
+      "picked": 855451
     },
     {
       "id": "spell.daggers",
@@ -820,13 +837,17 @@
     {
       "id": "finish.volt",
       "use": "A foe slain by Volt, lightning leaping on",
-      "query": "electric shock",
+      "query": "thunder lightning",
       "seconds": [
         0.2,
         1.5
       ],
       "skip": [
         19487,
+        108858,
+        403445,
+        445911,
+        477807,
         512471,
         536741,
         853286
@@ -855,6 +876,7 @@
         343461,
         343997,
         788603,
+        827664,
         855417
       ]
     },
@@ -919,7 +941,8 @@
         563375,
         563483,
         873669
-      ]
+      ],
+      "picked": 714258
     },
     {
       "id": "shield.hit",
@@ -931,18 +954,23 @@
       ],
       "skip": [
         456613
-      ]
+      ],
+      "picked": 223630
     },
     {
       "id": "shield.break",
       "use": "A foe's element shield breaks",
-      "query": "shatter",
+      "query": "magic shatter",
       "seconds": [
         0.2,
         2.0
       ],
       "skip": [
-        807391
+        147867,
+        444134,
+        753899,
+        807391,
+        814954
       ]
     },
     {
