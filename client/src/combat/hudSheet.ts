@@ -107,7 +107,7 @@ ${wards}
 
 /* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
    show. */
-.fight-hud .target { width: 340px; font-size: 14px; }
+.fight-hud .target { width: min(340px, ${boss.share * 100}%); font-size: 14px; }
 .fight-hud .target .body { flex: 1; gap: 3px; }
 .fight-hud .target .meter.health { height: 12px; }
 
