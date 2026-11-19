@@ -83,3 +83,18 @@ test('a Saltmere the worker still holds is not opened again', async () => {
   await shown.home();
   assert.deepEqual(opened, []);
 });
+
+test('Saltmere is drawn again even when the worker cannot open it, so no island stays drawn after the flight', async () => {
+  const { islands: shown, drawn, answers } = islands();
+  void shown.open('highland');
+  await settle();
+  answers[0]?.answer();
+  await shown.show();
+  assert.equal(shown.landmass.id, 'highland');
+  const back = shown.home();
+  await settle();
+  answers[1]?.fail();
+  await assert.rejects(back, /saltmere would not open/);
+  assert.equal(shown.landmass.id, 'saltmere');
+  assert.equal(drawn.at(-1), 'saltmere');
+});

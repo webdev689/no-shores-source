@@ -180,3 +180,41 @@ test('at the title any key begins, Space with the rest', async () => {
     mock.timers.reset();
   }
 });
+
+test('an intro left mid-flight lets its islands go: none opening shows, and the land is Saltmere again', async () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    const { beat, islands, opened, shown, play, answer } = intro();
+    await answer('continent-2');
+    await play(6 + 13.5);
+    assert.equal(opened.at(-1), 'continent-6', 'a passage is under way');
+    beat.leave?.();
+    shown.length = 0;
+    await answer('continent-6');
+    await answer('continent-1');
+    await play(3);
+    assert.equal(opened.at(-1), 'continent-1', 'the worker ends holding Saltmere');
+    assert.equal(islands.landmass.id, 'continent-1', 'Saltmere is drawn');
+    assert.ok(!shown.includes('white 0'), 'the island that opened after it is never shown');
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test('played by touch, the title asks for a tap', async () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  Object.assign(globalThis, { matchMedia: (query: string) => ({ matches: query === '(pointer: coarse)' }) });
+  try {
+    const { beat, shown, play, answer } = intro();
+    await answer('continent-2');
+    await play(1);
+    beat.skip?.();
+    await answer('continent-1');
+    await play(3);
+    assert.ok(shown.includes('Tap to begin'));
+    assert.ok(!shown.includes('Press any key to begin'));
+  } finally {
+    Object.assign(globalThis, { matchMedia: undefined });
+    mock.timers.reset();
+  }
+});
