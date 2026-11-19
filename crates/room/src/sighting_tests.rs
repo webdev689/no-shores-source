@@ -32,6 +32,8 @@ fn a_bands_row_holds_from_its_level_to_the_next_and_its_shares_sum_to_one() {
     for (_, row) in RANKS_BY_BAND {
         assert!((row.iter().sum::<f64>() - 1.0).abs() < 1e-12);
     }
+    assert_eq!(rank_for(19, 1.0 - f64::EPSILON / 4.0), Rank::Miniboss, "the top of a roll: the row's highest rank");
+    assert_eq!(rank_for(1, 1.0 - f64::EPSILON / 4.0), Rank::Elite);
 }
 
 #[test]

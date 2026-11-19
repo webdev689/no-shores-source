@@ -80,7 +80,8 @@ pub fn rank_for(low: u8, roll: f64) -> Rank {
             return rank;
         }
     }
-    Rank::Major
+    // A roll the shares' rounded sum falls a hair short of: the highest rank the row sends.
+    RANKS_AT_SEA.into_iter().zip(shares).rfind(|(_, share)| *share > 0.0).map_or(Rank::Major, |(rank, _)| rank)
 }
 
 /// The level `roll` in 0 to 1 draws evenly from a band, as a garrison foe's is; 0 with none.

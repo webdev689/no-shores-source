@@ -72,8 +72,8 @@ fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
 }
 
 /// One tick of the clashes at sea, each player's ship at `players`: each steps, with no orders; one with no ship a
-/// player keeps at sea (within 1.1 times her sight) leaves the sea, as a ship at sea does; and one that is over sends the ships
-/// that sail on back to sea.
+/// player keeps at sea (within 1.1 times her sight) leaves the sea, as a ship at sea does; and one that is over sends
+/// the ships that sail on back to sea.
 pub fn step_clashes(
     clashes: &mut Vec<Clash>,
     pirates: &mut Pirates,

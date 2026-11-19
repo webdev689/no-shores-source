@@ -48,7 +48,9 @@ pub(crate) struct SeaChart<'sea> {
 
 impl Chart for SeaChart<'_> {
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool {
-        let home = self.water(to).is_some_and(|water| water.holder == Holder::Home);
+        // Only a step into home waters is refused: one a fight among captains left inside them sails out.
+        let is_home = |at: [f64; 2]| self.water(at).is_some_and(|water| water.holder == Holder::Home);
+        let home = is_home(to) && !is_home(from);
         match [whole(&from), whole(&to)] {
             [Some(from), Some(to)] => !home && !on_land(self.coasts, to) && !leg_meets_land(self.coasts, from, to),
             _ => false,

@@ -24,6 +24,7 @@ fn the_chart_reads_each_water_its_band_and_refuses_a_step_into_home_waters() {
     assert_eq!(chart.water([150_000.0, 150_000.0]), None, "land");
     assert!(chart.open([350_000.0, 150_000.0], [330_000.0, 150_000.0]));
     assert!(!chart.open([310_000.0, 150_000.0], [290_000.0, 150_000.0]), "into home waters");
+    assert!(chart.open([290_000.0, 150_000.0], [310_000.0, 150_000.0]), "a ship left inside them sails out");
     assert!(!chart.open([350_000.0, 150_000.0], [450_000.0, 150_000.0]), "onto land");
     assert!((chart.coast([350_000.0, 150_000.0]) - 50_000.0).abs() < 1.0);
     assert_eq!(chart.lane([350_000.0, 150_000.0]), None, "no ports, no lanes");

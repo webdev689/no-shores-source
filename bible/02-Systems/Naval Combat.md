@@ -244,7 +244,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   friendly lane (a leg of a route between the port cities, `world::traffic`) within 50 km, heading along it the way
   nearer her slant toward the player. With no lane that near, she comes as a pirate does. Every other ship heads across
   the player's waters on a slant. She sails at the Sloop's 2.4 m/s times her rank's way (Minor 0.9, Major 1, Elite 1.1,
-  Miniboss 1.2), going about at land and at the edge of home waters, which no hostile ship enters. Her temper is her
+  Miniboss 1.2), going about at land and at the edge of home waters, which no hostile ship enters (one a fight among
+  captains left inside them may sail out). Her temper is her
   seed's: an Elite and a Miniboss are always bold, any other one in four.
 - **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
   voyage's pace (144 m/s at ×60), the world's own while they lie at rest, and real time where another player sails
