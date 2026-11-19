@@ -20,7 +20,7 @@ pub enum TraitColumn {
 }
 
 /// A trait a node may hold: its id, name and words, the column it is offered in, and what it fits: `melee`,
-/// `ranged`, `weapon`, `armour`, `shield` (armour, and a loadout with a shield, as a shield's block perks did), or
+/// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks), or
 /// for a signature the one named item that carries it.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct TraitDef {
@@ -133,6 +133,13 @@ impl Catalogue {
     #[must_use]
     pub fn trait_def(&self, id: &str) -> Option<&TraitDef> {
         self.traits.iter().find(|found| found.id == id)
+    }
+
+    /// Whether a trait fits an item of this kind, the named one it is if any: what a roll offers it and what a worn
+    /// piece gives by the same rule.
+    #[must_use]
+    pub fn trait_fits(&self, id: &str, kind: Kind, named: Option<&str>) -> bool {
+        self.trait_def(id).is_some_and(|found| fits(found, kind, named))
     }
 
     #[must_use]
@@ -289,7 +296,7 @@ fn fits(found: &TraitDef, kind: Kind, named: Option<&str>) -> bool {
         "ranged" => kind.ranged(),
         "weapon" => kind.weapon(),
         "armour" => kind.armour(),
-        "shield" => kind.armour() || kind.shielded(),
+        "shield" => kind.shielded(),
         item => named == Some(item),
     }
 }
