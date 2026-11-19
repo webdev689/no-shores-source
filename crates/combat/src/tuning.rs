@@ -37,7 +37,8 @@ pub const AIM_TURN: f64 = 540.0 * DEGREES / 60.0;
 /// The soft lock steers a blow at its target when the target is within the weapon's reach and this.
 pub const STEER_REACH: f64 = 2.5;
 
-/// The guard: a press opens a parry window this long; a press this soon after an unused window opens none.
+/// The guard: a player's press opens a parry window this long (a foe's, `parry_window`); a press this soon after an
+/// unused window opens none.
 pub const PARRY_WINDOW: u32 = 12;
 pub const PARRY_RUSHED: u32 = 30;
 
