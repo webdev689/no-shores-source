@@ -1,12 +1,15 @@
 // The owner's seventh beat: the lookout cuts into the calm, crying out that a larger ship comes out of the storm
 // straight for her side; the camera pulls sharply out to show her coming, the crew brace, and she strikes. Black.
+// The larger ship is Captain Brannoc Thule's Frigate, drawn at her own size under sail.
 import { Cues } from '../../cinema/cues.ts';
 import type { RailKey } from '../../cinema/rail.ts';
 import { motionReduced } from '../../plus/kit.ts';
+import { shipWaterline } from '../../ships/shipMesh.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
 import { CALM_SOUND, DECK_VIEW, onBrig } from './calm.ts';
+import { CAPTAIN_SHADE } from './fightAtSea.ts';
 import { youAtHelm } from './helm.ts';
 import { storyCue } from './music.ts';
 import type { Sailed } from './sailing.ts';
@@ -14,16 +17,14 @@ import { STILL } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
-/** The larger ship: drawn this many times the Brig (a stand-in until her own hull is published), as dark as a
- *  shadow, coming from this far to starboard and striking this many seconds in. */
-export const RAMMER_SCALE = 1.3;
+/** The larger ship comes from this far to starboard and strikes this many seconds in. */
 const RAMMER_FROM_M = 150;
 export const IMPACT_S = 10;
 /** When the crew brace: every word of the beat has been said by then. */
 export const BRACED_S = 6.4;
-/** Her bow meets the Brig's side when their middles are this far apart: half the Brig's beam and half the rammer's
- *  length as drawn. */
-const MEET_M = 2.6 + 15.4 * RAMMER_SCALE;
+/** Her bow meets the Brig's side when their middles are this far apart: half the Brig's beam and half the Frigate's
+ *  length, at their waterlines. */
+const MEET_M = shipWaterline('brig').beamM / 2 + shipWaterline('frigate').lengthM / 2;
 
 /** How far the larger ship's middle is from the Brig's at `time`: coming at a steady pace, her bow on her at the
  *  impact. */
@@ -112,20 +113,19 @@ export class Ram implements Beat {
     this.meeting = { x: brig.x, y: brig.y };
   }
 
-  /** The larger ship at `time`, her bow on the Brig's side at the impact. */
+  /** The Frigate at `time`, under sail in a captain's shade, her bow on the Brig's side at the impact. */
   private rammer(time: number): Sailed {
     const { brig } = this.story;
     const away = rammerAway(time);
     const after = this.struck >= 0 ? Math.min(1, (this.since - this.struck) / 0.5) : 0;
     return {
       who: 'rammer',
-      hull: 'brig',
+      hull: 'frigate',
       x: brig.x + Math.sin(this.from) * away,
       y: brig.y - Math.cos(this.from) * away,
       heading: this.from + Math.PI,
       underWay: true,
-      scale: RAMMER_SCALE,
-      shade: 0.38,
+      shade: CAPTAIN_SHADE,
       rise: after * 1.4,
     };
   }

@@ -10,10 +10,11 @@ import type { CaptainAt, FightView } from '../../rules/fightRules.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { Battle } from './battle.ts';
+import { CAPTAIN_SHADE } from './fightAtSea.ts';
 import { Brig } from './brig.ts';
 import { Calm, DECK_VIEW, onBrig } from './calm.ts';
 import { BRACED_S, IMPACT_S, Ram, rammerAway } from './ram.ts';
-import { Sailing, type Sailed } from './sailing.ts';
+import { onDeck, Sailing, type Sailed } from './sailing.ts';
 import { CRY_S, inboundAt, Sighted } from './sighted.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -62,6 +63,7 @@ function storied(options: { land?: LandWorker } = {}) {
   const sailing = new Sailing({
     brig: { waterline: shipWaterline('brig'), sails: shipSails('brig') },
     sloop: { waterline: shipWaterline('sloop'), sails: shipSails('sloop') },
+    frigate: { waterline: shipWaterline('frigate'), sails: shipSails('frigate') },
   });
   const story = {
     stage,
@@ -264,6 +266,22 @@ test('the ram opens where the calm left the camera, its cries on the view and th
       `the larger ship on the view at ${at.toFixed(2)} s`,
     );
   }
+});
+
+test("the larger ship is Thule's Frigate at her own size, a captain's shade, her bow on the Brig's side as she strikes", () => {
+  const { story, run } = storied();
+  const frames = run(new Ram(story), IMPACT_S);
+  const ships = frames.at(-1)?.frame.ships ?? [];
+  const [own, rammer] = [ships[0]?.place, ships[1]];
+  assert.ok(own && rammer);
+  assert.equal(rammer.hull, 'frigate');
+  assert.equal(rammer.place.scale, 1);
+  assert.equal(rammer.shade, CAPTAIN_SHADE);
+  const [brig, frigate] = [shipWaterline('brig'), shipWaterline('frigate')];
+  // Her stem, half her length ahead of her middle, is at the Brig's starboard side, half the Brig's beam out.
+  const [stemX, stemY] = onDeck(rammer.place, frigate.lengthM / 2, 0, 0);
+  const out = Math.hypot(stemX - own.x, stemY - own.y);
+  assert.ok(Math.abs(out - brig.beamM / 2) < 0.05, `her stem ${out.toFixed(2)} m from the Brig's middle`);
 });
 
 test('a ram skipped at once still leaves her struck and the screen black, and says and sounds nothing', () => {

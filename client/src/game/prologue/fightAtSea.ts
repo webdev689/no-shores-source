@@ -57,8 +57,8 @@ export interface StoryFightFrame {
 const TURN = 2 * Math.PI;
 /** The story's fight is the same every time it is fought. */
 const STORY_SEED = 1;
-/** A captain's Sloop is drawn darker, as in the World Editor. */
-const CAPTAIN_SHADE = 0.55;
+/** A captain's ship is drawn darker, as in the World Editor. */
+export const CAPTAIN_SHADE = 0.55;
 /** The way a ship's foam shows round her bow, m/s. */
 const UNDER_WAY = 2;
 /** The player's ship as drawn, and every captain's. */

@@ -1,6 +1,6 @@
-// Ships a cutscene sails by hand: the player's Brig in the storm, ships passing an island, the hull that rams her.
-// Each is placed where the story says, posed on the sea as it is drawn (a storm's swell gained), heeled as she turns,
-// her sails filled by the wind or furled, and drawn by her hull's own model.
+// Ships a cutscene sails by hand: the player's Brig in the storm, ships passing an island, Thule's Frigate that rams
+// her. Each is placed where the story says, posed on the sea as it is drawn (a storm's swell gained), heeled as she
+// turns, her sails filled by the wind or furled, and drawn by her hull's own model.
 import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import type { Waterline } from '../../ships/shipMesh.ts';
@@ -8,7 +8,7 @@ import type { ShipPlace } from '../../ships/shipView.ts';
 import { poseOnSwell } from '../../ships/swellPose.ts';
 
 /** The hulls the story draws, by their names in the ships' manifest. */
-export type Hull = 'brig' | 'sloop';
+export type Hull = 'brig' | 'sloop' | 'frigate';
 
 /** A ship as the story has her now: where she lies (world metres), her heading, whether she sails, how many times her
  *  size she is drawn, how light, and extra heel and rise the story gives her (a list, a lurch). */

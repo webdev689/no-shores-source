@@ -1,6 +1,6 @@
 // The story made from the game's own parts once they have loaded: the stage's drawers, voices, sounds and screen, the
-// Brig's model beside the Sloop's, the islands the intro flies over, the storm's place off Saltmere, the player's
-// look as kept, and the director that runs it all from the beat asked for.
+// Brig's and Thule's Frigate's models beside the Sloop's, the islands the intro flies over, the storm's place off
+// Saltmere, the player's look as kept, and the director that runs it all from the beat asked for.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
 import scenes from '../../../../content/story/prologue.json' with { type: 'json' };
 import { Ambience } from '../../cinema/ambience.ts';
@@ -83,8 +83,9 @@ export interface Started {
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {
   const { gpu, scene, hudRoot } = game;
-  const brigMesh = await loadShip('brig');
+  const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
   const brigView = new ShipView(gpu, brigMesh, shipSails('brig'));
+  const frigateView = new ShipView(gpu, frigateMesh, shipSails('frigate'));
   const islands = new Islands({
     open: (id) => openLandmass(game.land, game.world, game.rmbText, id),
     scene,
@@ -103,7 +104,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     footView: game.footView,
     forge: game.forge,
     firstPerson: game.firstPerson,
-    hulls: { brig: brigView, sloop: game.sloop },
+    hulls: { brig: brigView, sloop: game.sloop, frigate: frigateView },
     birds: new Birds(gpu),
     flames: new Flames(gpu),
     screen: new Screen(hudRoot, game.canvas),
@@ -121,6 +122,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   const sailing = new Sailing({
     brig: { waterline: brigMesh.waterline, sails: shipSails('brig') },
     sloop: { waterline: game.sloop.waterline, sails: shipSails('sloop') },
+    frigate: { waterline: frigateMesh.waterline, sails: shipSails('frigate') },
   });
   const places = stormPlaces(game.home.landmass, scene.land?.swell?.bearing ?? 0);
   const look = keptLook(localStorage) ?? FIRST_LOOK;
@@ -150,7 +152,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     roomModule: game.roomModule,
     groundAt: (x: number, y: number) => scene.groundAt(x, y),
     gpu,
-    hull: brigMesh,
+    hulls: { brig: brigMesh, frigate: frigateMesh },
   };
   const prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
   return { prologue, epilogue: new Epilogue(stage, game.forge), stage, look: () => story.look };

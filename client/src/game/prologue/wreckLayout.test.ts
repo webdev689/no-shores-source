@@ -20,16 +20,21 @@ const LOWEST_DECK_M = 2.0;
 const along = (from: readonly number[], to: readonly number[], walked: number, length: number) =>
   [0, 1].map((axis) => (from[axis] ?? 0) + (((to[axis] ?? 0) - (from[axis] ?? 0)) * walked) / length);
 
-test('both ships lie as decks of blocks, the brig east to west and the rammer north to south', () => {
+test('both ships lie as decks of blocks, the brig east to west and the frigate north to south at her own size', () => {
   assert.equal(layout.ships.length, 2);
   const [brig, rammer] = layout.ships;
+  assert.equal(brig?.ship, 'brig');
   assert.equal(brig?.lying.heading, Math.PI / 2);
+  assert.equal(rammer?.ship, 'frigate');
   assert.equal(rammer?.lying.heading, 0);
-  assert.equal(rammer?.lying.scale, 1.3);
+  assert.equal(rammer?.lying.scale, 1);
   assert.ok(decks.length > 50, `${decks.length} deck blocks`);
-  // The brig's main deck about 2.2 to 2.4 m up, the rammer's quarterdeck about 1.3 times the brig's.
+  // The brig's main deck about 2.2 to 2.4 m up; the frigate's waist about 2.6 m and her quarterdeck about 3.7 m.
   assert.ok(Math.abs(topAt(decks, -5, -3) - 2.2) < 0.15, `brig's waist ${topAt(decks, -5, -3)}`);
-  assert.ok(topAt(decks, 0, 38) > 3.9 && topAt(decks, 0, 38) < 4.6, `rammer's quarterdeck ${topAt(decks, 0, 38)}`);
+  assert.ok(Math.abs(topAt(decks, 0, 22) - 2.6) < 0.1, `frigate's waist ${topAt(decks, 0, 22)}`);
+  assert.ok(Math.abs(topAt(decks, 0, 36) - 3.75) < 0.15, `frigate's quarterdeck ${topAt(decks, 0, 36)}`);
+  // Her bow is driven through the brig's starboard side (south) to about her middle.
+  assert.ok(topAt(decks, 0, 1) > 4 && topAt(decks, 0, -1) === 0, "her bow ends at the brig's middle");
 });
 
 test('every block that shows stands inside the ships, over one of their decks', () => {

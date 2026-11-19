@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
+import { deckToWorld } from '../../ships/deck.ts';
+import { shipSails } from '../../ships/shipMesh.ts';
 import type { Shot } from '../camera.ts';
 import { Deep } from './deep.ts';
 import { YOU_ID } from './helm.ts';
@@ -122,6 +124,32 @@ test("the wake's flight draws the wreck and the player, and ends on the shot pla
   assert.ok(beat.done);
   rest.eye.forEach((value, axis) => assert.ok(Math.abs((handed.shot.eye[axis] ?? 0) - value) < 1e-6));
   assert.ok(Math.abs(handed.shot.yaw - rest.yaw) < 1e-6 && Math.abs(handed.shot.pitch - rest.pitch) < 1e-6);
+});
+
+test("the wake's flight down the wreck keeps its eye clear of the frigate's masts", () => {
+  const { story } = recorded();
+  const beat = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
+  const frigate = layout.ships.find((shown) => shown.ship === 'frigate');
+  assert.ok(frigate);
+  // Each mast stands where her square sails' heads hang from it: heads within a metre along her are one mast's.
+  const heads = shipSails('frigate').flatMap((sail) => (sail.kind === 'square' ? [sail.head_port[0]] : []));
+  const along: number[][] = [];
+  for (const head of heads.sort((first, second) => first - second)) {
+    const last = along.at(-1);
+    if (last && head - (last.at(-1) ?? 0) < 1) last.push(head);
+    else along.push([head]);
+  }
+  const masts = along.map((mast) => {
+    const forward = mast.reduce((sum, head) => sum + head, 0) / mast.length;
+    return deckToWorld(frigate.lying, 0, -forward, 0);
+  });
+  assert.equal(masts.length, 3, 'her fore, main and mizzen');
+  beat.frame(tick(15));
+  for (let since = 15; since < 23; since += 0.05) {
+    const [x, y] = beat.frame(tick(0.05)).shot.eye;
+    for (const [mastX = 0, mastY = 0] of masts)
+      assert.ok(Math.hypot(x - mastX, y - mastY) > 1, `the eye at ${x.toFixed(1)}, ${y.toFixed(1)} is in a mast`);
+  }
 });
 
 test('the wake cut short leaves the eyes open, though the director frames it once more', () => {

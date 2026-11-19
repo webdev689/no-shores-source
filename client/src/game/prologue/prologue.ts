@@ -125,8 +125,8 @@ export class Prologue {
 
   /** The wreck as drawn, made once for every beat that shows it, from the wake to the deep. */
   private scenery(): WreckScenery {
-    const { gpu, hull } = this.wreckContext;
-    this.carried.scenery ??= new WreckScenery(gpu, hull, this.wreck(), this.meeting());
+    const { gpu, hulls } = this.wreckContext;
+    this.carried.scenery ??= new WreckScenery(gpu, hulls, this.wreck(), this.meeting());
     return this.carried.scenery;
   }
 
