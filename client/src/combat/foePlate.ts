@@ -6,7 +6,7 @@ import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
-import { element, Meter } from './meter.ts';
+import { element, Meter, setStyle, showNode } from './meter.ts';
 import { foeDebuffs, StatusRow } from './statusIcons.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
@@ -78,7 +78,7 @@ class PoiseTrack {
       this.root.className = `poise-track poise-${state}${breaks ? ' poise-flash' : ''}`;
       this.last = { id, state };
     }
-    this.fill.style.width = `${Math.round(fill * 1000) / 10}%`;
+    setStyle(this.fill, 'width', `${Math.round(fill * 1000) / 10}%`);
     if (this.word.textContent !== word) this.word.textContent = word;
   }
 }
@@ -148,9 +148,9 @@ export class FoePlate {
     this.alert.classList.toggle('now', alert === '!');
     this.health.set(share, seconds);
     const ward = wardOf(foe);
-    this.ward.hidden = !ward;
+    showNode(this.ward, !!ward);
     if (ward) {
-      this.ward.style.width = `${Math.round(ward.share * 1000) / 10}%`;
+      setStyle(this.ward, 'width', `${Math.round(ward.share * 1000) / 10}%`);
       if (this.ward.dataset['element'] !== String(ward.element)) this.ward.dataset['element'] = String(ward.element);
     }
     this.seen?.set(foe.id, Math.max(0, Math.min(1, share)));

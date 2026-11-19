@@ -235,9 +235,8 @@ test('a settled display writes nothing more to the page and reads no layout, wit
     assert.equal(findAll(root, 'status').length, 2, 'two buffs show');
     const counted = countWrites(root);
     for (let step = 0; step < 3; step++) hud.update(frame, 1 / 60);
-    // The plates over figures are the foe bars' own, which lay themselves each frame.
-    const ours = counted.writes.filter((write) => !/^(plate overhead|plate boss|ward)/.test(write));
-    assert.deepEqual(ours, [], 'nothing written that did not change');
+    // The plates over figures and the boss bar too: a foe standing still in a still view writes nothing.
+    assert.deepEqual(counted.writes, [], 'nothing written that did not change');
     assert.equal(counted.reads, 0, 'no layout read');
     // A taller view moves the Arts and weapons, which stand from its foot, without changing their size or step.
     hud.update({ ...frame, height: 800 }, 1 / 60);
