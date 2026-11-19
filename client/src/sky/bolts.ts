@@ -94,13 +94,13 @@ struct Drawn { @builtin(position) position: vec4f, @location(0) light: f32, @loc
   let to_clip = bolts.from_eye * vec4f(second.xyz, 1.0);
   if (from_clip.w <= 1.0 || to_clip.w <= 1.0) { return out; }
   let pixel = 2.0 / bolts.screen.xy;
-  let from = from_clip.xy / from_clip.w;
-  let to = to_clip.xy / to_clip.w;
-  let along = (to - from) / pixel;
+  let start = from_clip.xy / from_clip.w;
+  let finish = to_clip.xy / to_clip.w;
+  let along = (finish - start) / pixel;
   let across = normalize(vec2f(-along.y, along.x) + vec2f(1e-6, 0.0)) * second.w * 0.5;
   let corner = array(vec2f(0.0, -1.0), vec2f(1.0, -1.0), vec2f(0.0, 1.0), vec2f(0.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0))[index];
   let clip = mix(from_clip, to_clip, corner.x);
-  let at = mix(from, to, corner.x) + across * corner.y * pixel;
+  let at = mix(start, finish, corner.x) + across * corner.y * pixel;
   out.position = vec4f(at * clip.w, clip.z, clip.w);
   out.light = first.w;
   out.across = corner.y;

@@ -15,9 +15,23 @@
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
-// waits minutes behind. The console's errors are printed.
+// waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
+// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
+
+const SHADER_ERRORS = () => {
+  const create = GPUDevice.prototype.createShaderModule;
+  GPUDevice.prototype.createShaderModule = function (descriptor) {
+    const made = create.call(this, descriptor);
+    made.getCompilationInfo().then((info) => {
+      for (const note of info.messages)
+        if (note.type === 'error')
+          console.error(`WGSL ${note.lineNum}: ${note.message} | ${(descriptor.code.split('\n')[note.lineNum - 1] ?? '').trim()}`);
+    });
+    return made;
+  };
+};
 
 const OWN_TEXTURE = () => {
   const kept = new WeakMap();
@@ -114,6 +128,7 @@ async function main() {
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   await page.addInitScript(OWN_TEXTURE);
+  await page.addInitScript(SHADER_ERRORS);
   if (plan.init) await page.addInitScript({ content: plan.init });
   await page.goto(plan.url);
   for (const step of plan.steps) {
