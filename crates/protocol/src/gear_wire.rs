@@ -259,6 +259,13 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .collect();
     let (to_next, to_next_needs) = character.to_next();
     let arms: Vec<u32> = room::arms_allowed(character).into_iter().map(combat::Arms::code).collect();
+    // In a patrol, its entrances: x, y, the ground's height, the yaw and the model, each.
+    let dungeons: Vec<f64> = room
+        .entrances()
+        .iter()
+        .flat_map(|entrance| [entrance.at[0], entrance.at[1], entrance.at[2], entrance.yaw, entrance.model as f64])
+        .collect();
+    let dungeons = (!dungeons.is_empty()).then(|| builder.create_vector(&dungeons));
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -285,7 +292,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         emblems: Some(builder.create_vector(&emblems)),
         emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
         emblems_sold: Some(builder.create_vector(&emblems_sold)),
-        dungeons: None,
+        dungeons,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

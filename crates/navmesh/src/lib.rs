@@ -107,23 +107,43 @@ impl NavMesh {
     #[must_use]
     pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent)
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, None)
+    }
+
+    /// Bakes as `bake_on` does, but keeps the part a walk joins to the floor nearest `anchor` rather than the largest:
+    /// a dungeon's rock stands as a terrain wall whose flat tops would otherwise be the largest part.
+    #[must_use]
+    pub fn bake_anchored(
+        blocks: &[Block],
+        ground: &dyn Terrain,
+        bounds: Bounds,
+        agent: &Agent,
+        anchor: [f64; 3],
+    ) -> Self {
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, Some(anchor))
     }
 
     /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        Self::baked(colliders, None, bounds, agent)
+        Self::baked(colliders, None, bounds, agent, None)
     }
 
-    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent) -> Self {
+    fn baked(
+        colliders: &[Collider],
+        ground: Option<Heights>,
+        bounds: Bounds,
+        agent: &Agent,
+        anchor: Option<[f64; 3]>,
+    ) -> Self {
         let floor: &dyn Terrain = match &ground {
             Some(heights) => heights,
             None => &Flat,
         };
         let solid = raster::voxelise(colliders, floor, bounds, agent);
         let mut field = compact::build(&solid, agent);
-        regions::partition(&mut field);
+        regions::partition(&mut field, anchor);
         let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
         let outlines = contours::build(&field);
         let grid = field.grid;

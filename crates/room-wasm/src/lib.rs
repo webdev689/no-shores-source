@@ -25,6 +25,7 @@ mod fleet_door;
 mod gear_door;
 mod roster_door;
 
+pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
@@ -236,6 +237,7 @@ pub fn snapshot() -> Vec<u8> {
             let tick = room.clock();
             let lines = room.take_lines();
             let shots: Vec<combat::Shot> = room.shots().copied().collect();
+            let cache = room.cache();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,
@@ -244,6 +246,7 @@ pub fn snapshot() -> Vec<u8> {
                 events: &events,
                 shots: &shots,
                 lines: &lines,
+                cache: cache.as_ref().map_or(&[], |cache| cache.as_slice()),
             };
             protocol::snapshot_bytes(&snapshot)
         }

@@ -1,6 +1,7 @@
 //! Regions: a watershed over the distance field splits the walkable surface into well-shaped chunks (rooms, runs of
 //! corridor) whose outlines the contours trace. Slivers merge into their largest neighbour, and every part not joined
-//! to the largest one, which no walk reaches, is dropped from the walkable surface.
+//! to the largest one (or to the one under an anchor, when a bake names one), which no walk reaches, is dropped from
+//! the walkable surface.
 
 use crate::compact::CompactField;
 
@@ -132,9 +133,28 @@ fn resolve(remap: &[usize], mut region: usize) -> usize {
     region
 }
 
+/// The span in a region nearest a world point, its floor's height counted as its across; the first of any as near.
+fn anchored_span(field: &CompactField, flat: &Flat, region: &[usize], point: [f64; 3]) -> Option<usize> {
+    let grid = &field.grid;
+    let apart = |at: usize| {
+        let (column, index) = flat.owner[at];
+        let (x, y) = grid.centre(column % grid.cells_x, column / grid.cells_x);
+        let z = grid.height(field.columns[column][index].floor);
+        (x - point[0]) * (x - point[0]) + (y - point[1]) * (y - point[1]) + (z - point[2]) * (z - point[2])
+    };
+    (0..region.len())
+        .filter(|&at| region[at] != 0)
+        .fold(None, |best: Option<(usize, f64)>, at| {
+            let own = apart(at);
+            if best.is_none_or(|(_, nearest)| own < nearest) { Some((at, own)) } else { best }
+        })
+        .map(|(at, _)| at)
+}
+
 /// Partitions the walkable surface into regions, writing each span's region (1 up, 0 for none) and clearing
-/// `walkable` on every span dropped.
-pub(crate) fn partition(field: &mut CompactField) {
+/// `walkable` on every span dropped: every part a walk does not join to the largest, or to the floor nearest `anchor`
+/// when there is one.
+pub(crate) fn partition(field: &mut CompactField, anchor: Option<[f64; 3]>) {
     let cell = field.grid.cell;
     let merge_area = (2.0 / (cell * cell)).round() as i64;
     let min_component = (4.0 / (cell * cell)).round() as i64;
@@ -212,8 +232,11 @@ pub(crate) fn partition(field: &mut CompactField) {
     }
 
     let (component, component_area) = components(&remap, &count, &adjacent);
-    let largest = (1..component_area.len())
-        .fold(0, |largest, at| if component_area[at] > component_area[largest] { at } else { largest });
+    let anchored = anchor.and_then(|point| anchored_span(field, &flat, &region, point));
+    let largest = anchored.and_then(|at| component[resolve(&remap, region[at])]).unwrap_or_else(|| {
+        (1..component_area.len())
+            .fold(0, |largest, at| if component_area[at] > component_area[largest] { at } else { largest })
+    });
     let mut culled = vec![false; regions];
     for first in 1..regions {
         let own = resolve(&remap, first);
