@@ -328,11 +328,13 @@ lays them (`crates/room/tests/rooms_walked.rs`).
 Where the brief asks for `heights`, each area's floor stands at a level by its kind, as a share of the massif's
 height: the land's own for what meets the sea, a river or a gorge out, and for what lies sunk (a landing, a gate, a
 dock, a wreck, a mill, a quarry, a graveyard, a coven, a cave); the wilds and an arena 0.2, a farm 0.25, a hamlet 0.35,
-a camp 0.4, a ruin 0.45, a shrine 0.55, a tower and a lighthouse 0.6, a keep 0.7. Every point of every way then takes
-the blend of the levels round it along the ways (`heights`): a point on an area's floor holds that area's level, and
-every other point the mean of those before and after it along its way, weighted by how near, and of every other way's
-points within 10 m, relaxed until it settles; so a way climbs evenly from one place's level to the next, and ways that
-share or run beside one another stand at one level. A raised area's floors and every stretch of way off the land's own
+a camp 0.4, a ruin 0.45, a shrine 0.55, a tower and a lighthouse 0.6, a keep 0.7. Then every point of every way
+(`heights`): a point on an area's floor holds that area's level; every other holds the lower of its way's two areas'
+levels, raised wherever a higher point lies near enough along the ways that the way would climb steeper than 0.14
+from it, and lowered likewise toward a lower place's floor; points of different ways within 10 m count as one way.
+So a place up high stands on its platform over the ways with a ramp up to it, a way between two places up high runs
+along a causeway, one between two places down low keeps down, and no stretch of any way climbs steeper than a track
+may, nor two ways side by side stand further apart than such a slope. A raised area's floors and every stretch of way off the land's own
 level are carved as the sculpt's raised floors ([[Land]]); a terrace stands its area's level higher, a ramp's foot at
 the level of the land under it; a lookout's climb starts at its floor's level, and a pocket opens at its way's. What
 was stood on the land before the carving is lifted onto it. A retaining wall stands only where a cliff rises from the

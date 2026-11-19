@@ -202,8 +202,15 @@ pub fn plan(
     let river = wide.as_ref().filter(|_| brief.river).and_then(|wide| field::river_wing(wide, &claim, avoid));
     let meadows = river.as_ref().map_or(&[][..], |river| river.floors.as_slice());
     let levels = heights::levels(&areas, brief);
-    let network =
-        carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets, meadows, levels: &levels };
+    let network = carve::Network {
+        areas: &areas,
+        paths: &paths,
+        exits: &exits,
+        pockets: &pockets,
+        meadows,
+        levels: &levels,
+        joined: &joined,
+    };
     let (mut sculpt, basins) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // What stands on a terrace or a raised floor (a place at a height, a way graded between places) was stood on the
     // land before it was carved: lift it onto the land's level there.
@@ -318,7 +325,7 @@ pub fn plan(
     let zone = plantings::Zone { biome, seed, takes: &takes };
     let plantings = plantings::plantings(&areas, &basins, &paths, &seating, &runs, &zone);
     let spawns = spawns_round(&field, anchor);
-    let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined).collect();
+    let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
     let land = spaces::Land { floor: &|at| ground.height_at(at[0], at[1]) + raise(at), level: &|at| raise(at) / rise };
     let climbs: Vec<&[[f64; 7]]> = carve::lookouts(&sculpt.climbs).collect();

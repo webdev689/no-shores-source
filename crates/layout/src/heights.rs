@@ -1,8 +1,9 @@
 //! The heights a zone's places stand at where its brief asks for them (`heights`), and its ways graded between them as
 //! one network. An area's floor stands at a level by its kind, as a share of the massif's height: the land's own level
 //! for what meets the sea, the river or a gorge out and for what lies sunk; higher for what is built to be looked up
-//! to. Every point of every way takes the blend of the levels round it along the ways, so a way runs evenly from one
-//! place's level to the next, and ways that share or run beside one another stand at one level where they meet.
+//! to. A way holds the lower of its two places' levels and ramps up near the higher, so a place up high stands on its
+//! platform over the ways, a way between two places up high runs along a causeway, and one between two places down
+//! low keeps down; no stretch of any way climbs steeper than a track may, and ways side by side stand at one level.
 
 use crate::areas::Area;
 use crate::basins::Basin;
@@ -12,11 +13,9 @@ use crate::paths::{Path, off_line};
 
 /// How near two points of different ways must lie to be held at one level, metres.
 const BESIDE_M: f64 = 10.0;
-/// How strongly two ways side by side are held together, against a neighbour along the way one metre off.
-const BESIDE_PULL: f64 = 4.0;
-/// How many times the levels are relaxed toward their neighbours' at the most, and the change that counts as settled.
-const RELAXATIONS: usize = 4000;
-const SETTLED: f64 = 1e-9;
+/// The steepest a way climbs to a place over it, a rise a metre: under a track's 0.18 where the massif's local height
+/// stands its highest, 1.15 times its own.
+const STEEPEST: f64 = 0.14;
 
 /// The level an area's floor stands at by its kind, as a share of the massif's height.
 #[must_use]
@@ -62,11 +61,13 @@ pub fn levels(areas: &[Area], brief: &Brief) -> Vec<f64> {
         .collect()
 }
 
-/// The level of each point of each way: an area's where the point lies on its basin's floor, and elsewhere the blend of
-/// its neighbours', those before and after it along its way (weighted by how near) and every other way's points within
-/// 10 m, relaxed until it settles. A point no area holds and no way leads to one from stays at the land's own level.
+/// The level of each point of each way, as a share of the massif's height (`rise` metres): an area's where the point lies
+/// on its basin's floor; else the lower of its way's two areas' levels (`joined`), raised wherever a higher point lies
+/// near enough along the ways that the way would climb steeper than `STEEPEST` from it, so it ramps up to it instead,
+/// and lowered likewise toward a place lower than it. Points of different ways within 10 m are joined, so ways side by
+/// side stand within a walkable slope of one another.
 #[must_use]
-pub fn graded(paths: &[Path], basins: &[Basin], levels: &[f64]) -> Vec<Vec<f64>> {
+pub fn graded(paths: &[Path], joined: &[[usize; 2]], basins: &[Basin], (levels, rise): (&[f64], f64)) -> Vec<Vec<f64>> {
     let points: Vec<[f64; 2]> = paths.iter().flat_map(|path| path.points.iter().copied()).collect();
     let starts: Vec<usize> = paths
         .iter()
@@ -76,6 +77,7 @@ pub fn graded(paths: &[Path], basins: &[Basin], levels: &[f64]) -> Vec<Vec<f64>>
             Some(at)
         })
         .collect();
+    let way_of = |point: usize| starts.iter().rposition(|&start| start <= point).unwrap_or(0);
     let held: Vec<Option<f64>> = points
         .iter()
         .map(|&at| {
@@ -85,43 +87,90 @@ pub fn graded(paths: &[Path], basins: &[Basin], levels: &[f64]) -> Vec<Vec<f64>>
             basins.iter().zip(levels).find(|(basin, _)| on(basin)).map(|(_, &level)| level)
         })
         .collect();
+    let lower = |way: usize| joined.get(way).map_or(0.0, |&[from, to]| levels[from].min(levels[to]));
+    let mut level: Vec<f64> =
+        (0..points.len()).map(|point| held[point].unwrap_or_else(|| lower(way_of(point)))).collect();
     let mut neighbours: Vec<Vec<(usize, f64)>> = vec![Vec::new(); points.len()];
+    let mut link = |first: usize, second: usize| {
+        let apart = distance(points[first], points[second]);
+        neighbours[first].push((second, apart));
+        neighbours[second].push((first, apart));
+    };
     for (path, &start) in paths.iter().zip(&starts) {
         for index in 1..path.points.len() {
-            let (before, at) = (start + index - 1, start + index);
-            let pull = 1.0 / distance(points[before], points[at]).max(0.5);
-            neighbours[before].push((at, pull));
-            neighbours[at].push((before, pull));
+            link(start + index - 1, start + index);
         }
     }
-    let way_of = |point: usize| starts.iter().rposition(|&start| start <= point).unwrap_or(0);
     for first in 0..points.len() {
         for second in first + 1..points.len() {
             if way_of(first) != way_of(second) && distance(points[first], points[second]) <= BESIDE_M {
-                neighbours[first].push((second, BESIDE_PULL));
-                neighbours[second].push((first, BESIDE_PULL));
+                link(first, second);
             }
         }
     }
-    let mut level: Vec<f64> = held.iter().map(|held| held.unwrap_or(0.0)).collect();
-    for _ in 0..RELAXATIONS {
-        let mut moved: f64 = 0.0;
-        for point in 0..points.len() {
-            if held[point].is_some() || neighbours[point].is_empty() {
-                continue;
+    // Each point raised to no less than any point's level less the steepest climb over the way between them: the
+    // highest first, as a shortest-path search spreads its nearest first.
+    let fall = STEEPEST / rise.max(1.0);
+    let mut queue: std::collections::BinaryHeap<Raised> =
+        level.iter().enumerate().map(|(point, &share)| Raised(share, point)).collect();
+    while let Some(Raised(share, point)) = queue.pop() {
+        if share < level[point] {
+            continue;
+        }
+        for &(other, apart) in &neighbours[point] {
+            let reached = share - fall * apart;
+            if held[other].is_none() && reached > level[other] + 1e-12 {
+                level[other] = reached;
+                queue.push(Raised(reached, other));
             }
-            let (sum, weight) = neighbours[point]
-                .iter()
-                .fold((0.0, 0.0), |(sum, weight), &(other, pull)| (sum + level[other] * pull, weight + pull));
-            let next = sum / weight;
-            moved = moved.max((next - level[point]).abs());
-            level[point] = next;
         }
-        if moved < SETTLED {
-            break;
+    }
+    // And lowered to no more than any held point's level plus the steepest climb over the way from it, so a way passing
+    // a place lower than itself falls to it instead of stepping down at its edge.
+    let mut ceiling: Vec<f64> = held.iter().map(|held| held.unwrap_or(f64::INFINITY)).collect();
+    let mut lowest: std::collections::BinaryHeap<std::cmp::Reverse<Raised>> = (0..points.len())
+        .filter_map(|point| held[point].map(|share| std::cmp::Reverse(Raised(share, point))))
+        .collect();
+    while let Some(std::cmp::Reverse(Raised(share, point))) = lowest.pop() {
+        if share > ceiling[point] {
+            continue;
         }
+        for &(other, apart) in &neighbours[point] {
+            let reached = share + fall * apart;
+            if reached < ceiling[other] - 1e-12 {
+                ceiling[other] = reached;
+                lowest.push(std::cmp::Reverse(Raised(reached, other)));
+            }
+        }
+    }
+    for point in (0..points.len()).filter(|&point| held[point].is_none()) {
+        level[point] = level[point].min(ceiling[point]);
     }
     paths.iter().zip(&starts).map(|(path, &start)| level[start..start + path.points.len()].to_vec()).collect()
+}
+
+/// A point's level waiting to be spread, highest first, ties by its place.
+#[derive(Debug, Clone, Copy)]
+struct Raised(f64, usize);
+
+impl PartialEq for Raised {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == std::cmp::Ordering::Equal
+    }
+}
+
+impl Eq for Raised {}
+
+impl PartialOrd for Raised {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Raised {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.total_cmp(&other.0).then(other.1.cmp(&self.1))
+    }
 }
 
 #[cfg(test)]
@@ -137,27 +186,39 @@ mod tests {
         Basin { floors: vec![[at[0], at[1], at[0], at[1], 20.0]], terraces: Vec::new() }
     }
 
+    /// A straight way of points every 10 m from (0, 0) to (200, 0).
+    fn straight(south: f64) -> Vec<[f64; 2]> {
+        (0..=20).map(|step| [f64::from(step) * 10.0, south]).collect()
+    }
+
     #[test]
-    fn a_way_between_two_levels_runs_evenly_from_one_to_the_other() {
-        let points: Vec<[f64; 2]> = (0..=20).map(|step| [f64::from(step) * 10.0, 0.0]).collect();
-        let graded = graded(&[way(&points)], &[basin_at([0.0, 0.0]), basin_at([200.0, 0.0])], &[0.0, 0.6]);
+    fn a_way_holds_the_lower_places_level_and_ramps_up_to_the_higher() {
+        let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0])];
+        let graded = graded(&[way(&straight(0.0))], &[[0, 1]], &basins, (&[0.1, 0.6], 28.0));
         let levels = &graded[0];
-        assert!(levels[0].abs() < 1e-9 && (levels[20] - 0.6).abs() < 1e-9, "each end at its area's level");
-        // Off the basins (20 m round each end), the way climbs evenly between them.
-        for pair in levels[2..=18].windows(2) {
-            let step = pair[1] - pair[0];
-            assert!((step - 0.6 / 16.0).abs() < 0.01, "an even step: {step}");
+        assert!((levels[0] - 0.1).abs() < 1e-9 && (levels[20] - 0.6).abs() < 1e-9, "each end at its area's level");
+        for pair in levels.windows(2).skip(2).take(16) {
+            let grade = (pair[1] - pair[0]).abs() * 28.0 / 10.0;
+            assert!(grade <= STEEPEST + 1e-9, "no stretch climbs steeper than a track: {grade}");
         }
+        assert!((levels[4] - 0.1).abs() < 1e-9, "away from the higher place the way keeps the lower's level");
+        assert!(levels[17] > 0.45, "near the higher place it has ramped up: {}", levels[17]);
+    }
+
+    #[test]
+    fn a_way_between_two_places_up_high_keeps_up() {
+        let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0])];
+        let graded = graded(&[way(&straight(0.0))], &[[0, 1]], &basins, (&[0.6, 0.6], 28.0));
+        assert!(graded[0].iter().all(|level| (level - 0.6).abs() < 1e-9), "{:?}", graded[0]);
     }
 
     #[test]
     fn ways_side_by_side_stand_at_one_level() {
-        let first: Vec<[f64; 2]> = (0..=20).map(|step| [f64::from(step) * 10.0, 0.0]).collect();
-        let second: Vec<[f64; 2]> = (0..=20).map(|step| [f64::from(step) * 10.0, 6.0]).collect();
-        let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0])];
-        let graded = graded(&[way(&first), way(&second)], &basins, &[0.0, 0.6]);
+        let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0]), basin_at([0.0, 6.0])];
+        let ways = [way(&straight(0.0)), way(&straight(6.0))];
+        let graded = graded(&ways, &[[0, 1], [2, 1]], &basins, (&[0.0, 0.6, 0.0], 28.0));
         for (one, other) in graded[0].iter().zip(&graded[1]) {
-            assert!((one - other).abs() < 0.02, "{one} beside {other}");
+            assert!((one - other).abs() * 28.0 <= STEEPEST * 6.0 + 1e-9, "{one} beside {other}");
         }
     }
 

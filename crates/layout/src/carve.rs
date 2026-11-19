@@ -134,8 +134,8 @@ pub(crate) fn gorge(field: &Field, from: [f64; 2], way: [f64; 2], half: f64) -> 
 }
 
 /// What a layout's floor is carved round: its areas, its paths, the gorges out of it (each a start and a way), the
-/// pockets off its paths where its resources lie, the water meadows along a river its brief names, and each area's
-/// level (`heights`, all the land's own where the brief asks for none).
+/// pockets off its paths where its resources lie, the water meadows along a river its brief names, each area's level
+/// (`heights`, all the land's own where the brief asks for none), and the two areas each path was laid between.
 #[derive(Debug, Clone, Copy)]
 pub struct Network<'layout> {
     pub areas: &'layout [Area],
@@ -144,6 +144,7 @@ pub struct Network<'layout> {
     pub pockets: &'layout [[f64; 2]],
     pub meadows: &'layout [[f64; 5]],
     pub levels: &'layout [f64],
+    pub joined: &'layout [[usize; 2]],
 }
 
 /// A pocket's half-width, metres: room round a resource and a way into it from the path.
@@ -197,7 +198,7 @@ pub fn carve(
     rise: f64,
     seed: u32,
 ) -> (Sculpt, Vec<Basin>) {
-    let Network { areas, paths, exits, pockets, meadows, levels } = network;
+    let Network { areas, paths, exits, pockets, meadows, levels, joined } = network;
     let mut drawn = 0_i64;
     let mut draw = || {
         drawn += 1;
@@ -222,7 +223,7 @@ pub fn carve(
         }
     }
     let grades = if levels.iter().any(|&level| level > 0.0) {
-        crate::heights::graded(paths, &basins, levels)
+        crate::heights::graded(paths, joined, &basins, (levels, rise))
     } else {
         Vec::new()
     };
