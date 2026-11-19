@@ -5,20 +5,49 @@ import type { Block } from '../rules/movementRules.ts';
 
 type Triple = readonly [number, number, number];
 
+/** A dungeon style's key: the Forge's crypt, hall, cells and temple, and its cave and mine. */
+export type StyleKey = 'crypt' | 'halls' | 'cells' | 'sanctum' | 'caverns' | 'mines';
+
+/** What a room's ceiling is drawn as: flat, a barrel vault along its longer side, a dome, or rough rock. */
+export type CeilingForm = 'flat' | 'vault' | 'dome' | 'cave';
+
+/** A light that is not a wall's torch, by its kind's number: what it is drawn as and how it lights. */
+export const FIXTURE = { brazier: 0, candles: 1, crystals: 2, lantern: 3, hearth: 4 } as const;
+
 /** A patrol's dungeon as `room_dungeon` answers it (crates/room-wasm/src/dungeon_door.rs): x east and y south from
  *  its north-west corner, z up from its floor. A cell is -2 rock, -1 corridor or its room's number; a side is 0 east,
- *  1 south, 2 west, 3 north; a torch is x, y, z and its wall's side; a frame is its room's cell, the side its
- *  corridor lies on and its height; a pillar its corner and its height; a box min x, min y, max x, max y and top: the jambs, then the pillars, then
- *  the props' solids. */
+ *  1 south, 2 west, 3 north; a torch is x, y, z and its wall's side; a fixture x, y, z and its kind (`FIXTURE`); a
+ *  frame is its room's cell, the side its corridor lies on and its height; a pillar its corner and its height; a box
+ *  min x, min y, max x, max y and top: the jambs, then the pillars, then the props' solids, then the fixtures'. */
 export interface DungeonLayout {
   readonly name: string;
+  /** The first block's style, which names the dungeon. */
+  readonly style: StyleKey;
+  /** The first look's two picture sets. */
   readonly pictures: readonly [number, number];
+  /** Each look a part of the dungeon wears: its style and its two picture sets, the first block's look first. */
+  readonly looks: readonly { readonly style: StyleKey; readonly pictures: readonly [number, number] }[];
+  /** Each cell's look, by its number among `looks`; -1 for rock. */
+  readonly cellLooks: readonly number[];
   readonly cell: number;
   readonly columns: number;
   readonly rows: number;
   readonly cells: readonly number[];
   readonly ceilings: readonly number[];
-  readonly rooms: readonly { readonly x: number; readonly y: number; readonly width: number; readonly depth: number }[];
+  /** Each room's rectangle, its ceiling's height and its walk from the way in, its purpose and its name, how its
+   *  ceiling is drawn and its look. */
+  readonly rooms: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly depth: number;
+    readonly height: number;
+    readonly walk: number;
+    readonly role: string;
+    readonly name: string;
+    readonly ceiling: CeilingForm;
+    readonly look: number;
+  }[];
   readonly end: number;
   readonly wayIn: { readonly cell: number; readonly side: number; readonly room: number };
   readonly arrival: { readonly x: number; readonly y: number; readonly bearing: number };
@@ -34,11 +63,13 @@ export interface DungeonLayout {
   };
   readonly torches: readonly (readonly [number, number, number, number])[];
   readonly torchReach: number;
+  readonly fixtures: readonly (readonly [number, number, number, number])[];
   readonly frames: readonly Triple[];
   readonly doorway: { readonly half: number; readonly jambDepth: number; readonly lintel: number };
   readonly pillars: readonly Triple[];
   readonly pillarHalf: number;
-  /** The forged props standing in it: each its model, where its origin stands (x, y, z) and its yaw. */
+  /** The forged props standing in it: each its model, where its origin stands (x, y, z) and its yaw. A piece hung on a
+   *  wall has no solid among the boxes. */
   readonly props: readonly (readonly [number, number, number, number, number])[];
   readonly boxes: readonly (readonly [number, number, number, number, number])[];
 }
