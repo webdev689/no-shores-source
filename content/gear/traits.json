@@ -18,7 +18,7 @@
     {"id": "long_shot", "name": "Long Shot", "column": "perk", "fits": "ranged", "words": "A shot at a foe past 20 m strikes 15% harder."},
     {"id": "second_wind", "name": "Second Wind", "column": "perk", "fits": "armour", "words": "Stamina comes back 15% faster."},
     {"id": "sure_footing", "name": "Sure Footing", "column": "perk", "fits": "armour", "words": "A dodge costs 15% less stamina."},
-    {"id": "bulwark", "name": "Bulwark", "column": "perk", "fits": "armour", "words": "A guard pays 15% less stamina for a blow."},
+    {"id": "bulwark", "name": "Bulwark", "column": "perk", "fits": "shield", "words": "A guard pays 15% less stamina for a blow."},
     {"id": "unshaken", "name": "Unshaken", "column": "perk", "fits": "armour", "words": "Poise holds 15% more."},
     {"id": "hardy", "name": "Hardy", "column": "perk", "fits": "armour", "words": "Telegraphed blows strike 10% softer, through a guard as well."},
     {"id": "forager", "name": "Forager", "column": "perk", "fits": "armour", "words": "Gathering takes one more of a resource."},

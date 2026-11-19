@@ -26,62 +26,59 @@ fn at_level_20() -> Character {
 fn a_new_player_starts_as_destiny_1s_guardians_did() {
     let character = Character::starting();
     assert_eq!(character.level(), 1);
-    let sword = character.worn(Slot::MainHand).expect("a sword in hand");
+    let sword = character.worn(Slot::Melee).expect("a sword for Melee");
     assert_eq!((sword.kind, sword.rarity, sword.level), (Kind::Sword, Rarity::Normal, 1));
     for slot in [Slot::Head, Slot::Torso, Slot::Arms, Slot::Legs] {
         assert!(character.worn(slot).is_some_and(|item| item.rarity == Rarity::Normal), "{slot:?}");
     }
-    assert!(character.worn(Slot::OffHand).is_none() && character.worn(Slot::Cloak).is_none());
+    assert!(character.worn(Slot::Ranged).is_none() && character.worn(Slot::Cloak).is_none());
     assert_eq!(character.prestige(), 0);
     assert_eq!(character.materials.aurem, 0);
 }
 
 #[test]
-fn wearing_keeps_hands_levels_and_one_atheric_to_each_of_hands_and_armour() {
+fn wearing_keeps_loadouts_levels_and_one_atheric_to_each_of_loadouts_and_armour() {
     let mut character = at_level_20();
-    let shield = give(&mut character, Kind::Shield, Rarity::Rare, 20, Slot::OffHand);
-    let hammer = give(&mut character, Kind::Warhammer, Rarity::Rare, 20, Slot::MainHand);
+    let shielded = give(&mut character, Kind::SwordAndShield, Rarity::Rare, 20, Slot::Melee);
+    let gun = give(&mut character, Kind::DoublePistolet, Rarity::Rare, 20, Slot::Ranged);
     assert_eq!(
-        character.ask(Ask::Wear { item: shield, slot: Slot::MainHand }, AFIELD, &DICE),
+        character.ask(Ask::Wear { item: shielded, slot: Slot::Ranged }, AFIELD, &DICE),
         Err(Refusal::DoesNotFit)
     );
-    assert_eq!(character.ask(Ask::Wear { item: shield, slot: Slot::OffHand }, AFIELD, &DICE), Ok(Done::Done));
-    assert_eq!(character.ask(Ask::Wear { item: hammer, slot: Slot::MainHand }, AFIELD, &DICE), Ok(Done::Done));
-    assert_eq!(character.at(shield), Some(At::Carried), "a two-handed weapon empties the off hand");
-    assert_eq!(character.ask(Ask::Wear { item: shield, slot: Slot::OffHand }, AFIELD, &DICE), Err(Refusal::DoesNotFit));
+    assert_eq!(character.ask(Ask::Wear { item: gun, slot: Slot::Melee }, AFIELD, &DICE), Err(Refusal::DoesNotFit));
+    assert_eq!(character.ask(Ask::Wear { item: shielded, slot: Slot::Melee }, AFIELD, &DICE), Ok(Done::Done));
+    assert_eq!(character.ask(Ask::Wear { item: gun, slot: Slot::Ranged }, AFIELD, &DICE), Ok(Done::Done));
+    assert_eq!(character.at(shielded), Some(At::Worn(Slot::Melee)), "both loadouts are worn at once");
     let high = give(&mut character, Kind::Legs, Rarity::Magic, 20, Slot::Legs);
     let mut low = Character::starting();
     low.items.insert(high, (Item::new(high, Kind::Legs, Rarity::Magic, 20, Slot::Legs), At::Carried));
     assert_eq!(low.ask(Ask::Wear { item: high, slot: Slot::Legs }, AFIELD, &DICE), Err(Refusal::TooLow));
-    let oath = give(&mut character, Kind::Sword, Rarity::Atheric, NAMED_LEVEL, Slot::MainHand);
-    let reef = give(&mut character, Kind::Shield, Rarity::Atheric, NAMED_LEVEL, Slot::OffHand);
+    let oath = give(&mut character, Kind::Sword, Rarity::Atheric, NAMED_LEVEL, Slot::Melee);
+    let wing = give(&mut character, Kind::Bow, Rarity::Atheric, NAMED_LEVEL, Slot::Ranged);
     let crown = give(&mut character, Kind::Head, Rarity::Atheric, NAMED_LEVEL, Slot::Head);
     let hide = give(&mut character, Kind::Torso, Rarity::Atheric, NAMED_LEVEL, Slot::Torso);
-    assert_eq!(character.ask(Ask::Wear { item: oath, slot: Slot::MainHand }, AFIELD, &DICE), Ok(Done::Done));
-    assert_eq!(character.ask(Ask::Wear { item: reef, slot: Slot::OffHand }, AFIELD, &DICE), Err(Refusal::OneAtheric));
+    assert_eq!(character.ask(Ask::Wear { item: oath, slot: Slot::Melee }, AFIELD, &DICE), Ok(Done::Done));
+    assert_eq!(character.ask(Ask::Wear { item: wing, slot: Slot::Ranged }, AFIELD, &DICE), Err(Refusal::OneAtheric));
     assert_eq!(character.ask(Ask::Wear { item: crown, slot: Slot::Head }, AFIELD, &DICE), Ok(Done::Done));
     assert_eq!(character.ask(Ask::Wear { item: hide, slot: Slot::Torso }, AFIELD, &DICE), Err(Refusal::OneAtheric));
-    assert_eq!(
-        character.ask(Ask::Wear { item: oath, slot: Slot::OffHand }, AFIELD, &DICE),
-        Ok(Done::Done),
-        "a blade moves to the other hand"
-    );
-    assert!(character.worn(Slot::MainHand).is_none());
+    assert_eq!(character.ask(Ask::TakeOff { slot: Slot::Melee }, AFIELD, &DICE), Ok(Done::Done));
+    assert_eq!(character.ask(Ask::Wear { item: wing, slot: Slot::Ranged }, AFIELD, &DICE), Ok(Done::Done));
+    assert!(character.worn(Slot::Melee).is_none());
 }
 
 #[test]
 fn a_slot_carries_nine_beside_the_one_worn() {
     let mut character = Character::starting();
     for _ in 0..CARRIED_MOST {
-        give(&mut character, Kind::Dagger, Rarity::Normal, 1, Slot::MainHand);
+        give(&mut character, Kind::DoubleDaggers, Rarity::Normal, 1, Slot::Melee);
     }
-    let worn = character.worn(Slot::MainHand).expect("the sword").id;
-    assert_eq!(character.ask(Ask::TakeOff { slot: Slot::MainHand }, AFIELD, &DICE), Err(Refusal::CarriedFull));
-    assert_eq!(character.at(worn), Some(At::Worn(Slot::MainHand)), "a refused ask changes nothing");
-    let dagger = character.items.iter().find(|(_, (item, _))| item.kind == Kind::Dagger).map(|(id, _)| *id);
-    let dagger = dagger.expect("a carried dagger");
+    let worn = character.worn(Slot::Melee).expect("the sword").id;
+    assert_eq!(character.ask(Ask::TakeOff { slot: Slot::Melee }, AFIELD, &DICE), Err(Refusal::CarriedFull));
+    assert_eq!(character.at(worn), Some(At::Worn(Slot::Melee)), "a refused ask changes nothing");
+    let dagger = character.items.iter().find(|(_, (item, _))| item.kind == Kind::DoubleDaggers).map(|(id, _)| *id);
+    let dagger = dagger.expect("carried daggers");
     assert_eq!(
-        character.ask(Ask::Wear { item: dagger, slot: Slot::MainHand }, AFIELD, &DICE),
+        character.ask(Ask::Wear { item: dagger, slot: Slot::Melee }, AFIELD, &DICE),
         Ok(Done::Done),
         "a swap fits"
     );
@@ -91,7 +88,7 @@ fn a_slot_carries_nine_beside_the_one_worn() {
 #[test]
 fn a_node_is_bought_once_its_column_unlocks_and_its_cost_is_paid() {
     let mut character = at_level_20();
-    let sword = give(&mut character, Kind::Sword, Rarity::Rare, 20, Slot::MainHand);
+    let sword = give(&mut character, Kind::Sword, Rarity::Rare, 20, Slot::Melee);
     let buy = |column, node| Ask::Buy { item: sword, column, node };
     assert_eq!(character.ask(buy(0, 0), AFIELD, &DICE), Err(Refusal::Locked));
     character.items.get_mut(&sword).expect("the sword").0.xp = 6_000;
@@ -114,8 +111,8 @@ fn a_node_is_bought_once_its_column_unlocks_and_its_cost_is_paid() {
 #[test]
 fn a_legendarys_upgrade_asks_for_its_islands_resource() {
     let mut character = at_level_20();
-    let shield = give(&mut character, Kind::Shield, Rarity::Legendary, NAMED_LEVEL, Slot::OffHand);
-    let entry = character.items.get_mut(&shield).expect("the shield");
+    let shield = give(&mut character, Kind::Head, Rarity::Legendary, NAMED_LEVEL, Slot::Head);
+    let entry = character.items.get_mut(&shield).expect("the helm");
     entry.0.xp = 20_000;
     entry.0.resource = Some(2);
     character.materials.aurem = 5_000;
@@ -137,7 +134,7 @@ fn dismantling_gives_back_fragments_essence_and_a_third_of_what_was_spent() {
     let mut character = at_level_20();
     let worn = character.worn(Slot::Head).expect("a cap").id;
     assert_eq!(character.ask(Ask::Dismantle { item: worn }, AFIELD, &DICE), Err(Refusal::WrongPlace));
-    let magic = give(&mut character, Kind::Bow, Rarity::Magic, 5, Slot::MainHand);
+    let magic = give(&mut character, Kind::Bow, Rarity::Magic, 5, Slot::Melee);
     assert_eq!(character.ask(Ask::Dismantle { item: magic }, AFIELD, &DICE), Ok(Done::Done));
     assert_eq!((character.materials.aurem, character.materials.weapon_fragments), (50, 1));
     assert!(character.item(magic).is_none());
@@ -178,7 +175,7 @@ fn fruit_of_dagon_grows_past_level_20_and_feeds_an_item() {
     assert_eq!(character.materials.fruit, 3);
     let worn = character.worn(Slot::Head).expect("the cap").id;
     assert_eq!(character.item(worn).map(|item| item.xp), Some(1_000), "a Normal's XP stops at its last column");
-    let fresh = give(&mut character, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::MainHand);
+    let fresh = give(&mut character, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
     assert_eq!(character.ask(Ask::Feed { item: worn }, AFIELD, &DICE), Err(Refusal::FullOfXp));
     assert_eq!(character.ask(Ask::Feed { item: fresh }, AFIELD, &DICE), Ok(Done::Done));
     assert_eq!((character.item(fresh).map(|item| item.xp), character.materials.fruit), (Some(5_000), 2));
@@ -187,30 +184,30 @@ fn fruit_of_dagon_grows_past_level_20_and_feeds_an_item() {
 #[test]
 fn a_kill_teaches_the_weapon_that_struck_and_every_armour_piece() {
     let mut character = Character::starting();
-    give(&mut character, Kind::Dagger, Rarity::Normal, 1, Slot::MainHand);
-    character.earn_xp(400, Some(Slot::MainHand));
+    give(&mut character, Kind::DoubleDaggers, Rarity::Normal, 1, Slot::Melee);
+    character.earn_xp(400, Some(Slot::Melee));
     let xp = |slot| character.worn(slot).map(|item| item.xp);
-    assert_eq!((xp(Slot::MainHand), xp(Slot::Head), xp(Slot::Legs)), (Some(400), Some(400), Some(400)));
-    let carried = character.items.values().find(|(item, _)| item.kind == Kind::Dagger).map(|(item, _)| item.xp);
+    assert_eq!((xp(Slot::Melee), xp(Slot::Head), xp(Slot::Legs)), (Some(400), Some(400), Some(400)));
+    let carried = character.items.values().find(|(item, _)| item.kind == Kind::DoubleDaggers).map(|(item, _)| item.xp);
     assert_eq!(carried, Some(0), "what is carried earns nothing");
     character.earn_xp(100, None);
-    assert_eq!(character.worn(Slot::MainHand).map(|item| item.xp), Some(400), "XP no weapon earned");
+    assert_eq!(character.worn(Slot::Melee).map(|item| item.xp), Some(400), "XP no weapon earned");
     assert_eq!(character.xp, 500);
 }
 
 #[test]
 fn the_vault_is_reached_in_a_social_space_and_holds_twenty_of_each() {
     let mut character = Character::starting();
-    let axe = give(&mut character, Kind::Axe, Rarity::Normal, 1, Slot::MainHand);
+    let axe = give(&mut character, Kind::GreatAxe, Rarity::Normal, 1, Slot::Melee);
     assert_eq!(character.ask(Ask::Store { item: axe }, AFIELD, &DICE), Err(Refusal::NotHere));
     assert_eq!(character.ask(Ask::Store { item: axe }, IN_TOWN, &DICE), Ok(Done::Done));
     assert_eq!(character.at(axe), Some(At::Vault));
-    assert_eq!(character.ask(Ask::Wear { item: axe, slot: Slot::MainHand }, IN_TOWN, &DICE), Err(Refusal::WrongPlace));
+    assert_eq!(character.ask(Ask::Wear { item: axe, slot: Slot::Melee }, IN_TOWN, &DICE), Err(Refusal::WrongPlace));
     for _ in 0..19 {
-        let more = give(&mut character, Kind::Axe, Rarity::Normal, 1, Slot::MainHand);
+        let more = give(&mut character, Kind::GreatAxe, Rarity::Normal, 1, Slot::Melee);
         character.items.get_mut(&more).expect("an axe").1 = At::Vault;
     }
-    let one_more = give(&mut character, Kind::Mace, Rarity::Normal, 1, Slot::MainHand);
+    let one_more = give(&mut character, Kind::Mace, Rarity::Normal, 1, Slot::Melee);
     assert_eq!(character.ask(Ask::Store { item: one_more }, IN_TOWN, &DICE), Err(Refusal::VaultFull));
     assert_eq!(character.ask(Ask::Withdraw { item: axe }, IN_TOWN, &DICE), Ok(Done::Done));
     assert_eq!(character.at(axe), Some(At::Carried));
@@ -225,7 +222,9 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     assert_ne!(today, wares(Vendor::Armsmith, 20_401, 12), "and new the next");
     assert!(today.iter().all(|item| item.level == 12 && !item.rarity.named()));
     assert_eq!(today.iter().filter(|item| item.rarity == Rarity::Rare).count(), WARES / 2);
-    assert!(wares(Vendor::Quartermaster, 20_400, 12).iter().all(|item| item.kind.defends()));
+    assert!(wares(Vendor::Quartermaster, 20_400, 12).iter().all(|item| item.kind.armour()));
+    let ranged = today.iter().filter(|item| item.kind.ranged()).count();
+    assert_eq!((today.len() - ranged, ranged), (4, 2), "two Melee to each Ranged");
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
     let here = Here { social: true, day: 20_400 };

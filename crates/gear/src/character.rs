@@ -1,7 +1,7 @@
 //! What a player holds: every item, where each is (worn in a slot, carried, or in the vault), their Vestiges, their
-//! materials and their XP; and what follows from it: their level, Prestige, Defense, each hand's Attack, and the traits
-//! their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges, and a
-//! vault of twenty weapons, twenty armour and twenty Vestiges.
+//! materials and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
+//! traits their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges,
+//! and a vault of twenty weapons, twenty armour and twenty Vestiges.
 
 use crate::catalogue::catalogue;
 use crate::item::Item;
@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 pub const CARRIED_MOST: usize = 9;
 /// How many Vestiges a player carries.
 pub const VESTIGES_MOST: usize = 10;
-/// How many weapons, armour (cloaks and shields with it) and Vestiges the vault holds.
+/// How many weapons, armour (cloaks with it) and Vestiges the vault holds.
 pub const VAULT_MOST: usize = 20;
 /// The most Aurem held.
 pub const AUREM_MOST: u32 = 25_000;
@@ -131,7 +131,7 @@ pub struct Character {
 }
 
 impl Character {
-    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword in hand and level 1 Normal armour.
+    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
     #[must_use]
     pub fn starting() -> Self {
         let mut character = Self {
@@ -145,7 +145,7 @@ impl Character {
             emblem: crate::emblems::starting(),
         };
         for (kind, slot) in [
-            (Kind::Sword, Slot::MainHand),
+            (Kind::Sword, Slot::Melee),
             (Kind::Head, Slot::Head),
             (Kind::Torso, Slot::Torso),
             (Kind::Arms, Slot::Arms),
@@ -172,10 +172,13 @@ impl Character {
     /// A character kept between sessions, or none when the text is not one. Read, it is made whole: it gains a stock
     /// of each island's resource added since it was kept, its stocks stay within their caps, each item is as an item
     /// should be (`Item::kept`), one worn in a slot it does not fit or that another fills is carried, and its next
-    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it.
+    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it. One
+    /// kept before the loadouts is read into them (`old_hands.rs`).
     #[must_use]
     pub fn from_json(text: &str) -> Option<Self> {
-        let mut character: Self = serde_json::from_str(text).ok()?;
+        let mut kept: serde_json::Value = serde_json::from_str(text).ok()?;
+        let shields = crate::old_hands::read(&mut kept);
+        let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();
         let materials = &mut character.materials;
         materials.resources.resize(resources.max(materials.resources.len()), 0);
@@ -205,6 +208,7 @@ impl Character {
             };
             character.items.insert(id, (item, at));
         }
+        shields.settle(&mut character);
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.earn_due();
@@ -252,7 +256,7 @@ impl Character {
         self.items.values().filter(|(item, at)| *at == At::Carried && item.bucket == bucket).count()
     }
 
-    /// How many items of this stock the vault holds: weapons, or armour with cloaks and shields.
+    /// How many items of this stock the vault holds: weapons, or armour with cloaks.
     #[must_use]
     pub fn vaulted(&self, stock: Stock) -> usize {
         self.items.values().filter(|(item, at)| *at == At::Vault && item.kind.stock() == stock).count()
@@ -297,16 +301,16 @@ impl Character {
         Some((past % FRUIT_XP) as f64 / FRUIT_XP as f64)
     }
 
-    /// The Defense of everything worn: the four armour pieces and a shield.
+    /// The Defense of everything worn: the four armour pieces.
     #[must_use]
     pub fn defense(&self) -> u32 {
         self.all_worn().filter_map(|(_, item)| item.defense()).sum()
     }
 
-    /// The Attack of the weapon in a hand, if it holds one.
+    /// The Attack of the loadout worn in a slot, if one is.
     #[must_use]
-    pub fn attack(&self, hand: Slot) -> Option<u32> {
-        self.worn(hand).and_then(Item::attack)
+    pub fn attack(&self, loadout: Slot) -> Option<u32> {
+        self.worn(loadout).and_then(Item::attack)
     }
 
     /// The traits the gear worn gives, each once however many items give it.
@@ -325,8 +329,8 @@ impl Character {
     }
 
     /// Adds XP to the player and to the items that earn it, a tenth more with Scholar worn. Past level 20 every
-    /// 20,000 grows a Fruit of Dagon. `weapon` is the hand whose blow earned it, if one did: that weapon earns it, and
-    /// every armour piece and shield worn does.
+    /// 20,000 grows a Fruit of Dagon. `weapon` is the loadout whose blow earned it, if one did: that loadout earns it,
+    /// and every armour piece worn does.
     pub fn earn_xp(&mut self, xp: u32, weapon: Option<Slot>) {
         let xp = if self.has_trait("scholar") { xp.saturating_add(xp / 10) } else { xp };
         self.xp = self.xp.saturating_add(u64::from(xp));
@@ -339,7 +343,7 @@ impl Character {
         }
         for (item, at) in self.items.values_mut() {
             let earns = match at {
-                At::Worn(slot) => item.kind.defends() || Some(*slot) == weapon,
+                At::Worn(slot) => item.kind.armour() || Some(*slot) == weapon,
                 _ => false,
             };
             if earns {

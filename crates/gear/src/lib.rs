@@ -13,6 +13,7 @@ pub mod emblems;
 pub mod grid;
 pub mod item;
 pub mod kinds;
+mod old_hands;
 pub mod power;
 pub mod rarity;
 pub mod rewards;
@@ -37,6 +38,8 @@ mod emblems_tests;
 mod item_tests;
 #[cfg(test)]
 mod keep_tests;
+#[cfg(test)]
+mod old_hands_tests;
 #[cfg(test)]
 mod power_tests;
 #[cfg(test)]

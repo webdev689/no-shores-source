@@ -75,11 +75,11 @@ pub enum Ask {
 pub enum Refusal {
     NoSuchItem,
     NoSuchVestige,
-    /// The item does not go in that slot, or the main hand's weapon takes both hands.
+    /// The item does not go in that slot.
     DoesNotFit,
     /// The player's level is below the item's.
     TooLow,
-    /// An Atheric is already worn in the hands, or in the armour.
+    /// An Atheric is already worn in a loadout, or in the armour.
     OneAtheric,
     /// The slot it would be carried in already holds nine.
     CarriedFull,
@@ -157,18 +157,18 @@ impl Character {
         if !matches!(at, At::Carried | At::Worn(_)) {
             return Err(Refusal::WrongPlace);
         }
-        if !item.kind.fits(slot)
-            || slot == Slot::OffHand && self.worn(Slot::MainHand).is_some_and(|main| main.kind.two_handed())
-        {
+        if !item.kind.fits(slot) {
             return Err(Refusal::DoesNotFit);
         }
         if item.level > self.level() {
             return Err(Refusal::TooLow);
         }
-        let hands = |slot: Slot| matches!(slot, Slot::MainHand | Slot::OffHand);
         if item.rarity == Rarity::Atheric
             && self.all_worn().any(|(worn_slot, worn)| {
-                worn.rarity == Rarity::Atheric && worn.id != id && worn_slot != slot && hands(worn_slot) == hands(slot)
+                worn.rarity == Rarity::Atheric
+                    && worn.id != id
+                    && worn_slot != slot
+                    && worn_slot.loadout() == slot.loadout()
             })
         {
             return Err(Refusal::OneAtheric);
@@ -176,12 +176,6 @@ impl Character {
         let mut moves = vec![(id, At::Worn(slot))];
         if let Some(previous) = self.worn(slot).filter(|previous| previous.id != id) {
             moves.push((previous.id, At::Carried));
-        }
-        if slot == Slot::MainHand
-            && item.kind.two_handed()
-            && let Some(off) = self.worn(Slot::OffHand).filter(|off| off.id != id)
-        {
-            moves.push((off.id, At::Carried));
         }
         self.settle_moves(&moves)?;
         Ok(None)
@@ -213,7 +207,8 @@ impl Character {
         Ok(None)
     }
 
-    /// Moves items at once, if every slot still carries nine at most afterwards.
+    /// Moves items at once, if every slot still carries nine at most afterwards, or no more than it did: a slot two
+    /// hands' pieces were read into may carry past nine, and only empties.
     fn settle_moves(&mut self, moves: &[(u32, At)]) -> Result<(), Refusal> {
         let mut after = self.clone();
         for (id, at) in moves {
@@ -221,7 +216,7 @@ impl Character {
                 entry.1 = *at;
             }
         }
-        if Slot::ALL.into_iter().any(|bucket| after.carried_in(bucket) > CARRIED_MOST) {
+        if Slot::ALL.into_iter().any(|bucket| after.carried_in(bucket) > CARRIED_MOST.max(self.carried_in(bucket))) {
             return Err(Refusal::CarriedFull);
         }
         *self = after;
@@ -298,6 +293,14 @@ impl Character {
             Some(_) => return Err(Refusal::WrongPlace),
             None => return Err(Refusal::NoSuchItem),
         };
+        self.items.remove(&id);
+        self.salvage(&item, dice);
+        Ok(None)
+    }
+
+    /// Adds what an item dismantled gives back: Aurem, and its stock's fragments and, from a Legendary or Atheric,
+    /// Essence with a third of what was spent on it.
+    pub(crate) fn salvage(&mut self, item: &Item, dice: &Dice) {
         let stock = item.kind.stock();
         let back = u16::try_from(item.essence_spent() / 3).unwrap_or(u16::MAX);
         let (aurem, fragments, essence) = match item.rarity {
@@ -307,11 +310,9 @@ impl Character {
             Rarity::Legendary => (200, 3, 2 + u16::from(dice.roll(Purpose::Essence, 0) < 0.5) + back),
             Rarity::Atheric => (300, 5, 2 + back),
         };
-        self.items.remove(&id);
         self.materials.add_aurem(aurem);
         self.materials.add(Stuff::Fragments(stock), fragments);
         self.materials.add(Stuff::Essence(stock), essence);
-        Ok(None)
     }
 
     fn identify(&mut self, id: u32, here: Here, dice: &Dice) -> Result<Option<Done>, Refusal> {
