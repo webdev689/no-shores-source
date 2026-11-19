@@ -145,6 +145,8 @@ export class Hands {
 
   /** Ends every reload under way at once: the fight's rules have loaded the weapons, so the next shot they let go plays. */
   loaded(): void {
+    // A brace's rules wait only out the first gun's frames before the other fires: they load both once both have fired.
+    if (this.plan?.volley && this.arms.some((arm) => arm.shot?.loaded)) return;
     for (const arm of this.arms) {
       arm.shot?.load();
       arm.melee?.load();

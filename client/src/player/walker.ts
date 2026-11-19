@@ -207,7 +207,10 @@ export class Walker {
     // The rules take up another weapon only at rest: while they are busy, the figure and the hands keep the one held.
     const kept = this.dress.outfit;
     const dress = fighting
-      ? { ...worn, outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn: kept.drawn } }
+      ? {
+          ...worn,
+          outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn: holding && kept.drawn },
+        }
       : worn;
     if (!fighting) this.shownGlow = this.glow;
     const { outfit } = dress;

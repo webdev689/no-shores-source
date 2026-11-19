@@ -172,3 +172,16 @@ test("a gun the fight's rules have loaded fires at once, though its own reload w
   hands.update(0.01, press, plan, still);
   assert.deepEqual(run(hands, plan, 4, 0.05, none), ['right:loose'], 'loaded by the rules, it fires');
 });
+
+test("a brace the rules load between its two shots keeps its fired gun reloading, so the next pull is the other's", () => {
+  const hands = new Hands();
+  const plan = handsPlan('pistolet', 'pistolet_l');
+  hands.update(0.01, press, plan, still);
+  run(hands, plan, 30, 0.05, none);
+  const pull = () => [...run(hands, plan, 1, 0.01, press), ...run(hands, plan, 4, 0.05, none)];
+  hands.loaded();
+  assert.deepEqual(pull(), ['left:loose'], "the left's turn, as the rules have it");
+  run(hands, plan, 10, 0.05, none);
+  hands.loaded();
+  assert.deepEqual(pull(), ['right:loose'], 'both fired, both loaded by the rules');
+});

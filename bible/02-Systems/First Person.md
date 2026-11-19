@@ -97,10 +97,10 @@ The guns and the crossbow fire on a trigger. A click fires when loaded; holding 
 aiming, where each shot takes a fresh pull as the rules ask. In a fight, any weapon, a bow too, plays a shot only as
 the fight's rules let one go, so a pull they refuse (no ammunition, a reload, a swap of loadouts) plays nothing; a gun
 with no shot left clicks dry ([[Combat]], "Shots"). Its reload ends when the rules' does, which a quicker reload or
-a kill that reloads ([[Gear]], "Perks") makes sooner than the weapon's own clock, so the next shot they let go plays.
-A weapon changed while the rules are busy (a swing, a guard, a reload, a draw) stays in hand until they take the new
-one up at rest, as the swap begins. Aiming zooms the weapon with the view, about the middle of
-the screen, and its muzzle with it, so a tracer starts where it is drawn
+a kill that reloads ([[Gear]], "Perks") makes sooner than the weapon's own clock, so the next shot they let go plays;
+a brace's two guns load once both have fired. A weapon changed while the rules are busy (a swing, a guard, a reload, a
+draw) stays in hand until they take the new one up at rest, as the swap begins. Aiming zooms the weapon with the view,
+about the middle of the screen, and its muzzle with it, so a tracer starts where it is drawn
 ([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames at its own rate, then the weapon
 reloads:
 

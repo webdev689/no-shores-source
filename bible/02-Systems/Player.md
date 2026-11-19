@@ -42,8 +42,9 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
   Each figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working
   out the moves only for a new dress). The figure holds the weapon the fight's rules hold: one changed while they are
-  busy shows once they take it up at rest. The walker gives the player's own card for an eye; other players' figures stand where their room last saw them, in
-  their own dress when it reads as one (`OtherPlayers`, `showOther`), as in the game's nodes so on the Test Ground.
+  busy shows once they take it up at rest. The walker gives the player's own card for an eye; other players' figures
+  stand where their room last saw them, in their own dress when it reads as one (`OtherPlayers`, `showOther`), as in
+  the game's nodes so on the Test Ground.
 - **A room** (`Fighting`): it is joined with the player's session, if they have one, to keep their character
   ([[Accounts]]). Each tick's intent goes to it, with what the figure shows, the dress when it changed, a gear ask and
   a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,
