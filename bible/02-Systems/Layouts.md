@@ -87,7 +87,8 @@ from the sea, fresh water and the claim's edge), then:
    more the steeper it climbs, water is bridged at a price, a way already laid costs a third so later ways branch
    off it, and a slow noise bends it as worn tracks wander. It ends on a block's own streets and leaves a village
    between its buildings. A way too steep for its tier is laid as a footpath, then stepped; an area no way reached is
-   joined to the nearest that is. Bridges carry paths over rivers.
+   joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
+   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers.
    Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
    where it reaches one; a milestone every 160 m between the places; a scene every 80 to 180 m (a cart broken down
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m

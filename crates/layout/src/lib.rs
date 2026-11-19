@@ -133,6 +133,10 @@ pub fn plan(
         .collect();
     let blocked = blocked_by(&field, &seating);
     let mut paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
+    // A way ending at an area's middle stops at what stands there: its set piece, tower or hull.
+    for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
+        end_at_rim(&mut paths, area.at, rim_of(&seating, area.at));
+    }
     keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
     for path in &paths {
@@ -357,6 +361,59 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
         }
     }
     Blocked(blocked)
+}
+
+/// How far from a point the pieces standing over it reach: a set piece at an area's middle, its tower or its hull.
+fn rim_of(seating: &Seating, at: [f64; 2]) -> f64 {
+    let solids = seating.solids.iter().map(|solid| {
+        let [west, north, east, south, _, _] = solid.bounds();
+        [west, north, east, south]
+    });
+    let props = seating.props.iter().map(|prop| prop.footprint);
+    solids
+        .chain(props)
+        .filter(|&[west, north, east, south]| at[0] >= west && at[0] <= east && at[1] >= north && at[1] <= south)
+        .flat_map(|[west, north, east, south]| [[west, north], [east, north], [east, south], [west, south]])
+        .map(|corner| distance(corner, at))
+        .fold(0.0, f64::max)
+}
+
+/// Ends each way that ends at a point `rim` metres short of it, past what stands there by the room the way keeps
+/// from what stands (`keep_off_paths`), so the way stops at the piece and the piece stays; a way shorter than that
+/// is left whole.
+fn end_at_rim(paths: &mut [Path], at: [f64; 2], rim: f64) {
+    if rim <= 0.0 {
+        return;
+    }
+    for path in paths {
+        let keep = rim + path.tier.width() / 2.0 + 1.2;
+        for reversed in [false, true] {
+            if reversed {
+                path.points.reverse();
+            }
+            let ends_here = path.points.last().is_some_and(|&end| distance(end, at) < CELL_M);
+            let inside = path.points.iter().rposition(|&point| distance(point, at) >= keep);
+            if let (true, Some(last)) = (ends_here, inside)
+                && last > 0
+            {
+                // The way's last point outside the rim, then on along its next segment to the rim.
+                let (out, next) = (path.points[last], path.points[last + 1]);
+                let along = |share: f64| [out[0] + (next[0] - out[0]) * share, out[1] + (next[1] - out[1]) * share];
+                let step = 0.25 / distance(out, next).max(0.25);
+                let mut share = 0.0;
+                while share + step <= 1.0 && distance(along(share + step), at) >= keep {
+                    share += step;
+                }
+                path.points.truncate(last + 1);
+                if share > 0.0 {
+                    path.points.push(along(share));
+                }
+            }
+            if reversed {
+                path.points.reverse();
+            }
+        }
+    }
 }
 
 /// Leaves out what a path runs over: a cart or a fence in the middle of a track, a lantern on its post.

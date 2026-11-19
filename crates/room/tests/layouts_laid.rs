@@ -148,7 +148,15 @@ fn every_set_piece_at_an_areas_middle_stands() {
         });
         for area in centred {
             if !layout.seating.props.iter().any(|prop| distance([prop.at[0], prop.at[1]], area.at) < 0.5) {
-                failed.push(format!("{}: {:?} {} lost its middle", layout.id, area.kind, area.name));
+                let nearest = layout
+                    .paths
+                    .iter()
+                    .flat_map(|path| path.points.windows(2).map(|pair| off_line(area.at, pair[0], pair[1])))
+                    .fold(f64::INFINITY, f64::min);
+                failed.push(format!(
+                    "{}: {:?} {} lost its middle, a way {nearest:.1} m from it",
+                    layout.id, area.kind, area.name
+                ));
             }
         }
     }
