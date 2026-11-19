@@ -144,8 +144,8 @@ test('through the striker’s own eyes a blow’s pictures are smaller; one land
     impacts.bits.flying.length = 0;
     const out: number[] = [];
     impacts.lay(out, eye);
-    const xs = out.filter((unused, index) => index % 7 === 0);
-    return xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+    const easts = out.filter((unused, index) => index % 7 === 0);
+    return easts.length ? Math.max(...easts) - Math.min(...easts) : 0;
   };
   const behind = across([0, 4, 1.6]);
   const ownEyes = across([0, 2, 1.6]);
