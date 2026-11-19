@@ -109,6 +109,14 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
       said,
     );
     name.focus();
+    // A player already signed in goes on as themselves; the form stays below for another account.
+    void link.session().then((account) => {
+      if (!account?.username || !frame.isConnected) return;
+      const username = account.username;
+      const goOn = pressOf(`Go on as ${username}`, () => done({ kind: 'account', username }), 'primary');
+      contents.prepend(make('p', `You are signed in as ${username}.`, 'creation-words'), goOn);
+      goOn.focus();
+    });
   });
 }
 

@@ -90,22 +90,23 @@ export class Intro implements Beat {
     this.since = 0;
   }
 
-  /** Into the cloud between islands: white, the next opening; once open and drawn, the white lifts on its shot. */
-  private toCloud(next: number): void {
+  /** Into the cloud between islands: white, the next opening (unless it is open already); once open and drawn, the
+   *  white lifts on its shot. */
+  private toCloud(next: number, opened = false): void {
     const { screen, ambience } = this.stage.parts;
     screen.fade(CLOUD_WHITE, 1.1, 'white');
     ambience.whoosh();
     this.stage.parts.birds.clear();
     this.enter({ kind: 'cloud', next });
     const passing = PASSING[next];
-    const opened = passing ? this.islands.open(passing.id) : this.islands.home();
-    void opened.then(() => this.cleared(next));
+    const opening = opened ? Promise.resolve() : passing ? this.islands.open(passing.id) : this.islands.home();
+    void opening.then(() => this.cleared(next, !opened));
   }
 
-  private async cleared(next: number): Promise<void> {
+  private async cleared(next: number, swap: boolean): Promise<void> {
     if (this.skipping) return;
     const passing = PASSING[next];
-    if (passing) await this.islands.show();
+    if (passing && swap) await this.islands.show();
     const frame = islandFrame(this.islands.landmass);
     // The white has had its second to cover the swap before it lifts.
     window.setTimeout(() => this.stage.parts.screen.fade(0, 1.6, 'white'), Math.max(0, 1100 - this.since * 1000));
@@ -200,7 +201,7 @@ export class Intro implements Beat {
         if (!start) return null;
         const rise = Math.min(1, this.since / DAWN_S);
         const eye: [number, number, number] = [start.eye[0] - 900 * (1 - rise), start.eye[1], 1500 - 400 * rise];
-        if (this.since >= DAWN_S) this.toCloud(0);
+        if (this.since >= DAWN_S) this.toCloud(0, true);
         return lens({ eye, yaw: -2.35 + rise * 0.6, pitch: 0.04 + rise * 0.25, fov: LENS.fov });
       }
       case 'island': {

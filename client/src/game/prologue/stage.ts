@@ -10,6 +10,7 @@ import type { FirstPerson } from '../../firstperson/firstPerson.ts';
 import type { Gpu } from '../../gpu.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Swell } from '../../rules/landRules.ts';
+import type { FoeType } from '../../rules/roster.ts';
 import type { ShipView } from '../../ships/shipView.ts';
 import type { Cast, Line } from '../../speech/cast.ts';
 import type { DialogueBox } from '../../speech/dialogue.ts';
@@ -17,11 +18,13 @@ import type { Overheads } from '../../speech/overheads.ts';
 import type { HullMask } from '../../water/hullMask.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { FigureView } from '../figureView.ts';
+import type { FootView } from '../footView.ts';
 import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
 import type { Drawer, GameScene } from '../scene.ts';
 import { type Actor, actorCards } from './actors.ts';
+import type { Objective } from './objective.ts';
 import type { Hull, ShipDraw } from './sailing.ts';
 
 /** What a beat shows in a frame. */
@@ -60,8 +63,14 @@ export interface StageParts {
   readonly dialogue: DialogueBox;
   readonly overheads: Overheads;
   readonly ambience: Ambience;
+  readonly objective: Objective;
+  readonly footView: FootView;
   readonly cast: Cast;
   readonly scenes: Readonly<Record<string, readonly Line[]>>;
+  /** The foes' roster, for the factions a cutscene stages. */
+  readonly roster: readonly FoeType[];
+  /** Keeps the exact ground round a world point, sampled from the land's worker, for a scene near the ground. */
+  readonly keepClose: (point: readonly [number, number]) => void;
   /** The open landmass's drawers (its city and nature), or null before one is open. */
   readonly landDrawers: () => LandDrawers | null;
   readonly landmass: () => Landmass;
