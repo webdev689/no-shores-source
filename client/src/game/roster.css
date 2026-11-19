@@ -309,10 +309,15 @@
   flex-direction: column;
   gap: 4px;
 }
+/* On foot the vitals hold the top left: the company stands under them, and under a boss's bar where it reaches. */
+#hud:has(> .fight:not([hidden])) .company-hud {
+  top: 140px;
+}
 .company-plate {
   position: relative;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
   width: 240px;
   height: 48px;
   padding-left: 56px;

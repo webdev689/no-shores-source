@@ -49,16 +49,18 @@ test('the veil is blood for a death, plain for a link joining again or lost, and
   assert.match(rule(css, '.fight-hud .veil.link'), /background: rgba\(5,7,10,/, 'a lost link is no wound');
 });
 
-test('an arrow that would fall on the vitals stands above them on the edge; anywhere else it stays', () => {
-  const panel = { left: 24, top: 450, right: 284, bottom: 576 };
+test('an arrow that would fall on the Arts and weapons stands above them, and on the vitals below them', () => {
+  const arms = { left: 24, top: 490, right: 430, bottom: 578 };
   const onIt = { x: 28, y: 520, angle: Math.PI };
-  assert.deepEqual(clearOf(onIt, panel, 22), { x: 28, y: 428, angle: Math.PI });
+  assert.deepEqual(clearOf(onIt, arms, 22), { x: 28, y: 468, angle: Math.PI });
   const below = { x: 150, y: 572, angle: Math.PI / 2 };
-  assert.equal(clearOf(below, panel, 22).y, 428, 'one at the foot, toward a foe behind, too');
+  assert.equal(clearOf(below, arms, 22).y, 468, 'one at the foot, toward a foe behind, too');
   const above = { x: 28, y: 300, angle: Math.PI };
-  assert.equal(clearOf(above, panel, 22), above);
+  assert.equal(clearOf(above, arms, 22), above);
   const right = { x: 932, y: 520, angle: 0 };
-  assert.equal(clearOf(right, panel, 22), right);
+  assert.equal(clearOf(right, arms, 22), right);
+  const vitals = { left: 28, top: 14, right: 204, bottom: 88 };
+  assert.deepEqual(clearOf({ x: 28, y: 40, angle: Math.PI }, vitals, 22, true), { x: 28, y: 110, angle: Math.PI });
 });
 
 test('words over the world and the fills carry a hard outline all round, as a ship’s plate strokes its words', () => {
@@ -70,7 +72,7 @@ test('words over the world and the fills carry a hard outline all round, as a sh
   ])
     assert.ok(HALO.includes(`${across}px ${down}px 0 ${TONES.outline}`), `outlined at ${across}, ${down}`);
   const css = fightSheetCss();
-  for (const selector of ['.fight-hud .plate .title', '.fight-hud .vital .label, .fight-hud .vital .number'])
+  for (const selector of ['.fight-hud .plate .title', '.fight-hud .vital .poise-word'])
     assert.ok(rule(css, selector).includes(HALO), selector);
 });
 
@@ -80,11 +82,12 @@ test('the display keeps its stacking to itself, and the plates over figures unde
   assert.match(rule(css, '.fight-hud .over'), /isolation: isolate/, 'the plates’ order stays among them');
 });
 
-test('with reduced motion asked for, neither the low health nor the empty stamina blinks', () => {
+test('with reduced motion asked for, neither the low health nor the empty stamina blinks: each holds its warning', () => {
   const css = fightSheetCss();
-  const still = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
-  assert.match(still, /\.vital\.low \{ animation: none;/);
-  assert.match(still, /\.vital\.stamina\.flash \{ animation: none;/);
+  const still = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)', css.indexOf('.fight-hud .vitals')));
+  assert.match(still, /\.vital\.low::after \{ animation: none; opacity: 1; \}/, 'the blood frame stands');
+  assert.match(still, /\.vital\.stamina\.flash::after \{ animation: none; \}/, 'the white frame stands');
+  assert.match(css, /\.vital\.stamina\.flash::after \{ opacity: 1;/);
 });
 
 test('the plates on foot are the sizes the sea draws its own at', () => {

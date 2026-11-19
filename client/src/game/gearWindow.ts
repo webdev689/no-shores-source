@@ -27,7 +27,7 @@ import {
 } from './gearScreen.ts';
 import { inventoryPage } from './inventoryPage.ts';
 import { itemPage } from './itemPage.ts';
-import { ItemPictures } from './itemPictures.ts';
+import { ItemPictures } from '../player/itemPictures.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';

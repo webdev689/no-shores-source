@@ -230,6 +230,5 @@ ${looks.join('\n')}
 .fight-hud .target, .fight-hud .boss { position: relative; }
 .fight-hud .plate .statuses { position: absolute; left: calc(100% + 5px); bottom: 0; }
 .fight-hud .overhead .statuses { transform-origin: left bottom; }
-.fight-hud .vitals > .statuses { position: absolute; left: 0; bottom: calc(100% + 8px); gap: 6px; }
 `;
 }

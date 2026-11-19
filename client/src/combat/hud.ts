@@ -16,7 +16,12 @@ import { element } from './meter.ts';
 import { cameraOf, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
+import type { Cards } from '../player/cards.ts';
+import { ItemPictures } from '../player/itemPictures.ts';
+import { UNABLE } from './casting.ts';
+import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Vitals } from './vitals.ts';
+import { type ArmsShown, WeaponRows } from './weapons.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
  *  camera projects a point, the canvas's size in CSS pixels, the fight's events since the last frame, whether the view
@@ -47,6 +52,8 @@ export interface HudFrame {
   readonly blocks?: readonly Block[];
   /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
   readonly abilities?: AbilityState | null;
+  /** The loadouts as the weapons' rows show them; none hides them. */
+  readonly arms?: ArmsShown | null;
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -56,7 +63,7 @@ const RESPAWN_TICKS = 240;
 /** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
 const FLASH_SECONDS = 0.45;
 /** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels; and how far clear of the
- *  vitals' row it stands where it would fall on it: half an arrow, a bar's frame and a little more. */
+ *  vitals or the Arts and weapons it stands where it would fall on them: half an arrow and a little more. */
 const ARROW_INSET = 28;
 const ARROW_CLEAR = 22;
 /** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
@@ -90,15 +97,17 @@ export function project(
   return { x: ((clipX / clipW + 1) / 2) * width, y: ((1 - clipY / clipW) / 2) * height };
 }
 
-/** A spot on the screen's edge moved up the edge to stand `gap` above `box` (CSS pixels from the display's corner)
- *  where it would fall within `gap` of it; elsewhere as it is. */
+/** A spot on the screen's edge moved along the edge to stand `gap` above `box` (CSS pixels from the display's corner),
+ *  or below it when `below`, where it would fall within `gap` of it; elsewhere as it is. */
 export function clearOf<Spot extends { readonly x: number; readonly y: number }>(
   spot: Spot,
   box: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number },
   gap: number,
+  below = false,
 ): Spot {
   const near = (value: number, from: number, to: number) => value >= from - gap && value <= to + gap;
-  return near(spot.x, box.left, box.right) && near(spot.y, box.top, box.bottom) ? { ...spot, y: box.top - gap } : spot;
+  if (!near(spot.x, box.left, box.right) || !near(spot.y, box.top, box.bottom)) return spot;
+  return { ...spot, y: below ? box.bottom + gap : box.top - gap };
 }
 
 /** The veil over the display, by what holds the player: joining the room again, the room lost (and why), or their
@@ -141,7 +150,11 @@ export class Hud {
   private readonly words: Words;
   /** The side the next number with no stroke to follow is thrown to. */
   private nextSide = 1;
+  private readonly column: HTMLElement;
+  private readonly arms: HTMLElement;
   private readonly abilities: AbilityBar | null;
+  private readonly weapons: WeaponRows;
+  private layout: HudLayout | null = null;
   private readonly arrows = new Map<number, HTMLElement>();
   private readonly rings = new Map<number, HTMLElement>();
   /** The foes whose iron wind-up the player has been told of, until it ends. */
@@ -149,8 +162,13 @@ export class Hud {
   private staminaFlash = 0;
   private hurtFlash = 0;
 
-  /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's ability bar stands by the vitals. */
-  constructor(root: HTMLElement, pictures: ((art: number) => ArtPictures | null) | null = null) {
+  /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
+   *  with `forge`, the weapons beside them are drawn as its pictures. */
+  constructor(
+    root: HTMLElement,
+    pictures: ((art: number) => ArtPictures | null) | null = null,
+    forge: Cards | null = null,
+  ) {
     wearFightSheet(root.ownerDocument);
     root.classList.add('fight-hud');
     this.root = root;
@@ -158,23 +176,41 @@ export class Hud {
     // bar, the target's plate), then the veil over all.
     this.hurt = element('div', 'hurt', root);
     this.vitals = new Vitals(root);
+    this.arms = element('div', 'arms', root);
+    this.abilities = pictures && new AbilityBar(this.arms, pictures);
+    this.weapons = new WeaponRows(this.arms, forge && new ItemPictures(forge));
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
     this.crosshair = element('div', 'crosshair', root);
     this.crosshair.hidden = true;
     element('div', 'charge', this.crosshair);
     this.ammo = new AmmoCounter(root);
-    const column = element('div', 'compass-column', root);
-    this.compass = new Compass(column);
-    this.foeBars = new FoeBars(root, this.over, column);
-    this.target = new FoePlate(column, 'target', { poise: true, remembers: 'whole' });
+    this.column = element('div', 'compass-column', root);
+    this.compass = new Compass(this.column);
+    this.foeBars = new FoeBars(root, this.over, this.column);
+    this.target = new FoePlate(this.column, 'target', { poise: true, remembers: 'whole' });
     this.words = new Words(this.over);
-    this.abilities = pictures && new AbilityBar(root, pictures);
     this.veil = element('div', 'veil', root);
+  }
+
+  /** Lays the corner pieces for a view `width` by `height`, only when that changes what they need. */
+  private lay(width: number, height: number): void {
+    const next = hudLayout(width, height);
+    const was = this.layout;
+    const same = was?.wide === next.wide && was.zoom === next.zoom && was.length === next.length;
+    if (same && was?.compassTop === next.compassTop) return;
+    this.layout = next;
+    this.root.classList.toggle('wide', next.wide);
+    this.root.classList.toggle('double', next.zoom === 2);
+    this.root.classList.toggle('stacked', next.stacked);
+    this.column.style.top = next.stacked ? `${next.compassTop}px` : '';
+    this.vitals.lay(next.length, next.wide);
+    this.weapons.lay(next.wide, next.zoom);
   }
 
   update(frame: HudFrame, seconds: number): void {
     const { own } = frame;
+    this.lay(frame.width, frame.height);
     this.flash(frame, seconds);
     const veil = veilOf(frame);
     this.veil.hidden = !veil;
@@ -205,8 +241,9 @@ export class Hud {
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
-    if (frame.abilities) this.abilities?.update(frame.abilities);
+    if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));
     else this.abilities?.hide();
+    this.weapons.update(frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null }, own, seconds);
     this.pointAtThreats(frame);
     this.ringParries(frame);
     this.floatWords(frame, seconds);
@@ -271,21 +308,22 @@ export class Hud {
   }
 
   /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
-   *  ends, standing clear of the vitals' row. */
+   *  ends, standing below the vitals and above the Arts and weapons where it would fall on them. */
   private pointAtThreats(frame: HudFrame): void {
     const shown = new Set<number>();
-    let row: { left: number; top: number; right: number; bottom: number } | null = null;
+    let corners: { left: number; top: number; right: number; bottom: number }[] | null = null;
     for (const { id, view } of frame.foes) {
       if (!threatens(view, frame.player)) continue;
       const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
       const edge = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
       if (!edge) continue;
-      if (!row) {
-        const [box, origin] = [this.vitals.root.getBoundingClientRect(), this.root.getBoundingClientRect()];
+      corners ??= [this.vitals.root, this.arms].map((node) => {
+        const [box, origin] = [node.getBoundingClientRect(), this.root.getBoundingClientRect()];
         const [left, top] = [box.left - origin.left, box.top - origin.top];
-        row = { left, top, right: left + box.width, bottom: top + box.height };
-      }
-      const spot = clearOf(edge, row, ARROW_CLEAR);
+        return { left, top, right: left + box.width, bottom: top + box.height };
+      });
+      const [vitals, arms] = corners;
+      const spot = arms && vitals ? clearOf(clearOf(edge, vitals, ARROW_CLEAR, true), arms, ARROW_CLEAR) : edge;
       shown.add(id);
       const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
       this.arrows.set(id, arrow);

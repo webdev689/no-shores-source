@@ -465,6 +465,12 @@ export class Foot {
       crosshair: sights
         ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
         : null,
+      arms: {
+        gear: this.gear?.gear ?? null,
+        loadout: walker.player.loadout,
+        drawn: walker.you.dress.outfit.drawn,
+        dress: walker.you.dress,
+      },
     };
     const edge = this.standing;
     const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);

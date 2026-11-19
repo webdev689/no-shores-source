@@ -26,7 +26,7 @@ import {
   traitNode,
 } from './gearDom.ts';
 import { itemDetailOf } from './gearScreen.ts';
-import { LARGE_CAP } from './iconFit.ts';
+import { LARGE_CAP } from '../player/iconFit.ts';
 
 /** The art's box: what the page's height leaves it, within these, in pixels. */
 const ART_LEAST = 200;

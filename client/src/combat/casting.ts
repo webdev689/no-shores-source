@@ -21,7 +21,7 @@ export const DAGGERS = 1;
  *  word. */
 export const CAST_LOCKOUT_MOST_S = 2;
 /** What a fighter is doing that no cast starts from, as the room has it: staggered (a Charge with it), down, dead. */
-const UNABLE = new Set(['staggered', 'down', 'dead']);
+export const UNABLE: ReadonlySet<string> = new Set(['staggered', 'down', 'dead']);
 
 /** Dusk Daggers aimed: the middle of the ring where they will whirl, its radius, and its Art's element. */
 export interface AimRing {

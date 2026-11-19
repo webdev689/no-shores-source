@@ -10,7 +10,7 @@ import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
 import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 import { elementSvg } from './elementGlyphs.ts';
-import { diagonalFit, drawnBounds, fitIcon } from './iconFit.ts';
+import { diagonalFit, drawnBounds, fitIcon } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */

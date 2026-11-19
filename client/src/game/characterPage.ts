@@ -25,7 +25,7 @@ import {
   tileLabel,
 } from './gearDom.ts';
 import { characterOf } from './gearScreen.ts';
-import { LARGE_CAP } from './iconFit.ts';
+import { LARGE_CAP } from '../player/iconFit.ts';
 import { EMBLEM_SLOT, emblemSlot } from './emblemSlot.ts';
 
 /** What a page of the gear screen draws from: the gear, the way to ask of it, the card, the pictures, and the height
