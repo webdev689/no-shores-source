@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { mock, test } from 'node:test';
 import type { Line } from '../../speech/cast.ts';
 import { CLEAR } from '../../cinema/weather.ts';
-import { headOnView, Stage, type StageParts } from './stage.ts';
+import { HUD_VEIL_S, headOnView, Stage, type StageParts } from './stage.ts';
 
 test('a scene plays in order: barks over heads, runs of lines together in the box, each line its emote', async () => {
   mock.timers.enable({ apis: ['setTimeout'] });
@@ -110,10 +111,23 @@ test('leaving gives the game back its clear weather, quiet, an HUD with no death
   } as unknown as StageParts;
   const stage = new Stage(parts);
   stage.weatherTowards({ ...CLEAR, rain: 1 }, 0);
+  mock.timers.enable({ apis: ['setTimeout'] });
   stage.leave();
   assert.deepEqual(scene.weather, CLEAR);
   assert.deepEqual(stage.weather, CLEAR);
   for (const what of ['quiet', 'no birds', 'no fires', 'no prompt', 'reach inside', 'no hints', 'no fight panel'])
     assert.ok(done.includes(what), what);
-  assert.ok(done.includes('open view') && done.includes('box closed') && done.includes('heads cleared'));
+  assert.ok(done.includes('box closed') && done.includes('heads cleared'));
+  // The story's black holds while the game's veil rises over it, and goes once the veil is up.
+  mock.timers.tick(HUD_VEIL_S * 1000 - 1);
+  assert.ok(!done.includes('open view'), 'the black holds under the rising veil');
+  mock.timers.tick(1);
+  mock.timers.reset();
+  assert.ok(done.includes('open view'));
+});
+
+test("the veil's time is the page's own veil transition", () => {
+  const page = readFileSync(new URL('../../../index.html', import.meta.url), 'utf8');
+  const veil = /\n\s*\.veil \{[^}]*transition: opacity ([\d.]+)s/.exec(page);
+  assert.equal(Number(veil?.[1]), HUD_VEIL_S);
 });

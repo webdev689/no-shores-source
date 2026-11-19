@@ -18,7 +18,7 @@ const CSS = `
 `;
 
 /** Whether the page is played by touch: its prompt says tap rather than press. */
-const touch = () => globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
+export const touch = () => globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
 
 /** Shows the tap to start over `root`; resolves on the first tap, click or key, and lets the screen fade once
  *  `ready` has resolved too. */

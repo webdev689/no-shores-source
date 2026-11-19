@@ -73,7 +73,8 @@ The page reads the world (`loadWorld`: the layout and every continent's edits fi
 in the [[Land]]'s worker, kept, with the RMB index's blocks, so its city is settled on it as the bake settles it
 ([[Cities]]). Overlook's plan comes from that worker; its social space is the node `overlook-social`, the plaza beside
 the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet, facing out from the landmark and
-looking 17° down over the parapet onto the city, the harbour and the sea.
+looking 17° down over the parapet onto the city, the harbour and the sea. Arriving from the story played through, the
+stranger's last moment plays there once the veil has fallen ([[Prologue]]); leaving the node ends it.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook.

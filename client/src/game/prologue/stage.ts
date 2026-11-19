@@ -77,6 +77,10 @@ export interface StageParts {
   readonly landmass: () => Landmass;
 }
 
+/** How long the game's veil over a loading place takes to rise or to fall, seconds: `.veil`'s transition in
+ *  client/index.html. */
+export const HUD_VEIL_S = 0.7;
+
 /** How many ships of one hull a frame draws at most: each has a slot of its own. */
 const SLOTS_A_HULL = 16;
 
@@ -130,7 +134,9 @@ export class Stage {
     hud.reach({ kind: 'inside' });
     hud.hints([]);
     footView.hide();
-    screen.clear();
+    // The game's veil rises over the story's black as the game takes over; the black is let go only once the veil is
+    // wholly up, so the story's last picture never shows through the crossing.
+    setTimeout(() => screen.clear(), HUD_VEIL_S * 1000);
   }
 
   get weather(): Weather {

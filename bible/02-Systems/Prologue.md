@@ -71,10 +71,24 @@ and Begin takes them straight to Overlook's social space.
 | `wreck` | Fought on foot through the wreck; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won | played |
 | `overboard` | Out and back in on the body thrown over the rail, Thule and his crew crying out and dancing | shown |
 | `deep` | Sinking past the fallen crew, the fire's light through the surface; the eyes; a flash; a voice; black | shown |
-| `shore` | First person on Saltmere's shore; a stranger comes down the beach and speaks; up, and up the shore together | played by watching |
+| `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
-After the shore the flow's `story-ended` takes the player through the veil to Overlook's social space, where the
-stranger stands beside them, says their last lines and walks off into the town. The game is the player's from there.
+**The shore.** The player wakes lying on the strand, looking up at the sky while the eyes blink open. The stranger
+sets off 3 s in, 12 m up the beach, and walks down to a place 1.1 m up from the player and 0.6 m to their side, where
+she kneels (about 11 s in); the head turns to her from 6 s. Once she is down she says her two lines, framed in the
+view; then the screen asks the player to take her hand ("Click or press any key to take her hand", "Tap to take her
+hand" on a touch screen). Only a press, a click or a tap raises them: the view rises to standing over 2.4 s while she
+rises with it, she says one more line, and the camera goes behind the two as they walk up the shore from where they
+stood, for 6.5 s, into black. If the coast has no strand, or the land's worker cannot answer the search, the player
+wakes on Overlook's plaza by its first spawn instead; if even that cannot be laid, the shore fails and the story ends
+played.
+
+**After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space. The story's
+black holds until the veil has risen over it (0.7 s), then goes. The stranger waits behind the veil; once it has
+fallen and she is in the player's view she stands 2.2 m ahead of them and 1 m to their right, facing them, and says
+her last line. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or
+unknown), and is let go once she is out of the player's view. Leaving Overlook's social space before then ends her
+part at once, her words with it. The game is the player's from there.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour, turned until the sea round it is open and
 deep (`stormPlaces`), the Brig heading across the swell. The wreck is laid where the ships met. The shore is the

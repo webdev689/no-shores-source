@@ -18,8 +18,6 @@ export interface Beach {
   readonly at: Point;
   /** The bearing from there inland, toward the town. */
   readonly inland: number;
-  /** Where the water's edge is, beyond the player. */
-  readonly edge: Point;
 }
 
 /** The nearest beach to `from` within `reachM`, or null where there is none. */
@@ -46,7 +44,7 @@ export function findBeach(
       const gentle = higher !== null && higher <= INLAND_HIGHEST_M;
       const quays = Math.hypot(ashore[0] - harbour[0], ashore[1] - harbour[1]) < HARBOUR_CLEAR_M;
       if (low && gentle && !quays && !cleared(ashore[0], ashore[1]) && (!best || along < best.distance))
-        best = { beach: { at: ashore, inland: bearing + Math.PI, edge: point }, distance: along };
+        best = { beach: { at: ashore, inland: bearing + Math.PI }, distance: along };
       break;
     }
   }

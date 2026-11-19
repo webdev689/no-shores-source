@@ -40,13 +40,10 @@
       { "who": "voice", "say": "Wake." }
     ],
     "shore": [
-      { "who": "stranger", "say": "Hey! Can you hear me?", "emote": "alert" },
+      { "who": "stranger", "say": "You're breathing. Good.", "emote": "alert" },
       { "who": "stranger", "say": "Easy now. You swallowed half the sea.", "emote": "fear" }
     ],
     "standing": [{ "who": "stranger", "say": "Overlook is just up the shore. Lean on me." }],
-    "arrived": [
-      { "who": "stranger", "say": "Here we are. Overlook.", "emote": "cheer" },
-      { "who": "stranger", "say": "Find your feet. Someone here will know what to do." }
-    ]
+    "arrived": [{ "who": "stranger", "say": "Find your feet. Someone here will know what to do." }]
   }
 }
