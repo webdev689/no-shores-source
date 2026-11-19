@@ -15,7 +15,8 @@
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
-// waits minutes behind. The console's errors are printed.
+// waits minutes behind. The console's errors and warnings are printed, each the first time it is said: WebGPU
+// reports a refused frame (a buffer too small for its binding) only as a warning, and repeats it every frame.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
 
@@ -105,8 +106,12 @@ async function main() {
   });
   const [width, height] = plan.size ?? [1280, 800];
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: plan.scale ?? 1 });
+  const said = new Set();
   page.on('console', (message) => {
-    if (message.type() === 'error') console.log('console:', message.text().slice(0, 300));
+    const [kind, text] = [message.type(), message.text().slice(0, 300)];
+    if ((kind !== 'error' && kind !== 'warning') || said.has(text)) return;
+    said.add(text);
+    console.log(`console ${kind}:`, text);
   });
   page.on('pageerror', (error) => console.log('page error:', error.message.slice(0, 300)));
   for (const [part, file] of Object.entries(plan.routes ?? {}))
