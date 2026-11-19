@@ -247,7 +247,7 @@ pub fn dead_masses(field: &Field, sculpts: &Sculpts, rise: f64) -> Vec<Mass> {
             let [x, y] = centre(at);
             field.inside[cell(at)] > FROM_EDGE_M
                 && off[at] * STRIDE as f64 > FROM_FLOORS_M
-                && sculpts.raise(x, y, field.to_sea[cell(at)]) > rise / 2.0
+                && sculpts.raise(x, y, field.to_sea[cell(at)]) - sculpts.floor_level(x, y) > rise / 2.0
         })
         .collect();
     let mut seen = vec![false; dead.len()];

@@ -116,7 +116,9 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
   land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
   from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
-  top, and a basin's shelf or platform a climb level along it inside the floor, raised over it as an embankment. The floor's distance counts the climbs, so a section reaches up them. Its runs ([[Layouts]], "Runs") are cut
+  top, and a basin's shelf or platform a climb level along it inside the floor, raised over it as an embankment. The floor's distance counts the climbs, so a section reaches up them, and the floor's level at a point
+  (`floor_level`) is the nearest floor's or climb's: 0 for a floor, a climb's level where it is nearer, so a face's
+  foot and dead rock are measured over a terrace or a ramp as over the land's own floor. Its runs ([[Layouts]], "Runs") are cut
   into its rock the same way. Where capsules meet (a run's at a bend, a climb's at its lookout) the level is a blend
   of the near capsules', weighted by how near each is (within 3 m), so the land climbs round the bend and beside a
   climb's top without a step. Its wings are capsules

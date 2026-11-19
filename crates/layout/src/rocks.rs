@@ -68,8 +68,8 @@ pub fn stone(kit: &mut Kit, shape: Shape, at: [f64; 3], size: [f64; 3], tip: f64
     kit.solid(Solid { lean, roll, ..upright });
 }
 
-/// A stone fallen onto the floor at a point, on the ground as carved; none where the carving raises the land, up a
-/// face, so every stone rests on level ground.
+/// A stone fallen onto the floor at a point, on the ground as carved; none where the carving raises the land over its
+/// floor, up a face, so every stone rests on level ground.
 pub(crate) fn fallen(kit: &mut Kit, carved: &Sculpts, shape: Shape, at: [f64; 2], size: [f64; 3], tip: f64) {
     if raised(kit, carved, at) <= FOOT_RISE_M {
         let ground = crate::skyline::carved_at(kit, carved, at);
@@ -77,9 +77,10 @@ pub(crate) fn fallen(kit: &mut Kit, carved: &Sculpts, shape: Shape, at: [f64; 2]
     }
 }
 
-/// How far the carving raises the land at a point, metres.
+/// How far the carving raises the land at a point over its nearest floor's level, metres: a terrace, a ramp or a
+/// raised floor is floor, not face.
 pub(crate) fn raised(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
-    carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
+    carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1])) - carved.floor_level(at[0], at[1])
 }
 
 /// A point `out` metres along `way` from `from`, and `side` metres across it.

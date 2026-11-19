@@ -393,3 +393,18 @@ fn an_outcrop_is_written_with_its_shape_and_read_from_four_numbers_as_a_mesa() {
         assert!(serde_json::from_str::<Outcrop>(wrong).is_err(), "{wrong} is refused");
     }
 }
+
+#[test]
+fn the_floor_level_is_the_nearest_floors_or_climbs() {
+    let sculpts = sculpt();
+    let level = |x: f64, y: f64| sculpts.floor_level(x, y);
+    assert!(level(0.0, 0.0).abs() < 1e-9, "a basin's floor is the land's own level");
+    assert!(level(250.0, 30.0).abs() < 1e-9, "beside a canyon, its floor's");
+    assert!((level(120.0, -40.0) - 15.0).abs() < 0.01, "halfway up a climb, half the massif's height");
+    assert!((level(180.0, -40.0) - 30.0).abs() < 0.01, "a lookout, the massif's top");
+    assert!((level(120.0, -50.0) - 15.0).abs() < 0.01, "off a climb, nearer it than any floor, the climb's level");
+    assert!((level(-50.0, 300.0) - 15.0).abs() < 0.01, "halfway along a rising run, its level there");
+    // On a climb the land stands at its level, so nothing there is raised over its floor.
+    let over = sculpts.raise(120.0, -40.0, 1000.0) - level(120.0, -40.0);
+    assert!(over.abs() < 0.5, "a climb is floor: {over:.2} m over it");
+}

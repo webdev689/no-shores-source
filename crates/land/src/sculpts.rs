@@ -330,6 +330,26 @@ impl Sculpts {
         self.floor_distance(x, y) <= 0.0
     }
 
+    /// The height the nearest floor or climb stands at over the land's own level, metres: 0 for a floor, a climb's
+    /// level at its nearest point (as the land is carved there) for a climb or run; 0 far from any. A face's foot and
+    /// a body's footing are measured over it, so a terrace, a ramp or a raised floor is floor as the land's own is.
+    #[must_use]
+    pub fn floor_level(&self, x: f64, y: f64) -> f64 {
+        (0..self.sculpts.len())
+            .filter(|&number| {
+                let reach = self.reaches[number];
+                x >= reach[0] && x <= reach[2] && y >= reach[1] && y <= reach[3]
+            })
+            .map(|number| {
+                let (floor, (climb, share)) = (self.off_floor(number, x, y), self.off_climb(number, x, y));
+                let level = if climb < floor { share * self.sculpts[number].rise } else { 0.0 };
+                (floor.min(climb), level)
+            })
+            .filter(|(off, _)| off.is_finite())
+            .min_by(|first, second| first.0.total_cmp(&second.0))
+            .map_or(0.0, |(_, level)| level)
+    }
+
     /// How far the sculpts raise the land at a point, metres; `coast` is its distance from the painted coast, positive
     /// on land, and no sculpt raises the strand or the sea. Each sculpt's rise is held under the faces rising from
     /// every other sculpt's floor, so no layout's massif or fade buries another's basins, canyons, climbs or gorges,
