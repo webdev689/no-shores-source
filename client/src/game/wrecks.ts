@@ -11,8 +11,7 @@ import type { Drawer } from './scene.ts';
 
 /** How far over her highest deck a wreck keeps anything: her masts broke off below this, metres. */
 const STUMP_OVER_DECK_M = 2;
-/** How a wreck is drawn: her pictures as painted, in no side's colours, and darker than a ship afloat, weathered
- *  and waterlogged. Without a rig she flies no flag. */
+/** How a wreck is drawn: in her own paint, no side's colours, weathered and waterlogged darker than a ship afloat. */
 const WRECK_LOOK: ShipLook = { side: 'player', shade: 0.6 };
 
 type Hull = Wreck['ship'];
@@ -50,8 +49,9 @@ function viewOf(gpu: Gpu, ship: Hull): Promise<ShipView> {
   let view = views.get(ship);
   if (!view) {
     const stump = Math.max(...deckHeights(ship)) + STUMP_OVER_DECK_M;
-    const paint = hullPaint(HULL_NAMES.indexOf(ship));
-    view = loadShip(ship).then((mesh) => ShipView.open(gpu, brokenMesh(mesh, stump), [], paint, 1));
+    view = loadShip(ship).then((mesh) =>
+      ShipView.open(gpu, brokenMesh(mesh, stump), [], hullPaint(HULL_NAMES.indexOf(ship)), 1),
+    );
     views.set(ship, view);
   }
   return view;
