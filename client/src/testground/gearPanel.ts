@@ -53,6 +53,20 @@ function nodeButton(item: GearItem, column: number, node: number, ask: (ask: Gea
   return pressed;
 }
 
+/** What the player holds besides their gear, as the inventory shows it: Aurem, the one currency, then each stack they
+ *  hold any of. */
+export function heldLine(gear: Pick<GearState, 'aurem' | 'stocks' | 'resources'>): string {
+  const stacks = [
+    ...STOCK_NAMES.map((name, index) => [name, gear.stocks[index] ?? 0] as const),
+    ...Array.from(
+      { length: RESOURCE_COUNT },
+      (unused, index) => [resourceName(index), gear.resources[index] ?? 0] as const,
+    ),
+  ];
+  const held = stacks.filter(([, count]) => count > 0).map(([name, count]) => `${name} ${count}`);
+  return [`${gear.aurem.toLocaleString()} Aurem`, ...held].join(' · ');
+}
+
 /** A button that asks only once held down for a moment. */
 function holdButton(label: string, held: () => void): HTMLElement {
   const pressed = button(label, () => undefined);
@@ -176,10 +190,6 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     answer.textContent = answerText(gear.answer);
     const opened = gear.items.find((item) => item.id === gear.identified);
     const level = `Level ${gear.level} · Prestige ${gear.prestige} · Defense ${gear.defense} · XP ${gear.xp.toLocaleString()}`;
-    const stocks = STOCK_NAMES.map((name, index) => `${name} ${gear.stocks[index] ?? 0}`);
-    const islands = Array.from({ length: RESOURCE_COUNT }, (unused, index) => index)
-      .filter((index) => (gear.resources[index] ?? 0) > 0)
-      .map((index) => `${resourceName(index)} ${gear.resources[index] ?? 0}`);
     const wornItems = SLOTS.map((unused, slot) => gear.items.find((item) => item.at === WORN + slot)).filter(
       (item): item is GearItem => item !== undefined,
     );
@@ -206,8 +216,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     );
     body.replaceChildren(
       make('p', level),
-      make('p', `${gear.aurem.toLocaleString()} Aurem · ${stocks.join(' · ')}`, 'hint'),
-      ...(islands.length > 0 ? [make('p', islands.join(' · '), 'hint')] : []),
+      make('p', heldLine(gear), 'hint'),
       ...(opened && opened.at === CARRIED ? [make('p', `The Vestige opened: ${itemName(opened)}.`)] : []),
       make(
         'p',

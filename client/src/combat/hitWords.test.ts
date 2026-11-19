@@ -68,3 +68,27 @@ test('a flurry fans out either side of where it happened, and each word goes onc
     words.update(project, 800, 600, WORD_SECONDS);
     assert.equal(findAll(root, 'word').length, 0);
   }));
+
+test('words said together never cover one another: a later one stands above one it would cover, and stays there', () =>
+  onFakePage((root) => {
+    const words = new Words(root, () => [40, 20]);
+    const said = { text: '23', tone: 'dealt' as const, tags: [] };
+    const places = { near: [0, 0, 0], beside: [1, 0, 0], far: [9, 0, 0] } as const;
+    const project = (point: readonly [number, number, number]) => ({ x: 100 + point[0] * 30, y: 50 });
+    for (const place of [places.near, places.beside, places.far]) words.say(said, place, 0.5);
+    words.update(project, 800, 600, 0.05);
+    const shown = () => findAll(root, 'word').map((word) => word.style['transform']);
+    assert.deepEqual(shown(), [
+      'translate(100.0px, 50.0px)',
+      'translate(130.0px, 28.0px)',
+      'translate(370.0px, 50.0px)',
+    ]);
+    words.say(said, places.near, 0.5);
+    words.update(project, 800, 600, 0.05);
+    assert.deepEqual(shown().slice(0, 3), [
+      'translate(100.0px, 50.0px)',
+      'translate(130.0px, 28.0px)',
+      'translate(370.0px, 50.0px)',
+    ]);
+    assert.equal(shown()[3], 'translate(100.0px, 50.0px)', 'a word said later rises clear of the earlier on its own');
+  }));

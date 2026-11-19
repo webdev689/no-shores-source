@@ -219,6 +219,21 @@ test('a blow that meets something flares where its tip was, and only while it sw
   assert.ok(strongest(late.mesh(EYE, LOOK)) <= 1);
 });
 
+test('a blow that meets several at once flares as brightly as the most it came to, whatever their order', () => {
+  const flaredBy = (strengths: readonly number[]) => {
+    const arcs = new SwingArcs();
+    play(arcs, [
+      [0, 0],
+      [0.41, 0.41],
+    ]);
+    for (const strength of strengths) arcs.struck(7, strength);
+    play(arcs, [[0.43, 0.43]]);
+    return strongest(arcs.mesh(EYE, LOOK));
+  };
+  assert.equal(flaredBy([1.5, 1, 1]), flaredBy([1.5]), 'a kill among plain hits');
+  assert.equal(flaredBy([1, 1.5, 0.6]), flaredBy([1.5]));
+});
+
 test('dark at no brightness, and held back by a hit-stop', () => {
   const arcs = new SwingArcs();
   play(arcs, [[0, 0.3]]);

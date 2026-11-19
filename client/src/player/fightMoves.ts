@@ -49,6 +49,8 @@ export function fightOf(view: FighterView): Fight | null {
  *  snapshot may come after several ticks). */
 export function foeDoing(view: FighterView, before: FighterView | null, dress: Dress, seconds: number): Doing {
   const speed = before ? Math.hypot(view.x - before.x, view.y - before.y) / seconds : 0;
+  // On a wall a foe moves up or down it, not across the ground.
+  const climbing = view.mode === 'climb' && !!before && Math.abs(view.z - before.z) / seconds > 0.2;
   const { action } = view;
   const blow =
     action.kind === 'attack'
@@ -61,7 +63,7 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
       : null;
   return {
     mode: view.mode,
-    moving: speed > 0.2,
+    moving: speed > 0.2 || climbing,
     running: speed > RUNNING,
     crouched: view.crouched,
     mounted: false,

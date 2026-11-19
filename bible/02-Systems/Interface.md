@@ -135,8 +135,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   fading (0.56 s, 0.64 s); two pieces fall in turn, so blows in quick succession each have their own. The vitals'
   health and stamina, the target plate, the boss bar and ships' plates break pieces off; the plates over figures and
   the poise do not.
-- **The target plate** shows the foe the player is fighting: the one their blow last reached, the one their soft
-  lock takes, or one beginning a telegraphed blow at them (unless they struck another in the last 2 s). It stands 6 s
+- **The target plate** shows the foe the player is fighting: the one their blow last reached (of several struck at
+  once, the soft lock's foe, else the first struck), the one their soft lock takes, or one beginning a telegraphed blow
+  at them (unless they struck another in the last 2 s). It stands 6 s
   after the last of these, fading over the last 1.5 s, and goes at once when the foe dies; never the Boss the boss
   bar shows. It remembers the health it last showed of each foe, so one turned back to loses from where its own bar
   stood, and one first shown is taken as whole, the plate coming with the first blow. The boss bar remembers its
@@ -233,9 +234,10 @@ never while a press is held. Each press is an ask the room answers.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
   Attack, Defense, Prestige and Fruit of Dagon. The weapons, the cloak and the emblem stand to its left, the armour to
   its right, each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its
-  flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. A flyout closes once
-  the mouse is off its slot and itself, a strip over the gap between them keeping it while the mouse crosses, or on a
-  click or Escape. The emblem's flyout holds every emblem, five a row: those
+  flyout of the nine it may carry, toward the figure, upward from each side's two lowest slots; a click there wears
+  one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the
+  gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its
+  slot. The emblem's flyout holds every emblem, five a row: those
   kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter

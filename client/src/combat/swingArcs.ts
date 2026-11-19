@@ -324,13 +324,16 @@ export class SwingArcs {
   }
 
   /** Flares the latest arc of `striker` as its blow meets something, as strongly as `strength`, if it is still in its
-   *  sweep (`lag` the seconds its striker's drawing is held back). */
+   *  sweep (`lag` the seconds its striker's drawing is held back). A blow meeting several at once flares as strongly
+   *  as the most it came to. */
   struck(striker: number, strength: number, lag = 0): void {
     const arc = this.arcs.findLast((each) => each.swing.id === striker);
     if (!arc) return;
     const time = arc.time - lag;
-    if (time >= arc.course.from && time <= arc.course.to + FLARE.fades)
-      arc.flare = { when: Math.min(time, arc.course.to), strength };
+    if (time < arc.course.from || time > arc.course.to + FLARE.fades) return;
+    const when = Math.min(time, arc.course.to);
+    if (arc.flare?.when === when && arc.flare.strength >= strength) return;
+    arc.flare = { when, strength };
   }
 
   /** How many arcs are drawn. */

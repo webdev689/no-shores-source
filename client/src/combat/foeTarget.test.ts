@@ -105,6 +105,25 @@ test('the soft lock taking a foe makes it the target', () => {
   assert.equal(target.step(frameOf([foe(4)], [], 4), 0)?.id, 4);
 });
 
+test('a stroke striking several keeps the target on the lock’s foe among them, else on the first it struck alive', () => {
+  const foes = [foe(3), foe(4), foe(5)];
+  const locked = new FoeTarget();
+  locked.step(frameOf(foes, [], 3), 0);
+  const sweep = [struck(PLAYER, 4), struck(PLAYER, 3), struck(PLAYER, 5)];
+  assert.equal(locked.step(frameOf(foes, sweep, 3), 0)?.id, 3, 'the lock’s, wherever it stands among them');
+  assert.deepEqual(
+    [3, 4, 5].map((id) => locked.foughtWith(id)),
+    [true, true, true],
+    'all of them fought',
+  );
+  const free = new FoeTarget();
+  assert.equal(free.step(frameOf(foes, [struck(PLAYER, 4), struck(PLAYER, 5)]), 0)?.id, 4, 'the first struck');
+  const slain = [foe(3), foe(4, { action: { kind: 'dead', elapsed: 0 } }), foe(5)];
+  const after = new FoeTarget();
+  const killing = [struck(PLAYER, 4), struck(PLAYER, 4, EVENT.killed), struck(PLAYER, 5)];
+  assert.equal(after.step(frameOf(slain, killing), 0)?.id, 5, 'the first slain, the next struck alive');
+});
+
 test('the foes fought in the last minute, struck or struck by, are known; a minute on they are not', () => {
   const target = new FoeTarget();
   const foes = [foe(2), foe(3), foe(4)];

@@ -403,6 +403,10 @@ export function startGearWindow(
     const beside = [held?.nextElementSibling, held?.previousElementSibling]
       .map((node) => (node instanceof HTMLElement ? node.dataset['key'] : undefined))
       .find(Boolean);
+    // A key's focus in a slot's grid goes back to its slot as the grid closes; a pointer's would open the slot's card.
+    const slotted = held?.matches(':focus-visible')
+      ? held.closest('.gear-slot-holder')?.querySelector<HTMLElement>('.gear-slot')?.dataset['key']
+      : undefined;
     const within = held !== null && screen.contains(held);
     tip.hide();
     ends(gear);
@@ -474,7 +478,7 @@ export function startGearWindow(
       // The page is read from its name, so no card opens over it unasked.
       shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
     else {
-      const next = again ?? found(returnTo) ?? found(beside);
+      const next = again ?? found(returnTo) ?? found(beside) ?? found(slotted);
       if (next) next.focus();
       else if (within && !screen.contains(document.activeElement))
         (tabs.find((node) => node.classList.contains('gear-chosen')) ?? title).focus();

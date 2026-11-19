@@ -130,8 +130,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     passed it and burns by how fast it went, so only the cut glows; a ribbon along the tip turns to the eye, so a cut
     seen edge on still shows, and a dark rim keeps it clear against the sky. It burns in the weapon's metal (daedric
     red, steel blue, dwarven gold), gold for a riposte or a counter; it follows the blow's aim as the rules turn it,
-    flares where the blow meets something, stops where a flinch or a dodge cuts it short, and waits while the fight
-    waits. None is drawn through the eyes. Brightness and trail are set.
+    flares where the blow meets something (meeting several, as brightly as the most it came to), stops where a flinch
+    or a dodge cuts it short, and waits while the fight waits. None is drawn through the eyes. Brightness and trail
+    are set.
   - *Hit-stop.* As a blow lands, its striker and the one struck hold still (a block 0.05 s, a hit 0.075 s, a parry
     0.08 s, a stagger 0.09 s, a guard broken 0.11 s, a kill 0.14 s; a blow that harms nothing, or a shot, holds
     nothing), from the frame after it lands, so the landing is what holds; the one struck shudders. Then they catch
@@ -140,8 +141,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   - *Camera kick.* The player's blow landing punches the view down and along the stroke and shakes it a little, harder
     for a kill, a stagger or a guard broken; a blow of theirs stopped by a guard knocks the view back; a blow landing
     on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. A
-    blow's hit and the kill it made punch once; a shot kicks nothing; while a crosshair shows, the kick moves the view
-    but never turns it, so the crosshair stays where shots land. Its strength is set.
+    blow's hit and the kill it made punch once, as does one stroke however many it strikes, as hard as the hardest; a
+    shot kicks nothing; while a crosshair shows, the kick moves the view but never turns it, so the crosshair stays
+    where shots land. Its strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
 - **The crosshair.** While a ranged weapon aims, and whenever one is drawn in first person, a crosshair marks the
@@ -157,7 +159,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   nearest living Boss alert or struck, the boss bar: its level, name and faction, "Phase n of 3", and its health in
   yellow marked at 2/3 and 1/3 ([[Enemies]]); words on a dark chip over whoever was struck for each blow and what it
   came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Slain, a foe's Feint),
-  gold or green when it is good for the player and red when bad; in first person, words about the player under the
+  gold or green when it is good for the player and red when bad, those said together (a stroke over each foe it
+  struck) each standing clear of the rest; in first person, words about the player under the
   crosshair; an arrow at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a
   foe at a blow at the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once
   a press of the guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or
