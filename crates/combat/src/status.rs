@@ -208,6 +208,20 @@ pub(crate) fn held_still(fighter: &mut Fighter) {
     }
 }
 
+/// A fighter freed of what its foes gave it: its Expose, its Charge with the stagger it holds, and the immunity after
+/// one. A foe walking home sheds them, so its next fight is fresh.
+#[must_use]
+pub fn cleansed(fighter: &Fighter) -> Fighter {
+    let mut next = *fighter;
+    next.statuses.held[Status::Expose as usize] = Given::default();
+    next.statuses.held[Status::Charge as usize] = Given::default();
+    next.statuses.charge_immune = 0;
+    if matches!(next.action, Action::Staggered { cause: Cause::Charged, .. }) {
+        next.action = Action::Idle;
+    }
+    next
+}
+
 /// Whether a blow is a crit: marked one, struck while its striker has Crit, or a swing landing within `BACKSTAB` of its
 /// defender's back while its striker is Veiled.
 #[must_use]

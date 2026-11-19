@@ -365,6 +365,9 @@ impl Room {
             if calls.refill_poise {
                 fighter.poise = 0.0;
             }
+            if calls.cleanse {
+                fighter = combat::status::cleansed(&fighter);
+            }
             if calls.heal > 0.0 {
                 fighter.health = (fighter.health + calls.heal).min(fighter.health_max);
             }

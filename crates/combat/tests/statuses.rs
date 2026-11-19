@@ -188,6 +188,21 @@ fn waits_out(held: Fighter, ticks: u32, action_ticks: u32) {
 }
 
 #[test]
+fn a_fighter_cleansed_sheds_its_expose_and_its_charge_with_the_stagger_and_immunity_it_brings() {
+    let foe = given(&given(&foe_at(0.0, 0.0, 0.0), Status::Haste, 360), Status::Expose, 360);
+    let charged = given(&foe, Status::Charge, charge_ticks(1));
+    let clean = combat::status::cleansed(&charged);
+    assert!(!clean.statuses.has(Status::Expose) && !clean.statuses.has(Status::Charge));
+    assert_eq!(clean.action, Action::Idle, "the Charge's stagger ends with it");
+    assert!(clean.statuses.has(Status::Haste), "what it was given for itself it keeps");
+    let mut immune = foe;
+    immune.statuses.charge_immune = 90;
+    immune.action = Action::Staggered { left: 30, cause: Cause::Poise };
+    let clean = combat::status::cleansed(&immune);
+    assert_eq!((clean.statuses.charge_immune, clean.action), (0, immune.action), "another stagger stays");
+}
+
+#[test]
 fn a_charge_waits_out_a_reload_an_overreach_a_fall_or_another_stagger_then_holds_its_whole_time() {
     let reloading = Fighter { action: Action::Reload { left: 40 }, ..player_at(0.0, 0.0) };
     waits_out(reloading, charge_ticks(1), 40);

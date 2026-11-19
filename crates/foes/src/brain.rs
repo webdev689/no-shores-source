@@ -35,14 +35,15 @@ pub const SAMPLE_TICKS: u64 = 15;
 pub const SAMPLES: usize = (HURT_WINDOW * 60.0) as usize / SAMPLE_TICKS as usize + 1;
 
 /// What a foe's brain asks of its room beyond its fighter's controls: its poise refilled and the foes its phase calls,
-/// as it roars into a new phase; its shout as it turns alert, passing its allies the place it believes its foe is; and
-/// the health it gets back this tick, walking back to its post.
+/// as it roars into a new phase; its shout as it turns alert, passing its allies the place it believes its foe is; the
+/// health it gets back this tick, walking back to its post; and its Expose and Charge shed as it turns home.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Calls {
     pub refill_poise: bool,
     pub crew: Option<Call>,
     pub shout: Option<[f64; 3]>,
     pub heal: f64,
+    pub cleanse: bool,
 }
 
 /// A garrison foe's place at its post and the way it faces there.
