@@ -19,6 +19,8 @@ export const PULL_SHARE = 0.012;
 const PLATE_DROP_M = 0.03;
 /** How dark a ruin's walls are scorched at their break: a share of their light taken. */
 const SCORCH = 0.78;
+/** How far under its break a ruin's wall edge falls at most, metres, so the break is ragged. */
+const JAG_M = 3;
 
 const VIEW = /* wgsl */ `
 ${SHARED_WGSL}
@@ -120,6 +122,15 @@ struct Surface {
   @location(6) ruin: vec2f,
 };
 
+// A broken wall's edge: how far under the break it has fallen at a point, 0 to 1, the same over each 1.5 m square.
+fn jagged(point: vec3f) -> f32 {
+  let square = vec2i(floor(point.xy / 1.5));
+  var mixed = (u32(square.x) * 0x9e3779b1u) ^ (u32(square.y) * 0x85ebca77u);
+  mixed = (mixed ^ (mixed >> 15u)) * 0x2c1b3c6du;
+  mixed = mixed ^ (mixed >> 12u);
+  return f32(mixed & 1023u) / 1023.0;
+}
+
 @fragment
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
@@ -130,7 +141,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   // above its break a ruin's building is gone, and so are its floors and ceilings in its upper part, which would
   // otherwise read as a roof from above
   let slab = abs(normalize(surface.normal).z) > 0.9 && surface.ruin.x > 0.25 * surface.ruin.y;
-  if broken && (surface.ruin.x > surface.ruin.y || slab) {
+  let jag = ${JAG_M} * jagged(surface.from_eye + view.eye.xyz);
+  if broken && (surface.ruin.x > surface.ruin.y - jag || slab) {
     discard;
   }
   // a ruin's open shell is drawn from inside too, lit from the side seen
