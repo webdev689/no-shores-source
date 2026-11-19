@@ -1,7 +1,7 @@
 import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
-import { type Orbit, REVERSED_DEPTH, viewProjection } from '../editor/orbit.ts';
-import { MARK_FLOATS } from '../combat/marks.ts';
+import { type Orbit, REVERSED_DEPTH, cameraOf, viewProjection } from '../editor/orbit.ts';
+import { MarkDraw } from '../combat/markDraw.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
 import { SWING_ATTRIBUTES, SWING_WGSL } from '../combat/swingLook.ts';
 import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
@@ -57,21 +57,6 @@ fn gridLine(world: vec2f, spacing: f32) -> f32 {
   colour = mix(colour, vec3f(1.0, 0.85, 0.2), scene.marker.w * (1.0 - min(ring / 2.0, 1.0)));
   let fog = clamp(length(in.world - scene.eye.xy) / 1200.0, 0.0, 1.0);
   return vec4f(mix(colour, SKY, fog * fog), 1.0);
-}
-
-struct MarkOut { @builtin(position) position: vec4f, @location(0) colour: vec4f }
-
-@vertex fn markVertex(@location(0) position: vec3f, @location(1) colour: vec4f) -> MarkOut {
-  var out: MarkOut;
-  out.position = scene.viewProjection * vec4f(position, 1.0);
-  out.colour = colour;
-  return out;
-}
-
-// An opacity below none marks light added to what stands behind (a drop's line): its colour, covering nothing.
-@fragment fn markFragment(in: MarkOut) -> @location(0) vec4f {
-  if (in.colour.a < 0.0) { return vec4f(in.colour.rgb, 0.0); }
-  return vec4f(in.colour.rgb * in.colour.a, in.colour.a);
 }
 
 @vertex fn swingVertex(
@@ -161,9 +146,8 @@ export class SceneView implements CardMaker {
   private readonly cardLayout: GPUBindGroupLayout;
   private readonly blockPipeline: GPURenderPipeline;
   private blockVertices: { buffer: GPUBuffer; count: number } | null = null;
-  private readonly markPipeline: GPURenderPipeline;
-  private markBuffer: GPUBuffer | null = null;
-  private markCount = 0;
+  private readonly marks: MarkDraw;
+  private markVertices: Float32Array = new Float32Array(0);
   private readonly swingPipeline: GPURenderPipeline;
   private swingBuffer: GPUBuffer | null = null;
   private swingCount = 0;
@@ -220,39 +204,8 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil,
     });
-    // Marks lie over the ground, blended, tested against the scene's depth but writing none, so figures stand over
-    // them and they never hide one another.
-    this.markPipeline = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
-      vertex: {
-        module,
-        entryPoint: 'markVertex',
-        buffers: [
-          {
-            arrayStride: MARK_FLOATS * 4,
-            attributes: [
-              { shaderLocation: 0, offset: 0, format: 'float32x3' },
-              { shaderLocation: 1, offset: 12, format: 'float32x4' },
-            ],
-          },
-        ],
-      },
-      fragment: {
-        module,
-        entryPoint: 'markFragment',
-        targets: [
-          {
-            format: gpu.format,
-            blend: {
-              color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-              alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' },
-            },
-          },
-        ],
-      },
-      primitive: { topology: 'triangle-list' },
-      depthStencil: { ...depthStencil, depthWriteEnabled: false },
-    });
+    // The fight's marks: the solid ones writing depth with the figures, the see-through ones after them.
+    this.marks = new MarkDraw(gpu, 1);
     // Swings' streaks the same way, over everything, each pixel of them solid.
     this.swingPipeline = device.createRenderPipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
@@ -295,8 +248,7 @@ export class SceneView implements CardMaker {
 
   /** The marks the next frames draw: telegraphed blows on the ground and shots in flight, as `marksMesh` lays them. */
   setMarks(vertices: Float32Array): void {
-    this.markCount = vertices.length / MARK_FLOATS;
-    this.markBuffer = this.written(this.markBuffer, vertices);
+    this.markVertices = vertices;
   }
 
   /** The swings' streaks the next frames draw, as `SwingArcs` lays them. */
@@ -507,17 +459,14 @@ export class SceneView implements CardMaker {
       pass.setBindGroup(1, group);
       pass.draw(6);
     });
+    this.marks.set(this.markVertices, cameraOf(orbit).eye);
+    this.marks.drawSolid(pass, seen);
     // A Veiled figure's weapon shows no outline: it is all but unseen.
     const glowing = drawn.filter(({ card, veiled }) => card.glow && !veiled);
     const metres = 1 / PX_PER_M;
     const glows = glowing.map(({ card, x, y, z, flip, surge }) => ({ card, x, y, z, flip, metres, surge }));
     this.glows.draw(pass, seen, right, performance.now() / 1000, glows);
-    if (this.markBuffer && this.markCount > 0) {
-      pass.setPipeline(this.markPipeline);
-      pass.setBindGroup(0, this.sceneGroup);
-      pass.setVertexBuffer(0, this.markBuffer);
-      pass.draw(this.markCount);
-    }
+    this.marks.drawClear(pass, seen);
     if (this.swingBuffer && this.swingCount > 0) {
       pass.setPipeline(this.swingPipeline);
       pass.setBindGroup(0, this.sceneGroup);

@@ -1,7 +1,9 @@
-import { glowRampAt } from '../elementGlow.ts';
+import { GLOW_RAMPS } from '../elementGlow.ts';
 import type { FlyingShot } from '../network/messages.ts';
+import { PX_PER_M } from '../player/figures.ts';
 import type { Spark } from './sparks.ts';
 import type { Action, Shape } from '../rules/fighters.ts';
+import { IRON, rampOf } from './markSprites.ts';
 
 /** A telegraphed blow's mark: its shape where it stands, how far its wind-up has run, and whether it is iron. */
 export type TelegraphMark = Extract<Action, { kind: 'telegraph' }>;
@@ -17,35 +19,44 @@ const GROUND: Readonly<Record<Shape, { length: number; width: number; inner: num
   leap: { length: 0, width: 1.8, inner: 0, halfArc: 0 },
   aimed: { length: 0, width: 0.25, inner: 0, halfArc: 0 },
 };
-/** A mark's colours: a plain blow's gold and an iron one's red, its fill's opacity, its edge's opacity and width, and
- *  how much brighter its last stretch is (the last 12 ticks, 0.2 s, as the combat crate's NOW). */
-const GOLD = [1, 0.74, 0.22] as const;
-const IRON = [0.95, 0.16, 0.1] as const;
-const FILL = 0.28;
-const EDGE = 0.75;
-const EDGE_M = 0.06;
+/** A plain blow's mark's ramp, dark to white-hot (an iron one's is the display's iron red, `IRON`). */
+const GOLD = rampOf('#4a2a06', '#c8901e', '#ffd95a', '#fff6d0');
+/** The ground's cells a mark is dithered in: four of a figure's pixels, so its dots read as dots across a fight. */
+export const DITHER_M = 4 / PX_PER_M;
+/** A mark's fill is this share of its cells, and this share in its last stretch (the last 12 ticks, 0.2 s, as the
+ *  combat crate's NOW), whose first ticks light its edge white-hot. */
+const FILL = 0.25;
+const FILL_NOW = 0.5;
 const NOW_TICKS = 12;
-const NOW_BRIGHTER = 1.6;
+const NOW_HOT_TICKS = 3;
+/** Its edge: a bright band four figure pixels wide inside its ground and a dark line two wide outside it, raised over
+ *  the fill so the two never fight for depth. */
+const EDGE_M = 4 / PX_PER_M;
+const OUTLINE_M = 2 / PX_PER_M;
+const EDGE_LIFT = 0.006;
 /** An iron blow's edge is drawn twice, the second this far inside the first: its shape says iron, not its colour alone,
  *  for those who cannot tell red from gold. */
 const IRON_INSET = 0.2;
 /** How far above the ground a mark lies, so it never fights the ground for depth. */
 const LIFT = 0.03;
-/** An arrow's length and thickness, its colour, and the steps a curve is drawn in. */
+/** An arrow's length and thickness, the share of it its head and its fletching take, and their colours. */
 const ARROW_M = 0.75;
 const ARROW_THICK = 0.035;
-const ARROW_COLOUR = [0.52, 0.38, 0.22, 1] as const;
-/** A spark's streak: as long as this much of its flight (seconds), this thick (metres), white hot cooling to orange,
- *  or down its element's ramp. */
+const ARROW_HEAD = 0.1;
+const ARROW_FLETCH = 0.2;
+const ARROW_COLOURS = { shaft: [0.52, 0.38, 0.22], head: [0.81, 0.88, 1], fletch: [0.93, 0.9, 0.82] } as const;
+/** A spark's streak: as long as this much of its flight (seconds), two of a figure's pixels thick, stepping down
+ *  steel's sparks' ramp (white-hot, yellow, orange, ember) or its element's as it cools. */
 const SPARK_STREAK_S = 0.03;
-const SPARK_THICK = 0.012;
-const SPARK_HOT = [1, 0.92, 0.6] as const;
-const SPARK_COOL = [1, 0.38, 0.06] as const;
+const SPARK_THICK = 2 / PX_PER_M;
+const SPARK_RAMP = rampOf('#7a2a08', '#ff7a1e', '#ffd860', '#fffbe8');
 /** An element's mote is a streak at least this long (metres), so a slow one still shows. */
-const MOTE_M = 0.025;
+const MOTE_M = 0.04;
 const CURVE_STEPS = 24;
 /** Each vertex's numbers: x, y, z, then red, green, blue, opacity. */
 export const MARK_FLOATS = 7;
+/** A mark dithered whole on the ground, `share` of its cells kept: its opacity's code, above 1. */
+export const ditherCode = (share: number): number => 1 + Math.min(1, Math.max(0, share));
 
 type Point = readonly [number, number];
 
@@ -63,12 +74,11 @@ export function marksMesh(
   for (const telegraph of telegraphs) markTelegraph(out, telegraph);
   for (const shot of shots) markArrow(out, shot.at, shot.velocity);
   for (const { at, velocity, age, life, look } of sparks) {
-    const cooled = Math.min(1, age / life);
-    const colour = look
-      ? glowRampAt(look, cooled)
-      : [0, 1, 2].map((part) => (SPARK_HOT[part] ?? 1) + ((SPARK_COOL[part] ?? 1) - (SPARK_HOT[part] ?? 1)) * cooled);
+    // Each spark cools a whole stop at a time, solid until it is spent.
+    const stop = 3 - Math.min(3, Math.floor((age / life) * 4));
+    const colour = (look ? GLOW_RAMPS[look] : SPARK_RAMP)[stop] ?? SPARK_RAMP[0];
     const length = Math.max(look ? MOTE_M : 0, Math.hypot(...velocity) * SPARK_STREAK_S);
-    markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1 - cooled * cooled]);
+    markStreak(out, at, velocity, length, SPARK_THICK, [...colour, 1]);
   }
   for (const value of more) out.push(value);
   for (let start = 0; start < out.length; start += MARK_FLOATS)
@@ -79,71 +89,86 @@ export function marksMesh(
 function markTelegraph(out: number[], telegraph: TelegraphMark): void {
   const ground = GROUND[telegraph.shape];
   const progress = Math.min(1, telegraph.elapsed / Math.max(1, telegraph.windup));
-  const now = telegraph.windup - telegraph.elapsed <= NOW_TICKS ? NOW_BRIGHTER : 1;
-  const [red, green, blue] = telegraph.iron ? IRON : GOLD;
-  const fill = [red, green, blue, Math.min(1, FILL * now)] as const;
-  const edge = [red, green, blue, Math.min(1, EDGE * now)] as const;
+  const left = telegraph.windup - telegraph.elapsed;
+  const now = left <= NOW_TICKS;
+  const hot = now && left > NOW_TICKS - NOW_HOT_TICKS;
+  const ramp = telegraph.iron ? IRON : GOLD;
+  const fill = [...ramp[2], ditherCode(now ? FILL_NOW : FILL)] as const;
+  const bright = [...ramp[hot ? 3 : 2], 1] as const;
+  const dark = [...ramp[0], 1] as const;
   const [originX, originY, originZ] = telegraph.origin;
   const forward: Point = [Math.sin(telegraph.bearing), -Math.cos(telegraph.bearing)];
   const across: Point = [-forward[1], forward[0]];
-  // A point `along` ahead of the origin and `aside` across, on the ground.
-  const onGround = (along: number, aside: number): [number, number, number] => [
+  // A point `along` ahead of the origin and `aside` across, on the ground; an edge is raised over the fill.
+  const onGround = (along: number, aside: number, lift = LIFT): [number, number, number] => [
     originX + forward[0] * along + across[0] * aside,
     originY + forward[1] * along + across[1] * aside,
-    originZ + LIFT,
+    originZ + lift,
   ];
   const quad = (corners: readonly (readonly [number, number, number])[], colour: readonly number[]) => {
     const [first, second, third, fourth] = corners;
     if (!first || !second || !third || !fourth) return;
     for (const corner of [first, second, third, first, third, fourth]) out.push(...corner, ...colour);
   };
-  const insets = telegraph.iron ? [0, IRON_INSET] : [0];
-  const lane = (length: number, width: number) => {
+  const raised = LIFT + EDGE_LIFT;
+  // A strip of edge from `from` to `to` along the lane, between two asides.
+  const strip = (from: number, to: number, aside: number, other: number, colour: readonly number[]) =>
     quad(
       [
-        onGround(-0.3, -width),
-        onGround(-0.3 + (length + 0.3) * progress, -width),
-        onGround(-0.3 + (length + 0.3) * progress, width),
-        onGround(-0.3, width),
+        onGround(from, aside, raised),
+        onGround(to, aside, raised),
+        onGround(to, other, raised),
+        onGround(from, other, raised),
       ],
-      fill,
+      colour,
     );
+  const insets = telegraph.iron ? [0, IRON_INSET] : [0];
+  const lane = (length: number, width: number) => {
+    const far = -0.3 + (length + 0.3) * progress;
+    quad([onGround(-0.3, -width), onGround(far, -width), onGround(far, width), onGround(-0.3, width)], fill);
     for (const inset of insets) {
       // A narrow lane's second edge keeps to its own half.
       const side = width - Math.min(inset, width / 2);
       const end = length - inset;
-      quad(
-        [onGround(-0.3, -side), onGround(end, -side), onGround(end, -side + EDGE_M), onGround(-0.3, -side + EDGE_M)],
-        edge,
-      );
-      quad(
-        [onGround(-0.3, side - EDGE_M), onGround(end, side - EDGE_M), onGround(end, side), onGround(-0.3, side)],
-        edge,
-      );
-      quad(
-        [onGround(end - EDGE_M, -side), onGround(end, -side), onGround(end, side), onGround(end - EDGE_M, side)],
-        edge,
-      );
+      for (const sign of [-1, 1]) {
+        strip(-0.3, end, sign * side, sign * (side - EDGE_M), bright);
+        strip(-0.3, end + OUTLINE_M, sign * side, sign * (side + OUTLINE_M), dark);
+      }
+      strip(end - EDGE_M, end, -side, side, bright);
+      strip(end, end + OUTLINE_M, -side, side, dark);
     }
   };
-  // A band of the circle about (ahead, 0) from radius `inner` to `outer`, between two angles off the bearing.
-  const band = (ahead: number, inner: number, outer: number, from: number, to: number, colour: readonly number[]) => {
+  // A band of the circle about (ahead, 0) between two radii and two angles off the bearing.
+  const band = (
+    ahead: number,
+    [inner, outer]: readonly [number, number],
+    [from, to]: readonly [number, number],
+    colour: readonly number[],
+    lift = LIFT,
+  ) => {
     for (let step = 0; step < CURVE_STEPS; step += 1) {
       const [first, second] = [
         from + ((to - from) * step) / CURVE_STEPS,
         from + ((to - from) * (step + 1)) / CURVE_STEPS,
       ];
       const point = (radius: number, angle: number) =>
-        onGround(ahead + Math.cos(angle) * radius, Math.sin(angle) * radius);
+        onGround(ahead + Math.cos(angle) * radius, Math.sin(angle) * radius, lift);
       quad([point(inner, first), point(outer, first), point(outer, second), point(inner, second)], colour);
     }
   };
-  // An edge band inside radius `outer` (and its iron double further in), or outside `inner`.
-  const edgeIn = (ahead: number, outer: number, from: number, to: number) => {
-    for (const inset of insets) band(ahead, outer - EDGE_M - inset, outer - inset, from, to, edge);
+  // The edge inside radius `outer` (and its iron double further in), its dark line outside it.
+  const edgeIn = (ahead: number, outer: number, arc: readonly [number, number]) => {
+    for (const inset of insets) {
+      band(ahead, [outer - inset - EDGE_M, outer - inset], arc, bright, raised);
+      band(ahead, [outer - inset, outer - inset + OUTLINE_M], arc, dark, raised);
+    }
   };
+  // The edge outside radius `inner`, its dark line inside it.
   const edgeOut = (inner: number) => {
-    for (const inset of insets) band(0, inner + inset, inner + inset + EDGE_M, -Math.PI, Math.PI, edge);
+    for (const inset of insets) {
+      band(0, [inner + inset, inner + inset + EDGE_M], WHOLE, bright, raised);
+      band(0, [inner + inset - OUTLINE_M, inner + inset], WHOLE, dark, raised);
+    }
   };
   switch (telegraph.shape) {
     case 'lunge':
@@ -154,27 +179,50 @@ function markTelegraph(out: number[], telegraph: TelegraphMark): void {
       lane(telegraph.ahead, ground.width);
       break;
     case 'sweep':
-      band(0, 0, ground.length * progress, -ground.halfArc, ground.halfArc, fill);
-      edgeIn(0, ground.length, -ground.halfArc, ground.halfArc);
+      band(0, [0, ground.length * progress], [-ground.halfArc, ground.halfArc], fill);
+      edgeIn(0, ground.length, [-ground.halfArc, ground.halfArc]);
       break;
     case 'ring':
-      band(0, ground.length - (ground.length - ground.inner) * progress, ground.length, -Math.PI, Math.PI, fill);
+      band(0, [ground.length - (ground.length - ground.inner) * progress, ground.length], WHOLE, fill);
       edgeOut(ground.inner);
-      edgeIn(0, ground.length, -Math.PI, Math.PI);
+      edgeIn(0, ground.length, WHOLE);
       break;
     case 'slam':
     case 'leap': {
       const ahead = telegraph.shape === 'slam' ? ground.length : telegraph.ahead;
-      band(ahead, 0, ground.width * progress, -Math.PI, Math.PI, fill);
-      edgeIn(ahead, ground.width, -Math.PI, Math.PI);
+      band(ahead, [0, ground.width * progress], WHOLE, fill);
+      edgeIn(ahead, ground.width, WHOLE);
       break;
     }
   }
 }
 
-/** An arrow or a bolt flying at `velocity`, its head at `at`. */
+/** A whole turn, from straight behind round to straight behind. */
+const WHOLE = [-Math.PI, Math.PI] as const;
+
+/** An arrow or a bolt flying at `velocity`, its head at `head`: a steel head, a wooden shaft and pale fletching. */
 export function markArrow(out: number[], head: readonly number[], velocity: readonly number[]): void {
-  markStreak(out, head, velocity, ARROW_M, ARROW_THICK, ARROW_COLOUR);
+  const speed = Math.hypot(velocity[0] ?? 0, velocity[1] ?? 0, velocity[2] ?? 0) || 1;
+  const back = (share: number) =>
+    [0, 1, 2].map((axis) => (head[axis] ?? 0) - ((velocity[axis] ?? 0) / speed) * ARROW_M * share);
+  const { head: steel, shaft, fletch } = ARROW_COLOURS;
+  markStreak(out, head, velocity, ARROW_M * ARROW_HEAD, ARROW_THICK, [...steel, 1]);
+  markStreak(out, back(ARROW_HEAD), velocity, ARROW_M * (1 - ARROW_HEAD - ARROW_FLETCH), ARROW_THICK / 2, [
+    ...shaft,
+    1,
+  ]);
+  markStreak(out, back(1 - ARROW_FLETCH), velocity, ARROW_M * ARROW_FLETCH, ARROW_THICK * 1.5, [...fletch, 1]);
+}
+
+/** An arrow or a bolt stuck where it stopped at `place`, flying `way`: its head sunk out of sight, its shaft and
+ *  fletching standing out behind. */
+export function markStuckArrow(out: number[], place: readonly number[], way: readonly number[]): void {
+  const shown = 1 - ARROW_HEAD - ARROW_FLETCH;
+  const { shaft, fletch } = ARROW_COLOURS;
+  const length = Math.hypot(way[0] ?? 0, way[1] ?? 0, way[2] ?? 0) || 1;
+  const tail = [0, 1, 2].map((axis) => (place[axis] ?? 0) - ((way[axis] ?? 0) / length) * ARROW_M * shown);
+  markStreak(out, place, way, ARROW_M * shown, ARROW_THICK / 2, [...shaft, 1]);
+  markStreak(out, tail, way, ARROW_M * ARROW_FLETCH, ARROW_THICK * 1.5, [...fletch, 1]);
 }
 
 /** A streak `length` long behind a point flying at `velocity` (an arrow, a bolt, a spark): two crossed strips `thick`

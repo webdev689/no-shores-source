@@ -24,6 +24,19 @@ const drop = (fields: Partial<GearDrop>): GearDrop => ({
 /** How many pixels a picture fills. */
 const filled = (rows: readonly string[]) => rows.join('').replaceAll('.', '').length;
 
+/** The area mark triangles cover, square metres. */
+function covered(marks: readonly number[]): number {
+  let area = 0;
+  for (let start = 0; start + 3 * MARK_FLOATS <= marks.length; start += 3 * MARK_FLOATS) {
+    const value = (vertex: number, axis: number) => marks[start + vertex * MARK_FLOATS + axis] ?? 0;
+    const [first, second] = [1, 2].map((vertex) => [0, 1, 2].map((axis) => value(vertex, axis) - value(0, axis)));
+    const [east = 0, south = 0, up = 0] = first ?? [];
+    const [east2 = 0, south2 = 0, up2 = 0] = second ?? [];
+    area += Math.hypot(south * up2 - up * south2, up * east2 - east * up2, east * south2 - south * east2) / 2;
+  }
+  return area;
+}
+
 test('a drop leaves the body high, arcs up, bounces twice and rests where the room threw it in about 0.6 s', () => {
   const start = flightAt(FROM, REST, 0);
   assert.ok(Math.abs(start.at[2] - 0.8) < 1e-9 && !start.resting, 'it leaves from the body, 0.8 m up');
@@ -58,9 +71,14 @@ test('each drop stands as its own picture: a Vestige in its rarity, an Ammo box 
 
 test('in flight a drop is its picture alone; at rest its line rises, a rarer one taller, ammo white', () => {
   const shown = new DropsShown();
-  const pixels = filled(VESTIGE_ROWS) * 6 * MARK_FLOATS;
   const flying = shown.frame([drop({ rarity: 4 })], 10, EYE);
-  assert.equal(flying.marks.length, pixels, 'no line while it flies');
+  const pixels = flying.marks.length;
+  assert.ok(pixels < filled(VESTIGE_ROWS) * 6 * MARK_FLOATS, 'its runs of one colour, fewer quads than pixels');
+  const area = covered(flying.marks);
+  assert.ok(
+    Math.abs(area - filled(VESTIGE_ROWS) * PIXEL_M ** 2) < 1e-6,
+    `every pixel, none twice and no line: ${area}`,
+  );
   const rested = shown.frame([drop({ rarity: 4 })], 10 + FLIGHT_S + RISE_S, EYE);
   assert.equal(rested.marks.length - pixels, 12 * 2 * 6 * MARK_FLOATS, 'the line in twelve steps, either side');
   const line = rested.marks.slice(pixels);
@@ -69,7 +87,8 @@ test('in flight a drop is its picture alone; at rest its line rises, a rarer one
   assert.ok(Math.abs(Math.max(...(tops as number[])) - (crown + LINE_M[4])) < 1e-9, "an Atheric's 2.5 m");
   assert.equal(line[6], -1, 'its light is added to what stands behind');
   const ammo = new DropsShown().frame([drop({ kind: DROPPED.ammoBox, flying: 0 })], 0, EYE).marks;
-  const light = ammo.slice(filled(AMMO_BOX.rows) * 6 * MARK_FLOATS);
+  const box = new DropsShown().frame([drop({ kind: DROPPED.ammoBox })], 0, EYE).marks.length;
+  const light = ammo.slice(box);
   const lit = Array.from({ length: light.length / MARK_FLOATS }, (unused, vertex) =>
     light.slice(vertex * MARK_FLOATS + 3, vertex * MARK_FLOATS + 6),
   ).filter(([red = 0]) => red > 0);

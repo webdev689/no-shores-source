@@ -12,10 +12,13 @@ import { frameOf, fromEyeMatrix, type Shot } from './camera.ts';
 
 /** Anything else drawn with the land, into the same pass: a city, its nature, the figures. Its points are measured
  *  from the eye, which it is handed in world metres. One that casts shadows draws them first, into the sun's map
- *  (`castInto`), and every one is handed the map to receive them. */
+ *  (`castInto`), and every one is handed the map to receive them; one may draw again over the water (`overWater`). */
 export interface Drawer {
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
   castInto?(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void;
+  /** Draws over the finished picture `target`, after the water, tested against the scene's `depth` (one float a pixel,
+   *  reversed) by hand: what is seen through and must not be covered by the water laid over the land. */
+  overWater?(encoder: GPUCommandEncoder, target: GPUTextureView, fromEye: Float32Array, depth: GPUTexture): void;
 }
 
 /** Where the exact ground round a point comes from: the land worker's sampler. */
@@ -246,6 +249,7 @@ export class GameScene {
       drawn: targets,
       target,
     });
+    for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
     more.after?.(encoder, target);
     this.gpu.device.queue.submit([encoder.finish()]);
   }

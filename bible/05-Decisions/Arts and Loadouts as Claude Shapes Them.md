@@ -192,6 +192,31 @@ from its light, gold `#4a2a06 #c8901e #ffd95a #fff6d0`), held steps, no soft fad
   frames and 1.15 for 2, rising 4 px every 4 frames, blinking out over the last 6; standing at the blow, its near edge
   thrown 28 px the way the stroke went (a crit's or a kill's 56), 24 px clear of every plate and clear of each other; a
   foe's blows within 0.6 s add up.
+- **A gun's shot**, in black powder's stops (Blaze's, `#4a1606 #ff7a2a #ffd36a #fff4d6`): frame 1 a star of 9 by 9
+  cells at the muzzle, 0.6 m across for a pistolet and 0.9 m for a thunderlock; frame 2 the star at 0.7 and three
+  tongues of flame along the barrel, 0.9 m (1.2 m); frames 3 and 4 six sparks thrown ahead; the ground under it lit
+  in three steps for the first two frames. From frame 3, five puffs of pale grey smoke (`#2b2b2b #5e5e5e #9a9a9a
+  #d0d0d0`), 0.12 to 0.3 m across, rise 0.8 m/s and drift the shot's way for 1.2 s, keeping 60%, 40%, 25% and 10%
+  of their cells by quarters, so the shot's mark is never hidden for long. Each size is held to a quarter radian of
+  the view, so in first person, an arm's length off, the star is about a tenth of a metre; smoke within 1.8 m of the
+  eye is left out.
+- **Tracers**: solid stops, never faded: a ball's white-hot core in a powder-orange glow, an arrow's white core in
+  dark steel, each at least 2 and 4 pixels wide at 720p however far and at most about 6 and 12 near the eye (a first
+  person's muzzle); a ball's head a 3 by 3 glint racing out with a
+  6 m streak and a thin trace back to the muzzle; once there it breaks into 0.35 m pieces, keeping 3, 2 and 1 in 4
+  by quarters of 0.32 s. An arrow's trail keeps its newest half whole and breaks up toward its tail.
+- **Where a shot stops**: a ball flashes a 0.3 m star for 2 frames; a body takes a star 0.35 m (powder for a ball,
+  steel for an arrow) for 3 frames; the ground throws dust and keeps a ball's hole for 8 s; stone throws chips and 10
+  sparks; the sea throws a 0.6 m splash and a ring. An arrow sticks where it stops for 8 s, in a body until the body
+  is gone; the 24 newest are kept. Sparks are two figure pixels thick and cool a whole stop at a time.
+- **A foe's telegraphed blow**: its fill a quarter of its cells (4 figure pixels square), dithered whole on the ground
+  in the mark's light stop, a half in its last 12 ticks, whose first 3 light its edge white-hot; its edge 4 figure
+  pixels wide with a dark line 2 wide outside it; gold `#4a2a06 #c8901e #ffd95a #fff6d0`, iron red `#3a0806 #a01a10
+  #e0281c #ffd8c8`. At 80% of a wind-up, a telegraphed blow's or a plain swing's, a 5 by 5 star of steel flashes on the
+  foe's weapon for 4 ticks (white-hot, then a stop cooler), red for an iron blow; an iron blow's foe is outlined iron
+  red for its last 12 ticks.
+- **How the marks are drawn**: solid marks write depth, so a near blade hides a far one; the see-through rest is
+  drawn after them, far to near, and in the game after the water, so the water near a coast never covers them.
 
 ## Perks
 

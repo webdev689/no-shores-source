@@ -75,13 +75,82 @@ export function flightAt(from: Point, rest: Point, seconds: number): { readonly 
 export function pictureOf(drop: Pick<GearDrop, 'kind' | 'rarity'>): PixelPicture {
   if (drop.kind === DROPPED.ammoBox) return AMMO_BOX;
   if (drop.kind === DROPPED.crate) return AMMO_CRATE;
-  return vestigePicture(drop.rarity);
+  return VESTIGES[drop.rarity] ?? VESTIGES[0] ?? vestigePicture(drop.rarity);
 }
+
+/** Each rarity's Vestige, made once. */
+const VESTIGES: readonly PixelPicture[] = RARITIES.map((unused, rarity) => vestigePicture(rarity));
 
 /** A colour written `#rrggbb` as red, green and blue from 0 to 1. */
 function rgbOf(hex: string): [number, number, number] {
   const value = Number.parseInt(hex.slice(1), 16);
   return [(value >> 16) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
+}
+
+/** Each rarity's line colour, read once. */
+const LINE_COLOURS = RARITIES.map((rarity) => rgbOf(rarity.colour));
+
+/** The numbers of a run of one colour along a picture's rows (as many rows as repeat it): its left and right (metres
+ *  off its middle), its foot and its top (metres over the ground), and its red, green and blue. */
+const RUN = 7;
+const runsKept = new WeakMap<PixelPicture, readonly number[]>();
+
+/** A picture's runs, worked out the first time it is laid. */
+function runsOf(picture: PixelPicture): readonly number[] {
+  const kept = runsKept.get(picture);
+  if (kept) return kept;
+  const colours = picture.colours.map(rgbOf);
+  const width = picture.rows[0]?.length ?? 0;
+  const runs: number[] = [];
+  // A run open from the row above, by its columns and letter: where its foot is in `runs`.
+  let open = new Map<string, number>();
+  picture.rows.forEach((row, line) => {
+    const foot = (picture.rows.length - line - 1) * PIXEL_M + LIFT_M;
+    const next = new Map<string, number>();
+    for (let column = 0; column < row.length;) {
+      const letter = row[column] ?? '';
+      let end = column + 1;
+      while (end < row.length && row[end] === letter) end++;
+      const colour = colours['abcdef'.indexOf(letter)];
+      const key = `${column}:${end}:${letter}`;
+      const above = open.get(key);
+      if (colour && above !== undefined) {
+        // The same run as the row above: that one reaches down to here.
+        runs[above] = foot;
+        next.set(key, above);
+      } else if (colour) {
+        next.set(key, runs.length + 2);
+        runs.push((column - width / 2) * PIXEL_M, (end - width / 2) * PIXEL_M, foot, foot + PIXEL_M, ...colour);
+      }
+      column = end;
+    }
+    open = next;
+  });
+  runsKept.set(picture, runs);
+  return runs;
+}
+
+/** Writes a mark vertex into `out` at `index`, by index rather than pushed (a frame lays tens of thousands), and answers
+ *  where the next goes. */
+function put(
+  out: number[],
+  index: number,
+  east: number,
+  south: number,
+  up: number,
+  red: number,
+  green: number,
+  blue: number,
+  opacity: number,
+): number {
+  out[index] = east;
+  out[index + 1] = south;
+  out[index + 2] = up;
+  out[index + 3] = red;
+  out[index + 4] = green;
+  out[index + 5] = blue;
+  out[index + 6] = opacity;
+  return index + 7;
 }
 
 /** The way across the eye's view at `base`, along the ground. */
@@ -91,31 +160,32 @@ function acrossFrom(eye: Point, base: Point): [number, number] {
   return [-south / length, east / length];
 }
 
-/** A picture standing on `base`, turned to the eye, each pixel two triangles, as marks' vertices into `out`. */
+/** A picture standing on `base`, turned to the eye, each run of one colour along a row two triangles, as marks'
+ *  vertices into `out`. */
 export function markPicture(out: number[], picture: PixelPicture, base: Point, eye: Point): void {
   const [right, ahead] = acrossFrom(eye, base);
-  const colours = picture.colours.map(rgbOf);
-  const width = picture.rows[0]?.length ?? 0;
-  picture.rows.forEach((row, line) =>
-    [...row].forEach((letter, column) => {
-      const colour = colours['abcdef'.indexOf(letter)];
-      if (!colour) return;
-      const corner = (side: number, up: number) => {
-        const off = (column + side - width / 2) * PIXEL_M;
-        const lift = (picture.rows.length - line - 1 + up) * PIXEL_M + LIFT_M;
-        out.push(base[0] + right * off, base[1] + ahead * off, base[2] + lift, ...colour, 1);
-      };
-      for (const [side, up] of [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [0, 0],
-        [1, 1],
-        [0, 1],
-      ] as const)
-        corner(side, up);
-    }),
-  );
+  const runs = runsOf(picture);
+  const [x, y, z] = base;
+  let next = out.length;
+  for (let start = 0; start < runs.length; start += RUN) {
+    const left = runs[start] ?? 0;
+    const end = runs[start + 1] ?? 0;
+    const foot = z + (runs[start + 2] ?? 0);
+    const top = z + (runs[start + 3] ?? 0);
+    const red = runs[start + 4] ?? 0;
+    const green = runs[start + 5] ?? 0;
+    const blue = runs[start + 6] ?? 0;
+    const leftX = x + right * left;
+    const leftY = y + ahead * left;
+    const endX = x + right * end;
+    const endY = y + ahead * end;
+    next = put(out, next, leftX, leftY, foot, red, green, blue, 1);
+    next = put(out, next, endX, endY, foot, red, green, blue, 1);
+    next = put(out, next, endX, endY, top, red, green, blue, 1);
+    next = put(out, next, leftX, leftY, foot, red, green, blue, 1);
+    next = put(out, next, endX, endY, top, red, green, blue, 1);
+    next = put(out, next, leftX, leftY, top, red, green, blue, 1);
+  }
 }
 
 /** How bright a line is `share` of the way up it at `seconds`: brightest where it leaves the picture, thinning to none
@@ -128,8 +198,11 @@ export function lineLight(share: number, seconds: number): number {
   return tail * (0.75 + 0.55 * glint) + 0.8 * root;
 }
 
+/** Each step's light up a line, worked out once a line. */
+const lights = new Float64Array(LINE_STEPS + 1);
+
 /** A line rising `height` from `root`, turned to the eye, its colour times `strength`, as marks' vertices added to what
- *  stands behind it. */
+ *  stands behind it: its middle lit, its sides dark. */
 export function markLine(
   out: number[],
   root: Point,
@@ -141,23 +214,24 @@ export function markLine(
 ): void {
   const [right, ahead] = acrossFrom(eye, root);
   const half = Math.max(LINE_WIDE_M, Math.hypot(root[0] - eye[0], root[1] - eye[1], root[2] - eye[2]) * LINE_LEAST) / 2;
-  const vertex = (side: number, share: number) => {
-    const light = side === 0 ? lineLight(share, seconds) * strength : 0;
-    const shown = colour.map((part) => part * light);
-    out.push(root[0] + right * side * half, root[1] + ahead * side * half, root[2] + share * height, ...shown, ADDED);
-  };
+  for (let step = 0; step <= LINE_STEPS; step += 1) lights[step] = lineLight(step / LINE_STEPS, seconds) * strength;
+  const [red, green, blue] = [colour[0] ?? 0, colour[1] ?? 0, colour[2] ?? 0];
+  const [x, y, z] = root;
+  let next = out.length;
   for (let step = 0; step < LINE_STEPS; step += 1) {
-    const [low, high] = [step / LINE_STEPS, (step + 1) / LINE_STEPS];
-    for (const side of [-1, 1]) {
-      for (const [across, share] of [
-        [side, low],
-        [0, low],
-        [0, high],
-        [side, low],
-        [0, high],
-        [side, high],
-      ] as const)
-        vertex(across, share);
+    const low = z + (step / LINE_STEPS) * height;
+    const high = z + ((step + 1) / LINE_STEPS) * height;
+    const lowLight = lights[step] ?? 0;
+    const highLight = lights[step + 1] ?? 0;
+    for (let side = -1; side <= 1; side += 2) {
+      const sideX = x + right * side * half;
+      const sideY = y + ahead * side * half;
+      next = put(out, next, sideX, sideY, low, 0, 0, 0, ADDED);
+      next = put(out, next, x, y, low, red * lowLight, green * lowLight, blue * lowLight, ADDED);
+      next = put(out, next, x, y, high, red * highLight, green * highLight, blue * highLight, ADDED);
+      next = put(out, next, sideX, sideY, low, 0, 0, 0, ADDED);
+      next = put(out, next, x, y, high, red * highLight, green * highLight, blue * highLight, ADDED);
+      next = put(out, next, sideX, sideY, high, 0, 0, 0, ADDED);
     }
   }
 }
@@ -167,16 +241,21 @@ const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
 
 /**
  * The drops lying for the player as they are drawn: each flying from where the room threw it the moment it is first
- * told of (or resting already, told of late), standing and lit once it rests. Each frame answers the marks and the
- * rarities of the Vestiges that came to rest since the last, for a Rare's or finer's chime.
+ * told of (or resting already, told of late), standing and lit once it rests. Each frame answers the marks (laid into
+ * `out` when given) and the rarities of the Vestiges that came to rest since the last, for a Rare's or finer's chime.
  */
 export class DropsShown {
   /** When each drop's flight began, on the page's clock. */
   private readonly began = new Map<string, number>();
   private readonly rested = new Set<string>();
 
-  frame(drops: readonly GearDrop[], seconds: number, eye: Point): { marks: number[]; rested: number[] } {
-    const marks: number[] = [];
+  frame(
+    drops: readonly GearDrop[],
+    seconds: number,
+    eye: Point,
+    out: number[] = [],
+  ): { marks: number[]; rested: number[] } {
+    const marks = out;
     const rested: number[] = [];
     const lying = new Set<string>();
     for (const drop of drops) {
@@ -199,8 +278,7 @@ export class DropsShown {
       }
       const rise = Math.min(1, (since - FLIGHT_S) / RISE_S);
       const ammo = drop.kind !== DROPPED.vestige;
-      const found = RARITIES[drop.rarity] ?? RARITIES[0];
-      const colour = ammo ? WHITE : rgbOf(found.colour);
+      const colour = ammo ? WHITE : (LINE_COLOURS[drop.rarity] ?? WHITE);
       const tall = (ammo ? AMMO_LINE_M : (LINE_M[drop.rarity] ?? AMMO_LINE_M)) * rise;
       const pulse = !ammo && drop.rarity >= 3 ? 1 + 0.35 * Math.sin(seconds * 2 * Math.PI * PULSE_HZ) : 1;
       const crown: Point = [place[0], place[1], place[2] + picture.rows.length * PIXEL_M + LIFT_M];

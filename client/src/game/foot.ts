@@ -385,11 +385,10 @@ export class Foot {
       origin: shot.eye,
       groundAt,
       drawn: { foes: foes.placed, others: this.otherPlayers.placed },
-      more: [
+      more: this.dropMarks(clock, shot.eye, [
         ...groundRings(this.gear?.gear ?? null, this.node.stations ?? [], (x, y) => movement.standing(x, y).z, clock),
-        ...this.dropMarks(clock, shot.eye),
         ...foes.overheads(shot.eye, clock),
-      ],
+      ]),
     });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({
@@ -443,9 +442,10 @@ export class Foot {
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
-  /** The drops lying for the player, flying and standing, seen from `eye`; a Rare or finer chimes as it comes to rest. */
-  private dropMarks(clock: number, eye: readonly [number, number, number]): number[] {
-    const { marks, rested } = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye);
+  /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`; a Rare or
+   *  finer chimes as it comes to rest. */
+  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]): number[] {
+    const { marks, rested } = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
     const rarest = Math.max(-1, ...rested);
     if (rarest >= 2) chime(rarest);
     return marks;

@@ -12,6 +12,7 @@ import type { Fighting, KeptFoe } from './fighting.ts';
 import { FIGHT_TICKS } from '../player/fightMoves.ts';
 import { type Flashes, dissolveShare } from './flashes.ts';
 import type { MarkedFoe } from './foeBars.ts';
+import { ironOutline } from './glints.ts';
 import { overheadMarks } from './overheads.ts';
 
 type Point = readonly [number, number, number];
@@ -133,7 +134,7 @@ export class FoeFigures {
           ...stand,
           z: drawnAt[2],
           flip,
-          flash: flashes.flashOf(kept.id),
+          flash: flashes.flashOf(kept.id) ?? ironOutline(action),
           exposed,
           charged: (kept.statuses?.charge ?? 0) > 0,
           jitter: flashes.shakeOf(kept.id),
