@@ -159,3 +159,16 @@ test('the hands cancelled stop their strike at once: no blow lands, and the weap
     [[3, 2]],
   );
 });
+
+test("a gun the fight's rules have loaded fires at once, though its own reload would still run", () => {
+  const hands = new Hands();
+  const plan = handsPlan('thunderlock', null);
+  hands.update(0.01, press, plan, still);
+  const firing = SHOOTER_FEEL.thunderlock.frames / SHOOTER_FEEL.thunderlock.fps;
+  run(hands, plan, Math.ceil(firing / 0.05) + 2, 0.05, none);
+  assert.equal(hands.swing?.reload, true, 'reloading by its own clock');
+  assert.deepEqual(run(hands, plan, 1, 0.01, press), [], 'unloaded, a pull fires nothing');
+  hands.loaded();
+  hands.update(0.01, press, plan, still);
+  assert.deepEqual(run(hands, plan, 4, 0.05, none), ['right:loose'], 'loaded by the rules, it fires');
+});
