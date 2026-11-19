@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { planOfLayouts } from './layoutPlan.ts';
+import { planOfLayouts, plantedOf } from './layoutPlan.ts';
 import type { NodeLayout } from './layouts.ts';
 
 test('nothing wild grows on a run: its beats and its way are cleared', () => {
@@ -72,4 +72,30 @@ test("a chalk zone's rubble is chalk, and its other solids are as they were", ()
     planOfLayouts([laid()])?.works.map((each) => each.material),
     ['rubble', 'stone'],
   );
+});
+
+test("a layout's plantings reach nature as placed instances", () => {
+  const laid = (plantings?: unknown) => ({ id: 'vale', plantings }) as unknown as NodeLayout;
+  const planted = plantedOf(
+    [
+      laid([
+        {
+          kind: 'oak',
+          points: [
+            [130, 70],
+            [139, 70],
+          ],
+        },
+        { kind: 'gorse', points: [[10, -200]] },
+      ]),
+      laid(),
+    ],
+    64,
+  );
+  assert.deepEqual(planted(2, 1), [
+    { kind: 'oak', at: [130, 70] },
+    { kind: 'oak', at: [139, 70] },
+  ]);
+  assert.deepEqual(planted(0, -4), [{ kind: 'gorse', at: [10, -200] }]);
+  assert.deepEqual(planted(1, 1), [], 'none where nothing is planted');
 });

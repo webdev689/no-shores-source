@@ -70,6 +70,8 @@ export interface NodeLayout {
   readonly pads: readonly Pad[];
   /** The linear combat areas breaking off a patrol area; none written when it has none. */
   readonly runs?: readonly LaidRun[];
+  /** The kinds of its climate's nature it plants and where each stands; none written when it plants none. */
+  readonly plantings?: readonly { readonly kind: string; readonly points: readonly Point[] }[];
   /** The stone its cliffs and rubble wear where it is not its climate's; none written when it is. */
   readonly stone?: string;
   /** The land it carves: its claim, and the wings (capsules `[x1, y1, x2, y2, half]`) that carry it past its ring. */

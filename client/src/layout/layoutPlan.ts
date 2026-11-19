@@ -170,3 +170,21 @@ export function planOfLayouts(layouts: readonly NodeLayout[]): CityPlan | null {
     ]),
   };
 }
+
+/** What the layouts planted, as nature places it (nature/scatter.ts `planted`): each planted kind's name and point,
+ *  by the nature tile `tileM` metres a side it stands in. */
+export function plantedOf(
+  layouts: readonly NodeLayout[],
+  tileM: number,
+): (tileX: number, tileY: number) => readonly { readonly kind: string; readonly at: readonly [number, number] }[] {
+  const byTile = new Map<string, { kind: string; at: readonly [number, number] }[]>();
+  for (const { kind, points } of layouts.flatMap((layout) => layout.plantings ?? [])) {
+    for (const at of points) {
+      const key = `${Math.floor(at[0] / tileM)},${Math.floor(at[1] / tileM)}`;
+      const tile = byTile.get(key) ?? [];
+      byTile.set(key, tile);
+      tile.push({ kind, at });
+    }
+  }
+  return (tileX, tileY) => byTile.get(`${tileX},${tileY}`) ?? [];
+}

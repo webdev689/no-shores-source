@@ -11,11 +11,19 @@ export const SLOT_M: Readonly<Record<Layer, number>> = { tall: 8, low: 4 };
  *  at its foot. */
 export const PLANTED_FLOATS = 12;
 
-/** The ground a scatter reads: the sampler, the caller's cleared places and the snow line, metres. */
+/** A plant a layout planted: its kind's name in the cast and where it stands, metres east and south. */
+export interface Planted {
+  readonly kind: string;
+  readonly at: readonly [number, number];
+}
+
+/** The ground a scatter reads: the sampler, the caller's cleared places, the snow line, metres, and what the caller
+ *  planted in a tile. */
 export interface ScatterGround {
   readonly sample: GroundSampler;
   readonly cleared: Cleared;
   readonly snowM: number;
+  readonly planted?: (tileX: number, tileY: number) => readonly Planted[];
 }
 
 /** A 32-bit hash of whole numbers: every machine plants the same thing in the same slot. */
@@ -169,29 +177,46 @@ export function scatterTile(
     const width = kind.sizes[0] + (kind.sizes[1] - kind.sizes[0]) * drawn(seed, 3);
     if (tall && crowded(cast, kindOf, tall, east, south, kind.footM * width)) continue;
     if (ground.cleared(x, y)) continue;
-    const plant = Math.min(kind.forms - 1, Math.floor(drawn(seed, 4) * kind.forms));
-    const form = (forms[share.kind] ?? 0) + plant;
-    // Sunk by its foot's rise across the slope, so its downhill side never stands clear of the ground.
-    const foot = here.height - here.slope * kind.footM * width - 0.1;
-    // Most stand a little shorter than their width says and a few half again as tall: a wood's ragged skyline.
-    const height = width * (0.65 + 0.7 * drawn(seed, 5) ** 2);
-    planted.push([
-      form,
-      east,
-      south,
-      foot,
-      drawn(seed, 6) * Math.PI * 2,
-      width,
-      height,
-      drawn(seed, 7) * 2 - 1,
-      drawn(seed, 8),
-      here.rise?.[0] ?? 0,
-      here.rise?.[1] ?? 0,
-      here.height,
-    ]);
+    planted.push(plantOf(kind, forms[share.kind] ?? 0, seed, [east, south], here));
+  }
+  // What the caller planted stands where it was planted, whatever the ground's growth and clearings say.
+  for (const { kind: name, at } of ground.planted?.(tileX, tileY) ?? []) {
+    const index = cast.kinds.findIndex((each) => each.name === name && each.layer === layer);
+    const kind = cast.kinds[index];
+    if (!kind) continue;
+    const seed = hashOf(Math.round(at[0] * 100), Math.round(at[1] * 100), salt + 2);
+    if (far && (kind.reachM <= far.beyondM || drawn(seed, 8) >= far.keepBelow)) continue;
+    const here = ground.sample(at[0], at[1]);
+    if (here.water !== 'dry') continue;
+    planted.push(plantOf(kind, forms[index] ?? 0, seed, [at[0] - tileX * TILE_M, at[1] - tileY * TILE_M], here));
   }
   planted.sort((a, b) => (a[0] ?? 0) - (b[0] ?? 0) || (a[8] ?? 0) - (b[8] ?? 0));
   return Float32Array.from(planted.flat());
+}
+
+/** A plant of a kind standing at a place in its tile (east, south) on the ground there, drawn from its seed: its
+ *  form (from the kind's first), place, foot, turn, size, tint, rank and the ground under it, as PLANTED_FLOATS. */
+function plantOf(kind: Kind, first: number, seed: number, place: readonly [number, number], here: GroundAt): number[] {
+  const width = kind.sizes[0] + (kind.sizes[1] - kind.sizes[0]) * drawn(seed, 3);
+  const form = first + Math.min(kind.forms - 1, Math.floor(drawn(seed, 4) * kind.forms));
+  // Sunk by its foot's rise across the slope, so its downhill side never stands clear of the ground.
+  const foot = here.height - here.slope * kind.footM * width - 0.1;
+  // Most stand a little shorter than their width says and a few half again as tall: a wood's ragged skyline.
+  const height = width * (0.65 + 0.7 * drawn(seed, 5) ** 2);
+  return [
+    form,
+    place[0],
+    place[1],
+    foot,
+    drawn(seed, 6) * Math.PI * 2,
+    width,
+    height,
+    drawn(seed, 7) * 2 - 1,
+    drawn(seed, 8),
+    here.rise?.[0] ?? 0,
+    here.rise?.[1] ?? 0,
+    here.height,
+  ];
 }
 
 /** Whether a point lies within `radius` (and a hand's breadth) of a tall plant's foot. */

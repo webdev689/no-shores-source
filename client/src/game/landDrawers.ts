@@ -4,10 +4,11 @@ import type { CityTables } from '../city/cityBuild.ts';
 import { CityView } from '../city/cityView.ts';
 import { cityClimate } from '../city/plan.ts';
 import { layoutFollower, type NodeLayout } from '../layout/layouts.ts';
-import { planOfLayouts } from '../layout/layoutPlan.ts';
+import { planOfLayouts, plantedOf } from '../layout/layoutPlan.ts';
 import { paintOfLayouts } from './groundPaint.ts';
 import { landSampler } from '../nature/ground.ts';
 import { NatureView } from '../nature/natureView.ts';
+import { type Planted, TILE_M } from '../nature/scatter.ts';
 import type { Landmass } from './landmass.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { Shot } from './camera.ts';
@@ -38,7 +39,7 @@ const PAINT_REACH_M = 2500;
 
 /** Draws the layouts near the eye with the city layer, followed before each frame: the ground under them is painted
  *  again each time the eye has moved on (`painted`), and the city built again when the layouts near the eye change
- *  and its tables have come (`rebuilt`). */
+ *  and its tables have come (`rebuilt`), when what they planted is handed to nature (`planted`) too. */
 function layoutDrawer(
   gpu: Gpu,
   layouts: readonly NodeLayout[],
@@ -46,18 +47,26 @@ function layoutDrawer(
   assets: Promise<CityAssets | null>,
   painted: (near: readonly NodeLayout[], eye: readonly [number, number]) => void,
   rebuilt: () => void,
-): { drawer: Drawer; view: CityView; release(): void } {
+): {
+  drawer: Drawer;
+  view: CityView;
+  planted: (tileX: number, tileY: number) => readonly Planted[];
+  release(): void;
+} {
   const view = new CityView(gpu);
   let tables: CityTables | null = null;
+  let planted = plantedOf([], TILE_M);
   void assets.then((loaded) => (tables = loaded?.tables ?? null));
   const follow = layoutFollower(layouts, LAYOUT_REACH_M, LAYOUT_REGATHER_M, painted, (near) => {
     const plan = planOfLayouts(near);
     if (plan && tables) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
     else view.clear();
+    planted = plantedOf(near, TILE_M);
     rebuilt();
   });
   return {
     view,
+    planted: (tileX, tileY) => planted(tileX, tileY),
     drawer: {
       prepare: (shot) => follow([shot.eye[0], shot.eye[1]], tables !== null),
       castInto: (pass, fromEye, shot, time, shadow) => view.castInto(pass, fromEye, shot, time, shadow),
@@ -169,6 +178,7 @@ export function landDrawers(
       version,
       sample,
       cleared,
+      planted: (tileX: number, tileY: number) => laid?.planted(tileX, tileY) ?? [],
       groundColour: land.ground,
     };
     view.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground, shadow);
