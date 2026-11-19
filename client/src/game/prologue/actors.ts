@@ -34,7 +34,12 @@ export function actorFrame(actor: Pick<Actor, 'since' | 'hold'>, clock: number, 
 }
 
 /** Each actor's card for an eye at `eye`, those whose frame is not composed yet showing their last. */
-export function actorCards(actors: readonly Actor[], forge: Cards, eye: readonly [number, number, number], clock: number): CardAt[] {
+export function actorCards(
+  actors: readonly Actor[],
+  forge: Cards,
+  eye: readonly [number, number, number],
+  clock: number,
+): CardAt[] {
   const shown: CardAt[] = [];
   for (const actor of actors) {
     const { view, flip } = viewOf(actor.facing, actor.x, actor.y, eye[0], eye[1]);

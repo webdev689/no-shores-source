@@ -20,7 +20,6 @@ const THULE = 12;
 const THULE_ID = ACTOR_IDS + 50;
 /** The boss's coming: the push in to him, his cry, and the camera back to the player. */
 const PUSH_S = 0.9;
-const CRY_S = 2.4;
 const BACK_S = 5.6;
 /** The fewest seconds between two of Thule's barks of one kind. */
 const BARK_GAP_S = 9;
@@ -81,7 +80,15 @@ export class WreckFight implements Beat {
       since: 0,
       from,
       cues: new Cues([
-        [PUSH_S, () => this.nameplate.show(kind?.name ?? 'Captain Brannoc Thule', kind?.faction ?? 1, kind?.factionName ?? 'The Grey Tithe')],
+        [
+          PUSH_S,
+          () =>
+            this.nameplate.show(
+              kind?.name ?? 'Captain Brannoc Thule',
+              kind?.faction ?? 1,
+              kind?.factionName ?? 'The Grey Tithe',
+            ),
+        ],
         [PUSH_S + 0.2, () => void stage.play('warCry', true, { thule: 'thule' })],
         [PUSH_S + 0.3, () => stage.parts.ambience.thunder(0.4)],
         [BACK_S - 1.2, () => this.nameplate.hide()],
@@ -104,11 +111,7 @@ export class WreckFight implements Beat {
     const thule = this.thuleAt();
     const head: Point3 = [thule[0], thule[1], thule[2] + 1.9];
     const toward = lookAt(coming.from.eye, head);
-    const near: Point3 = [
-      head[0] - Math.sin(toward.yaw) * 4.2,
-      head[1] + Math.cos(toward.yaw) * 4.2,
-      head[2] - 0.2,
-    ];
+    const near: Point3 = [head[0] - Math.sin(toward.yaw) * 4.2, head[1] + Math.cos(toward.yaw) * 4.2, head[2] - 0.2];
     const into = coming.since;
     const share = into < PUSH_S ? into / PUSH_S : into < BACK_S - 0.7 ? 1 : Math.max(0, (BACK_S - into) / 0.7);
     const eased = 1 - (1 - share) ** 3;
@@ -152,7 +155,8 @@ export class WreckFight implements Beat {
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
     const hands =
       walker.inFirstPerson && !coming
-        ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, tick.size.width, tick.size.height)
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView) =>
+            firstPerson.draw(encoder, view, tick.size.width, tick.size.height)
         : undefined;
     return {
       shot: coming ? this.comingShot() : shown.shot,

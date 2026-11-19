@@ -30,7 +30,10 @@ export function islandFrame(landmass: Landmass): IslandFrame {
   const ground = (x: number, y: number) => Math.max(0, landmass.heightAt(x, y) || 0);
   const outline = landmass.outline;
   const middle: [number, number] = outline.length
-    ? [outline.reduce((sum, point) => sum + point[0], 0) / outline.length, outline.reduce((sum, point) => sum + point[1], 0) / outline.length]
+    ? [
+        outline.reduce((sum, point) => sum + point[0], 0) / outline.length,
+        outline.reduce((sum, point) => sum + point[1], 0) / outline.length,
+      ]
     : [landmass.view.leftM, landmass.view.topM];
   const centre = landmass.plan?.centre ?? middle;
   const harbour = landmass.plan?.harbour ?? [centre[0] + 1, centre[1]];
@@ -58,7 +61,11 @@ export function passingRail(frame: IslandFrame, side: 1 | -1): RailKey[] {
     { at: 3.2, eye: fromTown(frame, out + side * 0.18, 2300, UNDER_CLOUD_M), look },
     { at: 7.5, eye: fromTown(frame, out + side * 0.08, 950, town[2] + 230), look },
     { at: 10.5, eye: fromTown(frame, out - side * 0.75, 800, town[2] + 300), look },
-    { at: ISLAND_S, eye: fromTown(frame, out - side * 1.3, 1700, IN_CLOUD_M), look: fromTown(frame, out - side * 1.7, 3200, IN_CLOUD_M + 80) },
+    {
+      at: ISLAND_S,
+      eye: fromTown(frame, out - side * 1.3, 1700, IN_CLOUD_M),
+      look: fromTown(frame, out - side * 1.7, 3200, IN_CLOUD_M + 80),
+    },
   ];
 }
 
@@ -72,7 +79,11 @@ export function fightRail(frame: IslandFrame, side: 1 | -1): RailKey[] {
     { at: 3.4, eye: near(out + side * 0.25, 600, 260), look },
     { at: 7, eye: near(out + side * 0.1, 26, 9), look, fov: 0.75 },
     { at: 10, eye: near(out - side * 0.9, 22, 6), look, fov: 0.75 },
-    { at: ISLAND_S, eye: near(out - side * 1.4, 900, IN_CLOUD_M - plaza[2]), look: near(out - side * 1.6, 2400, IN_CLOUD_M) },
+    {
+      at: ISLAND_S,
+      eye: near(out - side * 1.4, 900, IN_CLOUD_M - plaza[2]),
+      look: near(out - side * 1.6, 2400, IN_CLOUD_M),
+    },
   ];
 }
 
@@ -97,7 +108,10 @@ export function titleEye(frame: IslandFrame, drift: number): Point3 {
 }
 
 /** The ships riding off an island: two under sail heading out, one at anchor; `seconds` into its shot. */
-export function shipsOff(frame: IslandFrame, seconds: number): { x: number; y: number; heading: number; underWay: boolean; hull: 'brig' | 'sloop' }[] {
+export function shipsOff(
+  frame: IslandFrame,
+  seconds: number,
+): { x: number; y: number; heading: number; underWay: boolean; hull: 'brig' | 'sloop' }[] {
   const [x, y] = frame.anchorage;
   const across = frame.out + Math.PI / 2;
   const sail = (offset: number, ahead: number, heading: number, speed: number) => {

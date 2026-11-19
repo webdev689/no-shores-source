@@ -37,7 +37,11 @@ function sightedKeys(): RailKey[] {
     { at: 2.2, eye: [-17.5, -2.2, 6.5], look: [30, 0, 5] },
     { at: 5.5, eye: [-55, -32, 34], look: [600, 0, 8] },
     { at: 8.5, eye: [-40, 38, 26], look: [700, 30, 6] },
-    { at: BACK_S, eye: [behind, 0, FIGHT_VIEW.distance * Math.sin(FIGHT_VIEW.pitch) + FIGHT_VIEW.lookOverM], look: [0, 0, FIGHT_VIEW.lookOverM] },
+    {
+      at: BACK_S,
+      eye: [behind, 0, FIGHT_VIEW.distance * Math.sin(FIGHT_VIEW.pitch) + FIGHT_VIEW.lookOverM],
+      look: [0, 0, FIGHT_VIEW.lookOverM],
+    },
   ];
 }
 
@@ -63,7 +67,15 @@ export class Sighted implements Beat {
       const bearing = brig.heading + ship.bearing;
       const x = brig.x + Math.sin(bearing) * ship.distanceM;
       const y = brig.y - Math.cos(bearing) * ship.distanceM;
-      return { who: `inbound-${index}`, hull: 'sloop', x, y, heading: Math.atan2(brig.x - x, y - brig.y), underWay: true, shade: 0.5 };
+      return {
+        who: `inbound-${index}`,
+        hull: 'sloop',
+        x,
+        y,
+        heading: Math.atan2(brig.x - x, y - brig.y),
+        underWay: true,
+        shade: 0.5,
+      };
     });
     this.cues = new Cues([
       [0.3, () => void stage.play('sighted').then(() => (this.spoken = true))],
@@ -103,7 +115,7 @@ export class Sighted implements Beat {
     if (!own) throw new Error('the Brig is not sailing');
     const shot = this.shot(own);
     if (this.since >= SIGHTED_S && this.spoken) this.done = true;
-    const moves = this.since < 6 ? { lookout: 'gesture', bosun: 'gesture' } : { gunner: 'chop' };
+    const moves: Readonly<Record<string, string>> = this.since < 6 ? { lookout: 'gesture', bosun: 'gesture' } : { gunner: 'chop' };
     return {
       shot,
       ships,
@@ -116,7 +128,11 @@ export class Sighted implements Beat {
 
   private shot(own: ShipPlace): Shot {
     const steady: ShipPlace = { ...own, pitch: own.pitch * 0.3, roll: own.roll * 0.3 };
-    const carried = this.keys.map((key) => ({ ...key, eye: onDeck(steady, ...key.eye), look: onDeck(steady, ...key.look) }));
+    const carried = this.keys.map((key) => ({
+      ...key,
+      eye: onDeck(steady, ...key.eye),
+      look: onDeck(steady, ...key.look),
+    }));
     return { ...LENS, ...railShot(carried, this.since, LENS.fov) };
   }
 }

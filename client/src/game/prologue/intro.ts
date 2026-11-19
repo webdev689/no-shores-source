@@ -115,7 +115,12 @@ export class Intro implements Beat {
       const side = next % 2 === 0 ? 1 : -1;
       if (passing.fight) this.stage.parts.keepClose([frame.plaza[0], frame.plaza[1]]);
       this.ambienceFor(passing.weather);
-      this.enter({ kind: 'island', index: next, rail: passing.fight ? fightRail(frame, side) : passingRail(frame, side), frame });
+      this.enter({
+        kind: 'island',
+        index: next,
+        rail: passing.fight ? fightRail(frame, side) : passingRail(frame, side),
+        frame,
+      });
     } else this.goHome(frame);
   }
 
@@ -127,7 +132,12 @@ export class Intro implements Beat {
     birds.flock([x, y, 28], 14, 120, 11);
     birds.flock([frame.town[0], frame.town[1], frame.town[2] + 70], 10, 160, 12);
     const eye = titleEye(frame, 0);
-    birds.flock([eye[0] + (frame.town[0] - eye[0]) * 0.12, eye[1] + (frame.town[1] - eye[1]) * 0.12, eye[2] - 25], 7, 45, 13);
+    birds.flock(
+      [eye[0] + (frame.town[0] - eye[0]) * 0.12, eye[1] + (frame.town[1] - eye[1]) * 0.12, eye[2] - 25],
+      7,
+      45,
+      13,
+    );
     this.enter({ kind: 'home', rail: homeRail(frame), frame });
   }
 
@@ -191,7 +201,10 @@ export class Intro implements Beat {
 
   private shotNow(tick: Tick): Shot | null {
     const phase = this.phase;
-    const lens = (rail: { eye: [number, number, number]; yaw: number; pitch: number; fov: number }): Shot => ({ ...LENS, ...rail });
+    const lens = (rail: { eye: [number, number, number]; yaw: number; pitch: number; fov: number }): Shot => ({
+      ...LENS,
+      ...rail,
+    });
     switch (phase.kind) {
       case 'dark':
         return null;
@@ -241,7 +254,13 @@ export class Intro implements Beat {
     const seconds = phase.kind === 'title' ? HOME_S + this.since : this.since;
     const placed: Sailed[] = shipsOff(phase.frame, seconds).map((ship, index) => ({ ...ship, who: `intro-${index}` }));
     const weather = this.stage.weather;
-    return this.sailing.frame(placed, tick.seconds, tick.clock, Math.atan2(weather.wind[0], -weather.wind[1]), this.stage.swell());
+    return this.sailing.frame(
+      placed,
+      tick.seconds,
+      tick.clock,
+      Math.atan2(weather.wind[0], -weather.wind[1]),
+      this.stage.swell(),
+    );
   }
 
   private actors(tick: Tick): StoryFrame['actors'] {
@@ -252,7 +271,11 @@ export class Intro implements Beat {
     const pairs: Pairing[] = FIGHT.map(([first, second], index) => {
       const across = out + Math.PI / 2;
       const offset = (index - 1) * 4.5;
-      const at: [number, number, number] = [plaza[0] + Math.sin(across) * offset, plaza[1] - Math.cos(across) * offset, ground];
+      const at: [number, number, number] = [
+        plaza[0] + Math.sin(across) * offset,
+        plaza[1] - Math.cos(across) * offset,
+        ground,
+      ];
       return { first, second, at, facing: out + (index - 1) * 0.6 };
     });
     return fighters(this.stage.parts.roster, pairs, tick.clock);

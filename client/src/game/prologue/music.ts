@@ -2,17 +2,7 @@
 // music system is another piece of work (its director, its voices and its scores); until it lands, a cue is kept as
 // the moment now reached and nothing plays.
 
-export type StoryCue =
-  | 'title'
-  | 'storm'
-  | 'sighted'
-  | 'battle'
-  | 'calm'
-  | 'ram'
-  | 'wreck'
-  | 'boss'
-  | 'deep'
-  | 'shore';
+export type StoryCue = 'title' | 'storm' | 'sighted' | 'battle' | 'calm' | 'ram' | 'wreck' | 'boss' | 'deep' | 'shore';
 
 let reached: StoryCue | null = null;
 

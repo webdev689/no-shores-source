@@ -85,7 +85,10 @@ export class Deep implements Beat {
     // The fire above flickers through the water.
     const flicker = 0.75 + 0.25 * Math.sin(this.since * 7.3) * Math.sin(this.since * 3.1);
     stage.stepWeather(tick.seconds);
-    stage.parts.scene.weather = { ...stage.parts.scene.weather, glow: { colour: [1, 0.5, 0.18], strength: 0.8 * flicker } };
+    stage.parts.scene.weather = {
+      ...stage.parts.scene.weather,
+      glow: { colour: [1, 0.5, 0.18], strength: 0.8 * flicker },
+    };
     const eyes = this.since >= EYES_S && this.since < FLASH_S;
     if (eyes) stage.parts.screen.lids(Math.min(0.85, (this.since - EYES_S) / (FLASH_S - EYES_S - 0.5)));
     const body = this.body();
@@ -98,13 +101,28 @@ export class Deep implements Beat {
       z: body[2] + one.at[2] - this.since * (0.25 + index * 0.08),
       facing: index * 1.3,
     }));
-    if (!eyes) actors.push({ id: YOU_ID, dress: this.story.dress, anim: 'fallen', x: body[0], y: body[1], z: body[2], facing: 0.4 });
+    if (!eyes)
+      actors.push({
+        id: YOU_ID,
+        dress: this.story.dress,
+        anim: 'fallen',
+        x: body[0],
+        y: body[1],
+        z: body[2],
+        facing: 0.4,
+      });
     return { shot: this.shot(body, eyes), actors, land: false, focus: [body[0], body[1]] };
   }
 
   /** Beside and below the body looking up past it to the burning light; then the player's own eyes, looking up. */
   private shot(body: Point3, eyes: boolean): Shot {
-    if (eyes) return { ...LENS, eye: [body[0], body[1], body[2] + 1.6], yaw: 0.5, pitch: -1.35 + Math.sin(this.since * 0.4) * 0.05 };
+    if (eyes)
+      return {
+        ...LENS,
+        eye: [body[0], body[1], body[2] + 1.6],
+        yaw: 0.5,
+        pitch: -1.35 + Math.sin(this.since * 0.4) * 0.05,
+      };
     const eye: Point3 = [body[0] - 5.5, body[1] + 4, body[2] - 3.5 - Math.min(2, this.since * 0.2)];
     const target: Point3 = [body[0], body[1], body[2] + 2.5];
     return { ...LENS, eye: [...eye], ...lookAt(eye, target) };

@@ -36,7 +36,7 @@ import type { BeatName } from './beat.ts';
 import { Brig } from './brig.ts';
 import { Epilogue } from './epilogue.ts';
 import { Islands } from './islands.ts';
-import { FIRST_LOOK, armouredDress, keptLook } from './look.ts';
+import { FIRST_LOOK, armouredDress, keptLook, type Look } from './look.ts';
 import { Nameplate } from './nameplate.ts';
 import { Objective } from './objective.ts';
 import { stormPlaces } from './places.ts';
@@ -76,6 +76,9 @@ export interface StoryGame {
 export interface Started {
   readonly prologue: Prologue;
   readonly epilogue: Epilogue;
+  readonly stage: Stage;
+  /** The look the player has made themselves, as it stands now. */
+  look(): Look;
 }
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {
@@ -150,5 +153,5 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     groundAt: (x: number, y: number) => scene.groundAt(x, y),
   };
   const prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
-  return { prologue, epilogue: new Epilogue(stage, game.forge) };
+  return { prologue, epilogue: new Epilogue(stage, game.forge), stage, look: () => story.look };
 }

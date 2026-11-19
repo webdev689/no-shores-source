@@ -118,7 +118,8 @@ export class Shore implements Beat {
     }
     if (this.phase === 'walking') {
       this.walked += tick.seconds;
-      if (this.walked > TOGETHER_S - 1.6 && this.walked - tick.seconds <= TOGETHER_S - 1.6) stage.parts.screen.fade(1, 1.6);
+      if (this.walked > TOGETHER_S - 1.6 && this.walked - tick.seconds <= TOGETHER_S - 1.6)
+        stage.parts.screen.fade(1, 1.6);
       if (this.walked >= TOGETHER_S) {
         this.phase = 'gone';
         this.done = true;
@@ -172,7 +173,12 @@ export class Shore implements Beat {
     if (this.phase === 'walking' || this.phase === 'gone') {
       const back = beach.inland + Math.PI;
       const eye: Point3 = [you.x + Math.sin(back) * 4.5, you.y - Math.cos(back) * 4.5, you.z + 2.2];
-      return { ...LENS, fov: 0.9, eye: [...eye], ...lookAt(eye, [you.x + Math.sin(beach.inland) * 6, you.y - Math.cos(beach.inland) * 6, you.z + 1.3]) };
+      return {
+        ...LENS,
+        fov: 0.9,
+        eye: [...eye],
+        ...lookAt(eye, [you.x + Math.sin(beach.inland) * 6, you.y - Math.cos(beach.inland) * 6, you.z + 1.3]),
+      };
     }
     const lift = this.phase === 'rising' || this.phase === 'leaning' ? (this.phase === 'leaning' ? 1 : this.rose) : 0;
     const eased = lift * lift * (3 - 2 * lift);

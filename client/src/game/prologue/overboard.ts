@@ -13,7 +13,11 @@ import { topAt, type WreckLayout } from './wreckLayout.ts';
 
 const LENS = { fov: 0.85, near: 0.2, far: 20_000 } as const;
 /** The crew who celebrate by the boss: their roster types, their moves, and where they stand from him (east, south). */
-const CELEBRANTS: readonly { readonly type: number; readonly anim: string; readonly from: readonly [number, number] }[] = [
+const CELEBRANTS: readonly {
+  readonly type: number;
+  readonly anim: string;
+  readonly from: readonly [number, number];
+}[] = [
   { type: 12, anim: 'warcry', from: [0, 0] },
   { type: 7, anim: 'dance', from: [-2.4, -1.6] },
   { type: 8, anim: 'warcry', from: [-2.1, 1.8] },
@@ -86,12 +90,29 @@ export class Overboard implements Beat {
       if (!dress) return;
       const [standX, standY] = [x + one.from[0], y + one.from[1]];
       const stand = topAt(this.layout.decks, standX, standY);
-      actors.push({ id: ACTOR_IDS + 60 + index, dress, anim: one.anim, x: standX, y: standY, z: stand, facing: Math.PI / 2, since: index * 0.3 });
+      actors.push({
+        id: ACTOR_IDS + 60 + index,
+        dress,
+        anim: one.anim,
+        x: standX,
+        y: standY,
+        z: stand,
+        facing: Math.PI / 2,
+        since: index * 0.3,
+      });
       heads.set(index === 0 ? 'thule' : `celebrant-${index}`, [standX, standY, stand + 2.2]);
     });
     const thrown = this.since >= THROW_AT_S ? thrownAt([x + 1.6, y, z + 0.9], this.since - THROW_AT_S) : null;
     if (thrown && thrown[2] > -0.8)
-      actors.push({ id: YOU_ID, dress: this.story.dress, anim: 'hurt', x: thrown[0], y: thrown[1], z: thrown[2], facing: -Math.PI / 2 });
+      actors.push({
+        id: YOU_ID,
+        dress: this.story.dress,
+        anim: 'hurt',
+        x: thrown[0],
+        y: thrown[1],
+        z: thrown[2],
+        facing: -Math.PI / 2,
+      });
     return { shot: this.shot([x, y, z]), actors, heads, focus: [x, y] };
   }
 

@@ -61,7 +61,10 @@ export class Lightning {
   step(
     seconds: number,
     eye: readonly [number, number],
-  ): { readonly flash: number; readonly bolt: { readonly x: number; readonly y: number; readonly seed: number } | null } {
+  ): {
+    readonly flash: number;
+    readonly bolt: { readonly x: number; readonly y: number; readonly seed: number } | null;
+  } {
     this.clock += seconds;
     if (this.on && this.clock >= this.nextAt) {
       const bearing = this.draw() * Math.PI * 2;

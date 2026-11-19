@@ -1,24 +1,19 @@
-import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
 import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
-import { type CardAt, openCards } from '../player/cards.ts';
+import type { CardAt } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
-import { rosterOf } from '../rules/roster.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
-import { startMovementRules } from '../rules/movementRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
-import { loadShip, shipSails } from '../ships/shipMesh.ts';
-import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -39,20 +34,17 @@ import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
-import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
-import { beatNamed } from './prologue/beat.ts';
+import { arrivalAt, type NodeInfo } from './worldData.ts';
+import { loadParts } from './loading.ts';
+import { standingDrawers } from './standing.ts';
 import type { Epilogue } from './prologue/epilogue.ts';
-import { fightPointer } from './prologue/fightPointer.ts';
+import { StoryHost } from './prologue/host.ts';
 import { keptLook, plainDressOf } from './prologue/look.ts';
-import { type Started, startStory } from './prologue/storyStart.ts';
-import { tapToStart } from './prologue/tap.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 const FIRST_NODE = 'overlook-social';
-/** The most ships drawn at sea in a frame: the player's and those near it. */
-const SEA_SHIPS = 16;
 /** The islands' names the owner has given, by continent. */
 const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 /** The region every island lies in. */
@@ -61,12 +53,6 @@ const REGION = 'The Pale Expanse';
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
 const CHART_EVERY_S = 1;
-
-/** The forge's figures and the first person's hands, read from the forge's published renders. */
-async function openForge(gpu: Gpu, figures: FigureView) {
-  const { forge, store } = await openCards(figures);
-  return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
-}
 
 /** The words under a place's name: its kind, and its island's name where it has one. */
 function placeWords(node: NodeInfo): string {
@@ -87,11 +73,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // With `?at=` the page goes straight to a node; otherwise the story opens the game behind a tap to start.
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
   if (flow.mode === 'loading') hud.veil(flow.words);
-  let story: Started | null = null;
+  const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
   let epilogue: Epilogue | null = null;
-  let storyStarted: (started: Started | null) => void = () => undefined;
-  const storyReady = new Promise<Started | null>((resolve) => (storyStarted = resolve));
-  const tapped = flow.mode === 'story' ? tapToStart(hudRoot, storyReady) : null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
@@ -107,20 +90,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
-    loadWorld(base),
-    fetch(`${base}world/rmb/index.json`)
-      .then((answer) => (answer.ok ? answer.text() : null))
-      .catch(() => null),
-    fetch(`${base}movement.wasm`)
-      .then((answer) => {
-        if (!answer.ok) throw new Error(`movement.wasm: ${answer.status}`);
-        return answer.arrayBuffer();
-      })
-      .then(startMovementRules),
-    openForge(gpu, figureView),
-    loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
-  ]);
+  const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const { continents } = world;
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
@@ -253,23 +223,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const firstNode = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
   if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
-  const arrive = () => behindVeil(flow.mode === 'loading' ? flow.words : '', () => goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)));
+  const arrive = () =>
+    behindVeil(flow.mode === 'loading' ? flow.words : '', () =>
+      goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)),
+    );
   if (flow.mode === 'loading') arrive();
-  else {
-    const from = import.meta.env.DEV ? beatNamed(new URLSearchParams(location.search).get('prologue')) : null;
-    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land, world };
-    const parts = { rmbText, movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, drawersOn, terrainFor };
-    roomModule
-      .then((module) => startStory({ ...game, ...parts, roster: rosterOf(module), home: { landmass, drawers }, closeSource }, from))
-      .then(storyStarted, (error: unknown) => {
-        // A story that cannot start leaves the player arriving at Overlook, as before it was made.
-        console.error('the story could not start:', error);
-        storyStarted(null);
-        flow = arriving(FIRST_NODE, 'Overlook');
-        arrive();
-      });
-    void tapped?.then(async () => (story = await storyReady));
-  }
+  const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land, world };
+  const more = { rmbText, movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop };
+  const lands = { drawersOn, terrainFor, home: { landmass, drawers }, closeSource };
+  story?.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
 
   const landAt = (id: string) => {
     discovered.nodes([id]);
@@ -404,11 +366,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
   startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
-  addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.prologue.key(event.key.toLowerCase(), false)));
+  addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
     if (event.repeat) return;
-    if (flow.mode === 'story') return void story?.prologue.key(key, true);
+    if (flow.mode === 'story') return void story?.key(key, true);
     if (heldMap?.shown) {
       if (key === 'escape') heldMap.escape();
       else if (key === 'enter') heldMap.setSail();
@@ -437,10 +399,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'enter' && flow.mode === 'foot') respawn();
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
   });
-  canvas.addEventListener('pointerdown', () => flow.mode === 'story' && story?.prologue.press());
-  fightPointer(canvas, () => (flow.mode === 'story' ? (story?.prologue.fight ?? null) : null));
   canvas.addEventListener('click', () => {
-    if (flow.mode === 'story' && story?.prologue.wantsPointer && !input.locked) input.lock();
+    if (flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
     if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();
   });
@@ -452,28 +412,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   /** The drawers that stand on the open landmass, its city and its nature, and the meshes and figures besides; on foot
    *  the fight's blood under the figures and its marks over them. */
-  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) => {
-    const found: (Drawer | null | undefined)[] = [
-      drawers.city,
-      drawers.nature,
-      fight?.under,
-      {
-        drawInto: (pass, fromEye, shot, time) => {
-          const camera = { fromEye, eye: shot.eye };
-          ships.forEach((ship, slot) => sloop.drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig));
-          sea?.fight?.draw(pass, camera, time);
-        },
+  const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
+    standingDrawers(
+      drawers,
+      (pass, camera, time) => {
+        ships.forEach((ship, slot) => sloop.drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig));
+        sea?.fight?.draw(pass, camera, time);
       },
-      {
-        castInto: (pass, fromEye, shot, _time, shadow) =>
-          figureView.castInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
-        drawInto: (pass, fromEye, shot, _time, shadow) =>
-          figureView.drawInto(pass, fromEye, shot.eye, shot.yaw, figures, shadow),
-      },
-      fight?.over,
-    ];
-    return found.filter((drawer): drawer is Drawer => !!drawer);
-  };
+      figureView,
+      figures,
+      fight,
+    );
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
@@ -596,17 +545,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       });
   };
 
-  /** A frame of the story; once it ends, the player arrives at Overlook's social space, the stranger with them if
-   *  they played it through. */
-  const storyFrame = (started: Started, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    started.prologue.frame(controls, seconds, size, viewport);
-    const ended = started.prologue.end;
-    if (!ended) return;
-    if (ended === 'played') epilogue = started.epilogue;
-    story = null;
-    started.stage.parts.screen.clear();
-    walker.you.dress = plainDressOf(started.look());
+  /** A frame of the story; once it ends, the player arrives at Overlook's social space in their own dress, the stranger
+   *  with them if they played it through. */
+  const storyFrame = (
+    host: StoryHost,
+    controls: InputFrame,
+    seconds: number,
+    size: { width: number; height: number },
+  ) => {
+    const left = host.frame(controls, seconds, size);
+    if (!left) return;
+    [epilogue, walker.you.dress] = [left.epilogue, left.dress];
     flow = next(flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
     arrive();
   };

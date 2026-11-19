@@ -23,7 +23,11 @@ export function helmInShip(): Point3 {
 export function creationEye(turn: number): { readonly eye: Point3; readonly look: Point3 } {
   const [forward, starboard, up] = helmInShip();
   const [along, across] = [Math.cos(turn), Math.sin(turn)];
-  const eye: Point3 = [forward + along * CREATION.distance, starboard + across * CREATION.distance, up + CREATION.height];
+  const eye: Point3 = [
+    forward + along * CREATION.distance,
+    starboard + across * CREATION.distance,
+    up + CREATION.height,
+  ];
   // The camera's right, looking back at the player: the figure stands left of the picture's middle.
   const look: Point3 = [forward + across * CREATION.aside, starboard - along * CREATION.aside, up + CREATION.lookUp];
   return { eye, look };
@@ -33,5 +37,15 @@ export function creationEye(turn: number): { readonly eye: Point3; readonly look
 export function youAtHelm(story: Story, place: ShipPlace, anim: string, since = 0): Actor {
   const [x, y, z] = helmSpot();
   const [worldX, worldY, worldZ] = deckPoint(place, x, y, z);
-  return { id: YOU_ID, dress: story.dress, anim, x: worldX, y: worldY, z: worldZ, facing: place.heading, since, scale: place.scale };
+  return {
+    id: YOU_ID,
+    dress: story.dress,
+    anim,
+    x: worldX,
+    y: worldY,
+    z: worldZ,
+    facing: place.heading,
+    since,
+    scale: place.scale,
+  };
 }

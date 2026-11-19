@@ -47,12 +47,16 @@ export class Battle implements Beat {
     const { brig, land, marks, stage } = story;
     story.lightning.on = true;
     brig.way = 0;
-    void StoryFight.begin(land, { x: brig.x, y: brig.y, heading: brig.heading }, ambushersFrom(story, inbound), { sails: [], marks }, 0).then(
-      (fight) => {
-        this.fight = fight;
-        stage.parts.objective.show('Engage', 'Sink the ships closing on you.', 8);
-      },
-    );
+    void StoryFight.begin(
+      land,
+      { x: brig.x, y: brig.y, heading: brig.heading },
+      ambushersFrom(story, inbound),
+      { sails: [], marks },
+      0,
+    ).then((fight) => {
+      this.fight = fight;
+      stage.parts.objective.show('Engage', 'Sink the ships closing on you.', 8);
+    });
   }
 
   /** The fight's keys while it is on: the helm's, the sails', the brace. */
@@ -88,7 +92,12 @@ export class Battle implements Beat {
     }
     const ships: ShipDraw[] = shown.ships
       .filter((ship) => !ship.sunk)
-      .map((ship) => ({ hull: ship.hull === 'own' ? 'brig' : 'sloop', place: ship.place, shade: ship.shade, rig: ship.rig }));
+      .map((ship) => ({
+        hull: ship.hull === 'own' ? 'brig' : 'sloop',
+        place: ship.place,
+        shade: ship.shade,
+        rig: ship.rig,
+      }));
     const own = shown.ships[0]?.place;
     if (own) Object.assign(brig, { x: own.x, y: own.y, heading: own.heading });
     const { hud } = stage.parts;

@@ -109,8 +109,9 @@ export class Prologue {
 
   /** The wreck's run, opened once behind the wake's black. */
   private openRun(): Promise<WreckRun> {
-    this.carried.run ??= WreckRun.open(this.wreckContext, this.wreck(), this.wreck().wake.at);
-    return this.carried.run;
+    const run = this.carried.run ?? WreckRun.open(this.wreckContext, this.wreck(), this.wreck().wake.at);
+    this.carried.run = run;
+    return run;
   }
 
   /** What the beat that ended leaves, and the beat after it; a played story ends at the title. */
@@ -162,7 +163,12 @@ export class Prologue {
   }
 
   /** One frame of the story: the beat played, drawn, and moved on once it is done. */
-  frame(controls: InputFrame, seconds: number, size: { width: number; height: number }, viewport: { width: number; height: number }): void {
+  frame(
+    controls: InputFrame,
+    seconds: number,
+    size: { width: number; height: number },
+    viewport: { width: number; height: number },
+  ): void {
     if (this.end) return;
     this.clock += seconds;
     const { stage } = this.story;

@@ -35,7 +35,12 @@ export function fightMove(blows: readonly string[], clock: number, phase: number
 }
 
 /** Every fighter of the pairs as actors at `clock`: each pair a metre and three quarters apart, facing each other. */
-export function fighters(roster: readonly FoeType[], pairs: readonly Pairing[], clock: number, firstId = ACTOR_IDS): Actor[] {
+export function fighters(
+  roster: readonly FoeType[],
+  pairs: readonly Pairing[],
+  clock: number,
+  firstId = ACTOR_IDS,
+): Actor[] {
   const shown: Actor[] = [];
   pairs.forEach((pair, index) => {
     const [x, y, z] = pair.at;
@@ -53,7 +58,17 @@ export function fighters(roster: readonly FoeType[], pairs: readonly Pairing[], 
       // A blow plays from its first frame: the move began when this blow did.
       const round = BLOW_S + GUARD_S;
       const since = clock - ((((clock + phase) % round) + round) % round);
-      shown.push({ id: firstId + index * 2 + side, dress, anim, x: standX, y: standY, z, facing, since, hold: anim !== 'guard' && anim !== 'block' });
+      shown.push({
+        id: firstId + index * 2 + side,
+        dress,
+        anim,
+        x: standX,
+        y: standY,
+        z,
+        facing,
+        since,
+        hold: anim !== 'guard' && anim !== 'block',
+      });
     });
   });
   return shown;

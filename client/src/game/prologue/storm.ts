@@ -103,19 +103,31 @@ export class StormDive implements Beat {
     const strike = lightning.step(tick.seconds, [brig.x, brig.y]);
     stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
     const swell = stage.swell();
-    const ships = this.leapt ? sailing.frame([brig.sailed()], tick.seconds, tick.clock, story.places.heading + 2.6, swell) : [];
+    const ships = this.leapt
+      ? sailing.frame([brig.sailed()], tick.seconds, tick.clock, story.places.heading + 2.6, swell)
+      : [];
     const own = ships[0]?.place ?? this.place();
     const shot = this.leapt ? this.runShot(own) : this.pullShot();
     if (this.since >= PULL_S + RUN_S) this.done = true;
     const actors = this.leapt ? [...brig.crew(own, tick.clock), youAtHelm(story, own, 'idle')] : [];
-    return { shot, ships, actors, land: !this.leapt, heads: this.leapt ? brig.heads(own) : undefined, focus: [shot.eye[0], shot.eye[1]] };
+    return {
+      shot,
+      ships,
+      actors,
+      land: !this.leapt,
+      heads: this.leapt ? brig.heads(own) : undefined,
+      focus: [shot.eye[0], shot.eye[1]],
+    };
   }
 
   /** Up from the title and round toward the open sea, where the storm stands. */
   private pullShot(): Shot {
     const share = Math.min(1, this.since / PULL_S);
     const eased = share * share * (3 - 2 * share);
-    const turn = Math.atan2(Math.sin(this.story.places.home + Math.PI - this.from.yaw), Math.cos(this.story.places.home + Math.PI - this.from.yaw));
+    const turn = Math.atan2(
+      Math.sin(this.story.places.home + Math.PI - this.from.yaw),
+      Math.cos(this.story.places.home + Math.PI - this.from.yaw),
+    );
     const yaw = this.from.yaw + turn * eased;
     const forward = eased * eased * 1800;
     return {

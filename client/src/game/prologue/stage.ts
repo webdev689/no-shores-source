@@ -11,7 +11,7 @@ import type { Gpu } from '../../gpu.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Swell } from '../../rules/landRules.ts';
 import type { FoeType } from '../../rules/roster.ts';
-import type { ShipView } from '../../ships/shipView.ts';
+import type { ShipCamera, ShipView } from '../../ships/shipView.ts';
 import type { Cast, Line } from '../../speech/cast.ts';
 import type { DialogueBox } from '../../speech/dialogue.ts';
 import type { Overheads } from '../../speech/overheads.ts';
@@ -23,6 +23,7 @@ import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
 import type { Drawer, GameScene } from '../scene.ts';
+import { standingDrawers } from '../standing.ts';
 import { type Actor, actorCards } from './actors.ts';
 import type { Objective } from './objective.ts';
 import type { Hull, ShipDraw } from './sailing.ts';
@@ -121,34 +122,25 @@ export class Stage {
 
   /** Draws a beat's frame: the land, its city and nature where asked, the ships, every figure, the birds and the fire,
    *  and what the beat adds; then the barks and emotes over the heads it names, and the dialogue's typing. */
-  draw(frame: StoryFrame, size: { readonly width: number; readonly height: number }, clock: number, seconds: number): void {
+  draw(
+    frame: StoryFrame,
+    size: { readonly width: number; readonly height: number },
+    clock: number,
+    seconds: number,
+  ): void {
     const { scene, figures, forge, hulls, birds, flames, overheads, dialogue, canvas } = this.parts;
     const shot = frame.shot;
     const land = frame.land === false ? null : this.parts.landDrawers();
     const cards = [...actorCards(frame.actors ?? [], forge, shot.eye, clock), ...(frame.cards ?? [])];
     const ships = frame.ships ?? [];
-    const drawers: Drawer[] = [
-      ...(land ? [land.city, land.nature].filter((drawer): drawer is Drawer => !!drawer) : []),
-      {
-        drawInto: (pass, fromEye) => {
-          const camera = { fromEye, eye: shot.eye };
-          const slots: Record<Hull, number> = { brig: 0, sloop: 0 };
-          for (const ship of ships) {
-            const slot = slots[ship.hull]++;
-            if (slot < SLOTS_A_HULL) hulls[ship.hull].drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig);
-          }
-        },
-      },
-      {
-        castInto: (pass, fromEye, drawn, _time, shadow) =>
-          figures.castInto(pass, fromEye, drawn.eye, drawn.yaw, cards, shadow),
-        drawInto: (pass, fromEye, drawn, _time, shadow) =>
-          figures.drawInto(pass, fromEye, drawn.eye, drawn.yaw, cards, shadow),
-      },
-      birds,
-      flames,
-      ...(frame.drawers ?? []),
-    ];
+    const sailed = (pass: GPURenderPassEncoder, camera: ShipCamera) => {
+      const slots: Record<Hull, number> = { brig: 0, sloop: 0 };
+      for (const ship of ships) {
+        const slot = slots[ship.hull]++;
+        if (slot < SLOTS_A_HULL) hulls[ship.hull].drawInto(pass, ship.place, camera, slot, ship.shade, ship.rig);
+      }
+    };
+    const drawers = [...standingDrawers(land, sailed, figures, cards), birds, flames, ...(frame.drawers ?? [])];
     scene.draw(shot, size, clock, seconds, drawers, {
       after: frame.after,
       hulls: frame.hulls,

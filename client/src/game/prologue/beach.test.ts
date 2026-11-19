@@ -26,7 +26,15 @@ test('no beach under a cliff, by the harbour, on the city, or past the reach', (
   const beach = findBeach(island, [0, 0], HARBOUR, nowhere, 900);
   assert.ok(beach && beach.at[1] > -150, 'not under the north cliff');
   assert.ok(beach && Math.hypot(beach.at[0] - 300, beach.at[1]) >= 260, 'clear of the quays');
-  assert.equal(findBeach(island, [0, 0], HARBOUR, () => true, 900), null, 'all of it the city');
+  assert.equal(
+    findBeach(island, [0, 0], HARBOUR, () => true, 900),
+    null,
+    'all of it the city',
+  );
   assert.equal(findBeach(island, [0, 0], HARBOUR, nowhere, 200), null, 'the sea is out of reach');
-  assert.equal(findBeach(() => null, [0, 0], HARBOUR, nowhere, 900), null, 'off the charts');
+  assert.equal(
+    findBeach(() => null, [0, 0], HARBOUR, nowhere, 900),
+    null,
+    'off the charts',
+  );
 });

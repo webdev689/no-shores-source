@@ -74,7 +74,11 @@ export class Calm implements Beat {
     const eased = share * share * (3 - 2 * share);
     const shot: Shot = {
       ...deck,
-      eye: [0, 1, 2].map((axis) => (this.from.eye[axis] ?? 0) * (1 - eased) + (deck.eye[axis] ?? 0) * eased) as [number, number, number],
+      eye: [0, 1, 2].map((axis) => (this.from.eye[axis] ?? 0) * (1 - eased) + (deck.eye[axis] ?? 0) * eased) as [
+        number,
+        number,
+        number,
+      ],
       yaw: this.from.yaw + Math.atan2(Math.sin(deck.yaw - this.from.yaw), Math.cos(deck.yaw - this.from.yaw)) * eased,
       pitch: this.from.pitch * (1 - eased) + deck.pitch * eased,
     };
@@ -82,7 +86,10 @@ export class Calm implements Beat {
     return {
       shot,
       ships,
-      actors: [...brig.crew(own, tick.clock, { gunner: 'idle', bosun: 'idle', lookout: 'idle' }), youAtHelm(story, own, 'idle')],
+      actors: [
+        ...brig.crew(own, tick.clock, { gunner: 'idle', bosun: 'idle', lookout: 'idle' }),
+        youAtHelm(story, own, 'idle'),
+      ],
       heads: brig.heads(own),
       land: false,
       focus: [brig.x, brig.y],
@@ -177,7 +184,9 @@ export class Ram implements Beat {
     const own = ships[0]?.place;
     if (!own) throw new Error('the Brig is not sailing');
     const braced = this.since > 6.4;
-    const moves = braced ? { mate: 'crouch', bosun: 'crouch', gunner: 'crouch', lookout: 'crouch' } : { lookout: 'gesture' };
+    const moves: Readonly<Record<string, string>> = braced
+      ? { mate: 'crouch', bosun: 'crouch', gunner: 'crouch', lookout: 'crouch' }
+      : { lookout: 'gesture' };
     return {
       shot: this.shot(own),
       ships,
@@ -205,6 +214,10 @@ export class Ram implements Beat {
     if (this.struck < 0 || motionReduced()) return shot;
     const shake = Math.max(0, 1 - (this.since - this.struck) / 1.2) * 0.6;
     const wobble = (rate: number) => Math.sin(this.since * rate) * shake;
-    return { ...shot, eye: [shot.eye[0] + wobble(61), shot.eye[1] + wobble(53), shot.eye[2] + wobble(71)], pitch: shot.pitch + wobble(47) * 0.05 };
+    return {
+      ...shot,
+      eye: [shot.eye[0] + wobble(61), shot.eye[1] + wobble(53), shot.eye[2] + wobble(71)],
+      pitch: shot.pitch + wobble(47) * 0.05,
+    };
   }
 }

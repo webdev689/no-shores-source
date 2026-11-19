@@ -10,7 +10,15 @@ export const OVER_CLOUD: Weather = { ...CLEAR, clouds: CLOUD_LAYER, wind: [3, 1]
 /** Under the cloud over a highland island: low mist in its valleys. */
 export const HIGHLAND: Weather = { ...CLEAR, overcast: 0.3, mist: 0.45, clouds: CLOUD_LAYER, wind: [4, 2] };
 /** Rain over a green island. */
-export const RAIN: Weather = { ...CLEAR, overcast: 0.6, rain: 0.6, mist: 0.3, clouds: CLOUD_LAYER, wind: [5, 3], seaGain: 1.4 };
+export const RAIN: Weather = {
+  ...CLEAR,
+  overcast: 0.6,
+  rain: 0.6,
+  mist: 0.3,
+  clouds: CLOUD_LAYER,
+  wind: [5, 3],
+  seaGain: 1.4,
+};
 /** A clear, hot sky over a desert island. */
 export const FAIR: Weather = { ...CLEAR, clouds: { ...CLOUD_LAYER, cover: 0.35 }, wind: [2, 0] };
 /** Snow over the tundra. */

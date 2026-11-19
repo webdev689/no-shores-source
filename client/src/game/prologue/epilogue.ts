@@ -54,7 +54,13 @@ export class Epilogue {
       if (this.walked * WALK_M_S > GONE_M) this.done = true;
     }
     const facing = this.spoken ? standing.facing + Math.PI : standing.facing;
-    const stranger: Actor = { id: STRANGER_ID, dress: STRANGER_DRESS, anim: this.spoken ? 'walk' : 'idle', ...standing, facing };
+    const stranger: Actor = {
+      id: STRANGER_ID,
+      dress: STRANGER_DRESS,
+      anim: this.spoken ? 'walk' : 'idle',
+      ...standing,
+      facing,
+    };
     const head = onScreen(shot, viewport, [standing.x, standing.y, standing.z + 2]);
     this.stage.parts.overheads.frame(seconds, new Map([['stranger', head]]));
     this.stage.parts.dialogue.frame(seconds);

@@ -6,7 +6,12 @@ import { fightRail, homeRail, type IslandFrame, passingRail, shipsOff, titleEye 
 import { thrownAt } from './overboard.ts';
 import { lidsAt } from './wake.ts';
 
-const FRAME: IslandFrame = { town: [1000, 1000, 40], out: Math.PI / 2, plaza: [1010, 1000, 52], anchorage: [2600, 1000] };
+const FRAME: IslandFrame = {
+  town: [1000, 1000, 40],
+  out: Math.PI / 2,
+  plaza: [1010, 1000, 52],
+  anchorage: [2600, 1000],
+};
 
 test('a passing island is flown into from the cloud over the sea and out into the cloud again', () => {
   const rail = passingRail(FRAME, 1);

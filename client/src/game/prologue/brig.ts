@@ -69,7 +69,15 @@ export class Brig {
   }
 
   sailed(overrides: Partial<Sailed> = {}): Sailed {
-    return { who: 'brig', hull: 'brig', x: this.x, y: this.y, heading: this.heading, underWay: this.way > 0, ...overrides };
+    return {
+      who: 'brig',
+      hull: 'brig',
+      x: this.x,
+      y: this.y,
+      heading: this.heading,
+      underWay: this.way > 0,
+      ...overrides,
+    };
   }
 
   /** Her crew where they work, as she is placed; `moves` swaps a speaker's move (a cry, a cheer). */
