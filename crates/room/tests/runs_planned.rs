@@ -259,6 +259,83 @@ fn a_building_runs_ceilings_stand_clear_and_its_passages_are_roofed() {
     });
 }
 
+#[test]
+fn a_halls_rooms_and_pillars_stand_on_their_beats_floor() {
+    each_run(&|laid, run, floor| {
+        if !run.kind.building() {
+            return;
+        }
+        // How far a point lies past a beat's rim.
+        let past = |at: [f64; 2], beat: &layout::runs::Beat| layout::field::distance(at, beat.at) - beat.radius;
+        for beat in &run.beats {
+            let ground = floor(beat.at);
+            // A piece is a beat's when its middle stands within half the face's run past the beat's rim, nearer it than
+            // another beat's or the door (set in the face), and not in the room over the way in from the mouth.
+            let mouth_room = layout::run_halls::mouth_room(run).map(|([x, y], [east, south])| {
+                let out = layout::halls::WALL_M + 0.05;
+                [x - east - out, y - south - out, x + east + out, y + south + out]
+            });
+            let ours = |at: [f64; 2], print: [f64; 4]| {
+                let off = past(at, beat);
+                off < land::sculpts::CLIFF_RUN_M / 2.0
+                    && off <= layout::field::distance(at, run.door)
+                    && run.beats.iter().all(|other| past(at, other) >= off)
+                    && !mouth_room.is_some_and(|room| {
+                        room[0] <= print[0] && room[1] <= print[1] && print[2] <= room[2] && print[3] <= room[3]
+                    })
+            };
+            // A room's walls and a pillar stand from 0.4 m under their beat's floor.
+            let standing = laid.seating.solids.iter().filter(|solid| {
+                let [west, north, east, south, bottom, top] = solid.bounds();
+                matches!(solid.shape, city::solids::Shape::Block | city::solids::Shape::Column { .. })
+                    && (bottom - (ground - 0.4)).abs() < 0.15
+                    && top > bottom + 3.0
+                    && ours([(west + east) / 2.0, (north + south) / 2.0], [west, north, east, south])
+            });
+            // Each stands on the beat's flat floor, short of the face, and a room's pillars stand inside its walls.
+            for solid in standing {
+                let [west, north, east, south, ..] = solid.bounds();
+                let room = beat.radius * layout::run_halls::ROOM_SHARE;
+                let out = (west - beat.at[0])
+                    .abs()
+                    .max((east - beat.at[0]).abs())
+                    .max((north - beat.at[1]).abs())
+                    .max((south - beat.at[1]).abs());
+                let pillar = matches!(solid.shape, city::solids::Shape::Column { .. });
+                assert!(
+                    !(pillar && layout::run_halls::roomed(run.kind)) || out < room,
+                    "{}: {}'s pillar at {:?} stands outside its room on its beat at {:?}",
+                    laid.id,
+                    run.name,
+                    solid.at,
+                    beat.at
+                );
+                for corner in [[west, north], [east, north], [east, south], [west, south]] {
+                    let up = floor(corner) - ground;
+                    assert!(
+                        up <= 0.5,
+                        "{}: {}'s {:?} at {:?} on its beat at {:?} stands {up:.2} m up the face at {corner:?}",
+                        laid.id,
+                        run.name,
+                        solid.shape,
+                        solid.at,
+                        beat.at
+                    );
+                }
+            }
+        }
+    });
+}
+
+/// Each solid of a layout as a box (west, north, east, south, top, bottom), whether or not the section reaches it.
+fn solids_of(laid: &layout::Layout) -> Vec<[f64; 6]> {
+    let boxed = |solid: &city::solids::Solid| {
+        let [west, north, east, south, bottom, top] = solid.bounds();
+        [west, north, east, south, top, bottom]
+    };
+    laid.seating.solids.iter().map(boxed).collect()
+}
+
 /// Whether two footprints (west, north, east, south first) overlap.
 fn overlapping(first: &[f64], second: &[f64]) -> bool {
     first[0] < second[2] && second[0] < first[2] && first[1] < second[3] && second[1] < first[3]
@@ -272,7 +349,8 @@ fn every_cavern_slab_is_carried() {
         }
         for beat in &run.beats {
             let underside = floor(beat.at) + layout::run_halls::ROOF_UP_M;
-            let near: Vec<&[f64; 6]> = laid.boxes.iter().filter(|b| off_box(beat.at, b) <= beat.radius + 8.0).collect();
+            let solids = solids_of(laid);
+            let near: Vec<&[f64; 6]> = solids.iter().filter(|b| off_box(beat.at, b) <= beat.radius + 8.0).collect();
             let slabs: Vec<&[f64; 6]> = near
                 .iter()
                 .copied()
@@ -306,7 +384,10 @@ fn every_cavern_slab_is_carried() {
                         && !(b[0] >= inner[0] && b[1] >= inner[1] && b[2] <= inner[2] && b[3] <= inner[3])
                 });
                 let on_rock = edges(slab).into_iter().any(|at| floor(at) >= slab[5] - 0.5);
-                assert!(carried || on_rock, "{cavern}: the roof slab {slab:?} has no rib, pillar or rock under its edge");
+                assert!(
+                    carried || on_rock,
+                    "{cavern}: the roof slab {slab:?} has no rib, pillar or rock under its edge"
+                );
             }
             // A rib (a beam under the roof, not a pillar from the floor) springs at either end from the rock or a
             // pillar.

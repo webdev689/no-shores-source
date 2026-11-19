@@ -10,7 +10,7 @@ use crate::paths::off_line;
 use crate::pieces::{Kit, turn_along};
 use crate::rocks::stone;
 use crate::run_climbs::off_print;
-use crate::run_halls::ROOM_SHARE;
+use crate::run_halls::{ROOM_SHARE, roomed};
 use crate::runs::{Beat, Run, half_of};
 use crate::skyline::{carved_at, tower_stump};
 use city::solids::{Material, Shape, Solid};
@@ -24,6 +24,9 @@ const LINE_CLEAR_M: f64 = 2.6;
 /// A raised place's top over its beat's floor, and its steps' rise, metres.
 const RAISED_M: f64 = 1.6;
 const STEP_M: f64 = 0.4;
+/// How far a room's stores (a keep's crates, an undercroft's coffins) reach from where they stand, turned any way,
+/// metres: a coffin's half-diagonal.
+const STORE_REACH_M: f64 = 1.4;
 /// A length of a rampart's wall, metres.
 const WALL_LENGTH_M: f64 = 5.0;
 
@@ -133,8 +136,8 @@ fn mouth(kit: &mut Kit, run: &Run, carved: &Sculpts) {
 /// the beat's middle side. Where it stands, so the cover keeps off it.
 fn raised_place(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, climb: Option<[f64; 4]>) -> Option<[f64; 2]> {
     let start = kit.draw() * std::f64::consts::TAU;
-    // Well inside the rim, so the section (traced on 8 m cells) holds it whole, and inside a keep's room.
-    let inside = if run.kind == RunKind::Keep { beat.radius * ROOM_SHARE - 3.0 } else { beat.radius - 6.0 };
+    // Well inside the rim, so the section (traced on 8 m cells) holds it whole, and inside a beat's room.
+    let inside = if roomed(run.kind) { beat.radius * ROOM_SHARE - 3.0 } else { beat.radius - 6.0 };
     let out = inside.max(4.0);
     let off_climb = |at: [f64; 2]| climb.map_or(f64::INFINITY, |print| off_print(print, at));
     let place = (0..12).find_map(|turn| {
@@ -193,11 +196,11 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, kept: (Option<
                     continue;
                 }
             }
-            // Clear of what a body climbs, and of a keep's room's walls.
+            // Clear of what a body climbs, and of a beat's room's walls.
             let walls = beat.radius * ROOM_SHARE + WALL_M / 2.0;
             let off_walls = (walls - (at[0] - beat.at[0]).abs().max((at[1] - beat.at[1]).abs())).abs();
             if climb.is_some_and(|print| off_print(print, at) < across / 2.0 + 0.5)
-                || (run.kind == RunKind::Keep && off_walls < 1.6)
+                || (roomed(run.kind) && off_walls < WALL_M / 2.0 + STORE_REACH_M)
             {
                 continue;
             }

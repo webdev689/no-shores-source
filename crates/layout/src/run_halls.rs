@@ -16,9 +16,14 @@ use crate::skyline::carved_at;
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::Sculpts;
 
-/// A keep's rooms' inner half-width, a share of their beat's reach: so a room's corners, and a turret on each, stand on
-/// the beat's flat floor, short of where the rock's face rises past its rim.
+/// A keep's rooms' and an undercroft's vaults' inner half-width, a share of their beat's reach: so a room's corners,
+/// and a turret on each, stand on the beat's flat floor, short of where the rock's face rises past its rim.
 pub const ROOM_SHARE: f64 = 0.7;
+/// Whether a run of a kind stands a room square to the world on each beat, at ROOM_SHARE: a keep and an undercroft.
+#[must_use]
+pub const fn roomed(kind: RunKind) -> bool {
+    matches!(kind, RunKind::Keep | RunKind::Undercroft)
+}
 /// A building's ward's, courts' and halls' inner height, and its passages', metres.
 pub const WARD_M: f64 = 9.0;
 /// A ward's turrets' tops over its floor, metres: taller than its walls and their merlons.
@@ -58,12 +63,11 @@ fn passages(run: &Run) -> Vec<[[f64; 2]; 2]> {
     run.line.windows(2).filter(|pair| !(in_beat(pair[0]) && in_beat(pair[1]))).map(|pair| [pair[0], pair[1]]).collect()
 }
 
-/// Builds a building run's building; nothing for a run in the open.
-pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
-    let mut out = Vec::new();
-    let floor = |kit: &Kit, at: [f64; 2]| carved_at(kit, carved, at);
+/// The room over a building run's way in, its middle and inner half-widths east and south: a keep's gatehouse from its
+/// mouth to the way's first bend, an undercroft's chapel just past its mouth; none for the rest.
+#[must_use]
+pub fn mouth_room(run: &Run) -> Option<([f64; 2], [f64; 2])> {
     let half = half_of(run.kind);
-    let way_in = unit(run.mouth, run.line.get(1).copied().unwrap_or(run.door));
     match run.kind {
         RunKind::Keep => {
             let gate = run.line.get(1).copied().unwrap_or(run.mouth);
@@ -72,6 +76,25 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                 ((gate[0] - run.mouth[0]).abs() / 2.0).max(half + 2.5),
                 ((gate[1] - run.mouth[1]).abs() / 2.0).max(half + 2.5),
             ];
+            Some((middle, reach))
+        }
+        RunKind::Undercroft => {
+            let way_in = unit(run.mouth, run.line.get(1).copied().unwrap_or(run.door));
+            Some((ahead(run.mouth, way_in, 4.0), [half + 5.0; 2]))
+        }
+        _ => None,
+    }
+}
+
+/// Builds a building run's building; nothing for a run in the open.
+pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
+    let mut out = Vec::new();
+    let floor = |kit: &Kit, at: [f64; 2]| carved_at(kit, carved, at);
+    let half = half_of(run.kind);
+    let way_in = unit(run.mouth, run.line.get(1).copied().unwrap_or(run.door));
+    match run.kind {
+        RunKind::Keep => {
+            let (middle, reach) = mouth_room(run).unwrap_or_default();
             room(
                 &mut out,
                 &run.way(),
@@ -169,8 +192,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
             }
         }
         RunKind::Undercroft => {
-            let chapel = ahead(run.mouth, way_in, 4.0);
-            let reach = [half + 5.0, half + 5.0];
+            let (chapel, reach) = mouth_room(run).unwrap_or_default();
             room(
                 &mut out,
                 &run.way(),
@@ -199,7 +221,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                 ribs(&mut out, *ends, floors, half);
             }
             for beat in &run.beats {
-                let reach = beat.radius * 0.9;
+                let reach = beat.radius * ROOM_SHARE;
                 let shape = Room {
                     middle: beat.at,
                     floor: floor(kit, beat.at),
@@ -210,7 +232,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
                     battled: false,
                 };
                 room(&mut out, &run.way(), shape, Material::Stone);
-                pillars(kit, &mut out, run, beat.at, beat.radius, carved, (Material::Stone, 1.3, 5.6));
+                pillars(kit, &mut out, run, (beat.at, beat.radius, reach), carved, (Material::Stone, 1.3, 5.6));
             }
         }
         RunKind::Gorge | RunKind::Ledge | RunKind::Rampart => {}
@@ -280,7 +302,7 @@ fn gallery(kit: &Kit, out: &mut Vec<Solid>, ends: [[f64; 2]; 2], half: f64, carv
 /// from the rock walls either side and running over the pillars on every other one; and a roof of rubble slabs over
 /// the bays, each on the ribs at its edges, with a few left out so light falls in shafts.
 fn cavern(kit: &mut Kit, out: &mut Vec<Solid>, run: &Run, middle: [f64; 2], radius: f64, carved: &Sculpts) {
-    pillars(kit, out, run, middle, radius, carved, (Material::Rubble, 2.6, ROOF_UP_M));
+    pillars(kit, out, run, (middle, radius, f64::INFINITY), carved, (Material::Rubble, 2.6, ROOF_UP_M));
     let underside = carved_at(kit, carved, middle) + ROOF_UP_M;
     let mut ribs = Vec::new();
     let lines = ((radius + 2.0) / BAY_M).floor() as i32;
@@ -342,14 +364,14 @@ fn springs(kit: &Kit, carved: &Sculpts, (from, way): ([f64; 2], [f64; 2]), rim: 
     None
 }
 
-/// Pillars over a beat on an 11 m lattice, each 3 m or more off the run's line: `look` is their material, their width
-/// and their height.
+/// Pillars over a beat (its middle and reach) on an 11 m lattice, each 3 m or more inside its rim, 2 m or more inside
+/// the walls of its room (`room`, its inner half-width, infinite in a cavern) and 3 m or more off the run's line:
+/// `look` is their material, their width and their height.
 fn pillars(
     kit: &Kit,
     out: &mut Vec<Solid>,
     run: &Run,
-    middle: [f64; 2],
-    radius: f64,
+    (middle, radius, room): ([f64; 2], f64, f64),
     carved: &Sculpts,
     look: (Material, f64, f64),
 ) {
@@ -366,7 +388,8 @@ fn pillars(
                 .windows(2)
                 .map(|pair| crate::paths::off_line(at, pair[0], pair[1]))
                 .fold(f64::INFINITY, f64::min);
-            if distance(at, middle) > radius - 3.0 || off < 3.0 + across / 2.0 {
+            let square = (at[0] - middle[0]).abs().max((at[1] - middle[1]).abs());
+            if distance(at, middle) > radius - 3.0 || square > room - 2.0 || off < 3.0 + across / 2.0 {
                 continue;
             }
             let base = carved_at(kit, carved, at) - 0.4;
