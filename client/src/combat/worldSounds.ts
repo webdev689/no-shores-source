@@ -340,7 +340,7 @@ export class WorldSounds {
 }
 
 /** The listener at the eye facing its yaw (clockwise from north, -y), up the world's up. */
-function listen(listener: AudioListener, eye: Point, yaw: number): void {
+export function listen(listener: AudioListener, eye: Point, yaw: number): void {
   const [ahead, along] = [Math.sin(yaw), -Math.cos(yaw)];
   // Browsers without the listener's parameters take its older calls.
   if (!(listener.positionX as AudioParam | undefined)) {

@@ -326,7 +326,7 @@ never while a press is held. Each press is an ask the room answers.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
   Under it, the players blocked, each with a press to unblock them; then the volumes of the interface, the world
-  ("World sounds"), the music ("Music") and the ambience ("Ambience"), each kept in this browser, and the recorded
+  ("World sounds"), the music ("Music") and the [[Ambience]] ("Ambience"), each kept in this browser, and the recorded
   sounds' credits: each one's name, author, licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
   wash move: no quiver, no shards, and the gains appear without sliding in.

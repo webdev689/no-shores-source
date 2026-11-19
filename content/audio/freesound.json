@@ -1024,6 +1024,69 @@
         838027
       ],
       "picked": 807391
+    },
+    {
+      "id": "amb.sea.gull",
+      "use": "Gulls calling over the sea near a coast, over a harbour and a shore",
+      "query": "seagulls calling",
+      "seconds": [
+        1.5,
+        12.0
+      ]
+    },
+    {
+      "id": "amb.social.crowd",
+      "use": "A port city's market crowd far below the plaza, no word clear, looped",
+      "query": "market crowd murmur",
+      "seconds": [
+        30.0,
+        240.0
+      ]
+    },
+    {
+      "id": "amb.woodland.crow",
+      "use": "A crow cawing in a wood",
+      "query": "crow caw",
+      "seconds": [
+        0.8,
+        6.0
+      ]
+    },
+    {
+      "id": "amb.highland.raven",
+      "use": "A raven croaking as it flies over the fells, the steppe, a marsh or the tundra",
+      "query": "raven croak",
+      "seconds": [
+        0.5,
+        5.0
+      ]
+    },
+    {
+      "id": "amb.rainforest.parrot",
+      "use": "Parrots squawking in a rainforest's canopy",
+      "query": "parrot squawk",
+      "seconds": [
+        0.5,
+        6.0
+      ]
+    },
+    {
+      "id": "amb.swamp.heron",
+      "use": "A heron croaking over a marsh",
+      "query": "heron call",
+      "seconds": [
+        0.4,
+        4.0
+      ]
+    },
+    {
+      "id": "amb.savanna.lion",
+      "use": "A lion roaring far off in the grasslands at night",
+      "query": "lion roar distant",
+      "seconds": [
+        2.0,
+        15.0
+      ]
     }
   ]
 }

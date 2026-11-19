@@ -161,7 +161,7 @@ export class Foot {
   private dressedLoadout = 0;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
-  private readonly folk: Placed[];
+  readonly folk: Placed[];
   private readonly prompt: UsePrompt | null;
   private using: Use | null = null;
 
