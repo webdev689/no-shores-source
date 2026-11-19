@@ -33,14 +33,16 @@ DFO's Dungeons 2.0: the Forge, which lays every dungeon in blocks of DFO's own, 
   frames where a room meets a corridor, pillars at a great room's inner corners, each face by its picture's role.
 - **Its population**, as far as Overlook uses it: the way in's exit door against rock, markers on a room's quiet
   floor, a torch on each room's wall and every fourth corridor cell, no foe in the way-in room.
+- **Its scenery's law**: a room's dressing, one piece for each ten of its cells on a quiet cell against a wall, laid
+  with the forged props of the dungeon's style in place of Daggerfall's scenery sprites.
 - **The heart**: the end room is held by its guardian, and a cache beside it opens when it falls; its stone that
   carried the player back to the way in becomes the return portal out of the dungeon.
 
 ## What stays behind
 
 - Stairs and storeys: [[Movement]] and the [[Navmesh]] stand one floor at a point.
-- Doors and their locks, traps and their notice and disarm, poison, magicka drains, last fire and its rest, scenery
-  flats, light hues by flame, block names, the director's noise and patrols: each needs a system Overlook does not
+- Doors and their locks, traps and their notice and disarm, poison, magicka drains, last fire and its rest, the
+  scenery sprites themselves, light hues by flame, block names, the director's noise and patrols: each needs a system Overlook does not
   have, or only repeats what its garrison already does.
 - The blocks' people, fixed foes, castle courts and riddle vaults, the source dungeons' squares and kinds, curated
   blocks, the plan's print and saves: all of them Daggerfall's dungeons or DFO's saves.

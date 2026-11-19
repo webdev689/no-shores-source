@@ -8,5 +8,9 @@ description = "The patrol areas' dungeons, laid by DFO's Forge: rooms and corrid
 
 [dependencies]
 
+# Only to test the props' table against the forged models' measures.
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true

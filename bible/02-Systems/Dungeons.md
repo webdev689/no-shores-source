@@ -8,6 +8,8 @@ code:
   - crates/dungeon/src/dungeon.rs#Dungeon
   - crates/dungeon/src/block.rs#BlockLayout
   - crates/dungeon/src/lane.rs#Lane
+  - crates/dungeon/src/props.rs#PropModel
+  - crates/dungeon/src/props.rs#furnish
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
   - crates/room/src/dungeon_ground.rs#DungeonGround
   - crates/room-wasm/src/fighter_door.rs#set_dungeon
@@ -83,13 +85,28 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.8 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A room at least 4 cells each way stands a
   pillar 0.7 m square at every second inner corner whose four cells are its own.
+- **Props.** Each room is furnished as the Forge furnished it with scenery, with the forged props of its style
+  ([[Forged Models]]): one for each ten of its cells and at least one, each on a quiet cell against a rock wall, its
+  back 0.1 m off it, its front to the room, turned a quarter more where it is deeper than wide so its long side runs
+  along the wall, its foot on the floor and its top 0.3 m under the ceiling at most. One to a cell, drawn on the room's
+  own lane, and never on the way in's cell, the portal's, a torch's wall, the four cells nearest a room's middle where
+  its foes stand, or the Reeve's cell and those round it. Each is a solid like a pillar.
+
+| Style | Its props |
+|---|---|
+| Crypt | low coffins (43304, 43306), tomb markers (43055, 43057), a pedestal (41020), broken columns (41731, 41733), crates (41816, 41818) |
+| Halls | crates (41816, 41817, 41822, 41827, 41831), a cabinet (41022), a cupboard (41032), shelves (41035), a table (41108), a bench (41105), a chair (41100), a rack (41125) |
+| Cells | beds (41000, 41001), a bench (41105), a stool (41103), a table (41111), crates (41816, 41818), a trough (41209) |
+| Sanctum | statues (62327, 62329), a pedestal (41020), a lectern (41021), columns (41723, 41731), an obelisk (43303), a throne (41122) |
+
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; every room of the way in's block
   lies nearer than the end.
 - **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
-  cells of 3.2 m, and the jambs and pillars as boxes (min x, min y, max x, max y, top).
+  cells of 3.2 m, and the jambs, then the pillars, then the props as boxes (min x, min y, max x, max y, top).
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
   name and its number: its cells (-2 rock, -1 corridor, or a room's number), ceilings, rooms, end, way in, arrival,
-  exit door, portal, torches, frames, pillars and boxes; null for a number past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by
+  exit door, portal, torches, frames, pillars, props (each its model, its origin and its yaw) and boxes; null for a
+  number past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by
   their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine.
 
 ## In the rooms
@@ -102,10 +119,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Its height is the
-  cells' (0 m open, a wall 10 m over the floor for rock) and 10 m inside a jamb or a pillar, so a shot or a look meets
-  them as it meets the rock. A move is walled where it crosses rock, or where it ends nearer than a body's half-width
-  (0.35 m) to rock, a jamb or a pillar and nearer than it began: a body slides along a wall, steps away from one, and
-  never stands in its face. Movement climbs blocks, never a ground's walls, so no jamb or pillar is climbed and no body
+  cells' (0 m open, a wall 10 m over the floor for rock) and 10 m inside a jamb, a pillar or a prop, so a shot or a
+  look meets them as it meets the rock. A move is walled where it crosses rock, or where it ends nearer than a body's
+  half-width (0.35 m) to rock, a jamb, a pillar or a prop and nearer than it began: a body slides along a wall, steps
+  away from one, and never stands in its face. Inside a solid, as a shove might leave it, its nearness is less than
+  nothing by its depth, so it walks out and never deeper. Movement climbs blocks, never a ground's walls, so no jamb or pillar is climbed and no body
   reaches a ceiling. Each cell keeps the jambs and pillars within a half-width of it, so a move looks at a few. The
   browser predicts on the same ground (`fighter_dungeon`).
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with the jambs and

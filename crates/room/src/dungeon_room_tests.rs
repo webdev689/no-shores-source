@@ -7,7 +7,7 @@ use crate::garrison::STAND_AGAIN;
 use crate::{Input, standing_on};
 use combat::Intent;
 use combat::fighter::Action;
-use combat::sight::off;
+use combat::sight::{apart, off};
 use dungeon::{DOORWAY_HALF_M, Side};
 use movement::{Controls, Mode, TUNING};
 
@@ -86,15 +86,24 @@ fn a_dungeons_room_stands_its_reeve_alone_in_the_end_room_and_its_bands_past_the
 
 #[test]
 fn bands_past_the_rooms_most_are_spread_evenly_along_the_walk() {
-    let dungeon = forged(PATROLS[0], 0);
-    let all = band_rooms(&dungeon, usize::MAX);
-    assert_eq!(all.len(), dungeon.rooms.len() - 2, "every room but the way in's and the end");
-    let few = band_rooms(&dungeon, 7);
-    let size = |room: &usize| band_size(dungeon.rooms[*room].cells.len());
-    assert!(!few.is_empty() && few.iter().map(size).sum::<usize>() < 7, "with the Reeve, seven at most");
-    let walks: Vec<u32> = few.iter().map(|&room| dungeon.rooms[room].walk).collect();
-    assert!(walks.is_sorted() && few.len() < all.len(), "{walks:?}");
-    assert!(few[0] != all[0] && few[few.len() - 1] != all[all.len() - 1], "spread, not the first nor the last");
+    for patrol in PATROLS {
+        for number in 0..dungeon::PER_PATROL {
+            let dungeon = forged(patrol, number);
+            let all = band_rooms(&dungeon, usize::MAX);
+            assert_eq!(all.len(), dungeon.rooms.len() - 2, "every room but the way in's and the end");
+            let size = |room: &usize| band_size(dungeon.rooms[*room].cells.len());
+            for most in [5, 9, 13] {
+                let few = band_rooms(&dungeon, most);
+                assert!(few.iter().map(size).sum::<usize>() < most, "with the Reeve, {most} at most");
+                // Each chosen room's place along the walk: equal stretches apart, give or take one room.
+                let places: Vec<usize> =
+                    few.iter().map(|room| all.iter().position(|found| found == room).unwrap()).collect();
+                let gaps: Vec<usize> = places.windows(2).map(|pair| pair[1] - pair[0]).collect();
+                let (low, high) = (gaps.iter().min().copied().unwrap_or(0), gaps.iter().max().copied().unwrap_or(0));
+                assert!(high - low <= 1, "{patrol} {number}: spread evenly, {places:?} of {}", all.len());
+            }
+        }
+    }
 }
 
 #[test]
@@ -166,9 +175,11 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     let post = room.garrison[0].at;
     assert!((apart([x, y], [post[0], post[1]]) - CACHE_FROM_POST_M).abs() < 1e-9 && open == 0.0, "shut by the Reeve");
     assert!((facing - bearing([x, y], [post[0], post[1]])).abs() < 1e-12, "facing the Reeve's post");
-    assert!(room.blocks.iter().all(|block| {
-        apart([x, y], [x.clamp(block.min_x, block.max_x), y.clamp(block.min_y, block.max_y)]) >= CACHE_CLEAR_M
+    let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
+    assert!(ground.solids().iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+        apart([x, y], [x.clamp(min_x, max_x), y.clamp(min_y, max_y)]) >= CACHE_CLEAR_M
     }));
+    assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0), "nothing between the Reeve and the cache");
     let players: Vec<PlayerId> = (0..2).map(|_| room.join().expect("room")).collect();
     run(&mut room, 1);
     assert!(players.iter().all(|player| room.drops_for(*player).count() == 0));

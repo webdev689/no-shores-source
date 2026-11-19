@@ -7,12 +7,14 @@
 mod block;
 mod dungeon;
 pub mod lane;
+mod props;
 
 pub use block::{BLOCK_CELLS, Ends, Opening};
 pub use dungeon::{
     DOORWAY_HALF_M, Dungeon, EXIT_HEIGHT_M, EXIT_WIDTH_M, Frame, JAMB_DEPTH_M, LINTEL_M, PILLAR_HALF_M, Room, TORCH_M,
     TORCH_REACH_M, Torch, WallDoor,
 };
+pub use props::{CELLS_PROPS, CRYPT_PROPS, HALLS_PROPS, POSTS_A_ROOM, Prop, PropModel, SANCTUM_PROPS};
 
 /// A cell's side in metres, and a block's.
 pub const CELL_M: f64 = 3.2;
@@ -101,14 +103,48 @@ pub struct Style {
     /// Its main picture set and its second, by Daggerfall's dungeon archives.
     pub pictures: [u16; 2],
     pub noun: &'static str,
+    /// The forged props its rooms are furnished with.
+    pub props: &'static [PropModel],
 }
 
 /// The four styles, as the Forge's crypt, hall, cells and temple.
 pub const STYLES: [Style; 4] = [
-    Style { rooms: (3, 5), room_cells: (2, 4), heights: (3.2, 4.4), ells: false, pictures: [123, 124], noun: "Crypt" },
-    Style { rooms: (2, 4), room_cells: (3, 7), heights: (4.0, 5.6), ells: true, pictures: [122, 124], noun: "Halls" },
-    Style { rooms: (4, 6), room_cells: (2, 3), heights: (3.2, 3.6), ells: false, pictures: [122, 123], noun: "Cells" },
-    Style { rooms: (2, 4), room_cells: (3, 6), heights: (4.4, 5.6), ells: true, pictures: [124, 122], noun: "Sanctum" },
+    Style {
+        rooms: (3, 5),
+        room_cells: (2, 4),
+        heights: (3.2, 4.4),
+        ells: false,
+        pictures: [123, 124],
+        noun: "Crypt",
+        props: CRYPT_PROPS,
+    },
+    Style {
+        rooms: (2, 4),
+        room_cells: (3, 7),
+        heights: (4.0, 5.6),
+        ells: true,
+        pictures: [122, 124],
+        noun: "Halls",
+        props: HALLS_PROPS,
+    },
+    Style {
+        rooms: (4, 6),
+        room_cells: (2, 3),
+        heights: (3.2, 3.6),
+        ells: false,
+        pictures: [122, 123],
+        noun: "Cells",
+        props: CELLS_PROPS,
+    },
+    Style {
+        rooms: (2, 4),
+        room_cells: (3, 6),
+        heights: (4.4, 5.6),
+        ells: true,
+        pictures: [124, 122],
+        noun: "Sanctum",
+        props: SANCTUM_PROPS,
+    },
 ];
 
 /// A patrol's dungeon by its number: its seed, from the patrol's id, and its style. A patrol's dungeons take different
@@ -134,3 +170,5 @@ pub fn name(style: &Style, patrol_name: &str) -> String {
 mod block_tests;
 #[cfg(test)]
 mod dungeon_tests;
+#[cfg(test)]
+mod props_tests;

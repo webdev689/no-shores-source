@@ -35,7 +35,9 @@ pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
 /// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
 /// wall as the exit door stands on the way in's, as wide and as high. Each cell is -2 for rock, -1 for a corridor
 /// or its room's number; sides are 0 east, 1 south, 2 west, 3 north; points are x east, y south, z up from the
-/// dungeon's north-west corner at its floor; a bearing is radians clockwise from north.
+/// dungeon's north-west corner at its floor; a bearing is radians clockwise from north. Each prop is its forged model's
+/// id, where its origin stands (x, y, z) and its yaw, which turns its +z as an RMB block's yaw does; its solid is
+/// among the boxes, after the jambs and the pillars.
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
     let (Ok(found), Some((seed, style))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
@@ -64,6 +66,8 @@ pub fn dungeon_json(text: &[u8]) -> String {
         .iter()
         .map(|torch| [torch.at[0], torch.at[1], torch.at[2], f64::from(side_number(torch.wall))])
         .collect();
+    let props: Vec<[f64; 5]> =
+        laid.props.iter().map(|prop| [f64::from(prop.model), prop.at[0], prop.at[1], prop.at[2], prop.yaw]).collect();
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
     json!({
@@ -93,6 +97,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "pillars": laid.pillars,
         "pillarHalf": dungeon::PILLAR_HALF_M,
         "boxes": laid.boxes(),
+        "props": props,
     })
     .to_string()
 }
@@ -158,7 +163,7 @@ mod tests {
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
     ];
-    const AGREED_HASH: u64 = 0x211e_d498_04b0_827c;
+    const AGREED_HASH: u64 = 0x14f0_a5f0_c3a2_7e1b;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {

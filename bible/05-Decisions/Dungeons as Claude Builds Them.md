@@ -13,6 +13,9 @@ status: in force
 > "They need to be a slighty linear thing with a clear beginning, middle, end and an easy navigation path out of the
 > dungeon, like a return portal"
 
+> "Do a comprehensive and detailed pass on this. Ensure everything recieves our texture system, props are laid, and
+> everything is perfection"
+
 > "This is your baby to mold." ([[The World Is Claude's to Mold]])
 
 ## What it settles
@@ -26,7 +29,8 @@ change any of them.
 | One floor | A dungeon is one floor; the Forge's stacked storeys and their stairs stay behind | [[Movement]] and the [[Navmesh]] stand one floor at a point |
 | A run, not a maze | A block's rooms joined one after another, from the doorway in to the doorway on, never by the Forge's spanning tree and loops; a block opens only onto the blocks before and after it in the chain, by one doorway. The end is the last room of the last block | The owner: "a slighty linear thing with a clear beginning, middle, end"; about one loop in a dungeon, where the Forge's law made five |
 | The return portal | On the end room's wall farthest from the way in, a doorway of light as wide and high as the exit door, open while the Reeve lies fallen, as the cache is | The owner's "easy navigation path out of the dungeon, like a return portal", and DFO's heart, which carried the player back to the way in |
-| What stays behind | Doors and locks, traps, scenery sprites, the blocks' people, riddle vaults, last fire, light hues, block names, the director, DELVE II's encounters, and the cave and mine styles | Each needs a system Overlook does not have (lockpicking, Luck, magicka, poison, rest, Daggerfall's light table and sprites), or nothing in Overlook asks for it (block names, the director, beside the garrison's own hearing and standing again); caves and mines need a rock picture the painter does not paint |
+| Props | Each style's own forged props laid as the Forge laid its scenery, one for each ten cells of a room, against its walls: the Tithe's crates, cabinets, shelves, tables and racks in the Halls; beds, benches and a trough in the Cells; coffins, tomb markers and broken columns in the Crypt; statues, pedestals, a lectern and a throne in the Sanctum. Each is a solid. They keep clear of the doorways, the way in, the portal, the torches and where the foes and the Reeve stand | The owner asked that props be laid; the forged props come over with the rest of the branch's models |
+| What stays behind | Doors and locks, traps, scenery sprites (forged props stand in their place), the blocks' people, riddle vaults, last fire, light hues, block names, the director, DELVE II's encounters, and the cave and mine styles | Each needs a system Overlook does not have (lockpicking, Luck, magicka, poison, rest, Daggerfall's light table and sprites), or nothing in Overlook asks for it (block names, the director, beside the garrison's own hearing and standing again); caves and mines need a rock picture the painter does not paint |
 | Dungeons in a patrol area | Three, each behind its own entrance | A patrol is about 1.6 km across: three give a route between them and its resource spots |
 | Where an entrance stands | Laid out from the patrol's id, the same every time: inside the ring and 60 m inside its edge, 60 m from every spawn, 40 m from every resource spot, 300 m from another entrance, on dry ground that rises no more than 1 in 4 across the 12 m round it | Found while crossing the patrol, never in the way at a spawn |
 | An entrance | One of the four dungeon entrances Daggerfall's dungeon blocks stand, among the forged models (42000, 42001, 43601, 43602), drawn from the dungeon's seed, its door facing the middle of the patrol | Daggerfall's own dungeon doors, forged with the rest of its models |

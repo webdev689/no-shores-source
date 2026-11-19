@@ -86,6 +86,8 @@ pub struct Dungeon {
     pub frames: Vec<Frame>,
     /// Each pillar's middle, (x, y), and its top.
     pub pillars: Vec<[f64; 3]>,
+    /// The props its rooms are furnished with (`props`).
+    pub props: Vec<crate::Prop>,
 }
 
 /// The squares of the blocks, in a chain: the first at the start, each next one beside the one before, drawn from
@@ -151,6 +153,7 @@ impl Dungeon {
             torches: Vec::new(),
             frames: Vec::new(),
             pillars: Vec::new(),
+            props: Vec::new(),
         };
         let blocks: Vec<BlockLayout> = openings
             .iter()
@@ -174,6 +177,7 @@ impl Dungeon {
         for (number, block) in blocks.iter().enumerate() {
             dungeon.light(squares[number], block);
         }
+        dungeon.furnish(seed, style.props);
         dungeon.frame();
         dungeon
     }
@@ -202,7 +206,7 @@ impl Dungeon {
     }
 
     /// Whether the cell beside on `side` is rock, or past the grid.
-    fn rock_beside(&self, cell: usize, side: Side) -> bool {
+    pub(crate) fn rock_beside(&self, cell: usize, side: Side) -> bool {
         self.beside(cell, side).is_none_or(|next| self.cells[next] == Cell::Rock)
     }
 
@@ -407,7 +411,7 @@ impl Dungeon {
     }
 
     /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up
-    /// to its ceiling, and every pillar.
+    /// to its ceiling, then every pillar, then every prop.
     #[must_use]
     pub fn boxes(&self) -> Vec<[f64; 5]> {
         let half = CELL_M / 2.0;
@@ -434,6 +438,7 @@ impl Dungeon {
         for &[x, y, top] in &self.pillars {
             boxes.push([x - PILLAR_HALF_M, y - PILLAR_HALF_M, x + PILLAR_HALF_M, y + PILLAR_HALF_M, top]);
         }
+        boxes.extend(self.props.iter().map(|prop| prop.solid));
         boxes
     }
 }

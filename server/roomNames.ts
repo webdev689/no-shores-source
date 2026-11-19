@@ -10,7 +10,8 @@ export function nodeRoom(
   name: string,
 ): { readonly id: string; readonly seas: number; readonly dungeon: number | null } | null {
   const parts = name.split('--');
-  const number = DUNGEON.exec(parts.at(-1) ?? '')?.[1];
+  // A dungeon's ending only after `--`: a node may itself be called `dungeon-0`.
+  const number = parts.length > 1 ? DUNGEON.exec(parts.at(-1) ?? '')?.[1] : undefined;
   if (number !== undefined) parts.pop();
   const [id = '', seas, ...more] = parts;
   const difficulty = seas === undefined ? 0 : SEAS.indexOf(seas);

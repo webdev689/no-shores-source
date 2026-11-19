@@ -9,7 +9,7 @@ use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
 use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
 use ::foes::Rank::{self, Miniboss};
 use ::foes::roster::{REEVE, foe_type};
-use combat::sight::{apart, bearing};
+use combat::sight::bearing;
 use dungeon::{CELL_M, Dungeon};
 use movement::{Block, Terrain};
 use navmesh::NavMesh;
@@ -22,7 +22,7 @@ const CACHE_CLEAR_M: f64 = 0.5;
 const VESTIGE_BEFORE_M: f64 = 0.8;
 /// A band's foes: one for each this many of its room's cells, rounded, and at least and at most so many.
 const CELLS_A_FOE: usize = 10;
-const BAND: (usize, usize) = (2, 4);
+const BAND: (usize, usize) = (2, dungeon::POSTS_A_ROOM);
 
 /// A dungeon's cache: where it stands (x, y, z), the way it faces, the post of the Reeve it lies by, and whether it
 /// stands open.
@@ -61,22 +61,6 @@ pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavM
         }
         Floor::Flat | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),
     }
-}
-
-/// A room's cells nearest its middle, its quiet cells (none of whose sides meets a corridor) when it has `count` of
-/// them, else any of its cells; nearest first, of two as near the first laid.
-fn nearest_middle(dungeon: &Dungeon, room: usize, count: usize) -> Vec<usize> {
-    let found = &dungeon.rooms[room];
-    let middle =
-        [(found.x as f64 + found.width as f64 / 2.0) * CELL_M, (found.y as f64 + found.depth as f64 / 2.0) * CELL_M];
-    let mut cells = if found.quiet.len() >= count { found.quiet.clone() } else { found.cells.clone() };
-    let from_middle = |cell: &usize| {
-        let [x, y] = dungeon.centre(*cell);
-        (x - middle[0]) * (x - middle[0]) + (y - middle[1]) * (y - middle[1])
-    };
-    cells.sort_by(|first, second| from_middle(first).total_cmp(&from_middle(second)));
-    cells.truncate(count);
-    cells
 }
 
 /// A room's band size: one foe for each CELLS_A_FOE of its cells, rounded, within BAND.
@@ -159,7 +143,8 @@ impl Room {
 
     /// Where `count` foes stand in a room: its cells nearest its middle, each on the navmesh.
     fn placed(&self, dungeon: &Dungeon, room: usize, count: usize) -> Vec<[f64; 3]> {
-        nearest_middle(dungeon, room, count)
+        dungeon
+            .nearest_middle(room, count)
             .into_iter()
             .map(|cell| {
                 let [x, y] = dungeon.centre(cell);
@@ -172,19 +157,16 @@ impl Room {
     /// The cache by the Reeve's post: CACHE_FROM_POST_M from it on open floor, nothing between, clear of every jamb
     /// and pillar, the first of the eight ways round it (north first, clockwise) that is; facing the post.
     fn cache_by(&self, post: [f64; 3]) -> Option<Cache> {
+        let Floor::Dungeon(ground) = &self.floor else { return None };
         let diagonal = CACHE_FROM_POST_M * core::f64::consts::FRAC_1_SQRT_2;
         let ways =
             [(0.0, -1.0), (1.0, -1.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (-1.0, 1.0), (-1.0, 0.0), (-1.0, -1.0)];
         ways.into_iter().find_map(|(east, south): (f64, f64)| {
             let across = if east != 0.0 && south != 0.0 { diagonal } else { CACHE_FROM_POST_M };
             let (x, y) = (post[0] + east * across, post[1] + south * across);
-            let solids = match &self.floor {
-                Floor::Dungeon(ground) => ground.solids(),
-                Floor::Flat | Floor::Land(_) => &[],
-            };
-            let clear = solids.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
-                apart([x, y], [x.clamp(min_x, max_x), y.clamp(min_y, max_y)]) >= CACHE_CLEAR_M
-            });
+            // Nothing between the post and the cache, where the Vestiges lie, and the cache clear of every solid.
+            let clear = ground.clear_between([post[0], post[1]], [x, y], 0.0)
+                && ground.clear_between([x, y], [x, y], CACHE_CLEAR_M);
             let open = !self.floor.walled((post[0], post[1]), (x, y));
             (clear && open).then(|| Cache {
                 at: [x, y, self.floor.height_at(x, y)],
