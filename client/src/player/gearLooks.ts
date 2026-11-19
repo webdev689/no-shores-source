@@ -109,6 +109,9 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
 
 /** The outfit of `gearOutfit` with the other loadout than `loadout` in its hands, or null with no weapon worn there. */
 export function spareOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit, loadout = MELEE): Outfit | null {
-  const spare = gearOutfit(state, wardrobe, outfit, loadout === MELEE ? RANGED_SLOT : MELEE);
+  const spare = gearOutfit(state, wardrobe, outfit, otherLoadout(loadout));
   return spare.right ? spare : null;
 }
+
+/** The loadout a swap from `loadout` takes up. */
+export const otherLoadout = (loadout: number): number => (loadout === MELEE ? RANGED_SLOT : MELEE);

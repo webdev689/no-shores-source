@@ -21,7 +21,7 @@ import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
-import { gearOutfit, spareOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
@@ -278,6 +278,7 @@ export class Foot {
       walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
     }
     walker.glow = heldElements(gear, loadout);
+    walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
@@ -424,7 +425,7 @@ export class Foot {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      { id: fight.player, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({
         id: number,
@@ -449,7 +450,7 @@ export class Foot {
     };
     const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
     const held = gear?.gear;
-    // The room leaves an Ammo box lying at full ammunition, as a melee-only character's always is.
+    // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
     const fought: FootFight = {
       own: ownView,

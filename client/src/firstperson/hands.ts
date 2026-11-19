@@ -143,6 +143,16 @@ export class Hands {
     }
   }
 
+  /** Ends every reload under way at once: the fight's rules have loaded the weapons, so the next shot they let go plays. */
+  loaded(): void {
+    // A brace's rules wait only out the first gun's frames before the other fires: they load both once both have fired.
+    if (this.plan?.volley && this.arms.some((arm) => arm.shot?.loaded)) return;
+    for (const arm of this.arms) {
+      arm.shot?.load();
+      arm.melee?.load();
+    }
+  }
+
   /** Moves the hands on by `seconds` with this frame's button, holding as `plan` says (null: nothing in hand). A strike
    *  begun now keeps a fight's `pace`, as its rules time the swing. */
   update(

@@ -232,9 +232,10 @@ export class Cards {
 
   /** Queues every view and frame of a dress's moves to be composed ahead of need, as drawn and as mirrored, its weapon
    *  glowing in `glow`, once for each dress; they replace whatever is still queued for the same figure (`owner`), as
-   *  only its newest dress will be shown, and leave every other figure's queued. */
-  warm(dress: Dress, anims: readonly string[], glow: GlowLook = 0, owner: number | string = 0): void {
-    const key = JSON.stringify([dress, anims, glow]);
+   *  only its newest dress will be shown, and leave every other figure's queued. The moves (`anims`, the same for the
+   *  same dress) are asked for only when the dress is new: a figure warms each frame. */
+  warm(dress: Dress, anims: () => readonly string[], glow: GlowLook = 0, owner: number | string = 0): void {
+    const key = JSON.stringify([dress, glow]);
     if (this.warmed.has(key)) return;
     this.warmed.add(key);
     // A dress replaced before all of it was composed is warmed again if it is worn again.
@@ -242,7 +243,7 @@ export class Cards {
     const others = this.queued.filter((queued) => queued.owner !== owner);
     this.queued.splice(0, this.queued.length, ...others);
     const kept = structuredClone(dress);
-    for (const anim of anims) {
+    for (const anim of anims()) {
       if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
       for (let view = 0; view < VIEWS; view++)
         for (let frame = 0; frame < this.frames(dress.body, anim); frame++)

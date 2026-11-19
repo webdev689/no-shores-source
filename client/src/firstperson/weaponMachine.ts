@@ -164,6 +164,11 @@ export class WeaponMachine {
     this.clock = 0;
   }
 
+  /** Ends a bow's reload at once: the fight's rules have loaded it. */
+  load(): void {
+    this.reload = 0;
+  }
+
   /** How far through a strike its blow lands: on the hit frame, of five frames or of bare hands' left strike's eight,
    *  or as a fight's rules land it. */
   get lands(): number {

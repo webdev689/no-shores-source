@@ -96,8 +96,11 @@ it while it reloads is the blade's.
 The guns and the crossbow fire on a trigger. A click fires when loaded; holding fires again as it loads, but not while
 aiming, where each shot takes a fresh pull as the rules ask. In a fight, any weapon, a bow too, plays a shot only as
 the fight's rules let one go, so a pull they refuse (no ammunition, a reload, a swap of loadouts) plays nothing; a gun
-with no shot left clicks dry ([[Combat]], "Shots"). Aiming zooms the weapon with the view, about the middle of
-the screen, and its muzzle with it, so a tracer starts where it is drawn
+with no shot left clicks dry ([[Combat]], "Shots"). Its reload ends when the rules' does, which a quicker reload or
+a kill that reloads ([[Gear]], "Perks") makes sooner than the weapon's own clock, so the next shot they let go plays;
+a brace's two guns load once both have fired. A weapon changed while the rules are busy (a swing, a guard, a reload, a
+draw) stays in hand until they take the new one up at rest, as the swap begins. Aiming zooms the weapon with the view,
+about the middle of the screen, and its muzzle with it, so a tracer starts where it is drawn
 ([[First-Person Aiming Zooms the Weapon With the View]]). A shot plays its frames at its own rate, then the weapon
 reloads:
 
@@ -164,7 +167,8 @@ gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both cast
 weapon meanwhile. In an armour set's gauntlets each casting hand is the set's whole arm, dyed as its fists are, under
 the element's light; with none it is the linen sleeve and the leather glove. An Art's cast is lit by its light,
 Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its element's glow ([[Arts]]). A new look's
-pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once.
+pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once;
+the figure's are composed ahead in the glow the other weapon will show once drawn.
 
 ### Climbing
 
