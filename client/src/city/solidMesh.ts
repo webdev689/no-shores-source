@@ -3,6 +3,7 @@
 // own +y, turned clockwise from north, and stood at its place. Every face is wound out of the solid.
 import { addPolygon, cross, dot, type MeshData, minus, normalised, type Vector } from './mesh.ts';
 import type { Solid } from './plan.ts';
+import { rockMesh } from '../rules/rockMesh.ts';
 
 /** Texels a metre a solid's picture is laid at: coarser than the forged models' forty, so a landmark's or a wall's
  *  courses read as monumental ashlar from the plaza and across the city, not as a fine grain. */
@@ -460,7 +461,27 @@ export function solidFaces(solid: Solid, surface: Surface): Face[] {
       return gable(half, height, surface);
     case 'arch':
       return arch(half, height, solid.opening, surface);
+    case 'caveroof':
+    case 'overhang':
+    case 'rockarch':
+    case 'tunnelmouth':
+      return rock(solid, surface);
   }
+}
+
+/** Natural rock's triangles, each lit flat so the rock reads as faceted crags, its picture laid from the axis each
+ *  triangle faces most so the stone runs on unbroken across a lump's side. */
+function rock(solid: Solid, surface: Surface): Face[] {
+  const { positions, triangles } = rockMesh(solid, solid.size);
+  const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / surface.width, SOLID_TEXELS_PER_METRE / surface.height];
+  return triangles.map((indices) => {
+    const corners = indices.map((index) => positions[index]);
+    const facing = cross(minus(corners[1], corners[0]), minus(corners[2], corners[0]));
+    const most = [0, 1, 2].reduce((best, axis) => (Math.abs(facing[axis]) > Math.abs(facing[best]) ? axis : best), 2);
+    const uvOf = ([x, y, z]: Vector): Uv =>
+      most === 2 ? [x * scaleU, y * scaleV] : most === 0 ? [y * scaleU, -z * scaleV] : [x * scaleU, -z * scaleV];
+    return { corners, normals: [normalised(facing)], uvs: corners.map(uvOf), facing };
+  });
 }
 
 /** A point or direction of the solid's own frame turned into the world's axes (east, south, up): rolled, leaned,
