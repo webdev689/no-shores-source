@@ -49,7 +49,8 @@ something enormous, a causeway, a cave's mouth, and an instance's way in and the
 is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale). Nothing reads `stone` or `river` yet.
+and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). Nothing
+reads `stone` yet.
 
 ## How a layout is planned
 
@@ -93,7 +94,9 @@ from the sea, fresh water and the claim's edge), then:
    off it, and a slow noise bends it as worn tracks wander. It ends on a block's own streets and leaves a village
    between its buildings. A way too steep for its tier is laid as a footpath, then stepped; an area no way reached is
    joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
-   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers.
+   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers: a timber deck 0.5 m
+   thick, so a body walks on it, and rails, both laid in lengths short enough that each one's box keeps close to it
+   on a slant.
    Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
    where it reaches one; a milestone every 160 m between the places; a scene every 80 to 180 m (a cart broken down
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
@@ -154,6 +157,21 @@ from the sea, fresh water and the claim's edge), then:
    other floor and well inside the claim; at its top a flat 22 m across, with a broken parapet but where the climb
    arrives and a brazier glowing on a plinth; a low drystone kerb runs along the climb's drop, broken here and there. Each climb is walked as a footpath, and the section takes in the climbs
    and the lookouts, so a patrol area has its heights as well as its floor.
+   A brief with `river` carries its claim along the river it holds most of, where the river runs between the
+   claim's north and south bounds: a wing 24 m either side of each stretch of the river's course (160 m at most),
+   any stretch whose wing would reach another node's claim or come within 50 m of the sea and its own width left out,
+   and the stretch's banks as floor, water meadows 12 m either side (both wider by as far as the river strays from its
+   course), so the section takes the river in. Where a gorge out of the claim meets a river inside the section, a
+   footbridge carries it over, reaching out along the lower bank until both its ends meet the land.
+   Then the dead masses (`masses`): patches of the massif over 2,500 m2, sought on 16 m cells, raised over half its
+   height, more than 150 m from every floor, climb and run and 120 m inside the claim's edge (the bounds). Before the
+   runs are found, each layout answers its largest mass, seeks them again, and so on five times at most: a straight
+   climb from a floor reached out of the mass's deepest point (sixteen headings tried) back up toward it, to a lookout
+   as above with a broken tower standing on the top 24 m past it, where that leaves under 2,500 m2 of the mass dead;
+   else a valley 22 m wide through the deepest point that joins two existing floors over walked land, keeps 48 m off
+   every climb past both edges and off every outcrop, and reaches most of the mass; else the climb that reaches most.
+   On Saltmere the Downs take three climbs, the Vale three valleys across the rock round its keep and a climb, the
+   Moors three valleys and two climbs.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds: a colossal ruined wall of
    ashlar dammed across the longest track's straightest run, its ends sunk in the cliffs, buttressed and
    battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
@@ -195,7 +213,8 @@ out past its edge.
   across and its sealed door: 200 to 400 m in all. Each passage between beats runs out of one beat's rim, bends 26
   to 49 degrees at its elbow and turns back into the next, so one beat never sees the next whole. The first fit wins
   among 24 headings from each area, seeded; a run keeps 16 m and its half-width off every floor, twice the face's run
-  off every climb and other run, and its door has 40 m of rock behind it. A run in the rock keeps 30 m inside the
+  off every climb and other run, and its door has 40 m of rock behind it, which no floors close round (the section
+  would take such rock in as a hole). A run in the rock keeps 30 m inside the
   claim; a run past the edge carries its door 80 m or more out of it, on dry land 50 m from the sea and clear of every
   other node's claim by the land's fade, read on a field 456 m wider than the claim's.
 - **Its land**: cut into the sculpt as levelled capsules ([[Land]]), its beats flat and its passages climbing between

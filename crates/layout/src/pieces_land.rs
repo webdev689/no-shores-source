@@ -1,7 +1,8 @@
 //! The set pieces inland: a mill and its wheel, a quarry stepped into its slope, the bones of something enormous, a
-//! broken causeway, a cave's mouth, and the bridges that carry paths over rivers.
+//! broken causeway, a cave's mouth, and the bridges that carry paths and gorges over rivers.
 
 use crate::areas::Area;
+use crate::field::{Field, Water, distance, ring_holds};
 use crate::pieces::{Kit, ahead, fire, lantern, model, turn_along, yaw_toward};
 use city::solids::{Material, Shape, Solid};
 
@@ -234,6 +235,52 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
                 [0.4, 0.4, deck + 1.1 - bottom],
                 Material::Timber,
             ));
+        }
+    }
+}
+
+/// How far a footbridge reaches out along a lower bank to meet the land at the other's height, in 2 m steps.
+const BANK_STEPS: usize = 6;
+
+/// A footbridge wherever a gorge out of a claim (its capsule) meets a river on `field` inside the section (`ring`),
+/// along the gorge: out along the lower bank until the deck's ends, 3 m past each bank, stand within 0.15 m of each
+/// other, so a body steps onto it at either end.
+pub fn footbridges(kit: &mut Kit, field: &Field, [x1, y1, x2, y2, _]: [f64; 5], ring: &[[f64; 2]]) {
+    let length = distance([x1, y1], [x2, y2]);
+    let steps = (length / 2.0).ceil() as usize;
+    let way = [(x2 - x1) / length.max(1e-9), (y2 - y1) / length.max(1e-9)];
+    let along = |step: usize| {
+        let share = step as f64 / steps.max(1) as f64;
+        [x1 + (x2 - x1) * share, y1 + (y2 - y1) * share]
+    };
+    let wet = |step: usize| {
+        let [x, y] = along(step);
+        field.cell_of(x, y).is_some_and(|(column, row)| field.water[field.index(column, row)] == Water::River)
+    };
+    let mut entered = None;
+    for step in 1..=steps {
+        match (wet(step - 1), wet(step), entered) {
+            (false, true, _) => entered = Some(step - 1),
+            (true, false, Some(bank)) => {
+                let end = |step: usize, out: f64| kit.height(ahead(along(step), way, 3.0 * out, 0.0));
+                let (mut west, mut east) = (bank, step);
+                loop {
+                    let (low_west, low_east) = (end(west, -1.0), end(east, 1.0));
+                    if low_west < low_east - 0.15 && west > 0 && bank - west < BANK_STEPS {
+                        west -= 1;
+                    } else if low_east < low_west - 0.15 && east < steps && east - step < BANK_STEPS {
+                        east += 1;
+                    } else {
+                        break;
+                    }
+                }
+                let banks = [along(west), along(east)];
+                if banks.iter().all(|at| ring_holds(ring, at[0], at[1])) {
+                    bridge(kit, banks, crate::paths::Tier::Footpath.width());
+                }
+                entered = None;
+            }
+            _ => {}
         }
     }
 }

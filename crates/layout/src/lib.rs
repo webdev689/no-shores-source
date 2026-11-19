@@ -48,8 +48,6 @@ use serde::Serialize;
 /// reaches out, a whole number of cells further, so the two grids' cells lie alike.
 const MARGIN_M: f64 = 40.0;
 const RUNS_MARGIN_M: f64 = MARGIN_M + 52.0 * CELL_M;
-/// How far a footbridge reaches out along a lower bank to meet the land at the other's height, in 2 m steps.
-const BANK_STEPS: usize = 6;
 
 /// Another node a layout leads to or comes from: its id and the middle of its claim.
 #[derive(Debug, Clone, PartialEq)]
@@ -274,52 +272,9 @@ pub fn plan(
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }
-    // Where a gorge out of the claim meets a river, a footbridge carries its way over, along the gorge.
+    // Where a gorge out of the claim meets a river, a footbridge carries its way over.
     for &(from, way) in &exits {
-        let [x1, y1, x2, y2, _] = carve::gorge(&field, from, way, 0.0);
-        let steps = (distance([x1, y1], [x2, y2]) / 2.0).ceil() as usize;
-        let along = |step: usize| {
-            let share = step as f64 / steps.max(1) as f64;
-            [x1 + (x2 - x1) * share, y1 + (y2 - y1) * share]
-        };
-        let wet = |step: usize| {
-            let [x, y] = along(step);
-            reach
-                .cell_of(x, y)
-                .is_some_and(|(column, row)| reach.water[reach.index(column, row)] == field::Water::River)
-        };
-        let mut entered = None;
-        for step in 1..=steps {
-            match (wet(step - 1), wet(step), entered) {
-                (false, true, _) => entered = Some(step - 1),
-                (true, false, Some(bank)) => {
-                    // Out along the lower bank to where it stands as high as the other, so a body steps onto the
-                    // deck at either end; and only where the section takes the way in.
-                    // The deck reaches 3 m past each bank and stands at the higher of its two ends.
-                    let end = |step: usize, out: f64| {
-                        let [x, y] = along(step);
-                        ground.height_at(x + way[0] * 3.0 * out, y + way[1] * 3.0 * out)
-                    };
-                    let (mut west, mut east) = (bank, step);
-                    loop {
-                        let (low_west, low_east) = (end(west, -1.0), end(east, 1.0));
-                        if low_west < low_east - 0.15 && west > 0 && bank - west < BANK_STEPS {
-                            west -= 1;
-                        } else if low_east < low_west - 0.15 && east < steps && east - step < BANK_STEPS {
-                            east += 1;
-                        } else {
-                            break;
-                        }
-                    }
-                    let banks = [along(west), along(east)];
-                    if banks.iter().all(|at| field::ring_holds(&ring, at[0], at[1])) {
-                        pieces_land::bridge(&mut kit, banks, Tier::Footpath.width());
-                    }
-                    entered = None;
-                }
-                _ => {}
-            }
-        }
+        pieces_land::footbridges(&mut kit, reach, carve::gorge(&field, from, way, 0.0), &ring);
     }
     let gorges: Vec<Path> = exits
         .iter()

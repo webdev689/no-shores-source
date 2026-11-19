@@ -120,8 +120,8 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   into its rock the same way. Where capsules meet (a run's at a bend, a climb's at its lookout) the level is a blend
   of the near capsules', weighted by how near each is (within 3 m), so the land climbs round the bend and beside a
   climb's top without a step. Its wings are capsules
-  that carry its claim past its ring, so the massif stands round a run that leaves the zone and fades back past the
-  wing. Neither is written when empty. Each sculpt measures its claim's edge
+  that carry its claim past its ring, so the massif stands round a run that leaves the zone, or round the river its
+  brief names, and fades back past the wing. Neither is written when empty. Each sculpt measures its claim's edge
   once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no
   measuring, the same to the bit; a 2 km close-up of carved ground samples in about a quarter of a second.
 - A sculpt's outcrops stand on its floor, each a shape with a middle, a radius, a tall and an angle (clockwise from
