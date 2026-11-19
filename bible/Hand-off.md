@@ -237,10 +237,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
   slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
   (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
-- **The world's sounds on #69 wait on the owner's second pass** on the sound sheet
-  ([[The World Sounds From the Sound Picker]]). The first pass picked 24, now in the game; 41 cues are open, among
-  them the four steps, offered from the recordings the owner chose for DFO ([[DFO's Own Sounds Join the Sound Sheet]]),
-  and the Duskraven's fire ([[The Duskraven Sounds With Fire Under Its Raven]]). Claude's calls in the layer, the
+- **Every world sound on #69 is the owner's pick**, over seven passes on the sound sheet
+  ([[The World Sounds From the Sound Picker]]): 63 Freesound recordings, DFO's own steps and Voidrend
+  ([[DFO's Own Sounds Join the Sound Sheet]]), the Duskraven's fire
+  ([[The Duskraven Sounds With Fire Under Its Raven]]); Exposed, Charged and Haste make none
+  ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
   owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
@@ -255,8 +256,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
-  layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), tested offline with every cue silent. Not yet: any world
-  sound heard, the layer in the game on foot in a browser, the walking blows looked at frame by frame.
+  layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
+  heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
 - **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
   `picked` in `content/audio/freesound.json`, and a redone cue's heard numbers in its `skip`; let the `freesound`
   workflow run, then `tools/freesound/publish.py <download>`. A pick of DFO's own (`dfo:<name>` on the sheet) sets
