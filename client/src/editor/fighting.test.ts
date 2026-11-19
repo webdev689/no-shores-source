@@ -195,3 +195,11 @@ test('a joined fight names her own ship, describes every captain afloat and tell
   assert.ok(after.includes('The Pirate Brig surrenders!'), after.join(' | '));
   assert.ok(after.includes('BROADSIDE! Brace (C).'), 'any captain running out her guns warns');
 });
+
+test('a fight begun with several captains sights them all, by how many and the nearest', () => {
+  const near: FightCaptain = { ...captain, ship: [0, 300, 0, 0, 0, 0, 0, 2] };
+  const sunk: FightCaptain = { ...captain, ship: [0, 100, 0, 0, 0, 0, 0, 2], state: 'sunk' };
+  const fighting = Fighting.joined(source().fights, 'sea', { ...VIEW, others: [near, captain, sunk] }, 0, 'Brig');
+  const lines = fighting.lines(0);
+  assert.ok(lines.includes('3 ships are sighted, the nearest 300 m off.'), lines.join(' | '));
+});

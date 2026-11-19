@@ -83,9 +83,16 @@ export class Fighting {
     this.id = id;
     this.answer = answer;
     this.own = own;
-    const [x = 0, y = 0] = answer.captain.ship;
     const [ownX = 0, ownY = 0] = answer.player.ship;
-    this.say(`A ${answer.captain.name} is sighted, ${Math.round(Math.hypot(x - ownX, y - ownY))} m off.`, now);
+    const captains = [answer.captain, ...(answer.others ?? [])].filter((captain) => captain.state !== 'sunk');
+    const off = (captain: FightCaptain) => Math.hypot((captain.ship[0] ?? 0) - ownX, (captain.ship[1] ?? 0) - ownY);
+    const nearest = Math.round(Math.min(...captains.map(off)));
+    this.say(
+      captains.length > 1
+        ? `${captains.length} ships are sighted, the nearest ${nearest} m off.`
+        : `A ${answer.captain.name} is sighted, ${Math.round(off(answer.captain))} m off.`,
+      now,
+    );
   }
 
   /** Calls a pirate captain onto the ring round her `ship`, or says why none comes. The rules decide where. */
