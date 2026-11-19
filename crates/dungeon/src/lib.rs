@@ -8,10 +8,10 @@ mod block;
 mod dungeon;
 pub mod lane;
 
-pub use block::{BLOCK_CELLS, Opening};
+pub use block::{BLOCK_CELLS, Ends, Opening};
 pub use dungeon::{
     DOORWAY_HALF_M, Dungeon, EXIT_HEIGHT_M, EXIT_WIDTH_M, Frame, JAMB_DEPTH_M, LINTEL_M, PILLAR_HALF_M, Room, TORCH_M,
-    TORCH_REACH_M, Torch, WayIn,
+    TORCH_REACH_M, Torch, WallDoor,
 };
 
 /// A cell's side in metres, and a block's.

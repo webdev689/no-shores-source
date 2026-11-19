@@ -72,7 +72,7 @@ fn the_resource_spots_stand_where_they_stood_before_the_entrances_came() {
 
 /// The patrol's land in cells of 100 m: sea (below 0 m) over its western half, then ground at 2 m that climbs a cliff
 /// to 20 m between x 250 m and 350 m.
-fn coast() -> Floor {
+fn coast() -> Heights {
     let heights = (0..16 * 16)
         .map(|cell| {
             let x = -800.0 + (cell % 16) as f64 * 100.0 + 50.0;
@@ -85,13 +85,13 @@ fn coast() -> Floor {
             })
         })
         .collect();
-    Floor::Dungeon(Box::new(Heights::new(-800.0, -800.0, 100.0, 16, 16, heights).expect("a grid")))
+    Heights::new(-800.0, -800.0, 100.0, 16, 16, heights).expect("a grid")
 }
 
 #[test]
 fn an_entrance_stands_on_dry_level_ground() {
     let floor = coast();
-    let entrances = laid("saltgrass-downs", &floor, &ring(), &SPAWNS, &[]);
+    let entrances = laid("saltgrass-downs", &floor, &|x, y| floor.height_at(x, y) >= 0.0, &ring(), &SPAWNS, &[]);
     assert!(!entrances.is_empty(), "the dry land takes some");
     for entrance in &entrances {
         let [x, y, z] = entrance.at;

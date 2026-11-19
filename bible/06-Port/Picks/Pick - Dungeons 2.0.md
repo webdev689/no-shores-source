@@ -25,14 +25,16 @@ DFO's Dungeons 2.0: the Forge, which lays every dungeon in blocks of DFO's own, 
 ## What comes over
 
 - **The Forge's block law**: the 16 by 16 grid; rooms by a seeded split, in each style's count, size, height and shape
-  (rectangles, an L two times in five); the edge contracts between blocks side by side; ways through the rock by the
-  cheapest route, a spanning tree and a share of loops; the check that a block is one walk, a failed seed taking the
-  next sub-seed, sixteen times, then the simplest form.
+  (rectangles, an L two times in five); the edge contracts between blocks; ways through the rock by the cheapest
+  route; the check that a block is one walk, a failed seed taking the next sub-seed, sixteen times, then the simplest
+  form. Its rooms are joined one after another rather than by its spanning tree and loops, and its blocks laid in a
+  chain, as the owner wants a run and not a labyrinth.
 - **The Forge's mesh**: floors, ceilings and walls from the cells, trim bands at a wall's foot and head, doorway
   frames where a room meets a corridor, pillars at a great room's inner corners, each face by its picture's role.
 - **Its population**, as far as Overlook uses it: the way in's exit door against rock, markers on a room's quiet
   floor, a torch on each room's wall and every fourth corridor cell, no foe in the way-in room.
-- **The heart**: the room farthest from the way in is held by its guardian, and a cache beside it opens when it falls.
+- **The heart**: the end room is held by its guardian, and a cache beside it opens when it falls; its stone that
+  carried the player back to the way in becomes the return portal out of the dungeon.
 
 ## What stays behind
 

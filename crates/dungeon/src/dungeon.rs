@@ -1,9 +1,9 @@
-//! A whole dungeon: three or four blocks grown from the way in's, each next beside one already laid, every two side
-//! by side sharing one or two doorways in their edge. With it, what the rooms and the Game read: the way in's exit door,
-//! the torches, each room's walk from the way in, and what a body runs into beside the rock, the doorways' jambs and
-//! the great rooms' pillars.
+//! A whole dungeon: three or four blocks in a chain from the way in's, each next one beside the one before and sharing
+//! one doorway with it, so the way runs from a beginning through a middle to an end. With it, what the rooms and the
+//! Game read: the way in's exit door, the return portal in the end room, the torches, each room's walk from the way in,
+//! and what a body runs into beside the rock, the doorways' jambs and the great rooms' pillars.
 
-use crate::block::{BLOCK_CELLS, BlockLayout, OPENING_FIRST, OPENING_LAST, Opening};
+use crate::block::{BLOCK_CELLS, BlockLayout, Ends, OPENING_FIRST, OPENING_LAST, Opening};
 use crate::lane::Lane;
 use crate::{CELL_M, Cell, SIDES, Shape, Side, Style};
 
@@ -41,9 +41,10 @@ pub struct Room {
     pub walk: u32,
 }
 
-/// The way in: the room's cell the exit door stands at, and the side of it the door is on.
+/// A door on a wall of a room: the room's cell it stands at, the side of that cell its wall is on, and the room. The
+/// way in's exit door is one, and the return portal on the end room's far wall another.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WayIn {
+pub struct WallDoor {
     pub cell: usize,
     pub side: Side,
     pub room: usize,
@@ -76,53 +77,50 @@ pub struct Dungeon {
     /// Each open cell's ceiling, 0 for rock.
     pub ceilings: Vec<f64>,
     pub rooms: Vec<Room>,
-    pub way_in: WayIn,
+    pub way_in: WallDoor,
+    /// The end room: the last the way reaches in the last block.
+    pub end: usize,
+    /// The return portal: on the wall of the end room farthest from the way in, it takes a player back out.
+    pub portal: WallDoor,
     pub torches: Vec<Torch>,
     pub frames: Vec<Frame>,
     /// Each pillar's middle, (x, y), and its top.
     pub pillars: Vec<[f64; 3]>,
 }
 
-/// The squares of the blocks: the first at the start, each next one beside one already laid, drawn from those free.
+/// The squares of the blocks, in a chain: the first at the start, each next one beside the one before, drawn from
+/// the free squares round it, so the way runs from block to block.
 fn grow(lane: &mut Lane, count: usize) -> Vec<(isize, isize)> {
     let mut squares = vec![(0, 0)];
     while squares.len() < count {
-        let mut free: Vec<(isize, isize)> = Vec::new();
-        for &(column, row) in &squares {
-            for side in SIDES {
-                let (dx, dy) = side.step();
-                let next = (column + dx, row + dy);
-                if !squares.contains(&next) && !free.contains(&next) {
-                    free.push(next);
-                }
-            }
-        }
+        let (column, row) = squares[squares.len() - 1];
+        let free: Vec<(isize, isize)> = SIDES
+            .into_iter()
+            .map(|side| (column + side.step().0, row + side.step().1))
+            .filter(|next| !squares.contains(next))
+            .collect();
         squares.push(free[lane.below(free.len())]);
     }
     squares
 }
 
-/// Each block's openings: every two blocks side by side share one or two, each a cell along their edge.
-fn contracts(seed: u32, squares: &[(usize, usize)]) -> Vec<Vec<Opening>> {
-    let mut openings = vec![Vec::new(); squares.len()];
-    for (first, &(column, row)) in squares.iter().enumerate() {
-        for side in [Side::East, Side::South] {
+/// Each block's way in and way on: a block and the next in the chain share one doorway, a cell along their edge; two
+/// blocks side by side that are not next in the chain share none.
+fn contracts(seed: u32, squares: &[(usize, usize)]) -> Vec<Ends> {
+    let mut ends = vec![Ends::default(); squares.len()];
+    for first in 1..squares.len() {
+        let (before, after) = (squares[first - 1], squares[first]);
+        let Some(side) = SIDES.into_iter().find(|side| {
             let (dx, dy) = side.step();
-            let next = (column.wrapping_add_signed(dx), row.wrapping_add_signed(dy));
-            let Some(second) = squares.iter().position(|&square| square == next) else { continue };
-            let mut lane = Lane::named(&format!("edge:{seed}:{first}:{second}"));
-            let mut taken = Vec::new();
-            for _ in 0..lane.int(1, 2) {
-                let cell = lane.int(OPENING_FIRST, OPENING_LAST);
-                if !taken.contains(&cell) {
-                    taken.push(cell);
-                    openings[first].push(Opening { side, cell });
-                    openings[second].push(Opening { side: side.opposite(), cell });
-                }
-            }
-        }
+            (before.0.wrapping_add_signed(dx), before.1.wrapping_add_signed(dy)) == after
+        }) else {
+            continue;
+        };
+        let cell = Lane::named(&format!("edge:{seed}:{first}")).int(OPENING_FIRST, OPENING_LAST);
+        ends[first - 1].exit = Some(Opening { side, cell });
+        ends[first].entry = Some(Opening { side: side.opposite(), cell });
     }
-    openings
+    ends
 }
 
 impl Dungeon {
@@ -147,7 +145,9 @@ impl Dungeon {
             cells: vec![Cell::Rock; columns * rows],
             ceilings: vec![0.0; columns * rows],
             rooms: Vec::new(),
-            way_in: WayIn { cell: 0, side: Side::North, room: 0 },
+            way_in: WallDoor { cell: 0, side: Side::North, room: 0 },
+            end: 0,
+            portal: WallDoor { cell: 0, side: Side::North, room: 0 },
             torches: Vec::new(),
             frames: Vec::new(),
             pillars: Vec::new(),
@@ -155,7 +155,7 @@ impl Dungeon {
         let blocks: Vec<BlockLayout> = openings
             .iter()
             .enumerate()
-            .map(|(number, own)| {
+            .map(|(number, &own)| {
                 BlockLayout::sound(crate::lane::named(&format!("block:{seed}:{number}")), own, &style, number == 0)
             })
             .collect();
@@ -164,13 +164,17 @@ impl Dungeon {
         }
         if let Some((x, y, side)) = blocks[0].exit_spot() {
             let cell = dungeon.cell_of(squares[0], x, y);
-            dungeon.way_in = WayIn { cell, side, room: dungeon.room_at(cell).unwrap_or(0) };
+            dungeon.way_in = WallDoor { cell, side, room: dungeon.room_at(cell).unwrap_or(0) };
         }
+        let last = blocks.len() - 1;
+        let first_of_last: usize = blocks[..last].iter().map(|block| block.rooms.len()).sum();
+        dungeon.end = first_of_last + blocks[last].order.last().copied().unwrap_or(0);
+        let steps = dungeon.walk();
+        dungeon.portal = dungeon.portal_spot(&steps);
         for (number, block) in blocks.iter().enumerate() {
             dungeon.light(squares[number], block);
         }
         dungeon.frame();
-        dungeon.walk();
         dungeon
     }
 
@@ -262,10 +266,11 @@ impl Dungeon {
         corners
     }
 
-    /// A torch on the first wall of a cell that has one, never over the exit door; whether it stood.
+    /// A torch on the first wall of a cell that has one, never over the exit door or the portal; whether it stood.
     fn torch_on(&mut self, cell: usize) -> bool {
-        let door = (self.way_in.cell, self.way_in.side);
-        let Some(wall) = SIDES.into_iter().find(|&side| self.rock_beside(cell, side) && (cell, side) != door) else {
+        let doors = [(self.way_in.cell, self.way_in.side), (self.portal.cell, self.portal.side)];
+        let Some(wall) = SIDES.into_iter().find(|&side| self.rock_beside(cell, side) && !doors.contains(&(cell, side)))
+        else {
             return false;
         };
         let [x, y] = self.centre(cell);
@@ -321,7 +326,7 @@ impl Dungeon {
     }
 
     /// Each room's walk from the way in: the fewest cells crossed to reach any of its cells.
-    pub(crate) fn walk(&mut self) {
+    pub(crate) fn walk(&mut self) -> Vec<u32> {
         let mut steps = vec![u32::MAX; self.cells.len()];
         let mut todo = std::collections::VecDeque::from([self.way_in.cell]);
         steps[self.way_in.cell] = 0;
@@ -337,13 +342,32 @@ impl Dungeon {
         for room in &mut self.rooms {
             room.walk = room.cells.iter().map(|&cell| steps[cell]).min().unwrap_or(u32::MAX);
         }
+        steps
     }
 
-    /// The room farthest from the way in by walk; of two as far, the one laid first.
+    /// Where the return portal stands: on a wall of the end room, at its cell farthest from the way in by walk (its
+    /// quiet cells first), the first such wall; on the way in's own wall only where the end room has no other.
+    fn portal_spot(&self, steps: &[u32]) -> WallDoor {
+        let room = self.end();
+        let found = &self.rooms[room];
+        for cells in [&found.quiet, &found.cells] {
+            let mut deepest = cells.clone();
+            deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
+            for cell in deepest {
+                let door = (self.way_in.cell, self.way_in.side);
+                if let Some(side) = SIDES.into_iter().find(|&side| self.rock_beside(cell, side) && (cell, side) != door)
+                {
+                    return WallDoor { cell, side, room };
+                }
+            }
+        }
+        WallDoor { room, ..self.way_in }
+    }
+
+    /// The end: the last room the way reaches in the last block, where the Reeve and the return portal stand.
     #[must_use]
-    pub fn end(&self) -> usize {
-        (0..self.rooms.len())
-            .fold(0, |far, number| if self.rooms[number].walk > self.rooms[far].walk { number } else { far })
+    pub const fn end(&self) -> usize {
+        self.end
     }
 
     /// Where a body arrives and comes back after death: before the exit door, (x, y), and the way it faces, away from
@@ -358,8 +382,19 @@ impl Dungeon {
     /// The exit door's middle at its foot, (x, y), on its wall.
     #[must_use]
     pub fn exit_door(&self) -> [f64; 2] {
-        let [x, y] = self.centre(self.way_in.cell);
-        let [dx, dy] = self.way_in.side.unit();
+        self.on_wall(self.way_in)
+    }
+
+    /// The return portal's middle at its foot, (x, y), on its wall: as wide and as high as the exit door.
+    #[must_use]
+    pub fn portal_door(&self) -> [f64; 2] {
+        self.on_wall(self.portal)
+    }
+
+    /// A wall door's middle at its foot, (x, y), just off its wall.
+    fn on_wall(&self, door: WallDoor) -> [f64; 2] {
+        let [x, y] = self.centre(door.cell);
+        let [dx, dy] = door.side.unit();
         let off = CELL_M / 2.0 - EXIT_OFF_WALL_M;
         [x + dx * off, y + dy * off]
     }

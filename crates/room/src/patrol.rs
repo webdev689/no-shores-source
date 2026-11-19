@@ -58,7 +58,8 @@ impl Room {
         let Some(section) = &self.section else { return };
         let spots = Dice { seed: named(node), tick: 0, player: 0 };
         let nodes = places(&section.ring, &section.spawns, &spots, SPOTS, [SPOTS_APART_M, SPOTS_FROM_SPAWNS_M]);
-        let entrances = crate::entrances::laid(node, &self.floor, &section.ring, &section.spawns, &nodes);
+        let dry = |x: f64, y: f64| crate::entrances::dry(&self.floor, x, y);
+        let entrances = crate::entrances::laid(node, &self.floor, &dry, &section.ring, &section.spawns, &nodes);
         self.resource_nodes = nodes.into_iter().map(|[x, y]| ResourceNode { x, y, resource }).collect();
         self.patrol = Some(Patrol { entrances, ..Patrol::default() });
     }

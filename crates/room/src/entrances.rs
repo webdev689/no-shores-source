@@ -93,8 +93,8 @@ impl Entrance {
     }
 }
 
-/// Whether a point is dry ground: out of the sea, and out of any river or lake the land tells.
-fn dry(floor: &Floor, x: f64, y: f64) -> bool {
+/// Whether a point of a room's floor is dry ground: out of the sea, and out of any river or lake the land tells.
+pub(crate) fn dry(floor: &Floor, x: f64, y: f64) -> bool {
     match floor {
         Floor::Land(ground) => ground.water_at(x, y) == WaterAt::Dry,
         Floor::Flat | Floor::Dungeon(_) => floor.height_at(x, y) >= 0.0,
@@ -103,7 +103,7 @@ fn dry(floor: &Floor, x: f64, y: f64) -> bool {
 
 /// Whether the ground across LEVEL_ACROSS_M round a point, at its middle and at eight ways round it at half that and
 /// at all of it, rises and falls by LEVEL_WITHIN_M at most.
-fn level(floor: &Floor, x: f64, y: f64) -> bool {
+fn level(floor: &dyn Terrain, x: f64, y: f64) -> bool {
     let ways = [(0.0, -1.0), (1.0, -1.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0), (-1.0, 1.0), (-1.0, 0.0), (-1.0, -1.0)];
     let heights = [LEVEL_ACROSS_M / 2.0, LEVEL_ACROSS_M].into_iter().flat_map(|across| {
         ways.into_iter().map(move |(east, south): (f64, f64)| {
@@ -123,7 +123,8 @@ fn level(floor: &Floor, x: f64, y: f64) -> bool {
 /// door faces the ring's middle (its corners' average).
 pub(crate) fn laid(
     node: &str,
-    floor: &Floor,
+    floor: &dyn Terrain,
+    dry: &dyn Fn(f64, f64) -> bool,
     ring: &[[f64; 2]],
     spawns: &[[f64; 2]],
     spots: &[[f64; 2]],
@@ -145,7 +146,7 @@ pub(crate) fn laid(
             && spawns.iter().all(|&spawn| apart(spawn, [x, y]) >= FROM_SPAWNS_M)
             && spots.iter().all(|&spot| apart(spot, [x, y]) >= FROM_SPOTS_M)
             && found.iter().all(|other| apart([other.at[0], other.at[1]], [x, y]) >= APART_M)
-            && dry(floor, x, y)
+            && dry(x, y)
             && level(floor, x, y);
         if clear {
             let (seed, _) = dungeon::of_patrol(node, found.len());

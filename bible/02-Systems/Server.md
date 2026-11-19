@@ -58,8 +58,8 @@ on Cloudflare.
   and no clock of its own: its host hands it each player's inputs, ticks it 60 times a second, and sends out what it
   sees.
 - **Its ground:** a node's room stands its bodies on the node's window of the [[Land]], among the boxes of its city a
-  body runs into ([[Movement]]). A dungeon's room stands them on its floor, movement's grid of heights in the
-  dungeon's own frame, whose rock is a wall no body passes, among its doorways' jambs and its pillars ([[Dungeons]]).
+  body runs into ([[Movement]]). A dungeon's room stands them on the dungeon's own ground in its own frame, whose
+  rock, doorways' jambs and pillars are walls no body passes or climbs, kept a body's half-width off ([[Dungeons]]).
   Any other room stands them on its course of blocks on open ground at 0 m.
 - **Joining:** a player gets a number no one else in the room has had. In a node's room they stand on the ground at
   the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn.
@@ -399,8 +399,8 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: the largest, 153.6 m by 102.4 m, opens
-  in about 0.15 s natively, the bake holding about 22 MB at its peak (tested offline). Movement has no ceilings, so
-  a body pressed against a jamb or a pillar climbs it as it climbs any block too high to grab, and stands on its top.
+  in about 0.15 s natively, the bake holding about 22 MB at its peak (tested offline). Movement has no ceilings; a
+  dungeon's are never reached, as nothing in it can be climbed.
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
   and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).

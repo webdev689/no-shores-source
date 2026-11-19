@@ -1,6 +1,7 @@
 //! One block's layout, as DFO's Forge lays it: 16 by 16 cells of 3.2 m, rock but where rooms are carved by a seeded
-//! split of the square and joined, to each other and to the block's edge openings, by the cheapest ways through the
-//! rock. The outer ring stays rock but where an opening passes, so a block closes its own edges.
+//! split of the square and joined by the cheapest ways through the rock. The owner wants a dungeon run through, not a
+//! maze, so a block's rooms are joined one after another, from its way in to its way on. The outer ring stays rock but
+//! where an opening passes, so a block closes its own edges.
 
 use crate::lane::Lane;
 use crate::{CORRIDOR_HEIGHT_M, Cell, SIDES, Shape, Side, Style};
@@ -11,8 +12,7 @@ const AREA: usize = BLOCK_CELLS * BLOCK_CELLS;
 /// An opening's cell along its side, clear of the corners.
 pub(crate) const OPENING_FIRST: usize = 2;
 pub(crate) const OPENING_LAST: usize = 13;
-/// The share of extra ways past the spanning tree, and a split's smallest part in cells.
-const LOOPS: f64 = 0.3;
+/// A split's smallest part, in cells.
 const LEAST_PART: usize = 5;
 /// Tries at a sound layout before a block takes its simplest form, and the step between their seeds.
 const TRIES: u32 = 16;
@@ -38,13 +38,23 @@ pub(crate) struct BlockRoom {
     pub shape: Shape,
 }
 
-/// A block's cells (a room's by its number in `rooms`), each open cell's ceiling height, its rooms and its openings.
+/// A block's way in, the opening from the block before it, and its way on, the opening onto the next; the way in's
+/// block has no way in and the last block no way on.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Ends {
+    pub entry: Option<Opening>,
+    pub exit: Option<Opening>,
+}
+
+/// A block's cells (a room's by its number in `rooms`), each open cell's ceiling height, its rooms, its openings, and
+/// its rooms in the order its way runs through them.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct BlockLayout {
     pub cells: Vec<Cell>,
     pub ceilings: Vec<f64>,
     pub rooms: Vec<BlockRoom>,
     pub openings: Vec<Opening>,
+    pub order: Vec<usize>,
 }
 
 const fn at(x: usize, y: usize) -> usize {
@@ -125,7 +135,13 @@ fn takes(shape: Shape, ell: (usize, usize, bool, bool), width: usize, depth: usi
 
 impl BlockLayout {
     fn empty() -> Self {
-        Self { cells: vec![Cell::Rock; AREA], ceilings: vec![0.0; AREA], rooms: Vec::new(), openings: Vec::new() }
+        Self {
+            cells: vec![Cell::Rock; AREA],
+            ceilings: vec![0.0; AREA],
+            rooms: Vec::new(),
+            openings: Vec::new(),
+            order: Vec::new(),
+        }
     }
 
     /// Carves a room into each part, a cell of rock kept on every side of it.
@@ -237,65 +253,46 @@ impl BlockLayout {
             .collect()
     }
 
-    /// Joins the rooms and openings: a spanning tree by distance, then a share of the other pairs as loops, each by
-    /// its cheapest way.
-    fn join(&mut self, lane: &mut Lane) {
-        let mut nodes: Vec<(usize, usize)> = (0..self.rooms.len())
-            .filter_map(|number| {
+    /// Joins the block's way through, one room after another: from its way in (the opening from the block before, or
+    /// for the way in's block its first room), through each room in turn, nearest the way in and farthest from the way
+    /// on first, to the opening onto the next block; each by its cheapest way. One way from room to room keeps a block
+    /// a run from one end to the other rather than a maze.
+    fn join(&mut self, ends: Ends) {
+        let middles: Vec<(usize, usize)> = (0..self.rooms.len())
+            .map(|number| {
                 let cells = self.room_cells(number);
-                cells.get(cells.len() / 2).copied()
+                cells.get(cells.len() / 2).copied().unwrap_or((self.rooms[number].x, self.rooms[number].y))
             })
             .collect();
-        let rim: Vec<(usize, usize)> = self.openings.iter().map(|&opening| opening_cell(opening)).collect();
-        nodes.extend(&rim);
-        if nodes.len() < 2 {
-            return;
-        }
-        let apart = |a: (usize, usize), b: (usize, usize)| a.0.abs_diff(b.0) + a.1.abs_diff(b.1);
-        let mut in_tree = vec![0];
-        let mut edges: Vec<(usize, usize)> = Vec::new();
-        while in_tree.len() < nodes.len() {
-            let mut best: Option<(usize, usize, usize)> = None;
-            for &from in &in_tree {
-                for to in (0..nodes.len()).filter(|to| !in_tree.contains(to)) {
-                    let length = apart(nodes[from], nodes[to]);
-                    if best.is_none_or(|(_, _, shortest)| length < shortest) {
-                        best = Some((from, to, length));
-                    }
-                }
-            }
-            let Some((from, to, _)) = best else { break };
-            in_tree.push(to);
-            edges.push((from, to));
-        }
-        let share = LOOPS.min(2.0 / nodes.len() as f64);
-        for first in 0..nodes.len() {
-            for second in first + 1..nodes.len() {
-                let joined = edges.iter().any(|&edge| edge == (first, second) || edge == (second, first));
-                if !joined && lane.chance(share) {
-                    edges.push((first, second));
-                }
-            }
-        }
-        for (from, to) in edges {
-            if let Some(path) = self.route(nodes[from], nodes[to], &rim) {
+        let apart = |a: (usize, usize), b: (usize, usize)| (a.0.abs_diff(b.0) + a.1.abs_diff(b.1)) as isize;
+        let (entry, exit) = (ends.entry.map(opening_cell), ends.exit.map(opening_cell));
+        let along =
+            |cell: (usize, usize)| entry.map_or(0, |from| apart(from, cell)) - exit.map_or(0, |to| apart(to, cell));
+        let mut order: Vec<usize> = (0..self.rooms.len()).collect();
+        order.sort_by_key(|&number| (along(middles[number]), number));
+        let stops: Vec<(usize, usize)> =
+            entry.into_iter().chain(order.iter().map(|&number| middles[number])).chain(exit).collect();
+        let rim: Vec<(usize, usize)> = entry.into_iter().chain(exit).collect();
+        for pair in stops.windows(2) {
+            if let Some(path) = self.route(pair[0], pair[1], &rim) {
                 self.carve(&path);
             }
         }
+        self.order = order;
     }
 
-    /// The layout of one try: its rooms, its openings cut through the rim, every room and opening joined.
-    fn laid(seed: u32, openings: &[Opening], style: &Style) -> Self {
+    /// The layout of one try: its rooms, its way in and its way on cut through the rim, and the way through it joined.
+    fn laid(seed: u32, ends: Ends, style: &Style) -> Self {
         let mut lane = Lane::new(seed);
         let mut block = Self::empty();
         block.carve_rooms(&mut lane, style);
-        for &opening in openings {
+        for opening in [ends.entry, ends.exit].into_iter().flatten() {
             let (x, y) = opening_cell(opening);
             block.cells[at(x, y)] = Cell::Corridor;
             block.ceilings[at(x, y)] = CORRIDOR_HEIGHT_M;
             block.openings.push(opening);
         }
-        block.join(&mut lane);
+        block.join(ends);
         block
     }
 
@@ -328,11 +325,13 @@ impl BlockLayout {
         self.room_cells(number).into_iter().filter(|&(x, y)| !busy(x, y)).collect()
     }
 
-    /// Where the way in's exit door stands: a room's cell with rock beside it, its quiet cells first and then the rest,
-    /// each nearest its room's middle; the cell and the side the rock is on. None where no room meets rock.
+    /// Where the way in's exit door stands: a room's cell with rock beside it, the rooms in the block's order, their
+    /// quiet cells first and then the rest, each nearest its room's middle; the cell and the side the rock is on. None
+    /// where no room meets rock.
     pub(crate) fn exit_spot(&self) -> Option<(usize, usize, Side)> {
         for quiet in [true, false] {
-            for (number, room) in self.rooms.iter().enumerate() {
+            for &number in &self.order {
+                let room = self.rooms[number];
                 let mut cells = if quiet { self.quiet_cells(number) } else { self.room_cells(number) };
                 let off = |&(x, y): &(usize, usize)| {
                     (2 * x).abs_diff(2 * room.x + room.width - 1) + (2 * y).abs_diff(2 * room.y + room.depth - 1)
@@ -352,16 +351,16 @@ impl BlockLayout {
 
     /// The block's sound layout: its own seed, then sub-seeds, until one is one walk and, for the way in's block, has a
     /// place for its exit door; past TRIES, its simplest form, one small room.
-    pub(crate) fn sound(seed: u32, openings: &[Opening], style: &Style, way_in: bool) -> Self {
+    pub(crate) fn sound(seed: u32, ends: Ends, style: &Style, way_in: bool) -> Self {
         for attempt in 0..TRIES {
-            let block = Self::laid(seed.wrapping_add(attempt.wrapping_mul(TRY_STEP)), openings, style);
+            let block = Self::laid(seed.wrapping_add(attempt.wrapping_mul(TRY_STEP)), ends, style);
             if block.one_walk() && (!way_in || block.exit_spot().is_some()) {
                 return block;
             }
         }
         Self::laid(
             seed,
-            openings,
+            ends,
             &Style { rooms: (1, 1), room_cells: (3, 3), heights: SIMPLEST_HEIGHTS, ells: false, ..*style },
         )
     }

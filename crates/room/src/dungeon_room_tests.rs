@@ -9,7 +9,7 @@ use combat::Intent;
 use combat::fighter::Action;
 use combat::sight::off;
 use dungeon::{DOORWAY_HALF_M, Side};
-use movement::{Controls, TUNING};
+use movement::{Controls, Mode, TUNING};
 
 const PATROLS: [&str; 3] = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"];
 const LEVELS: Option<(u8, u8)> = Some((10, 14));
@@ -131,7 +131,7 @@ fn past(dungeon: &Dungeon, cell: usize, side: Side, at: [f64; 2]) -> f64 {
 }
 
 #[test]
-fn a_body_walked_into_the_rock_stops_at_the_wall_and_a_jamb_leaves_no_gap_at_the_wall() {
+fn a_body_pressed_into_the_rock_or_a_jamb_stops_its_half_width_off_it_and_never_climbs() {
     let mut room = Room::dungeon(PATROLS[0], 1, LEVELS).expect("a patrol's dungeon");
     let dungeon = forged(PATROLS[0], 1);
     let player = room.join().expect("room for a player");
@@ -140,19 +140,23 @@ fn a_body_walked_into_the_rock_stops_at_the_wall_and_a_jamb_leaves_no_gap_at_the
     let (arrival, toward) = dungeon.arrival();
     assert_eq!([body.x, body.y], arrival);
     assert!(off(body.facing, bearing([0.0, 0.0], toward)) < 1e-9, "facing into the room");
-    let stopped = walk(&mut room, player, way_in.side.bearing(), 120);
+    // A run's tick is how far short of its half-width a body may stop.
+    let tick = TUNING.run / 60.0;
+    let stopped = walk(&mut room, player, way_in.side.bearing(), 240);
     let into = past(&dungeon, way_in.cell, way_in.side, stopped);
-    assert!(into < CELL_M / 2.0 && into > CELL_M / 2.0 - 0.6, "stopped at the wall, {into} m past the middle");
+    let wall = CELL_M / 2.0 - TUNING.radius;
+    assert!(into <= wall + 1e-9 && into > wall - tick, "stopped its half-width off the wall, {into} m past the middle");
     let frame = dungeon.frames[0];
     let [dx, dy] = frame.side.unit();
     let [x, y] = dungeon.centre(frame.cell);
     // Beside the doorway's opening, where its jamb stands in the corridor against the wall.
     let across = (DOORWAY_HALF_M + CELL_M / 2.0) / 2.0;
     stand_player(&mut room, player, [x + dx * 0.5 - dy * across, y + dy * 0.5 + dx * across]);
-    // Half a second takes it to the jamb and no further; longer, it climbs, as a body climbs any block too high to grab.
-    let stopped = walk(&mut room, player, frame.side.bearing(), 30);
+    let stopped = walk(&mut room, player, frame.side.bearing(), 240);
     let into = past(&dungeon, frame.cell, frame.side, stopped);
-    assert!(into <= CELL_M / 2.0 - TUNING.radius + 0.01 && into > 1.0, "the jamb stops it in its room, {into} m past");
+    assert!(into <= wall + 1e-9 && into > wall - tick, "the jamb stops it in its room, {into} m past");
+    let body = room.players[&player].fighter.body;
+    assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground, "four seconds pressed and it never climbs");
 }
 
 #[test]

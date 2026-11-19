@@ -9,6 +9,8 @@ code:
   - crates/dungeon/src/block.rs#BlockLayout
   - crates/dungeon/src/lane.rs#Lane
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
+  - crates/room/src/dungeon_ground.rs#DungeonGround
+  - crates/room-wasm/src/fighter_door.rs#set_dungeon
   - client/src/rules/dungeonRules.test.ts
   - crates/room/src/dungeon_room.rs#dungeon
   - crates/room/src/dungeon_room.rs#band_rooms
@@ -45,31 +47,41 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | Cells | 4 to 6 | 2 to 3 | 3.2 to 3.6 | no | 122, 123 | Cells |
 | Temple | 2 to 4 | 3 to 6 | 4.4 to 5.6 | yes | 124, 122 | Sanctum |
 
-- **The blocks.** A dungeon is three or four blocks of 51.2 m, the way in's first and each next one beside one
-  already laid, drawn from the free squares round them. Every two side by side share one or two doorways, each a cell
-  along their edge from the third to the fourteenth.
+- **A run, not a maze** ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]). A dungeon has a beginning, the
+  way in's block and its first room; a middle, the blocks between; and an end, the last room of the last block, where
+  the Reeve and the return portal stand. Its way runs from one to the next, room after room.
+- **The blocks.** A dungeon is three or four blocks of 51.2 m in a chain: the way in's first, each next one beside the
+  one before, drawn from the free squares round it. A block and the next share one doorway, a cell along their edge
+  from the third to the fourteenth; two blocks side by side that are not next in the chain share none.
 - **A block** is 16 by 16 cells of 3.2 m, rock to begin with. The square inside its rim is split, the largest part
   first, into parts no smaller than five cells, and a room is carved in each, a cell of rock kept round it: its sides
   and its ceiling (a whole number of 0.4 m) drawn from its style's ranges, and in a hall or a temple, two times in
-  five, an L, a corner quarter of its rectangle left rock. Its rooms and its doorways are joined by a spanning tree,
-  nearest first, and a share of the other pairs as loops (0.3, or 2 over their count where that is less), each by the
-  cheapest way: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a
-  doorway. A block that is not one walk, or a way in's with no room against rock for its exit door, tries again on
+  five, an L, a corner quarter of its rectangle left rock. Its rooms are joined one after another: from its way in
+  (the doorway from the block before, or in the way in's block its first room), each room in turn, ordered by how
+  far it lies from the way in less how far from the way on, to the doorway onto the next block. Each way is the
+  cheapest: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a doorway.
+  Where two ways cross they make a loop; over 2,000 dungeons there is about one loop in a dungeon, against five and up
+  to 28 under the Forge's own spanning tree and loops. A block that is not one walk, or a way in's with no room against rock for its exit door, tries again on
   the next of sixteen seeds, and past them takes its simplest form, one room of 3 by 3.
-- **The way in** is the room's cell nearest its middle with rock beside it, its quiet cells first: the exit door
-  stands on that rock, 1.4 m wide and 2.4 m high, and a body arrives 0.4 m in from it, facing into the room.
+- **The way in** is in the first room of the way in's block that has a cell with rock beside it, at the cell nearest
+  its middle, its quiet cells first: the exit door stands on that rock, 1.4 m wide and 2.4 m high, and a body arrives
+  0.4 m in from it, facing into the room.
+- **The return portal** stands on the end room's wall like the exit door, as wide and as high: on the room's cell
+  farthest from the way in by walk that has rock beside it, its quiet cells first, never on the exit door's wall. It
+  takes a player back out to the dungeon's entrance once the Reeve has fallen ("In the Game").
 - **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m: on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
-  on every fourth corridor cell of a block, row by row. None stands over the exit door.
+  on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.8 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A room at least 4 cells each way stands a
   pillar 0.7 m square at every second inner corner whose four cells are its own.
-- **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; the end is the room farthest.
+- **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; every room of the way in's block
+  lies nearer than the end.
 - **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
-  cells of 3.2 m, as [[Movement]]'s grid of heights takes them; and the jambs and pillars as its blocks.
+  cells of 3.2 m, and the jambs and pillars as boxes (min x, min y, max x, max y, top).
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
-  name and its number: its cells (-2 rock, -1 corridor, or a room's number), ceilings, rooms, way in, arrival, exit
-  door, torches, frames, pillars and boxes. The room door's `dungeon` asks it. Three dungeons' answers are pinned by
+  name and its number: its cells (-2 rock, -1 corridor, or a room's number), ceilings, rooms, end, way in, arrival,
+  exit door, portal, torches, frames, pillars and boxes; null for a number past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by
   their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine.
 
 ## In the rooms
@@ -81,10 +93,16 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Its world is the dungeon's frame**: x east and y south from the north-west corner, the floor at 0 m. Every point
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.
-- **What a body stands on**: [[Movement]]'s grid of heights over the dungeon's cells, its rock a wall no body passes,
-  and its jambs and pillars as blocks.
-- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m and kept to the floor joined to the arrival
-  ([[Navmesh]]), so the rock's flat tops are left out.
+- **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Its height is the
+  cells' (0 m open, a wall 10 m over the floor for rock) and 10 m inside a jamb or a pillar, so a shot or a look meets
+  them as it meets the rock. A move is walled where it crosses rock, or where it ends nearer than a body's half-width
+  (0.35 m) to rock, a jamb or a pillar and nearer than it began: a body slides along a wall, steps away from one, and
+  never stands in its face. Movement climbs blocks, never a ground's walls, so no jamb or pillar is climbed and no body
+  reaches a ceiling. Each cell keeps the jambs and pillars within a half-width of it, so a move looks at a few. The
+  browser predicts on the same ground (`fighter_dungeon`).
+- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with the jambs and
+  pillars as its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left
+  out.
 - **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells, on its quiet cells nearest its
   middle; when the bands and the Reeve would pass the room's 24 foes, the most rooms that fit, spread evenly along
@@ -114,5 +132,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - One floor: [[Movement]] and the [[Navmesh]] stand one floor at a point, so the Forge's storeys and stairs stay
   behind.
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
-- Movement has no ceilings: a body pressed against a jamb or a pillar climbs it, as it climbs any block too high to
-  grab, and stands on its top at the ceiling's height.
+- Movement has no ceilings: a dungeon's are never reached because nothing in it can be climbed, and a jump rises
+  about half a metre.
+- A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end
+  nearer is refused whole before each axis is tried alone.

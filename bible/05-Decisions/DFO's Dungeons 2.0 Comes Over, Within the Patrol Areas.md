@@ -20,12 +20,18 @@ status: in force
 
 > Once the work was under way: "I want you to build out everything and return when this is 100% finished"
 
+> "So with our dungeons. I dont want them to be this extravgant labyrinth that is hard to navigate. They need to be a
+> slighty linear thing with a clear beginning, middle, end and an easy navigation path out of the dungeon, like a
+> return portal"
+
 ## What it settles
 
 - **Dungeons 2.0 comes over** as far as it fits what Overlook is building: the Forge, DFO's own dungeon generator, and
   what of its dungeon engine and DELVE II serves Overlook as it stands ([[Pick - Dungeons 2.0]]). A part that would
   have to be reshaped around a system Overlook does not have stays behind. The owner counts the Forge as DFO's own:
   "our own propritarty dungeon generation".
+- **A dungeon is not a labyrinth.** It runs slightly linear, with a clear beginning, middle and end, and an easy way
+  out, like a return portal.
 - **Forged dungeons stand within the patrol areas**, the "procedural dungeons" the owner's Patrol already holds
   ([[Gear and Power Follow Destiny 1 Vanilla]]).
 - **Done properly, with time taken, and built out in full** before it comes back to the owner. How it works in
