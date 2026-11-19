@@ -13,11 +13,17 @@ export const BOSS_SECONDS = 150;
 /** How the boss fight ended: the player fell, or the fight was stopped with Thule still standing. */
 export type Outcome = 'felled' | 'overpowered';
 
-/** What the level asks of its room after a frame: a checkpoint to keep, foes to stand, and the player brought back
- *  from the sea to where. */
+/** A foe of a wave to stand, and the zone whose wave it is. */
+export interface Standing extends WaveFoe {
+  readonly zone: number;
+}
+
+/** What the level asks of its room after a frame: a checkpoint to keep, foes to stand, the zones whose gates open,
+ *  and the player brought back from the sea, or from beyond a closed way, to where. */
 export interface Asks {
   readonly checkpoint: readonly [number, number] | null;
-  readonly stand: readonly WaveFoe[];
+  readonly stand: readonly Standing[];
+  readonly open: readonly number[];
   readonly bringBack: readonly [number, number] | null;
 }
 
@@ -28,8 +34,8 @@ export interface Seen {
   readonly z: number;
   /** Whether the player's fighter lies dead. */
   readonly dead: boolean;
-  /** The wreck's foes alive now. */
-  readonly alive: number;
+  /** The wreck's foes alive now, by the zone whose wave they came in. */
+  readonly alive: readonly number[];
   /** Thule's health and its most, once he stands. */
   readonly thule: { readonly health: number; readonly healthMax: number } | null;
 }
@@ -37,8 +43,8 @@ export interface Seen {
 /**
  * The wreck's progress along its path, with no room or drawing: the zones the player has reached, each one's
  * checkpoint kept and the next zone's wave stood ahead of them (so its foes are already fighting each other when the
- * player comes), no more than `ALIVE_MOST` alive at once; a fall into the sea brought back to the last checkpoint after
- * a moment; and the boss fight's end.
+ * player comes), no more than `ALIVE_MOST` alive at once; the way on from each zone closed until its wave has fallen;
+ * a fall into the sea, or a climb over a closed way, brought back to the last checkpoint; and the boss fight's end.
  */
 export class WreckProgress {
   private readonly layout: WreckLayout;
@@ -46,7 +52,9 @@ export class WreckProgress {
   zone = -1;
   /** Whether the player has entered the arena. */
   arena = false;
-  private readonly waiting: WaveFoe[] = [];
+  private readonly waiting: Standing[] = [];
+  /** Whether each zone's way on is still closed. */
+  private readonly closed: boolean[];
   private stood = 0;
   private inSea = 0;
   private bossFor: number | null = null;
@@ -54,11 +62,7 @@ export class WreckProgress {
 
   constructor(layout: WreckLayout) {
     this.layout = layout;
-  }
-
-  /** Whether the player has reached a zone. */
-  reached(zone: number): boolean {
-    return zone <= this.zone;
+    this.closed = layout.zones.map((zone) => zone.gate !== null);
   }
 
   /** Whether the boss fight has begun. */
@@ -71,21 +75,45 @@ export class WreckProgress {
     this.bossFor ??= 0;
   }
 
+  /** The furthest zone the player may stand in: the first whose way on is closed. */
+  private get furthest(): number {
+    const first = this.closed.indexOf(true);
+    return first < 0 ? this.layout.zones.length - 1 : first;
+  }
+
+  /** Whether the player may be in a zone: once the boss fight begins, only the arena. */
+  private allowed(zone: number): boolean {
+    return this.fighting ? zone === this.layout.arena.zone : zone <= this.furthest;
+  }
+
   /** The waves stood up to and including `zone` (one ahead of the furthest reached). */
   private standUpTo(zone: number): void {
     const { zones } = this.layout;
     for (; this.stood <= Math.min(zone, zones.length - 1); this.stood++)
-      this.waiting.push(...(zones[this.stood]?.wave ?? []));
+      this.waiting.push(...(zones[this.stood]?.wave ?? []).map((foe) => ({ ...foe, zone: this.stood })));
   }
 
-  /** One frame of `seconds`: the zones reached, the waves stood, the sea, and the boss fight's end. */
+  /** The zones whose ways open now: each wave stood whole in an earlier frame, none of it waiting or alive. */
+  private opening(alive: readonly number[]): number[] {
+    const open: number[] = [];
+    this.closed.forEach((closed, zone) => {
+      if (!closed || zone >= this.stood || (alive[zone] ?? 0) > 0) return;
+      if (this.waiting.some((foe) => foe.zone === zone)) return;
+      this.closed[zone] = false;
+      open.push(zone);
+    });
+    return open;
+  }
+
+  /** One frame of `seconds`: the ways opened, the zones reached, the waves stood, the sea, and the boss fight's end. */
   frame(seen: Seen, seconds: number): Asks {
     const { zones, arena } = this.layout;
+    const open = this.opening(seen.alive);
     let checkpoint: readonly [number, number] | null = null;
     // A body in the sea reaches no zone: its feet are not on the deck.
     const inSea = seen.z < IN_THE_SEA_M;
     zones.forEach((zone, index) => {
-      if (index <= this.zone || inSea || !inArea(zone.area, seen.x, seen.y)) return;
+      if (index <= this.zone || inSea || !this.allowed(index) || !inArea(zone.area, seen.x, seen.y)) return;
       this.zone = index;
       checkpoint = zone.checkpoint;
     });
@@ -93,12 +121,13 @@ export class WreckProgress {
     this.standUpTo(this.zone + 1);
     // The boss fight is one on one: a wave still waiting never comes.
     if (this.fighting) this.waiting.length = 0;
-    const stand = this.waiting.splice(0, Math.max(0, ALIVE_MOST - seen.alive));
+    const alive = seen.alive.reduce((sum, count) => sum + count, 0);
+    const stand = this.waiting.splice(0, Math.max(0, ALIVE_MOST - alive));
     this.inSea = inSea && !seen.dead ? this.inSea + seconds : 0;
     const last = zones[Math.max(0, this.zone)]?.checkpoint ?? null;
-    // Once the boss fight begins, a player who climbs out over the closed way is brought back into the arena.
-    const fled = this.fighting && !inSea && !inArea(zones[arena.zone]?.area ?? [0, 0, 0, 0], seen.x, seen.y);
-    const back = this.inSea >= BROUGHT_BACK_S || fled ? last : null;
+    // A player who climbs over a closed way, or out of the arena once the boss fight begins, is brought back.
+    const astray = !inSea && zones.some((zone, index) => !this.allowed(index) && inArea(zone.area, seen.x, seen.y));
+    const back = this.inSea >= BROUGHT_BACK_S || astray ? last : null;
     if (back) this.inSea = 0;
     if (this.bossFor !== null && !this.outcome) {
       this.bossFor += seconds;
@@ -107,6 +136,6 @@ export class WreckProgress {
       else if (this.bossFor >= BOSS_SECONDS || (thule && thule.health < thule.healthMax * BOSS_UNDER))
         this.outcome = 'overpowered';
     }
-    return { checkpoint, stand, bringBack: back };
+    return { checkpoint, stand, open, bringBack: back };
   }
 }

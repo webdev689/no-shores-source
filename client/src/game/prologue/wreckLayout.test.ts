@@ -39,7 +39,7 @@ test('every block that shows stands inside the ships, over one of their decks', 
   }
 });
 
-test('the path runs from waking to the arena with no hole, and no rise a step, a jump or a climb cannot take', () => {
+test('the path, every gate open, runs from waking to the arena with no hole, nor a rise a step or jump cannot take', () => {
   const [first] = layout.path;
   assert.deepEqual(first, layout.wake.at, 'the path starts where the player wakes');
   let last: number | null = null;
@@ -47,12 +47,13 @@ test('the path runs from waking to the arena with no hole, and no rise a step, a
   for (let index = 1; index < layout.path.length; index++) {
     const [from, to] = [layout.path[index - 1] ?? [0, 0], layout.path[index] ?? [0, 0]];
     const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
-    for (let walked = 0; walked <= length; walked += 0.1) {
+    // Ground is read under the body's centre, so a gap of a few centimetres drops it: the walk is sampled finer.
+    for (let walked = 0; walked <= length; walked += 0.01) {
       const [x = 0, y = 0] = along(from, to, walked, length);
       const top = topAt(course, x, y);
       assert.ok(top >= LOWEST_DECK_M, `a hole at ${x.toFixed(1)}, ${y.toFixed(1)}`);
       if (last !== null) assert.ok(top - last <= REACH_M, `a wall at ${x.toFixed(1)}, ${y.toFixed(1)}`);
-      if (last !== null && top - last > STEP_M) climbs += 1;
+      if (last !== null && top - last > STEP_M + 1e-9) climbs += 1;
       last = top;
     }
   }
@@ -98,6 +99,55 @@ test('the arena is open, about 12 m by 9 m, Thule in it, and its gate across the
   );
   const [pathX = 0, pathY = 0] = layout.path.at(-2) ?? [];
   assert.ok(pathY < gate.minY && !inArea(zone.area, pathX, pathY), 'the path comes in through it');
+});
+
+test("the planks laid where the rammer's deck is cut leave no gap a body's centre could drop through", () => {
+  const [, rammer] = wreck.ships;
+  assert.ok(rammer);
+  const uncut = readWreck({ ...wreck, ships: [{ ...rammer, cuts: [] }] }).decks;
+  for (const [minX = 0, minY = 0, maxX = 0, maxY = 0] of rammer.cuts)
+    for (let x = minX - 0.7; x <= maxX + 0.7; x += 0.01)
+      for (let y = minY - 0.7; y <= maxY + 0.7; y += 0.01)
+        if (topAt(uncut, x, y) >= LOWEST_DECK_M)
+          assert.ok(topAt(course, x, y) >= LOWEST_DECK_M, `a gap at ${x.toFixed(2)}, ${y.toFixed(2)}`);
+});
+
+test('each zone before the arena has a heap across the way on from it, too high to step or jump, standing on no one', () => {
+  const gates = layout.zones.slice(0, layout.arena.zone).map((zone) => zone.gate);
+  assert.equal(layout.zones[layout.arena.zone]?.gate, null, 'the arena is the end of the way');
+  assert.equal(gates.at(-1), layout.arena.gate, "the last is the arena's own");
+  const clear = (gate: (typeof gates)[number], [x, y]: readonly [number, number]) =>
+    !!gate &&
+    (x < gate.minX - BODY_RADIUS_M ||
+      x > gate.maxX + BODY_RADIUS_M ||
+      y < gate.minY - BODY_RADIUS_M ||
+      y > gate.maxY + BODY_RADIUS_M);
+  const crossed: number[] = [];
+  gates.forEach((gate, index) => {
+    assert.ok(gate, `${layout.zones[index]?.name} has a gate`);
+    const standing = [
+      layout.wake.at,
+      ...layout.zones.flatMap((zone) => [zone.checkpoint, ...zone.wave.map((foe) => foe.at)]),
+    ];
+    for (const spot of standing)
+      assert.ok(clear(gate, spot), `the gate past ${layout.zones[index]?.name} stands on ${spot}`);
+    for (let step = 1; step < layout.path.length; step++) {
+      const [from, to] = [layout.path[step - 1] ?? [0, 0], layout.path[step] ?? [0, 0]];
+      const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+      for (let walked = 0; walked <= length; walked += 0.05) {
+        const [x = 0, y = 0] = along(from, to, walked, length);
+        if (x < gate.minX || x > gate.maxX || y < gate.minY || y > gate.maxY) continue;
+        assert.ok(gate.top - topAt(course, x, y) > REACH_M, `the gate past ${layout.zones[index]?.name} is too low`);
+        crossed[index] ??= step;
+      }
+    }
+  });
+  assert.equal(crossed.length, gates.length, 'the path goes through every gate');
+  assert.deepEqual(
+    [...crossed].sort((first, second) => first - second),
+    crossed,
+    'in the order of the zones',
+  );
 });
 
 test('fires burn on the decks', () => {

@@ -25,14 +25,19 @@ export interface WaveFoe {
   readonly facing: number;
 }
 
-/** A stretch of the path: the area that, entered, reaches it, the checkpoint the player comes back to from it, and
- *  the foes it holds. */
+/** A stretch of the path: the area that, entered, reaches it, the checkpoint the player comes back to from it, the
+ *  heap of debris that closes the way on from it until its wave has fallen (none for the arena), and the foes it
+ *  holds. */
 export interface Zone {
   readonly name: string;
   readonly area: Area;
   readonly checkpoint: Point;
+  readonly gate: CourseBlock | null;
   readonly wave: readonly WaveFoe[];
 }
+
+/** Whether a deck crew's roster type fights for the Grey Tithe (7 to 12); the pirates' are 13 to 17. */
+export const titheCrew = (type: number): boolean => type >= 7 && type <= 12;
 
 /** A fire burning in the wreck: where, and how big across, metres. */
 export interface Fire {
@@ -78,8 +83,8 @@ type WreckFile = typeof wreck;
 
 const KINDS: readonly SceneryKind[] = ['spar', 'planks', 'crate', 'debris'];
 
-/** Reads a wreck's file into its layout at the world's origin; throws on a ship the manifest has no deck for or a
- *  block of no kind it draws. */
+/** Reads a wreck's file into its layout at the world's origin; throws on a ship the manifest has no deck for, a
+ *  block of no kind it draws, or an arena no gate closes. The arena's gate is the heap across the way into it. */
 export function readWreck(file: WreckFile = wreck): WreckLayout {
   const decks = ships.ships as Readonly<Record<string, { readonly deck: Parameters<typeof deckOf>[0] }>>;
   const laid = file.ships.map((entry) => {
@@ -95,18 +100,22 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
     return { kind, block: blockOf(entry.box) };
   });
   const [wakeX = 0, wakeY = 0, wakeFacing = 0] = file.wake;
+  const zones = file.zones.map((zone) => ({
+    name: zone.name,
+    area: areaOf(zone.area),
+    checkpoint: pointOf(zone.checkpoint),
+    gate: zone.gate ? blockOf(zone.gate) : null,
+    wave: zone.wave.map((foe) => ({ ...foe, at: pointOf(foe.at), facing: foe.facing * RADIANS })),
+  }));
+  const gate = zones[file.arena.zone - 1]?.gate;
+  if (!gate) throw new Error("no gate closes the way into the wreck's arena");
   return {
     decks: laid.flatMap((ship) => ship.blocks),
     scenery,
     wake: { at: [wakeX, wakeY], facing: wakeFacing * RADIANS },
     path: file.path.map(pointOf),
-    zones: file.zones.map((zone) => ({
-      name: zone.name,
-      area: areaOf(zone.area),
-      checkpoint: pointOf(zone.checkpoint),
-      wave: zone.wave.map((foe) => ({ ...foe, at: pointOf(foe.at), facing: foe.facing * RADIANS })),
-    })),
-    arena: { zone: file.arena.zone, gate: blockOf(file.arena.gate), thule: pointOf(file.arena.thule) },
+    zones,
+    arena: { zone: file.arena.zone, gate, thule: pointOf(file.arena.thule) },
     fires: file.fires.map((fire) => {
       const [x = 0, y = 0, z = 0] = fire.at;
       return { at: [x, y, z], size: fire.size };
@@ -135,6 +144,7 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
       ...zone,
       area: area(zone.area),
       checkpoint: point(zone.checkpoint),
+      gate: zone.gate && block(zone.gate),
       wave: zone.wave.map((foe) => ({ ...foe, at: point(foe.at) })),
     })),
     arena: { ...layout.arena, gate: block(layout.arena.gate), thule: point(layout.arena.thule) },
