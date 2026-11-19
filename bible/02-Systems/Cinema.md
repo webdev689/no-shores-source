@@ -76,7 +76,8 @@ which lights what stands round it in the game's stepped halo.
 
 In a development build, `?weather=storm|rain|snow|mist|clouds|deep`, `?birds=1` and `?flames=1` set the weather,
 two flocks and three fires up round the arrival; `?shot=sea` (and the deep, always) moves the camera out over the
-nearest open sea. A storm strikes lightning every five seconds.
+nearest open sea, inside the cloud layer when it is the clouds. A storm strikes lightning every five seconds, and
+`?strike=1` holds a stroke lit for a picture.
 
 ## Limits
 
@@ -84,3 +85,4 @@ nearest open sea. A storm strikes lightning every five seconds.
   the water's highlights, only dimmed.
 - Rain and snow are drawn round the eye only; they do not wet or whiten the ground.
 - A fire's light is the light layer's, so it is stepped and screen-wide, not cast onto the deck as a shadowed lamp.
+- Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.

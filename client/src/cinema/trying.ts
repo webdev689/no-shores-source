@@ -95,13 +95,17 @@ export class Trying {
 
   private place(shot: Shot): { look: Shot | null; ahead: Point } {
     if (this.placed) return this.placed;
+    // The land arrives after the first frames; place nothing until its ground is known.
+    if (this.groundAt(shot.eye[0], shot.eye[1]) === null) return { look: null, ahead: shot.eye };
     let look: Shot | null = null;
     let base = shot;
     const sea = this.asked.sea ? openSeaNear([shot.eye[0], shot.eye[1]], this.groundAt) : null;
     if (sea) {
       const outward = Math.atan2(sea[0] - shot.eye[0], -(sea[1] - shot.eye[1]));
       const deep = this.asked.weather === 'deep';
-      look = { ...shot, eye: [sea[0], sea[1], deep ? -9 : 14], yaw: outward, pitch: deep ? -0.55 : 0.04 };
+      const clouds = this.asked.weather === 'clouds' ? WEATHERS.clouds.clouds : null;
+      const height = deep ? -9 : clouds ? (clouds.base + clouds.top) / 2 : 14;
+      look = { ...shot, eye: [sea[0], sea[1], height], yaw: outward, pitch: deep ? -0.55 : 0.04 };
       base = look;
     }
     const along = (metres: number, rise: number): Point => [
@@ -110,14 +114,16 @@ export class Trying {
       base.eye[2] + rise,
     ];
     if (this.asked.birds) {
-      this.birds.flock(along(35, 14), 22, 22, 1);
-      this.birds.flock(along(200, 40), 14, 45, 2);
+      this.birds.flock(along(30, 3), 22, 15, 1);
+      this.birds.flock(along(200, 10), 14, 45, 2);
     }
     if (this.asked.flames) {
       const fire = (metres: number, side: number, size: number, seed: number) => {
         const [x, y] = along(metres, 0);
         const across: [number, number] = [x + Math.cos(base.yaw) * side, y + Math.sin(base.yaw) * side];
-        this.flames.light([...across, this.groundAt(...across) ?? 0], size, seed);
+        // The land's ground lies under the city's paving: on foot, the fires stand at the walker's feet instead.
+        const ground = Math.max(0, this.groundAt(...across) ?? 0);
+        this.flames.light([...across, look ? ground : Math.max(ground, base.eye[2] - 2.4)], size, seed);
       };
       fire(6, -1.5, 0.5, 1);
       fire(8, 1.8, 1.5, 2);

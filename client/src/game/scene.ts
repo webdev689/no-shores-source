@@ -148,12 +148,13 @@ export class GameScene {
     return !!centre && Math.hypot(x - centre[0], y - centre[1]) < REFRESH_M;
   }
 
-  /** The water at a world point now: its surface over the sea or a lake or river, or null on dry ground. */
+  /** The water at a world point now, on the swell as drawn: its surface over the sea or a lake or river, or null on
+   *  dry ground. */
   waterAt(x: number, y: number, time: number): { surface: number; fresh: boolean } | null {
     const view = this.terrain?.view;
     const field = this.close?.ground.field;
     if (view && field) {
-      const water = waterUnder(field, view.swell, { x, y }, time);
+      const water = waterUnder(field, this.drawnSwell(view), { x, y }, time);
       if (water) return water.kind === 'dry' ? null : { surface: water.surface, fresh: water.kind === 'fresh' };
     }
     return (this.groundAt(x, y) ?? 0) < 0 ? { surface: 0, fresh: false } : null;
@@ -253,7 +254,7 @@ export class GameScene {
       exaggeration: 1,
       fogM: Math.max(25_000, above * 60),
       world: [...origin],
-      swell: view.swell && swellGained(view.swell, this.weather.seaGain),
+      swell: this.drawnSwell(view),
       coarse: drawn.cells,
       patch: near?.water ?? null,
       eyeWater,
@@ -273,11 +274,16 @@ export class GameScene {
       camera: { ...camera, eye: shot.eye },
       tanHalfView: Math.tan(shot.fov / 2),
       size: [size.width, size.height],
-      time: seconds,
+      time,
       motionReduced: motionReduced(),
     });
     more.after?.(encoder, target);
     this.gpu.device.queue.submit([encoder.finish()]);
+  }
+
+  /** The swell as drawn: the rules' own, its waves raised by the weather's gain. */
+  private drawnSwell(view: LandView) {
+    return view.swell && swellGained(view.swell, this.weather.seaGain);
   }
 
   private targetsOf(width: number, height: number) {

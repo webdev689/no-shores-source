@@ -42,7 +42,8 @@ fn voiced(cast: &Value) -> Vec<String> {
 fn check_scene(file: &str, scene: &str, lines: &[Value], speakers: &[String]) -> Vec<Problem> {
     let mut found = Vec::new();
     if lines.len() > SCENE_LINES {
-        found.push(problem(file, format!("scene \"{scene}\" holds {} lines; a scene holds {SCENE_LINES}", lines.len())));
+        found
+            .push(problem(file, format!("scene \"{scene}\" holds {} lines; a scene holds {SCENE_LINES}", lines.len())));
     }
     let (mut last, mut run) = (String::new(), 0);
     for (index, line) in lines.iter().enumerate() {
@@ -159,7 +160,8 @@ mod tests {
 
     #[test]
     fn long_turns_and_long_scenes_are_refused() {
-        let three = r#"[{"who": "mate", "say": "One."}, {"who": "mate", "say": "Two."}, {"who": "mate", "say": "Three."}]"#;
+        let three =
+            r#"[{"who": "mate", "say": "One."}, {"who": "mate", "say": "Two."}, {"who": "mate", "say": "Three."}]"#;
         assert_eq!(checked(three).len(), 1);
         let nine: Vec<String> =
             (0..9).map(|turn| format!(r#"{{"who": "{}", "say": "Aye."}}"#, ["mate", "x"][turn % 2])).collect();
@@ -170,9 +172,11 @@ mod tests {
     #[test]
     fn a_line_with_no_words_and_a_file_with_no_scenes_are_refused() {
         assert_eq!(checked(r#"[{"who": "mate"}]"#).len(), 1);
-        let bare = vec![(CAST.to_owned(), CAST_TEXT.to_owned()), ("content/story/two.json".to_owned(), "{}".to_owned())];
+        let bare =
+            vec![(CAST.to_owned(), CAST_TEXT.to_owned()), ("content/story/two.json".to_owned(), "{}".to_owned())];
         assert_eq!(check(&bare).len(), 1);
-        let broken = vec![(CAST.to_owned(), CAST_TEXT.to_owned()), ("content/story/two.json".to_owned(), "{".to_owned())];
+        let broken =
+            vec![(CAST.to_owned(), CAST_TEXT.to_owned()), ("content/story/two.json".to_owned(), "{".to_owned())];
         assert_eq!(check(&broken).len(), 1);
     }
 }

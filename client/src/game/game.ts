@@ -96,7 +96,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       const draw = scene.draw.bind(scene);
       scene.draw = (shot, size, time, seconds, drawers, more) => {
         const tried = trying.shotOf(shot);
-        scene.weather = trying.weatherAt(seconds);
+        scene.weather = trying.weatherAt(time);
         draw(tried, size, time, seconds, [...drawers, ...trying.drawers()], more);
       };
     });
