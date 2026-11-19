@@ -18,6 +18,8 @@ const EMOTES: [&str; 7] = ["alert", "question", "fear", "anger", "cheer", "pain"
 const VOICE_NUMBERS: [&str; 5] = ["pitchHz", "spreadHz", "muffleHz", "volume", "syllableS"];
 const MAY_BE_ZERO: &str = "spreadHz";
 const SHORTEST_SYLLABLE_S: f64 = 0.04;
+/// The key a plain object cannot keep as its own: the speech system refuses a speaker, a voice or a scene so named.
+const PROTOTYPE_KEY: &str = "__proto__";
 
 /// A dash or a trailing-off the rule keeps out: a pause is a full stop.
 const BANNED: [(&str, &str); 5] = [
@@ -63,16 +65,21 @@ fn check_cast(cast: &Value) -> (Vec<Problem>, Vec<String>) {
         part.unwrap_or(&empty)
     };
     let (voices, speakers) = (part("voices"), part("speakers"));
+    for (name, part) in [("voices", voices), ("speakers", speakers)] {
+        if part.contains_key(PROTOTYPE_KEY) {
+            found.push(format!("the cast's {name} cannot hold the key \"{PROTOTYPE_KEY}\""));
+        }
+    }
     for (key, voice) in voices {
         found.extend(check_voice(key, voice));
     }
     let mut voiced = Vec::new();
-    for (key, speaker) in speakers {
+    for (key, speaker) in speakers.iter().filter(|(key, _)| *key != PROTOTYPE_KEY) {
         if speaker.get("name").and_then(Value::as_str).is_none() {
             found.push(format!("speaker \"{key}\" has no name"));
         }
         match speaker.get("voice").and_then(Value::as_str) {
-            Some(voice) if voices.contains_key(voice) => voiced.push(key.clone()),
+            Some(voice) if voice != PROTOTYPE_KEY && voices.contains_key(voice) => voiced.push(key.clone()),
             voice => found.push(format!(
                 "speaker \"{key}\" has no voice: \"{}\" is not in the cast's voices",
                 voice.unwrap_or_default()
@@ -183,7 +190,10 @@ pub fn check(files: &[(String, String)]) -> Vec<Problem> {
             found.push(problem(path, "a story file holds its scenes under \"scenes\"".to_owned()));
             continue;
         };
-        for (scene, lines) in scenes {
+        if scenes.contains_key(PROTOTYPE_KEY) {
+            found.push(problem(path, format!("the scenes cannot hold the key \"{PROTOTYPE_KEY}\"")));
+        }
+        for (scene, lines) in scenes.iter().filter(|(scene, _)| *scene != PROTOTYPE_KEY) {
             found.extend(check_scene(path, scene, lines, &speakers));
         }
     }
@@ -276,6 +286,28 @@ mod tests {
             assert_eq!(found, vec![format!("voice \"low\" has no usable {number}")], "{number} {value}");
         }
         assert_eq!(checked_with(r#"{"speakers": {}}"#, "[]"), vec!["the cast's voices are not an object".to_owned()]);
+    }
+
+    #[test]
+    fn a_key_that_would_set_a_prototype_is_refused_as_a_speaker_a_voice_or_a_scene() {
+        let line = r#"[{"who": "mate", "say": "Aye."}]"#;
+        let speaker = format!(
+            r#"{{"speakers": {{"__proto__": {{"name": "Mate", "voice": "low"}}}}, "voices": {{"low": {VOICE}}}}}"#
+        );
+        let found = checked_with(&speaker, r#"[{"who": "__proto__", "say": "Aye."}]"#);
+        assert!(found.iter().any(|message| message.contains("speakers cannot hold the key")), "{found:?}");
+        let voice = format!(
+            r#"{{"speakers": {{"mate": {{"name": "Mate", "voice": "__proto__"}}}}, "voices": {{"__proto__": {VOICE}}}}}"#
+        );
+        let found = checked_with(&voice, line);
+        assert!(found.iter().any(|message| message.contains("voices cannot hold the key")), "{found:?}");
+        assert!(found.iter().any(|message| message.contains("not a speaker in the cast with a voice")), "{found:?}");
+        let files = vec![
+            (CAST.to_owned(), cast_text()),
+            ("content/story/one.json".to_owned(), format!(r#"{{"scenes": {{"__proto__": {line}}}}}"#)),
+        ];
+        let found: Vec<String> = check(&files).into_iter().map(|found| found.message).collect();
+        assert_eq!(found, vec!["the scenes cannot hold the key \"__proto__\"".to_owned()]);
     }
 
     #[test]

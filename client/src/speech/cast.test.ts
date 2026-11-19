@@ -67,6 +67,20 @@ test('a name every object carries is not a speaker or a voice', () => {
   assert.throws(() => castOf(json), /constructor/);
 });
 
+test("a key that would set an object's prototype is refused as a speaker, a voice or a scene", () => {
+  const voice = JSON.stringify(VOICE);
+  const speaker = JSON.parse(
+    `{"speakers": {"__proto__": {"name": "Mate", "voice": "mate"}}, "voices": {"mate": ${voice}}}`,
+  );
+  assert.throws(() => castOf(speaker), /__proto__/);
+  const voiceKey = JSON.parse(
+    `{"speakers": {"mate": {"name": "Mate", "voice": "__proto__"}}, "voices": {"__proto__": ${voice}}}`,
+  );
+  assert.throws(() => castOf(voiceKey), /__proto__/);
+  const scene = JSON.parse('{"scenes": {"__proto__": [{"who": "mate", "say": "Aye."}]}}');
+  assert.throws(() => scenesOf(scene, castOf(small())), /__proto__/);
+});
+
 test('a syllable too short to swell and fall is refused', () => {
   const json = small();
   json.voices.mate.syllableS = 0.01;
