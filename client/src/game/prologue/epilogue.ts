@@ -46,11 +46,16 @@ export class Epilogue {
     this.lifted += seconds;
     const standing = (this.standing ??= this.placed(you));
     const head = headOnView(onScreen(shot, viewport, [standing.x, standing.y, standing.z + HEAD_M]), viewport);
-    // Her words begin once the veil is wholly gone and she is in the player's sight, so every line is heard.
-    if (this.phase === 'waiting' && this.lifted >= HUD_VEIL_S && head) {
+    // Her words begin once the veil and the story's black are wholly gone and she is in the player's sight, so every
+    // line is heard. Words that cannot be played still let her go.
+    if (this.phase === 'waiting' && this.lifted >= HUD_VEIL_S && this.stage.screenOpen && head) {
       this.phase = 'speaking';
-      void this.stage.play('arrived', true, { stranger: 'stranger' }).then(() => {
+      const walkOff = () => {
         if (this.phase === 'speaking') this.phase = 'going';
+      };
+      this.stage.play('arrived', true, { stranger: 'stranger' }).then(walkOff, (error: unknown) => {
+        console.error("the stranger's last words could not be played:", error);
+        walkOff();
       });
     }
     if (this.phase === 'going' && !head) {
@@ -77,13 +82,18 @@ export class Epilogue {
     this.stage.hush();
   }
 
-  /** Ahead of the player and to their right, facing them, on the ground there. */
+  /** Ahead of the player and to their right, facing them, on the ground there; to their left where the right is
+   *  water, and at their own feet' height where both are. */
   private placed(you: { readonly x: number; readonly y: number; readonly z: number; readonly facing: number }) {
     const right = you.facing + Math.PI / 2;
-    const x = you.x + Math.sin(you.facing) * AHEAD_M + Math.sin(right) * RIGHT_M;
-    const y = you.y - Math.cos(you.facing) * AHEAD_M - Math.cos(right) * RIGHT_M;
-    const z = this.stage.parts.scene.groundAt(x, y) ?? you.z;
-    return { x, y, z, facing: Math.atan2(you.x - x, y - you.y) };
+    const spots = [RIGHT_M, -RIGHT_M].map((side) => {
+      const x = you.x + Math.sin(you.facing) * AHEAD_M + Math.sin(right) * side;
+      const y = you.y - Math.cos(you.facing) * AHEAD_M - Math.cos(right) * side;
+      return { x, y, ground: this.stage.parts.scene.groundAt(x, y) };
+    });
+    const dry = spots.find((spot) => spot.ground !== null && spot.ground >= 0);
+    const { x, y } = dry ?? (spots[0] as (typeof spots)[number]);
+    return { x, y, z: dry?.ground ?? you.z, facing: Math.atan2(you.x - x, y - you.y) };
   }
 
   /** A step toward the town's middle, on dry ground only: where the next step is water or unknown she stands. True

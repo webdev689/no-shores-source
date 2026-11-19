@@ -82,6 +82,11 @@ fn check_cast(cast: &Value) -> (Vec<Problem>, Vec<String>) {
     (found.into_iter().map(|message| problem(CAST, message)).collect(), voiced)
 }
 
+/// What JavaScript's `trim()` strips, which counts a line of only these as no words.
+fn blank(mark: char) -> bool {
+    mark.is_whitespace() || mark == '\u{feff}'
+}
+
 /// One line's problems: its speaker, its words and marks, its kind and its emote.
 fn check_line(at: &str, line: &Value, speakers: &[String]) -> Vec<String> {
     if !line.is_object() {
@@ -102,7 +107,7 @@ fn check_line(at: &str, line: &Value, speakers: &[String]) -> Vec<String> {
     {
         found.push(format!("{at}: emote {emote} is not one of {}", EMOTES.join(", ")));
     }
-    let Some(said) = line.get("say").and_then(Value::as_str).filter(|said| !said.trim().is_empty()) else {
+    let Some(said) = line.get("say").and_then(Value::as_str).filter(|said| !said.trim_matches(blank).is_empty()) else {
         found.push(format!("{at} says nothing: every line has its words in \"say\""));
         return found;
     };
@@ -289,6 +294,7 @@ mod tests {
         assert_eq!(checked(r#"[{"who": "mate"}]"#).len(), 1);
         assert_eq!(checked(r#"[{"who": "mate", "say": ""}]"#).len(), 1, "empty words");
         assert_eq!(checked(r#"[{"who": "mate", "say": "   "}]"#).len(), 1, "only spaces");
+        assert_eq!(checked("[{\"who\": \"mate\", \"say\": \"\u{feff}\"}]").len(), 1, "a byte-order mark");
         let bare = vec![(CAST.to_owned(), cast_text()), ("content/story/two.json".to_owned(), "{}".to_owned())];
         assert_eq!(check(&bare).len(), 1);
         let broken = vec![(CAST.to_owned(), cast_text()), ("content/story/two.json".to_owned(), "{".to_owned())];

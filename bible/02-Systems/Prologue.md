@@ -84,9 +84,9 @@ wakes on Overlook's plaza by its first spawn instead; if even that cannot be lai
 played.
 
 **After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space. The story's
-black holds until the veil has risen over it (0.7 s), then goes. The stranger waits behind the veil; once it has
-fallen and she is in the player's view she stands 2.2 m ahead of them and 1 m to their right, facing them, and says
-her last line. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or
+black holds until the veil has risen over it (0.7 s), then goes. The stranger waits behind the veil; she stands 2.2 m ahead of the
+player and 1 m to their right (their left where the right is water), facing them, and says her last line once the
+veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or
 unknown), and is let go once she is out of the player's view. Leaving Overlook's social space before then ends her
 part at once, her words with it. The game is the player's from there.
 

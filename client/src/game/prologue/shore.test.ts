@@ -117,6 +117,32 @@ test('the stranger walks down to the player, kneels, and speaks only then, heard
   failed.mock.restore();
 });
 
+test('a shore left while she speaks asks nothing more', async () => {
+  const failed = mock.method(console, 'error', () => undefined);
+  const { story, said, prompts } = shoreStory();
+  const shore = new Shore(story);
+  await settled();
+  while (said.length === 0) shore.frame(tick);
+  shore.leave();
+  said[0]?.finish();
+  await settled();
+  assert.deepEqual(prompts, [null], 'no prompt over the black');
+  failed.mock.restore();
+});
+
+test('a key on the way to another window is not her hand taken', async () => {
+  const failed = mock.method(console, 'error', () => undefined);
+  const { story, said, prompts } = shoreStory();
+  const shore = new Shore(story);
+  await settled();
+  while (said.length === 0) shore.frame(tick);
+  said[0]?.finish();
+  await settled();
+  for (const key of ['alt', 'tab', 'escape']) shore.key(key, true);
+  assert.deepEqual(prompts, [takeHandPrompt(false)], 'still asking');
+  failed.mock.restore();
+});
+
 test('a key before her hand is held out is not the hand taken', async () => {
   const failed = mock.method(console, 'error', () => undefined);
   const { story, said } = shoreStory();

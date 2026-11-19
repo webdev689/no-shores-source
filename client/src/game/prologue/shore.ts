@@ -54,6 +54,9 @@ const TOGETHER_S = 6.5;
 
 type Phase = 'searching' | 'waking' | 'talking' | 'asking' | 'rising' | 'leaning' | 'walking' | 'gone';
 
+/** Keys pressed on the way to another window or to let the pointer go, never to take her hand. */
+const AWAY_KEYS = new Set(['alt', 'tab', 'escape', 'meta', 'control', 'shift', 'os']);
+
 /** The prompt that asks the player to take her hand, by whatever they play with. */
 export const takeHandPrompt = (touched: boolean) =>
   touched ? 'Tap to take her hand' : 'Click or press any key to take her hand';
@@ -126,6 +129,8 @@ export class Shore implements Beat {
   private talk(): void {
     this.phase = 'talking';
     this.story.stage.play('shore', true, { stranger: 'stranger' }).then(() => {
+      // A shore hushed and left while she spoke asks nothing of a player no longer there.
+      if (this.phase !== 'talking') return;
       this.phase = 'asking';
       this.story.stage.parts.screen.showPrompt(takeHandPrompt(touch()));
     }, this.fail);
@@ -139,9 +144,9 @@ export class Shore implements Beat {
     this.rose = 0;
   }
 
-  key(_key: string, down: boolean): boolean {
+  key(key: string, down: boolean): boolean {
     const asking = this.phase === 'asking';
-    if (down) this.take();
+    if (down && !AWAY_KEYS.has(key)) this.take();
     return asking;
   }
 
@@ -151,6 +156,7 @@ export class Shore implements Beat {
   }
 
   leave(): void {
+    this.phase = 'gone';
     this.story.stage.parts.screen.showPrompt(null);
   }
 
