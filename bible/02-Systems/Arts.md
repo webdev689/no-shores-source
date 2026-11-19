@@ -181,9 +181,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   second, and a burst of sparks. A Hasted player leaves three streaks behind them as they move, each 0.3 s long.
 - **Arc Lash.** Five bolts fanned through the cone, reaching out over 0.1 s and thinning in three steps, with sparks
   where they end.
-- **Sunwell.** A sun 2.8 m over its middle, bobbing a cell at a time, its eight rays turning; twelve dashes on the
-  ground at its radius, turning; and a beam from the sun to each Linked player inside it. A Linked player has six
-  motes rising off them, cooling a step as they rise.
+- **Sunwell.** A sun 6 m over its middle, clear of the view of a player standing in it, bobbing a cell at a time, its
+  eight rays turning; twelve dashes on the ground at its radius, turning; and a beam from the sun to each Linked player
+  inside it. A Linked player has six motes rising off them, cooling a step as they rise.
 - **Mend.** Over the caster's chest, a white-hot flash with a cross through it, then a ring swelling and cooling in
   four steps, and a burst of embers.
 - **Dawnflare.** A bird of fire facing the way it flies, its wings beating in four steps ten times a second, its

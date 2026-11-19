@@ -73,9 +73,10 @@ const LASH_FADES = [
   { core: 0.03, glow: 0.09, opacity: 0.85 },
   { core: 0, glow: 0.06, opacity: 0.6 },
 ] as const;
-/** The Sunwell: its sun's height over the ground, bob (radians a second) and turn (radians a second), its ring's
- *  dashes and their share of each twelfth, its ring's turn, and its beams. */
-const SUN_UP_M = 2.8;
+/** The Sunwell: its sun's height over the ground (high enough to clear the view of a player standing in it), bob
+ *  (radians a second) and turn (radians a second), its ring's dashes and their share of each twelfth, its ring's
+ *  turn, and its beams. */
+const SUN_UP_M = 6;
 const SUN_BOB = 1.6;
 const SUN_TURN = 0.6;
 const DASHES = 12;
