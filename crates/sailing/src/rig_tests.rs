@@ -41,7 +41,7 @@ fn sailed_way(hull: &Hull, heading: f64) -> f64 {
 }
 
 #[test]
-fn no_hull_sails_faster_than_the_sloop_at_her_best_and_each_sails_by_her_own_sails() {
+fn no_hull_sails_faster_than_the_sloop_at_her_best_nor_on_any_point_of_sail() {
     // The wind blows to the east: heading south-east is the wind on her quarter, her best.
     let quarter = std::f64::consts::FRAC_PI_2 + QUARTER_DEG.to_radians();
     let best = sailed_way(&SLOOP, quarter);
@@ -50,7 +50,7 @@ fn no_hull_sails_faster_than_the_sloop_at_her_best_and_each_sails_by_her_own_sai
         let hull = kind.hull();
         let crest = sailed_way(hull, quarter);
         assert!((crest - best).abs() < 1e-9, "{}: {crest} at her best against the Sloop's {best}", hull.name);
-        // On a beam reach (north) and running (east), her way is her own sails at their crests by the point of sail.
+        // On a beam reach (north) and running (east), her way is her sails at their crests by the point of sail.
         for (heading, off_run) in [(0.0, 90.0), (std::f64::consts::FRAC_PI_2, 0.0)] {
             let way = sailed_way(hull, heading);
             assert!((way - way_under_sail(hull, off_run)).abs() < 1e-9, "{}: {way}", hull.name);

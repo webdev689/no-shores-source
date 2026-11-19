@@ -361,3 +361,32 @@ fn a_captain_her_fires_made_strike_is_graced_against_the_volley_then_aloft() {
     fight.strike(&hit, &mut events);
     assert_eq!((captain(&fight).damage.state, captain(&fight).damage.hull), (State::Struck, 1.0));
 }
+
+#[test]
+fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_her() {
+    // Ten of a Frigate's balls, each a tenth of her broadside's three, against ten of the Sloop's on the same draws.
+    let lost = |share: f64| {
+        let mut fight = alongside(60.0, Temper::Wary);
+        let gun = crate::guns::Gun { share, ..crate::guns::SWIVEL };
+        let hit = ShotEvent::Hit {
+            shooter: PLAYER,
+            target: CAPTAIN,
+            zone: Zone::Hull,
+            point: [0.0; 3],
+            flight: 0.5,
+            gun,
+            shot: Shot::Round,
+        };
+        let before = captain(&fight).damage.clone();
+        for _ in 0..10 {
+            fight.strike(&hit, &mut Vec::new());
+        }
+        let after = &captain(&fight).damage;
+        [before.hull - after.hull, before.crew - after.crew]
+    };
+    let (whole, frigates) = (lost(1.0), lost(0.3));
+    for (sloops, hers) in whole.iter().zip(frigates) {
+        assert!((hers - sloops * 0.3).abs() < 1.0, "{hers} against a share of {sloops}");
+    }
+    assert!(whole[0] >= 40.0, "the Sloop's ten balls take whole: {whole:?}");
+}
