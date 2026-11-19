@@ -23,21 +23,31 @@ const luminance = (colour: Colour): number => 0.2126 * colour[0] + 0.7152 * colo
 
 /** The sun's light above the air, and how much of each colour the air takes per air mass: red least, blue most. */
 const SUN_ABOVE: Colour = [1.08, 1.06, 1.04];
-const AIR_TAKES: Colour = [0.08, 0.16, 0.36];
-/** The sky by day, at twilight's start (the sun on the horizon) and by night; and the glow low toward a setting sun. */
+const AIR_TAKES: Colour = [0.04, 0.085, 0.2];
+/**
+ * The clear sky's zenith and horizon at four heights of the sun: by night (18 degrees under), at the end of civil
+ * twilight (6 under, still a blue sky), with the sun on the horizon (the glow toward it is the shader's) and by day.
+ */
+const NIGHT_ZENITH: Colour = [0.016, 0.03, 0.085];
+const NIGHT_HORIZON: Colour = [0.03, 0.055, 0.12];
+const CIVIL_ZENITH: Colour = [0.05, 0.11, 0.28];
+const CIVIL_HORIZON: Colour = [0.15, 0.22, 0.38];
+const SET_ZENITH: Colour = [0.17, 0.29, 0.56];
+const SET_HORIZON: Colour = [0.48, 0.6, 0.76];
 const DAY_ZENITH: Colour = [0.2, 0.42, 0.8];
 const DAY_HORIZON: Colour = [0.7, 0.81, 0.92];
-const DUSK_ZENITH: Colour = [0.12, 0.2, 0.42];
-const DUSK_HORIZON: Colour = [0.95, 0.58, 0.34];
-const NIGHT_ZENITH: Colour = [0.006, 0.011, 0.028];
-const NIGHT_HORIZON: Colour = [0.018, 0.026, 0.052];
+const NIGHT_SUN = -0.31;
+const CIVIL_SUN = -0.105;
+const DAY_SUN = 0.3;
 /** A whole deck's grey by day, a storm's under it, and sand's tan in the air. */
 const OVERCAST: Colour = [0.6, 0.63, 0.66];
-const STORM: Colour = [0.24, 0.26, 0.3];
+const STORM: Colour = [0.16, 0.18, 0.22];
 const SAND_AIR: Colour = [0.78, 0.62, 0.42];
-/** Moonlight at a full moon high in a clear sky, and the night's least light, so a moonless night still shows shapes. */
-const FULL_MOON: Colour = [0.07, 0.085, 0.13];
-const STARLIGHT: Colour = [0.018, 0.022, 0.036];
+/** Moonlight at a full moon high in a clear sky, what it adds to the sky's blue, and the night's least light, so a
+ *  moonless night still shows shapes. */
+const FULL_MOON: Colour = [0.2, 0.24, 0.34];
+const MOON_SKY: Colour = [0.035, 0.055, 0.1];
+const NIGHT_FLOOR: Colour = [0.06, 0.07, 0.1];
 /** The clouds' drift on their plane, cells a second at a steering flow of 30 m/s, and where their pattern repeats. */
 const DRIFT_CELLS_S = 0.004;
 const DRIFT_WRAP = 1024;
@@ -45,6 +55,13 @@ const DRIFT_WRAP = 1024;
 const FOG_BANK = 0.004;
 const FALL_HAZE = 0.0012;
 const SAND_HAZE = 0.006;
+
+/** A clear sky's colour at a height of the sun (its sine), from the four stages. */
+function clearSky(up: number, night: Colour, civil: Colour, set: Colour, day: Colour): Colour {
+  if (up < CIVIL_SUN) return mix(night, civil, smooth(NIGHT_SUN, CIVIL_SUN, up));
+  if (up < 0) return mix(civil, set, smooth(CIVIL_SUN, 0, up));
+  return mix(set, day, smooth(0, DAY_SUN, up));
+}
 
 /** The air mass the sun's light crosses at a height whose sine is `up` (Kasten and Young's), held finite at the horizon. */
 function airMass(up: number): number {
@@ -75,26 +92,28 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
   const dimmed = (1 - 0.72 * cover * cover) * (1 - 0.45 * storm) * (1 - 0.6 * fog) * (1 - 0.5 * sand);
   const sunAtGround = scale(sunLight(sun[2]), dimmed);
   const moonUp = smooth(-0.05, 0.25, moon[2]);
-  const moonAtGround = scale(FULL_MOON, reading.moonLit * moonUp * (1 - 0.85 * cover) * (1 - daylight));
+  const moonShown = reading.moonLit * moonUp * (1 - daylight);
+  const moonAtGround = scale(FULL_MOON, moonShown * (1 - 0.85 * cover));
   // The key light is whichever body gives more: the sun by day, the moon once the sun has set.
   const sunBright = luminance(sunAtGround);
   const byMoon = sunBright < luminance(moonAtGround) || sun[2] < -0.02;
   const keyLight = byMoon ? moonAtGround : sunAtGround;
   const key = byMoon ? moon : sun;
-  // Twilight runs from the sun on the horizon to 12 degrees under it.
-  const twilight = smooth(-0.21, 0.0, sun[2]);
-  const high = smooth(0.0, 0.35, sun[2]);
-  let zenith = mix(mix(NIGHT_ZENITH, DUSK_ZENITH, twilight), DAY_ZENITH, high);
-  let horizon = mix(mix(NIGHT_HORIZON, DUSK_HORIZON, twilight), DAY_HORIZON, high);
-  const grey = scale(mix(OVERCAST, STORM, storm), Math.max(daylight, 0.02));
+  const moonSky = scale(MOON_SKY, moonShown * (1 - 0.7 * cover));
+  const clearZenith = add(clearSky(sun[2], NIGHT_ZENITH, CIVIL_ZENITH, SET_ZENITH, DAY_ZENITH), moonSky);
+  const clearHorizon = add(clearSky(sun[2], NIGHT_HORIZON, CIVIL_HORIZON, SET_HORIZON, DAY_HORIZON), moonSky);
+  // A deck is as bright as the clear sky above it would be, a little of that sky's blue showing through.
+  const skyLight = Math.max(luminance(clearHorizon) / luminance(DAY_HORIZON), 0.05);
+  const grey = add(scale(mix(OVERCAST, STORM, storm), skyLight * 0.75), scale(clearHorizon, 0.2 - 0.14 * storm));
   const greyed = Math.pow(cover, 1.5) * 0.9;
-  zenith = mix(zenith, scale(grey, 0.85), greyed);
-  horizon = mix(horizon, grey, greyed);
-  horizon = mix(horizon, scale(SAND_AIR, Math.max(daylight, 0.05)), sand * 0.8);
-  const skyBright = luminance(mix(horizon, zenith, 0.6));
+  const zenith = mix(clearZenith, scale(grey, 0.85), greyed);
+  let horizon = mix(clearHorizon, grey, greyed);
+  horizon = mix(horizon, scale(SAND_AIR, skyLight), sand * 0.8);
+  // Eased up, so twilight's ground keeps more of the day's light than its darkening zenith alone would give.
+  const skyShare = Math.pow(clamp01(luminance(zenith) / luminance(DAY_ZENITH)), 0.6);
   const ambientSky = add(
-    scale(mix(zenith, [0.36, 0.36, 0.36], 0.75), 0.35 / 0.41),
-    add(STARLIGHT, scale(moonAtGround, 0.6)),
+    scale(mix(zenith, [0.36, 0.36, 0.36], 0.75), (0.35 / 0.41) * skyShare),
+    add(scale(NIGHT_FLOOR, 1 - skyShare), scale(moonAtGround, 0.5)),
   );
   const ambientGround = add(scale(sunAtGround, 0.12 * smooth(0, 0.2, sun[2])), scale(ambientSky, 0.7));
   const fogDensity = FOG_BANK * fog + FALL_HAZE * falling + SAND_HAZE * sand;
@@ -124,8 +143,11 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
     falling,
     sand,
     flash,
-    stars: smooth(-0.02, -0.25, sun[2]) * (1 - cover) * (skyBright < 0.2 ? 1 : 0.5),
+    // The stars come out as twilight ends; a bright moon washes out the faint ones.
+    stars: smooth(-0.02, -0.25, sun[2]) * (1 - 0.6 * moonShown) * (1 - 0.5 * cover),
     starTurn: reading.starTurn,
     drift,
+    latitude: (reading.latitudeDeg * Math.PI) / 180,
+    moonPhase: reading.moonPhase,
   };
 }

@@ -41,11 +41,12 @@ const sea: HeightAt = () => -30;
 const ship: Vec3 = [4_200_000, 2_900_000, 0];
 
 test('the camera stands 150 to 450 m over the ship, looks 15 to 75 degrees down, and stays under a cloud deck', () => {
-  assert.equal(ceilingFor(null), 450, 'no deck: the band top');
-  assert.equal(ceilingFor(Number.NaN), 450);
-  assert.equal(ceilingFor(1_200), 450, 'a high deck: still the band top');
-  assert.equal(ceilingFor(150), 90, 'a fog deck at 150 m: 60 m under it');
-  assert.equal(ceilingFor(0), 40, 'a deck on the sea: the floor');
+  assert.equal(ceilingFor(null), 450, 'no weather yet: the band top');
+  assert.equal(ceilingFor({ cloud: 0.3, falling: 0, storm: 0 }), 450, 'broken cloud: no deck');
+  assert.equal(ceilingFor({ cloud: 1, falling: 0, storm: 0 }), 450, 'a high overcast deck: still the band top');
+  assert.equal(ceilingFor({ cloud: 1, falling: 0.5, storm: 0 }), 340, 'rain lowers the deck: 60 m under its 400 m');
+  assert.equal(ceilingFor({ cloud: 1, falling: 1, storm: 1 }), 90, 'a storm lower still');
+  assert.equal(ceilingFor({ cloud: 1, falling: 3, storm: 1 }), 40, 'never under the floor');
   assert.deepEqual(heightBand(450), [150, 450]);
   assert.deepEqual(heightBand(90), [90, 90], 'under a low deck the band closes on the ceiling');
   assert.deepEqual(heightBand(10), [40, 40], 'and never under the floor');
