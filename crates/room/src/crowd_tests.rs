@@ -216,7 +216,6 @@ fn sixteen_melee_foes_round_a_player_stand_apart_take_their_turns_and_keep_fight
     for (on, walking, heat) in [(Ground::Open, false, 0.9), (Ground::Course, true, 0.35), (Ground::Node, true, 0.9)] {
         let crowd = crowd(on, 16, heat, walking);
         let cap = ::foes::Director { heat }.caps().melee;
-        eprintln!("PROBE {on:?} {crowd:?}");
         assert!(crowd.overlapping < 0.15 && crowd.through_ally < 0.25, "{on:?}: no ally in another's way: {crowd:?}");
         assert!(crowd.waiting_nearest >= 1.25 && crowd.inside_ring < 0.5, "{on:?}: the waiting apart, on their rings");
         assert!(crowd.turns_most <= cap + 1, "{on:?}: at most one past the turns' cap: {}", crowd.turns_most);
