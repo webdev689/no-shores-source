@@ -266,6 +266,9 @@ export function blowFrame(progress: number, lands: number): number {
 /** How far through a swing its blow lands by DFO's swing law: as the third of five strike frames begins. */
 export const BLOW_LANDS = 2 / 5;
 
+/** Whether a blow `progress` through its swing, landing `lands` through it, has shown its last frame. */
+const blowPlayed = (progress: number, lands = BLOW_LANDS): boolean => progress >= lands * (1 + STRIKE_PACE.recover);
+
 /** The frame (whole part) of a stroke `span` frames long at `progress` through its swing: the frames run through the
  *  wind-up to land the last on the blow (`lands` through the swing), held through the follow-through, so the figure
  *  strikes fast and shows itself open while it recovers. */
@@ -316,9 +319,14 @@ export function shownMove(
   const kit = kitOf(doing.drawn ? doing.right : null, doing.drawn ? doing.left : null, draws);
   const { blow } = doing;
   if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(moved(kit.reload), blow.progress);
-  if (blow && !blow.reload) {
-    const struck =
-      blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
+  const struck =
+    blow?.direction &&
+    !blow.reload &&
+    doing.drawn &&
+    blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
+  // Its frames played, a blow struck on the move walks on while the swing runs out, rather than stand mid-stride.
+  const walkedOn = !!struck && doing.moving && doing.mode === 'ground' && blowPlayed(blow.progress, blow.lands);
+  if (blow && !blow.reload && !walkedOn) {
     if (struck)
       return { anim: moved(struck), frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
     const stroke = blow.direction && STROKE_OF[blow.direction];

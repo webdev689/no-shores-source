@@ -292,8 +292,9 @@ The player's figure shows the move the forge draws for what the body does:
   stroke by the swing (down the overhead, up the thrust, any other the side cut) and its hold by the weapon (a sword,
   dagger or mace in one hand; an axe, flail or warhammer on its haft; a blade or mace in each hand as a pair; a staff in
   both hands). A blow's nine frames hold the first until a quarter of the way to the blow, run the first four through
-  the last three quarters of that time, show the fifth as it lands, and run the rest over a little over half that time
-  after ([[Third-Person Strikes Run Faster Than DFO's]]). Where no blow is drawn, a swing plays one stroke of the
+  the last three quarters of that time, show the fifth as it lands on the rules' tick, and run the rest over a little
+  over half that time after ([[Third-Person Strikes Run Faster Than DFO's]]); while the swing runs out, a figure
+  standing holds the last, and one on the move walks on. Where no blow is drawn, a swing plays one stroke of the
   weapon's attack, frames 0 to 2, and the next swing frames 3 to 5. The stroke's frames run through the last three
   quarters of the swing's wind-up so its last lands with the blow, two fifths of the way through a swing by the swing
   law (a sword's in 0.3 s, [[Combat]]), and it is held through the follow-through: the figure strikes fast and shows

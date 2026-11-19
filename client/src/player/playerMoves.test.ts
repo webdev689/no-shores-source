@@ -272,6 +272,21 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
   assert.ok(!likely.includes('chop') && !likely.includes('attack_sword'));
 });
 
+test('a blow struck on the move walks on once its frames have played, rather than stand mid-stride', () => {
+  const onTheMove = (action: string) => `${action}walk`;
+  const blowAt = (progress: number, moving: boolean) =>
+    shownMove(
+      { ...doing, moving, speed: 3, blow: { direction: 'down', second: false, progress } },
+      frames,
+      everything,
+      onTheMove,
+    );
+  // A sword's blow lands 0.4 through its swing; its last frame shows 0.55 of that after.
+  assert.deepEqual([blowAt(0.6, true).anim, blowAt(0.6, true).frame], ['over1hwalk', 8]);
+  assert.equal(blowAt(0.63, true).anim, 'walk', 'walking on while the swing runs out');
+  assert.deepEqual([blowAt(0.9, false).anim, blowAt(0.9, false).frame], ['over1h', 8], 'standing, it holds its last');
+});
+
 test('what a fight holds a figure to, and its blows on the move, are composed ahead too', () => {
   const onTheMoveOf = (action: string) => `${action}walk`;
   const likely = likelyMoves('sword_iron', null, everything, null, onTheMoveOf);
