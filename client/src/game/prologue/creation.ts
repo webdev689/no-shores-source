@@ -2,11 +2,19 @@
 // at the right of the screen so the figure standing at the left stays clear.
 import './creation.css';
 import { make } from '../../editor/dom.ts';
-import type { AccountLink } from '../../network/accounts.ts';
+import type { Account, AccountLink } from '../../network/accounts.ts';
 import { ROLES } from '../../plus/kit.ts';
 import { type Race } from '../../player/dressing.ts';
 import { pressOf } from '../gearDom.ts';
-import { type AccountAsk, type AccountOutcome, askAccounts } from './accountAsk.ts';
+import {
+  type AccountAsk,
+  type AccountOutcome,
+  OUT_OF_REACH,
+  askAccounts,
+  discordAway,
+  goingOn,
+  markHelm,
+} from './accountAsk.ts';
 import { HAIR_COLOURS, type Look, hairStylesOf, withBody, withHair, withRace, withTone } from './look.ts';
 
 export type { AccountOutcome };
@@ -52,7 +60,8 @@ function field(label: string, type: 'text' | 'password', complete: string): [HTM
 
 /**
  * The first step: create an account, sign in, sign in with Discord, or play as a guest. A refusal shows in the
- * accounts' own words and the step stays. With no accounts (playing alone) it says so and lets the player go on.
+ * accounts' own words and the step stays. A player signed in already may go on as themselves; with the accounts out
+ * of reach, without an account. With no accounts (playing alone) it says so and lets the player go on.
  */
 export function accountStep(root: HTMLElement, link: AccountLink | null): Promise<AccountOutcome> {
   const [frame, contents] = windowIn(root, 'Your account');
@@ -72,7 +81,20 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
     const said = make('p', link.said ?? '', 'creation-said');
     said.setAttribute('role', 'status');
     const presses: HTMLButtonElement[] = [];
-    // One ask at a time: every press waits while the accounts answer, and the focus comes back to the one pressed.
+    // Going on past the form is offered once, above it: as the account signed in, or without one out of reach.
+    let offered: string | null = null;
+    const offer = (account: Account | null) => {
+      const going = goingOn(account);
+      if (!going || offered !== null || !frame.isConnected) return;
+      offered = going.words;
+      const goOn = pressOf(going.press, () => done(going.outcome), 'primary');
+      presses.push(goOn);
+      contents.prepend(make('p', going.words, 'creation-words'), goOn);
+      // A player already typing on the form keeps their place in it.
+      if (name.value === '' && password.value === '') goOn.focus();
+    };
+    // One ask at a time: every press waits while the accounts answer, and the focus comes back to the one pressed,
+    // unless the answer offered going on and that press took it.
     const waiting = async (asking: () => Promise<void>) => {
       const pressed = document.activeElement;
       for (const press of presses) press.disabled = true;
@@ -81,22 +103,30 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
         await asking();
       } finally {
         for (const press of presses) press.disabled = false;
-        if (pressed instanceof HTMLElement && frame.isConnected) pressed.focus();
+        const kept = document.activeElement !== pressed && frame.contains(document.activeElement);
+        if (pressed instanceof HTMLElement && frame.isConnected && !kept) pressed.focus();
       }
     };
+    const answered = (answer: AccountOutcome | string) => {
+      if (typeof answer !== 'string') return done(answer);
+      if (answer === OUT_OF_REACH) offer(null);
+      // Words the offer above already says are not said twice.
+      said.textContent = answer === offered ? '' : answer;
+    };
     const ask = (what: AccountAsk) =>
+      void waiting(async () => answered(await askAccounts(link, what, name.value, password.value)));
+    const discord = () =>
       void waiting(async () => {
-        const answer = await askAccounts(link, what, name.value, password.value);
-        if (typeof answer === 'string') said.textContent = answer;
-        else done(answer);
+        const away = await discordAway(link, location.href);
+        if (typeof away === 'string') return answered(away);
+        // The way back from Discord picks the story up here, at the helm, not from its start.
+        markHelm(sessionStorage);
+        location.assign(away.to);
       });
     presses.push(
       pressOf('Create an account', () => ask('create'), 'primary'),
       pressOf('Sign in', () => ask('sign in')),
-      pressOf(
-        'Sign in with Discord',
-        () => void waiting(async () => location.assign(await link.discord(location.href))),
-      ),
+      pressOf('Sign in with Discord', discord),
       pressOf('Play as a guest', () => ask('guest')),
     );
     const row = make('div', '', 'creation-presses');
@@ -109,13 +139,10 @@ export function accountStep(root: HTMLElement, link: AccountLink | null): Promis
       said,
     );
     name.focus();
-    // A player already signed in goes on as themselves; the form stays below for another account.
     void link.session().then((account) => {
-      if (!account?.username || !frame.isConnected) return;
-      const username = account.username;
-      const goOn = pressOf(`Go on as ${username}`, () => done({ kind: 'account', username }), 'primary');
-      contents.prepend(make('p', `You are signed in as ${username}.`, 'creation-words'), goOn);
-      goOn.focus();
+      // A Discord sign-in that came back is redeemed by now, and its words are the accounts' latest.
+      if (link.said && !said.textContent) said.textContent = link.said;
+      offer(account);
     });
   });
 }

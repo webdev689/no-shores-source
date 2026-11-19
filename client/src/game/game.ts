@@ -5,7 +5,6 @@ import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import type { CardAt } from '../player/cards.ts';
-import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
@@ -39,7 +38,7 @@ import { loadParts } from './loading.ts';
 import { standingDrawers } from './standing.ts';
 import type { Epilogue } from './prologue/epilogue.ts';
 import { StoryHost } from './prologue/host.ts';
-import { keptLook, plainDressOf } from './prologue/look.ts';
+import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
@@ -115,8 +114,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   scene.setLand(landmass.view, terrainFor(landmass));
 
   const input = new Input(canvas);
-  const look = keptLook(localStorage);
-  const dress = look ? plainDressOf(look) : plainDress('human', 0.3);
+  const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
   const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
@@ -217,7 +215,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Online the server's sea room; playing alone, the same room in the page.
     await sea.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session)
+        ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session())
         : async (snapshot) => LocalRoom.openSea(await roomModule, world.layoutText, snapshot),
     );
   };
@@ -366,7 +364,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
-  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story');
   addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();

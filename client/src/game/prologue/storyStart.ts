@@ -28,7 +28,7 @@ import type { FigureView } from '../figureView.ts';
 import type { FootView } from '../footView.ts';
 import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
-import type { Landmass } from '../landmass.ts';
+import { type Landmass, openLandmass } from '../landmass.ts';
 import type { GameScene } from '../scene.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { WorldData } from '../worldData.ts';
@@ -86,9 +86,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   const brigMesh = await loadShip('brig');
   const brigView = new ShipView(gpu, brigMesh, shipSails('brig'));
   const islands = new Islands({
-    land: game.land,
-    world: game.world,
-    rmbText: game.rmbText,
+    open: (id) => openLandmass(game.land, game.world, game.rmbText, id),
     scene,
     drawersOn: game.drawersOn,
     terrainFor: game.terrainFor,

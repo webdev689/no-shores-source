@@ -7,6 +7,9 @@ const STYLE_ID = 'cinema-screen';
 /** The title as the screen shows it. */
 export const TITLE = 'Overlook';
 
+/** Whether the page is played by touch, so its prompts say tap and hold rather than name keys. */
+export const playedByTouch = (): boolean => globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
+
 function screenCss(): string {
   return `
 .cinema { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
@@ -24,7 +27,7 @@ function screenCss(): string {
 .cinema-title { position: absolute; left: 0; right: 0; top: 30%; text-align: center; opacity: 0;
   transition: opacity 2.4s ease-in-out; }
 .cinema-title.shown { opacity: 1; }
-.cinema-name { display: inline-block; font-size: 99px; line-height: 1; letter-spacing: round(up, calc(8em / 22), 1px);
+.cinema-name { display: inline-block; font-size: min(99px, 10vw); line-height: 1; letter-spacing: round(up, calc(8em / 22), 1px);
   text-transform: uppercase; color: #e9d8a6;
   text-shadow: 0 4px 0 #3a2c14, 0 0 22px rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.9); }
 .cinema-rule { width: 440px; max-width: 70vw; height: 4px; margin: 22px auto 0;
@@ -36,10 +39,10 @@ function screenCss(): string {
 @keyframes cinema-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 .cinema-skip { position: absolute; right: 33px; bottom: 33px; font-size: 11px; letter-spacing: 1px; color: #efe6cf;
   text-transform: uppercase; opacity: 0; transition: opacity 0.4s; text-shadow: 0 1px 0 #000; }
-.cinema-skip.shown { opacity: 0.85; }
+.cinema-skip.shown { opacity: 0.45; }
+.cinema-skip.shown.held { opacity: 0.9; }
 .cinema-skip i { display: block; height: 2px; margin-top: 6px; background: #e9d8a6; transform-origin: left;
   transform: scaleX(0); }
-@media (max-width: 900px) { .cinema-name { font-size: 66px; } }
 @media (prefers-reduced-motion: reduce) {
   .cinema-prompt.shown { animation: none; }
   .cinema-bar { transition: none; }
@@ -86,7 +89,7 @@ export class Screen {
     made(page, 'cinema-name', this.title, TITLE);
     made(page, 'cinema-rule', this.title);
     this.prompt = made(page, 'cinema-prompt', this.root);
-    this.skip = made(page, 'cinema-skip', this.root, 'Hold Space to skip');
+    this.skip = made(page, 'cinema-skip', this.root, playedByTouch() ? 'Hold to skip' : 'Hold Space to skip');
     this.skipFill = page.createElement('i');
     this.skip.append(this.skipFill);
     this.white = made(page, 'cinema-veil cinema-white', this.root);
@@ -136,9 +139,11 @@ export class Screen {
     this.prompt.classList.toggle('shown', text !== null);
   }
 
-  /** The skip's hold: its share filled, shown while a cutscene can be skipped. */
+  /** The skip's hint, faint while a cutscene can be skipped and bright while the hold fills its `share`; null hides it
+   *  where there is nothing to skip. */
   showSkip(share: number | null): void {
     this.skip.classList.toggle('shown', share !== null);
+    this.skip.classList.toggle('held', share !== null && share > 0);
     this.skipFill.style.transform = `scaleX(${share ?? 0})`;
   }
 

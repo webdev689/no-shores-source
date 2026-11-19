@@ -49,6 +49,8 @@ export class Prologue {
   private readonly wreckContext: WreckContext;
   private readonly skipping = new HoldToSkip(1);
   private readonly played: boolean;
+  /** Whether a touch is held on the screen, which skips a cutscene as Space held does. */
+  private touching = false;
   private beat: Beat;
   private carried: Carried = { shot: null, inbound: [], meeting: null, layout: null, run: null };
   private clock = 0;
@@ -129,7 +131,8 @@ export class Prologue {
       return;
     }
     if (ended instanceof Overboard) void this.carried.run?.then((run) => run.leave());
-    if (ended instanceof Deep) void this.islands.home();
+    if (ended instanceof Deep)
+      this.islands.home().catch((error: unknown) => console.error('Saltmere would not open:', error));
     if (ended instanceof Shore) {
       keepProloguePlayed(localStorage);
       this.end = 'played';
@@ -153,6 +156,11 @@ export class Prologue {
   /** A tap or click: the title's beginning. */
   press(): void {
     if (this.beat instanceof Intro) this.beat.press();
+  }
+
+  /** A touch on the screen held down, or let go. */
+  touch(held: boolean): void {
+    this.touching = held;
   }
 
   /** Whether the player is playing a beat where the pointer is theirs to lock (the wreck). */
@@ -179,9 +187,10 @@ export class Prologue {
     stage.step(seconds);
     const beat = this.beat;
     if (beat.skippable && beat.skip) {
-      const holding = controls.held('jump');
+      const holding = controls.held('jump') || this.touching;
       const skipped = this.skipping.step(seconds, holding);
-      stage.parts.screen.showSkip(holding ? this.skipping.share : null);
+      // The hint shows, faint, whenever there is something to skip, so the skip can be found before it is held.
+      stage.parts.screen.showSkip(holding ? this.skipping.share : 0);
       if (skipped) {
         // A skipped cutscene's world is left as its end leaves it, but none of its words are said.
         beat.skip();

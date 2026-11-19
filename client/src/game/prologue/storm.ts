@@ -12,7 +12,7 @@ import { onDeck } from './sailing.ts';
 import { STORM } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
-import { creationEye, youAtHelm } from './helm.ts';
+import { CREATION_LENS, creationEye, youAtHelm } from './helm.ts';
 
 const LENS = { fov: 0.9, near: 0.3, far: 30_000 } as const;
 /** The pull away from the title, then the leap, then the run to the Brig and over her. */
@@ -20,9 +20,10 @@ const PULL_S = 7;
 const RUN_S = 20;
 
 /** The run in the Brig's own frame (metres to her bow, to her starboard, up from her waterline), so it keeps with
- *  her as she sails: low over the swell astern and to port, up along her port side, over her deck aft to her helm. */
-function runKeys(): RailKey[] {
-  const creation = creationEye(0);
+ *  her as she sails: low over the swell astern and to port, up along her port side, over her deck aft to her helm,
+ *  where it ends on the creation's own shot for a view `aspect` wide to its height. */
+function runKeys(aspect: number): RailKey[] {
+  const creation = creationEye(0, aspect);
   return [
     { at: 0, eye: [-420, -260, 22], look: [0, 0, 6] },
     { at: 6, eye: [-150, -90, 14], look: [0, 0, 8] },
@@ -30,7 +31,8 @@ function runKeys(): RailKey[] {
     { at: 12.5, eye: [14, -9, 8], look: [16, 0, 3] },
     { at: 15, eye: [4, -5.5, 7.5], look: [-4, 1, 3] },
     { at: 17.5, eye: [-7, -4.5, 6.8], look: [-11, 0, 4] },
-    { at: RUN_S, eye: creation.eye, look: creation.look },
+    // It ends in the creation's own lens, so the helm takes the shot up without a jump.
+    { at: RUN_S, eye: creation.eye, look: creation.look, fov: CREATION_LENS.fov },
   ];
 }
 
@@ -40,7 +42,6 @@ export class StormDive implements Beat {
   private readonly story: Story;
   private readonly from: Shot;
   private readonly cues: Cues;
-  private readonly run: RailKey[];
   private since = 0;
   private leapt = false;
   done = false;
@@ -48,7 +49,6 @@ export class StormDive implements Beat {
   constructor(story: Story, from: Shot) {
     this.story = story;
     this.from = from;
-    this.run = runKeys();
     const { stage, lightning } = story;
     const { ambience, screen } = stage.parts;
     storyCue('storm');
@@ -107,7 +107,8 @@ export class StormDive implements Beat {
       ? sailing.frame([brig.sailed()], tick.seconds, tick.clock, stage.windBearing(), swell)
       : [];
     const own = ships[0]?.place ?? this.place();
-    const shot = this.leapt ? this.runShot(own) : this.pullShot();
+    const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
+    const shot = this.leapt ? this.runShot(own, aspect) : this.pullShot();
     if (this.since >= PULL_S + RUN_S) this.done = true;
     const actors = this.leapt ? [...brig.crew(own, tick.clock), youAtHelm(story, own, 'idle')] : [];
     return {
@@ -144,9 +145,13 @@ export class StormDive implements Beat {
   }
 
   /** The run to the Brig, kept with her as she sails, a little of her rise and fall in it. */
-  private runShot(own: ShipPlace): Shot {
+  private runShot(own: ShipPlace, aspect: number): Shot {
     const calm: ShipPlace = { ...own, pitch: 0, roll: 0, z: own.z * 0.35 };
-    const carried = this.run.map((key) => ({ ...key, eye: onDeck(calm, ...key.eye), look: onDeck(calm, ...key.look) }));
+    const carried = runKeys(aspect).map((key) => ({
+      ...key,
+      eye: onDeck(calm, ...key.eye),
+      look: onDeck(calm, ...key.look),
+    }));
     return { ...LENS, ...railShot(carried, this.since - PULL_S, LENS.fov) };
   }
 }

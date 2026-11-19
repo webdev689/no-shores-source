@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Account } from '../../network/accounts.ts';
-import { OUT_OF_REACH, type Accounts, askAccounts } from './accountAsk.ts';
+import { OUT_OF_REACH, type Accounts, askAccounts, backAtHelm, discordAway, goingOn, markHelm } from './accountAsk.ts';
 
 const guest: Account = { id: 'g1', username: null, discord: false, guest: true };
 
@@ -53,4 +53,60 @@ test('with the accounts out of reach, nothing is asked past the session and the 
   assert.equal(await askAccounts(offline, 'guest', '', ''), OUT_OF_REACH);
   assert.equal(await askAccounts(offline, 'create', 'Wren', 'hunter22'), OUT_OF_REACH);
   assert.deepEqual(offline.asked, ['session', 'session']);
+});
+
+test('with the accounts out of reach the player may go on without an account, as the game played before', () => {
+  assert.deepEqual(goingOn(null), {
+    words: OUT_OF_REACH,
+    press: 'Go on without an account',
+    outcome: { kind: 'alone' },
+  });
+});
+
+test('a signed-in account goes on as itself, by its username or, linked by Discord alone, in plain words', () => {
+  assert.deepEqual(goingOn({ ...guest, username: 'Wren', guest: false }), {
+    words: 'You are signed in as Wren.',
+    press: 'Go on as Wren',
+    outcome: { kind: 'account', username: 'Wren' },
+  });
+  assert.deepEqual(goingOn({ ...guest, discord: true, guest: false }), {
+    words: 'You are signed in with Discord.',
+    press: 'Go on',
+    outcome: { kind: 'account', username: null },
+  });
+  assert.equal(goingOn(guest), null, 'a guest chooses on the form');
+});
+
+test('Discord is left for only while the accounts can be reached', async () => {
+  const offline = { session: async () => null, discord: async () => 'https://discord.example' };
+  assert.equal(await discordAway(offline, 'https://game.example/'), OUT_OF_REACH);
+  const online = {
+    session: async () => guest,
+    discord: async (back: string) => `https://discord.example?back=${back}`,
+  };
+  assert.deepEqual(await discordAway(online, 'here'), { to: 'https://discord.example?back=here' });
+});
+
+test('a player who left for Discord comes back to the helm once, and a store that keeps nothing never throws', () => {
+  const kept = new Map<string, string>();
+  const tab = {
+    getItem: (key: string) => kept.get(key) ?? null,
+    setItem: (key: string, value: string) => void kept.set(key, value),
+    removeItem: (key: string) => void kept.delete(key),
+  };
+  assert.equal(backAtHelm(tab), false);
+  markHelm(tab);
+  assert.equal(backAtHelm(tab), true);
+  assert.equal(backAtHelm(tab), false, 'read once');
+  const broken = {
+    getItem: () => {
+      throw new Error('denied');
+    },
+    setItem: () => {
+      throw new Error('denied');
+    },
+    removeItem: () => undefined,
+  };
+  assert.doesNotThrow(() => markHelm(broken));
+  assert.equal(backAtHelm(broken), false);
 });

@@ -1,9 +1,11 @@
-// The story as the game holds it: the tap to start shown at once, the story started once the game has loaded (or,
-// if it cannot start, the player sent on to Overlook as before), its frames, keys and pointer, and its end, which
-// hands the player to the game with the epilogue to play on foot and their look to dress them.
+// The story as the game holds it: the tap to start shown at once, the story started once the game has loaded (at the
+// helm for a player back from Discord; or, if it cannot start, the player sent on to Overlook as before), its frames,
+// keys, pointer and touches, and its end, which hands the player to the game with the epilogue to play on foot and
+// their look to dress them.
 import type { InputFrame } from '../../player/input.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { rosterOf } from '../../rules/roster.ts';
+import { backAtHelm } from './accountAsk.ts';
 import { beatNamed } from './beat.ts';
 import type { Epilogue } from './epilogue.ts';
 import { fightPointer } from './fightPointer.ts';
@@ -26,13 +28,20 @@ export class StoryHost {
   constructor(hudRoot: HTMLElement, canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     void tapToStart(hudRoot, this.ready).then(async () => (this.story = await this.ready));
-    canvas.addEventListener('pointerdown', () => this.story?.prologue.press());
+    canvas.addEventListener('pointerdown', (event) => {
+      this.story?.prologue.press();
+      if (event.pointerType === 'touch') this.story?.prologue.touch(true);
+    });
+    for (const ending of ['pointerup', 'pointercancel'])
+      canvas.addEventListener(ending, () => this.story?.prologue.touch(false));
     fightPointer(canvas, () => this.story?.prologue.fight ?? null);
   }
 
   /** Starts the story on the game's parts, once the rooms' module has compiled; `failed` if it cannot start. */
   begin(game: Omit<StoryGame, 'roster'>, failed: () => void): void {
-    const from = import.meta.env.DEV ? beatNamed(new URLSearchParams(location.search).get('prologue')) : null;
+    // A player back from Discord picks the story up at the helm, where they left it.
+    const back = backAtHelm(sessionStorage) ? 'creation' : null;
+    const from = (import.meta.env.DEV ? beatNamed(new URLSearchParams(location.search).get('prologue')) : null) ?? back;
     game.roomModule
       .then((module) => startStory({ ...game, roster: rosterOf(module) }, from))
       .then(

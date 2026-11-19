@@ -52,7 +52,11 @@ export function keptLook(kept: Pick<Storage, 'getItem'>): Look | null {
 }
 
 export function keepLook(kept: Pick<Storage, 'setItem'>, look: Look): void {
-  kept.setItem(KEY, JSON.stringify(look));
+  try {
+    kept.setItem(KEY, JSON.stringify(look));
+  } catch {
+    // A browser that keeps nothing (full, or private) asks for the look again next time.
+  }
 }
 
 /** The look on another body: the hair keeps its colour and takes that body's first style. */
