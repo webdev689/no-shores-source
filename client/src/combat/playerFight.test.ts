@@ -38,10 +38,10 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
   };
 }
 
-/** The player with a sword drawn (or `right`, once the room's gear wears it) in a fight in a room in the page, the first
- *  person's hands standing in: each frame's button, pose, pace and spare are kept, what the forge warms, and the room's
- *  last word on the gear. */
-function fightingPlayer(right = 'sword_iron') {
+/** The player with a sword drawn (or `right`, once the room's gear wears it) in a fight in a room in the page, standing
+ *  at `start` (the course's own), the first person's hands standing in: each frame's button, pose, pace and spare are kept,
+ *  what the forge warms, and the room's last word on the gear. */
+function fightingPlayer(right = 'sword_iron', start: { readonly x: number; readonly y: number } = course.start) {
   type State = { right?: string | null; pose?: unknown; pace?: unknown; spare?: unknown };
   const shown: { attackPressed: boolean; right: unknown; pose: unknown; pace: unknown; spare: unknown }[] = [];
   const said: { gear: GearMessage | null } = { gear: null };
@@ -69,11 +69,11 @@ function fightingPlayer(right = 'sword_iron') {
   const dress = plainDress('human', 0.3);
   const you = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   you.dress = { ...dress, outfit: { ...dress.outfit, right, drawn: true } };
-  const walker = new Walker(newPlayer(movement, course.start.x, course.start.y), you, hands, forge);
+  const walker = new Walker(newPlayer(movement, start.x, start.y), you, hands, forge);
   let fight: Fighting | null = null;
   const room = LocalRoom.open(
     compiled,
-    course.start,
+    start,
     course.blocks,
     (snapshot: Snapshot) => fight?.receive(snapshot),
     (gear) => (said.gear = gear),
@@ -151,6 +151,28 @@ test('a weapon changed mid-swing is shown as the rules take it up, once the swin
   assert.equal(shown.at(-1)?.right, 'pistolet', 'the gun once they take it up');
   assert.equal(fighting.arms, startCombatRules(compiled).armsCode('pistolet', null, true), 'the gun asked for');
   assert.equal(walker.shownDress.outfit.right, 'pistolet');
+});
+
+test('a climb begun while the rules reload puts the held weapon away, though the rules still hold it', () => {
+  // Facing the course's tall wall from just short of its near face: a reload lets the body walk into it and climb.
+  const { fighting, walker, frame, said } = fightingPlayer('pistolet', { x: 11, y: -0.6 });
+  const ask = (gear: Parameters<Fighting['askGear']>[0]) => {
+    fighting.askGear(gear);
+    for (let tick = 0; tick < 20; tick++) frame(controls());
+  };
+  ask({ kind: ASKS.grantItem, itemKind: KINDS.indexOf('pistolet'), rarity: 0, level: 1 });
+  const pistolet = said.gear?.items.find((item) => KINDS[item.kind] === 'pistolet');
+  ask({ kind: ASKS.wear, item: pistolet?.id ?? 0, slot: 1 });
+  frame(controls(['guard'], ['guard']));
+  while (fighting.own?.action.kind !== 'reload') frame(controls());
+  let climbed = false;
+  for (let tick = 0; tick < 60 && fighting.own?.action.kind === 'reload'; tick++) {
+    frame(controls(['forward']));
+    if (walker.player.body.mode !== 'climb') continue;
+    climbed = true;
+    assert.equal(walker.shownDress.outfit.drawn, false, `put away on the wall at tick ${tick}`);
+  }
+  assert.ok(climbed, 'the body took to the wall while the rules reloaded');
 });
 
 test('the guard held stands the first person in its pose, and the figure faces where its arms point', () => {
