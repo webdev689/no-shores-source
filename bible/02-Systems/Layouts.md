@@ -95,8 +95,10 @@ from the sea, fresh water and the claim's edge), then:
    between its buildings. A way too steep for its tier is laid as a footpath, then stepped; an area no way reached is
    joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
    arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers: a timber deck 0.5 m
-   thick, so a body walks on it, and rails, both laid in lengths short enough that each one's box keeps close to it
-   on a slant.
+   thick, so a body walks on it, 0.3 m over the land at its higher end, 3 m past each bank and on out along a lower
+   bank until its two ends' land stands within 0.15 m, so a body steps onto it at either end; rails 0.8 m past the
+   walked width; deck and rails laid in lengths short enough that each one's box keeps close to it on a slant, so no
+   rail's box reaches onto the way.
    Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
    where it reaches one; a milestone every 160 m between the places; a scene every 80 to 180 m (a cart broken down
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
@@ -167,7 +169,8 @@ from the sea, fresh water and the claim's edge), then:
    height, more than 150 m from every floor, climb and run and 120 m inside the claim's edge (the bounds). Before the
    runs are found, each layout answers its largest mass, seeks them again, and so on five times at most: a straight
    climb from a floor reached out of the mass's deepest point (sixteen headings tried) back up toward it, to a lookout
-   as above with a broken tower standing on the top 24 m past it, where that leaves under 2,500 m2 of the mass dead;
+   as above with a broken tower standing on the top 24 m past it (ahead or to either side, where the top is level and
+   clear of every outcrop as for the rim's ruins, else none), where that leaves under 2,500 m2 of the mass dead;
    else a valley 22 m wide through the deepest point that joins two existing floors over walked land, keeps 48 m off
    every climb past both edges and off every outcrop, and reaches most of the mass; else the climb that reaches most.
    On Saltmere the Downs take three climbs, the Vale three valleys across the rock round its keep and a climb, the
@@ -197,8 +200,8 @@ from the sea, fresh water and the claim's edge), then:
    on a stone plinth in a ring of standing stones; ore as a broken outcrop seamed with metal and its spoil; salvage as
    broken timbers and spilt stores; herbs by a gatherer's drying rack hung with bundles; timber as felled logs stacked
    by a stump with its axe.
-10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, in the claim, as one
-    piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
+10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, and the bridges over
+    water a cell wider either side, in the claim, as one piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
     the landing or the way in.
 
 ## Runs
@@ -246,7 +249,8 @@ sculpts, then the buildings' seats as pads, then the paths as roads (their beds 
 nature keeps off them, every window of the ground carries them, and a node's room stands its bodies on the carved
 land ([[Land]], [[Server]]). Every prop and stone that stood on the ground as it was planned then follows it as it is
 laid, by as far as the pads and roads moved it (`follow_ground`), and what stands on one (a lantern's cage on its
-post) moves with it; a deck, a pile in the water, a battlement or a building's plinth keeps its height. The streets' and paths' heights
+post) moves with it; a pile in the water, a battlement or a building's plinth keeps its height. A bridge's timbers
+move together, by as far as the land under its deck's higher end moved, never one length on its own. The streets' and paths' heights
 are then read from the ground as it lies. Saltmere's ten
 layouts are planned and laid in about 0.65 s natively. The bake and the land's worker settle them alike; a node's
 file takes its section, spawns and boxes from its layout.
