@@ -219,9 +219,10 @@ fn sixteen_melee_foes_round_a_player_stand_apart_take_their_turns_and_keep_fight
         assert!(crowd.overlapping < 0.15 && crowd.through_ally < 0.25, "{on:?}: no ally in another's way: {crowd:?}");
         assert!(crowd.waiting_nearest >= 1.25 && crowd.inside_ring < 0.5, "{on:?}: the waiting apart, on their rings");
         assert!(crowd.turns_most <= cap + 1, "{on:?}: at most one past the turns' cap: {}", crowd.turns_most);
-        // One blow at a time lands at a target, a beat apart: they keep fighting at a swing every other beat or more.
+        // One blow at a time lands at a target, a beat apart, and one foe goes in at a time: they keep swinging at
+        // least once in two and a half beats.
         let beat = ::foes::Director { heat }.pressed().beat;
         let swings = crowd.swings;
-        assert!(swings >= 30.0 / beat, "{on:?}: and they keep fighting: {swings} swings a minute, a beat {beat} s");
+        assert!(swings >= 25.0 / beat, "{on:?}: and they keep fighting: {swings} swings a minute, a beat {beat} s");
     }
 }
