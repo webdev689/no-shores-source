@@ -192,6 +192,12 @@ impl Brain {
         self.plan
     }
 
+    /// Whom it fights: its chosen target, whatever blow it answers.
+    #[must_use]
+    pub fn fights(&self) -> Option<FighterId> {
+        self.target
+    }
+
     /// The fighter its soft lock should hold: its chosen target, but while it answers a blow, the one whose blow it
     /// is, so its guard and its dodge face that one.
     #[must_use]
