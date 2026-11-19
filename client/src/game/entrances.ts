@@ -42,15 +42,15 @@ export function turned([x, y, z]: Point, yaw: number): [number, number, number] 
   return [x * cosine + z * sine, x * sine - z * cosine, y];
 }
 
-/** Lays a forged model into `mesh` standing at `at` (east, south, up) turned by `yaw`, as the city stands a model;
+/** Lays a forged model into `mesh` standing at `where` (east, south, up) turned by `yaw`, as the city stands a model;
  *  each triangle keeps its picture and is lit by its first corner's normal. */
-export function layModel(mesh: MeshBuilder, model: ForgedModel, at: Point, yaw: number): void {
+export function layModel(mesh: MeshBuilder, model: ForgedModel, where: Point, yaw: number): void {
   const point = (vertex: number, from: Float32Array, shift: boolean) => {
     const [east, south, up] = turned(
       [from[vertex * 3] ?? 0, from[vertex * 3 + 1] ?? 0, from[vertex * 3 + 2] ?? 0],
       yaw,
     );
-    return shift ? [east + at[0], south + at[1], up + at[2]] : [east, south, up];
+    return shift ? [east + where[0], south + where[1], up + where[2]] : [east, south, up];
   };
   for (const part of model.parts)
     for (let index = part.start; index < part.start + part.count; index += 3) {
