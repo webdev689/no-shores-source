@@ -99,7 +99,8 @@ test('blows on one foe in quick succession add into one number, popped again; a 
       ['Crit'],
     );
     assert.ok(shown[0]?.classList.contains('loud'));
-    assert.match(shown[0]?.style['transform'] ?? '', new RegExp(`translate\\(${100 + WORD_THROW_PX}\\.0px`), 'thrown');
+    const across = Number(/translate\(([\d.]+)px/.exec(shown[0]?.style['transform'] ?? '')?.[1]);
+    assert.ok(across > 100 + 2 * WORD_THROW_PX, `thrown right, its near edge clear of the blow: ${across}`);
     words.update(project, 800, 600, (WORD_FRAMES.plain + 2) * FRAME);
     assert.equal(findAll(root, 'word').length, 1, 'a crit’s word stands longer');
     words.update(project, 800, 600, (WORD_FRAMES.loud - WORD_FRAMES.plain) * FRAME);

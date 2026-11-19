@@ -136,6 +136,7 @@ interface Word {
   readonly number: HTMLElement;
   readonly at: readonly [number, number, number] | null;
   readonly line: number;
+  readonly side: number;
   readonly across: number;
   readonly key: string | null;
   readonly stamps: Set<string>;
@@ -183,9 +184,7 @@ export class Words {
     const number = element('span', 'number', rise, textOf(said));
     for (const tag of said.tags) element('small', 'tag', rise, tag);
     const line = place ? 0 : this.words.filter((word) => !word.at).length;
-    // A crit's or a kill's number is thrown twice as far, clear of its larger star.
-    const thrown = WORD_THROW_PX * (said.crit || said.killed ? 2 : 1);
-    const across = place ? Math.round(side * thrown + (scatter * 2 - 1) * WORD_SCATTER_PX) : 0;
+    const across = place ? Math.round((scatter * 2 - 1) * WORD_SCATTER_PX) : 0;
     const full: Said = { defender: -1, ...said };
     const word: Word = {
       element: made,
@@ -193,6 +192,7 @@ export class Words {
       number,
       at: place,
       line,
+      side: place ? side : 0,
       across,
       key,
       stamps: new Set(),
@@ -235,7 +235,10 @@ export class Words {
       }
       const pose = wordPose(frame, word.life, still);
       const [half, size] = [widthOf(word) / 2, sizeOf(word.said)];
-      const [middle, top] = [Math.round(spot.x + word.across), Math.round(spot.y - pose.rise - size / 2)];
+      // Its near edge stands its throw from the blow, so the blow itself stays clear; a crit's or a kill's twice as far.
+      const thrown = word.side * (WORD_THROW_PX * (size === WORD_PX.loud ? 2 : 1) + half);
+      const middle = Math.round(spot.x + word.across + thrown);
+      const top = Math.round(spot.y - pose.rise - size / 2);
       const want = { left: middle - half, right: middle + half, top, bottom: top + size };
       // A word whose place is off the screen's foot or side (a body right before the eyes) stands just inside it.
       const inside = word.at ? clampedTo(want, width, height) : want;
