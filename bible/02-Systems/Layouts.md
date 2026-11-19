@@ -115,7 +115,8 @@ from the sea, fresh water and the claim's edge), then:
    battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
    top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing over a
    third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and retaining
-   walls along part of the wider basins' feet. Along the cliff tops round the section, every 130 to 210 m where the
+   walls along part of the wider basins' feet, each length where the cliff really rises from the floor and clear of
+   every way, the climbs' and runs' too. Along the cliff tops round the section, every 130 to 210 m where the
    massif stands over the floor, its top level enough to hold one and no way runs out, stand the ruins of an older
    frontier: round towers broken off at their tops with a few merlons left, and runs of curtain wall in lengths
    broken to different heights, some buttressed, so the bounds read as a border once held.

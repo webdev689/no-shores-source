@@ -16,7 +16,7 @@ const PATH_CLEAR_M: f64 = 10.0;
 /// Scree is lower than a body steps over (collide.rs STEPPED_OVER_M).
 const SCREE_TALLEST_M: f64 = 0.4;
 /// The carving raises the floor no more than this where a face meets it, metres: a face's foot.
-const FOOT_RISE_M: f64 = 0.3;
+pub(crate) const FOOT_RISE_M: f64 = 0.3;
 
 /// Whether a point lies within `clear` metres of a path's line.
 fn near_path(paths: &[Path], at: [f64; 2], clear: f64) -> bool {
@@ -43,7 +43,7 @@ pub(crate) fn fallen(kit: &mut Kit, carved: &Sculpts, shape: Shape, at: [f64; 2]
 }
 
 /// How far the carving raises the land at a point, metres.
-fn raised(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
+pub(crate) fn raised(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
     carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
 }
 

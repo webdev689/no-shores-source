@@ -7,7 +7,7 @@
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
-use crate::paths::{Path, Tier, simplified};
+use crate::paths::{Path, Tier, off_line, simplified};
 use crate::pieces::{Kit, ahead, turn_along};
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::Sculpts;
@@ -23,6 +23,8 @@ const DECK_M: f64 = 7.0;
 const PIER_M: f64 = 4.0;
 /// How far apart the great wall and the viaduct stand at least, metres.
 const WORKS_APART_M: f64 = 250.0;
+/// Where the carving first raises the floor this much, metres, is a cliff's foot (rocks.rs FOOT_RISE_M).
+const FOOT: f64 = crate::rocks::FOOT_RISE_M;
 
 /// A straight run of a path: its middle, its way and its length.
 type Run = ([f64; 2], [f64; 2], f64);
@@ -45,7 +47,7 @@ fn between_areas(areas: &[Area], at: [f64; 2]) -> bool {
 }
 
 /// Builds a layout's great works: the wall across the longest track's straightest run, the viaduct over the next
-/// longest path's, a natural arch over a third, and the retaining walls.
+/// longest path's and a natural arch over a third.
 pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &Sculpts) {
     let mut runs: Vec<(Tier, Run)> = paths
         .iter()
@@ -71,10 +73,14 @@ pub fn build(kit: &mut Kit, areas: &[Area], paths: &[Path], rise: f64, carved: &
     {
         crate::skyline::natural_arch(kit, *middle, *way, *tier, rise, carved);
     }
+}
+
+/// The retaining walls along the wider basins' feet, clear of every way (the climbs' too).
+pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], carved: &Sculpts) {
     for area in
         areas.iter().filter(|area| area.radius >= 60.0 && !matches!(area.kind, AreaKind::Wilds | AreaKind::Arena))
     {
-        retaining(kit, area, paths);
+        retaining(kit, area, paths, carved);
     }
 }
 
@@ -227,21 +233,37 @@ fn viaduct(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64
 }
 
 /// Retaining walls along part of a basin's edge, where its floor meets the cliff: ashlar four metres high in lengths
-/// following the curve, broken where a path leaves the basin.
-fn retaining(kit: &mut Kit, area: &Area, paths: &[Path]) {
+/// following the curve, each found by walking out from the basin's middle to the cliff's real foot, and broken where
+/// a way runs by.
+fn retaining(kit: &mut Kit, area: &Area, paths: &[Path], carved: &Sculpts) {
     let edge = area.radius + 30.0;
     let start = kit.draw() * std::f64::consts::TAU;
     let arc = 1.2 + kit.draw() * 1.6;
     let pieces = (arc * edge / 7.0) as u32;
     for piece in 0..pieces {
         let angle = start + arc * f64::from(piece) / f64::from(pieces);
-        let at = ahead(area.at, [0.0, -1.0], edge, angle);
-        let on_path = paths.iter().any(|path| path.points.iter().any(|&point| distance(point, at) < 14.0));
+        let (sine, cosine) = land::exact::sin_cos(angle);
+        let (outward, tangent) = ([sine, -cosine], [cosine, sine]);
+        // The floor's edge wanders out to 1.35 of its reach; the wall stands its half-thickness in front of the foot.
+        let mut out = area.radius;
+        // A mesa standing on the floor is not the cliff: the foot lies past the floor's edge.
+        let foot = |out: f64| {
+            let at = ahead(area.at, outward, out, 0.0);
+            crate::rocks::raised(kit, carved, at) >= FOOT && carved.floor_distance(at[0], at[1]) > 0.0
+        };
+        while out < (edge + 2.0) * 1.35 && !foot(out) {
+            out += 0.5;
+        }
+        if out >= (edge + 2.0) * 1.35 {
+            continue;
+        }
+        let at = ahead(area.at, outward, out - 0.7, 0.0);
+        let on_path = paths.iter().any(|path| {
+            path.points.windows(2).any(|pair| off_line(at, pair[0], pair[1]) < path.tier.width() / 2.0 + 4.1)
+        });
         if on_path {
             continue;
         }
-        let (sine, cosine) = land::exact::sin_cos(angle);
-        let tangent = [cosine, sine];
         kit.stand(Shape::Block, at, [1.4, 7.2, 4.2], turn_along(tangent), Material::Stone, 1.0);
     }
 }

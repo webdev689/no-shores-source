@@ -227,6 +227,7 @@ pub fn plan(
         }));
         sites.push(sites::Site { kind: sites::SiteKind::Door, at: run.door, radius: 3.0, holds: named });
     }
+    works::retaining_walls(&mut kit, &areas, &paths, &carved);
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }

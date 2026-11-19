@@ -245,7 +245,8 @@ fn every_retaining_wall_stands_at_its_cliffs_foot() {
         for solid in layout.seating.solids.iter().filter(|solid| is_retaining(solid)) {
             lengths += 1;
             let off = own.floor_distance(solid.at[0], solid.at[1]);
-            if !(-4.0..=3.0).contains(&off) {
+            // The face eases up from the floor's edge, so its foot (where it stands a hand high) is a few metres out.
+            if !(-3.0..=5.0).contains(&off) {
                 failed.push(format!("{}: a length {off:.1} m off its cliff's foot", layout.id));
             }
         }
