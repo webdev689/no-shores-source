@@ -236,6 +236,16 @@ pub fn off_line(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
     distance(point, [from[0] + span_x * along, from[1] + span_y * along])
 }
 
+/// Whether a footprint square to the world (west, north, east, south) keeps more than 0.3 m off every way's walked
+/// width.
+#[must_use]
+pub fn clear_of<'a>(print: [f64; 4], ways: impl IntoIterator<Item = &'a Path>) -> bool {
+    ways.into_iter().all(|way| {
+        let reach = way.tier.width() / 2.0 + 0.3;
+        way.points.windows(2).all(|pair| rect_off_line(print, pair[0], pair[1]) > reach)
+    })
+}
+
 /// How far a footprint square to the world (west, north, east, south) lies from the segment between two points: 0
 /// where the segment runs into it.
 #[must_use]

@@ -21,7 +21,6 @@ const STEPPED_OVER_M: f64 = 0.45;
 struct Laid {
     layouts: Vec<Layout>,
     ground: Ground,
-    book: layout::book::Book,
 }
 
 fn laid() -> &'static Laid {
@@ -38,7 +37,7 @@ fn laid() -> &'static Laid {
         let mut landmass = land::landmass::generate(&continent, edits).expect("continent-1 generates");
         city::settle(&mut landmass, &city).expect("its city settles");
         let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
-        Laid { layouts, ground: landmass.surface, book: builders.book }
+        Laid { layouts, ground: landmass.surface }
     })
 }
 

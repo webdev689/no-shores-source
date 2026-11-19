@@ -127,13 +127,6 @@ fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_othe
                             run.door[1] + run.facing[1] * 120.0 + across[1] * lateral,
                         ];
                         let pressed = walked(&floor, &blocks, end, &[target], 40.0);
-                        if std::env::var("RUNS_CONTINENT").is_ok() {
-                            let height = ground.height_at(pressed[0], pressed[1]);
-                            println!(
-                                "{name} lateral {lateral}: ends at {pressed:?} {height:.1} m; door at {:.1} m",
-                                ground.height_at(run.door[0], run.door[1])
-                            );
-                        }
                         (pressed[0] - run.door[0]) * run.facing[0] + (pressed[1] - run.door[1]) * run.facing[1]
                     })
                     .fold(f64::NEG_INFINITY, f64::max);

@@ -7,7 +7,7 @@
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
-use crate::paths::{Path, Tier, off_line, rect_off_line, simplified};
+use crate::paths::{Path, Tier, off_line, simplified};
 use crate::pieces::{Kit, ahead, turn_along};
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::Sculpts;
@@ -49,11 +49,7 @@ fn longest_run(path: &Path) -> Option<Run> {
 fn clear_of_ways(pieces: &[Solid], paths: &[Path], floor: f64) -> bool {
     pieces.iter().filter(|piece| piece.at[2] < floor + 2.0).all(|piece| {
         let [west, north, east, south, ..] = piece.bounds();
-        paths.iter().all(|path| {
-            path.points
-                .windows(2)
-                .all(|pair| rect_off_line([west, north, east, south], pair[0], pair[1]) > path.tier.width() / 2.0 + 0.3)
-        })
+        crate::paths::clear_of([west, north, east, south], paths)
     })
 }
 

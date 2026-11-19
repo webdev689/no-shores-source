@@ -7,7 +7,7 @@
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
-use crate::paths::{Path, Tier, off_line, rect_off_line};
+use crate::paths::{Path, Tier, off_line};
 use crate::pieces::{Kit, fire, lantern, model, turn_along, yaw_toward};
 use crate::rocks::stone;
 use city::solids::{Material, Shape};
@@ -180,12 +180,7 @@ fn drystone(kit: &mut Kit, ways: &[&Path], others: &[&Path], at: [f64; 2], way: 
     crate::halls::wall(&mut lengths, from, to, base, base + high, 0.8, Material::Rubble);
     for length in lengths {
         let [west, north, east, south, ..] = length.bounds();
-        let clear = ways.iter().all(|path| {
-            path.points
-                .windows(2)
-                .all(|pair| rect_off_line([west, north, east, south], pair[0], pair[1]) > path.tier.width() / 2.0 + 0.3)
-        });
-        if clear {
+        if crate::paths::clear_of([west, north, east, south], ways.iter().copied()) {
             kit.solid(length);
         }
     }

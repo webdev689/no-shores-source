@@ -8,6 +8,7 @@ pub mod areas;
 pub mod book;
 pub mod brief;
 pub mod carve;
+mod clearing;
 pub mod collide;
 pub mod compose;
 pub mod dressing;
@@ -135,10 +136,10 @@ pub fn plan(
     let mut paths = lay_paths(&field, &areas, &hubs, &blocked, patrol, seed);
     // A way ending at an area's middle stops at what stands there: its set piece, tower or hull.
     for (area, _) in areas.iter().zip(&hubs).filter(|&(area, &hub)| distance(hub, area.at) < 1e-6) {
-        end_at_rim(&mut paths, area.at, rim_of(&seating, area.at));
+        clearing::end_at_rim(&mut paths, area.at, clearing::rim_of(&seating, area.at));
     }
-    round_rooms(&mut paths, &seating);
-    keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
+    clearing::round_rooms(&mut paths, &seating);
+    clearing::keep_off_paths(&mut seating, &paths, &|x, y| ground.height_at(x, y));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
     for path in &paths {
         for &banks in &path.crossings {
@@ -252,7 +253,7 @@ pub fn plan(
     skyline::rim(&mut kit, &ring, &ways, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
     // them all again. A run keeps its own pieces off its line (run_kits.rs).
-    keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));
+    clearing::keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));
     let spawns = spawns_round(&field, anchor);
     Layout {
         id: node.id.clone(),
@@ -379,143 +380,6 @@ fn blocked_by(field: &Field, seating: &Seating) -> Blocked {
     Blocked(blocked)
 }
 
-/// How far from a point the pieces standing over it reach: a set piece at an area's middle, its tower or its hull.
-fn rim_of(seating: &Seating, at: [f64; 2]) -> f64 {
-    let solids = seating.solids.iter().map(|solid| {
-        let [west, north, east, south, _, _] = solid.bounds();
-        [west, north, east, south]
-    });
-    let props = seating.props.iter().map(|prop| prop.footprint);
-    solids
-        .chain(props)
-        .filter(|&[west, north, east, south]| at[0] >= west && at[0] <= east && at[1] >= north && at[1] <= south)
-        .flat_map(|[west, north, east, south]| [[west, north], [east, north], [east, south], [west, south]])
-        .map(|corner| distance(corner, at))
-        .fold(0.0, f64::max)
-}
-
-/// Ends each way that ends at a point `rim` metres short of it, past what stands there by the room the way keeps
-/// from what stands (`keep_off_paths`), so the way stops at the piece and the piece stays; a way shorter than that
-/// is left whole.
-fn end_at_rim(paths: &mut [Path], at: [f64; 2], rim: f64) {
-    if rim <= 0.0 {
-        return;
-    }
-    for path in paths {
-        let keep = rim + path.tier.width() / 2.0 + 1.2;
-        for reversed in [false, true] {
-            if reversed {
-                path.points.reverse();
-            }
-            let ends_here = path.points.last().is_some_and(|&end| distance(end, at) < CELL_M);
-            let inside = path.points.iter().rposition(|&point| distance(point, at) >= keep);
-            if let (true, Some(last)) = (ends_here, inside)
-                && last > 0
-            {
-                // The way's last point outside the rim, then on along its next segment to the rim.
-                let (out, next) = (path.points[last], path.points[last + 1]);
-                let along = |share: f64| [out[0] + (next[0] - out[0]) * share, out[1] + (next[1] - out[1]) * share];
-                let step = 0.25 / distance(out, next).max(0.25);
-                let mut share = 0.0;
-                while share + step <= 1.0 && distance(along(share + step), at) >= keep {
-                    share += step;
-                }
-                path.points.truncate(last + 1);
-                if share > 0.0 {
-                    path.points.push(along(share));
-                }
-            }
-            if reversed {
-                path.points.reverse();
-            }
-        }
-    }
-}
-
-/// Bends each way round the buildings walked into where it would graze one, as it may near its end's yard: where a
-/// segment passes within its half-width of one, a point pushed out to that width is put in at its nearest.
-fn round_rooms(paths: &mut [Path], seating: &Seating) {
-    let prints: Vec<[f64; 4]> =
-        seating.buildings.iter().filter(|building| building.open).map(|building| building.footprint).collect();
-    for path in paths {
-        let reach = path.tier.width() / 2.0 + 0.3;
-        let mut at = 0;
-        while at + 1 < path.points.len() {
-            let (from, to) = (path.points[at], path.points[at + 1]);
-            let grazed = prints.iter().find_map(|&[west, north, east, south]| {
-                // The segment's point nearest the footprint, in tenths along it.
-                (0..=10).map(|tenth| f64::from(tenth) / 10.0).find_map(|share| {
-                    let point = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
-                    let nearest = [point[0].clamp(west, east), point[1].clamp(north, south)];
-                    let off = distance(point, nearest);
-                    (off > 1e-6 && off < reach && share > 0.0 && share < 1.0).then(|| {
-                        let push = reach / off;
-                        [nearest[0] + (point[0] - nearest[0]) * push, nearest[1] + (point[1] - nearest[1]) * push]
-                    })
-                })
-            });
-            match grazed {
-                Some(point) if path.points.len() < 4096 => path.points.insert(at + 1, point),
-                _ => at += 1,
-            }
-        }
-    }
-}
-
-/// Leaves out what a path runs over: a cart or a fence in the middle of a track, a lantern on its post.
-fn keep_off_paths(seating: &mut Seating, paths: &[Path], height: &dyn Fn(f64, f64) -> f64) {
-    let clear = |at: [f64; 2], spread: f64| {
-        paths.iter().all(|path| {
-            let reach = path.tier.width() / 2.0 + 0.6 + spread;
-            path.points.windows(2).all(|pair| crate::paths::off_line(at, pair[0], pair[1]) > reach)
-        })
-    };
-    let off_ways = |print: [f64; 4]| {
-        paths.iter().all(|path| {
-            let reach = path.tier.width() / 2.0 + 0.3;
-            path.points.windows(2).all(|pair| crate::paths::rect_off_line(print, pair[0], pair[1]) > reach)
-        })
-    };
-    // A prop goes where any of its footprint reaches onto a way's width: a ship's hull as well as a lantern.
-    seating.props.retain(|prop| off_ways(prop.footprint));
-    // So does a building not walked into, as a yard's wall a way leaves its block through, with its pad and plinth.
-    let gone: Vec<[f64; 4]> = seating
-        .buildings
-        .iter()
-        .filter(|building| !building.open && !off_ways(building.footprint))
-        .map(|building| building.footprint)
-        .collect();
-    seating.buildings.retain(|building| !gone.contains(&building.footprint));
-    seating.pads.retain(|pad| !gone.contains(&pad.bounds));
-    seating.solids.retain(|solid| {
-        !gone.iter().any(|print| {
-            solid.material == city::solids::Material::Stone
-                && (solid.at[0] - (print[0] + print[2]) / 2.0).abs() < 1e-9
-                && (solid.at[1] - (print[1] + print[3]) / 2.0).abs() < 1e-9
-                && (solid.size[0] - (print[2] - print[0] + 0.3)).abs() < 1e-9
-        })
-    });
-    // The set pieces' small solids standing on the ground in a way's path (a lantern, a fire's stones), and what stands
-    // on them, go too: a deck, a pile in the water or a work's great stones keep their places.
-    let place =
-        |solid: &city::solids::Solid| ((solid.at[0] * 100.0).round() as i64, (solid.at[1] * 100.0).round() as i64);
-    let in_the_way: std::collections::BTreeSet<(i64, i64)> = seating
-        .solids
-        .iter()
-        .filter(|solid| {
-            let small = solid.size[0].max(solid.size[1]) <= SMALL_SOLID_M;
-            let ground_at = height(solid.at[0], solid.at[1]);
-            let standing = solid.at[2] >= ground_at - 1.2 && solid.at[2] <= ground_at + 0.05;
-            small && standing && !clear([solid.at[0], solid.at[1]], solid.size[0].max(solid.size[1]) / 2.0)
-        })
-        .map(place)
-        .collect();
-    seating.solids.retain(|solid| !in_the_way.contains(&place(solid)));
-}
-
-/// The widest a set piece's solid may be and still be cleared out of a way, metres: a post, a lantern, a stone.
-const SMALL_SOLID_M: f64 = 2.5;
-
 /// The paths joining a layout's areas. A patrol area's areas are joined by tracks along a tree of the shortest links
 /// and footpaths closing a loop or two; its gates by a footpath from the nearest area. An instance's run in a chain.
 fn lay_paths(
@@ -640,7 +504,7 @@ mod tests {
             ],
             ..Seating::default()
         };
-        keep_off_paths(&mut seating, &[path], &|_, _| 0.0);
+        clearing::keep_off_paths(&mut seating, &[path], &|_, _| 0.0);
         let left: Vec<[f64; 2]> = seating.solids.iter().map(|solid| [solid.at[0], solid.at[1]]).collect();
         assert_eq!(left, [[60.0, 0.5], [70.0, 9.0]], "the lantern on the track and its light are gone");
     }
