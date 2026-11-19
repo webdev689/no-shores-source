@@ -48,7 +48,9 @@ function directed(made: Map<BeatName, Played>, from: BeatName) {
     step: () => asked.push('step'),
     hush: () => asked.push('hush'),
     draw: () => asked.push('draw'),
-    parts: { screen: { showSkip: () => undefined, clear: () => asked.push('clear') } },
+    parts: {
+      screen: { showSkip: (share: number | null) => asked.push(`skip ${share}`), clear: () => asked.push('clear') },
+    },
   };
   Object.assign(globalThis, { localStorage: { getItem: () => null, setItem: () => undefined } });
   class Directed extends Prologue {
@@ -99,4 +101,27 @@ test('a cutscene held through a second of Space is skipped, and nothing more of 
   assert.ok(made.get('ram')?.skipped);
   assert.ok(asked.includes('hush'));
   assert.equal(director.now.name, 'wake');
+});
+
+test('the skip hint shows, faint, wherever a cutscene can be skipped, and nowhere else', () => {
+  const made = new Map<BeatName, Played>([['ram', new Played('ram', true)]]);
+  const { director, asked } = directed(made, 'ram');
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.ok(asked.includes('skip 0'), 'faint before it is held');
+  made.set('wake', new Played('wake'));
+  for (let frame = 0; frame < 11; frame++) director.frame(controls(true), 0.1, SIZE, SIZE);
+  asked.length = 0;
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.deepEqual(
+    asked.filter((what) => what.startsWith('skip')),
+    ['skip null'],
+  );
+});
+
+test('a touch held on the screen for a second skips a cutscene, as Space does', () => {
+  const made = new Map<BeatName, Played>([['ram', new Played('ram', true)]]);
+  const { director } = directed(made, 'ram');
+  director.touch(true);
+  for (let frame = 0; frame < 11; frame++) director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.ok(made.get('ram')?.skipped);
 });

@@ -1,6 +1,6 @@
 // Fights a cutscene stages: pairs of fighters of two factions trading blows, each blow a move the forge draws with
-// the weapon in hand, the one struck guarding, and sometimes one fallen. Their moves run on a clock of their own so
-// no two pairs strike together.
+// the weapon in hand, the one struck guarding or blocking. Their moves run on a clock of their own so no two pairs
+// strike together.
 import { foeDress } from '../../player/foeDress.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { FoeType } from '../../rules/roster.ts';

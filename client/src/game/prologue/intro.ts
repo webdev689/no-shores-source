@@ -1,8 +1,10 @@
 // The intro, the owner's first beat: the camera fades in high over the cloud at first light, then dives through it to
 // each island in turn (a highland in mist, a green one in rain, a desert town where a fight breaks out on the plaza, a
 // tundra town in snow), with ships sailing off each, and last to Saltmere, where gulls wheel over the harbour, the
-// title rises and a prompt to begin breathes. Holding Space flies straight to Saltmere.
+// title rises and a prompt to begin breathes. Holding Space flies straight to Saltmere. An island that will not open
+// is passed over for the next; a Saltmere that will not open is the beat's failure, thrown from its frame.
 import { type RailKey, railLength, railShot } from '../../cinema/rail.ts';
+import { playedByTouch } from '../../cinema/screen.ts';
 import type { Weather } from '../../cinema/weather.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
@@ -49,12 +51,12 @@ type Phase =
   | { readonly kind: 'dawn' }
   | { readonly kind: 'island'; readonly index: number; readonly rail: RailKey[]; readonly frame: IslandFrame }
   | { readonly kind: 'cloud'; readonly next: number }
+  | { readonly kind: 'skipped' }
   | { readonly kind: 'home'; readonly rail: RailKey[]; readonly frame: IslandFrame }
   | { readonly kind: 'title'; readonly frame: IslandFrame };
 
 export class Intro implements Beat {
   readonly name = 'intro';
-  readonly skippable = true;
   private readonly stage: Stage;
   private readonly islands: Islands;
   private readonly sailing: Sailing;
@@ -62,9 +64,12 @@ export class Intro implements Beat {
   private since = 0;
   private lastShot: Shot | null = null;
   private begun = false;
-  private skipping = false;
+  /** Whether the first island opened, so the dawn's passage into cloud shows it rather than the next. */
+  private firstOpened = false;
   /** Counts the passages begun: an island that opens after a later passage (or a skip) began is not shown. */
   private passage = 0;
+  /** What could not be done (Saltmere would not open), thrown from the next frame. */
+  private failure: unknown = null;
   done = false;
 
   constructor(stage: Stage, islands: Islands, sailing: Sailing) {
@@ -75,13 +80,25 @@ export class Intro implements Beat {
     void this.openFirst();
   }
 
+  /** Whether holding Space would cut the flight short: not once Saltmere is reached, or on the way there. */
+  get skippable(): boolean {
+    const kind = this.phase.kind;
+    return kind !== 'skipped' && kind !== 'home' && kind !== 'title';
+  }
+
   private async openFirst(): Promise<void> {
     const first = PASSING[0];
-    if (!first) return;
     const passage = this.passage;
-    await this.islands.open(first.id);
+    this.firstOpened = first
+      ? await this.islands.open(first.id).then(
+          () => true,
+          (error: unknown) => (this.passOver(first.id, error), false),
+        )
+      : false;
     if (passage !== this.passage) return;
-    await this.islands.show();
+    // A first island that would not open leaves the dawn over Saltmere, still shown.
+    if (this.firstOpened) await this.islands.show();
+    if (passage !== this.passage) return;
     this.stage.weatherTowards(OVER_CLOUD, 0);
     this.stage.parts.ambience.set({ wind: 0.35, waves: 0, rain: 0, gulls: 0, fire: 0, deep: 0, creak: 0 }, 0.5);
     storyCue('title');
@@ -102,14 +119,35 @@ export class Intro implements Beat {
     ambience.whoosh();
     this.stage.parts.birds.clear();
     this.enter({ kind: 'cloud', next });
+    this.openPassage(next, opened);
+  }
+
+  /** Opens the island `next` (Saltmere past the last) behind the cloud's white; one that will not open is passed over
+   *  for the one after it. */
+  private openPassage(next: number, opened = false): void {
     const passage = ++this.passage;
     const passing = PASSING[next];
     const opening = opened ? Promise.resolve() : passing ? this.islands.open(passing.id) : this.islands.home();
-    void opening.then(() => this.cleared(next, !opened, passage));
+    void opening.then(
+      () => this.cleared(next, !opened, passage),
+      (error: unknown) => {
+        if (passage !== this.passage) return;
+        if (!passing) this.failure = error;
+        else {
+          this.passOver(passing.id, error);
+          this.openPassage(next + 1);
+        }
+      },
+    );
+  }
+
+  /** An island that would not open, said in the log; the flight goes on without it. */
+  private passOver(id: string, error: unknown): void {
+    console.error(`the intro passes over ${id}, which would not open:`, error);
   }
 
   private async cleared(next: number, swap: boolean, passage: number): Promise<void> {
-    if (this.skipping || passage !== this.passage) return;
+    if (passage !== this.passage) return;
     const passing = PASSING[next];
     if (passing && swap) await this.islands.show();
     if (passage !== this.passage) return;
@@ -154,26 +192,29 @@ export class Intro implements Beat {
     );
   }
 
-  /** Holding Space flies straight to Saltmere's title. */
+  /** Holding Space flies straight to Saltmere's title: the flight stops where it is (no passage begins after it, so
+   *  no island opens over Saltmere), the view goes black, and Saltmere's glide ends under the title. */
   skip(): void {
-    if (this.phase.kind === 'title' || this.phase.kind === 'home' || this.skipping) return;
-    this.skipping = true;
+    if (!this.skippable) return;
+    this.enter({ kind: 'skipped' });
     this.passage++;
     const { screen } = this.stage.parts;
     screen.fade(1, 0.4);
-    void this.islands.home().then(() => {
-      this.skipping = false;
-      const frame = islandFrame(this.islands.landmass);
-      this.goHome(frame);
-      this.since = HOME_S;
-      screen.fade(0, 0, 'white');
-      screen.fade(0, 1.2);
-    });
+    void this.islands.home().then(
+      () => {
+        const frame = islandFrame(this.islands.landmass);
+        this.goHome(frame);
+        this.since = HOME_S;
+        screen.fade(0, 0, 'white');
+        screen.fade(0, 1.2);
+      },
+      (error: unknown) => (this.failure = error),
+    );
   }
 
   key(key: string, down: boolean): boolean {
-    // Any key once the prompt shows begins; Space held is the skip's, not a beginning.
-    if (down && this.phase.kind === 'title' && this.since > PROMPT_AFTER_S && key !== ' ') this.begin();
+    // Any key once the prompt shows begins, Space too: at the title there is nothing left to skip.
+    if (down && this.phase.kind === 'title' && this.since > PROMPT_AFTER_S) this.begin();
     return this.phase.kind === 'title';
   }
 
@@ -197,6 +238,7 @@ export class Intro implements Beat {
   }
 
   frame(tick: Tick): StoryFrame | null {
+    if (this.failure) throw this.failure;
     this.since += tick.seconds;
     this.stage.stepWeather(tick.seconds);
     const shot = this.shotNow(tick);
@@ -221,13 +263,16 @@ export class Intro implements Beat {
         if (!start) return null;
         const rise = Math.min(1, this.since / DAWN_S);
         const eye: [number, number, number] = [start.eye[0] - 900 * (1 - rise), start.eye[1], 1500 - 400 * rise];
-        if (this.since >= DAWN_S) this.toCloud(0, true);
+        if (this.since >= DAWN_S) this.toCloud(this.firstOpened ? 0 : 1, this.firstOpened);
         return lens({ eye, yaw: -2.35 + rise * 0.6, pitch: 0.04 + rise * 0.25, fov: LENS.fov });
       }
       case 'island': {
         if (this.since >= railLength(phase.rail)) this.toCloud(phase.index + 1);
         return lens(railShot(phase.rail, this.since, LENS.fov, 'none'));
       }
+      case 'skipped':
+        // The view holds where the skip found it while the black comes down over it.
+        return this.lastShot;
       case 'cloud': {
         if (!this.lastShot) return null;
         const ahead = tick.seconds * 60;
@@ -247,7 +292,8 @@ export class Intro implements Beat {
         return glide;
       }
       case 'title': {
-        if (this.since > PROMPT_AFTER_S) this.stage.parts.screen.showPrompt('Press any key to begin');
+        if (this.since > PROMPT_AFTER_S)
+          this.stage.parts.screen.showPrompt(playedByTouch() ? 'Tap to begin' : 'Press any key to begin');
         const look = phase.frame.town;
         const eye = titleEye(phase.frame, this.since * DRIFT_M_S);
         const rail = railShot([{ at: 0, eye, look: [look[0], look[1], look[2] + 45] }], 0, LENS.fov);

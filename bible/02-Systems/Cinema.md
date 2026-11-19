@@ -39,11 +39,11 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   rail keeps moving. A rail laid in a ship's own frame is carried into the world each frame as she sails.
 - **Moments** (`Cues`). What happens once at given seconds into a cutscene (a line, a sound, a flash) runs in time
   order, exactly once, however long the frames are; a skipped cutscene runs every moment left at once, so the world
-  is left as its end would leave it. Holding Space for a second skips (`HoldToSkip`), its share shown at the bottom
-  right.
+  is left as its end would leave it. Holding Space (or a touch on the screen) for a second skips (`HoldToSkip`):
+  the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
 - **The screen** (`Screen`), laid over the canvas: fades to black or white over any time, a white flash, the
   letterbox's bars, eyelids that close from above and below for waking, a blur over the whole view, the title (the
-  game's name over a brass rule) and a prompt that breathes under it.
+  game's name over a brass rule, sized to fit a phone's width) and a prompt that breathes under it.
 - **Lightning** (`Lightning`). Strikes come by themselves at seeded moments, 4 to 11 s apart, 0.4 to 4.5 km round the
   eye, or where a story calls one. Each is two flashes and a fading glow over a second, brighter the nearer it falls,
   its bolt shown for 0.22 s, and its thunder heard as late as its distance makes it.
