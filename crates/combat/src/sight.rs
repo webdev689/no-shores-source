@@ -34,7 +34,7 @@ pub fn apart(first: [f64; 2], second: [f64; 2]) -> f64 {
 /// ground to its top, and of the terrain's own walls.
 #[must_use]
 pub fn clear_line(blocks: &[Block], terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> bool {
-    blocks.iter().all(|block| !crosses(block, from, to)) && !terrain.line_walled((from[0], from[1]), (to[0], to[1]))
+    blocks.iter().all(|block| !crosses(block, from, to)) && !terrain.line_walled(from, to)
 }
 
 /// Whether the segment passes through the block's box, by the slabs between its faces.

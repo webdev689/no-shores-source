@@ -5,9 +5,6 @@
 
 use movement::{Heights, TUNING, Terrain};
 
-/// How tall a jamb or a pillar stands to a body and a shot: over every ceiling, as the rock does.
-const SOLID_TOP_M: f64 = 10.0;
-
 /// A dungeon's ground: its cells' heights (0 m open, none for rock), its jambs and pillars (min x, min y, max x,
 /// max y, each as the dungeon's `boxes` give them, top last), and for each cell the solids within a body's half-width
 /// of it.
@@ -135,19 +132,90 @@ impl DungeonGround {
         })
     }
 
-    /// Whether a point stands inside a jamb or a pillar.
-    fn in_solid(&self, x: f64, y: f64) -> bool {
-        let Some((column, row)) = self.cell_at(x, y) else { return false };
-        self.near[row * self.columns + column].iter().any(|&number| {
-            let [min_x, min_y, max_x, max_y, _] = self.solids[number];
-            x >= min_x && x <= max_x && y >= min_y && y <= max_y
-        })
+    /// The highest top of the solids standing over a point, if one stands there.
+    fn solid_top(&self, x: f64, y: f64) -> Option<f64> {
+        let (column, row) = self.cell_at(x, y)?;
+        self.near[row * self.columns + column]
+            .iter()
+            .map(|&number| self.solids[number])
+            .filter(|&[min_x, min_y, max_x, max_y, _]| x >= min_x && x <= max_x && y >= min_y && y <= max_y)
+            .fold(None, |highest: Option<f64>, solid| Some(highest.map_or(solid[4], |top| top.max(solid[4]))))
+    }
+
+    /// The cells a straight line crosses, from its first end's to its last's, by each grid line it passes; empty when
+    /// an end lies off the grid.
+    fn cells_along(&self, from: [f64; 2], to: [f64; 2]) -> Vec<usize> {
+        let (Some(start), Some(end)) = (self.cell_at(from[0], from[1]), self.cell_at(to[0], to[1])) else {
+            return Vec::new();
+        };
+        // How far along the line (0 to 1) the next grid line lies on an axis, how far apart they lie, and the step.
+        let crossing = |at: f64, index: usize, delta: f64| -> (f64, f64, isize) {
+            if delta > 0.0 {
+                (((index + 1) as f64 * self.cell - at) / delta, self.cell / delta, 1)
+            } else if delta < 0.0 {
+                ((index as f64 * self.cell - at) / delta, -self.cell / delta, -1)
+            } else {
+                (f64::INFINITY, f64::INFINITY, 0)
+            }
+        };
+        let (mut next_column, gap_column, step_column) = crossing(from[0], start.0, to[0] - from[0]);
+        let (mut next_row, gap_row, step_row) = crossing(from[1], start.1, to[1] - from[1]);
+        let (mut column, mut row) = (start.0 as isize, start.1 as isize);
+        let mut cells = Vec::new();
+        while column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows {
+            cells.push(row as usize * self.columns + column as usize);
+            if (column as usize, row as usize) == end || cells.len() > self.columns + self.rows {
+                break;
+            }
+            if next_column < next_row {
+                column += step_column;
+                next_column += gap_column;
+            } else {
+                row += step_row;
+                next_row += gap_row;
+            }
+        }
+        cells
+    }
+
+    /// Whether the line passes through a jamb, a pillar or a prop below its top: only the solids near the cells it
+    /// crosses are looked at, each against the line by the slabs between its sides.
+    fn solid_across(&self, from: [f64; 3], to: [f64; 3]) -> bool {
+        let cells = self.cells_along([from[0], from[1]], [to[0], to[1]]);
+        let below = |number: &usize| crosses_below(&self.solids[*number], from, to);
+        if cells.is_empty() {
+            return (0..self.solids.len()).any(|number| below(&number));
+        }
+        cells.iter().any(|&cell| self.near[cell].iter().any(below))
     }
 }
 
+/// Whether a line (x, y, z) passes through a box below its top: where it is inside the box's sides, by the slabs
+/// between them, its lowest point there is under the top.
+fn crosses_below(solid: &[f64; 5], from: [f64; 3], to: [f64; 3]) -> bool {
+    let [min_x, min_y, max_x, max_y, top] = *solid;
+    let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
+    for (start, end, low, high) in [(from[0], to[0], min_x, max_x), (from[1], to[1], min_y, max_y)] {
+        let step = end - start;
+        if step == 0.0 {
+            if start < low || start > high {
+                return false;
+            }
+        } else {
+            let (first, second) = ((low - start) / step, (high - start) / step);
+            enter = enter.max(first.min(second));
+            leave = leave.min(first.max(second));
+        }
+    }
+    let height = |share: f64| from[2] + (to[2] - from[2]) * share;
+    enter <= leave && height(enter).min(height(leave)) < top
+}
+
 impl Terrain for DungeonGround {
+    /// The floor, or a solid's top over it: a body is kept out of a solid by `walled` all the same, and a shot passes
+    /// over one lower than itself.
     fn height_at(&self, x: f64, y: f64) -> f64 {
-        if self.in_solid(x, y) { SOLID_TOP_M } else { self.heights.height_at(x, y) }
+        self.solid_top(x, y).unwrap_or_else(|| self.heights.height_at(x, y))
     }
 
     /// A move is walled when it crosses rock, or ends nearer than a body's half-width to rock, a jamb, a pillar or a
@@ -161,10 +229,10 @@ impl Terrain for DungeonGround {
         ends < TUNING.radius && ends < self.clearance(from.0, from.1)
     }
 
-    /// A line is walled where it crosses rock, as a move is, or passes through a jamb, a pillar or a prop: each stands
-    /// to every ceiling, so nothing is seen, struck or thrown over one.
-    fn line_walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
-        self.heights.walled(from, to) || !self.clear_between([from.0, from.1], [to.0, to.1], 0.0)
+    /// A line is walled where it crosses rock, as a move is, or passes through a jamb, a pillar or a prop below its
+    /// top: a look, a blow or a throw passes over a low coffin, never through a shelf.
+    fn line_walled(&self, from: [f64; 3], to: [f64; 3]) -> bool {
+        self.heights.walled((from[0], from[1]), (to[0], to[1])) || self.solid_across(from, to)
     }
 }
 

@@ -82,7 +82,8 @@ fn a_pillar_keeps_a_body_its_half_width_off_and_is_never_climbed() {
         assert!(body.x <= x - dungeon::PILLAR_HALF_M - TUNING.radius + 1e-9, "{} short of the pillar", x - body.x);
         assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground);
     }
-    assert_eq!(ground.height_at(dungeon.pillars[0][0], dungeon.pillars[0][1]), SOLID_TOP_M);
+    let [x, y, top] = dungeon.pillars[0];
+    assert_eq!(ground.height_at(x, y), top, "a pillar stands to its own top, the ceiling");
 }
 
 #[test]
@@ -173,7 +174,8 @@ fn a_line_is_walled_by_the_rock_and_every_solid_but_crosses_bare_floor() {
         let solids = dungeon.boxes();
         for &[min_x, min_y, max_x, max_y, _] in &solids {
             let middle_y = (min_y + max_y) / 2.0;
-            assert!(ground.line_walled((min_x - 0.1, middle_y), (max_x + 0.1, middle_y)), "seed {seed}: a solid");
+            let low = [min_x - 0.1, middle_y, 0.1];
+            assert!(ground.line_walled(low, [max_x + 0.1, middle_y, 0.1]), "seed {seed}: a solid");
         }
         for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != dungeon::Cell::Rock) {
             let [x, y] = dungeon.centre(cell);
@@ -181,13 +183,34 @@ fn a_line_is_walled_by_the_rock_and_every_solid_but_crosses_bare_floor() {
             let bare = solids.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
                 max_x < x - half || min_x > x + half || max_y < y - half || min_y > y + half
             });
-            assert!(!bare || !ground.line_walled((x - half / 2.0, y), (x + half / 2.0, y)), "seed {seed}: bare floor");
+            let chest = 1.3;
+            let across = ground.line_walled([x - half / 2.0, y, chest], [x + half / 2.0, y, chest]);
+            assert!(!bare || !across, "seed {seed}: bare floor");
             for side in SIDES {
                 let rock = dungeon.beside(cell, side).is_none_or(|next| dungeon.cells[next] == dungeon::Cell::Rock);
                 let [dx, dy] = side.unit();
-                let into = (x + dx * CELL_M, y + dy * CELL_M);
-                assert!(!rock || ground.line_walled((x, y), into), "seed {seed}: the rock {side:?} of {cell}");
+                let into = [x + dx * CELL_M, y + dy * CELL_M, chest];
+                assert!(!rock || ground.line_walled([x, y, chest], into), "seed {seed}: the rock {side:?} of {cell}");
             }
         }
     }
+}
+
+#[test]
+fn a_line_passes_over_a_solid_lower_than_itself_and_meets_one_where_it_is_lower_than_the_top() {
+    let mut low_props = 0;
+    for seed in 0..40 {
+        let (dungeon, ground) = forged(seed);
+        for &[min_x, min_y, max_x, max_y, top] in &dungeon.boxes() {
+            // Inside the solid's own sides, so no other solid or rock is crossed.
+            let (middle_y, inset) = ((min_y + max_y) / 2.0, (max_x - min_x) / 4.0);
+            let line = |z: f64| ground.line_walled([min_x + inset, middle_y, z], [max_x - inset, middle_y, z]);
+            assert!(!line(top + 0.05), "seed {seed}: a line just over a solid's top passes");
+            assert!(line(top - 0.05), "seed {seed}: a line just under it is walled");
+            assert!(ground.line_walled([min_x + inset, middle_y, top + 1.0], [max_x - inset, middle_y, top - 0.2]));
+            assert_eq!(ground.height_at((min_x + max_x) / 2.0, middle_y), top, "seed {seed}: the ground is its top");
+            low_props += usize::from(top < 1.3);
+        }
+    }
+    assert!(low_props > 0, "some solid stands lower than a chest, so a look passes over it");
 }

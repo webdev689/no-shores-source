@@ -124,18 +124,18 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.
 - **What a body stands on** (`DungeonGround`): the dungeon's own ground, not [[Movement]]'s blocks. Its height is the
-  cells' (0 m open, a wall 10 m over the floor for rock) and 10 m inside a jamb, a pillar or a prop, so a shot meets
-  them as it meets the rock. A move is walled where it crosses rock, or where it ends nearer than a body's
-  half-width (0.35 m) to rock, a jamb, a pillar or a prop and nearer than it began: a body slides along a wall, steps
-  away from one, and never stands in its face. Inside a solid, as a shove might leave it, its nearness is less than
-  nothing by its depth, so it walks out and never deeper. Movement climbs blocks, never a ground's walls, so no jamb or pillar is climbed and no body
-  reaches a ceiling. Each cell keeps the jambs and pillars within a half-width of it, so a move looks at a few. The
-  browser predicts on the same ground (`fighter_dungeon`).
-- **What a line meets**: the ground's walls stand to every ceiling, so a line that crosses rock or passes through a
-  jamb, a pillar or a prop is walled, as one through a block is (`line_walled`). Nothing is seen or struck through
-  them: not by a foe's eyes, a soft lock, a blow, a telegraphed shape, a charge's lane or a shooter's cover. A noise
-  through them carries half as loud and half as far. A kill's drop thrown across one rests where its foe fell, on the
-  floor.
+  cells' (0 m open, a wall 10 m over the floor for rock), and over a jamb, a pillar or a prop that solid's own top, so
+  a shot meets rock at any height and passes over a solid lower than itself. A move is walled where it crosses rock,
+  or where it ends nearer than a body's half-width (0.35 m) to rock, a jamb, a pillar or a prop and nearer than it
+  began: a body slides along a wall, steps away from one, and never stands in its face. Inside a solid, as a shove
+  might leave it, its nearness is less than nothing by its depth, so it walks out and never deeper. Movement climbs
+  blocks, never a ground's walls, so no solid is climbed and no body reaches a ceiling. Each cell keeps the solids
+  within a half-width of it, so a move looks at a few. The browser predicts on the same ground (`fighter_dungeon`).
+- **What a line meets** (`line_walled`): rock at any height, and a jamb, a pillar or a prop where the line passes
+  below its top, as a block meets a line; a line looks only at the solids by the cells it crosses. A foe's eyes, a
+  soft lock, a blow, a telegraphed shape, a charge's lane and a shooter's cover are stopped by them and see over a
+  low coffin or table. A noise through them carries half as loud and half as far. A kill's drop thrown across a wall
+  or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top.
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with the jambs and
   pillars as its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left
   out.

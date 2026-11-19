@@ -13,10 +13,10 @@ pub trait Terrain {
         false
     }
 
-    /// Whether a wall of the terrain, standing to every ceiling, crosses the straight line from `from` to `to`, so a
-    /// look, a blow, a noise or a throw along it meets the wall. Unlike a move, a line keeps no half-width off a wall.
-    /// Open ground has none.
-    fn line_walled(&self, _from: (f64, f64), _to: (f64, f64)) -> bool {
+    /// Whether a wall of the terrain stands across the straight line from `from` to `to` (x, y, z) below the line where
+    /// it crosses, so a look, a blow, a noise or a throw along it meets the wall; a line passes over a wall lower than
+    /// itself. Unlike a move, a line keeps no half-width off a wall. Open ground has none.
+    fn line_walled(&self, _from: [f64; 3], _to: [f64; 3]) -> bool {
         false
     }
 }

@@ -40,7 +40,7 @@ impl Terrain for Floor {
     }
 
     /// Only a dungeon's walls stand across a line: open ground has none, and a line passes over the land's rises.
-    fn line_walled(&self, from: (f64, f64), to: (f64, f64)) -> bool {
+    fn line_walled(&self, from: [f64; 3], to: [f64; 3]) -> bool {
         match self {
             Floor::Flat | Floor::Land(_) => false,
             Floor::Dungeon(ground) => ground.line_walled(from, to),
