@@ -70,8 +70,7 @@ pub fn taken(here: &Here<'_, '_>, place: [f64; 3]) -> bool {
     let mine = apart(at, to);
     here.world.fighters.iter().any(|(id, other)| {
         let there = [other.body.x, other.body.y];
-        let ally = *id != here.me && other.side == here.fighter.side && !other.dead();
-        ally && apart(there, at) < SPACING && apart(there, to) < mine
+        here.ally(*id, other) && apart(there, at) < SPACING && apart(there, to) < mine
     })
 }
 
@@ -83,7 +82,7 @@ fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
     let at = here.at();
     let mut push = [0.0, 0.0];
     for (id, other) in here.world.fighters {
-        if *id == here.me || other.side != here.fighter.side || other.dead() {
+        if !here.ally(*id, other) {
             continue;
         }
         let distance = apart(at, [other.body.x, other.body.y]);
@@ -103,7 +102,7 @@ fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
         if along < 0.0 {
             let across = [wish[0] - along * out[0], wish[1] - along * out[1]];
             let length = libm::sqrt(across[0] * across[0] + across[1] * across[1]);
-            let side = if here.me.is_multiple_of(2) { 1.0 } else { -1.0 };
+            let side = here.way_round(0.0);
             let aside =
                 if length > 1e-9 { [across[0] / length, across[1] / length] } else { [-out[1] * side, out[0] * side] };
             let turned = -along * ((SPACING - distance) / (SPACING - CLEAR)).min(1.0);
@@ -167,7 +166,7 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     if !ask.unspaced {
         wish = spaced(here, wish);
     }
-    let whole = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt();
+    let whole = libm::sqrt(wish[0] * wish[0] + wish[1] * wish[1]);
     let length = whole.min(1.0);
     let held = length > 1e-9 && off_edge(here, [wish[0] / whole * length, wish[1] / whole * length], ask.run);
     let length = if held { 0.0 } else { length };

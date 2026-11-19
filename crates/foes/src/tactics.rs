@@ -345,8 +345,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
 /// The side round its target toward which the target's guard faces away from it (1 clockwise, -1 not): a blow from
 /// outside the guard is not blocked. Dead ahead, the side its number picks.
 fn open_side(here: &Here<'_, '_>, sight: &Sight) -> f64 {
-    let side = wrap(sight.toward + PI - sight.fighter.aim);
-    if side > 0.0 || (side == 0.0 && here.me.is_multiple_of(2)) { 1.0 } else { -1.0 }
+    here.way_round(wrap(sight.toward + PI - sight.fighter.aim))
 }
 
 /// Whether its target's guard is raised and faces it, so a swing from here would be blocked.
