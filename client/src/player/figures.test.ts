@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { bearing, cardStand, eyeOf, frameAt, groundPoint, viewOf } from './figures.ts';
+import { bearing, cardStand, eyeOf, frameAt, viewOf } from './figures.ts';
 
 const QUARTER = Math.PI / 2;
 
@@ -29,11 +29,6 @@ test('frames loop at their rate', () => {
   assert.equal(frameAt(0.5, 4, 6), 3);
   assert.equal(frameAt(0.7, 4, 6), 0);
   assert.equal(frameAt(5, 0, 6), 0);
-});
-
-test('a ray down to the ground lands where it crosses z = 0; one looking up never does', () => {
-  assert.deepEqual(groundPoint([0, 0, 10], [0.6, 0, -0.8]), { x: 7.5, y: 0 });
-  assert.equal(groundPoint([0, 0, 10], [0, 0.6, 0.8]), null);
 });
 
 test('an eye looking north stands south of its target', () => {

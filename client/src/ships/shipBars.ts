@@ -18,7 +18,6 @@ export const SHIP_FACTIONS = [
 ] as const;
 /** The ranks by their numbers, 1 to 5. */
 export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
-export const PIRATES = 2;
 const BOSS = 5;
 /** A ship's plate over her and a Boss's across the top: a foe's over its head and the boss bar, size for size. */
 const { overhead: PLATE, boss: BOSS_PLATE } = PLATES;

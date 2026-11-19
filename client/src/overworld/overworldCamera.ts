@@ -36,9 +36,6 @@ export const FOLLOW = { lagM: 60, jumpM: 2_000 } as const;
 export const ZOOM_STEP = 1.18;
 export const DRAG = { orbitPerPx: 0.005, tiltPerPx: 0.004 } as const;
 
-/** The heading a body turns toward its keys' way, radians a second. */
-export const TURN_RATE = 6;
-
 /** The suggested vertical field of view, 65 degrees: at the lowest tilt it stands the horizon about a third of the
  *  way down the picture, with the ship in its middle. */
 export const FIELD_OF_VIEW = degrees(65);
@@ -111,7 +108,7 @@ export function angleDelta(from: number, to: number): number {
 /** Exponential easing's share of the way for one step of `dt` seconds at `rate` a second. */
 export const easeShare = (dt: number, rate: number) => 1 - Math.exp(-Math.max(0, dt) * rate);
 
-/** Smoothstep on [0, 1]: the rise, the fall and the fly-in. */
+/** Smoothstep on [0, 1]. */
 export function smooth01(t: number): number {
   const x = clamp(t, 0, 1);
   return x * x * (3 - 2 * x);
@@ -262,23 +259,6 @@ export function stepCamera(
   return { camera: next, shot: shotOf(next, heightAt) };
 }
 
-/**
- * The rise and the fall: the shot between the player's own (`from`, t 0) and the raised one (`to`, t 1),
- * smoothstepped. The look turns by its angles, the bearing the short way round, so a view orbited half round never
- * rolls through looking straight down on its way back.
- */
-export function blendView(from: Shot, to: Shot, t: number): Shot {
-  const share = smooth01(t);
-  const [start, end] = [anglesOf(from.forward), anglesOf(to.forward)];
-  return {
-    eye: mix(from.eye, to.eye, share),
-    forward: forwardOf(
-      start.yaw + angleDelta(start.yaw, end.yaw) * share,
-      start.pitch + (end.pitch - start.pitch) * share,
-    ),
-  };
-}
-
 /** A shot as a renderer's pose: its right and up from its angles, so the horizon stays level. */
 export function poseOf(shot: Shot, fovY: number = FIELD_OF_VIEW): CameraPose {
   const { yaw, pitch } = anglesOf(shot.forward);
@@ -315,35 +295,19 @@ export function rayThrough(pose: CameraPose, viewport: Viewport, x: number, y: n
 }
 
 /**
- * The haze's end and the lens's planes, metres: the ground's own (`ground`) with the view down, eased by the blend
- * toward the air's as it rises. The haze runs out to where the land meets the sky, the far plane past it, and the
- * near plane grows with the eye's distance so depth keeps its precision far out. None comes nearer than the ground's.
+ * The haze's end and the lens's planes from the air, metres. The haze runs out to where the land meets the sky, the
+ * far plane past it, and the near plane grows with the eye's distance so depth keeps its precision far out. None
+ * comes nearer than the ground's own (`ground`).
  */
 export function horizonOf(
   ground: { readonly fogEndM: number; readonly nearM: number; readonly farM: number },
-  blend: number,
   eyeDistanceM: number,
 ): { readonly fogEndM: number; readonly nearM: number; readonly farM: number } {
-  const share = smooth01(blend);
   const fogEnd = Math.max(HAZE.endM, HAZE.perEyeM * eyeDistanceM);
   const near = Math.max(HAZE.nearM, HAZE.nearShare * eyeDistanceM);
-  const toward = (from: number, to: number) => Math.max(from, from + (to - from) * share);
   return {
-    fogEndM: toward(ground.fogEndM, fogEnd),
-    nearM: toward(ground.nearM, near),
-    farM: toward(ground.farM, fogEnd + eyeDistanceM),
+    fogEndM: Math.max(ground.fogEndM, fogEnd),
+    nearM: Math.max(ground.nearM, near),
+    farM: Math.max(ground.farM, fogEnd + eyeDistanceM),
   };
-}
-
-/** The bearing the movement keys point under the view: the camera's bearing turned by the keys' axes (forward and
- *  right, -1 to 1), or null when no key moves. */
-export function keysHeading(cameraYaw: number, forward: number, strafe: number): number | null {
-  return forward || strafe ? cameraYaw + Math.atan2(strafe, forward) : null;
-}
-
-/** A heading turned toward a target, the short way, at most `rate` radians a second. */
-export function turnHeading(heading: number, target: number, dt: number, rate: number = TURN_RATE): number {
-  const turn = angleDelta(heading, target);
-  const step = rate * Math.max(0, dt);
-  return Math.abs(turn) <= step ? target : heading + Math.sign(turn) * step;
 }
