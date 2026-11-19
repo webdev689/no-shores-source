@@ -76,8 +76,9 @@ pub const fn weapon(class: WeaponClass) -> Weapon {
 
 /// DFO's swing law at an average speed: one strike frame lasts 3 x (115 - 50) / 980 seconds, times the weapon's
 /// handling and a further 1.06 for a two-handed one, held between 0.09 and 0.4. A swing is five frames; its blow
-/// lands as the third begins.
+/// lands as the third begins. At the owner's word every swing then takes three quarters of that (`SWING_PACE`).
 const SWING_FRAME: f64 = 3.0 * (115.0 - 50.0) / 980.0;
+const SWING_PACE: f64 = 0.75;
 const STRIKE_FRAMES: f64 = 5.0;
 const HIT_FRAME: f64 = 2.0;
 
@@ -85,7 +86,8 @@ const HIT_FRAME: f64 = 2.0;
 #[must_use]
 pub fn swing_ticks(class: WeaponClass) -> (u32, u32) {
     let weapon = weapon(class);
-    let frame = (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4);
+    let frame =
+        (SWING_FRAME * weapon.handling * if weapon.two_handed { 1.06 } else { 1.0 }).clamp(0.09, 0.4) * SWING_PACE;
     (ticks(frame * HIT_FRAME), ticks(frame * STRIKE_FRAMES))
 }
 
@@ -113,8 +115,8 @@ impl Stroke {
 }
 
 /// How a stroke changes its weapon's blow: reach added, the half-width of its arc in radians, and its damage, poise
-/// and guard shares; and how many it may strike. A thrust reaches furthest at one; a chop breaks poise and guards; a
-/// sweep crosses three.
+/// and guard shares. A thrust reaches furthest in a narrow arc; a chop breaks poise and guards; a sweep crosses the
+/// widest arc. A blow strikes every fighter of another side its reach and arc hold, at the owner's word.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StrokeShape {
     pub reach: f64,
@@ -122,24 +124,19 @@ pub struct StrokeShape {
     pub damage: f64,
     pub poise: f64,
     pub guard: f64,
-    pub targets: usize,
 }
 
 #[must_use]
 pub fn stroke_shape(stroke: Stroke) -> StrokeShape {
     let degrees = core::f64::consts::PI / 180.0;
     match stroke {
-        Stroke::Up => {
-            StrokeShape { reach: 0.5, half_arc: 20.0 * degrees, damage: 1.0, poise: 0.8, guard: 1.0, targets: 1 }
-        }
-        Stroke::Down => {
-            StrokeShape { reach: 0.0, half_arc: 35.0 * degrees, damage: 1.15, poise: 1.4, guard: 1.5, targets: 1 }
-        }
+        Stroke::Up => StrokeShape { reach: 0.5, half_arc: 20.0 * degrees, damage: 1.0, poise: 0.8, guard: 1.0 },
+        Stroke::Down => StrokeShape { reach: 0.0, half_arc: 35.0 * degrees, damage: 1.15, poise: 1.4, guard: 1.5 },
         Stroke::Left | Stroke::Right => {
-            StrokeShape { reach: -0.1, half_arc: 70.0 * degrees, damage: 0.85, poise: 0.9, guard: 1.0, targets: 3 }
+            StrokeShape { reach: -0.1, half_arc: 70.0 * degrees, damage: 0.85, poise: 0.9, guard: 1.0 }
         }
         Stroke::DownLeft | Stroke::DownRight => {
-            StrokeShape { reach: 0.0, half_arc: 50.0 * degrees, damage: 1.0, poise: 1.0, guard: 1.0, targets: 2 }
+            StrokeShape { reach: 0.0, half_arc: 50.0 * degrees, damage: 1.0, poise: 1.0, guard: 1.0 }
         }
     }
 }

@@ -37,23 +37,24 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 
 | Weapon | Reach (m) | Damage | Weight | Stamina | Blow lands / swing ends (ticks) |
 |---|---|---|---|---|---|
-| Fists | 1.0 | 6 | 0.6 | 6 | 21 / 54 |
-| Dagger | 1.3 | 9 | 0.7 | 8 | 21 / 54 |
-| Sword | 1.8 | 14 | 1.0 | 12 | 24 / 60 |
-| Mace | 1.6 | 15 | 1.5 | 14 | 25 / 61 |
-| Flail | 1.8 | 16 | 1.5 | 15 | 25 / 63 |
-| Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 27 / 66 |
-| Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 27 / 67 |
-| Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 25 / 61 |
+| Fists | 1.0 | 6 | 0.6 | 6 | 16 / 40 |
+| Dagger | 1.3 | 9 | 0.7 | 8 | 16 / 40 |
+| Sword | 1.8 | 14 | 1.0 | 12 | 18 / 45 |
+| Mace | 1.6 | 15 | 1.5 | 14 | 18 / 46 |
+| Flail | 1.8 | 16 | 1.5 | 15 | 19 / 47 |
+| Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 20 / 50 |
+| Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 20 / 50 |
+| Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 18 / 46 |
 
-- **Swings.** DFO's swing law times them: five strike frames, each a fifth of a second for a sword, shorter or longer
-  by the weapon's handling and a two-handed weight; the blow lands as the third frame begins. Holding the button
-  swings again as each blow ends. A swing costs its stamina, and while it is struck the fighter moves at a third of its
-  pace. A click picks the stroke at random, as Daggerfall Unity's click to attack does, among the strokes that reach
-  the locked foe when some do (the page rolls it): up thrusts half a metre further at one foe, in a narrow arc;
-  down chops at one, heavier on poise and half again on a guard; left and right sweep a wide arc across three; the
-  diagonals slash at two. A blow reaches a fighter of another side within its reach and arc (close in, almost any way
-  it faces), near the striker's height, with no block between them; the soft lock's target first, then the nearest.
+- **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
+  frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
+  the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
+  struck the fighter moves at a third of its pace. A click picks the stroke at random, as Daggerfall Unity's click to
+  attack does, among the strokes that reach the locked foe when some do (the page rolls it): up thrusts half a metre
+  further, in a narrow arc; down chops, heavier on poise and half again on a guard; left and right sweep the widest arc;
+  the diagonals slash between. A blow strikes every fighter of another side within its reach and arc (close in, almost
+  any way it faces), near the striker's height, with no block between them, each taking the whole blow; the soft lock's
+  target first, then the nearest.
 - **Stamina.** 100. It comes back at 45 a second once it has rested half a second since it was last spent, slower
   behind a guard. A fighter with none cannot swing or dodge; spending never takes it below none.
 - **The guard and the parry.** Holding the guard raises it; pressing it opens a parry window of a fifth of a second
@@ -104,14 +105,13 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 ## The soft lock
 
 As in Soulframe, there is no button. Each swing or guard takes the foe best ranked for it (by nearness to the look
-within 70 degrees and nearness within 9 m, in sight, by equal shares), but keeps the one it holds unless another
-ranks clearly better, so it does not flick between neighbours; one that strikes a fighter with no lock is taken too,
-and a parry turns the lock on the parried. A sweep that lands on three leaves the lock where it was. While it holds,
-and while the look is within 70 degrees of it, the fighter's swings turn after it in their wind-up (540 degrees a
-second, if it is within the weapon's reach and 2.5 m) and its guard turns to face it; turned to face another, the
-guard follows the look. The dodge faces it. It lets go when the foe dies, is past 15 m, has been out of sight for a
-second and a half, or the fighter's look has stayed more than 110 degrees away for half a second. The camera stays
-its player's.
+within 70 degrees and nearness within 9 m, in sight, by equal shares), but keeps the one it holds unless another ranks
+clearly better, so it does not flick between neighbours; one that strikes a fighter with no lock is taken too, and a
+parry turns the lock on the parried. A blow that lands on several leaves the lock where it was. While it holds, and
+while the look is within 70 degrees of it, the fighter's swings turn after it in their wind-up (540 degrees a second, if
+it is within the weapon's reach and 2.5 m) and its guard turns to face it; turned to face another, the guard follows the
+look. The dodge faces it. It lets go when the foe dies, is past 15 m, has been out of sight for a second and a half, or
+the fighter's look leaves the 70 degrees it takes within, at once. The camera stays its player's.
 
 ## Foes' telegraphed blows
 
