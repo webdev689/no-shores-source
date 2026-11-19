@@ -233,7 +233,7 @@ impl Room {
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
-        self.players.remove(&player);
+        self.part(player);
         self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
             std::mem::take(&mut self.pending).into_iter().partition(|pending| pending.defender == player);

@@ -140,6 +140,32 @@ fn a_body_dead_past_its_section_casts_nothing_and_takes_no_spell() {
 }
 
 #[test]
+fn an_account_s_arts_are_kept_while_it_is_away_and_given_back_as_it_rejoins() {
+    let (mut room, player) = room_with_player();
+    assert!(room.own(player, "ada"));
+    room.players.get_mut(&player).expect("in").casting.tenets = [0.25, 0.5];
+    room.leave(player);
+    let back = room.join().expect("a room with space");
+    assert_eq!(casting(&room, back).tenets, [1.0, 1.0], "a join starts the Tenets ready");
+    assert!(room.own(back, "ada"));
+    assert_eq!(casting(&room, back).tenets, [0.25, 0.5], "given back as they left them");
+    let other = room.join().expect("a room with space");
+    assert!(room.own(other, "bea"));
+    assert_eq!(casting(&room, other).tenets, [1.0, 1.0], "a first join starts them ready");
+    room.leave(back);
+    room.clock += 60 * 600;
+    let late = room.join().expect("a room with space");
+    assert!(room.own(late, "ada"));
+    assert_eq!(casting(&room, late).tenets, [1.0, 1.0], "forgotten after ten minutes away");
+    for nth in 0..=crate::PLAYERS_MOST {
+        let passing = room.join().expect("a room with space");
+        assert!(room.own(passing, &format!("passer {nth}")));
+        room.leave(passing);
+    }
+    assert_eq!(room.spells.kept.len(), crate::PLAYERS_MOST, "kept for as many as the room holds");
+}
+
+#[test]
 fn a_cast_is_refused_while_mounted() {
     let (mut room, player) = room_with_player();
     let controls = movement::Controls { mounted: true, ..movement::Controls::default() };

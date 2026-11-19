@@ -316,7 +316,7 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
-    /// spent for them again, however often they rejoin.
+    /// spent for them again, however often they rejoin; and the Arts' charge the room kept for it is theirs again.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
@@ -327,7 +327,15 @@ impl Room {
             }
         }
         found.gear_changed = true;
+        self.give_casting_back(player, owner);
         true
+    }
+
+    /// Takes a player out of the room, keeping their account's Arts for its return.
+    pub(crate) fn part(&mut self, player: PlayerId) {
+        if let Some(gone) = self.players.remove(&player) {
+            self.keep_casting(&gone);
+        }
     }
 
     /// A player as the room keeps them.

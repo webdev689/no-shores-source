@@ -15,6 +15,8 @@ use gear::{Character, Element, Slot};
 const FULL: f64 = 1.0 - 1e-9;
 /// A kill takes this share off the Tenets' cooldowns with the weapons' perk Spellfeed.
 const SPELLFEED_SHARE: f64 = 0.03;
+/// How long the room keeps an account's Arts after it leaves: ten minutes.
+const KEPT_TICKS: u64 = 60 * 600;
 
 /// A cast as an input asks for it: the spell by its number among the Arts' (its Art's number less one, times three,
 /// plus its ability, 0 the Anima and 1 or 2 a Tenet, plus one: 1 Tempest to 9 Vanish), and where it is aimed, if it is.
@@ -204,6 +206,36 @@ impl Room {
             found.casting = Casting { anima: 0.0, tenets: [0.0, 0.0], releasing: None, hunting: false };
         }
         0
+    }
+
+    /// A player leaving: an account's Anima and Tenets kept as they left them, with the Art it wore, so a rejoin does
+    /// not ready the Tenets afresh. The room keeps as many as it holds players, the oldest let go first, and forgets
+    /// one gone `KEPT_TICKS`.
+    pub(crate) fn keep_casting(&mut self, gone: &Player) {
+        let Some(owner) = gone.owner.clone() else { return };
+        let (clock, kept) = (self.clock, &mut self.spells.kept);
+        kept.retain(|_, (_, _, left)| clock < left.saturating_add(KEPT_TICKS));
+        kept.remove(&owner);
+        if kept.len() >= crate::PLAYERS_MOST
+            && let Some(oldest) = kept.iter().min_by_key(|(_, (_, _, left))| *left).map(|(key, _)| key.clone())
+        {
+            kept.remove(&oldest);
+        }
+        kept.insert(owner, (gone.casting, gone.character.art().id, clock));
+    }
+
+    /// An account's Anima and Tenets given back as it rejoins within `KEPT_TICKS`: as it left them, or empty if it
+    /// now wears another Art, as wearing another empties them.
+    pub(crate) fn give_casting_back(&mut self, player: PlayerId, owner: &str) {
+        let clock = self.clock;
+        let Some((casting, art, left)) = self.spells.kept.remove(owner) else { return };
+        let Some(found) = self.players.get_mut(&player).filter(|_| clock < left.saturating_add(KEPT_TICKS)) else {
+            return;
+        };
+        let same = found.character.art().id == art;
+        found.casting.anima = if same { casting.anima } else { 0.0 };
+        found.casting.tenets = if same { casting.tenets } else { [0.0; 2] };
+        found.gear_changed = true;
     }
 
     /// The Test Ground's grant: the player's Anima full and both Tenets ready.

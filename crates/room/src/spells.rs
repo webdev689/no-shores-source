@@ -83,12 +83,14 @@ impl Spell {
     }
 }
 
-/// The room's spells, the number the next takes, and the ticks each player's Duskravens are to be kept longer.
+/// The room's spells, the number the next takes, the ticks each player's Duskravens are to be kept longer, and each
+/// account's Arts as it left, with the Art it wore and the tick it left (`arts::keep_casting`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Spells {
     pub list: Vec<Spell>,
     next: u32,
     kept_longer: Vec<(PlayerId, u32)>,
+    pub kept: std::collections::BTreeMap<String, (crate::Casting, u8, u64)>,
 }
 
 /// A spell as every player sees it: its number, its kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt),
