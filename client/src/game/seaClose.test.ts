@@ -70,7 +70,7 @@ function notchByNotch(lengthM: number, drawnM: number, degrees: number): { pixel
   const [yaw, tilt] = [2.6, (degrees * Math.PI) / 180];
   const close = new CloseZoom();
   const pixels: number[] = [];
-  let [height, scale] = [HEIGHT.highest, 0];
+  let [height, scale]: number[] = [HEIGHT.highest, 0];
   for (let notch = 0; notch <= 13; notch++) {
     const left = notch === 0 ? 0 : close.zoom(1, height <= HEIGHT.lowest + 1e-6);
     height = zoomTarget(height, left, Infinity);
