@@ -43,7 +43,8 @@ The owner's answers to the questions that followed:
   zones for mission areas. Some are cut into the zone's own rock, and some leave the zone past its edge into land
   beyond it.
 - **A run along the rock's top runs in a sunken way**: its way is cut down into the top, so the rock's faces bound
-  it, and its walls and battlements stand on the trench's lips. The movement rules stay as they are.
+  it, and its walls and battlements stand on the trench's lips. The movement rules stay as they are. Replaced by
+  [[A Run on the Rock's Top Is Held by Out of Bounds]].
 - **Saltmere's three zones first** (the Saltgrass Downs, the Gullwing Vale and the Driftwood Moors): their runs and
   detail are built and shown to the owner before the other 24.
 - [[The World Editor Draws the Layouts' Buildings]], [[The Well House's Roof Is Fixed]] and the flora workflow's
