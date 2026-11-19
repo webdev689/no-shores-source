@@ -251,7 +251,7 @@ fn line_through(sculpts: &Sculpts, outcrop: &Outcrop, across: bool) -> (f64, f64
     let (sine, cosine) = crate::exact::sin_cos(outcrop.angle);
     let way = if across { [cosine, sine] } else { [sine, -cosine] };
     let [west, north, east, south] = outcrop.reach();
-    let out = (east - west).max(south - north);
+    let out = 0.5 * (east - west).max(south - north) + 4.0;
     let heights: Vec<f64> = (-(out * 4.0) as i32..=(out * 4.0) as i32)
         .map(|step| {
             let along = f64::from(step) * 0.25;
@@ -270,13 +270,14 @@ fn line_through(sculpts: &Sculpts, outcrop: &Outcrop, across: bool) -> (f64, f64
 #[test]
 fn every_shape_holds_its_bands_on_the_close_up_grid() {
     for shape in SHAPES {
-        for radius in [12.0, 30.0, 40.0] {
+        for radius in [12.0, 30.0, 40.0, 64.0] {
             let outcrop = Outcrop { at: [3.3, -2.1], radius, tall: 10.0, shape, angle: 0.7 };
             let sculpts = standing(outcrop);
             let band = outcrop.tall / f64::from(outcrop.bands());
             let broad = match shape {
-                Shape::Tor | Shape::Crag | Shape::Knoll => radius > 20.0,
-                Shape::Mesa => radius > 35.0,
+                Shape::Tor | Shape::Knoll => radius > 20.0,
+                Shape::Crag => radius > 35.0,
+                Shape::Mesa => radius > 50.0,
                 Shape::Whaleback | Shape::Hummock => false,
             };
             assert!(!broad || outcrop.bands() >= 2, "a broad {shape:?} stands in bands");
@@ -314,6 +315,41 @@ fn every_shape_holds_its_bands_on_the_close_up_grid() {
                 Shape::Mesa | Shape::Crag | Shape::Hummock => {
                     assert!(flat >= 4.0, "{shape:?}: its top flat over a sample: {flat}")
                 }
+            }
+        }
+    }
+}
+
+#[test]
+fn a_stepped_shape_shows_a_ledge_between_its_faces_on_the_close_up_grid() {
+    for (shape, radius) in [(Shape::Mesa, 64.0), (Shape::Crag, 40.0), (Shape::Crag, 64.0)] {
+        let outcrop = Outcrop { at: [3.3, -2.1], radius, tall: 10.0, shape, angle: 0.7 };
+        let sculpts = standing(outcrop);
+        let bands = outcrop.bands();
+        assert!(bands >= 2, "{shape:?} {radius} stands in bands");
+        let band = outcrop.tall / f64::from(bands);
+        for turn in 0..8 {
+            let (sine, cosine) = crate::exact::sin_cos(f64::from(turn) * 0.79 + 0.2);
+            for offset in [0.0, 1.0, 2.0, 3.0] {
+                // The close-up's samples out along a line from the middle.
+                let heights: Vec<f64> = (0..)
+                    .map(|sample| offset + 4.0 * f64::from(sample))
+                    .take_while(|&out| out < radius * 1.4)
+                    .map(|out| sculpts.raise(outcrop.at[0] + sine * out, outcrop.at[1] - cosine * out, 1000.0))
+                    .collect();
+                // The faces it falls in, each parted from the next by a step that is nearly flat: a ramp is one face.
+                let (mut faces, mut fallen) = (0, 0.0);
+                for pair in heights.windows(2) {
+                    let fall = (pair[0] - pair[1]).abs();
+                    if fall < band * 0.15 {
+                        faces += u32::from(fallen >= band * 0.5);
+                        fallen = 0.0;
+                    } else {
+                        fallen += fall;
+                    }
+                }
+                faces += u32::from(fallen >= band * 0.5);
+                assert!(faces >= bands, "{shape:?} {radius}, turn {turn}, offset {offset}: {faces} faces of {bands}");
             }
         }
     }

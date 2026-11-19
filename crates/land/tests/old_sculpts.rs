@@ -1,7 +1,7 @@
-//! A sculpt written before outcrops had shapes, each outcrop four numbers, still reads: each outcrop a mesa at angle
-//! 0, raising the land as that mesa does. The fixture holds such a sculpt and the heights the code it was written
-//! with gave on a 2 m grid over its outcrops, its basin's edge and a climb; where no outcrop reaches, the land is
-//! still those heights to the bit.
+//! A sculpt whose outcrops are written as four numbers each reads every one as a mesa at angle 0, raising the land
+//! as that mesa does. The fixture holds such a sculpt and its heights on a 2 m grid over its outcrops, its basin's
+//! edge and a climb, from four-number mesas of another profile; where no outcrop reaches, the land is those heights
+//! to the bit.
 
 use land::sculpts::{Outcrop, Sculpt, Sculpts, Shape};
 use serde::Deserialize;

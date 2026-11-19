@@ -124,13 +124,15 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no
   measuring, the same to the bit; a 2 km close-up of carved ground samples in about a quarter of a second.
 - A sculpt's outcrops stand on its floor, each a shape with a middle, a radius, a tall and an angle (clockwise from
-  north), written `[x, y, radius, tall, shape, angle]`; one written as four numbers, as sculpts were before outcrops
-  had shapes, is a mesa at angle 0. Every shape stands in as many bands as fit, up to its most, each face rising over
-  at least 8 m (`BAND_M`, two of the close-up's 4 m samples), so the close-up draws its faces and never a point; on a
-  small outcrop the flat top gives way to them. A mesa is up to four terraced faces under a flat top over 0.55 of its
-  radius (two faces from a radius of 36 m); a tor a rounded stack of up to three domes leaning along its angle; a
-  whaleback a rounded ridge whose top runs 2.5 times its radius either way along its angle; a crag up to four faces
-  and ledges under a flat top over a quarter of its radius; a knoll up to three terraced faces under a rounded top; a
+  north), written `[x, y, radius, tall, shape, angle]`; four numbers, `[x, y, radius, tall]`, read as a mesa at
+  angle 0. Every shape stands in as many bands as fit, up to its most, each face rising over at least 8 m (`BAND_M`,
+  two of the close-up's 4 m samples), so the close-up draws its faces and never a point; on a small outcrop the flat
+  top gives way to its face. The stepped shapes part each face from the next by a 6 m ledge, so one of the close-up's
+  steps always lies nearly flat on it, and their flat top is the last face's ledge: a mesa is up to four faces under
+  a flat top over 0.55 of its radius (two faces from a radius of 49 m, three from 80 m), and a crag up to four under
+  a flat top over a quarter of its radius (two from 30 m, three from 48 m). The rounded shapes' faces meet: a tor is
+  a stack of up to three domes leaning along its angle; a whaleback a low ridge whose top runs 2.5 times its radius
+  either way along its angle; a knoll a steep-sided hill of up to three faces, each easing onto a soft shoulder; a
   hummock one low face under a flat top over up to half its radius. Each edge wanders out by up to 35 % over three
   quarters of its radius, so a broad outcrop's faces are no steeper than a small one's. An outcrop never rises past
   its tall or its reach (its spine's ends and its radius, wandered out), by which the sculpt's buckets find it.
