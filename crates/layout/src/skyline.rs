@@ -193,14 +193,20 @@ pub fn kerb(kit: &mut Kit, from: [f64; 2], to: [f64; 2], half: f64, carved: &Scu
             continue;
         }
         let base = carved_at(kit, carved, at) - 0.2;
-        let size = [0.6, 3.4, 0.75 + kit.draw() * 0.2];
-        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Rubble).turned(turn_along(way)));
+        let high = 0.75 + kit.draw() * 0.2;
+        // In lengths whose boxes keep close to the kerb's line, off the climb's way.
+        let (start, end) = ([at[0] - way[0] * 1.7, at[1] - way[1] * 1.7], [at[0] + way[0] * 1.7, at[1] + way[1] * 1.7]);
+        let mut lengths = Vec::new();
+        crate::halls::wall(&mut lengths, start, end, base, base + high, 0.6, Material::Rubble);
+        for length in lengths {
+            kit.solid(length);
+        }
     }
 }
 
 /// A natural arch of rock left standing over a canyon, square to its way at `middle`: its feet in the cliffs either
 /// side, its crown a little over the massif's top, boulders fallen at its feet; the way runs under it.
-pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64) {
+pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, rise: f64, carved: &Sculpts) {
     let half = if tier == Tier::Track { 15.0 } else { 11.0 };
     // The arch's opening is its middle four-fifths (the city's arch), so its jambs stand on the cliffs' feet.
     let span = 2.0 * (half + 6.0) / 0.9;
@@ -221,8 +227,7 @@ pub fn natural_arch(kit: &mut Kit, middle: [f64; 2], way: [f64; 2], tier: Tier, 
             let along = (kit.draw() - 0.5) * depth * 1.5;
             let at = [middle[0] + across[0] * out + way[0] * along, middle[1] + across[1] * out + way[1] * along];
             let size = [1.5 + kit.draw() * 2.5, 1.3 + kit.draw() * 2.0, 1.0 + kit.draw() * 2.0];
-            let ground = kit.height(at);
-            stone(kit, Shape::Dome { sides: 6 }, [at[0], at[1], ground], size, 0.3);
+            crate::rocks::fallen(kit, carved, Shape::Dome { sides: 6 }, at, size, 0.3);
         }
     }
 }

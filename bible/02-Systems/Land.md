@@ -107,13 +107,17 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
 - A layout's sculpt carves the land round its patrol area or instance ([[Layouts]]): its network's floor (basins and
   canyons) is left as it is and everything else in its claim is raised into a massif with stepped cliffs, fading back
   to the land over 140 m past the claim. It is applied to the land before the towns, rivers and roads, never raises
-  the sea or the 35 m of strand inland from the coast, and only raises: the coast stays where it was painted. Its
+  the sea or the 35 m of strand inland from the coast, and only raises: the coast stays where it was painted. Where
+  sculpts meet, each one's rise is held under the faces rising from every other's floor (its basins, canyons, climbs,
+  runs and the gorges out through its gates), at the faces' own steepness past their tops, so no layout's massif or
+  fade buries another's floor, and where two floors meet both stay open with no step. Its
   climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
   land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
   from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
   top. The floor's distance counts the climbs, so a section reaches up them. Its runs ([[Layouts]], "Runs") are cut
-  into its rock the same way, but where a run's capsules meet at a bend its level is a blend of its near capsules',
-  weighted by how near each is (within 3 m), so the land climbs round the bend without a step. Its wings are capsules
+  into its rock the same way. Where capsules meet (a run's at a bend, a climb's at its lookout) the level is a blend
+  of the near capsules', weighted by how near each is (within 3 m), so the land climbs round the bend and beside a
+  climb's top without a step. Its wings are capsules
   that carry its claim past its ring, so the massif stands round a run that leaves the zone and fades back past the
   wing. Neither is written when empty. Each sculpt measures its claim's edge
   once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no

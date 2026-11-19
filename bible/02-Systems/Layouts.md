@@ -87,15 +87,22 @@ from the sea, fresh water and the claim's edge), then:
    more the steeper it climbs, water is bridged at a price, a way already laid costs a third so later ways branch
    off it, and a slow noise bends it as worn tracks wander. It ends on a block's own streets and leaves a village
    between its buildings. A way too steep for its tier is laid as a footpath, then stepped; an area no way reached is
-   joined to the nearest that is. Bridges carry paths over rivers.
+   joined to the nearest that is. A way that ends at an area's middle stops short of what stands there (a gate's
+   arch, a tower, a hull, the wilds' standing stone), so the piece stays. Bridges carry paths over rivers.
    Along every way, beside it and clear of every other way and of what stands: a signpost where it leaves a place and
    where it reaches one; a milestone every 160 m between the places; a scene every 80 to 180 m (a cart broken down
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
    along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
    drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
    Each keeps clear of its own way all along it, not only where it was set, so none stands on a bend; and once the
-   ways are laid, the set pieces' props and small solids in a way's path (a lantern, a fire's stones) are left out,
-   with what stands on them.
+   ways are laid, every prop whose footprint reaches onto a way's width, the set pieces' small solids in a way's
+   path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way runs
+   through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner of
+   a building walked into rather than graze it. A way may not cross a cell reaching under a building walked into,
+   nor one whose middle stands under anything else, each taken at least a cell wide so a thin wall never slips
+   between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
+   boxes keep close to them, each kept off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and
+   the great wall are.
 6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side
    of a track, 11 of a footpath), their edges wandering outward with a noise; a gorge runs out of the claim from
    each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised into a
@@ -115,7 +122,8 @@ from the sea, fresh water and the claim's edge), then:
    battlemented, a breach broken through it where the track runs; a viaduct carried over another canyon from cliff
    top to cliff top on piers and arches, one span fallen into the gorge; a natural arch of rock left standing over a
    third canyon, its feet in the cliffs, its crown over the massif's top, the way running under it; and retaining
-   walls along part of the wider basins' feet. Along the cliff tops round the section, every 130 to 210 m where the
+   walls along part of the wider basins' feet, each length where the cliff really rises from the floor and clear of
+   every way, the climbs' and runs' too. Along the cliff tops round the section, every 130 to 210 m where the
    massif stands over the floor, its top level enough to hold one and no way runs out, stand the ruins of an older
    frontier: round towers broken off at their tops with a few merlons left, and runs of curtain wall in lengths
    broken to different heights, some buttressed, so the bounds read as a border once held.
@@ -154,7 +162,8 @@ out past its edge.
   other node's claim by the land's fade, read on a field 456 m wider than the claim's.
 - **Its land**: cut into the sculpt as levelled capsules ([[Land]]), its beats flat and its passages climbing between
   their rims. A ledge climbs to 0.55 of the massif's height; a rampart climbs to the top in its first two fifths,
-  keeps to it and drops to 0.55 into its end arena; the rest keep to the floor. A climbing run ends at 0.55 so the face
+  or longer where a slope of 0.6 needs it, keeps to it and drops to 0.55 into its end arena; on a massif under 27 m
+  both end lower, so the face behind the door stands at least 12 m (on the swamp's they end on the floor); the rest keep to the floor. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
   road. Foes hold its beats; its end arena is an objective's site and its door a door's.
@@ -168,8 +177,9 @@ out past its edge.
   pillared vaults and a slab of stone for its door. The door stands at the foot of the face behind the end arena, iron-
   banded timber in a stone arch for the rest. A building's rooms stand square to the world and open wherever the way
   crosses a wall; a slanted wall is laid in lengths short enough that each piece's box stays within half a metre of it.
-- **Kept clear**: no box of a run's pieces stands within 1.2 m of its line under head height; every ceiling over a
-  building run's way stands 2.6 m or more over its floor. A body walks every run from its mouth to its door, and no
+- **Kept clear**: a run's way is its line and on from its end beat's middle to its door. No box of a run's pieces
+  stands within 1.2 m of its way under head height, and the rock and walls laid after it keep off it; every ceiling over a
+  building run's way stands 2.6 m or more over its floor. A body walks every run from its mouth to within 3 m of its door, and no
   further (`crates/room/tests/runs_walked.rs`).
 
 ## Laid on the land
@@ -179,21 +189,23 @@ sculpts, then the buildings' seats as pads, then the paths as roads (their beds 
 nature keeps off them, every window of the ground carries them, and a node's room stands its bodies on the carved
 land ([[Land]], [[Server]]). Every prop and stone that stood on the ground as it was planned then follows it as it is
 laid, by as far as the pads and roads moved it (`follow_ground`), and what stands on one (a lantern's cage on its
-post) moves with it; a deck, a pile in the water or a battlement keeps its height. The streets' and paths' heights
+post) moves with it; a deck, a pile in the water, a battlement or a building's plinth keeps its height. The streets' and paths' heights
 are then read from the ground as it lies. Saltmere's ten
 layouts are planned and laid in about 0.65 s natively. The bake and the land's worker settle them alike; a node's
 file takes its section, spawns and boxes from its layout.
 
 ## Boxes
 
-What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing too low
-to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the ways,
-and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is never
-reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m, by
-any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
-underside is its own, so a body walks under a viaduct's deck and a lintel. Boxes are written to the centimetre, grown
-out so none shrinks. A body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every
-upper floor, as the bake lays them (`crates/room/tests/rooms_walked.rs`).
+What a body meets ([[Movement]]): each room's linings, lintels, planks, slabs and stairs, the outdoor steps, each wing
+too low to enter whole, each building not walked into whole, each plinth, set piece, great work, rock and wall by the
+ways, and each prop too tall to step over. What lies wholly past the section (at the cliffs' feet, on their tops) is
+never reached and is no box: a piece is kept by its middle in the section or a cell of it, or, for one wider than 8 m,
+by any corner. An arch is its two jambs and its head over the crown of its opening, so a body walks under it. A box's
+underside is its own, so a body walks under a viaduct's deck and a lintel. A leaning or rolled solid's box is the box
+of its turned corners. Boxes are written to the centimetre, grown out so none shrinks. No box of a solid, prop or
+building stands across a way's walked width under head height on continent 1 (`crates/room/tests/layouts_laid.rs`). A
+body walks in at every ground-floor door of the Saltgrass Downs' buildings, and up to every upper floor, as the bake
+lays them (`crates/room/tests/rooms_walked.rs`).
 
 ## Gates
 

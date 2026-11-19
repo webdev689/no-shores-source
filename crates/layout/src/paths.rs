@@ -236,18 +236,53 @@ pub fn off_line(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
     distance(point, [from[0] + span_x * along, from[1] + span_y * along])
 }
 
+/// Whether a footprint square to the world (west, north, east, south) keeps more than 0.3 m off every way's walked
+/// width.
+#[must_use]
+pub fn clear_of<'a>(print: [f64; 4], ways: impl IntoIterator<Item = &'a Path>) -> bool {
+    ways.into_iter().all(|way| {
+        let reach = way.tier.width() / 2.0 + 0.3;
+        let [west, north, east, south] = [print[0] - reach, print[1] - reach, print[2] + reach, print[3] + reach];
+        way.points.windows(2).all(|pair| {
+            // Most segments lie far off: their bounds never come near the footprint.
+            let apart = pair[0][0].max(pair[1][0]) < west
+                || pair[0][0].min(pair[1][0]) > east
+                || pair[0][1].max(pair[1][1]) < north
+                || pair[0][1].min(pair[1][1]) > south;
+            apart || rect_off_line(print, pair[0], pair[1]) > reach
+        })
+    })
+}
+
+/// How far a footprint square to the world (west, north, east, south) lies from the segment between two points: 0
+/// where the segment runs into it.
+#[must_use]
+pub fn rect_off_line([west, north, east, south]: [f64; 4], from: [f64; 2], to: [f64; 2]) -> f64 {
+    let inside = |[x, y]: [f64; 2]| x >= west && x <= east && y >= north && y <= south;
+    let corners = [[west, north], [east, north], [east, south], [west, south]];
+    let crosses = (0..4).any(|side| segments_cross(from, to, corners[side], corners[(side + 1) % 4]));
+    if inside(from) || inside(to) || crosses {
+        return 0.0;
+    }
+    let to_rect = |[x, y]: [f64; 2]| {
+        let (east_of, south_of) = ((west - x).max(x - east).max(0.0), (north - y).max(y - south).max(0.0));
+        (east_of * east_of + south_of * south_of).sqrt()
+    };
+    corners.iter().map(|&corner| off_line(corner, from, to)).fold(to_rect(from).min(to_rect(to)), f64::min)
+}
+
 /// Where a way of cells crosses a river: the last dry cell before the water and the first after it, each a point.
 #[must_use]
 pub fn crossings(field: &Field, cells: &[usize]) -> Vec<[[f64; 2]; 2]> {
     let mut found = Vec::new();
     let mut entered: Option<usize> = None;
     for pair in cells.windows(2) {
-        let (dry, wet) = (field.water[pair[0]] == Water::River, field.water[pair[1]] == Water::River);
-        if !dry && wet {
+        let (was_river, is_river) = (field.water[pair[0]] == Water::River, field.water[pair[1]] == Water::River);
+        if !was_river && is_river {
             entered = Some(pair[0]);
         }
-        if dry
-            && !wet
+        if was_river
+            && !is_river
             && let Some(bank) = entered.take()
         {
             let centre = |at: usize| field.centre(at % field.columns, at / field.columns);
@@ -333,5 +368,15 @@ mod tests {
     fn crossing_segments_are_found_and_touching_ones_are_not() {
         assert!(segments_cross([0.0, 0.0], [10.0, 10.0], [0.0, 10.0], [10.0, 0.0]));
         assert!(!segments_cross([0.0, 0.0], [10.0, 0.0], [10.0, 0.0], [10.0, 10.0]));
+    }
+
+    #[test]
+    fn a_footprint_is_as_far_from_a_segment_as_their_nearest_points() {
+        let print = [0.0, 0.0, 4.0, 2.0];
+        assert_eq!(rect_off_line(print, [-5.0, 1.0], [10.0, 1.0]), 0.0, "through it");
+        assert!((rect_off_line(print, [-5.0, 5.0], [10.0, 5.0]) - 3.0).abs() < 1e-12, "past its south side");
+        // Passing its corner at a slant: nearest at the corner, not at either end.
+        let slant = rect_off_line(print, [6.0, 0.0], [4.0, -2.0]);
+        assert!((slant - 2.0_f64.sqrt()).abs() < 1e-12, "{slant}");
     }
 }

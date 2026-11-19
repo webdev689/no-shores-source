@@ -53,7 +53,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     });
 }
 
-/// Whether a solid's box stands within 1.2 m of a run's line under head height (2.2 m over `floor`).
+/// Whether a solid's box stands within 1.2 m of a run's way (its line and on to its door) under head height (2.2 m over `floor`).
 fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     let [west, north, east, south, bottom, _] = solid.bounds();
     // An arch is boxed as its jambs and head (collide.rs), and the kits stand its jambs clear of the line.
@@ -62,7 +62,7 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     }
     let near =
         |at: [f64; 2]| at[0] >= west - 1.2 && at[0] <= east + 1.2 && at[1] >= north - 1.2 && at[1] <= south + 1.2;
-    run.line.windows(2).any(|pair| {
+    run.way().windows(2).any(|pair| {
         let length = distance(pair[0], pair[1]);
         let steps = (length / 0.5).ceil().max(1.0) as usize;
         (0..=steps).any(|step| {
@@ -72,9 +72,9 @@ fn blocks(run: &Run, solid: &Solid, floor: f64) -> bool {
     })
 }
 
-/// How far a point lies from a run's line, metres.
+/// How far a point lies from a run's way, its line and on to its door, metres.
 fn off_run(run: &Run, at: [f64; 2]) -> f64 {
-    run.line.windows(2).map(|pair| off_line(at, pair[0], pair[1])).fold(f64::INFINITY, f64::min)
+    run.way().windows(2).map(|pair| off_line(at, pair[0], pair[1])).fold(f64::INFINITY, f64::min)
 }
 
 fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
@@ -219,7 +219,7 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, raised: Option
 /// A point moved straight away from the run's line until it lies `clear` metres off it.
 fn away_from_line(run: &Run, at: [f64; 2], clear: f64) -> [f64; 2] {
     let nearest = run
-        .line
+        .way()
         .windows(2)
         .map(|pair| {
             let span = [pair[1][0] - pair[0][0], pair[1][1] - pair[0][1]];
@@ -296,12 +296,14 @@ fn rampart_wall(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         }
         let length = distance(pair[0], pair[1]);
         let way = [(pair[1][0] - pair[0][0]) / length.max(1e-9), (pair[1][1] - pair[0][1]) / length.max(1e-9)];
-        let lengths = (length / WALL_LENGTH_M).floor() as u32;
+        // Whole lengths from end to end of the passage, so no gap is left at its ends.
+        let lengths = (length / WALL_LENGTH_M).ceil().max(1.0);
+        let each = length / lengths;
         for side in [1.0, -1.0] {
             let across = [-way[1] * side, way[0] * side];
-            for piece in 0..lengths {
-                let middle = ahead(ahead(pair[0], way, WALL_LENGTH_M * (f64::from(piece) + 0.5)), across, half + 2.2);
-                wall_length(kit, run, carved, middle, way);
+            for piece in 0..lengths as u32 {
+                let middle = ahead(ahead(pair[0], way, each * (f64::from(piece) + 0.5)), across, half + 2.2);
+                wall_length(kit, run, carved, middle, way, each);
             }
         }
     }
@@ -310,20 +312,28 @@ fn rampart_wall(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         for piece in 0..pieces as u32 {
             let (sine, cosine) = land::exact::sin_cos(std::f64::consts::TAU * f64::from(piece) / pieces);
             let middle = ahead(beat.at, [sine, -cosine], beat.radius + 1.5);
-            wall_length(kit, run, carved, middle, [cosine, sine]);
+            let each = std::f64::consts::TAU * (beat.radius + 1.5) / pieces;
+            wall_length(kit, run, carved, middle, [cosine, sine], each);
         }
     }
 }
 
-/// One length of a rampart's curtain wall at a point along `way`, left out where its ends come near the run's way.
-fn wall_length(kit: &mut Kit, run: &Run, carved: &Sculpts, middle: [f64; 2], way: [f64; 2]) {
-    let ends = [ahead(middle, way, -WALL_LENGTH_M / 2.0), ahead(middle, way, WALL_LENGTH_M / 2.0)];
+/// One length of a rampart's curtain wall `length` long at a point along `way`; where its ends come near the run's
+/// way it is laid as two half lengths, each left out only where it comes near the way itself, so the wall stops at
+/// the way and leaves no gap beside it.
+fn wall_length(kit: &mut Kit, run: &Run, carved: &Sculpts, middle: [f64; 2], way: [f64; 2], length: f64) {
+    let ends = [ahead(middle, way, -length / 2.0), ahead(middle, way, length / 2.0)];
     if ends.iter().chain(std::iter::once(&middle)).any(|end| off_run(run, *end) < half_of(run.kind) + 1.4) {
+        if length > 1.5 {
+            for side in [-1.0, 1.0] {
+                wall_length(kit, run, carved, ahead(middle, way, side * length / 4.0), way, length / 2.0);
+            }
+        }
         return;
     }
     let base = carved_at(kit, carved, middle) - 1.0;
     let high = 3.4 + kit.draw() * 2.2;
-    let size = [1.6, WALL_LENGTH_M - 0.3, high];
+    let size = [1.6, length + 0.2, high];
     kit.solid(
         Solid::upright(Shape::Block, [middle[0], middle[1], base], size, Material::Stone).turned(turn_along(way)),
     );

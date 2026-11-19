@@ -16,7 +16,7 @@ const PATH_CLEAR_M: f64 = 10.0;
 /// Scree is lower than a body steps over (collide.rs STEPPED_OVER_M).
 const SCREE_TALLEST_M: f64 = 0.4;
 /// The carving raises the floor no more than this where a face meets it, metres: a face's foot.
-const FOOT_RISE_M: f64 = 0.3;
+pub(crate) const FOOT_RISE_M: f64 = 0.3;
 
 /// Whether a point lies within `clear` metres of a path's line.
 fn near_path(paths: &[Path], at: [f64; 2], clear: f64) -> bool {
@@ -33,8 +33,17 @@ pub fn stone(kit: &mut Kit, shape: Shape, at: [f64; 3], size: [f64; 3], tip: f64
     kit.solid(Solid { lean, roll, ..upright });
 }
 
+/// A stone fallen onto the floor at a point, on the ground as carved; none where the carving raises the land, up a
+/// face, so every stone rests on level ground.
+pub(crate) fn fallen(kit: &mut Kit, carved: &Sculpts, shape: Shape, at: [f64; 2], size: [f64; 3], tip: f64) {
+    if raised(kit, carved, at) <= FOOT_RISE_M {
+        let ground = crate::skyline::carved_at(kit, carved, at);
+        stone(kit, shape, [at[0], at[1], ground], size, tip);
+    }
+}
+
 /// How far the carving raises the land at a point, metres.
-fn raised(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
+pub(crate) fn raised(kit: &Kit, carved: &Sculpts, at: [f64; 2]) -> f64 {
     carved.raise(at[0], at[1], kit.ground.coast.at(at[0], at[1]))
 }
 
@@ -82,7 +91,7 @@ pub fn talus(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts)
                 [-normal[0], -normal[1]]
             };
             if let Some(foot) = foot_of(kit, carved, edge, inward, 10.0) {
-                heap(kit, foot, inward);
+                heap(kit, carved, foot, inward);
             }
         }
         carried = length - (step - HEAP_EVERY_M);
@@ -90,28 +99,26 @@ pub fn talus(kit: &mut Kit, ring: &[[f64; 2]], paths: &[Path], carved: &Sculpts)
 }
 
 /// A heap on the floor at a face's foot (`inward`, away from the face): a boulder or two against the foot, smaller
-/// stones by them, and scree spilt out onto the floor.
-fn heap(kit: &mut Kit, foot: [f64; 2], inward: [f64; 2]) {
+/// stones by them, and scree spilt out onto the floor. Each stone stands on the ground as carved, and one that would
+/// lie up the face is left out.
+fn heap(kit: &mut Kit, carved: &Sculpts, foot: [f64; 2], inward: [f64; 2]) {
     for _ in 0..1 + (kit.draw() * 2.0) as u32 {
         let at = off(foot, inward, 0.6 + kit.draw() * 1.4, (kit.draw() - 0.5) * 4.0);
         let across = 1.2 + kit.draw() * 1.4;
         let size = [across, across * (0.7 + kit.draw() * 0.3), 0.7 + kit.draw() * 0.9];
-        let ground = kit.height(at);
-        stone(kit, Shape::Dome { sides: 7 }, [at[0], at[1], ground], size, 0.12);
+        fallen(kit, carved, Shape::Dome { sides: 7 }, at, size, 0.12);
     }
     for _ in 0..1 + (kit.draw() * 2.0) as u32 {
         let at = off(foot, inward, 1.0 + kit.draw() * 2.5, (kit.draw() - 0.5) * 5.0);
         let across = 0.6 + kit.draw() * 0.6;
         let size = [across, across * (0.7 + kit.draw() * 0.3), 0.45 + kit.draw() * 0.35];
-        let ground = kit.height(at);
-        stone(kit, Shape::Dome { sides: 6 }, [at[0], at[1], ground], size, 0.15);
+        fallen(kit, carved, Shape::Dome { sides: 6 }, at, size, 0.15);
     }
     for _ in 0..3 + (kit.draw() * 3.0) as u32 {
         let at = off(foot, inward, 1.5 + kit.draw() * 4.0, (kit.draw() - 0.5) * 7.0);
         let across = 0.3 + kit.draw() * 0.5;
         let size = [across, across * (0.6 + kit.draw() * 0.4), 0.15 + kit.draw() * (SCREE_TALLEST_M - 0.15)];
-        let ground = kit.height(at);
-        stone(kit, Shape::Pyramid { top: 0.45 }, [at[0], at[1], ground], size, 0.2);
+        fallen(kit, carved, Shape::Pyramid { top: 0.45 }, at, size, 0.2);
     }
 }
 
@@ -128,7 +135,7 @@ pub fn clad(kit: &mut Kit, outcrops: &[[f64; 4]], paths: &[Path], carved: &Sculp
             if near_path(paths, foot, PATH_CLEAR_M) {
                 continue;
             }
-            heap(kit, foot, outward);
+            heap(kit, carved, foot, outward);
         }
     }
 }

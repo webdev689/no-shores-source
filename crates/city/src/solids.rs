@@ -70,26 +70,37 @@ impl Solid {
     }
 
     /// The solid's footprint and height as a box square to the world: west, north, east, south, bottom, top. A
-    /// leaning or rolled solid's box holds the whole of it: round its base, as far as its top swings out.
+    /// leaning or rolled solid's box holds its turned corners, so no more than the whole of it.
     #[must_use]
     pub fn bounds(&self) -> [f64; 6] {
+        // The corners of the box the shape fills in its own frame, rolled about its y, leaned toward its +y and
+        // turned, as the browser draws it (client/src/city/solidMesh.ts solidTurn).
+        let (roll_sine, roll_cosine) = sin_cos(self.roll);
+        let (lean_sine, lean_cosine) = sin_cos(self.lean);
         let (sine, cosine) = sin_cos(self.turn);
         let (half_width, half_depth) = (self.size[0] / 2.0, self.size[1] / 2.0);
-        let mut reach_east = half_width * cosine.abs() + half_depth * sine.abs();
-        let mut reach_south = half_width * sine.abs() + half_depth * cosine.abs();
-        if self.lean != 0.0 || self.roll != 0.0 {
-            let swing = sin_cos(self.lean).0.abs().max(sin_cos(self.roll).0.abs());
-            let tallest = self.size[2] * swing + half_width.max(half_depth) * core::f64::consts::SQRT_2;
-            reach_east = reach_east.max(tallest);
-            reach_south = reach_south.max(tallest);
+        let start =
+            [f64::INFINITY, f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+        let mut found = start;
+        for corner in 0..8 {
+            let x = if corner & 1 == 0 { -half_width } else { half_width };
+            let y = if corner & 2 == 0 { -half_depth } else { half_depth };
+            let z = if corner & 4 == 0 { 0.0 } else { self.size[2] };
+            let (x, z) = (x * roll_cosine + z * roll_sine, -x * roll_sine + z * roll_cosine);
+            let (y, z) = (y * lean_cosine + z * lean_sine, -y * lean_sine + z * lean_cosine);
+            let (east, south) = (x * cosine - y * sine, x * sine + y * cosine);
+            for (axis, value) in [east, south, z].into_iter().enumerate() {
+                found[axis] = found[axis].min(value);
+                found[axis + 3] = found[axis + 3].max(value);
+            }
         }
         [
-            self.at[0] - reach_east,
-            self.at[1] - reach_south,
-            self.at[0] + reach_east,
-            self.at[1] + reach_south,
-            self.at[2],
-            self.at[2] + self.size[2],
+            self.at[0] + found[0],
+            self.at[1] + found[1],
+            self.at[0] + found[3],
+            self.at[1] + found[4],
+            self.at[2] + found[2],
+            self.at[2] + found[5],
         ]
     }
 }
@@ -102,9 +113,12 @@ mod tests {
     fn a_leaning_solid_reaches_only_as_far_as_its_top_swings() {
         let lean = 5.0 * core::f64::consts::PI / 180.0;
         let shaft = Solid { lean, ..Solid::upright(Shape::Block, [0.0; 3], [20.0, 20.0, 190.0], Material::Stone) };
-        let [west, _, east, _, _, top] = shaft.bounds();
-        assert!(east > 190.0 * libm::sin(lean) && east < 35.0, "{east}");
-        assert!((west + east).abs() < 1e-9 && (top - 190.0).abs() < 1e-9);
+        let [west, north, east, south, bottom, top] = shaft.bounds();
+        let (sine, cosine) = (libm::sin(lean), libm::cos(lean));
+        // It leans toward its own +y, south when not turned: its top's far edge swings out, its foot's near edge in.
+        assert!((south - (190.0 * sine + 10.0 * cosine)).abs() < 1e-9, "{south}");
+        assert!((north + 10.0 * cosine).abs() < 1e-9 && (west + 10.0).abs() < 1e-9 && (east - 10.0).abs() < 1e-9);
+        assert!((bottom + 10.0 * sine).abs() < 1e-9 && (top - (190.0 * cosine + 10.0 * sine)).abs() < 1e-9);
     }
 
     #[test]
