@@ -1032,15 +1032,18 @@
       "seconds": [
         1.5,
         12.0
+      ],
+      "skip": [
+        49437
       ]
     },
     {
       "id": "amb.social.crowd",
       "use": "A port city's market crowd far below the plaza, no word clear, looped",
-      "query": "market crowd murmur",
+      "query": "market crowd",
       "seconds": [
-        30.0,
-        240.0
+        20.0,
+        300.0
       ]
     },
     {
@@ -1050,42 +1053,51 @@
       "seconds": [
         0.8,
         6.0
+      ],
+      "skip": [
+        813117
       ]
     },
     {
       "id": "amb.highland.raven",
       "use": "A raven croaking as it flies over the fells, the steppe, a marsh or the tundra",
-      "query": "raven croak",
+      "query": "raven",
       "seconds": [
-        0.5,
-        5.0
+        0.4,
+        10.0
       ]
     },
     {
       "id": "amb.rainforest.parrot",
       "use": "Parrots squawking in a rainforest's canopy",
-      "query": "parrot squawk",
+      "query": "macaw",
       "seconds": [
         0.5,
-        6.0
+        12.0
+      ],
+      "skip": [
+        384373
       ]
     },
     {
       "id": "amb.swamp.heron",
       "use": "A heron croaking over a marsh",
-      "query": "heron call",
+      "query": "heron",
       "seconds": [
-        0.4,
-        4.0
+        0.3,
+        10.0
+      ],
+      "skip": [
+        15025
       ]
     },
     {
       "id": "amb.savanna.lion",
       "use": "A lion roaring far off in the grasslands at night",
-      "query": "lion roar distant",
+      "query": "lion roar",
       "seconds": [
-        2.0,
-        15.0
+        1.5,
+        30.0
       ]
     }
   ]
