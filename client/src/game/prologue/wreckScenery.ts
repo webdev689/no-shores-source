@@ -2,18 +2,40 @@ import type { Gpu } from '../../gpu.ts';
 import { type ShipMesh, VERTEX_BYTES } from '../../ships/shipMesh.ts';
 import { type ShipPlace, ShipView } from '../../ships/shipView.ts';
 import { SHIP_PARTS, type ShipPart } from '../../textures/shipPictures.ts';
+import type { Flames } from '../../cinema/flames.ts';
 import type { Drawer } from '../scene.ts';
+import { WRECK } from './skies.ts';
+import type { Story } from './story.ts';
 import type { Scenery, SceneryKind, WreckLayout } from './wreckLayout.ts';
 
-/** How deep each kind is drawn under its top, metres (a crate and a spar as deep as they are wide, so this is the
- *  most), and the ship's picture it wears: planks and crates the deck's boards, spars a spar's grain, debris the
- *  hull's strakes. The block a body stands on still reaches down to the sea. */
+/** How deep each kind is drawn under its top, metres (a crate and a spar as deep as they are wide; debris heaped up
+ *  from the sea, so a heap across a deck stands on it), and the ship's picture it wears: planks and crates the deck's
+ *  boards, spars a spar's grain, debris the hull's strakes. The block a body stands on still reaches down to the sea. */
 const LOOKS: Readonly<Record<SceneryKind, { readonly depth: number; readonly part: ShipPart }>> = {
   planks: { depth: 0.12, part: 'deck' },
   crate: { depth: 1.2, part: 'deck' },
   spar: { depth: 0.8, part: 'spar' },
-  debris: { depth: 2.6, part: 'hull' },
+  debris: { depth: Infinity, part: 'hull' },
 };
+
+/** The wreck's sounds: its fires, the rain and wind, the sea against the hulls and their timbers working. */
+const WRECK_SOUNDS = { fire: 0.8, rain: 0.65, wind: 0.5, waves: 0.8, creak: 0.9, deep: 0, gulls: 0 } as const;
+
+/** Lights the wreck's fires, each with its own flicker. */
+export function lightFires(flames: Flames, layout: WreckLayout): void {
+  flames.clear();
+  layout.fires.forEach((fire, index) => flames.light(fire.at, fire.size, index + 1));
+}
+
+/** The wreck as each of its beats on deck opens on it, so a page begun at one plays as the story does: its storm,
+ *  its fires and their sounds, and no lightning of the storm's own. */
+export function setAblaze(story: Story, layout: WreckLayout): void {
+  const { stage } = story;
+  story.lightning.striking = false;
+  stage.weatherTowards(WRECK, 0);
+  lightFires(stage.parts.flames, layout);
+  stage.parts.ambience.set(WRECK_SOUNDS, 2);
+}
 
 /** The six faces of a box: its normal and its four corners as picks of (west or east, north or south, bottom or
  *  top), and which two of the box's axes lay its picture. */
@@ -120,22 +142,26 @@ const SQUARE_TO_THE_WORLD = Math.PI / 2;
 
 /**
  * The wreck as drawn: both ships from one published mesh (`hull`, the Brig's), each where she lies and the rammer at
- * her size, her canvas struck; and the blocks that show, in timber from the ships' own pictures. The gate is drawn
- * once it stands.
+ * her size, her canvas struck; the blocks that show, in timber from the ships' own pictures; and each zone's heap of
+ * debris across the way on, drawn while it stands. Every heap stands until the level opens it.
  */
 export class WreckScenery {
   private readonly ships: ShipView;
   private readonly places: readonly ShipPlace[];
   private readonly pieces: ShipView;
-  private readonly gate: ShipView;
+  private readonly gates: ReadonlyMap<number, ShipView>;
   private readonly placed: ShipPlace;
-  gateStands = false;
+  /** The zones whose heaps stand. */
+  readonly standing = new Set<number>();
 
   constructor(gpu: Gpu, hull: ShipMesh, layout: WreckLayout, origin: readonly [number, number]) {
     this.ships = new ShipView(gpu, hull, [], layout.ships.length);
     this.places = layout.ships.map(({ lying }) => ({ ...lying, z: lying.heave }));
     this.pieces = new ShipView(gpu, sceneryMesh(layout.scenery, origin), [], 1);
-    this.gate = new ShipView(gpu, sceneryMesh([{ kind: 'debris', block: layout.arena.gate }], origin), [], 1);
+    const heap = (block: Scenery['block']) =>
+      new ShipView(gpu, sceneryMesh([{ kind: 'debris', block }], origin), [], 1);
+    this.gates = new Map(layout.zones.flatMap((zone, index) => (zone.gate ? [[index, heap(zone.gate)] as const] : [])));
+    for (const zone of this.gates.keys()) this.standing.add(zone);
     this.placed = { x: origin[0], y: origin[1], z: 0, heading: SQUARE_TO_THE_WORLD, pitch: 0, roll: 0 };
   }
 
@@ -146,8 +172,13 @@ export class WreckScenery {
         const camera = { fromEye, eye: shot.eye };
         this.places.forEach((place, slot) => this.ships.drawInto(pass, place, camera, slot));
         this.pieces.drawInto(pass, this.placed, camera);
-        if (this.gateStands) this.gate.drawInto(pass, this.placed, camera);
+        for (const zone of this.standing) this.gates.get(zone)?.drawInto(pass, this.placed, camera);
       },
     };
+  }
+
+  /** Lets go of everything it holds on the GPU; it is never drawn again. */
+  destroy(): void {
+    for (const view of [this.ships, this.pieces, ...this.gates.values()]) view.destroy();
   }
 }

@@ -24,11 +24,11 @@
     ],
     "wreck": [
       { "who": "tithe", "say": "For the Tithe!", "kind": "bark", "emote": "anger" },
-      { "who": "pirate", "say": "Cut them down!", "kind": "bark", "emote": "anger" },
-      { "who": "tithe", "say": "Survivor! Get that one!", "kind": "bark", "emote": "alert" }
+      { "who": "pirate", "say": "Cut them down!", "kind": "bark", "emote": "anger" }
     ],
+    "survivor": [{ "who": "tithe", "say": "Survivor! Get that one!", "kind": "bark", "emote": "alert" }],
     "warCry": [{ "who": "thule", "say": "The Tithe is owed!", "kind": "bark", "emote": "anger" }],
-    "bossStruck": [{ "who": "thule", "say": "Is that all?", "kind": "bark" }],
+    "bossStruck": [{ "who": "thule", "say": "Your debt grows.", "kind": "bark" }],
     "bossStrikes": [{ "who": "thule", "say": "Kneel.", "kind": "bark", "emote": "anger" }],
     "overboard": [
       { "who": "thule", "say": "Over the side.", "kind": "bark" },

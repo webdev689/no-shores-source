@@ -187,6 +187,7 @@ export class ShipView {
   private readonly indexCount: number;
   private readonly canvasIndices: GPUBuffer | null;
   private readonly canvasIndexCount: number;
+  private readonly pictures: GPUTexture;
   /** Her waterline, for her footprint on the water and her wake. */
   readonly waterline: Waterline;
   /** Her sails' corners, for each ship's rig. */
@@ -239,7 +240,8 @@ export class ShipView {
         })
       : null;
     if (this.canvasIndices) gpu.device.queue.writeBuffer(this.canvasIndices, 0, grid);
-    const pictures = picturesTexture(gpu.device).createView({ dimension: '2d-array' });
+    this.pictures = picturesTexture(gpu.device);
+    const pictures = this.pictures.createView({ dimension: '2d-array' });
     const pictured = gpu.device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
@@ -308,6 +310,16 @@ export class ShipView {
     pass.setVertexBuffer(0, drawn.canvas);
     pass.setIndexBuffer(this.canvasIndices, 'uint32');
     pass.drawIndexed(this.canvasIndexCount);
+  }
+
+  /** Lets go of her buffers and pictures on the GPU; she is never drawn again. */
+  destroy(): void {
+    for (const buffer of [this.vertices, this.indices, this.canvasIndices]) buffer?.destroy();
+    for (const slot of this.slots) {
+      slot.uniforms.destroy();
+      slot.canvas?.destroy();
+    }
+    this.pictures.destroy();
   }
 }
 
