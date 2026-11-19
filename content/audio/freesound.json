@@ -183,7 +183,8 @@
         189159,
         321810,
         561655
-      ]
+      ],
+      "picked": 420673
     },
     {
       "id": "block.blade",
@@ -220,7 +221,8 @@
       "skip": [
         616493,
         873753
-      ]
+      ],
+      "picked": 326868
     },
     {
       "id": "guard.break",
@@ -243,7 +245,8 @@
       "skip": [
         660769,
         833032
-      ]
+      ],
+      "picked": 791953
     },
     {
       "id": "kill",
@@ -278,7 +281,8 @@
         180838,
         426326,
         700006
-      ]
+      ],
+      "picked": 107590
     },
     {
       "id": "bow.draw",
@@ -342,7 +346,8 @@
       "skip": [
         258250,
         817931
-      ]
+      ],
+      "picked": 473846
     },
     {
       "id": "musket.shot",
@@ -361,7 +366,8 @@
         244345,
         347647,
         593908
-      ]
+      ],
+      "picked": 648755
     },
     {
       "id": "gun.reload",
@@ -433,13 +439,14 @@
     {
       "id": "shot.splash",
       "use": "A shot falls in water",
-      "query": "pebble water splash",
+      "query": "water plop",
       "seconds": [
         0.1,
         1.0
       ],
       "skip": [
         30341,
+        223806,
         554595,
         841834,
         872596
@@ -459,7 +466,7 @@
         389454,
         477396
       ],
-      "dfo": true
+      "dfo": "if/Grass_Footstep"
     },
     {
       "id": "step.stone",
@@ -475,7 +482,7 @@
         517137,
         815758
       ],
-      "dfo": true
+      "dfo": "if/Tile_Footstep"
     },
     {
       "id": "step.wood",
@@ -491,7 +498,7 @@
         340983,
         421153
       ],
-      "dfo": true
+      "dfo": "if/Wood_Footstep"
     },
     {
       "id": "step.water",
@@ -507,7 +514,7 @@
         478709,
         849638
       ],
-      "dfo": true
+      "dfo": "if/Deep_Water_Footstep"
     },
     {
       "id": "jump",
@@ -592,13 +599,15 @@
     {
       "id": "spell.arclash",
       "use": "Arc Lash: lightning fanned through a cone",
-      "query": "lightning zap",
+      "query": "lightning",
       "seconds": [
         0.2,
         2.0
       ],
       "skip": [
+        127125,
         350812,
+        363194,
         592668
       ]
     },
@@ -615,19 +624,23 @@
         853303,
         878595,
         879797
-      ]
+      ],
+      "picked": 853656
     },
     {
       "id": "spell.mend",
       "use": "Mend: a burst of healing",
-      "query": "healing magic",
+      "query": "heal",
       "seconds": [
         0.3,
         2.0
       ],
       "skip": [
+        530488,
         562292,
-        827665
+        794532,
+        827665,
+        878312
       ]
     },
     {
@@ -657,7 +670,8 @@
       "seconds": [
         0.3,
         2.5
-      ]
+      ],
+      "picked": 426208
     },
     {
       "id": "spell.ravenbolt",
@@ -674,12 +688,13 @@
     {
       "id": "spell.daggers",
       "use": "Dusk Daggers strike in their ring",
-      "query": "dagger slash",
+      "query": "blade whoosh",
       "seconds": [
         0.1,
         1.2
       ],
       "skip": [
+        147288,
         385966,
         423281,
         475136,
@@ -699,7 +714,7 @@
     {
       "id": "anima.storm",
       "use": "Storm's Anima released",
-      "query": "thunder crack",
+      "query": "thunderclap",
       "seconds": [
         0.5,
         3.0
@@ -708,6 +723,7 @@
         238807,
         592668,
         592676,
+        807391,
         815095
       ]
     },
@@ -734,7 +750,7 @@
     {
       "id": "element.blaze",
       "use": "A Blaze blow bursts where it lands",
-      "query": "fire whoosh short",
+      "query": "fire impact",
       "seconds": [
         0.1,
         1.0
@@ -743,22 +759,27 @@
         170274,
         539972,
         636024,
+        683178,
         854644
       ]
     },
     {
       "id": "element.volt",
       "use": "A Volt blow bursts where it lands",
-      "query": "electric zap short",
+      "query": "electric impact",
       "seconds": [
         0.1,
         1.0
       ],
       "skip": [
         94128,
+        136542,
         189630,
+        264779,
+        456827,
         512471,
-        643861
+        643861,
+        878329
       ]
     },
     {
@@ -774,18 +795,23 @@
         422516,
         446111,
         473762
-      ]
+      ],
+      "picked": 541480
     },
     {
       "id": "finish.blaze",
       "use": "A foe slain by Blaze burns away",
-      "query": "fire burst",
+      "query": "fireball explosion",
       "seconds": [
         0.3,
         2.0
       ],
       "skip": [
+        90143,
+        105025,
+        170274,
         398448,
+        539972,
         753847,
         787500,
         872842
@@ -819,12 +845,15 @@
     {
       "id": "status.expose",
       "use": "A foe Exposed",
-      "query": "curse",
+      "query": "negative spell",
       "seconds": [
         0.1,
         1.0
       ],
       "skip": [
+        179220,
+        343461,
+        343997,
         788603,
         855417
       ]
@@ -832,25 +861,30 @@
     {
       "id": "status.charge",
       "use": "A foe Charged and held",
-      "query": "electric buzz",
+      "query": "static",
       "seconds": [
         0.2,
         1.5
       ],
       "skip": [
+        18825,
         87040,
-        264779
+        264779,
+        340908,
+        477807,
+        582631
       ]
     },
     {
       "id": "status.haste",
       "use": "Haste given",
-      "query": "magic speed up",
+      "query": "speed up",
       "seconds": [
         0.2,
         1.2
       ],
       "skip": [
+        219571,
         546281,
         752035,
         810777,
@@ -860,13 +894,16 @@
     {
       "id": "status.linked",
       "use": "Linked: healed in the Sunwell",
-      "query": "magic chime",
+      "query": "healing aura",
       "seconds": [
         0.2,
         1.5
       ],
       "skip": [
-        483608
+        376748,
+        483608,
+        789596,
+        789599
       ]
     },
     {
@@ -931,30 +968,37 @@
     {
       "id": "foe.alert",
       "use": "A foe notices the player",
-      "query": "monster growl short",
+      "query": "growl",
       "seconds": [
         0.1,
         1.0
       ],
       "skip": [
         72126,
+        75143,
+        262430,
         323018,
         375980,
+        483795,
         856777
       ]
     },
     {
       "id": "respawn",
       "use": "Standing again at a spawn",
-      "query": "magic teleport",
+      "query": "magic appear",
       "seconds": [
         0.3,
         2.0
       ],
       "skip": [
         83301,
+        234804,
         252081,
+        474179,
+        474180,
         812521,
+        831718,
         838027
       ]
     }

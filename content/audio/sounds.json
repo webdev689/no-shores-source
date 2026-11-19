@@ -221,6 +221,62 @@
       "page": "https://freesound.org/people/qubodup/sounds/714257/",
       "changes": "Unchanged."
     },
+    "step.ground": {
+      "keys": [
+        "sounds/4525cfef01730ffce17b4d7c2ff2460fc3552b24c82a1da29e3baa825dd2407d.mp3",
+        "sounds/f965c3d7817dabb7b3d38ea765899c578e74cef639d424b7904c59d67997244f.mp3",
+        "sounds/ac4334e5ca2b69925a133d1f7a7932a9be12b2be9a909bc25d3184bccccd6945.mp3",
+        "sounds/9c47859c9df84bf64df8cb11daa5362aa56404ed151b32fc60bcc3ca7c639200.mp3",
+        "sounds/21ff6f3c3d285536189c3fd116d6acc8ba0e34febf0bf27b17418c0180929e52.mp3",
+        "sounds/026636d5fc40578eb831e9a1e0f59453e47aa052613e5a8340a921d734062ad4.mp3"
+      ],
+      "name": "Grass footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "step.stone": {
+      "keys": [
+        "sounds/d2c0d89eefda33950e4e69ca9d3b9d5d9421b95709a98378a2f66e9b12639f3c.mp3",
+        "sounds/d42179bb321e0d3af5600f37febabea9b7dc1399ec26191fc3ec2b3f4a259298.mp3",
+        "sounds/97e7898ce3103eb058c1c06da0dda62dd87d70bf3c5a65f31edd46e8fb764666.mp3",
+        "sounds/d9ffa5fc405f7b8c8c2110f5250914d4bc8f89e7f2052ea6f077be366997b799.mp3",
+        "sounds/a1c1a5498eb9ef417b71bd9bed867c701231d59261faaa7597f51bcaa4a5749b.mp3",
+        "sounds/699fc3a16cbed67384547a67e46c5adde467a7367f2a691ddaa8e3719af5b0c2.mp3"
+      ],
+      "name": "Tile footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "step.water": {
+      "keys": [
+        "sounds/c5c81531e923255ee717f6f66ac9073d5c2230e19e3de2c6de464795a1910f10.mp3",
+        "sounds/78474590b3ca2c8c77a13d7f53582e2491b5c0537bc9b363f13f6c52b532ae90.mp3",
+        "sounds/f918bb0ce2e097a7d0c5e78ac64e78bd007be5928aae768a95a6eaffb243f123.mp3",
+        "sounds/d168721bbc3977d2e4b0cbff193196fd5e1e78f6af4ab17dc3ff54cd91d45280.mp3",
+        "sounds/3370c3958ce2b413edae03f00a0075fee74f0b0531c0ec9029cd90e71c0ac535.mp3",
+        "sounds/9aeca3473644c6c60ccd8a607bb44d95681f8e7753729d552e18da9a3ba84809.mp3"
+      ],
+      "name": "Deep water footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "step.wood": {
+      "keys": [
+        "sounds/beedc0d5ce30b3ba96ece03882c6689bc48f3671feeda42bbfd2e156ebb31cad.mp3",
+        "sounds/4bfb4432605d6f4015498fcd9a25fe9c1702ae190c794c1a13ba25bc51088216.mp3",
+        "sounds/052e307223658e55260f3b1b9f61b8b02624ef73b781a8b5a16164cb83a188f0.mp3",
+        "sounds/8bf18eec17a4dddb45b1aea9fcb417b76cde0fedd6493709f3391ffc24589a03.mp3",
+        "sounds/11efaff54b8dc24ac902530ec2afb86872ada32c0709b5c4605b29016c21408e.mp3",
+        "sounds/3bc95c98012d7c3653de398daed57963452576ea4193ae11b6ba308b4045c57e.mp3"
+      ],
+      "name": "Wood footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
     "swing.heavy": {
       "key": "sounds/877198908523d1afff4d871b4f8721a28d0b928c39901666e1a254152fac4eaa.mp3",
       "freesound": 422513,
