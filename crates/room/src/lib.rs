@@ -28,7 +28,7 @@ pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
-pub use power::{Drop, allowed_arms, arms_allowed, gear_arms};
+pub use power::{Drop, allowed_arms, arms_allowed, loadout_arms};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{Action, FighterId, player};
@@ -446,14 +446,14 @@ impl Room {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
                 for defender in struck(id, fighter, &attack, view, &self.blocks) {
-                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender, attack.left_hand);
+                    let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
                         let check = Check::Swing { striker: Box::new(*fighter), attack };
                         self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
                     } else if let Some(then) = self.as_seen(defender, view) {
-                        let hand = if attack.left_hand { gear::Slot::OffHand } else { gear::Slot::MainHand };
-                        self.judge_now(&blow, how, defender, &then, Some(hand));
+                        let loadout = self.striking(id);
+                        self.judge_now(&blow, how, defender, &then, Some(loadout));
                     }
                 }
             }
@@ -465,7 +465,7 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    let loosed = self.held(id, gear::Slot::MainHand);
+                    let loosed = self.held(id, gear::Slot::Ranged);
                     self.shots.push((shot, loosed));
                 }
             }
@@ -580,6 +580,8 @@ mod fight_tests;
 mod foe_tests;
 #[cfg(test)]
 mod gear_tests;
+#[cfg(test)]
+mod loadout_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]

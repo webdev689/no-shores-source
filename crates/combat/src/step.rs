@@ -2,10 +2,10 @@
 //! still), what it is doing carried on or ended, a new swing, guard, dodge, shot or telegraphed blow begun, its body
 //! moved by the movement rules as that allows (faster Hasted), and its aim turned. What it does to others is the host's: a blow that lands now is said, and the host judges it.
 
-use crate::arms::{swing_ticks, weapon};
+use crate::arms::{Ranged, swing_ticks, weapon};
 use crate::fighter::{Action, Attack, CombatInput, Fighter, Held, Intent, Kept, Swing};
 use crate::shapes::Telegraph;
-use crate::shots::{DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
+use crate::shots::{BRACE_GAP, DRAW_FULL, Shot, aimed_power, by_foe, loose, shot_numbers, toward};
 use crate::sight::{apart, bearing, off, turned, wrap};
 use crate::tuning::{
     AIM_TURN, ATTACK_PACE, BODY_RADIUS, DODGE_ATTACK, DODGE_LIFT, DODGE_SPEED, DODGE_STAMINA, DODGE_TICKS, FLINCH,
@@ -68,6 +68,7 @@ pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_
     if matches!(happening, Some(Happening::Struck(_) | Happening::Loosed(_))) {
         next.statuses.unveil();
     }
+    next.swap = next.swap.saturating_sub(1);
     move_body(&mut next, intent.controls, around);
     aim(&mut next, intent, around);
     (next, happening)
@@ -285,7 +286,7 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     if (input.guard || next.kept.guard > 0) && guards(next) {
         return Some(raise_guard(next));
     }
-    if next.arms.ranged.is_some() && input.aim {
+    if next.arms.ranged.is_some() && input.aim && next.swap == 0 {
         next.action = Action::Draw { elapsed: 0 };
         next.aim = aimed_bearing(next, intent);
         return None;
@@ -293,7 +294,7 @@ fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Opti
     // The trigger shoots at once, at the soft lock's target if it holds one the look is toward (turned away from it,
     // the shot flies along the look, as a swing turns only after a target within the lock's arc); the swing's button
     // swings a ranged holder's fists.
-    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot) {
+    if let Some(ranged) = next.arms.ranged.filter(|_| input.shoot && next.swap == 0) {
         let (chest, yaw) = (next.chest(), intent.controls.yaw);
         let ahead = |at: &[f64; 3]| off(yaw, bearing([chest[0], chest[1]], [at[0], at[1]])) <= LOCK_ARC;
         let (heading, pitch) =
@@ -312,10 +313,10 @@ fn raise_guard(next: &mut Fighter) -> Happening {
 }
 
 /// A swing begun with the stroke held, or the one a kept press was made with: a riposte at the foe it parried, a
-/// counter a perfect dodge earned, or a plain one. None without stamina, or riding off the ground.
+/// counter a perfect dodge earned, or a plain one. None without stamina, riding off the ground, or in a swap.
 fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
     let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
-    if next.stamina <= 0.0 || (intent.controls.mounted && next.body.mode != Mode::Ground) {
+    if next.stamina <= 0.0 || (intent.controls.mounted && next.body.mode != Mode::Ground) || next.swap > 0 {
         return None;
     }
     let (strike, end) = swing_ticks(next.arms.melee);
@@ -433,9 +434,12 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
     None
 }
 
-/// A shot leaving: the weapon reloads, its arms pointing the way the shot flies.
+/// A shot leaving: the weapon reloads, its arms pointing the way the shot flies. A double pistolet's right shot waits
+/// only for its firing frames, the left's for the reload of both.
 fn shoot(next: &mut Fighter, shot: Shot) -> Happening {
-    let reload = f64::from(shot_numbers(shot.ranged).3) * next.trim.reload;
+    let right = shot.ranged == Ranged::DoublePistolet && !next.fired_right;
+    next.fired_right = right;
+    let reload = if right { f64::from(BRACE_GAP) } else { f64::from(shot_numbers(shot.ranged).3) * next.trim.reload };
     next.action = Action::Reload { left: reload.round().max(1.0) as u32 };
     next.aim = crate::sight::bearing([0.0, 0.0], [shot.velocity[0], shot.velocity[1]]);
     Happening::Loosed(shot)

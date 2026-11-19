@@ -21,7 +21,7 @@ scale elsewhere: a player has 100 health, a sword's blow does 14 before power, a
 | Greatsword | Its own class: reach 2.3 m, 24 damage, weight 1.3 x 1.15, stamina 21, handling 1.06, two-handed; drawn with the sword's pictures in the two-handed hilt blows, in first person with the sword's |
 | Double pistolet | Two shots, one from each hand, before one reload 1.5 times a pistolet's; each shot 0.85 of a pistolet's damage |
 | Defense | Comes from armour alone; the share a shield had is spread over the four armour pieces |
-| Switching | Melee is drawn by default; `1` draws Melee, `2` Ranged (or the mouse wheel); a swap takes 24 ticks (0.4 s), in which no blow or shot starts. The room accepts the arms of either worn loadout |
+| Switching | Melee is drawn by default; `1` draws Melee, `2` Ranged (the mouse wheel stays the camera's, as [[The Player Plays as in DFO]] has it); a swap takes 24 ticks (0.4 s), in which no blow or shot starts. The room accepts the arms of either worn loadout |
 | Old saves | Read once into the new shape. The main hand's piece takes its slot by kind; a sword, dagger or mace with a shield in the off hand becomes its "& Shield"; two daggers, swords or maces become their pair; a lone dagger becomes Double Daggers, an axe a Great axe. An off-hand piece left over is carried, as its new kind; a shield left over is refunded as its dismantle materials. A Vestige for the off hand becomes one for Melee |
 | Named pieces | One Legendary for each kind; the old ones keep their names under their new kind (The Reefwall becomes an Atheric Sword & Shield); new ones for the new kinds |
 | Vendors | The Armsmith sells two Melee pieces and one Ranged a day |

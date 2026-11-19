@@ -78,7 +78,7 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     // A level 1 player's Normal sword of level 1 has 10 Attack: two thirds of a level's rise.
     let times = gear::power::by_player(10, 1, 1);
     assert!((hit.amount - 14.0 * 1.15 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 1.15 * times);
-    assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::MainHand));
+    assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::Melee));
     let level_five = stand(&mut room, ::foes::Role::Brute, 5, -40.0);
     let striker = *room.fighter(player).expect("in");
     let attack = combat::fighter::Attack {
@@ -90,9 +90,9 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
         left_hand: false,
     };
     let blow = combat::judge::swing_blow(player, &striker, &attack, level_five);
-    assert_eq!(room.empower(blow, level_five, false).damage, 0.0, "four levels below, a player strikes for nothing");
+    assert_eq!(room.empower(blow, level_five).damage, 0.0, "four levels below, a player strikes for nothing");
     let foe_blow = combat::judge::swing_blow(level_five, room.fighter(level_five).expect("standing"), &attack, player);
-    let struck = room.empower(foe_blow, player, false).damage;
+    let struck = room.empower(foe_blow, player).damage;
     let times = gear::power::on_player(room.player(player).expect("in").character.defense(), 1, 5);
     assert!((struck - foe_blow.damage * times).abs() < 1e-9 && times > 2.0, "and the foe strikes them twice as hard");
 }
@@ -128,11 +128,11 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let paid = &room.player(player).expect("in").character;
     assert_eq!((paid.xp, paid.materials.aurem), (90, 7), "a brute's worth at level 0: 180 and 15, halved");
     assert_eq!(room.player(onlooker).expect("in").character.xp, 0, "striking nothing earns nothing");
-    let sword = paid.worn(Slot::MainHand).expect("the sword");
+    let sword = paid.worn(Slot::Melee).expect("the sword");
     assert_eq!(sword.xp, 90, "the weapon that struck earns it");
 
     let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
-    room.mark_struck(player, captain, Slot::MainHand);
+    room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).copied().collect();
     assert_eq!(lying.len(), 1, "a captain always leaves a Vestige");
@@ -150,7 +150,7 @@ fn a_vestige_left_lying_is_gone_after_two_minutes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
-    room.mark_struck(player, captain, Slot::MainHand);
+    room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     for _ in 0..crate::power::DROP_TICKS {
         room.tick();
@@ -294,9 +294,9 @@ fn a_blow_that_cannot_harm_its_foe_shares_nothing_of_its_kill() {
         swing: combat::fighter::Swing::Plain,
         left_hand: false,
     };
-    let blow = room.empower(combat::judge::swing_blow(player, &striker, &attack, foe), foe, false);
+    let blow = room.empower(combat::judge::swing_blow(player, &striker, &attack, foe), foe);
     assert_eq!(blow.damage, 0.0, "eight levels below");
-    room.settle(&blow, How::Swing, foe, Verdict::Hit { damage: 0.0, poise: 0.0 }, Some(Slot::MainHand));
+    room.settle(&blow, How::Swing, foe, Verdict::Hit { damage: 0.0, poise: 0.0 }, Some(Slot::Melee));
     assert!(room.foes[&foe].struck_by.is_empty(), "no share of a kill it could not help");
 }
 
@@ -334,7 +334,7 @@ fn asks_wait_their_turn_and_one_that_changes_how_a_player_fights_is_sent_at_once
     }
     room.players.get_mut(&player).expect("in").gear_changed = true;
     assert!(room.take_gear_change(player), "sent, so the next must wait");
-    room.take_ask(player, Asked::Gear(Ask::TakeOff { slot: Slot::MainHand }));
+    room.take_ask(player, Asked::Gear(Ask::TakeOff { slot: Slot::Melee }));
     assert!(room.take_gear_change(player), "a hand emptied changes how they fight: sent at once");
 }
 
@@ -353,7 +353,7 @@ fn a_shield_takes_blows_before_health_and_its_own_element_breaks_it_fastest() {
         room.foes.get_mut(&foe).expect("stood").shield = Some(Shield { left, ..Shield::whole(Element::Volt, 1_000.0) });
         let character = &mut room.players.get_mut(&player).expect("in").character;
         for (item, at) in character.items.values_mut() {
-            if *at == gear::At::Worn(Slot::MainHand) {
+            if *at == gear::At::Worn(Slot::Melee) {
                 item.element = element;
             }
         }

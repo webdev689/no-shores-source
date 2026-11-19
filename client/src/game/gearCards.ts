@@ -5,7 +5,6 @@
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
   CARRIED,
-  KINDS,
   RARITIES,
   RESOURCE_COUNT,
   SLOTS,
@@ -15,6 +14,7 @@ import {
   itemName,
   isWeapon,
   itemWords,
+  kindName,
   resourceName,
   resourceWords,
   traitOf,
@@ -90,7 +90,7 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   return {
     name: itemName(item),
     rarity: item.rarity,
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(KINDS[item.kind] ?? '')}`,
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}`,
     big,
     rows,
     element: item.element,
@@ -110,10 +110,9 @@ export function flyoutOf(
   return { worn, cells: Array.from({ length: CARRIED_MOST }, (unused, place) => carried[place] ?? null) };
 }
 
-/** What wearing a carried item in a slot asks: the off hand's flyout wears in the off hand, any other its own. */
-export function wearIn(item: GearItem, slot: number): Press | null {
-  const asks = wearAsks(item);
-  const found = asks.find((each) => each.ask.slot === slot) ?? asks[0];
+/** What wearing a carried item from a slot's flyout asks: wearing it in its own slot, the flyout's. */
+export function wearIn(item: GearItem): Press | null {
+  const [found] = wearAsks(item);
   return found ? { label: 'Equip', ask: found.ask, role: 'primary' } : null;
 }
 

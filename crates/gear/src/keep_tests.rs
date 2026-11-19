@@ -8,10 +8,10 @@ use crate::rarity::Rarity;
 #[test]
 fn a_character_kept_as_json_comes_back_as_it_was() {
     let mut character = Character::starting();
-    character.earn_xp(5_000, Some(Slot::MainHand));
+    character.earn_xp(5_000, Some(Slot::Melee));
     character.materials.add_aurem(1_234);
     let id = character.take_id();
-    character.items.insert(id, (Item::new(id, Kind::Pistolet, Rarity::Legendary, 20, Slot::OffHand), At::Vault));
+    character.items.insert(id, (Item::new(id, Kind::Pistolet, Rarity::Legendary, 20, Slot::Ranged), At::Vault));
     assert_eq!(Character::from_json(&character.to_json()), Some(character));
 }
 
@@ -34,7 +34,7 @@ fn a_kept_character_however_broken_is_made_whole_and_no_ask_fails_on_it() {
     use crate::dice::Dice;
     let mut character = Character::starting();
     let id = character.take_id();
-    let mut item = Item::new(id, Kind::Sword, Rarity::Legendary, 20, Slot::MainHand);
+    let mut item = Item::new(id, Kind::Sword, Rarity::Legendary, 20, Slot::Melee);
     item.xp = u32::MAX;
     item.chosen.clear();
     item.bought = u32::MAX;

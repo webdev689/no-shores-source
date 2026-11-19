@@ -27,7 +27,7 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { COURSE, RESOURCE_NODES, STALL, START } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
-import { SLOTS, heldElement, worn } from '../player/gear.ts';
+import { SLOTS, heldElements, worn } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
@@ -239,14 +239,16 @@ async function start(): Promise<void> {
     // The figure wears what the gear wears, and the hands hold it: the room takes no other arms.
     const ownGear = gear;
     const gearWorn =
-      ownGear && JSON.stringify([you.dress.body, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
+      ownGear &&
+      JSON.stringify([you.dress.body, player.player.loadout, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
     const bodyLayers = looks.bodies[you.dress.body]?.layers;
     if (ownGear && gearWorn && gearWorn !== gearWornKey && bodyLayers) {
       gearWornKey = gearWorn;
-      const outfit = gearOutfit(ownGear, wardrobeOf(you.dress.body, bodyLayers), you.dress.outfit);
+      const wardrobe = wardrobeOf(you.dress.body, bodyLayers);
+      const outfit = gearOutfit(ownGear, wardrobe, you.dress.outfit, player.player.loadout);
       you.dress = { ...you.dress, outfit };
     }
-    player.glow = feel.glow([heldElement(ownGear, 0), heldElement(ownGear, 1)]);
+    player.glow = feel.glow(heldElements(ownGear, player.player.loadout));
     const bodies = [...foes.placed.values(), ...others.values()].map(
       (placed) => [placed.x, placed.y, placed.z] as const,
     );

@@ -20,7 +20,8 @@ pub enum TraitColumn {
 }
 
 /// A trait a node may hold: its id, name and words, the column it is offered in, and what it fits: `melee`,
-/// `ranged`, `weapon` or `armour` (which takes a shield too), or for a signature the one named item that carries it.
+/// `ranged`, `weapon`, `armour`, `shield` (armour, and a loadout with a shield, as a shield's block perks did), or
+/// for a signature the one named item that carries it.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct TraitDef {
     pub id: String,
@@ -193,6 +194,11 @@ impl Catalogue {
         for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
             self.kind_problems(kind, &mut problems);
         }
+        for kind in Kind::ALL.into_iter().filter(|kind| kind.weapon()) {
+            if !self.items.iter().any(|item| item.kind == kind && item.rarity == Rarity::Legendary) {
+                problems.push(format!("no Legendary {kind:?}"));
+            }
+        }
         for slot in Slot::VESTIGE {
             for rarity in [Rarity::Legendary, Rarity::Atheric] {
                 if self.vestige_pool(rarity, slot).next().is_none() {
@@ -282,7 +288,8 @@ fn fits(found: &TraitDef, kind: Kind, named: Option<&str>) -> bool {
         "melee" => kind.weapon() && !kind.ranged(),
         "ranged" => kind.ranged(),
         "weapon" => kind.weapon(),
-        "armour" => kind.defends(),
+        "armour" => kind.armour(),
+        "shield" => kind.armour() || kind.shielded(),
         item => named == Some(item),
     }
 }

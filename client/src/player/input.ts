@@ -13,6 +13,8 @@ export const BINDINGS = {
   jump: [' '],
   crouch: ['c'],
   ready: ['z'],
+  melee: ['1'],
+  ranged: ['2'],
   swing: ['mouse2'],
   guard: ['mouse0', 'f'],
   dodge: ['v', 'mouse4'],

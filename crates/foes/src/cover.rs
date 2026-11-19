@@ -71,7 +71,7 @@ fn band(ranged: Ranged) -> (f64, f64) {
     match ranged {
         Ranged::Bow => BAND_BOW,
         Ranged::Crossbow => BAND_CROSSBOW,
-        Ranged::Pistolet => BAND_PISTOLET,
+        Ranged::Pistolet | Ranged::DoublePistolet => BAND_PISTOLET,
         Ranged::Thunderlock => BAND_THUNDERLOCK,
     }
 }

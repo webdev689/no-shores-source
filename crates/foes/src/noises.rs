@@ -48,7 +48,7 @@ impl Noise {
 #[must_use]
 pub fn shot(fighter: &Fighter, ranged: Ranged) -> Noise {
     match ranged {
-        Ranged::Pistolet | Ranged::Thunderlock => Noise::by(fighter, GUN_LOUDNESS, GUN_REACH),
+        Ranged::Pistolet | Ranged::DoublePistolet | Ranged::Thunderlock => Noise::by(fighter, GUN_LOUDNESS, GUN_REACH),
         Ranged::Bow | Ranged::Crossbow => Noise::by(fighter, BOW_LOUDNESS, BOW_REACH),
     }
 }

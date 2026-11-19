@@ -19,6 +19,8 @@ export interface Doing {
   readonly drawn: boolean;
   readonly right: string | null;
   readonly left: string | null;
+  /** Both hands on the right's sword's hilt, a greatsword. */
+  readonly grip?: 'hilt' | null;
   /** The blow being struck or the shot fired: its direction (null for a shot), whether it is the second stroke of the
    *  swing, its progress 0..1, how far through the swing its blow lands (DFO's swing law's by default), and whether a
    *  shot's weapon is reloading. */
@@ -109,9 +111,14 @@ function kitOf(right: string | null, left: string | null, draws: Draws): Kit {
 /** The moves a figure with these hands is likeliest to show next, to compose ahead of need: its rest and walk; its
  *  blows where every swing strikes one, else its attack and a weapon held alone's strokes; a gun's reload, running,
  *  the roll, jumping and crouching. */
-export function likelyMoves(right: string | null, left: string | null, draws: Draws): string[] {
+export function likelyMoves(
+  right: string | null,
+  left: string | null,
+  draws: Draws,
+  grip: 'hilt' | null = null,
+): string[] {
   const kit = kitOf(right, left, draws);
-  const blows = (['down', 'left', 'up'] as const).map((way) => blowOf(way, right, left, draws));
+  const blows = (['down', 'left', 'up'] as const).map((way) => blowOf(way, right, left, draws, grip));
   const struck = blows.filter((blow): blow is string => blow !== null);
   const strokes = right && !left ? [kit.attack, 'thrust', 'chop', 'swing2h'] : [kit.attack];
   const own = [
@@ -169,11 +176,17 @@ export function blowWay(anim: string): StrokeDirection | null {
   return null;
 }
 
-function blowOf(direction: Direction, right: string | null, left: string | null, draws: Draws): string | null {
+function blowOf(
+  direction: Direction,
+  right: string | null,
+  left: string | null,
+  draws: Draws,
+  grip: 'hilt' | null = null,
+): string | null {
   if (!right) return null;
   const stroke = direction === 'down' ? 'over' : direction === 'up' ? 'thrust' : 'side';
   const pair = !!left?.endsWith('_l') && !left.startsWith('pistolet');
-  const hold = pair ? 'pair' : HOLD_OF[right.split('_')[0] ?? ''];
+  const hold = grip === 'hilt' ? 'hilt' : pair ? 'pair' : HOLD_OF[right.split('_')[0] ?? ''];
   const anim = hold ? `${stroke}${hold}` : null;
   return anim && draws(anim, right) && (!left || draws(anim, left)) ? anim : null;
 }
@@ -236,7 +249,8 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   const { blow } = doing;
   if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(kit.reload, blow.progress);
   if (blow && !blow.reload) {
-    const struck = blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws);
+    const struck =
+      blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
     if (struck) return { anim: struck, frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
     const stroke = blow.direction && STROKE_OF[blow.direction];
     // The owner's strokes for a weapon held alone: an off hand's blade, shield or torch is drawn in none of them.

@@ -124,7 +124,7 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
 #[test]
 fn a_kill_pays_every_player_who_struck_by_the_foes_kind_and_level() {
     let mut character = Character::starting();
-    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::MainHand), Difficulty::Calm, &dice(1));
+    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::Melee), Difficulty::Calm, &dice(1));
     assert_eq!((reward.xp, reward.aurem), (90, 8), "a swordsman's worth at level 5");
     let captain = character.reward_kill(Foe::Captain, 15, None, Difficulty::Calm, &dice(1));
     assert_eq!((captain.xp, captain.aurem), (4_000, 240));

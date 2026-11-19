@@ -12,8 +12,8 @@ use movement::{Body, Controls};
 
 /// The fight's own numbers after the body's: side, arms, weight, health and its most, stamina and its rest, poise,
 /// its most, its rest and its immunity, aim, target (id + 1, 0 none), the lock's away and unseen counts, the riposte's
-/// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, and the presses kept, in one number),
-/// blows, might; then the action's kind and its numbers.
+/// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, the presses kept, the swap's ticks and a
+/// double pistolet's right shot gone, in one number), blows, might; then the action's kind and its numbers.
 pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS;
 const ACTION_NUMBERS: usize = 10;
 /// A whole fighter: its body, the fight's numbers, its statuses, then its gear's trim.
@@ -25,6 +25,9 @@ pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 9;
 /// crouched, aim, side, arms, weight, health and its most, stamina, poise and its most, target (id + 1), then the
 /// action's kind and numbers.
 pub const GLANCE_FLOATS: usize = 17 + ACTION_NUMBERS;
+
+/// The most a swap's ticks are kept as, in the buttons' number's six bits for them.
+const SWAP_MOST: u32 = 0x3f;
 
 fn flag(value: bool) -> f64 {
     if value { 1.0 } else { 0.0 }
@@ -199,7 +202,9 @@ impl Fighter {
             | u32::from(self.kept.attack) << 4
             | u32::from(self.kept.guard) << 8
             | u32::from(self.kept.dodge) << 12
-            | u32::from(self.kept.stroke.map_or(0, |stroke| stroke as u8)) << 16;
+            | u32::from(self.kept.stroke.map_or(0, |stroke| stroke as u8)) << 16
+            | self.swap.min(SWAP_MOST) << 19
+            | u32::from(self.fired_right) << 25;
         let riposte = self.riposte.map_or((0.0, 0.0), |(foe, left)| (f64::from(foe) + 1.0, f64::from(left)));
         let (kind, numbers) = action_floats(&self.action);
         let combat = [
@@ -273,6 +278,8 @@ impl Fighter {
             held: Held { attack: held & 1 != 0, guard: held & 2 != 0, dodge: held & 4 != 0, shoot: held & 8 != 0 },
             kept: kept_of(held),
             blows: count(at(21)),
+            swap: held >> 19 & SWAP_MOST,
+            fired_right: held >> 25 & 1 != 0,
             might: at(22),
             statuses: combat[COMBAT_FLOATS..COMBAT_FLOATS + STATUS_FLOATS]
                 .try_into()

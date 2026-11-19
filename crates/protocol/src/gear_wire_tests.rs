@@ -9,7 +9,7 @@ fn asked_input(asked: Asked) -> Input {
 
 fn every_ask() -> Vec<Asked> {
     vec![
-        Asked::Gear(Ask::Wear { item: 3, slot: Slot::OffHand }),
+        Asked::Gear(Ask::Wear { item: 3, slot: Slot::Ranged }),
         Asked::Gear(Ask::TakeOff { slot: Slot::Legs }),
         Asked::Gear(Ask::Buy { item: 4, column: 6, node: 1 }),
         Asked::Gear(Ask::Choose { item: 4, column: 0, node: 2 }),
@@ -72,7 +72,7 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 1, Asked::Grant(Grant::Xp(190_000)));
     ask(&mut room, 2, Asked::Grant(Grant::Named("harbourwarden".to_owned())));
     let sword = room.player(player).and_then(|found| found.character.items.keys().max().copied()).expect("granted");
-    ask(&mut room, 3, Asked::Gear(Ask::Wear { item: sword, slot: Slot::MainHand }));
+    ask(&mut room, 3, Asked::Gear(Ask::Wear { item: sword, slot: Slot::Melee }));
     ask(&mut room, 4, Asked::Gather { node: 0 });
     ask(&mut room, 5, Asked::Grant(Grant::Vestige { rarity: Rarity::Atheric, slot: Slot::Head, level: 20 }));
     (room, player)

@@ -41,7 +41,7 @@ const CONTROLS = [
   'Click the view to play; Escape frees the mouse.',
   'W A S D move, the mouse looks, Shift runs, Space jumps (at a wall: grabs, vaults or mantles), C crouches or lets go.',
   'Into a wall too high to grab: climb. Hanging: A D shimmy, W climbs over.',
-  'Z readies or puts away the weapon; right click swings, holding swings again. Q casts. Comma mounts.',
+  'Z readies or puts away the weapon; 1 draws Melee, 2 Ranged. Right click swings, holding swings again. Q casts. Comma mounts.',
   'Left click or F guards; pressed just as a blow lands, it parries. V or Mouse5 dodges the way you move.',
   'A bow, crossbow or gun: left click fires at the locked foe; hold right click to aim (a bow charges), left click fires.',
   'The wheel moves between first and third person; Mouse4 switches straight.',

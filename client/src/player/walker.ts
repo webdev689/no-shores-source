@@ -196,6 +196,7 @@ export class Walker {
         drawn: outfit.drawn,
         right: outfit.right,
         left: outfit.left,
+        grip: outfit.grip ?? null,
         blow: swing && {
           direction: swing.direction,
           reload: swing.reload,
@@ -215,7 +216,12 @@ export class Walker {
     const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
     forge.warm(
       dress,
-      likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, drawn) => forge.draws(dress.body, anim, drawn)),
+      likelyMoves(
+        hands[0] ?? null,
+        hands[1] ?? null,
+        (anim, drawn) => forge.draws(dress.body, anim, drawn),
+        outfit.drawn ? (outfit.grip ?? null) : null,
+      ),
       outfit.drawn ? this.glow[0] : 0,
     );
     forge.pump();

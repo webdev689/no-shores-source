@@ -34,7 +34,9 @@ which hand, and reports the swing or shot under way, so the figure seen from out
 | A shield, a torch or a lantern in the left | It, beside a one-handed weapon or a fist |
 | Nothing | Both fists up |
 
-The two-handers are the staff, the warhammer, the battleaxe, the bows and the Thunderlock.
+The two-handers are the staff, the warhammer, the battleaxe, the bows and the Thunderlock. The hands hold the loadout
+drawn ([[Gear]], "Loadouts"): a pair's two blades or maces, an "& Shield"'s weapon and shield, a double pistolet's two
+Pistolets as a volley, the Great Axe the battleaxe's pictures, and a Greatsword the sword's, held as a sword is.
 
 A weapon in an element glows in it while drawn, each hand in its own weapon's ([[Weapon Glow]]).
 
@@ -175,7 +177,8 @@ rein, not its fist up.
 
 - No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
-  feeling its weapon heavier.
+  feeling its weapon heavier. A Greatsword's swings are the sword's in first person, though the rules land its blows
+  at its own pace.
 - The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.

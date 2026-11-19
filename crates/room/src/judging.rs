@@ -98,7 +98,7 @@ pub fn how_of_swing(attack: &Attack, defender: FighterId) -> How {
 
 impl Room {
     /// Judges a blow against `then`, the defender as its striker saw it, and settles it now. `hand` is the striking
-    /// player's hand, if a player struck.
+    /// player's loadout, if a player struck.
     pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter, hand: Option<Slot>) {
         let verdict = judge(blow, then);
         self.settle(blow, how, defender, verdict, hand);
@@ -344,13 +344,13 @@ impl Room {
         if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
-            let held = self.held(shot.owner, Slot::MainHand);
+            let held = self.held(shot.owner, Slot::Ranged);
             let blow = self.empower_as(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, held);
             // A ball's range is measured as an arrow's: the line it flew to where it struck.
             let [east, south, up] = [stop[0] - shot.at[0], stop[1] - shot.at[1], stop[2] - shot.at[2]];
             let covered = libm::sqrt(east * east + south * south + up * up);
             let blow = held.map_or(blow, |held| Self::at_range(blow, covered, &held.trim));
-            self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::MainHand));
+            self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::Ranged));
         }
         stop
     }
@@ -360,7 +360,7 @@ impl Room {
         if self.players.contains_key(&defender) {
             self.pending.push(Pending { blow: *blow, how, defender, tick: self.clock, check });
         } else if let Some(then) = self.fighter(defender).copied() {
-            self.judge_now(blow, how, defender, &then, Some(Slot::MainHand));
+            self.judge_now(blow, how, defender, &then, Some(Slot::Ranged));
         }
     }
 }
