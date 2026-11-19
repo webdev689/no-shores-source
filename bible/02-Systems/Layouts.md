@@ -86,7 +86,8 @@ from the sea, fresh water and the claim's edge), then:
    is entered: a landing's boardwalk, lanterns, stores and a beached boat; a gate's stone arch between palisades; a
    camp's palisade round tents and a fire, its gap toward the path; a watchtower with a brazier on its battlements; a
    lighthouse; a jetty; a mill and its wheel; a quarry's stepped faces and crane; a wreck; a graveyard of hulls; ribs
-   and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and standing stone.
+   and a skull; a broken causeway; a cave's mouth; the wilds' outcrops and broken walls, set every 10 m round a ring
+   at about 0.58 of its reach (an arena's every 8 m) with a share left out, round its standing stone.
 5. **The paths.** A tree of the shortest links between the areas is laid as tracks (4.5 m, at most 18 % steep) and a
    loop or two closed with footpaths (2.6 m, at most 32 %), as Destiny's public areas form a loop; each gate is
    reached by a footpath. Each is the least-cost way over the 8 m grid in sixteen headings (Galin et al.): a step costs

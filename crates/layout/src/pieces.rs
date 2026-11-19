@@ -290,14 +290,18 @@ pub fn fire(kit: &mut Kit, at: [f64; 2], across: f64) {
     kit.stand(Shape::Pyramid { top: 0.2 }, at, [across * 0.5, across * 0.5, 0.35], 0.0, Material::Glow, 0.05);
 }
 
+/// How far apart the wilds' cover is set round its ring, and an arena's, metres.
+const COVER_APART_M: [f64; 2] = [10.0, 8.0];
+
 /// Open ground where public events are fought, or the arena an instance ends in: outcrops and broken walls in a
-/// loose ring for cover, ten metres or so apart, round a standing stone that marks the middle. An arena's ring is
-/// closer and more whole.
+/// loose ring for cover, set ten metres apart round it (eight in an arena) and a share left out, round a standing
+/// stone that marks the middle. An arena's ring is closer and more whole.
 fn ground_of_battle(kit: &mut Kit, area: &Area, arena: bool) {
     let middle = area.at;
     let focus_yaw = kit.draw() * 360.0;
     kit.prop(if arena { model::STATUE } else { model::OBELISK }, middle, focus_yaw);
-    let (rings, gap) = if arena { (14, 0.85) } else { (10, 0.7) };
+    let round = std::f64::consts::TAU * area.radius * 0.58 / COVER_APART_M[usize::from(arena)];
+    let (rings, gap) = ((round.ceil() as u32).max(10), if arena { 0.85 } else { 0.7 });
     for cover in 0..rings {
         if kit.draw() > gap {
             continue;

@@ -698,3 +698,29 @@ fn every_farm_keeps_a_fold_of_drystone() {
     }
     assert!(seen > 0, "continent 1 has a farm");
 }
+
+#[test]
+fn the_wilds_hold_cover_round_their_ring() {
+    let wilds = continent_one()
+        .iter()
+        .flat_map(|laid| laid.areas.iter().filter(|area| area.kind == AreaKind::Wilds).map(move |area| (laid, area)));
+    let mut seen = 0;
+    for (laid, area) in wilds {
+        seen += 1;
+        // Rock and broken walls in the ring round its standing stone, one at least every 20 m round it.
+        let cover = laid.seating.props.iter().filter(|prop| {
+            let off = layout::field::distance([prop.at[0], prop.at[1]], area.at) / area.radius;
+            let model = &prop.model;
+            (layout::pieces::model::ROCKS.contains(model) || layout::pieces::model::RUINS.contains(model))
+                && (0.35..=0.85).contains(&off)
+        });
+        let (count, round) = (cover.count(), std::f64::consts::TAU * area.radius * 0.58);
+        assert!(
+            count as f64 >= round / 20.0,
+            "{}: {} holds {count} pieces of cover round {round:.0} m",
+            laid.id,
+            area.name
+        );
+    }
+    assert!(seen > 0, "continent 1 has wilds");
+}
