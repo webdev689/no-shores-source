@@ -1,12 +1,12 @@
 // What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
-// under a beam of light seen across the patrol, so a route can be planned through them; each Vestige lying for them,
-// a ring and a beam in its rarity's colour, picked up by walking over it; each station that deals with them, a brass
-// ring at its counter. And what E does where they stand: a station's offer opened, or a node
-// within reach gathered. The room judges every gather; the rings only show where.
+// under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
+// them, a brass ring at its counter. The drops lying for them stand as their own pictures (`combat/drops.ts`). And
+// what E does where they stand: a station's offer opened, or a node within reach gathered. The room judges every
+// gather; the rings only show where.
 
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { RARITIES, resourceName } from '../player/gear.ts';
+import { resourceName } from '../player/gear.ts';
 import { openGearWindow } from './gearScreen.ts';
 import type { StationInfo } from './nodes.ts';
 import { SERVED_M, offerAt } from './plazaLife.ts';
@@ -16,10 +16,9 @@ export const NODE_REACH_M = 2.5;
 /** A station's ring in brass, a resource node's in sea green, each beating slowly so it is seen across the ground. */
 const BRASS = [0.93, 0.74, 0.32] as const;
 const NODE = [0.35, 0.85, 0.7] as const;
-/** How tall a node's beam stands and a Vestige's, and half of how wide each is, metres: a node's is seen across the
- *  patrol, hundreds of metres off. */
+/** How tall a node's beam stands, and half of how wide it is, metres: it is seen across the patrol, hundreds of metres
+ *  off. */
 const NODE_BEAM = { height: 40, half: 0.5 } as const;
-const VESTIGE_BEAM = { height: 8, half: 0.2 } as const;
 /** How much of its opacity a beam keeps at its top. */
 const BEAM_TOP = 0.2;
 
@@ -42,12 +41,6 @@ export function useAt(
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
   if (!node) return null;
   return { words: `Gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };
-}
-
-/** A colour written `#rrggbb` as red, green and blue from 0 to 1. */
-function rgbOf(hex: string): [number, number, number] {
-  const value = Number.parseInt(hex.slice(1), 16);
-  return [(value >> 16) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
 }
 
 /** A beam of light standing `height` over `base`, in two crossed planes so it is seen from every side, fading upward. */
@@ -93,12 +86,6 @@ export function groundRings(
     markRing(out, base, NODE_REACH_M - 0.1, NODE_REACH_M, [...NODE, 0.5]);
     markRing(out, base, 0.3, 0.6, [...NODE, beat]);
     markBeam(out, base, NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
-  }
-  for (const drop of gear?.drops ?? []) {
-    const colour = rgbOf(RARITIES[drop.rarity]?.colour ?? '#e8e2d8');
-    markRing(out, drop.at, 0.15, 0.45, [...colour, beat + 0.2]);
-    markRing(out, drop.at, 0.6, 0.7, [...colour, beat * 0.6]);
-    markBeam(out, drop.at, VESTIGE_BEAM, [...colour, beat]);
   }
   return out;
 }

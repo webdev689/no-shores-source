@@ -1,5 +1,5 @@
 import { button, make } from '../editor/dom.ts';
-import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import { AMMO_FULL, ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import {
   CARRIED,
   COLUMNS,
@@ -158,6 +158,10 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       button('50 of every material', () => ask({ kind: ASKS.grantMaterials, count: 50 })),
       button('10,000 XP', () => ask({ kind: ASKS.grantXp, count: 10_000 })),
       button('XP to level 20', () => ask({ kind: ASKS.grantXp, count: 190_000 })),
+      button('Full ammo', () => ask({ kind: ASKS.grantAmmo, count: AMMO_FULL })),
+      button('No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
+      button('5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
+      button('Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
     ];
   };
 
@@ -167,6 +171,8 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       gear?.answered,
       gear?.items.length,
       gear?.drops.length,
+      gear?.ammo,
+      gear?.crates,
       view.atStall,
       view.nodesInReach,
     ]);
@@ -210,6 +216,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     body.replaceChildren(
       make('p', level),
       make('p', `${gear.aurem.toLocaleString()} Aurem · ${stocks.join(' · ')}`, 'hint'),
+      make('p', `Ammo ${gear.ammo ?? 0} of ${gear.ammoMost ?? 0} · ${gear.crates ?? 0} Ammo crates`, 'hint'),
       ...(islands.length > 0 ? [make('p', islands.join(' · '), 'hint')] : []),
       ...(opened && opened.at === CARRIED ? [make('p', `The Vestige opened: ${itemName(opened)}.`)] : []),
       make(

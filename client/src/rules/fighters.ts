@@ -66,6 +66,8 @@ export interface FighterView {
   readonly action: Action;
   /** Its statuses, read from a whole fighter's numbers; a glance carries none. */
   readonly statuses?: Statuses;
+  /** The shots its Ranged weapon has left, read from a whole fighter's numbers; null for none counted (a foe's). */
+  readonly ammo?: number | null;
 }
 
 /** The statuses, in the combat crate's order (crates/combat/src/status.rs). */
@@ -78,10 +80,12 @@ export type Statuses = Readonly<Record<StatusName, number>> & { readonly chargeI
 const COMBAT_AT = BODY_FLOATS;
 const ACTION_NUMBERS = 10;
 export const GLANCE_FLOATS = 17 + ACTION_NUMBERS;
-/** A whole fighter: its body, the fight's numbers, its action's, its statuses (each one's ticks, a Charge's immunity,
- *  each one's giver), then its gear's trim (combat's TRIM_FLOATS). */
+/** A whole fighter: its body, the fight's numbers, its action's, the shots its Ranged weapon has left (+ 1, 0 for none
+ *  counted), its statuses (each one's ticks, a Charge's immunity, each one's giver), then its gear's trim (combat's
+ *  TRIM_FLOATS). */
 export const TRIM_FLOATS = 29;
-const STATUSES_AT = BODY_FLOATS + 24 + ACTION_NUMBERS;
+const AMMO_AT = BODY_FLOATS + 24 + ACTION_NUMBERS;
+const STATUSES_AT = AMMO_AT + 1;
 export const STATUS_FLOATS = 2 * STATUSES.length + 1;
 export const FIGHTER_FLOATS = STATUSES_AT + STATUS_FLOATS + TRIM_FLOATS;
 /** A fighter as a snapshot carries it: all but its trim, which only its own player has, in their gear. */
@@ -205,10 +209,17 @@ export function statusesOf(fighter: ArrayLike<number>): Statuses {
   return { ...held, chargeImmune: ticks(STATUSES.length) };
 }
 
+/** The shots a fighter's whole numbers (or a snapshot's) say its Ranged weapon has left; null for none counted. */
+export function ammoOf(fighter: ArrayLike<number>): number | null {
+  const counted = fighter[AMMO_AT] ?? 0;
+  return counted >= 1 ? counted - 1 : null;
+}
+
 /** What a fighter's whole numbers say. */
 export const fighterView = (fighter: ArrayLike<number>): FighterView => ({
   ...glanceView(glanceFrom(fighter)),
   statuses: statusesOf(fighter),
+  ammo: ammoOf(fighter),
 });
 
 /** How far through its action a fighter is, 0 to 1, by the action's own clock; 0 for one with none. */

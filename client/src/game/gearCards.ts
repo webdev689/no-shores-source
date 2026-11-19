@@ -22,11 +22,13 @@ import {
 } from '../player/gear.ts';
 import type { Press } from './gearScreen.ts';
 
-/** How many items a slot carries beside the one worn, how many Vestiges are carried, and how many of each the vault
- *  keeps (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST` and `VAULT_MOST`). */
+/** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
+ *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
+ *  `CRATES_MOST`). */
 export const CARRIED_MOST = 9;
 export const VESTIGES_MOST = 10;
 export const VAULT_MOST = 20;
+export const CRATES_MOST = 5;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
@@ -126,6 +128,8 @@ export type Glyph =
   | 'fruit'
   | 'resource'
   | 'vestige'
+  | 'ammo-box'
+  | 'ammo-crate'
   | 'empty'
   | 'item';
 
@@ -177,6 +181,16 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     count: state.stocks[4] ?? 0,
     words: "Hold it on an item's page to feed it to that item: it grows the item.",
   });
+  const crates = state.crates ?? 0;
+  const full = (state.ammoShare ?? 1) >= 1;
+  const crate = cell('ammo-crate', 'ammo-crate', 'Ammo crate', {
+    count: crates,
+    words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${full ? ' Yours is full.' : ''}`,
+    press:
+      crates > 0 && !full
+        ? { label: 'Hold to fill your ammo', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
+        : null,
+  });
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) =>
     cell(`resource-${index}`, 'resource', resourceName(index), {
       count: state.resources[index] ?? 0,
@@ -199,7 +213,7 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     currencies,
     vestiges: { held: carried.length, most: VESTIGES_MOST, cells: [...carried, ...empties] },
     tabs: [
-      { id: 'consumables', name: 'Consumables', cells: [fruit] },
+      { id: 'consumables', name: 'Consumables', cells: [fruit, crate] },
       { id: 'materials', name: 'Materials', cells: materials },
     ],
   };

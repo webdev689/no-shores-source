@@ -19,6 +19,9 @@ export const ASKS = {
   vend: 12,
   wearEmblem: 13,
   buyEmblem: 14,
+  /** An Ammo crate used, filling the Ranged loadout's ammunition; one bought at the Quartermaster's counter. */
+  useCrate: 15,
+  buyCrate: 16,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,
@@ -27,6 +30,9 @@ export const ASKS = {
   grantXp: 34,
   /** A status (its number in `slot`) on the player (`node` 0) or every foe (1), for `count` ticks or its own time. */
   grantStatus: 35,
+  /** The Ranged loadout's ammunition set to `count` parts of `AMMO_FULL`; `count` Ammo crates more. */
+  grantAmmo: 36,
+  grantCrates: 37,
 } as const;
 
 /** An ask of a player's gear: what, and what it names: an item or Vestige by the player's number for it, a slot, a
@@ -90,12 +96,22 @@ export interface GearVestige {
   readonly vaulted: boolean;
 }
 
-/** A Vestige lying for the player, and where. */
+/** The whole share of a Ranged loadout's ammunition, in parts (the gear crate's `AMMO_FULL`). */
+export const AMMO_FULL = 720;
+
+/** What lies on the ground, by the gear message's numbers. */
+export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2 } as const;
+
+/** A drop lying for the player: their number for it, a Vestige's rarity and slot, where it rests, what it is, where it
+ *  was thrown from, and the room's ticks it has still to fly. */
 export interface GearDrop {
   readonly id: number;
   readonly rarity: number;
   readonly slot: number;
   readonly at: readonly [number, number, number];
+  readonly kind: number;
+  readonly from: readonly [number, number, number];
+  readonly flying: number;
 }
 
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
@@ -144,6 +160,13 @@ export interface GearState {
   readonly emblems?: readonly number[];
   readonly emblem?: number;
   readonly emblemsSold?: readonly number[];
+  /** The shots left in the Ranged loadout worn and its capacity (0 with none worn), the share of a full capacity kept
+   *  (0 to 1), the Ammo crates carried, and in a social space the Quartermaster's price for one (0 elsewhere). */
+  readonly ammo?: number;
+  readonly ammoMost?: number;
+  readonly ammoShare?: number;
+  readonly crates?: number;
+  readonly cratePrice?: number;
 }
 
 /** No node chosen in a column, and no resource. */
@@ -215,7 +238,16 @@ export function gearOf(gear: Gear): GearState {
     const drop = gear.drops(index);
     if (!drop) throw new Error(`gear drop ${index} is missing`);
     const [x = 0, y = 0, z = 0] = Array.from(drop.atArray() ?? []);
-    return { id: drop.id(), rarity: drop.rarity(), slot: drop.slot(), at: [x, y, z] as const };
+    const [fromX = x, fromY = y, fromZ = z] = Array.from(drop.fromArray() ?? []);
+    return {
+      id: drop.id(),
+      rarity: drop.rarity(),
+      slot: drop.slot(),
+      at: [x, y, z] as const,
+      kind: drop.kind(),
+      from: [fromX, fromY, fromZ] as const,
+      flying: drop.flying(),
+    };
   });
   return {
     xp: gear.xp(),
@@ -243,6 +275,11 @@ export function gearOf(gear: Gear): GearState {
     emblems: Array.from(gear.emblemsArray() ?? []),
     emblem: gear.emblem(),
     emblemsSold: Array.from(gear.emblemsSoldArray() ?? []),
+    ammo: gear.ammo(),
+    ammoMost: gear.ammoMost(),
+    ammoShare: gear.ammoShare(),
+    crates: gear.crates(),
+    cratePrice: gear.cratePrice(),
   };
 }
 

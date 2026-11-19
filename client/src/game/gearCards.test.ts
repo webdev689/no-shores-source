@@ -109,6 +109,22 @@ test('the inventory shows its currencies, and Vestiges open only in a social spa
   assert.equal(social.vestiges.held, 1);
 });
 
+test('the Ammo crate stands on the Consumables shelf with its count, held to fill the ammunition when it can', () => {
+  const crateOf = (fields: Partial<GearState>) =>
+    inventoryPageOf(state(fields)).tabs.find((each) => each.id === 'consumables')?.cells[1];
+  const crate = crateOf({ crates: 3, ammoShare: 0.5 });
+  assert.deepEqual([crate?.name, crate?.glyph, crate?.count], ['Ammo crate', 'ammo-crate', 3]);
+  assert.deepEqual(crate?.press, {
+    label: 'Hold to fill your ammo',
+    ask: { kind: ASKS.useCrate },
+    role: 'button',
+    held: true,
+    burst: 'pulse',
+  });
+  assert.equal(crateOf({ crates: 3, ammoShare: 1 })?.press, null, 'full, nothing to fill');
+  assert.equal(crateOf({ crates: 0, ammoShare: 0 })?.press, null, 'none to use');
+});
+
 test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from what is carried', () => {
   const vault = vaultOf(
     state({

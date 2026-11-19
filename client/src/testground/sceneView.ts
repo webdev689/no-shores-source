@@ -66,7 +66,9 @@ struct MarkOut { @builtin(position) position: vec4f, @location(0) colour: vec4f 
   return out;
 }
 
+// An opacity below none marks light added to what stands behind (a drop's line): its colour, covering nothing.
 @fragment fn markFragment(in: MarkOut) -> @location(0) vec4f {
+  if (in.colour.a < 0.0) { return vec4f(in.colour.rgb, 0.0); }
   return vec4f(in.colour.rgb * in.colour.a, in.colour.a);
 }
 

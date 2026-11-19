@@ -155,6 +155,17 @@ export function heldPress(
   { charges, ...hold }: Omit<Hold, 'charges'> & { readonly charges?: () => HTMLElement | null } = {},
 ): HTMLButtonElement {
   const node = pressOf(text, () => undefined, role);
+  holdToAct(node, held, { ...hold, charges });
+  return node;
+}
+
+/** Makes `node` act only once held down for a moment, by the pointer or by Enter or Space, `charges` charging with
+ *  it; let go early, nothing happens. */
+export function holdToAct(
+  node: HTMLElement,
+  held: () => void,
+  { charges, ...hold }: Omit<Hold, 'charges'> & { readonly charges?: (() => HTMLElement | null) | undefined } = {},
+): void {
   node.classList.add('gear-held');
   node.style.setProperty('--hold', `${hold.holdMs ?? HOLD_MS}ms`);
   const begin = () => holdOn(node, held, { ...hold, charges: charges?.() ?? null });
@@ -170,7 +181,6 @@ export function heldPress(
   node.addEventListener('keyup', (event) => {
     if (event.key === 'Enter' || event.key === ' ') cancel();
   });
-  return node;
 }
 
 /** The key held on a carried piece's tile to dismantle it, as Destiny's is on a computer. */

@@ -1,6 +1,7 @@
 // The screens a social space's counters open, as Destiny's vendors and vault open in the Tower: a vendor's stall of
-// the day's wares, each held to buy; the Tailor's emblems of the day, as Destiny's Outfitter sold them; and the vault,
-// its weapons, armour and Vestiges beside what the player carries, each a click to move across.
+// the day's wares, each held to buy, the Quartermaster's with an Ammo crate every day; the Tailor's emblems of the day,
+// as Destiny's Outfitter sold them; and the vault, its weapons, armour and Vestiges beside what the player carries,
+// each a click to move across.
 
 import { make } from '../editor/dom.ts';
 import { ASKS } from '../network/gearMessages.ts';
@@ -9,7 +10,7 @@ import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
 import { emblemImage, emblemOf } from './emblemArt.ts';
 import { emblemCard } from './emblemSlot.ts';
-import { type VaultShelf, cardOf, vaultOf } from './gearCards.ts';
+import { CRATES_MOST, type VaultShelf, cardOf, vaultOf } from './gearCards.ts';
 import { cardNode, glyphImage, heldPress, itemIcon, itemMarks, rarityOf } from './gearDom.ts';
 import { vendorsOf } from './gearScreen.ts';
 import { cellTile, vestigePlace } from './inventoryPage.ts';
@@ -63,8 +64,36 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
     }
     wares.append(block);
   });
+  if (vendor === 0 && (context.gear.cratePrice ?? 0) > 0) wares.append(crateWare(context));
   page.append(wares);
   return page;
+}
+
+/** The Quartermaster's Ammo crate, sold every day beside the armour, held to buy while there is room for one. */
+function crateWare(context: PageContext): HTMLElement {
+  const { gear } = context;
+  const [price, carried] = [gear.cratePrice ?? 0, gear.crates ?? 0];
+  const affordable = gear.aurem >= price;
+  const room = carried < CRATES_MOST;
+  const cell = make('div', '', `gear-cell ${ROLES.tile}`);
+  cell.append(glyphImage('ammo-crate'));
+  const block = heldPress('', () => context.ask({ kind: ASKS.buyCrate }), 'button', { charges: () => cell });
+  block.classList.add('gear-ware');
+  block.dataset['key'] = 'buy-crate';
+  if (!affordable || !room) block.setAttribute('aria-disabled', 'true');
+  const words = make('div', '', 'gear-ware-words');
+  const held = `Consumable · ${carried} of ${CRATES_MOST} carried`;
+  words.append(make('b', 'Ammo crate'), make('span', held, 'gear-hint'));
+  words.append(make('span', "Fills your Ranged weapon's ammunition.", 'gear-ware-power'));
+  const shown = make('span', '', `gear-price${affordable ? '' : ' gear-short'}`);
+  shown.append(glyphImage('aurem'), make('b', price.toLocaleString()));
+  if (!affordable) shown.append(make('span', 'Not enough Aurem', 'gear-hint'));
+  else if (!room) shown.append(make('span', 'You carry five', 'gear-hint'));
+  words.append(shown);
+  block.append(cell, words);
+  const said = !affordable ? 'not enough Aurem' : room ? 'hold to buy' : 'you carry five';
+  block.setAttribute('aria-label', `Ammo crate, ${held}, ${price.toLocaleString()} Aurem, ${said}`);
+  return block;
 }
 
 /** The Tailor's stall: the emblems sold today, each held to buy at its price, from the level it is sold at. */
