@@ -349,9 +349,9 @@ Where the work stands now, for the next session. Each session rewrites this note
      floor); lookout climbs start at their floor's level; outcrops stand on the raised floor under their middle; the
      floor's level follows the massif's local rise, as a climb's does. Still failing there: the node agreement's pin
      (moved by the local rise: re-pin once the rest settles); the Hollow Undercroft no longer found in the Vale's rock
-     (four tests); a terrace's ramp in the Vale stepping at its foot, which is lifted to its area's level but lies on
-     a graded way at another (a ramp's foot should take the level of the land under it); and three of the Vale's
-     retaining walls 6.6 to 7.3 m off their cliff's foot. Then the bridges over the river, built before the carving
+     (four tests); outcrops burying stones by the raised floors; and three of the Vale's retaining walls 6.6 to 7.3 m
+     off their cliff's foot. Fixed there: the land is cut to its raised floors before its climbs, so a terrace stands
+     on a raised floor, and a ramp's foot meets the land under it. Then the bridges over the river, built before the carving
      on the land's own heights, must span the ravine at the ways' level, and the masses' valleys join floors at theirs;
   3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
      hollows and pits;
