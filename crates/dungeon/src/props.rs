@@ -1,7 +1,7 @@
 //! A dungeon's props: the forged models of its style laid against its rooms' walls, as the Forge laid a room's
-//! scenery, one for each ten of its cells and at least one, each on a quiet cell against a wall. They keep clear of the
-//! way in, the portal, a torch's wall, and the cells where a room's foes and the Reeve stand, so nothing the rooms place
-//! meets one. Each is a solid a body, a foe and a shot meet.
+//! scenery, one for each ten of its cells and at least one where a cell is free, each on a quiet cell against a wall.
+//! They keep clear of the way in, the portal, a torch's wall, and the cells where a room's foes and the Reeve stand, so
+//! nothing the rooms place meets one. Each is a solid a body, a foe and a shot meet.
 
 use crate::lane::Lane;
 use crate::{CELL_M, Dungeon, SIDES, Side};
@@ -18,7 +18,7 @@ pub struct PropModel {
 /// How far a prop's back stands off its wall, and how much room it leaves under its room's ceiling (m).
 const OFF_WALL_M: f64 = 0.1;
 const UNDER_CEILING_M: f64 = 0.3;
-/// A room's props: one for each this many of its cells, and at least one.
+/// A room asks for one prop for each this many of its cells, and at least one.
 const CELLS_A_PROP: usize = 10;
 /// The cells nearest a room's middle a band of foes may stand on, kept clear of props.
 pub const POSTS_A_ROOM: usize = 4;

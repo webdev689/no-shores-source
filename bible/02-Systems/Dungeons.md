@@ -94,7 +94,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   back 0.1 m off it, its front to the room, turned a quarter more where it is deeper than wide so its long side runs
   along the wall, its foot on the floor and its top 0.3 m under the ceiling at most. One to a cell, drawn on the room's
   own lane, and never on the way in's cell, the portal's, a torch's wall, the four cells nearest a room's middle where
-  its foes stand, or the Reeve's cell and those round it. Each is a solid like a pillar.
+  its foes stand, or the Reeve's cell and those round it. A room lays as many as it has such cells free, so a small
+  room whose quiet cells its foes take lays none: over a quarter of rooms. Each is a solid like a pillar.
 
 | Style | Its props |
 |---|---|

@@ -34,6 +34,7 @@ function recorded(here: { foot: object | null }) {
     drawers: { props: null, show: () => undefined },
   };
   const settled = async () => {
+    await module;
     await new Promise((done) => setImmediate(done));
     await Promise.all(travels);
   };
