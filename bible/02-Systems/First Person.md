@@ -50,8 +50,10 @@ rules refuse (no stamina, a stagger) is not drawn. A swing the rules begin once 
 strike again, a pair's from the other hand, so no held swing is lost to the frames' rounding; one the rules end early
 (a dodge, a flinch, a guard) ends in the first person at once, and a bow's draw let go too soon to shoot is put away
 without a loose. A swing takes five of DFO's strike frames, and its blow lands as the third begins: a frame lasts
-0.199 s for a sword, DFO's swing law at an average Speed. A dagger and bare hands come round quicker; a mace, a flail
-and the two-handed weapons slower. The strike's own frames run faster than that
+0.149 s for a sword, three quarters of DFO's swing law at an average Speed ([[Combat]]). A dagger and bare hands come
+round quicker; a mace, a flail and the two-handed weapons slower. In a fight the rules' own swing paces each strike,
+whatever the weapon: its blow's frame shows on the tick they land it and it ends with their swing, and a pair's flurry,
+drawn from the hand already raised, lands when they land it. The strike's own frames run faster than that
 ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]): the first is held until a quarter of
 the way to the blow, the first two run through the last three quarters of that time, the third shows as the blow
 lands, and the last two run over a little over half that time after. The weapon is then at rest while the swing runs
@@ -186,8 +188,7 @@ rein, not its fist up.
 
 - No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
-  feeling its weapon heavier. A Greatsword's swings are the sword's in first person, though the rules land its blows
-  at its own pace.
+  feeling its weapon heavier. A Greatsword's swings are the sword's pictures in first person, at its own pace.
 - The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.

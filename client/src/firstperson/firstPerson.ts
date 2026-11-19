@@ -47,7 +47,7 @@ import {
   reinPicture,
   ridePlace,
 } from './riding.ts';
-import type { AttackInput } from './weaponMachine.ts';
+import type { AttackInput, Pace } from './weaponMachine.ts';
 
 /** What the first person shows this frame, from the one who sees it. `right` and `left` are forge layers (`sword_iron`,
  *  `bow_long_elven`, `pistolet_l`, `shield_kite_iron`, `torch_l`, `lantern`; null for an empty hand), `armour` the sets
@@ -74,6 +74,8 @@ export interface FirstPersonState {
   readonly pose?: { readonly record: number; readonly frame: number } | null;
   /** How far the view is zoomed in (aiming): the hands zoom with it, about the middle of the screen. */
   readonly zoom?: number;
+  /** The fight's own timing of the swing it has begun, which a strike begun now keeps; none outside a fight. */
+  readonly pace?: Pace | null;
 }
 
 /** What a blow of the player's own met, as the first person shows it: it landed, or it was blocked (or blocked one). */
@@ -270,7 +272,7 @@ export class FirstPerson {
     this.lower = lowerStep(this.lower, state.climbing, seconds);
     const free = this.castClock === null && this.lower < 0.5;
     const motion = { running: state.running && state.moving && !state.mounted, stride: state.stride };
-    const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion);
+    const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion, state.pace ?? null);
     this.hands.pose(state.pose ?? null);
     this.duck = lowerStep(this.duck, ducks(this.plan?.held) && this.hands.swing ? 1 : 0, seconds);
     const walking = state.moving && !state.mounted;

@@ -1,6 +1,7 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { Contact, FirstPerson } from '../firstperson/firstPerson.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
+import type { Pace } from '../firstperson/weaponMachine.ts';
 import type { Look } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
@@ -30,6 +31,11 @@ const guardPose = (action: Action) => {
   if (action.kind !== 'parry') return null;
   return { record: PARRY_RECORD, frame: 1 + Math.min(2, Math.floor((action.elapsed / FIGHT_TICKS.parry) * 3)) };
 };
+/** The fight's own timing of a swing under way, seconds, ticks `tick` seconds long; null for any other action. */
+export function paceOf(action: Action, tick: number): Pace | null {
+  if (action.kind !== 'attack') return null;
+  return { strike: action.strike * tick, end: action.end * tick, at: action.elapsed * tick };
+}
 /** What the fight holds the player to, when their weapon neither swings nor shoots. */
 const HELD = new Set(['flinch', 'staggered', 'down', 'dead', 'dodge', 'guard', 'parry', 'telegraph', 'overreach']);
 
@@ -88,6 +94,8 @@ export class Walker {
   private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
   private drawnBefore = false;
+  /** The seconds a tick of the rules lasts, as the last step took them. */
+  private tickSeconds = 1 / 60;
 
   constructor(player: Player, you: Placed, firstPerson: FirstPerson, forge: Cards) {
     this.player = player;
@@ -159,6 +167,7 @@ export class Walker {
     const { you, firstPerson } = this;
     const wasDrawn = you.dress.outfit.drawn;
     this.drawnBefore = wasDrawn;
+    this.tickSeconds = rules.tickSeconds;
     if (!controls.locked) return;
     const swinging = firstPerson.swing !== null;
     this.player = updatePlayer({ ...this.player, drawn: wasDrawn }, controls, rules, seconds, swinging, toward, aiming);
@@ -206,6 +215,7 @@ export class Walker {
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
       zoom,
+      pace: own ? paceOf(own.action, this.tickSeconds) : null,
     });
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);

@@ -65,13 +65,15 @@ export const HIT_FRAME = 2;
  *  time up to it, the first held before; the blow's frame as it lands; the rest over a little over half that time
  *  after it. The blow still lands when the fight's rules land it. The figure seen from outside runs at this pace too. */
 export const STRIKE_PACE = { windup: 0.75, recover: 0.55 } as const;
+/** A blow or an end due within this many seconds of now comes now: whole ticks summed as seconds are never exact. */
+const DUE = 1e-6;
 
 /** The step a strike `length` steps long shows `time` seconds in, at `tick` seconds a step by DFO's swing law, landing
  *  on HIT_FRAME at STRIKE_PACE and never before step `from`; null once its follow-through is over, at rest while the
  *  swing runs out. */
 export function pacedStep(time: number, tick: number, length: number, from = 0): number | null {
   const lands = HIT_FRAME * tick;
-  if (time < lands) {
+  if (time < lands - DUE) {
     const start = lands * (1 - STRIKE_PACE.windup);
     const share = Math.max(0, (time - start) / (lands - start));
     return Math.max(from, Math.min(HIT_FRAME - 1, Math.floor(share * HIT_FRAME)));
@@ -91,6 +93,14 @@ export const BOW_RELOAD = Math.max(0, STRIKE_FRAMES * swingFrameSeconds('bow') -
 
 type Phase = 'idle' | 'strike' | 'draw' | 'release';
 
+/** A fight's own timing of a strike, seconds: when its rules land its blow and end it after it begins, and how far into
+ *  it they already are. */
+export interface Pace {
+  readonly strike: number;
+  readonly end: number;
+  readonly at?: number;
+}
+
 /**
  * The first person's weapon through a swing: which record and frame it shows, and when a blow lands or an arrow
  * leaves. A press swings once; holding the button swings again as each blow ends, a new direction each time. A bow
@@ -104,8 +114,11 @@ export class WeaponMachine {
   private phase: Phase = 'idle';
   private direction: Direction = 'down';
   private clock = 0;
-  private step = 0;
-  /** The step a strike began on: a pair's flurry is thrown from a hand already raised. */
+  /** The strike under way: seconds into it, how long each of its steps lasts, and how long it lasts. */
+  private time = 0;
+  private tick: number;
+  private ends: number;
+  /** The step a strike is drawn from: a pair's flurry is thrown from a hand already raised. */
   private from = 0;
   private reload = 0;
   private readonly random: () => number;
@@ -113,6 +126,8 @@ export class WeaponMachine {
   constructor(kind: WeaponKind, random: () => number = Math.random) {
     this.kind = kind;
     this.random = random;
+    this.tick = swingFrameSeconds(kind);
+    this.ends = STRIKE_FRAMES * this.tick;
   }
 
   /** Whether a swing or a shot is under way. */
@@ -127,16 +142,13 @@ export class WeaponMachine {
 
   /** Whether a strike's blow has landed and only its follow-through is left. */
   get followingThrough(): boolean {
-    return this.phase === 'strike' && this.step > HIT_FRAME;
+    return this.phase === 'strike' && this.time >= (HIT_FRAME + 1) * this.tick - DUE;
   }
 
   /** How far through the swing or the shot under way, 0..1, or null at rest: the figure seen from outside plays its
    *  own move at the same pace. A bow's draw is its first half and its loose the second. */
   get progress(): number | null {
-    if (this.phase === 'strike') {
-      const length = this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT.length : STRIKE_FRAMES;
-      return Math.min(1, (this.step + this.clock / swingFrameSeconds(this.kind)) / length);
-    }
+    if (this.phase === 'strike') return Math.min(1, this.time / this.ends);
     if (this.phase === 'draw') return (Math.min(BOW_HELD_FRAME, this.frame) / BOW_HELD_FRAME) * 0.5;
     if (this.phase === 'release') return 0.5 + (0.5 * (this.frame - BOW_HELD_FRAME)) / (BOW_FRAMES - BOW_HELD_FRAME);
     return null;
@@ -150,10 +162,10 @@ export class WeaponMachine {
     this.clock = 0;
   }
 
-  /** How far through a strike its blow lands: on the hit frame, of five frames or of bare hands' left strike's eight. */
+  /** How far through a strike its blow lands: on the hit frame, of five frames or of bare hands' left strike's eight,
+   *  or as a fight's rules land it. */
   get lands(): number {
-    const length = this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT.length : STRIKE_FRAMES;
-    return HIT_FRAME / length;
+    return (HIT_FRAME * this.tick) / this.ends;
   }
 
   /** Holds the weapon at rest in a pose a fight asks for, one of its own strokes' frames, or lets it back to rest. */
@@ -165,42 +177,54 @@ export class WeaponMachine {
 
   /** Moves the machine on by `seconds` with this frame's button. A strike begun now starts on the frame `opening`
    *  answers: a pair's flurry is thrown from a hand already raised. A press while a strike's blow has already landed
-   *  starts a new strike: the fight's rules, timed in whole ticks, may begin the next swing a little sooner. */
-  update(seconds: number, input: AttackInput, opening: () => number = () => 0): MachineEvents {
+   *  starts a new strike: the fight's rules, timed in whole ticks, may begin the next swing a little sooner. A strike
+   *  begun with a fight's `pace` keeps it: its blow lands and it ends as the rules have it, whatever its weapon. */
+  update(
+    seconds: number,
+    input: AttackInput,
+    opening: () => number = () => 0,
+    pace: Pace | null = null,
+  ): MachineEvents {
     this.reload = Math.max(0, this.reload - seconds);
-    return this.kind === 'bow' ? this.shoot(seconds, input) : this.swing(seconds, input, opening);
+    return this.kind === 'bow' ? this.shoot(seconds, input) : this.swing(seconds, input, opening, pace);
   }
 
-  private swing(seconds: number, input: AttackInput, opening: () => number): MachineEvents {
+  private swing(seconds: number, input: AttackInput, opening: () => number, pace: Pace | null): MachineEvents {
     let blow: MachineEvents['blow'] = null;
     if (this.phase === 'strike') {
-      const tick = swingFrameSeconds(this.kind);
-      this.clock += seconds;
-      while (this.phase === 'strike' && this.clock >= tick) {
-        this.clock -= tick;
-        if (this.advanceStrike()) blow = { direction: this.direction };
-      }
+      const lands = HIT_FRAME * this.tick;
+      const before = this.time;
+      this.time += seconds;
+      if (before < lands - DUE && this.time >= lands - DUE) blow = { direction: this.direction };
+      if (this.time >= this.ends - DUE) this.cancel();
     }
     const again = this.followingThrough && input.attackPressed;
-    if (again || (this.phase === 'idle' && (input.attackPressed || input.attackHeld))) this.beginStrike(opening());
+    if (again || (this.phase === 'idle' && (input.attackPressed || input.attackHeld)))
+      this.beginStrike(opening(), pace);
     if (this.phase === 'strike') this.show();
     return { blow, loose: false };
   }
 
-  private beginStrike(fromStep: number): void {
+  private beginStrike(fromStep: number, pace: Pace | null): void {
     this.direction = DIRECTIONS[Math.floor(this.random() * DIRECTIONS.length)] ?? 'down';
     this.phase = 'strike';
-    this.step = Math.max(0, Math.min(HIT_FRAME - 1, fromStep));
-    this.from = this.step;
-    this.clock = 0;
+    this.from = Math.max(0, Math.min(HIT_FRAME - 1, fromStep));
+    if (pace && pace.strike > 0 && pace.end > pace.strike) {
+      // A fight's rules time it: a flurry is drawn from its raised hand but lands when they land it.
+      [this.tick, this.ends, this.time] = [pace.strike / HIT_FRAME, pace.end, pace.at ?? 0];
+      return;
+    }
+    // On DFO's clock alone a flurry, thrown from a hand already raised, lands a step sooner.
+    this.tick = swingFrameSeconds(this.kind);
+    this.ends = (this.sequence?.length ?? STRIKE_FRAMES) * this.tick;
+    this.time = this.from * this.tick;
   }
 
-  /** The strike's frame as it is shown: its steps at STRIKE_PACE, on DFO's clock, and at rest once it has followed
-   *  through. */
+  /** The strike's frame as it is shown: its steps at STRIKE_PACE, on DFO's clock or the fight's, and at rest once it
+   *  has followed through. */
   private show(): void {
     const sequence = this.sequence;
-    const tick = swingFrameSeconds(this.kind);
-    const step = pacedStep(this.step * tick + this.clock, tick, sequence?.length ?? STRIKE_FRAMES, this.from);
+    const step = pacedStep(this.time, this.tick, sequence?.length ?? STRIKE_FRAMES, this.from);
     this.record = step === null ? 0 : RECORD_OF[this.direction];
     this.frame = step === null ? 0 : (sequence?.[step] ?? step);
   }
@@ -208,18 +232,6 @@ export class WeaponMachine {
   /** Bare hands' strike to the left steps through its own list of frames; every other strike counts up. */
   private get sequence(): readonly number[] | null {
     return this.kind === 'fists' && this.direction === 'left' ? UNARMED_LEFT : null;
-  }
-
-  /** One step on DFO's clock; true when the blow lands on it. Bare hands' strike to the left takes its list's steps. */
-  private advanceStrike(): boolean {
-    this.step += 1;
-    if (this.step >= (this.sequence?.length ?? STRIKE_FRAMES)) {
-      this.phase = 'idle';
-      this.record = 0;
-      this.frame = 0;
-      return false;
-    }
-    return this.step === HIT_FRAME;
   }
 
   private shoot(seconds: number, input: AttackInput): MachineEvents {

@@ -39,13 +39,13 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
 /** The player with a sword drawn in a fight in a room in the page, the first person's hands standing in: each frame's
  *  button and pose are kept. */
 function fightingPlayer() {
-  const shown: { attackPressed: boolean; pose: unknown }[] = [];
+  const shown: { attackPressed: boolean; pose: unknown; pace: unknown }[] = [];
   const hands = {
     swing: null,
     muzzle: null,
     cancel: () => undefined,
-    update: (_seconds: number, button: { attackPressed: boolean }, state: { pose?: unknown }) => {
-      shown.push({ attackPressed: button.attackPressed, pose: state.pose ?? null });
+    update: (_seconds: number, button: { attackPressed: boolean }, state: { pose?: unknown; pace?: unknown }) => {
+      shown.push({ attackPressed: button.attackPressed, pose: state.pose ?? null, pace: state.pace ?? null });
     },
   } as unknown as ConstructorParameters<typeof Walker>[2];
   const forge = {
@@ -84,10 +84,13 @@ test('a swing pressed reaches the fight, and the first person swings as the rule
   assert.equal(pressed.pressed, true);
   frame(controls(['swing']));
   assert.equal(fighting.own?.action.kind, 'attack');
-  assert.ok(
-    shown.some((each) => each.attackPressed),
-    'swung in the first person once the rules began it',
-  );
+  const begun = shown.find((each) => each.attackPressed);
+  assert.ok(begun, 'swung in the first person once the rules began it');
+  // The hands are paced by the rules' own swing: a sword's blow lands at 18 ticks of 45.
+  const action = fighting.own?.action;
+  assert.ok(action?.kind === 'attack');
+  assert.deepEqual(begun.pace, { strike: action.strike * TICK, end: action.end * TICK, at: 0 });
+  assert.deepEqual([action.strike, action.end], [18, 45]);
   assert.deepEqual(fighting.look, walker.look, 'the room is told what the figure shows');
   assert.equal(fighting.dress, walker.lookDress);
 });

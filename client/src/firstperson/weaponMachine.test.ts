@@ -85,6 +85,35 @@ test('the blow lands two frame-times after the click, whatever the frame rate', 
   assert.ok(Math.abs(landed - 2 * tick) < 0.005, `landed at ${landed}`);
 });
 
+test("a strike the fight paces lands and ends as its rules have it: a greatsword's at its 20th tick of 50", () => {
+  // A greatsword's pictures are the sword's, whose own clock lands at 18 ticks and ends at 45.
+  const machine = new WeaponMachine('sword', always('down'));
+  const pace = { strike: 20 / 60, end: 50 / 60 };
+  machine.update(0, press, () => 0, pace);
+  const frames = [];
+  let [landed, ended] = [-1, -1];
+  for (let tick = 1; tick <= 60 && ended < 0; tick += 1) {
+    if (machine.update(1 / 60, none, () => 0, pace).blow) landed = tick;
+    frames.push(machine.frame);
+    if (!machine.busy) ended = tick;
+  }
+  assert.deepEqual([landed, ended], [20, 50]);
+  assert.equal(frames[19], 2, "the blow's frame as it lands");
+  assert.equal(frames[18], 1);
+  assert.ok(Math.abs(machine.lands - 0.4) < 1e-9);
+});
+
+test('a flurry the fight paces is drawn from its raised hand but lands when the rules land it', () => {
+  const machine = new WeaponMachine('dagger', always('down'));
+  const pace = { strike: 16 / 60, end: 40 / 60 };
+  machine.update(0, press, () => 1, pace);
+  assert.equal(machine.frame, 1, 'thrown from a hand already raised');
+  let landed = -1;
+  for (let tick = 1; tick <= 40 && landed < 0; tick += 1)
+    if (machine.update(1 / 60, none, () => 0, pace).blow) landed = tick;
+  assert.equal(landed, 16);
+});
+
 test('holding the button swings again as each blow ends, a fresh direction each time', () => {
   const picks = [0.05, 0.95];
   const machine = new WeaponMachine('sword', () => picks.shift() ?? 0.5);
