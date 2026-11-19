@@ -5,7 +5,7 @@
 use crate::arms::{Arms, Build, PIRATE_SLOOP, SLOOP_ARMS, TITHE_SLOOP, arms_of};
 use crate::captain::PIRATE_RUNS_AT;
 use crate::captain::odds::hit_share;
-use crate::damage::{Damage, STRUCK_AT};
+use crate::damage::{Damage, HOLED_BONUS, STRUCK_AT, WATERLINE_BAND_M};
 use crate::guns::Gun;
 use sailing::HullKind;
 
@@ -130,13 +130,22 @@ impl Rank {
     }
 }
 
-/// How much more often a broadside strikes her hull than the Sloop's: the fight's hit share on her box over the
-/// Sloop's, from the Sloop's guns at the duel's range by a captain's gunners. Her hull, canvas and men are this many
-/// times her class's, so the same fire takes as long to make any hull of one rank strike; the Sloop's is 1.
+/// How much more often a broadside strikes her than the Sloop: the fight's hit share on her box over the Sloop's, from
+/// the Sloop's guns at the duel's range by a captain's gunners. Her canvas and men are this many times her class's, so
+/// the same fire takes as long to make any hull of one rank strike; the Sloop's is 1.
 #[must_use]
 pub fn exposure(hull: HullKind) -> f64 {
     let at = |arms: &Arms| hit_share(&SLOOP_ARMS, arms, PIRATE_SLOOP.skill);
     at(arms_of(hull)) / at(&SLOOP_ARMS)
+}
+
+/// How much more harm a broadside does her hull than the Sloop's: her exposure, each hit holed as often as the
+/// waterline band is of her height (as `strike_time` reckons it), over the Sloop's. Her hull points are this many
+/// times her class's; the Sloop's is 1.
+#[must_use]
+pub fn hull_exposure(hull: HullKind) -> f64 {
+    let holed = |arms: &Arms| 1.0 + HOLED_BONUS * (WATERLINE_BAND_M / arms.hull[1][2]).min(1.0);
+    exposure(hull) * (holed(arms_of(hull)) / holed(&SLOOP_ARMS))
 }
 
 /// A captain's ship's name, by her faction and her hull: the Tithe's or the pirates' Sloop, Schooner, Brig or Frigate.
@@ -190,7 +199,8 @@ impl Commission {
         let scale = self.rank.scale().hull;
         let (name, exposed) = (ship_name(self.faction, self.hull()), exposure(self.hull()));
         // Whole points and whole men, as every blow takes, so neither ever shows a fraction left.
-        let (hull, crew) = ((base.hull * scale * exposed).round(), (base.crew * scale * exposed).round());
+        let (hull, crew) =
+            ((base.hull * scale * hull_exposure(self.hull())).round(), (base.crew * scale * exposed).round());
         Build { name, hull, sail: (base.sail * exposed).round(), crew, ..base }
     }
 

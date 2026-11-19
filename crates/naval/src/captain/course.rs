@@ -113,8 +113,8 @@ pub fn pass_reach(arms: &crate::arms::Arms) -> f64 {
 }
 
 /// `want` bent clear of the hulls about her (`others`, each where it is, its way and its pass reach; hers `vel`, her
-/// heading `heading`, her pass reach `reach`): each that will pass within both reaches and `AVOID_SHIP_CLEAR` soon bends
-/// it by its urgency, to starboard for a hull off her bow, else away from where it will lie, up to
+/// heading `heading`, her pass reach `reach`): each that will pass within both reaches and `AVOID_SHIP_CLEAR` soon
+/// bends it by its urgency, to starboard for a hull off her bow, else away from where it will lie, up to
 /// `AVOID_SHIP_SWING_DEG` in all.
 #[must_use]
 pub fn traffic_course((me, heading, vel): ([f64; 2], f64, [f64; 2]), want: f64, others: &[Traffic], reach: f64) -> f64 {

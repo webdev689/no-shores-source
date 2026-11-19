@@ -28,7 +28,7 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
         assert_eq!([scale.hull, scale.might, scale.reload, scale.aim_error], [hull, might, reload, aim_error]);
         assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (bold, runs_at, strikes_at), "{rank:?}");
         let commission = Commission { faction: GREY_TITHE, rank };
-        let exposed = exposure(rank.hull());
+        let exposed = hull_exposure(rank.hull());
         assert_eq!(commission.build().hull, (264.0 * hull * exposed).round(), "whole points: {rank:?}");
         assert_eq!(commission.damage().struck_at, strikes_at, "{rank:?}");
         let gun = commission.armed(SWIVEL);
@@ -42,7 +42,7 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
 fn each_faction_sails_her_own_class_and_only_captains_factions_take_a_commission() {
     let minor = Commission { faction: PIRATES, rank: Rank::Minor }.build().hull;
     let elite = Commission { faction: PIRATES, rank: Rank::Elite }.build().hull;
-    let schooner = exposure(sailing::HullKind::Schooner);
+    let schooner = hull_exposure(sailing::HullKind::Schooner);
     assert_eq!((minor, elite), (158.0, (475.2 * schooner).round()), "a Minor's and an Elite's hull in whole points");
     assert_eq!(Commission { faction: GREY_TITHE, rank: Rank::Major }.build().name, "Tithe Sloop");
     assert_eq!(Commission { faction: PIRATES, rank: Rank::Boss }.build().name, "Pirate Frigate");
@@ -81,38 +81,44 @@ fn a_captain_is_named_for_her_faction_and_her_hull() {
 
 #[test]
 fn a_bigger_hull_is_as_much_tougher_as_she_is_easier_to_hit() {
-    use crate::arms::{FRIGATE_ARMS, SLOOP_ARMS, arms_of};
+    use crate::arms::{FRIGATE_ARMS, SLOOP_ARMS};
     use crate::captain::odds::hit_share;
     use sailing::HullKind;
-    assert_eq!(exposure(HullKind::Sloop), 1.0, "the Sloop's own build, to the bit");
+    assert_eq!((exposure(HullKind::Sloop), hull_exposure(HullKind::Sloop)), (1.0, 1.0), "the Sloop's, to the bit");
     let frigate = hit_share(&SLOOP_ARMS, &FRIGATE_ARMS, 0.45) / hit_share(&SLOOP_ARMS, &SLOOP_ARMS, 0.45);
     assert!((exposure(HullKind::Frigate) - frigate).abs() < 1e-12 && (frigate - 0.778 / 0.413).abs() < 0.01);
+    // Her hull's, each hit holed by the waterline band's share of her height.
+    let holed = |top: f64| 1.0 + 0.4 * (1.1 / top);
+    let hulled = frigate * holed(FRIGATE_ARMS.hull[1][2]) / holed(SLOOP_ARMS.hull[1][2]);
+    assert!((hull_exposure(HullKind::Frigate) - hulled).abs() < 1e-12 && (hulled - 1.79).abs() < 0.01, "{hulled}");
     for kind in HullKind::ALL {
-        assert!(exposure(kind) >= 1.0, "{kind:?}: a bigger box, struck more often");
-        let _ = arms_of(kind);
+        assert!(exposure(kind) >= 1.0 && hull_exposure(kind) >= 1.0, "{kind:?}: a bigger box, struck more often");
     }
     let boss = |faction| Commission { faction, rank: Rank::Boss }.build();
     let exposed = exposure(HullKind::Frigate);
-    assert_eq!(boss(PIRATES).hull, (264.0 * 5.0 * exposed).round(), "her hull, her rank's and her size's");
+    assert_eq!(boss(PIRATES).hull, (264.0 * 5.0 * hulled).round(), "her hull, her rank's and her size's");
     assert_eq!((boss(PIRATES).sail, boss(PIRATES).crew), ((96.0 * exposed).round(), (10.0 * 5.0 * exposed).round()));
 }
 
 /// Balls fired at a ship of `hull` sound as `damage` (each striking by the fight's hit share on her hull, a round
-/// ball's harm into her hull) until she strikes, over many seeds: the mean count.
+/// ball's harm into her hull, holed as often as the waterline band is of her height) until she strikes, over many
+/// seeds: the mean count.
 fn balls_to_strike(hull: sailing::HullKind, sound: &Damage) -> f64 {
     use crate::arms::{SLOOP_ARMS, arms_of};
     use crate::captain::odds::hit_share;
     use crate::damage::{SHIP_TOUGHNESS, State, Zone, shot_harm};
     let strikes = hit_share(&SLOOP_ARMS, arms_of(hull), PIRATE_SLOOP.skill);
+    let holed = (crate::damage::WATERLINE_BAND_M / arms_of(hull).hull[1][2]).min(1.0);
     let mut draws = crate::random::Mulberry32::new(5);
     let (mut fired, seeds) = (0.0, 2000);
     for _ in 0..seeds {
         let mut damage = sound.clone();
         while damage.state == State::Afloat {
             fired += 1.0;
-            let (hits, roll) = (draws.draw() < strikes, draws.draw());
+            let (hits, roll, low) = (draws.draw() < strikes, draws.draw(), draws.draw() < holed);
+            let zone = if low { Zone::Holed } else { Zone::Hull };
             if hits {
-                damage.apply(shot_harm(&SWIVEL, Zone::Hull, false, roll, SHIP_TOUGHNESS), 0.0, 0.0);
+                damage.apply(shot_harm(&SWIVEL, zone, false, roll, SHIP_TOUGHNESS), 0.0, 0.0);
             }
         }
     }

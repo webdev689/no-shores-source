@@ -152,10 +152,11 @@ Elite's or a Miniboss's mark, above a bar of her hull, red, orange or yellow by 
 no plate covers another. A Boss's stands across the top of the screen with her faction's name.
 
 A hull changes her size, her boxes, her sails, her handling, her stem and how many guns she carries, never her
-strength: the table above is the whole of it. A bigger box is struck more often, so her hull, canvas and men are her
-class's times her rank's times her exposure: the fight's hit share on her box over the Sloop's, from the Sloop's guns
-at the duel's 110 m by a captain's gunners (the Schooner 1.44, the Brig 1.65, the Frigate 1.88), and the same fire takes
-as long to make any hull of one rank strike. Her canvas drives her no harder than the Sloop's, so her rank's way alone
+strength: the table above is the whole of it. A bigger box is struck more often, so her canvas and men are her class's
+times her rank's times her exposure: the fight's hit share on her box over the Sloop's, from the Sloop's guns at the
+duel's 110 m by a captain's gunners (the Schooner 1.44, the Brig 1.65, the Frigate 1.88). Her hull points take it too,
+less for a taller hull's hits holing her less often (the Schooner 1.39, the Brig 1.58, the Frigate 1.79), so the same
+fire takes as long to make any hull of one rank strike. Her canvas drives her no harder than the Sloop's, so her rank's way alone
 sets her speed ([[Sailing]], "The other hulls").
 A side's broadside weighs the Sloop's times her rank's gun damage, spread evenly over that side's guns (the Schooner's
 five, the Brig's seven, the Frigate's ten across her two gun decks): each ball is the Sloop's, rounded as hers, and the

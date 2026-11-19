@@ -95,7 +95,7 @@ fn her_rank_sets_her_hull_arms_her_volley_and_paces_her_reload() {
     for rank in Rank::ALL {
         let fight = two_captains(Commission { faction: GREY_TITHE, rank }, elite(PIRATES));
         let hull = fight.vessel(FIRST).map(|vessel| vessel.damage.max_hull);
-        let exposed = crate::ranks::exposure(rank.hull());
+        let exposed = crate::ranks::hull_exposure(rank.hull());
         assert_eq!(hull, Some((264.0 * rank.scale().hull * exposed).round()), "{rank:?}");
     }
     let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
