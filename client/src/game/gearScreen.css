@@ -396,9 +396,9 @@ img.gear-glyph {
   color: var(--word);
 }
 #hud button.gear-slot:hover,
-#hud button.gear-cell:hover,
+#hud .gear-cell:not(.gear-vacant):hover,
 #hud button.gear-slot:focus-visible,
-#hud button.gear-cell:focus-visible {
+#hud .gear-cell:not(.gear-vacant):focus-visible {
   border-color: var(--rar, var(--brass-lit));
   background-color: #171a20;
   box-shadow:

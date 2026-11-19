@@ -58,7 +58,10 @@ function cellCard(cell: Cell): HTMLElement {
 /** A cell's tile: its picture in a well of its rarity, its count and pips, its card, and its presses. */
 export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const vacant = cell.glyph === 'empty';
-  const node = make(vacant ? 'div' : 'button', '', `gear-cell ${ROLES.tile}`);
+  // A cell a press does nothing to (a stack, a Vestige away from the Reader) is no button: it takes the focus for its
+  // card and reads as a picture with its count, and a click on it makes no press's sound.
+  const pressed = cell.press !== null || cell.other !== null || cell.item !== null;
+  const node = make(pressed && !vacant ? 'button' : 'div', '', `gear-cell ${ROLES.tile}`);
   if (cell.glyph === 'vestige' || cell.item) rarityOf(node, cell.rarity);
   node.classList.toggle('gear-none', !vacant && !holds(cell));
   node.classList.toggle('gear-vacant', vacant);
@@ -72,6 +75,10 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const pips = cell.glyph === 'vestige' || cell.item ? (RARITIES[cell.rarity]?.pips ?? '') : '';
   if (pips) node.append(make('span', pips, 'gear-pips'));
   if (vacant) return node;
+  if (!pressed) {
+    node.tabIndex = 0;
+    node.setAttribute('role', 'img');
+  }
   const item = cell.item;
   node.dataset['key'] = `cell-${cell.key}`;
   const what = cell.count === null ? '' : `${cell.count.toLocaleString()} held`;
@@ -155,6 +162,8 @@ export function inventoryPage(context: PageContext, tab: string, choose: (tab: s
     press.classList.toggle('gear-chosen', each.id === tab);
     press.classList.toggle('gear-bare', each.held === 0);
     press.append(make('span', each.name), make('span', String(each.held), 'gear-tab-count'));
+    // Its name and count are read apart, not run together as one word.
+    press.setAttribute('aria-label', `${each.name}, ${each.held}`);
     press.addEventListener('click', () => choose(each.id));
     tabs.append(press);
   }
