@@ -1,7 +1,9 @@
 //! Each layout's map as the bake plans continent 1: its first spaces are its areas and every way joins two of them,
 //! every space is reached from the first, each lookout stands on its massif's top at its climb's end, each beat follows
-//! the one before it, and a mine's and an undercroft's beats are roofed while no area of Saltmere's is.
+//! the one before it, a mine's and an undercroft's beats are roofed while no area of Saltmere's is, and every way and
+//! climb of Saltmere's is walked without a step a body cannot take.
 
+use land::ground::Ground;
 use layout::Layout;
 use layout::field::distance;
 use layout::spaces::{Joined, SpaceKind};
@@ -10,9 +12,9 @@ use std::sync::OnceLock;
 
 const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 
-/// Continent 1's layouts as the bake settles them.
-fn continent_one() -> &'static [Layout] {
-    static LAID: OnceLock<Vec<Layout>> = OnceLock::new();
+/// Continent 1's layouts as the bake settles them, and its ground as they leave it.
+fn laid_one() -> &'static (Vec<Layout>, Ground) {
+    static LAID: OnceLock<(Vec<Layout>, Ground)> = OnceLock::new();
     LAID.get_or_init(|| {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let read =
@@ -25,8 +27,13 @@ fn continent_one() -> &'static [Layout] {
         let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
         let mut landmass = land::landmass::generate(&continent, edits).expect("continent-1 generates");
         city::settle(&mut landmass, &city).expect("its city settles");
-        layout::settle::settle(&mut landmass, &builders.book, &builders.briefs)
+        let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
+        (layouts, landmass.surface)
     })
+}
+
+fn continent_one() -> &'static [Layout] {
+    &laid_one().0
 }
 
 #[test]
@@ -133,4 +140,45 @@ fn a_mines_and_an_undercrofts_beats_are_roofed_and_no_area_of_saltmeres_is() {
         }
     }
     assert!(roofed_runs >= 2, "Saltmere has a mine and an undercroft");
+}
+
+/// A body's step: the most the land may rise within half a metre along a way, metres.
+const STEP_M: f64 = 0.5;
+
+#[test]
+#[ignore = "the Driftwood Moors' way from Moorend steps 0.5 to 0.7 m onto the Tithe Camp's platform where its ramp, cut straight, leaves the way's line; cutting each ramp along its way moves the step onto the way that passes between two ramps, so it waits on the height rework's graded network"]
+fn every_way_and_climb_of_saltmeres_is_walked_without_a_step() {
+    let ground = &laid_one().1;
+    let mut steps_found = Vec::new();
+    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+        // A river crossing's bridge carries the way over the water and its banks.
+        let bridged = |at: [f64; 2]| {
+            laid.paths
+                .iter()
+                .flat_map(|path| &path.crossings)
+                .any(|[first, second]| layout::paths::off_line(at, *first, *second) < 6.0)
+        };
+        let walked = laid.map.connections.iter().filter(|joined| matches!(joined.joined, Joined::Way | Joined::Climb));
+        for joined in walked {
+            for pair in joined.points.windows(2) {
+                let count = (distance(pair[0], pair[1]) / 0.5).ceil().max(1.0) as i32;
+                let point = |step: i32| {
+                    let share = f64::from(step) / f64::from(count);
+                    [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]
+                };
+                for step in 1..=count {
+                    let (before, at) = (point(step - 1), point(step));
+                    let rise = ground.height_at(at[0], at[1]) - ground.height_at(before[0], before[1]);
+                    if rise.abs() > STEP_M && !bridged(at) && !bridged(before) {
+                        let (from, to) = (joined.from, joined.to);
+                        steps_found.push(format!(
+                            "{}: {:?} {from} to {to} steps {rise:+.2} m at {at:?}",
+                            laid.id, joined.joined
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    assert!(steps_found.is_empty(), "{} steps: {steps_found:#?}", steps_found.len());
 }

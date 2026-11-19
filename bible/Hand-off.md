@@ -333,7 +333,13 @@ Where the work stands now, for the next session. Each session rewrites this note
      under it (a graveyard's hollow, a coven, a river's ravine, the gates' gorges out), the high places over it (a
      keep's citadel, a tower, a shrine, a camp), with ramps or switchbacks where a way meets a higher or lower area,
      stairs for short rises, land bridges (a climb standing over a lower floor), and the landing climbing up from
-     its strand;
+     its strand. Done: the floor level (`Sculpts::floor_level`), with a face's foot and dead rock measured over it.
+     Found: `map_planned.rs`'s walk of every way and climb (ignored for now) finds the Moors' way from Moorend
+     stepping 0.5 to 0.7 m onto the Tithe Camp's platform, whose ramp is cut straight and leaves the way's line.
+     Cutting each ramp along its way's own line (tried, not kept) fixed that way but stepped the way from the
+     landing to the graves, which runs between two of the camp's ramps over their raised sides. So a ramp alone is
+     not enough: the levels must be laid on the network of ways as a whole, the ground between ways that run near
+     each other graded to one level, and the walk switched on once they are;
   3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
      hollows and pits;
   4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;
