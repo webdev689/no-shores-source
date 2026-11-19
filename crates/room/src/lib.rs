@@ -569,6 +569,8 @@ impl Room {
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
+mod climb_tests;
+#[cfg(test)]
 mod faction_tests;
 #[cfg(test)]
 mod fair_tests;

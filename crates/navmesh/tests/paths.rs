@@ -1,10 +1,10 @@
-//! Paths over small courses on a 20 m field: around blocks and up steps, never onto what a body cannot climb, kept
-//! a body's radius from every wall, pulled taut, and steered by obstacles.
+//! Paths over small courses on a 20 m field: around blocks and up steps, onto a top no step reaches only by a link
+//! the movement rules cross, kept a body's radius from every wall, pulled taut, and steered by obstacles.
 
 mod common;
 
 use common::{along, closest, ends_at, path};
-use movement::Block;
+use movement::{Block, TICK_SECONDS, TUNING};
 use navmesh::{AGENT, Bounds, Collider, NavMesh, Ramp, Rise, Way};
 
 fn block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> Block {
@@ -86,35 +86,61 @@ fn steps_of_a_step_height_lead_up_to_a_platform() {
     assert!(tops.windows(2).all(|pair| (pair[1] - pair[0]).abs() <= 0.5 + 1e-9), "up a step at a time: {route:?}");
 }
 
-#[test]
-fn a_block_one_step_high_is_climbed_and_one_higher_is_not() {
-    let goal = [4.0, 0.0, 0.5];
-    let route = path(&bake(&[block(2.0, -2.0, 6.0, 2.0, 0.5)]), [-5.0, 0.0, 0.0], goal);
-    ends_at(&route, goal);
-    let tall = bake(&[block(2.0, -2.0, 6.0, 2.0, 0.75)]);
-    assert_eq!(tall.find_path([-5.0, 0.0, 0.0], [4.0, 0.0, 0.75]), None);
-    let past = path(&tall, [-5.0, 0.0, 0.0], [9.0, 0.0, 0.0]);
-    assert!(past.len() >= 3, "a walk past it goes round, not over: {past:?}");
+/// Whether a path goes up or down more than a step between two waypoints: across a link.
+fn crosses_a_link(route: &[[f64; 3]]) -> bool {
+    route.windows(2).any(|pair| (pair[1][2] - pair[0][2]).abs() > 0.5)
 }
 
 #[test]
-fn a_platform_with_no_way_up_is_out_of_reach() {
+fn a_block_one_step_high_is_walked_onto_and_one_higher_is_climbed() {
+    let low = bake(&[block(2.0, -2.0, 6.0, 2.0, 0.5)]);
+    let goal = [4.0, 0.0, 0.5];
+    let route = path(&low, [-5.0, 0.0, 0.0], goal);
+    ends_at(&route, goal);
+    assert!(!crosses_a_link(&route) && low.links().next().is_none(), "a step is walked: {route:?}");
+    let tall = bake(&[block(2.0, -2.0, 6.0, 2.0, 0.75)]);
+    let goal = [4.0, 0.0, 0.75];
+    let route = path(&tall, [-5.0, 0.0, 0.0], goal);
+    ends_at(&route, goal);
+    assert!(crosses_a_link(&route), "it goes up a link: {route:?}");
+    assert!(tall.links().any(|link| link.jump && link.to[2] == 0.75), "jumped onto, as a mantle");
+}
+
+#[test]
+fn a_platform_with_no_step_up_is_climbed_onto_and_dropped_off() {
     let island = block(2.0, -2.0, 6.0, 2.0, 2.0);
     let navmesh = bake(&[island]);
     let (ground, top) = ([-5.0, 0.0, 0.0], [4.0, 0.0, 2.0]);
-    assert_eq!(navmesh.find_path(ground, top), None);
+    let up = path(&navmesh, ground, top);
+    ends_at(&up, top);
+    assert!(crosses_a_link(&up), "up its side: {up:?}");
+    let down = path(&navmesh, top, [9.0, 0.0, 0.0]);
+    assert!(crosses_a_link(&down), "off its edge: {down:?}");
     let reach = navmesh.reachable_from(ground).expect("the ground is on the mesh");
     assert!(reach.contains([8.0, 6.0, 0.0]), "the ground all round is reached");
-    assert!(!reach.contains(top), "the platform's top is not");
-    assert!(!reach.contains([8.0, 6.0, 2.0]), "nor a point 2 m over the ground");
-    assert!(navmesh.reachable_from(top).is_none(), "the top stands on no poly");
-    assert_eq!(navmesh.nearest_point(top), None, "no poly on the top's level");
+    assert!(reach.contains(top), "and the platform's top");
+    assert!(!reach.contains([8.0, 6.0, 2.0]), "but not a point 2 m over the ground");
     let beside = navmesh.nearest_point([6.2, 0.0, 0.0]).expect("the ground beside it is near");
     assert!(beside[0] - 6.0 >= AGENT.radius && beside[0] - 6.2 <= 0.5, "the mesh's edge beside it: {beside:?}");
     assert!(beside[2].abs() < 1e-9, "on the ground: {beside:?}");
     let route = path(&navmesh, ground, beside);
     ends_at(&route, beside);
     assert_eq!(navmesh.nearest_point([-5.0, 3.0, 0.0]), Some([-5.0, 3.0, 0.0]), "a point on the mesh is its own");
+}
+
+#[test]
+fn every_link_starts_square_to_a_side_and_costs_the_walk_of_its_crossing_time() {
+    let navmesh = bake(&[block(2.0, -2.0, 6.0, 2.0, 2.0)]);
+    let links: Vec<_> = navmesh.links().collect();
+    assert!(!links.is_empty());
+    for link in links {
+        let ahead = link.ahead_of(link.from);
+        let way = libm::atan2(ahead[0] - link.from[0], -(ahead[1] - link.from[1]));
+        assert_eq!(way.to_bits(), link.bearing.to_bits(), "square along its bearing: {link:?}");
+        let ticks = link.cost / (TUNING.walk * TICK_SECONDS);
+        assert!(ticks >= 1.0 && (ticks - ticks.round()).abs() < 1e-6, "a walk of whole ticks: {link:?}");
+        assert!(link.from[2] == 0.0 || link.from[2] == 2.0, "from the ground or the top: {link:?}");
+    }
 }
 
 #[test]
@@ -129,8 +155,11 @@ fn a_gentle_ramp_walks_up_and_a_steep_one_does_not() {
     let route = path(&gentle, [-5.0, 0.0, 0.0], goal);
     ends_at(&route, goal);
     assert!(route.iter().all(|point| point[2] >= 0.0 && point[2] <= 1.5), "on the ramp's plane: {route:?}");
+    // The steep ramp is not walked up; the block it leans on is climbed from its other sides.
     let steep = NavMesh::bake_colliders(&ramp(1.0), FIELD, &AGENT);
-    assert_eq!(steep.find_path([-5.0, 0.0, 0.0], goal), None);
+    let reach = steep.reachable_from([-5.0, 0.0, 0.0]).expect("the ground is on the mesh");
+    assert!(!reach.contains([3.5, 0.0, 0.75]), "no floor on the steep ramp");
+    assert!(crosses_a_link(&path(&steep, [-5.0, 0.0, 0.0], goal)), "the block is climbed instead");
 }
 
 #[test]
