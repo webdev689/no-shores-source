@@ -5,7 +5,7 @@ import course from '../../../content/testground/course.json' with { type: 'json'
 import { LocalRoom } from '../network/localRoom.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
-import { plainDress } from '../player/dressing.ts';
+import { type Dress, plainDress } from '../player/dressing.ts';
 import type { Action, InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
@@ -39,19 +39,23 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
 /** The player with a sword drawn in a fight in a room in the page, the first person's hands standing in: each frame's
  *  button and pose are kept. */
 function fightingPlayer() {
-  const shown: { attackPressed: boolean; pose: unknown; pace: unknown }[] = [];
+  type State = { pose?: unknown; pace?: unknown; spare?: unknown };
+  const shown: { attackPressed: boolean; pose: unknown; pace: unknown; spare: unknown }[] = [];
   const hands = {
     swing: null,
     muzzle: null,
     cancel: () => undefined,
-    update: (_seconds: number, button: { attackPressed: boolean }, state: { pose?: unknown; pace?: unknown }) => {
-      shown.push({ attackPressed: button.attackPressed, pose: state.pose ?? null, pace: state.pace ?? null });
+    update: (_seconds: number, button: { attackPressed: boolean }, state: State) => {
+      const { pose = null, pace = null, spare = null } = state;
+      shown.push({ attackPressed: button.attackPressed, pose, pace, spare });
     },
   } as unknown as ConstructorParameters<typeof Walker>[2];
+  const warmed: { right: string | null; owner: unknown }[] = [];
   const forge = {
     frames: () => 4,
     draws: () => true,
-    warm: () => undefined,
+    warm: (dress: Dress, _anims: unknown, _glow: unknown, owner: unknown) =>
+      warmed.push({ right: dress.outfit.right, owner }),
     walking: () => null,
     pump: () => undefined,
     card: () => null,
@@ -74,8 +78,23 @@ function fightingPlayer() {
     clock += TICK;
     return player.frame(input, steps, TICK, clock, { running: true, hands: true, markOf: () => null, zoomOf: () => 1 });
   };
-  return { fighting, walker, shown, frame };
+  return { fighting, walker, shown, frame, warmed };
 }
+
+test("the other loadout's weapon is composed ahead of a swap, for the figure and for the hands", () => {
+  const { walker, shown, frame, warmed } = fightingPlayer();
+  walker.spare = { ...walker.you.dress.outfit, right: 'bow_long_iron', left: null };
+  frame(controls());
+  assert.ok(
+    warmed.some((each) => each.right === 'bow_long_iron' && each.owner !== walker.you.id),
+    'the figure',
+  );
+  assert.ok(
+    warmed.some((each) => each.right !== 'bow_long_iron' && each.owner === walker.you.id),
+    'its own apart',
+  );
+  assert.deepEqual(shown.at(-1)?.spare, { right: 'bow_long_iron', left: null }, 'the hands');
+});
 
 test('a swing pressed reaches the fight, and the first person swings as the rules begin it, the arms told to the room', () => {
   const { fighting, walker, shown, frame } = fightingPlayer();

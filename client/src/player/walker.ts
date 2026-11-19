@@ -7,6 +7,7 @@ import type { Action, FighterView } from '../rules/fighters.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
+import type { Outfit } from '../forge/outfit.ts';
 import { FIGHT_TICKS, dodgeFacing, fightOf } from './fightMoves.ts';
 import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { InputFrame } from './input.ts';
@@ -75,6 +76,8 @@ export class Walker {
   readonly you: Placed;
   /** The element each hand's weapon glows in (the right, then the left), as the page reads it from the gear. */
   glow: readonly [GlowLook, GlowLook] = NO_GLOW;
+  /** What the other loadout dresses the hands in, as the page reads it from the gear: composed ahead of a swap. */
+  spare: Outfit | null = null;
   /** The element the last cast glows in: its Art's. */
   castGlow: GlowLook = 0;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
@@ -218,6 +221,7 @@ export class Walker {
       pose: own ? guardPose(own.action) : null,
       zoom,
       pace: own ? paceOf(own.action, this.tickSeconds) : null,
+      spare: this.spare && { right: this.spare.right, left: this.spare.left },
     });
     const swing = firstPerson.swing;
     this.strokes = strokesAfter(this.strokes, this.swingWas, swing?.progress ?? null);
@@ -254,19 +258,22 @@ export class Walker {
       (anim, drawn) => forge.draws(dress.body, anim, drawn),
       (action) => forge.walking(dress, action),
     );
-    const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
-    forge.warm(
-      dress,
-      likelyMoves(
-        hands[0] ?? null,
-        hands[1] ?? null,
-        (anim, drawn) => forge.draws(dress.body, anim, drawn),
-        outfit.drawn ? (outfit.grip ?? null) : null,
-        (action) => forge.walking(dress, action),
-      ),
-      outfit.drawn ? this.glow[0] : 0,
-      you.id,
-    );
+    const warm = (shown: Dress, glow: GlowLook, owner: number | string) => {
+      const { drawn, right, left, grip } = shown.outfit;
+      const draws = (anim: string, held: string | null) => forge.draws(shown.body, anim, held);
+      const walking = (action: string) => forge.walking(shown, action);
+      const likely = likelyMoves(
+        drawn ? right : null,
+        drawn ? left : null,
+        draws,
+        drawn ? (grip ?? null) : null,
+        walking,
+      );
+      forge.warm(shown, likely, glow, owner);
+    };
+    warm(dress, outfit.drawn ? this.glow[0] : 0, you.id);
+    // The other loadout's too, so a swap shows it at once.
+    if (this.spare) warm({ ...dress, outfit: { ...this.spare, drawn: true } }, 0, `${you.id} spare`);
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);
     const index = this.loop.frame(this.shown, frames, seconds, clock);

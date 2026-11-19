@@ -76,6 +76,8 @@ export interface FirstPersonState {
   readonly zoom?: number;
   /** The fight's own timing of the swing it has begun, which a strike begun now keeps; none outside a fight. */
   readonly pace?: Pace | null;
+  /** What the hands would hold drawing the other loadout, whose pictures are asked for ahead of a swap. */
+  readonly spare?: { readonly right: string | null; readonly left: string | null } | null;
 }
 
 /** What a blow of the player's own met, as the first person shows it: it landed, or it was blocked (or blocked one). */
@@ -197,6 +199,8 @@ export class FirstPerson {
   private shield = SHIELD_REST;
   private shieldClock = 0;
   private look = '';
+  /** The other loadout's hands whose pictures were last asked for ahead of a swap. */
+  private spareLook = '';
   private wanted: Wanted[] = [];
   private shown: ScreenQuad[] = [];
   private drawnMuzzle: readonly [number, number] | null = null;
@@ -290,6 +294,10 @@ export class FirstPerson {
       this.look = lookKey;
       this.prefetch(worn, !!state.mounted);
     }
+    const spare = state.spare ?? null;
+    const spareKey = spare ? `${spare.right}|${spare.left}|${worn.hands}|${worn.feet}` : '';
+    if (spare && spareKey !== this.spareLook) this.prefetchHands(handsPlan(spare.right, spare.left), worn);
+    this.spareLook = spareKey;
     return events;
   }
 
@@ -409,9 +417,13 @@ export class FirstPerson {
   private prefetch(worn: Worn, mounted: boolean): void {
     for (let frame = 0; frame < RUN_FRAMES; frame++) this.request(this.runWanted(worn, frame, false, 0));
     if (mounted) for (const shot of RIDE_AHEAD) for (const wanted of this.rideWanted(shot, worn)) this.request(wanted);
-    if (!this.plan) return;
-    for (const view of everyView(this.plan)) this.request(this.viewWanted(view, worn, 0, 0));
-    const { held } = this.plan;
+    if (this.plan) this.prefetchHands(this.plan, worn);
+  }
+
+  /** Asks for every picture the hands of `plan` show: the loadout drawn, or the other, so a swap shows it at once. */
+  private prefetchHands(plan: HandsPlan, worn: Worn): void {
+    for (const view of everyView(plan)) this.request(this.viewWanted(view, worn, 0, 0));
+    const { held } = plan;
     const frames = held?.kind === 'shield' ? SHIELD_FRAMES : LIGHT_FRAMES;
     if (held) for (let frame = 0; frame < frames; frame++) this.request(this.heldWanted(held, worn, 0, frame));
   }

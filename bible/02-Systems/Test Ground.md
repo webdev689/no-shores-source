@@ -377,8 +377,11 @@ picture.
 - A figure is drawn as one flat card, so two figures that overlap are ordered as whole cards, not pixel by pixel.
 - The course's blocks are the only things to climb, and the climbing does not tire.
 - Composed frames are kept on the GPU up to 4,000, then all are let go and composed again as needed.
-- The player's likeliest moves are composed ahead, two frames a tick: its rest, walk and attack, its strokes, the run,
-  the jump and the crouch. A move not composed yet shows the last frame until it is.
+- Each figure's likeliest moves are composed ahead, two frames a tick, each figure's in a queue of its own, every view
+  as drawn and as mirrored: its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or
+  a shield's block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap
+  shows it at once. A move not composed yet shows the last frame until it is: its strips take most of a second to come
+  the first time.
 
 ## First person
 

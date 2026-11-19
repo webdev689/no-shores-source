@@ -161,8 +161,8 @@ the right. A gun, or one crossbow, is carried across the chest at a run, from th
 gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both casting hands for 0.28 s and hides the
 weapon meanwhile. In an armour set's gauntlets each casting hand is the set's whole arm, dyed as its fists are, under
 the element's light; with none it is the linen sleeve and the leather glove. An Art's cast is lit by its light,
-Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its element's glow ([[Arts]]). A new look's pictures are composed ahead
-and kept on the GPU.
+Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its element's glow ([[Arts]]). A new look's
+pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once.
 
 ### Climbing
 

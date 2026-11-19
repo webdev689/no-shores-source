@@ -21,7 +21,7 @@ import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
-import { gearOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
@@ -275,6 +275,7 @@ export class Foot {
     if (wardrobe) {
       const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
       walker.you.dress = { ...walker.you.dress, outfit };
+      walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
     }
     walker.glow = heldElements(gear, loadout);
   }
