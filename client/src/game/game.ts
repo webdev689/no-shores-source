@@ -19,6 +19,7 @@ import { MarkView } from '../ships/markView.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { FigureView } from './figureView.ts';
+import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
@@ -146,6 +147,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     session,
   };
   const footView = new FootView(gpu, hudRoot);
+  const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   /** The held map, made when it is first asked for, since its coasts are worked out then. */
@@ -442,6 +444,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    music.onFoot(world, here.node, shown.fight, seconds);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
     const hands = walker.inFirstPerson
@@ -487,6 +490,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       paused,
     });
     for (const stir of shown.stirs) scene.stir(stir);
+    music.atSea(here, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
     wasWalking = here.aboard.walking;
