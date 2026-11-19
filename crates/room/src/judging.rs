@@ -244,7 +244,8 @@ impl Room {
         defender: FighterId,
         amount: f64,
     ) {
-        let event = Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None, crit: false, element: 0 };
+        let event =
+            Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None, crit: false, element: 0 };
         self.events.push(event);
     }
 
