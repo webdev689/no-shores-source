@@ -183,6 +183,20 @@ impl From<Sculpts> for Vec<Sculpt> {
     }
 }
 
+/// The nearest of capsules' (off, level) parts, and their levels blended by how near each is (within `RUN_BLEND_M` of
+/// the nearest): the land then climbs round a bend, or beside a climb's top, without a step. Infinity where none.
+fn blended(parts: &[(f64, f64)]) -> (f64, f64) {
+    let nearest = parts.iter().map(|part| part.0).fold(f64::INFINITY, f64::min);
+    if !nearest.is_finite() {
+        return (f64::INFINITY, 1.0);
+    }
+    let (sum, weight) = parts.iter().fold((0.0, 0.0), |(sum, weight), &(off, level)| {
+        let near = (1.0 - (off - nearest) / RUN_BLEND_M).max(0.0);
+        (sum + near * level, weight + near)
+    });
+    (nearest, sum / weight)
+}
+
 /// The distance from a point to a segment.
 fn to_segment(x: f64, y: f64, from: [f64; 2], to: [f64; 2]) -> f64 {
     along_segment(x, y, from, to).0
@@ -307,7 +321,7 @@ impl Sculpts {
     /// is: the land then climbs round a bend, or beside a climb's top, without a step.
     fn off_climb(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
         let sculpt = &self.sculpts[number];
-        let Some((_, _, climbs, runs, levels)) = self.near[number].get(&(bucket(x), bucket(y))) else {
+        let Some((_, _, climbs, runs, _)) = self.near[number].get(&(bucket(x), bucket(y))) else {
             return (f64::INFINITY, 1.0);
         };
         let measured = |capsule: &[f64; 7]| {
@@ -319,17 +333,24 @@ impl Sculpts {
             .iter()
             .map(|&climb| measured(&sculpt.climbs[climb as usize]))
             .chain(runs.iter().map(|&run| measured(&sculpt.runs[run as usize])))
-            .chain(levels.iter().map(|&level| measured(&sculpt.levels[level as usize])))
             .collect();
-        let nearest = parts.iter().map(|part| part.0).fold(f64::INFINITY, f64::min);
-        if !nearest.is_finite() {
-            return (f64::INFINITY, 1.0);
-        }
-        let (sum, weight) = parts.iter().fold((0.0, 0.0), |(sum, weight), &(off, level)| {
-            let near = (1.0 - (off - nearest) / RUN_BLEND_M).max(0.0);
-            (sum + near * level, weight + near)
-        });
-        (nearest, sum / weight)
+        blended(&parts)
+    }
+
+    /// How far a point lies off the nearest raised floor of a sculpt (metres, negative on it), and its level there as a
+    /// share of the massif's height, blended as `off_climb`'s; infinity where none is near.
+    fn off_level(&self, number: usize, x: f64, y: f64) -> (f64, f64) {
+        let sculpt = &self.sculpts[number];
+        let Some((.., levels)) = self.near[number].get(&(bucket(x), bucket(y))) else { return (f64::INFINITY, 1.0) };
+        let parts: Vec<(f64, f64)> = levels
+            .iter()
+            .map(|&level| {
+                let [x1, y1, x2, y2, half, from, to] = sculpt.levels[level as usize];
+                let (distance, along) = along_segment(x, y, [x1, y1], [x2, y2]);
+                (distance - half, from + (to - from) * along)
+            })
+            .collect();
+        blended(&parts)
     }
 
     /// A sculpt's massif's height at a point, metres: its rise, varied slowly by its noise, so the top rolls.
@@ -358,7 +379,10 @@ impl Sculpts {
                 let reach = self.reaches[number];
                 x >= reach[0] && x <= reach[2] && y >= reach[1] && y <= reach[3]
             })
-            .map(|number| self.off_floor(number, x, y).min(self.off_climb(number, x, y).0))
+            .map(|number| {
+                let off = self.off_floor(number, x, y).min(self.off_climb(number, x, y).0);
+                off.min(self.off_level(number, x, y).0)
+            })
             .fold(f64::INFINITY, f64::min)
     }
 
@@ -379,9 +403,17 @@ impl Sculpts {
                 x >= reach[0] && x <= reach[2] && y >= reach[1] && y <= reach[3]
             })
             .map(|number| {
-                let (floor, (climb, share)) = (self.off_floor(number, x, y), self.off_climb(number, x, y));
-                let level = if climb < floor { share * self.rise_at(number, x, y) } else { 0.0 };
-                (floor.min(climb), level)
+                let floor = self.off_floor(number, x, y);
+                let ((climb, climbed), (raised, level)) = (self.off_climb(number, x, y), self.off_level(number, x, y));
+                // A climb or terrace cut into a raised floor is the floor where it covers the point.
+                let (off, share) = if climb <= 0.0 || (climb < raised && climb < floor) {
+                    (climb, climbed)
+                } else if raised < floor {
+                    (raised, level)
+                } else {
+                    (floor, 0.0)
+                };
+                (off, share * self.rise_at(number, x, y))
             })
             .filter(|(off, _)| off.is_finite())
             .min_by(|first, second| first.0.total_cmp(&second.0))
@@ -434,15 +466,17 @@ impl Sculpts {
         } else {
             ceiling_face(rise, off)
         };
-        // A climb is cut into the massif at its own level, its own face rising from it to the top: the land is
-        // the lower of the two, so a way up runs along the cliff with a drop on its floor's side.
-        let (off_climb, share) = self.off_climb(number, x, y);
-        if off_climb.is_finite() {
-            let level = rise * share;
-            // On the climb the land is its level, an embankment where the floor's face runs lower; off it, over
-            // a couple of metres, whichever face is lower.
-            let beside = height.min(level + (height - level) * face(off_climb.max(0.0)));
-            height = level + (beside - level) * smooth(0.0, CLIMB_EDGE_M, off_climb);
+        // A raised floor is cut first, then a climb into what it leaves, each at its own level with its own face
+        // rising from it to the top: the land is the lower, so a way up runs along the cliff with a drop on its floor's
+        // side, and a terrace stands on a raised floor as on the land's own.
+        for (off, share) in [self.off_level(number, x, y), self.off_climb(number, x, y)] {
+            if off.is_finite() {
+                let level = rise * share;
+                // On it the land is its level, an embankment where the floor's face runs lower; off it, over a
+                // couple of metres, whichever face is lower.
+                let beside = height.min(level + (height - level) * face(off.max(0.0)));
+                height = level + (beside - level) * smooth(0.0, CLIMB_EDGE_M, off);
+            }
         }
         height
     }

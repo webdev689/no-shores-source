@@ -220,13 +220,6 @@ pub fn carve(
         } else {
             floors.extend_from_slice(&basin.floors);
         }
-        let lifted = |share: f64| (share + level).min(1.0);
-        terraces.extend(
-            basin
-                .terraces
-                .iter()
-                .map(|&[x1, y1, x2, y2, half, from, to]| [x1, y1, x2, y2, half, lifted(from), lifted(to)]),
-        );
     }
     let grades = if levels.iter().any(|&level| level > 0.0) {
         crate::heights::graded(paths, &basins, levels)
@@ -266,6 +259,15 @@ pub fn carve(
             floors.push([mouth[0], mouth[1], pocket[0], pocket[1], POCKET_HALF_M]);
         }
     }
+    // Each terrace stands its area's level higher; a ramp's foot (a terrace's level 0 end) meets the land under it,
+    // which may be a way graded to another level.
+    for (basin, &level) in basins.iter().zip(levels) {
+        let lifted = |share: f64| (share + level).min(1.0);
+        terraces.extend(basin.terraces.iter().map(|&[x1, y1, x2, y2, half, from, to]| {
+            let foot = if from == 0.0 { share_at(&floors, &raised, [x1, y1]) } else { lifted(from) };
+            [x1, y1, x2, y2, half, foot, lifted(to)]
+        }));
+    }
     let bare = Sculpts::from(vec![Sculpt {
         claim: claim.clone(),
         floors: floors.clone(),
@@ -283,6 +285,24 @@ pub fn carve(
     let sculpt =
         Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new(), levels: raised };
     (sculpt, basins)
+}
+
+/// The level of the floor under a point, as a share of the massif's height: the raised floor's there where one is
+/// nearer than any floor at the land's own level, else 0.
+fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -> f64 {
+    let floor = floors
+        .iter()
+        .map(|&[x1, y1, x2, y2, half]| off_line(at, [x1, y1], [x2, y2]) - half)
+        .fold(f64::INFINITY, f64::min);
+    let nearest = raised.iter().map(|&[x1, y1, x2, y2, half, from, to]| {
+        let (from_end, to_end) = (distance(at, [x1, y1]), distance(at, [x2, y2]));
+        let along = if from_end + to_end > 0.0 { from_end / (from_end + to_end) } else { 0.0 };
+        (off_line(at, [x1, y1], [x2, y2]) - half, from + (to - from) * along)
+    });
+    nearest
+        .filter(|&(off, _)| off < floor)
+        .min_by(|first, second| first.0.total_cmp(&second.0))
+        .map_or(0.0, |(_, share)| share)
 }
 
 /// How steep a climb rises at most (a rise a metre, for the massif's tallest), its half-width, its lookout's reach,
