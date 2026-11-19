@@ -6,19 +6,23 @@
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
-import { KINDS, WORN } from '../player/gear.ts';
+import { KINDS, MELEE, WORN } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { type Picture, addedBy } from '../player/picture.ts';
 
-/** The view an item is drawn in, from the front; and the move each weapon is held up in, a melee weapon or shield on
- *  guard. Armour is drawn standing. */
+/** The view an item is drawn in, from the front; and the move each loadout is held up in, a melee one on guard, a
+ *  pair on its own guard. Armour is drawn standing. */
 const VIEW = 0;
 const HELD_IN: Readonly<Record<string, string>> = {
   bow: 'idle_bow',
   staff: 'idle_staff',
   crossbow: 'braceready',
   pistolet: 'pistolready',
+  double_pistolet: 'braceready',
   thunderlock: 'gunready',
+  double_daggers: 'twinguard',
+  double_swords: 'twinguard',
+  double_mace: 'twinguard',
 };
 /** No figure: what a layer drawn alone adds to it is all of the layer. */
 const NOTHING: Picture = { width: 0, height: 0, pixels: new Uint8ClampedArray(0) };
@@ -96,16 +100,18 @@ export class ItemPictures {
     const plain = { ...body.outfit, armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: true };
     const dressed = (state: GearState): Dress => ({
       ...body,
-      outfit: { ...gearOutfit(state, wardrobe, plain), drawn: true },
+      outfit: { ...gearOutfit(state, wardrobe, plain, slot <= 1 ? slot : MELEE), drawn: true },
     });
     const [worn, bare] = [dressed(holding([{ ...item, at: WORN + slot }])), dressed(holding([]))];
     const kind = KINDS[item.kind] ?? '';
-    const held = worn.outfit.left ?? worn.outfit.right;
+    // A loadout in both hands (a pair, a weapon and shield) is what the figure gains holding it; one in one hand alone.
+    const { right, left } = worn.outfit;
+    const held = right && left ? null : (left ?? right);
     const wanted = slot <= 1 ? (HELD_IN[kind] ?? 'guard') : 'idle';
-    const anim = this.forge.draws(body.body, wanted, held) ? wanted : 'idle';
+    const anim = this.forge.draws(body.body, wanted, held ?? right) ? wanted : 'idle';
     // A piece in hand is drawn by itself; one the pose puts away is drawn worn, as armour is.
     const alone = held && this.forge.draws(body.body, anim, held) ? held : null;
-    // A weapon or a shield is one piece: anything else the figure shows with it (a sheath at the hip) is not it.
+    // A loadout is one piece: anything else the figure shows with it (a sheath at the hip) is not it.
     const key = JSON.stringify([worn, bare, anim, alone]);
     const look = { body, key, worn, bare, anim, onePiece: slot <= 1, alone };
     this.looks.set(item, look);

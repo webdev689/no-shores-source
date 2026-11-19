@@ -158,6 +158,20 @@ test('the nearer of hand and weapon shows where both are drawn, either alone whe
   );
 });
 
+test('a layered blade marks only its blade', () => {
+  const hand = new Uint8Array([1, 1, 1, 255, 1, 1, 1, 255, 0, 0, 0, 0]);
+  const weapon = new Uint8Array([2, 2, 2, 255, 2, 2, 2, 255, 2, 2, 2, 255]);
+  const handDepth = strip([[0, 1, 0], [0, 9, 0], null]);
+  const weaponDepth = strip([
+    [0, 5, 0],
+    [0, 5, 0],
+    [0, 5, 0],
+  ]);
+  const mask = new Uint8Array(3);
+  layByDepth(hand, handDepth, weapon, weaponDepth, mask);
+  assert.deepEqual([...mask], [0, 1, 1], 'the hand over its grip, the blade nearer, the blade alone');
+});
+
 test('a sword lays its hand and blade by depth, each in its own colours; without both layers it draws whole', async () => {
   const layerAt = (layer: 'hand' | 'weapon', look: string | null, depth = false) =>
     layerPath('WEAPON04', 0, 0, layer, look, depth);

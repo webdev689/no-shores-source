@@ -1,6 +1,6 @@
 //! What others see of a character, kept beside it so the accounts can show it without the rules: their level, their
-//! Defense and main hand's Attack, the emblem they wear, and each piece they wear, numbered as the gear message
-//! numbers them.
+//! Defense and Melee loadout's Attack (the Ranged one's without one), the emblem they wear, and each piece they wear,
+//! numbered as the gear message numbers them.
 
 use crate::character::Character;
 use crate::kinds::Slot;
@@ -54,7 +54,7 @@ impl Character {
         Shown {
             level: self.level(),
             defense: self.defense(),
-            attack: self.attack(Slot::MainHand).unwrap_or_default(),
+            attack: self.attack(Slot::Melee).or_else(|| self.attack(Slot::Ranged)).unwrap_or_default(),
             emblem: self.emblem.clone(),
             worn,
         }

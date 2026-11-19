@@ -132,10 +132,15 @@ def write_png(path, arr, offset=None, box=None):
     _png(path, w, h, np.ascontiguousarray(arr, dtype=np.uint8).tobytes(), offset, box)
 
 
+# the brightest a pixel lit by the world alone, with no lamp, is drawn: a lost light leaves its shape flat at the
+# world's 19 (or black); the darkest lit strip the forge draws (a dark plate from behind) still reaches 33
+WORLD_ONLY = 24
+
+
 def unlit(out):
-    """Whether a render drew pixels but no light on any of them: its colour all black where its alpha stands."""
+    """Whether a render drew pixels but no lamp lit any of them: its colour no brighter than the world alone draws."""
     on = out[..., 3] > 0
-    return bool(on.any()) and int(out[..., :3][on].max()) == 0
+    return bool(on.any()) and int(out[..., :3][on].max()) <= WORLD_ONLY
 
 
 def render_rgba(tmp_path):

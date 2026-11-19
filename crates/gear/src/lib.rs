@@ -4,6 +4,8 @@
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; and everything a player
 //! holds.
 
+pub mod ammo;
+pub mod arts;
 pub mod asks;
 pub mod catalogue;
 pub mod character;
@@ -13,6 +15,7 @@ pub mod emblems;
 pub mod grid;
 pub mod item;
 pub mod kinds;
+mod old_hands;
 pub mod power;
 pub mod rarity;
 pub mod rewards;
@@ -30,6 +33,10 @@ pub use rarity::Rarity;
 pub use world::Difficulty;
 
 #[cfg(test)]
+mod ammo_tests;
+#[cfg(test)]
+mod arts_tests;
+#[cfg(test)]
 mod asks_tests;
 #[cfg(test)]
 mod emblems_tests;
@@ -37,6 +44,8 @@ mod emblems_tests;
 mod item_tests;
 #[cfg(test)]
 mod keep_tests;
+#[cfg(test)]
+mod old_hands_tests;
 #[cfg(test)]
 mod power_tests;
 #[cfg(test)]

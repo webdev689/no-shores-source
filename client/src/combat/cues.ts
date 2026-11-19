@@ -1,3 +1,4 @@
+import type { GlowLook } from '../elementGlow.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 
@@ -15,7 +16,23 @@ export const EVENT = {
   shielded: 12,
   shieldBroken: 13,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6 } as const;
+export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
+
+/** The element a blow burns in where it lands: a spell's in its caster's Art's, the player's own blow or shot in their
+ *  weapon's glow as their page shows it, and any other in what the room says it carried. */
+export function blowLook(
+  event: FightEvent,
+  {
+    player,
+    own,
+    spellLook,
+  }: { readonly player: number; readonly own: GlowLook; readonly spellLook?: (id: number) => GlowLook },
+): GlowLook {
+  const carried = event.element === 1 || event.element === 2 || event.element === 3 ? event.element : 0;
+  if (event.how === HOW.spell) return carried || (spellLook?.(event.striker) ?? 0);
+  if (event.striker === player && own) return own;
+  return carried;
+}
 
 /** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, or
  *  one of no side of theirs. */

@@ -7,7 +7,6 @@ import type { Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import {
   CARRIED,
-  KINDS,
   type NodeShown,
   RARITIES,
   SLOTS,
@@ -15,6 +14,7 @@ import {
   WORN,
   itemName,
   itemWords,
+  kindName,
   nodeShown,
   wearAsks,
 } from '../player/gear.ts';
@@ -118,7 +118,7 @@ export function characterOf(state: GearState): Character {
       : level < LEVEL_BY_XP
         ? `${needs} XP to level ${level + 1}`
         : `${needs} more Prestige for level ${level + 1}`;
-  // A hand holding no weapon (empty, or a shield) has no Attack.
+  // A loadout not worn has no Attack.
   const hand = (slot: number) => {
     const attack = state.items.find((item) => item.at === WORN + slot)?.attack ?? 0;
     return attack > 0 ? attack : null;
@@ -152,7 +152,6 @@ export interface ItemDetail {
 
 /** An item's detail; `atVault`, seen at the vault's counter, where it may be put in or taken out. */
 export function itemDetailOf(item: GearItem, state: GearState, atVault = false): ItemDetail {
-  const kind = KINDS[item.kind] ?? '';
   const numbers: [string, string][] = [];
   if (item.attack) numbers.push(['Attack', String(item.attack)]);
   if (item.defense) numbers.push(['Defense', String(item.defense)]);
@@ -185,7 +184,7 @@ export function itemDetailOf(item: GearItem, state: GearState, atVault = false):
   return {
     name: itemName(item),
     colour: colourOf(item.rarity),
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(kind)}${item.breach ? ' · from a Breach' : ''}`,
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}${item.breach ? ' · from a Breach' : ''}`,
     numbers,
     columns: item.columns.map((column, index) => ({
       nodes: Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
@@ -215,7 +214,7 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
     name,
     wares: state.wares.slice(vendor * half, (vendor + 1) * half).map((item) => ({
       tile: tileOf(item),
-      kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(KINDS[item.kind] ?? '')}`,
+      kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}`,
       level: item.level,
       price: item.price,
       affordable: state.aurem >= item.price,

@@ -1,137 +1,104 @@
 """The blows: three strokes for each way a weapon is held, nine frames each, the same in every view. The game plays the
 stroke the player swings: down the overhead, left, right or a diagonal the side cut, up the thrust.
 
-The holds (`HOLDS`): one hand, the left fist empty; both hands on a haft (a war axe, a warhammer, a flail), the right
-fist up it and the left on its foot; both on a long sword's hilt as a claymore, the left just under the right; and a
-pair, a blade in each fist. Each stroke runs the guard, the wind-up, the hit (frame 4), the follow-through and the way
-back.
+The holds (`HOLDS`): one hand, the left fist empty; both hands on a haft (a war axe, a warhammer, a flail), the
+right fist up it and the left on its foot; both on a long sword's hilt as a claymore, the left just under the right;
+a pair, a blade in each fist; and a staff in both fists a forearm apart, struck with its head. Each stroke runs
+the guard, the wind-up, the hit (frame 4), the follow-through and the way back.
 
-One hand's strokes, both hands' drive and a pair's right then left and double thrust are captured (`CAPTURED`,
-specs/moves.json): KayKit's clips, each weapon laid as the clip held it (poses.py `captured_blade`), its edge leading
-the cut. The others are keyed by hand in body space, five keys with an in-between after each. A blend of two keys
-gives the in-between, but where a blade swings round a side between two lines pointing nearly opposite ways
-(`BETWEEN`), which a blend would turn over the top.
-
-A key: both hands' (the right fist, the weapon's line up from it), the way the weapon's edge faces, the chest's turn
-(+ to the left) and lean (+ forward), the legs. A pair's: the right blade, the left blade, turn, lean, legs.
+Every stroke is captured whole from Quaternius's sword clips (`CAPTURED`, specs/moves.json), the body's turn, lean, step
+and crouch as the clip moves them, in every hold: the overhead, his Sword_Attack; the side cut, Sword_Regular_A and its
+recovery, a lunge; the thrust, Sword_Dash_RM's crouched charge with the sword arm driven straight ahead (`THRUST`). A
+lunge's travel is kept in part and drawn home by the last frame (mocap.py `homed`). His rig has no weapon slot: the
+weapon runs along the hand bone's +Z and its edge faces its +Y, as he held it (mocap.py `--blade`). Both hands' holds
+lay both arms by keys of their own (`TWO`), as a one-handed clip swings its arm wide of any left hand: the right fist
+off the shoulders and the weapon's way, level and turned with the chest for the overhead and the side cut, so the body's
+twist drives the swing; the left fist closes on the weapon below the right (`both`). A pair's left blade is held at
+guard before the chest while the right strikes (`guard_left`).
 
 Points and ways are in body space, as poses.py's: the ground under the body, +X its left, -Y ahead, +Z up."""
-from mathutils import Vector
+import math
 
-import onehand
+from mathutils import Matrix, Vector
+
 import poses
 
 STROKES = ('over', 'side', 'thrust')
-HOLDS = ('1h', 'haft', 'hilt', 'pair')
+HOLDS = ('1h', 'haft', 'hilt', 'pair', 'staff')
 FRAMES = 9
 AT = 4   # the frame the weapon lands on
 BLOWS = {f'{stroke}{hold}': FRAMES for hold in HOLDS for stroke in STROKES}
 PAIR = tuple(f'{stroke}pair' for stroke in STROKES)
 # both hands on the weapon: (how far the weapon's own grip lies below the right fist, the left fist below the right),
-# metres. A haft slides up through the right fist, the left on its foot; a claymore's left takes the hilt under it
-TWO_HANDS = {'haft': (0.28, 0.28), 'hilt': (0.0, 0.10)}
+# metres. A haft slides up through the right fist, the left on its foot; a claymore's left takes the hilt under it; a
+# staff's right fist stays where it carries it, the left a forearm's length down the shaft, head and foot both free
+TWO_HANDS = {'haft': (0.28, 0.28), 'hilt': (0.0, 0.10), 'staff': (0.0, 0.42)}
 
-BACK = {'thigh_L': (-16, -8, -12), 'shin_L': (10, 0, 0), 'thigh_R': (8, 10, 16), 'shin_R': (30, 0, 0)}
-MID = {'thigh_L': (-26, -8, -12), 'shin_L': (24, 0, 0), 'thigh_R': (18, 10, 16), 'shin_R': (16, 0, 0)}
-LUNGE = {'thigh_L': (-34, -8, -12), 'shin_L': (34, 0, 0), 'thigh_R': (26, 10, 16), 'shin_R': (8, 0, 0)}
-
-# both hands. The guard holds the weapon ready across the front, its head up by the right shoulder, clear of the face.
-# The overhead chop: raised high, the fists over the brow and the head back over the crown; brought over and down at
-# arm's length, a little across the body; through to the left of the front leg at the knee. The wide side sweep: drawn
-# back past the right hip, the chest wound right; swung round the right side and flat across the front at the waist;
-# carried round to the left. Their drive is captured (`CAPTURED`)
-GUARD_2H = (((-0.14, -0.34, 1.16), (-0.30, -0.40, 0.87)), (0.0, -0.9, -0.41), 0, 0, {})
-BACK_2H = (((-0.12, -0.40, 1.10), (0.15, -0.62, 0.77)), (0.0, -0.77, 0.62))
-TWO = {
-    'over': [GUARD_2H,
-             (((-0.12, -0.20, 1.84), (-0.15, 0.40, 0.90)), (0.0, -0.91, 0.40), -6, 0, BACK),
-             (((-0.08, -0.58, 1.30), (0.18, -0.92, -0.34)), (0.0, 0.34, -0.92), 4, 14, LUNGE),
-             (((0.08, -0.44, 1.02), (0.60, -0.50, -0.62)), (0.0, 0.62, -0.50), 12, 16, LUNGE),
-             (*BACK_2H, 2, 4, MID)],
-    'side': [GUARD_2H,
-             (((-0.40, 0.02, 1.18), (-0.65, 0.70, 0.30)), (-0.70, -0.65, 0.0), -38, 2, BACK),
-             (((-0.04, -0.56, 1.10), (0.78, -0.62, 0.02)), (0.62, 0.78, 0.0), 6, 10, LUNGE),
-             (((0.30, -0.38, 1.10), (0.92, 0.30, -0.05)), (-0.30, 0.92, 0.0), 34, 10, LUNGE),
-             (*BACK_2H, 4, 4, MID)],
-}
-
-# a pair, each blade keyed as one hand's, from the pair's own guard (onehand.py TWIN_GUARD), the V the twin idle
-# stands in. Both down, crossing: both raised high in a V, the fists over the brow and the blades back over the crown;
-# brought down together to cross in an X before the chest; carried on down, still crossed, to the knees. Its right
-# then left and its double thrust are captured (`CAPTURED`)
-GUARD_PAIR = (onehand.TWIN_GUARD[0], onehand.TWIN_GUARD[1], 0, 0, onehand.TWIN_LEGS)
-PAIRED = {
-    'over': [GUARD_PAIR,
-             (((-0.20, -0.18, 1.80), (-0.25, 0.30, 0.92)), ((0.20, -0.18, 1.80), (0.25, 0.30, 0.92)), 0, 0, BACK),
-             (((-0.13, -0.55, 1.36), (0.40, -0.88, -0.25)), ((0.13, -0.55, 1.34), (-0.40, -0.88, -0.25)), 0, 12, LUNGE),
-             (((-0.12, -0.52, 1.08), (0.45, -0.72, -0.52)), ((0.12, -0.52, 1.06), (-0.45, -0.72, -0.52)), 0, 14, LUNGE),
-             (((-0.26, -0.32, 1.06), (-0.30, -0.60, 0.74)), ((0.24, -0.36, 1.02), (0.35, -0.65, 0.67)), 0, 4, MID)],
-}
-
-# the in-betweens a blend would get wrong, by (keys, stroke, the key before): a side cut's blade swinging round its own
-# side, and an overhead's top, straight over the head in the swing's own plane so it never turns across the face
-BETWEEN = {
-    ('two', 'side', 1): (((-0.34, -0.36, 1.14), (-0.80, -0.55, 0.10)), (0.55, -0.80, 0.0), -16, 6, MID),
-    ('two', 'over', 1): (((-0.10, -0.30, 1.86), (-0.03, -0.25, 0.97)), (0.0, -0.97, -0.25), -2, 4, MID),
-    ('pair', 'over', 1): (((-0.15, -0.26, 1.86), (-0.05, -0.25, 0.97)), ((0.15, -0.26, 1.86), (0.05, -0.25, 0.97)),
-                          0, 4, MID),
-}
-
-
-def _lerp(a, b, t):
-    return tuple(x + (y - x) * t for x, y in zip(a, b))
-
-
-def _unit(v):
-    n = sum(x * x for x in v) ** 0.5
-    return tuple(x / n for x in v)
-
-
-def _line(a, b, t):
-    """A weapon's (fist, line) between two keys': the fist moved straight, the line turned through."""
-    return (_lerp(a[0], b[0], t), _unit(_lerp(a[1], b[1], t)))
-
-
-def _legs(a, b, t):
-    return {j: _lerp(a.get(j, onehand.GUARD[j]), b.get(j, onehand.GUARD[j]), t) for j in set(a) | set(b)}
-
-
-def blend(keys, a, b, t=0.5):
-    """The pose `t` of the way from key `a` to key `b`: both hands' edge and a pair's left blade turned through, as
-    the right's weapon is."""
-    first, second, turn, lean, legs = a
-    first_b, second_b, turn_b, lean_b, legs_b = b
-    other = {'two': lambda x, y, s: _unit(_lerp(x, y, s)), 'pair': _line}[keys]
-    return (_line(first, first_b, t), other(second, second_b, t), turn + (turn_b - turn) * t,
-            lean + (lean_b - lean) * t, _legs(legs, legs_b, t))
-
-
-def frames_of(keys, stroke):
-    """A stroke's nine frames: its five keys at 0, 2, 4 (the hit), 6 and 8, an in-between after each."""
-    table = {'two': TWO, 'pair': PAIRED}[keys][stroke]
-    out = []
-    for i, key in enumerate(table):
-        out.append(key)
-        if i + 1 < len(table):
-            out.append(BETWEEN.get((keys, stroke, i)) or blend(keys, key, table[i + 1]))
-    return out
-
-
-# the captured blows and the keys they play (specs/moves.json): one hand's, KayKit's Melee_1H_Attack_Chop,
-# _Slice_Horizontal and _Stab; both hands' drive, its Melee_2H_Attack_Stab, the left fist set on the weapon by the hold;
-# a pair's right then left and double thrust, its Melee_Dualwield_Attack_Chop and _Stab
-CAPTURED = {'over1h': 'over1h', 'side1h': 'side1h', 'thrust1h': 'thrust1h', 'thrusthaft': 'thrust2h',
-            'thrusthilt': 'thrust2h', 'sidepair': 'sidepair', 'thrustpair': 'thrustpair'}
-KEYS_OF = {'haft': 'two', 'hilt': 'two', 'pair': 'pair'}
-POSES = {f'{stroke}{hold}': frames_of(KEYS_OF[hold], stroke) for hold in KEYS_OF for stroke in STROKES
-         if f'{stroke}{hold}' not in CAPTURED}
+# each stroke's captured clip, the same for every hold (specs/moves.json)
+CAPTURED = {f'{stroke}{hold}': f'{stroke}1h' for stroke in STROKES for hold in HOLDS}
 FISTS = {'L': True, 'R': True}
+# the thrust's sword arm by frame: the fist off the right shoulder (body space) and the weapon's way, drawn back by the
+# hip as the body coils, driven straight out ahead at the shoulder's height on the hit, held, and drawn in; the guard
+# and the last two frames as captured
+THRUST = {1: ((0.02, 0.16, -0.34), (0.0, -0.95, 0.30)), 2: ((0.0, 0.22, -0.30), (0.0, -0.93, 0.36)),
+          3: ((0.04, -0.20, -0.18), (0.0, -0.99, 0.12)), 4: ((0.10, -0.60, -0.06), (0.0, -1.0, 0.02)),
+          5: ((0.09, -0.56, -0.08), (0.0, -1.0, 0.0)), 6: ((0.04, -0.34, -0.24), (0.0, -0.96, 0.28))}
+THRUST_EDGE = (0.0, 0.0, 1.0)   # its edges up and down
+THRUST_ELBOW = (-0.6, 0.2, -1.0)   # the right elbow down and out
+# both hands' strokes by frame: the right fist off the shoulders' middle and the weapon's way. The overhead's and the
+# side cut's are level and turned as the chest is, so a crouch or a lean never tips the swing into the floor; the
+# thrust's are in the body's own turn. The overhead: raised over the brow, brought over and down before the chest,
+# through low. The side cut: drawn back past the right shoulder, swung flat across the front, carried round to the
+# left. The thrust: drawn to the right hip, driven out ahead at the hips' height, held and drawn back
+GUARD_LOW = ((-0.10, -0.34, -0.23), (-0.25, -0.45, 0.86))
+TWO = {
+    'over': [GUARD_LOW, ((-0.12, -0.20, 0.19), (-0.10, 0.30, 0.95)), ((-0.08, -0.12, 0.31), (-0.05, 0.80, 0.60)),
+             ((-0.05, -0.42, 0.15), (0.0, -0.75, 0.66)), ((-0.04, -0.50, -0.15), (0.05, -0.90, -0.42)),
+             ((0.0, -0.36, -0.29), (0.12, -0.78, -0.62)), ((0.02, -0.34, -0.30), (0.12, -0.76, -0.64)),
+             ((-0.06, -0.34, -0.27), (-0.15, -0.65, 0.74)), GUARD_LOW],
+    'side': [GUARD_LOW, ((-0.30, -0.22, -0.19), (-0.80, 0.40, 0.45)), ((-0.36, -0.10, -0.17), (-0.65, 0.70, 0.30)),
+             ((-0.22, -0.42, -0.21), (-0.90, -0.40, 0.15)), ((-0.02, -0.50, -0.23), (-0.20, -0.98, 0.05)),
+             ((0.10, -0.38, -0.23), (0.70, -0.70, 0.0)), ((0.16, -0.30, -0.25), (0.92, -0.35, -0.10)),
+             ((0.0, -0.36, -0.25), (0.20, -0.60, 0.77)), GUARD_LOW],
+    'thrust': [GUARD_LOW, ((-0.14, -0.22, -0.42), (0.05, -0.95, 0.30)),
+               ((-0.12, -0.16, -0.40), (0.05, -0.93, 0.36)), ((-0.08, -0.34, -0.32), (0.02, -0.99, 0.12)),
+               ((-0.06, -0.52, -0.20), (0.0, -1.0, 0.02)), ((-0.06, -0.50, -0.22), (0.0, -1.0, 0.0)),
+               ((-0.08, -0.36, -0.32), (0.0, -0.96, 0.28)), ((-0.10, -0.34, -0.28), (-0.15, -0.65, 0.74)), GUARD_LOW],
+}
+# the axis each stroke swings about (in its keys' frame): the edge faces the way the head goes round it
+SWING = {'over': (1.0, 0.0, 0.0), 'side': (0.0, 0.0, 1.0), 'thrust': (1.0, 0.0, 0.0)}
+POLE_R, POLE_L = (-1.0, 0.3, -0.6), (1.0, 0.3, -0.6)   # the elbows down and out
+# how far each hold's weapon runs past the right fist, ahead to its head and behind to its foot, metres
+ENDS = {'haft': (poses.AXE_REACH, 0.30), 'hilt': (poses.SWORD_TIP, 0.15),
+        'staff': (poses.STAFF_TOP, poses.STAFF_POLE - poses.STAFF_TOP)}
+# a pair's left blade at guard before the chest while the right strikes, in the chest's turn: the fist off the left
+# shoulder, the blade's way (up and out ahead) and its edge's, and the elbow's way
+GUARD_L = ((-0.06, -0.34, -0.22), (0.20, -0.45, 0.87), (0.0, -1.0, 0.0))
+GUARD_ELBOW = (0.6, 0.2, -1.0)
 
 
-def two_hands(p, hold, key, edge):
-    """The weapon in both fists: the right at `key` (the fist, the weapon's line), as the gear's frame (`both`)."""
-    at, way = key
-    return both(p, hold, poses.axe_at(p, at, way, edge, pole_r=(-1, 0.6, -0.3)), (1, 0.3, -0.5))
+def thrust_arm(p, frame):
+    """The thrust's right fist laid where `THRUST` puts it off the shoulder, or None where the capture keeps its own.
+    Gives the weapon's way and its edge (body space)."""
+    if frame not in THRUST:
+        return None
+    off, way = THRUST[frame]
+    R = poses.root_matrix(p).inverted()
+    shoulder = R @ p.world()['uarm_R'].translation
+    poses.grip(p, 'R', tuple(shoulder + Vector(off)), way, THRUST_ELBOW)
+    return way, THRUST_EDGE
+
+
+def guard_left(p):
+    """A pair's left blade laid at guard before the chest (`GUARD_L`), turned with it. Gives its way and its edge's
+    (body space)."""
+    W = p.world()
+    R = poses.root_matrix(p).inverted()
+    chest = R.to_3x3() @ W['chest'].to_3x3()
+    off, way, edge = (Vector(v) for v in GUARD_L)
+    poses.grip(p, 'L', tuple(R @ W['uarm_L'].translation + chest @ off), tuple(chest @ way),
+               tuple(chest @ Vector(GUARD_ELBOW)))
+    return tuple(chest @ way), tuple(chest @ edge)
 
 
 def both(p, hold, M, pole_l):
@@ -146,45 +113,73 @@ def both(p, hold, M, pole_l):
     return M
 
 
-def elbow_way(p, side):
-    """The way `side`'s elbow points off its shoulder-to-hand line (body space): where a captured arm bent it."""
+def two_hands(p, hold, stroke, frame):
+    """Both hands' weapon at `frame`: the right fist and the weapon's way keyed (`TWO`), the left fist closed on it."""
+    fist, way = (Vector(v) for v in TWO[stroke][frame])
     W = p.world()
-    sh, el, hand = (W[f'{b}_{side}'].translation for b in ('uarm', 'farm', 'hand'))
-    line = (hand - sh).normalized()
-    return tuple(poses.root_matrix(p).to_3x3().inverted() @ ((el - sh) - (el - sh).project(line)))
+    R = poses.root_matrix(p).inverted()
+    F = Matrix.Translation(R @ ((W['uarm_L'].translation + W['uarm_R'].translation) / 2))
+    if stroke != 'thrust':   # level, turned as the chest is
+        fwd = (R @ W['chest']).to_3x3() @ Vector((0.0, -1.0, 0.0))
+        F = F @ Matrix.Rotation(math.atan2(fwd.x, -fwd.y), 4, 'Z')
+    turn = F.to_3x3()
+    at, edge = F @ fist, turn @ Vector(SWING[stroke]).cross(way.normalized())
+    ahead, behind = ENDS[hold]
+    up = at - Vector((0.0, 0.0, -p.root_loc.z))   # the fist over the floor: a crouch lowers the root under the body
+    way = _clear(up, (turn @ way).normalized(), ahead)
+    way = -_clear(up, -way, behind)
+    M = poses.axe_at(p, tuple(at), tuple(way), tuple((edge - edge.project(way)).normalized()),
+                     pole_r=tuple(turn @ Vector(POLE_R)))
+    return both(p, hold, M, tuple(turn @ Vector(POLE_L)))
+
+
+def _clear(at, way, reach):
+    """Way `way` from `at` (over the floor) raised, its heading kept, till the end `reach` along it clears the floor."""
+    if not reach or at.z + way.z * reach >= 0.03 or at.z < 0.03:
+        return way
+    z = (0.03 - at.z) / reach
+    flat = Vector((way.x, way.y, 0.0)).normalized() * math.sqrt(max(0.0, 1 - z * z))
+    return Vector((flat.x, flat.y, z))
+
+
+def struck(p, name, frame):
+    """Blow `name`'s weapons at `frame` in the hands of body `p`: the thrust's arm laid, both hands' arms keyed, a
+    pair's left at guard."""
+    stroke = next(s for s in STROKES if name.startswith(s))
+    hold, clip = name[len(stroke):], CAPTURED[name]
+    if hold in TWO_HANDS:
+        return {'axe': two_hands(p, hold, stroke, frame), 'fist': dict(FISTS)}
+    blade, edge = (thrust_arm(p, frame) if stroke == 'thrust' else None) or poses.captured_blade(clip, frame)
+    M = poses.held(p, blade, 'R', blades=edge, upright=False)
+    gear = {'axe': M, 'fist': dict(FISTS)}
+    if hold == 'pair':
+        blade, edge = guard_left(p)
+        gear['off'] = poses.held(p, blade, 'L', blades=edge, upright=False)
+    return gear
+
+
+def aimed(name, frame):
+    """Whether blow `name`'s arms at `frame` are keyed (`THRUST`, `TWO`), not the capture's."""
+    stroke = next(s for s in STROKES if name.startswith(s))
+    return name[len(stroke):] in TWO_HANDS or stroke == 'thrust' and frame in THRUST
 
 
 def blow(name):
-    stroke = next(s for s in STROKES if name.startswith(s))
-    hold = name[len(stroke):]
-
     def frame_of(frame, view, yaw):
-        if name in CAPTURED:   # the weapon along the captured blade, its edge as the clip turned it
-            p = poses.captured(CAPTURED[name], frame, yaw)
-            blade, edge = poses.captured_blade(CAPTURED[name], frame)
-            pole_l = elbow_way(p, 'L')
-            M = poses.held(p, blade, 'R', blades=edge)
-            gear = {'axe': both(p, hold, M, pole_l) if hold in TWO_HANDS else M, 'fist': dict(FISTS)}
-            if hold == 'pair':
-                blade, edge = poses.captured_blade(CAPTURED[name], frame, 'L')
-                gear['off'] = poses.held(p, blade, 'L', blades=edge)
-            return p, gear
-        first, second, turn, lean, legs = POSES[name][frame]
-        p = onehand._stance(legs, yaw, turn, lean)
-        if hold == 'pair':
-            return p, {'axe': onehand.sword(p, 'R', first), 'off': onehand.sword(p, 'L', second), 'fist': dict(FISTS)}
-        return p, {'axe': two_hands(p, hold, first, second), 'fist': dict(FISTS)}
+        p = poses.captured(CAPTURED[name], frame, yaw)
+        return p, struck(p, name, frame)
     return frame_of
 
 
-# the holds each held weapon is struck in, by its kind (layers.py `HELD`): a long sword in one hand, as a claymore and
-# in a pair; a short sword, a dagger and a mace in one hand and in a pair; an axe as a battle axe (one hand) and as a
-# war axe (a haft); a flail and a warhammer on a haft. The class sword and axe stand in for a weapon of a metal not
-# drawn. A pair's left weapon (`<layer>_l`) in the pair's alone
+# the holds each held weapon is struck in, by its kind (layers.py `HELD`): a long sword in one hand, as a claymore
+# and in a pair; a short sword, a dagger and a mace in one hand and in a pair; an axe as a battle axe (one hand) and
+# as a war axe (a haft); a flail and a warhammer on a haft; a staff in both hands. The class sword and axe stand in
+# for a weapon of a metal not drawn. A pair's left weapon (`<layer>_l`) in the pair's alone
 HOLDS_OF = {'sword': ('1h', 'hilt', 'pair'), 'short': ('1h', 'pair'), 'dagger': ('1h', 'pair'),
-            'mace': ('1h', 'pair'), 'axe': ('1h', 'haft'), 'flail': ('haft',), 'warhammer': ('haft',)}
-# the hold a class look's records strike in: the long sword in one hand, the war axe on its haft
-CLASS_HOLD = {'sword': '1h', 'axe': 'haft'}
+            'mace': ('1h', 'pair'), 'axe': ('1h', 'haft'), 'flail': ('haft',), 'warhammer': ('haft',),
+            'staff': ('staff',)}
+# the hold a class look's records strike in: the long sword in one hand, the war axe on its haft, the staff in both
+CLASS_HOLD = {'sword': '1h', 'axe': 'haft', 'staff': 'staff'}
 # A look's own records hold each stroke, five views each, so the moves after them keep their records: its hold's once
 # drawn, else the thrust's frames standing in for it (`stands`, the stroke's records: forgeMoves.js FORGE_MOVES)
 STAND_IN = 'thrust'

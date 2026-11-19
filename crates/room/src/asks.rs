@@ -1,8 +1,8 @@
 //! A player's asks of their gear, answered in turn with their inputs: the gear crate's own asks, judged where the
 //! player stands (at the counter that serves the ask in a social space, or within reach of the Test Ground's stall,
 //! which serves them all); gathering a resource node within reach;
-//! and, in the Test Ground alone, grants of gear to try it with. Each answer is kept to send the player with their
-//! gear.
+//! and, in the Test Ground alone, grants of gear and of statuses to try them with. Each answer is kept to send the
+//! player with their gear.
 
 use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
@@ -34,6 +34,8 @@ pub enum Asked {
         node: u8,
     },
     Grant(Grant),
+    /// Wears an Art, or sets a fragment in a slot of one's Core.
+    Art(gear::arts::ArtAsk),
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -54,6 +56,18 @@ pub enum Grant {
     /// This many of every material, and as much again of Aurem a hundred times over.
     Materials(u16),
     Xp(u32),
+    /// A status on the player, or on every foe, for this many ticks or its own time: to see and tune it.
+    Status {
+        status: combat::Status,
+        on_foes: bool,
+        ticks: Option<u32>,
+    },
+    /// The player's Anima full and their Tenets ready, to try every spell at once.
+    ArtsReady,
+    /// The Ranged loadout's ammunition set to this share, in `gear::ammo::AMMO_FULL` parts: full, or none to run dry.
+    Ammo(u16),
+    /// This many Ammo crates more, up to the five carried.
+    Crates(u16),
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -92,6 +106,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
             Some(CounterKind::Vault)
         }
         Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
+        Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Quartermaster)),
         Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
         _ => None,
     }
@@ -196,6 +211,7 @@ impl Room {
             Asked::Gather { node } => self.gather(player, node),
             Asked::Grant(grant) if self.section.is_none() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
+            Asked::Art(ask) => self.ask_art(player, ask),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;
@@ -205,6 +221,8 @@ impl Room {
         self.retrim(player);
         if let Some(found) = self.players.get_mut(&player) {
             found.gear_urgent |= before != (found.trim, crate::power::arms_allowed(&found.character));
+            // The shots an ask gave or took are the fighter's at once, so the next snapshot tells its browser.
+            found.fighter = found.armed(found.fighter);
         }
     }
 
@@ -230,6 +248,14 @@ impl Room {
     }
 
     fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
+        if let Grant::Status { status, on_foes, ticks } = grant {
+            self.grant_status(player, status, on_foes, ticks);
+            return 0;
+        }
+        if grant == Grant::ArtsReady {
+            self.ready_arts(player);
+            return 0;
+        }
         let dice = self.dice(player);
         let Some(found) = self.players.get_mut(&player) else { return 0 };
         let character = &mut found.character;
@@ -245,8 +271,7 @@ impl Room {
                 let Some(def) = gear::catalogue::catalogue().named(&named) else {
                     return answer_code(Err(Refusal::NoSuchItem));
                 };
-                let bucket = Slot::ALL.into_iter().find(|slot| def.kind.fits(*slot)).unwrap_or(Slot::MainHand);
-                let mut item = gear::vestige::named_item(character.take_id(), def, bucket);
+                let mut item = gear::vestige::named_item(character.take_id(), def, def.kind.slot());
                 item.element = gear::element::rolled(item.kind, item.rarity, &dice);
                 return carry(character, item);
             }
@@ -254,8 +279,7 @@ impl Room {
                 if rarity.named() || kind == Kind::Cloak {
                     return answer_code(Err(Refusal::NoSuchItem));
                 }
-                let bucket = Slot::ALL.into_iter().find(|slot| kind.fits(*slot)).unwrap_or(Slot::MainHand);
-                let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, bucket, level, &dice);
+                let mut item = gear::vestige::rolled(character.take_id(), kind, rarity, kind.slot(), level, &dice);
                 item.element = gear::element::rolled(kind, rarity, &dice);
                 return carry(character, item);
             }
@@ -277,6 +301,13 @@ impl Room {
                 }
             }
             Grant::Xp(xp) => character.earn_xp(xp, None),
+            Grant::Ammo(share) => character.ammo = share.min(gear::ammo::AMMO_FULL),
+            Grant::Crates(count) => {
+                for _ in 0..count.min(gear::ammo::CRATES_MOST) {
+                    character.take_crate();
+                }
+            }
+            Grant::Status { .. } | Grant::ArtsReady => {}
         }
         0
     }

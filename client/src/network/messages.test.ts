@@ -5,7 +5,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Course, Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import type { FightOrders } from '../rules/fightRules.ts';
-import { fighterView, glanceView } from '../rules/fighters.ts';
+import { fighterView, glanceView, statusesOf } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
 import { courseBytes, inputBytes, ordersBytes, readFromRoom, walkBytes } from './messages.ts';
 import { fightViewOf, ordersNumbers } from './seaFight.ts';
@@ -70,6 +70,10 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   // A pirate brute of the Elite rank in its first phase, alert.
   assert.deepEqual([foe?.type, foe?.rank, foe?.faction, foe?.phase, foe?.alert], [15, 3, 2, 1, 2]);
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
+  // The brute Exposed for 200 ticks and immune to a Charge for 90; the second player Veiled for 150 and Hasted for 30.
+  assert.deepEqual(foe?.statuses, { expose: 200, charge: 0, chargeImmune: 90 });
+  const own = { crit: 0, expose: 0, charge: 0, haste: 30, linked: 0, veiled: 150, chargeImmune: 0 };
+  assert.deepEqual(statusesOf(snapshot.players[1]?.fighter ?? []), own);
   assert.deepEqual(
     snapshot.events.map((event) => [
       event.tick,
@@ -79,10 +83,12 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
       event.defender,
       event.amount,
       event.stroke,
+      event.crit,
+      event.element,
     ]),
     [
-      [1233n, 3, 1, 12, 9, 0, 0],
-      [1234n, 1, 2, 9, 12, 35, 3],
+      [1233n, 3, 1, 12, 9, 0, 0, false, 0],
+      [1234n, 1, 2, 9, 12, 35, 3, true, 2],
     ],
   );
   const [arrow] = snapshot.shots;
