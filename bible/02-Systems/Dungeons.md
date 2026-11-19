@@ -81,7 +81,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   takes a player back out to the dungeon's entrance once the Reeve has fallen ("In the Game").
 - **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m: on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
-  on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal.
+  on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal, and two stand on
+  the portal's wall, 1.15 m either side of its middle, so the end of the way is lit and marked before it opens.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.8 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A room at least 4 cells each way stands a
   pillar 0.7 m square at every second inner corner whose four cells are its own.
@@ -138,8 +139,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot
   carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
-  the node's id, drawn apart from its resource spots. Each is the model its dungeon's seed draws of the four
-  Daggerfall's dungeon blocks stand, raised as those blocks raise it:
+  the node's id, drawn apart from its resource spots. Each is the mound with a door its dungeon's seed draws, 43601
+  or 43602, which read as a way under the ground in every biome; the four Daggerfall's dungeon blocks stand keep
+  their numbers on the wire (0 to 3), raised as those blocks raise them:
 
 | Model | Stood by | Raised (m) |
 |---|---|---|
@@ -162,16 +164,18 @@ dungeon").
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
   layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Pictures by role from the
   style's two sets, turned to the island's climate (`smallBook`) and painted by the city's painter.
-- **Its light** (`dungeonLight.ts`): each torch warm to `torchReach`, flickering, a faint cold light everywhere; the shader
-  and the figures sum the same light (`lightAt`).
+- **Its light** (`dungeonLight.ts`): each torch warm to `torchReach`, flickering, and a dim cold light everywhere,
+  enough that a room past every torch's reach still shows its walls; the shader and the figures sum the same
+  light (`lightAt`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
 - **The props** (`layout.props`): each forged prop laid by `layModel` as the city lays one, lit by the torches; the
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
 - **Its pictures**, every one painted by the procedural textures: the style's sets (122, 123, 124, records 0 to 4,
   each turned to 22, 122, 322 or 422 and so on by the island's climate), the textures' ironwork (93, record 0), the
   entrance's door picture (56 or 331, record 2), the climate's timber and the props' own.
-- **The entrances** (`entrances.ts`, `EntranceView`): the forged models 42000, 42001, 43601 and 43602, lifted 2.5 m,
-  4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand them, turned by the room's yaw; E reaches a door within
+- **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the forged 42000, 42001, 43601
+  and 43602 (the rooms lay only the two mounds), lifted 2.5 m, 4.8 m, 0.775 m and 0.475 m as Daggerfall's blocks stand
+  them, turned by the room's yaw; E reaches a door within
   2.5 m of its quad's middle.
 - **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room
   judges bodies; the jambs are drawn from the same `boxes`.
@@ -187,3 +191,6 @@ dungeon").
   about half a metre.
 - A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end
   nearer is refused whole before each axis is tried alone.
+- Returning to the ship from inside a dungeon keeps its pictures on the GPU, a few dozen small layers, until the next
+  dungeon is drawn or the page closes; leaving by its door or portal lets them go.
+- The third-person camera keeps short of the rock, so in a narrow room or a corridor it sits close behind the player.

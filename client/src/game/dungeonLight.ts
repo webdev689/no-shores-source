@@ -6,7 +6,7 @@ type Colour = readonly [number, number, number];
 type Torch = readonly [number, number, number, number];
 
 /** The faint cold light everywhere, and a torch's warm light at its foot. */
-export const COLD: Colour = [0.07, 0.08, 0.11];
+export const COLD: Colour = [0.2, 0.21, 0.26];
 export const WARM: Colour = [1.5, 0.95, 0.5];
 /** An open portal's face, a cold bright light. */
 export const PORTAL: Colour = [0.85, 0.95, 1.4];

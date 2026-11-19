@@ -47,4 +47,6 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   assert.deepEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid);
   const furnished = laid.frames.length * 2 + laid.pillars.length;
   assert.ok(laid.boxes.length >= furnished, 'two jambs a frame, then the pillars, then the props’ solids');
+  assert.equal(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid, 'laid once, kept');
+  assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
 });

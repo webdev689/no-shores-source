@@ -20,6 +20,8 @@ const PILLAR_ROOM_CELLS: usize = 4;
 pub const TORCH_M: f64 = 2.1;
 const TORCH_INSET_M: f64 = 0.35;
 pub const TORCH_REACH_M: f64 = 8.0;
+/// How far along its wall each of the portal's two torches stands from its middle: past its edge, inside its cell.
+const PORTAL_TORCH_M: f64 = 1.15;
 /// The exit door's width and height, how far off its wall it stands, and how far from it a body arrives (m).
 pub const EXIT_WIDTH_M: f64 = 1.4;
 pub const EXIT_HEIGHT_M: f64 = 2.4;
@@ -177,6 +179,7 @@ impl Dungeon {
         for (number, block) in blocks.iter().enumerate() {
             dungeon.light(squares[number], block);
         }
+        dungeon.flank_portal();
         dungeon.furnish(seed, style.props);
         dungeon.frame();
         dungeon
@@ -311,6 +314,18 @@ impl Dungeon {
                     corridors += 1;
                 }
             }
+        }
+    }
+
+    /// Two torches on the portal's wall, one either side of it, so the end of the way is lit and marked before the
+    /// portal opens.
+    fn flank_portal(&mut self) {
+        let [x, y] = self.centre(self.portal.cell);
+        let [dx, dy] = self.portal.side.unit();
+        let off = CELL_M / 2.0 - TORCH_INSET_M;
+        for along in [-PORTAL_TORCH_M, PORTAL_TORCH_M] {
+            let at = [x + dx * off - dy * along, y + dy * off + dx * along, TORCH_M];
+            self.torches.push(Torch { at, wall: self.portal.side });
         }
     }
 

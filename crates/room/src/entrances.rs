@@ -34,6 +34,10 @@ pub(crate) struct Model {
     pub lift: f64,
 }
 
+/// The entrances a patrol's dungeons take: the two mounds with a door the other dungeon blocks stand, which read as a way
+/// under the ground in every biome; DUNGAA00's boulder and DUNGAA01's great tree stand by their numbers on the wire.
+pub(crate) const MOUNDS: [usize; 2] = [2, 3];
+
 /// The four entrances Daggerfall's dungeon blocks stand: DUNGAA00's and DUNGAA01's, and the two the other blocks do.
 #[allow(clippy::approx_constant, reason = "the forged props' own numbers, as they are written there")]
 pub(crate) const MODELS: [Model; 4] = [
@@ -150,7 +154,7 @@ pub(crate) fn laid(
             && level(floor, x, y);
         if clear {
             let (seed, _) = dungeon::of_patrol(node, found.len());
-            let model = seed as usize % MODELS.len();
+            let model = MOUNDS[seed as usize % MOUNDS.len()];
             let Model { normal, .. } = MODELS[model];
             let yaw = bearing([x, y], middle) - libm::atan2(normal[0], normal[2]);
             found.push(Entrance { at: [x, y, floor.height_at(x, y)], yaw, model });

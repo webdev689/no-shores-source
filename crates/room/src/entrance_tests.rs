@@ -33,7 +33,8 @@ fn keeps_its_distances(room: &Room) {
         let (door, facing) = entrance.door();
         assert!(off(facing, bearing(door, [0.0, 0.0])) < 0.05, "entrance {number}'s door faces the middle");
         let (seed, _) = dungeon::of_patrol("saltgrass-downs", number);
-        assert_eq!(entrance.model, seed as usize % 4, "its model is its dungeon's seed's");
+        let mounds = crate::entrances::MOUNDS;
+        assert_eq!(entrance.model, mounds[seed as usize % mounds.len()], "its model is its dungeon's seed's mound");
     }
 }
 
@@ -45,10 +46,11 @@ fn a_patrol_lays_its_three_entrances_the_same_every_time_keeping_their_distances
     // Where this patrol lays them, the same on every machine: x, y, the yaw's bits, the model.
     let laid = [
         (-219.78015985926243, -86.68886922122908, 1.946495638220125, 3),
-        (-91.1984168814954, -715.9114353242533, -0.1267054110259509, 0),
-        (-573.2086510065137, -182.53261888435497, 2.1383719746341163, 1),
+        (-91.1984168814954, -715.9114353242533, 3.8002854059612905, 2),
+        (-573.2086510065137, -182.53261888435497, 1.8790836256484815, 3),
     ];
     for (entrance, (x, y, yaw, model)) in room.entrances().iter().zip(laid) {
+        assert!(crate::entrances::MOUNDS.contains(&entrance.model), "a mound with a door");
         assert_eq!(
             [entrance.at[0].to_bits(), entrance.at[1].to_bits(), entrance.yaw.to_bits()],
             [f64::to_bits(x), f64::to_bits(y), f64::to_bits(yaw)]

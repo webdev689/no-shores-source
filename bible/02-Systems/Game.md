@@ -191,8 +191,8 @@ procedural textures as the city paints its own ([[Procedural Textures]]). Their 
 3.2 m. The exit door wears the door picture its entrance's model wears.
 
 - **The light.** The 32 torches nearest the eye each light 8 m round them, warm, flickering gently and none in step,
-  fading to nothing at their reach, a face turned from one catching half; a faint cold light lies everywhere, so a wall
-  past a torch still reads. Each torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as
+  fading to nothing at their reach, a face turned from one catching half; a dim cold light lies everywhere, enough
+  that a room past every torch's reach still shows its walls. Each torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as
   the city's braziers glow. The props are lit by the same light as the walls.
 - **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
   lit by the light where it stands, at its chest's height, in place of the sun.

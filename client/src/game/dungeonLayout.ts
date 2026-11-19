@@ -55,11 +55,22 @@ export const SIDE_STEPS: readonly (readonly [number, number])[] = [
 /** How high the rock beside the open cells stands for the camera and the shots: over any ceiling. */
 const ROCK_TOP_M = 12;
 
+/** Each room module's door, kept, and the dungeons it has laid: the prompt names a dungeon before the trip lays it,
+ *  and a patrol has three, so each is laid once. */
+const doors = new WeakMap<WebAssembly.Module, ReturnType<typeof startRoomDoor>>();
+const laid = new Map<string, DungeonLayout>();
+
 /** The dungeon `number` of the patrol `patrol` (its id) named `name`, laid by the room module's own rules; an ask it
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {
-  const layout = JSON.parse(startRoomDoor(module).dungeon(patrol, name, number)) as DungeonLayout | null;
+  const key = `${patrol}\n${name}\n${number}`;
+  const known = laid.get(key);
+  if (known) return known;
+  const door = doors.get(module) ?? startRoomDoor(module);
+  doors.set(module, door);
+  const layout = JSON.parse(door.dungeon(patrol, name, number)) as DungeonLayout | null;
   if (!layout) throw new Error(`${patrol} has no dungeon ${number}`);
+  laid.set(key, layout);
   return layout;
 }
 
