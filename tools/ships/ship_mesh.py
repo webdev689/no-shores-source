@@ -8,6 +8,9 @@ import math
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 
 PARTS = ('hull', 'deck', 'spar', 'sail', 'iron')
+# A prism is built in lengths no longer than this, as the Sloop's spars are: tools/ships/deck.py takes each solid face
+# by its whole extent, so one long face sloping down would wall off every cell beneath it.
+SEGMENT_M = 0.6
 
 
 def part_materials():
@@ -53,32 +56,36 @@ class Piece:
                 self.quad(corners, part, facing)
 
     def prism(self, start, end, radius, part, sides=8, end_radius=None, caps=True):
-        """A tapered prism along a line, `sides` facets round, its radius going from `radius` to `end_radius`."""
+        """A tapered prism along a line, `sides` facets round, its radius going from `radius` to `end_radius`, built in
+        lengths of at most `SEGMENT_M`."""
         axis = [end[index] - start[index] for index in range(3)]
         length = math.sqrt(sum(value * value for value in axis))
         along = [value / length for value in axis]
         helper = (0.0, 0.0, 1.0) if abs(along[2]) < 0.9 else (1.0, 0.0, 0.0)
         first = normalised(cross(along, helper))
         second = cross(along, first)
+        last = radius if end_radius is None else end_radius
+        lengths = max(1, math.ceil(length / SEGMENT_M))
         rings = []
-        for centre, size in ((start, radius), (end, radius if end_radius is None else end_radius)):
+        for share in (index / lengths for index in range(lengths + 1)):
+            centre = [start[index] + share * axis[index] for index in range(3)]
+            size = radius + share * (last - radius)
             ring = []
             for step in range(sides):
                 angle = 2 * math.pi * (step + 0.5) / sides
                 offset = [math.cos(angle) * first[index] + math.sin(angle) * second[index] for index in range(3)]
                 ring.append(self.point([centre[index] + size * offset[index] for index in range(3)]))
-            rings.append(ring)
-        low, high = rings
-        for step in range(sides):
-            following = (step + 1) % sides
-            corners = [low[step], low[following], high[following], high[step]]
-            middle = [sum(self.points[corner][axis] for corner in corners) / 4 for axis in range(3)]
-            centre = [(start[axis] + end[axis]) / 2 for axis in range(3)]
-            outward = [middle[axis] - centre[axis] for axis in range(3)]
-            self.orient(corners, part, outward)
+            rings.append((ring, centre))
+        for (low, low_centre), (high, high_centre) in zip(rings, rings[1:]):
+            for step in range(sides):
+                following = (step + 1) % sides
+                corners = [low[step], low[following], high[following], high[step]]
+                middle = [sum(self.points[corner][axis] for corner in corners) / 4 for axis in range(3)]
+                centre = [(low_centre[axis] + high_centre[axis]) / 2 for axis in range(3)]
+                self.orient(corners, part, [middle[axis] - centre[axis] for axis in range(3)])
         if caps:
-            self.orient(low, part, [-value for value in along])
-            self.orient(high, part, along)
+            self.orient(rings[0][0], part, [-value for value in along])
+            self.orient(rings[-1][0], part, along)
 
     def slab(self, corner, edges, part):
         """A box at any angle: from `corner`, spanned by its three edge vectors."""

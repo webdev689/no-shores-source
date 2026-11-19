@@ -51,7 +51,8 @@ def wheel(piece, hull):
     for side in (1, -1):
         piece.box((x - 0.08, side * 0.12 - 0.06, deck), (x + 0.08, side * 0.12 + 0.06, deck + 1.05), 'spar')
     piece.box((x - 0.1, -0.2, deck + 1.0), (x + 0.1, 0.2, deck + 1.12), 'spar')
-    centre = (x + 0.2, 0.0, deck + 1.2)
+    # The rim stands aft of its posts, toward the hand at it, so the helm's spot behind it is clear of them.
+    centre = (x - 0.15, 0.0, deck + 1.2)
     rim, spokes = 0.55, 8
     for step in range(16):
         first, second = (2 * math.pi * (step + offset) / 16 for offset in (0, 1))
@@ -64,7 +65,7 @@ def wheel(piece, hull):
         piece.prism(centre, tip, 0.025, 'spar', sides=4)
         piece.prism(tip, tuple(tip[axis] + (0, 0.04 * math.cos(angle), 0.04 * math.sin(angle))[axis]
                                for axis in range(3)), 0.04, 'spar', sides=6)
-    piece.prism((centre[0] - 0.1, 0.0, centre[2]), (centre[0] + 0.12, 0.0, centre[2]), 0.1, 'spar', sides=8)
+    piece.prism((centre[0] - 0.08, 0.0, centre[2]), (x, 0.0, centre[2]), 0.1, 'spar', sides=8)
 
 
 def quarterdeck_rail(piece, hull):

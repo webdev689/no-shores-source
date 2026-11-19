@@ -10,6 +10,8 @@ status: in force
 
 > Shown the roster below with a longboat as its smallest hull: "scrap the longboat. Sloop is the smallest"
 
+> Shown the Schooner and the cabin after their detailed pass: "Approved. Onto the next ship"
+
 ## What it settles
 
 Claude's choice of every ship type, for the sea the owner approved

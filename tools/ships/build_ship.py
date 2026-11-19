@@ -68,6 +68,11 @@ def main():
     build_fittings(hull, collection)
     build_details(hull, collection)
     place_guns(hull, collection, os.path.abspath(given.sloop))
+    # Where a hand stands behind her wheel, as the Sloop's 0.45 m aft of hers: the export keeps her helm there.
+    helm = bpy.data.objects.new('Helm', None)
+    wheel_x = hull.numbers['helm_x_m'] - 0.15
+    helm.location = (wheel_x - 0.45, 0.0, hull.deck(wheel_x) + hull.numbers['quarterdeck_m'][1])
+    collection.objects.link(helm)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(given.out))
 
 

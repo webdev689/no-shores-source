@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 sys.path.insert(0, TOOLS)
 sys.path.insert(0, HERE)
-from deck import MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
+from deck import HELM_AFT_M, MANIFEST, deck_of, mesh_triangles, write_manifest  # noqa: E402
 from r2 import PUBLIC, published, put  # noqa: E402
 
 # The parts the game paints, numbered as her mesh numbers them (client/src/textures/shipPictures.ts).
@@ -402,7 +402,17 @@ def main():
             file.write(mesh)
         return
     # Her deck from the mesh as published, so this and tools/ships/deck.py measure the same numbers.
-    publish(args.name, args.blend, mesh, size, armed, struck, rigged, deck_of(mesh_triangles(mesh)))
+    publish(args.name, args.blend, mesh, size, armed, struck, rigged,
+            deck_of(mesh_triangles(mesh), helm_aft(bpy.data.objects, offset)))
+
+
+def helm_aft(objects, offset):
+    """How far aft of her middle her helm is kept: where an empty named `Helm` stands in her model (as
+    tools/ships/build_ship.py places it), or the Sloop's spot for a model without one."""
+    helm = objects.get('Helm')
+    if helm is None:
+        return HELM_AFT_M
+    return round(-(helm.matrix_world.translation.x + offset[0]), 4)
 
 
 if __name__ == '__main__':
