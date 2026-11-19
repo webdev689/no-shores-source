@@ -147,7 +147,7 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
 /// its blocks and the open ground round them; a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     if let (Floor::Dungeon(_), Some(section)) = (floor, section) {
-        return crate::dungeon_room::baked(floor, blocks, first, section);
+        return crate::dungeon_room::baked(floor, first, section);
     }
     let (walked, middle, around): (&[Block], (f64, f64), f64) = match section {
         Some(section) => (&[], ground_middle(section, first), NODE_AROUND),

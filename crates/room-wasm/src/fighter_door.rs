@@ -43,6 +43,20 @@ pub fn set_ground(text: &[u8]) -> bool {
     kept
 }
 
+/// Keeps a patrol's dungeon's ground for predicting a fighter without a room, from the JSON ask `room_dungeon` takes
+/// (its patrol's id and name and its number), and an empty course: a dungeon's jambs and pillars are its ground's own.
+/// Answers whether the ask was a dungeon.
+pub fn set_dungeon(text: &[u8]) -> bool {
+    let Some(floor) = crate::dungeon_door::asked(text)
+        .and_then(|(seed, style)| Floor::of_dungeon(&dungeon::Dungeon::forge(seed, style)))
+    else {
+        return false;
+    };
+    FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor);
+    COURSE.with(|course| course.borrow_mut().clear());
+    true
+}
+
 /// One tick of a player's fighter as a room would take it, on the ground kept (open ground unless set), from its
 /// numbers: the fighter,
 /// the intent, the player's number, the arms their hands hold (taken up as the room takes them, `Fighter::holding`),
@@ -130,6 +144,17 @@ pub unsafe extern "C" fn fighter_course(address: *const u8, length: usize) -> u3
 pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the dungeon asked for by the JSON written at `address` for predicting (`set_dungeon`); 1 if it was one, 0 if
+/// not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_dungeon(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_dungeon(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Steps the fighter whose numbers are written at `address` a tick, as `predict` says; answers the next fighter's

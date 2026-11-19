@@ -1,5 +1,7 @@
 use crate::dungeon::{DOORWAY_HALF_M, JAMB_DEPTH_M, TORCH_M};
-use crate::{BLOCK_CELLS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WayIn, name, of_patrol};
+use crate::{
+    BLOCK_CELLS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor, name, of_patrol,
+};
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
     (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
@@ -199,18 +201,20 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         ],
         ceilings: vec![3.2; 12],
         rooms: vec![room(vec![0]), room(vec![3, 4]), room(vec![11])],
-        way_in: WayIn { cell: 0, side: Side::West, room: 0 },
+        way_in: WallDoor { cell: 0, side: Side::West, room: 0 },
+        end: 2,
+        portal: WallDoor { cell: 11, side: Side::East, room: 2 },
         torches: Vec::new(),
         frames: Vec::new(),
         pillars: Vec::new(),
     };
-    laid.walk();
+    let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
     laid.cells[9] = corridor;
     laid.cells[10] = corridor;
-    laid.walk();
+    let steps = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, 6]);
-    assert_eq!(laid.end(), 2);
+    assert_eq!(steps[10], 5, "each cell's walk too");
 }
 
 #[test]
@@ -259,11 +263,12 @@ fn pillars_stand_on_every_second_inner_corner_of_a_great_room_four_of_its_own_ce
 }
 
 #[test]
-fn the_end_is_the_room_farthest_by_walk() {
-    for dungeon in every_dungeon(300) {
+fn the_end_lies_past_every_room_of_the_first_block_and_is_never_the_way_ins() {
+    for dungeon in every_dungeon(600) {
         let end = dungeon.end();
-        assert!(dungeon.rooms.iter().all(|room| room.walk <= dungeon.rooms[end].walk));
         assert_ne!(end, dungeon.way_in.room, "the end is never the way in's room");
+        let first_block = dungeon.rooms.iter().filter(|room| square_of(&dungeon, room.cells[0]) == dungeon.squares[0]);
+        assert!(first_block.clone().all(|room| room.walk < dungeon.rooms[end].walk), "the end lies past the beginning");
     }
 }
 
@@ -278,4 +283,96 @@ fn a_patrols_dungeons_take_different_styles_and_are_named_for_their_patrol() {
     }
     assert_eq!(name(&STYLES[0], "The Saltgrass Downs"), "The Crypt of the Saltgrass Downs");
     assert_eq!(name(&STYLES[3], "The Pale Wastes"), "The Sanctum of the Pale Wastes");
+}
+
+/// The square of blocks a cell lies in.
+fn square_of(dungeon: &Dungeon, cell: usize) -> (usize, usize) {
+    ((cell % dungeon.columns) / BLOCK_CELLS, (cell / dungeon.columns) / BLOCK_CELLS)
+}
+
+#[test]
+fn the_blocks_run_in_a_chain_each_opening_only_onto_the_one_before_and_the_one_after() {
+    for dungeon in every_dungeon(600) {
+        for pair in dungeon.squares.windows(2) {
+            assert_eq!(
+                pair[0].0.abs_diff(pair[1].0) + pair[0].1.abs_diff(pair[1].1),
+                1,
+                "each block beside the one before"
+            );
+        }
+        let mut doorways = std::collections::BTreeMap::new();
+        for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != Cell::Rock) {
+            for side in [Side::East, Side::South] {
+                let Some(next) = dungeon.beside(cell, side) else { continue };
+                let (here, there) = (square_of(&dungeon, cell), square_of(&dungeon, next));
+                if here != there && dungeon.cells[next] != Cell::Rock {
+                    let first = dungeon.squares.iter().position(|&square| square == here).unwrap();
+                    let second = dungeon.squares.iter().position(|&square| square == there).unwrap();
+                    *doorways.entry((first.min(second), first.max(second))).or_insert(0) += 1;
+                }
+            }
+        }
+        let next_in_chain: Vec<(usize, usize)> =
+            (1..dungeon.squares.len()).map(|number| (number - 1, number)).collect();
+        assert_eq!(doorways.keys().copied().collect::<Vec<_>>(), next_in_chain, "only blocks next in the chain open");
+        assert!(doorways.values().all(|&count| count == 1), "one doorway between them");
+    }
+}
+
+#[test]
+fn a_dungeon_begins_in_its_first_block_and_ends_in_its_last() {
+    for dungeon in every_dungeon(600) {
+        assert_eq!(square_of(&dungeon, dungeon.way_in.cell), dungeon.squares[0]);
+        let end = &dungeon.rooms[dungeon.end()];
+        assert_eq!(square_of(&dungeon, end.cells[0]), dungeon.squares[dungeon.squares.len() - 1]);
+    }
+}
+
+#[test]
+fn a_dungeon_is_a_run_with_few_loops_not_a_maze() {
+    // Loops counted over a graph whose nodes are rooms and corridor cells: its edges past a tree's.
+    let (count, mut loops, mut most) = (2000, 0, 0);
+    for dungeon in every_dungeon(count) {
+        let node = |cell: usize| match dungeon.cells[cell] {
+            Cell::Rock => None,
+            Cell::Room(number) => Some(usize::from(number)),
+            Cell::Corridor => Some(dungeon.rooms.len() + cell),
+        };
+        let mut joined = std::collections::BTreeSet::new();
+        for cell in 0..dungeon.cells.len() {
+            for side in [Side::East, Side::South] {
+                if let (Some(here), Some(there)) = (node(cell), dungeon.beside(cell, side).and_then(node))
+                    && here != there
+                {
+                    joined.insert((here.min(there), here.max(there)));
+                }
+            }
+        }
+        let corridors = dungeon.cells.iter().filter(|&&cell| cell == Cell::Corridor).count();
+        let found = joined.len() + 1 - (dungeon.rooms.len() + corridors);
+        loops += found;
+        most = most.max(found);
+    }
+    // DFO's maze law, with its loops, made 5.3 on average over these dungeons and up to 28.
+    assert!(loops * 10 < count as usize * 12, "{} loops a dungeon on average", loops as f64 / f64::from(count));
+    assert!(most <= 10, "at most {most}");
+}
+
+#[test]
+fn the_return_portal_stands_on_a_rock_wall_of_the_end_room_and_no_torch_hangs_there() {
+    for dungeon in every_dungeon(600) {
+        let portal = dungeon.portal;
+        assert_eq!(portal.room, dungeon.end());
+        assert_eq!(dungeon.room_at(portal.cell), Some(portal.room));
+        assert!(dungeon.beside(portal.cell, portal.side).is_none_or(|next| dungeon.cells[next] == Cell::Rock));
+        assert_ne!((portal.cell, portal.side), (dungeon.way_in.cell, dungeon.way_in.side));
+        for torch in &dungeon.torches {
+            let cell = (torch.at[0] / CELL_M) as usize + (torch.at[1] / CELL_M) as usize * dungeon.columns;
+            assert_ne!((cell, torch.wall), (portal.cell, portal.side), "no torch over the portal");
+        }
+        let [x, y] = dungeon.portal_door();
+        let [middle_x, middle_y] = dungeon.centre(portal.cell);
+        let [dx, dy] = portal.side.unit();
+        assert!(((x - middle_x) * dx + (y - middle_y) * dy - CELL_M / 2.0).abs() < 0.05, "on its wall");
+    }
 }

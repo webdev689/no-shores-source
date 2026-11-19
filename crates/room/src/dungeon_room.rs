@@ -38,9 +38,9 @@ pub(crate) struct Cache {
 /// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
 const NAV_CELL_M: f64 = CELL_M / 8.0;
 
-/// A dungeon room's navmesh: over the whole dungeon and its jambs and pillars, kept to the floor the way in stands on,
-/// in cells of NAV_CELL_M.
-pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: &Section) -> NavMesh {
+/// A dungeon room's navmesh: over the whole dungeon and its ground's jambs and pillars, kept to the floor the way in
+/// stands on, in cells of NAV_CELL_M.
+pub(crate) fn baked(floor: &Floor, first: (f64, f64), section: &Section) -> NavMesh {
     let fold = |pick: fn(f64, f64) -> f64, start: f64, axis: usize| {
         section.ring.iter().fold(start, |kept, corner| pick(kept, corner[axis]))
     };
@@ -51,7 +51,16 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         max_y: fold(f64::max, f64::NEG_INFINITY, 1),
     };
     let agent = navmesh::Agent { cell_size: NAV_CELL_M, ..navmesh::AGENT };
-    NavMesh::bake_anchored(blocks, floor, bounds, &agent, [first.0, first.1, floor.height_at(first.0, first.1)])
+    let anchor = [first.0, first.1, floor.height_at(first.0, first.1)];
+    match floor {
+        // On the cells' heights alone, the jambs and pillars its colliders: a solid read as ground would make the
+        // floor beside it too steep to walk, and narrow every doorway past a body's width.
+        Floor::Dungeon(ground) => {
+            let solids: Vec<Block> = ground.solids().iter().map(Block::from_floats).collect();
+            NavMesh::bake_anchored(&solids, ground.grid(), bounds, &agent, anchor)
+        }
+        Floor::Flat | Floor::Land(_) => NavMesh::bake_anchored(&[], floor, bounds, &agent, anchor),
+    }
 }
 
 /// A room's cells nearest its middle, its quiet cells (none of whose sides meets a corridor) when it has `count` of
@@ -105,11 +114,11 @@ impl Room {
         let (seed, style) = dungeon::of_patrol(patrol, number);
         let dungeon = Dungeon::forge(seed, style);
         let floor = Floor::of_dungeon(&dungeon)?;
-        let blocks = dungeon.boxes().iter().map(Block::from_floats).collect();
         let (width, depth) = (dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M);
         let ([x, y], [toward_x, toward_y]) = dungeon.arrival();
         let ring = vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]];
-        let mut room = Self::node(floor, blocks, Section { ring, spawns: vec![[x, y]] });
+        // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
+        let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]] });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
         room.world_seed = node_seed(&format!("{patrol}--dungeon-{number}"));
         room.foes_most = NODE_FOES_MOST;
@@ -169,10 +178,12 @@ impl Room {
         ways.into_iter().find_map(|(east, south): (f64, f64)| {
             let across = if east != 0.0 && south != 0.0 { diagonal } else { CACHE_FROM_POST_M };
             let (x, y) = (post[0] + east * across, post[1] + south * across);
-            let clear = self.blocks.iter().all(|block| {
-                let near_x = x.clamp(block.min_x, block.max_x);
-                let near_y = y.clamp(block.min_y, block.max_y);
-                apart([x, y], [near_x, near_y]) >= CACHE_CLEAR_M
+            let solids = match &self.floor {
+                Floor::Dungeon(ground) => ground.solids(),
+                Floor::Flat | Floor::Land(_) => &[],
+            };
+            let clear = solids.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+                apart([x, y], [x.clamp(min_x, max_x), y.clamp(min_y, max_y)]) >= CACHE_CLEAR_M
             });
             let open = !self.floor.walled((post[0], post[1]), (x, y));
             (clear && open).then(|| Cache {

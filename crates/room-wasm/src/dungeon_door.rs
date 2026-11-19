@@ -25,13 +25,22 @@ const fn side_number(side: Side) -> u8 {
     }
 }
 
-/// The dungeon asked for as JSON, or null for an ask that does not read. Each cell is -2 for rock, -1 for a corridor
+/// The seed and style of the dungeon an ask names, or None for an ask that does not read or a number past the
+/// patrol's dungeons.
+pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
+    let asked = serde_json::from_slice::<Asked>(text).ok()?;
+    (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&asked.patrol, asked.number))
+}
+
+/// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
+/// wall as the exit door stands on the way in's, as wide and as high. Each cell is -2 for rock, -1 for a corridor
 /// or its room's number; sides are 0 east, 1 south, 2 west, 3 north; points are x east, y south, z up from the
 /// dungeon's north-west corner at its floor; a bearing is radians clockwise from north.
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
-    let Ok(asked) = serde_json::from_slice::<Asked>(text) else { return Value::Null.to_string() };
-    let (seed, style) = dungeon::of_patrol(&asked.patrol, asked.number);
+    let (Ok(found), Some((seed, style))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
+        return Value::Null.to_string();
+    };
     let laid = Dungeon::forge(seed, style);
     let cells: Vec<i32> = laid
         .cells
@@ -49,6 +58,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
         .collect();
     let ([arrive_x, arrive_y], _) = laid.arrival();
     let [door_x, door_y] = laid.exit_door();
+    let [portal_x, portal_y] = laid.portal_door();
     let torches: Vec<[f64; 4]> = laid
         .torches
         .iter()
@@ -57,7 +67,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
     json!({
-        "name": dungeon::name(&style, &asked.name),
+        "name": dungeon::name(&style, &found.name),
         "pictures": style.pictures,
         "cell": dungeon::CELL_M,
         "columns": laid.columns,
@@ -69,6 +79,13 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "wayIn": { "cell": laid.way_in.cell, "side": side_number(laid.way_in.side), "room": laid.way_in.room },
         "arrival": { "x": arrive_x, "y": arrive_y, "bearing": laid.way_in.side.opposite().bearing() },
         "exitDoor": { "x": door_x, "y": door_y, "width": dungeon::EXIT_WIDTH_M, "height": dungeon::EXIT_HEIGHT_M },
+        "portal": {
+            "x": portal_x,
+            "y": portal_y,
+            "side": side_number(laid.portal.side),
+            "width": dungeon::EXIT_WIDTH_M,
+            "height": dungeon::EXIT_HEIGHT_M,
+        },
         "torches": torches,
         "torchReach": dungeon::TORCH_REACH_M,
         "frames": frames,
@@ -141,7 +158,7 @@ mod tests {
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
     ];
-    const AGREED_HASH: u64 = 0x07fe_bb82_28aa_ee0e;
+    const AGREED_HASH: u64 = 0x211e_d498_04b0_827c;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -153,7 +170,8 @@ mod tests {
     }
 
     #[test]
-    fn an_ask_that_does_not_read_is_null() {
+    fn an_ask_that_does_not_read_or_names_no_dungeon_is_null() {
         assert_eq!(dungeon_json(b"not json"), "null");
+        assert_eq!(dungeon_json(br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":3}"#), "null");
     }
 }

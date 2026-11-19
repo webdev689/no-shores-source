@@ -1,17 +1,20 @@
-use crate::block::{BLOCK_CELLS, BlockLayout, Opening, opening_cell};
+use crate::block::{BLOCK_CELLS, BlockLayout, Ends, Opening, opening_cell};
 use crate::lane::Lane;
 use crate::{Cell, STYLES, Shape, Side};
 
-/// A block's openings as a seed draws them: up to one on each side.
-fn openings(seed: u32) -> Vec<Opening> {
+/// A block's way in and way on as a seed draws them: each on a side of its own, or none.
+fn ends(seed: u32) -> Ends {
     let mut lane = Lane::new(seed);
-    let mut gaps = Vec::new();
-    for side in [Side::East, Side::South, Side::West, Side::North] {
-        if lane.chance(0.6) {
-            gaps.push(Opening { side, cell: lane.int(2, 13) });
-        }
-    }
-    gaps
+    let sides = [Side::East, Side::South, Side::West, Side::North];
+    let entry = sides[lane.below(4)];
+    let exit = sides.into_iter().filter(|&side| side != entry).nth(lane.below(3)).unwrap_or(Side::East);
+    let mut opening = |side| lane.chance(0.8).then(|| Opening { side, cell: lane.int(2, 13) });
+    Ends { entry: opening(entry), exit: opening(exit) }
+}
+
+/// The rim cells a block's ends pass through.
+fn rim(ends: Ends) -> Vec<(usize, usize)> {
+    [ends.entry, ends.exit].into_iter().flatten().map(opening_cell).collect()
 }
 
 fn open_cells(block: &BlockLayout) -> Vec<(usize, usize)> {
@@ -25,8 +28,8 @@ fn open_cells(block: &BlockLayout) -> Vec<(usize, usize)> {
 fn every_block_is_one_walk_its_rim_rock_but_where_its_openings_pass() {
     for seed in 0..2000 {
         let style = STYLES[seed as usize % STYLES.len()];
-        let gaps = openings(seed);
-        let block = BlockLayout::sound(seed, &gaps, &style, seed % 5 == 0);
+        let gaps = ends(seed);
+        let block = BlockLayout::sound(seed, gaps, &style, seed % 5 == 0);
         let open = open_cells(&block);
         let mut reached = vec![open[0]];
         let mut todo = vec![open[0]];
@@ -39,7 +42,7 @@ fn every_block_is_one_walk_its_rim_rock_but_where_its_openings_pass() {
             }
         }
         assert_eq!(reached.len(), open.len(), "seed {seed}: every open cell one walk");
-        let rim: Vec<(usize, usize)> = gaps.iter().map(|&gap| opening_cell(gap)).collect();
+        let rim = rim(gaps);
         for &(x, y) in &open {
             let on_rim = x == 0 || y == 0 || x == BLOCK_CELLS - 1 || y == BLOCK_CELLS - 1;
             assert!(!on_rim || rim.contains(&(x, y)), "seed {seed}: ({x}, {y}) opens the rim");
@@ -60,10 +63,11 @@ fn every_block_is_one_walk_its_rim_rock_but_where_its_openings_pass() {
 
 #[test]
 fn the_same_seed_lays_the_same_block() {
-    let gaps = [Opening { side: Side::East, cell: 7 }, Opening { side: Side::North, cell: 3 }];
+    let gaps =
+        Ends { entry: Some(Opening { side: Side::North, cell: 3 }), exit: Some(Opening { side: Side::East, cell: 7 }) };
     for style in STYLES {
-        assert_eq!(BlockLayout::sound(77, &gaps, &style, true), BlockLayout::sound(77, &gaps, &style, true));
-        assert_ne!(BlockLayout::sound(77, &gaps, &style, true), BlockLayout::sound(78, &gaps, &style, true));
+        assert_eq!(BlockLayout::sound(77, gaps, &style, true), BlockLayout::sound(77, gaps, &style, true));
+        assert_ne!(BlockLayout::sound(77, gaps, &style, true), BlockLayout::sound(78, gaps, &style, true));
     }
 }
 
@@ -72,7 +76,7 @@ fn rooms_take_their_styles_sizes_heights_and_shapes() {
     for style in STYLES {
         let (mut ells, mut could) = (0, 0);
         for seed in 0..600 {
-            let block = BlockLayout::sound(seed, &[], &style, false);
+            let block = BlockLayout::sound(seed, Ends::default(), &style, false);
             assert!(block.rooms.len() <= style.rooms.1, "{}: no more rooms than its most", style.noun);
             for room in &block.rooms {
                 assert!(room.width <= style.room_cells.1 && room.depth <= style.room_cells.1);
@@ -101,7 +105,7 @@ fn an_ell_leaves_one_corner_quarter_of_its_rectangle_rock() {
     let style = STYLES[1];
     let (block, number) = (0..)
         .find_map(|seed| {
-            let block = BlockLayout::sound(seed, &[], &style, false);
+            let block = BlockLayout::sound(seed, Ends::default(), &style, false);
             let number = block.rooms.iter().position(|room| room.shape == Shape::Ell)?;
             Some((block, number))
         })
@@ -114,7 +118,7 @@ fn an_ell_leaves_one_corner_quarter_of_its_rectangle_rock() {
 #[test]
 fn the_way_ins_block_has_its_exit_door_against_rock_in_a_room() {
     for seed in 0..500 {
-        let block = BlockLayout::sound(seed, &openings(seed), &STYLES[seed as usize % 4], true);
+        let block = BlockLayout::sound(seed, ends(seed), &STYLES[seed as usize % 4], true);
         let (x, y, side) = block.exit_spot().unwrap();
         assert!(matches!(block.cells[y * BLOCK_CELLS + x], Cell::Room(_)), "seed {seed}: the door is in a room");
         let (dx, dy) = side.step();
@@ -126,7 +130,7 @@ fn the_way_ins_block_has_its_exit_door_against_rock_in_a_room() {
 #[test]
 fn a_quiet_cell_meets_no_corridor() {
     for seed in 0..300 {
-        let block = BlockLayout::sound(seed, &openings(seed), &STYLES[0], false);
+        let block = BlockLayout::sound(seed, ends(seed), &STYLES[0], false);
         for number in 0..block.rooms.len() {
             for (x, y) in block.quiet_cells(number) {
                 for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)] {

@@ -7,6 +7,7 @@
 pub mod asks;
 pub mod clash;
 pub mod deck;
+pub mod dungeon_ground;
 mod dungeon_room;
 mod entrances;
 pub mod fleet;
