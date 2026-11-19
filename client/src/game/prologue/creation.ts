@@ -51,6 +51,7 @@ function windowIn(
   ended: () => void = () => undefined,
 ): [HTMLElement, HTMLElement] {
   const frame = make('section', '', `creation ${ROLES.window}`);
+  if (signal?.aborted) reject(signal.reason);
   signal?.addEventListener(
     'abort',
     () => {
@@ -90,7 +91,8 @@ export function accountStep(
     const [frame, contents] = windowIn(root, 'Your account', signal, reject);
     const done = (outcome: AccountOutcome) => {
       frame.remove();
-      if (link !== null) dispatchEvent(new Event(ACCOUNT_CHANGED));
+      // Going on without an account changed nothing, and asking again would only wait on accounts out of reach.
+      if (outcome.kind !== 'alone') dispatchEvent(new Event(ACCOUNT_CHANGED));
       resolve(outcome);
     };
     if (link === null) {
@@ -112,7 +114,7 @@ export function accountStep(
       offered = going.words;
       const goOn = pressOf(going.press, () => done(going.outcome), 'primary');
       presses.push(goOn);
-      // Discord linked is news the offer does not say; signed in with Discord, it says already.
+      // Discord linked is news the offer does not say; a Discord sign-in is told by the offer's own words.
       const words = told === DISCORD_LINKED ? `${told} ${going.words}` : going.words;
       contents.prepend(make('p', words, 'creation-words'), goOn);
       // A player already typing on the form keeps their place in it.

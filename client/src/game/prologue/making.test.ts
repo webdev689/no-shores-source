@@ -94,13 +94,20 @@ test('the story moving on from the helm ends its windows, and the step ending th
       if (signal) signals.push(signal);
       return { kind: 'alone' };
     },
-    look: (_root, _start, _changed, _turn, signal) =>
-      new Promise((_resolve, reject) => signal?.addEventListener('abort', () => reject(signal.reason))),
+    // A look step that, left, still answers with a choice, as a press landing as the helm goes would.
+    look: (_root, _start, changed, _turn, signal) =>
+      new Promise((resolve) =>
+        signal?.addEventListener('abort', () => {
+          if (!signal.aborted) changed(chosen);
+          resolve(chosen);
+        }),
+      ),
   });
+  const chosen: Look = { ...FIRST_LOOK, race: 'anole' };
   await settle();
   making.leave();
   await settle();
   assert.equal(signals[0]?.aborted, true, 'the windows are told the helm is left');
-  assert.equal(making.done, false);
-  assert.equal(helm.look, FIRST_LOOK);
+  assert.equal(making.done, false, 'a helm left is not done');
+  assert.equal(helm.look, FIRST_LOOK, 'what the step answers after the helm is left dresses nobody');
 });

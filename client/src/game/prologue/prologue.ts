@@ -139,7 +139,7 @@ export class Prologue {
   }
 
   /** The beat after the one that ended, made from what it left; a beat that cannot be made is passed over. `before`
-   *  runs only if a beat follows, before it lays anything over the view. */
+   *  runs only if a beat follows, before each beat tried lays anything over the view. */
   private next(before: () => void = () => undefined): void {
     const ended = this.beat;
     // A hold on Space belongs to the cutscene it began on: the next must be held for its own second.

@@ -56,6 +56,8 @@ export class Making implements Beat {
       (step) => (this.turnTo += step * TURN_STEP),
       signal,
     );
+    // A step that answers after the helm was left has no player left to dress.
+    if (signal.aborted) return;
     this.dressAs(chosen);
     keepLook(localStorage, chosen);
     this.turnTo = 0;

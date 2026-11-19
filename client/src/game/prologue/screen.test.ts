@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { FakeElement, fakePage } from '../game/pageForTests.ts';
-import { Screen } from './screen.ts';
+import { FakeElement, fakePage } from '../pageForTests.ts';
+import { Screen } from '../../cinema/screen.ts';
 
 const byTouch = (touch: boolean) =>
   Object.assign(globalThis, { matchMedia: (query: string) => ({ matches: touch && query === '(pointer: coarse)' }) });

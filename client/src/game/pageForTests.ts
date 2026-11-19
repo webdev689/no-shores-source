@@ -51,7 +51,9 @@ export class FakeElement extends Listeners {
   readonly children: FakeElement[] = [];
   parent: FakeElement | null = null;
   readonly attributes = new Map<string, string>();
-  readonly style: Record<string, string> = {};
+  readonly style: Record<string, string | ((name: string, value: string) => void)> = {
+    setProperty: (name: string, value: string) => void (this.style[name] = value),
+  };
   readonly dataset: Record<string, string> = {};
   className = '';
   value = '';

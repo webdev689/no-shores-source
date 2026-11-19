@@ -106,6 +106,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   });
   const readCast = castOf(cast);
   const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
+  const screen = new Screen(hudRoot, game.canvas);
   const stage = new Stage({
     gpu,
     canvas: game.canvas,
@@ -119,7 +120,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     hulls,
     birds,
     flames,
-    screen: new Screen(hudRoot, game.canvas),
+    screen,
     dialogue: new DialogueBox(hudRoot, worldOutput),
     overheads: new Overheads(hudRoot, worldOutput),
     ambience: new Ambience(worldOutput),
@@ -166,7 +167,14 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
     gpu,
     hulls: { brig: brigMesh, frigate: frigateMesh },
   };
-  const prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
+  let prologue: Prologue;
+  try {
+    prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
+  } catch (error) {
+    // A story that cannot begin gives the page back its touches and its canvas's ease for the game.
+    screen.remove();
+    throw error;
+  }
   const leave = () => {
     stage.leave();
     prologue.leave();
