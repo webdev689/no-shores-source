@@ -177,6 +177,8 @@ fn every_beat_has_a_raised_place() {
 #[test]
 fn nothing_stands_on_a_runs_line() {
     each_run(&|laid, run, floor| {
+        // What a body climbs on its way (an undercroft's chapel floor and stairs) is walked in runs_walked.rs.
+        let climbed = layout::run_climbs::climb(run).map(|climb| climb.print);
         // Its line, and on from its end beat's middle to its door.
         for pair in run.way().windows(2) {
             let length = layout::field::distance(pair[0], pair[1]);
@@ -185,6 +187,9 @@ fn nothing_stands_on_a_runs_line() {
                 let share = step as f64 / steps as f64;
                 let at =
                     [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share];
+                if climbed.is_some_and(|print| layout::run_climbs::off_print(print, at) < 1.2) {
+                    continue;
+                }
                 let ground = floor(at);
                 let blocking =
                     laid.boxes.iter().find(|b| b[5] < ground + 2.0 && b[4] > ground + 0.4 && off_box(at, b) < 1.2);

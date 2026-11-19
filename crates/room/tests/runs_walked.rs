@@ -125,7 +125,12 @@ fn zones_of(id: &str) -> Vec<Zone> {
 /// A body walked from `from` through each waypoint in turn, steering at each tick toward the next; where it ends, and
 /// how many waypoints it passed.
 fn walked(zone: &Zone, from: [f64; 2], waypoints: &[[f64; 2]], ticks: usize) -> (movement::Body, usize) {
-    let mut body = standing_on(&zone.floor, &zone.blocks, from[0], from[1]);
+    walked_on(zone, standing_on(&zone.floor, &zone.blocks, from[0], from[1]), waypoints, ticks)
+}
+
+/// A body walked on from where it stands through each waypoint in turn, as `walked`.
+fn walked_on(zone: &Zone, body: movement::Body, waypoints: &[[f64; 2]], ticks: usize) -> (movement::Body, usize) {
+    let mut body = body;
     let mut next = 0;
     for _ in 0..ticks {
         let Some(target) = waypoints.get(next) else { break };
@@ -163,6 +168,58 @@ fn every_run_is_walked_to_its_door_and_no_further() {
             }
         }
     }
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn every_keep_is_climbed_to_its_turret_top_and_every_undercroft_walked_down_from_its_chapel_floor() {
+    let zones = zones();
+    let (mut keeps, mut undercrofts, mut failed) = (0, 0, Vec::new());
+    for zone in &zones {
+        for run in zone.runs.iter().filter(|run| run.kind.building()) {
+            let Some(climb) = layout::run_climbs::climb(run) else {
+                if run.kind != layout::brief::RunKind::Mine {
+                    failed.push(format!("{}: {} has nothing to climb", zone.id, run.name));
+                }
+                continue;
+            };
+            let up = |body: &movement::Body| body.z - zone.floor.height_at(body.x, body.y);
+            let ticks = (60.0 / TICK_SECONDS) as usize;
+            let (end, last) = (climb.walk.len() - 1, climb.walk[climb.walk.len() - 1]);
+            if run.kind == layout::brief::RunKind::Keep {
+                keeps += 1;
+                // Up the stair, along the wall-walk and up onto the turret, 11 m over the ward's floor.
+                let (body, _) = walked(zone, climb.walk[0], &climb.walk[1..], ticks);
+                if distance([body.x, body.y], last) > THERE_M || up(&body) < 10.5 {
+                    failed.push(format!(
+                        "{}: up {}'s stair the body stops at {:.1},{:.1}, {:.1} m up",
+                        zone.id,
+                        run.name,
+                        body.x,
+                        body.y,
+                        up(&body)
+                    ));
+                }
+            } else {
+                undercrofts += 1;
+                // Up onto the chapel's floor from the zone, then down its stair into the undercroft.
+                let (top, _) = walked(zone, climb.walk[0], &climb.walk[1..end], ticks);
+                let (body, _) = walked_on(zone, top, &[last], ticks);
+                if up(&top) < 2.2 || distance([body.x, body.y], last) > THERE_M || up(&body).abs() > 0.1 {
+                    failed.push(format!(
+                        "{}: {}'s chapel floor is {:.1} m up, and down its stair the body stops at {:.1},{:.1}, {:.1} m up",
+                        zone.id,
+                        run.name,
+                        up(&top),
+                        body.x,
+                        body.y,
+                        up(&body)
+                    ));
+                }
+            }
+        }
+    }
+    assert!(keeps >= 2 && undercrofts >= 1, "Saltmere's keeps and undercroft: {keeps}, {undercrofts}");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 

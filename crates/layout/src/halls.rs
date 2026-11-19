@@ -1,7 +1,7 @@
 //! A hall kit for the large buildings runs pass through, of the city's solids, every piece a collider: walls laid in
 //! short lengths so a wall at a slant still boxes close to itself (a body meets a solid's box, square to the world);
 //! rooms square to the world whose walls open wherever a way crosses them, roofed or open to the sky; corridors walled
-//! and roofed along a way; stairs of 0.2 m risers.
+//! and roofed along a way; stairs of 0.2 m risers; round turrets ringed with merlons.
 
 use crate::field::distance;
 use crate::pieces::turn_along;
@@ -17,6 +17,9 @@ const GAP_HALF_M: f64 = 3.6;
 const LINTEL_M: f64 = 3.2;
 /// A stair's rise a step, metres.
 const RISER_M: f64 = 0.2;
+/// A turret's width, and a merlon's width, depth and height, metres.
+pub const TURRET_M: f64 = 5.0;
+const MERLON: [f64; 3] = [0.9, 0.4, 1.2];
 
 fn unit(from: [f64; 2], to: [f64; 2]) -> [f64; 2] {
     let length = distance(from, to).max(1e-9);
@@ -174,6 +177,21 @@ pub fn stair(out: &mut Vec<Solid>, from: [f64; 3], to: [f64; 3], width: f64, mat
         out.push(
             Solid::upright(Shape::Block, [middle[0], middle[1], from[2] - 0.3], size, material).turned(turn_along(way)),
         );
+    }
+}
+
+/// A round turret from `heights[0]` to `heights[1]` with ten merlons round its top; where `open` (a unit vector) is
+/// given, the merlon on that side is left out, so a body comes onto the top from there.
+pub fn turret(out: &mut Vec<Solid>, at: [f64; 2], heights: [f64; 2], open: Option<[f64; 2]>, material: Material) {
+    let [bottom, top] = heights;
+    let shape = Shape::Column { sides: 10, top: 1.0 };
+    out.push(Solid::upright(shape, [at[0], at[1], bottom], [TURRET_M, TURRET_M, top - bottom], material));
+    let start = open.map_or(0.0, |way| libm::atan2(way[1], way[0]));
+    for slot in usize::from(open.is_some())..10 {
+        let (sine, cosine) = land::exact::sin_cos(start + std::f64::consts::TAU * slot as f64 / 10.0);
+        let spot = ahead(at, [cosine, sine], TURRET_M / 2.0 - 0.35);
+        let merlon = Solid::upright(Shape::Block, [spot[0], spot[1], top], MERLON, material);
+        out.push(merlon.turned(turn_along([cosine, sine])));
     }
 }
 

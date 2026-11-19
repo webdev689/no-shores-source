@@ -24,6 +24,7 @@ pub mod pieces_coast;
 pub mod pieces_land;
 pub mod ring;
 pub mod rocks;
+pub mod run_climbs;
 pub mod run_halls;
 pub mod run_kits;
 pub mod runs;

@@ -238,10 +238,19 @@ out past its edge.
   pillared vaults and a slab of stone for its door. The door stands at the foot of the face behind the end arena, iron-
   banded timber in a stone arch for the rest. A building's rooms stand square to the world and open wherever the way
   crosses a wall; a slanted wall is laid in lengths short enough that each piece's box stays within half a metre of it.
+  A keep's rooms reach 0.7 of their beat's, so their corners stand on its floor, short of the rock's face.
+- **What a body climbs** (`run_climbs`), square to the world so each box is its piece: in a keep's ward a stair of 0.2 m
+  risers up the inside of the wall its way keeps furthest from to a wall-walk along it 8.4 m up, a parapet's height
+  under the wall's top, and at its end a short stair onto a round turret's top at the corner, 11 m up and ringed with
+  merlons, open where the stair comes on; just past an undercroft's mouth its chapel's floor raised 2.4 m on the way,
+  with a stair up onto it from the zone and a stair down off it into the undercroft, along the axis nearest the way in
+  (no point of the way stands on a step). The
+  run's other pieces keep off them, and they are laid after the way is cleared.
 - **Kept clear**: a run's way is its line and on from its end beat's middle to its door. No box of a run's pieces
-  stands within 1.2 m of its way under head height, and the rock and walls laid after it keep off it; every ceiling over a
-  building run's way stands 2.6 m or more over its floor. A body walks every run from its mouth to within 3 m of its door, and no
-  further (`crates/room/tests/runs_walked.rs`).
+  stands within 1.2 m of its way under head height, but for what a body climbs on it, and the rock and walls laid after
+  it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
+  from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
+  undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`).
 
 ## Laid on the land
 

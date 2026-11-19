@@ -5,9 +5,12 @@
 
 use crate::brief::RunKind;
 use crate::field::distance;
+use crate::halls::WALL_M;
 use crate::paths::off_line;
 use crate::pieces::{Kit, turn_along};
 use crate::rocks::stone;
+use crate::run_climbs::off_print;
+use crate::run_halls::ROOM_SHARE;
 use crate::runs::{Beat, Run, half_of};
 use crate::skyline::{carved_at, tower_stump};
 use city::solids::{Material, Shape, Solid};
@@ -29,10 +32,11 @@ const WALL_LENGTH_M: f64 = 5.0;
 /// further than the piece.
 pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
     let first = kit.into.solids.len();
+    let climb = crate::run_climbs::climb(run).map(|climb| climb.print);
     mouth(kit, run, carved);
     for (number, beat) in run.beats.iter().enumerate() {
-        let raised = raised_place(kit, run, beat, carved);
-        cover(kit, run, beat, carved, raised);
+        let raised = raised_place(kit, run, beat, carved, climb);
+        cover(kit, run, beat, carved, (raised, climb));
         if number + 1 == run.beats.len() / 2 + 1 {
             middle_piece(kit, run, beat, carved);
         }
@@ -51,6 +55,7 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         index += 1;
         !built || !blocks(run, solid, floor)
     });
+    crate::run_climbs::build(kit, run, carved);
 }
 
 /// Whether a solid's box stands within 1.2 m of a run's way (its line and on to its door) under head height (2.2 m over `floor`).
@@ -126,10 +131,12 @@ fn mouth(kit: &mut Kit, run: &Run, carved: &Sculpts) {
 
 /// A raised place at a beat's edge, clear of the line: a shelf of stone 1.6 m over the floor with steps up to it from
 /// the beat's middle side. Where it stands, so the cover keeps off it.
-fn raised_place(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts) -> Option<[f64; 2]> {
+fn raised_place(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, climb: Option<[f64; 4]>) -> Option<[f64; 2]> {
     let start = kit.draw() * std::f64::consts::TAU;
-    // Well inside the rim, so the section (traced on 8 m cells) holds it whole.
-    let out = (beat.radius - 6.0).max(4.0);
+    // Well inside the rim, so the section (traced on 8 m cells) holds it whole, and inside a keep's room.
+    let inside = if run.kind == RunKind::Keep { beat.radius * ROOM_SHARE - 3.0 } else { beat.radius - 6.0 };
+    let out = inside.max(4.0);
+    let off_climb = |at: [f64; 2]| climb.map_or(f64::INFINITY, |print| off_print(print, at));
     let place = (0..12).find_map(|turn| {
         let (sine, cosine) = land::exact::sin_cos(start + f64::from(turn) * std::f64::consts::TAU / 12.0);
         let way = [sine, -cosine];
@@ -137,8 +144,9 @@ fn raised_place(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts) -> Opti
         // The steps run along the rim beside the shelf, so on a small beat they keep as far from the line as it does.
         let along = [-way[1], way[0]];
         let steps: Vec<[f64; 2]> = (1..=3).map(|step| ahead(shelf, along, 1.6 + 1.2 * f64::from(step) - 0.6)).collect();
-        let clear =
-            off_run(run, shelf) > LINE_CLEAR_M + 2.4 && steps.iter().all(|at| off_run(run, *at) > LINE_CLEAR_M + 1.0);
+        let clear = off_run(run, shelf) > LINE_CLEAR_M + 2.4
+            && off_climb(shelf) > 2.4
+            && steps.iter().all(|at| off_run(run, *at) > LINE_CLEAR_M + 1.0 && off_climb(*at) > 1.4);
         clear.then_some((shelf, way, steps))
     });
     let (shelf, way, steps) = place?;
@@ -159,7 +167,8 @@ fn raised_place(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts) -> Opti
 
 /// Cover over a beat's floor on a staggered lattice, each piece moved off the line where it would stand on it and left
 /// out where the raised place stands: rock in the open, broken masonry along a rampart or ledge.
-fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, raised: Option<[f64; 2]>) {
+fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, kept: (Option<[f64; 2]>, Option<[f64; 4]>)) {
+    let (raised, climb) = kept;
     let reach = beat.radius - 1.5;
     let row_step = COVER_EVERY_M * 0.866;
     let rows = (reach / row_step).ceil() as i32;
@@ -183,6 +192,14 @@ fn cover(kit: &mut Kit, run: &Run, beat: &Beat, carved: &Sculpts, raised: Option
                 if distance(at, beat.at) > reach {
                     continue;
                 }
+            }
+            // Clear of what a body climbs, and of a keep's room's walls.
+            let walls = beat.radius * ROOM_SHARE + WALL_M / 2.0;
+            let off_walls = (walls - (at[0] - beat.at[0]).abs().max((at[1] - beat.at[1]).abs())).abs();
+            if climb.is_some_and(|print| off_print(print, at) < across / 2.0 + 0.5)
+                || (run.kind == RunKind::Keep && off_walls < 1.6)
+            {
+                continue;
             }
             let ground = carved_at(kit, carved, at);
             // Tall enough to crouch behind wherever the floor rises toward a passage.
