@@ -40,12 +40,12 @@ HULLS = {
         'ports': (-6.0, -3.4, -0.8, 1.8, 4.4),
         'masts': (
             {'x': 5.4, 'height_m': 14.5, 'topmast_m': 3.0, 'rake_deg': 4, 'radius_m': 0.24, 'boom_m': 1.9,
-             'boom_to_m': -1.2, 'gaff_m': 12.6, 'gaff_to_m': 0.6, 'gaff_rise_m': 2.6},
+             'boom_to_m': -1.2, 'gaff_m': 12.6, 'gaff_to_m': 0.6, 'gaff_rise_m': 2.0},
             {'x': -2.2, 'height_m': 16.0, 'topmast_m': 3.5, 'rake_deg': 5, 'radius_m': 0.27, 'boom_m': 2.75,
              'boom_to_m': -14.2, 'gaff_m': 14.0, 'gaff_to_m': -9.4, 'gaff_rise_m': 3.0},
         ),
         'bowsprit': {'from_x_m': 10.4, 'to_x_m': 20.5, 'rise_m': 2.2, 'radius_m': 0.22},
-        'staysail': {'head_m': 13.4, 'clew_m': 2.2, 'clew_ahead_m': 1.0},
+        'staysail': {'head_m': 13.4, 'clew_m': 2.8, 'clew_ahead_m': 1.0},
         'helm_x_m': -11.0,
         'hatch_x_m': 3.7,
         'boat_x_m': 0.6,
@@ -83,7 +83,7 @@ HULLS = {
         # jibboom's; `clew_m` is over her deck at her stem, and `y_m` keeps the two out of one plane.
         'headsails': (
             {'stay_from_m': 19.1, 'head_x_m': 13.0, 'tack_x_m': 21.8, 'clew_x_m': 13.6, 'clew_m': 2.7, 'y_m': 0.15},
-            {'stay_from_m': 19.4, 'to_jibboom': True, 'head_x_m': 15.0, 'tack_x_m': 28.2, 'clew_x_m': 18.5,
+            {'stay_from_m': 18.95, 'to_jibboom': True, 'head_x_m': 15.0, 'tack_x_m': 28.2, 'clew_x_m': 18.5,
              'clew_m': 3.9, 'y_m': -0.15},
         ),
         'helm_x_m': -13.4,
@@ -125,8 +125,8 @@ HULLS = {
         ),
         'bowsprit': {'from_x_m': 15.0, 'to_x_m': 28.0, 'rise_m': 3.0, 'radius_m': 0.38, 'jibboom_m': 8.0},
         'headsails': (
-            {'stay_from_m': 22.6, 'head_x_m': 16.0, 'tack_x_m': 27.2, 'clew_x_m': 17.0, 'clew_m': 3.6, 'y_m': 0.15},
-            {'stay_from_m': 23.0, 'to_jibboom': True, 'head_x_m': 18.5, 'tack_x_m': 35.0, 'clew_x_m': 23.0,
+            {'stay_from_m': 22.4, 'head_x_m': 16.0, 'tack_x_m': 27.2, 'clew_x_m': 17.0, 'clew_m': 3.6, 'y_m': 0.15},
+            {'stay_from_m': 22.1, 'to_jibboom': True, 'head_x_m': 18.5, 'tack_x_m': 35.0, 'clew_x_m': 23.0,
              'clew_m': 5.6, 'y_m': -0.15},
         ),
         'helm_x_m': -16.5,

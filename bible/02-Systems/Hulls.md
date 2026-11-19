@@ -62,8 +62,9 @@ The Sloop, built and the smallest, sails as Minor and Major ships and is the pla
    shrouds with ratlines, stays, a bobstay and dolphin striker, mast hoops, a rudder, catheads with anchors, hawse
    holes, a stern lantern, a windlass, a bell, a binnacle, a skylight, boom gallows, a ship's boat, pin rails, stores
    and coils of rope. Each gun is placed by its own muzzle, measured from its mesh: its wheels on her deck and its
-   barrel through the middle of a port cut round it. No face shares a plane with another facing the same way where
-   either shows: Cycles renders such a spot black.
+   barrel through the middle of a port cut round it. A mast's channel moves forward until its chainplates clear every
+   port. No face shares a plane with another facing the same way where either shows: Cycles renders such a spot black.
+   No sail is cut by a spar, a rope or a fitting: each stay leaves its mast between the sails above and below it.
 2. It is painted and rendered from four sides, on deck and beside the Sloop, for the owner's yes. The Schooner has
    it, and the cabin and the Brig; the Frigate waits for it.
 
