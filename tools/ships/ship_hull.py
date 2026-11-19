@@ -169,9 +169,10 @@ def forecastle_back(piece, hull):
 
 def ends(piece, hull):
     """Solid timber where her bulwarks meet at her stem and her stern, each thicker than she is wide there, so no
-    gap between their inner faces opens to the sky. It stays inside her narrowest planks, so none of it shows."""
+    gap between their inner faces opens to the sky. It stays inside her narrowest planks and her end caps, so none of it
+    shows: a face on her end cap's plane would render black there."""
     half = KEEL_HALF_M - 0.01
-    for x0, x1 in ((hull.fore - 0.8, hull.fore), (hull.aft, hull.aft + 0.45)):
+    for x0, x1 in ((hull.fore - 0.8, hull.fore - 0.02), (hull.aft + 0.02, hull.aft + 0.45)):
         middle = (x0 + x1) / 2
         top = hull.section(middle)[-1][1] + 0.08
         piece.box((x0, -half, hull.floor_at(middle)), (x1, half, top), 'hull')

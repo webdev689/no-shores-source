@@ -51,15 +51,19 @@ The Sloop, built and the smallest, sails as Minor and Major ships and is the pla
 ## How one is made
 
 1. `tools/ships/build_ship.py` makes the hull from her numbers in `HULLS`, in the Sloop's style: her faceted shell,
-   lined gunports and capped rail, her quarterdeck, her rig and sails, her fittings, the Sloop's own cannon at each
-   port, and her companionway, whose doors an empty named `Cabin.Entrance` marks as her way into the cabin.
+   lined gunports and capped rail, her quarterdeck and any forecastle with rails and steps at their edges, her rig
+   and sails, her fittings, the Sloop's own cannon at each port, and her companionway, whose doors an empty named
+   `Cabin.Entrance` marks as her way into the cabin. `ship_rig.py` rigs a mast either way: a gaff mast with its boom,
+   gaff and sail; or a square mast with a top, topmast and topgallant, a yard and sail for each, and a gaff spanker
+   abaft it; her headsails are bent to stays to her bowsprit and any jibboom.
    `ship_details.py` adds what the Sloop does not carry: wales, gunport lids, channels with deadeyes and chainplates,
    shrouds with ratlines, stays, a bobstay and dolphin striker, mast hoops, a rudder, catheads with anchors, hawse
    holes, a stern lantern, a windlass, a bell, a binnacle, a skylight, boom gallows, a ship's boat, pin rails, stores
    and coils of rope. Each gun is placed by its own muzzle, measured from its mesh: its wheels on her deck and its
-   barrel through the middle of a port cut round it.
+   barrel through the middle of a port cut round it. No face shares a plane with another facing the same way where
+   either shows: Cycles renders such a spot black.
 2. It is painted and rendered from four sides, on deck and beside the Sloop, for the owner's yes. The Schooner has
-   it, and the cabin.
+   it, and the cabin; the Brig waits for it.
 
 The cabin is one room for every ship ([[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]):
 `tools/ships/build_cabin.py` builds it: spacious, about 10 m by 6.4 m with a 3 m ceiling, its middle and forward
@@ -70,7 +74,8 @@ weapon rack, lanterns, and stores by the stairs. `Cabin.Inside` marks
 where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, where they go back up.
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
-   entry in `content/ships/ships.json`. The `ships` workflow does this for the Sloop and the Schooner.
+   entry in `content/ships/ships.json`. The `ships` workflow does this for the Sloop and the Schooner. It takes a
+   square sail for a gaff sail today, so the Brig is not published until it knows them.
 
 ## What the code needs
 

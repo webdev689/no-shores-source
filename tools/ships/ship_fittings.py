@@ -1,6 +1,7 @@
-"""A ship's fittings in the Sloop's style: her wheel on its post, her quarterdeck's rail and the steps at its front
-corners, the posts paired along her rail, her stem and bitts, a hatch with its grating, fife rails at her masts, stern
-windows, the companionway into her cabin, and her guns, which are the Sloop's own.
+"""A ship's fittings in the Sloop's style: her wheel on its post, the rails across her quarterdeck's front and her
+forecastle's back with steps at their corners, the posts paired along her rail, her stem and bitts, a hatch with its
+grating, fife rails at her masts, stern windows, the companionway into her cabin, and her guns, which are the Sloop's
+own.
 
 The companionway's doors are her cabin's entrance; an empty named `Cabin.Entrance` marks where a player stands to
 open them.
@@ -29,7 +30,9 @@ def build_fittings(hull, collection):
     piece = Piece()
     numbers = hull.numbers
     wheel(piece, hull)
-    quarterdeck_rail(piece, hull)
+    breast_rail(piece, hull, *numbers['quarterdeck_m'], 1)
+    if numbers.get('forecastle_m'):
+        breast_rail(piece, hull, *numbers['forecastle_m'], -1)
     rail_posts(piece, hull)
     bow(piece, hull)
     hatch(piece, hull)
@@ -68,27 +71,31 @@ def wheel(piece, hull):
     piece.prism((centre[0] - 0.08, 0.0, centre[2]), (x, 0.0, centre[2]), 0.1, 'spar', sides=8)
 
 
-def quarterdeck_rail(piece, hull):
-    """A panelled rail across her quarterdeck's front, its posts topped by a rail, and steps at both front corners."""
-    front, rise = hull.numbers['quarterdeck_m']
-    deck = hull.deck(front)
+def breast_rail(piece, hull, edge, rise, way):
+    """A panelled rail across the edge of a raised deck, its posts topped by a rail, and steps at both its corners
+    down onto her main deck, which lies the `way` along her from it (1 for her quarterdeck, -1 for her forecastle)."""
+    deck = hull.deck(edge)
     top = deck + rise
-    half = inside(hull, front)
+    half = inside(hull, edge)
     gap = 0.9
+    across = lambda back, front: tuple(edge + pick(way * back, way * front) for pick in (min, max))  # noqa: E731
     for side in (1, -1):
         near, far = side * (half - gap), side * 0.0
         low, high = min(near, far), max(near, far)
-        piece.box((front - 0.06, low, top), (front + 0.02, high, top + 0.5), 'hull')
-        piece.box((front - 0.1, low, top + 0.5), (front + 0.06, high, top + 0.6), 'spar')
-        for y in (near, near * 0.5, 0.0):
-            piece.box((front - 0.08, y - 0.07, top), (front + 0.06, y + 0.07, top + 0.68), 'spar')
+        x0, x1 = across(-0.06, 0.02)
+        piece.box((x0, low, top), (x1, high, top + 0.5), 'hull')
+        x0, x1 = across(-0.1, 0.06)
+        piece.box((x0, low, top + 0.5), (x1, high, top + 0.6), 'spar')
+        # Its posts stand proud of the rail and the panel both ways: a face shared with either renders black.
+        for y in (near, near * 0.5) if side > 0 else (near, near * 0.5, 0.0):
+            x0, x1 = across(-0.08, 0.08)
+            piece.box((x0, y - 0.07, top), (x1, y + 0.07, top + 0.68), 'spar')
         treads = max(1, round(rise / TREAD_RISE_M))
         for step in range(treads):
-            depth = (treads - step) * 0.25
-            z = deck + (step + 1) * rise / treads
+            x0, x1 = across(0.0, (treads - step) * 0.25)
+            z0, z1 = (deck + (step + level) * rise / treads for level in (0, 1))
             outer, inward = side * (half - 0.02), side * (half - gap + 0.05)
-            piece.box((front, min(outer, inward), deck), (front + depth, max(outer, inward), z), 'deck',
-                      skip=('bottom',))
+            piece.box((x0, min(outer, inward), z0), (x1, max(outer, inward), z1), 'deck', skip=('bottom',))
 
 
 def rail_posts(piece, hull):
@@ -113,7 +120,7 @@ def bow(piece, hull):
     rail = hull.section(fore - 0.3)[-1][1]
     piece.box((fore - 0.35, -0.16, hull.keel(fore) - 0.05), (fore + 0.12, 0.16, rail + 0.55), 'hull')
     sprit = hull.numbers['bowsprit']['from_x_m']
-    deck = hull.deck(sprit)
+    deck = hull.floor_at(sprit)
     for side in (1, -1):
         piece.box((sprit - 0.12, side * 0.3 - 0.11, deck), (sprit + 0.12, side * 0.3 + 0.11, deck + 1.25), 'spar')
     piece.box((sprit - 0.08, -0.45, deck + 0.75), (sprit + 0.08, 0.45, deck + 0.9), 'spar')
@@ -125,12 +132,16 @@ def hatch(piece, hull):
     deck = hull.deck(x)
     piece.box((x - half_length, -half_width, deck), (x + half_length, half_width, deck + 0.3), 'hull',
               skip=('bottom', 'top'))
+    # The slats' ends stop short of the coaming, so none shares its plane.
+    inset = 0.02
     for step in range(7):
         y = -half_width + (step + 0.5) * 2 * half_width / 7
-        piece.box((x - half_length, y - 0.04, deck + 0.24), (x + half_length, y + 0.04, deck + 0.3), 'deck')
+        piece.box((x - half_length + inset, y - 0.04, deck + 0.24), (x + half_length - inset, y + 0.04, deck + 0.3),
+                  'deck')
     for step in range(8):
         x_slat = x - half_length + (step + 0.5) * 2 * half_length / 8
-        piece.box((x_slat - 0.04, -half_width, deck + 0.28), (x_slat + 0.04, half_width, deck + 0.33), 'deck')
+        piece.box((x_slat - 0.04, -half_width + inset, deck + 0.28), (x_slat + 0.04, half_width - inset, deck + 0.33),
+                  'deck')
 
 
 def fife_rail(piece, hull, x):
@@ -192,7 +203,7 @@ def companionway(piece, hull):
     deck = hull.deck(x1)
     piece.box((x0, -half, deck), (x1, half, deck + height), 'hull', skip=('bottom', 'top', 'fore'))
     for side in (1, -1):
-        piece.box((x1 - 0.06, side * 0.62 - 0.13, deck), (x1 + 0.02, side * 0.62 + 0.13, deck + height), 'hull')
+        piece.box((x1 - 0.06, side * 0.62 - 0.14, deck), (x1 + 0.02, side * 0.62 + 0.14, deck + height), 'hull')
     piece.box((x0 - 0.08, -half - 0.1, deck + height), (x1 + 0.12, half + 0.1, deck + height + 0.1), 'hull')
     piece.box((x0 - 0.04, -half + 0.05, deck + height + 0.1), (x1 + 0.06, half - 0.05, deck + height + 0.22), 'deck')
     for side in (1, -1):

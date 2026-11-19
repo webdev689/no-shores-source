@@ -1,7 +1,8 @@
 """A ship's finer work, past what the Sloop carries: wales along her sides, gunport lids propped open, channels with
 deadeyes and chainplates, shrouds with ratlines, stays between her mastheads and to her bowsprit, a bobstay and
 dolphin striker, mast hoops, a rudder, catheads with their anchors, hawse holes and a stern lantern; on deck a windlass,
-a bell, a binnacle, a skylight, boom gallows, a ship's boat on chocks, pin rails, stores and coils of rope.
+a bell, a binnacle, a skylight, boom gallows, a ship's boat on chocks, pin rails, stores and coils of rope. A square
+mast's lower shrouds reach its top, with futtock shrouds under it, and topmast shrouds and backstays rise from there.
 
 Standing rigging is tarred, so it wears the iron part; everything else wears the part it is made of.
 """
@@ -9,7 +10,7 @@ import math
 
 from ship_hull import BODY_ROWS, PORT_LINTEL_M, inner
 from ship_mesh import Piece, normalised
-from ship_rig import mast_at
+from ship_rig import along_x, headsail_stays, heights, mast_at, section_at, sprit_line, top_rim
 
 ROPE_M = 0.025
 RATLINE_EVERY_M = 0.42
@@ -24,7 +25,11 @@ def build_details(hull, collection):
     port_lids(piece, hull)
     for mast in hull.numbers['masts']:
         shrouds(piece, hull, mast)
-        mast_hoops(piece, hull, mast)
+        if mast.get('rig') == 'square':
+            upper_shrouds(piece, hull, mast)
+        gear = mast.get('spanker') if mast.get('rig') == 'square' else mast
+        if gear:
+            mast_hoops(piece, hull, mast, gear)
         pin_rails(piece, hull, mast['x'])
         coils(piece, hull, mast['x'])
     stays(piece, hull)
@@ -89,9 +94,12 @@ def port_lids(piece, hull):
 
 def shrouds(piece, hull, mast):
     """A channel each side at the mast, three deadeyes on it with chainplates down her side, shrouds from them to the
-    crosstrees, and ratlines across the shrouds."""
+    crosstrees (a square mast's to the sides of its top), and ratlines across the shrouds."""
     deck = hull.deck(mast['x'])
     trees = mast_at(mast, deck, mast['height_m'] - 0.9)
+    square = mast.get('rig') == 'square'
+    if square:
+        _, _, half, top_z = top_rim(mast, deck)
     places = (mast['x'] + 0.35, mast['x'] - 0.35, mast['x'] - 1.05)
     for side in (1, -1):
         rail_y, rail_z = rail(hull, mast['x'])
@@ -105,14 +113,49 @@ def shrouds(piece, hull, mast):
             (_, low_y, low_z), _ = outward(hull, x, board_z - 1.2, side)
             piece.prism((x, eye[1], board_z + 0.1), (x, low_y + side * 0.03, low_z), 0.025, 'iron', sides=4)
             top = (trees[0], side * 0.3, trees[2])
+            if square:
+                top = (trees[0] + (x - mast['x']) * 0.6, side * (half - 0.2), top_z - 0.12)
             piece.prism(eye, top, ROPE_M, 'iron', sides=5)
             lines.append((eye, top))
-        (first_low, first_high), (last_low, last_high) = lines[0], lines[-1]
-        z = first_low[2] + 0.6
-        while z < trees[2] - 0.8:
-            ends = [along(low, high, z) for low, high in ((first_low, first_high), (last_low, last_high))]
-            piece.prism(ends[0], ends[1], 0.012, 'iron', sides=4, caps=False)
-            z += RATLINE_EVERY_M
+        ratlines(piece, lines, lines[0][0][2] + 0.6, lines[0][1][2] - 0.8)
+
+
+def ratlines(piece, lines, low, high):
+    """Ratlines across a side's shrouds, from its first to its last, every `RATLINE_EVERY_M` from `low` to `high`."""
+    (first_low, first_high), (last_low, last_high) = lines[0], lines[-1]
+    z = low
+    while z < high:
+        ends = [along(bottom, top, z) for bottom, top in ((first_low, first_high), (last_low, last_high))]
+        piece.prism(ends[0], ends[1], 0.012, 'iron', sides=4, caps=False)
+        z += RATLINE_EVERY_M
+
+
+def upper_shrouds(piece, hull, mast):
+    """Above a square mast's top: futtock shrouds from its sides in under it to the mast, topmast shrouds from its
+    sides to the crosstrees with their ratlines, topgallant shrouds from the crosstrees, and backstays from the
+    topmast and topgallant heads down to her channel's aftmost deadeye."""
+    deck = hull.deck(mast['x'])
+    aft, fore, half, top_z = top_rim(mast, deck)
+    lower, upper, highest = heights(mast)
+    band = mast_at(mast, deck, lower - 1.7)
+    tree_x, _, tree_z = section_at(mast, deck, upper - 0.7, 1)
+    head = section_at(mast, deck, highest - 0.4, 2)
+    rail_y, rail_z = rail(hull, mast['x'])
+    channel = (mast['x'] - 1.05, rail_y + 0.33, rail_z - 0.12)
+    for side in (1, -1):
+        lines = []
+        for share in (0.15, 0.45, 0.75):
+            x = aft + share * (fore - aft)
+            piece.prism((x, side * (half - 0.1), top_z - 0.12), (band[0], side * mast['radius_m'], band[2]), ROPE_M,
+                        'iron', sides=5)
+            foot, top = (x, side * (half - 0.1), top_z), (tree_x, side * (0.4 + share), tree_z)
+            piece.prism(foot, top, ROPE_M, 'iron', sides=5)
+            lines.append((foot, top))
+        ratlines(piece, lines, top_z + 0.4, tree_z - 0.4)
+        piece.prism((tree_x, side * 1.1, tree_z + 0.12), (head[0], side * 0.12, head[2]), ROPE_M * 0.8, 'iron',
+                    sides=5)
+        for start in ((tree_x - 0.2, side * 1.1, tree_z + 0.06), (head[0], side * 0.12, head[2])):
+            piece.prism(start, (channel[0], side * channel[1], channel[2]), ROPE_M, 'iron', sides=5)
 
 
 def along(low, high, z):
@@ -122,9 +165,13 @@ def along(low, high, z):
 
 
 def stays(piece, hull):
-    """A stay from her foremast to her bowsprit before the staysail's luff, and two between her mastheads."""
+    """A stay from her foremast to her bowsprit before the staysail's luff, and two between her mastheads; for square
+    masts, the stays of her square rig."""
     fore, main = hull.numbers['masts'][0], hull.numbers['masts'][-1]
     fore_deck, main_deck = hull.deck(fore['x']), hull.deck(main['x'])
+    if 'staysail' not in hull.numbers:
+        square_stays(piece, hull)
+        return
     head = mast_at(fore, fore_deck, hull.numbers['staysail']['head_m'] + 0.3)
     sprit = hull.numbers['bowsprit']
     sprit_end = (sprit['to_x_m'], 0.0, hull.deck(hull.fore) + sprit['rise_m'])
@@ -135,12 +182,32 @@ def stays(piece, hull):
                     sides=5)
 
 
+def square_stays(piece, hull):
+    """The stays of a square rig: those her headsails are bent to, her forestay from her fore lower masthead to her
+    bowsprit at her stem, her fore topgallant stay to her jibboom's end, and from her mainmast her mainstay to her
+    foremast's foot, her main topmast stay to her fore top, and her main topgallant stay to her fore crosstrees."""
+    fore, main = hull.numbers['masts'][0], hull.numbers['masts'][-1]
+    fore_deck, main_deck = hull.deck(fore['x']), hull.deck(main['x'])
+    start, end, _, tip = sprit_line(hull)
+    fore_lower, fore_upper, fore_highest = heights(fore)
+    main_lower, main_upper, main_highest = heights(main)
+    fore_foot = mast_at(fore, fore_deck, 1.2)
+    fore_top_aft, _, _, fore_top_z = top_rim(fore, fore_deck)
+    lines = headsail_stays(hull) + [
+        (section_at(fore, fore_deck, fore_lower - 0.15, 0), along_x(start, end, hull.fore - 0.2)),
+        (section_at(fore, fore_deck, fore_highest - 0.1, 2), tip or end),
+        (section_at(main, main_deck, main_lower - 0.15, 0), (fore_foot[0] - fore['radius_m'], 0.0, fore_foot[2])),
+        (section_at(main, main_deck, main_upper - 0.15, 1), (fore_top_aft, 0.0, fore_top_z - 0.06)),
+        (section_at(main, main_deck, main_highest - 0.1, 2), section_at(fore, fore_deck, fore_upper - 0.6, 1)),
+    ]
+    for top, bottom in lines:
+        piece.prism(top, bottom, ROPE_M, 'iron', sides=5)
+
+
 def bowsprit_gear(piece, hull):
-    """A dolphin striker hung under her bowsprit, a martingale from its end to the striker's foot and back to her
-    stem's face, and a bobstay from its end to her stem's foot."""
-    sprit = hull.numbers['bowsprit']
-    start = (sprit['from_x_m'], 0.0, hull.deck(sprit['from_x_m']) + 0.9)
-    end = (sprit['to_x_m'], 0.0, hull.deck(hull.fore) + sprit['rise_m'])
+    """A dolphin striker hung under her bowsprit, a martingale from its end (and her jibboom's, where she has one) to
+    the striker's foot and back to her stem's face, and a bobstay from its end to her stem's foot."""
+    start, end, _, tip = sprit_line(hull)
     share = 1 - 1.6 / (end[0] - start[0])
     root = tuple(start[axis] + share * (end[axis] - start[axis]) for axis in range(3))
     foot = (root[0] - 0.15, 0.0, root[2] - 1.3)
@@ -149,15 +216,18 @@ def bowsprit_gear(piece, hull):
     stem_face = hull.fore + 0.12
     piece.prism(foot, (stem_face, 0.0, hull.deck(hull.fore) - 0.3), ROPE_M * 1.3, 'iron', sides=5)
     piece.prism(end, (stem_face, 0.0, hull.keel(hull.fore) + 0.15), 0.035, 'iron', sides=6)
+    if tip:
+        piece.prism(tip, foot, ROPE_M * 1.3, 'iron', sides=5)
 
 
-def mast_hoops(piece, hull, mast):
-    """Hoops round the mast between its boom and gaff, that the gaff sail's luff is bent to."""
+def mast_hoops(piece, hull, mast, gear):
+    """Hoops round the mast between its boom and gaff, that the gaff sail's luff is bent to: `gear` holds their
+    heights."""
     deck = hull.deck(mast['x'])
     lean = math.radians(mast['rake_deg'])
     axis = (-math.sin(lean), 0.0, math.cos(lean))
-    height = mast['boom_m'] + 0.6
-    while height < mast['gaff_m'] - 0.4:
+    height = gear['boom_m'] + 0.6
+    while height < gear['gaff_m'] - 0.4:
         share = height / mast['height_m']
         radius = mast['radius_m'] * (1 - 0.25 * share) + 0.05
         piece.ring(mast_at(mast, deck, height), axis, radius, 0.05, 'spar', segments=10)
@@ -196,7 +266,7 @@ def rudder(piece, hull):
     for share in (0.2, 0.5, 0.8):
         z = low + share * (high - low)
         reach = 0.95 - 0.55 * share
-        piece.slab((aft - reach * 0.6, -0.14, z), ((reach * 0.6 + 0.1, 0, 0), (0, 0.28, 0), (0, 0, 0.07)), 'iron')
+        piece.slab((aft - reach * 0.6, -0.145, z), ((reach * 0.6 + 0.1, 0, 0), (0, 0.29, 0), (0, 0, 0.07)), 'iron')
 
 
 def hexahedron(piece, corners, part):
@@ -252,7 +322,7 @@ def stern_lantern(piece, hull):
 def windlass(piece, hull):
     """A windlass across her foredeck aft of the bitts: its barrel between two cheeks, iron bands and a pawl post."""
     x = hull.numbers['bowsprit']['from_x_m'] - 0.9
-    deck = hull.deck(x)
+    deck = hull.floor_at(x)
     piece.prism((x, -0.85, deck + 0.55), (x, 0.85, deck + 0.55), 0.21, 'spar', sides=12)
     for y in (-0.55, 0.0, 0.55):
         piece.ring((x, y, deck + 0.55), (0, 1, 0), 0.215, 0.05, 'iron', segments=12)
@@ -287,9 +357,10 @@ def quarterdeck_gear(piece, hull):
         for bar in (-0.3, 0.0, 0.3):
             piece.prism((sky + bar, side * 0.45, base + 0.34), (sky + bar, 0.0, base + 0.58), 0.02, 'spar', sides=4)
     main = hull.numbers['masts'][-1]
+    boom = main.get('spanker', main)
     gallows = hull.aft + 1.0
-    boom_start = mast_at(main, hull.deck(main['x']), main['boom_m'])
-    share = (gallows - boom_start[0]) / (main['boom_to_m'] - boom_start[0])
+    boom_start = mast_at(main, hull.deck(main['x']), boom['boom_m'])
+    share = (gallows - boom_start[0]) / (boom['boom_to_m'] - boom_start[0])
     boom_z = boom_start[2] + 0.25 * share - main['radius_m'] * 0.55
     base = hull.deck(gallows) + rise
     for side in (1, -1):
@@ -322,14 +393,15 @@ def boat(piece, hull):
 
 
 def stores(piece, hull):
-    """Two barrels and a crate by her companionway."""
+    """Two barrels and a crate by her companionway, before her quarterdeck."""
     deck_at = hull.deck
-    for x, y in ((-4.9, -1.3), (-4.3, -1.35)):
+    front = hull.numbers['quarterdeck_m'][0]
+    for x, y in ((front + 2.7, -1.3), (front + 3.3, -1.35)):
         base = deck_at(x)
         piece.prism((x, y, base), (x, y, base + 0.85), 0.3, 'hull', sides=12)
         for z in (0.12, 0.42, 0.73):
             piece.ring((x, y, base + z), (0, 0, 1), 0.305, 0.05, 'iron', segments=12)
-    x, y = -4.6, 1.35
+    x, y = front + 3.0, 1.35
     base = deck_at(x)
     piece.box((x - 0.35, y - 0.3, base), (x + 0.35, y + 0.3, base + 0.55), 'hull')
     for dx in (-0.33, 0.29):

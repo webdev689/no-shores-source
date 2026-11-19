@@ -51,6 +51,46 @@ HULLS = {
         'boat_x_m': 0.6,
         'stern_windows': ((-12.35, 1), (-12.35, -1), (-12.85, 1), (-12.85, -1)),
     },
+    # A square mast's yards are (height, reach either side): course, topsail, topgallant. Its masts stand where their
+    # channels' chainplates fall between her gunports.
+    'brig': {
+        'length_m': 32.0,
+        'beam_m': 8.6,
+        'widest_m': (-8.0, 3.0),
+        'stern_round': 2.6,
+        'bow_fine': 1.25,
+        'keel_m': -1.0,
+        'fin_m': 0.85,
+        'cutwater_m': 6.0,
+        'sternpost_m': 3.6,
+        'stern_rise_m': 1.5,
+        'deck_m': 3.4,
+        'sheer_m': (0.5, 1.0),
+        'bulwark_m': 1.6,
+        'station_m': 0.6,
+        'quarterdeck_m': (-9.8, 0.7),
+        'forecastle_m': (10.4, 0.6),
+        'ports': (-7.8, -5.2, -2.6, 0.0, 2.6, 5.2, 7.8),
+        'masts': (
+            {'rig': 'square', 'x': 6.85, 'height_m': 11.5, 'topmast_m': 8.0, 'topgallant_m': 5.0, 'rake_deg': 2,
+             'radius_m': 0.3, 'top_m': 1.5, 'course_foot_m': 2.2, 'yards': ((10.7, 6.0), (18.5, 4.6), (23.4, 3.2))},
+            {'rig': 'square', 'x': -3.55, 'height_m': 12.5, 'topmast_m': 8.5, 'topgallant_m': 5.5, 'rake_deg': 4,
+             'radius_m': 0.32, 'top_m': 1.6, 'course_foot_m': 2.2, 'yards': ((11.7, 6.6), (20.0, 5.0), (25.1, 3.4)),
+             'spanker': {'boom_m': 3.4, 'boom_to_m': -17.6, 'gaff_m': 10.9, 'gaff_to_m': -11.0, 'gaff_rise_m': 2.4}},
+        ),
+        'bowsprit': {'from_x_m': 11.6, 'to_x_m': 22.5, 'rise_m': 2.6, 'radius_m': 0.3, 'jibboom_m': 6.5},
+        # Her headsails: each bent to a stay from `stay_from_m` up her fore topmast, to her bowsprit's end or her
+        # jibboom's; `clew_m` is over her deck at her stem, and `y_m` keeps the two out of one plane.
+        'headsails': (
+            {'stay_from_m': 19.1, 'head_x_m': 13.0, 'tack_x_m': 21.8, 'clew_x_m': 13.6, 'clew_m': 2.7, 'y_m': 0.15},
+            {'stay_from_m': 19.4, 'to_jibboom': True, 'head_x_m': 15.0, 'tack_x_m': 28.2, 'clew_x_m': 18.5,
+             'clew_m': 3.9, 'y_m': -0.15},
+        ),
+        'helm_x_m': -13.4,
+        'hatch_x_m': 3.6,
+        'boat_x_m': 0.8,
+        'stern_windows': ((-15.35, 1), (-15.35, -1), (-15.85, 1), (-15.85, -1)),
+    },
 }
 
 
