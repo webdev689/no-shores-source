@@ -72,7 +72,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const asked = new URLSearchParams(location.search).get('at');
   // With `?at=` the page goes straight to a node; otherwise the story opens the game behind a tap to start.
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
-  if (flow.mode === 'loading') hud.veil(flow.words);
+  // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
+  hud.veil(flow.mode === 'loading' ? flow.words : null);
   const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
   let epilogue: Epilogue | null = null;
   const base = import.meta.env.BASE_URL;

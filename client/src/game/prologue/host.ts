@@ -35,12 +35,19 @@ export class StoryHost {
     const from = import.meta.env.DEV ? beatNamed(new URLSearchParams(location.search).get('prologue')) : null;
     game.roomModule
       .then((module) => startStory({ ...game, roster: rosterOf(module) }, from))
-      .then(this.started, (error: unknown) => {
-        // A story that cannot start leaves the player arriving at Overlook, as before it was made.
-        console.error('the story could not start:', error);
-        this.started(null);
-        failed();
-      });
+      .then(
+        (started) => {
+          // A headless check reads the story's state from the page.
+          if (import.meta.env.DEV) Object.assign(window, { __prologue: started.prologue });
+          this.started(started);
+        },
+        (error: unknown) => {
+          // A story that cannot start leaves the player arriving at Overlook, as before it was made.
+          console.error('the story could not start:', error);
+          this.started(null);
+          failed();
+        },
+      );
   }
 
   key(key: string, down: boolean): void {
