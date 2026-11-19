@@ -1,6 +1,7 @@
-// The ships at sea as drawn: each riding the swell the page draws and heeling into her turns, as the World Editor's
-// Sloop does, her sails set while she is under way and filled by the steady wind, each in her own hull and her side's
-// colours; and each one's footprint on the water, which the sea leaves out under her and foams round her bow under way.
+// The ships at sea as drawn: each riding the swell the page draws through her inertia and heeling into her turns, as
+// the World Editor's Sloop does, her bow slamming into crests and throwing spray, her sails set while she is under way
+// and filled by the weather's wind, each in her own hull and her side's colours; and each one's footprint on the
+// water, which the sea leaves out along her own hull line and foams along, her wake and bow wave behind her.
 import type { SeenPirate, SeenShip } from '../network/messages.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import type { Swell } from '../rules/landRules.ts';
@@ -10,8 +11,9 @@ import { SailRig, windOff } from '../ships/sails.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
-import { poseOnSwell, turnHeel } from '../ships/swellPose.ts';
+import { poseOnSwell, slams, sprayOf, turnHeel } from '../ships/swellPose.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
+import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { MarkDrawer } from '../editor/naval.ts';
 import { HELM_TURN } from './seaHelm.ts';
 
@@ -31,11 +33,15 @@ export interface SeaHull {
   readonly marks: MarkDrawer;
 }
 
-/** The sea the ships ride: its swell, and how deep it is at a point (Infinity off the charts). */
+/** The sea the ships ride: its swell (the weather's, with its sea state, once the page has it), and how deep it is at
+ *  a point (Infinity off the charts). */
 export interface SeaWater {
-  readonly swell: Swell | undefined;
+  readonly swell: (ShelteredSwell & { readonly state?: number }) | Swell | undefined;
   depthAt(x: number, y: number): number;
 }
+
+/** A moderate sea's state, for a swell that does not say its own. */
+const MODERATE_STATE = 0.35;
 
 /** A ship at sea as drawn: her hull, her place, larger than life but in a fight, her sails' rig, and her side. */
 export type SeaShip = DrawnShip;
@@ -90,6 +96,9 @@ export class SeaShips {
   private readonly shown: (hull: number) => number;
   private readonly rigs = new Map<string, { readonly hull: number; readonly rig: SailRig }>();
   private readonly swings = new Map<string, { heading: number; swing: number }>();
+  /** Each ship's pitch as last drawn, how long since her bow last slammed (seconds; negative before any) and her bow's
+   *  spray now. */
+  private readonly rides = new Map<string, { pitch: number; sinceSlamS: number; spray: number }>();
 
   constructor(shown: (hull: number) => number = (hull) => hull) {
     this.shown = shown;
@@ -116,8 +125,10 @@ export class SeaShips {
     const swing = (last?.swing ?? 0) + (asked - (last?.swing ?? 0)) * (1 - Math.exp(-seconds * SWING.rate));
     this.swings.set(who, { heading: lies.heading, swing });
     const { lengthM, beamM } = hullWaterline(hull);
-    const pose = poseOnSwell(water.swell, water.depthAt, lies, (lengthM / 2) * scale, (beamM / 2) * scale, time);
+    const halfLength = (lengthM / 2) * scale;
+    const pose = poseOnSwell(water.swell, water.depthAt, lies, halfLength, (beamM / 2) * scale, time);
     const heel = turnHeel(swing, lies.underWay ? SHIP_SPEED : 0) * heelShare(hull);
+    if (seconds > 0) this.ride(who, lies, pose, halfLength, water, seconds, time);
     return {
       x: lies.x,
       y: lies.y,
@@ -127,6 +138,30 @@ export class SeaShips {
       roll: pose.roll + heel,
       scale,
     };
+  }
+
+  /** Follows her bow over the swell: a slam when it pitches down into a crest, and the spray it throws. */
+  private ride(
+    who: string,
+    lies: Lies,
+    pose: { readonly heave: number; readonly pitch: number },
+    halfLength: number,
+    water: SeaWater,
+    seconds: number,
+    time: number,
+  ): void {
+    const last = this.rides.get(who) ?? { pitch: pose.pitch, sinceSlamS: -1, spray: 0 };
+    const stem: [number, number] = [
+      lies.x + Math.sin(lies.heading) * halfLength,
+      lies.y - Math.cos(lies.heading) * halfLength,
+    ];
+    const sea = water.swell ? swellHeight(water.swell, stem[0], stem[1], time, water.depthAt(stem[0], stem[1])) : 0;
+    const bowUnder = sea - (pose.heave + Math.sin(pose.pitch) * halfLength);
+    const slammed = lies.underWay && slams((pose.pitch - last.pitch) / seconds, bowUnder);
+    const sinceSlamS = slammed ? 0 : last.sinceSlamS < 0 ? -1 : last.sinceSlamS + seconds;
+    const state = water.swell && 'state' in water.swell ? (water.swell.state ?? MODERATE_STATE) : MODERATE_STATE;
+    const spray = sprayOf(lies.underWay ? 1 : 0, state, sinceSlamS);
+    this.rides.set(who, { pitch: pose.pitch, sinceSlamS, spray });
   }
 
   /** The player's ship as `own` places her, every other player's and every captain's, `seconds` on at `time`, drawn
@@ -158,21 +193,24 @@ export class SeaShips {
     const sailing = new Set(['own', ...ships.map((ship) => ship.who)]);
     for (const who of this.rigs.keys()) if (!sailing.has(who)) this.rigs.delete(who);
     for (const who of this.swings.keys()) if (!sailing.has(who)) this.swings.delete(who);
+    for (const who of this.rides.keys()) if (!sailing.has(who)) this.rides.delete(who);
     const player = { who: 'own', lies: own.lies, hull: SLOOP_HULL, side: 'player' as const };
     return [riding(player, own.place), ...ships.map((ship) => riding(ship, null))];
   }
 
-  /** Each ship's footprint on the water, drawn `scale` times her size: the player's first, then every other player's
-   *  and every pirate's, nearest her first, as many as the water holds. */
+  /** Each ship's footprint on the water, drawn `scale` times her size, in her own hull's line, with her way for her
+   *  wake and her bow's spray: the player's first, then every other player's and every pirate's, nearest her first,
+   *  as many as the water holds (`HULLS`). */
   hulls(own: Lies, others: readonly SeenShip[], pirates: readonly SeenPirate[], scale: number): HullMask[] {
-    const footprint = (lies: Lies, hull: number): HullMask => {
+    const footprint = (who: string, lies: Lies, hull: number): HullMask => {
       const { x, y, heading } = lies;
       const { lengthM, beamM } = hullWaterline(hull);
       const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
-      return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0 };
+      const spray = this.rides.get(who)?.spray ?? 0;
+      return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0, hull, scale, spray };
     };
-    const near = round(others, pirates, this.shown).map((ship) => footprint(ship.lies, ship.hull));
+    const near = round(others, pirates, this.shown).map((ship) => footprint(ship.who, ship.lies, ship.hull));
     const away = (mask: HullMask) => Math.hypot(mask.x - own.x, mask.y - own.y);
-    return [footprint(own, SLOOP_HULL), ...near.sort((one, other) => away(one) - away(other))].slice(0, HULLS);
+    return [footprint('own', own, SLOOP_HULL), ...near.sort((one, other) => away(one) - away(other))].slice(0, HULLS);
   }
 }

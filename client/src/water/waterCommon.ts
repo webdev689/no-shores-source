@@ -1,8 +1,11 @@
-import { HULLS } from './hullMask.ts';
+import { HULL_VECTORS, HULLS } from './hullMask.ts';
+import { STATIONS } from './hullLines.ts';
+import { HULL_NAMES } from '../ships/hulls.ts';
 import { FRESH_LEVEL_M, FRESH_SINK_M, SHORE } from './shore.ts';
 
-/** The most swell waves the GPU sums; crates/land/src/sea.rs makes ten. The wind's chop is twelve more. */
-export const MOST_WAVES = 12;
+/** The most swell waves the GPU sums: crates/land/src/sea.rs's `MOST_WAVES`, two bearings' sets of ten at two
+ *  lengths under the weather. The wind's chop is twelve more. */
+export const MOST_WAVES = 40;
 export const CHOP_WAVES = 12;
 /**
  * Noise is read at points measured from an anchor, a whole number of ANCHOR_M from the window's corner, near the
@@ -317,11 +320,16 @@ struct Frame {
   ripple_area: vec4f,
   swell_terms: vec4f,
   local: vec4f,
+  // The sea by weather: its state (0 calm to 1 storm), the shelter grid's north-west corner from the eye and its
+  // cell; then its cells a side and whether it is there.
+  sea: vec4f,
+  sea_grid: vec4f,
   waves: array<vec4f, ${MOST_WAVES * 2}>,
   chop: array<vec4f, ${CHOP_WAVES}>,
-  // Each ship's footprint: her middle from the eye, and the sine and cosine of her heading; then her fitted half
-  // length and half beam, her way, and whether she is there.
-  hulls: array<vec4f, ${HULLS * 2}>,
+  // Each ship (hullValues): her middle from the eye and her heading's sine and cosine; her fitted half length and
+  // half beam, her way and her hull plus one (0 is none); her drawn size and her bow's spray. Then each hull's line.
+  hulls: array<vec4f, ${HULLS * HULL_VECTORS}>,
+  hull_lines: array<vec4f, ${(HULL_NAMES.length * STATIONS) / 4}>,
 };
 
 @group(0) @binding(0) var<uniform> frame: Frame;
@@ -334,6 +342,7 @@ struct Frame {
 @group(0) @binding(7) var patch_shore: texture_2d<f32>;
 @group(0) @binding(8) var ripples: texture_2d<f32>;
 @group(0) @binding(9) var smooth_sampler: sampler;
+@group(0) @binding(10) var shelter: texture_2d<f32>;
 
 const BREAK_PERIOD = ${SHORE.periodS}.0;
 const BREAK_HEIGHT = ${SHORE.heightM};
@@ -392,13 +401,17 @@ struct Swell {
   height: f32,
   slope: vec2f,
   stretch: vec3f,
+  // The waves' heights summed, so a crest can be told against the sea it stands in.
+  most: f32,
 };
 
 // The swell at the water whose rest is 'offset' metres from the eye: sea.rs's waves, each fading where 'footprint'
 // (the metres a vertex or a pixel spans) is too coarse to hold it. 'stretch' holds the sideways carry's slopes.
 fn swell_at(offset: vec2f, depth: f32, footprint: f32) -> Swell {
   var swell: Swell;
-  let share = reach(depth);
+  // The weather's waves are the view's middle's: the lee of land and a roadstead stand lower (SHELTER_WGSL).
+  let sheltered = shelter_at(offset);
+  let share = reach(depth) * sheltered;
   if (share <= 0.0) { return swell; }
   let count = u32(frame.swell_terms.z);
   for (var index = 0u; index < count; index++) {
@@ -410,9 +423,11 @@ fn swell_at(offset: vec2f, depth: f32, footprint: f32) -> Swell {
     let sine = sin(angle);
     let cosine = cos(angle);
     let amplitude = second.x * fade;
-    let shift = second.y * fade;
+    // The carry is the middle's at most, so no crest folds where the sea stands higher than there.
+    let shift = second.y * fade / max(sheltered, 1.0);
     swell.shift += shift * first.xy * cosine;
     swell.height += amplitude * sine;
+    swell.most += amplitude;
     swell.slope += amplitude * first.z * first.xy * cosine;
     let pinch = shift * first.z * sine;
     swell.stretch -= pinch * vec3f(first.x * first.x, first.y * first.y, first.x * first.y);

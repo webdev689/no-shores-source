@@ -159,9 +159,9 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "fefeda2120258b46";
+pub const SEA_CLASH_HASH: &str = "f05db2adccaeec70";
 /// The world time the sea opens at: a day whose weather brings the rivals together and the player to them.
-pub const CLASH_START_S: f64 = 1_790_021_600.0;
+pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
 #[test]
 fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {

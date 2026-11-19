@@ -2,7 +2,9 @@ import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { RippleField } from './ripples.ts';
 import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
-import { HULL_FIT, HULLS, type HullMask } from './hullMask.ts';
+import { HULL_LINES } from './hullLines.ts';
+import { type HullMask, hullValues } from './hullMask.ts';
+import type { SeaGrid, SeaSwell } from './seaWeather.ts';
 import { ANCHOR_M, CHOP_WAVES, MOST_WAVES } from './waterCommon.ts';
 import { WATER_SHADER } from './waterShader.ts';
 
@@ -64,7 +66,10 @@ export interface WaterScene {
   readonly target: GPUTextureView;
 }
 
-const FRAME_FLOATS = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4 + HULLS * 8;
+/** Where the waves begin in the frame's floats, after the camera's, the eye's and the sea by weather's. */
+const WAVES_AT = 72;
+const HULLS_AT = WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 4;
+const FRAME_FLOATS = HULLS_AT + hullValues([], [0, 0], HULL_LINES.table()).length;
 /** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
 export const SAMPLES = 4;
 /** The disc of water round the eye: rings out to the far plane, each this share wider than the last, and segments. */
@@ -104,6 +109,8 @@ export class WaterView {
   private readonly ripples: RippleField;
   private readonly empty: { readonly flat: GPUTexture; readonly shore: GPUTexture };
   private chop: { readonly swell: Swell | undefined; readonly waves: Float32Array } | null = null;
+  /** The shelter grid last sent to the GPU, and its texture. */
+  private shelter: { readonly grid: SeaGrid; readonly texture: GPUTexture } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -116,6 +123,7 @@ export class WaterView {
         { binding: 1, visibility: seen, texture: { sampleType: 'float' } },
         ...[2, 3, 4, 5, 6, 7, 8].map((binding) => ({ binding, visibility: seen, texture: cells })),
         { binding: 9, visibility: seen, sampler: { type: 'filtering' } },
+        { binding: 10, visibility: seen, texture: cells },
       ],
     });
     const module = device.createShaderModule({ code: WATER_SHADER });
@@ -188,6 +196,7 @@ export class WaterView {
         { binding: 7, resource: (patch?.shore ?? this.empty.shore).createView() },
         { binding: 8, resource: this.ripples.heights.createView() },
         { binding: 9, resource: this.sampler },
+        { binding: 10, resource: this.shelterOf(scene.swell).createView() },
       ],
     });
     const pass = encoder.beginRenderPass({
@@ -230,6 +239,14 @@ export class WaterView {
     values.set([inner, Math.max(far, inner * 10), RINGS, SEGMENTS], 48);
     const [rippleX, rippleY, rippleCell, rippleCells] = this.ripples.area;
     values.set([rippleX - eyeX, rippleY - eyeY, rippleCell, rippleCells], 52);
+    const sea = scene.swell && 'grid' in scene.swell ? (scene.swell as SeaSwell) : null;
+    if (sea) {
+      const corner = [sea.grid.corner[0] - scene.world[0] - eyeX, sea.grid.corner[1] - scene.world[1] - eyeY];
+      values.set([sea.state, corner[0] ?? 0, corner[1] ?? 0, sea.grid.cellM, sea.grid.cells, 1, 0, 0], 64);
+    } else {
+      // No weather: a moderate sea's state, its swell whole everywhere.
+      values.set([0.35, 0, 0, 1, 0, 0, 0, 0], 64);
+    }
     const waves = scene.swell?.waves.slice(0, MOST_WAVES) ?? [];
     const breakerClock = scene.time % SHORE.periodS;
     values.set([scene.swell?.fullDepthM ?? 15, scene.swell?.goneDepthM ?? 1, waves.length, breakerClock], 56);
@@ -240,19 +257,34 @@ export class WaterView {
     for (const [index, wave] of waves.entries()) {
       const along = wave.direction[0] * worldX + wave.direction[1] * worldY;
       const phase = (wave.number * along - wave.frequency * scene.time + wave.phase) % (2 * Math.PI);
-      values.set([wave.direction[0], wave.direction[1], wave.number, phase], 64 + index * 8);
-      values.set([wave.amplitude, wave.shift, 0, 0], 68 + index * 8);
+      values.set([wave.direction[0], wave.direction[1], wave.number, phase], WAVES_AT + index * 8);
+      values.set([wave.amplitude, wave.shift, 0, 0], WAVES_AT + 4 + index * 8);
     }
     const chop =
       this.chop && this.chop.swell === scene.swell ? this.chop : { swell: scene.swell, waves: chopWaves(scene.swell) };
     this.chop = chop;
-    values.set(chop.waves, 64 + MOST_WAVES * 8);
-    for (const [index, hull] of scene.hulls.slice(0, HULLS).entries()) {
-      const start = 64 + MOST_WAVES * 8 + CHOP_WAVES * 4 + index * 8;
-      values.set([hull.x - eyeX, hull.y - eyeY, Math.sin(hull.heading), Math.cos(hull.heading)], start);
-      values.set([hull.halfLength * HULL_FIT, hull.halfBeam * HULL_FIT, hull.way, 1], start + 4);
-    }
+    values.set(chop.waves, WAVES_AT + MOST_WAVES * 8);
+    values.set(hullValues(scene.hulls, [eyeX, eyeY], HULL_LINES.table()), HULLS_AT);
     return values;
+  }
+
+  /** The shelter grid's texture for the swell drawn now, sent again when the grid is new; a 1 × 1 one without. */
+  private shelterOf(swell: Swell | undefined): GPUTexture {
+    const grid = swell && 'grid' in swell ? (swell as SeaSwell).grid : null;
+    if (!grid) return this.empty.flat;
+    if (this.shelter?.grid === grid) return this.shelter.texture;
+    this.shelter?.texture.destroy();
+    const texture = this.gpu.device.createTexture({
+      size: [grid.cells, grid.cells],
+      format: 'r32float',
+      usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+    });
+    this.gpu.device.queue.writeTexture({ texture }, grid.shares, { bytesPerRow: grid.cells * 4 }, [
+      grid.cells,
+      grid.cells,
+    ]);
+    this.shelter = { grid, texture };
+    return texture;
   }
 
   destroy(): void {
@@ -260,6 +292,7 @@ export class WaterView {
     this.uniforms.destroy();
     this.empty.flat.destroy();
     this.empty.shore.destroy();
+    this.shelter?.texture.destroy();
   }
 }
 

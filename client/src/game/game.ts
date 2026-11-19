@@ -39,6 +39,8 @@ import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.t
 import { showSeaHud } from './seaHud.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
+import { startWatersRules } from '../rules/watersRules.ts';
+import { SeaWeather } from '../water/seaWeather.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -106,6 +108,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     shipModels.load(SLOOP_HULL),
   ]);
   const { continents } = world;
+  // The sea by weather, from the room module's door once it has compiled: the swell the sea is drawn with.
+  let [seaWeather, seaReachM]: [SeaWeather | null, number] = [null, 0];
+  void roomModule
+    .then((module) => {
+      const rules = startWatersRules(module);
+      rules.open(world.layoutText, world.cities);
+      seaWeather = new SeaWeather(rules);
+    })
+    .catch(() => undefined);
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
@@ -472,7 +483,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
-    const swell = scene.land?.swell;
+    // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
+    const swell = seaWeather?.follow(here.position, seaReachM, seconds) ?? scene.land?.swell;
     footView.hide();
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
     if (!paused && !heldMap?.shown)
@@ -514,7 +526,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : shown.firstPerson
         ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
         : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus };
+    seaReachM = Math.max(0, shown.shot.eye[2]) * 6;
+    const more = { hulls: shown.hulls, after, focus: shown.focus, ...(swell ? { swell } : {}) };
     scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {

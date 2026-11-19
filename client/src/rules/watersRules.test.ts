@@ -101,3 +101,24 @@ test('ships near a port sail their routes at five metres a second', async () => 
   assert.deepEqual(rules.ship(first.id, time), first);
   assert.equal(rules.ship(first.id, 0), null);
 });
+
+/** Points from Overlook's roadstead out to the open sea west of it (crates/room-wasm/src/waters_door_tests.rs
+ *  `sea_points`). */
+const SEA_POINTS = Array.from(
+  { length: 40 },
+  (_value, step) => [2_790_000.125 - 9_000.5 * step, 1_199_000.75 + 1_250.25 * step] as const,
+);
+
+test('the sea by weather is calm in a roadstead and the deep sea holds to the fingerprint the crate holds natively', async () => {
+  const { rules, table } = await opened();
+  const time = 1_790_000_123.25;
+  const roadstead = table.ports[0]?.roadstead ?? [0, 0];
+  const swell = rules.seaSwell(roadstead, time);
+  assert.equal(swell.harbour, 1);
+  assert.equal(swell.height, 0.3);
+  assert.ok(swell.waves.length > 0 && swell.waves.length <= 40);
+  assert.ok(Math.abs(Math.hypot(...swell.wind) - Math.hypot(swell.wind[0], swell.wind[1])) < 1e-9);
+  const grid = rules.seaHeights([roadstead[0] - 2_000, roadstead[1] - 2_000], 1_000, 4, 4, time);
+  assert.equal(grid.length, 16);
+  assert.equal(rules.seaHash(SEA_POINTS, time), '9253bce77cd855e8');
+});

@@ -74,7 +74,8 @@ export class LocalRoom implements RoomLink {
     seed = Math.floor(Math.random() * 2 ** 32),
   ): LocalRoom {
     const door = startRoomDoor(module);
-    if (!door.openSea(layoutText, seed, Date.now() / 1000)) throw new Error('the world’s layout is not one the sea can open round');
+    if (!door.openSea(layoutText, seed, Date.now() / 1000))
+      throw new Error('the world’s layout is not one the sea can open round');
     return new LocalRoom(door, snapshot, () => undefined);
   }
 

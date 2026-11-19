@@ -1,5 +1,7 @@
 import { HULL_WGSL } from './hullMask.ts';
+import { SHELTER_WGSL } from './seaWeather.ts';
 import { SHARED_WGSL, WATER_WGSL } from './waterCommon.ts';
+import { WAKE_WGSL } from './wakes.ts';
 
 /**
  * The water's two draws after the land. The backdrop fills every pixel first: the sky, the land in its haze, or,
@@ -12,6 +14,8 @@ export const WATER_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${WATER_WGSL}
 ${HULL_WGSL}
+${WAKE_WGSL}
+${SHELTER_WGSL}
 
 fn eye_fresh() -> bool {
   return frame.coarse_area.y > 0.5;
@@ -105,6 +109,8 @@ fn surface_vertex(@builtin(vertex_index) index: u32) -> Surface {
     let swell = swell_at(offset, depth, spacing);
     shift = swell.shift;
     height += swell.height + breaker_at(offset, max(depth, 0.0), spacing).height;
+    // Her wake's small waves, where the ships' frame says, drawn once the mesh is fine enough to hold them.
+    height += wake_at(offset + shift).height * (1.0 - smoothstep(2.0, 8.0, spacing)) * reach(depth);
   }
   var surface: Surface;
   surface.offset = offset;
@@ -173,12 +179,19 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   } else {
     let swell = swell_at(surface.offset, depth, footprint);
     breaker = breaker_at(surface.offset, max(depth, 0.0), footprint);
-    let slope = chop_slope(local, vec2f(0.0), 1.0, footprint) + breaker.slope;
+    // The wind's chop rises with the sea state: a calm's glassy sea to a storm's.
+    let state = frame.sea.x;
+    let slope = chop_slope(local, vec2f(0.0), (0.45 + 1.3 * state) * shelter_at(surface.offset), footprint) + breaker.slope;
+    rough = 0.2 * (0.6 + 1.0 * state);
     let rolled = swell_normal(swell);
     normal = normalize(rolled / max(rolled.z, 0.05) + vec3f(-slope, 0.0));
     crest = swell.height;
     let squeeze = (1.0 + swell.stretch.x) * (1.0 + swell.stretch.y) - swell.stretch.z * swell.stretch.z;
-    whitecap = 1.0 - smoothstep(0.28, 0.6, squeeze);
+    // Whitecaps: crests folding, and, as the sea rises, every crest standing high in the sea round it, a rough sea's
+    // and a storm's breaking white; read from far off as the share of the sea they cover.
+    let standing = swell.height / max(swell.most, 1e-3);
+    let caps = smoothstep(mix(0.75, 0.32, state), mix(0.95, 0.6, state), standing) * smoothstep(0.25, 0.9, state);
+    whitecap = max(1.0 - smoothstep(0.28, 0.6, squeeze), caps);
     drift = breaker.toward_shore * frame.eye.w * 0.45 * breaker.broken;
   }
   // Ripples are centimetres high: their slope is drawn much steeper, so a swimmer's rings read against the chop.
@@ -192,7 +205,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   let edge = (1.0 - smoothstep(0.0, select(0.14, 0.06, fresh), thin)) * select(0.95, 0.5, fresh)
     * (1.0 - smoothstep(1.0, 6.0, footprint));
   let splashed = smoothstep(0.012, 0.04, abs(ripple.x)) * 0.6;
-  let bow_wave = hull_foam(surface.drawn.xy);
+  let bow_wave = max(hull_foam(surface.drawn.xy), select(wake_at(surface.drawn.xy).foam, 0.0, fresh));
   let amount = clamp(max(max(whitecap * 0.85, max(breaking, lingering)), max(max(edge, splashed), bow_wave)), 0.0, 1.0);
   // Too far off to hold its lace, foam is drawn as the share of the surface it would cover.
   let foam = mix(foam_cover(local, drift, amount, footprint), amount * 0.55, smoothstep(0.4, 3.0, footprint));

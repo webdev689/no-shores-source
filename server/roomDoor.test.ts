@@ -264,7 +264,7 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
 });
 
 /** The world time the clash's sea opens at (crates/room-wasm/src/door_tests.rs `CLASH_START_S`). */
-const CLASH_START_S = 1_790_021_600;
+const CLASH_START_S = 1_790_151_200;
 
 test('a sea where rivals clash and a player joins them snapshots to the fingerprint the crate holds natively', () => {
   // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH).
@@ -275,7 +275,11 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     [200_000, 200_000],
     [100_000, 200_000],
   ];
-  const opened = room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 51, CLASH_START_S);
+  const opened = room.openSea(
+    JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }),
+    51,
+    CLASH_START_S,
+  );
   assert.equal(opened, true);
   const player = room.join();
   assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
@@ -291,7 +295,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), 'fefeda2120258b46');
+  assert.equal(hash.toString(16).padStart(16, '0'), 'f05db2adccaeec70');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
