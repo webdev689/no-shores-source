@@ -246,6 +246,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
+- The cleanup audit (#70): dead code out of the overworld, naval and player, and the Overworld note, its pick and the
+  [[Code Map]] brought in line with the code, in files no open pull request changes. Its description lists what it
+  found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
+  Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
 
 ## Next
 
