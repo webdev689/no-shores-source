@@ -77,7 +77,8 @@ looking 17° down over the parapet onto the city, the harbour and the sea.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. A ruined
-city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins").
+city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins"),
+on the veil too: the page asks the rules' module which cities are ports (`mainPortsOf`) before it arrives.
 
 ## On foot
 

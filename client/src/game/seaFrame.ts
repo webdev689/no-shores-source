@@ -30,6 +30,8 @@ export interface SeaInput {
 export interface SeaFrame {
   readonly shot: Shot;
   readonly ships: readonly SeaShip[];
+  /** How many times her true size every ship is drawn (`shownScale`): the Overworld's, or the size coming in. */
+  readonly shipScale: number;
   /** Each ship's footprint on the water, world metres: none inside her, foam round her bow under way. */
   readonly hulls: readonly HullMask[];
   /** In a fight, each captain's bar over her masthead as she is drawn. */

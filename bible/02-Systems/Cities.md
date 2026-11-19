@@ -216,20 +216,22 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
   than 4 m deep from 170 m out (none where no such water lies within 750 m), heeled 25 degrees, one to each side,
   her heading across the way out turned a little by the city's seed. The page draws each with the ships layer's
   mesh, every face more than 2 m over her highest deck left out (her masts and spars), settled in the water to her
-  deck's middle height and shaded 0.6 as light as a ship afloat, in no side's colours, at her true size as the city
-  is drawn.
+  deck's middle height and shaded 0.6 as light as a ship afloat, in no side's colours (her pictures as painted, no
+  flag), at the size every ship is drawn at: at sea the Overworld's four times and the size coming in
+  (`shownScale`), true size on foot.
 - **Its ways** are strewn with rubble: four heaps in each avenue's cell, each 3 to 7 m by 2 to 5 m and 0.8 to 2 m
   high, turned at random, seeded by the cell; none within 110 m of the plaza, so no heap stands in its node.
 - **Its plaza** is walkable and empty: its counters stand bare, without their goods, and no station is kept, so no
-  keeper or townsfolk stand there, no counter is served by its room, and nothing is offered (`stations`). Its room's
+  keeper or townsfolk stand there, no counter is served by its room, and nothing is offered (`stations`): with no
+  counters its room is no social space, so it sends no wares, no emblems of the day and no crate's price. Its room's
   boxes are a port city's but for the goods and what of the landmark is gone.
 - **Its buildings** are broken where the page stands them (`ruins.ts`), each by its place to the centimetre, the same
   on every machine: one in four has fallen to a heap of rubble over its hull's footprint, a quarter of its walls'
   height and at least 1.5 m; the rest are broken off at 35 to 75 % of their height, never above their lowest wing's
   eaves, so roofless, the edge ragged, each 1.5 m square of wall fallen up to 3 m lower or half its standing height,
   their walls darkened toward the break, at the break 78 % darker. Near, the forged model is cut at the break in the
-  shader and drawn from both faces, an open shell, its level faces over a quarter of the break's height (its upper floors and
-  ceilings) left out too; its shadow is cast as if every corner above the break stood at it, lidded there.
+  shader and drawn from both faces, an open shell, its level faces over a quarter of the break's height (its upper
+  floors and ceilings) left out too; its shadow is cast as if every corner above the break stood at it, lidded there.
   Its masses and hull end at the break, open at the top and drawn from both faces, so a ruin reads as one at every
   distance, from the sea and the Overworld too. A ruin's windows are as dark as a port city's: lit windows are not
   drawn.
@@ -248,7 +250,7 @@ shows no port icon over its harbour and offers no docking there; its island's ot
 - Props are drawn only near; flats (trees, people, lamps) and lit windows are not drawn.
 - The depth pull lets the city show through land within its share of the distance in front of it.
 - A ruin's building's break is ragged by squares, not broken stone; inside its open shell the forged model's own
-  faces show, lit from the side seen. From the sea's raised view a wreck, at her true size, is small beside the
-  ships, which the Overworld draws four times theirs.
+  faces show, lit from the side seen. At sea a wreck is drawn as large as the ships, and so larger than the city
+  round her.
 - Fallen buildings' heaps and the ways' rubble are not walked against: only the plaza is.
 - A wreck is drawn only once her ship's mesh has come from the ships' bucket, and casts no shadow.

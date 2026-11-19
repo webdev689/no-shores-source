@@ -70,7 +70,8 @@ async function blocksOf(
 /**
  * A landmass's city, drawn by the city layer once its tables and blocks have come (nothing until then), and its
  * nature, which grows round the eye where the city has not set the ground, from the land as the scene last sampled
- * it close by. `biome` is the continent's `climate` in the layout.
+ * it close by. `biome` is the continent's `climate` in the layout. A ruin's wrecks are drawn with the city, at the
+ * size ships are drawn at now (`shipScale`).
  */
 export function landDrawers(
   gpu: Gpu,
@@ -79,6 +80,7 @@ export function landDrawers(
   biome: string | null,
   base: string,
   assets: Promise<CityAssets | null>,
+  shipScale: () => number,
 ): LandDrawers {
   const plan = landmass.drawnPlan;
   let [version, patch, sample] = [0, scene.closePatch(), landSampler(landmass.view, scene.closePatch())];
@@ -130,7 +132,7 @@ export function landDrawers(
     },
   };
   return {
-    city: plan && city && withWrecks(gpu, city, plan),
+    city: plan && city && withWrecks(gpu, city, plan, shipScale),
     nature: natureDrawer,
     release: () => {
       released = true;

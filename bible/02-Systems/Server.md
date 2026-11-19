@@ -99,7 +99,8 @@ on Cloudflare.
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
-  file names: a Vestige opened at the Reader's, the vault at a vault's, a ware at its own vendor's, an emblem at the Tailor's; the Test Ground's
+  file names (a ruin's plaza names none, and its room serves and shows nothing:
+  [[Cities]], "Ruins"): a Vestige opened at the Reader's, the vault at a vault's, a ware at its own vendor's, an emblem at the Tailor's; the Test Ground's
   course serves them all within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers

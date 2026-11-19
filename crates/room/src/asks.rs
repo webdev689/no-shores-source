@@ -139,9 +139,11 @@ impl Room {
     }
 
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
+    /// A ruin's plaza has no counters, and nothing is sold there.
     #[must_use]
     pub fn in_social_space(&self, player: PlayerId) -> bool {
-        self.counters.is_some() || self.here(player, &Ask::Vend { vendor: Vendor::Quartermaster, ware: 0 }).social
+        self.counters.as_ref().is_some_and(|counters| !counters.is_empty())
+            || self.here(player, &Ask::Vend { vendor: Vendor::Quartermaster, ware: 0 }).social
     }
 
     /// Whether a player stands where a Vestige opens: at the Reader's counter, or the stall.

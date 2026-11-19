@@ -97,10 +97,17 @@ export async function loadWorld(base: string): Promise<WorldData> {
 }
 
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is
- *  `<city id>-social`, named for its city. Null for an id the world does not hold. */
-export function arrivalAt(world: WorldData, id: string): { continent: string; node: string; name: string } | null {
+ *  `<city id>-social`, named for its city, "Ruins of" its name where it is not among the port cities' ids
+ *  `mainPorts` (the rules' own; with none known, by its name alone). Null for an id the world does not hold. */
+export function arrivalAt(
+  world: WorldData,
+  id: string,
+  mainPorts: readonly string[] | null = null,
+): { continent: string; node: string; name: string } | null {
   const node = world.nodes.find((each) => each.id === id);
   if (node) return { continent: node.continent, node: node.id, name: node.name };
   const city = world.cities.find((each) => `${each.id}-social` === id);
-  return city ? { continent: city.continent, node: id, name: city.name } : null;
+  if (!city) return null;
+  const ruined = mainPorts !== null && !mainPorts.includes(city.id);
+  return { continent: city.continent, node: id, name: ruined ? `Ruins of ${city.name}` : city.name };
 }

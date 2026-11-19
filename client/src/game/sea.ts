@@ -477,6 +477,7 @@ export class Sea {
       ships: combat
         ? combat.ships(dt, time, windBearing, scale)
         : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, pirates, scale, this.water),
+      shipScale: scale,
       hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, pirates, scale),
       bars: combat?.bars(scale) ?? [],
       marks: marks.shown,

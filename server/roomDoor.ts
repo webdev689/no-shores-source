@@ -81,6 +81,8 @@ export interface RoomDoor {
    *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
    *  first), and its right and left forge layers. */
   roster(): string;
+  /** The port cities' ids, as JSON: every other city is a ruin. */
+  mainPorts(): string;
 }
 
 interface RoomExports {
@@ -109,6 +111,7 @@ interface RoomExports {
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
+  room_main_ports(): bigint;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -181,5 +184,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
+    mainPorts: () => new TextDecoder().decode(take(exports.room_main_ports())),
   };
 }

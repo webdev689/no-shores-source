@@ -12,6 +12,7 @@ import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
+import { mainPortsOf } from '../rules/roster.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
@@ -108,9 +109,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const { continents } = world;
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
-  const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
+  // The size ships are drawn at this frame, which a ruin's wrecks are drawn at too: the sea's, true size on foot.
+  let shipScale = 1;
+  const drawersOn = (opened: Landmass) =>
+    landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets, () => shipScale);
   const asked = new URLSearchParams(location.search).get('at');
-  const start = (asked === null ? null : arrivalAt(world, asked)) ?? arrivalAt(world, FIRST_NODE);
+  // Which cities are ports, so a ruin's social space is arrived at under its ruin's name; by its name alone if the
+  // rules' module does not come.
+  const mainPorts = await roomModule.then(mainPortsOf).catch(() => null);
+  const start = (asked === null ? null : arrivalAt(world, asked, mainPorts)) ?? arrivalAt(world, FIRST_NODE);
   if (!start) throw new Error('the world has no Overlook to arrive at');
   if (start.node !== FIRST_NODE) {
     flow = arriving(start.node, start.name);
@@ -487,6 +494,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       controls,
       paused,
     });
+    shipScale = shown.shipScale;
     for (const stir of shown.stirs) scene.stir(stir);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
@@ -568,6 +576,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const size = { width: canvas.width, height: canvas.height };
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
     let settled = true;
+    shipScale = 1;
     if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     if (flow.mode === 'loading' && ready) {
