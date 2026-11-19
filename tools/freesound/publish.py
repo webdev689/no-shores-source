@@ -22,9 +22,10 @@ REPO = os.path.dirname(TOOLS)
 MANIFEST = os.path.join(REPO, 'content', 'audio', 'sounds.json')
 WANTED = os.path.join(REPO, 'content', 'audio', 'freesound.json')
 # What was done to each on its way in, as an Attribution licence asks a credit to say; Settings says once that each
-# plays at the game's own level. The sounds heard most vary a little in pitch each time (uiSounds.ts, play).
+# plays at the game's own level. The sounds heard most vary a little in pitch each time (uiSounds.ts, play; the world's
+# steps, swings and blows in worldSounds.ts).
 CHANGES = 'Unchanged.'
-VARIED = {'ui.hover', 'ui.press', 'ui.back'}
+VARIED = re.compile(r'ui\.(hover|press|back)|(step|swing|hit)\..+')
 VARIES = 'Its pitch varies a little each time it plays.'
 # The licences the owner allows, each at its own address with its version.
 LICENCES = {
@@ -76,7 +77,7 @@ def main():
             'licence': licence['name'],
             'licenceUrl': licence['url'],
             'page': pick['page'],
-            'changes': VARIES if cue in VARIED else CHANGES,
+            'changes': VARIES if VARIED.fullmatch(cue) else CHANGES,
         }
     # DFO's own sounds the owner picked are put in by own.py, not by a download: kept, unless the cue now has a pick.
     with open(MANIFEST) as file:

@@ -198,7 +198,7 @@
     {
       "id": "block.shield",
       "use": "A blow met by a shield",
-      "query": "wooden shield hit",
+      "query": "shield hit",
       "seconds": [
         0.1,
         1.0
@@ -283,7 +283,7 @@
     {
       "id": "bow.draw",
       "use": "A bow drawn",
-      "query": "bow string stretch",
+      "query": "bow pull",
       "seconds": [
         0.3,
         2.0
@@ -316,7 +316,7 @@
     {
       "id": "crossbow.reload",
       "use": "A crossbow wound again",
-      "query": "crossbow cock",
+      "query": "ratchet crank",
       "seconds": [
         0.3,
         3.0
@@ -391,7 +391,7 @@
     {
       "id": "arrow.hit",
       "use": "An arrow or bolt strikes a body",
-      "query": "arrow hit flesh",
+      "query": "arrow",
       "seconds": [
         0.1,
         1.0
@@ -406,7 +406,7 @@
     {
       "id": "arrow.stick",
       "use": "An arrow sticks in wood or earth",
-      "query": "arrow hit wood",
+      "query": "arrow thud",
       "seconds": [
         0.1,
         0.8
@@ -418,7 +418,7 @@
     {
       "id": "ball.hit",
       "use": "A ball strikes stone",
-      "query": "bullet impact stone",
+      "query": "ricochet",
       "seconds": [
         0.1,
         1.2
@@ -542,7 +542,7 @@
     {
       "id": "cast.charge",
       "use": "An Anima gathering as it is cast",
-      "query": "magic charge up",
+      "query": "charge up",
       "seconds": [
         0.3,
         3.0
@@ -552,7 +552,7 @@
     {
       "id": "spell.tempest",
       "use": "Tempest: the seeking orbs cast",
-      "query": "magic swirl",
+      "query": "magic whoosh",
       "seconds": [
         0.3,
         3.0
@@ -567,7 +567,7 @@
     {
       "id": "spell.orb",
       "use": "A Tempest orb bursts on what it seeks",
-      "query": "magic orb impact",
+      "query": "magic hit",
       "seconds": [
         0.1,
         1.0
@@ -662,7 +662,7 @@
     {
       "id": "spell.ravenbolt",
       "use": "A Duskraven bolt flies",
-      "query": "dark magic whoosh",
+      "query": "spell cast",
       "seconds": [
         0.1,
         1.5
@@ -794,7 +794,7 @@
     {
       "id": "finish.volt",
       "use": "A foe slain by Volt, lightning leaping on",
-      "query": "lightning crackle",
+      "query": "electric shock",
       "seconds": [
         0.2,
         1.5
@@ -819,7 +819,7 @@
     {
       "id": "status.expose",
       "use": "A foe Exposed",
-      "query": "magic debuff",
+      "query": "curse",
       "seconds": [
         0.1,
         1.0
@@ -872,7 +872,7 @@
     {
       "id": "status.veil",
       "use": "Veiled",
-      "query": "invisibility magic",
+      "query": "magic disappear",
       "seconds": [
         0.2,
         1.2
@@ -887,7 +887,7 @@
     {
       "id": "shield.hit",
       "use": "A foe's element shield struck",
-      "query": "force field hit",
+      "query": "shield impact",
       "seconds": [
         0.1,
         1.0
@@ -899,7 +899,7 @@
     {
       "id": "shield.break",
       "use": "A foe's element shield breaks",
-      "query": "glass shield break",
+      "query": "shatter",
       "seconds": [
         0.2,
         2.0
