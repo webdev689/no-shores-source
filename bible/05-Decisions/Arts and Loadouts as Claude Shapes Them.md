@@ -121,6 +121,25 @@ Shields' block perks (Bulwark, Coral Guard) fit loadouts with a shield. New perk
 | Attuned | Weapon | While the worn Art's element is the weapon's, it deals 10% more |
 | Spellfeed | Weapon | Each kill takes 3% off the Tenets' cooldowns |
 
+## Loot drops
+
+| Call | Choice |
+|---|---|
+| What drops in sight | Vestiges and Ammo boxes, thrown out of the fallen foe for each player who earned them, seen by that player alone; XP and Aurem are paid at once, as Destiny's are |
+| How they look | DFO's: the piece's own picture standing on the ground, a thin line of its rarity's colour rising from it (Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m), a glint climbing it, Legendary and Atheric pulsing; thrown out in a fan, bouncing to rest in about 0.6 s; a Rare or rarer chimes at rest. An Ammo box is a small crate picture with a white line |
+| Taking them | Walking within 1.5 m, as Vestiges are taken now; a Vestige past the ten carried stays on the ground |
+| How long | Two minutes, then gone |
+
+## Ammo
+
+| Call | Choice |
+|---|---|
+| Capacity | Shots carried for the worn Ranged weapon: bow 60, crossbow 30, pistolet 24, double pistolet 36, thunderlock 16. Kept on the character as a share of the full capacity, so a different Ranged weapon worn keeps the same share |
+| Firing | A shot spends one; at none, the weapon will not fire and the crosshair says "No ammo". Reloads take as long as now. Foes' weapons never run dry |
+| Ammo box | Dropped on a kill for each player who earned it: Minor 20%, Major 35%, Elite 60%, Miniboss and Boss always. Taken, it gives back a quarter of the capacity, at least one shot |
+| Ammo crate | A consumable: held in the Consumables shelf, it fills the worn Ranged weapon's ammo at once. Five carried at most; the Quartermaster sells them for 250 Aurem; a Miniboss or Boss drops one for each player |
+| Shown | The shots left beside the crosshair while the Ranged weapon is drawn, and under the Ranged slot on the Character page |
+
 ## Not now
 
 A Relic slot (the owner dropped it); Arts beyond the three; unlocking fragments by play; a separate greatsword

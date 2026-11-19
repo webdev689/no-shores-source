@@ -112,6 +112,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Weapons Are a Melee and a Ranged Loadout]]
 - [[Arts Are Overlook's Subclasses]]
 - [[Arts and Loadouts as Claude Shapes Them]]
+- [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
