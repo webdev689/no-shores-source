@@ -8,6 +8,8 @@ import { RARITIES, answerText, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
+import { ARTS_HINTS, ART_DIAMOND_KEY, artDiamond, artsPage } from './artsPage.ts';
+import { coresOf, gearAskOf } from './artsCards.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
 import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
 import {
@@ -174,6 +176,9 @@ export function startGearWindow(
   const feed = startAcquiredFeed(root, here, picturesOf);
   let view: View | null = null;
   let slot: number | null = null;
+  /** Whether the Character page shows the worn Art's screen, and the Core slot whose flyout is open on it. */
+  let arts = false;
+  let artSlot: number | null = null;
   let shelf = FIRST_SHELF;
   let inspecting: number | null = null;
   /** The gear and the state of the menu it was last built for. */
@@ -221,6 +226,8 @@ export function startGearWindow(
     letGo();
     if (inspecting !== null) inspecting = null;
     else if (slot !== null) slot = null;
+    else if (artSlot !== null) artSlot = null;
+    else if (arts) [arts, returnTo] = [false, ART_DIAMOND_KEY];
     else return shut();
     play('back');
   };
@@ -230,6 +237,7 @@ export function startGearWindow(
     letGo();
     const opening = view === null;
     [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
+    [arts, artSlot] = [false, null];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
     play(opening ? 'open' : 'tab');
@@ -388,7 +396,7 @@ export function startGearWindow(
         });
     }
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    const state = JSON.stringify([view, slot, shelf, inspecting, drawn, now === null]);
+    const state = JSON.stringify([view, slot, arts, artSlot, shelf, inspecting, drawn, now === null]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
     const holding = pressing || screen.querySelector('.gear-holding') !== null;
     if (holding || (gear === shownGear && state === shownState)) {
@@ -439,9 +447,22 @@ export function startGearWindow(
         render();
       },
       atVault: view === 'vault',
+      ...(gear.arts && { art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = null), render()), tip) }),
     };
-    const page =
-      view === 'character'
+    const worn = view === 'character' && arts ? gear.arts : undefined;
+    const page = worn
+      ? artsPage(
+          {
+            worn: worn.art,
+            cores: coresOf(worn),
+            ask: (asked) => now.ask(gearAskOf(asked)),
+            tip,
+            close: () => ((arts = false), (returnTo = ART_DIAMOND_KEY), render()),
+          },
+          artSlot,
+          (chosen) => ((artSlot = chosen), render()),
+        )
+      : view === 'character'
         ? characterPage(context, slot, (chosen) => ((slot = chosen), render()))
         : view === 'inventory'
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
@@ -462,9 +483,9 @@ export function startGearWindow(
     const opens: readonly Hint[] =
       gear.atReader && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
     const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
-    const hints = shown ? HINTS.item : view === 'inventory' ? shelfHints : HINTS[view];
+    const hints = shown ? HINTS.item : worn ? ARTS_HINTS : view === 'inventory' ? shelfHints : HINTS[view];
     hinted(hints ?? []);
-    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null ? [stepBack] : [close]));
+    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || worn ? [stepBack] : [close]));
     // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
     // goes back to the item's tile.
     const found = (key: string | null | undefined) =>

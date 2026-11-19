@@ -43,6 +43,8 @@ export interface PageContext {
   readonly inspect: (item: GearItem) => void;
   /** Whether the player stands at the vault's counter, where an item may be put in or taken out. */
   readonly atVault: boolean;
+  /** The worn Art's diamond, which opens its screen, where the menu has one. */
+  readonly art?: HTMLElement;
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */
@@ -201,7 +203,9 @@ export function characterPage(
   );
   middle.append(power, stand, stats);
   const weapons = side(WEAPONS, 'Weapons');
-  weapons.prepend(make('div', '', 'gear-art'));
+  const art = make('div', '', 'gear-art');
+  if (context.art) art.append(context.art);
+  weapons.prepend(art);
   weapons.append(emblemSlot(context, open === EMBLEM_SLOT, () => choose(open === EMBLEM_SLOT ? null : EMBLEM_SLOT)));
   page.append(weapons, middle, side(ARMOUR, 'Armour'));
   return page;

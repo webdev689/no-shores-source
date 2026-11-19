@@ -6,6 +6,7 @@ code:
   - client/src/game/artsPage.ts#artsPage
   - client/src/game/artsPage.ts#artDiamond
   - client/src/game/artsPage.ts#ArtsPageContext
+  - client/src/game/gearWindow.ts#startGearWindow
   - client/src/game/artsCards.ts#ArtsAsk
   - client/src/game/artsCards.ts#coreChoices
   - client/src/game/artsCards.ts#spellCard
@@ -40,7 +41,7 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 
 - **The Art's diamond** stands on the Character page above the weapons, with the slots: the worn Art's emblem, "Art"
   and its name in its element's colour. Its card names the Art, its spells and its words. Pressed, it opens the Art's
-  screen.
+  screen in the Character page's place, the footer's Back closing it as Escape does.
 - **The Art's screen**, after Destiny's subclass screen: a dark ground washed in the Art's colour, its emblem large and
   faint behind. At the left, the worn Art's name, its element, its diamond large and its words; under them the three
   Arts' diamonds, the worn one edged in brass. Pressing another asks the room to wear it. To the right, in rows under
@@ -156,4 +157,3 @@ ability bar on the HUD), how the rules cast each spell, and how the browser asks
 - The spells are not drawn yet beyond the cast move and Dusk Daggers' ring; another player's cast shows the forge's
   own spark.
 - A spell looks through walls: an orb, a bolt or an area finds a foe behind a block, and an orb flies through one.
-- The Art's screen is not yet wired into the menu.
