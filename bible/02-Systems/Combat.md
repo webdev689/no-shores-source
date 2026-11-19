@@ -178,7 +178,7 @@ The timings are set against shipped games and what a person can do, measured or 
 | No window for 30 ticks after one unused | Sekiro and Lies of P reset after 500 ms | Mashing does not parry; the guard still blocks |
 | Dodge safe 1 to 18 ticks (300 ms), perfect within 12 (200 ms) | A backstep or quickstep's 230 to 300 ms; Stellar Blade's perfect dodge 150 ms, more with upgrades | A short hop; the perfect stretch matches the parry window, so the two reads feel alike |
 | Stamina back at 45 a second after 0.5 s; a dodge 22 of 100 | The Souls games' 37 to 45 a second | Four dodges from full, back in about two seconds |
-| A sword's blow 24 ticks (400 ms) after the press | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it |
+| A sword's blow 18 ticks (300 ms) after the press | For Honor's quickest light, 400 ms, "reactable" | A foe's swing can be answered by a person who watches for it |
 | A press kept 8 ticks | Fighting games' 5 to 10 frame buffers | A press a moment early is not lost |
 | Lock takes within 9 m and 70 degrees; lets go past 15 m, after 1.5 s unseen | FromSoftware's 15 m lock and its keep time; God of War's on-screen targeting | Holds through a moment behind a pillar, and follows the look |
 
