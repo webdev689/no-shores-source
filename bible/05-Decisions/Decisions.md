@@ -123,6 +123,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]
 - [[The Waters Come From the Islands]]
 - [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]
+- [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

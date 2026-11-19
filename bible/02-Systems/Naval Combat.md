@@ -48,7 +48,8 @@ Broadsides, and rams, between players' Sloops and the captains' Sloops of the en
 rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one captain
 alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. What the sea's fights become
 next, each ending in a sinking or a boarding, against a hull for each rank, is decided and not yet built
-([[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[Hulls]]).
+([[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[Hulls]],
+[[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]).
 
 ## The fight
 
