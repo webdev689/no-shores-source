@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { FRAGMENT_MAPS } from './artFragments.ts';
-import { EMBLEM_MAPS, PALETTE_LETTERS, SPELL_MAPS, artPalette, mapSvg } from '../player/artGlyphs.ts';
+import { EMBLEM_FRAME, EMBLEM_MAPS, PALETTE_LETTERS, SPELL_MAPS, artPalette, mapSvg } from '../player/artGlyphs.ts';
 
-const ALL = { ...EMBLEM_MAPS, ...SPELL_MAPS, ...FRAGMENT_MAPS };
+const ALL = { ...EMBLEM_MAPS, ...SPELL_MAPS, ...FRAGMENT_MAPS, frame: EMBLEM_FRAME };
 
 test('every map is a rectangle drawn only in its palette’s letters', () => {
   for (const [key, rows] of Object.entries(ALL)) {
@@ -31,6 +31,24 @@ test('each Art has its emblem, three spells and six fragments drawn, at their si
   }
   const drawn = arts.arts.flatMap((art) => [art.anima, ...art.tenets, ...art.core].map((each) => each.key));
   assert.equal(Object.keys(SPELL_MAPS).length + Object.keys(FRAGMENT_MAPS).length, drawn.length, 'nothing extra');
+});
+
+test('the emblem’s frame is a double diamond round the emblem, brass at its four points', () => {
+  assert.equal(EMBLEM_FRAME.length, 32);
+  assert.equal(EMBLEM_FRAME[0], `${'.'.repeat(15)}ff${'.'.repeat(15)}`);
+  assert.equal(EMBLEM_FRAME[2], `${'.'.repeat(13)}cb..bc${'.'.repeat(13)}`, 'the outer line over the deeper one');
+  assert.equal(EMBLEM_FRAME[15]?.slice(0, 4), 'ff..', 'the point in brass, two cells clear of the emblem');
+  const brass = EMBLEM_FRAME.join('')
+    .split('')
+    .filter((letter) => letter === 'f').length;
+  assert.equal(brass, 16, 'four cells at each point');
+  // The emblem's 24-cell diamond in its middle stays clear of both lines.
+  EMBLEM_FRAME.forEach((row, line) =>
+    [...row].forEach((letter, column) => {
+      const ring = Math.abs(column - 15.5) + Math.abs(line - 15.5);
+      if (letter !== '.') assert.ok(ring > 12, `${column},${line}`);
+    }),
+  );
 });
 
 test('no two of an Art’s pictures are the same', () => {

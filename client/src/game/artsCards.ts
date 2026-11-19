@@ -5,7 +5,7 @@
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ABILITY_KEYS } from '../combat/abilityBar.ts';
 import { FRAGMENT_MAPS } from './artFragments.ts';
-import { EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
+import { EMBLEM_FRAME, EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { ArtState } from '../network/artMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
 import type { Card } from './gearCards.ts';
@@ -97,6 +97,12 @@ export function spellNumbers(spell: Spell): [string, string][] {
   });
 }
 
+/** A recharge as a player reads one: under a minute in seconds ("38 s"), else minutes and seconds ("8:20"). */
+export function rechargeWords(seconds: number): string {
+  const whole = Math.round(seconds);
+  return whole < 60 ? `${whole} s` : `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+}
+
 /** A spell's card: its name, whether it is the Anima or a Tenet and its element, its recharge large, its numbers and
  *  what it does. */
 export function spellCard(art: Art, spell: Spell): Card {
@@ -104,7 +110,7 @@ export function spellCard(art: Art, spell: Spell): Card {
     name: spell.name,
     rarity: 0,
     kind: spell === art.anima ? 'Anima' : 'Tenet',
-    big: { label: 'Seconds to recharge', value: spell.rechargeS },
+    big: { label: 'Recharge', value: rechargeWords(spell.rechargeS) },
     rows: spellNumbers(spell),
     element: art.element,
     traits: [],
@@ -188,6 +194,8 @@ export function keyOf(art: Art, spell: Spell): string {
 
 /** An Art's emblem in its diamond, as SVG. */
 export const emblemSvg = (art: Art): string => mapSvg(EMBLEM_MAPS[art.key], art.element);
+/** The double diamond an Art's emblem stands in on its screen, as SVG. */
+export const frameSvg = (art: Art): string => mapSvg(EMBLEM_FRAME, art.element);
 /** A spell's icon, as SVG. */
 export const spellSvg = (art: Art, spell: Spell): string => mapSvg(SPELL_MAPS[spell.key], art.element);
 /** A fragment's icon, as SVG. */

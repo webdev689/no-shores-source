@@ -125,17 +125,19 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one
   going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
-  writing its percentage inside: never 0% while anything is left. Health at a quarter or less flashes its edge to blood;
+  writing its percentage inside: never 0% while anything is left. Where the HUD is wide (1500 by 900 and up) the window
+  is 330 px wide, health and stamina 33 px tall and their words at 22, and the ability bar beside it grows with it. Health at a quarter or less flashes its edge to blood;
   the stamina flashes white for a swing or a dodge asked with none. Whole and untouched for 4 s (health and stamina
   short of no whole point, no poise taken), with no buff and no foe on the target plate or the boss bar, the window
   rests out of sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
-  colours (Crit a burst and Linked two rings in Blaze; Expose a cracked shield and Veiled a crescent in Cosmic; Charge
-  a crackling bolt and Haste two chevrons in Volt), over a thin line in the element's colour that shrinks from the
-  most time it held since it began or was refreshed. Each tells a screen reader what it is and the whole seconds it has
-  left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row over the vitals' health, 24 px each, and keep
-  the window awake while one holds. A foe's debuffs (Expose, then Charge, or the Charge's immunity as a faded Charge)
-  stand beside the bar of each of its plates: 24 px by the target's and the boss bar, 12 over a figure.
+  colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
+  give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
+  in the element's colour that shrinks from the most time it held since it began or was refreshed. Each tells a screen
+  reader what it is and the whole seconds it has left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row
+  over the vitals' health, 24 px each and 6 apart, and keep the window awake while one holds. A foe's debuffs (Expose,
+  then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its plates, 24 px each: over
+  a figure the row is scaled back up as the plate shrinks with distance, so it never reads smaller.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
   ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
@@ -220,7 +222,9 @@ on the Inventory, which shows it. Once shown it stays, though the room's word go
 stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
 focus stays within it, marked in white. On a screen past 1440p the menu, its cards and the HUD's words stand at
 twice their size, the 1280 by 720 layout doubled. Escape steps back: a page's own step first (the Roster's panel, a player's
-details), then an item's page, then a slot's flyout, then the menu. Gear shows as the
+details), then an item's page, then a slot's flyout, then the Art's screen, then the menu; with the room lost none
+of those is shown, and it closes the menu. A tile the focus is given back to (an item's, the Art's diamond) is
+forgotten once it has it. Gear shows as the
 player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
 never while a press is held. Each press is an ask the room answers.
 
@@ -242,13 +246,17 @@ never while a press is held. Each press is an ask the room answers.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the
   Melee and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and
   the emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture
-  with its names; under the Ranged slot's, the shots left of its capacity ("18 of 24 shots"), or "No ammo" in the loss
-  colour. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows on hover or focus; a click opens its
+  with its names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's
+  across from it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the
+  loss colour, at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its
   flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those
   kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
-  with the gain or loss in green or red. Along its foot what its presses do.
+  with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
+  stand at 22, as the menu's labels do, in a card 440 px wide. It shows only for a pointer that moves or a focus the
+  keys moved: a page built anew under a resting pointer, or a focus a click left, opens none over what the player
+  looks at.
 - **An item's page** lies over the menu, as Destiny 1's weapon page does: its name on its rarity's band, its kind,
   level, pips and element; its words; its main number large over a meter of it; what it changes over the piece worn;
   the perks its chosen nodes give; and its node grid. Each node is a tile of the kit's stone with its kind's glyph:
@@ -274,9 +282,11 @@ never while a press is held. Each press is an ask the room answers.
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
   used is spent, not gained.
-- **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair, counted
-  as the fight's rules count them on the player's own fighter, so a shot takes one at once; "No ammo" at none, in the
-  loss colour.
+- **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
+  that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
+  player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
+  or less, and "No ammo" at none, in the loss colour. Whether the Ranged loadout is drawn is read from the outfit
+  shown.
 - **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
   turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
   refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the

@@ -1,7 +1,8 @@
 // The Art's abilities on the HUD, at the bottom left beside the vitals, as Destiny shows a Super and its abilities:
-// the Anima as the Art's diamond, lit from the bottom as it charges and glowing once full; the two Tenets as square
-// icons, a dark wedge over each sweeping clockwise away as it recharges, its last seconds counted in it. Each has its
-// key on a keycap. What it shows is worked out from the room's numbers alone, and only what changed is written.
+// the Anima as its own icon, the one the Art's screen shows, lit from the bottom as it charges, its outline lit all
+// the while, and glowing once full; the two Tenets as square icons, a dark wedge over each sweeping clockwise away as
+// it recharges, its last seconds counted in it. Each has its key on a keycap under it. What it shows is worked out
+// from the room's numbers alone, and only what changed is written.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ROLES } from '../plus/kit.ts';
 import { HALO, TONES } from '../plus/tones.ts';
@@ -9,14 +10,16 @@ import { ELEMENTS } from '../player/gear.ts';
 
 /** The keys that cast the Anima and the two Tenets. */
 export const ABILITY_KEYS = ['R', 'Q', 'G'] as const;
-/** The Anima's diamond's rows: it lights a whole row of its picture at a time. */
+/** The Anima's icon's rows: it lights a whole row of its picture at a time. */
 export const ANIMA_ROWS = 24;
 /** The steps a Tenet's wedge sweeps in, round the circle. */
 const SWEEP_STEPS = 60;
 /** A Tenet counts its seconds only once fewer than this are left. */
 const COUNT_UNDER = 10;
-/** How many CSS pixels each cell of a picture takes on the bar. */
+/** How many CSS pixels each cell of the Anima's icon takes on the bar, and of a Tenet's, and where the HUD is wide
+ *  (1500 by 900 and up). */
 const SCALE = 3;
+const WIDE_SCALE = 4;
 /** Float error left by a share worked out from ticks, kept from tipping a step. */
 const EPSILON = 1e-9;
 
@@ -45,10 +48,11 @@ export interface AbilityShown {
   readonly tenets: readonly [TenetShown, TenetShown];
 }
 
-/** The pictures the bar draws an Art with, as SVG: its diamond, and its two Tenets' icons. The game's glyphs make
- *  them, so the HUD needs no picture of its own. */
+/** The pictures the bar draws an Art with, as SVG: its Anima's icon and that icon's outline alone, and its two Tenets'
+ *  icons. The game's glyphs make them, so the HUD needs no picture of its own. */
 export interface ArtPictures {
-  readonly diamond: string;
+  readonly anima: string;
+  readonly animaOutline: string;
   readonly tenets: readonly [string, string];
 }
 
@@ -82,7 +86,8 @@ export function abilityBarOf(state: AbilityState): AbilityShown {
 }
 
 const SHEET_ID = 'ability-bar';
-/** The bar's sheet: a carved window right of the vitals, the Anima's diamond, the Tenets' wells and the keycaps. */
+/** The bar's sheet: a carved window right of the vitals, the Anima's icon, the Tenets' wells and the keycaps, each cap
+ *  under its icon on one line; where the HUD is wide, each a step larger, its pictures still whole multiples. */
 const SHEET = `
 .ability-bar { position: absolute; left: 308px; bottom: 24px; display: flex; align-items: flex-end; gap: 11px;
   box-sizing: border-box; padding: 7px 12px; border-width: 2px; border-style: solid; pointer-events: none; }
@@ -91,9 +96,8 @@ const SHEET = `
 .ability-bar img { display: block; image-rendering: pixelated; }
 .ability-bar .anima { position: relative; width: ${ANIMA_ROWS * SCALE}px; height: ${ANIMA_ROWS * SCALE}px; }
 .ability-bar .anima img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.ability-bar .anima .unlit { filter: grayscale(0.8) brightness(0.4); }
+.ability-bar .anima .unlit { filter: grayscale(0.8) brightness(0.55); }
 .ability-bar .anima.full .lit { filter: drop-shadow(0 0 6px var(--art)); }
-.ability-bar .anima kbd { position: absolute; left: 50%; bottom: -6px; translate: -50% 0; }
 .ability-bar .tenet { position: relative; box-sizing: border-box; width: 44px; height: 44px; display: grid;
   place-items: center; border: 2px solid; border-color: ${TONES.stoneDark} ${TONES.stoneMid} ${TONES.stoneLit}
   ${TONES.stoneDim}; background: ${TONES.groundTrack}; box-shadow: 0 0 0 1px ${TONES.outline}; }
@@ -109,6 +113,13 @@ const SHEET = `
 .ability-bar kbd { min-width: 18px; box-sizing: border-box; padding: 0 5px; border: 1px solid;
   border-color: ${TONES.stoneLit} ${TONES.stoneDark} ${TONES.stoneDark} ${TONES.stoneLit}; border-bottom-width: 2px;
   background: #16181d; font: inherit; font-size: 11px; line-height: 16px; text-align: center; color: ${TONES.word}; }
+@media (min-width: 1500px) and (min-height: 900px) {
+  .ability-bar { left: 378px; }
+  .ability-bar .anima { width: ${ANIMA_ROWS * WIDE_SCALE}px; height: ${ANIMA_ROWS * WIDE_SCALE}px; }
+  .ability-bar .tenet { width: 52px; height: 52px; }
+  .ability-bar .tenet img { width: 48px; height: 48px; }
+  .ability-bar kbd { min-width: 28px; font-size: 22px; line-height: 28px; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .ability-bar .anima.full .lit { animation: ability-full 1.6s steps(4, end) infinite alternate; }
 }
@@ -146,6 +157,7 @@ export class AbilityBar {
   readonly root: HTMLElement;
   private readonly anima: HTMLElement;
   private readonly unlit: HTMLImageElement;
+  private readonly outline: HTMLImageElement;
   private readonly lit: HTMLImageElement;
   private readonly tenets: readonly [TenetParts, TenetParts];
   private readonly pictures: (art: number) => ArtPictures | null;
@@ -160,8 +172,9 @@ export class AbilityBar {
     const animaSlot = part('div', 'slot', this.root);
     this.anima = part('div', 'anima', animaSlot);
     this.unlit = part('img', 'unlit', this.anima);
+    this.outline = part('img', 'outline', this.anima);
     this.lit = part('img', 'lit', this.anima);
-    part('kbd', '', this.anima, ABILITY_KEYS[0]);
+    part('kbd', '', animaSlot, ABILITY_KEYS[0]);
     const tenet = (key: string): TenetParts => {
       const slot = part('div', 'slot', this.root);
       const well = part('div', 'tenet', slot);
@@ -209,7 +222,8 @@ export class AbilityBar {
     this.root.style.setProperty('--art', element.colour);
     this.root.style.setProperty('--art-lit', lit);
     this.root.style.setProperty('--art-dark', dark);
-    this.unlit.src = this.lit.src = pictureUrl(pictures.diamond);
+    this.unlit.src = this.lit.src = pictureUrl(pictures.anima);
+    this.outline.src = pictureUrl(pictures.animaOutline);
     this.tenets.forEach((parts, index) => (parts.icon.src = pictureUrl(pictures.tenets[index as 0 | 1])));
   }
 }

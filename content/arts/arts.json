@@ -41,7 +41,7 @@
       ],
       "core": [
         { "key": "pursuit", "name": "Pursuit", "text": "Tempest sends two more orbs.", "orbs": 2 },
-        { "key": "conduction", "name": "Conduction", "text": "Arc Lash's Charge lasts half as long again.", "chargeTimes": 1.5 },
+        { "key": "conduction", "name": "Conduction", "text": "Arc Lash's Charge lasts 50% longer.", "chargeTimes": 1.5 },
         { "key": "momentum", "name": "Momentum", "text": "Quicken also gives you Crit while it lasts." },
         { "key": "recharge", "name": "Recharge", "text": "Each Volt kill takes 4% off your Tenets' cooldowns.", "cooldownShare": 0.04 },
         { "key": "overload", "name": "Overload", "text": "Enemies you Charge are Exposed too." },

@@ -11,8 +11,10 @@ import {
   fragmentCard,
   gearAskOf,
   keyOf,
+  rechargeWords,
   spellCard,
   spellNumbers,
+  spellSvg,
 } from './artsCards.ts';
 
 const storm = () => {
@@ -37,7 +39,8 @@ test('each Art has its three spells and six fragments, named and worded as the A
       assert.equal(card.name, wanted[place]?.name);
       assert.equal(card.words, wanted[place]?.text);
       assert.equal(card.element, file.element);
-      assert.equal(card.big?.value, wanted[place]?.rechargeS, 'its recharge leads the card');
+      assert.equal(card.big?.value, rechargeWords(wanted[place]?.rechargeS ?? 0), 'its recharge leads the card');
+      assert.equal(card.big?.label, 'Recharge');
       assert.equal(card.kind, place === 0 ? 'Anima' : 'Tenet');
     }
     assert.equal(art.core.length, 6);
@@ -84,15 +87,25 @@ test('the Core’s flyout refuses a fragment already set in another slot', () =>
   assert.equal(coreChoices(art, core, 0)[2]?.ask, null);
 });
 
+test('a recharge reads in seconds under a minute, else in minutes and seconds', () => {
+  assert.equal(rechargeWords(38), '38 s');
+  assert.equal(rechargeWords(59), '59 s');
+  assert.equal(rechargeWords(60), '1:00');
+  assert.equal(rechargeWords(91), '1:31');
+  assert.equal(rechargeWords(500), '8:20');
+});
+
 test('a Core the room has not sent is three empty slots', () => {
   assert.deepEqual(coreOf({}, 2), [null, null, null]);
   assert.deepEqual(coreOf({ 2: [4] }, 2), [4, null, null]);
 });
 
-test('the HUD is given each Art’s diamond and Tenets as pictures, and none for no Art', () => {
+test('the HUD is given each Art’s Anima, its outline, and its Tenets as pictures, and none for no Art', () => {
   for (const art of ARTS) {
     const pictures = abilityPictures(art.id);
-    assert.match(pictures?.diamond ?? '', /viewBox="0 0 24 24"/);
+    assert.equal(pictures?.anima, spellSvg(art, art.anima), 'the Anima as the Art’s screen shows it');
+    assert.match(pictures?.animaOutline ?? '', /viewBox="0 0 24 24"/);
+    assert.ok((pictures?.animaOutline.length ?? 0) < (pictures?.anima.length ?? 0), 'its outline alone');
     assert.equal(pictures?.tenets.length, 2);
     for (const tenet of pictures?.tenets ?? []) assert.match(tenet, /viewBox="0 0 12 12"/);
   }

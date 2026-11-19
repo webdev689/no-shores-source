@@ -7,7 +7,6 @@ import type { FighterView } from '../rules/fighters.ts';
 import {
   ABILITY_ACTIONS,
   CAST_LOCKOUT_MOST_S,
-  CAST_LOCKOUT_S,
   CastKeys,
   DAGGERS,
   abilitiesAt,
@@ -75,8 +74,11 @@ test('a press casts its ability only when it is ready, then waits for the roomâ€
   assert.deepEqual(framed(casting, state(1, 0.5), keys(['anima'])).cast, null, 'the Anima is not full');
   assert.deepEqual(framed(casting, state(1), keys(['anima'])).cast, { spell: SPELLS.tempest, aim: null });
   assert.equal(framed(casting, state(1), keys(['tenetTwo'])).cast, null, 'locked out a moment');
-  for (let frame = 0; frame < CAST_LOCKOUT_S * 60 + 1; frame++) framed(casting, state(1));
-  assert.deepEqual(framed(casting, state(2), keys(['tenetTwo'])).cast, { spell: SPELLS.dawnflare, aim: null });
+  assert.deepEqual(
+    framed(casting, state(2), keys(['tenetTwo'])).cast,
+    { spell: SPELLS.dawnflare, aim: null },
+    'Art changed',
+  );
   const staggered = new CastKeys().frame(keys(['anima']), 0, {
     hands: true,
     state: state(1),
@@ -89,13 +91,13 @@ test('a press casts its ability only when it is ready, then waits for the roomâ€
   assert.equal(staggered.cast, null, 'staggered, nothing is cast');
 });
 
-test('after a cast the keys wait for the roomâ€™s word on the Arts, however long it takes, up to a limit', () => {
+test('after a cast the keys wait for the roomâ€™s word that it was spent, however long it takes, up to a limit', () => {
   const casting = new CastKeys();
   const word = state(1);
   assert.ok(framed(casting, word, keys(['tenetOne'])).cast, 'Quicken sent');
-  for (let frame = 0; frame < CAST_LOCKOUT_S * 60 + 30; frame++) framed(casting, word);
-  assert.equal(framed(casting, word, keys(['tenetTwo'])).cast, null, 'no word yet: a slow room keeps them shut');
-  assert.ok(framed(casting, state(1), keys(['tenetTwo'])).cast, 'the roomâ€™s word come, Arc Lash goes');
+  for (let frame = 0; frame < 60; frame++) framed(casting, state(1));
+  assert.equal(framed(casting, state(1), keys(['tenetTwo'])).cast, null, 'other words, Quicken still full: kept shut');
+  assert.ok(framed(casting, state(1, 1, [0, 1]), keys(['tenetTwo'])).cast, 'the room spent Quicken: Arc Lash goes');
   for (let frame = 0; frame < CAST_LOCKOUT_MOST_S * 60 + 1; frame++) framed(casting, word);
   assert.ok(framed(casting, word, keys(['anima'])).cast, 'a cast the room let fall sends no word: they open again');
   casting.reset();

@@ -36,6 +36,7 @@ code:
   - client/src/game/aboard.ts#Aboard
   - client/src/game/shipPanel.ts#shipPanelOf
   - client/src/game/hints.ts#seaHints
+  - client/src/game/hints.ts#footHints
   - client/src/game/rooms.ts#roomsFrom
   - client/src/heldmap/heldMap.ts#HeldMap
 ---
@@ -94,7 +95,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock holds a
   foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
-  name the fight's.
+  name the fight's, the Arts' line ("R Anima · Q G Tenets") adding how to aim Dusk Daggers only while Shadow is worn.
+  Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand at 22 px a line,
+  over the vitals and the buffs above them.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
   foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the

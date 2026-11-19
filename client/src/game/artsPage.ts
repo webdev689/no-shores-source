@@ -1,9 +1,10 @@
-// The Art's screen, after Destiny's subclass screen: over a dark ground washed in the Art's colour, the worn Art's name
-// and its diamond large at the left, the three Arts' diamonds under it to wear another; to the right its ANIMA, its two
-// TENETS and its CORE in rows of the menu's tiles, framed in its element. A Core slot opens a flyout of the Art's six
-// fragments, where one set in another slot is refused. Each spell and fragment shows its card on hover or focus. The
-// arrows move between the tiles, Enter chooses, Escape closes the flyout and then the screen. Every change is an ask
-// the room answers; the screen shows the Art and Core the room last sent.
+// The Art's screen, after Destiny's subclass screen: the Art's scene drawn behind it, its drama at the right; at the
+// left the worn Art's name, its diamond large in a double frame, the three Arts' diamonds to wear another and its
+// words; in the middle its ANIMA, its two TENETS and its CORE in rows of the menu's tiles, framed in its element, the
+// Core's fragments written out under it. A Core slot opens a flyout of the Art's six fragments, where one set in
+// another slot is refused. Each spell and fragment shows its card beside its row on hover or focus. The arrows move
+// between the tiles, Enter chooses, Escape closes the flyout and then the screen. Every change is an ask the room
+// answers; the screen shows the Art and Core the room last sent.
 
 import './arts.css';
 import { make } from '../editor/dom.ts';
@@ -11,6 +12,7 @@ import { ELEMENTS } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import {
   ARTS,
+  CORE_SLOTS,
   type Art,
   type ArtsAsk,
   type Cores,
@@ -22,29 +24,40 @@ import {
   emblemSvg,
   fragmentCard,
   fragmentSvg,
+  frameSvg,
   keyOf,
   spellCard,
   slotCard,
   spellSvg,
 } from './artsCards.ts';
+import { artStage } from './artStage.ts';
 import type { Card } from './gearCards.ts';
 import { type Hint, type HoverCard, cardNode, elementGlyph, glyphImage } from './gearDom.ts';
 import { STEP_BACK } from './gearScreen.ts';
 import { play } from './uiSounds.ts';
 
+/** How the screen comes in when built: opened, another Art just worn, or neither. */
+export type ArtsEntrance = 'open' | 'wear' | null;
+
 /** What the Art's screen draws from: the Art worn and each Art's Core as the room last sent them, the way to ask the
- *  room for a change, the menu's hover card, and the way back to the Character page. */
+ *  room for a change, the menu's hover card, the way back to the Character page, how the screen comes in, the Core
+ *  slot the room has just set and the one whose ask is waiting. */
 export interface ArtsPageContext {
   readonly worn: number;
   readonly cores: Cores;
   readonly ask: (ask: ArtsAsk) => void;
   readonly tip: HoverCard;
   readonly close: () => void;
+  readonly entrance?: ArtsEntrance;
+  readonly justSet?: number | null;
+  readonly pending?: number | null;
 }
 
 /** What the footer says the screen's presses and keys do. */
 export const ARTS_HINTS: readonly Hint[] = [
   ['Click', 'Wear an Art or set a fragment'],
+  ['Arrows', 'Move'],
+  ['Enter', 'Choose'],
   ['Esc', 'Back'],
 ];
 /** The key of the Character page's diamond, which takes the focus back once the screen closes. */
@@ -54,8 +67,6 @@ const WEAR: readonly Hint[] = [['Click', 'Wear it']];
 const CHANGE: readonly Hint[] = [['Click', 'Change it']];
 const CHOOSE: readonly Hint[] = [['Click', 'Choose a fragment']];
 const SET: readonly Hint[] = [['Click', 'Set it here']];
-/** How much fainter the Art's emblem is where it washes the screen's ground. */
-const WASH_OPACITY = 0.08;
 /** Each arrow key's way across the screen. */
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
@@ -65,6 +76,8 @@ const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
 };
 
 const pictureUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;
+/** The key of a spell's tile, which the screen's focus starts on for the Anima. */
+const spellKey = (spell: Spell): string => `spell-${spell.key}`;
 
 /** A pixel picture as an image, never read aloud: its tile names it. */
 function picture(svg: string, className: string): HTMLImageElement {
@@ -105,10 +118,11 @@ function focusSoon(key: string): void {
   else requestAnimationFrame(() => found()?.focus());
 }
 
-/** A tile of the menu's, for the arrows to move between. */
-function tileOf(className: string, key: string, label: string): HTMLButtonElement {
-  const tile = make('button', '', `${className} ${ROLES.tile}`);
-  tile.type = 'button';
+/** A tile of the menu's, for the arrows to move between: a press, or with `still` one that only shows its card. */
+function tileOf(className: string, key: string, label: string, still = false): HTMLElement {
+  const tile = make(still ? 'div' : 'button', '', `${className} ${ROLES.tile}`);
+  if (tile instanceof HTMLButtonElement) tile.type = 'button';
+  else [tile.tabIndex, tile.role] = [0, 'img'];
   tile.dataset['key'] = key;
   tile.dataset['nav'] = '';
   tile.setAttribute('aria-label', label);
@@ -143,23 +157,34 @@ function group(name: string, tiles: readonly HTMLElement[], className = ''): HTM
   return shown;
 }
 
-/** A spell's tile: its icon, its key on a keycap, and its card on hover or focus. */
-function spellTile(context: ArtsPageContext, art: Art, spell: Spell): HTMLElement {
+/** A spell's tile: its icon and its key on a keycap under it. It is pressed for nothing, so it is no button; its card
+ *  shows beside `row` on hover or focus. */
+function spellTile(context: ArtsPageContext, art: Art, spell: Spell, row: HTMLElement): HTMLElement {
   const anima = spell === art.anima;
   const key = keyOf(art, spell);
-  const tile = tileOf(
-    anima ? 'gear-slot' : 'gear-cell',
-    `spell-${spell.key}`,
-    `${spell.name}, ${anima ? 'Anima' : 'Tenet'}, key ${key}`,
-  );
+  const label = `${spell.name}, ${anima ? 'Anima' : 'Tenet'}, key ${key}`;
+  const tile = tileOf(anima ? 'gear-slot' : 'gear-cell', spellKey(spell), label, true);
   tile.append(picture(spellSvg(art, spell), 'arts-glyph'), make('kbd', key, 'gear-key arts-key'));
-  context.tip.over(tile, () =>
-    cardWith(spellCard(art, spell), spellSvg(art, spell), art.element, [[key, 'Cast in play']]),
-  );
+  const card = () => cardWith(spellCard(art, spell), spellSvg(art, spell), art.element, [[key, 'Cast in play']]);
+  context.tip.over(tile, card, row);
   return tile;
 }
 
-/** The Core's three slots, and the open one's flyout of the Art's six fragments. */
+/** The fragments set in a Core, one line each: its name and what it does. */
+function buildList(art: Art, core: readonly (number | null)[]): HTMLElement {
+  const list = make('ul', '', 'arts-build');
+  list.setAttribute('aria-label', 'Set in the Core');
+  for (const chosen of core) {
+    const fragment = chosen === null ? undefined : art.core[chosen];
+    if (!fragment) continue;
+    const line = make('li');
+    line.append(make('b', fragment.name), make('span', fragment.text));
+    list.append(line);
+  }
+  return list;
+}
+
+/** The Core's three slots, the open one's flyout of the Art's six fragments, and what is set written out under them. */
 function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose: (slot: number | null) => void) {
   const core = coreOf(context.cores, art.id);
   const slots = core.map((chosen, slot) => {
@@ -169,6 +194,9 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
     tile.append(fragment ? picture(fragmentSvg(art, fragment), 'arts-glyph') : glyphImage('empty'));
     tile.classList.toggle('gear-vacant', !fragment);
     tile.classList.toggle('gear-open', open === slot);
+    // The room's word has just set it, or the ask that will is on its way.
+    tile.classList.toggle('arts-just-set', context.justSet === slot);
+    if (context.pending === slot) tile.setAttribute('aria-busy', 'true');
     tile.setAttribute('aria-expanded', String(open === slot));
     tile.setAttribute('aria-haspopup', 'true');
     tile.addEventListener('click', () => {
@@ -179,16 +207,25 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
       const first = chosen ?? coreChoices(art, core, slot).find((each) => each.ask)?.index ?? 0;
       focusSoon(`fragment-${first}`);
     });
+    return { tile, fragment, slot };
+  });
+  const filled = core.filter((chosen) => chosen !== null).length;
+  const shown = group(
+    `Core · ${filled} of ${CORE_SLOTS}`,
+    slots.map(({ tile }) => tile),
+    'arts-core',
+  );
+  const row = shown.querySelector<HTMLElement>('.arts-tiles') ?? shown;
+  for (const { tile, fragment, slot } of slots) {
     const card = () => {
       if (fragment) return cardWith(fragmentCard(art, fragment), fragmentSvg(art, fragment), art.element, CHANGE);
       const node = cardNode(slotCard(art, slot), null, CHOOSE);
       tone(node, art.element);
       return node;
     };
-    context.tip.over(tile, card);
-    return tile;
-  });
-  const shown = group('Core', slots, 'arts-core');
+    context.tip.over(tile, card, row);
+  }
+  shown.append(buildList(art, core));
   if (open === null) return shown;
   const flyout = make('div', '', `gear-flyout arts-flyout ${ROLES.panel}`);
   flyout.append(make('div', `Core slot ${open + 1}`, 'gear-flyout-head'));
@@ -220,35 +257,21 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
   }
   flyout.append(grid);
   // Beside the slots, as a slot's flyout opens beside it on the Character page.
-  shown.querySelector('.arts-tiles')?.append(flyout);
+  row.append(flyout);
   return shown;
 }
 
-/** The Art's screen for the worn Art, with `open` the Core slot whose flyout is open (null for none); `choose` opens
- *  or closes a slot's flyout. */
-export function artsPage(
-  context: ArtsPageContext,
-  open: number | null,
-  choose: (slot: number | null) => void,
-): HTMLElement {
-  const art = artOf(context.worn) ?? ARTS[0];
-  const page = make('div', '', 'arts-page');
-  if (!art) return page;
-  page.dataset['art'] = art.key;
-  tone(page, art.element);
-  const wash = emblemSvg(art).replace('<svg ', `<svg opacity="${WASH_OPACITY}" `);
-  page.style.setProperty('--wash', `url("${pictureUrl(wash)}")`);
+/** The worn Art's name, element, framed diamond, the three Arts' diamonds to wear another, and its words. */
+function sideOf(context: ArtsPageContext, art: Art): HTMLElement {
   const side = make('div', '', 'arts-side');
   const name = make('h2', art.name, 'arts-name');
-  name.tabIndex = -1;
-  // Named, so the menu finds the focus again on the page built anew when the room's word comes.
-  name.dataset['key'] = 'arts-name';
+  name.id = 'arts-name';
   const kind = make('p', '', 'arts-kind');
   const glyph = elementGlyph(art.element, 'gear-element-inline');
   if (glyph) kind.append(glyph);
   kind.append(make('span', `${ELEMENTS[art.element]?.name ?? ''} Art`));
   const emblem = make('div', '', 'arts-emblem');
-  emblem.append(picture(emblemSvg(art), 'arts-emblem-img'));
+  emblem.append(picture(frameSvg(art), 'arts-frame-img'), picture(emblemSvg(art), 'arts-emblem-img'));
   const picks = make('div', '', 'arts-picks');
   picks.setAttribute('role', 'group');
   picks.setAttribute('aria-label', 'Arts');
@@ -268,21 +291,40 @@ export function artsPage(
       context.tip.hide();
       context.ask({ kind: 'wearArt', art: each.id });
     });
-    context.tip.over(pick, () => cardWith(artCard(each, worn), emblemSvg(each), each.element, worn ? [] : WEAR));
+    context.tip.over(pick, () => cardWith(artCard(each, worn), emblemSvg(each), each.element, worn ? [] : WEAR), picks);
     picks.append(pick);
   }
-  side.append(name, kind, emblem, make('p', art.blurb, 'arts-blurb'), picks);
+  // The diamonds stand above the words, so a longer or shorter blurb never moves them under the pointer.
+  side.append(name, kind, emblem, picks, make('p', art.blurb, 'arts-blurb'));
+  return side;
+}
+
+/** The Art's screen for the worn Art, with `open` the Core slot whose flyout is open (null for none); `choose` opens
+ *  or closes a slot's flyout. */
+export function artsPage(
+  context: ArtsPageContext,
+  open: number | null,
+  choose: (slot: number | null) => void,
+): HTMLElement {
+  const art = artOf(context.worn) ?? ARTS[0];
+  const page = make('div', '', 'arts-page');
+  if (!art) return page;
+  page.dataset['art'] = art.key;
+  page.setAttribute('role', 'region');
+  page.setAttribute('aria-labelledby', 'arts-name');
+  if (context.entrance) page.classList.add(`arts-${context.entrance}`);
+  tone(page, art.element);
   const rows = make('div', '', 'arts-rows');
   const top = make('div', '', 'arts-line');
   top.append(
-    group('Anima', [spellTile(context, art, art.anima)]),
+    group('Anima', [spellTile(context, art, art.anima, top)]),
     group(
       'Tenets',
-      art.tenets.map((tenet) => spellTile(context, art, tenet)),
+      art.tenets.map((tenet) => spellTile(context, art, tenet, top)),
     ),
   );
   rows.append(top, coreRow(context, art, open, choose));
-  page.append(side, rows);
+  page.append(artStage(art), sideOf(context, art), rows);
   page.addEventListener('keydown', (event) => {
     const way = ARROWS[event.key];
     const from = document.activeElement;
@@ -310,8 +352,8 @@ export function artsPage(
   return page;
 }
 
-/** The worn Art's diamond for the Character page, above the weapons, its name beside it: pressed, it opens the Art's
- *  screen through `open`. */
+/** The worn Art's diamond for the Character page, the first of the weapons' rows, its name beside it: pressed, it opens
+ *  the Art's screen through `open`, the focus on its Anima. */
 export function artDiamond(worn: number, open: () => void, tip: HoverCard | null = null): HTMLElement {
   const art = artOf(worn) ?? ARTS[0];
   const holder = make('div', '', 'gear-slot-holder arts-holder');
@@ -325,8 +367,7 @@ export function artDiamond(worn: number, open: () => void, tip: HoverCard | null
   press.addEventListener('click', () => {
     tip?.hide();
     open();
-    // The screen is read from its name, so no card opens over it unasked.
-    requestAnimationFrame(() => document.querySelector<HTMLElement>('.arts-name')?.focus());
+    focusSoon(spellKey(art.anima));
   });
   tip?.over(press, () => cardWith(artCard(art), emblemSvg(art), art.element, [['Click', 'Open its screen']]));
   const words = make('div', '', 'gear-slot-words');
