@@ -60,7 +60,7 @@
         { "type": 8, "rank": 1, "at": [-1.8, 24.5], "facing": 90 },
         { "type": 13, "rank": 1, "at": [-0.4, 24.5], "facing": 270 }
       ] },
-    { "name": "the rammer's quarterdeck", "area": [-4.5, 30, 4.5, 42], "checkpoint": [0, 31], "wave": [] }
+    { "name": "the rammer's quarterdeck", "area": [-4.5, 30.6, 4.5, 42], "checkpoint": [0, 31], "wave": [] }
   ],
   "arena": { "zone": 5, "gate": [-4.6, 29.6, 4.6, 30.2, 5.4], "thule": [0, 39] },
   "fires": [

@@ -27,8 +27,10 @@ const LONGEST_FRAME_S = 0.1;
 
 /**
  * Plays the wreck for trying it under `npm run dev` (`?wreck=1`), in place of the first node: once `takeFirst`
- * hands over the node the game entered first (taking it from the game) and it is left, the wreck opens offshore of the landmass's city,
- * where the sea lies as the voyage's anchorage does, and is drawn frame by frame. The run and the walker are left on `window` (`wreck`, `walker`), for a browser check to drive.
+ * hands over the node the game entered first (taking it from the game) and it is left, the wreck opens offshore of
+ * the landmass's city, where the sea lies as the voyage's anchorage does, and is drawn frame by frame. The run and
+ * the walker are left on `window` (`wreck`, `walker`), for a browser check to drive. Its frames read the game's input
+ * too, so a key pressed and let go within one frame may go to the game's own loop instead.
  */
 export async function tryWreck(
   context: WreckContext,

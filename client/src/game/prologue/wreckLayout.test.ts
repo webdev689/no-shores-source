@@ -11,6 +11,8 @@ const whole = readWreck({ ...wreck, ships: wreck.ships.map((ship) => ({ ...ship,
 /** The movement rules' step and the reach of a jump over a lip, metres (crates/movement's TUNING). */
 const STEP_M = 0.5;
 const REACH_M = 1.8;
+/** A body's radius: the gate never stands on a player in the arena. */
+const BODY_RADIUS_M = 0.35;
 /** No deck lies lower than this over the sea. */
 const LOWEST_DECK_M = 2.0;
 
@@ -91,7 +93,7 @@ test('the arena is open, about 12 m by 9 m, Thule in it, and its gate across the
   const { gate } = layout.arena;
   assert.ok(gate.minX <= minX && gate.maxX >= maxX, 'the gate spans the arena');
   assert.ok(
-    gate.maxY <= minY + 0.5 && gate.top - topAt(decks, 0, gate.maxY) > 2,
+    gate.maxY + BODY_RADIUS_M <= minY && gate.top - topAt(decks, 0, gate.maxY) > 2,
     'across its way in, higher than a step',
   );
   const [pathX = 0, pathY = 0] = layout.path.at(-2) ?? [];

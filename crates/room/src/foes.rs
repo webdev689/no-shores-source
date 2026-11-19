@@ -200,13 +200,7 @@ impl Room {
     pub(crate) fn spawn_asked(&mut self) {
         for (asker, ask, level) in std::mem::take(&mut self.spawns) {
             let SpawnAsk::Foe { foe_type: number, rank, shield } = ask else {
-                let gone: Vec<FighterId> = self.foes.keys().copied().collect();
-                for foe in gone {
-                    self.board.forget(foe);
-                }
-                self.foes.clear();
-                self.groups.clear();
-                self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
+                self.send_foes_away();
                 continue;
             };
             let (Some(foe_type), Some(player)) = (foe_type(number), self.fighter(asker).copied()) else {
@@ -224,6 +218,18 @@ impl Room {
             let id = self.stand_foe(foe_type, rank, spot, facing, Some(asker));
             self.gird(id, level, gear::Element::from_number(shield));
         }
+    }
+
+    /// Sends every foe away at once, with the blows they struck still waiting.
+    pub(crate) fn send_foes_away(&mut self) {
+        let gone: Vec<FighterId> = self.foes.keys().copied().collect();
+        for foe in gone {
+            self.board.forget(foe);
+        }
+        self.foes.clear();
+        self.quiet.clear();
+        self.groups.clear();
+        self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
     }
 
     /// Raises a foe just stood to its level, its health its kind's at that level, and gives it a whole shield of

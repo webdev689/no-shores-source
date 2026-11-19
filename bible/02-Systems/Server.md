@@ -377,13 +377,13 @@ lag behind, as a headless page's slow frames do. Stopped mid-fight and started a
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
-- **A course a page plays alone** may be asked four things more, which no server ever asks and no message carries
-  (`course.rs`, through the door's `room_stand_foe`, `room_set_spawn`, `room_put_player` and `room_stand_block`):
-  a foe of the roster stood where the page puts it, on the top of the block under it, at the level asked, posted
-  there (a Boss stood so calls no one in its phases); where the next respawn stands the player, a checkpoint; the
-  player stood somewhere at once, keeping their health, as when they fall into the sea and are brought back; and a
-  block stood on the course after it opened, as a way closing. The foes' navmesh is not baked again for that block.
-  The [[Prologue]]'s wreck is played so.
+- **A course a page plays alone** may be asked five things more, which no server ever asks and no message carries
+  (`course.rs`, through the door's `room_stand_foe`, `room_clear_foes`, `room_set_spawn`, `room_put_player` and
+  `room_stand_block`): a foe of the roster stood where the page puts it, on the top of the block under it, at the level
+  asked, posted there (a Boss stood so calls no one in its phases); every foe sent away at once; where the next respawn
+  stands the player, a checkpoint; the player stood somewhere at once, keeping their health, as when they fall into the
+  sea and are brought back; and a block stood on the course after it opened, as a way closing. The foes' navmesh is not
+  baked again for that block. The [[Prologue]]'s wreck is played so.
 - A node's room bakes its foes' navmesh over a 70 m square of its land, never its whole section or its city's boxes;
   a foe that chases a player off it walks straight. A node's room opens in 0.18 to 0.67 s of WebAssembly, garrison
   and all, 0.22 s at the median over the 90 garrisoned nodes (tested offline, on a busy machine).

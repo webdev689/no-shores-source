@@ -1,5 +1,5 @@
 //! What a page playing a course alone may ask of its own room, and a server never does: a foe of the roster stood
-//! where the page puts it, the spawn the next respawn stands the player at, the player stood somewhere at once, and a
+//! where the page puts it, every foe sent away at once, the spawn the next respawn stands the player at, the player stood somewhere at once, and a
 //! block stood on the course after it opened. A story level is played so: its waves placed, its checkpoints kept, a
 //! fall into the sea brought back, its way into an arena closed.
 
@@ -40,6 +40,11 @@ impl Room {
         }
         self.quiet.insert(id);
         Some(id)
+    }
+
+    /// Sends every foe away at once, as a scene clears its stage.
+    pub fn clear_foes(&mut self) {
+        self.send_foes_away();
     }
 
     /// Where the next respawn stands the player: a checkpoint.

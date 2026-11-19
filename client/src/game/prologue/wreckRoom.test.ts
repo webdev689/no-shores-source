@@ -42,7 +42,7 @@ test('the wreck opens as a room, the player waking on the quarterdeck, not in th
   assert.deepEqual(woke, [wakeX, wakeY, topAt(course, wakeX, wakeY)]);
 });
 
-test('the page stands a wave on the deck, brings the player back from the sea, and keeps checkpoints', () => {
+test('the page stands a wave on the deck, sends it away, and brings the player back from the sea', () => {
   const { room, last } = wreckRoom();
   const foe = layout.zones[1]?.wave[0];
   assert.ok(foe);
@@ -51,9 +51,21 @@ test('the page stands a wave on the deck, brings the player back from the sea, a
   room.pump(ONE_TICK);
   const stood = last().foes.find((seen) => seen.id === id);
   assert.equal(stood?.type, foe.type);
+  room.clearFoes();
+  room.pump(ONE_TICK);
+  assert.equal(last().foes.length, 0);
   const [checkX, checkY] = layout.zones[2]?.checkpoint ?? [0, 0];
   room.putPlayer(checkX, checkY);
-  room.setSpawn(checkX, checkY);
   room.pump(ONE_TICK);
   assert.deepEqual(feet(last(), room.player), [checkX, checkY, topAt(course, checkX, checkY)]);
+});
+
+test('a block stood on the course closes a way: the player put on it stands on its top', () => {
+  const { room, last } = wreckRoom();
+  const { gate } = layout.arena;
+  room.standBlock(gate);
+  const [x, y] = [(gate.minX + gate.maxX) / 2, (gate.minY + gate.maxY) / 2];
+  room.putPlayer(x, y);
+  room.pump(ONE_TICK);
+  assert.equal(feet(last(), room.player)?.[2], gate.top);
 });

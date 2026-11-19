@@ -1,5 +1,5 @@
 //! A course's room as a page playing alone asks of it, and a server never does: a foe of the roster stood where the
-//! page puts it, a checkpoint, the player stood somewhere at once, and a block stood after the room opened (the room
+//! page puts it, every foe sent away, a checkpoint, the player stood somewhere at once, and a block stood after the room opened (the room
 //! crate's `course.rs`). Each answers nothing but whether it was done.
 
 use super::{Opened, with_open};
@@ -18,6 +18,11 @@ fn on_land<T>(ask: impl FnOnce(&mut Room) -> T) -> Option<T> {
 /// Stands a foe of the roster where the page puts it (`Room::stand_foe_at`); its number, or 0 when none stood.
 pub fn stand_foe(foe_type: u8, rank: u8, at: (f64, f64), facing: f64, level: u8) -> u32 {
     on_land(|room| room.stand_foe_at(foe_type, rank, at, facing, level)).flatten().unwrap_or(0)
+}
+
+/// Sends every foe away at once; false with no room on land.
+pub fn clear_foes() -> bool {
+    on_land(Room::clear_foes).is_some()
 }
 
 /// Sets where the next respawn stands the player; false with no room on land.
@@ -46,6 +51,12 @@ pub fn stand_block(block: Block) -> bool {
 pub extern "C" fn room_stand_foe(foe_type: u32, rank: u32, x: f64, y: f64, facing: f64, level: u32) -> u32 {
     let number = |value: u32| u8::try_from(value).unwrap_or(u8::MAX);
     stand_foe(number(foe_type), number(rank), (x, y), facing, number(level))
+}
+
+/// Sends every foe away (`clear_foes`); 1 if done, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_clear_foes() -> u32 {
+    u32::from(clear_foes())
 }
 
 /// Sets the checkpoint (`set_spawn`); 1 if set, 0 if not.

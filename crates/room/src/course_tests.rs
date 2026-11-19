@@ -70,6 +70,16 @@ fn a_boss_the_page_stood_calls_no_one_in_its_last_phase() {
 }
 
 #[test]
+fn the_page_sends_every_foe_away_at_once() {
+    let mut room = Room::new(vec![deck()], (0.0, 0.0));
+    room.stand_foe_at(7, 1, (2.0, 1.0), 0.0, 1).unwrap();
+    room.stand_foe_at(12, 5, (-2.0, 1.0), 0.0, 4).unwrap();
+    room.clear_foes();
+    assert_eq!(room.foes_seen().count(), 0);
+    assert!(room.quiet.is_empty());
+}
+
+#[test]
 fn a_checkpoint_moves_where_the_next_respawn_stands() {
     let mut room = Room::new(vec![deck()], (0.0, 0.0));
     let player = room.join().expect("a room with space");

@@ -119,8 +119,9 @@ export function sceneryMesh(scenery: readonly Scenery[], origin: readonly [numbe
 const SQUARE_TO_THE_WORLD = Math.PI / 2;
 
 /**
- * The wreck as drawn: both ships from one published mesh (`hull`, the Brig's), each where she lies and the rammer at her size, her
- * canvas struck; and the blocks that show, in timber from the ships' own pictures. The gate is drawn once it stands.
+ * The wreck as drawn: both ships from one published mesh (`hull`, the Brig's), each where she lies and the rammer at
+ * her size, her canvas struck; and the blocks that show, in timber from the ships' own pictures. The gate is drawn
+ * once it stands.
  */
 export class WreckScenery {
   private readonly ships: ShipView;
