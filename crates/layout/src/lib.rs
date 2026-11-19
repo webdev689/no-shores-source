@@ -5,6 +5,7 @@
 //! the layout holds, so it follows the land.
 
 pub mod areas;
+pub mod basins;
 pub mod book;
 pub mod brief;
 pub mod carve;
@@ -74,6 +75,9 @@ pub struct Layout {
     pub seating: Seating,
     /// How the layout carves its land.
     pub sculpt: land::sculpts::Sculpt,
+    /// Each of its areas' basins, as its sculpt was carved from them.
+    #[serde(skip)]
+    pub basins: Vec<basins::Basin>,
     /// What a body runs into, once the layout is laid on the ground: west, north, east, south, top and bottom.
     pub boxes: Vec<collide::Box3>,
 }
@@ -169,7 +173,14 @@ pub fn plan(
     let pockets: Vec<[f64; 2]> =
         sites.iter().filter(|site| site.kind == sites::SiteKind::Resource).map(|site| site.at).collect();
     let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets };
-    let mut sculpt = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
+    let (mut sculpt, basins) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
+    // What stands on a terrace was stood on the land before it was carved: lift it onto the terrace's level.
+    let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
+    if !terraces.is_empty() {
+        let lifting = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
+        let raised = |[x, y]: [f64; 2]| lifting.raise(x, y, ground.coast.at(x, y));
+        basins::seat_on_terraces(&mut seating, &terraces, &raised);
+    }
     // The runs are cut into the rock the carving left, and a run past the edge is read on a wider field, the claim
     // carried out round it by its wing.
     let claim = claim_of(node);
@@ -197,8 +208,9 @@ pub fn plan(
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };
     works::build(&mut kit, &areas, &paths, rise, &carved);
+    basins::graves(&mut kit, &terraces, &carved);
     // Each climb is walked as a footpath, and its lookout over the basin is a place of its own.
-    for pair in sculpt.climbs.chunks_exact(2) {
+    for pair in carve::lookouts(&sculpt.climbs) {
         let ([x1, y1, x2, y2, ..], end) = (pair[0], [pair[1][0], pair[1][1]]);
         let steps = (field::distance([x1, y1], [x2, y2]) / 8.0).ceil().max(1.0);
         let points = (0..=steps as usize)
@@ -270,6 +282,7 @@ pub fn plan(
         runs,
         seating,
         sculpt,
+        basins,
         boxes: Vec::new(),
     }
 }

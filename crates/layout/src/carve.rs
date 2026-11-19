@@ -1,10 +1,11 @@
-//! How a layout carves its land (the land crate's sculpt): each area a basin a little wider than its reach, each path
+//! How a layout carves its land (the land crate's sculpt): each area a basin shaped by its kind (basins.rs), each path
 //! a canyon as wide as its tier wants, a gorge out of the claim at each gate and toward the sea from the landing, and
 //! outcrops standing up in its open ground for cover and to break the long views, the rest raised into a massif
 //! whose stepped cliffs are the layout's bounds. How high the massif stands is the biome's: tall in the highland and
 //! the desert, low in the swamp; and its outcrops' shape is its brief's, or its climate's.
 
 use crate::areas::Area;
+use crate::basins::{Basin, basin};
 use crate::brief::{AreaKind, Brief};
 use crate::field::{Field, distance};
 use crate::paths::{Path, Tier, off_line, rect_off_line, segments_apart, simplified};
@@ -12,8 +13,6 @@ use crate::seat::Seating;
 use land::exact::rand01;
 use land::sculpts::{Outcrop, Sculpt, Sculpts, Shape};
 
-/// How much wider than its area's reach a basin is, metres.
-const BASIN_ROOM_M: f64 = 32.0;
 /// A canyon's half-width along each tier of path, metres.
 const TRACK_HALF_M: f64 = 15.0;
 const FOOTPATH_HALF_M: f64 = 11.0;
@@ -92,7 +91,26 @@ fn nearest_on(paths: &[Path], at: [f64; 2]) -> Option<[f64; 2]> {
         .min_by(|first, second| distance(*first, at).total_cmp(&distance(*second, at)))
 }
 
-/// A layout's sculpt: its claim, its floors, its outcrops of a shape, its massif's height and seed.
+/// The way the water runs past a point: square to the way the fresh water's distance falls, or None where no water
+/// is near enough to lean it.
+fn along_water(field: &Field, at: [f64; 2]) -> Option<[f64; 2]> {
+    let (column, row) = field.cell_of(at[0], at[1])?;
+    let to_fresh = |column: usize, row: usize| field.to_fresh[field.index(column, row)];
+    let (west, east) = (column.checked_sub(2)?, (column + 2).min(field.columns - 1));
+    let (north, south) = (row.checked_sub(2)?, (row + 2).min(field.rows - 1));
+    let falls = [to_fresh(east, row) - to_fresh(west, row), to_fresh(column, south) - to_fresh(column, north)];
+    let steep = (falls[0] * falls[0] + falls[1] * falls[1]).sqrt();
+    (steep > 1.0).then(|| [-falls[1] / steep, falls[0] / steep])
+}
+
+/// The climbs that run up to the massif's top to a lookout, each with its lookout: those `carve` finds first, before
+/// the basins' terraces and ramps, which stand lower.
+pub fn lookouts(climbs: &[[f64; 7]]) -> impl Iterator<Item = &[[f64; 7]]> {
+    climbs.chunks_exact(2).take_while(|pair| pair[1][5] >= 1.0)
+}
+
+/// A layout's sculpt (its claim, its floors, its outcrops of a shape, its climbs, its massif's height and seed) and
+/// each of its areas' basins.
 #[must_use]
 pub fn carve(
     field: &Field,
@@ -102,10 +120,22 @@ pub fn carve(
     shape: Shape,
     rise: f64,
     seed: u32,
-) -> Sculpt {
+) -> (Sculpt, Vec<Basin>) {
     let Network { areas, paths, exits, pockets } = network;
-    let mut floors: Vec<[f64; 5]> =
-        areas.iter().map(|area| [area.at[0], area.at[1], area.at[0], area.at[1], area.radius + BASIN_ROOM_M]).collect();
+    let mut drawn = 0_i64;
+    let mut draw = || {
+        drawn += 1;
+        rand01(seed ^ 0xBA51, &[drawn])
+    };
+    let basins: Vec<Basin> = areas
+        .iter()
+        .map(|area| {
+            let water = (area.kind == AreaKind::Mill).then(|| along_water(field, area.at)).flatten();
+            basin(area, seating, paths, water, &mut draw)
+        })
+        .collect();
+    let mut floors: Vec<[f64; 5]> = basins.iter().flat_map(|basin| basin.floors.iter().copied()).collect();
+    let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
     for path in paths {
         let half = if path.tier == Tier::Track { TRACK_HALF_M } else { FOOTPATH_HALF_M };
         for pair in simplified(&path.points, 3.0).windows(2) {
@@ -125,13 +155,14 @@ pub fn carve(
         outcrops: Vec::new(),
         rise,
         seed,
-        climbs: Vec::new(),
+        climbs: terraces.clone(),
         runs: Vec::new(),
         wings: Vec::new(),
     }]);
-    let climbs = climbs(field, areas, &bare, rise, seed);
+    let mut climbs = climbs(field, areas, &bare, rise, seed);
+    climbs.extend(terraces);
     let outcrops = outcrops(areas, Ways { paths, climbs: &climbs }, seating, (shape, rise), seed);
-    Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new() }
+    (Sculpt { claim, floors, outcrops, rise, seed, climbs, runs: Vec::new(), wings: Vec::new() }, basins)
 }
 
 /// How steep a climb rises at most (a rise a metre, for the massif's tallest), its half-width, its lookout's reach,

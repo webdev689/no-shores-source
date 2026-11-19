@@ -10,6 +10,7 @@ code:
   - crates/layout/src/seat.rs#seat
   - crates/layout/src/paths.rs#find
   - crates/layout/src/carve.rs#carve
+  - crates/layout/src/basins.rs#basin
   - crates/layout/src/carve.rs#shape_of
   - crates/land/src/sculpts.rs#Sculpts
   - crates/layout/src/pieces.rs#build
@@ -107,9 +108,30 @@ from the sea, fresh water and the claim's edge), then:
    between the grid's cells; and a work's or a wall's turned pieces are laid in lengths whose
    boxes keep close to them, each kept off the ways, as the drystone walls, the climbs' kerbs, the viaduct's piers and
    the great wall are.
-6. **The land carved.** Each area becomes a basin 32 m wider than its reach and each path a canyon (15 m either side
-   of a track, 11 of a footpath), their edges wandering outward with a noise; a gorge runs out of the claim from
-   each gate toward its instance and from the landing toward the sea. Everything else in the claim is raised into a
+6. **The land carved.** Each area becomes a basin shaped by its kind, holding its reach and 32 m of floor round each of
+   its buildings:
+   - a farm: a straight-sided field along the run of its yards and buildings, 1.8 times as long as it is wide; a
+     mill: such a field along its water;
+   - a hamlet: a bowl with a lobe 64 m wide toward each of its blocks, standing 56 m out of it, so its ways out turn
+     between rock;
+   - the wilds and an arena: a bowl with three to five bowls of different sizes standing out of it;
+   - a ruin: a bowl broken by five or six capsules whose sides part past its reach, so spurs of rock run in between;
+   - a graveyard: a bowl 32 m wider than its reach, with one or two shelves along its rim at 0.14 of the massif's
+     height, 24 m wide and 64 m long, each as far out as it fits clear of the ways, the other shelf and every solid,
+     cutting through no building. A ramp runs on from one of its ends along the rim down to the floor, and rows of
+     headstones stand on the shelf, askew, a few gone, either side of a lane down its middle;
+   - a keep and a camp: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
+     short of it. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
+     camp's reaches 6 m past its palisade, at 0.12;
+   - every other kind: a round bowl 32 m wider than its reach.
+
+   A shelf and a platform are level climbs, and a ramp a climb from the floor to their level ([[Land]]), 9 m wide,
+   rising at most 0.25 a metre where the massif stands highest. What was stood before the carving on a terrace,
+   a ramp or the fall of their edges is lifted onto the land as carved there: a building whole by the raise at its
+   middle, with its pad, plinth, rooms and walls and all in its footprint, every other prop and solid by the raise
+   under it. Each path becomes a canyon (15 m either side of a track, 11 of a footpath), the edges of basins and
+   canyons wandering outward with a noise; a gorge runs out of the claim from each gate toward its instance and from
+   the landing toward the sea. Everything else in the claim is raised into a
    massif whose faces fall to the floor over 16 m in four ledges of strata, its top rough, as high as the biome's
    land stands (38 m in the highland, 12 m in the swamp). Outcrops stand up in the wilds and arenas (up to five) and
    at the rims of the wider basins (two), for cover and to break the long views, all of one shape ([[Land]]): the

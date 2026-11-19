@@ -103,8 +103,9 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
 - A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder. A layout's paths are laid
-  as roads after the land is made (`add_roads`), each point of a course 8 m from the next, but for its runs' ways,
-  whose floors are carved to their levels already.
+  as roads after the land is made (`add_roads`), each point of a course 8 m from the next, but for its runs' ways
+  and the stretches of its ways over a basin's terrace or ramp and its edge, whose floors are carved to their levels
+  already.
 - A layout's sculpt carves the land round its patrol area or instance ([[Layouts]]): its network's floor (basins and
   canyons) is left as it is and everything else in its claim is raised into a massif with stepped cliffs, fading back
   to the land over 140 m past the claim. It is applied to the land before the towns, rivers and roads, never raises
@@ -115,7 +116,7 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
   land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
   from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
-  top. The floor's distance counts the climbs, so a section reaches up them. Its runs ([[Layouts]], "Runs") are cut
+  top, and a basin's shelf or platform a climb level along it inside the floor, raised over it as an embankment. The floor's distance counts the climbs, so a section reaches up them. Its runs ([[Layouts]], "Runs") are cut
   into its rock the same way. Where capsules meet (a run's at a bend, a climb's at its lookout) the level is a blend
   of the near capsules', weighted by how near each is (within 3 m), so the land climbs round the bend and beside a
   climb's top without a step. Its wings are capsules

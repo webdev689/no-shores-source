@@ -1,19 +1,23 @@
 //! The detail of Saltmere's three zones as the bake plans them: each zone's outcrops in the shape its brief names, no
 //! outcrop a spire the close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen
-//! rock, and every run its brief asks for still found; and the climates with no hint, the swamp's and the desert's,
-//! keeping their outcrops under their massif and off their ways.
+//! rock, and every run its brief asks for still found; continent 1's basins shaped by their kinds, what stands on a
+//! terrace on its level; and the climates with no hint, the swamp's and the desert's, keeping their outcrops under
+//! their massif and off their ways.
 
 use city::solids::{Material, Shape as SolidShape};
+use land::ground::Ground;
 use land::sculpts::{BAND_M, Outcrop, Sculpt, Sculpts, Shape};
 use layout::Layout;
+use layout::basins::Basin;
+use layout::brief::AreaKind;
 use layout::paths::{off_line, segments_apart};
 use std::path::Path;
 use std::sync::OnceLock;
 
 const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"];
 
-/// A continent's layouts as the bake settles them, and its biome's key.
-fn settled(id: &str) -> (Vec<Layout>, Option<&'static str>) {
+/// A continent's layouts as the bake settles them, its biome's key, and its ground as they leave it.
+fn settled(id: &str) -> (Vec<Layout>, Option<&'static str>, Ground) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
@@ -24,12 +28,17 @@ fn settled(id: &str) -> (Vec<Layout>, Option<&'static str>) {
     let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");
     let biome = landmass.biome.map(|biome| biome.key);
-    (layout::settle::settle(&mut landmass, &builders.book, &builders.briefs), biome)
+    let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
+    (layouts, biome, landmass.surface)
+}
+
+fn laid_one() -> &'static (Vec<Layout>, Option<&'static str>, Ground) {
+    static LAID: OnceLock<(Vec<Layout>, Option<&'static str>, Ground)> = OnceLock::new();
+    LAID.get_or_init(|| settled("continent-1"))
 }
 
 fn continent_one() -> &'static [Layout] {
-    static LAID: OnceLock<Vec<Layout>> = OnceLock::new();
-    LAID.get_or_init(|| settled("continent-1").0)
+    &laid_one().0
 }
 
 fn zone(id: &str) -> &'static Layout {
@@ -132,7 +141,7 @@ fn off_outcrop(outcrop: &Outcrop, from: [f64; 2], to: [f64; 2]) -> f64 {
 #[test]
 fn the_swamps_and_the_deserts_outcrops_stand_under_their_massif_and_off_their_ways() {
     for (continent, shape) in [("continent-8", Shape::Hummock), ("continent-4", Shape::Mesa)] {
-        let (layouts, biome) = settled(continent);
+        let (layouts, biome, _) = settled(continent);
         let rise = layout::carve::rise_of(biome);
         let mut outcrops = 0;
         for laid in &layouts {
@@ -153,4 +162,85 @@ fn the_swamps_and_the_deserts_outcrops_stand_under_their_massif_and_off_their_wa
         let buried: Vec<String> = layouts.iter().flat_map(buried).collect();
         assert!(buried.is_empty(), "{} buried: {:#?}", buried.len(), &buried[..buried.len().min(12)]);
     }
+}
+
+/// How much longer than wide a basin must be than another's, or how many more lobes it must have, to read as another
+/// kind's: a farm's field, 1.6 times as long as wide, against a round bowl's 1; and one lobe.
+const LONGER_BY: f64 = 0.6;
+const LOBES_BY: f64 = 1.0;
+
+#[test]
+fn basins_differ_by_kind() {
+    let kinds = [AreaKind::Farm, AreaKind::Hamlet, AreaKind::Wilds, AreaKind::Graveyard];
+    let shapes = kinds.map(|kind| {
+        let basins: Vec<&Basin> = continent_one()
+            .iter()
+            .inspect(|laid| assert_eq!(laid.basins.len(), laid.areas.len(), "{}: a basin an area", laid.id))
+            .flat_map(|laid| laid.areas.iter().zip(&laid.basins).filter(|(area, _)| area.kind == kind))
+            .map(|(_, basin)| basin)
+            .collect();
+        assert!(!basins.is_empty(), "continent 1 has a {kind:?}");
+        let count = basins.len() as f64;
+        let long = basins.iter().map(|basin| basin.long_over_short()).sum::<f64>() / count;
+        (kind, long, basins.iter().map(|basin| basin.lobes() as f64).sum::<f64>() / count)
+    });
+    for (number, &(kind, long, lobes)) in shapes.iter().enumerate() {
+        for &(other, other_long, other_lobes) in &shapes[number + 1..] {
+            assert!(
+                (long - other_long).abs() >= LONGER_BY || (lobes - other_lobes).abs() >= LOBES_BY,
+                "{kind:?} ({long:.2} long, {lobes:.1} lobes) reads as {other:?} ({other_long:.2}, {other_lobes:.1})"
+            );
+        }
+    }
+}
+
+#[test]
+fn what_stands_on_a_terrace_stands_on_its_level() {
+    let (layouts, _, ground) = laid_one();
+    let (mut standing, mut failed) = (0, Vec::new());
+    for laid in layouts {
+        let levels =
+            laid.basins.iter().flat_map(|basin| basin.terraces.iter()).filter(|terrace| terrace[5] == terrace[6]);
+        for &[x1, y1, x2, y2, half, ..] in levels {
+            let on = |at: [f64; 2]| off_line(at, [x1, y1], [x2, y2]) < half - 1.0;
+            // A shelf (a platform is a disc) holds graves.
+            let shelf = (x2 - x1).abs() + (y2 - y1).abs() > 1.0;
+            if shelf && !laid.seating.solids.iter().any(|solid| on([solid.at[0], solid.at[1]])) {
+                failed.push(format!("{}: no graves on the shelf at {x1:.0},{y1:.0}", laid.id));
+            }
+            let under_pad = |at: [f64; 2]| {
+                laid.seating.pads.iter().any(|pad| {
+                    at[0] >= pad.bounds[0] && at[0] <= pad.bounds[2] && at[1] >= pad.bounds[1] && at[1] <= pad.bounds[3]
+                })
+            };
+            let props = laid.seating.props.iter().map(|prop| ("a prop", prop.at));
+            let solids = laid.seating.solids.iter().map(|solid| ("a solid", solid.at));
+            for (what, at) in props.chain(solids).filter(|&(_, at)| on([at[0], at[1]]) && !under_pad([at[0], at[1]])) {
+                standing += 1;
+                // A solid's footing is sunk at most 1.2 m; one left on the land under the terrace is its level under.
+                let under = ground.height_at(at[0], at[1]) - at[2];
+                if under > 1.5 {
+                    failed.push(format!("{}: {what} at {at:?} {under:.1} m under its terrace", laid.id));
+                }
+            }
+            for pad in laid
+                .seating
+                .pads
+                .iter()
+                .filter(|pad| on([(pad.bounds[0] + pad.bounds[2]) / 2.0, (pad.bounds[1] + pad.bounds[3]) / 2.0]))
+            {
+                standing += 1;
+                let beside = ground.height_at(pad.bounds[0] - 1.0, (pad.bounds[1] + pad.bounds[3]) / 2.0);
+                if beside - pad.level > 1.5 {
+                    failed.push(format!(
+                        "{}: a building's floor {:.1} m under its terrace",
+                        laid.id,
+                        beside - pad.level
+                    ));
+                }
+            }
+        }
+    }
+    assert!(standing > 0, "something stands on a terrace");
+    assert!(failed.is_empty(), "{} of {standing}: {:#?}", failed.len(), &failed[..failed.len().min(12)]);
 }

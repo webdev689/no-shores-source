@@ -238,11 +238,17 @@ fn tower(kit: &mut Kit, area: &Area) {
     }
 }
 
+/// How far a camp's palisade stands from its middle, metres.
+#[must_use]
+pub fn palisade_radius(area: &Area) -> f64 {
+    (area.radius * 0.55).clamp(16.0, 26.0)
+}
+
 /// A camp behind a palisade: sharpened stakes in a ring with a gap toward the way in, tents round a fire ringed with
 /// stones, carts, crates and a siege engine under repair.
 fn camp(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let middle = area.at;
-    let radius = (area.radius * 0.55).clamp(16.0, 26.0);
+    let radius = palisade_radius(area);
     let stakes = (std::f64::consts::TAU * radius / 1.1) as u32;
     for stake in 0..stakes {
         let angle = std::f64::consts::TAU * f64::from(stake) / f64::from(stakes);

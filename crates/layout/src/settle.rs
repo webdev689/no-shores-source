@@ -148,11 +148,19 @@ pub fn settle(landmass: &mut Landmass, book: &Book, briefs: &Briefs) -> Vec<Layo
             // A run's floor is carved to its level along its line, so its way needs no bed: a bed averaged over
             // its points would step where its beats' flat floors meet its ramps.
             let carved = |path: &&crate::paths::Path| layout.runs.iter().any(|run| run.line == path.points);
-            layout
-                .paths
-                .iter()
-                .filter(move |path| !carved(path))
-                .map(|path| (dense(&path.points, PATH_STEP_M), path.tier.width()))
+            // So is a terrace's or a ramp's: a bed smoothed over points beside it would cut a bench into its side.
+            let on_terrace = |&(x, y): &(f64, f64)| {
+                layout.basins.iter().flat_map(|basin| basin.terraces.iter()).any(|terrace| {
+                    let [x1, y1, x2, y2, half, ..] = *terrace;
+                    crate::paths::off_line([x, y], [x1, y1], [x2, y2]) <= half + crate::basins::TERRACE_EDGE_M
+                })
+            };
+            layout.paths.iter().filter(move |path| !carved(path)).flat_map(move |path| {
+                let points = dense(&path.points, PATH_STEP_M);
+                let off: Vec<Vec<(f64, f64)>> =
+                    points.split(on_terrace).filter(|stretch| stretch.len() > 1).map(<[_]>::to_vec).collect();
+                off.into_iter().map(move |stretch| (stretch, path.tier.width()))
+            })
         })
         .collect();
     landmass.surface.add_roads(&roads);

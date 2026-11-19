@@ -1,7 +1,10 @@
 //! Saltmere's runs as the bake lays them, walked by the movement rules: a body walks each run from its mouth along its
-//! line to its door, and pressing on past the door gets it nowhere.
+//! line to its door, and pressing on past the door gets it nowhere; and up each ramp onto the terrace it serves.
 
+use layout::field::distance;
+use layout::paths::off_line;
 use layout::runs::Run;
+use movement::terrain::Terrain;
 use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
@@ -17,6 +20,7 @@ struct Zone {
     blocks: Blocks,
     runs: Vec<Run>,
     ring: Vec<[f64; 2]>,
+    terraces: Vec<[f64; 7]>,
 }
 
 fn zones() -> Vec<Zone> {
@@ -42,6 +46,7 @@ fn zones() -> Vec<Zone> {
                 blocks: Blocks::new(node.boxes.iter().map(Block::from_floats).collect()),
                 runs: laid.runs.clone(),
                 ring: laid.ring.clone(),
+                terraces: laid.basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect(),
             }
         })
         .collect()
@@ -88,6 +93,40 @@ fn every_run_is_walked_to_its_door_and_no_further() {
             }
         }
     }
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn every_terrace_is_walked_up_its_ramps() {
+    let zones = zones();
+    let (mut ramps, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for &[x1, y1, x2, y2, half, level, _] in zone.terraces.iter().filter(|terrace| terrace[5] == terrace[6]) {
+            let serving = zone.terraces.iter().filter(|ramp| {
+                ramp[5] == 0.0 && ramp[6] == level && off_line([ramp[2], ramp[3]], [x1, y1], [x2, y2]) < half
+            });
+            let mut served = false;
+            for &[foot_x, foot_y, top_x, top_y, ..] in serving {
+                ramps += 1;
+                served = true;
+                // From the ramp's foot up it, and on 3 m onto the terrace.
+                let length = distance([foot_x, foot_y], [top_x, top_y]);
+                let on = [top_x + (top_x - foot_x) / length * 3.0, top_y + (top_y - foot_y) / length * 3.0];
+                let raised = zone.floor.height_at(on[0], on[1]) - zone.floor.height_at(foot_x, foot_y);
+                let (body, _) = walked(zone, [foot_x, foot_y], &[[top_x, top_y], on], (60.0 / TICK_SECONDS) as usize);
+                if distance([body.x, body.y], on) > THERE_M || raised < 1.0 {
+                    failed.push(format!(
+                        "{}: up the ramp from {foot_x:.0},{foot_y:.0} the body stops at {:.0},{:.0}, {raised:.1} m up",
+                        zone.id, body.x, body.y
+                    ));
+                }
+            }
+            if !served {
+                failed.push(format!("{}: no ramp up to the terrace at {x1:.0},{y1:.0}", zone.id));
+            }
+        }
+    }
+    assert!(ramps > 0, "Saltmere's zones have terraces");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 
