@@ -73,6 +73,11 @@ pub struct Brain {
     /// Where it believes its foe is: where it last saw its target, or what last stirred it.
     pub(crate) last_seen: Option<[f64; 3]>,
     pub(crate) seen_at: u64,
+    /// When it took its target and when a blow last drew it to one, and the fighter that struck it since while it
+    /// fought another.
+    pub(crate) taken_at: u64,
+    pub(crate) drawn_at: Option<u64>,
+    pub(crate) struck_by: Option<FighterId>,
     pub(crate) awareness: Awareness,
     /// The bearing it faces and steers by, turning at its own pace.
     pub(crate) heading: f64,
@@ -113,6 +118,9 @@ impl Brain {
             target: None,
             last_seen: None,
             seen_at: 0,
+            taken_at: 0,
+            drawn_at: None,
+            struck_by: None,
             awareness: Awareness::default(),
             heading: facing,
             plan: Plan::Wait,
@@ -230,11 +238,14 @@ pub fn notice(brain: &mut Brain, me: FighterId, seen: &Seen, tick: u64) {
         Seen::Loosed { by, speed } if by != me && alert => brain.reactions.saw_shot(by, speed, tick),
         Seen::Struck { by, .. } => {
             brain.awareness.level = 1.0;
-            // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place.
+            // The one that strikes it is its foe, as the soft lock takes it, and where it stands now is its place;
+            // fighting another, it weighs turning on it as it next thinks.
             if brain.target.is_none() {
                 brain.target = Some(by);
-                brain.seen_at = tick;
+                (brain.seen_at, brain.taken_at, brain.drawn_at) = (tick, tick, Some(tick));
                 brain.last_seen = None;
+            } else if brain.target != Some(by) {
+                brain.struck_by = Some(by);
             }
         }
         // Its own side's noises it pays no heed; an ally's shout it does.

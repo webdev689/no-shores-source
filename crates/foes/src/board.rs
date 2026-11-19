@@ -1,8 +1,9 @@
-//! What the foes of a room share: for each target, who holds the turns to fight it hand to hand and to shoot at it,
-//! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in one
-//! over the count, never more, so a crowd's patience cannot pile it onto its target. When the latest blow begun at
-//! each target lands, so the next comes a beat after it; and which waiting foe works round to its flank. And the posts
-//! shooters hold, so no two take one place, and the tick one last picked a post, so only one picks a tick.
+//! What the foes of a room share: whom each fights, so a foe weighing its targets counts those already at each; for
+//! each target, who holds the turns to fight it hand to hand and to shoot at it, and since when each of the rest has
+//! waited. The longest waiter goes in next; past its patience, a foe goes in one over the count, never more, so a
+//! crowd's patience cannot pile it onto its target. When the latest blow begun at each target lands, so the next comes
+//! a beat after it; and which waiting foe works round to its flank. And the posts shooters hold, so no two take one
+//! place, and the tick one last picked a post, so only one picks a tick.
 
 use crate::director::Caps;
 use combat::FighterId;
@@ -45,14 +46,17 @@ fn free_for(place: Option<(FighterId, u64)>, foe: FighterId, tick: u64) -> bool 
 /// each shooter holds as its post.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Board {
+    /// Whom each foe fights.
+    aims: BTreeMap<FighterId, FighterId>,
     fights: BTreeMap<FighterId, Fight>,
     posts: BTreeMap<FighterId, [f64; 3]>,
     picked: Option<u64>,
 }
 
 impl Board {
-    /// A foe that died or left gives up any turn it held and stops waiting.
+    /// A foe that died or left fights no one, gives up any turn it held and stops waiting.
     pub fn forget(&mut self, foe: FighterId) {
+        self.aims.remove(&foe);
         self.posts.remove(&foe);
         for fight in self.fights.values_mut() {
             fight.melee.remove(&foe);
@@ -66,6 +70,20 @@ impl Board {
             }
         }
         self.fights.retain(|_, fight| !fight.empty());
+    }
+
+    /// Whom a foe fights now, if anyone.
+    pub fn aim(&mut self, foe: FighterId, target: Option<FighterId>) {
+        match target {
+            Some(target) => self.aims.insert(foe, target),
+            None => self.aims.remove(&foe),
+        };
+    }
+
+    /// How many foes but `foe` fight `target`.
+    #[must_use]
+    pub fn fighting(&self, target: FighterId, foe: FighterId) -> usize {
+        self.aims.iter().filter(|(other, aim)| **other != foe && **aim == target).count()
     }
 
     /// A foe fighting `target`, hand to hand or by shooting, joins its waiting unless it holds a token of that kind; a

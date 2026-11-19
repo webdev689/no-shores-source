@@ -3,7 +3,7 @@
 //! it always did.
 
 use super::*;
-use crate::Input;
+use crate::{How, Input};
 use ::foes::Rank;
 use ::foes::roster::{COLLECTOR, ENFORCER, RUNNER};
 use combat::sight::bearing;
@@ -20,13 +20,17 @@ const LANDING: [EventKind; 6] = [
 ];
 
 /// What a fight measured, per player in the order they joined: the foes fighting them, on average a tick past the
-/// first 10 s, and the foes' blows that landed on them; how often a foe changed whom it fights, a foe-minute; and every
-/// foe's fighter, tick by tick, folded into one number.
+/// first 10 s, and the foes' blows that landed on them; how often a foe changed whom it fights, a foe-minute, over the
+/// whole minute and past its first 20 s; the blows a foe aimed at a player that landed inside the beat after another
+/// foe's (neither a riposte nor a counter); and every foe's fighter, tick by tick, folded into one number.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Spread {
     pub foes: Vec<f64>,
     pub landings: Vec<u32>,
     pub switches: f64,
+    pub settled: f64,
+    pub quickest: u64,
+    pub inside_beat: u32,
     pub fingerprint: u64,
 }
 
@@ -54,8 +58,10 @@ pub(crate) fn spread(players: usize, count: usize, apart: f64, seed: u64, swingi
         })
         .collect();
     let (mut fought, mut landings) = (vec![0_u64; players], vec![0_u32; players]);
-    let mut last: BTreeMap<FighterId, FighterId> = BTreeMap::new();
-    let (mut switches, mut sequence, mut counted) = (0_u32, 0, 0_u64);
+    let mut last: BTreeMap<FighterId, (FighterId, u64)> = BTreeMap::new();
+    let mut quickest = u64::MAX;
+    let (mut switches, mut settled, mut sequence, mut counted) = (0_u32, 0_u32, 0, 0_u64);
+    let (mut aimed, mut inside_beat) = (BTreeMap::<FighterId, (u64, FighterId)>::new(), 0);
     let mut fingerprint: u64 = 0xcbf2_9ce4_8422_2325;
     for tick in 0..3600 {
         sequence += 1;
@@ -71,11 +77,21 @@ pub(crate) fn spread(players: usize, count: usize, apart: f64, seed: u64, swingi
             let fighter = &mut room.players.get_mut(player).unwrap().fighter;
             fighter.health = fighter.health_max;
         }
+        let beat = u64::from(combat::ticks(room.director.pressed().beat));
         for event in room.take_events() {
             let on = ids.iter().position(|id| *id == event.defender);
-            if let Some(on) = on.filter(|_| LANDING.contains(&event.kind) && room.foes.contains_key(&event.striker)) {
-                landings[on] += 1;
+            let Some(on) = on.filter(|_| LANDING.contains(&event.kind) && room.foes.contains_key(&event.striker))
+            else {
+                continue;
+            };
+            landings[on] += 1;
+            let at = room.foes[&event.striker].brain.fights() == Some(event.defender);
+            if !at || matches!(event.how, Some(How::Riposte | How::Counter)) {
+                continue;
             }
+            let before = aimed.insert(event.defender, (event.tick, event.striker));
+            inside_beat +=
+                u32::from(before.is_some_and(|(tick, by)| by != event.striker && event.tick + 1 < tick + beat));
         }
         for found in room.foes.values() {
             for number in found.fighter.to_floats() {
@@ -84,8 +100,17 @@ pub(crate) fn spread(players: usize, count: usize, apart: f64, seed: u64, swingi
         }
         for foe in &foes {
             let Some(whom) = room.foes.get(foe).and_then(|found| found.brain.fights()) else { continue };
-            if last.insert(*foe, whom).is_some_and(|before| before != whom) {
-                switches += 1;
+            match last.get(foe).copied() {
+                Some((before, at)) if before != whom => {
+                    switches += 1;
+                    settled += u32::from(tick >= 1200);
+                    quickest = quickest.min(tick - at);
+                    last.insert(*foe, (whom, tick));
+                }
+                Some(_) => {}
+                None => {
+                    last.insert(*foe, (whom, tick));
+                }
             }
             if let Some(on) = ids.iter().position(|id| *id == whom).filter(|_| tick >= 600) {
                 fought[on] += 1;
@@ -97,28 +122,10 @@ pub(crate) fn spread(players: usize, count: usize, apart: f64, seed: u64, swingi
         foes: fought.iter().map(|ticks| *ticks as f64 / counted as f64).collect(),
         landings,
         switches: f64::from(switches) / count as f64,
+        settled: f64::from(settled) * 1.5 / count as f64,
+        quickest,
+        inside_beat,
         fingerprint,
-    }
-}
-
-#[test]
-#[ignore = "probe: prints the spread across players, foes and distances"]
-fn probe_spread() {
-    for players in [2, 3] {
-        for count in [3, 6, 12] {
-            for apart in [1.5, 5.0, 12.0, 25.0] {
-                for seed in 0..2 {
-                    let measured = spread(players, count, apart, seed, false);
-                    let foes: Vec<String> = measured.foes.iter().map(|foes| format!("{foes:.1}")).collect();
-                    println!(
-                        "players {players} foes {count:2} apart {apart:4} seed {seed}: foes {} landings {:?} switches {:.2}",
-                        foes.join("/"),
-                        measured.landings,
-                        measured.switches
-                    );
-                }
-            }
-        }
     }
 }
 
@@ -131,7 +138,30 @@ fn one_player_against_a_group_fights_as_it_always_did() {
             hash = (hash ^ spread(1, count, 0.0, 1, swinging).fingerprint).wrapping_mul(0x0000_0100_0000_01b3);
         }
     }
+    // A second player 25 m off, out of every foe's sight, changes nothing.
+    for count in [6, 12] {
+        hash = (hash ^ spread(2, count, 25.0, 0, false).fingerprint).wrapping_mul(0x0000_0100_0000_01b3);
+    }
     assert_eq!(format!("{hash:016x}"), LONE_CROWD_HASH, "one player's fight against a group changed");
 }
 
-const LONE_CROWD_HASH: &str = "a6c3e6fb7c12173c";
+const LONE_CROWD_HASH: &str = "057f3785ceb4f269";
+
+#[test]
+fn a_group_shares_itself_across_the_players_it_sees_and_holds_its_choice() {
+    // A group round one player, a second 5 or 12 m off (and a third 12 m past it): each player draws foes and blows,
+    // no foe changes whom it fights within SHARE_HOLD of its last change nor after the first 20 s, and blows at each
+    // player still land a beat apart.
+    let hold = u64::from(combat::ticks(::foes::tuning::SHARE_HOLD));
+    for (players, count, apart) in [(2, 6, 5.0), (2, 6, 12.0), (3, 12, 12.0)] {
+        for seed in 0..2 {
+            let measured = spread(players, count, apart, seed, false);
+            let case = format!("{players} players {apart} m apart, {count} foes, seed {seed}: {measured:?}");
+            assert!(measured.foes.iter().all(|foes| *foes >= 1.5), "every player draws foes: {case}");
+            assert!(measured.landings.iter().all(|landed| *landed >= 15), "and blows: {case}");
+            assert!(measured.switches <= 1.0 && measured.settled == 0.0, "no flicking: {case}");
+            assert!(measured.quickest >= hold, "a change holds: {case}");
+            assert_eq!(measured.inside_beat, 0, "the beat holds at each player: {case}");
+        }
+    }
+}

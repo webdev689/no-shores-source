@@ -30,14 +30,21 @@ pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Optio
             return None;
         }
         let target = brain.target.and_then(|target| here.enemy(target))?;
-        let feet = [target.body.x, target.body.y, target.body.z];
-        let far = apart([home.at[0], home.at[1]], [feet[0], feet[1]]) > LEASH;
-        if !far && here.world.routes.walkable(feet) {
+        if within(brain, here, target) {
             return None;
         }
         give_up(brain, here, board);
     }
     Some(walk_home(brain, here, home))
+}
+
+/// Whether a foe may fight a fighter where it stands: a garrison foe only within LEASH of its place, on ground the
+/// room's routes cover.
+pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
+    let feet = [other.body.x, other.body.y, other.body.z];
+    brain.home.is_none_or(|home| {
+        apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= LEASH && here.world.routes.walkable(feet)
+    })
 }
 
 /// What a foe with no one to fight asks: a garrison foe whose search has just let go (it was alert before its senses

@@ -22,6 +22,7 @@ mod react;
 pub mod roles;
 pub mod roster;
 mod senses;
+mod share;
 mod shoot;
 mod steer;
 mod tactics;
@@ -183,5 +184,6 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
     let ask = tactics::decide(&mut next, &here, board);
     let intent = steer::controls(&mut next, &here, &ask);
     pace::note(&next, &here, board, &intent);
+    board.aim(me, next.target);
     (next, intent)
 }

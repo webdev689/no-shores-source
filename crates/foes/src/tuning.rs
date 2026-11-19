@@ -17,6 +17,13 @@ pub const STALE: f64 = 1.5;
 /// A foe notices a fighter it is not already fighting only within this much of where it faces, as DFO's do: half of
 /// all round.
 pub const SIGHT_ARC: f64 = 90.0 * DEGREES;
+/// Foes share themselves out among the fighters they fight. A foe waiting its turn weighs whom to fight every
+/// SHARE_EVERY, as DFO's target timer does (5 of its system timer's 1/18.2 s), and goes for another only to strike it
+/// SHARE_SOONER of a beat sooner; having changed whom it fights, it holds to it SHARE_HOLD, time to run to one in its
+/// range and strike.
+pub const SHARE_EVERY: f64 = 0.27;
+pub const SHARE_SOONER: f64 = 0.5;
+pub const SHARE_HOLD: f64 = 5.0;
 
 /// Awareness, from nothing to full: seeing a fighter raises it by up to SIGHT_GAIN a second, dead ahead at its feet,
 /// falling away to nothing at the edge of its range and of its arc; with nothing stirring it bleeds ALERT_BLEED a

@@ -15,6 +15,7 @@ use crate::leash::{leash, unoccupied};
 use crate::pace;
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
+use crate::share::share;
 use crate::shoot::{ranged, shooting};
 use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
@@ -39,13 +40,15 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         return ask;
     }
     let (before, was_alert) = (brain.target, brain.awareness.alert);
-    let sight = sense(brain, here);
+    let sight = sense(brain, here, board);
+    let sight = share(brain, here, board, sight);
     if sight.is_some() {
         // Something to fight: any walk home is over.
         brain.returning = None;
     }
     if brain.target != before {
         board.forget(me);
+        brain.taken_at = here.tick();
         brain.plan = Plan::Wait;
         brain.ready_at = None;
         brain.slot = None;
