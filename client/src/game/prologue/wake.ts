@@ -142,13 +142,20 @@ export class Wake implements Beat {
   private flightKeys(rest: Shot | null): RailKey[] {
     const facing = this.layout.wake.facing;
     const stand = this.eyeAt(1.65);
-    const behind: Point3 = [stand[0] - Math.sin(facing) * 3.6, stand[1] + Math.cos(facing) * 3.6, stand[2] + 0.6];
+    // Over the right shoulder, up and to the side, so the player's head stands clear of the middle of the picture.
+    const right = facing + Math.PI / 2;
+    const behind: Point3 = [
+      stand[0] - Math.sin(facing) * 3.6 + Math.sin(right) * 0.9,
+      stand[1] + Math.cos(facing) * 3.6 - Math.cos(right) * 0.9,
+      stand[2] + 0.9,
+    ];
     const ahead = (from: Point3): Point3 => [
       from[0] + Math.sin(facing) * 20,
       from[1] - Math.cos(facing) * 20,
       from[2] - 2,
     ];
-    const path = this.layout.path;
+    // The path ends at Thule's place, in the arena: the flight stops at its gate, so he is first seen in the push in.
+    const path = this.layout.path.slice(0, -1);
     const along = path.map(([x, y], index): RailKey => {
       const next = path[Math.min(path.length - 1, index + 1)] ?? [x, y];
       const deck = topAt(this.layout.decks, x, y);
