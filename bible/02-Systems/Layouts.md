@@ -104,7 +104,8 @@ from the sea, fresh water and the claim's edge), then:
    with its crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts every 42 m
    along the ways within 70 m of a settlement (a hamlet, farm, keep, landing, camp, dock or mill), side to side; and
    drystone walls along both sides of the tracks within 170 m of a hamlet or farm, broken by gaps, with fallen stones.
-   Each keeps clear of its own way all along it, not only where it was set, so none stands on a bend; and once the
+   Round a shrine, 6 m past what is seated about its middle, a ring of twelve standing stones 2.6 to 4.2 m tall, a few
+   leaning and every fifth fallen, none within 2 m of a way. Each keeps clear of its own way all along it, not only where it was set, so none stands on a bend; and once the
    ways are laid, every prop whose footprint reaches onto a way's width, the set pieces' small solids in a way's
    path (a lantern, a fire's stones), with what stands on them, and each building not walked into that a way runs
    through near its block (a yard's wall), with its pad and plinth, are left out, and a way bends round the corner of

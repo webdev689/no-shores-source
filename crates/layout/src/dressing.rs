@@ -2,15 +2,17 @@
 //! a milestone every so often between the places and now and then a scene by the way (a cart broken down with its
 //! crates, a fallen log, a cold campfire with a log to sit on, a heap of stones); lanterns on posts along the ways
 //! into a settlement; and drystone walls along the tracks out of the farms and hamlets. All of it beside the way,
-//! clear of every other way and of what already stands.
+//! clear of every other way and of what already stands. And, once the ways are laid, a shrine's ring of standing
+//! stones, which keeps off them.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
 use crate::field::distance;
 use crate::paths::{Path, Tier, off_line};
-use crate::pieces::{Kit, fire, lantern, model, turn_along, yaw_toward};
+use crate::pieces::{Kit, ahead, fire, lantern, model, turn_along, yaw_toward};
 use crate::rocks::stone;
-use city::solids::{Material, Shape};
+use city::solids::{Material, Shape, Solid};
+use std::f64::consts::TAU;
 
 /// How far apart a way's samples, milestones, scenes and lanterns lie along it, metres.
 const STEP_M: f64 = 2.0;
@@ -82,12 +84,50 @@ fn off_way(path: &Path, at: [f64; 2], at_least: f64) -> bool {
     path.points.windows(2).all(|pair| off_line(at, pair[0], pair[1]) >= at_least)
 }
 
-/// Dresses every way of a layout.
+/// Dresses every way of a layout, and rings each shrine with its stones.
 pub fn dress(kit: &mut Kit, areas: &[Area], paths: &[Path]) {
     for (number, path) in paths.iter().enumerate() {
         let others: Vec<&Path> =
             paths.iter().enumerate().filter(|(other, _)| *other != number).map(|(_, other)| other).collect();
         along(kit, areas, path, &others);
+    }
+    let all: Vec<&Path> = paths.iter().collect();
+    for area in areas.iter().filter(|area| area.kind == AreaKind::Shrine) {
+        stone_ring(kit, area, &all);
+    }
+}
+
+/// How many stones a shrine's ring stands, and how far past what is seated about its middle, metres.
+const RING_STONES: u32 = 12;
+const RING_PAST_M: f64 = 6.0;
+
+/// A shrine's ring of standing stones round what is seated about its middle (a shrine is standing stones round an
+/// altar), a few leaning, every fifth fallen; none on a way or on what is seated.
+fn stone_ring(kit: &mut Kit, area: &Area, ways: &[&Path]) {
+    let near = area.radius * 0.7;
+    let seats = kit.into.buildings.iter().chain(kit.into.props.iter()).map(|seated| seated.footprint);
+    let rim = seats
+        .filter(|&[west, north, east, south]| distance([(west + east) / 2.0, (north + south) / 2.0], area.at) < near)
+        .flat_map(|[west, north, east, south]| [[west, north], [east, north], [east, south], [west, south]])
+        .map(|corner| distance(corner, area.at))
+        .fold(0.0, f64::max);
+    let radius = (rim + RING_PAST_M).clamp(10.0, area.radius * 0.9);
+    let start = kit.draw() * TAU;
+    for number in 0..RING_STONES {
+        let angle = start + f64::from(number) * TAU / f64::from(RING_STONES) + (kit.draw() - 0.5) * 0.15;
+        let at = ahead(area.at, [0.0, -1.0], radius, angle);
+        let size = [1.1 + kit.draw() * 0.4, 0.7 + kit.draw() * 0.2, 2.6 + kit.draw() * 1.6];
+        let lean = (kit.draw() - 0.5) * 0.12;
+        if !clear(kit, ways, at, 2.0) {
+            continue;
+        }
+        if number % 5 == 2 {
+            kit.stand(Shape::Block, at, [size[1] + 0.3, size[2], size[1]], angle, Material::Stone, 0.3);
+        } else {
+            let base = kit.height(at) - 0.5;
+            let upright = Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Stone).turned(angle);
+            kit.solid(Solid { lean, ..upright });
+        }
     }
 }
 

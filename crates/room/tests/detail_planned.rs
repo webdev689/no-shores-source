@@ -616,3 +616,43 @@ fn a_farms_hedgerows_line_its_drystone_walls() {
         );
     }
 }
+
+#[test]
+fn every_shrine_stands_in_a_ring_of_standing_stones() {
+    let shrines = continent_one()
+        .iter()
+        .flat_map(|laid| laid.areas.iter().filter(|area| area.kind == AreaKind::Shrine).map(move |area| (laid, area)));
+    let mut seen = 0;
+    for (laid, area) in shrines {
+        seen += 1;
+        // A standing stone: dressed stone taller than a body, no wider than a stone.
+        let stones = laid.seating.solids.iter().filter(|solid| {
+            solid.material == Material::Stone
+                && solid.shape == SolidShape::Block
+                && solid.size[2] >= 2.4
+                && solid.size[0].max(solid.size[1]) <= 1.6
+                && layout::field::distance([solid.at[0], solid.at[1]], area.at) <= area.radius
+        });
+        let ground = &laid_one().2;
+        let mut count = 0;
+        for stone in stones {
+            count += 1;
+            // Sunk half a metre into level ground: the ground under each of its corners within that of its middle.
+            let [west, north, east, south, ..] = stone.bounds();
+            let under = ground.height_at(stone.at[0], stone.at[1]);
+            let rise = [[west, north], [east, north], [east, south], [west, south]]
+                .map(|[x, y]| ground.height_at(x, y) - under)
+                .into_iter()
+                .fold(0.0_f64, |most, each| most.max(each.abs()));
+            assert!(
+                (stone.at[2] + 0.5 - under).abs() < 0.15 && rise < 0.4,
+                "{}: a standing stone at {:?} stands {:+.2} m off the ground, {rise:.2} m across",
+                laid.id,
+                stone.at,
+                stone.at[2] + 0.5 - under
+            );
+        }
+        assert!(count >= 7, "{}: {} stands in {count} standing stones", laid.id, area.name);
+    }
+    assert!(seen > 0, "continent 1 has a shrine");
+}
