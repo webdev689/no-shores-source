@@ -180,18 +180,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- #68, a draft with the owner's asks of this round, built and tested offline, waits on the owner's yes to merge:
-  foes show their level on their plates; garrison groups patrol beats by the navmesh, a Boss's group holding its post;
-  foes climb and drop by the navmesh's links; melee foes in numbers spread out; melee swings a quarter faster and
-  strikes every foe in its reach and arc; the soft lock lets go past 70 degrees; a slot's grid closes off hover; and
-  the inventory holds Aurem as its one currency and its stacks in Destiny's grid
+- #68, a draft with the owner's asks, built, audited deeply with a design pass, and tested offline, waits on the
+  owner's yes to merge: foes show their level; garrison groups patrol beats; foes climb by the navmesh's links; melee
+  foes spread out; melee swings a quarter faster and strikes every foe in reach; the soft lock lets go past 70
+  degrees; a slot's grid closes off hover; and the inventory holds Aurem alone and its stacks in Destiny's grid
   ([[Foes Show Their Level, Patrol in Groups and Climb]],
   [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]],
-  [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]). Its open choices: a foe past its
-  patience now goes in at most one over the turns' cap, where DFO's port sent it in whatever the count; sixteen foes
-  still stand about 1.4 m apart, as each weapon's ring is 0.5 to 0.7 m from the next; node rooms bake no boxes, so
-  foes there neither climb nor drop and beats ignore boxes (a town's boxes, Mistfall's 475 links, cost about 45 ms a
-  room); and climbs and drops have no height cap, as the movement rules have none.
+  [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]). Its open choices, each measured in
+  #68's description: foes barely answer the faster swings (Minors never; no foe blocks a melee swing); the lock lets
+  go mid wind-up past 70 degrees; melee foes never strike a player walking away; three or more Majors fell a player
+  in about 6 s; walking groups take a player's snapshots from about 5 to 20 KB/s; patience at one over the cap;
+  sixteen foes about 1.4 m apart; node rooms bake no boxes; no height cap on climbs; and smaller rule and display
+  choices. `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the owner.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
