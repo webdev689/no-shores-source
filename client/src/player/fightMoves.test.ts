@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import { fightOf, foeDoing } from './fightMoves.ts';
+import { FIGHT_TICKS, fightOf, foeDoing, struckProgress } from './fightMoves.ts';
 import { foeDress } from './foeDress.ts';
 import type { FoeType } from '../rules/roster.ts';
 import { shownMove } from './playerMoves.ts';
@@ -96,4 +96,24 @@ test('a foe that moved over a snapshot of several ticks walks at its own pace, n
   // Walking at 3 m/s: 0.15 m over the three ticks between two snapshots.
   const walked = foeDoing({ ...standing, x: 0.15 }, standing, dress, 3 / 60);
   assert.deepEqual([walked.moving, walked.running, Math.round(walked.speed * 100) / 100], [true, false, 3]);
+});
+
+test('a flinch plays its hurt frames once; a stagger reels through them forth and back; a Charge holds still', () => {
+  assert.equal(struckProgress('flinch', FIGHT_TICKS.flinch), 0);
+  assert.ok(struckProgress('flinch', 5) > struckProgress('flinch', 10));
+  assert.equal(struckProgress('flinch', 0), 1);
+  const reel = Array.from({ length: 25 }, (_unused, tick) => struckProgress('staggered', 72 - tick));
+  assert.ok(Math.max(...reel) > 0.9 && Math.min(...reel) < 0.1, 'it reaches both ends');
+  assert.ok(reel.every((share) => share >= 0 && share < 1));
+  assert.equal(struckProgress('staggered', 40, true), 0);
+  const frames = (anim: string) => (anim === 'hurt' ? 3 : 1);
+  const dress = foeDress(swordsman);
+  assert.ok(dress);
+  const hurtFrames = new Set(
+    Array.from({ length: 24 }, (_unused, tick) => {
+      const action = { kind: 'staggered', left: 60 - tick, cause: 'poise' } as const;
+      return shownMove(foeDoing(doing(action), null, dress, 1 / 60), frames, () => true).frame;
+    }),
+  );
+  assert.deepEqual([...hurtFrames].sort(), [0, 1, 2], 'a staggered figure moves');
 });

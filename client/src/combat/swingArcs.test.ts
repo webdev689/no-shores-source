@@ -11,7 +11,10 @@ import {
   headAt,
   tipAt,
   weaponTint,
+  weightOf,
 } from './swingArcs.ts';
+import { RAMP, SWING_WGSL, swingRampColour } from './swingLook.ts';
+import { groundStrike } from './swingMesh.ts';
 
 const DEGREE = Math.PI / 180;
 const LOOK = { brightness: 1, trail: 1 };
@@ -154,7 +157,8 @@ test('a blow seen again is one arc; a later one another; each laid as triangles 
     [5.2, 0.4],
   ]);
   assert.equal(arcs.count, 1);
-  const mesh = arcs.mesh(EYE, LOOK);
+  // Seen from over its striker's shoulder, the arc is drawn where it is, not brought over its card.
+  const mesh = arcs.mesh([10, 20.5, 1.6], LOOK);
   assert.ok(mesh.length > 0 && mesh.length % (SWING_FLOATS * 6) === 0, 'whole quads');
   const course = courseOf(swing());
   for (let vertex = 0; vertex < mesh.length; vertex += SWING_FLOATS) {
@@ -259,4 +263,132 @@ test('a thrust stabs as it lands, a flare at its tip that shows even end on, and
   assert.equal(flares(0.3), 1, 'its glint alone, still driving');
   assert.equal(flares(0.45), 2, 'landed: its stab at the tip, beside the glint of its withdrawing head');
   assert.equal(flares(0.7), 0, 'the stab over');
+});
+
+/** Each vertex of a mesh: its place, part, ramp and its shape's first two numbers. */
+const vertices = (mesh: Float32Array) =>
+  Array.from({ length: mesh.length / SWING_FLOATS }, (_unused, index) => {
+    const start = index * SWING_FLOATS;
+    const value = (offset: number) => mesh[start + offset] ?? Number.NaN;
+    return { place: [value(0), value(1), value(2)] as const, part: value(6), ramp: value(11), first: value(3) };
+  });
+
+test('an arc is brought along the eye’s line until it stands over its own striker’s card, never moved on the screen', () => {
+  const arcs = new SwingArcs();
+  play(arcs, [
+    [0, 0.3],
+    [0.12, 0.42],
+  ]);
+  const card = Math.hypot(FEET[0] - EYE[0], FEET[1] - EYE[1]) - 0.35;
+  const laid = vertices(arcs.mesh(EYE, LOOK));
+  assert.ok(laid.length > 0);
+  for (const { place } of laid) assert.ok(Math.hypot(place[0] - EYE[0], place[1] - EYE[1]) < card, 'over its card');
+  // The same arc seen from close by is not brought in: each of its points lies on the line from the eye to the far one.
+  const near = new SwingArcs();
+  play(near, [
+    [0, 0.3],
+    [0.12, 0.42],
+  ]);
+  const far = vertices(near.mesh([10, 20.5, 1.6], LOOK));
+  assert.equal(far.length, laid.length);
+});
+
+test('a blade’s element sets its arc’s ramp, a riposte’s is gold, a bare one burns in its metal', () => {
+  const rampOf = (over: Partial<Swing>) => {
+    const arcs = new SwingArcs();
+    play(arcs, [[0, 0.42]], over);
+    return new Set(vertices(arcs.mesh(EYE, LOOK)).map((vertex) => vertex.ramp));
+  };
+  assert.deepEqual(rampOf({}), new Set([RAMP.metal]));
+  assert.deepEqual(rampOf({ look: 2 }), new Set([RAMP.volt]));
+  assert.deepEqual(rampOf({ look: 3, special: true }), new Set([RAMP.gold]));
+  assert.deepEqual(
+    swingRampColour(RAMP.metal, 3, [0.74, 0.86, 1]).map((part) => Math.round(part * 100)),
+    [97, 99, 100],
+  );
+  assert.deepEqual(swingRampColour(RAMP.metal, 0, [1, 1, 1]), [0.24, 0.24, 0.24]);
+  assert.ok(SWING_WGSL.includes('@fragment fn swingFragment') && !/NaN|undefined|\$\{/.test(SWING_WGSL));
+});
+
+test('the element leaves the blade: Blaze’s embers outlive the cut, Volt forks while it is fast, Cosmic leaves stars', () => {
+  const solids = (look: 1 | 2 | 3, time: number) => {
+    const arcs = new SwingArcs();
+    play(arcs, [[0, time]], { look });
+    return vertices(arcs.mesh(EYE, LOOK)).filter((vertex) => vertex.part === PART.solid).length / 6;
+  };
+  assert.ok(solids(1, 0.45) > 3, 'embers shed through the cut');
+  const embers = new SwingArcs();
+  play(embers, [[0, 0.45]], { look: 1 });
+  play(embers, [[0.25, null]]);
+  assert.ok(
+    vertices(embers.mesh(EYE, LOOK)).some((vertex) => vertex.part === PART.solid),
+    'still rising after it',
+  );
+  assert.equal(solids(2, 0.42), 2 * 3 * 2, 'two forks of three legs, each a halo and a core');
+  assert.equal(solids(2, 0.1), 0, 'none while the blade is slow');
+  const stars = new SwingArcs();
+  play(stars, [[0, 0.45]], { look: 3 });
+  const flares = vertices(stars.mesh(EYE, LOOK)).filter((vertex) => vertex.part === PART.flare).length / 6;
+  assert.ok(flares > 2, `stars along its path, and its glint: ${flares}`);
+});
+
+test('a heavy class swings wider and longer than a dagger, and its overhead strikes the ground', () => {
+  assert.ok(weightOf(8).wide > weightOf(2).wide && weightOf(2).wide > weightOf(1).wide);
+  assert.ok(weightOf(6).trail > weightOf(1).trail);
+  assert.deepEqual(weightOf(), weightOf(2), 'a sword for none known');
+  assert.ok(weightOf(3).blunt && !weightOf(8).blunt);
+  const overhead = courseOf(swing({ stroke: 1, arms: 8, reach: 2.3 }));
+  assert.ok(
+    overhead.ground && !courseOf(swing({ stroke: 3, arms: 8 })).ground && !courseOf(swing({ stroke: 1 })).ground,
+  );
+  const struck = groundStrike(overhead, FEET);
+  assert.ok(
+    struck && struck.time > overhead.strike && struck.at[2] === FEET[2],
+    'its head meets the ground after it lands',
+  );
+  const arcs = new SwingArcs();
+  play(arcs, [[0, (struck?.time ?? 0) + 0.05]], { stroke: 1, arms: 8, reach: 2.3 });
+  const ground = vertices(arcs.mesh(EYE, LOOK)).filter((vertex) => vertex.part === PART.solid);
+  assert.ok(
+    ground.some((vertex) => Math.abs(vertex.place[2] - 0.02) < 1e-6),
+    'a crack on the ground',
+  );
+  assert.ok(
+    ground.some((vertex) => vertex.ramp === RAMP.dust),
+    'dust thrown off it',
+  );
+});
+
+test('a smear trails its striker’s card for the first frames of its strike, back against the blade’s way', () => {
+  const arcs = new SwingArcs();
+  play(arcs, [[0, 0.39]]);
+  assert.equal(arcs.smearOf(7, [1, 0]), null, 'not before the strike');
+  play(arcs, [[0.02, 0.41]]);
+  const smear = arcs.smearOf(7, [1, 0]);
+  // A sweep to the left travels west: its smear lies east of the figure, in whole pixels.
+  assert.ok(smear && smear.across > 0 && Number.isInteger(smear.across) && Number.isInteger(smear.up));
+  play(arcs, [[0.1, 0.5]]);
+  assert.equal(arcs.smearOf(7, [1, 0]), null, 'gone two frames on');
+});
+
+test('an arc laid far out in the world, measured from its eye, keeps its centimetres', () => {
+  const far: Vector = [3_000_000, 3_000_000, 0];
+  const laidFrom = (shift: Vector) => {
+    const arcs = new SwingArcs();
+    const feet: Vector = [FEET[0] + shift[0], FEET[1] + shift[1], FEET[2] + shift[2]];
+    const eye: Vector = [EYE[0] + shift[0], EYE[1] + shift[1], EYE[2] + shift[2]];
+    for (const [now, elapsed] of [
+      [5, 0.2],
+      [5.2, 0.4],
+    ] as const)
+      arcs.seen(now, [swing({ elapsed })], () => feet);
+    return arcs.mesh(eye, LOOK, () => 0, eye);
+  };
+  const [near, out] = [laidFrom([0, 0, 0]), laidFrom(far)];
+  assert.ok(near.length > 0 && near.length === out.length);
+  let worst = 0;
+  for (let vertex = 0; vertex < near.length; vertex += SWING_FLOATS)
+    for (let axis = 0; axis < 3; axis++)
+      worst = Math.max(worst, Math.abs((near[vertex + axis] ?? 0) - (out[vertex + axis] ?? 0)));
+  assert.ok(worst < 0.01, `off by ${worst} m`);
 });

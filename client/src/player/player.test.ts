@@ -49,6 +49,16 @@ test('locked on, a figure on foot faces its foe as it walks away from it; mounte
   assert.notEqual(riding.facing, toward);
 });
 
+test('1 draws the Melee loadout and 2 the Ranged, each readying it; Melee is drawn first', () => {
+  const player = start();
+  assert.equal(player.loadout, 0);
+  const ranged = updatePlayer(player, frame([], ['ranged']), movement, TICK);
+  assert.deepEqual([ranged.loadout, ranged.drawn], [1, true]);
+  const melee = updatePlayer({ ...ranged, drawn: false }, frame([], ['melee']), movement, TICK);
+  assert.deepEqual([melee.loadout, melee.drawn], [0, true]);
+  assert.equal(updatePlayer(ranged, frame(), movement, TICK).loadout, 1, 'kept until the other is drawn');
+});
+
 test('Z puts the weapon away and readies it; the wheel and Mouse4 move between first and third person', () => {
   const player = start();
   assert.equal(player.view.firstPerson, false);
@@ -68,7 +78,7 @@ test('the mouse turns the view; the figure faces where it walks and keeps facing
   player = updatePlayer(player, frame(), movement, TICK);
   assert.equal(player.facing, walkingFacing);
   // Casting turns it to the view.
-  player = updatePlayer(player, frame([], ['cast']), movement, TICK);
+  player = updatePlayer({ ...player, cast: 0 }, frame(), movement, TICK);
   assert.equal(player.facing, player.yaw);
 });
 

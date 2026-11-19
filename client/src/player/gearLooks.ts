@@ -4,7 +4,7 @@
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { Wardrobe } from './dressing.ts';
-import { gearHands, worn } from './gear.ts';
+import { MELEE, gearHands, worn } from './gear.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
 const RARE = 2;
@@ -65,8 +65,9 @@ function setOf(item: GearItem, slot: number, wardrobe: Wardrobe): string | null 
   return (item.named ? sets[0] : pick(sets.slice(0, 2), item)) ?? null;
 }
 
-/** The outfit the gear worn makes of `outfit`: its armour and garments the gear's, and its hands; its hair kept. */
-export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit): Outfit {
+/** The outfit the gear worn makes of `outfit`: its armour and garments the gear's, and its hands the drawn loadout's
+ *  (`loadout`, Melee or Ranged); its hair kept. */
+export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit, loadout = MELEE): Outfit {
   const armour: Partial<Record<ArmourPiece, string>> = {};
   const garments: string[] = [];
   const dyes: Record<string, string> = {};
@@ -102,6 +103,6 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit)
     armour,
     garments: garments.filter((each) => wardrobe.garments.includes(each)),
     dyes,
-    ...gearHands(state, wardrobe),
+    ...gearHands(state, wardrobe, loadout),
   };
 }

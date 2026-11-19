@@ -87,6 +87,9 @@ phases) is [[Enemies]].
   **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then
   lets go, and its level bleeds back to idle. The foe's soft lock holds its target, but while it answers a blow, the
   striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
+- **The veil.** A Veiled fighter ([[Combat]], "Statuses") is not one a foe sees, takes as a target, answers or aims at:
+  a foe fighting one lets it go at once and swings or winds up at it no more, though a wind-up already under way still
+  lands. Its noises still stir a foe. Its own blow ends the veil, and the foe it strikes takes it as its target.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
   way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
@@ -95,7 +98,8 @@ phases) is [[Enemies]].
   ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50 m from that place, or off the
   room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up
   once no wind-up of its own is under way: its target, its turn, the blow it saw coming and its answer, its hunt, its
-  search, its awareness, and a roar its health no longer calls for. It walks back by the room's routes, healing each
+  search, its awareness, and a roar its health no longer calls for. It sheds its Expose and its Charge ([[Combat]],
+  "Statuses") and walks back by the room's routes, healing each
   tick the share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m,
   about 9 s), then turns to face as it was posted and stands idle. Walking back it heeds nothing it sees or hears and
   shows as idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert with

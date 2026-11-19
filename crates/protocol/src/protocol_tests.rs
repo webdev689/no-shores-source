@@ -12,8 +12,8 @@ fn input(sequence: u32, controls: Controls) -> Input {
 }
 
 /// The two players the client's test of the same bytes expects (messages.test.ts): one standing inside, one after half
-/// a second's walk at a bearing of 0.3, swinging a sword at its target, foe 12, warned with 432 ticks left; and the
-/// dress the first sent.
+/// a second's walk at a bearing of 0.3, swinging a sword at its target, foe 12, warned with 432 ticks left, Veiled for
+/// 150 ticks and Hasted for 30 by player 7; and the dress the first sent.
 pub fn players() -> Vec<Seen> {
     let walk = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
     let walked = (0..30).fold(standing(1.5, -2.25), |body, _| step_body(&body, &walk, &[], &Flat, TICK_SECONDS));
@@ -22,6 +22,8 @@ pub fn players() -> Vec<Seen> {
     let mut fighting = player(walked, sword);
     fighting.target = Some(12);
     fighting.stamina = 88.0;
+    fighting = combat::give(&fighting, combat::Status::Veiled, 150, Some(7)).unwrap();
+    fighting = combat::give(&fighting, combat::Status::Haste, 30, Some(7)).unwrap();
     vec![
         Seen {
             player: 7,
@@ -41,13 +43,16 @@ pub fn players() -> Vec<Seen> {
 }
 
 /// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
-/// staggered with 40 of its 130 health gone, alert to the player its lock is on.
+/// staggered with 40 of its 130 health gone, alert to the player its lock is on, Exposed for 200 ticks and immune to a
+/// Charge for 90.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
     let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
+    brute = combat::give(&brute, combat::Status::Expose, 200, Some(9)).unwrap();
+    brute.statuses.charge_immune = 90;
     vec![FoeSeen {
         foe: 12,
         kind: 3,
@@ -71,6 +76,8 @@ pub const EVENTS: [Event; 2] = [
         defender: 9,
         amount: 0.0,
         stroke: None,
+        crit: false,
+        element: 0,
     },
     Event {
         tick: 1234,
@@ -80,6 +87,8 @@ pub const EVENTS: [Event; 2] = [
         defender: 12,
         amount: 35.0,
         stroke: Some(Stroke::Left),
+        crit: true,
+        element: 2,
     },
 ];
 
@@ -95,6 +104,34 @@ fn lines() -> Vec<Line> {
 }
 
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
+
+/// A Dawnflare heading to its end, and a Duskraven's bolt seeking a foe.
+const SPELLS: [room::SpellSeen; 2] = [
+    room::SpellSeen {
+        id: 4,
+        kind: 6,
+        caster: 7,
+        art: 2,
+        at: [1.0, -2.0, 1.1],
+        heads: Some([1.0, -26.0, 1.1]),
+        seeks: None,
+        age: 30,
+        life: 96,
+        radius: 3.0,
+    },
+    room::SpellSeen {
+        id: 9,
+        kind: room::BOLT,
+        caster: 7,
+        art: 3,
+        at: [0.5, 0.0, 2.0],
+        heads: None,
+        seeks: Some(12),
+        age: 2,
+        life: 88,
+        radius: 0.0,
+    },
+];
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
 /// The ships the client's test expects in the sea's snapshot.
@@ -153,7 +190,7 @@ fn snapshot<'snapshot>(
     shots: &'snapshot [Shot],
     lines: &'snapshot [Line],
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines }
+    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines, spells: &SPELLS }
 }
 
 /// The dresses a message holds.
@@ -188,8 +225,13 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         respawn: true,
         ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
         spawn_level: 12,
+        cast: Some(room::Cast { spell: 8, aim: Some([3.0, -12.5, 0.25]) }),
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
+    let unaimed = Input { cast: Some(room::Cast { spell: 2, aim: None }), ..sent.clone() };
+    assert_eq!(read_input(&input_bytes(&unaimed)).unwrap(), unaimed);
+    let badly = Input { cast: Some(room::Cast { spell: 8, aim: Some([f64::NAN, 0.0, 0.0]) }), ..sent.clone() };
+    assert_eq!(read_input(&input_bytes(&badly)).unwrap().cast, Some(room::Cast { spell: 8, aim: None }));
     let clearing = Input { spawn: Some(SpawnAsk::Clear), ..input(2, Controls::default()) };
     assert_eq!(read_input(&input_bytes(&clearing)).unwrap(), clearing);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
@@ -303,9 +345,12 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
     assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
+    assert_eq!((foe.expose(), foe.charge(), foe.charge_immune()), (200, 0, 90), "its debuffs' ticks cross");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);
+    let marked: Vec<_> = read.events().unwrap().iter().map(|event| (event.crit(), event.element())).collect();
+    assert_eq!(marked, vec![(false, 0), (true, 2)], "a crit and a blow's element cross");
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
@@ -318,6 +363,13 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let sent = [Some(line.last.at.to_vec()), Some(line.last.velocity.to_vec()), Some(line.muzzle.to_vec())];
     assert_eq!((stopped.age(), ends(stopped)), (6, sent), "a stopped ball's last segment, and where it left its gun");
     assert!(read.ships().is_none());
+    let spells: Vec<_> = read.spells().unwrap().iter().collect();
+    let numbers = |spell: &messages::Spell<'_>| (spell.id(), spell.kind(), spell.caster(), spell.art(), spell.seeks());
+    assert_eq!(spells.iter().map(numbers).collect::<Vec<_>>(), [(4, 6, 7, 2, 0), (9, 10, 7, 3, 12)]);
+    let heads = spells[0].heads().map(|heads| heads.iter().collect::<Vec<_>>());
+    let told = (heads, spells[0].age(), spells[0].life(), spells[0].radius());
+    assert_eq!(told, (Some(vec![1.0, -26.0, 1.1]), 30, 96, 3.0));
+    assert!(spells[1].heads().is_none(), "a bolt seeks; it heads nowhere");
 
     let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();

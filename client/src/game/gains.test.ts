@@ -90,3 +90,19 @@ test('an emblem newly kept is a gain', () => {
     [['emblem-3', 3]],
   );
 });
+
+test('an Ammo box taken gains its shots and a crate gained shows; a crate used gains nothing', () => {
+  const before = state({ ammo: 6, ammoMost: 24, ammoShare: 0.25, crates: 1 });
+  const boxed = state({ ammo: 12, ammoMost: 24, ammoShare: 0.5, crates: 1 });
+  assert.deepEqual(
+    gainsOf(before, boxed).map((each) => [each.key, each.name, each.count, each.glyph]),
+    [['ammo', 'Ammo', 6, 'ammo-box']],
+  );
+  const filled = state({ ammo: 24, ammoMost: 24, ammoShare: 1, crates: 0 });
+  assert.deepEqual(gainsOf(before, filled), [], 'the crate was spent: its ammunition is no gain');
+  const dropped = state({ ammo: 6, ammoMost: 24, ammoShare: 0.25, crates: 3 });
+  assert.deepEqual(
+    gainsOf(before, dropped).map((each) => [each.key, each.name, each.count, each.glyph]),
+    [['ammo-crate', 'Ammo crate', 2, 'ammo-crate']],
+  );
+});

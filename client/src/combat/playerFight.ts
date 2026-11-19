@@ -1,18 +1,24 @@
+import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { InputFrame } from '../player/input.ts';
 import { SHOOTERS, type Walker } from '../player/walker.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
+import { CastKeys } from './casting.ts';
 import type { Fighting } from './fighting.ts';
 
 type Point = readonly [number, number, number];
 
-/** What the display needs of the player's frame in a fight: whether a ranged weapon is drawn and aims, and whether a
- *  swing or a dodge was pressed (the stamina flashes for one pressed with none). */
+/** What the display needs of the player's frame in a fight: whether a ranged weapon is out to fight with, whether the
+ *  Ranged loadout is drawn on a body free to shoot (from the outfit shown, the pointer held or not), whether it aims,
+ *  whether a swing or a dodge was pressed (the stamina flashes for one pressed with none), and whether its trigger was
+ *  pulled (an empty gun clicks). */
 export interface PlayerFightFrame {
   readonly shooter: boolean;
   readonly ranged: boolean;
+  readonly rangedDrawn: boolean;
   readonly aiming: boolean;
   readonly pressed: boolean;
+  readonly pulled: boolean;
 }
 
 /**
@@ -24,12 +30,16 @@ export class PlayerFight {
   readonly fight: Fighting;
   private readonly rules: CombatRules;
   private readonly walker: Walker;
+  private readonly castKeys = new CastKeys();
+  /** The rooms the fight had joined when the keys last cast: a room joined afresh starts them afresh. */
+  private castJoins: number;
   private armsKey = '';
 
   constructor(fight: Fighting, rules: CombatRules, walker: Walker) {
     this.fight = fight;
     this.rules = rules;
     this.walker = walker;
+    this.castJoins = fight.joins;
   }
 
   /**
@@ -81,6 +91,8 @@ export class PlayerFight {
       shootPressed: ranged && controls.pressed('guard'),
       guardPressed: guards && controls.pressed('guard'),
     });
+    const floorAt = (x: number, y: number) => steps.standing(x, y).z;
+    this.castFrame(controls, seconds, hands && free && !player.mounted, { markOf, floorAt });
     const foe = fight.targetAt;
     const toward = foe && Math.atan2(foe.x - player.body.x, -(foe.y - player.body.y));
     walker.step(controls, steps, seconds, toward, aiming);
@@ -95,14 +107,47 @@ export class PlayerFight {
     [fight.swingsBegun, fight.drawsDropped] = [0, 0];
     walker.show(controls, seconds, clock, shown, zoomOf());
     const { outfit } = walker.shownDress;
-    const handsKey = `${outfit.right}|${outfit.left}|${outfit.drawn}`;
+    // A greatsword's left hand is on its hilt, which combat's arms read as the left hand's own.
+    const left = outfit.grip === 'hilt' ? 'hilt' : outfit.left;
+    const handsKey = `${outfit.right}|${left}|${outfit.drawn}`;
     if (handsKey !== this.armsKey) {
       this.armsKey = handsKey;
-      fight.arms = this.rules.armsCode(outfit.right, outfit.left, outfit.drawn);
+      fight.arms = this.rules.armsCode(outfit.right, left, outfit.drawn);
     }
     fight.look = walker.look;
     fight.dress = walker.lookDress;
     const pressed = (armed && !shooter && controls.pressed('swing')) || (hands && controls.pressed('dodge'));
-    return { shooter, ranged, aiming, pressed };
+    const rangedDrawn = outfit.drawn && SHOOTERS.test(outfit.right ?? '') && free && !player.mounted;
+    return { shooter, ranged, rangedDrawn, aiming, pressed, pulled: ranged && controls.pressed('guard') };
+  }
+
+  /** The casting keys: a cast sent to the room plays its move in its Art's colour, and Dusk Daggers' ring is laid while
+   *  it is aimed, on the ground `floorAt` gives. */
+  private castFrame(
+    controls: InputFrame,
+    seconds: number,
+    hands: boolean,
+    { markOf, floorAt }: { markOf: () => Point | null; floorAt: (x: number, y: number) => number },
+  ): void {
+    const { fight, walker } = this;
+    if (fight.joins !== this.castJoins) {
+      this.castJoins = fight.joins;
+      this.castKeys.reset();
+    }
+    const state = fight.arts;
+    const { cast, ring } = this.castKeys.frame(controls, seconds, {
+      hands,
+      state,
+      abilities: fight.abilities,
+      own: fight.own,
+      yaw: walker.player.yaw,
+      markOf,
+      floorAt,
+    });
+    fight.aimRing = ring;
+    if (!cast) return;
+    fight.cast(cast);
+    const element = arts.arts.find((art) => art.id === state?.art)?.element ?? 0;
+    if (cast.spell > 0 && (element === 1 || element === 2 || element === 3)) walker.beginCast(element);
   }
 }

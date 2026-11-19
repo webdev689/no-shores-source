@@ -157,9 +157,47 @@ SLOT_THUMB = 0.05   # metres from the hand along a weapon slot's +Y, where a rig
 ARMS_IN = {'kaykit': 26.0}
 
 
-def armature_frames(path, frames, clip=''):
+def chained_frames(path, frames, clips, blade=None):
+    """`armature_frames` of clips played one after another (`A+B`): a frame past the first's last is the next's, its
+    first frame at the next number, and each clip is moved over the ground to start where the one before it ended."""
+    whole = [armature_frames(path, None, c, blade) for c in clips]
+    if frames is None:
+        parts = whole
+    else:
+        starts = np.cumsum([0] + [len(w) for w in whole])
+        want = [[] for _ in clips]
+        for f in frames:
+            i = min(int(np.searchsorted(starts, f, side='right')) - 1, len(clips) - 1)
+            want[i].append(f - starts[i])
+        parts = [armature_frames(path, w, c, blade) if w else [] for c, w in zip(clips, want)]
+    out, shift = [], np.zeros(3)
+    for i, (part, every) in enumerate(zip(parts, whole)):
+        if i:   # this clip's first pelvis over the last one's last, on the ground's plane
+            shift += (whole[i - 1][-1]['pelvis'] - every[0]['pelvis']) * np.array([1, 1, 0])
+        out += [{k: v + shift for k, v in pts.items()} for pts in part]
+    return out
+
+
+def homed(keys, scale, home):
+    """Baked keys' travel scaled by `scale`, and from key `home` on drawn back to the first key's place by the last, so
+    a sprite that lunges ends where it stood."""
+    last = len(keys) - 1
+    end = np.array(keys[last]['travel']) * scale
+    for i, key in enumerate(keys):
+        t = np.array(key['travel']) * scale
+        if home is not None and i > home:
+            t = t - end * (i - home) / (last - home)
+        key['travel'] = [round(float(v), 4) for v in t]
+    return keys
+
+
+def armature_frames(path, frames, clip='', blade=None):
     """The landmarks of an FBX, BVH or glTF armature at `frames` (or, with `frames` None, every frame of the clip),
-    read through Blender. A file of many clips (a glTF library) plays the one named `clip`."""
+    read through Blender. A file of many clips (a glTF library) plays the one named `clip`; `A+B` plays A then B.
+    `blade`, two of the hand bone's axes ('Z', 'Y'), gives a rig with no weapon slot the way its weapon runs and the way
+    its edge faces, as the clip's maker held it."""
+    if '+' in clip:
+        return chained_frames(path, frames, clip.split('+'), blade)
     import bpy
     import addon_utils   # Blender's own, importable once bpy is
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -214,6 +252,10 @@ def armature_frames(path, frames, clip=''):
             if f'hand_{s}' not in pts:
                 pts[f'hand_{s}'] = np.array((arm.matrix_world @ names[rig[f'wrist_{s}']].tail)[:])
             pts.setdefault(f'thumb_{s}', pts[f'hand_{s}'])
+        for s in 'LR' if blade else ():   # no weapon slot: the hand bone's own axes
+            axes = (arm.matrix_world @ names[rig[f'wrist_{s}']].matrix).to_3x3()
+            way, edge = (np.array(axes.col['XYZ'.index(a)].normalized()[:]) for a in blade)
+            pts[f'blade_{s}'], pts[f'edge_{s}'] = pts[f'hand_{s}'] + way, pts[f'hand_{s}'] + edge
         out.append(arms_in(pts, ARMS_IN.get(kind, 0.0)))
     return out
 
@@ -427,6 +469,11 @@ def main():
     ap.add_argument('--source', default='', help="with --bake: the clip's maker and licence, kept beside its keys")
     ap.add_argument('--pick', default='', help="with --bake: the frames to keep, counted from 0 over those read")
     ap.add_argument('--mirror', action='store_true', help="the clip left for right: its other arm does what it shows")
+    ap.add_argument('--blade', default='', help="a rig with no weapon slot: the hand bone's axes its weapon runs along and "
+                                                "its edge faces, as 'Z,Y'")
+    ap.add_argument('--travel', type=float, default=1.0, help="with --bake: the share of the clip's travel kept")
+    ap.add_argument('--home', type=int, default=None,
+                    help="with --bake: from this picked frame on, the travel drawn back to where the clip stood")
     args = ap.parse_args(sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])
     frames = frame_list(args.frames)
     if args.amc:
@@ -436,7 +483,7 @@ def main():
         every = cmu_frames(args.asf, args.amc)
         caught = every[::2] if frames is None else [every[min(f, len(every)) - 1] for f in frames]
     else:
-        caught = armature_frames(args.fbx, frames, args.clip)
+        caught = armature_frames(args.fbx, frames, args.clip, tuple(args.blade.split(',')) if args.blade else None)
     if args.mirror:
         caught = [mirrored(p) for p in caught]
     gif = args.out.lower().endswith('.gif')
@@ -447,7 +494,11 @@ def main():
         # the clip's own frame numbers where they were named, a sub-frame's fraction kept
         picked = pick if frames is None else [frames[i] for i in pick]
         keys[args.bake] = {'clip': args.clip or os.path.basename(args.amc or args.fbx), 'picked': picked,
-                           'source': args.source, 'keys': bake([face_front(caught[i], turn, origin) for i in pick])}
+                           'source': args.source,
+                           'keys': homed(bake([face_front(caught[i], turn, origin) for i in pick]), args.travel,
+                                         args.home)}
+        if args.travel != 1.0 or args.home is not None:
+            keys[args.bake].update(travel=args.travel, home=args.home)
         caught = pick
         with open(args.keys, 'w') as f:
             f.write('{\n' + ',\n'.join(f' {json.dumps(k)}: ' + json.dumps(v) for k, v in sorted(keys.items())) + '\n}\n')

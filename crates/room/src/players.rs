@@ -66,7 +66,8 @@ pub struct Shown {
 /// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
 /// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
 /// or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it fights by
-/// combat's own numbers); whether they ask to respawn, dead past a node's section; and an ask of their gear.
+/// combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear; and a spell
+/// they cast.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -79,6 +80,7 @@ pub struct Input {
     pub respawn: bool,
     pub ask: Option<Asked>,
     pub spawn_level: u8,
+    pub cast: Option<crate::arts::Cast>,
 }
 
 /// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
@@ -162,15 +164,22 @@ pub struct Player {
     pub spent: Vec<u8>,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
-    /// What their worn gear trims of the fight's numbers, set whenever it may change.
+    /// What their worn gear trims of the fight's numbers with the loadout drawn; and with each drawn, Melee then
+    /// Ranged, set whenever their gear may change.
     pub trim: combat::Trim,
+    pub(crate) trims: [combat::Trim; 2],
+    /// Their Anima's charge, their Tenets' recharge and a cast on its way, kept while they are in the room.
+    pub casting: crate::arts::Casting,
+    /// What their perks count from blow to blow, kept while they are in the room.
+    pub(crate) counts: crate::perks::PerkCounts,
 }
 
 impl Player {
     #[must_use]
     pub fn new(fighter: Fighter, joined: u64) -> Self {
+        let character = Character::starting();
         Player {
-            fighter,
+            fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,
             shown: Shown::default(),
             dress: String::new(),
@@ -185,7 +194,7 @@ impl Player {
             graced: 0,
             dress_next: None,
             dressed_at: None,
-            character: Character::starting(),
+            character,
             gear_changed: true,
             placed_sent: (false, false),
             gear_sent: None,
@@ -198,7 +207,24 @@ impl Player {
             spent: Vec::new(),
             owner: None,
             trim: combat::Trim::PLAIN,
+            trims: [combat::Trim::PLAIN; 2],
+            casting: crate::arts::Casting::default(),
+            counts: crate::perks::PerkCounts::default(),
         }
+    }
+
+    /// A fighter of theirs as their gear arms it: trimmed by their armour and the loadout it has drawn, its Ranged
+    /// weapon holding the shots their gear keeps. A loadout drawn that changes the trim sends it to them at once, so
+    /// their browser predicts them by it.
+    #[must_use]
+    pub fn armed(&mut self, fighter: Fighter) -> Fighter {
+        let trim = self.trims[usize::from(crate::power::drawn(&self.character, &fighter) == gear::Slot::Ranged)];
+        if trim != self.trim {
+            self.trim = trim;
+            self.gear_changed = true;
+            self.gear_urgent = true;
+        }
+        Fighter { trim, ammo: Some(u32::from(self.character.shots())), ..fighter }
     }
 
     /// Keeps the fighter after an input that was seeing `seen`.
@@ -271,6 +297,9 @@ impl Room {
         found.character = character;
         found.gear_changed = true;
         self.retrim(player);
+        if let Some(found) = self.players.get_mut(&player) {
+            found.fighter = found.armed(found.fighter);
+        }
         true
     }
 
@@ -287,7 +316,7 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
-    /// spent for them again, however often they rejoin.
+    /// spent for them again, however often they rejoin; and the Arts' charge the room kept for it is theirs again.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
@@ -298,7 +327,15 @@ impl Room {
             }
         }
         found.gear_changed = true;
+        self.give_casting_back(player, owner);
         true
+    }
+
+    /// Takes a player out of the room, keeping their account's Arts for its return.
+    pub(crate) fn part(&mut self, player: PlayerId) {
+        if let Some(gone) = self.players.remove(&player) {
+            self.keep_casting(&gone);
+        }
     }
 
     /// A player as the room keeps them.

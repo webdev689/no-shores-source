@@ -1,7 +1,7 @@
 //! What a player holds: every item, where each is (worn in a slot, carried, or in the vault), their Vestiges, their
-//! materials and their XP; and what follows from it: their level, Prestige, Defense, each hand's Attack, and the traits
-//! their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges, and a
-//! vault of twenty weapons, twenty armour and twenty Vestiges.
+//! materials and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
+//! traits their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges,
+//! and a vault of twenty weapons, twenty armour and twenty Vestiges.
 
 use crate::catalogue::catalogue;
 use crate::item::Item;
@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 pub const CARRIED_MOST: usize = 9;
 /// How many Vestiges a player carries.
 pub const VESTIGES_MOST: usize = 10;
-/// How many weapons, armour (cloaks and shields with it) and Vestiges the vault holds.
+/// How many weapons, armour (cloaks with it) and Vestiges the vault holds.
 pub const VAULT_MOST: usize = 20;
 /// The most Aurem held.
 pub const AUREM_MOST: u32 = 25_000;
@@ -52,6 +52,9 @@ pub struct Materials {
     pub armor_essence: u16,
     pub fruit: u16,
     pub resources: Vec<u16>,
+    /// Ammo crates carried (`ammo.rs`).
+    #[serde(default)]
+    pub crates: u16,
 }
 
 impl Materials {
@@ -128,10 +131,16 @@ pub struct Character {
     pub emblems: Vec<String>,
     #[serde(default)]
     pub emblem: String,
+    /// The Art they wear and each Art's Core (`arts.rs`).
+    #[serde(default)]
+    pub arts: crate::arts::WornArts,
+    /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
+    #[serde(default = "crate::ammo::full")]
+    pub ammo: u16,
 }
 
 impl Character {
-    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword in hand and level 1 Normal armour.
+    /// A new player, as Destiny 1 starts a Guardian: a level 1 Normal sword for Melee and level 1 Normal armour.
     #[must_use]
     pub fn starting() -> Self {
         let mut character = Self {
@@ -143,9 +152,11 @@ impl Character {
             next_id: 1,
             emblems: Vec::new(),
             emblem: crate::emblems::starting(),
+            arts: crate::arts::WornArts::default(),
+            ammo: crate::ammo::AMMO_FULL,
         };
         for (kind, slot) in [
-            (Kind::Sword, Slot::MainHand),
+            (Kind::Sword, Slot::Melee),
             (Kind::Head, Slot::Head),
             (Kind::Torso, Slot::Torso),
             (Kind::Arms, Slot::Arms),
@@ -171,11 +182,15 @@ impl Character {
 
     /// A character kept between sessions, or none when the text is not one. Read, it is made whole: it gains a stock
     /// of each island's resource added since it was kept, its stocks stay within their caps, each item is as an item
-    /// should be (`Item::kept`), one worn in a slot it does not fit or that another fills is carried, and its next
-    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it.
+    /// should be (`Item::kept`), a node bought whose trait no longer fits its piece is given back
+    /// (`old_hands::unfit`), one worn in a slot it does not fit or that another fills is carried, and its next
+    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it. One
+    /// kept before the loadouts is read into them (`old_hands.rs`).
     #[must_use]
     pub fn from_json(text: &str) -> Option<Self> {
-        let mut character: Self = serde_json::from_str(text).ok()?;
+        let mut kept: serde_json::Value = serde_json::from_str(text).ok()?;
+        let shields = crate::old_hands::read(&mut kept);
+        let mut character: Self = serde_json::from_value(kept).ok()?;
         let resources = catalogue().resources.len();
         let materials = &mut character.materials;
         materials.resources.resize(resources.max(materials.resources.len()), 0);
@@ -192,9 +207,11 @@ impl Character {
         {
             *stock = (*stock).min(STOCK_MOST);
         }
+        materials.crates = materials.crates.min(crate::ammo::CRATES_MOST);
+        character.ammo = character.ammo.min(crate::ammo::AMMO_FULL);
         let mut worn = Vec::new();
         for (id, (item, at)) in std::mem::take(&mut character.items) {
-            let item = item.kept(id, resources);
+            let item = crate::old_hands::unfit(&mut character, item.kept(id, resources));
             let at = match at {
                 At::Worn(slot) if !item.kind.fits(slot) || worn.contains(&slot) => At::Carried,
                 At::Worn(slot) => {
@@ -205,8 +222,10 @@ impl Character {
             };
             character.items.insert(id, (item, at));
         }
+        shields.settle(&mut character);
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
+        character.arts = std::mem::take(&mut character.arts).kept();
         character.earn_due();
         Some(character)
     }
@@ -252,7 +271,7 @@ impl Character {
         self.items.values().filter(|(item, at)| *at == At::Carried && item.bucket == bucket).count()
     }
 
-    /// How many items of this stock the vault holds: weapons, or armour with cloaks and shields.
+    /// How many items of this stock the vault holds: weapons, or armour with cloaks.
     #[must_use]
     pub fn vaulted(&self, stock: Stock) -> usize {
         self.items.values().filter(|(item, at)| *at == At::Vault && item.kind.stock() == stock).count()
@@ -297,36 +316,49 @@ impl Character {
         Some((past % FRUIT_XP) as f64 / FRUIT_XP as f64)
     }
 
-    /// The Defense of everything worn: the four armour pieces and a shield.
+    /// The Defense of everything worn: the four armour pieces.
     #[must_use]
     pub fn defense(&self) -> u32 {
         self.all_worn().filter_map(|(_, item)| item.defense()).sum()
     }
 
-    /// The Attack of the weapon in a hand, if it holds one.
+    /// The Attack of the loadout worn in a slot, if one is.
     #[must_use]
-    pub fn attack(&self, hand: Slot) -> Option<u32> {
-        self.worn(hand).and_then(Item::attack)
+    pub fn attack(&self, loadout: Slot) -> Option<u32> {
+        self.worn(loadout).and_then(Item::attack)
     }
 
-    /// The traits the gear worn gives, each once however many items give it.
+    /// The traits the gear worn gives while a loadout is drawn (`Slot::Melee` or `Slot::Ranged`), each once however
+    /// many items give it: the armour's and that loadout's. A loadout is one item with one set of perks, so the other
+    /// one's wait until it is drawn.
     #[must_use]
-    pub fn traits(&self) -> Vec<&str> {
-        let mut traits: Vec<&str> = self.all_worn().flat_map(|(_, item)| item.active_traits()).collect();
+    pub fn traits(&self, drawn: Slot) -> Vec<&str> {
+        let mut traits: Vec<&str> = self.drawing(drawn).flat_map(Item::active_traits).collect();
         traits.sort_unstable();
         traits.dedup();
         traits
     }
 
-    /// Whether the gear worn gives a trait.
+    /// Whether the gear worn gives a trait while a loadout is drawn.
+    #[must_use]
+    pub fn has_drawn_trait(&self, id: &str, drawn: Slot) -> bool {
+        self.drawing(drawn).any(|item| item.active_traits().any(|active| active == id))
+    }
+
+    /// Whether the armour worn gives a trait, whichever loadout is drawn.
     #[must_use]
     pub fn has_trait(&self, id: &str) -> bool {
-        self.all_worn().any(|(_, item)| item.active_traits().any(|active| active == id))
+        self.all_worn().any(|(slot, item)| !slot.loadout() && item.active_traits().any(|active| active == id))
+    }
+
+    /// Everything worn that gives its traits while a loadout is drawn: all but the other loadout.
+    fn drawing(&self, drawn: Slot) -> impl Iterator<Item = &Item> {
+        self.all_worn().filter(move |(slot, _)| !slot.loadout() || *slot == drawn).map(|(_, item)| item)
     }
 
     /// Adds XP to the player and to the items that earn it, a tenth more with Scholar worn. Past level 20 every
-    /// 20,000 grows a Fruit of Dagon. `weapon` is the hand whose blow earned it, if one did: that weapon earns it, and
-    /// every armour piece and shield worn does.
+    /// 20,000 grows a Fruit of Dagon. `weapon` is the loadout whose blow earned it, if one did: that loadout earns it,
+    /// and every armour piece worn does.
     pub fn earn_xp(&mut self, xp: u32, weapon: Option<Slot>) {
         let xp = if self.has_trait("scholar") { xp.saturating_add(xp / 10) } else { xp };
         self.xp = self.xp.saturating_add(u64::from(xp));
@@ -339,7 +371,7 @@ impl Character {
         }
         for (item, at) in self.items.values_mut() {
             let earns = match at {
-                At::Worn(slot) => item.kind.defends() || Some(*slot) == weapon,
+                At::Worn(slot) => item.kind.armour() || Some(*slot) == weapon,
                 _ => false,
             };
             if earns {

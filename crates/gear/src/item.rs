@@ -15,7 +15,7 @@ pub const ITEM_LEVEL_MOST: u8 = 20;
 
 /// An item as a player holds it. Its own number is the player's for it; a named item's traits are copied from the
 /// catalogue when it is made, so the item stays what it was. `bucket` is the slot whose carried items it counts
-/// among: a weapon found for the off hand is carried with the off hand's.
+/// among: its kind's own.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct Item {
     pub id: u32,
@@ -69,7 +69,7 @@ impl Item {
 
     /// The item as a kept character should hold it, whatever the keeping did to it: its number its key's, its level
     /// and XP within their bounds, a choice for each of its columns naming only a node bought, nodes only it has, and
-    /// a resource the catalogue lists.
+    /// a resource the catalogue lists, carried with its kind's slot.
     #[must_use]
     pub fn kept(mut self, id: u32, resources: usize) -> Self {
         self.id = id;
@@ -96,6 +96,7 @@ impl Item {
         if !self.kind.weapon() {
             self.element = None;
         }
+        self.bucket = self.kind.slot();
         self
     }
 
@@ -159,12 +160,15 @@ impl Item {
         self.layout.get(place).map_or(&[], Vec::as_slice)
     }
 
-    /// The traits it gives while worn: the one chosen in each trait column, if bought.
+    /// The traits it gives while worn: the one chosen in each trait column, if bought and if it fits the item as a
+    /// roll would offer it (a kept piece's node whose trait does not fit it is given back as it is read).
     pub fn active_traits(&self) -> impl Iterator<Item = &str> {
-        self.chosen.iter().enumerate().filter_map(|(column, &node)| {
+        let content = crate::catalogue::catalogue();
+        self.chosen.iter().enumerate().filter_map(move |(column, &node)| {
             (node != NONE_CHOSEN && self.has(column, node))
                 .then(|| self.traits_of(column).get(usize::from(node)).map(String::as_str))
                 .flatten()
+                .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref()))
         })
     }
 
@@ -213,11 +217,11 @@ impl Item {
         }
     }
 
-    /// Its Defense, if it is armour or a shield: 45 times its slot's share times its defense level, which is 20 plus a
+    /// Its Defense, if it is armour: 45 times its slot's share times its defense level, which is 20 plus a
     /// third of its Prestige when it carries some, and otherwise rises as a lesser weapon's Attack does.
     #[must_use]
     pub fn defense(&self) -> Option<u32> {
-        if !self.kind.defends() {
+        if !self.kind.armour() {
             return None;
         }
         let full = 45.0 * self.kind.defense_share();

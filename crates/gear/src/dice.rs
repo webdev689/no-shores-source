@@ -26,6 +26,8 @@ pub enum Purpose {
     Shield = 9,
     /// Which emblems the Tailor sells on a day (the place in the list added to the purpose's number).
     Emblem = 10,
+    /// Whether a kill leaves an Ammo box.
+    AmmoBox = 11,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
 }

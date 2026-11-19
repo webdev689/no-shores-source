@@ -134,6 +134,7 @@ export class FoeBars {
       const place = laid.get(foe.id) ?? { lift: 0, front: 0 };
       const moved = `translate(${x.toFixed(1)}px, ${(y - place.lift).toFixed(1)}px)`;
       plate.root.style.transform = scale < 1 ? `${moved} scale(${scale.toFixed(3)})` : moved;
+      plate.scaled(scale);
       plate.root.style.opacity = cone < 1 ? cone.toFixed(2) : '';
       plate.root.style.zIndex = String(shown.length - place.front);
     }
