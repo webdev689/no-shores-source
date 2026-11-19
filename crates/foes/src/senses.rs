@@ -58,6 +58,19 @@ impl Here<'_, '_> {
         other.side != self.fighter.side && !other.dead()
     }
 
+    /// Whether a fighter of the room, by its id, is another of this foe's side, alive.
+    #[must_use]
+    pub fn ally(&self, id: FighterId, other: &Fighter) -> bool {
+        id != self.me && other.side == self.fighter.side && !other.dead()
+    }
+
+    /// The way round something by the sign of `turn` (1 clockwise, -1 not); dead on, the way its number picks, the
+    /// same on every machine.
+    #[must_use]
+    pub fn way_round(&self, turn: f64) -> f64 {
+        if turn > 0.0 || (turn == 0.0 && self.me.is_multiple_of(2)) { 1.0 } else { -1.0 }
+    }
+
     /// How far it fights from.
     #[must_use]
     pub fn range(&self) -> f64 {

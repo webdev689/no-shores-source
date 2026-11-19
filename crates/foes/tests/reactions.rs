@@ -1,16 +1,18 @@
 //! Answers to blows: a swordsman that sees a swing begin parries some in time, pressing its guard so the parry window
 //! spans the landing, and ripostes at once after a parry; one waiting its turn holds its shield up; a skirmisher hops
-//! aside; and none answers faster than its reaction time.
+//! aside, even out of its own swing; and none answers faster than its reaction time.
 
 mod common;
 
-use combat::fighter::Swing;
+use combat::arms::{WeaponClass, swing_ticks};
+use combat::fighter::{Action, Swing};
 use combat::{Happening, Stroke, Verdict};
 use common::{BRUTE, Room, SKIRMISHER, SWORDSMAN, standing_still};
 use core::f64::consts::PI;
 use foes::Rank::Major;
 
 const PLAYER: u32 = 1;
+const COLLECTOR: u8 = 2;
 const SWINGS_AT: u64 = 5;
 
 /// A player that swings once, at SWINGS_AT, looking north at a foe standing just in reach.
@@ -43,7 +45,7 @@ fn answered(number: u8, seed: u64) -> (Option<Verdict>, Option<u64>, bool) {
 
 #[test]
 fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripostes_after() {
-    let lands = SWINGS_AT + 24;
+    let lands = SWINGS_AT + u64::from(swing_ticks(WeaponClass::Sword).0);
     let (mut parried, mut riposted) = (0, 0);
     for seed in 1..=60 {
         let (verdict, pressed, riposte) = answered(SWORDSMAN, seed);
@@ -79,6 +81,22 @@ fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
 }
 
 #[test]
+fn a_swordsman_waiting_on_its_answer_winds_up_no_blow_of_its_own() {
+    // From seeing the swing begin to deciding its answer, its reaction time on.
+    let reaction = foes::foe_type(SWORDSMAN).expect("a type of the roster").numbers(Major, 1).reaction;
+    let (mut before, mut decided) = (0, 0);
+    for seed in 1..=60 {
+        let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -1.5, PI);
+        let mut room = room.alert(10, PLAYER);
+        room.run(SWINGS_AT + reaction + 1, &mut one_swing);
+        let orders = room.orders(10);
+        before += orders.iter().filter(|(tick, _)| *tick > SWINGS_AT && *tick < SWINGS_AT + reaction).count();
+        decided += orders.len();
+    }
+    assert_eq!(before, 0, "no wind-up begun while it waits on its answer ({decided} after it decided)");
+}
+
+#[test]
 fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch() {
     let mut dodged = 0;
     for seed in 1..=30 {
@@ -95,6 +113,27 @@ fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch(
         }
     }
     assert!(dodged >= 8, "it dodges often: {dodged} of 30");
+}
+
+#[test]
+fn a_skirmisher_in_its_own_swing_still_dodges_a_blow_at_it() {
+    // A pirate skirmisher and a Grey Tithe collector fight each other; neither flinches, so each swings into the
+    // other's swing, and the skirmisher weighs the collector's blows while its own is under way.
+    let mut dodged = 0;
+    for seed in 1..=20 {
+        let room = Room::new(seed).foe(10, SKIRMISHER, Major, 0.0, -1.5, PI).foe(11, COLLECTOR, Major, 0.0, 0.0, 0.0);
+        let mut room = room.alert(10, 11).alert(11, 10);
+        let mut swinging = Vec::new();
+        for _ in 0..600 {
+            if matches!(room.fighter(10).action, Action::Attack(_)) {
+                swinging.push(room.tick);
+            }
+            room.step(&mut |_, _| standing_still(0.0));
+        }
+        let mid_swing = |tick: &u64| swinging.contains(tick);
+        dodged += room.foe_intents(10).iter().filter(|(tick, intent)| intent.combat.dodge && mid_swing(tick)).count();
+    }
+    assert!(dodged >= 3, "it hops out of its own swing at times: {dodged} in 20 fights");
 }
 
 #[test]

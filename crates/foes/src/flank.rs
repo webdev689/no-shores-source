@@ -18,8 +18,7 @@ pub fn drift(here: &Here<'_, '_>, sight: &Sight, place: f64, ring: f64) -> f64 {
     let (mut clockwise, mut counter) = (f64::INFINITY, f64::INFINITY);
     for (id, other) in here.world.fighters {
         let there = [other.body.x, other.body.y];
-        let near = *id != here.me && other.side == here.fighter.side && !other.dead();
-        if !near || (apart(centre, there) - ring).abs() > 2.0 * RING_SLACK {
+        if !here.ally(*id, other) || (apart(centre, there) - ring).abs() > 2.0 * RING_SLACK {
             continue;
         }
         let ahead = wrap(bearing(centre, there) - place);
@@ -41,8 +40,7 @@ pub fn drift(here: &Here<'_, '_>, sight: &Sight, place: f64, ring: f64) -> f64 {
     if from_face.abs() >= FLANK_ARC {
         return place;
     }
-    // Dead ahead of its target, the side it goes round is its number's, the same on every machine.
-    let way = if from_face > 0.0 || (from_face == 0.0 && here.me.is_multiple_of(2)) { 1.0 } else { -1.0 };
+    let way = here.way_round(from_face);
     let room = if way > 0.0 { clockwise } else { counter };
     if room >= gap + step { wrap(place + way * step) } else { place }
 }

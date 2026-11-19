@@ -146,7 +146,6 @@ impl core::fmt::Debug for World<'_> {
 pub enum Seen {
     /// A fighter began a swing (the attack as begun: its strike and end ticks tell when its blow lands).
     Swung { by: FighterId, attack: combat::fighter::Attack },
-    /// A fighter loosed a shot: it is taken to leave now, arriving by its distance.
     /// A fighter loosed a shot, flying at `speed` (0 where the room does not know it, or it reaches its mark at once).
     Loosed { by: FighterId, speed: f64 },
     /// A blow reached this foe and came to `verdict`.

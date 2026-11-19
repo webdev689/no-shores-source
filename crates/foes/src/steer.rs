@@ -43,6 +43,13 @@ impl Ask {
     pub fn stepping(way: f64, pace: f64, face: f64) -> Self {
         Ask { way: Some((way, pace)), face: Some(face), ..Ask::default() }
     }
+
+    /// The same, its guard held up or not.
+    #[must_use]
+    pub fn guarded(mut self, guard: bool) -> Self {
+        self.combat.guard = guard;
+        self
+    }
 }
 
 /// The bearing to walk to reach a spot by the room's routes, or none when there is no way. A route's corner underfoot
@@ -55,6 +62,18 @@ pub fn way_to(here: &Here<'_, '_>, spot: [f64; 3]) -> Option<f64> {
     Some(bearing([from[0], from[1]], [point[0], point[1]]))
 }
 
+/// Whether an ally of its side already stands nearer a place than it does, within SPACING of it: walking on for the
+/// place would only press into that ally, so foes making for one place stand behind the first there.
+#[must_use]
+pub fn taken(here: &Here<'_, '_>, place: [f64; 3]) -> bool {
+    let (at, to) = (here.at(), [place[0], place[1]]);
+    let mine = apart(at, to);
+    here.world.fighters.iter().any(|(id, other)| {
+        let there = [other.body.x, other.body.y];
+        here.ally(*id, other) && apart(there, at) < SPACING && apart(there, to) < mine
+    })
+}
+
 /// Its move, as shares of a walk east and south, steered clear of the foes of its side standing too near: inside
 /// SPACING each pushes it away, harder the nearer, and the part of its move that walks into one turns aside round it,
 /// all of it within CLEAR, so a foe pressing on toward its target slips past an ally rather than through it. It turns
@@ -63,7 +82,7 @@ fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
     let at = here.at();
     let mut push = [0.0, 0.0];
     for (id, other) in here.world.fighters {
-        if *id == here.me || other.side != here.fighter.side || other.dead() {
+        if !here.ally(*id, other) {
             continue;
         }
         let distance = apart(at, [other.body.x, other.body.y]);
@@ -83,7 +102,7 @@ fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
         if along < 0.0 {
             let across = [wish[0] - along * out[0], wish[1] - along * out[1]];
             let length = libm::sqrt(across[0] * across[0] + across[1] * across[1]);
-            let side = if here.me.is_multiple_of(2) { 1.0 } else { -1.0 };
+            let side = here.way_round(0.0);
             let aside =
                 if length > 1e-9 { [across[0] / length, across[1] / length] } else { [-out[1] * side, out[0] * side] };
             let turned = -along * ((SPACING - distance) / (SPACING - CLEAR)).min(1.0);
@@ -147,7 +166,7 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     if !ask.unspaced {
         wish = spaced(here, wish);
     }
-    let whole = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt();
+    let whole = libm::sqrt(wish[0] * wish[0] + wish[1] * wish[1]);
     let length = whole.min(1.0);
     let held = length > 1e-9 && off_edge(here, [wish[0] / whole * length, wish[1] / whole * length], ask.run);
     let length = if held { 0.0 } else { length };

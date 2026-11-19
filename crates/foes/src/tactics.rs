@@ -15,7 +15,7 @@ use crate::leash::{leash, unoccupied};
 use crate::react::{defend, opening};
 use crate::senses::{Here, Sight, sense};
 use crate::shoot::{ranged, shooting};
-use crate::steer::{Ask, way_to};
+use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
@@ -68,6 +68,10 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
     }
     if matches!(here.fighter.action, Action::Attack(_)) {
         brain.plan = Plan::Strike;
+        // Mid-swing it may still dodge a blow at it, as its answers allow.
+        if let Some(ask) = defend(brain, here) {
+            return ask;
+        }
         return Ask::facing(sight.map_or(brain.heading, |sight| sight.toward));
     }
     if brain.plan == Plan::Strike {
@@ -91,7 +95,8 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         if here.tick() > brain.seen_at + Here::ticks(STALE) {
             board.forget(me);
         }
-        if sight.distance < 0.5 {
+        // It hunts where it last saw its target, and stands behind an ally already there rather than shove it.
+        if sight.distance < 0.5 || taken(here, sight.spot) {
             return Ask::default();
         }
         return way_to(here, sight.spot).map_or_else(Ask::default, |way| Ask::walking(way, 1.0, true));
@@ -286,7 +291,10 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let mut walled = guarded && brain.blocked >= BLOCKED_ENOUGH;
     let (since, side) =
         if walled { *brain.walled.get_or_insert_with(|| (tick, open_side(here, sight))) } else { (tick, 1.0) };
+    // Waiting on its answer to a blow at it, it neither swings nor winds up one of its own.
+    let pending = brain.reactions.threat.is_some();
     if board.holds(sight.id, here.me, false)
+        && !pending
         && let Some(order) = throw(brain, here, sight, reach, walled)
     {
         return telegraph(brain, order);
@@ -327,7 +335,6 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let stroke = stroke(here, sight);
     let reaches = sight.distance <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
     let free = matches!(fighter.action, Action::Idle | Action::Guard { .. });
-    let pending = brain.reactions.threat.is_some();
     if free && reaches && !walled && !pending && tick >= ready_at && off(brain.heading, sight.toward) <= SWING_FACE {
         ask.combat.attack = Some(stroke);
         brain.ready_at = None;
@@ -338,8 +345,7 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
 /// The side round its target toward which the target's guard faces away from it (1 clockwise, -1 not): a blow from
 /// outside the guard is not blocked. Dead ahead, the side its number picks.
 fn open_side(here: &Here<'_, '_>, sight: &Sight) -> f64 {
-    let side = wrap(sight.toward + PI - sight.fighter.aim);
-    if side > 0.0 || (side == 0.0 && here.me.is_multiple_of(2)) { 1.0 } else { -1.0 }
+    here.way_round(wrap(sight.toward + PI - sight.fighter.aim))
 }
 
 /// Whether its target's guard is raised and faces it, so a swing from here would be blocked.
@@ -383,6 +389,11 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
 fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -> Ask {
     let tick = here.tick();
     let away = sight.toward + PI;
+    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does: raised near the
+    // ring's line, and kept up across the ring's give and the step back in from just past it, so a target swaying about
+    // the ring's edge never has it drop and rise again tick by tick.
+    let shield = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+    let guarding = shield && matches!(here.fighter.action, Action::Guard { .. });
     if brain.plan == Plan::Backoff && sight.distance >= ring - RING_SLACK {
         // Out at its farther ring its walk out is over: a target that follows it turns it to face them, not back.
         brain.hop_until = brain.hop_until.min(tick);
@@ -408,7 +419,7 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
         let goal = [spot[0] + libm::sin(place) * ring, spot[1] - libm::cos(place) * ring, spot[2]];
         let Some(way) = way_to(here, goal) else { return Ask::facing(sight.toward) };
         return if sight.distance <= ring + RING_SLACK + 1.0 {
-            Ask::stepping(way, 1.0, sight.toward)
+            Ask::stepping(way, 1.0, sight.toward).guarded(guarding)
         } else {
             Ask::walking(way, 1.0, sight.distance - ring > RUN_FROM)
         };
@@ -417,12 +428,10 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     brain.slot = Some(slot);
     // Round the ring to its place and out or in to the ring's own line, not merely inside its give.
     let (round, out) = (wrap(slot - away) * ring, ring - sight.distance);
-    let mut ask = if round.abs() < SETTLED && out.abs() < SETTLED {
+    let ask = if round.abs() < SETTLED && out.abs() < SETTLED {
         Ask::facing(sight.toward)
     } else {
         Ask::stepping(away + libm::atan2(round, out), CIRCLE_PACE, sight.toward)
     };
-    // A foe that blocks holds its guard up on the ring while it waits its turn, as a shield-bearer does.
-    ask.combat.guard = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
-    ask
+    ask.guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
 }

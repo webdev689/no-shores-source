@@ -88,7 +88,8 @@ phases) is [[Enemies]].
   range, a target is pursued, not fought; a shooter pursuing one walks on until it stands 6 m inside its range. Out of
   sight, its target is hunted where it was last seen for 5 s, its turn kept 1.5 s (DFO's stale lease); then it
   **searches**: walks to within 1.4 m of the place, sweeps its gaze at 2.2 radians a second out and back for 2.6 s, then
-  lets go, and its level bleeds back to idle. The foe's soft lock holds its target, but while it answers a blow, the
+  lets go, and its level bleeds back to idle. Hunting or searching, it stops short of the place behind an ally that
+  already stands nearer it, within 1.2 m. The foe's soft lock holds its target, but while it answers a blow, the
   striker. A player just stood again is left be for 3 s, unless they strike first, and their feet make no noise.
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
@@ -132,8 +133,9 @@ phases) is [[Enemies]].
   of the next foe on the ring (dead ahead, it takes a side by its number). A target who turns its back on a waiting
   foe (more than 110 degrees) near the ring, or walks in on one inside the ring's near edge, is open to it without a
   turn, but to one such foe at a time, and it goes on fighting while the target stays that close. A foe that blocks
-  holds its guard up on the ring while it waits its turn, as a shield-bearer does. A holder going in takes the
-  shortest way.
+  holds its guard up on the ring while it waits its turn, as a shield-bearer does: it raises it within 0.3 m of the
+  ring's line and keeps it up across the ring's give and the step back in from just past it. A holder going in takes
+  the shortest way.
 - **Room on the ring.** The waiting keep apart. A ring holds as many as stand 2.5 m apart round it; the rest, in the
   order they wait, stand on a ring 2.5 m farther out, and so on, so the next to go in stand nearest. Nearer than 2.5 m
   to the next on its ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring
@@ -201,9 +203,10 @@ later it would parry, which a block is not), or keeps one already held; too late
 hops aside and a little back, still facing the blow, pressed 2 to 14 ticks before the landing. Mid-swing it can only
 dodge. A shot loosed at it is timed by its distance and the speed the room says it flies at (an aimed shot's
 faster than its weapon's plain one): a shield-bearer blocks it, others may dodge it. Only the swing or
-shot of a fighter of another side is weighed, never an ally's. Waiting on an answer, a foe does not swing; while it
-answers, it faces the striker. The room judges a player's blow against a foe where the player's screen showed it but
-guarding and dodging as it is now ([[Server]]), so these answers count the same at any lag.
+shot of a fighter of another side is weighed, never an ally's. Waiting on an answer, a foe neither swings nor winds up
+a telegraphed blow; while it answers, it faces the striker. The room judges a player's blow against a foe where the
+player's screen showed it but guarding and dodging as it is now ([[Server]]), so these answers count the same at any
+lag.
 
 ## Telegraphed blows
 

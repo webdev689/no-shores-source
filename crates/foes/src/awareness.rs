@@ -3,13 +3,13 @@
 //! place it believes the stir came from; with nothing stirring it bleeds away, but not while it fights or hunts a
 //! target. Stirred, a foe is suspicious: it turns to the place and walks a few metres toward it. Full, it is alert and
 //! shouts once, waking its allies near it. Alert with no one in sight, it searches: it walks to the place it last knew,
-//! looks about, then lets go, its awareness bleeding back to nothing.
+//! or as near as an ally already there leaves it, looks about, then lets go, its awareness bleeding back to nothing.
 
 use crate::Seen;
 use crate::brain::Brain;
 use crate::dice::Purpose;
 use crate::senses::Here;
-use crate::steer::{Ask, way_to};
+use crate::steer::{Ask, taken, way_to};
 use crate::tuning::{
     ALERT_BLEED, ALERT_OFF, ALERT_ON, ALERT_PROP, SEARCH_REACH, SEARCH_SWEEP, SEARCH_T, SUSPICIOUS_WALK,
 };
@@ -148,7 +148,10 @@ pub fn look(brain: &mut Brain, here: &Here<'_, '_>) -> Ask {
     let look = match awareness.look {
         Some(look) => look,
         None => {
-            if far && let Some(way) = way_to(here, place) {
+            if far
+                && !taken(here, place)
+                && let Some(way) = way_to(here, place)
+            {
                 return Ask::walking(way, 1.0, false);
             }
             let side = if here.dice.roll(Purpose::Search) < 0.5 { -1.0 } else { 1.0 };
