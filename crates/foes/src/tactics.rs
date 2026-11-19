@@ -30,6 +30,7 @@ use combat::sight::{apart, bearing, clear_line, off, wrap};
 use combat::tuning::{ATTACK_PACE, BODY_RADIUS, guard_of};
 use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
+use movement::blocks::blocking_at;
 use movement::{TICK_SECONDS, TUNING};
 
 /// A foe's whole tick of thinking, before its controls: what it asks.
@@ -437,6 +438,15 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
         // Out at its farther ring its walk out is over: a target that follows it turns it to face them, not back.
         brain.hop_until = brain.hop_until.min(tick);
     }
+    // A place a block hides from its target, as beyond a wall the target stands against, or one too near a block's
+    // side to stand on, is no place to fight from.
+    let (spot, chest) = (sight.spot, sight.fighter.chest());
+    let goal = |place: f64| [spot[0] + libm::sin(place) * ring, spot[1] - libm::cos(place) * ring, spot[2]];
+    let hidden = |place: f64| {
+        let at = goal(place);
+        let blocks = here.world.blocks;
+        !clear_line(blocks, chest, [at[0], at[1], chest[2]]) || blocking_at(blocks, at[0], at[1], at[2]).is_some()
+    };
     if sight.distance < ring - RING_SLACK {
         if tick < brain.hop_until {
             return if brain.plan == Plan::Backoff {
@@ -448,26 +458,31 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
         if brain.plan == Plan::Recover {
             return Ask::facing(sight.toward);
         }
-        // Waiting inside its ring it steps back out, leaving room for the foes whose turn it is.
-        return Ask::stepping(away, CIRCLE_PACE, sight.toward);
+        // Waiting inside its ring it steps back out, leaving room for the foes whose turn it is: straight out, or,
+        // backed against a block, toward the nearest place round the ring that is open to it.
+        let turns = (0..=6).flat_map(|turn| [1.0, -1.0].map(|side| away + side * f64::from(turn) * PI / 6.0));
+        let out = turns.into_iter().find(|place| !hidden(*place)).unwrap_or(away);
+        return Ask::stepping(out, CIRCLE_PACE, sight.toward);
     }
-    if sight.distance > ring + RING_SLACK {
-        // From afar it makes for its own place on the ring rather than its target, so the waiting come in spread round.
+    if sight.distance > ring + RING_SLACK || hidden(away) {
+        // From afar it makes for its own place on the ring rather than its target, so the waiting come in spread
+        // round; to a hidden place, or from behind a block on the ring itself, it makes for its target by the
+        // room's routes instead, and comes onto the ring on its own side.
         let place = brain.slot.unwrap_or(away);
-        let spot = sight.spot;
-        let goal = [spot[0] + libm::sin(place) * ring, spot[1] - libm::cos(place) * ring, spot[2]];
-        // A place a block hides from its target, as beyond a wall the target stands against, is no place to fight
-        // from: it makes for its target instead, and comes onto the ring on its own side.
-        let chest = sight.fighter.chest();
-        let open = clear_line(here.world.blocks, chest, [goal[0], goal[1], chest[2]]);
-        let Some(way) = way_to(here, if open { goal } else { spot }) else { return Ask::facing(sight.toward) };
+        let Some(way) = way_to(here, if hidden(place) { spot } else { goal(place) }) else {
+            return Ask::facing(sight.toward);
+        };
         return if sight.distance <= ring + RING_SLACK + 1.0 {
             Ask::stepping(way, 1.0, sight.toward).guarded(guarding)
         } else {
             Ask::walking(way, 1.0, sight.distance - ring > RUN_FROM)
         };
     }
-    let slot = drift(here, sight, brain.slot.unwrap_or(away), ring, brain.flanking);
+    // On the ring its place drifts round only as far as its target can still see it: stepped round the ring with
+    // no route, a place drifted behind a block would lead it into the block's face.
+    let held = brain.slot.filter(|place| !hidden(*place)).unwrap_or(away);
+    let drifted = drift(here, sight, held, ring, brain.flanking);
+    let slot = if hidden(drifted) { held } else { drifted };
     brain.slot = Some(slot);
     // Round the ring to its place and out or in to the ring's own line, not merely inside its give, the faster the
     // farther it is from its place: a place drifting on draws it along, rather than by stops and starts.

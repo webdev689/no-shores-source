@@ -8,7 +8,12 @@ use crate::senses::Here;
 use crate::tuning::{CLEAR, SPACING, SPACING_PACE, SQUARE, TURN, WALK_FACE};
 use combat::sight::{apart, bearing, off, turned, wrap};
 use combat::{CombatInput, Intent};
-use movement::{Controls, Mode, TICK_SECONDS, TUNING};
+use movement::blocks::wall_ahead;
+use movement::step::{CLIMB_SQUARE, square_into};
+use movement::{Block, Body, Controls, Mode, TICK_SECONDS, TUNING};
+
+/// How far wider than the rules' square a foe looks to keep off a wall it is not to climb, in radians.
+const WIDE_OF_SQUARE: f64 = 0.02;
 
 /// What a foe's thinking asks of its body and its arms this tick.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -169,16 +174,44 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     }
     let whole = libm::sqrt(wish[0] * wish[0] + wish[1] * wish[1]);
     let length = whole.min(1.0);
-    let held = length > 1e-9 && off_edge(here, [wish[0] / whole * length, wish[1] / whole * length], ask.run);
+    let share = if whole > 1e-9 { [wish[0] / whole * length, wish[1] / whole * length] } else { [0.0, 0.0] };
+    let held = length > 1e-9 && off_edge(here, share, ask.run);
     let length = if held { 0.0 } else { length };
+    // Faced near square into a wall too high to grab that its step makes no way into, the rules would take hold of
+    // it; only a crossing climbs, so this tick it looks just wide of square, and moves on as asked.
+    let yaw = climbs_ahead(here, brain.heading, share, ask.run).map_or(brain.heading, |into| {
+        let side = if wrap(brain.heading - into) < 0.0 { -1.0 } else { 1.0 };
+        wrap(into + side * (CLIMB_SQUARE + WIDE_OF_SQUARE))
+    });
     let (forward, sideways) = if length > 1e-9 {
-        let relative = wrap(libm::atan2(wish[0], -wish[1]) - brain.heading);
+        let relative = wrap(libm::atan2(wish[0], -wish[1]) - yaw);
         (libm::cos(relative) * length, libm::sin(relative) * length)
     } else {
         (0.0, 0.0)
     };
-    Intent {
-        controls: Controls { forward, sideways, yaw: brain.heading, run: ask.run, ..Controls::default() },
-        combat: ask.combat,
-    }
+    Intent { controls: Controls { forward, sideways, yaw, run: ask.run, ..Controls::default() }, combat: ask.combat }
+}
+
+/// The bearing square into the side of a wall too high to grab that a step along its heading would take hold of, as
+/// the rules take hold for a body stepping on along its heading, faced near square into a side its move makes no way
+/// into, from where it stands or where this tick's step (a share of a walk, or a run) leaves it; none when the step
+/// takes hold of nothing.
+fn climbs_ahead(here: &Here<'_, '_>, heading: f64, share: [f64; 2], run: bool) -> Option<f64> {
+    let body = here.fighter.body;
+    let pace = if run { TUNING.run } else { TUNING.walk } * TICK_SECONDS;
+    let stepped = Body { x: body.x + share[0] * pace, y: body.y + share[1] * pace, ..body };
+    let held_by = |block: &Block| {
+        let into = square_into(block, &body);
+        // Its step toward the side, and the room left before its body meets the side.
+        let toward = (libm::sin(into) * share[0] - libm::cos(into) * share[1]) * pace;
+        let gap =
+            (block.min_x - body.x).max(body.x - block.max_x).max((block.min_y - body.y).max(body.y - block.max_y));
+        let stopped = toward.abs() < 1e-9 || toward > gap - TUNING.radius;
+        (stopped && block.top - body.z > TUNING.reach && off(heading, into) <= CLIMB_SQUARE).then_some(into)
+    };
+    let walls = [body, stepped].map(|at| wall_ahead(here.world.blocks, &at, heading));
+    // Only a step with some way along its heading presses on into what is before it.
+    let onward = libm::sin(heading) * share[0] - libm::cos(heading) * share[1] > 1e-9;
+    let held = walls.iter().flatten().find_map(|wall| held_by(&wall.block));
+    held.filter(|_| onward && body.mode == Mode::Ground)
 }

@@ -268,12 +268,21 @@ pub const CLIMB_SQUARE: f64 = 45.0 * PI / 180.0;
 /// The bearing square into the side of `block` a body stands against, if its move from `before` to `after` made no
 /// way into that side, however it slid along it, and the look is within `CLIMB_SQUARE` of square to it.
 fn pressed_into(block: &Block, before: &Body, after: &Body, yaw: f64) -> Option<f64> {
-    let gap_x = (block.min_x - after.x).max(after.x - block.max_x);
-    let gap_y = (block.min_y - after.y).max(after.y - block.max_y);
-    let (into, stopped) = if gap_y >= gap_x {
-        (if after.y > block.max_y { 0.0 } else { PI }, after.y == before.y)
-    } else {
-        (if after.x > block.max_x { -PI / 2.0 } else { PI / 2.0 }, after.x == before.x)
-    };
+    let into = square_into(block, after);
+    let stopped = if into == 0.0 || into == PI { after.y == before.y } else { after.x == before.x };
     (stopped && wrap(yaw - into).abs() <= CLIMB_SQUARE).then_some(into)
+}
+
+/// The bearing square into the side of `block` nearest a body standing outside it.
+#[must_use]
+pub fn square_into(block: &Block, body: &Body) -> f64 {
+    let gap_x = (block.min_x - body.x).max(body.x - block.max_x);
+    let gap_y = (block.min_y - body.y).max(body.y - block.max_y);
+    if gap_y >= gap_x {
+        if body.y > block.max_y { 0.0 } else { PI }
+    } else if body.x > block.max_x {
+        -PI / 2.0
+    } else {
+        PI / 2.0
+    }
 }

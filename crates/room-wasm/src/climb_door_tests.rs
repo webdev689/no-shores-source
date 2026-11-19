@@ -12,7 +12,7 @@ use room::SpawnAsk;
 use serde_json::Value;
 
 /// Both tests hold this value; a change to the course, the bake, the foes or the fight changes it in both, on purpose.
-pub const CLIMB_HASH: &str = "b864a13c";
+pub const CLIMB_HASH: &str = "e33e5fe6";
 
 /// The script: ticks east, then ticks north into the ledge and up it, then facing south; the tick the player asks for
 /// a swordsman, and how often they swing at it after; the run's length.

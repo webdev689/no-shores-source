@@ -125,11 +125,13 @@ phases) is [[Enemies]].
 - **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
   [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
   steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
-  climb it up a wall too high to grab, or walk it off an edge and drop it. On a wall, or in the air, it presses on
-  the way it faces, so it goes up and over whatever its thinking asks. Struck or set down short, it finds its way again
-  from where it stands. Its own steps, a hop back from its blow or its circling, hold at an edge more than a step high:
-  only a link drops it. A target within 4 m across but higher or lower than a blow reaches (1.4 m) is as far as the
-  walk to it, so a foe beneath a ledge goes up to it rather than swing at it from below.
+  climb it up a wall too high to grab, or walk it off an edge and drop it. On a wall, or in the air, it presses on the
+  way it faces, so it goes up and over whatever its thinking asks. Struck or set down short, it finds its way again from
+  where it stands. Its own steps, a hop back from its blow or its circling, hold at an edge more than a step high: only
+  a link drops it. Nor do they take hold of a wall too high to grab: faced within the rules' 45 degrees of square into
+  such a wall that its step makes no way into, it looks 0.02 radians wider of square that tick and moves on as asked,
+  along the wall; only a link climbs it. A target within 4 m across but higher or lower than a blow reaches (1.4 m) is
+  as far as the walk to it, so a foe beneath a ledge goes up to it rather than swing at it from below.
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place in its group, at its post or on its beat, which
   holds still while the group fights ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands
   50 m from that place, or off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level
@@ -187,8 +189,13 @@ phases) is [[Enemies]].
   ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring evens out. A
   waiting foe stands on its ring's own line, not merely within its give: inside the ring once it has held its ground
   after its blow, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather than for
-  its target, so the waiting come in spread round it; when a block stands between its target's chest and that place,
-  as a wall the target stands against, it makes for its target instead, and comes onto the ring on its own side.
+  its target, so the waiting come in spread round it. A place is no place to wait when a block stands between its
+  target's chest and it, as beyond a wall the target stands against, or when a block too high to step onto stands
+  within a body's width of it. Making for such a place from afar, or standing where its own place on the ring would
+  be one, it makes for its target by the room's routes instead, and comes onto the ring on its own side. On the ring
+  its place moves round only into places open to it, so it is never led into a block's face. Stepping back out from
+  inside the ring with a block behind it, it steps toward the nearest place round the ring, by twelfths of a turn,
+  that is open to it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
   the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each

@@ -581,6 +581,8 @@ mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
 #[cfg(test)]
+mod ring_tests;
+#[cfg(test)]
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
