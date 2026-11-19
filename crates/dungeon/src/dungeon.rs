@@ -321,7 +321,7 @@ impl Dungeon {
     }
 
     /// Each room's walk from the way in: the fewest cells crossed to reach any of its cells.
-    fn walk(&mut self) {
+    pub(crate) fn walk(&mut self) {
         let mut steps = vec![u32::MAX; self.cells.len()];
         let mut todo = std::collections::VecDeque::from([self.way_in.cell]);
         steps[self.way_in.cell] = 0;
