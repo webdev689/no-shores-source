@@ -17,7 +17,11 @@ test('the beach found is low by the water, slopes gently, and faces inland towar
   assert.ok(beach);
   const height = island(beach.at[0], beach.at[1]);
   assert.ok(height >= 0.25 && height <= 2.8, `${height}`);
-  assert.ok(island(beach.edge[0], beach.edge[1]) < 0, 'the edge is the water');
+  const seaward: readonly [number, number] = [
+    beach.at[0] - Math.sin(beach.inland) * 12,
+    beach.at[1] + Math.cos(beach.inland) * 12,
+  ];
+  assert.ok(island(seaward[0], seaward[1]) < 0, 'the water is just beyond the player');
   const toTown = Math.atan2(-beach.at[0], beach.at[1]);
   assert.ok(Math.abs(Math.atan2(Math.sin(beach.inland - toTown), Math.cos(beach.inland - toTown))) < 0.1);
 });

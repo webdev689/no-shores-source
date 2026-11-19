@@ -157,9 +157,9 @@ export class Prologue {
     return this.beat.key?.(key, down) ?? false;
   }
 
-  /** A tap or click: the title's beginning. */
+  /** A tap or click: the title's beginning, or the stranger's hand taken on the shore. */
   press(): void {
-    if (this.beat instanceof Intro) this.beat.press();
+    if (this.beat instanceof Intro || this.beat instanceof Shore) this.beat.press();
   }
 
   /** A touch on the screen held down, or let go. */

@@ -175,10 +175,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     behindVeil(after.words, work);
   };
 
-  /** Leaves wherever the player was: death's grey goes with them. */
+  /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
   const leaveHere = () => {
     canvas.classList.remove('dead');
     wasDead = false;
+    epilogue?.leave();
   };
 
   const goFoot = async (node: NodeInfo, facing: number, seas = heldMap?.difficulty) => {
@@ -434,9 +435,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
-    // The story's last moment, on foot: the stranger beside the player, till they walk off.
-    const met = epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, (x, y) => scene.groundAt(x, y)) ?? [];
-    if (epilogue?.done) epilogue = null;
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, till she walks off.
+    const met = epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot') ?? [];
     scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), { after: hands });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));

@@ -77,6 +77,12 @@ export interface StageParts {
   readonly landmass: () => Landmass;
 }
 
+/** How long the game's veil over a loading place takes to rise or to fall, seconds: `.veil`'s transition in
+ *  client/index.html. */
+export const HUD_VEIL_S = 0.7;
+/** How long the story's screen takes to clear its black: `Screen.clear`'s fade. */
+const SCREEN_CLEAR_S = 0.6;
+
 /** How many ships of one hull a frame draws at most: each has a slot of its own. */
 const SLOTS_A_HULL = 16;
 
@@ -99,6 +105,8 @@ export class Stage {
   private glide = { seconds: 0, done: 0 };
   /** Counts the scenes begun and hushed: a scene stops at its next line once a later one begins or it is hushed. */
   private scenes = 0;
+  /** False from the story's end until its black has wholly gone from over the game. */
+  screenOpen = true;
 
   constructor(parts: StageParts) {
     this.parts = parts;
@@ -130,7 +138,11 @@ export class Stage {
     hud.reach({ kind: 'inside' });
     hud.hints([]);
     footView.hide();
-    screen.clear();
+    // The game's veil rises over the story's black as the game takes over; the black is let go only once the veil is
+    // wholly up, so the story's last picture never shows through the crossing.
+    this.screenOpen = false;
+    setTimeout(() => screen.clear(), HUD_VEIL_S * 1000);
+    setTimeout(() => (this.screenOpen = true), (HUD_VEIL_S + SCREEN_CLEAR_S) * 1000);
   }
 
   get weather(): Weather {
