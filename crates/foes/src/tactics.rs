@@ -20,8 +20,8 @@ use crate::steer::{Ask, taken, way_to};
 use crate::tell::{After, follow, roar, throw};
 use crate::tuning::{
     BACK_TURNED, BACKOFF, BACKOFF_COOLDOWN, BACKOFF_GAP, BLOCKED_ENOUGH, CIRCLE_PACE, CLOSE_IN, CLOSING, FLEE,
-    FLEE_SHARE, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_ROOM, RING_SLACK,
-    RUN_FROM, SETTLED, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
+    FLEE_SHARE, FOLLOW, GUARD_RESERVE, HURT_SHARE, KITE_CORNERED, POISE_NEAR, RECOVER, RECOVER_HOP, RING_ROOM,
+    RING_SLACK, RUN_FROM, STALE, STEP_PACE, SWING_FACE, SWING_SLACK, WALLED,
 };
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
@@ -462,14 +462,12 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     }
     let slot = drift(here, sight, brain.slot.unwrap_or(away), ring, brain.flanking);
     brain.slot = Some(slot);
-    // Round the ring to its place and out or in to the ring's own line, not merely inside its give.
+    // Round the ring to its place and out or in to the ring's own line, not merely inside its give, the faster the
+    // farther it is from its place: a place drifting on draws it along, rather than by stops and starts.
     let (round, out) = (wrap(slot - away) * ring, ring - sight.distance);
-    let ask = if round.abs() < SETTLED && out.abs() < SETTLED {
-        Ask::facing(sight.toward)
-    } else {
-        // Far round from its place, as a foe joining the line is, it walks there; near it, it circles slowly.
-        let pace = if round.abs() > RING_ROOM { 1.0 } else { CIRCLE_PACE };
-        Ask::stepping(away + libm::atan2(round, out), pace, sight.toward)
-    };
-    ask.guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
+    // Far round from its place, as a foe joining the line is, it walks there; near it, it circles slowly.
+    let most = if round.abs() > RING_ROOM { 1.0 } else { CIRCLE_PACE };
+    let pace = (libm::hypot(round, out) * FOLLOW / TUNING.walk).min(most);
+    Ask::stepping(away + libm::atan2(round, out), pace, sight.toward)
+        .guarded(guarding || (shield && out.abs() <= RING_SLACK / 2.0))
 }

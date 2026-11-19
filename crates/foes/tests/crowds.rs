@@ -6,7 +6,7 @@
 mod common;
 
 use combat::sight::apart;
-use common::{Room, SWORDSMAN, still};
+use common::{ARCHER, BRUTE, Room, SKIRMISHER, SWORDSMAN, still};
 use core::f64::consts::{PI, TAU};
 use foes::Director;
 use foes::Rank::Major;
@@ -162,4 +162,46 @@ fn foes_hunting_and_searching_one_place_stand_behind_the_first_there_rather_than
         }
     }
     assert!(reversals <= 20, "they stand, not jostle at the place: {reversals} turns about");
+}
+
+/// Eight foes of four kinds come at a still player from before it, its fight at rest, over four half-minutes: how
+/// often a foe's move turns about from one tick to the next, a foe-second, and how often a waiting foe on the move
+/// stops dead, a waiting foe-second.
+fn turns_and_stops() -> (f64, f64) {
+    let kinds = [SKIRMISHER, SWORDSMAN, SWORDSMAN, BRUTE, SKIRMISHER, SWORDSMAN, BRUTE, ARCHER];
+    let (mut turns, mut stops, mut alive, mut waited) = (0, 0, 0, 0);
+    for seed in 1..=4 {
+        let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0);
+        for (index, kind) in kinds.into_iter().enumerate() {
+            let turn = (f64::from(u8::try_from(index).expect("eight")) - 3.5) * 0.35;
+            let id = 10 + u32::try_from(index).expect("eight");
+            room =
+                room.foe(id, kind, Major, 6.0 * libm::sin(turn), -6.0 * libm::cos(turn), turn + PI).alert(id, PLAYER);
+        }
+        let mut was: Vec<[f64; 2]> = vec![[0.0; 2]; kinds.len()];
+        for _ in 0..1800 {
+            room.step(&mut still(0.0));
+            for (index, before) in was.iter_mut().enumerate() {
+                let id = 10 + u32::try_from(index).expect("eight");
+                let body = room.fighter(id).body;
+                let (now, then) = ([body.vx, body.vy], *before);
+                let (speed, was_speed) = (libm::hypot(now[0], now[1]), libm::hypot(then[0], then[1]));
+                let back = now[0] * then[0] + now[1] * then[1] < -0.5 * speed * was_speed;
+                turns += usize::from(speed > 0.3 && was_speed > 0.3 && back);
+                stops += usize::from(waiting(&room, id) && was_speed > 0.3 && speed < 0.05);
+                waited += usize::from(waiting(&room, id));
+                alive += 1;
+                *before = now;
+            }
+        }
+    }
+    let per_second = |count: usize, ticks: usize| count as f64 * 60.0 / ticks.max(1) as f64;
+    (per_second(turns, alive), per_second(stops, waited))
+}
+
+#[test]
+fn foes_in_a_crowd_neither_turn_about_tick_by_tick_nor_circle_by_stops_and_starts() {
+    let (turns, stops) = turns_and_stops();
+    assert!(turns < 0.2, "a foe's move turns about {turns:.2} times a second");
+    assert!(stops < 0.2, "a waiting foe stops dead {stops:.2} times a second");
 }

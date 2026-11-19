@@ -103,7 +103,8 @@ phases) is [[Enemies]].
   their places on the ring. It finds its way by the room's routes, and stops by its distance to the target, never to a
   route's corner. Foes of one side steer apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part
   of a foe's move that walks into an ally turns aside round it, all of it within 0.8 m, so a foe going in slips past an
-  ally rather than through it. Nothing is moved but by its own controls.
+  ally rather than through it. Each ally turns the move as asked, not as another already turned it, so a foe between
+  two is held back rather than tossed from one to the other. Nothing is moved but by its own controls.
 - **Climbing.** A foe climbs and drops by the [[Movement]] rules, as a player does, where its way crosses one of the
   [[Navmesh]]'s links. At the link's start it turns square to the block's side, then walks on, neither running nor
   steered apart, pressing jump where the link goes over: the rules vault it, mantle it, catch the lip it jumps for, or
@@ -154,8 +155,9 @@ phases) is [[Enemies]].
   group's side of the target: the bearing where the foes fighting it hand to hand stand round it, once the mean of
   their bearings leans a quarter of the way one way, else the way the target faces. A place more than 75 degrees off
   the line's middle moves to the line's nearer end, and the foe walks there while more than 2.5 m round, else circles
-  at 0.4 of a walk; in the line a place closes up toward the middle, stopping 2.5 m short of the next foe that way. So
-  a player facing a group sees every foe that waits, with a way out behind.
+  at up to 0.4 of a walk, three times its distance from its place a second, so a place drifting on draws it along
+  without a stop; in the line a place closes up toward the middle, stopping 2.5 m short of the next foe that way. So a
+  player facing a group sees every foe that waits, with a way out behind.
 - **The flanker.** One waiting foe at a time **flanks** instead: a skirmisher before any other, a foe with no shield
   before none, and a shield-bearer never, as it holds the line. Its place drifts 0.4 radians a second away from where
   the target faces, past the line, out to 100 degrees either side of its face, and it keeps flanking through its own
