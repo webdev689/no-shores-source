@@ -81,6 +81,22 @@ fn a_swordsman_waiting_its_turn_holds_its_shield_up_and_blocks() {
 }
 
 #[test]
+fn a_swordsman_waiting_on_its_answer_winds_up_no_blow_of_its_own() {
+    // From seeing the swing begin to deciding its answer, its reaction time on.
+    let reaction = foes::foe_type(SWORDSMAN).expect("a type of the roster").numbers(Major, 1).reaction;
+    let (mut before, mut decided) = (0, 0);
+    for seed in 1..=60 {
+        let room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -1.5, PI);
+        let mut room = room.alert(10, PLAYER);
+        room.run(SWINGS_AT + reaction + 1, &mut one_swing);
+        let orders = room.orders(10);
+        before += orders.iter().filter(|(tick, _)| *tick > SWINGS_AT && *tick < SWINGS_AT + reaction).count();
+        decided += orders.len();
+    }
+    assert_eq!(before, 0, "no wind-up begun while it waits on its answer ({decided} after it decided)");
+}
+
+#[test]
 fn a_skirmisher_hops_aside_and_one_caught_by_the_blow_is_in_its_perfect_stretch() {
     let mut dodged = 0;
     for seed in 1..=30 {

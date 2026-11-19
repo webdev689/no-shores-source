@@ -291,7 +291,10 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let mut walled = guarded && brain.blocked >= BLOCKED_ENOUGH;
     let (since, side) =
         if walled { *brain.walled.get_or_insert_with(|| (tick, open_side(here, sight))) } else { (tick, 1.0) };
+    // Waiting on its answer to a blow at it, it neither swings nor winds up one of its own.
+    let pending = brain.reactions.threat.is_some();
     if board.holds(sight.id, here.me, false)
+        && !pending
         && let Some(order) = throw(brain, here, sight, reach, walled)
     {
         return telegraph(brain, order);
@@ -332,7 +335,6 @@ fn engage(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sig
     let stroke = stroke(here, sight);
     let reaches = sight.distance <= reach + stroke_shape(stroke).reach + BODY_RADIUS - 0.1;
     let free = matches!(fighter.action, Action::Idle | Action::Guard { .. });
-    let pending = brain.reactions.threat.is_some();
     if free && reaches && !walled && !pending && tick >= ready_at && off(brain.heading, sight.toward) <= SWING_FACE {
         ask.combat.attack = Some(stroke);
         brain.ready_at = None;
