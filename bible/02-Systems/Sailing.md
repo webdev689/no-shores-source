@@ -137,7 +137,9 @@ picture's grain, the picture's lightness about its mean kept:
   that slice is at least 0.6 of her greatest breadth at or below it at that station: a deckhouse standing above her
   rail is not her side, and her bow flaring out over her forefoot is. Her stem and transom are her shell the same way
   along her, facing fore or aft within 0.15 m of how far she reaches in their slice across her, and within 0.6 m of
-  how far she reaches at that height. A face whose corners differ is painted to the halfway between them. Her deck,
+  how far she reaches at that height. A face modelled inside out, facing inboard on her outside, counts only within
+  3 cm of her breadth in its own slice, where the inside of a bulwark never lies. A face whose corners differ is
+  painted to the halfway between them. Her deck,
   its fittings and the insides of her bulwarks keep their timber.
 - **Her stripe** is 0.6 m deep along the line through the mouths of her upper tier of guns, rising with her sheer.
 - **Her flag** flies at the head of her tallest mast (the highest point of her spars), a tenth of her waterline's
