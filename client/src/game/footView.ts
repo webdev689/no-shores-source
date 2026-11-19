@@ -1,5 +1,6 @@
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { Hud } from '../combat/hud.ts';
+import { abilityPictures } from './artsCards.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
@@ -116,7 +117,7 @@ export class FootView {
     this.root.className = 'fight';
     this.root.hidden = true;
     hudRoot.prepend(this.root);
-    this.hud = new Hud(this.root);
+    this.hud = new Hud(this.root, abilityPictures);
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */

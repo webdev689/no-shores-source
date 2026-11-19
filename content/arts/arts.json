@@ -55,12 +55,12 @@
         }
       ],
       "core": [
-        { "key": "pursuit", "name": "Pursuit", "text": "Tempest sends two more orbs." },
-        { "key": "conduction", "name": "Conduction", "text": "Arc Lash's Charge lasts half as long again." },
+        { "key": "pursuit", "name": "Pursuit", "text": "Tempest sends two more orbs.", "orbs": 2 },
+        { "key": "conduction", "name": "Conduction", "text": "Arc Lash's Charge lasts half as long again.", "chargeTimes": 1.5 },
         { "key": "momentum", "name": "Momentum", "text": "Quicken also gives you Crit while it lasts." },
-        { "key": "recharge", "name": "Recharge", "text": "Each Volt kill takes 4% off your Tenets' cooldowns." },
+        { "key": "recharge", "name": "Recharge", "text": "Each Volt kill takes 4% off your Tenets' cooldowns.", "cooldownShare": 0.04 },
         { "key": "overload", "name": "Overload", "text": "Enemies you Charge are Exposed too." },
-        { "key": "gale", "name": "Gale", "text": "Quicken lasts 3 s longer and reaches 18 m." }
+        { "key": "gale", "name": "Gale", "text": "Quicken lasts 3 s longer and reaches 18 m.", "moreS": 3, "radius": 18 }
       ]
     },
     {
@@ -97,10 +97,10 @@
         }
       ],
       "core": [
-        { "key": "radiance", "name": "Radiance", "text": "The Sunwell reaches 3 m further and lasts 4 s longer." },
-        { "key": "mercy", "name": "Mercy", "text": "Mend also heals players within 8 m half as much." },
+        { "key": "radiance", "name": "Radiance", "text": "The Sunwell reaches 3 m further and lasts 4 s longer.", "moreRadius": 3, "moreS": 4 },
+        { "key": "mercy", "name": "Mercy", "text": "Mend also heals players within 8 m half as much.", "radius": 8, "healShare": 0.5 },
         { "key": "wings", "name": "Wings", "text": "The Dawnflare makes a second pass back." },
-        { "key": "zeal", "name": "Zeal", "text": "While Linked, each Blaze kill takes 5% off your Tenets' cooldowns." },
+        { "key": "zeal", "name": "Zeal", "text": "While Linked, each Blaze kill takes 5% off your Tenets' cooldowns.", "cooldownShare": 0.05 },
         { "key": "searing", "name": "Searing", "text": "The Dawnflare Exposes what it burns." },
         { "key": "resolve", "name": "Resolve", "text": "Mend gives you Crit." }
       ]
@@ -144,12 +144,12 @@
         }
       ],
       "core": [
-        { "key": "hunger", "name": "Hunger", "text": "The Duskraven heals you all it deals, not half." },
-        { "key": "night", "name": "Night", "text": "Vanish's veil lasts 2 s longer." },
-        { "key": "blades", "name": "Blades", "text": "Dusk Daggers reach 1.5 m further and last 2 s longer." },
-        { "key": "hunt", "name": "Hunt", "text": "A crit out of Vanish gives back half its cooldown." },
-        { "key": "dread", "name": "Dread", "text": "Each Cosmic kill on an Exposed enemy keeps the Duskraven 2 s longer." },
-        { "key": "cruelty", "name": "Cruelty", "text": "Your crits on Exposed enemies deal 10% more." }
+        { "key": "hunger", "name": "Hunger", "text": "The Duskraven heals you all it deals, not half.", "healShare": 1 },
+        { "key": "night", "name": "Night", "text": "Vanish's veil lasts 2 s longer.", "moreS": 2 },
+        { "key": "blades", "name": "Blades", "text": "Dusk Daggers reach 1.5 m further and last 2 s longer.", "moreRadius": 1.5, "moreS": 2 },
+        { "key": "hunt", "name": "Hunt", "text": "A crit out of Vanish gives back half its cooldown.", "cooldownShare": 0.5 },
+        { "key": "dread", "name": "Dread", "text": "Each Cosmic kill on an Exposed enemy keeps the Duskraven 2 s longer.", "moreS": 2 },
+        { "key": "cruelty", "name": "Cruelty", "text": "Your crits on Exposed enemies deal 10% more.", "critTimes": 1.1 }
       ]
     }
   ]

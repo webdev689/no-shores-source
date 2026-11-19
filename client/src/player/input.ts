@@ -18,7 +18,10 @@ export const BINDINGS = {
   swing: ['mouse2'],
   guard: ['mouse0', 'f'],
   dodge: ['v', 'mouse4'],
-  cast: ['q'],
+  // The Art's spells, on keys DFO's scheme leaves free: the Anima on R, the Tenets on Q (where casting was) and G.
+  anima: ['r'],
+  tenetOne: ['q'],
+  tenetTwo: ['g'],
   perspective: ['mouse3'],
   mount: [','],
 } as const;

@@ -1,5 +1,6 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
+import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Look } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
@@ -68,6 +69,8 @@ export class Walker {
   readonly you: Placed;
   /** The element each hand's weapon glows in (the right, then the left), as the page reads it from the gear. */
   glow: readonly [GlowLook, GlowLook] = NO_GLOW;
+  /** The element the last cast glows in: its Art's. */
+  castGlow: GlowLook = 0;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
   lookDress: string;
@@ -111,6 +114,14 @@ export class Walker {
   /** The dress the figure shows this frame: the weapon worn while the hands hold a wall or a ledge. */
   get shownDress(): Dress {
     return this.dress;
+  }
+
+  /** Plays a cast in `glow`, its Art's element: the figure's cast move, its spark in that colour, and the first
+   *  person's casting hands, lit by the Art's light. None on horseback, or while one plays. */
+  beginCast(glow: GlowLook): void {
+    if (this.player.mounted || this.player.cast !== null) return;
+    this.castGlow = glow;
+    this.player = { ...this.player, cast: 0 };
   }
 
   /** One frame of play: the body stepped by `rules` while the pointer is held, the first person's weapon swung, and
@@ -172,6 +183,7 @@ export class Walker {
       running: speed > (player.mounted ? GALLOP : RUNNING),
       stride: this.stride,
       casting: player.cast !== null,
+      ...(this.castGlow ? { element: ART_LIGHTS[this.castGlow], castGlow: this.castGlow } : {}),
       climbing: holding ? 0 : 1,
       mounted: player.mounted,
       yaw: player.yaw,
@@ -265,7 +277,8 @@ export class Walker {
     const body = shownBody(player);
     const [x, y, z] = [body.x + shift[0], body.y + shift[1], body.z + shift[2]];
     const { view, flip } = viewOf(you.facing, x, y, eyeX, eyeY);
-    const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip, this.glowing[0]);
+    const glow = this.look.anim === 'cast' ? this.castGlow : this.glowing[0];
+    const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip, glow);
     return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, ...(flash ? { flash } : {}) };
   }
 }

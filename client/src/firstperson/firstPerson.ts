@@ -65,6 +65,8 @@ export interface FirstPersonState {
   readonly casting: boolean;
   readonly climbing: number;
   readonly element?: string;
+  /** The element a cast's light is recoloured to: its Art's. */
+  readonly castGlow?: GlowElement | null;
   readonly mounted?: boolean;
   readonly yaw?: number;
   readonly blocking?: boolean;
@@ -279,8 +281,9 @@ export class FirstPerson {
     if (this.castClock !== null) {
       const record = CAST_SEQUENCE[Math.floor(this.castClock / CAST_STEP)] ?? 0;
       const element = state.element ?? 'magic';
-      const ask = () => castPicture(this.source, element, record, worn.hands);
-      const key = `cast|${element}|${record}|${worn.hands}`;
+      const glow = state.castGlow ?? null;
+      const ask = () => castPicture(this.source, element, record, worn.hands, glow);
+      const key = `cast|${element}|${glow}|${record}|${worn.hands}`;
       return [
         { key, ask, place: castPlace(record, element, false) },
         { key, ask, place: castPlace(record, element, true) },

@@ -6,6 +6,7 @@ code:
   - client/src/testground/testgroundMain.ts
   - client/src/testground/aimPanel.ts
   - client/src/testground/statusPanel.ts#startStatusPanel
+  - client/src/testground/artsPanel.ts#startArtsPanel
   - client/src/testground/attackFeel.ts#AttackFeel
   - client/src/testground/feelPanel.ts#startFeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
@@ -57,9 +58,9 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | `Z` | Ready the weapon or put it away |
 | `1`, `2` | Draw the Melee loadout, or the Ranged ([[Gear]], "Loadouts"); a swap between them takes 0.4 s |
 | Right click, held | Swing; holding swings again. A swing readies a weapon put away. With a bow, a crossbow or a gun drawn: aim, over the shoulder or down the weapon's side, a bow charging |
-| Left click or `F`, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
+| Left click, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
 | `V` or Mouse5 | Dodge the way you move, or straight back |
-| `Q` | Cast |
+| `R`, `Q`, `G` | Cast the worn Art's Anima, first Tenet and second Tenet, each once ready ([[Arts]]). Shadow's Dusk Daggers aims while `Q` is held, a ring on the ground at the crosshair, and casts as it is let go |
 | `,` | Mount or dismount: 6 m/s, galloping at 12 with `Shift` |
 | Wheel, Mouse4 | Pull back into third person and further, or come back into first person; Mouse4 switches straight |
 
@@ -95,6 +96,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   for its own time or for as many seconds as asked (ten minutes at most), through the room's own door, as a spell or a
   perk will: the icons show on the foes' plates and over the vitals, and the rules act on them. Only a course's room
   grants them; a node's refuses.
+- **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
+  the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). The ability bar stands by
+  the vitals.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's

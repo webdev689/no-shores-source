@@ -8,7 +8,7 @@ import { HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 
 /** The keys that cast the Anima and the two Tenets. */
-export const ABILITY_KEYS = ['F', 'Q', 'C'] as const;
+export const ABILITY_KEYS = ['R', 'Q', 'G'] as const;
 /** The Anima's diamond's rows: it lights a whole row of its picture at a time. */
 export const ANIMA_ROWS = 24;
 /** The steps a Tenet's wedge sweeps in, round the circle. */
@@ -190,6 +190,13 @@ export class AbilityBar {
       if (tenet.seconds !== before?.seconds) parts.seconds.textContent = tenet.seconds;
       if (tenet.ready !== before?.ready) parts.well.classList.toggle('ready', tenet.ready);
     });
+  }
+
+  /** Hides the bar until it is next shown a state. */
+  hide(): void {
+    if (this.root.hidden && !this.shown) return;
+    this.root.hidden = true;
+    this.shown = null;
   }
 
   /** Draws the bar in `art`'s pictures and colours; hidden with none. */

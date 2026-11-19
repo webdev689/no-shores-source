@@ -1,4 +1,4 @@
-import { type GlowElement, type GlowField, type GlowLook, glowField } from '../elementGlow.ts';
+import { type GlowElement, type GlowField, type GlowLook, glowField, recolourToGlow } from '../elementGlow.ts';
 import { type Colours, composeFrame } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { type ForgeLooks, mirroredGear } from '../forge/looks.ts';
@@ -59,6 +59,8 @@ const KEPT_CARDS = 4000;
 const KEPT_AFTER = 3000;
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
+/** The move a cast plays, whose spark glows in its Art's element. */
+const CAST = 'cast';
 /** The forge's views of a figure. */
 const VIEWS = 5;
 /** Warming starts at most this many frames a tick, and none while this many are under way. */
@@ -135,7 +137,8 @@ export class Cards {
   }
 
   /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A
-   *  move carries the props, instrument or spark the forge draws in it; a weapon glowing in `glow` its outline. */
+   *  move carries the props, instrument or spark the forge draws in it; a weapon glowing in `glow` its outline, and a
+   *  cast's spark recoloured to it. */
   private ask(dress: Dress, anim: string, view: number, frame: number, flip = false, glow: GlowLook = 0): Card | null {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
@@ -156,6 +159,8 @@ export class Cards {
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
     composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, (path) => this.store.strip(path))
       .then((composed) => {
+        // A cast's spark takes its Art's colour, as the weapon's glow takes the weapon's.
+        if (composed && glow && anim === CAST) recolourToGlow(composed.pixels, glow, composed.weapon);
         const card = composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root);
         if (!card || !composed || !glow || !composed.weapon.includes(1)) {
           this.kept.set(key, card);

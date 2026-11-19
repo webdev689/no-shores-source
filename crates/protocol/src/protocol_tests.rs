@@ -100,6 +100,34 @@ fn lines() -> Vec<Line> {
 }
 
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
+
+/// A Dawnflare heading to its end, and a Duskraven's bolt seeking a foe.
+const SPELLS: [room::SpellSeen; 2] = [
+    room::SpellSeen {
+        id: 4,
+        kind: 6,
+        caster: 7,
+        art: 2,
+        at: [1.0, -2.0, 1.1],
+        heads: Some([1.0, -26.0, 1.1]),
+        seeks: None,
+        age: 30,
+        life: 96,
+        radius: 3.0,
+    },
+    room::SpellSeen {
+        id: 9,
+        kind: room::BOLT,
+        caster: 7,
+        art: 3,
+        at: [0.5, 0.0, 2.0],
+        heads: None,
+        seeks: Some(12),
+        age: 2,
+        life: 88,
+        radius: 0.0,
+    },
+];
 /// The node and rect the client's test expects in the welcome.
 const NODE: (&str, [f64; 4]) = ("overlook-social", [2_808_986.0, 1_201_139.0, 2_809_442.0, 1_201_455.5]);
 /// The ships the client's test expects in the sea's snapshot.
@@ -158,7 +186,7 @@ fn snapshot<'snapshot>(
     shots: &'snapshot [Shot],
     lines: &'snapshot [Line],
 ) -> Snapshot<'snapshot> {
-    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines }
+    Snapshot { tick: 1234, players, dressed: &DRESSED, foes, events: &EVENTS, shots, lines, spells: &SPELLS }
 }
 
 /// The dresses a message holds.
@@ -193,8 +221,13 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         respawn: true,
         ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
         spawn_level: 12,
+        cast: Some(room::Cast { spell: 8, aim: Some([3.0, -12.5, 0.25]) }),
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
+    let unaimed = Input { cast: Some(room::Cast { spell: 2, aim: None }), ..sent.clone() };
+    assert_eq!(read_input(&input_bytes(&unaimed)).unwrap(), unaimed);
+    let badly = Input { cast: Some(room::Cast { spell: 8, aim: Some([f64::NAN, 0.0, 0.0]) }), ..sent.clone() };
+    assert_eq!(read_input(&input_bytes(&badly)).unwrap().cast, Some(room::Cast { spell: 8, aim: None }));
     let clearing = Input { spawn: Some(SpawnAsk::Clear), ..input(2, Controls::default()) };
     assert_eq!(read_input(&input_bytes(&clearing)).unwrap(), clearing);
     let plain = read_input(&input_bytes(&input(1, Controls::default()))).unwrap();
@@ -324,6 +357,13 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let sent = [Some(line.last.at.to_vec()), Some(line.last.velocity.to_vec()), Some(line.muzzle.to_vec())];
     assert_eq!((stopped.age(), ends(stopped)), (6, sent), "a stopped ball's last segment, and where it left its gun");
     assert!(read.ships().is_none());
+    let spells: Vec<_> = read.spells().unwrap().iter().collect();
+    let numbers = |spell: &messages::Spell<'_>| (spell.id(), spell.kind(), spell.caster(), spell.art(), spell.seeks());
+    assert_eq!(spells.iter().map(numbers).collect::<Vec<_>>(), [(4, 6, 7, 2, 0), (9, 10, 7, 3, 12)]);
+    let heads = spells[0].heads().map(|heads| heads.iter().collect::<Vec<_>>());
+    let told = (heads, spells[0].age(), spells[0].life(), spells[0].radius());
+    assert_eq!(told, (Some(vec![1.0, -26.0, 1.1]), 30, 96, 3.0));
+    assert!(spells[1].heads().is_none(), "a bolt seeks; it heads nowhere");
 
     let bytes = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen());
     let sea = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();

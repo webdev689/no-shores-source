@@ -3,9 +3,11 @@
 // pictures the HUD draws an Art with, and the asks the screen sends the room. Nothing changes until the room answers.
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import { ABILITY_KEYS, type ArtPictures } from '../combat/abilityBar.ts';
+import { ABILITY_KEYS } from '../combat/abilityBar.ts';
 import { FRAGMENT_MAPS } from './artFragments.ts';
-import { EMBLEM_MAPS, SPELL_MAPS, mapSvg } from './artGlyphs.ts';
+import { EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
+import type { ArtState } from '../network/artMessages.ts';
+import { ASKS, type GearAsk } from '../network/gearMessages.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -50,6 +52,18 @@ export type ArtsAsk =
 export type Cores = Readonly<Record<number, readonly (number | null)[]>>;
 
 export const artOf = (id: number): Art | undefined => ARTS.find((art) => art.id === id);
+
+/** The room's word on the Arts as the screen reads it: each Art's Core by its id. */
+export function coresOf(state: ArtState): Cores {
+  return Object.fromEntries(state.cores.map((core, index) => [ARTS[index]?.id ?? index + 1, core]));
+}
+
+/** The screen's ask as an input carries it to the room. */
+export function gearAskOf(ask: ArtsAsk): GearAsk {
+  return ask.kind === 'wearArt'
+    ? { kind: ASKS.wearArt, column: ask.art }
+    : { kind: ASKS.setCore, column: ask.art, slot: ask.slot, node: ask.fragment };
+}
 
 /** An Art's Core as its slots: three, each a fragment or null, whatever the room sent. */
 export function coreOf(cores: Cores, art: number): (number | null)[] {
@@ -180,9 +194,4 @@ export const spellSvg = (art: Art, spell: Spell): string => mapSvg(SPELL_MAPS[sp
 export const fragmentSvg = (art: Art, fragment: Fragment): string => mapSvg(FRAGMENT_MAPS[fragment.key], art.element);
 
 /** The pictures the HUD's ability bar draws an Art with; null for no Art. */
-export function abilityPictures(id: number): ArtPictures | null {
-  const art = artOf(id);
-  const [first, second] = art?.tenets ?? [];
-  if (!art || !first || !second) return null;
-  return { diamond: emblemSvg(art), tenets: [spellSvg(art, first), spellSvg(art, second)] };
-}
+export { abilityPictures } from '../player/artGlyphs.ts';

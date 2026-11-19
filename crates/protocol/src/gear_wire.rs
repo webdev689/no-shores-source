@@ -4,6 +4,7 @@
 
 use crate::messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
+use gear::arts::ArtAsk;
 use gear::item::NONE_CHOSEN;
 use gear::{Ask, At, Item, Kind, Rarity, Slot};
 use room::{Asked, Drop, Grant, PlayerId, Room};
@@ -32,6 +33,14 @@ pub const GRANT_XP: u8 = 34;
 /// A status granted: its number (combat's) in `slot`, on the player (0) or every foe (1) in `node`, and its ticks in
 /// `count`, 0 for its own time.
 pub const GRANT_STATUS: u8 = 35;
+/// The Test Ground's grant of the Anima full and both Tenets ready.
+pub const GRANT_ARTS: u8 = 36;
+/// An Art worn, by its number in `column`; a fragment set in its Core, the Art in `column`, the slot (0 to 2) in
+/// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
+pub const WEAR_ART: u8 = 40;
+pub const SET_CORE: u8 = 41;
+/// A Core slot with no fragment, as the gear message carries it.
+pub const NO_FRAGMENT: u8 = 255;
 
 /// An ask as the room takes it, or none for a number or a name it does not know.
 #[must_use]
@@ -73,6 +82,9 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
             on_foes: node == 1,
             ticks: Some(ask.count()).filter(|ticks| *ticks > 0),
         }),
+        GRANT_ARTS => Asked::Grant(Grant::ArtsReady),
+        WEAR_ART => Asked::Art(ArtAsk::Wear { art: column }),
+        SET_CORE => Asked::Art(ArtAsk::SetCore { art: column, slot: ask.slot(), fragment: node }),
         _ => return None,
     })
 }
@@ -128,6 +140,12 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Grant(Grant::Status { status, on_foes, ticks }) => {
             let (slot, node, count) = (*status as u8, u8::from(*on_foes), ticks.unwrap_or(0));
             args = messages::AskArgs { kind: GRANT_STATUS, slot, node, count, ..args };
+        }
+        Asked::Grant(Grant::ArtsReady) => args = messages::AskArgs { kind: GRANT_ARTS, ..args },
+        Asked::Art(ArtAsk::Wear { art }) => args = messages::AskArgs { kind: WEAR_ART, column: *art, ..args },
+        Asked::Art(ArtAsk::SetCore { art, slot, fragment }) => {
+            let (column, slot, node) = (*art, *slot, *fragment);
+            args = messages::AskArgs { kind: SET_CORE, column, slot, node, ..args };
         }
     }
     messages::Ask::create(builder, &args)
@@ -271,6 +289,9 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .collect();
     let (to_next, to_next_needs) = character.to_next();
     let arms: Vec<u32> = room::arms_allowed(character).into_iter().map(combat::Arms::code).collect();
+    let arts = gear::arts::arts().arts.iter();
+    let cores: Vec<u8> = arts.flat_map(|art| character.core_of(art.id)).map(|set| set.unwrap_or(NO_FRAGMENT)).collect();
+    let casting = found.casting;
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -297,6 +318,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         emblems: Some(builder.create_vector(&emblems)),
         emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
         emblems_sold: Some(builder.create_vector(&emblems_sold)),
+        art: character.art().id,
+        cores: Some(builder.create_vector(&cores)),
+        anima: casting.anima,
+        tenets: Some(builder.create_vector(&casting.tenets)),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

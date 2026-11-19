@@ -28,8 +28,9 @@ table Ask {
 // 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
 // shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
 // their gear, and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in
-// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). New
-// fields go at the end, so old readers skip them.
+// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). Then a
+// spell cast this tick, by its number among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y,
+// z): Dusk Daggers' ring while it is held and as it is let go. New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -46,6 +47,8 @@ table Input {
   spawn_level: ubyte;
   spawn_type: ubyte;
   spawn_rank: ubyte;
+  cast: ubyte;
+  cast_aim: [double];
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -258,11 +261,29 @@ table Naval {
   left: double;
 }
 
+// A spell every player sees: its number in the room; its kind (its spell's number among the Arts', 1 Tempest's orb to
+// 9 Vanish's veil, 10 a Duskraven's bolt); the player who cast it; its Art (1 Storm, 2 Divine, 3 Shadow); where it is
+// (x, y, z); where it heads (a Dawnflare's end, Arc Lash's reach ahead; none for the rest); the foe it seeks (0 none);
+// the ticks it has lasted and its whole life in ticks; and how far it reaches (a ring's or a well's radius, a cone's
+// length).
+table Spell {
+  id: uint;
+  kind: ubyte;
+  caster: uint;
+  art: ubyte;
+  at: [double];
+  heads: [double];
+  seeks: uint;
+  age: uint;
+  life: uint;
+  radius: double;
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
 // her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
-// aloft, what happened in its fight since the last snapshot, and the fight's clock.
+// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -277,6 +298,7 @@ table Snapshot {
   balls: [Ball];
   naval: [Naval];
   fight_clock: double;
+  spells: [Spell];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the
@@ -382,6 +404,13 @@ table Gear {
   emblems: [ushort];
   emblem: ushort;
   emblems_sold: [ushort];
+  // The Art they wear (1 Storm, 2 Divine, 3 Shadow); each Art's Core, three slots an Art in the Arts' order, each its
+  // fragment's place in its Art's list (255 none); how far their Anima has charged, and each Tenet recharged, 0 to 1
+  // (1 ready), as the room's tick that sent them had it.
+  art: ubyte;
+  cores: [ubyte];
+  anima: double;
+  tenets: [double];
 }
 
 // What a room sends: exactly one of these is present.

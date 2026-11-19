@@ -4,6 +4,7 @@ import type { Fired } from '../rules/combatRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { Fighting } from './fighting.ts';
 import { Flashes } from './flashes.ts';
+import { aimRingMesh } from './casting.ts';
 import { type TelegraphMark, marksMesh } from './marks.ts';
 import { Sparks } from './sparks.ts';
 import { IMPACT_SPARKS, Tracers, othersArrows } from './tracers.ts';
@@ -43,7 +44,7 @@ export class FightEffects {
    * The marks to draw from an eye at `eye`, as `marksMesh` lays them from `origin`: every telegraphed blow, everyone
    * else's arrows, the sparks and the tracers. The player's own shots leave the weapon at `muzzleOf`'s point; the
    * tracers run on by `seconds` (none while the fight waits), a shot stopped by `blocks`, the ground or one of
-   * `bodies` (their feet) throwing sparks where it comes to rest.
+   * `bodies` (their feet) throwing sparks where it comes to rest; and Dusk Daggers' ring while it is aimed.
    */
   marks(
     fight: Fighting,
@@ -70,6 +71,7 @@ export class FightEffects {
     if (look) for (const head of this.tracers.ownHeads) this.sparks.trail(head, look, seconds);
     const traced = this.tracers.mesh(eye, fight.shots, fight.player, look, this.clock);
     const arrows = othersArrows(fight.shots, fight.player);
-    return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...more], origin);
+    const ring = fight.aimRing ? aimRingMesh(fight.aimRing) : [];
+    return marksMesh(telegraphs, arrows, this.sparks.flying, [...traced, ...ring, ...more], origin);
   }
 }

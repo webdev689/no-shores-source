@@ -2,6 +2,7 @@ import type * as flatbuffers from 'flatbuffers';
 import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
+import { type ArtState, artsOf } from './artMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -27,6 +28,12 @@ export const ASKS = {
   grantXp: 34,
   /** A status (its number in `slot`) on the player (`node` 0) or every foe (1), for `count` ticks or its own time. */
   grantStatus: 35,
+  /** The Test Ground's grant of the Anima full and both Tenets ready. */
+  grantArts: 36,
+  /** An Art worn, by its number in `column`; a fragment set, the Art in `column`, the slot (0 to 2) in `slot` and
+   *  the fragment's place in its Art's list (0 to 5) in `node`. */
+  wearArt: 40,
+  setCore: 41,
 } as const;
 
 /** An ask of a player's gear: what, and what it names: an item or Vestige by the player's number for it, a slot, a
@@ -144,6 +151,8 @@ export interface GearState {
   readonly emblems?: readonly number[];
   readonly emblem?: number;
   readonly emblemsSold?: readonly number[];
+  /** Their Arts: the Art worn, each Art's Core, and the Anima's and Tenets' charge. */
+  readonly arts?: ArtState;
 }
 
 /** No node chosen in a column, and no resource. */
@@ -243,6 +252,7 @@ export function gearOf(gear: Gear): GearState {
     emblems: Array.from(gear.emblemsArray() ?? []),
     emblem: gear.emblem(),
     emblemsSold: Array.from(gear.emblemsSoldArray() ?? []),
+    arts: artsOf(gear),
   };
 }
 

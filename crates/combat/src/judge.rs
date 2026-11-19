@@ -18,6 +18,9 @@ pub enum BlowKind {
     Swing(Stroke),
     Telegraph(Shape),
     Shot(Ranged),
+    /// A player's spell, by its number among the Arts' (1 Tempest to 9 Vanish, 10 a Duskraven's bolt): never parried or
+    /// guarded.
+    Spell(u8),
 }
 
 /// A blow on its way to a fighter: who struck it and from where, what it does, and what may stop it.

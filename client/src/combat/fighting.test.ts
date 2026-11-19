@@ -193,6 +193,7 @@ function fightByHand() {
       foes: [],
       events: [],
       shots,
+      spells: [],
     } as unknown as Snapshot);
   };
   const steps = fighting.steps(movement);
@@ -322,6 +323,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     balls: [],
     naval: [],
     fightClock: 0,
+    spells: [],
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));

@@ -89,6 +89,22 @@ export function glowRampAt(look: GlowElement, share: number): Rgb {
   return [from[0] + (to[0] - from[0]) * part, from[1] + (to[1] - from[1]) * part, from[2] + (to[2] - from[2]) * part];
 }
 
+/** Recolours `pixels` (RGBA8) in place into an element's glow by their brightness, the brightest white-hot and the
+ *  darkest its dark: a cast's light or spark in its Art's colour. With `only`, a byte a pixel, just those marked 1. */
+export function recolourToGlow(
+  pixels: Uint8Array | Uint8ClampedArray,
+  look: GlowElement,
+  only: Uint8Array | null = null,
+): void {
+  for (let start = 0; start + 3 < pixels.length; start += 4) {
+    if (!pixels[start + 3] || (only && only[start / 4] !== 1)) continue;
+    const light =
+      (0.2126 * (pixels[start] ?? 0) + 0.7152 * (pixels[start + 1] ?? 0) + 0.0722 * (pixels[start + 2] ?? 0)) / 255;
+    const [red, green, blue] = glowRampAt(look, 1 - light);
+    [pixels[start], pixels[start + 1], pixels[start + 2]] = [red * 255, green * 255, blue * 255].map(Math.round);
+  }
+}
+
 /** Each element's burst off a landed blow: how many motes, their speed (m/s) and life (s) between two, and how hard
  *  they are held up against gravity (m/s²): embers float, sparks fly and fall, cosmic motes hang. */
 export const GLOW_BURSTS: Readonly<

@@ -15,7 +15,7 @@ export const EVENT = {
   shielded: 12,
   shieldBroken: 13,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6 } as const;
+export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
 
 /** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, or
  *  one of no side of theirs. */

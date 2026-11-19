@@ -203,6 +203,8 @@ gives every one through one door, `Room::give`, for the status's own time unless
   shield takes its share. Only a swing makes a Veiled backstab.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
   fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
+- **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,
+  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]).
 - **On the wire.** A player's statuses travel in their fighter's numbers, after its action's: their browser predicts
   its own from them, and another browser reads a player's veil there. A foe's Expose, its Charge and the immunity after
   it cross with the foe ([[Server]]). Foes' plates and the player's vitals show them ([[Interface]]), and the
@@ -230,8 +232,7 @@ human limits ([[Foes]]).
 
 - Gear's power and the rest of its perks reach a blow in the rooms ([[Gear]]): a fight stepped alone, with no room, has its trims but not those.
 - Running costs no stamina.
-- Casting does no harm yet, and only the Test Ground gives statuses: the Arts' spells and the weapons' perks will give
-  them through the same door.
+- The weapons' perks give no statuses yet: they will through the same door as the Arts' spells ([[Arts]]).
 - A reload is not cut short by a dodge; a press made in one waits for it to end (8 ticks at most).
 - No hit-stop: the rules step in fixed ticks for everyone, so a blow cannot pause them; the Test Ground holds only
   the drawing ([[Test Ground]], [[The Attack Feel Is Tried in the Test Ground]]).

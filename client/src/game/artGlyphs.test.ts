@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { FRAGMENT_MAPS } from './artFragments.ts';
-import { EMBLEM_MAPS, PALETTE_LETTERS, SPELL_MAPS, artPalette, mapSvg } from './artGlyphs.ts';
+import { EMBLEM_MAPS, PALETTE_LETTERS, SPELL_MAPS, artPalette, mapSvg } from '../player/artGlyphs.ts';
 
 const ALL = { ...EMBLEM_MAPS, ...SPELL_MAPS, ...FRAGMENT_MAPS };
 

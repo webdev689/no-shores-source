@@ -49,7 +49,8 @@ animation in the Art's colour, and cannot start while staggered, Charged or down
 
 - **The Anima** fills over its base time, as a Destiny Super does, and 2% more with each kill; it is cast when full.
 - **The Tenets** each recharge over their own cooldown, after Destiny's grenade and class abilities.
-- **Keys**: Anima `F`, first Tenet `Q`, second Tenet `C`.
+- **Keys**: Anima `R`, first Tenet `Q`, second Tenet `G`: keys DFO's scheme leaves free, since the owner keeps its
+  controls ([[The Player Plays as in DFO]]); `Q` was the cosmetic cast.
 - Charge and cooldowns are kept by the room while the player is in it; a new room starts the Anima empty and the
   Tenets ready.
 

@@ -1,9 +1,10 @@
 // The Arts' pictures, drawn pixel by pixel as the elements' and the gear's glyphs are: each Art's emblem in a diamond,
 // as Destiny frames a subclass (Storm a forked bolt, Divine a sun with wings, Shadow a crescent holding a raven's
 // eye), and an icon for each spell. Each is drawn in its Art's element: an outline, a deep shade, the body, its light
-// and a white heat. The fragments' icons are in `artFragments.ts`.
+// and a white heat. The fragments' icons are in `game/artFragments.ts`.
 
-import { ELEMENTS } from '../player/gear.ts';
+import arts from '../../../content/arts/arts.json' with { type: 'json' };
+import { ELEMENTS } from './gear.ts';
 
 /** The letters a map draws with, each a colour of its Art's palette in turn; a dot is none. */
 export const PALETTE_LETTERS = 'abcde';
@@ -290,3 +291,15 @@ export const SPELL_MAPS: Readonly<Record<string, readonly string[]>> = {
     '............',
   ],
 };
+
+/** The pictures the HUD's ability bar draws an Art with, by its id, as SVG: its emblem in its diamond and its two
+ *  Tenets' icons; null for no Art. */
+export function abilityPictures(
+  id: number,
+): { readonly diamond: string; readonly tenets: readonly [string, string] } | null {
+  const art = arts.arts.find((each) => each.id === id);
+  const [first, second] = art?.tenets ?? [];
+  if (!art || !first || !second) return null;
+  const icon = (key: string) => mapSvg(SPELL_MAPS[key], art.element);
+  return { diamond: mapSvg(EMBLEM_MAPS[art.key], art.element), tenets: [icon(first.key), icon(second.key)] };
+}

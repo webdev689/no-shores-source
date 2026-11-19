@@ -16,6 +16,7 @@ import { PlayerFight } from '../combat/playerFight.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
+import { abilityPictures } from '../player/artGlyphs.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
@@ -41,6 +42,7 @@ import { startAimPanel } from './aimPanel.ts';
 import { AttackFeel, type DrawnFigure } from './attackFeel.ts';
 import { startPanel } from './panel.ts';
 import { startStatusPanel } from './statusPanel.ts';
+import { startArtsPanel } from './artsPanel.ts';
 import { SceneView } from './sceneView.ts';
 
 /** How fast a figure set turning round turns, in radians a second: a full turn in 8 seconds. */
@@ -158,6 +160,7 @@ async function start(): Promise<void> {
     [aimPlace, aimHeld] = [place, held];
   });
   startStatusPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
+  const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
   const feel = new AttackFeel(element<HTMLElement>('#panel'), combatRules, movement.tickSeconds);
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: Player) =>
@@ -221,7 +224,7 @@ async function start(): Promise<void> {
   otherPlayers.takeDresses(link.dressed);
   const steps = fighting.steps(movement);
   const playerFight = new PlayerFight(fighting, combatRules, player);
-  const hud = new Hud(element<HTMLElement>('#hud'));
+  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures);
   const effects = new FightEffects();
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
   // snapshots.
@@ -376,6 +379,7 @@ async function start(): Promise<void> {
         lost: link.lost,
         rejoining: link.rejoining,
         parryOpen: fighting.parryOpen,
+        abilities: fighting.abilities,
         crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
       },
       seconds,
@@ -386,6 +390,7 @@ async function start(): Promise<void> {
     showPanel(panelState(looks, hair, line + composing + failure));
     const atStall = Math.hypot(player.player.body.x - STALL.x, player.player.body.y - STALL.y) <= STALL_REACH;
     showGear({ gear, atStall, nodesInReach: nodesInReach(player.player.body, RESOURCE_NODES, gear) });
+    showArts(fighting.arts);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
