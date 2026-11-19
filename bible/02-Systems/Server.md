@@ -22,12 +22,14 @@ code:
   - crates/naval/src/wire.rs#parted
   - crates/bake/src/lib.rs#nodes_of
   - crates/bake/src/lib.rs#MARGIN_M
+  - crates/bake/src/lib.rs#lock
   - crates/protocol/messages.fbs
   - crates/protocol/src/lib.rs#read_input
   - crates/protocol/src/lib.rs#read_course
   - crates/protocol/src/lib.rs#snapshot_bytes
   - crates/room-wasm/src/lib.rs#room_input
   - crates/room-wasm/src/lib.rs#open_node
+  - crates/room-wasm/src/lib.rs#refusal
   - crates/room/src/garrison.rs#garrisoned
   - server/worker.ts#RoomHost
   - server/roomDoor.ts#startRoomDoor
@@ -208,8 +210,10 @@ A drawn node's section, spawns and boxes are its layout's: the bake settles ever
 city ([[Layouts]]), so the window is cut from the carved land. A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
 city terraces and the layouts' carving included; the boxes of the city and the layouts a body runs into there, each
-with its top and its underside; and, for a social space, the counters that serve a player's gear (the Reader's, the
-vaults', the Quartermaster's, the Armsmith's and the Tailor's). The bake takes about 15 s for the nine continents' 99
+with its top and its underside; for a social space, the counters that serve a player's gear (the Reader's, the
+vaults', the Quartermaster's, the Armsmith's and the Tailor's); and whether it is locked: each patrol area and mission
+the open list, `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"). The bake
+takes about 15 s for the nine continents' 99
 nodes, a few at a time, and writes about 14.9 MB in all, a patrol area's file the largest at about 0.46 MB (its rooms'
 and rock's boxes). `server`, `server:bundle` and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
 called `index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
@@ -286,7 +290,10 @@ so every decision is Rust and the shell only carries bytes and time.
   message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
-- A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
+- A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). A locked
+  node's room takes no one, at any seas: the room answers every join with none and says why (`refusal`), and the host
+  closes the socket with 4003 and those words, "<name> is locked". A landing, a gate and a company's join all come in
+  as a join, so none gets in. Should the
   room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
   sends every player the snapshot after each tick, and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
@@ -303,8 +310,8 @@ so every decision is Rust and the shell only carries bytes and time.
   1 again, the player standing where the room puts them, their dress sent again and what their hands hold kept, and
 every other figure drawn on from where the new room has it, though its clock starts again. The
   [[Test Ground]], the [[Game]]'s node rooms and sea, and a fleet each follow it so; at sea, and in a fleet, the ship
-  puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009)
-  is not joined again, and the page says why.
+  puts to sea again where she lies. A room that sends the player away for not keeping to the messages (1008, 1009),
+  or because its node is locked (4003), is not joined again, and the page says why.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
   with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
   rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the

@@ -294,7 +294,9 @@ lays them (`crates/room/tests/rooms_walked.rs`).
 ## Gates
 
 A gate's basin and an instance's way in are passages ([[Game]]): standing in one, the player is offered "Enter" the
-instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate.
+instance or "Return to" the patrol area (E), and goes through the veil to arrive at the other's way in or gate. A way
+into a locked node ([[World Map]], "Seen whole, reached by nodes") is shut: it offers "<name> is locked", and E there
+does nothing.
 
 ## In the browser
 
