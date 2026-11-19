@@ -29,14 +29,14 @@ test('a flame flickers gently: never above full, never below 84%', () => {
 });
 
 test('no lamp is lit by day, not even a carried one', () => {
-  assert.deepEqual(lampsRound([0, 0, 0], [place(5)], 'torch', 1, 0), []);
+  assert.deepEqual(lampsRound([0, 0, 0], [place(5)], { light: 'torch', feet: [0, 0, 0] }, 1, 0), []);
 });
 
-test('at night the carried light comes first, at the hand, then the nearest places from the eye', () => {
+test("at night the carried light comes first, at the carrier's hand, then the nearest places from the eye", () => {
   const places = [place(300, 1), place(20, 2), place(-50, 3)];
-  const lamps = lampsRound([10, 0, 1], places, 'lantern', 0, 0);
+  const lamps = lampsRound([10, 0, 1], places, { light: 'lantern', feet: [14, 3, 0.9] }, 0, 0);
   assert.equal(lamps.length, 4);
-  assert.deepEqual(lamps[0]?.fromEye, [0, 0, -0.5]);
+  assert.deepEqual(lamps[0]?.fromEye, [4, 3, 1]);
   assert.deepEqual(lamps[1]?.fromEye, [10, 0, 1]);
   assert.deepEqual(lamps[2]?.fromEye, [-60, 0, 1]);
   assert.deepEqual(lamps[3]?.fromEye, [290, 0, 1]);
@@ -45,15 +45,25 @@ test('at night the carried light comes first, at the hand, then the nearest plac
 
 test('only the nearest LAMPS_MOST are lit, a carried light among them', () => {
   const places = Array.from({ length: 40 }, (_unused, index) => place(index * 7));
-  const lamps = lampsRound([0, 0, 0], places, 'torch', 0, 1);
+  const lamps = lampsRound([0, 0, 0], places, { light: 'torch', feet: [0, 0, 0] }, 0, 1);
   assert.equal(lamps.length, LAMPS_MOST);
   assert.deepEqual(lamps.at(-1)?.fromEye, [(LAMPS_MOST - 2) * 7, 0, 2]);
 });
 
-test("the eye's place goes to the uniform wrapped, marked known; without one it is unknown", () => {
-  const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3]);
+test('a great fire farther off is lit before a nearer lantern whose light falls short of the eye', () => {
+  const fire: LampPlace = { at: [70, 0, 0], reachM: 60, light: [1, 0.6, 0.3], seed: 0 };
+  const lamps = lampsRound([0, 0, 0], [place(40), fire], null, 0, 0);
+  assert.deepEqual(
+    lamps.map((lamp) => lamp.fromEye[0]),
+    [70, 40],
+  );
+});
+
+test("the eye's place and the clouds' shift go to the uniform wrapped, marked known; without them, unknown", () => {
+  const known = skyNumbers(AFTERNOON, [], { eye: [WRAP_M + 5, -3], clouds: [-2, WRAP_M * 3 + 7] });
   const row = 12 * 4;
   assert.deepEqual([...known.slice(row, row + 4)], [0, 5, WRAP_M - 3, 1]);
+  assert.deepEqual([known[row + 4 + 7], known[row + 4 + 15]], [WRAP_M - 2, 7]);
   const unknown = skyNumbers(AFTERNOON, []);
   assert.deepEqual([...unknown.slice(row, row + 4)], [0, 0, 0, 0]);
 });

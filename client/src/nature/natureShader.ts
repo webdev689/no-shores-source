@@ -132,7 +132,8 @@ fn standing_of(vertex: Vertex, which: u32) -> Standing {
   offset += vec2f(cos(tilt_way), sin(tilt_way)) * tilt * local.z;
   // Gusts roll downwind across the land; each plant also rocks on its own beat, its leaves trembling.
   let gusting = 0.25 + 0.5 * frame.land.z;
-  let gust = 1.0 - gusting + gusting * sin(frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S);
+  let rolling = frame.wind.w + dot(foot.anchored, frame.wind.yz) * GUST_PER_M - frame.wind.x * GUST_PER_S;
+  let gust = 1.0 - gusting + gusting * sin(rolling);
   let sway = 0.35 * sin(frame.wind.x * 2.3 + item.look.w * 40.0);
   let bend = vertex.colour.a * form.thin.z * item.look.y * (gust + sway) * frame.land.y;
   offset += frame.wind.yz * bend;

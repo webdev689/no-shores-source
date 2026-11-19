@@ -455,7 +455,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
-    const carried = walker.you.dress.outfit.left;
+    const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands, carried });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));

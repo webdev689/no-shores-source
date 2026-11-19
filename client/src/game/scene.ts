@@ -182,8 +182,9 @@ export class GameScene {
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
       readonly atSea?: boolean;
-      /** The layer the player's left hand carries (`torch_l`, `lantern`): a light there lights round the eye. */
-      readonly carried?: string | null;
+      /** What the player's left hand carries (`torch_l`, `lantern`) and where their feet are (world metres): a light
+       *  there lights round them. */
+      readonly carried?: { readonly left: string | null; readonly feet: readonly [number, number, number] };
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -208,10 +209,11 @@ export class GameScene {
     const targets = this.targetsOf(size.width, size.height);
     const encoder = this.gpu.device.createCommandEncoder();
     // The lamps follow the daylight the sky last showed: a frame behind, which no eye can tell.
+    const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
       CITY_LAMPS.current,
-      carriedLight(more.carried),
+      light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,
     );

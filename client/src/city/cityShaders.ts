@@ -104,7 +104,7 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
-  // The plaza's flat stone holds puddles; walls and roofs are only darkened and sheened.
+  // Flat stone (the plaza, a flat roof) holds puddles; walls and sloping roofs are only darkened and sheened.
   let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95);
   let wet = max(sky_state.ambient_sky.w * 0.7, puddle);
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);

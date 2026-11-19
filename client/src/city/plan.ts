@@ -106,7 +106,7 @@ export function glowLamps(plan: CityPlan): LampPlace[] {
     .filter((solid) => solid.material === 'glow')
     .map((solid, index) => {
       const largest = Math.max(...solid.size);
-      const strength = Math.min(1.8, 1 + largest / 20);
+      const strength = Math.min(1.3, 1 + largest / 40);
       return {
         at: [solid.at[0], solid.at[1], solid.at[2] + solid.size[2] / 2],
         reachM: Math.min(60, 9 + 2 * largest),

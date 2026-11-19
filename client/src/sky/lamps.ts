@@ -22,8 +22,14 @@ const CARRIED = {
   torch: { reachM: 11, light: [1.0, 0.58, 0.26], flicker: 1 },
   lantern: { reachM: 13, light: [1.0, 0.74, 0.44], flicker: 0.4 },
 } as const;
-/** The carried light hangs a little under the eye, at the hand. */
-const HAND_FROM_EYE = [0, 0, -0.5] as const;
+/** The carried light is held at the hand, this high over the carrier's feet. */
+const HAND_M = 1.1;
+
+/** A light carried by someone standing with their feet at `feet` (world metres). */
+export interface Carried {
+  readonly light: 'torch' | 'lantern';
+  readonly feet: readonly [number, number, number];
+}
 
 /** The light a left hand's layer (`torch_l`, `lantern`) carries, or null for none. */
 export function carriedLight(left: string | null | undefined): 'torch' | 'lantern' | null {
@@ -47,33 +53,39 @@ export function flicker(seed: number, seconds: number, depth = 1): number {
 }
 
 /**
- * The lamps lit round the eye (world metres) now: the carried light first, at the hand, then the nearest places, at
- * most LAMPS_MOST in all, each flickering and dimmed as the daylight shows. None by day.
+ * The lamps lit round the eye (world metres) now: the carried light first, at the carrier's hand, then the places
+ * nearest the eye counting their reach, at most LAMPS_MOST in all, each flickering and dimmed as the daylight shows.
+ * None by day.
  */
 export function lampsRound(
   eye: readonly [number, number, number],
   places: readonly LampPlace[],
-  carried: 'torch' | 'lantern' | null,
+  carried: Carried | null,
   daylight: number,
   seconds: number,
 ): Lamp[] {
   const lit = lampsLit(daylight);
   if (lit <= 0) return [];
   const lamps: Lamp[] = [];
+  const fromEye = (point: readonly [number, number, number]): Rgb => [
+    point[0] - eye[0],
+    point[1] - eye[1],
+    point[2] - eye[2],
+  ];
   if (carried) {
-    const held = CARRIED[carried];
+    const held = CARRIED[carried.light];
     const shown = lit * flicker(0, seconds, held.flicker);
-    lamps.push({ fromEye: HAND_FROM_EYE, reachM: held.reachM, light: held.light.map((part) => part * shown) as Rgb });
+    const hand = fromEye([carried.feet[0], carried.feet[1], carried.feet[2] + HAND_M]);
+    lamps.push({ fromEye: hand, reachM: held.reachM, light: held.light.map((part) => part * shown) as Rgb });
   }
-  const fromEye = (place: LampPlace): Rgb => [place.at[0] - eye[0], place.at[1] - eye[1], place.at[2] - eye[2]];
   const nearest = places
-    .map((place) => ({ place, away: Math.hypot(...fromEye(place)) - place.reachM }))
+    .map((place) => ({ place, away: Math.hypot(...fromEye(place.at)) - place.reachM }))
     .sort((one, other) => one.away - other.away)
     .slice(0, LAMPS_MOST - lamps.length);
   for (const { place } of nearest) {
     const shown = lit * flicker(place.seed, seconds);
     lamps.push({
-      fromEye: fromEye(place),
+      fromEye: fromEye(place.at),
       reachM: place.reachM,
       light: place.light.map((part) => part * shown) as Rgb,
     });
