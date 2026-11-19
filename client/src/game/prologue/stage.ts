@@ -214,8 +214,14 @@ export class Stage {
 
   /** Plays a scene in order: each bark over its speaker's head, each run of lines together in the dialogue box (by
    *  itself in a cutscene, `auto`, else as the player presses on), and every line's emote over its speaker's head.
-   *  `heads` maps a speaker to the head that says it, where the head's name is not the speaker's own. */
-  async play(scene: string, auto = true, heads: Readonly<Record<string, string>> = {}): Promise<void> {
+   *  `heads` maps a speaker to the head that says it, where the head's name is not the speaker's own; `saying` hears
+   *  each line as it begins, for a beat whose camera answers what is said. */
+  async play(
+    scene: string,
+    auto = true,
+    heads: Readonly<Record<string, string>> = {},
+    saying: (line: Line) => void = () => undefined,
+  ): Promise<void> {
     const lines = this.parts.scenes[scene] ?? [];
     const { overheads, dialogue, cast } = this.parts;
     const playing = ++this.scenes;
@@ -227,6 +233,7 @@ export class Stage {
       if (line.kind === 'bark') {
         overheads.bark(head, line, cast);
         if (line.emote) overheads.emote(head, line.emote);
+        saying(line);
         index++;
         await wait(BARK_GAP_S);
         continue;
@@ -235,7 +242,10 @@ export class Stage {
       while (lines[index] && lines[index]?.kind !== 'bark') run.push(lines[index++] as Line);
       await dialogue.play(run, cast, {
         auto,
-        onLine: (said) => said.emote && overheads.emote(heads[said.who] ?? said.who, said.emote),
+        onLine: (said) => {
+          if (said.emote) overheads.emote(heads[said.who] ?? said.who, said.emote);
+          saying(said);
+        },
       });
     }
   }

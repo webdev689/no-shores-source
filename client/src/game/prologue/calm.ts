@@ -2,9 +2,10 @@
 // the fight to the Brig's deck, where the crew talk among the wrecks of the ships they beat; the lookout cuts the
 // mate off (the ram beat's first cry).
 import { Cues } from '../../cinema/cues.ts';
-import { type RailKey, railShot } from '../../cinema/rail.ts';
+import { lookAt, type RailKey, railShot } from '../../cinema/rail.ts';
 import type { AmbienceLevels } from '../../cinema/ambience.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
+import type { Line } from '../../speech/cast.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
 import { youAtHelm } from './helm.ts';
@@ -25,6 +26,13 @@ const DOWN_S = 3;
 const TALK_S = 3.2;
 const CUT_S = 1.3;
 const SETTLE_S = 20;
+/** The look out to the wrecks while the lookout speaks of them: how long the camera takes there and back, its lens,
+ *  and where it stands, behind his head and to one side, so he and the nearest wreck are both in the picture. */
+const LOOK_OUT_S = 1.4;
+const OUT_LENS = 0.55;
+const BEHIND_M = 3;
+const ASIDE_M = 1.1;
+const OVER_HEAD_M = 0.35;
 
 /** A camera kept with the Brig's deck (her frame), steadied so the picture does not heel with her. */
 export function onBrig(own: ShipPlace, keys: readonly RailKey[], time: number): Shot {
@@ -57,6 +65,9 @@ export class Calm implements Beat {
   /** The beaten ships where the fight left them; those going down settle on as the crew talk. */
   private readonly wrecks: readonly { readonly ship: Sailed; readonly settling: boolean }[];
   private since = 0;
+  /** When the lookout began to speak of the wrecks, and when the next line drew the camera back, or -1. */
+  private lookingOut = -1;
+  private lookedBack = -1;
   /** When the mate's last line began, or -1. */
   private cutFrom = -1;
   private skipped = false;
@@ -72,7 +83,14 @@ export class Calm implements Beat {
     stage.parts.ambience.set(CALM_SOUND, 4);
     story.lightning.striking = false;
     brig.way = 0;
-    this.cues = new Cues([[TALK_S, () => void stage.play('calm').then(() => this.lastLine())]]);
+    const said = (line: Line) => this.said(line);
+    this.cues = new Cues([[TALK_S, () => void stage.play('calm', true, {}, said).then(() => this.lastLine())]]);
+  }
+
+  /** The lookout's line turns the camera out to the wrecks he speaks of, and the line after it brings it back. */
+  private said(line: Line): void {
+    if (line.who === 'lookout' && this.lookingOut < 0 && this.wrecks.length > 0) this.lookingOut = this.since;
+    else if (this.lookingOut >= 0 && this.lookedBack < 0) this.lookedBack = this.since;
   }
 
   /** The mate's last line, which the lookout cuts into: said only while the calm still plays. */
@@ -108,8 +126,17 @@ export class Calm implements Beat {
     const own = ships[0]?.place;
     if (!own) throw new Error('the Brig is not sailing');
     const deck = onBrig(own, [{ at: 0, eye: [...DECK_VIEW.eye], look: [...DECK_VIEW.look] }], 0);
+    const down = eased(this.from, deck, this.since / DOWN_S);
+    const out = this.lookingOut >= 0 ? this.outToWrecks(own, ships.slice(1)) : null;
+    const shot = out
+      ? eased(
+          eased(down, out, (this.since - this.lookingOut) / LOOK_OUT_S),
+          down,
+          this.lookedBack >= 0 ? (this.since - this.lookedBack) / LOOK_OUT_S : 0,
+        )
+      : down;
     return {
-      shot: eased(this.from, deck, this.since / DOWN_S),
+      shot,
       ships,
       actors: [
         ...brig.crew(own, tick.clock, { gunner: 'idle', bosun: 'idle', lookout: 'idle' }),
@@ -119,5 +146,23 @@ export class Calm implements Beat {
       land: false,
       focus: [brig.x, brig.y],
     };
+  }
+
+  /** Over the lookout's shoulder to the nearest wreck, on a longer lens, so a ship beaten far off still reads. */
+  private outToWrecks(own: ShipPlace, wrecks: readonly { readonly place: ShipPlace }[]): Shot | null {
+    const head = this.story.brig.head(own, 'lookout');
+    const nearest = wrecks
+      .map((wreck) => wreck.place)
+      .sort((one, other) => Math.hypot(one.x - own.x, one.y - own.y) - Math.hypot(other.x - own.x, other.y - own.y))[0];
+    if (!head || !nearest) return null;
+    const [toX, toY] = [nearest.x - head[0], nearest.y - head[1]];
+    const far = Math.hypot(toX, toY) || 1;
+    const [alongX, alongY] = [toX / far, toY / far];
+    const eye: [number, number, number] = [
+      head[0] - alongX * BEHIND_M - alongY * ASIDE_M,
+      head[1] - alongY * BEHIND_M + alongX * ASIDE_M,
+      head[2] + OVER_HEAD_M,
+    ];
+    return { ...LENS, fov: OUT_LENS, eye, ...lookAt(eye, [nearest.x, nearest.y, nearest.z + 2]) };
   }
 }

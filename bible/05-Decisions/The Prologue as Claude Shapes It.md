@@ -36,7 +36,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The sea fight's end | Won when every pirate is beaten: sunk, going down, or struck; they never sail off; the Brig is never wrecked in it; the panel says how many are left | "destroying the ships trying to take you down", with no stall and no win without a fight |
 | The first cries | Two seconds into the sighting, once the camera looks down her deck | Every cry is heard with its speaker on screen |
 | The interrupt | The Lookout's "Ship to starboard!" cuts the First Mate off in his last line | "One crew member interrupts" |
-| The beaten ships in the calm | Where the fight left them: struck ones low and still, sinking ones settling on | The crew talk of the wreckage, so it is shown |
+| The beaten ships in the calm | Where the fight left them: struck ones low and still, sinking ones settling on; the camera looks out over the Lookout to the nearest while he speaks of them | The crew talk of the wreckage, so it is shown as they do |
 | The way through the wreck | A heap of debris across the way on from each zone, cleared when that zone's wave falls; climbing a closed heap brings the player back to the last checkpoint | "fighting through the linear wreckage, killing foes" |
 | A death in the wreck | "Fallen", and the player rises at the last checkpoint by themselves | The room raises them there; there is nothing to press |
 | The wreck's cries | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |

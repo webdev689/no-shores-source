@@ -18,6 +18,7 @@ import { CRY_S, inboundAt, Sighted } from './sighted.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import type { Beat } from './beat.ts';
+import type { Line } from '../../speech/cast.ts';
 
 const VIEW = { width: 1600, height: 900 };
 const STEP_S = 1 / 30;
@@ -29,11 +30,14 @@ function storied(options: { land?: LandWorker } = {}) {
   const said: Said[] = [];
   const done: string[] = [];
   const playing = new Map<string, () => void>();
+  /** What each scene played hears as its lines begin, for a test to say a line when it chooses. */
+  const saying = new Map<string, (line: Line) => void>();
   const clock = { now: 0 };
   const note = (what: string) => () => void done.push(what);
   const stage = {
-    play: (scene: string) => {
+    play: (scene: string, _auto?: boolean, _heads?: unknown, hears?: (line: Line) => void) => {
       said.push({ scene, at: clock.now });
+      if (hears) saying.set(scene, hears);
       return new Promise<void>((resolve) => playing.set(scene, resolve));
     },
     weatherTowards: (_to: unknown, seconds: number) => done.push(`weather ${seconds}`),
@@ -78,7 +82,7 @@ function storied(options: { land?: LandWorker } = {}) {
     }
     return frames;
   };
-  return { story, said, done, playing, run, clock };
+  return { story, said, done, playing, saying, run, clock };
 }
 
 /** How long a scene takes to say, roughly: a bark and the gap after it, each line typed and held. */
@@ -202,6 +206,38 @@ test('the calm keeps the beaten ships where they lie, the struck afloat and the 
   assert.ok(early[1] && late[1] && Math.abs(early[1].place.z - late[1].place.z) < 1e-9, 'the struck one lies still');
   assert.ok(early[2] && late[2] && late[2].place.z < early[2].place.z - 1, 'the other goes on down');
   assert.equal(late[2]?.place.x, 10_000);
+});
+
+test('as the lookout speaks of the wrecks the camera looks out over him to the nearest, and comes back after', () => {
+  const { story, saying, run } = storied();
+  const wrecks: Sailed[] = [
+    { who: 'far', hull: 'sloop', x: 10_900, y: 20_600, heading: 1, underWay: false, sinking: 0.1 },
+    // Astern of her, where the deck shot looking forward down her deck cannot see it.
+    { who: 'near', hull: 'sloop', x: 9_839, y: 20_191, heading: 2, underWay: false, sinking: 0.1 },
+  ];
+  const calm = new Calm(story, FROM, wrecks);
+  const onDeckOnly = run(calm, 4).at(-1)?.frame;
+  const astern = onDeckOnly?.ships?.[2]?.place;
+  assert.ok(
+    onDeckOnly && astern && !headOnView(onScreen(onDeckOnly.shot, VIEW, [astern.x, astern.y, astern.z + 2]), VIEW),
+  );
+  const lines = scenes.scenes.calm as readonly Line[];
+  const [lookout, mate] = [lines.find((line) => line.who === 'lookout'), lines.find((line) => line.who === 'mate')];
+  assert.ok(lookout && mate);
+  saying.get('calm')?.(lookout);
+  const out = run(calm, 1.6, 4).at(-1)?.frame;
+  assert.ok(out);
+  const near = out.ships?.[2]?.place;
+  assert.ok(near && near.x === 9_839, 'the nearest wreck is the second');
+  assert.ok(headOnView(onScreen(out.shot, VIEW, [near.x, near.y, near.z + 2]), VIEW), 'the nearest wreck in view');
+  const head = out.heads?.get('lookout');
+  assert.ok(head && headOnView(onScreen(out.shot, VIEW, head), VIEW), 'the lookout in view as he speaks');
+  saying.get('calm')?.(mate);
+  const back = run(calm, 1.6, 5.6).at(-1)?.frame.shot;
+  const own = story.sailing.frame([story.brig.sailed()], 0, 0, 0, undefined)[0]?.place;
+  const deck = own && onBrig(own, [{ at: 0, eye: [...DECK_VIEW.eye], look: [...DECK_VIEW.look] }], 0);
+  assert.ok(back && deck && Math.hypot(back.eye[0] - deck.eye[0], back.eye[1] - deck.eye[1]) < 0.5, 'back on deck');
+  assert.ok(back && Math.abs(back.fov - deck.fov) < 1e-6);
 });
 
 test('the ram opens where the calm left the camera, its cries on the view and the larger ship shown coming', () => {

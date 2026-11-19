@@ -7,7 +7,8 @@ import { HALO, TONES } from '../plus/tones.ts';
 
 const SHEET_ID = 'speech';
 /** The fight's vitals take the bottom left up to 354 px across, so the box keeps to the middle, clear of them on both
- *  sides, and stands over the sea bar at the screen's foot. */
+ *  sides, and stands over the sea bar at the screen's foot. It stands over the marks above heads, as a speaker's head
+ *  can be behind it. */
 const CLEAR_OF_VITALS_PX = 380;
 const BOX_WIDTH_PX = 660;
 const BOX_FOOT_PX = 104;
@@ -18,7 +19,7 @@ export function speechCss(): string {
 .speech-box {
   position: absolute; left: 50%; bottom: ${BOX_FOOT_PX}px; transform: translateX(-50%);
   width: min(${BOX_WIDTH_PX}px, calc(100vw - ${2 * CLEAR_OF_VITALS_PX}px)); min-width: 330px; box-sizing: border-box;
-  border-width: 2px; border-style: solid; pointer-events: none; }
+  border-width: 2px; border-style: solid; pointer-events: none; z-index: 1; }
 .speech-name {
   font-size: 22px; line-height: 33px; padding: 4px 22px 2px; color: ${TONES.brassHi};
   border-bottom-width: 1px; border-bottom-style: solid; text-shadow: 1px 1px 0 ${TONES.outline}; }

@@ -44,7 +44,7 @@ const SIDE_M = 0.6;
 export const KNEELS_AT_S = COME_AFTER_S + (FROM_M - KNEEL_M) / WALK_M_S;
 const SPEAKS_AFTER_S = 0.8;
 /** Her head over the ground kneeling and standing, and the point over it that her words and feelings stand on. */
-const KNEEL_HEAD_M = 1.2;
+const KNEEL_HEAD_M = 1.5;
 const STAND_HEAD_M = 1.7;
 const OVER_HEAD_M = 0.3;
 /** Getting up, and the walk up the shore together, and when it fades. */
