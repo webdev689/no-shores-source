@@ -4,7 +4,7 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
-import { plainDress } from './dressing.ts';
+import { type Dress, plainDress } from './dressing.ts';
 
 // A figure one pixel wide and two tall in each of the forge's five views, holding a sword in either fist.
 const cell = { cell: [1, 2], frames: 1, root: [0, 1] } as const;
@@ -57,7 +57,7 @@ test("one figure's warming leaves another's queued, and warms each view as drawn
   }
   // Each asked for the first time by a figure with no last card: composed already, or nothing to show.
   let asker = 100;
-  const ready = (dress: typeof armed, view: number, flip = false) =>
+  const ready = (dress: Dress, view: number, flip = false) =>
     forge.card(asker++, dress, 'guard', view, 0, flip) !== null;
   for (let view = 0; view < VIEWS; view++) {
     assert.ok(ready(armed, view), `the first figure's view ${view}`);

@@ -181,8 +181,7 @@ export class Walker {
   /** Shows the frame stepped: the first person's weapon, and the move the figure shows. In a fight (`fight`), both
    *  follow the fight's rules: a swing as the rules begin one, a shot while they let one go, the guard and the parry
    *  posed, and the figure held to what the fight holds it to, facing where its arms point, or a dodge the way it
-   *  goes. The hands zoom with the
-   *  view by `zoom`. */
+   *  goes. The hands zoom with the view by `zoom`. */
   show(controls: InputFrame, seconds: number, clock: number, fight: FightShown | null = null, zoom = 1): void {
     const { you, forge, firstPerson, player } = this;
     const body = shownBody(player);
