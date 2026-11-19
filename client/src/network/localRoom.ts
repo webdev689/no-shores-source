@@ -87,6 +87,11 @@ export class LocalRoom implements RoomLink {
     return this.door.standFoe(type, rank, x, y, facing, level);
   }
 
+  /** Sends every foe away at once, as a scene clears its stage. */
+  clearFoes(): void {
+    this.door.clearFoes();
+  }
+
   /** Sets where the next respawn stands the player: a checkpoint. */
   setSpawn(x: number, y: number): void {
     this.door.setSpawn(x, y);

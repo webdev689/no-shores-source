@@ -85,6 +85,8 @@ export interface RoomDoor {
    *  roster numbers them) on the top of the block under (x, y), facing `facing` (radians clockwise from north), its
    *  post there; a Boss stood so calls no one. Its number, or 0 when none stood. */
   standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+  /** A page alone: sends every foe away at once; false with no room on land. */
+  clearFoes(): boolean;
   /** A page alone: sets where the next respawn stands the player, a checkpoint; false with no room on land. */
   setSpawn(x: number, y: number): boolean;
   /** A page alone: stands a player at once on the top under (x, y), keeping their health; false for no such player. */
@@ -120,6 +122,7 @@ interface RoomExports {
   room_sloop(): bigint;
   room_roster(): bigint;
   room_stand_foe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+  room_clear_foes(): number;
   room_set_spawn(x: number, y: number): number;
   room_put_player(player: number, x: number, y: number): number;
   room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number): number;
@@ -196,6 +199,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
     standFoe: (type, rank, x, y, facing, level) => exports.room_stand_foe(type, rank, x, y, facing, level),
+    clearFoes: () => exports.room_clear_foes() === 1,
     setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
     putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
     standBlock: ({ minX, minY, maxX, maxY, top }) => exports.room_stand_block(minX, minY, maxX, maxY, top) === 1,

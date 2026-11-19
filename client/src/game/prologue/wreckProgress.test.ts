@@ -40,13 +40,28 @@ test('each zone along the path is reached in turn with its checkpoint, and never
 
 test('no more foes stand than may be alive at once; the rest wait until some fall', () => {
   const progress = new WreckProgress(layout);
-  const total = (zone: number) => layout.zones.slice(0, zone + 1).reduce((sum, found) => sum + found.wave.length, 0);
+  progress.frame(standing(0, { alive: ALIVE_MOST }), 0.016);
+  assert.deepEqual(progress.frame(standing(1, { alive: ALIVE_MOST }), 0.016).stand, [], 'six alive: nobody more');
+  for (const alive of [5, 3, 4]) {
+    const stood = progress.frame(standing(1, { alive }), 0.016).stand.length;
+    assert.equal(stood, ALIVE_MOST - alive, `${alive} alive`);
+  }
+});
+
+test('a body in the sea reaches no zone, and the sea brings no one back who lies dead', () => {
+  const progress = new WreckProgress(layout);
   progress.frame(standing(0), 0.016);
-  const first = progress.frame(standing(1, { alive: ALIVE_MOST }), 0.016);
-  assert.deepEqual(first.stand, [], 'six alive: nobody more');
-  let stood = 0;
-  for (let frame = 0; frame < 10; frame++) stood += progress.frame(standing(1, { alive: 5 }), 0.016).stand.length;
-  assert.ok(stood > 0 && stood <= total(2), `one by one as they fall: ${stood}`);
+  assert.equal(progress.frame({ ...standing(1), z: 0 }, 0.016).checkpoint, null);
+  assert.equal(progress.zone, 0);
+  for (let frame = 0; frame < 30; frame++)
+    assert.equal(progress.frame({ ...standing(0), z: 0, dead: true }, 0.1).bringBack, null);
+});
+
+test('once the boss fight begins, no wave still waiting comes', () => {
+  const progress = new WreckProgress(layout);
+  progress.frame(standing(0, { alive: ALIVE_MOST }), 0.016);
+  progress.beginBoss();
+  assert.deepEqual(progress.frame(standing(0, { alive: 0 }), 0.016).stand, []);
 });
 
 test('a fall into the sea is brought back to the last checkpoint after a moment, never a death', () => {

@@ -45,8 +45,6 @@ export interface WreckContext {
 
 /** Thule's place in the roster, the rank he comes in, and how many levels over the player he fights. */
 const THULE = { type: 12, rank: 5, over: 3 } as const;
-/** The room's ticks after the arena is cleared before Thule stands, so the clearing has been taken first. */
-const CLEARED_TICKS = 10;
 /** How far over a figure's feet its head's mark stands, metres. */
 const OVER_THE_HEAD_M = 2.1;
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
@@ -81,9 +79,10 @@ export class WreckRun {
   private readonly scenery: WreckScenery;
   private readonly progress: WreckProgress;
   private readonly level: { value: number };
-  /** Thule's number in the room, once he stands; the room tick the arena was cleared at, until he does. */
+  /** Thule's number in the room, once he stands. */
   private thule = 0;
-  private clearedAt: number | null = null;
+  /** The foes stood that no snapshot has shown yet: counted alive, so a wave never outruns the room's word. */
+  private readonly unseen = new Set<number>();
 
   private constructor(
     context: WreckContext,
@@ -162,15 +161,9 @@ export class WreckRun {
     for (const rules of [this.context.movement, this.combat]) rules.setCourse([...this.course, gate]);
     this.course.push(gate);
     this.scenery.gateStands = true;
-    this.fight.ask('clear');
-    this.clearedAt = this.fight.roomTick;
+    this.room.clearFoes();
+    this.unseen.clear();
     this.progress.beginBoss();
-  }
-
-  /** Stands Thule once the room has taken the clearing of the arena. */
-  private standThule(): void {
-    if (this.clearedAt === null || this.fight.roomTick < this.clearedAt + CLEARED_TICKS) return;
-    this.clearedAt = null;
     const [x, y] = this.layout.arena.thule;
     const { body } = this.context.walker.player;
     const facing = Math.atan2(body.x - x, -(body.y - y));
@@ -194,13 +187,16 @@ export class WreckRun {
   /** The level's progress this frame: checkpoints kept, waves stood, a fall into the sea brought back. */
   private advance(seconds: number): void {
     const { body } = this.context.walker.player;
-    const alive = [...this.fight.foes.values()].filter((kept) => kept.view.health > 0).length;
+    for (const id of this.fight.foes.keys()) this.unseen.delete(id);
+    const seen = [...this.fight.foes.values()].filter((kept) => kept.view.health > 0).length;
+    const alive = seen + this.unseen.size;
     const dead = this.fight.own?.action.kind === 'dead';
     const asks = this.progress.frame({ x: body.x, y: body.y, z: body.z, dead, alive, thule: this.boss }, seconds);
     if (asks.checkpoint) this.room.setSpawn(...asks.checkpoint);
     if (asks.bringBack) this.room.putPlayer(...asks.bringBack);
-    for (const foe of asks.stand) this.room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value);
-    this.standThule();
+    for (const foe of asks.stand)
+      this.unseen.add(this.room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value));
+    this.unseen.delete(0);
   }
 
   /** One frame: the player plays and fights (nothing pressed while `paused`, the fight's buttons only while
