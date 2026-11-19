@@ -54,6 +54,7 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Into a wall too high to grab | Climb it; at the lip, hang |
 | Hanging: `A` `D`, `W` | Shimmy along the lip; climb over it |
 | `Z` | Ready the weapon or put it away |
+| `1`, `2` | Draw the Melee loadout, or the Ranged ([[Gear]], "Loadouts"); a swap between them takes 0.4 s |
 | Right click, held | Swing; holding swings again. A swing readies a weapon put away. With a bow, a crossbow or a gun drawn: aim, over the shoulder or down the weapon's side, a bow charging |
 | Left click or `F`, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
 | `V` or Mouse5 | Dodge the way you move, or straight back |
@@ -180,7 +181,7 @@ Aurem and every material; what they wear and carry, each item's Attack, Defense 
 item's nodes, column by column, bought and chosen, with what a node costs or the XP it waits on; their Vestiges, those
 lying for them on the ground, and the vault; and the answer to their last ask.
 
-- **Asks.** Its buttons wear an item (a blade or mace in the off hand too), take one off, buy a node or choose among
+- **Asks.** Its buttons wear an item in its slot, take one off, buy a node or choose among
   those bought, dismantle, identify a Vestige, put into the vault and take out, and gather; a Fruit of Dagon is fed to
   an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes, carried
   by a tick of the player standing still.

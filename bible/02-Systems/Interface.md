@@ -219,7 +219,8 @@ never while a press is held. Each press is an ask the room answers.
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
 - **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped;
-  a weapon or a shield is its own layer drawn alone in the pose that holds it, so no hand hides its grip. Each is
+  a loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip; one in
+  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is
   fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a blade, a staff, a gun) is laid on its
   tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
   name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
@@ -231,8 +232,9 @@ never while a press is held. Each press is an ask the room answers.
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
-  Attack, Defense, Prestige and Fruit of Dagon. The weapons, the cloak and the emblem stand to its left, the armour to
-  its right, each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its
+  Melee and Ranged Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
+  emblem stand to its left, under a place kept for the worn Art, the armour to its right, each slot its item's picture
+  with its names. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows on hover or focus; a click opens its
   flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those
   kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
@@ -306,7 +308,7 @@ its Vestiges at the top. The room serves each ask only at its own counter ([[Gea
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
   right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
   an empty place a dark Vestige, as the inventory's.
-- **A vendor's stall**: the Quartermaster's armour or the Armsmith's weapons of the day ([[Gear]], "Vendors"). Each
+- **A vendor's stall**: the Quartermaster's armour or the Armsmith's loadouts of the day ([[Gear]], "Vendors"). Each
   ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
   the player cannot pay it; its card shows what it changes over the piece worn.
 - **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held

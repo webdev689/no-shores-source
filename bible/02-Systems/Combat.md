@@ -12,6 +12,8 @@ code:
   - crates/combat/src/shapes.rs#Telegraph
   - crates/combat/src/shots.rs#fly
   - crates/combat/src/arms.rs#arms_of
+  - crates/combat/src/fighter.rs#holding
+  - crates/combat/src/shots.rs#BRACE_GAP
   - crates/combat/src/tuning.rs#PARRY_WINDOW
 ---
 # Combat
@@ -28,10 +30,12 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   stamina, poise, what it is doing, its aim and its soft lock's target, and its side: the players', or an enemy
   faction's by its number ([[Enemies]]); fighters of different sides are each other's foes. What a fighter does to
   others is the host's to ask: its tick says when a blow lands, and the host finds who it reaches and judges it against them.
-- **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer or
-  staff, fists with nothing drawn, or a bow, crossbow, pistolet or thunderlock. The left hand holds a shield, a second
-  blade (the pair's blows take turns between the hands), a torch, or nothing; a two-handed weapon leaves it empty.
-  In a room a player holds only what their [[Gear]] puts in their hands. Metals do not change a fight. A blow carries
+- **What it holds.** The forge layers in its hands decide its arms: a dagger, sword, mace, flail, axe, warhammer,
+  staff or greatsword (a sword with both hands on its hilt), fists with nothing drawn, or a bow, crossbow, pistolet,
+  double pistolet (a pistolet in each hand) or thunderlock. The left hand holds a shield, a second blade or mace (the
+  pair's blows take turns between the hands), a torch, or nothing; a two-handed weapon leaves it empty. In a room a
+  player holds only what a loadout they wear puts in their hands ([[Gear]], "Loadouts"). Metals do not change a
+  fight. A blow carries
   its weapon's element, which only a foe's shield weighs, in the room ([[Gear]], "Elements and shields";
   [[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]).
 
@@ -45,6 +49,7 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 | Axe (two hands) | 2.0 | 22 | 1.44 | 20 | 27 / 66 |
 | Warhammer (two hands) | 2.0 | 24 | 1.73 | 22 | 27 / 67 |
 | Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 25 / 61 |
+| Greatsword (two hands) | 2.3 | 24 | 1.50 | 21 | 27 / 67 |
 
 - **Swings.** DFO's swing law times them: five strike frames, each a fifth of a second for a sword, shorter or longer
   by the weapon's handling and a two-handed weight; the blow lands as the third frame begins. Holding the button
@@ -89,6 +94,9 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
   landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
+- **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
+  (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
+  at once, but a swap begun as another was put away runs on.
 - **Gear's trim.** A fighter carries what its gear trims of these numbers ([[Gear]]): what a swing, a dodge (and a
   dodge with a weapon drawn) and a guard's blow cost; how fast stamina comes back, and again below half health; a
   reload's time, a bow's draw to full power and the pace kept while aiming; what its blows do (a riposte, a counter,
@@ -158,13 +166,16 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
   one coming down over a head meets its top.
 - **Reloading.** A shot comes again after the first person's firing and reload: a bow's 0.6 s, a crossbow's 1.6, a
-  pistolet's 1.9, a thunderlock's 2.2. While it reloads, the weapon stays pointed where it fired.
+  pistolet's 1.9, a thunderlock's 2.2. A double pistolet fires its right, then its left once the right's firing frames
+  have played (0.5 s, the pistolet's in first person), and only then reloads both, for 2.85 s, half again a
+  pistolet's. While it reloads, the weapon stays pointed where it fired.
 
 | Weapon | Quick shot | Aimed in full |
 |---|---|---|
 | Bow | 18 | 27, after a second's draw |
 | Crossbow | 26 | 39 |
 | Pistolet | 30 | 45 |
+| Double pistolet, each shot | 25.5 | 38.25 |
 | Thunderlock | 45 | 67.5 |
 
 ## Why these numbers
