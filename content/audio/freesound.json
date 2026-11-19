@@ -130,6 +130,582 @@
         3.0
       ],
       "made": "synthesiser"
+    },
+    {
+      "id": "swing.light",
+      "use": "A light weapon swung: a dagger, a sword or a mace",
+      "query": "sword swing whoosh",
+      "seconds": [
+        0.15,
+        0.8
+      ]
+    },
+    {
+      "id": "swing.heavy",
+      "use": "A heavy weapon swung: an axe, a flail, a warhammer or a greatsword",
+      "query": "heavy weapon swing whoosh",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "swing.staff",
+      "use": "A staff swung in both hands",
+      "query": "staff swing whoosh",
+      "seconds": [
+        0.15,
+        1.0
+      ]
+    },
+    {
+      "id": "hit.blade",
+      "use": "A blade cuts a body",
+      "query": "sword hit flesh",
+      "seconds": [
+        0.1,
+        0.8
+      ]
+    },
+    {
+      "id": "hit.blunt",
+      "use": "A mace, a hammer or a fist strikes a body",
+      "query": "punch impact body",
+      "seconds": [
+        0.1,
+        0.8
+      ]
+    },
+    {
+      "id": "block.blade",
+      "use": "A blow met by a blade",
+      "query": "sword clash",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "block.shield",
+      "use": "A blow met by a shield",
+      "query": "shield block",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "parry",
+      "use": "A parry: steel rings off steel",
+      "query": "sword parry",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "guard.break",
+      "use": "A guard broken",
+      "query": "metal impact heavy",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "crit",
+      "use": "A crit lands",
+      "query": "critical hit",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "kill",
+      "use": "A fighter falls slain",
+      "query": "body fall",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "weapon.draw",
+      "use": "A weapon drawn",
+      "query": "sword unsheathe",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "weapon.sheathe",
+      "use": "A weapon put away",
+      "query": "sword sheathe",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "bow.draw",
+      "use": "A bow drawn",
+      "query": "bow draw",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "bow.shot",
+      "use": "An arrow loosed",
+      "query": "bow release arrow",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "crossbow.shot",
+      "use": "A crossbow bolt loosed",
+      "query": "crossbow shot",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "crossbow.reload",
+      "use": "A crossbow wound again",
+      "query": "crossbow reload",
+      "seconds": [
+        0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "pistol.shot",
+      "use": "A pistolet fired",
+      "query": "flintlock pistol",
+      "seconds": [
+        0.2,
+        2.0
+      ]
+    },
+    {
+      "id": "musket.shot",
+      "use": "A thunderlock fired",
+      "query": "musket shot",
+      "seconds": [
+        0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "gun.reload",
+      "use": "A gun loaded again",
+      "query": "flintlock reload",
+      "seconds": [
+        0.5,
+        3.0
+      ]
+    },
+    {
+      "id": "gun.empty",
+      "use": "A gun with no shot left",
+      "query": "gun dry fire",
+      "seconds": [
+        0.05,
+        0.6
+      ]
+    },
+    {
+      "id": "arrow.hit",
+      "use": "An arrow or bolt strikes a body",
+      "query": "arrow hit flesh",
+      "seconds": [
+        0.1,
+        0.8
+      ]
+    },
+    {
+      "id": "arrow.stick",
+      "use": "An arrow sticks in wood or earth",
+      "query": "arrow impact wood",
+      "seconds": [
+        0.1,
+        0.8
+      ]
+    },
+    {
+      "id": "ball.hit",
+      "use": "A ball strikes stone",
+      "query": "bullet ricochet",
+      "seconds": [
+        0.1,
+        1.2
+      ]
+    },
+    {
+      "id": "shot.splash",
+      "use": "A shot falls in water",
+      "query": "small splash",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "step.ground",
+      "use": "A footstep on earth or grass",
+      "query": "footstep dirt",
+      "seconds": [
+        0.1,
+        0.6
+      ]
+    },
+    {
+      "id": "step.stone",
+      "use": "A footstep on stone",
+      "query": "footstep stone",
+      "seconds": [
+        0.1,
+        0.6
+      ]
+    },
+    {
+      "id": "step.wood",
+      "use": "A footstep on wood",
+      "query": "footstep wood",
+      "seconds": [
+        0.1,
+        0.6
+      ]
+    },
+    {
+      "id": "step.water",
+      "use": "A step wading through water",
+      "query": "footstep water",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "jump",
+      "use": "A jump",
+      "query": "cloth whoosh",
+      "seconds": [
+        0.1,
+        0.6
+      ]
+    },
+    {
+      "id": "land",
+      "use": "Landing from a jump or a fall",
+      "query": "landing thud",
+      "seconds": [
+        0.1,
+        0.8
+      ]
+    },
+    {
+      "id": "roll",
+      "use": "A dodge roll",
+      "query": "body roll",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "cast.charge",
+      "use": "An Anima gathering as it is cast",
+      "query": "magic charge",
+      "seconds": [
+        0.3,
+        1.5
+      ]
+    },
+    {
+      "id": "spell.tempest",
+      "use": "Tempest: the seeking orbs cast",
+      "query": "electric orb",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "spell.orb",
+      "use": "A Tempest orb bursts on what it seeks",
+      "query": "electric zap",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "spell.quicken",
+      "use": "Quicken: a ring of lightning at the feet",
+      "query": "electric whoosh",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "spell.arclash",
+      "use": "Arc Lash: lightning fanned through a cone",
+      "query": "lightning strike",
+      "seconds": [
+        0.2,
+        2.0
+      ]
+    },
+    {
+      "id": "spell.sunwell",
+      "use": "The Sunwell: a sun over a ring of light",
+      "query": "magic shimmer",
+      "seconds": [
+        0.5,
+        3.0
+      ]
+    },
+    {
+      "id": "spell.mend",
+      "use": "Mend: a burst of healing",
+      "query": "heal spell",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "spell.dawnflare",
+      "use": "The Dawnflare: a bird of fire",
+      "query": "fire whoosh",
+      "seconds": [
+        0.3,
+        2.5
+      ]
+    },
+    {
+      "id": "spell.duskraven",
+      "use": "The Duskraven called to the shoulder",
+      "query": "raven",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "spell.ravenbolt",
+      "use": "A Duskraven bolt flies",
+      "query": "dark magic bolt",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "spell.daggers",
+      "use": "Dusk Daggers strike in their ring",
+      "query": "magic blades",
+      "seconds": [
+        0.1,
+        1.2
+      ]
+    },
+    {
+      "id": "spell.vanish",
+      "use": "Vanish: a puff of dusk",
+      "query": "smoke poof",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "anima.storm",
+      "use": "Storm's Anima released",
+      "query": "thunder",
+      "seconds": [
+        0.5,
+        3.0
+      ]
+    },
+    {
+      "id": "anima.divine",
+      "use": "Divine's Anima released",
+      "query": "fire burst magic",
+      "seconds": [
+        0.5,
+        3.0
+      ]
+    },
+    {
+      "id": "anima.shadow",
+      "use": "Shadow's Anima released",
+      "query": "dark magic",
+      "seconds": [
+        0.5,
+        3.0
+      ]
+    },
+    {
+      "id": "element.blaze",
+      "use": "A Blaze blow bursts where it lands",
+      "query": "fire burst",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "element.volt",
+      "use": "A Volt blow bursts where it lands",
+      "query": "electric spark",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "element.cosmic",
+      "use": "A Cosmic blow bursts where it lands",
+      "query": "magic sparkle",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "finish.blaze",
+      "use": "A foe slain by Blaze burns away",
+      "query": "fire ignite",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "finish.volt",
+      "use": "A foe slain by Volt, lightning leaping on",
+      "query": "electric arc",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "finish.cosmic",
+      "use": "A foe slain by Cosmic implodes",
+      "query": "implosion",
+      "seconds": [
+        0.3,
+        2.0
+      ]
+    },
+    {
+      "id": "status.expose",
+      "use": "A foe Exposed",
+      "query": "debuff",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "status.charge",
+      "use": "A foe Charged and held",
+      "query": "electric stun",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "status.haste",
+      "use": "Haste given",
+      "query": "speed whoosh",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "status.linked",
+      "use": "Linked: healed in the Sunwell",
+      "query": "healing chime",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "status.veil",
+      "use": "Veiled",
+      "query": "stealth",
+      "seconds": [
+        0.2,
+        1.2
+      ]
+    },
+    {
+      "id": "shield.hit",
+      "use": "A foe's element shield struck",
+      "query": "energy shield hit",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "shield.break",
+      "use": "A foe's element shield breaks",
+      "query": "shield break",
+      "seconds": [
+        0.2,
+        1.5
+      ]
+    },
+    {
+      "id": "drop.land",
+      "use": "A Vestige or an Ammo box lands on the ground",
+      "query": "item drop",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "ammo.refill",
+      "use": "An Ammo crate opened, the Ranged weapon filled",
+      "query": "ammo pickup",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "foe.alert",
+      "use": "A foe notices the player",
+      "query": "alert",
+      "seconds": [
+        0.1,
+        1.0
+      ]
+    },
+    {
+      "id": "respawn",
+      "use": "Standing again at a spawn",
+      "query": "respawn",
+      "seconds": [
+        0.3,
+        2.0
+      ]
     }
   ]
 }

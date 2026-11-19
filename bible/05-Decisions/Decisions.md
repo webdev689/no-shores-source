@@ -115,6 +115,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]]
 - [[Attack Visuals Go Beyond the Limits]]
 - [[DFO's Blows on the Move Come Over Before the Merge]]
+- [[The World Sounds From the Sound Picker]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
