@@ -69,7 +69,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Enemies Come in Five Ranks, After Destiny]]
 - [[Enemy Factions Start With the Grey Tithe]]
 - [[project-final's AI Comes Over Onto DFO's]]
-- [[New Ships Are Planned in the Sloop's Style, After the System]]
 - [[The Enemies as Claude Builds Them]]
 - [[The Bars and the Fight Wear the Plus Kit]]
 - [[Foes Leash to Their Posts and Fall With Their Boss]]
@@ -119,6 +118,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[DFO's Own Sounds Join the Sound Sheet]]
 - [[The Duskraven Sounds With Fire Under Its Raven]]
 - [[Exposed, Charged and Haste Make No Sound]]
+- [[The Sea Is a Patrol Zone, and the Ship Is Gear]]
+- [[The Ships as Claude Shapes Them]]
+- [[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -132,3 +134,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]
+- [[New Ships Are Planned in the Sloop's Style, After the System]], by [[The Ships as Claude Shapes Them]]
