@@ -175,3 +175,12 @@ fn hulls_come_in_their_shares() {
         assert!((f64::from(*count) / f64::from(sum) - share).abs() < 0.01, "{counts:?}");
     }
 }
+
+#[test]
+fn a_time_that_is_no_number_finds_no_ship() {
+    let (_, _, traffic) = world();
+    for time in [f64::INFINITY, f64::NAN, 1e30] {
+        assert!(traffic.ships_near([2_800_000.0, 1_300_000.0], 400_000.0, time).is_empty());
+    }
+    assert!(traffic.ships_near([2_800_000.0, 1_300_000.0], f64::INFINITY, 1_795_000_000.0).is_empty());
+}

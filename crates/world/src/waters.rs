@@ -152,7 +152,16 @@ impl Waters {
         let rings: Vec<Vec<[f64; 2]>> = layout
             .continents
             .iter()
-            .map(|continent| continent.outline.iter().map(|point| [point.x as f64, point.y as f64]).collect())
+            .map(|continent| {
+                // A corner written twice would leave an edge of no length, with no side for land.
+                let mut ring: Vec<[f64; 2]> =
+                    continent.outline.iter().map(|point| [point.x as f64, point.y as f64]).collect();
+                ring.dedup();
+                while ring.len() > 1 && ring.first() == ring.last() {
+                    ring.pop();
+                }
+                ring
+            })
             .collect();
         let orientation = rings
             .iter()
@@ -242,37 +251,26 @@ impl Waters {
     }
 
     /// The nearest of these edges to a point; ties go to the lower continent index, then the lower edge.
-    fn nearest_of(&self, point: [f64; 2], candidates: impl Iterator<Item = u32>) -> Option<(f64, f64, Edge)> {
-        let mut best: Option<(f64, f64, Edge)> = None;
+    fn nearest_of(&self, point: [f64; 2], candidates: impl Iterator<Item = u32>) -> Option<(f64, Edge)> {
+        let mut best: Option<(f64, Edge)> = None;
         for candidate in candidates {
             let edge = self.edges[candidate as usize];
-            let (distance_squared, fraction) = to_segment(point, edge.from, edge.to);
-            let better = best.is_none_or(|(least, _, held)| {
+            let distance_squared = to_segment(point, edge.from, edge.to).0;
+            let better = best.is_none_or(|(least, held)| {
                 distance_squared < least
                     || (distance_squared == least && (edge.continent, edge.index) < (held.continent, held.index))
             });
             if better {
-                best = Some((distance_squared, fraction, edge));
+                best = Some((distance_squared, edge));
             }
         }
         best
     }
 
-    /// Whether the point lies on the land side of its nearest edge. Where the nearest coast is a corner, it is land
-    /// when it lies inside the corner's angle: on the land side of both edges at a corner bulging out, of either at one
-    /// cut in.
-    fn on_land(&self, point: [f64; 2], fraction: f64, edge: Edge) -> bool {
-        let ring = &self.rings[edge.continent];
-        let sign = self.orientation[edge.continent];
-        let landward = |from: [f64; 2], to: [f64; 2]| cross(from, to, point) * sign >= 0.0;
-        if fraction > 0.0 && fraction < 1.0 {
-            return landward(edge.from, edge.to);
-        }
-        let corner = if fraction <= 0.0 { edge.index } else { (edge.index + 1) % ring.len() };
-        let before = ring[(corner + ring.len() - 1) % ring.len()];
-        let (at, after) = (ring[corner], ring[(corner + 1) % ring.len()]);
-        let bulging = cross(before, at, after) * sign > 0.0;
-        if bulging { landward(before, at) && landward(at, after) } else { landward(before, at) || landward(at, after) }
+    /// Whether the point lies on the land side of its nearest edge's line. Where the nearest coast is a corner, the
+    /// point lies within the corner's outward or inward wedge, where both edges' lines agree, so either edge answers.
+    fn on_land(&self, point: [f64; 2], edge: Edge) -> bool {
+        cross(edge.from, edge.to, point) * self.orientation[edge.continent] >= 0.0
     }
 
     /// The nearest coast to a point, and whether the point is on land; none for a layout with no continent.
@@ -282,10 +280,10 @@ impl Waters {
             Some(bucket) => self.nearest_of(point, self.nearest_lists[bucket].iter().copied()),
             None => self.nearest_of(point, 0..self.edges.len() as u32),
         };
-        found.map(|(distance_squared, fraction, edge)| Nearest {
+        found.map(|(distance_squared, edge)| Nearest {
             continent: edge.continent,
             distance_squared,
-            land: distance_squared == 0.0 || self.on_land(point, fraction, edge),
+            land: distance_squared == 0.0 || self.on_land(point, edge),
         })
     }
 
@@ -312,15 +310,22 @@ impl Waters {
         let Some(seam) = self.seam else { return false };
         let Some(own) = seam.iter().position(|&continent| continent == nearest.continent) else { return false };
         let other = 1 - own;
-        let other_edges: Vec<u32> = match self.bucket(point) {
-            Some(bucket) => self.seam_lists[bucket][other].clone(),
-            None => (0..self.edges.len() as u32)
-                .filter(|&edge| self.edges[edge as usize].continent == seam[other])
-                .collect(),
+        let found = match self.bucket(point) {
+            Some(bucket) => self.nearest_of(point, self.seam_lists[bucket][other].iter().copied()),
+            None => self.nearest_of(
+                point,
+                (0..self.edges.len() as u32).filter(|&edge| self.edges[edge as usize].continent == seam[other]),
+            ),
         };
-        self.nearest_of(point, other_edges.into_iter()).is_some_and(|(distance_squared, ..)| {
+        found.is_some_and(|(distance_squared, ..)| {
             distance_squared.sqrt() - nearest.distance_squared.sqrt() <= SEAM_EXTRA_M
         })
+    }
+
+    /// A continent's water's holder off the seam; home waters for a continent the table does not name.
+    #[must_use]
+    pub fn holder(&self, continent: usize) -> Holder {
+        self.holders[continent]
     }
 
     /// The continent count of the layout the waters were made from.

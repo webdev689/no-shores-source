@@ -222,3 +222,21 @@ fn a_point_outside_the_frame_still_finds_its_water() {
     assert_eq!(waters.water_at(point).map(|water| water.continent), brute_force(&waters, point).map(|found| found.0));
     assert_eq!(Waters::new(&Layout::default()).water_at([0.0, 0.0]), None);
 }
+
+#[test]
+fn a_point_nearest_a_corner_is_land_only_inside_the_corner() {
+    let corner = |x: i64, y: i64| crate::geometry::Point::new(1_000_000 + x * 1_000, 1_000_000 + y * 1_000);
+    let outline = vec![corner(0, 0), corner(100, 0), corner(100, 50), corner(50, 50), corner(50, 100), corner(0, 100)];
+    let at = |x: f64, y: f64| [1_000_000.0 + x * 1_000.0, 1_000_000.0 + y * 1_000.0];
+    for ring in [outline.clone(), outline.into_iter().rev().collect()] {
+        let layout = Layout {
+            continents: vec![crate::layout::Continent { id: "ell".to_owned(), outline: ring, climate: None }],
+            isles: Vec::new(),
+        };
+        let waters = Waters::new(&layout);
+        assert!(waters.water_at(at(101.0, -1.0)).is_some(), "beyond a corner bulging out is sea");
+        assert!(waters.water_at(at(99.0, 1.0)).is_none(), "within a corner bulging out is land");
+        assert!(waters.water_at(at(51.0, 51.0)).is_some(), "in the notch of a corner cut in is sea");
+        assert!(waters.water_at(at(49.0, 49.0)).is_none(), "behind a corner cut in is land");
+    }
+}

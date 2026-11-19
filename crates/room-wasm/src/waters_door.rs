@@ -9,7 +9,7 @@ use serde_json::{Value, json};
 use std::cell::RefCell;
 use world::layout::Layout;
 use world::traffic::{Port, Traffic, TrafficShip};
-use world::waters::{Waters, holder_of, name_of};
+use world::waters::{Waters, name_of};
 
 /// `waters_at`'s answer when no waters are open.
 pub const NOT_OPEN: u32 = 256;
@@ -33,13 +33,17 @@ struct OpenRequest {
 /// `{ "waters": [{ "continent": <layout index>, "id", "name", "holder", "levels": [low, high] or null }],
 ///    "borders": [[a, b]], "ports": [{ "id", "name", "roadstead": [x, y] }],
 ///    "routes": [{ "from_port", "to_port", "length_m", "path": [[x, y]] }] }`, or `{ "error" }`.
-/// A holder is "home", "contested", "grey-tithe" or "pirates"; ports and routes are in the order given and planned.
+/// A holder is "home", "contested", "grey-tithe" or "pirates" (home for a continent the table does not name); ports
+/// and routes are in the order given and planned. A layout that breaks the world's rules is refused.
 #[must_use]
 pub fn open_waters(request: &[u8]) -> String {
     let request: OpenRequest = match serde_json::from_slice(request) {
         Ok(request) => request,
         Err(error) => return json!({ "error": error.to_string() }).to_string(),
     };
+    if let Some(problem) = world::check::check(&request.layout).first() {
+        return json!({ "error": problem.to_string() }).to_string();
+    }
     let waters = Waters::new(&request.layout);
     let traffic = Traffic::new(&request.layout, &waters, &request.ports);
     let table = table_of(&request.layout, &waters, &traffic);
@@ -57,7 +61,7 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
                 "continent": index,
                 "id": continent.id,
                 "name": name_of(&continent.id),
-                "holder": holder_of(&continent.id).map(|holder| holder.name()),
+                "holder": waters.holder(index).name(),
                 "levels": gear::world::island_levels(&continent.id).map(|(low, high)| [low, high]),
             })
         })

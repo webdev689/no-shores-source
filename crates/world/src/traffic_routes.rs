@@ -164,7 +164,8 @@ impl Mask {
     }
 
     /// The route between two roadsteads: from each to its nearest reachable clear cell, A* between those cells, then
-    /// string-pulled, each leg running as far ahead as it can without touching land. None when no path is found.
+    /// string-pulled, each leg running as far ahead as it can without touching land. None when no path is found, or
+    /// when even one step between neighbouring cells touches land (a rock smaller than a cell at its corner).
     pub(super) fn route(&self, coast: &[(Point, Point)], from: Point, to: Point) -> Option<Vec<Point>> {
         let cells = self.path(self.start_cell(coast, from)?, self.start_cell(coast, to)?)?;
         let mut points = vec![from];
@@ -174,6 +175,9 @@ impl Mask {
         let mut anchor = 0;
         while anchor + 1 < points.len() {
             let mut reach = anchor + 1;
+            if !leg_clear(coast, points[anchor], points[reach]) {
+                return None;
+            }
             while reach + 1 < points.len() && leg_clear(coast, points[anchor], points[reach + 1]) {
                 reach += 1;
             }

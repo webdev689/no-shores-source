@@ -14,7 +14,7 @@ export interface WaterInfo {
   readonly continent: number;
   readonly id: string;
   readonly name: string | null;
-  readonly holder: WaterHolder | null;
+  readonly holder: WaterHolder;
   readonly levels: readonly [number, number] | null;
 }
 
@@ -45,7 +45,7 @@ export interface WatersTable {
 /** The water at a point of sea: its continent's index, its holder (contested on the seam), and the seam. */
 export interface WaterAtPoint {
   readonly continent: number;
-  readonly holder: WaterHolder | null;
+  readonly holder: WaterHolder;
   readonly seam: boolean;
 }
 
@@ -141,9 +141,10 @@ function readShips(bytes: Uint8Array): TrafficShip[] {
 /** Starts the waters' rules on the room module, compiled; each start keeps its own instance. */
 export function startWatersRules(module: WebAssembly.Module): WatersRules {
   const exports = new WebAssembly.Instance(module, {}).exports as unknown as WatersExports;
-  let holders: (WaterHolder | null)[] = [];
+  let holders: WaterHolder[] = [];
+  let isOpen = false;
   const opened = () => {
-    if (holders.length === 0) throw new Error('the waters are not open');
+    if (!isOpen) throw new Error('the waters are not open');
   };
   return {
     open: (layoutText, ports) => {
@@ -158,6 +159,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
       }
       if (answer.error !== undefined) throw new Error(answer.error);
       holders = answer.waters.map((water) => water.holder);
+      isOpen = true;
       return {
         waters: answer.waters,
         borders: answer.borders,
@@ -176,7 +178,7 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
       if (byte === LAND_CELL) return null;
       const continent = byte & ~SEAM_BIT;
       const seam = (byte & SEAM_BIT) !== 0;
-      return { continent, seam, holder: seam ? 'contested' : (holders[continent] ?? null) };
+      return { continent, seam, holder: seam ? 'contested' : (holders[continent] ?? 'home') };
     },
     grid: (cellM) => {
       opened();

@@ -208,9 +208,16 @@ impl Traffic {
 
     /// Every ship within `radius_m` of `centre` at this world time, by id. Per route, the stretches of its path within
     /// the radius give the distances sailed that put a ship there, and those give the departures: never a walk over
-    /// every departure since 1970. Each candidate is then placed and judged exactly, as `ship` places her.
+    /// every departure since 1970. Each candidate is then placed and judged exactly, as `ship` places her. A time or
+    /// radius that is not a finite number, or a time past the last departure an id holds, finds none.
     #[must_use]
     pub fn ships_near(&self, centre: [f64; 2], radius_m: f64, time_s: f64) -> Vec<TrafficShip> {
+        let most_departures = (1_u64 << (64 - DEPARTURE_SHIFT)) as f64;
+        let usable = [centre[0], centre[1], radius_m, time_s].iter().all(|number| number.is_finite())
+            && time_s / DEPARTURE_EVERY_S < most_departures;
+        if !usable {
+            return Vec::new();
+        }
         let mut ids = BTreeSet::new();
         for (route_index, route) in self.routes.iter().enumerate() {
             for [start, end] in route.stretches_near(centre, radius_m) {
@@ -221,10 +228,10 @@ impl Traffic {
                     // any that fall outside.
                     let first = ((time_s - (high + 1.0) / SPEED_M_S) / DEPARTURE_EVERY_S).ceil().max(0.0);
                     let last = ((time_s - (low - 1.0) / SPEED_M_S) / DEPARTURE_EVERY_S).floor();
-                    let mut departure = first;
-                    while departure <= last {
-                        ids.insert(ship_id(route_index, direction, departure as u64));
-                        departure += 1.0;
+                    if last >= first {
+                        for departure in first as u64..=last as u64 {
+                            ids.insert(ship_id(route_index, direction, departure));
+                        }
                     }
                 }
             }
