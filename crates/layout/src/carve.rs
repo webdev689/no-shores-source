@@ -10,7 +10,7 @@ use crate::field::{Field, distance};
 use crate::paths::{Path, Tier, simplified};
 use crate::seat::Seating;
 use land::exact::rand01;
-use land::sculpts::{Sculpt, Sculpts};
+use land::sculpts::{Outcrop, Sculpt, Sculpts, Shape};
 
 /// How much wider than its area's reach a basin is, metres.
 const BASIN_ROOM_M: f64 = 32.0;
@@ -200,8 +200,8 @@ fn climb_clear(
 
 /// The mesas and spires of a layout's open ground: three to five in each wilds and arena, a pair at the rim of each
 /// other wide basin, never on a path, a building or another outcrop.
-fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<[f64; 4]> {
-    let mut found: Vec<[f64; 4]> = Vec::new();
+fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<Outcrop> {
+    let mut found: Vec<Outcrop> = Vec::new();
     let mut draw = 0_i64;
     let mut next = || {
         draw += 1;
@@ -239,10 +239,10 @@ fn outcrops(areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec
                 at[0] < west - margin || at[0] > east + margin || at[1] < north - margin || at[1] > south + margin
             });
             let clear_of_others =
-                found.iter().all(|other| distance([other[0], other[1]], at) > (other[2] + radius) * 1.5 + 6.0);
+                found.iter().all(|other| distance(other.at, at) > (other.radius + radius) * 1.5 + 6.0);
             let clear_of_middle = distance(at, area.at) > radius * 1.4 + 10.0;
             if clear_of_paths && clear_of_buildings && clear_of_others && clear_of_middle {
-                found.push([at[0], at[1], radius, tall]);
+                found.push(Outcrop { at, radius, tall, shape: Shape::Mesa, angle: 0.0 });
                 placed += 1;
             }
         }

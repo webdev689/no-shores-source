@@ -12,6 +12,7 @@ code:
   - crates/land/src/sites.rs#check_sites
   - crates/land/src/ground.rs#height_at
   - crates/land/src/ground_window.rs#window
+  - crates/land/src/outcrops.rs#stands
   - crates/land-wasm/src/lib.rs#land_open
   - crates/land-wasm/src/settled.rs#land_window
   - crates/land-wasm/src/settled.rs#land_city_plan
@@ -122,6 +123,17 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   wing. Neither is written when empty. Each sculpt measures its claim's edge
   once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no
   measuring, the same to the bit; a 2 km close-up of carved ground samples in about a quarter of a second.
+- A sculpt's outcrops stand on its floor, each a shape with a middle, a radius, a tall and an angle (clockwise from
+  north), written `[x, y, radius, tall, shape, angle]`; one written as four numbers is a mesa at angle 0. A mesa
+  stands in three steep bands in its rim's last three tenths, its top flat over the rest. Every other shape stands in
+  as many bands as fit, up to its most, each face rising over at least 8 m (`BAND_M`, two of the close-up's 4 m
+  samples), so the close-up draws its faces and never a point: a tor is a rounded stack of up to three domes leaning
+  along its angle; a whaleback a rounded ridge whose top runs 2.5 times its radius either way along its angle; a
+  crag up to four faces and ledges under a flat top over a quarter of its radius; a knoll up to three terraced faces
+  under a rounded top; a hummock one low face under a flat top over up to half its radius. Each edge wanders out by
+  up to 35 %, a mesa's over 9 m and the others' over three quarters of their radius, so a broad outcrop's faces are
+  no steeper than a small one's. An outcrop never rises past its tall or its reach (its spine's ends and its radius,
+  wandered out), by which the sculpt's buckets find it.
 
 The land's WebAssembly door gives the browser the same answers.
 
@@ -191,6 +203,8 @@ the painted coast and its height carried over the coast, so the browser draws th
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
   band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
 - A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.
+- A mesa keeps the profile old sculpts were written with: its bands are narrower than the close-up's samples, so
+  the close-up draws its rim as one slope.
 - A preview (`keep: false`) has no city settled on it.
 - A window keeps every course that reaches it whole, so a long river crossing it is carried end to end. Outside its
   rect a window still answers, but not as the whole ground would.

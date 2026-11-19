@@ -1,10 +1,12 @@
 //! The land a layout carves: round each patrol area's and instance's walkable network (its basins and the canyons
 //! between them) the ground is raised into a massif whose faces fall in stepped cliffs to the network's floor, so the
-//! layout's bounds are rock and its ways run through gorges; mesas and spires stand up inside its basins. A sculpt
-//! only raises the land, never on the sea or within a strand's width of the coast, and fades back into the natural
-//! land past its claim. Its maths is + - * /, square root and the exact noise, so every machine reads the same land.
+//! layout's bounds are rock and its ways run through gorges; outcrops (outcrops.rs) stand up inside its basins. A
+//! sculpt only raises the land, never on the sea or within a strand's width of the coast, and fades back into the
+//! natural land past its claim. Its maths is + - * /, square root and the exact noise, so every machine reads the
+//! same land.
 
 use crate::exact::{fbm, smooth};
+pub use crate::outcrops::{BAND_M, Outcrop, Shape};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -22,8 +24,9 @@ const CLIMB_EDGE_M: f64 = 2.0;
 const RUN_BLEND_M: f64 = 3.0;
 /// A bucket's side, metres, for finding the shapes near a point.
 const BUCKET_M: f64 = 32.0;
-/// How much a floor's edge wanders out from its stated reach, as a share: never in, so what was placed stays on it.
-const WANDER: f64 = 0.35;
+/// How much a floor's or outcrop's edge wanders out from its stated reach, as a share: never in, so what was placed
+/// stays on it.
+pub(crate) const WANDER: f64 = 0.35;
 /// The highest a floor's ceiling stands, metres: over any massif, and finite so a level blended under it stays a number.
 const CEILING_M: f64 = 1000.0;
 /// How far a floor reaches past its edge for its top's roughness and the ceiling it sets on other sculpts, metres:
@@ -32,7 +35,7 @@ const CEILING_M: f64 = 1000.0;
 const FLOOR_REACH_M: f64 = 3.0 * CLIFF_RUN_M;
 
 /// One layout's sculpt: its claim (where it reaches fully), the floor of its network as capsules (a segment and its
-/// half-width; a basin is a capsule of no length), the outcrops raised on that floor (`[x, y, radius, height]`), the
+/// half-width; a basin is a capsule of no length), the outcrops raised on that floor (`Outcrop`), the
 /// massif's height and its noise's seed, and its climbs: ways cut up the massif's faces and flats on its top, each a
 /// capsule `[x1, y1, x2, y2, half, from, to]` whose level runs from `from` to `to` of the massif's height along it (0
 /// the floor, 1 the top), a lookout one of no length. Its runs are cut into the rock as its climbs are, and its wings
@@ -41,7 +44,7 @@ const FLOOR_REACH_M: f64 = 3.0 * CLIFF_RUN_M;
 pub struct Sculpt {
     pub claim: Vec<[f64; 2]>,
     pub floors: Vec<[f64; 5]>,
-    pub outcrops: Vec<[f64; 4]>,
+    pub outcrops: Vec<Outcrop>,
     pub rise: f64,
     pub seed: u32,
     #[serde(default)]
@@ -136,9 +139,8 @@ impl From<Vec<Sculpt>> for Sculpts {
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.0.push(number as u32));
             }
-            for (number, &[x, y, radius, _]) in sculpt.outcrops.iter().enumerate() {
-                let reach = radius * (1.0 + WANDER);
-                spread([x - reach, y - reach, x + reach, y + reach], &mut |entry| entry.1.push(number as u32));
+            for (number, outcrop) in sculpt.outcrops.iter().enumerate() {
+                spread(outcrop.reach(), &mut |entry| entry.1.push(number as u32));
             }
             for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.climbs.iter().enumerate() {
                 let reach = half + CLIFF_RUN_M + RUN_BLEND_M;
@@ -402,12 +404,7 @@ impl Sculpts {
         let mut height = self.carved(number, x, y, true);
         if let Some((_, outcrops, ..)) = self.near[number].get(&(bucket(x), bucket(y))) {
             for &outcrop in outcrops {
-                let [middle_x, middle_y, radius, tall] = sculpt.outcrops[outcrop as usize];
-                let wander = 1.0 + WANDER * (0.5 + 0.5 * fbm(sculpt.seed ^ outcrop, x / 9.0, y / 9.0, 2));
-                let out = ((x - middle_x) * (x - middle_x) + (y - middle_y) * (y - middle_y)).sqrt() / wander;
-                let mesa = 1.0 - smooth(radius * 0.7, radius, out);
-                let band = (mesa * 3.0).floor();
-                height = height.max(tall * (band + smooth(0.6, 1.0, mesa * 3.0 - band)) / 3.0);
+                height = height.max(sculpt.outcrops[outcrop as usize].stands(sculpt.seed ^ outcrop, x, y));
             }
         }
         height * fade

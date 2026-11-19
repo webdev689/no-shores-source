@@ -6,7 +6,7 @@ use crate::field::{distance, ring_holds};
 use crate::paths::{Path, off_line};
 use crate::pieces::Kit;
 use city::solids::{Material, Shape, Solid};
-use land::sculpts::Sculpts;
+use land::sculpts::{Outcrop, Sculpts};
 
 /// How far apart the heaps lie along a cliff's foot, and the share of them left bare, metres.
 const HEAP_EVERY_M: f64 = 11.0;
@@ -122,10 +122,9 @@ fn heap(kit: &mut Kit, carved: &Sculpts, foot: [f64; 2], inward: [f64; 2]) {
     }
 }
 
-/// Boulders fallen at each outcrop's foot (`[x, y, radius, height]`, the sculpt's), on the floor where its face meets
-/// it; none on a path.
-pub fn clad(kit: &mut Kit, outcrops: &[[f64; 4]], paths: &[Path], carved: &Sculpts) {
-    for &[x, y, radius, _] in outcrops {
+/// Boulders fallen at each outcrop's foot (the sculpt's), on the floor where its face meets it; none on a path.
+pub fn clad(kit: &mut Kit, outcrops: &[Outcrop], paths: &[Path], carved: &Sculpts) {
+    for &Outcrop { at: [x, y], radius, .. } in outcrops {
         for _ in 0..3 + (kit.draw() * 3.0) as u32 {
             let angle = kit.draw() * std::f64::consts::TAU;
             let (sine, cosine) = land::exact::sin_cos(angle);

@@ -7,7 +7,7 @@ fn sculpt() -> Sculpts {
     Sculpts::from(vec![Sculpt {
         claim,
         floors: vec![[0.0, 0.0, 0.0, 0.0, 60.0], [0.0, 0.0, 300.0, 0.0, 12.0]],
-        outcrops: vec![[20.0, 20.0, 10.0, 12.0]],
+        outcrops: vec![Outcrop { at: [20.0, 20.0], radius: 10.0, tall: 12.0, shape: Shape::Mesa, angle: 0.0 }],
         rise: 30.0,
         seed: 7,
         climbs: vec![[60.0, -40.0, 180.0, -40.0, 4.0, 0.0, 1.0], [180.0, -40.0, 180.0, -40.0, 10.0, 1.0, 1.0]],
@@ -226,4 +226,128 @@ fn the_massif_has_no_step_at_a_bucket_edge_or_beside_a_climbs_top() {
         }
     }
     assert!(worst.0 < STRATA_STEP_M, "a step of {:.2} m at {:.2},{:.2}", worst.0, worst.1, worst.2);
+}
+
+const SHAPES: [Shape; 6] = [Shape::Mesa, Shape::Tor, Shape::Whaleback, Shape::Crag, Shape::Knoll, Shape::Hummock];
+
+/// One outcrop standing alone in a basin wide enough that the land round it is floor.
+fn standing(outcrop: Outcrop) -> Sculpts {
+    Sculpts::from(vec![Sculpt {
+        claim: vec![[-500.0, -500.0], [500.0, -500.0], [500.0, 500.0], [-500.0, 500.0]],
+        floors: vec![[0.0, 0.0, 0.0, 0.0, 320.0]],
+        outcrops: vec![outcrop],
+        rise: 30.0,
+        seed: 7,
+        climbs: Vec::new(),
+        runs: Vec::new(),
+        wings: Vec::new(),
+    }])
+}
+
+/// The land along a line through an outcrop's middle, `way` (along its angle, or across it with `across`), every
+/// 0.25 m out to its reach either side: how long a stretch of it stands, stands within a tenth of the tall of the
+/// line's highest point, and stands at its full tall, metres.
+fn line_through(sculpts: &Sculpts, outcrop: &Outcrop, across: bool) -> (f64, f64, f64) {
+    let (sine, cosine) = crate::exact::sin_cos(outcrop.angle);
+    let way = if across { [cosine, sine] } else { [sine, -cosine] };
+    let [west, north, east, south] = outcrop.reach();
+    let out = (east - west).max(south - north);
+    let heights: Vec<f64> = (-(out * 4.0) as i32..=(out * 4.0) as i32)
+        .map(|step| {
+            let along = f64::from(step) * 0.25;
+            sculpts.raise(outcrop.at[0] + way[0] * along, outcrop.at[1] + way[1] * along, 1000.0)
+        })
+        .collect();
+    let highest = heights.iter().copied().fold(0.0, f64::max);
+    let length = |test: &dyn Fn(f64) -> bool| heights.iter().filter(|&&height| test(height)).count() as f64 * 0.25;
+    (
+        length(&|height| height > 0.0),
+        length(&|height| height >= highest - outcrop.tall * 0.1),
+        length(&|height| height >= outcrop.tall - 1e-9),
+    )
+}
+
+#[test]
+fn every_shape_holds_its_bands_on_the_close_up_grid() {
+    for shape in SHAPES {
+        for radius in [12.0, 30.0] {
+            let outcrop = Outcrop { at: [3.3, -2.1], radius, tall: 10.0, shape, angle: 0.7 };
+            let sculpts = standing(outcrop);
+            let band = outcrop.tall / f64::from(outcrop.bands());
+            if radius > 20.0 && matches!(shape, Shape::Tor | Shape::Crag | Shape::Knoll) {
+                assert!(outcrop.bands() >= 2, "a broad {shape:?} stands in bands");
+            }
+            // The mesa keeps the profile old sculpts were written with, its whole rise in its rim's last three tenths:
+            // old_sculpts.rs holds it to the bit, and its bands are narrower than the close-up's. Every other shape's
+            // faces are `BAND_M` across, two samples, so no step between neighbours climbs near a whole band.
+            if shape != Shape::Mesa {
+                let [west, north, east, south] = outcrop.reach();
+                let height = |column: i32, row: i32| {
+                    sculpts.raise(west + 1.3 + f64::from(column) * 4.0, north + 0.7 + f64::from(row) * 4.0, 1000.0)
+                };
+                let (columns, rows) = (((east - west) / 4.0) as i32 + 1, ((south - north) / 4.0) as i32 + 1);
+                for column in 0..columns {
+                    for row in 0..rows {
+                        let here = height(column, row);
+                        for there in [height(column + 1, row), height(column, row + 1)] {
+                            let step = (there - here).abs();
+                            assert!(step < band * 0.8, "{shape:?} {radius}: {step:.2} m over 4 m, its band {band:.2}");
+                        }
+                    }
+                }
+            }
+            let (along, along_top, _) = line_through(&sculpts, &outcrop, false);
+            let (wide, across_top, flat) = line_through(&sculpts, &outcrop, true);
+            match shape {
+                Shape::Mesa => {
+                    assert!(flat >= wide * 0.5, "a mesa's top is flat over half its width: {flat} of {wide}")
+                }
+                Shape::Tor | Shape::Knoll => {
+                    assert!(along_top >= 4.0 && across_top >= 4.0, "{shape:?}: rounded {along_top} {across_top}");
+                    assert!(flat < 1.0, "{shape:?}: a dome, not a flat top: {flat}");
+                }
+                Shape::Whaleback => {
+                    assert!(along_top >= 2.5 * 2.0 * radius, "a whaleback's top runs long: {along_top} by {wide}");
+                    assert!(along > 2.5 * wide, "and it is long along its angle: {along} by {wide}");
+                }
+                Shape::Crag | Shape::Hummock => assert!(flat >= 4.0, "{shape:?}: its top flat over a sample: {flat}"),
+            }
+        }
+    }
+}
+
+#[test]
+fn a_shape_never_rises_past_its_tall_or_off_its_reach() {
+    for shape in SHAPES {
+        for (radius, angle) in [(12.0, 0.0), (30.0, 2.2), (7.0, 4.1)] {
+            let outcrop = Outcrop { at: [-14.6, 9.2], radius, tall: 10.0, shape, angle };
+            let sculpts = standing(outcrop);
+            let [west, north, east, south] = outcrop.reach();
+            let mut highest = 0.0_f64;
+            for column in 0..=((east - west + 40.0) as i32) {
+                for row in 0..=((south - north + 40.0) as i32) {
+                    let (x, y) = (west - 20.0 + f64::from(column), north - 20.0 + f64::from(row));
+                    let height = sculpts.raise(x, y, 1000.0);
+                    assert!((0.0..=outcrop.tall).contains(&height), "{shape:?}: {height} m at {x},{y}");
+                    let off = x < west || x > east || y < north || y > south;
+                    assert!(!off || height == 0.0, "{shape:?} rises {height} m off its reach at {x},{y}");
+                    highest = highest.max(height);
+                }
+            }
+            assert!(highest > outcrop.tall * 0.98, "{shape:?} stands its tall: {highest}");
+        }
+    }
+}
+
+#[test]
+fn an_outcrop_is_written_with_its_shape_and_read_from_four_numbers_as_a_mesa() {
+    let old: Outcrop = serde_json::from_str("[1.0, 2.0, 3.0, 4.0]").unwrap();
+    assert_eq!(old, Outcrop { at: [1.0, 2.0], radius: 3.0, tall: 4.0, shape: Shape::Mesa, angle: 0.0 });
+    let tor = Outcrop { at: [1.0, 2.0], radius: 3.0, tall: 4.0, shape: Shape::Tor, angle: 0.5 };
+    let text = serde_json::to_string(&tor).unwrap();
+    assert_eq!(text, r#"[1.0,2.0,3.0,4.0,"tor",0.5]"#);
+    assert_eq!(serde_json::from_str::<Outcrop>(&text).unwrap(), tor);
+    for wrong in ["[1.0, 2.0, 3.0]", "[1.0, 2.0, 3.0, 4.0, 0.5]", r#"[1.0, 2.0, 3.0, 4.0, "spire", 0.5]"#] {
+        assert!(serde_json::from_str::<Outcrop>(wrong).is_err(), "{wrong} is refused");
+    }
 }
