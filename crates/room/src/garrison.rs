@@ -384,3 +384,7 @@ mod gird_tests;
 #[cfg(test)]
 #[path = "leash_tests.rs"]
 mod leash_tests;
+
+#[cfg(test)]
+#[path = "crowd_tests.rs"]
+mod crowd_tests;

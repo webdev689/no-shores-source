@@ -1,7 +1,7 @@
 //! What the foes of a room share: for each target, who holds the turns to fight it hand to hand and to shoot at it,
-//! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in
-//! whatever the count. And the posts shooters hold, so no two take one place, and the tick one last picked a post, so
-//! only one picks a tick.
+//! and since when each of the rest has waited. The longest waiter goes in next; past its patience, a foe goes in one
+//! over the count, never more, so a crowd's patience cannot pile it onto its target. And the posts shooters hold, so no
+//! two take one place, and the tick one last picked a post, so only one picks a tick.
 
 use crate::director::Caps;
 use combat::FighterId;
@@ -67,8 +67,8 @@ impl Board {
     }
 
     /// Takes a token of its kind for a waiting foe if one is free under `caps` and nobody of its kind has waited
-    /// longer, or, past `patience` ticks of waiting, whatever the count. Answers whether it holds one. A holder keeps
-    /// its token when the caps drop, until it hands it on.
+    /// longer, or, past `patience` ticks of waiting, one over the cap at most. Answers whether it holds one. A holder
+    /// keeps its token when the caps drop, until it hands it on.
     pub fn take(
         &mut self,
         target: FighterId,
@@ -84,11 +84,12 @@ impl Board {
             return true;
         }
         let since = fight.waiting.get(&foe).map_or(tick, |&(since, _)| since);
-        let free = fight.tokens(ranged).len() < cap;
+        let out = fight.tokens(ranged).len();
+        let free = out < cap;
         let first = !fight.waiting.iter().any(|(other, &(other_since, other_ranged))| {
             *other != foe && other_ranged == ranged && other_since < since
         });
-        if !((free && first) || tick.saturating_sub(since) >= patience) {
+        if !((free && first) || (tick.saturating_sub(since) >= patience && out <= cap)) {
             return false;
         }
         fight.tokens(ranged).insert(foe, tick);
@@ -134,6 +135,18 @@ impl Board {
             return true;
         }
         false
+    }
+
+    /// How many of the foes waiting for a melee turn at `target` have waited longer than this one (the lower number
+    /// first on a tie): its place in the line, 0 for the next to go in.
+    #[must_use]
+    pub fn in_line(&self, target: FighterId, foe: FighterId) -> usize {
+        let Some(fight) = self.fights.get(&target) else { return 0 };
+        let Some(&(since, _)) = fight.waiting.get(&foe) else { return 0 };
+        let before = |(other, &(other_since, ranged)): (&FighterId, &(u64, bool))| {
+            !ranged && (other_since, *other) < (since, foe)
+        };
+        fight.waiting.iter().filter(|&entry| before(entry)).count()
     }
 
     /// How many melee and ranged tokens `target` has out.

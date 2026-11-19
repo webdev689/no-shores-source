@@ -90,7 +90,9 @@ phases) is [[Enemies]].
 - **Moving.** A foe faces a bearing of its own and turns at 320 degrees a second; walking somewhere it turns first and
   steps only within 45 degrees of its way, so no foe walks backwards. It runs to a spot more than 5 m off. It finds its
   way by the room's routes, and stops by its distance to the target, never to a route's corner. Foes of one side steer
-  apart inside 1.2 m of each other, pushed at up to 0.7 of a walk; nothing is moved but by its own controls.
+  apart inside 1.2 m of each other, pushed at up to 0.7 of a walk, and the part of a foe's move that walks into an ally
+  turns aside round it, all of it within 0.8 m, so a foe going in slips past an ally rather than through it. Nothing
+  is moved but by its own controls.
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place at its post
   ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands 50 m from that place, or off the
   room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level it has), it gives its fight up
@@ -105,18 +107,26 @@ phases) is [[Enemies]].
   back first) walks home the same way, healing (from 20 m, about 5 s). On this walk it heeds what it sees and hears
   as ever: they raise its awareness, and once it is alert it takes its target or searches again; short of that it
   walks on home, so a passing stir never leaves it standing short of its post. Either walk home takes a Boss or a
-  Miniboss back to its first phase, and the foes it called fall ([[Enemies]]).
+  Miniboss back to its first phase, and the foes it called fall ([[Enemies]]). With nothing stirring it, a garrison
+  foe keeps to its place: one a stir drew off, or an ally walking past moved, walks back to it once idle.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). A holder walks in to its reach, squares up within 22.5 degrees, waits 0.3
   to 0.9 s and swings once; then it hops back for at most 0.4 s, holds its ground 0.8 to 1.6 s, and hands its turn
-  on: the foe that has waited longest goes next, and one that has waited 6 s goes in whatever the count. The rest stand
-  on a ring 1.5 m outside their reach, with 0.6 m of give, and circle it slowly toward their own place on it, which
-  starts where each stood and **flanks**: it drifts 0.4 radians a second away from where the target faces, out to 100
-  degrees either side of its face, and stops short of the next foe on the ring (dead ahead, it takes a side by its
-  number). A target who turns its back on a waiting foe (more than 110 degrees) near the ring, or walks in on one
-  inside the ring's near edge, is open to it without a turn, but to one such foe at a time, and it goes on fighting
-  while the target stays that close. A foe that blocks holds its guard up on the ring while it waits its turn, as a
-  shield-bearer does. A holder going in takes the shortest way.
+  on: the foe that has waited longest goes next, and one that has waited 6 s goes in, one over the count at most, so
+  a crowd's patience never piles it onto its target. The rest stand on a ring 1.5 m outside their reach, with 0.6 m of
+  give, and circle it slowly toward their own place on it, which starts where each stood and **flanks**: it drifts 0.4
+  radians a second away from where the target faces, out to 100 degrees either side of its face, and stops 2.5 m short
+  of the next foe on the ring (dead ahead, it takes a side by its number). A target who turns its back on a waiting
+  foe (more than 110 degrees) near the ring, or walks in on one inside the ring's near edge, is open to it without a
+  turn, but to one such foe at a time, and it goes on fighting while the target stays that close. A foe that blocks
+  holds its guard up on the ring while it waits its turn, as a shield-bearer does. A holder going in takes the
+  shortest way.
+- **Room on the ring.** The waiting keep apart. A ring holds as many as stand 2.5 m apart round it; the rest, in the
+  order they wait, stand on a ring 2.5 m farther out, and so on, so the next to go in stand nearest. Nearer than 2.5 m
+  to the next on its ring, a foe's place moves toward the middle of the room between its neighbours, so a crowded ring
+  evens out. A waiting foe stands on its ring's own line, not merely within its give: inside the ring once the beat
+  after its blow is over, it steps back out at 0.4 of a walk. From afar it makes for its own place on the ring rather
+  than for its target, so the waiting come in spread round it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
   the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each
@@ -207,7 +217,6 @@ more often than an Elite's) and the three of each Boss, its own, are [[Enemies]]
 - A wind-up goes on when its foe changes target (DFO's breaks it).
 - A shot is taken to leave as the room says it was loosed; a draw is not read.
 - Flanking stops at 100 degrees, short of a turned back.
-- A foe only stirred, never alert, walks up to 3 m toward the stir and stays where it stopped: only a search's end
-  or a leash walks a garrison foe home.
+- A foe with no post, only stirred and never alert, walks up to 3 m toward the stir and stays where it stopped.
 - Walking back to its post after a leash a foe heeds no one, so another player may walk beside it unopposed until they
   strike it.

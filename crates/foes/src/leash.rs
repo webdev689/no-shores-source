@@ -12,7 +12,7 @@ use crate::react::Reactions;
 use crate::senses::Here;
 use crate::shoot::Bow;
 use crate::steer::{Ask, way_to};
-use crate::tuning::{HOME_FACED, HOME_REACHED, LEASH, SQUARING_PACE};
+use crate::tuning::{ALERT_OFF, HOME_FACED, HOME_REACHED, LEASH, SQUARING_PACE};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use movement::{TICK_SECONDS, TUNING};
@@ -41,7 +41,8 @@ pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Optio
 }
 
 /// What a foe with no one to fight asks: a garrison foe whose search has just let go (it was alert before its senses
-/// this tick, `was_alert`) walks home, and goes on walking while nothing turns it alert; any other looks about.
+/// this tick, `was_alert`) walks home, and goes on walking while nothing turns it alert; one with nothing stirring it
+/// keeps to its place, stepping back to it when an ally passing by has moved it; any other looks about.
 pub fn unoccupied(brain: &mut Brain, here: &Here<'_, '_>, was_alert: bool) -> Ask {
     let Some(home) = brain.home else { return look(brain, here) };
     if brain.returning == Some(Homeward::Searched) && !brain.awareness.alert {
@@ -49,6 +50,9 @@ pub fn unoccupied(brain: &mut Brain, here: &Here<'_, '_>, was_alert: bool) -> As
     }
     brain.returning = None;
     let ask = look(brain, here);
+    if !brain.awareness.alert && brain.awareness.level <= ALERT_OFF {
+        return walk_home(brain, here, home);
+    }
     if !was_alert || brain.awareness.alert {
         return ask;
     }

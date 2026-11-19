@@ -1,6 +1,6 @@
 //! The tactics: a lone foe walks to a player and swings in reach; four on one player take turns two at a time while
-//! the rest ring it and circle, and the turns pass on after each blow; a foe that waited past its patience goes in; a
-//! player who turns their back is open to anyone; a hurt foe backs off; a coward runs.
+//! the rest ring it and circle, and the turns pass on after each blow; a foe that waited past its patience goes in, one
+//! over the count at most; a player who turns their back is open to anyone; a hurt foe backs off; a coward runs.
 
 mod common;
 
@@ -63,7 +63,7 @@ fn of_four_swordsmen_only_two_fight_at_once_and_the_rest_ring_the_player_and_cir
             stretches[index] = if on_ring { Some(stretches[index].unwrap_or(bearing)) } else { None };
             circled = circled.max(stretches[index].map_or(0.0, |from| combat::sight::off(from, bearing)));
         }
-        if tick == 150 {
+        if tick == 100 {
             let ringed = foes.iter().filter(|id| (room.distance(PLAYER, **id) - ring).abs() <= 0.6).count();
             assert!(ringed >= 2, "the waiting stand on the ring, 1.5 m outside their reach");
         }
@@ -88,11 +88,11 @@ fn the_turns_pass_on_after_each_blow_so_every_foe_fights_in_time() {
 }
 
 #[test]
-fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_regardless() {
+fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_one_over_the_count() {
     let mut board = Board::default();
     let patience = 360;
     let caps = Director::default().caps();
-    for (foe, since) in [(1, 0), (2, 0), (3, 10), (4, 20)] {
+    for (foe, since) in [(1, 0), (2, 0), (3, 10), (4, 20), (5, 20)] {
         board.join(9, foe, false, since);
     }
     assert!(board.take(9, 1, false, 30, patience, caps) && board.take(9, 2, false, 30, patience, caps));
@@ -103,7 +103,8 @@ fn the_longest_waiter_takes_a_freed_turn_and_a_foe_past_its_patience_goes_in_reg
     assert!(!board.take(9, 1, false, 60, patience, caps), "and the one that just struck waits behind everyone");
     assert!(board.take(9, 3, false, 60, patience, caps));
     assert!(!board.take(9, 4, false, 379, patience, caps));
-    assert!(board.take(9, 4, false, 380, patience, caps), "six seconds of waiting: in, whatever the count");
+    assert!(board.take(9, 4, false, 380, patience, caps), "six seconds of waiting: in, one over the count");
+    assert!(!board.take(9, 5, false, 400, patience, caps), "but never two over it, however long the wait");
     assert_eq!(board.tokens_out(9), (3, 0));
     board.forget(3);
     board.forget(4);

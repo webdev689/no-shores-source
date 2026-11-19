@@ -4,7 +4,7 @@
 
 use crate::brain::Brain;
 use crate::senses::Here;
-use crate::tuning::{SPACING, SPACING_PACE, TURN, WALK_FACE};
+use crate::tuning::{CLEAR, SPACING, SPACING_PACE, TURN, WALK_FACE};
 use combat::sight::{apart, bearing, off, turned, wrap};
 use combat::{CombatInput, Intent};
 use movement::Controls;
@@ -54,8 +54,11 @@ pub fn way_to(here: &Here<'_, '_>, spot: [f64; 3]) -> Option<f64> {
     Some(bearing([from[0], from[1]], [point[0], point[1]]))
 }
 
-/// The push away from the foes of its side standing too near, as a share of a walk east and south.
-fn spacing(here: &Here<'_, '_>) -> [f64; 2] {
+/// Its move, as shares of a walk east and south, steered clear of the foes of its side standing too near: inside
+/// SPACING each pushes it away, harder the nearer, and the part of its move that walks into one turns aside round it,
+/// all of it within CLEAR, so a foe pressing on toward its target slips past an ally rather than through it. It turns
+/// the way its move already leans, and dead on the side its number picks, the same on every machine.
+fn spaced(here: &Here<'_, '_>, mut wish: [f64; 2]) -> [f64; 2] {
     let at = here.at();
     let mut push = [0.0, 0.0];
     for (id, other) in here.world.fighters {
@@ -72,12 +75,24 @@ fn spacing(here: &Here<'_, '_>) -> [f64; 2] {
         } else {
             f64::from(here.me.wrapping_sub(*id)) * 2.399_963_229_728_653
         };
+        let out = [libm::sin(away), -libm::cos(away)];
         let share = (SPACING - distance) / SPACING * SPACING_PACE;
-        push[0] += libm::sin(away) * share;
-        push[1] -= libm::cos(away) * share;
+        push = [push[0] + out[0] * share, push[1] + out[1] * share];
+        let along = wish[0] * out[0] + wish[1] * out[1];
+        if along < 0.0 {
+            let across = [wish[0] - along * out[0], wish[1] - along * out[1]];
+            let length = libm::sqrt(across[0] * across[0] + across[1] * across[1]);
+            let side = if here.me.is_multiple_of(2) { 1.0 } else { -1.0 };
+            let aside =
+                if length > 1e-9 { [across[0] / length, across[1] / length] } else { [-out[1] * side, out[0] * side] };
+            let turned = -along * ((SPACING - distance) / (SPACING - CLEAR)).min(1.0);
+            wish = [wish[0] + (out[0] + aside[0]) * turned, wish[1] + (out[1] + aside[1]) * turned];
+        }
     }
-    let length = (push[0] * push[0] + push[1] * push[1]).sqrt();
-    if length > SPACING_PACE { [push[0] / length * SPACING_PACE, push[1] / length * SPACING_PACE] } else { push }
+    let length = libm::sqrt(push[0] * push[0] + push[1] * push[1]);
+    let push =
+        if length > SPACING_PACE { [push[0] / length * SPACING_PACE, push[1] / length * SPACING_PACE] } else { push };
+    [wish[0] + push[0], wish[1] + push[1]]
 }
 
 /// The intent an ask comes to: the heading turned toward what it faces, the move made relative to it.
@@ -95,8 +110,7 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
         wish = [libm::sin(way) * pace, -libm::cos(way) * pace];
     }
     if !ask.unspaced {
-        let push = spacing(here);
-        wish = [wish[0] + push[0], wish[1] + push[1]];
+        wish = spaced(here, wish);
     }
     let length = (wish[0] * wish[0] + wish[1] * wish[1]).sqrt().min(1.0);
     let (forward, sideways) = if length > 1e-9 {
