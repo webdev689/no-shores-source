@@ -42,6 +42,19 @@ fn a_patrol_lays_its_three_entrances_the_same_every_time_keeping_their_distances
     let room = patrol(Floor::Flat);
     assert_eq!(room.entrances().len(), dungeon::PER_PATROL);
     assert_eq!(room.entrances(), patrol(Floor::Flat).entrances());
+    // Where this patrol lays them, the same on every machine: x, y, the yaw's bits, the model.
+    let laid = [
+        (-219.78015985926243, -86.68886922122908, 1.946495638220125, 3),
+        (-91.1984168814954, -715.9114353242533, -0.1267054110259509, 0),
+        (-573.2086510065137, -182.53261888435497, 2.1383719746341163, 1),
+    ];
+    for (entrance, (x, y, yaw, model)) in room.entrances().iter().zip(laid) {
+        assert_eq!(
+            [entrance.at[0].to_bits(), entrance.at[1].to_bits(), entrance.yaw.to_bits()],
+            [f64::to_bits(x), f64::to_bits(y), f64::to_bits(yaw)]
+        );
+        assert_eq!(entrance.model, model);
+    }
     keeps_its_distances(&room);
     assert!(
         Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec() }).entrances().is_empty()

@@ -47,7 +47,6 @@ fn a_body_passes_every_doorway_between_its_jambs_and_never_climbs_one() {
     for seed in 0..40 {
         let (dungeon, ground) = forged(seed);
         for frame in &dungeon.frames {
-            let corridor = dungeon.beside(frame.cell, frame.side).unwrap();
             let body = run(&ground, dungeon.centre(frame.cell), frame.side, 30);
             assert!(past(&dungeon, frame.cell, frame.side, &body) > CELL_M / 2.0, "seed {seed}: through the doorway");
             let [dx, dy] = frame.side.unit();
@@ -57,7 +56,6 @@ fn a_body_passes_every_doorway_between_its_jambs_and_never_climbs_one() {
             let body = run(&ground, beside_opening, frame.side, 240);
             assert!(past(&dungeon, frame.cell, frame.side, &body) <= CELL_M / 2.0 - TUNING.radius + 1e-9);
             assert!(body.z.abs() < 1e-9 && body.mode == Mode::Ground, "seed {seed}: a jamb is never climbed");
-            let _ = corridor;
         }
     }
 }

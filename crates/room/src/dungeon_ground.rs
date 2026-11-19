@@ -89,15 +89,13 @@ impl DungeonGround {
         let reach = TUNING.radius;
         let mut nearest = reach * reach;
         for (step_column, step_row) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
-            let (Some(next_column), Some(next_row)) =
-                (column.checked_add_signed(step_column), row.checked_add_signed(step_row))
-            else {
-                continue;
-            };
-            let rock = next_column >= self.columns
-                || next_row >= self.rows
-                || !self.open[next_row * self.columns + next_column];
-            if rock {
+            // Past the grid on any side is rock, as a cell holding none is.
+            let (next_column, next_row) = (column as isize + step_column, row as isize + step_row);
+            let inside = next_column >= 0
+                && next_row >= 0
+                && (next_column as usize) < self.columns
+                && (next_row as usize) < self.rows;
+            if !inside || !self.open[next_row as usize * self.columns + next_column as usize] {
                 let (west, north) = (next_column as f64 * self.cell, next_row as f64 * self.cell);
                 nearest = nearest.min(apart_squared(x, y, west, north, west + self.cell, north + self.cell));
             }
@@ -107,6 +105,30 @@ impl DungeonGround {
             nearest = nearest.min(apart_squared(x, y, min_x, min_y, max_x, max_y));
         }
         nearest
+    }
+
+    /// Whether the straight line between two points passes `keep` metres or more from every jamb and pillar: each box
+    /// grown by `keep` is tested against the line by the slabs between its sides.
+    #[must_use]
+    pub fn clear_between(&self, from: [f64; 2], to: [f64; 2], keep: f64) -> bool {
+        let along = [to[0] - from[0], to[1] - from[1]];
+        self.solids.iter().all(|&[min_x, min_y, max_x, max_y, _]| {
+            let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
+            for (start, step, low, high) in
+                [(from[0], along[0], min_x - keep, max_x + keep), (from[1], along[1], min_y - keep, max_y + keep)]
+            {
+                if step == 0.0 {
+                    if start < low || start > high {
+                        return true;
+                    }
+                } else {
+                    let (first, second) = ((low - start) / step, (high - start) / step);
+                    enter = enter.max(first.min(second));
+                    leave = leave.min(first.max(second));
+                }
+            }
+            enter > leave
+        })
     }
 
     /// Whether a point stands inside a jamb or a pillar.

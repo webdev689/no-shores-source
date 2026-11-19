@@ -31,3 +31,9 @@ test('a patrol’s dungeon has one room at each sea, named for its patrol and it
   ])
     assert.equal(nodeRoom(name), null, name);
 });
+
+test('a node called as a dungeon is named is still its own room, at every sea', () => {
+  assert.deepEqual(nodeRoom('dungeon-0'), { id: 'dungeon-0', seas: 0, dungeon: null });
+  assert.deepEqual(nodeRoom('dungeon-1--rough'), { id: 'dungeon-1', seas: 1, dungeon: null });
+  assert.deepEqual(nodeRoom('dungeon-2--dungeon-0'), { id: 'dungeon-2', seas: 0, dungeon: 0 });
+});
