@@ -25,6 +25,9 @@ export interface FoeFeel {
 /** Foes' figures are numbered down from here, never twice in the page's life: the forge keeps each figure's last card
  *  by its number, so a number used again would first show another foe. */
 let nextFoeId = -1;
+/** How far back a foe's pace is read, in seconds. The rules hold a foe still a tick between steps as it keeps to a
+ *  place that moves (its place on a ring, a target's heels), and a pace read tick by tick flicks it to a stand. */
+const PACE_SECONDS = 0.1;
 
 /**
  * Every foe of a fight as a figure in its type's dress, by the room's number for each: drawn gliding between the
@@ -39,6 +42,8 @@ export class FoeFigures {
   /** Each foe going over a lip, as its glances showed it begin: the mode, the room tick and height it began at, and the
    *  most it has risen since. */
   private readonly overs = new Map<number, { mode: Mode; tick: number; z: number; highest: number }>();
+  /** Each foe's glances by room tick, back to the one its pace is read from. */
+  private readonly trails = new Map<number, { tick: number; view: FighterView }[]>();
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -83,7 +88,14 @@ export class FoeFigures {
       // Its moves as its drawing shows them, held back while a blow landing holds it.
       const view = feel ? feel.held(kept.id, kept.view) : kept.view;
       const over = this.overOf(kept, fight.roomTick, tickSeconds);
-      const doing = { ...foeDoing(view, kept.before, dress, kept.ticks * tickSeconds), over };
+      const now = foeDoing(view, kept.before, dress, kept.ticks * tickSeconds);
+      // On the ground its pace is read over the last PACE_SECONDS, so a tick held still between steps is no stand.
+      const paced = this.pacedFrom(kept, fight.roomTick, tickSeconds);
+      const pace =
+        paced && view.mode === 'ground'
+          ? foeDoing(view, paced.view, dress, (fight.roomTick - paced.tick) * tickSeconds)
+          : now;
+      const doing = { ...now, moving: pace.moving, running: pace.running, speed: pace.speed, over };
       const draws = (anim: string, held: string | null) => forge.draws(dress.body, anim, held);
       const move = shownMove(doing, (anim) => forge.frames(dress.body, anim), draws);
       const moveFrames = forge.frames(dress.body, move.anim);
@@ -108,10 +120,24 @@ export class FoeFigures {
       const flash = { share: flashes.shareOf(kept.id), red: false };
       if (card) cards.push({ card, ...cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y), z: drawnAt[2], flip, flash });
     }
-    for (const kept of [this.figures, this.loops, this.overs])
+    for (const kept of [this.figures, this.loops, this.overs, this.trails])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));
     return cards;
+  }
+
+  /** The glance a foe's pace is read from at room tick `tick`, each `tickSeconds` long: the latest at least
+   *  PACE_SECONDS before, else the oldest kept; null with none before this tick's. */
+  private pacedFrom(kept: KeptFoe, tick: number, tickSeconds: number): { tick: number; view: FighterView } | null {
+    const held = this.trails.get(kept.id) ?? [];
+    // A room's clock gone back (the player joined it again) starts the trail over.
+    const trail = (held.at(-1)?.tick ?? tick) <= tick ? held : [];
+    if (trail.at(-1)?.tick !== tick) trail.push({ tick, view: kept.view });
+    const from = tick - PACE_SECONDS / tickSeconds;
+    while ((trail[1]?.tick ?? tick) <= from) trail.shift();
+    this.trails.set(kept.id, trail);
+    const first = trail[0];
+    return first && first.tick < tick ? first : null;
   }
 
   /** How far through a mantle or a vault a foe is, 0 to 1, by the room's tick (`tick`) since its glances first showed
