@@ -745,6 +745,15 @@ fn shot_list() {
                 views.push(view(stand, compass(stand, toward), "third,60,25", "river_1"));
             }
         }
+        // Into each cavern from its tunnel's mouth, and from inside its hollow back toward the mouth.
+        let caverns = laid.map.connections.iter().filter(|joined| joined.joined == layout::spaces::Joined::Tunnel);
+        for (number, tunnel) in caverns.enumerate() {
+            let (mouth, middle) = (tunnel.points[0], tunnel.points[1]);
+            let inside = [middle[0] + (mouth[0] - middle[0]) * 0.3, middle[1] + (mouth[1] - middle[1]) * 0.3];
+            let back = [mouth[0] + (middle[0] - mouth[0]) * 0.05, mouth[1] + (middle[1] - mouth[1]) * 0.05];
+            views.push(view(back, compass(back, middle), "first", &format!("cavern{number}_in")));
+            views.push(view(inside, compass(inside, mouth), "first", &format!("cavern{number}_out")));
+        }
         // From where a way enters an area, looking across the zone to its areas' middle.
         let count = laid.areas.len();
         let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);

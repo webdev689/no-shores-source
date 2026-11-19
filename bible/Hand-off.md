@@ -344,13 +344,17 @@ Where the work stands now, for the next session. Each session rewrites this note
      not enough: the levels must be laid on the network of ways as a whole, the ground between ways that run near
      each other graded to one level, and the walk switched on once they are. Done on the Vale ([[Layouts]],
      "Heights"): its places at their kinds' heights, every way graded between them as one network, the raised floors
-     carved as the sculpt's `levels` ([[Land]]), every way and climb walked without a step. Left for step 2: the
-     Downs and the Moors (the Moors' camp step waits on them taking the graded network), switchbacks where a way would
-     climb steeper than its tier, stairs for short rises, land bridges, bridges over a river a graded way crosses (none
-     in the Vale; built before the carving on the land's own heights, they must span at the ways' level), and the
-     masses' valleys joining floors at their levels. Two workers run beside it (`~/wt`, the toolkit's workers):
-     `ccr-0f4acf2e-wd3195-navmesh` for step 5, and `ccr-0f4acf2e-wd3195-rock` for the owner's real 3D rock (a cave
-     roof, an overhang, a natural arch, a tunnel mouth as solids, not yet placed);
+     carved as the sculpt's `levels` ([[Land]]), every way and climb walked without a step; a way holds the lower of
+     its places' levels and ramps up near the higher. Merged in from two workers: foes walk floors under roofs and a
+     node's room bakes its boxes ([[Navmesh]]); real rock (cave roofs, overhangs, rock arches, tunnel mouths,
+     [[Cities]]). Built on it: the Hollow Coven's cavern, the gates in clefts with palisades to the rock, every natural
+     arch real rock. Pictured (scratchpad `shots/heights-v1`, a fly-through rendering): from above the Vale still reads
+     as round basins joined by canyon lanes, each at its own depth, every basin walled up to one high plateau. So the
+     owner's "lanes and circles" is not yet answered in plan, only in height. Next, in order: the massif's top
+     following the floors near it (a terraced land of plateaus and steps, not one table); tiers within an area (a
+     hamlet's terraces, a ruin's broken tiers); ledges cut along faces between heights; then the Downs and the Moors
+     (the Moors' camp step waits on them taking the graded network), switchbacks where a way would climb steeper than
+     its tier, bridges over a river a graded way crosses, the masses' valleys at their floors' levels;
   3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
      hollows and pits;
   4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;

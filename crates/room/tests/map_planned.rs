@@ -283,3 +283,49 @@ fn each_of_the_vales_gates_closes_its_cleft_from_rock_to_rock() {
     }
     assert!(seen >= 3, "the Vale has its three gates");
 }
+
+#[test]
+#[ignore = "writes target/shots/vale-fly.json"]
+fn fly_list() {
+    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let named = |name: &str| laid.areas.iter().position(|area| area.name == name).expect("the area is laid out");
+    // A tour along the Vale's own ways: the landing, the meadows, the keep, the farm, the coven and into its cavern.
+    let stops = ["Vale Mouth", "The Water Meadows", "Valeguard", "Orchard Farm", "Hollow Coven"].map(named);
+    let mut line: Vec<[f64; 2]> = Vec::new();
+    for pair in stops.windows(2) {
+        let way = laid.map.connections.iter().find(|joined| {
+            joined.joined == Joined::Way
+                && ((joined.from, joined.to) == (pair[0], pair[1]) || (joined.from, joined.to) == (pair[1], pair[0]))
+        });
+        let Some(way) = way else {
+            panic!("a way joins {} and {}", laid.areas[pair[0]].name, laid.areas[pair[1]].name)
+        };
+        let mut points = way.points.clone();
+        if way.from != pair[0] {
+            points.reverse();
+        }
+        line.extend(points);
+    }
+    if let Some(tunnel) = laid.map.connections.iter().find(|joined| joined.joined == Joined::Tunnel) {
+        line.extend(tunnel.points.iter().copied());
+    }
+    let mut views = Vec::new();
+    let mut walked = 0.0;
+    let mut next = 0.0;
+    for (index, pair) in line.windows(2).enumerate() {
+        let length = distance(pair[0], pair[1]);
+        while next <= walked + length {
+            let share = (next - walked) / length.max(1e-9);
+            let at = [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share];
+            let ahead = line[(index + 3).min(line.len() - 1)];
+            let bearing = (ahead[0] - at[0]).atan2(-(ahead[1] - at[1])).to_degrees().rem_euclid(360.0);
+            let name = format!("fly{:03}", views.len());
+            views.push(serde_json::json!([at[0], at[1], bearing.round(), "third,45,22", name]));
+            next += 40.0;
+        }
+        walked += length;
+    }
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/shots/vale-fly.json");
+    std::fs::create_dir_all(path.parent().expect("a folder")).expect("the folder is made");
+    std::fs::write(&path, serde_json::to_string(&views).expect("the views write")).expect("the list is written");
+}
