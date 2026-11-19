@@ -17,7 +17,7 @@ code:
   - client/src/game/prologue/look.ts#armouredDress
   - client/src/game/prologue/sighted.ts#Sighted
   - client/src/game/prologue/battle.ts#Battle
-  - client/src/game/prologue/ram.ts#Calm
+  - client/src/game/prologue/calm.ts#Calm
   - client/src/game/prologue/ram.ts#Ram
   - client/src/game/prologue/wake.ts#Wake
   - client/src/game/prologue/wreckFight.ts#WreckFight
@@ -66,10 +66,10 @@ takes them straight to Overlook's social space. While the story plays the menu (
 | `intro` | First light over the cloud; then through the cloud to a highland island in mist, a green one in rain, a desert town where Grey Tithe and pirates fight on the plaza, a tundra town in snow, each with ships under sail off its harbour; last Saltmere, gulls over the harbour, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour with sword and shield | played |
-| `sighted` | The lookout and the bosun cry out with marks over their heads; the camera pulls out as three pirate Sloops come out of the dark; the mate and the gunner speak | shown |
-| `battle` | The sea's own fight against the three, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage" | played |
-| `calm` | The wind drops, the rain eases, the camera comes down to her deck; the crew talk | shown |
-| `ram` | The lookout cries out; a larger ship comes out of the storm at her side; the crew brace; the impact; black | shown |
+| `sighted` | The camera turns from the player to look down her deck; the lookout and the bosun cry out with marks over their heads and the mate and the gunner speak; the camera pulls out over her stern as three pirate Sloops come out of the dark, and comes down behind her through the fight's own lens | shown |
+| `battle` | The sea's own fight against the three, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage", and how many ships are left until every one is beaten, sunk or struck | played |
+| `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where the fight left them, struck ones afloat, sinking ones settling on; the crew talk until the lookout cuts the mate off | shown |
+| `ram` | The lookout cries out on the deck the calm left; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side; the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights and back | shown |
 | `wreck` | Fought on foot through the wreck; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won | played |
 | `overboard` | Out and back in on the body thrown over the rail, Thule and his crew crying out and dancing | shown |
@@ -79,8 +79,18 @@ takes them straight to Overlook's social space. While the story plays the menu (
 After the shore the flow's `story-ended` takes the player through the veil to Overlook's social space, where the
 stranger stands beside them, says their last lines and walks off into the town. The game is the player's from there.
 
-**Where it happens.** The storm lies 24 km out past Saltmere's harbour, turned until the sea round it is open and
-deep (`stormPlaces`), the Brig heading across the swell. The wreck is laid where the ships met. The shore is the
+**Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
+swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is
+turned either way, and if need be laid farther out (30 km, then 38 km), until all of it is 40 m deep or more; were
+none so, the place with the fewest shallows is taken.
+
+**At sea** (sighted to ram), each beat sets its own weather, sound, lightning and the Brig's way as it begins, so a
+page started there plays as it would in turn; `?prologue=battle` takes the ships where they would be sighted
+(`inboundAt`) and `?prologue=calm` lays them as wrecks there. Every cry is said with its speaker's head on the view,
+and each beat's moments run on its own clock: skipped, its moments left still change the world (the weather, the
+impact, the black) but say and sound nothing. The fight begins on the story's clock; a fight that cannot begin, or a
+step the rules refuse, is thrown from the beat's frame, so the director goes on past it. The calm's last line is a
+scene of its own (`calmCutOff`): the calm ends 1.3 s into it and the ram's first cry cuts it off. The wreck is laid where the ships met. The shore is the
 nearest gentle strand to the plaza, low by the water, clear of the city's pads and 260 m from its harbour
 (`findBeach`), found on the exact ground behind the deep's black.
 

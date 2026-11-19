@@ -1,8 +1,10 @@
 // The owner's fourth and fifth beats begin: the crew cry out through the storm, ships inbound, each with a mark over
 // their head; the camera pulls out to show the ships coming out of the dark, then comes back to the Brig, where the
 // fight's own camera will take her up.
+import type { AmbienceLevels } from '../../cinema/ambience.ts';
 import { Cues } from '../../cinema/cues.ts';
 import { type RailKey, railShot } from '../../cinema/rail.ts';
+import { FIELD_OF_VIEW } from '../../overworld/overworldCamera.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
@@ -21,28 +23,53 @@ export const INBOUND: readonly { readonly bearing: number; readonly distanceM: n
   { bearing: 0.38, distanceM: 720 },
 ];
 const INBOUND_WAY_M_S = 5;
-/** When the camera is back where the fight's own camera stands, and the beat's length. */
-const BACK_S = 11;
+/** When the crew first cry out, the camera turned to look down her deck at them; when it is back where the fight's
+ *  own camera stands; and the beat's length. */
+export const CRY_S = 2;
+const BACK_S = 11.5;
 const SIGHTED_S = 13;
+/** The storm as it sounds on her deck. */
+export const STORM_SOUND: Partial<AmbienceLevels> = { wind: 1, rain: 1, waves: 1, creak: 0.5 };
 /** The fight's camera as it first stands: behind her, this far, this far down, looking this high over her. */
 export const FIGHT_VIEW = { distance: 75, pitch: 0.3, lookOverM: 6 } as const;
 
-/** The camera's way, in the Brig's frame: from in front of the player round behind them at the helm, up and out over
- *  her stern to look ahead at the ships, and down to where the fight's camera stands. */
-function sightedKeys(): RailKey[] {
+/** The camera's way, in the Brig's frame: from in front of the player round behind them at the helm to look down her
+ *  deck at the crew as they cry out, up and out over her stern to look ahead at the ships with the crew still in the
+ *  picture, and down to where the fight's camera stands, through its lens. */
+export function sightedKeys(): RailKey[] {
   const front = creationEye(0);
   const behind = -FIGHT_VIEW.distance * Math.cos(FIGHT_VIEW.pitch);
   return [
     { at: 0, eye: front.eye, look: front.look, fov: 0.75 },
-    { at: 2.2, eye: [-17.5, -2.2, 6.5], look: [30, 0, 5] },
-    { at: 5.5, eye: [-55, -32, 34], look: [520, 0, 8] },
-    { at: 8.5, eye: [-40, 38, 26], look: [600, 30, 6] },
+    { at: 1.8, eye: [-17, -2.5, 7.5], look: [2, 0, 4.5] },
+    { at: 4, eye: [-20, -3, 8.5], look: [30, 0, 4] },
+    { at: 6.5, eye: [-48, -14, 22], look: [200, 0, 0] },
+    { at: 9, eye: [-45, 24, 20], look: [400, 20, 0] },
     {
       at: BACK_S,
       eye: [behind, 0, FIGHT_VIEW.distance * Math.sin(FIGHT_VIEW.pitch) + FIGHT_VIEW.lookOverM],
       look: [0, 0, FIGHT_VIEW.lookOverM],
+      fov: FIELD_OF_VIEW,
     },
   ];
+}
+
+/** The ships coming for her, as first seen round the Brig where she lies now. */
+export function inboundAt(brig: { readonly x: number; readonly y: number; readonly heading: number }): Sailed[] {
+  return INBOUND.map((ship, index) => {
+    const bearing = brig.heading + ship.bearing;
+    const x = brig.x + Math.sin(bearing) * ship.distanceM;
+    const y = brig.y - Math.cos(bearing) * ship.distanceM;
+    return {
+      who: `inbound-${index}`,
+      hull: 'sloop',
+      x,
+      y,
+      heading: Math.atan2(brig.x - x, y - brig.y),
+      underWay: true,
+      shade: 0.5,
+    };
+  });
 }
 
 export class Sighted implements Beat {
@@ -53,6 +80,8 @@ export class Sighted implements Beat {
   private readonly keys = sightedKeys();
   private since = 0;
   private spoken = false;
+  /** Set once skipped: its moments left still change the world, but none says or sounds a thing. */
+  private skipped = false;
   /** Where the inbound ships are now, as the fight will take them up. */
   readonly inbound: Sailed[];
   done = false;
@@ -63,25 +92,17 @@ export class Sighted implements Beat {
     const { ambience } = stage.parts;
     storyCue('sighted');
     stage.weatherTowards(STORM_FOG, 1.5);
-    this.inbound = INBOUND.map((ship, index) => {
-      const bearing = brig.heading + ship.bearing;
-      const x = brig.x + Math.sin(bearing) * ship.distanceM;
-      const y = brig.y - Math.cos(bearing) * ship.distanceM;
-      return {
-        who: `inbound-${index}`,
-        hull: 'sloop',
-        x,
-        y,
-        heading: Math.atan2(brig.x - x, y - brig.y),
-        underWay: true,
-        shade: 0.5,
-      };
-    });
+    ambience.set(STORM_SOUND, 1.5);
+    story.lightning.striking = true;
+    this.inbound = inboundAt(brig);
+    const heard = (moment: () => void) => () => {
+      if (!this.skipped) moment();
+    };
     this.cues = new Cues([
-      [0.3, () => void stage.play('sighted').then(() => (this.spoken = true))],
+      [CRY_S, heard(() => void stage.play('sighted').then(() => (this.spoken = true)))],
       [3.2, () => stage.weatherTowards(STORM, 5)],
-      [4.2, () => this.strikeAmong(1)],
-      [6.5, () => ambience.thunder(1.1)],
+      [4.2, heard(() => this.strikeAmong(1))],
+      [6.5, heard(() => ambience.thunder(1.1))],
     ]);
   }
 
@@ -91,8 +112,8 @@ export class Sighted implements Beat {
   }
 
   skip(): void {
+    this.skipped = true;
     this.cues.finish();
-    this.story.stage.parts.dialogue.skip();
     this.since = SIGHTED_S;
     this.done = true;
   }

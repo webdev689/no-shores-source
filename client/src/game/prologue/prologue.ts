@@ -4,7 +4,7 @@
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
-import { Battle } from './battle.ts';
+import { asWreck, Battle } from './battle.ts';
 import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
 import { Deep } from './deep.ts';
 import { Intro } from './intro.ts';
@@ -12,11 +12,12 @@ import type { Islands } from './islands.ts';
 import { Making } from './making.ts';
 import type { Nameplate } from './nameplate.ts';
 import { Overboard } from './overboard.ts';
-import { Calm, Ram } from './ram.ts';
+import { Calm } from './calm.ts';
+import { Ram } from './ram.ts';
 import type { Sailed } from './sailing.ts';
 import { Shore } from './shore.ts';
 import type { StoryFrame } from './stage.ts';
-import { Sighted } from './sighted.ts';
+import { inboundAt, Sighted } from './sighted.ts';
 import { StormDive } from './storm.ts';
 import type { Story } from './story.ts';
 import { Wake } from './wake.ts';
@@ -31,6 +32,8 @@ export type StoryEnd = 'played' | 'begun';
 interface Carried {
   shot: Shot | null;
   inbound: Sailed[];
+  /** The beaten ships the fight left, for the calm. */
+  wrecks: Sailed[] | null;
   meeting: { readonly x: number; readonly y: number } | null;
   layout: WreckLayout | null;
   run: Promise<WreckRun> | null;
@@ -52,7 +55,7 @@ export class Prologue {
   /** Whether a touch is held on the screen, which skips a cutscene as Space held does. */
   private touching = false;
   private beat: Beat;
-  private carried: Carried = { shot: null, inbound: [], meeting: null, layout: null, run: null };
+  private carried: Carried = { shot: null, inbound: [], wrecks: null, meeting: null, layout: null, run: null };
   private clock = 0;
   /** Set once the story hands the player to the game. */
   end: StoryEnd | null = null;
@@ -80,9 +83,9 @@ export class Prologue {
       case 'sighted':
         return new Sighted(story);
       case 'battle':
-        return new Battle(story, carried.inbound.length ? carried.inbound : new Sighted(story).inbound);
+        return new Battle(story, carried.inbound.length ? carried.inbound : inboundAt(story.brig));
       case 'calm':
-        return new Calm(story, shot());
+        return new Calm(story, shot(), carried.wrecks ?? inboundAt(story.brig).map((ship) => asWreck(ship, false)));
       case 'ram':
         return new Ram(story);
       case 'wake':
@@ -124,6 +127,7 @@ export class Prologue {
     const ended = this.beat;
     ended.leave?.();
     if (ended instanceof Sighted) this.carried.inbound = ended.inbound;
+    if (ended instanceof Battle) this.carried.wrecks = ended.wrecks;
     if (ended instanceof Ram) this.carried.meeting = ended.meeting;
     if (ended instanceof Ram) void this.openRun();
     if (ended instanceof Intro && this.played) {

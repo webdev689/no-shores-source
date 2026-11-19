@@ -13,9 +13,9 @@
       { "who": "bosun", "say": "Three ships, Captain. Not a man lost.", "emote": "cheer" },
       { "who": "lookout", "say": "Men in the water. Pirates, clinging to the wreckage.", "emote": "question" },
       { "who": "mate", "say": "Leave them. They would cut our throats for the boat.", "emote": "silence" },
-      { "who": "gunner", "say": "Storm's not done with us either.", "emote": "fear" },
-      { "who": "mate", "say": "Patch her up. We make for land at first light." }
+      { "who": "gunner", "say": "Storm's not done with us either.", "emote": "fear" }
     ],
+    "calmCutOff": [{ "who": "mate", "say": "Patch her up. We make for land at first light." }],
     "ram": [
       { "who": "lookout", "say": "Ship to starboard!", "kind": "bark", "emote": "alert" },
       { "who": "lookout", "say": "She's huge. Coming straight for us!", "emote": "fear" },

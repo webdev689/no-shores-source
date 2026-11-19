@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Landmass } from '../landmass.ts';
-import { stormPlaces } from './places.ts';
+import { CLEAR_M, stormPlaces } from './places.ts';
 
 /** A landmass made up for the search: a town at the origin with its harbour east, an island's coast 1 km round it,
  *  and, when `blocked`, a second coast straight out past the harbour where the storm would first be laid. */
-function landmass(blocked: boolean): Landmass {
+function landmass(blocked: boolean, more: (x: number, y: number) => boolean = () => false): Landmass {
   const heightAt = (x: number, y: number) => {
     if (Math.hypot(x, y) < 1000) return 10;
     if (blocked && Math.hypot(x - 25_000, y) < 6000) return 5;
+    if (more(x, y)) return -3;
     return -200;
   };
   return {
@@ -35,4 +36,19 @@ test('a coast in the way turns the storm aside until the sea round it is open', 
   const [x, y] = places.storm;
   assert.ok(Math.hypot(x - 25_000, y) > 6000 + 3000, 'clear of the other coast by the search radius');
   assert.ok(Math.hypot(x, y) > 20_000, 'still far out');
+});
+
+test('a reef too small for a few soundings to find still turns the storm aside', () => {
+  // 1.5 km past where the storm would first be laid, between any eight soundings on a ring 3 km out.
+  const [firstX] = stormPlaces(landmass(false), 1).storm;
+  const reef = (x: number, y: number) => Math.hypot(x - firstX - 1500, y) < 300;
+  const [x, y] = stormPlaces(landmass(false, reef), 1).storm;
+  assert.ok(Math.hypot(x - firstX - 1500, y) > CLEAR_M + 300, `clear of the reef: ${x}, ${y}`);
+});
+
+test('with every turn blocked close in, the storm is laid farther out where the sea is open', () => {
+  // Shallows on every bearing out to 27 km.
+  const bank = (x: number, y: number) => Math.hypot(x, y) > 1000 && Math.hypot(x, y) < 27_000;
+  const [x, y] = stormPlaces(landmass(false, bank), 1).storm;
+  assert.ok(Math.hypot(x, y) > 27_000 + CLEAR_M, `out past the bank: ${Math.hypot(x, y)}`);
 });

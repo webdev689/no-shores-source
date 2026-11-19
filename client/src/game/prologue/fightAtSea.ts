@@ -5,7 +5,7 @@
 import type { FightSource } from '../../editor/fighting.ts';
 import type { MarkDrawer } from '../../editor/naval.ts';
 import { SAILS_RUNG } from '../../editor/sailing.ts';
-import type { CaptainAt, FightEvent, FightVessel, FightView } from '../../rules/fightRules.ts';
+import type { CaptainAt, FightCaptain, FightEvent, FightVessel, FightView, ShipState } from '../../rules/fightRules.ts';
 import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import type { ShipBar } from '../../ships/shipBars.ts';
@@ -32,8 +32,9 @@ export interface Ambusher {
 export type Happening = 'hit-taken' | 'hit-given' | 'sinking' | 'sunk';
 
 /** One frame of the ambush: the camera's shot, every ship as drawn (hers first, the Brig; then each captain's Sloop,
- *  darker), their footprints, the captains' bars, the panel's lines, what happened since the last frame, how many
- *  captains are still afloat, and whether the fight is over: every captain sunk, or gone out of it. */
+ *  darker) with her state, their footprints, the captains' bars, the panel's lines, what happened since the last
+ *  frame, how many captains are still to beat (afloat and fighting), and whether the fight is over: every captain
+ *  beaten, sunk or struck. */
 export interface StoryFightFrame {
   readonly shot: Shot;
   readonly ships: readonly {
@@ -41,13 +42,14 @@ export interface StoryFightFrame {
     hull: 'own' | 'captain';
     shade: number;
     rig: SailRig;
+    state: ShipState;
     sunk: boolean;
   }[];
   readonly hulls: readonly HullMask[];
   readonly bars: readonly ShipBar[];
   readonly lines: readonly string[];
   readonly happened: readonly Happening[];
-  readonly afloat: number;
+  readonly left: number;
   readonly over: boolean;
 }
 
@@ -145,7 +147,7 @@ export class StoryFight {
       },
       fightEnd: () => land.fightEnd(),
     };
-    const combat = new SeaCombat(source, first, hull.marks, hull.sails, now);
+    const combat = new SeaCombat(source, first, hull.marks, hull.sails, now, 'Brig');
     return new StoryFight(land, combat, { heard, answered }, hull.sails);
   }
 
@@ -167,7 +169,7 @@ export class StoryFight {
     const captains = [view.captain, ...(view.others ?? [])];
     while (this.captainRigs.length < captains.length) this.captainRigs.push(new SailRig(this.sloopSails));
     const windBearing = input.swell?.bearing ?? 0;
-    const drawn = (vessel: FightVessel, hull: 'own' | 'captain', rig: SailRig) => {
+    const drawn = (vessel: FightVessel | FightCaptain, hull: 'own' | 'captain', rig: SailRig) => {
       const [x = 0, y = 0, heading = 0, , , , , rung = 0] = vessel.ship;
       rig.step(input.seconds, { offDeg: windOff(heading, windBearing), set: rung === SAILS_RUNG }, input.time);
       const { lengthM, beamM } = this.waterlines[hull];
@@ -180,20 +182,27 @@ export class StoryFight {
         (beamM / 2) * scale,
         input.time,
       );
-      // Going down, she settles and lists as the rules have her: their heave already rides their own swell.
-      const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
-      const going = vessel.state === 'sinking' || vessel.state === 'sunk';
-      const pose = going ? { heave, pitch, roll } : swell;
-      const place = { x, y, z: pose.heave, heading, pitch: pose.pitch, roll: pose.roll, scale };
+      // Her hurts and her going down settle, trim and list her as the rules have her, on the swell drawn here: the
+      // rules' own pose rides a swell of theirs, so taking it as she goes down would jump her.
+      const [settled, trim, list] = 'founder' in vessel && vessel.founder ? vessel.founder : [0, 0, 0];
+      const place = {
+        x,
+        y,
+        z: swell.heave - settled * scale,
+        heading,
+        pitch: swell.pitch + trim,
+        roll: swell.roll + list,
+        scale,
+      };
       const shade = hull === 'own' ? 1 : CAPTAIN_SHADE;
-      return { place, hull, shade, rig, sunk: vessel.state === 'sunk' };
+      return { place, hull, shade, rig, state: vessel.state, sunk: vessel.state === 'sunk' };
     };
     const ships = [
       drawn(view.player, 'own', this.ownRig),
       ...captains.map((captain, index) => drawn(captain, 'captain', this.captainRigs[index] ?? this.ownRig)),
     ];
     const happened = happenedOf(this.heard.splice(0));
-    const afloat = captains.filter((captain) => captain.state !== 'sinking' && captain.state !== 'sunk').length;
+    const left = captains.filter((captain) => captain.state === 'afloat').length;
     return {
       shot,
       ships,
@@ -201,7 +210,7 @@ export class StoryFight {
       bars: this.combat.bars(scale),
       lines: this.combat.lines(input.time),
       happened,
-      afloat,
+      left,
       over: view.over !== null,
     };
   }

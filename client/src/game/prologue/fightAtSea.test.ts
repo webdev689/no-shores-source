@@ -53,7 +53,9 @@ const vessel: FightVessel = {
 };
 const captainAt = (x: number, state: FightVessel['state']): FightCaptain => ({
   ...vessel,
-  pose: [state === 'sinking' ? -3 : 0, 0, 0.4, 0],
+  // The rules' own pose rides their own swell: the drawing takes her settling from `founder` alone.
+  pose: [state === 'sinking' ? -7 : 0, 0, 0.1, 0],
+  founder: state === 'sinking' ? [3, 0, 0.4] : [0, 0, 0],
   ship: [x, 5600, 2, 0, 0, 0, 0, 2],
   state,
   name: 'Pirate Sloop',
@@ -74,7 +76,7 @@ const viewOf = (states: readonly FightVessel['state'][], events: FightEvent[] = 
     balls: [],
     lay: null,
     events,
-    over: states.every((state) => state === 'sunk') ? 'sunk' : null,
+    over: states.every((state) => state !== 'afloat') ? 'beaten' : null,
     fingerprint: '',
   };
 };
@@ -117,7 +119,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
       ['captain', 0.55],
     ],
   );
-  assert.equal(first.afloat, 3);
+  assert.equal(first.left, 3);
   assert.equal(first.over, false);
   assert.ok(first.ships[0]?.place && first.ships[0].place.x === 5000);
   // Each frame steps the fight once a step's answer is in.
@@ -127,16 +129,65 @@ test('the story fight begins on the land door with its captains, draws them, hea
     await new Promise((settle) => setTimeout(settle, 0));
     frame = fight.frame({ ...input, time: step * 0.1 });
     heard.push(...frame.happened);
-    // A captain going down settles and lists as the rules have her, not on the story's swell.
+    // A captain going down settles and lists as her hurts have her, on the story's swell.
     if (frame.happened.includes('sinking')) {
       const going = frame.ships[2]?.place;
       assert.ok(going && going.z === -3 && going.roll === 0.4, JSON.stringify(going));
-      assert.equal(frame.afloat, 2);
+      assert.equal(frame.left, 2);
     }
   }
   assert.deepEqual(heard, ['sinking', 'sunk']);
-  assert.equal(frame.afloat, 0);
+  assert.equal(frame.left, 0);
   assert.equal(frame.over, true);
   assert.ok(frame.ships.slice(1).every((ship) => ship.sunk));
   assert.equal(frame.hulls.length, 1, 'only her footprint while the captains are gone');
+});
+
+/** The land door, its fight begun with three afloat, then answering each step from `steps` in turn. */
+function door(steps: (() => Promise<FightView>)[]): LandWorker {
+  return {
+    fightBegin: () => Promise.resolve(viewOf(['afloat', 'afloat', 'afloat'])),
+    fightStep: () => (steps.shift() ?? (() => Promise.resolve(viewOf(['afloat', 'afloat', 'afloat']))))(),
+    fightEnd: () => Promise.resolve(),
+  } as unknown as LandWorker;
+}
+
+const begunOn = (land: LandWorker) =>
+  StoryFight.begin(
+    land,
+    { x: 5000, y: 6000, heading: 0 },
+    [0, 2, 4].map((bearing) => ({ bearing, distanceM: 300, faction: 2, rank: 2 }) as const),
+    { sails: [], marks: { drawInto: () => undefined } as unknown as MarkDrawer },
+    0,
+  );
+
+test('a struck captain is beaten: one fewer is left to beat, and the fight is over once none fights', async () => {
+  const fight = await begunOn(
+    door([
+      () => Promise.resolve(viewOf(['afloat', 'struck', 'afloat'])),
+      () => Promise.resolve(viewOf(['struck', 'struck', 'sinking'])),
+    ]),
+  );
+  const input = { seconds: 0.1, time: 0, far: 1000, swell: undefined };
+  const lefts: number[] = [];
+  let frame = fight.frame(input);
+  for (let step = 1; step < 10 && !frame.over; step++) {
+    await new Promise((settle) => setTimeout(settle, 0));
+    frame = fight.frame({ ...input, time: step * 0.1 });
+    lefts.push(frame.left);
+  }
+  assert.ok(lefts.includes(2) && lefts.at(-1) === 0, lefts.join());
+  assert.equal(frame.over, true);
+  assert.deepEqual(
+    frame.ships.slice(1).map((ship) => ship.state),
+    ['struck', 'struck', 'sinking'],
+  );
+});
+
+test('a step the rules refuse is thrown from the next frame, for the director to go on past it', async () => {
+  const fight = await begunOn(door([() => Promise.reject(new Error('no fight is on'))]));
+  const input = { seconds: 0.1, time: 0, far: 1000, swell: undefined };
+  fight.frame(input);
+  await new Promise((settle) => setTimeout(settle, 0));
+  assert.throws(() => fight.frame({ ...input, time: 0.1 }), /no fight is on/);
 });

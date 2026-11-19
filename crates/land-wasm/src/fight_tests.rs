@@ -224,3 +224,56 @@ fn a_captain_set_aground_is_refused() {
     ));
     assert!(refused["error"].as_str().is_some_and(|error| error.contains("does not float")), "{refused}");
 }
+
+#[test]
+fn every_captain_shows_how_far_her_hurts_have_settled_her() {
+    opened();
+    let begun = answer(&fight_begin_json(
+        br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 2 } ] }"#,
+    ));
+    for captain in [&begun["captain"], &begun["others"][0]] {
+        assert_eq!(captain["founder"], serde_json::json!([0.0, 0.0, 0.0]), "a sound ship is not settled: {captain}");
+    }
+}
+
+/// Deep, still water everywhere.
+struct Deep;
+
+impl Waters for Deep {
+    fn at(&self, _x: f64, _y: f64, _time: f64) -> sailing::waters::Spot {
+        sailing::waters::Spot { bed: -50.0, surface: Some(0.0) }
+    }
+}
+
+#[test]
+fn an_ambush_whose_captains_have_all_struck_or_sunk_is_over_beaten() {
+    let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let mut fight = Fight::ambush(at(0.0), &[(at(500.0), major, 1), (at(-500.0), major, 2)], 3, &Deep, 0.0)
+        .unwrap_or_else(|error| panic!("{error}"));
+    assert_eq!(over_name(&fight), None);
+    for (state, id) in [State::Struck, State::Sunk].into_iter().zip(CAPTAIN..) {
+        fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}")).damage.state = state;
+    }
+    assert_eq!(over_name(&fight), Some("beaten"));
+}
+
+#[test]
+fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
+    let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let mut fight =
+        Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
+    let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
+    (damage.state, damage.sink_t) = (State::Sinking, 20.0);
+    let shown = view(&fight, &[], None, &Deep, 0.0);
+    let founder: Vec<f64> = shown["captain"]["founder"]
+        .as_array()
+        .map(|all| all.iter().filter_map(Value::as_f64).collect())
+        .unwrap_or_default();
+    assert_eq!(founder.len(), 3, "{shown}");
+    assert!(founder[0] > 0.5, "settled under: {founder:?}");
+    assert!(founder[1].abs() > 0.01 && founder[2].abs() > 0.01, "trimmed and listing: {founder:?}");
+}

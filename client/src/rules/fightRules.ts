@@ -48,7 +48,8 @@ export interface FightVessel {
 }
 
 /** A captain's Sloop in a fight: her name, her faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
- *  her mode, whether she is hostile to the player, and her sides run out. */
+ *  her mode, whether she is hostile to the player, her sides run out, and, from the land worker's fight, what her
+ *  hurts and her going down do to her pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
   readonly name: string;
   readonly faction: number;
@@ -56,6 +57,7 @@ export interface FightCaptain extends FightVessel {
   readonly mode: CaptainMode;
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
+  readonly founder?: readonly [number, number, number];
 }
 
 export type FightEvent =
@@ -113,7 +115,8 @@ export interface FightView {
   readonly balls: readonly (readonly [number, number, number, number])[];
   readonly lay: FightLay | null;
   readonly events: readonly FightEvent[];
-  readonly over: 'sunk' | 'gone' | null;
+  /** How it ended: the last captain sunk or gone, or (an ambush) every captain beaten, sunk or struck. */
+  readonly over: 'sunk' | 'gone' | 'beaten' | null;
   readonly fingerprint: string;
 }
 
