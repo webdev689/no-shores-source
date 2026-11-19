@@ -143,3 +143,36 @@ test('the sea room turns her at rest to the heading the helm faces her, and hold
     'turned, at rest, where she lay',
   );
 });
+
+test("watched close she eases down the ladder to the world's own time a step each 0.15 s, and back up to the dial", () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, asked } = fakeRoom();
+  passage.room = room;
+  passage.straightOn();
+  const paces = () => asked.map((said) => Number(said.split('×')[1]));
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
+  assert.deepEqual(paces(), [60, 40, 30, 20, 10, 5, 1], "the dial's x60, then down each step to the world's own time");
+  assert.equal(passage.pace, 60, 'the dial itself is not changed');
+  assert.equal(passage.note, 'Sailing straight on · Sailing at true speed while you watch close.');
+  const before = passage.ship.y;
+  passage.advance(1, true);
+  assert.ok(Math.abs(before - passage.ship.y - 12) < 1e-6, `her true speed, 12 m a second: ${before - passage.ship.y}`);
+  asked.length = 0;
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
+  assert.deepEqual(paces(), [5, 10, 20, 30, 40, 60], 'the view risen, back up the ladder to the dial');
+  assert.equal(passage.note, 'Sailing straight on');
+});
+
+test('the dial stepped while the view is close is kept for when it rises; stepped at the dial, she sails at it', () => {
+  const passage = new Passage(ISLAND, () => MASK, place(0, 0), 0);
+  const { room, asked } = fakeRoom();
+  passage.room = room;
+  passage.straightOn();
+  passage.stepPace(1);
+  assert.match(asked.at(-1) ?? '', /×100$/, 'at the dial, a step up sails at once');
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, true);
+  passage.stepPace(-1);
+  assert.match(asked.at(-1) ?? '', /×1$/, "watched close, still the world's own time");
+  for (let frame = 0; frame < 60; frame++) passage.advance(0.05, false);
+  assert.match(asked.at(-1) ?? '', /×60$/, 'back up to the dial as it is now');
+});

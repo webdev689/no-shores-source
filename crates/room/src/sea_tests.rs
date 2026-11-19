@@ -93,6 +93,33 @@ fn a_pace_off_the_steps_a_point_off_the_frame_and_too_long_a_course_are_refused(
 }
 
 #[test]
+fn a_ship_sails_at_the_worlds_own_time_while_the_view_is_close_on_her() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 60).unwrap();
+    next_course(&mut sea, player, &[[50_000.0, 50_000.0]], WORLD_PACE).unwrap();
+    let from = ship(&sea, player);
+    ticks(&mut sea, 60);
+    let on = ship(&sea, player);
+    assert!((from.y - on.y - SHIP_SPEED_M_S).abs() < 1e-6, "a second at 12 m/s: {}", from.y - on.y);
+    assert_eq!((on.pace, on.rate), (WORLD_PACE, WORLD_PACE));
+}
+
+#[test]
+fn off_the_helm_her_planned_course_is_taken_again_at_another_pace_but_no_other_course() {
+    let mut sea = sea();
+    let player = sea.join();
+    let planned = [[50_000.0, 150_000.0], [50_000.0, 50_000.0], [60_000.0, 40_000.0]];
+    sea.course(player, &planned, 60).unwrap();
+    sea.leave_helm(player).unwrap();
+    let ahead = &planned[1..];
+    assert_eq!(next_course(&mut sea, player, ahead, WORLD_PACE), Ok(()), "her course, at the world's own time");
+    assert_eq!(ship(&sea, player).pace, WORLD_PACE);
+    let elsewhere = [[50_000.0, 50_000.0], [40_000.0, 40_000.0]];
+    assert_eq!(next_course(&mut sea, player, &elsewhere, WORLD_PACE), Err(CourseRefused::OffTheHelm));
+}
+
+#[test]
 fn a_player_sets_one_course_each_half_second() {
     let mut sea = sea();
     let player = sea.join();
@@ -323,7 +350,11 @@ fn a_player_leaves_the_helm_only_at_sea_and_out_of_a_fight_and_walks_while_her_h
     assert_eq!(next_course(&mut sea, player, &[[60_000.0, 150_000.0]], 10), Err(CourseRefused::OffTheHelm));
     let on = ship(&sea, player);
     let ahead = [on.x, on.y - 20_000.0];
-    assert_eq!(next_course(&mut sea, player, &[ahead], 60), Err(CourseRefused::OffTheHelm), "nor the pace");
+    assert_eq!(
+        next_course(&mut sea, player, &[[on.x + 5_000.0, on.y - 20_000.0]], 10),
+        Err(CourseRefused::OffTheHelm),
+        "nor a course off her heading"
+    );
     assert_eq!(
         next_course(&mut sea, player, &[ahead, [on.x, on.y - 30_000.0]], 10),
         Err(CourseRefused::OffTheHelm),
@@ -334,6 +365,9 @@ fn a_player_leaves_the_helm_only_at_sea_and_out_of_a_fight_and_walks_while_her_h
         Ok(()),
         "straight on along her heading, at her pace: her helmsman sails on"
     );
+    assert_eq!(next_course(&mut sea, player, &[ahead], 60), Ok(()), "at the pace the page eases her to for the view");
+    assert_eq!(next_course(&mut sea, player, &[ahead], 7), Err(CourseRefused::BadPace), "but only a pace there is");
+    next_course(&mut sea, player, &[ahead], 10).unwrap();
     let before = ship(&sea, player);
     let forward = Controls { forward: 1.0, ..Controls::default() };
     for sequence in 1..=30 {
