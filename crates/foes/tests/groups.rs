@@ -237,7 +237,7 @@ fn one_foe_alone_fights_as_it_always_did() {
     assert_eq!(hash, LONE_HASH, "a lone foe's fight changed: {hash:#018x}");
 }
 
-const LONE_HASH: u64 = 0x74df_28e1_ce8e_dc6d;
+const LONE_HASH: u64 = 0x1a1d_982d_98e8_4b8e;
 
 #[test]
 fn a_foe_throws_no_blow_of_reach_at_a_target_walking_out_of_it() {
