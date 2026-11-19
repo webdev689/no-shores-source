@@ -1,8 +1,8 @@
 //! A player's asks of their gear, answered in turn with their inputs: the gear crate's own asks, judged where the
 //! player stands (at the counter that serves the ask in a social space, or within reach of the Test Ground's stall,
 //! which serves them all); gathering a resource node within reach;
-//! and, in the Test Ground alone, grants of gear to try it with. Each answer is kept to send the player with their
-//! gear.
+//! and, in the Test Ground alone, grants of gear and of statuses to try them with. Each answer is kept to send the
+//! player with their gear.
 
 use crate::{PlayerId, Room, Standing};
 use gear::dice::Dice;
@@ -54,6 +54,12 @@ pub enum Grant {
     /// This many of every material, and as much again of Aurem a hundred times over.
     Materials(u16),
     Xp(u32),
+    /// A status on the player, or on every foe, for this many ticks or its own time: to see and tune it.
+    Status {
+        status: combat::Status,
+        on_foes: bool,
+        ticks: Option<u32>,
+    },
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -230,6 +236,10 @@ impl Room {
     }
 
     fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {
+        if let Grant::Status { status, on_foes, ticks } = grant {
+            self.grant_status(player, status, on_foes, ticks);
+            return 0;
+        }
         let dice = self.dice(player);
         let Some(found) = self.players.get_mut(&player) else { return 0 };
         let character = &mut found.character;
@@ -277,6 +287,7 @@ impl Room {
                 }
             }
             Grant::Xp(xp) => character.earn_xp(xp, None),
+            Grant::Status { .. } => {}
         }
         0
     }

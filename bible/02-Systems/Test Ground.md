@@ -5,6 +5,7 @@ code:
   - client/testground/index.html
   - client/src/testground/testgroundMain.ts
   - client/src/testground/aimPanel.ts
+  - client/src/testground/statusPanel.ts#startStatusPanel
   - client/src/testground/attackFeel.ts#AttackFeel
   - client/src/testground/feelPanel.ts#startFeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
@@ -89,6 +90,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   for. Names, factions and hands come from the rules' roster through WebAssembly. Each fights by its brain ([[Foes]])
   and wears its type's dress ([[Enemies]]): the Grey Tithe in grey over leather or iron, the pirates as the foes of
   each kind were dressed before.
+- **Statuses.** The panel gives any status ([[Combat]], "Statuses") to the player or to every foe, from the player,
+  for its own time or for as many seconds as asked (ten minutes at most), through the room's own door, as a spell or a
+  perk will: the icons show on the foes' plates and over the vitals, and the rules act on them. Only a course's room
+  grants them; a node's refuses.
 - **What figures show.** A fight holds a figure to the forge's own moves: the death and then lying fallen; fallen when
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's

@@ -17,6 +17,7 @@ pub mod pirates;
 mod players;
 mod power;
 pub mod sea;
+mod statuses;
 pub mod threat;
 
 pub use asks::{Asked, Grant, ResourceNode};
@@ -296,6 +297,7 @@ impl Room {
         self.step_foes();
         self.fly_shots();
         self.judge_waiting();
+        self.heal_linked();
         self.tell_brains();
         self.fall_with_callers();
         self.raise_the_dead();

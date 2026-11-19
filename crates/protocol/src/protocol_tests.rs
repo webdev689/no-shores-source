@@ -12,8 +12,8 @@ fn input(sequence: u32, controls: Controls) -> Input {
 }
 
 /// The two players the client's test of the same bytes expects (messages.test.ts): one standing inside, one after half
-/// a second's walk at a bearing of 0.3, swinging a sword at its target, foe 12, warned with 432 ticks left; and the
-/// dress the first sent.
+/// a second's walk at a bearing of 0.3, swinging a sword at its target, foe 12, warned with 432 ticks left, Veiled for
+/// 150 ticks and Hasted for 30 by player 7; and the dress the first sent.
 pub fn players() -> Vec<Seen> {
     let walk = Controls { forward: 1.0, yaw: 0.3, ..Controls::default() };
     let walked = (0..30).fold(standing(1.5, -2.25), |body, _| step_body(&body, &walk, &[], &Flat, TICK_SECONDS));
@@ -22,6 +22,8 @@ pub fn players() -> Vec<Seen> {
     let mut fighting = player(walked, sword);
     fighting.target = Some(12);
     fighting.stamina = 88.0;
+    fighting = combat::give(&fighting, combat::Status::Veiled, 150, Some(7)).unwrap();
+    fighting = combat::give(&fighting, combat::Status::Haste, 30, Some(7)).unwrap();
     vec![
         Seen {
             player: 7,
@@ -41,13 +43,16 @@ pub fn players() -> Vec<Seen> {
 }
 
 /// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
-/// staggered with 40 of its 130 health gone, alert to the player its lock is on.
+/// staggered with 40 of its 130 health gone, alert to the player its lock is on, Exposed for 200 ticks and immune to a
+/// Charge for 90.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
     let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
     brute.health = 90.0;
     brute.target = Some(9);
     brute.action = Action::Staggered { left: 30, cause: combat::fighter::Cause::Parried };
+    brute = combat::give(&brute, combat::Status::Expose, 200, Some(9)).unwrap();
+    brute.statuses.charge_immune = 90;
     vec![FoeSeen {
         foe: 12,
         kind: 3,
@@ -303,6 +308,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let named = (foe.type_(), foe.rank(), foe.faction(), foe.phase(), foe.alert());
     assert_eq!(named, (15, 3, 2, 1, 2), "its type, rank, faction, phase and alertness cross");
     assert_eq!((foe.shield_element(), foe.shield(), foe.shield_most()), (3, 40.0, 40.0));
+    assert_eq!((foe.expose(), foe.charge(), foe.charge_immune()), (200, 0, 90), "its debuffs' ticks cross");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

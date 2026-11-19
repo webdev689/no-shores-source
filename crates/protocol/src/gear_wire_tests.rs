@@ -29,6 +29,8 @@ fn every_ask() -> Vec<Asked> {
         Asked::Grant(Grant::Item { kind: Kind::Crossbow, rarity: Rarity::Rare, level: 9 }),
         Asked::Grant(Grant::Materials(50)),
         Asked::Grant(Grant::Xp(12_345)),
+        Asked::Grant(Grant::Status { status: combat::Status::Expose, on_foes: true, ticks: Some(150) }),
+        Asked::Grant(Grant::Status { status: combat::Status::Veiled, on_foes: false, ticks: None }),
     ]
 }
 

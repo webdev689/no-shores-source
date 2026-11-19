@@ -40,6 +40,8 @@ pub struct Blow {
     /// Its striker's weapon's element, by the gear's number, 0 for none: combat carries it, and the host weighs it
     /// against a shield.
     pub element: u8,
+    /// Marked a crit by what struck it, whatever its striker holds (`status::crits`).
+    pub crit: bool,
 }
 
 impl Blow {
@@ -91,6 +93,7 @@ pub fn swing_blow(striker_id: FighterId, striker: &Fighter, attack: &Attack, def
         through: trim.guard_through,
         stagger: trim.stagger_given,
         element: 0,
+        crit: false,
     }
 }
 
@@ -113,6 +116,7 @@ pub fn telegraph_blow(striker_id: FighterId, striker: &Fighter, telegraph: &Tele
         through: 1.0,
         stagger: 1.0,
         element: 0,
+        crit: false,
     }
 }
 
@@ -133,6 +137,7 @@ pub fn shot_blow(shot: &crate::shots::Shot, from: [f64; 2]) -> Blow {
         through: 1.0,
         stagger: 1.0,
         element: 0,
+        crit: false,
     }
 }
 
