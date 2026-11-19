@@ -618,50 +618,69 @@ fn way_in(laid: &layout::Layout, area: &layout::areas::Area) -> Option<[f64; 2]>
     })
 }
 
-/// Writes the views of each Saltmere zone for the picture driver's `views` step: every area's middle facing its first
-/// way in, every run beat from its entry, and three high views looking down at the zone. It writes to `target/shots/saltmere.json`, or to `$SHOT_LIST`. Run it where the pictures are to be taken, so the
-/// views follow the runs as laid then: `cargo test -p room --test runs_planned shot_list -- --ignored`.
+/// The point a distance back along a line from one of its points, walking its segments.
+fn back_along(line: &[[f64; 2]], from: [f64; 2], distance: f64) -> [f64; 2] {
+    let at = line.iter().position(|point| *point == from).unwrap_or(0);
+    let mut left = distance;
+    for pair in line[..=at].windows(2).rev() {
+        let length = layout::field::distance(pair[0], pair[1]);
+        if length >= left {
+            let share = left / length.max(1e-9);
+            return [pair[1][0] + (pair[0][0] - pair[1][0]) * share, pair[1][1] + (pair[0][1] - pair[1][1]) * share];
+        }
+        left -= length;
+    }
+    line[0]
+}
+
+/// Writes the views of each Saltmere zone for the picture driver's `views` step, each standing in the open: every area
+/// from its first way in facing its middle, every run beat from its way in, and three high views looking down at the
+/// zone. It writes to `target/shots/saltmere.json`, or to `$SHOT_LIST`. Run it where the pictures are to be taken, so
+/// the views follow the runs as laid then: `cargo test -p room --test runs_planned shot_list -- --ignored`.
 #[test]
 #[ignore = "writes target/shots/saltmere.json"]
 fn shot_list() {
-    let (layouts, _, _) = continent_one(&briefs());
+    let (layouts, _, ground) = continent_one(&briefs());
     let mut zones = serde_json::Map::new();
     for id in ZONES {
         let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
         let mut views = Vec::new();
-        for (number, area) in laid.areas.iter().enumerate() {
-            // Where the first way enters, a little inside the rim, looking at the middle; with no way, south of it.
+        // Where an area's first way enters, a little inside the rim; with no way, south of its middle.
+        let stand_in = |area: &layout::areas::Area| {
             let from = way_in(laid, area).unwrap_or([area.at[0], area.at[1] + area.radius]);
             let reach = (libm::hypot(from[0] - area.at[0], from[1] - area.at[1])).min(area.radius * 0.9);
             let along = reach / libm::hypot(from[0] - area.at[0], from[1] - area.at[1]).max(1e-9);
-            let stand = [area.at[0] + (from[0] - area.at[0]) * along, area.at[1] + (from[1] - area.at[1]) * along];
-            views.push(view(stand, compass(stand, area.at), "first", &format!("area{number}_{}", slug(&area.name))));
+            [area.at[0] + (from[0] - area.at[0]) * along, area.at[1] + (from[1] - area.at[1]) * along]
+        };
+        for (number, area) in laid.areas.iter().enumerate() {
+            let stand = stand_in(area);
+            // An area with no name of its own is named for its kind.
+            let name = if area.name.is_empty() { format!("{:?}", area.kind) } else { area.name.clone() };
+            views.push(view(stand, compass(stand, area.at), "first", &format!("area{number}_{}", slug(&name))));
         }
         for run in &laid.runs {
-            let mut before = run.mouth;
+            // On the run's own line, which nothing stands on, back from each beat's middle: at its rim, or inside a
+            // building's room (its walls at ROOM_SHARE of the beat), looking at the middle.
+            let share = if run.kind.building() { 0.6 } else { 1.0 };
             for (number, beat) in run.beats.iter().enumerate() {
-                let (dx, dy) = (beat.at[0] - before[0], beat.at[1] - before[1]);
-                let length = libm::hypot(dx, dy).max(1e-9);
-                let back = beat.radius.min(length) / length;
-                let entry = [beat.at[0] - dx * back, beat.at[1] - dy * back];
-                views.push(view(
-                    entry,
-                    compass(before, beat.at),
-                    "first",
-                    &format!("run_{}_{number}", slug(&run.name)),
-                ));
-                before = beat.at;
+                let entry = back_along(&run.line, beat.at, beat.radius * share);
+                views.push(view(entry, compass(entry, beat.at), "first", &format!("run_{}_{number}", slug(&run.name))));
             }
         }
+        // From where a way enters an area, looking across the zone to its areas' middle.
         let count = laid.areas.len();
+        let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);
         for index in [0, count / 2, count.saturating_sub(1)] {
-            let area = &laid.areas[index];
-            let middle = [0, 1].map(|axis| laid.areas.iter().map(|each| each.at[axis]).sum::<f64>() / count as f64);
-            views.push(view(area.at, compass(area.at, middle), "third,200,40", &format!("high_{index}")));
+            let stand = stand_in(&laid.areas[index]);
+            views.push(view(stand, compass(stand, middle), "third,200,40", &format!("high_{index}")));
         }
         for entry in &views {
             let at = [entry[0].as_f64().unwrap_or(0.0), entry[1].as_f64().unwrap_or(0.0)];
             assert!(ring_holds(&laid.ring, at[0], at[1]), "{id}: {entry} is inside the section");
+            // In the open: no box within a body's reach of the point between its knees and its head.
+            let floor = ground.height_at(at[0], at[1]);
+            let walled = laid.boxes.iter().find(|b| off_box(at, b) < 0.6 && b[5] < floor + 1.9 && b[4] > floor + 0.3);
+            assert!(walled.is_none(), "{id}: {entry} stands in {walled:?}");
         }
         zones.insert(id.to_string(), serde_json::Value::Array(views));
     }
