@@ -448,6 +448,9 @@ export class Foot {
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
     const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    const held = gear?.gear;
+    // The room leaves an Ammo box lying at full ammunition, as a melee-only character's always is.
+    const full = (held?.ammoShare ?? 1) >= 1;
     const fought: FootFight = {
       own: ownView,
       foes: foes.marked(fight),
@@ -461,7 +464,8 @@ export class Foot {
       abilities: fight.abilities,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,
-      ammoMost: this.gear?.gear?.ammoMost ?? null,
+      ammoMost: held?.ammoMost ?? null,
+      ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
       crosshair: sights
         ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
         : null,

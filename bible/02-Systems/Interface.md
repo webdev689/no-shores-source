@@ -178,7 +178,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   down to stand 24 px clear of any foe's plate and clear of the words already shown. Blows by one striker on one
   foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
-  not break it says "Holds".
+  not break it says "Holds". Stepping onto an Ammo box the room leaves lying, the ammunition full, says "Ammo full" on
+  the player in plain grey, once each time ([[Gear]], "Ammo full").
 - **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
