@@ -180,6 +180,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#72, the dungeons, is not finished yet**: DFO's Dungeons 2.0 within the patrol areas
+  ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]], Claude's calls in [[Dungeons as Claude Builds Them]],
+  [[Dungeons]]). Built, tested offline, CI green: linear runs with a way in, a Reeve's end room and a return portal,
+  props, torches, the procedural pictures, three mound entrances a patrol, each dungeon its own room. When it is
+  finished it waits on the owner's yes to merge.
+
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
@@ -257,6 +263,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
 
 ## Next
+
+- **Finish #72's pass** (paused at the usage limit). Done, headless at 800x500: the Cells dungeon's mound entrance,
+  its prompt, the way in, a corridor's doorway and the furnished room all look right. Dying inside and standing
+  again at the way in works. Still to do:
+  - Picture the end room, cache and portal shut and open. The garrison kills a headless player first, so build
+    room.wasm in a scratch worktree with the Reeve's post empty and no bands (never committed). Route it in with
+    webgpu-shot's `routes`.
+  - Picture Halls, Sanctum and Crypt.
+  - Run a whole-diff review (`git diff origin/main...HEAD`) and fix what holds up.
+  - Bring the PR body up to date: it still reads as the opening draft.
+  - Then report to the owner.
+  The planner that writes the steps was `/tmp/claude-0/qa/plan4.ts`, which a new container loses: it walks a BFS
+  path from `arrival` to the cache and faces each shot.
 
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
