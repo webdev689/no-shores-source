@@ -342,7 +342,15 @@ Where the work stands now, for the next session. Each session rewrites this note
      Cutting each ramp along its way's own line (tried, not kept) fixed that way but stepped the way from the
      landing to the graves, which runs between two of the camp's ramps over their raised sides. So a ramp alone is
      not enough: the levels must be laid on the network of ways as a whole, the ground between ways that run near
-     each other graded to one level, and the walk switched on once they are;
+     each other graded to one level, and the walk switched on once they are. In progress on its own branch,
+     `ccr-0f4acf2e-wd3195-heights` (not merged into #63's): the brief's `heights` (the Vale's only, its Water Meadows
+     at the river's level), each area at its kind's level (`heights.rs`), every way's points graded between them as
+     one network, and the raised floors carved as the sculpt's `levels` (as climbs, but floor to all that asks for
+     floor); lookout climbs start at their floor's level. Three of `detail_planned.rs`'s tests still fail there: 393
+     of 919 plantings off their rules (the test may count `floors` alone as floor), 9 things buried by outcrops by
+     the raised floors (the outcrops keep off ways and climbs, not the raised floors), and the Hollow Undercroft no
+     longer found in the Vale's rock. Then the bridges over the river, which are built before the carving on the
+     land's own heights, must span the ravine at the ways' level, and the masses' valleys join floors at theirs;
   3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
      hollows and pits;
   4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;
