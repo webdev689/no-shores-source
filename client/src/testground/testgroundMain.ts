@@ -166,7 +166,10 @@ async function start(): Promise<void> {
   startStatusPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
   const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
   const feel = new AttackFeel(combatRules, movement.tickSeconds);
-  startFeelPanel(element<HTMLElement>('#panel'), (set) => feel.set(set));
+  startFeelPanel(element<HTMLElement>('#panel'), (set) => {
+    feel.set(set);
+    scene.light = set.light;
+  });
   // The camera the player's frame is drawn from, and an aimed shot laid on its crosshair.
   const aimView = (shown: Player) =>
     aboveGround(playerCamera(aimHeld ? { ...shown, aim: 1 } : shown, movement, COURSE, aimPlace));

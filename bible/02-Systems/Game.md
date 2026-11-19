@@ -19,6 +19,7 @@ code:
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
+  - client/src/combat/lightLayer.ts#LightLayer
   - client/src/shadow.ts#ShadowMap
   - client/src/game/figureView.ts#FigureView
   - client/src/combat/flashes.ts#Flashes
@@ -109,7 +110,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
   crosshair shows); and the lunge driving a striker's figure into its blow. Only the drawing moves, never the rules or
   their clock (`combat/attackFeel.ts`). A player who asks for reduced motion keeps a still view: no kick, no shake, no
-  lunge carrying the eye and no Anima push-in; the Anima's edge frame still shows.
+  lunge carrying the eye and no Anima push-in; the Anima's edge frame still shows. The feel's light is on too: the
+  brightest marks and arcs light what stands round them ("Drawing").
 - **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole figure
   white for two, its outline white for two, then its outline for one in the blow's element's light (steel `#cfe0ff` for
   a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames only for a blow of
@@ -269,8 +271,11 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 
 `GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
 drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
-draws over the water: on foot, the fight's see-through marks, far to near, tested by hand against the scene's depth,
-so the water near a coast never covers them. The fight's solid marks write depth in the pass with the figures. The game adds the
+draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each tested by hand
+against the scene's depth, so the water's sky and its surface near a coast never cover them. The fight's solid marks
+write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the marks and arcs give
+their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The attack feel"), under
+the first person's hands. Off foot, or with no mark or arc to draw, it is not run. The game adds the
 open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
 its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
 `world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`

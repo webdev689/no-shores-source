@@ -1,6 +1,8 @@
 import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { type Orbit, REVERSED_DEPTH, cameraOf, viewProjection } from '../editor/orbit.ts';
+import { FEEL } from '../combat/attackFeel.ts';
+import { LIGHT_DEPTH, LIGHT_TARGET, LightLayer } from '../combat/lightLayer.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
 import { SWING_ATTRIBUTES, SWING_WGSL } from '../combat/swingLook.ts';
@@ -149,6 +151,8 @@ export class SceneView implements CardMaker {
   private readonly marks: MarkDraw;
   private markVertices: Float32Array = new Float32Array(0);
   private readonly swingPipeline: GPURenderPipeline;
+  private readonly swingLight: GPURenderPipeline;
+  private readonly lights: LightLayer;
   private swingBuffer: GPUBuffer | null = null;
   private swingCount = 0;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
@@ -156,6 +160,8 @@ export class SceneView implements CardMaker {
   private depth: GPUTexture | null = null;
   /** Draws into the scene's pass after the ground and blocks and before the cards, as blood does. */
   underCards: ((pass: GPURenderPassEncoder) => void) | null = null;
+  /** Whether the brightest effects light what stands round them (the attack feel's light). */
+  light = FEEL.light;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
@@ -235,6 +241,18 @@ export class SceneView implements CardMaker {
       primitive: { topology: 'triangle-list' },
       depthStencil: { ...depthStencil, depthWriteEnabled: false },
     });
+    this.swingLight = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [sceneLayout] }),
+      vertex: {
+        module,
+        entryPoint: 'swingVertex',
+        buffers: [{ arrayStride: SWING_FLOATS * 4, attributes: [...SWING_ATTRIBUTES] }],
+      },
+      fragment: { module, entryPoint: 'swingLight', targets: [LIGHT_TARGET] },
+      primitive: { topology: 'triangle-list' },
+      depthStencil: LIGHT_DEPTH,
+    });
+    this.lights = new LightLayer(gpu, 'depth');
     this.glows = new GlowCards(gpu, gpu.format, REVERSED_DEPTH.format);
     this.sceneBuffer = device.createBuffer({
       size: SCENE_BYTES,
@@ -384,7 +402,8 @@ export class SceneView implements CardMaker {
   }
 
   /** Draws the ground, the blocks and the cards as seen from `orbit` into the canvas, `width` by `height` device
-   *  pixels, with a ring round the chosen figure's feet; `after` may draw over the frame before it is shown. */
+   *  pixels, with a ring round the chosen figure's feet, and the light of the marks and arcs over them; `after` may
+   *  draw over the frame before it is shown. */
   draw(
     orbit: Orbit,
     width: number,
@@ -399,7 +418,7 @@ export class SceneView implements CardMaker {
       this.depth = device.createTexture({
         size: [width, height],
         format: REVERSED_DEPTH.format,
-        usage: TEXTURE_USAGE.renderAttachment,
+        usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.textureBinding,
       });
     }
     const values = new Float32Array(SCENE_BYTES / 4);
@@ -474,6 +493,15 @@ export class SceneView implements CardMaker {
       pass.draw(this.swingCount);
     }
     pass.end();
+    if (this.light && (this.markVertices.length > 0 || this.swingCount > 0))
+      this.lights.encode(encoder, colourView, this.depth, (light) => {
+        this.marks.drawLight(light, seen);
+        if (!this.swingBuffer || this.swingCount === 0) return;
+        light.setPipeline(this.swingLight);
+        light.setBindGroup(0, this.sceneGroup);
+        light.setVertexBuffer(0, this.swingBuffer);
+        light.draw(this.swingCount);
+      });
     after?.(encoder, colourView);
     device.queue.submit([encoder.finish()]);
   }

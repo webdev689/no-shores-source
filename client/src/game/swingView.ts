@@ -1,8 +1,7 @@
+import { LIGHT_DEPTH, LIGHT_TARGET } from '../combat/lightLayer.ts';
 import { SWING_FLOATS } from '../combat/swingArcs.ts';
 import { SWING_ATTRIBUTES, SWING_WGSL } from '../combat/swingLook.ts';
-import { REVERSED_DEPTH } from '../editor/orbit.ts';
-import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
-import { SAMPLES } from '../water/waterView.ts';
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 
 /** The swings' arcs, measured from the eye as the land is, drawn with the arcs' own pixel fragment. */
 const SHADER = /* wgsl */ `
@@ -23,51 +22,73 @@ ${SWING_WGSL}
   out.extra = extra;
   return out;
 }
+
+@group(0) @binding(1) var depths: texture_2d<f32>;
+
+// Over the finished picture: hidden where the scene's depth (reversed, nearer is more) stands nearer.
+@fragment fn swing_over(in: SwingOut) -> @location(0) vec4f {
+  let shown = swing_shade(in);
+  if (in.position.z < textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
+  return shown;
+}
 `;
 
-/** The arcs of the blows being struck on foot, as the attack feel lays them, over the land and figures, tested
- *  against their depth and writing none. */
+/** The arcs of the blows being struck on foot, as the attack feel lays them: over the finished picture, after the
+ *  water (which would paint its sky and surface over them), tested by hand against the scene's depth. */
 export class SwingView {
   private readonly device: GPUDevice;
-  private readonly pipeline: GPURenderPipeline;
+  private readonly over: GPURenderPipeline;
+  private readonly overLayout: GPUBindGroupLayout;
+  private overGroup: { depth: GPUTexture; group: GPUBindGroup } | null = null;
+  private readonly light: GPURenderPipeline;
   private readonly view: GPUBuffer;
   private readonly group: GPUBindGroup;
   private buffer: GPUBuffer | null = null;
   private count = 0;
 
   constructor(gpu: Gpu) {
-    this.device = gpu.device;
-    const module = gpu.device.createShaderModule({ code: SHADER });
+    const { device } = gpu;
+    this.device = device;
+    const module = device.createShaderModule({ code: SHADER });
     const blend = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
-    this.pipeline = gpu.device.createRenderPipeline({
-      layout: 'auto',
-      vertex: {
-        module,
-        entryPoint: 'swing_vertex',
-        buffers: [{ arrayStride: SWING_FLOATS * 4, attributes: [...SWING_ATTRIBUTES] }],
-      },
+    const vertex: GPUVertexState = {
+      module,
+      entryPoint: 'swing_vertex',
+      buffers: [{ arrayStride: SWING_FLOATS * 4, attributes: [...SWING_ATTRIBUTES] }],
+    };
+    const viewEntry = { binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} };
+    const layout = device.createBindGroupLayout({ entries: [viewEntry] });
+    this.overLayout = device.createBindGroupLayout({
+      entries: [
+        viewEntry,
+        { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
+      ],
+    });
+    this.over = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.overLayout] }),
+      vertex,
       fragment: {
         module,
-        entryPoint: 'swingFragment',
+        entryPoint: 'swing_over',
         targets: [{ format: gpu.format, blend: { color: blend, alpha: blend } }],
       },
       primitive: { topology: 'triangle-list' },
-      depthStencil: { format: REVERSED_DEPTH.format, depthWriteEnabled: false, depthCompare: REVERSED_DEPTH.compare },
-      multisample: { count: SAMPLES },
     });
-    this.view = gpu.device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
-    this.group = gpu.device.createBindGroup({
-      layout: this.pipeline.getBindGroupLayout(0),
-      entries: [{ binding: 0, resource: { buffer: this.view } }],
+    this.light = device.createRenderPipeline({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
+      vertex,
+      fragment: { module, entryPoint: 'swingLight', targets: [LIGHT_TARGET] },
+      primitive: { topology: 'triangle-list' },
+      depthStencil: LIGHT_DEPTH,
     });
+    this.view = device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
   }
 
-  /** The arcs the next frame draws, their vertices in world metres, taken to stand from `eye` (in place). */
-  set(vertices: Float32Array, eye: readonly [number, number, number]): void {
+  /** The arcs the next frame draws, their vertices measured from the eye (`AttackFeel.arcsMesh`'s origin). */
+  set(vertices: Float32Array): void {
     this.count = vertices.length / SWING_FLOATS;
     if (this.count === 0) return;
-    for (let start = 0; start < vertices.length; start += SWING_FLOATS)
-      for (let axis = 0; axis < 3; axis++) vertices[start + axis] = (vertices[start + axis] ?? 0) - (eye[axis] ?? 0);
     if (!this.buffer || this.buffer.size < vertices.byteLength) {
       this.buffer?.destroy();
       const size = Math.max(4096, 2 ** Math.ceil(Math.log2(vertices.byteLength)));
@@ -76,10 +97,34 @@ export class SwingView {
     this.device.queue.writeBuffer(this.buffer, 0, vertices);
   }
 
-  drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array): void {
+  /** The arcs over a finished single-sampled picture `target`, hidden where `depth` (the scene's depth, one float a
+   *  pixel) stands nearer. */
+  drawOver(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture, fromEye: Float32Array): void {
+    if (!this.buffer || this.count === 0) return;
+    if (this.overGroup?.depth !== depth) {
+      const group = this.device.createBindGroup({
+        layout: this.overLayout,
+        entries: [
+          { binding: 0, resource: { buffer: this.view } },
+          { binding: 1, resource: depth.createView() },
+        ],
+      });
+      this.overGroup = { depth, group };
+    }
+    this.device.queue.writeBuffer(this.view, 0, fromEye);
+    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
+    pass.setPipeline(this.over);
+    pass.setBindGroup(0, this.overGroup.group);
+    pass.setVertexBuffer(0, this.buffer);
+    pass.draw(this.count);
+    pass.end();
+  }
+
+  /** The arcs' light, into the light layer's pass (`LightLayer.encode`). */
+  drawLight(pass: GPURenderPassEncoder, fromEye: Float32Array): void {
     if (!this.buffer || this.count === 0) return;
     this.device.queue.writeBuffer(this.view, 0, fromEye);
-    pass.setPipeline(this.pipeline);
+    pass.setPipeline(this.light);
     pass.setBindGroup(0, this.group);
     pass.setVertexBuffer(0, this.buffer);
     pass.draw(this.count);

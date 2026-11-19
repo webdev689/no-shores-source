@@ -216,7 +216,16 @@ from its light, gold `#4a2a06 #c8901e #ffd95a #fff6d0`), held steps, no soft fad
   foe's weapon for 4 ticks (white-hot, then a stop cooler), red for an iron blow; an iron blow's foe is outlined iron
   red for its last 12 ticks.
 - **How the marks are drawn**: solid marks write depth, so a near blade hides a far one; the see-through rest is
-  drawn after them, far to near, and in the game after the water, so the water near a coast never covers them.
+  drawn after them, far to near, and in the game after the water, so the water near a coast never covers them. The
+  game's arcs are drawn after the water too, measured from the eye so they keep their centimetres far from the
+  world's origin.
+- **The light**: the brightest effects light what stands round them, in held pixel steps, never a soft bloom. The
+  marks and arcs are drawn again at a quarter of the view each way (480 by 270 at 1920 by 1080), each colour giving
+  light by how far its brightness passes 0.7, tested against the scene's depth; blurred twice by a 3 by 3 box,
+  tripled, cut to three levels a colour (none, half, all), and added in blocks of 4 screen pixels at 0.35 at most,
+  after the water and under the first person's hands. Nothing on the ground lights: not a telegraph, a drop's line or
+  a heavy blow's dust. Estimated at about half a millisecond a frame at 1920 by 1080 on an integrated GPU, so it is on
+  in the game; the Test Ground's Light switch turns it off.
 
 ## Perks
 
