@@ -171,7 +171,7 @@ export class Passage {
 
   /** Sails her `seconds` on: at the room's pace and drawn to where it has her once it has taken her course; the helm's
    *  course straight on set again as she nears its end, while the way beyond lies clear. The pace she is sailed at
-   *  eases to the world's own time while the view is close on her (`watched`), and back to the dial's once it is not. */
+   *  eases to the world's own time while the view is close on her (`watched`), and back to the dial's once not. */
   advance(seconds: number, watched = false): void {
     this.easePace(seconds, watched);
     if (!this.voyage) return;

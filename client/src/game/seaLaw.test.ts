@@ -206,5 +206,7 @@ test("at the world's own time, with no word from the room, she sails at her true
     [0, -10_000],
   ]);
   assert.equal(followed(voyage, 1_000, 1, WORLD_PACE, null), 1_000 + SHIP_SPEED, '12 m a second');
+  const easing = followed(voyage, 1_000, 1, WORLD_PACE, null, 40);
+  assert.equal(easing, 1_000 + SHIP_SPEED * 40, 'until the room takes the eased course, at the pace it sails her at');
   assert.equal(heldNote(WORLD_PACE, { x: 0, y: 0, pace: WORLD_PACE }), '', 'eased for the view, not held by a pirate');
 });

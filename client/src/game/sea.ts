@@ -326,7 +326,7 @@ export class Sea {
 
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
-    // Off the helm the room takes no course, so the dial waits for the player's return to it.
+    // Off the helm the room takes no new course, so the dial waits for the player's return to it.
     if (!this.aboard.walking) this.passage.stepPace(direction);
   }
 

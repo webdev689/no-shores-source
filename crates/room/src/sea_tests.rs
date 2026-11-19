@@ -106,6 +106,20 @@ fn a_ship_sails_at_the_worlds_own_time_while_the_view_is_close_on_her() {
 }
 
 #[test]
+fn off_the_helm_her_planned_course_is_taken_again_at_another_pace_but_no_other_course() {
+    let mut sea = sea();
+    let player = sea.join();
+    let planned = [[50_000.0, 150_000.0], [50_000.0, 50_000.0], [60_000.0, 40_000.0]];
+    sea.course(player, &planned, 60).unwrap();
+    sea.leave_helm(player).unwrap();
+    let ahead = &planned[1..];
+    assert_eq!(next_course(&mut sea, player, ahead, WORLD_PACE), Ok(()), "her course, at the world's own time");
+    assert_eq!(ship(&sea, player).pace, WORLD_PACE);
+    let elsewhere = [[50_000.0, 50_000.0], [40_000.0, 40_000.0]];
+    assert_eq!(next_course(&mut sea, player, &elsewhere, WORLD_PACE), Err(CourseRefused::OffTheHelm));
+}
+
+#[test]
 fn a_player_sets_one_course_each_half_second() {
     let mut sea = sea();
     let player = sea.join();

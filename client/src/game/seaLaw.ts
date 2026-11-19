@@ -182,8 +182,8 @@ export interface RoomWord {
 }
 
 /** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
- *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the pace she is sailed
- *  at (`sailed`), held to the pace it last sailed her at (`held`) while she was under way. */
+ *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the pace it last sailed
+ *  her at (`held`) while she was under way, else at the pace she is sailed at (`sailed`). */
 export function followed(
   voyage: Voyage,
   travelledM: number,
@@ -193,7 +193,8 @@ export function followed(
   held: number | null = null,
 ): number {
   const seconds = Math.max(0, dt);
-  const asked = SHIP_SPEED * (held !== null && held > 0 ? Math.min(sailed, held) : sailed);
+  // The room sails her at its last pace until it takes the course: matching it, she never drifts off where it has her.
+  const asked = SHIP_SPEED * (held !== null && held > 0 ? held : sailed);
   if (!room) return travelledM + asked * seconds;
   const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
   const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
@@ -209,7 +210,7 @@ export const heldNote = (sailed: SailedPace, room: RoomWord | null): string =>
 export const WORLD_PACE = 1;
 /** The pace a ship is sailed at: her dial's step, or the world's own time while the view is close on her. */
 export type SailedPace = Pace | typeof WORLD_PACE;
-/** The ladder the sailed pace eases along, DFO's steps down to the world's own time, and the seconds each step takes. */
+/** The ladder the sailed pace eases along, DFO's steps down to the world's own time, and the seconds a step takes. */
 const EASED_LADDER: readonly SailedPace[] = [WORLD_PACE, ...PACE_STEPS];
 export const PACE_EASE_S = 0.15;
 
