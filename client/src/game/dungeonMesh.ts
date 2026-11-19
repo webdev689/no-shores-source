@@ -310,9 +310,14 @@ function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
   const piece = (from: number, to: number, low: number, high: number) => {
     const ends = [from, to].map((along) => [opening.x + acrossX * along, opening.y + acrossY * along]);
     const off = [opening.x - east * ARCH.proud, opening.y - south * ARCH.proud];
-    const xs = [...ends.map(([x]) => x ?? 0), off[0] ?? 0];
-    const ys = [...ends.map(([, y]) => y ?? 0), off[1] ?? 0];
-    box(mesh, trim, [Math.min(...xs), Math.min(...ys), low], [Math.max(...xs), Math.max(...ys), high]);
+    const eastings = [...ends.map(([x]) => x ?? 0), off[0] ?? 0];
+    const southings = [...ends.map(([, y]) => y ?? 0), off[1] ?? 0];
+    box(
+      mesh,
+      trim,
+      [Math.min(...eastings), Math.min(...southings), low],
+      [Math.max(...eastings), Math.max(...southings), high],
+    );
   };
   const half = opening.width / 2;
   piece(-half - ARCH.post, -half, 0, opening.height + ARCH.lintel);
