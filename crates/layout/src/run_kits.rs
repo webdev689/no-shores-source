@@ -8,7 +8,7 @@ use crate::field::distance;
 use crate::halls::WALL_M;
 use crate::paths::off_line;
 use crate::pieces::{Kit, turn_along};
-use crate::rocks::stone;
+use crate::rocks::{keep_off, loose, stone};
 use crate::run_climbs::off_print;
 use crate::run_halls::{ROOM_SHARE, roomed};
 use crate::runs::{Beat, Run, half_of};
@@ -59,6 +59,10 @@ pub fn build(kit: &mut Kit, run: &Run, carved: &Sculpts) {
         !built || !blocks(run, solid, floor)
     });
     crate::run_climbs::build(kit, run, carved);
+    // Its own loose rock (cover's boulders, a stump's fallen courses) keeps off the rest of what it built.
+    let built: Vec<[f64; 6]> =
+        kit.into.solids[first..].iter().filter(|solid| !loose(solid)).map(Solid::bounds).collect();
+    keep_off(kit.into, first, &built);
 }
 
 /// Whether a solid's box stands within 1.2 m of a run's way (its line and on to its door) under head height (2.2 m over `floor`).

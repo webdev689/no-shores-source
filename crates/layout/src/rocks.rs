@@ -1,10 +1,13 @@
 //! The rock fallen from a layout's cliffs and outcrops, in rubble: boulders and scree lying on the floor where each
-//! face meets it, never up the face, so every stone rests on level ground as if it had rolled there. Scree is stepped
-//! over; a boulder is a box.
+//! face meets it, never up the face, so every stone rests on level ground as if it had rolled there, and never in what
+//! a run built or on its climb. Scree is stepped over; a boulder is a box.
 
 use crate::field::{distance, ring_holds};
 use crate::paths::{Path, off_line};
 use crate::pieces::Kit;
+use crate::run_climbs::climb;
+use crate::runs::Run;
+use crate::seat::Seating;
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::{Outcrop, Sculpts};
 
@@ -19,6 +22,36 @@ const GORGE_CLEAR_M: f64 = 22.0;
 const SCREE_TALLEST_M: f64 = 0.4;
 /// The carving raises the floor no more than this where a face meets it, metres: a face's foot.
 pub(crate) const FOOT_RISE_M: f64 = 0.3;
+
+/// What fallen rock keeps clear of in a zone's runs, as boxes (west, north, east, south, bottom, top): each solid a run
+/// built, and the ground its climb takes, whatever the height.
+#[must_use]
+pub(crate) fn kept_clear(built: &[Solid], runs: &[Run]) -> Vec<[f64; 6]> {
+    let climbs = runs.iter().filter_map(climb).map(|climb| {
+        let [west, north, east, south] = climb.print;
+        [west, north, east, south, f64::NEG_INFINITY, f64::INFINITY]
+    });
+    built.iter().map(Solid::bounds).chain(climbs).collect()
+}
+
+/// Whether a solid is loose rock: rubble tipped as it fell (`stone`).
+#[must_use]
+pub(crate) fn loose(solid: &Solid) -> bool {
+    solid.material == Material::Rubble && (solid.lean != 0.0 || solid.roll != 0.0)
+}
+
+/// Leaves out each loose stone laid from `from` on whose box meets one of `kept` (west, north, east, south, bottom,
+/// top), so none lies in a run's stone or on its climb.
+pub(crate) fn keep_off(seating: &mut Seating, from: usize, kept: &[[f64; 6]]) {
+    let meets = |[west, north, east, south, bottom, top]: [f64; 6]| {
+        kept.iter().any(|b| west < b[2] && b[0] < east && north < b[3] && b[1] < south && bottom < b[5] && b[4] < top)
+    };
+    let mut index = 0;
+    seating.solids.retain(|solid| {
+        index += 1;
+        index <= from || !loose(solid) || !meets(solid.bounds())
+    });
+}
 
 /// Whether a point lies within `clear` metres of a path's line.
 fn near_path(paths: &[Path], at: [f64; 2], clear: f64) -> bool {

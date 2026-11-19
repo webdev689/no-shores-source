@@ -413,6 +413,48 @@ fn every_cavern_slab_is_carried() {
 }
 
 #[test]
+fn no_loose_rock_lies_in_a_runs_stone_or_on_its_climb() {
+    let (layouts, _, _) = continent_one(&briefs());
+    let mut found = Vec::new();
+    for laid in &layouts {
+        // Loose rock is rubble tipped as it fell; what a run built stands upright.
+        let loose = |solid: &&city::solids::Solid| {
+            solid.material == city::solids::Material::Rubble && (solid.lean != 0.0 || solid.roll != 0.0)
+        };
+        let rocks: Vec<[f64; 6]> = laid.seating.solids.iter().filter(loose).map(|solid| solid.bounds()).collect();
+        let built: Vec<[f64; 6]> =
+            laid.seating.solids.iter().filter(|solid| !loose(solid)).map(|solid| solid.bounds()).collect();
+        for run in &laid.runs {
+            let reach = land::sculpts::CLIFF_RUN_M;
+            let half = layout::runs::half_of(run.kind);
+            let ours = |b: &[f64; 6]| {
+                let middle = [(b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0];
+                run.beats.iter().any(|beat| layout::field::distance(middle, beat.at) <= beat.radius + reach)
+                    || run
+                        .way()
+                        .windows(2)
+                        .any(|pair| layout::paths::off_line(middle, pair[0], pair[1]) <= half + reach)
+            };
+            let stone: Vec<&[f64; 6]> = built.iter().filter(|b| ours(b)).collect();
+            let climb = layout::run_climbs::climb(run).map(|climb| climb.print);
+            for rock in &rocks {
+                // Boxes as `Solid::bounds` gives them: west, north, east, south, bottom, top.
+                let meets = |b: &[f64; 6]| overlapping(&rock[..], &b[..]) && rock[4] < b[5] && b[4] < rock[5];
+                if stone.iter().any(|b| meets(b)) || climb.is_some_and(|print| overlapping(&rock[..], &print[..])) {
+                    found.push(format!("{}: {} at {:?}", laid.id, run.name, [rock[0], rock[1], rock[4]]));
+                }
+            }
+        }
+    }
+    assert!(
+        found.is_empty(),
+        "{} loose rocks lie in a run's stone or on its climb: {:#?}",
+        found.len(),
+        &found[..found.len().min(10)]
+    );
+}
+
+#[test]
 fn a_ramparts_way_along_the_top_is_walled_on_both_sides() {
     each_run(&|laid, run, floor| {
         if run.kind != layout::brief::RunKind::Rampart {

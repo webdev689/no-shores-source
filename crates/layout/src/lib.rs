@@ -273,9 +273,11 @@ pub fn plan(
         }))
         .collect();
     works::retaining_walls(&mut kit, &areas, &ways, &sculpt.outcrops, &carved);
+    let built = kit.into.solids.len();
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
     }
+    let runs_stone = rocks::kept_clear(&kit.into.solids[built..], &runs);
     // Where a gorge out of the claim meets a river, a footbridge carries its way over.
     for &(from, way) in &exits {
         pieces_land::footbridges(&mut kit, reach, carve::gorge(&field, from, way, 0.0), &ring);
@@ -289,8 +291,10 @@ pub fn plan(
             heights: Vec::new(),
         })
         .collect();
+    let fallen = kit.into.solids.len();
     rocks::talus(&mut kit, &ring, (&ways, &gorges), &carved);
     rocks::clad(&mut kit, &sculpt.outcrops, &ways, &carved);
+    rocks::keep_off(kit.into, fallen, &runs_stone);
     skyline::rim(&mut kit, &ring, (&ways, &sculpt.outcrops), &carved);
     // Last of what stands, so a shelf's headstones keep out of all the rest.
     basins::graves(&mut kit, &terraces, &carved);

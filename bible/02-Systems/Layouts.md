@@ -190,7 +190,9 @@ from the sea, fresh water and the claim's edge), then:
    left bare and never by a path, a heap of a boulder or two against the foot, smaller stones by them and scree spilt
    out onto the floor too low to trip on; and such heaps all round each outcrop's foot, a whaleback's ends too, more
    the longer its footprint is round. A face's foot is found by walking in from the section's edge to where the
-   carving no longer raises the floor. All of it is the solids' rubble, which wears the ground's stone in the grey the
+   carving no longer raises the floor. No stone that lies in what a run built or on the ground its climb takes is
+   laid, and a run's own loose stones (its cover's boulders, a stump's fallen courses) keep off the rest of what it
+   built. All of it is the solids' rubble, which wears the ground's stone in the grey the
    terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears chalk's white instead (the client
    turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
