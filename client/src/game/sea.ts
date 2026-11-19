@@ -35,7 +35,7 @@ import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
 import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
-import { SeaCombat } from './seaCombat.ts';
+import { roomSource, SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { HELM, helmEye, type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
 
@@ -556,7 +556,7 @@ export class Sea {
     this.aboard.drop();
     this.passage.stop();
     if (this.view.kind === 'helm') this.view = { kind: 'sail' };
-    this.combat = new SeaCombat(this.room, first, this.hull.marks, this.hull.sails, time);
+    this.combat = new SeaCombat(roomSource(this.room, first), first, this.hull.marks, this.hull.sails, time);
   }
 
   /** The view coming down to the helm, there, or going back up, `seconds` on: how far down, eased. */

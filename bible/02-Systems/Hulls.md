@@ -77,13 +77,14 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
    entry in `content/ships/ships.json`. The `ships` workflow does this for the Sloop, the Schooner and the Brig. A
-   square sail is measured by its four corners, each named by its side; the game does not set one yet.
+   square sail is measured by its four corners, each named by its side; the game sets it on them ([[Sailing]], "Her
+   sails").
 
 ## What the code needs
 
 - **Its numbers**: a `Hull` beside `SLOOP`, from its export, with its gain and its sails.
-- **Square sails**: the game bellies and swings only gaff sails and staysails. The hull rules already know square
-  and lateen sails.
+- **Square sails**: the game sets and bellies them (the Brig's), but does not brace their yards round. The hull rules
+  already know square and lateen sails.
 - **A ship's hull, everywhere**: the sailing and fight code, the rooms and the browser hold the Sloop alone, by
   `SLOOP` in about 25 places outside tests; each must carry which hull a ship is.
 - **The ram**: a ram bow that strikes harder than a stem.

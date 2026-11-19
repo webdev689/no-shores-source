@@ -1,5 +1,6 @@
-//! A fight over the open landmass: the player's Sloop and one pirate captain's (the naval crate's `Fight`). It stays
-//! here between calls, as the open landmass does; a request begins one, steps it, or ends it. Requests and answers
+//! A fight over the open landmass: the player's Sloop and one pirate captain's, or the captains a begin request sets
+//! upon her (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a request begins
+//! one, steps it, or ends it. Requests and answers
 //! are JSON: the fight's own numbers never cross, so a request carries only the player's orders.
 
 use super::OPEN;
@@ -12,11 +13,14 @@ use naval::captain::Mode;
 use naval::damage::{State, Zone};
 use naval::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use naval::guns::Shot;
+use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
+use sailing::ship::Ship;
 use sailing::waters::{LandWaters, Waters, steady_wind};
 use serde_json::{Value, json};
 use std::cell::RefCell;
+use std::f64::consts::TAU;
 
 thread_local! {
     static FIGHT: RefCell<Option<Fight>> = const { RefCell::new(None) };
@@ -140,11 +144,31 @@ fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &naval::captain::Captain)
     Ok((player, captain, &command.her))
 }
 
-/// The fight as the browser shows it, its lay over `waters` at `time`.
+/// A captain's Sloop as the browser shows her: her hurts, her commission, her mind and her sides run out.
+fn captain_json(vessel: &Vessel, her: &naval::captain::Captain) -> Value {
+    let mut captain = vessel_json(vessel);
+    captain["name"] = json!(her.build.name);
+    captain["faction"] = json!(her.commission.faction);
+    captain["rank"] = json!(her.commission.rank.number());
+    captain["mode"] = json!(mode_name(her.mode));
+    captain["hostile"] = json!(her.hostile_to(PLAYER));
+    captain["run_out"] = json!(
+        Side::BOTH.iter().filter(|side| her.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
+    );
+    captain
+}
+
+/// The fight as the browser shows it, its lay over `waters` at `time`: every captain after the first goes in
+/// `others`, by number, as the sea room's wire carries them.
 fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Value {
     let Ok((player, captain_ship, her)) = the_two(fight) else {
         return json!({ "error": "the fight has lost its ships" });
     };
+    let others: Vec<Value> = fight
+        .ships
+        .range(CAPTAIN + 1..)
+        .filter_map(|(_, vessel)| vessel.command().map(|command| captain_json(vessel, &command.her)))
+        .collect();
     let balls: Vec<[f64; 4]> = fight
         .balls
         .iter()
@@ -154,25 +178,41 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
             [at[0], at[1], at[2], ball.gun.radius_m]
         })
         .collect();
-    let mut captain = vessel_json(captain_ship);
-    captain["name"] = json!(her.build.name);
-    captain["faction"] = json!(her.commission.faction);
-    captain["rank"] = json!(her.commission.rank.number());
-    captain["mode"] = json!(mode_name(her.mode));
-    captain["hostile"] = json!(her.hostile_to(PLAYER));
-    captain["run_out"] = json!(
-        Side::BOTH.iter().filter(|side| her.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
-    );
     json!({
         "clock": fight.clock,
         "player": vessel_json(player),
-        "captain": captain,
+        "captain": captain_json(captain_ship, her),
+        "others": others,
         "balls": balls,
         "lay": lay_json(fight, aim, waters, time),
         "events": events.iter().filter_map(event_json).collect::<Vec<_>>(),
         "over": fight.over().map(|end| match end { End::Sunk => "sunk", End::Gone => "gone" }),
         "fingerprint": format!("{:016x}", fingerprint(fight.numbers())),
     })
+}
+
+/// A captain as the fight enlists her: her Sloop, her commission and her seed.
+type Enlisted = (Ship, Commission, u32);
+
+/// The captains a begin request sets at sea, each checked: where she is, her heading (radians) and her commission,
+/// her temper drawn from the fight's seed and her place in the list. None given: the plain fight's one captain.
+fn captains_of(request: &Value, seed: u32) -> Result<Option<Vec<Enlisted>>, String> {
+    let Some(captains) = request.get("captains").filter(|captains| !captains.is_null()) else { return Ok(None) };
+    let captains =
+        captains.as_array().filter(|captains| !captains.is_empty()).ok_or("a fight's captains are a list")?;
+    let captain = |(at, captain): (usize, &Value)| {
+        let x = number(&captain["x"], "a captain's x")?;
+        let y = number(&captain["y"], "a captain's y")?;
+        let heading = number(&captain["heading"], "a captain's heading")?.rem_euclid(TAU);
+        let whole = |name: &str| captain[name].as_u64().and_then(|value| u8::try_from(value).ok());
+        let rank = whole("rank").and_then(Rank::numbered).ok_or("a captain's rank is 1 to 5")?;
+        let commission = whole("faction")
+            .and_then(|faction| Commission::of(faction, rank))
+            .ok_or("a captain's faction is one whose captains sail")?;
+        let ship = Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+        Ok((ship, commission, seed.wrapping_add(u32::try_from(at).unwrap_or(0)).wrapping_add(1)))
+    };
+    captains.iter().enumerate().map(captain).collect::<Result<_, String>>().map(Some)
 }
 
 fn begin(request: &[u8]) -> Result<Value, String> {
@@ -191,12 +231,16 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         .and_then(|seed| u32::try_from(seed).ok())
         .ok_or("a fight's seed is a whole number under 2^32")?;
     let (time, _) = ticks_from(number(&request["time"], "the time")?, 0.0)?;
+    let captains = captains_of(&request, seed)?;
     OPEN.with(|open| {
         let open = open.borrow();
         let landmass = open.as_ref().ok_or("no landmass is open")?;
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
-        let fight = Fight::begin(ship, seed, &waters, time)?;
+        let fight = match &captains {
+            Some(captains) => Fight::ambush(ship, captains, seed, &waters, time),
+            None => Fight::begin(ship, seed, &waters, time)?,
+        };
         let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
         Ok(answer)
