@@ -51,4 +51,8 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | A cry in the sea fight | Waits up to 2.5 s for its speaker to be on the view, then is let go | Every cry is heard with its words |
 | The crew's cries | "Both sides loaded, Captain. Waiting on you.", "Took one, Captain!", "She's foundering!", "Grab a line!" | Said as these sailors would say them, not as a hundred games have |
 | The Frigate coming | 6 m/s, in a lighter shade than the fight's captains, two flashes of lightning past her | She is seen for what she is as she comes |
+| The wreck's decks | Both ships drawn whole and holding a body as drawn, the Frigate's bow standing in the Brig's side; an opening in a deck (a hatch, a gun, a mast) is a wall | Drawing a broken deck needs clipping the ship views do not have, and what is drawn must hold what it shows |
+| The way onto the Frigate | A stair from the Brig's fore deck over her bulwark to the Frigate's starboard rail, landing at the head of her waist; her forecastle closed | Every lane a body wide, over what is drawn |
+| Thule's cries in the fight | "Kneel." once, and again only after the player strikes him | [[Dialogue]] rule 2 |
+| The celebrating crew | Thule's crew leap and cry out as the player goes over | "the enemy celebrating" |
 | How long it runs | The intro about 80 s (75 s of shots, and a moment of cloud while each island opens); the whole story about 15 minutes played | A first session's length |
