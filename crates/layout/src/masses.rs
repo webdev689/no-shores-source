@@ -65,7 +65,7 @@ pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
     cut
 }
 
-/// The answer that reaches the most of a mass: a climb if one leaves none of it dead, else the valley reaching most
+/// The answer that reaches the most of a mass: a climb if one leaves no dead mass of it, else the valley reaching most
 /// of it, else the climb that does.
 fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> Option<Answer> {
     let taken: Vec<[f64; 7]> = sculpt.climbs.iter().chain(&sculpt.runs).copied().collect();
@@ -111,7 +111,7 @@ fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> 
                 let on_climb = lookouts(&sculpt.climbs)
                     .flatten()
                     .any(|climb| off_line(at, [climb[0], climb[1]], [climb[2], climb[3]]) <= climb[4] + CELL_M);
-                return (!on_climb).then_some((at, out));
+                return (!on_climb).then_some(at);
             }
             if walked && !field.walkable(cell) {
                 return None;
@@ -125,7 +125,7 @@ fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> 
         [sine, -cosine]
     });
     let climbs = ways.clone().filter_map(|way| {
-        let (start, _) = floor_along(way, false)?;
+        let start = floor_along(way, false)?;
         let climb = climb_along(field, carved, &taken, start, [-way[0], -way[1]], sculpt.rise)?;
         let [[x1, y1, x2, y2, half, ..], lookout] = climb;
         let reached = reaches(&[[x1, y1, x2, y2, half], [lookout[0], lookout[1], lookout[2], lookout[3], lookout[4]]]);
@@ -141,7 +141,7 @@ fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> 
         return Some(Answer::Climb(climb));
     }
     let valleys = ways.take(headings as usize / 2).filter_map(|way| {
-        let ((ahead, _), (behind, _)) = (floor_along(way, true)?, floor_along([-way[0], -way[1]], true)?);
+        let (ahead, behind) = (floor_along(way, true)?, floor_along([-way[0], -way[1]], true)?);
         let valley = [ahead[0], ahead[1], behind[0], behind[1], VALLEY_HALF_M];
         clear([ahead, behind], VALLEY_HALF_M).then(|| (reaches(&[valley]), valley))
     });
@@ -157,7 +157,7 @@ fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> 
 /// lie more than 20 m from every floor, climb and run (past what the section takes or bridges) and that no way across
 /// such cells joins to the grid's edge.
 #[derive(Debug)]
-pub struct Islands<'field> {
+pub(crate) struct Islands<'field> {
     field: &'field Field,
     columns: usize,
     enclosed: Vec<bool>,
@@ -167,8 +167,7 @@ pub struct Islands<'field> {
 const SEALED_M: f64 = 20.0;
 
 impl<'field> Islands<'field> {
-    #[must_use]
-    pub fn of(field: &'field Field, carved: &Sculpts) -> Self {
+    pub(crate) fn of(field: &'field Field, carved: &Sculpts) -> Self {
         let (columns, rows) = (field.columns.div_ceil(STRIDE), field.rows.div_ceil(STRIDE));
         let centre = |at: usize| field.centre((at % columns) * STRIDE, (at / columns) * STRIDE);
         let open: Vec<bool> = (0..columns * rows)
@@ -201,8 +200,7 @@ impl<'field> Islands<'field> {
     }
 
     /// Whether a point lies on rock the floors close round.
-    #[must_use]
-    pub fn hold(&self, point: [f64; 2]) -> bool {
+    pub(crate) fn hold(&self, point: [f64; 2]) -> bool {
         self.field
             .cell_of(point[0], point[1])
             .is_some_and(|(column, row)| self.enclosed[(row / STRIDE) * self.columns + column / STRIDE])
