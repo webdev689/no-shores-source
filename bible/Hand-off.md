@@ -323,11 +323,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   ways that switch back down faces, climb stairs, cross land bridges and bridges over chasms, and run through roofed
   tunnels; gates set in walls from cliff to cliff or clefts in the rock; each zone's map of its spaces and
   connections for missions, events and raids; and foes fighting in tunnels and caverns. The order:
-  1. the map of spaces and connections in the layout, saved with it;
-  2. heights: an area's floor as level flats (a sculpt's climbs whose two levels are equal), ways between heights as
-     chains of climbs turned into switchbacks where one ramp would be too steep, stairs for short rises, land
-     bridges (a climb standing over a lower floor); the sculpt only raises, so on Saltmere (28 m) the deepest place
-     is the land's own level;
+  1. done: the map of spaces and connections ([[Layouts]], "The map"), which shows every Saltmere area at the land's
+     own level but the camps' and the keep's platforms;
+  2. heights. The sculpt only raises, so on Saltmere (28 m) the deepest place is the land's own level, and the code
+     takes the floor to be land the carving does not raise (12 reads of `raise` in basins, lib, masses, plantings,
+     rocks, skyline and works). First give the sculpt a floor level at each point (its nearest floor's or climb's)
+     and read every height over the floor from it. Then lay the zone's network (its canyons and most basins) as
+     level flats (climbs whose two levels are equal) at a middle level, the deep places at the land's own level
+     under it (a graveyard's hollow, a coven, a river's ravine, the gates' gorges out), the high places over it (a
+     keep's citadel, a tower, a shrine, a camp), with ramps or switchbacks where a way meets a higher or lower area,
+     stairs for short rises, land bridges (a climb standing over a lower floor), and the landing climbing up from
+     its strand;
   3. below ground: tunnels and caverns as trenches roofed with solids (the mine run's slabs and ribs), sunken
      hollows and pits;
   4. gates and their palisades ending on rock or walls, with a check that each meets what it joins;
