@@ -179,7 +179,7 @@ sculpts, then the buildings' seats as pads, then the paths as roads (their beds 
 nature keeps off them, every window of the ground carries them, and a node's room stands its bodies on the carved
 land ([[Land]], [[Server]]). Every prop and stone that stood on the ground as it was planned then follows it as it is
 laid, by as far as the pads and roads moved it (`follow_ground`), and what stands on one (a lantern's cage on its
-post) moves with it; a deck, a pile in the water or a battlement keeps its height. The streets' and paths' heights
+post) moves with it; a deck, a pile in the water, a battlement or a building's plinth keeps its height. The streets' and paths' heights
 are then read from the ground as it lies. Saltmere's ten
 layouts are planned and laid in about 0.65 s natively. The bake and the land's worker settle them alike; a node's
 file takes its section, spawns and boxes from its layout.

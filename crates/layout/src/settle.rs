@@ -29,7 +29,8 @@ fn stood_on(base: f64, was: f64) -> bool {
 
 /// Moves every piece that stood on the ground as it was planned (`was`, the ground's height under it then) by as far
 /// as the pads and roads have since moved the ground under it, so none floats or sinks beside a path. A solid at a
-/// height of its own moves with a grounded one under it, as a lantern's cage with its post.
+/// height of its own moves with a grounded one under it, as a lantern's cage with its post; a solid under a pad, a
+/// building's plinth, keeps its height as the pad does.
 fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &Planned) {
     let moved = |at: [f64; 3], before: f64| height(at[0], at[1]) - before;
     for (prop, &before) in seating.props.iter_mut().zip(&was.props) {
@@ -37,13 +38,19 @@ fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &
             prop.at[2] += moved(prop.at, before);
         }
     }
+    // A plinth stands from its footing to its building's floor, which the pad holds where it is.
+    let under_pad = |at: [f64; 3]| {
+        seating.pads.iter().any(|pad| {
+            at[0] >= pad.bounds[0] && at[0] <= pad.bounds[2] && at[1] >= pad.bounds[1] && at[1] <= pad.bounds[3]
+        })
+    };
     // A solid's place to the centimetre: a stack's pieces stand on the same point.
     let place = |at: [f64; 3]| ((at[0] * 100.0).round() as i64, (at[1] * 100.0).round() as i64);
     let bases: std::collections::BTreeSet<(i64, i64)> = seating
         .solids
         .iter()
         .zip(&was.solids)
-        .filter(|(solid, before)| stood_on(solid.at[2], **before))
+        .filter(|(solid, before)| stood_on(solid.at[2], **before) && !under_pad(solid.at))
         .map(|(solid, _)| place(solid.at))
         .collect();
     for (solid, &before) in seating.solids.iter_mut().zip(&was.solids) {
@@ -217,6 +224,23 @@ mod tests {
         let heights = |list: &[[f64; 3]]| list.iter().map(|at| (at[2] * 100.0).round() / 100.0).collect::<Vec<_>>();
         assert_eq!(heights(&seating.props.iter().map(|prop| prop.at).collect::<Vec<_>>()), [9.8, 14.0]);
         assert_eq!(heights(&seating.solids.iter().map(|solid| solid.at).collect::<Vec<_>>()), [9.5, 12.2, -8.0]);
+    }
+
+    #[test]
+    fn a_plinth_keeps_its_buildings_level_when_the_ground_under_it_moves() {
+        use city::solids::{Material, Shape, Solid};
+        // A building's pad 10 m square at 10 m, on a plinth from 8.8 m where the ground falls to 9 m under its middle.
+        let plinth = Solid::upright(Shape::Block, [5.0, 5.0, 8.8], [10.3, 10.3, 1.2], Material::Stone);
+        let mut seating = Seating {
+            solids: vec![plinth],
+            pads: vec![Pad { bounds: [0.0, 0.0, 10.0, 10.0], level: 10.0 }],
+            ..Seating::default()
+        };
+        let was = Planned { props: Vec::new(), solids: vec![9.0] };
+        // A road's bed beside it raised the ground under the plinth's middle.
+        follow_ground(&mut seating, &|_, _| 9.4, &was);
+        let top = seating.solids[0].at[2] + seating.solids[0].size[2];
+        assert!((top - 10.0).abs() < 1e-9, "the plinth's top stays at its floor: {top}");
     }
 
     #[test]
