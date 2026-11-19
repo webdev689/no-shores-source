@@ -115,7 +115,8 @@ export class Sighted implements Beat {
     if (!own) throw new Error('the Brig is not sailing');
     const shot = this.shot(own);
     if (this.since >= SIGHTED_S && this.spoken) this.done = true;
-    const moves: Readonly<Record<string, string>> = this.since < 6 ? { lookout: 'gesture', bosun: 'gesture' } : { gunner: 'chop' };
+    const moves: Readonly<Record<string, string>> =
+      this.since < 6 ? { lookout: 'gesture', bosun: 'gesture' } : { gunner: 'chop' };
     return {
       shot,
       ships,

@@ -46,7 +46,7 @@ export class Battle implements Beat {
     this.story = story;
     storyCue('battle');
     const { brig, land, marks, stage } = story;
-    story.lightning.on = true;
+    story.lightning.striking = true;
     brig.way = 0;
     void StoryFight.begin(
       land,

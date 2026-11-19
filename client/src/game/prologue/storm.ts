@@ -62,7 +62,7 @@ export class StormDive implements Beat {
       [PULL_S, () => this.leap()],
       [PULL_S + 4, () => this.strikeNear(-300)],
       [PULL_S + 9, () => this.strikeNear(500)],
-      [PULL_S + 14, () => (lightning.on = true)],
+      [PULL_S + 14, () => (lightning.striking = true)],
     ]);
   }
 

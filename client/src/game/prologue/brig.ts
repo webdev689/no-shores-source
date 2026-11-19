@@ -57,8 +57,8 @@ export class Brig {
   way = STORM_WAY_M_S;
   private readonly dresses = CREW.map(dressOf);
 
-  constructor(at: readonly [number, number], heading: number) {
-    [this.x, this.y] = at;
+  constructor(start: readonly [number, number], heading: number) {
+    [this.x, this.y] = start;
     this.heading = heading;
   }
 

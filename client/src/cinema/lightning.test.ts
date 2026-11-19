@@ -28,7 +28,7 @@ test('strikes come by themselves only when on, seeded alike, spaced apart', () =
     const struck: number[] = [];
     let clock = 0;
     const storm = new Lightning(seed, () => struck.push(clock));
-    storm.on = true;
+    storm.striking = true;
     for (let frame = 0; frame < 60 * 60; frame++) {
       clock += 1 / 60;
       storm.step(1 / 60, [0, 0]);

@@ -272,12 +272,12 @@ export class Intro implements Beat {
     const pairs: Pairing[] = FIGHT.map(([first, second], index) => {
       const across = out + Math.PI / 2;
       const offset = (index - 1) * 4.5;
-      const at: [number, number, number] = [
+      const spot: [number, number, number] = [
         plaza[0] + Math.sin(across) * offset,
         plaza[1] - Math.cos(across) * offset,
         ground,
       ];
-      return { first, second, at, facing: out + (index - 1) * 0.6 };
+      return { first, second, at: spot, facing: out + (index - 1) * 0.6 };
     });
     return fighters(this.stage.parts.roster, pairs, tick.clock);
   }

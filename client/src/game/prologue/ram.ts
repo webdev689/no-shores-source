@@ -49,7 +49,7 @@ export class Calm implements Beat {
     const { stage } = story;
     stage.weatherTowards(STILL, 4);
     stage.parts.ambience.set({ wind: 0.3, rain: 0.7, waves: 0.7, creak: 0.7 }, 4);
-    story.lightning.on = false;
+    story.lightning.striking = false;
     window.setTimeout(() => void stage.play('calm').then(() => (this.spoken = true)), 3200);
   }
 
@@ -127,8 +127,8 @@ export class Ram implements Beat {
   }
 
   private strikeOverHer(): void {
-    const at = this.rammer(2.3);
-    this.story.lightning.strike(at.x + 40, at.y + 30, [this.story.brig.x, this.story.brig.y]);
+    const rammer = this.rammer(2.3);
+    this.story.lightning.strike(rammer.x + 40, rammer.y + 30, [this.story.brig.x, this.story.brig.y]);
   }
 
   private impact(): void {

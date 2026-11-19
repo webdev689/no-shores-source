@@ -109,8 +109,8 @@ export class Screen {
   }
 
   /** The letterbox's bars, in or out. */
-  bars(on: boolean): void {
-    this.root.classList.toggle('barred', on);
+  bars(shown: boolean): void {
+    this.root.classList.toggle('barred', shown);
   }
 
   /** The eyelids, 0 open to 1 shut. */

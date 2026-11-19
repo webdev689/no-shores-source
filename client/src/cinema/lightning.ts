@@ -43,7 +43,7 @@ export class Lightning {
   private clock = 0;
   private nextAt: number;
   /** Whether strikes come by themselves; a story may hold them off and call its own. */
-  on = false;
+  striking = false;
 
   constructor(seed: number, thunder: (distanceKm: number) => void) {
     this.draw = seeded(seed);
@@ -66,7 +66,7 @@ export class Lightning {
     readonly bolt: { readonly x: number; readonly y: number; readonly seed: number } | null;
   } {
     this.clock += seconds;
-    if (this.on && this.clock >= this.nextAt) {
+    if (this.striking && this.clock >= this.nextAt) {
       const bearing = this.draw() * Math.PI * 2;
       const away = FAR_M[0] + this.draw() * (FAR_M[1] - FAR_M[0]);
       this.strike(eye[0] + Math.sin(bearing) * away, eye[1] - Math.cos(bearing) * away, eye);
