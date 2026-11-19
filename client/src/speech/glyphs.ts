@@ -1,7 +1,8 @@
-// The emotes over a head, after fight-life's social emotes: each feeling a small piece of pixel art with its own
-// colour, its own motion and its own sound, shown and heard together. The art is a grid of letters, each a tone of the
-// glyph's palette: O its outline, M its body, H a highlight, D a shadow, "." clear. It is drawn in code at a whole
-// multiple of its grid, so it stays crisp at any size.
+// The emotes over a head, made for the owner's ask to use fight-life's social emotes (whose source was not to hand to
+// compare against): each feeling a small piece of pixel art with its own colour, its own motion and its own sound,
+// shown and heard together. The art is a grid of letters, each a tone of the glyph's palette: O its outline, M its
+// body, H a highlight, D a shadow, "." clear. It is drawn in code at a whole multiple of its grid, so it stays crisp at
+// any size.
 import { TONES } from '../plus/tones.ts';
 import type { EmoteKind } from './cast.ts';
 import type { VoiceProfile } from './voice.ts';

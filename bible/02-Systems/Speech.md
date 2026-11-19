@@ -27,7 +27,9 @@ line keeps to [[Dialogue]].
   numbers: its lowest pitch, how far above that a syllable may land, the muffle, the volume and a syllable's length.
   A mission's scenes are lists of lines, each a speaker, the words, and, if wanted, `kind: "bark"` and an emote.
   `castOf` and `scenesOf` refuse a speaker without a voice, a voice whose syllable is under 0.04 s, a line by someone
-  not in the cast, a line without words, and an emote or kind they do not know.
+  not in the cast, a line without words, and an emote or kind they do not know. The dialogue check in
+  `cargo xtask check` refuses all of the same, besides holding every scene to [[Dialogue]]'s numbers and marks, so a
+  story the speech system cannot read never passes the check.
 - **One voice for everyone.** Each syllable is a buzz through two band-passes set to a vowel rolled for that syllable,
   a low-pass that muffles it, a short swell and fall, and a pan: talk heard through wind and timber rather than words
   made out. Speakers differ only by their numbers. A bark leans on each syllable, a little higher and louder.
@@ -55,3 +57,5 @@ line keeps to [[Dialogue]].
 - A line too long for the box's two rows grows the box upward rather than paging. [[Dialogue]] keeps lines to 14
   words, which fit.
 - Lines are not yet shown in a speaker's portrait, and the mouth of a figure does not move with the voice.
+- The voice and the emotes are made to the owner's ask for fight-life's voice blurb and social emotes, but that
+  repository's source has not been compared against them: how closely they match it is unchecked.

@@ -1,7 +1,7 @@
-// The one voice every speaker is heard in, after fight-life's muffled voice: a buzz through two band-passes set to a
-// vowel, then a low-pass that muffles it, as speech heard through wind and timber rather than words made out. Each
-// call is one syllable with a vowel of its own, so a run of them reads as talk without being a language. A speaker
-// differs only by the numbers in its profile.
+// The one voice every speaker is heard in, made for the owner's ask to use fight-life's voice blurb (whose source was
+// not to hand to compare against): a buzz through two band-passes set to a vowel, then a low-pass that muffles it, as
+// speech heard through wind and timber rather than words made out. Each call is one syllable with a vowel of its own,
+// so a run of them reads as talk without being a language. A speaker differs only by the numbers in its profile.
 
 /** A speaker's voice, as content/story/cast.json gives it. */
 export interface VoiceProfile {
