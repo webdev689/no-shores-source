@@ -35,6 +35,8 @@ function verticesOf(vertices: ArrayBuffer, count: number) {
     return {
       point,
       outward: view.getInt8(byte + 13) * Math.sign(point[1]) > 0,
+      aft: view.getInt8(byte + 12) < -0.7 * 127,
+      inboard: view.getInt8(byte + 13) * Math.sign(point[1]) < -0.7 * 127,
       part: view.getUint8(byte + 24),
       shell: view.getUint8(byte + 25) === 1,
       yard: view.getUint8(byte + 26),
@@ -43,7 +45,7 @@ function verticesOf(vertices: ArrayBuffer, count: number) {
 }
 const HULL = SHIP_PARTS.indexOf('hull');
 
-test("the Sloop's after cabin keeps its timber, and every hull's sides amidships are her shell", async () => {
+test("the Sloop's after cabin keeps its timber, and every hull's sides amidships and transom are her shell", async () => {
   for (const [hull] of HULL_NAMES.entries()) {
     const mesh = await published(hull);
     const tagged = verticesOf(tagShip(mesh, hullSails(hull)).vertices, mesh.vertexCount).filter(
@@ -63,12 +65,43 @@ test("the Sloop's after cabin keeps its timber, and every hull's sides amidships
       sides.every((vertex) => vertex.shell),
       `${HULL_NAMES[hull]}: painted amidships`,
     );
+    // Her transom, facing aft at her stern under her rail, off the rudder that hangs on her centreline.
+    const sternmost = Math.min(...tagged.filter(({ point }) => point[2] > 0.5).map(({ point }) => point[0]));
+    const transom = tagged.filter(
+      ({ point: [x, y, z], aft }) => aft && x < sternmost + 1.5 && z > 0.5 && z < 1.8 && Math.abs(y) > 0.6,
+    );
+    assert.ok(transom.length > 0 && transom.every((vertex) => vertex.shell), `${HULL_NAMES[hull]}: her transom`);
     // Nothing on her deck: no shell over her waterline stands near her centreline, between her stem and stern.
     const middle = hullWaterline(hull).lengthM * 0.35;
     const inboard = tagged.filter(
       ({ point: [x, y, z], shell }) => shell && z > 1 && Math.abs(y) < 0.5 && Math.abs(x) < middle,
     );
     assert.equal(inboard.length, 0, `${HULL_NAMES[hull]}: no fitting on her deck is painted`);
+  }
+});
+
+test('the insides of her bulwarks keep their timber, from her bow aft', async () => {
+  for (const [hull] of HULL_NAMES.entries()) {
+    const mesh = await published(hull);
+    const tagged = verticesOf(tagShip(mesh, hullSails(hull)).vertices, mesh.vertexCount).filter(
+      (vertex) => vertex.part === HULL,
+    );
+    // A face over her deck looking inboard, with her hull standing 0.1 m or more outboard of it close by.
+    const inside = tagged.filter(
+      ({ point: [x, y, z], inboard }) =>
+        inboard &&
+        z > 1.5 &&
+        tagged.some(
+          ({ point: [alongX, acrossY, upZ] }) =>
+            Math.abs(alongX - x) < 0.3 &&
+            Math.abs(upZ - z) < 0.15 &&
+            Math.sign(acrossY) === Math.sign(y) &&
+            Math.abs(acrossY) > Math.abs(y) + 0.1,
+        ),
+    );
+    const painted = inside.filter((vertex) => vertex.shell).length;
+    // Where her sides close at her stem a few corners are shared with the outside.
+    assert.ok(painted <= inside.length * 0.02, `${HULL_NAMES[hull]}: ${painted} of ${inside.length} painted`);
   }
 });
 

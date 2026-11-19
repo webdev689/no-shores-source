@@ -130,12 +130,15 @@ picture's grain, the picture's lightness about its mean kept:
 | The Grey Tithe | Slate grey | Bone | Grey | Dark slate, the balance |
 | The pirates | Black | Red | Dark | Black, the skull |
 
-- **Her hull's paint** covers the outside of her shell, tagged when her model loads (`tagShip`): her breadth is
-  measured from her hull's faces in slices 0.25 m along her and 0.1 m deep, and a vertex of her hull within 0.15 m
-  of her breadth in its slice, its normal facing outboard, is her shell. Over her waterline a slice counts only where
-  it is at least 0.6 of her greatest breadth at that station, so a deckhouse standing above her rail is not her
-  side. Her deck, its fittings, the insides of her bulwarks and the faces of her stem and transom that look fore and
-  aft keep their timber.
+- **Her hull's paint** covers the outside of her shell, tagged when her model loads (`tagShip`). Her breadth is
+  sampled across her hull's faces in slices 0.25 m along her and 0.1 m deep, taken from her planks and wales (her
+  hull's pieces 5 m long or more) where a slice has them, so her channels, chainplates and catheads do not set it.
+  A vertex of her hull facing outboard within 0.15 m of the narrowest breadth round its slice is her side, where
+  that slice is at least 0.6 of her greatest breadth at or below it at that station: a deckhouse standing above her
+  rail is not her side, and her bow flaring out over her forefoot is. Her stem and transom are her shell the same way
+  along her, facing fore or aft within 0.15 m of how far she reaches in their slice across her, and within 0.6 m of
+  how far she reaches at that height. A face whose corners differ is painted to the halfway between them. Her deck,
+  its fittings and the insides of her bulwarks keep their timber.
 - **Her stripe** is 0.6 m deep along the line through the mouths of her upper tier of guns, rising with her sheer.
 - **Her flag** flies at the head of her tallest mast (the highest point of her spars), a tenth of her waterline's
   length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its

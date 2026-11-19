@@ -63,7 +63,8 @@ struct Drawn {
   @location(0) normal: vec3f,
   @location(1) uv: vec2f,
   @location(2) @interpolate(flat) part: u32,
-  @location(3) @interpolate(flat) shell: u32,
+  // 1 on the outside of her shell, 0 off it, blended across a face whose corners differ.
+  @location(3) shell: f32,
   // How high on her it is, and how far along her, in her own frame.
   @location(4) model: vec2f,
 };
@@ -94,7 +95,7 @@ fn vertex_main(
   drawn.normal = (place.turn * vec4f(facing, 0.0)).xyz;
   drawn.uv = uv * PICTURE_PER_M;
   drawn.part = part.x;
-  drawn.shell = part.y;
+  drawn.shell = f32(part.y);
   drawn.model = position.xz;
   return drawn;
 }
@@ -106,7 +107,7 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
   let light = dot(colour, LIGHTNESS);
   // A side paints the outside of her shell; her deck's fittings and the insides of her bulwarks keep their timber.
-  if (drawn.part == HULL_PART && drawn.shell == 1u) {
+  if (drawn.part == HULL_PART && drawn.shell > 0.5) {
     let line = place.band.x + place.band.y * drawn.model.x;
     if (place.stripe.w > 0.0 && abs(drawn.model.y - line) < place.band.z) {
       colour = place.stripe.rgb * clamp(light / HULL_LIGHT, 0.7, 1.3);

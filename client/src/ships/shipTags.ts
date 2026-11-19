@@ -13,11 +13,19 @@ const SHELL_BYTE = 25;
 const YARD_BYTE = 26;
 /** Her breadth is measured in slices this long along her and this deep, metres; a vertex within `SHELL_M` of her
  *  breadth in its slice, facing outboard, is her shell. */
-const SLICE = { alongM: 0.25, upM: 0.1 } as const;
+const SLICE = { alongM: 0.25, acrossM: 0.25, upM: 0.1 } as const;
 const SHELL_M = 0.15;
-/** Over her waterline a slice is her side only where she is this share of her greatest breadth at that station:
- *  a deckhouse standing above her rail is the widest thing in its own slices, but far inboard of her sides. */
+/** A face facing inboard is her shell only this close to her breadth, metres: under any bulwark's thickness. */
+const FLUSH_M = 0.03;
+/** A slice is her side only where she is this share of her greatest breadth at that station at or below it: a
+ *  deckhouse standing above her rail is the widest thing in its own slices, but far inboard of her sides under it,
+ *  while her bow flares out above her narrow forefoot. */
 const TOPSIDE_SHARE = 0.6;
+/** Her stem or transom in a slice across her is her end only within this of as far as she reaches at that height,
+ *  metres: a deckhouse's front or back stands well inboard of it. */
+const END_M = 0.6;
+/** Her sides' planking: a piece of her hull this long along her, metres. */
+const PLANK_M = 5;
 /** Her hull's faces are sampled this finely for her breadth, metres: under a slice's depth. */
 const SAMPLE_M = 0.08;
 /** Slices a station holds, for a slice's number: more than any hull is tall. */
@@ -28,7 +36,7 @@ const YARD_REACH_M = 0.8;
 const YARD_SPAN_SHARE = 0.3;
 /** A yard's piece is round, its thickness between these, and lies across her, a piece of a sail's yard this long at
  *  least and a bare yard's this; a bare yard stands within this of her mast along her, and this high. */
-const YARD = { thickM: 0.05, thinM: 0.5, pieceM: 1, bareM: 2.5, mastM: 1, overM: 7 } as const;
+const YARD = { thickM: 0.02, thinM: 0.5, pieceM: 1, bareM: 2.5, mastM: 1, overM: 7 } as const;
 /** Square sails whose heads stand this close along her hang from one mast. */
 const MAST_M = 1.5;
 
@@ -69,6 +77,122 @@ function piecesOf(mesh: ShipMesh): number[][] {
   return [...pieces.values()];
 }
 
+/** Every point over her hull's faces, sampled finely enough for her slices: a long plank has vertices only at its
+ *  ends. */
+function sampleFaces(
+  mesh: ShipMesh,
+  pointOf: (vertex: number) => Point,
+  sample: (x: number, y: number, z: number, vertex: number) => void,
+): void {
+  for (let corner = 0; corner < mesh.indices.length; corner += 3) {
+    const first = mesh.indices[corner] ?? 0;
+    const [from, toward, across] = [0, 1, 2].map((next) => pointOf(mesh.indices[corner + next] ?? 0)) as [
+      Point,
+      Point,
+      Point,
+    ];
+    const steps = Math.ceil(
+      Math.max(distance(from, toward), distance(from, across), distance(toward, across)) / SAMPLE_M,
+    );
+    const along = [0, 1, 2].map((axis) => (toward[axis] - from[axis]) / steps) as unknown as Point;
+    const over = [0, 1, 2].map((axis) => (across[axis] - from[axis]) / steps) as unknown as Point;
+    for (let one = 0; one <= steps; one++)
+      for (let other = 0; other <= steps - one; other++)
+        sample(
+          from[0] + along[0] * one + over[0] * other,
+          from[1] + along[1] * one + over[1] * other,
+          from[2] + along[2] * one + over[2] * other,
+          first,
+        );
+  }
+}
+
+/** The greatest of a number kept under a key. */
+const raise = (kept: Map<number, number>, key: number, value: number) => {
+  if (value > (kept.get(key) ?? -Infinity)) kept.set(key, value);
+};
+
+/** Tags the outside of her shell. Her sides: a vertex of her hull within `SHELL_M` of her breadth in its slice (along
+ *  her and up), facing outboard, where over her waterline her breadth there is a fair share of her greatest at that
+ *  station. Her stem and transom the same way along her: within `SHELL_M` of how far forward or aft she reaches in
+ *  its slice (across her and up), facing that way, where that is near as far as she reaches at that height and her
+ *  breadth there is her side's, not a deckhouse's. */
+function tagShell(
+  mesh: ShipMesh,
+  view: DataView,
+  pointOf: (vertex: number) => Point,
+  partOf: (vertex: number) => number,
+): void {
+  const hull = SHIP_PARTS.indexOf('hull');
+  const sliceOf = (across: number, z: number) => across * SLICES_UP + Math.floor(z / SLICE.upM);
+  const [stationOf, rowOf, heightOf] = [SLICE.alongM, SLICE.acrossM, SLICE.upM].map(
+    (size) => (value: number) => Math.floor(value / size),
+  ) as [(x: number) => number, (y: number) => number, (z: number) => number];
+  const [breadth, planked, ahead, astern, aheadAt, asternAt] = Array.from(
+    { length: 6 },
+    () => new Map<number, number>(),
+  );
+  // Her sides' planks and wales run long along her; her channels, chainplates, catheads and deckhouses are short,
+  // and stand proud of her or inboard of her.
+  const alongHer = new Uint8Array(mesh.vertexCount);
+  for (const piece of piecesOf(mesh)) {
+    if (partOf(piece[0] ?? 0) !== hull) continue;
+    const along = piece.map((vertex) => pointOf(vertex)[0]);
+    const long = Math.max(...along) - Math.min(...along) >= PLANK_M ? 1 : 0;
+    for (const vertex of piece) alongHer[vertex] = long;
+  }
+  const hullFaces = {
+    ...mesh,
+    indices: mesh.indices.filter((unused, corner) => partOf(mesh.indices[corner - (corner % 3)] ?? 0) === hull),
+  };
+  sampleFaces(hullFaces, pointOf, (x, y, z, vertex) => {
+    raise(breadth, sliceOf(stationOf(x), z), Math.abs(y));
+    if (alongHer[vertex]) raise(planked, sliceOf(stationOf(x), z), Math.abs(y));
+    raise(ahead, sliceOf(rowOf(y), z), x);
+    raise(astern, sliceOf(rowOf(y), z), -x);
+    raise(aheadAt, heightOf(z), x);
+    raise(asternAt, heightOf(z), -x);
+  });
+  // Her greatest breadth in each slice's station, at or below it.
+  const below = new Map<number, number>();
+  let [running, runningStation] = [0, NaN];
+  for (const slice of [...breadth.keys()].sort((one, other) => one - other)) {
+    const station = Math.round(slice / SLICES_UP);
+    if (station !== runningStation) [running, runningStation] = [0, station];
+    running = Math.max(running, breadth.get(slice) ?? 0);
+    below.set(slice, running);
+  }
+  for (let vertex = 0; vertex < mesh.vertexCount; vertex++) {
+    if (partOf(vertex) !== hull) continue;
+    const [x, y, z] = pointOf(vertex);
+    const [normalX, normalY] = [12, 13].map((byte) => view.getInt8(vertex * VERTEX_BYTES + byte));
+    const sideOf = (along: number, height: number) => {
+      const broadest = breadth.get(sliceOf(along, height));
+      const share = TOPSIDE_SHARE * (below.get(sliceOf(along, height)) ?? 0);
+      return broadest !== undefined && broadest >= share ? (planked.get(sliceOf(along, height)) ?? broadest) : null;
+    };
+    const topside = sideOf(stationOf(x), z) !== null;
+    // Where she narrows fast a slice's breadth is its wide end's: her side is measured by the narrowest round it.
+    const narrowest = Math.min(
+      ...[-1, 0, 1].flatMap((along) =>
+        [-1, 0, 1].map((up) => sideOf(stationOf(x) + along, z + up * SLICE.upM) ?? Infinity),
+      ),
+    );
+    // A face modelled inside out faces inboard on her outside: it counts only flush with her breadth in its own
+    // slice, where the inside of a bulwark never lies, even where she narrows to her bow.
+    const outboard = (normalY ?? 0) * Math.sign(y) > 0;
+    const flush = Math.abs(y) >= (breadth.get(sliceOf(stationOf(x), z)) ?? Infinity) - FLUSH_M;
+    const side = topside && (outboard ? Math.abs(y) >= narrowest - SHELL_M : flush);
+    const end = ([reach, reachAt, sign]: readonly [Map<number, number>, Map<number, number>, number]) => {
+      const farthest = reach.get(sliceOf(rowOf(y), z)) ?? -Infinity;
+      const outermost = (reachAt.get(heightOf(z)) ?? -Infinity) - farthest < END_M;
+      return sign * x >= farthest - SHELL_M && (normalX ?? 0) * sign > 0 && outermost;
+    };
+    const shell = side || (topside && (end([ahead, aheadAt, 1]) || end([astern, asternAt, -1])));
+    view.setUint8(vertex * VERTEX_BYTES + SHELL_BYTE, shell ? 1 : 0);
+  }
+}
+
 /** Tags her mesh's vertices: her shell, and her square sails' yards (each to its sail, a bare one to its mast's
  *  lowest sail). */
 export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags {
@@ -77,54 +201,8 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
   const pointOf = (vertex: number): Point =>
     [0, 4, 8].map((offset) => view.getFloat32(vertex * VERTEX_BYTES + offset, true)) as unknown as Point;
   const partOf = (vertex: number) => view.getUint8(vertex * VERTEX_BYTES + PART_BYTE);
-  const [hull, spar] = [SHIP_PARTS.indexOf('hull'), SHIP_PARTS.indexOf('spar')];
-  // Her breadth in each slice, from her hull's faces sampled across: a long plank has vertices only at its ends.
-  const stationOf = (x: number) => Math.floor(x / SLICE.alongM);
-  const sliceOf = (x: number, z: number) => stationOf(x) * SLICES_UP + Math.floor(z / SLICE.upM);
-  const [breadth, station] = [new Map<number, number>(), new Map<number, number>()];
-  const widen = (x: number, y: number, z: number) => {
-    const [slice, along] = [sliceOf(x, z), stationOf(x)];
-    if (Math.abs(y) > (breadth.get(slice) ?? 0)) breadth.set(slice, Math.abs(y));
-    if (Math.abs(y) > (station.get(along) ?? 0)) station.set(along, Math.abs(y));
-  };
-  for (let corner = 0; corner < mesh.indices.length; corner += 3) {
-    const [first, second, third] = [0, 1, 2].map((next) => mesh.indices[corner + next] ?? 0) as [
-      number,
-      number,
-      number,
-    ];
-    if (partOf(first) !== hull) continue;
-    const [from, toward, across] = [pointOf(first), pointOf(second), pointOf(third)];
-    const steps = Math.ceil(
-      Math.max(distance(from, toward), distance(from, across), distance(toward, across)) / SAMPLE_M,
-    );
-    const [alongX, alongY, alongZ] = [0, 1, 2].map((axis) => (toward[axis] - from[axis]) / steps) as [
-      number,
-      number,
-      number,
-    ];
-    const [overX, overY, overZ] = [0, 1, 2].map((axis) => (across[axis] - from[axis]) / steps) as [
-      number,
-      number,
-      number,
-    ];
-    for (let along = 0; along <= steps; along++)
-      for (let over = 0; over <= steps - along; over++)
-        widen(
-          from[0] + alongX * along + overX * over,
-          from[1] + alongY * along + overY * over,
-          from[2] + alongZ * along + overZ * over,
-        );
-  }
-  for (let vertex = 0; vertex < mesh.vertexCount; vertex++) {
-    if (partOf(vertex) !== hull) continue;
-    const [x, y, z] = pointOf(vertex);
-    const broadest = breadth.get(sliceOf(x, z)) ?? 0;
-    const outboard = view.getInt8(vertex * VERTEX_BYTES + 13) * Math.sign(y) > 0;
-    const side = z <= 0 || broadest >= TOPSIDE_SHARE * (station.get(stationOf(x)) ?? 0);
-    const shell = Math.abs(y) >= broadest - SHELL_M && outboard && side;
-    view.setUint8(vertex * VERTEX_BYTES + SHELL_BYTE, shell ? 1 : 0);
-  }
+  const spar = SHIP_PARTS.indexOf('spar');
+  tagShell(mesh, view, pointOf, partOf);
   // Her yards, by the spar pieces along each square sail's head; a round spar across a mast that holds none is bare.
   const sparPieces = piecesOf(mesh).filter((piece) => piece.every((vertex) => partOf(vertex) === spar));
   const yards: Yard[] = [];
