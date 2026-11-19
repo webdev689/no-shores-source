@@ -64,7 +64,7 @@ status: in force
   its pace, so each ship stays in sight at least 30 s. She stays until she is out of sight. Her water sets how many come
   and of which ranks. She flies her faction's colours and flag on her rank's hull.
 - Friendly ships sail routes between ports all the time, seen from land and sea, on the same hulls in friendly
-  colours. They are the merchantmen that escorts and events need
+  colours; the ports are three ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). They are the merchantmen that escorts and events need
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - The held map tints each water by its owner, with its name and level band, and hatches the contested seam
   ([[Held Map]]). Claude names the waters, and the owner can change any name.

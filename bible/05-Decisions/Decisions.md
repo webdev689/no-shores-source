@@ -122,6 +122,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Ships as Claude Shapes Them]]
 - [[Every Ship Matches the Sloop's Detail, With a Cabin to Enter]]
 - [[The Waters Come From the Islands]]
+- [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

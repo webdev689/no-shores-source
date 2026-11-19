@@ -33,8 +33,10 @@ code:
 ---
 # Cities
 
-Each of the nine continents has one port city, the same size, each with its own motif
-([[Every Island Is Seen Whole and Reached by Nodes]], [[The World as Claude Shapes It]]). A city is planned from its
+Each of the nine continents has one city, the same size, each with its own motif
+([[Every Island Is Seen Whole and Reached by Nodes]], [[The World as Claude Shapes It]]). Three of them are port
+cities, Overlook, Sunspire and Rimeholt; the other six are desolate and destroyed, which is decided and not yet built
+([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). A city is planned from its
 site by the same rules on the server and in every browser. From the sea and the Overworld it is seen whole; a player
 walks only its social space, a plaza the size of Destiny 1's Tower beside its landmark.
 
