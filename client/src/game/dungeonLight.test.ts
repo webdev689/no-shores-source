@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { falloff, FIXTURE_KINDS, flicker, LIGHT_KINDS, lightAt, MOODS } from './dungeonLight.ts';
+import { FIXTURE } from './dungeonLayout.ts';
 
 test('a light is all there where it burns and gone at its reach', () => {
   assert.equal(falloff(0, 8), 1);
@@ -29,7 +30,11 @@ test("past every light only the mood is left; by one, the light's own colour", (
 });
 
 test('each fixture kind burns its own way, and each style its own mood', () => {
-  assert.equal(FIXTURE_KINDS.length, 5);
+  for (const [name, number] of Object.entries(FIXTURE))
+    assert.equal(FIXTURE_KINDS[number], LIGHT_KINDS[name as keyof typeof FIXTURE]);
+  assert.equal(FIXTURE_KINDS.length, Object.keys(FIXTURE).length);
+  const [red, green, blue] = LIGHT_KINDS.fungus.colour;
+  assert.ok(green > red && green > blue, 'fungus lights green');
   assert.ok(LIGHT_KINDS.candles.reach < LIGHT_KINDS.torch.reach && LIGHT_KINDS.brazier.reach > LIGHT_KINDS.torch.reach);
   const moods = Object.values(MOODS).map((mood) => mood.join());
   assert.equal(new Set(moods).size, moods.length, 'no two styles share a mood');

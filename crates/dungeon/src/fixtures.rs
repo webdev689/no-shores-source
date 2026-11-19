@@ -1,7 +1,7 @@
 //! The lights that are not wall torches, by a room's purpose: braziers standing on the floor, candles on the tops of
 //! altars, tables, lecterns and coffins, crystals and glowing fungus against a cavern's walls, lanterns hung on a
-//! mine's walls and posts, and the fire in a hearth. A brazier and a crystal are solids, standing by the props' rules;
-//! the others hang or burn on a piece and fill nothing.
+//! mine's walls and posts, and the fire in a hearth. A brazier and a cluster of crystals or of fungus are solids,
+//! standing by the props' rules; the others hang or burn on a piece and fill nothing.
 
 use crate::furnish::Fitting;
 use crate::lane::Lane;
@@ -14,10 +14,12 @@ use crate::{CELL_M, Dungeon, Prop, SIDES, Side};
 pub enum Kind {
     Brazier,
     Candles,
-    /// Crystals, or glowing fungus: a cluster against a wall that glows.
+    /// A cluster of crystals against a wall, glowing.
     Crystals,
     Lantern,
     Hearth,
+    /// A cluster of fungus against a wall, its caps glowing.
+    Fungus,
 }
 
 impl Kind {
@@ -29,6 +31,7 @@ impl Kind {
             Kind::Crystals => 2,
             Kind::Lantern => 3,
             Kind::Hearth => 4,
+            Kind::Fungus => 5,
         }
     }
 }
@@ -50,12 +53,13 @@ const BRAZIER_FLAME_M: f64 = 1.15;
 const BRAZIER_OFF_WALL_M: f64 = 0.9;
 /// Candles' flames over the top they stand on (m).
 pub const CANDLES_OVER_M: f64 = 0.1;
-/// A crystal cluster's length along its wall, how far out it reaches, its top, and how far its back stands off the
-/// wall (m); it glows at its middle.
+/// A crystal or fungus cluster's length along its wall, how far out it reaches, how far its back stands off the wall,
+/// and each one's top (m); it glows at its middle.
 const CRYSTALS_ALONG_M: f64 = 0.6;
 const CRYSTALS_INTO_M: f64 = 0.4;
-pub const CRYSTALS_TOP_M: f64 = 0.9;
 const CRYSTALS_OFF_WALL_M: f64 = 0.1;
+pub const CRYSTALS_TOP_M: f64 = 0.9;
+pub const FUNGUS_TOP_M: f64 = 0.5;
 /// A lantern's height, how far off its wall it hangs, and how far from a post's middle (m).
 pub const LANTERN_M: f64 = 2.0;
 const LANTERN_OFF_WALL_M: f64 = 0.25;
@@ -90,18 +94,20 @@ impl Fitting {
         true
     }
 
-    /// A light on a wall of `cell`: a crystal cluster against it, a solid, or a lantern hung on it; whether it stood.
+    /// A light on a wall of `cell`: a cluster of crystals or fungus against it, a solid, or a lantern hung on it;
+    /// whether it stood.
     fn on_wall(&mut self, dungeon: &Dungeon, cell: usize, wall: Side, kind: Kind) -> bool {
         let [x, y] = dungeon.centre(cell);
         let [dx, dy] = wall.unit();
-        let (off, solid) = if kind == Kind::Crystals {
+        let top = if kind == Kind::Fungus { FUNGUS_TOP_M } else { CRYSTALS_TOP_M };
+        let (off, solid) = if matches!(kind, Kind::Crystals | Kind::Fungus) {
             let off = CELL_M / 2.0 - CRYSTALS_OFF_WALL_M - CRYSTALS_INTO_M / 2.0;
             let (half_x, half_y) = if dx == 0.0 {
                 (CRYSTALS_ALONG_M / 2.0, CRYSTALS_INTO_M / 2.0)
             } else {
                 (CRYSTALS_INTO_M / 2.0, CRYSTALS_ALONG_M / 2.0)
             };
-            (off, Some(square([x + dx * off, y + dy * off], half_x, half_y, CRYSTALS_TOP_M)))
+            (off, Some(square([x + dx * off, y + dy * off], half_x, half_y, top)))
         } else {
             (CELL_M / 2.0 - LANTERN_OFF_WALL_M, None)
         };
@@ -110,7 +116,7 @@ impl Fitting {
         }
         // A lantern fills no floor, but its cell then holds nothing else, as a hanging's does.
         self.take(cell, Some(wall), solid.is_some());
-        let z = if kind == Kind::Crystals { CRYSTALS_TOP_M / 2.0 } else { LANTERN_M };
+        let z = if solid.is_some() { top / 2.0 } else { LANTERN_M };
         self.fixtures.push(Fixture { at: [x + dx * off, y + dy * off, z], kind, solid });
         true
     }

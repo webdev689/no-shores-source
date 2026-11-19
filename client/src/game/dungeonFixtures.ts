@@ -1,5 +1,5 @@
 // A dungeon's lights that are not wall torches, drawn where the layout stands them: a brazier on its legs, a cluster
-// of candles, glowing crystals, a lantern on its chain and a hearth's fire. Each is shaped by where it stands, so no
+// of candles, glowing crystals, a lantern on its chain, a hearth's fire and a cluster of glowing fungus. Each is shaped by where it stands, so no
 // two are alike and every machine draws them the same.
 import type { MeshBuilder } from '../models/model.ts';
 import { FIXTURE } from './dungeonLayout.ts';
@@ -121,6 +121,21 @@ function hearthFire(mesh: MeshBuilder, [x, y, z]: Point): void {
   }
 }
 
+/** Six to ten fungi grown from the floor round where the light stands, each a pale stalk under a glowing cap, the
+ *  tallest nearest the middle. */
+function fungus(mesh: MeshBuilder, [x, y]: Point): void {
+  const count = 6 + Math.floor(seeded(x, y, 0) * 5);
+  for (let cap = 0; cap < count; cap++) {
+    const turn = (cap / count) * Math.PI * 2 + seeded(x, y, 1) * 4;
+    const out = cap === 0 ? 0 : 0.05 + seeded(x, y, cap + 2) * 0.2;
+    const [footX, footY] = [x + Math.cos(turn) * out, y + Math.sin(turn) * out];
+    const tall = (0.12 + seeded(y, x, cap + 2) * 0.3) * (1 - out);
+    const wide = 0.04 + seeded(x, y, cap + 20) * 0.06;
+    box(mesh, [COLOUR.wax, 0], [footX - 0.012, footY - 0.012, 0], [footX + 0.012, footY + 0.012, tall]);
+    spike(mesh, [COLOUR.fungus, 0], [footX, footY, tall - 0.01], [footX, footY, tall + wide * 0.6], wide);
+  }
+}
+
 /** One fixture as the layout stands it: x, y, the light's height and its kind (`FIXTURE`). */
 export function fixtureMesh(mesh: MeshBuilder, [x, y, z, kind]: readonly number[]): void {
   const where: Point = [x ?? 0, y ?? 0, z ?? 0];
@@ -129,4 +144,5 @@ export function fixtureMesh(mesh: MeshBuilder, [x, y, z, kind]: readonly number[
   else if (kind === FIXTURE.crystals) crystals(mesh, where);
   else if (kind === FIXTURE.lantern) lantern(mesh, where);
   else if (kind === FIXTURE.hearth) hearthFire(mesh, where);
+  else if (kind === FIXTURE.fungus) fungus(mesh, where);
 }

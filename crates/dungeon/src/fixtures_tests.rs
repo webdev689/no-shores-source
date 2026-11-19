@@ -1,6 +1,6 @@
 use crate::{
-    BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CELL_M, CRYSTALS_TOP_M, Cell, Dungeon, Kind, LANTERN_M, Piece,
-    SIDES, STYLES, prop_model,
+    BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CELL_M, CRYSTALS_TOP_M, Cell, Dungeon, FUNGUS_TOP_M, Kind,
+    LANTERN_M, Piece, SIDES, STYLES, prop_model,
 };
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
@@ -29,7 +29,7 @@ fn every_room_is_lit_by_a_torch_or_a_fixture() {
 
 #[test]
 fn each_fixture_burns_where_its_kind_does() {
-    let mut kinds = [0; 5];
+    let mut kinds = [0; 6];
     for dungeon in every_dungeon(1200) {
         let torch_walls: Vec<(usize, crate::Side)> =
             dungeon.torches.iter().map(|torch| (cell_at(&dungeon, torch.at[0], torch.at[1]), torch.wall)).collect();
@@ -72,17 +72,11 @@ fn each_fixture_burns_where_its_kind_does() {
                     });
                     assert!(on, "candles stand on a table, a lectern, an altar or a coffin");
                 }
-                Kind::Crystals => {
-                    assert_eq!(look, "caverns", "crystals glow in the caverns");
-                    let [min_x, min_y, max_x, max_y, top] = fixture.solid.expect("a crystal cluster is a solid");
-                    assert!(
-                        x > min_x
-                            && x < max_x
-                            && y > min_y
-                            && y < max_y
-                            && z < top
-                            && (top - CRYSTALS_TOP_M).abs() < 1e-12
-                    );
+                Kind::Crystals | Kind::Fungus => {
+                    assert_eq!(look, "caverns", "crystals and fungus glow in the caverns");
+                    let [min_x, min_y, max_x, max_y, top] = fixture.solid.expect("a cluster is a solid");
+                    let tall = if fixture.kind == Kind::Fungus { FUNGUS_TOP_M } else { CRYSTALS_TOP_M };
+                    assert!(x > min_x && x < max_x && y > min_y && y < max_y && z < top && (top - tall).abs() < 1e-12);
                     let side = wall_off(0.3).expect("against a rock wall");
                     assert!(!torch_walls.contains(&(cell, side)), "never on a torch's wall");
                 }

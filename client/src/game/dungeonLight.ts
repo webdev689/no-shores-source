@@ -21,6 +21,7 @@ export const LIGHT_KINDS = {
   crystals: { colour: [0.45, 1.0, 1.25], reach: 7, flicker: 0.15 },
   lantern: { colour: [1.45, 1.05, 0.6], reach: 8, flicker: 0.35 },
   hearth: { colour: [1.9, 0.8, 0.32], reach: 9.5, flicker: 1.3 },
+  fungus: { colour: [0.6, 1.2, 0.5], reach: 5.5, flicker: 0.1 },
   portal: { colour: [0.85, 0.95, 1.4], reach: 8, flicker: 0.2 },
 } as const satisfies Record<string, Burning>;
 
@@ -31,6 +32,7 @@ export const FIXTURE_KINDS: readonly Burning[] = [
   LIGHT_KINDS.crystals,
   LIGHT_KINDS.lantern,
   LIGHT_KINDS.hearth,
+  LIGHT_KINDS.fungus,
 ];
 
 /** The faint light everywhere, by style: the crypt's cold grey-blue, the halls' plain grey, the cells' sickly green,
@@ -44,9 +46,10 @@ export const MOODS: Readonly<Record<StyleKey, Colour>> = {
   mines: [0.25, 0.2, 0.15],
 };
 
-/** A flame's own glow, as the city's braziers glow; a crystal's, a lantern's glass and an ember's. */
+/** A flame's own glow, as the city's braziers glow; a crystal's, a fungus cap's, a lantern's glass and an ember's. */
 export const FLAME: Colour = [1.4, 1.0, 0.5];
 export const CRYSTAL_GLOW: Colour = [0.5, 1.2, 1.4];
+export const FUNGUS_GLOW: Colour = [0.75, 1.35, 0.45];
 export const LANTERN_GLOW: Colour = [1.5, 1.15, 0.65];
 export const EMBER_GLOW: Colour = [0.9, 0.3, 0.08];
 /** Candle wax, lit as a surface is. */
@@ -91,6 +94,7 @@ const vector = (colour: Colour) => `vec3f(${colour.map((value) => value.toFixed(
 export const LIGHT_WGSL = /* wgsl */ `
 const FLAME = ${vector(FLAME)};
 const CRYSTAL_GLOW = ${vector(CRYSTAL_GLOW)};
+const FUNGUS_GLOW = ${vector(FUNGUS_GLOW)};
 const LANTERN_GLOW = ${vector(LANTERN_GLOW)};
 const EMBER_GLOW = ${vector(EMBER_GLOW)};
 const WAX = ${vector(WAX)};

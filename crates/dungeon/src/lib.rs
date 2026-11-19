@@ -22,7 +22,9 @@ pub use dungeon::{
     BLOCKS, DOORWAY_HALF_M, Dungeon, EXIT_HEIGHT_M, EXIT_WIDTH_M, Frame, JAMB_DEPTH_M, LINTEL_M, PILLAR_HALF_M, Room,
     WallDoor,
 };
-pub use fixtures::{BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CRYSTALS_TOP_M, Fixture, Kind, LANTERN_M};
+pub use fixtures::{
+    BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CRYSTALS_TOP_M, FUNGUS_TOP_M, Fixture, Kind, LANTERN_M,
+};
 pub use models::{Piece, PropModel, prop_model};
 pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
 pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};

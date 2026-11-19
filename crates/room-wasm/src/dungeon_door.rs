@@ -273,7 +273,7 @@ mod tests {
                 for fixture in laid["fixtures"].as_array().unwrap() {
                     let numbers = fixture.as_array().unwrap();
                     assert_eq!(numbers.len(), 4);
-                    assert!((0.0..=4.0).contains(&numbers[3].as_f64().unwrap()), "a kind of the five");
+                    assert!((0.0..=5.0).contains(&numbers[3].as_f64().unwrap()), "a kind of the six");
                 }
                 assert_eq!(laid["boxes"].as_array().unwrap().len(), native.boxes().len());
                 assert_eq!(laid["props"].as_array().unwrap().len(), native.props.len());

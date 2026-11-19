@@ -2,7 +2,7 @@
 //! lights it burns beside its torches.
 
 use crate::fixtures::Kind;
-use crate::fixtures::Kind::{Brazier, Candles, Crystals, Hearth, Lantern};
+use crate::fixtures::Kind::{Brazier, Candles, Crystals, Fungus, Hearth, Lantern};
 use crate::models::{
     ANKHS, BEAMS, BEDS, BENCHES, BROKEN_COLUMNS, CABINETS, CANOPY_BEDS, CHAIRS, COLUMNS, COUNTERS, CRATES, CUPBOARDS,
     DRESSERS, GRAVE_SLABS, GREAT_CRATES, GREAT_ROCKS, GREAT_TOMBS, HANGINGS, HEADSTONES, HEARTHS, LADDERS, LECTERNS,
@@ -66,6 +66,9 @@ const HEARTH_FIRES: Light = light(Hearth, Lit::Hearths);
 const POST_LANTERNS: Light = light(Lantern, Lit::Posts);
 const fn crystals(per: usize) -> Light {
     light(Crystals, Lit::Walls { per })
+}
+const fn fungus(per: usize) -> Light {
+    light(Fungus, Lit::Walls { per })
 }
 const fn lanterns(per: usize) -> Light {
     light(Lantern, Lit::Walls { per })
@@ -290,7 +293,7 @@ pub(crate) const CAVERNS: Bank = Bank {
             "dripping-gallery",
             "Dripping Gallery",
             &[rubble(3, &[ROCKS, GREAT_ROCKS]), one(&[TROUGHS])],
-            &[crystals(8)],
+            &[fungus(8)],
         ),
         purpose(
             "bone-pit",
@@ -298,7 +301,7 @@ pub(crate) const CAVERNS: Bank = Bank {
             &[rubble(2, &[GRAVE_SLABS, ROCKS, HEADSTONES, BROKEN_COLUMNS])],
             &[crystals(8)],
         ),
-        purpose("fungus-grove", "Fungus Grove", &[rubble(4, &[LOGS, ROCKS])], &[crystals(3)]),
+        purpose("fungus-grove", "Fungus Grove", &[rubble(4, &[LOGS, ROCKS])], &[fungus(3)]),
         purpose(
             "squatters-den",
             "Squatters' Den",

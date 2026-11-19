@@ -21,7 +21,7 @@ function drawnOf(kind: number, where: readonly [number, number, number] = [4, 6,
   };
 }
 
-test('each fixture is drawn in its own colours: iron and fire, wax, crystal, lantern glass, embers', () => {
+test('each fixture is drawn in its own colours: iron and fire, wax, crystal, lantern glass, embers, fungus', () => {
   const has = (kind: number, picture: readonly [number, number]) => drawnOf(kind).pictures.has(picture.join('.'));
   assert.ok(
     has(FIXTURE.brazier, IRON) && has(FIXTURE.brazier, [COLOUR.ember, 0]) && has(FIXTURE.brazier, [COLOUR.glow, 0]),
@@ -30,6 +30,18 @@ test('each fixture is drawn in its own colours: iron and fire, wax, crystal, lan
   assert.ok(has(FIXTURE.crystals, [COLOUR.crystal, 0]));
   assert.ok(has(FIXTURE.lantern, IRON) && has(FIXTURE.lantern, [COLOUR.lanternGlass, 0]));
   assert.ok(has(FIXTURE.hearth, [COLOUR.ember, 0]) && has(FIXTURE.hearth, [COLOUR.glow, 0]));
+  assert.ok(has(FIXTURE.fungus, [COLOUR.fungus, 0]) && has(FIXTURE.fungus, [COLOUR.wax, 0]));
+});
+
+test("fungus grows low from the floor, under its cluster's half-metre top, close round where its light is", () => {
+  const mesh = meshBuilder();
+  fixtureMesh(mesh, [4, 6, 0.25, FIXTURE.fungus]);
+  const { positions } = mesh.model();
+  for (let vertex = 0; vertex < positions.length / 3; vertex++) {
+    const [x, y, z] = [positions[vertex * 3] ?? 0, positions[vertex * 3 + 1] ?? 0, positions[vertex * 3 + 2] ?? 0];
+    assert.ok(z >= -1e-6 && z <= 0.5, `${z} m up`);
+    assert.ok(Math.hypot(x - 4, y - 6) <= 0.35, 'within its cluster');
+  }
 });
 
 test('a brazier and crystals stand on the floor; a lantern hangs round where its light is', () => {

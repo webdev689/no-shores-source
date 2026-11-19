@@ -144,9 +144,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   walk and number as many as its band of foes (`posts_for`: one for each ten cells, two to four).
 - **Lights.** Beside its torches a purpose lights its room: braziers (a solid 0.6 m square and 1 m high) either side
   of the end's door or the way on, or nearest the middle; candles on its tables', lecterns', altars' and coffins'
-  tops; crystals or glowing fungus against the caverns' walls (a solid 0.6 m by 0.4 m, 0.9 m high); lanterns 2 m up
-  on the mines' walls and posts; and a fire in each hearth. A fixture with a solid stands as a piece does. Every room
-  has a light.
+  tops; crystals against the caverns' walls (a solid 0.6 m by 0.4 m, 0.9 m high), and glowing fungus in a Fungus
+  Grove or a Dripping Gallery (the same, 0.5 m high); lanterns 2 m up on the mines' walls and posts; and a fire in
+  each hearth. A fixture with a solid stands as a piece does. Every room has a light.
 - **Where foes stand** (`nearest_middle`): a room's free cells nearest its middle, its quiet cells first and then the
   rest, so a smaller band's cells are always the first of a larger's.
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; every room of the way in's block
@@ -231,11 +231,12 @@ dungeon").
   its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m.
   Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
 - **Its light** (`dungeonLight.ts`): each torch and fixture burns in its own colour, reach and flicker (`LIGHT_KINDS`):
-  a torch to `torchReach`, a brazier, candles, crystals, a lantern and a hearth. Each look has its own faint light,
+  a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
   lights nearest the eye, and the shader and the figures sum the same light (`lightAt`).
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
-  candles, five to eight glowing crystals, a lantern on its chain, and a hearth's fire. Each is shaped by where it
+  candles, five to eight glowing crystals, a lantern on its chain, a hearth's fire, and six to ten fungi, each a pale
+  stalk under a glowing cap. Each is shaped by where it
   stands, so no two are alike.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
@@ -259,8 +260,7 @@ dungeon").
 - A room ringed by corridors would have no wall for a torch and stand unlit; no dungeon the tests lay has one.
 - A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
   rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
-- No fountain or cart is laid: each is wider than a cell. Glowing fungus has no kind of its own; it is a crystals
-  fixture.
+- No fountain or cart is laid: each is wider than a cell.
 - Movement has no ceilings: a dungeon's are never reached because nothing in it can be climbed, and a jump rises
   about half a metre.
 - A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end

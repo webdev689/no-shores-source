@@ -12,7 +12,7 @@ export type StyleKey = 'crypt' | 'halls' | 'cells' | 'sanctum' | 'caverns' | 'mi
 export type CeilingForm = 'flat' | 'vault' | 'dome' | 'cave';
 
 /** A light that is not a wall's torch, by its kind's number: what it is drawn as and how it lights. */
-export const FIXTURE = { brazier: 0, candles: 1, crystals: 2, lantern: 3, hearth: 4 } as const;
+export const FIXTURE = { brazier: 0, candles: 1, crystals: 2, lantern: 3, hearth: 4, fungus: 5 } as const;
 
 /** A patrol's dungeon as `room_dungeon` answers it (crates/room-wasm/src/dungeon_door.rs): x east and y south from
  *  its north-west corner, z up from its floor. A cell is -2 rock, -1 corridor or its room's number; a side is 0 east,

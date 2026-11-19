@@ -1,6 +1,6 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
-// the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern and crystal glowing
-// in its own colour.
+// the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern, crystal and fungus
+// cap glowing in its own colour.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, PORTAL_FLAG } from './dungeonBook.ts';
 import { LIGHT_WGSL } from './dungeonLight.ts';
@@ -36,6 +36,7 @@ const WAX_LAYER = ${DUNGEON_LAYERS.wax}u;
 const EMBER = ${DUNGEON_LAYERS.ember}u;
 const LANTERN_GLASS = ${DUNGEON_LAYERS.lanternGlass}u;
 const CRYSTAL = ${DUNGEON_LAYERS.crystal}u;
+const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
 // A layer with this bit set is the portal's face, in the picture the rest of its number names.
 const PORTAL = ${PORTAL_FLAG}u;
 
@@ -97,6 +98,11 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
     // A slow swell through each crystal, from its foot to its tip.
     let swell = 0.85 + 0.15 * sin(time * 1.3 + phase + surface.point.z * 2.0);
     return vec4f(CRYSTAL_GLOW * swell, 1.0);
+  }
+  if layer == FUNGUS {
+    // A slower breath through each cap.
+    let breath = 0.8 + 0.2 * sin(time * 0.7 + phase * 1.7);
+    return vec4f(FUNGUS_GLOW * breath, 1.0);
   }
   if portal && view.lights.y > 0.5 {
     // Open, a doorway of light that shimmers across its face.
