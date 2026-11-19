@@ -6,12 +6,16 @@ code:
   - crates/world/src/layout.rs#Layout
   - crates/world/src/check.rs#check
   - crates/world/src/geometry.rs#doubled_area
+  - crates/world/src/waters.rs#Waters
+  - crates/world/src/traffic.rs#Traffic
+  - client/src/rules/watersRules.ts#startWatersRules
 ---
 # World Map
 
 The world's structure, as [[The World Map]] decides it: one ocean the size of Tamriel's frame, nine hand-placed
 continents, thousands of static isles, and discoveries that come and go. This note says how it is built. Built so far:
-the layout file, the rules it keeps, the [[World Editor]] that paints it, and the [[Land]] generated from it.
+the layout file, the rules it keeps, the [[World Editor]] that paints it, the [[Land]] generated from it, and the
+sea's waters and friendly traffic as rules and doors (nothing draws them yet).
 
 ## The layers
 
@@ -77,6 +81,81 @@ Overworld's bird's-eye view of the side of an island, they choose a node (a miss
 patrol area, a world boss) and are taken there. A node is one section of the land, and its edge warns the player to
 go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
 distance, never reached. Each island has one major port city; Saltmere's is Overlook.
+
+## Waters
+
+The sea is split into nine waters, one an island ([[The Waters Come From the Islands]]). The `world` crate judges them
+(`waters.rs`):
+
+- A point of sea belongs to the island whose coast (its continent's outline) is nearest, by straight-line distance in
+  metres; a tie goes to the lower continent index. A point inside an outline, or on it, is land and has no water.
+- Each water's holder and name come from the table `WATERS`, by continent id. Claude named the waters; the owner can
+  change any name.
+
+| Continent | Holder | Name |
+|---|---|---|
+| continent-1 | Home: no hostile ship | The Lantern Sea |
+| continent-2 | Contested | The Cairn Straits |
+| continent-3 | Grey Tithe | The Elmwater |
+| continent-4 | Pirates | The Sunscorch Coves |
+| continent-5 | Pirates | The Gilded Reach |
+| continent-6 | Pirates | The Mistwrack |
+| continent-7 | Grey Tithe | The Windward Levy |
+| continent-8 | Grey Tithe | The Fen Deeps |
+| continent-9 | Grey Tithe | The Rimeholt Deep |
+
+- The contested seam: a point whose nearest coast is continent-4's or continent-8's, and which is at most 200 km
+  farther from the other one's coast than from its own (about 100 km either side of their border), is contested
+  whatever its water's holder. It keeps its water's name.
+- `borders()` says which waters touch: the pairs whose sea cells lie side by side on a 10 km grid. On today's layout
+  there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9. 4-8 is the
+  only border between a pirate water and a Tithe water.
+- `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
+  continent's index for sea with bit 0x80 set on the seam, 255 for land. The [[Held Map]] tints from it.
+- Speed: a bucket grid of 32 km cells lists, for each bucket, every coast edge that can be nearest to some point in it,
+  so a query looks at a few dozen edges. `water_at` takes about 0.4 µs natively; `grid(4_800.0)`, 1024 × 640 cells,
+  about 80 ms natively in release and 120 ms in WebAssembly.
+- Only + − × ÷ and square roots on 64-bit floats, so every machine gives the same answer ([[Agree to the Bit]]).
+
+## Traffic
+
+Friendly ships sail between the ports all the time, seen from land and sea (`traffic.rs`, `traffic_routes.rs`). The
+numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
+
+- **Ports.** One an island, its city, passed in by the caller (the crate reads no files).
+- **Roadstead.** Where a port's ships come and go: the nearest point of its own coast to the city's centre, 3 km out
+  to sea away from the centre, then on outward in 500 m steps until it is at least 1 km clear of every coast, in whole
+  metres.
+- **Routes.** One between each pair of ports whose waters border, 17 in all, in `borders()`'s order. Each is planned
+  round land: A* over a mask of 5 km cells whose middles are at least 3 km clear of every coast (eight neighbours, no
+  corner cut past an unclear cell, ties to the lower cell), from each roadstead's nearest reachable clear cell; then
+  string-pulled, each leg running as far ahead as it can while it touches no coast edge, checked exactly in whole
+  metres with `segments_meet`. Today's routes run from 654 km (Elmhaven to Fenhallow) to 3,236 km (Cairnwatch to
+  Goldreach). Planning all of them takes about 0.6 s in WebAssembly.
+- **Schedule.** On each route a ship leaves each end every 1,200 s of world time, departure n at n × 1,200 s, and sails
+  at 5 m/s to the other end, where she is gone. World time is seconds since the Unix epoch, passed in, so every
+  machine computes the same ships for the same time.
+- **A ship.** Her id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Her hull comes
+  from a fixed hash of her id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. She carries her position,
+  the unit way she sails along her leg, the metres sailed and her route's length.
+- `ships_near(centre, radius_m, time_s)` works in closed form: per route, the stretches of its path within the radius
+  give the distances sailed that put a ship there, and those give the departures; each is then placed exactly.
+  `ship(id, time_s)` places one ship.
+
+### The doors
+
+The game page already loads `room.wasm`, which has the world and gear crates, so the doors live there
+(`crates/room-wasm/src/waters_door.rs`), and `client/src/rules/watersRules.ts` wraps them. The page passes the layout's
+text and the nine cities it already reads from the land files (`client/src/game/worldData.ts`), so there is one
+source of each.
+
+| Door | TypeScript | What it answers |
+|---|---|---|
+| `waters_open` | `open(layoutText, ports)` | The table: each water's continent index, id, name, holder and island's level band; the borders; each port's roadstead; each route's ports, length and path |
+| `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
+| `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m are refused |
+| `waters_ships` | `shipsNear(centre, radiusM, timeS)` | The ships near a point, 11 f64s each: id, route, from port, to port, hull, x, y, way x, way y, metres sailed, route length |
+| `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when she is not sailing |
 
 ## Weather and travel
 
