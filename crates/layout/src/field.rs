@@ -238,6 +238,130 @@ fn slopes(height: &[f64], columns: usize, rows: usize) -> Vec<f64> {
         .collect()
 }
 
+/// A river through a claim, as its zone's brief asks: the wings that carry the claim along the river's course where it
+/// runs between the claim's north and south bounds, a capsule a stretch, and each stretch's banks as floor (water
+/// meadows), so the section takes the river in.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RiverWing {
+    pub wings: Vec<[f64; 5]>,
+    pub floors: Vec<[f64; 5]>,
+}
+
+/// The water meadows' half-width either side of the river's middle, and the wing's, metres: the meadows wander out a
+/// third at most and the section reaches 4 m past them, all inside the wing. Each widens as far as the river strays
+/// from its course.
+const MEADOW_HALF_M: f64 = 12.0;
+const RIVER_WING_M: f64 = 24.0;
+/// How long a stretch of the river's rows its course takes the middle of, and how long a wing's stretch is at most,
+/// metres.
+const COURSE_STEP_M: f64 = 40.0;
+const STRETCH_M: f64 = 160.0;
+/// How many cells apart two of a river's cells may lie and be one river.
+const GAP_CELLS: usize = 3;
+/// How far a river's wing keeps from the sea, metres: past the strand.
+const RIVER_SEA_CLEAR_M: f64 = 50.0;
+
+/// The river a claim holds most of, between its north and south bounds, carried into the claim by a wing a stretch
+/// (`RiverWing`); a stretch whose wing would reach another node's claim (`avoid`) or near the sea is left out. None
+/// where no river runs in the claim.
+#[must_use]
+pub fn river_wing(field: &Field, claim: &[[f64; 2]], avoid: &[Vec<[f64; 2]>]) -> Option<RiverWing> {
+    let [_, north, _, south] = bounds_of(claim);
+    let columns = field.columns;
+    let centre = |at: usize| field.centre(at % columns, at / columns);
+    let river = |at: usize| field.water[at] == Water::River && (north..=south).contains(&centre(at)[1]);
+    // The river cells within a few cells of one another, as a river narrower than a cell leaves gaps along a slant;
+    // the group with the most cells in the claim is its river.
+    let mut group = vec![usize::MAX; field.water.len()];
+    let mut groups: Vec<(usize, Vec<usize>)> = Vec::new();
+    for start in (0..field.water.len()).filter(|&at| river(at)) {
+        if group[start] != usize::MAX {
+            continue;
+        }
+        let (mut cells, mut stack) = (Vec::new(), vec![start]);
+        group[start] = groups.len();
+        while let Some(at) = stack.pop() {
+            cells.push(at);
+            let (column, row) = (at % columns, at / columns);
+            for next_row in row.saturating_sub(GAP_CELLS)..=(row + GAP_CELLS).min(field.rows - 1) {
+                for next_column in column.saturating_sub(GAP_CELLS)..=(column + GAP_CELLS).min(columns - 1) {
+                    let next = field.index(next_column, next_row);
+                    if river(next) && group[next] == usize::MAX {
+                        group[next] = groups.len();
+                        stack.push(next);
+                    }
+                }
+            }
+        }
+        groups.push((cells.iter().filter(|&&at| field.claimed[at]).count(), cells));
+    }
+    let (claimed, cells) = groups.into_iter().max_by_key(|(claimed, cells)| (*claimed, cells.len()))?;
+    if claimed == 0 {
+        return None;
+    }
+    // shortcut: the course is the middle of each stretch of rows, which suits a river running north and south, as the
+    // Vale's does; a brief naming a river that runs east and west wants its course taken along its own length.
+    let rows_a_stretch = (COURSE_STEP_M / CELL_M) as usize;
+    let mut stretches: std::collections::BTreeMap<usize, [f64; 3]> = std::collections::BTreeMap::new();
+    for &at in &cells {
+        let [x, y] = centre(at);
+        let sum = stretches.entry(at / columns / rows_a_stretch).or_insert([0.0; 3]);
+        *sum = [sum[0] + x, sum[1] + y, sum[2] + 1.0];
+    }
+    let mut middles: Vec<[f64; 2]> = stretches.values().map(|&[x, y, count]| [x / count, y / count]).collect();
+    // The course runs on to the river's first and last rows in the span, not only to their stretches' middles.
+    let rows = cells.iter().map(|&at| centre(at)[1]);
+    let [first, last] = rows.fold([f64::INFINITY, f64::NEG_INFINITY], |[low, high], y| [low.min(y), high.max(y)]);
+    if let Some(end) = middles.first_mut() {
+        end[1] = first;
+    }
+    if let Some(end) = middles.last_mut() {
+        end[1] = last;
+    }
+    let course = crate::paths::simplified(&middles, CELL_M / 2.0);
+    // Stretches no longer than a few of the river's rows, so one near another claim leaves out only itself.
+    let segments: Vec<[[f64; 2]; 2]> = course
+        .windows(2)
+        .flat_map(|pair| {
+            let pieces = (distance(pair[0], pair[1]) / STRETCH_M).ceil().max(1.0) as u32;
+            let at = move |piece: u32| {
+                let share = f64::from(piece) / f64::from(pieces);
+                [pair[0][0] + (pair[1][0] - pair[0][0]) * share, pair[0][1] + (pair[1][1] - pair[0][1]) * share]
+            };
+            (0..pieces).map(move |piece| [at(piece), at(piece + 1)])
+        })
+        .collect();
+    // How far the river strays from each stretch of its course.
+    let mut strays = vec![0.0_f64; segments.len()];
+    for &at in &cells {
+        let offs = segments.iter().map(|&[from, to]| crate::paths::off_line(centre(at), from, to));
+        if let Some((nearest, off)) = offs.enumerate().min_by(|first, second| first.1.total_cmp(&second.1)) {
+            strays[nearest] = strays[nearest].max(off);
+        }
+    }
+    let mut wing = RiverWing { wings: Vec::new(), floors: Vec::new() };
+    for (&[from, to], &stray) in segments.iter().zip(&strays) {
+        let half = RIVER_WING_M + stray;
+        let off_claims = avoid.iter().all(|ring| {
+            !ring_holds(ring, from[0], from[1])
+                && (0..ring.len()).all(|edge| {
+                    crate::paths::segments_apart([from, to], [ring[edge], ring[(edge + 1) % ring.len()]]) > half
+                })
+        });
+        let steps = (distance(from, to) / CELL_M).ceil().max(1.0) as u32;
+        let off_sea = (0..=steps).all(|step| {
+            let share = f64::from(step) / f64::from(steps);
+            let at = [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
+            field.to_sea[field.nearest(at[0], at[1])] >= RIVER_SEA_CLEAR_M + half
+        });
+        if off_claims && off_sea {
+            wing.wings.push([from[0], from[1], to[0], to[1], half]);
+            wing.floors.push([from[0], from[1], to[0], to[1], MEADOW_HALF_M + stray]);
+        }
+    }
+    (!wing.wings.is_empty()).then_some(wing)
+}
+
 /// The steepest ground a layout treats as walked: a little under the body's 50 degrees, so a path never hugs a slope
 /// a body slides on.
 pub const WALKED_SLOPE: f64 = 1.0;
@@ -264,5 +388,62 @@ mod tests {
         for slope in slopes(&height, columns, rows) {
             assert!((slope - 0.5).abs() < 1e-12, "{slope}");
         }
+    }
+
+    /// Dry land over a square claim 600 m across and 80 m round it, a river a cell wide running north and south 256 m
+    /// east of its middle, and the cells claimed.
+    fn a_river() -> Field {
+        let claim = [[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
+        let (west, north, columns) = (-380.0, -380.0, 95);
+        let count = columns * columns;
+        let centre =
+            |at: usize| [west + ((at % columns) as f64 + 0.5) * CELL_M, north + ((at / columns) as f64 + 0.5) * CELL_M];
+        let claimed: Vec<bool> = (0..count).map(|at| ring_holds(&claim, centre(at)[0], centre(at)[1])).collect();
+        Field {
+            west,
+            north,
+            columns,
+            rows: columns,
+            height: vec![5.0; count],
+            water: (0..count)
+                .map(|at| if (centre(at)[0] - 256.0).abs() < 4.0 { Water::River } else { Water::Dry })
+                .collect(),
+            slope: vec![0.0; count],
+            inside: chamfer(columns, columns, |at| !claimed[at]),
+            claimed,
+            to_sea: vec![FAR_M; count],
+            to_fresh: vec![FAR_M; count],
+            seaward: [0.0, -1.0],
+        }
+    }
+
+    #[test]
+    fn a_rivers_wing_carries_the_claim_along_it_and_keeps_off_another_claim() {
+        let field = a_river();
+        let claim = [[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
+        // Another node's claim along the river's northern half, `apart` metres east of its middle.
+        let other = |apart: f64| vec![[256.0 + apart, -400.0], [500.0, -400.0], [500.0, 0.0], [256.0 + apart, 0.0]];
+        let span = |river: &RiverWing| {
+            let ends = river.wings.iter().flat_map(|wing| [wing[1], wing[3]]);
+            ends.fold([f64::INFINITY, f64::NEG_INFINITY], |[low, high], y| [low.min(y), high.max(y)])
+        };
+        // 30 m off, the wing passes it: the whole course between the claim's bounds is carried.
+        let Some(beside) = river_wing(&field, &claim, &[other(30.0)]) else { panic!("a river is found") };
+        let [north, south] = span(&beside);
+        assert!(north < -280.0 && south > 280.0, "from bound to bound: {north} to {south}");
+        // 14 m off, the stretches along it are left out.
+        let Some(river) = river_wing(&field, &claim, &[other(14.0)]) else { panic!("a river is found") };
+        let near = other(14.0);
+        assert_eq!(river.wings.len(), river.floors.len());
+        for (wing, floor) in river.wings.iter().zip(&river.floors) {
+            assert!(wing[4] >= 24.0 && floor[4] >= 12.0 && wing[4] >= floor[4] + 12.0, "{wing:?} {floor:?}");
+            let line = [[wing[0], wing[1]], [wing[2], wing[3]]];
+            let apart = (0..4).map(|edge| crate::paths::segments_apart(line, [near[edge], near[(edge + 1) % 4]]));
+            assert!(apart.fold(f64::INFINITY, f64::min) > wing[4], "no wing reaches the other claim: {wing:?}");
+            assert!((wing[0] - 256.0).abs() < 4.0 && (wing[2] - 256.0).abs() < 4.0, "along the river: {wing:?}");
+        }
+        assert!(span(&river)[1] > 280.0, "the rest still runs to the south bound");
+        let all_east = vec![[0.0, -400.0], [400.0, -400.0], [400.0, 400.0], [0.0, 400.0]];
+        assert_eq!(river_wing(&field, &claim, &[all_east]), None, "no stretch is left");
     }
 }

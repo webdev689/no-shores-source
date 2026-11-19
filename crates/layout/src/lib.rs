@@ -48,6 +48,8 @@ use serde::Serialize;
 /// reaches out, a whole number of cells further, so the two grids' cells lie alike.
 const MARGIN_M: f64 = 40.0;
 const RUNS_MARGIN_M: f64 = MARGIN_M + 52.0 * CELL_M;
+/// How far a footbridge reaches out along a lower bank to meet the land at the other's height, in 2 m steps.
+const BANK_STEPS: usize = 6;
 
 /// Another node a layout leads to or comes from: its id and the middle of its claim.
 #[derive(Debug, Clone, PartialEq)]
@@ -173,7 +175,14 @@ pub fn plan(
         .collect();
     let pockets: Vec<[f64; 2]> =
         sites.iter().filter(|site| site.kind == sites::SiteKind::Resource).map(|site| site.at).collect();
-    let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets };
+    // A run past the edge is read on a wider field, the claim carried out round it by its wing, and so is a river the
+    // brief names: its wings carry the claim along its course and its banks are floor.
+    let claim = claim_of(node);
+    let beyond = brief.runs.iter().any(|run| run.place == brief::RunPlace::Beyond);
+    let mut wide = (patrol && (beyond || brief.river)).then(|| Field::read(ground, &claim, RUNS_MARGIN_M));
+    let river = wide.as_ref().filter(|_| brief.river).and_then(|wide| field::river_wing(wide, &claim, avoid));
+    let meadows = river.as_ref().map_or(&[][..], |river| river.floors.as_slice());
+    let network = carve::Network { areas: &areas, paths: &paths, exits: &exits, pockets: &pockets, meadows };
     let (mut sculpt, basins) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
     // What stands on a terrace was stood on the land before it was carved: lift it onto the terrace's level.
     let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
@@ -185,11 +194,7 @@ pub fn plan(
     // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
     // found in what is left.
     let mass_climbs = masses::reach_masses(&field, &mut sculpt);
-    // The runs are cut into the rock the carving left, and a run past the edge is read on a wider field, the claim
-    // carried out round it by its wing.
-    let claim = claim_of(node);
-    let beyond = brief.runs.iter().any(|run| run.place == brief::RunPlace::Beyond);
-    let mut wide = (patrol && beyond).then(|| Field::read(ground, &claim, RUNS_MARGIN_M));
+    // The runs are cut into the rock the carving left.
     let runs = if patrol && !brief.runs.is_empty() {
         let bare = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
         let field = wide.as_ref().unwrap_or(&field);
@@ -201,6 +206,7 @@ pub fn plan(
     };
     sculpt.runs = runs.iter().flat_map(|run| runs::capsules(run, runs::half_of(run.kind))).collect();
     sculpt.wings = runs.iter().filter_map(|run| runs::wing(run, &claim)).collect();
+    sculpt.wings.extend(river.iter().flat_map(|river| river.wings.iter().copied()));
     if let Some(wide) = &mut wide {
         for &wing in &sculpt.wings {
             wide.claim_more(wing);
@@ -267,6 +273,53 @@ pub fn plan(
     works::retaining_walls(&mut kit, &areas, &ways, &sculpt.outcrops, &carved);
     for run in &runs {
         run_kits::build(&mut kit, run, &carved);
+    }
+    // Where a gorge out of the claim meets a river, a footbridge carries its way over, along the gorge.
+    for &(from, way) in &exits {
+        let [x1, y1, x2, y2, _] = carve::gorge(&field, from, way, 0.0);
+        let steps = (distance([x1, y1], [x2, y2]) / 2.0).ceil() as usize;
+        let along = |step: usize| {
+            let share = step as f64 / steps.max(1) as f64;
+            [x1 + (x2 - x1) * share, y1 + (y2 - y1) * share]
+        };
+        let wet = |step: usize| {
+            let [x, y] = along(step);
+            reach
+                .cell_of(x, y)
+                .is_some_and(|(column, row)| reach.water[reach.index(column, row)] == field::Water::River)
+        };
+        let mut entered = None;
+        for step in 1..=steps {
+            match (wet(step - 1), wet(step), entered) {
+                (false, true, _) => entered = Some(step - 1),
+                (true, false, Some(bank)) => {
+                    // Out along the lower bank to where it stands as high as the other, so a body steps onto the
+                    // deck at either end; and only where the section takes the way in.
+                    // The deck reaches 3 m past each bank and stands at the higher of its two ends.
+                    let end = |step: usize, out: f64| {
+                        let [x, y] = along(step);
+                        ground.height_at(x + way[0] * 3.0 * out, y + way[1] * 3.0 * out)
+                    };
+                    let (mut west, mut east) = (bank, step);
+                    loop {
+                        let (low_west, low_east) = (end(west, -1.0), end(east, 1.0));
+                        if low_west < low_east - 0.15 && west > 0 && bank - west < BANK_STEPS {
+                            west -= 1;
+                        } else if low_east < low_west - 0.15 && east < steps && east - step < BANK_STEPS {
+                            east += 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    let banks = [along(west), along(east)];
+                    if banks.iter().all(|at| field::ring_holds(&ring, at[0], at[1])) {
+                        pieces_land::bridge(&mut kit, banks, Tier::Footpath.width());
+                    }
+                    entered = None;
+                }
+                _ => {}
+            }
+        }
     }
     let gorges: Vec<Path> = exits
         .iter()

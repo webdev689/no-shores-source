@@ -1,8 +1,9 @@
 //! The detail of Saltmere's three zones as the bake plans them: each zone's outcrops in the shape its brief names, no
 //! outcrop a spire the close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen
 //! rock, and every run its brief asks for still found; continent 1's basins shaped by their kinds, what stands on a
-//! terrace on its level; no claim holding a mass of rock that nothing reaches; and the climates with no hint, the
-//! swamp's and the desert's, keeping their outcrops under their massif and off their ways.
+//! terrace on its level; no claim holding a mass of rock that nothing reaches; the Gullwing Vale's river in its
+//! section, carried there by wings that touch no other node; and the climates with no hint, the swamp's and the
+//! desert's, keeping their outcrops under their massif and off their ways.
 
 use city::solids::{Material, Shape as SolidShape};
 use land::ground::Ground;
@@ -18,12 +19,18 @@ const ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwood-moors"]
 
 /// A continent's layouts as the bake settles them, its biome's key, and its ground as they leave it.
 fn settled(id: &str) -> (Vec<Layout>, Option<&'static str>, Ground) {
+    settled_by(id, &|_| {})
+}
+
+/// A continent's layouts as the bake settles them with its briefs changed, its biome's key, and its ground.
+fn settled_by(id: &str, change: &dyn Fn(&mut layout::brief::Briefs)) -> (Vec<Layout>, Option<&'static str>, Ground) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
     let continent = world.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
     let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
-    let builders = bake::builders(&root).expect("the builders read");
+    let mut builders = bake::builders(&root).expect("the builders read");
+    change(&mut builders.briefs);
     let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
     let mut landmass = land::landmass::generate(&continent, edits).expect("the continent generates");
     city::settle(&mut landmass, &city).expect("its city settles");
@@ -304,4 +311,51 @@ fn no_claim_holds_a_dead_mass() {
         }
     }
     assert!(dead.is_empty(), "{dead:#?}");
+}
+
+#[test]
+fn the_vales_river_lies_in_its_section() {
+    let ground = &laid_one().2;
+    let vale = zone("gullwing-vale");
+    let field = layout::field::Field::read(ground, &vale.sculpt.claim, 456.0);
+    let [_, north, _, south] = layout::field::bounds_of(&vale.sculpt.claim);
+    let (mut river, mut outside) = (0, Vec::new());
+    for at in (0..field.water.len()).filter(|&at| field.water[at] == layout::field::Water::River) {
+        let [x, y] = field.centre(at % field.columns, at / field.columns);
+        if (north..=south).contains(&y) {
+            river += 1;
+            if !layout::field::ring_holds(&vale.ring, x, y) {
+                outside.push(format!("{x:.0},{y:.0}"));
+            }
+        }
+    }
+    assert!(river > 100, "the river runs the claim's length: {river} cells");
+    assert!(outside.is_empty(), "{} of {river} river cells outside the section: {outside:?}", outside.len());
+}
+
+#[test]
+fn no_other_node_is_raised_or_claimed_by_the_vales_wing() {
+    let (with, _, with_ground) = laid_one();
+    let (without, _, without_ground) = settled_by("continent-1", &|briefs| {
+        if let Some(vale) = briefs.0.get_mut("gullwing-vale") {
+            vale.river = false;
+        }
+    });
+    assert!(zone("gullwing-vale").sculpt.wings.len() > 1, "the vale's river has its wings");
+    for (now, was) in with.iter().zip(&without).filter(|(now, _)| now.id != "gullwing-vale") {
+        assert_eq!(now.ring, was.ring, "{}'s section", now.id);
+        let points = was
+            .sculpt
+            .floors
+            .iter()
+            .flat_map(|&[x1, y1, x2, y2, _]| [[x1, y1], [(x1 + x2) / 2.0, (y1 + y2) / 2.0], [x2, y2]]);
+        for [x, y] in points.chain(was.areas.iter().map(|area| area.at)) {
+            let (height, before) = (with_ground.height_at(x, y), without_ground.height_at(x, y));
+            assert!(
+                height == before,
+                "{}'s floor at {x:.0},{y:.0} stands {height} m, {before} m without the wing",
+                now.id
+            );
+        }
+    }
 }

@@ -193,6 +193,9 @@ pub fn cave(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     lantern(kit, ahead(middle, toward, 5.0, 1.1), 2.4);
 }
 
+/// A bridge deck's thickness, metres: thick enough to be a collider (a body stands on it, not in the water under it).
+const DECK_M: f64 = 0.5;
+
 /// A bridge over a river where a path crosses it: a timber deck from bank to bank at the higher bank's height, on
 /// piles, with rails either side.
 pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
@@ -207,18 +210,21 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
     let deck = kit.height(start).max(kit.height(end)) + 0.3;
     let span = length + 6.0;
     let middle = [(start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0];
-    let turn = turn_along(way);
-    kit.solid(
-        Solid::upright(Shape::Block, [middle[0], middle[1], deck - 0.35], [width + 1.0, span, 0.35], Material::Timber)
-            .turned(turn),
-    );
+    // Deck and rails in lengths, so on a slant each length's box keeps close to it and a body walks the deck.
+    let mut lengths = Vec::new();
+    crate::halls::wall(&mut lengths, start, end, deck - DECK_M, deck, width + 1.0, Material::Timber);
     let across = [-way[1], way[0]];
+    let aside = |at: [f64; 2], side: f64| {
+        [at[0] + across[0] * (width / 2.0 + 0.4) * side, at[1] + across[1] * (width / 2.0 + 0.4) * side]
+    };
     for side in [-1.0, 1.0] {
-        let rail =
-            [middle[0] + across[0] * (width / 2.0 + 0.4) * side, middle[1] + across[1] * (width / 2.0 + 0.4) * side];
-        kit.solid(
-            Solid::upright(Shape::Block, [rail[0], rail[1], deck], [0.2, span, 1.0], Material::Timber).turned(turn),
-        );
+        crate::halls::wall(&mut lengths, aside(start, side), aside(end, side), deck, deck + 1.0, 0.2, Material::Timber);
+    }
+    for length in lengths {
+        kit.solid(length);
+    }
+    for side in [-1.0, 1.0] {
+        let rail = aside(middle, side);
         for pile in 0..=(span / 4.0) as u32 {
             let at = ahead([rail[0], rail[1]], way, f64::from(pile) * 4.0 - span / 2.0, 0.0);
             let bottom = kit.height(at).min(deck) - 1.5;

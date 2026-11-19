@@ -120,7 +120,7 @@ pub fn canyon_half_at(path: &Path, at: [f64; 2], areas: &[Area]) -> f64 {
 }
 
 /// The capsule from a point to the claim's edge along a way, and on past it.
-fn gorge(field: &Field, from: [f64; 2], way: [f64; 2], half: f64) -> [f64; 5] {
+pub(crate) fn gorge(field: &Field, from: [f64; 2], way: [f64; 2], half: f64) -> [f64; 5] {
     let mut reach = 0.0;
     while reach < 2000.0 {
         let at = [from[0] + way[0] * reach, from[1] + way[1] * reach];
@@ -133,14 +133,15 @@ fn gorge(field: &Field, from: [f64; 2], way: [f64; 2], half: f64) -> [f64; 5] {
     [from[0], from[1], end[0], end[1], half]
 }
 
-/// What a layout's floor is carved round: its areas, its paths, the gorges out of it (each a start and a way), and
-/// the pockets off its paths where its resources lie.
+/// What a layout's floor is carved round: its areas, its paths, the gorges out of it (each a start and a way), the
+/// pockets off its paths where its resources lie, and the water meadows along a river its brief names.
 #[derive(Debug, Clone, Copy)]
 pub struct Network<'layout> {
     pub areas: &'layout [Area],
     pub paths: &'layout [Path],
     pub exits: &'layout [([f64; 2], [f64; 2])],
     pub pockets: &'layout [[f64; 2]],
+    pub meadows: &'layout [[f64; 5]],
 }
 
 /// A pocket's half-width, metres: room round a resource and a way into it from the path.
@@ -194,7 +195,7 @@ pub fn carve(
     rise: f64,
     seed: u32,
 ) -> (Sculpt, Vec<Basin>) {
-    let Network { areas, paths, exits, pockets } = network;
+    let Network { areas, paths, exits, pockets, meadows } = network;
     let mut drawn = 0_i64;
     let mut draw = || {
         drawn += 1;
@@ -216,6 +217,7 @@ pub fn carve(
             floors.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half]);
         }
     }
+    floors.extend_from_slice(meadows);
     for &(from, way) in exits {
         floors.push(gorge(field, from, way, FOOTPATH_HALF_M + 3.0));
     }

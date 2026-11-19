@@ -1,6 +1,7 @@
 //! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
 //! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every ramp, the instances'
-//! too, onto the terrace it serves; and up every climb to its lookout on the massif's top.
+//! too, onto the terrace it serves; up every climb to its lookout on the massif's top; and over every footbridge
+//! where a gorge out of a zone meets a river.
 
 use layout::field::distance;
 use layout::paths::off_line;
@@ -22,6 +23,39 @@ struct Zone {
     ring: Vec<[f64; 2]>,
     terraces: Vec<[f64; 7]>,
     climbs: Vec<[f64; 7]>,
+    /// Each footbridge over a gorge's river: its deck's top and its two ends, a few metres onto the banks.
+    bridges: Vec<(f64, [[f64; 2]; 2])>,
+}
+
+/// The footbridges over a layout's gorges (a capsule of its floor out of an area's middle): the top of the deck laid in
+/// lengths along each, and its ends a few metres out past its first and last lengths.
+fn bridges_of(laid: &layout::Layout) -> Vec<(f64, [[f64; 2]; 2])> {
+    let gorges = laid.sculpt.floors.iter().filter(|floor| {
+        let from = [floor[0], floor[1]];
+        distance(from, [floor[2], floor[3]]) > 1.0 && laid.areas.iter().any(|area| distance(area.at, from) < 1e-6)
+    });
+    let decks: Vec<&city::solids::Solid> = laid
+        .seating
+        .solids
+        .iter()
+        .filter(|solid| solid.material == city::solids::Material::Timber && (solid.size[2] - 0.5).abs() < 1e-9)
+        .collect();
+    gorges
+        .filter_map(|&[x1, y1, x2, y2, half]| {
+            let length = distance([x1, y1], [x2, y2]);
+            let way = [(x2 - x1) / length, (y2 - y1) / length];
+            let on: Vec<&&city::solids::Solid> =
+                decks.iter().filter(|deck| off_line([deck.at[0], deck.at[1]], [x1, y1], [x2, y2]) < half).collect();
+            let along = |deck: &&&city::solids::Solid| (deck.at[0] - x1) * way[0] + (deck.at[1] - y1) * way[1];
+            let first = on.iter().min_by(|one, other| along(one).total_cmp(&along(other)))?;
+            let last = on.iter().max_by(|one, other| along(one).total_cmp(&along(other)))?;
+            let out = |deck: &&&city::solids::Solid, side: f64| {
+                let reach = (deck.size[1] / 2.0 + 3.0) * side;
+                [deck.at[0] + way[0] * reach, deck.at[1] + way[1] * reach]
+            };
+            Some((first.at[2] + first.size[2], [out(first, -1.0), out(last, 1.0)]))
+        })
+        .collect()
 }
 
 fn zones() -> Vec<Zone> {
@@ -48,6 +82,7 @@ fn zones() -> Vec<Zone> {
                 ring: laid.ring.clone(),
                 terraces: laid.basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect(),
                 climbs: laid.sculpt.climbs.clone(),
+                bridges: bridges_of(laid),
             }
         })
         .collect()
@@ -150,6 +185,40 @@ fn every_climb_is_walked_to_its_lookout() {
         }
     }
     assert!(climbs > 0, "continent 1 has climbs");
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn every_footbridge_over_a_gorges_river_is_walked_over() {
+    let zones = zones();
+    let (mut bridges, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for &(deck, [from, to]) in &zone.bridges {
+            bridges += 1;
+            // Across it from bank to bank, noting how high the body stands as it passes the deck's middle.
+            let middle = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
+            let mut body = standing_on(&zone.floor, &zone.blocks, from[0], from[1]);
+            let mut over = f64::NEG_INFINITY;
+            for _ in 0..(30.0 / TICK_SECONDS) as usize {
+                let (east, south) = (to[0] - body.x, to[1] - body.y);
+                if (east * east + south * south).sqrt() < THERE_M {
+                    break;
+                }
+                let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
+                body = step_body(&body, &controls, &zone.blocks, &zone.floor, TICK_SECONDS);
+                if distance([body.x, body.y], middle) < 1.5 {
+                    over = over.max(body.z);
+                }
+            }
+            if distance([body.x, body.y], to) > THERE_M || over < deck - 0.1 {
+                failed.push(format!(
+                    "{}: over the bridge at {:.0},{:.0} the body stops at {:.0},{:.0}, {:.1} m at its middle on a {deck:.1} m deck",
+                    zone.id, middle[0], middle[1], body.x, body.y, over
+                ));
+            }
+        }
+    }
+    assert!(bridges > 0, "a gorge on continent 1 crosses a river");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 
