@@ -45,11 +45,13 @@ pub struct Calls {
     pub heal: f64,
 }
 
-/// A garrison foe's place at its post and the way it faces there.
+/// A garrison foe's place in its group and the way it faces there, and whether the group walks on, its place moving
+/// with it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Home {
     pub at: [f64; 3],
     pub facing: f64,
+    pub marching: bool,
 }
 
 /// Why a garrison foe walks back to its post: its target led it past its leash, when it heeds nothing on the way but a
@@ -131,7 +133,19 @@ impl Brain {
 
     /// Posts it at a garrison's place, facing `facing`: from now on it leashes to it.
     pub fn posted_at(&mut self, at: [f64; 3], facing: f64) {
-        self.home = Some(Home { at, facing });
+        self.home = Some(Home { at, facing, marching: false });
+    }
+
+    /// Moves its place, as its group walks its beat (`marching`) or stands at a point of it: it leashes to its place
+    /// as it is, and with nothing to fight keeps to it.
+    pub fn keep_to(&mut self, at: [f64; 3], facing: f64, marching: bool) {
+        self.home = Some(Home { at, facing, marching });
+    }
+
+    /// Its place in its group, if it is a garrison's.
+    #[must_use]
+    pub fn home(&self) -> Option<Home> {
+        self.home
     }
 
     /// Whether it walks back to its post, its fight given up or its search let go.

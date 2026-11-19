@@ -12,7 +12,7 @@ use crate::react::Reactions;
 use crate::senses::Here;
 use crate::shoot::Bow;
 use crate::steer::{Ask, way_to};
-use crate::tuning::{ALERT_OFF, HOME_FACED, HOME_REACHED, LEASH, SQUARING_PACE};
+use crate::tuning::{ALERT_OFF, HOME_FACED, HOME_REACHED, KEEP_UP, LEASH, SQUARING_PACE};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use movement::{TICK_SECONDS, TUNING};
@@ -83,12 +83,18 @@ fn start_home(brain: &mut Brain, why: Homeward) {
 }
 
 /// Its walk back to its place, healing a share of what it lacks each tick by the walk still left, so it is whole as it
-/// arrives; there, it turns to face as it was posted, and is home.
+/// arrives; there, it turns to face as it was posted, and is home. While its group walks on and it has nothing to walk
+/// back from, it keeps up with its place instead, the faster the farther behind.
 fn walk_home(brain: &mut Brain, here: &Here<'_, '_>, home: Home) -> Ask {
     brain.awareness.heard.clear();
     let fighter = &here.fighter;
     let missing = fighter.health_max - fighter.health;
     let left = apart(here.at(), [home.at[0], home.at[1]]);
+    if home.marching && brain.returning.is_none() {
+        brain.calls.heal = missing;
+        let way = (left > HOME_REACHED).then(|| way_to(here, home.at)).flatten();
+        return way.map_or_else(|| Ask::facing(home.facing), |way| Ask::walking(way, (left / KEEP_UP).min(1.0), false));
+    }
     if left > HOME_REACHED
         && let Some(way) = way_to(here, home.at)
     {

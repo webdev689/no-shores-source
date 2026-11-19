@@ -40,6 +40,9 @@ pub const LEASH: f64 = 50.0;
 pub const HOME_REACHED: f64 = 0.3;
 pub const HOME_FACED: f64 = 0.01;
 pub const SQUARING_PACE: f64 = 0.001;
+/// A foe keeping up with its place as its group walks on walks at the share of a walk its distance behind is of this,
+/// at most a full walk: at a group's stroll it walks a little behind its place, and catches up when farther.
+pub const KEEP_UP: f64 = 2.0;
 /// Noises: the awareness each adds where it is made, falling away to nothing at its reach. A gun alerts outright
 /// within half its reach; a bow or a crossbow only stirs; a swing, or a blow landing, alerts only at a fighter's elbow;
 /// a runner's feet stir once each RUN_EVERY.

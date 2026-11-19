@@ -1,8 +1,10 @@
-//! A garrison foe leashed to its post: it gives its target up 50 m from its place there or off the room's navmesh,
-//! walks back healing, heeds no one on its way but a blow, and stands idle at its place again; a foe with no post
-//! never does. A Boss or a Miniboss that leashes goes back to its first phase, its called foes falling; and a garrison
-//! foe whose search finds no one walks home as well, heeding what it sees on the way.
+//! A garrison foe leashed to its place in its group: it gives its target up 50 m from its place or off the room's
+//! navmesh, walks back healing, heeds no one on its way but a blow, and stands idle in its place again, its group then
+//! walking its beat on; a foe with no post never does. A Boss or a Miniboss that leashes goes back to its first phase,
+//! its called foes falling; and a garrison foe whose search finds no one walks home as well, heeding what it sees on
+//! the way.
 
+use super::beat::LAG;
 use super::garrison_tests::{called_by, into_its_last_phase, levelled, node, run, section, shoot, stand_player};
 use super::*;
 use crate::{Input, PlayerId};
@@ -18,7 +20,7 @@ fn group(room: &Room) -> Vec<Posted> {
     post.standing.iter().zip(&post.members).map(|(id, &(_, _, place, facing))| (*id, place, facing)).collect()
 }
 
-fn feet(room: &Room, id: FighterId) -> [f64; 2] {
+pub(super) fn feet(room: &Room, id: FighterId) -> [f64; 2] {
     let body = room.foes[&id].fighter.body;
     [body.x, body.y]
 }
@@ -27,9 +29,14 @@ fn flat(point: [f64; 3]) -> [f64; 2] {
     [point[0], point[1]]
 }
 
+/// A garrison foe's place in its group now, which its leash is measured from.
+pub(super) fn place_of(room: &Room, id: FighterId) -> [f64; 3] {
+    room.foes[&id].brain.home().unwrap().at
+}
+
 /// A point `distance` from `from` inside the section, on the navmesh (`on`) or plainly off it: the first by
 /// bearing, in sixty-fourths of a turn from north.
-fn point_at(room: &Room, from: [f64; 3], distance: f64, on: bool) -> [f64; 2] {
+pub(super) fn point_at(room: &Room, from: [f64; 3], distance: f64, on: bool) -> [f64; 2] {
     (0..64)
         .map(|step| f64::from(step) * TAU / 64.0)
         .map(|turn| [from[0] + libm::sin(turn) * distance, from[1] - libm::cos(turn) * distance])
@@ -58,12 +65,12 @@ fn provoke(room: &mut Room, player: PlayerId) {
 }
 
 /// The player kept whole, so a long chase goes on.
-fn whole(room: &mut Room, player: PlayerId) {
+pub(super) fn whole(room: &mut Room, player: PlayerId) {
     let fighter = &mut room.players.get_mut(&player).unwrap().fighter;
     fighter.health = fighter.health_max;
 }
 
-fn alert(room: &Room, id: FighterId) -> u8 {
+pub(super) fn alert(room: &Room, id: FighterId) -> u8 {
     room.foes_seen().find(|foe| foe.foe == id).unwrap().alert
 }
 
@@ -99,19 +106,19 @@ fn a_garrison_foe_chased_50_m_from_its_post_walks_back_healing_heeds_no_one_and_
             room.input(player, Input { sequence, intent, seen: room.clock(), ..Input::default() }).unwrap();
             whole(&mut room, player);
             run(&mut room, 1);
-            for (id, place, _) in &posted {
+            for (id, _, _) in &posted {
                 let gave_up = room.foes[id].brain.returning();
                 let target = room.foes[id].brain.target();
                 assert!(gave_up != (target == Some(player)), "{kind:?}: fights or walks back");
-                assert!(gave_up || apart(at(&room), flat(*place)) <= LEASH + 0.2, "never past its leash");
+                assert!(gave_up || apart(at(&room), flat(place_of(&room, *id))) <= LEASH + 0.2, "never past its leash");
                 if gave_up {
                     assert_eq!(alert(&room, *id), 0, "its fight given up");
                 }
             }
         }
         // On its way back it pays no heed to the player standing in its path.
-        let (first, place, _) = posted[0];
-        let toward = bearing(feet(&room, first), flat(place));
+        let first = posted[0].0;
+        let toward = bearing(feet(&room, first), flat(place_of(&room, first)));
         let [x, y] = feet(&room, first);
         stand_player(&mut room, player, [x + libm::sin(toward) * 4.0, y - libm::cos(toward) * 4.0]);
         let mut healths = Vec::new();
@@ -132,9 +139,30 @@ fn a_garrison_foe_chased_50_m_from_its_post_walks_back_healing_heeds_no_one_and_
         let middle = healths[healths.len() / 2];
         assert!(healths[0] < middle && middle < most, "{kind:?}: healing as it goes, not at once");
         run(&mut room, 600);
-        stands_home(&room, &posted, kind);
+        back_in_group(&mut room, &posted, kind);
         assert_eq!(room.garrison[0].standing, standing, "{kind:?}: its group's record is its own still");
         assert_eq!(room.garrison[0].cleared_at, None);
+    }
+}
+
+/// Every foe of the group back in it, whole and idle and walking back no longer: a group that holds its post stands at
+/// its places facing as posted, and one that walks a beat walks it on, each foe keeping to its place.
+pub(super) fn back_in_group(room: &mut Room, posted: &[Posted], kind: NodeKind) {
+    if room.garrison[0].beat.is_none() {
+        stands_home(room, posted, kind);
+        return;
+    }
+    for (id, _, _) in posted {
+        let fighter = room.foes[id].fighter;
+        assert!(!room.foes[id].brain.returning(), "{kind:?}: home");
+        assert!(fighter.health == fighter.health_max && alert(room, *id) == 0, "{kind:?}: whole and idle");
+    }
+    let leader = posted[0].0;
+    let from = feet(room, leader);
+    run(room, 600);
+    assert!(apart(feet(room, leader), from) > 5.0, "{kind:?}: its group walks its beat on");
+    for (id, _, _) in posted {
+        assert!(apart(feet(room, *id), flat(place_of(room, *id))) <= LAG, "{kind:?}: each in its place in the group");
     }
 }
 
@@ -155,7 +183,8 @@ fn a_garrison_foe_keeps_its_target_within_50_m_of_its_place_and_gives_it_up_past
     let mut room = node(NodeKind::Patrol, "glade");
     let player = room.join().unwrap();
     provoke(&mut room, player);
-    let (first, place, _) = group(&room)[0];
+    let first = group(&room)[0].0;
+    let place = place_of(&room, first);
     let to = point_at(&room, place, LEASH - 2.0, true);
     stand_player(&mut room, player, to);
     run(&mut room, 2);
@@ -168,8 +197,8 @@ fn a_garrison_foe_keeps_its_target_within_50_m_of_its_place_and_gives_it_up_past
     let mut room = node(NodeKind::Patrol, "glade");
     let player = room.join().unwrap();
     provoke(&mut room, player);
-    let (first, place, _) = group(&room)[0];
-    let off = point_at(&room, place, LEASH - 10.0, false);
+    let first = group(&room)[0].0;
+    let off = point_at(&room, place_of(&room, first), LEASH - 10.0, false);
     stand_player(&mut room, player, off);
     run(&mut room, 1);
     assert!(room.foes[&first].brain.returning(), "off the navmesh, 40 m off, it gives up");
@@ -190,8 +219,8 @@ fn a_blow_on_a_garrison_foe_walking_back_brings_it_back_to_the_fight() {
     let mut room = node(NodeKind::Patrol, "glade");
     let player = room.join().unwrap();
     provoke(&mut room, player);
-    let (first, place, _) = group(&room)[0];
-    let to = point_at(&room, place, LEASH + 1.0, true);
+    let first = group(&room)[0].0;
+    let to = point_at(&room, place_of(&room, first), LEASH + 1.0, true);
     stand_player(&mut room, player, to);
     run(&mut room, 30);
     assert!(room.foes[&first].brain.returning());
@@ -260,7 +289,8 @@ fn searching() -> (Room, Vec<Posted>) {
 #[test]
 fn a_garrison_foe_whose_search_finds_no_one_walks_home_healing_and_stands_idle_there() {
     let (mut room, posted) = searching();
-    let (first, place, _) = posted[0];
+    let first = posted[0].0;
+    let place = place_of(&room, first);
     let (mut searched, mut healths, mut farthest) = (false, Vec::new(), 0.0_f64);
     for _ in 0..2400 {
         run(&mut room, 1);
@@ -277,13 +307,14 @@ fn a_garrison_foe_whose_search_finds_no_one_walks_home_healing_and_stands_idle_t
     assert!(farthest > 10.0, "it walked home from where it searched: {farthest} m");
     assert!(healths.windows(2).all(|pair| pair[1] >= pair[0]) && healths[0] < healths[healths.len() / 2]);
     run(&mut room, 300);
-    stands_home(&room, &posted, NodeKind::Patrol);
+    back_in_group(&mut room, &posted, NodeKind::Patrol);
 }
 
 #[test]
 fn a_garrison_foe_walking_home_from_its_search_takes_a_player_it_sees_on_the_way() {
     let (mut room, posted) = searching();
-    let (first, place, _) = posted[0];
+    let first = posted[0].0;
+    let place = place_of(&room, first);
     for _ in 0..2400 {
         if room.foes[&first].brain.returning() && apart(feet(&room, first), flat(place)) > 6.0 {
             break;
