@@ -195,7 +195,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
   a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
   left out: its pictures are another person's ([[Own Work]]).
-- Which of the attack feel's effects go into the game, and at what settings, is the owner's to say.
+- The attack feel plays in the game on #69 at the [[Test Ground]]'s defaults, with the light layer on, as Claude's call
+  under the owner's "Attack visuals should go beyond the limits" ([[Attack Visuals Go Beyond the Limits]]). Which
+  effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
@@ -229,8 +231,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
   call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
   cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
-  Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 6 m up, the Armsmith's wares, and
-  the seven named armour pieces that gave Bulwark and now give another armour perk.
+  Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
+  caster's aim, the Armsmith's wares, the seven named armour pieces that gave Bulwark and now give another armour
+  perk, and how every attack looks ("How attacks look"): a crit's 0.11 s hold and a kill's 0.16 s, the chips'
+  leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
+  slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
+  (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -246,6 +252,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not yet
   seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a live
   room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
+- **Its second round, attack visuals beyond the limits (#69)**, tested offline in the Test Ground, and the game's own
+  page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers, damage
+  words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
+  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view
+  with the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's
+  0.4-0.5 ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the
+  marks still copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light;
+  `camera.ts` `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or
+  gun drawn can punch, and in what element.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.
