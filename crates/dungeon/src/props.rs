@@ -135,8 +135,9 @@ const fn clockwise(side: Side) -> Side {
 }
 
 impl Dungeon {
-    /// A room's `count` cells nearest its middle, its quiet cells when it has that many, else any of its cells; nearest
-    /// first, of two as near the first laid. Where a room's foes stand, and its first the Reeve's post in the end room.
+    /// A room's `count` cells nearest its middle: its quiet cells first and then the rest, each nearest first, of two as
+    /// near the first laid. Where a room's foes stand, and its first the Reeve's post in the end room. A smaller count's
+    /// cells are always the first of a larger's, so the cells kept for the most foes hold every band's.
     #[must_use]
     pub fn nearest_middle(&self, room: usize, count: usize) -> Vec<usize> {
         let found = &self.rooms[room];
@@ -144,12 +145,17 @@ impl Dungeon {
             (found.x as f64 + found.width as f64 / 2.0) * CELL_M,
             (found.y as f64 + found.depth as f64 / 2.0) * CELL_M,
         ];
-        let mut cells = if found.quiet.len() >= count { found.quiet.clone() } else { found.cells.clone() };
         let from_middle = |cell: &usize| {
             let [x, y] = self.centre(*cell);
             (x - middle[0]) * (x - middle[0]) + (y - middle[1]) * (y - middle[1])
         };
-        cells.sort_by(|first, second| from_middle(first).total_cmp(&from_middle(second)));
+        let nearest_first = |mut cells: Vec<usize>| {
+            cells.sort_by(|first, second| from_middle(first).total_cmp(&from_middle(second)));
+            cells
+        };
+        let rest = found.cells.iter().copied().filter(|cell| !found.quiet.contains(cell)).collect();
+        let mut cells = nearest_first(found.quiet.clone());
+        cells.extend(nearest_first(rest));
         cells.truncate(count);
         cells
     }

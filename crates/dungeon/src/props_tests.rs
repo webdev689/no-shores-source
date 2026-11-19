@@ -62,7 +62,10 @@ fn each_prop_stands_alone_against_a_rock_wall_on_a_quiet_cell_its_foot_on_the_fl
             assert!(!cells.contains(&cell), "one prop to a cell");
             cells.push(cell);
             assert!(cell != dungeon.way_in.cell && cell != dungeon.portal.cell, "never at the way in or the portal");
-            assert!(!dungeon.nearest_middle(room, POSTS_A_ROOM).contains(&cell), "never where the room's foes stand");
+            assert!(
+                (1..=POSTS_A_ROOM).all(|band| !dungeon.nearest_middle(room, band).contains(&cell)),
+                "never where a band of the room's foes, of any size, stands"
+            );
             let wide = (max_x - min_x).max(max_y - min_y);
             let deep = (max_x - min_x).min(max_y - min_y);
             let (model_wide, model_deep) = {

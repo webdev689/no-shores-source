@@ -43,7 +43,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## How it works
 
 - **One crate for every machine.** The `dungeon` crate lays a dungeon from its seed and style, and uses no other
-  crate. Its maths is + - * / and comparisons, and every draw is made on a lane of its own: Mulberry32 over a seed
+  crate. Its maths is + - * /, comparisons and rounding down to a whole number, each exact in IEEE-754, and every
+  draw is made on a lane of its own: Mulberry32 over a seed
   that is the FNV-1a hash of the lane's name, as DFO's lanes draw ([[Agree to the Bit]]).
 - **A patrol's three.** `of_patrol` gives each its seed, from the patrol's id and its number, and its style; the
   three take three different styles, shuffled by the patrol's id. `name` names one for its style and its patrol: The
@@ -52,9 +53,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 
 | Style | Rooms a block | A room's side (cells) | Ceilings (m) | Ls | Pictures | Its name |
 |---|---|---|---|---|---|---|
-| Crypt | 3 to 5 | 2 to 4 | 3.2 to 4.4 | no | 123, 124 | Crypt |
+| Crypt | 3 or 4 | 2 to 4 | 3.2 to 4.4 | no | 123, 124 | Crypt |
 | Hall | 2 to 4 | 3 to 7 | 4.0 to 5.6 | yes | 122, 124 | Halls |
-| Cells | 4 to 6 | 2 to 3 | 3.2 to 3.6 | no | 122, 123 | Cells |
+| Cells | 3 or 4 | 2 to 3 | 3.2 to 3.6 | no | 122, 123 | Cells |
 | Temple | 2 to 4 | 3 to 6 | 4.4 to 5.6 | yes | 124, 122 | Sanctum |
 
 - **A run, not a maze** ([[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]). A dungeon has a beginning, the
@@ -64,9 +65,11 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   one before, drawn from the free squares round it. A block and the next share one doorway, a cell along their edge
   from the third to the fourteenth; two blocks side by side that are not next in the chain share none.
 - **A block** is 16 by 16 cells of 3.2 m, rock to begin with. The square inside its rim is split, the largest part
-  first, into parts no smaller than five cells, and a room is carved in each, a cell of rock kept round it: its sides
-  and its ceiling (a whole number of 0.4 m) drawn from its style's ranges, and in a hall or a temple, two times in
-  five, an L, a corner quarter of its rectangle left rock. Its rooms are joined one after another: from its way in
+  first, into parts no smaller than five cells, and a room is carved in each, a cell of rock kept round it. A style
+  asks for as many rooms as the Forge's does (a crypt 3 to 5, the cells 4 to 6), but no part is cut below five cells,
+  so the square is cut at most once each way and a block holds four rooms at most. A room's sides and its ceiling (a
+  whole number of 0.4 m) are drawn from its style's ranges, and in a hall or a temple, two times in five, it is an L,
+  a corner quarter of its rectangle left rock. Its rooms are joined one after another: from its way in
   (the doorway from the block before, or in the way in's block its first room), each room in turn, ordered by how
   far it lies from the way in less how far from the way on, to the doorway onto the next block. Each way is the
   cheapest: rock costs 3, a room 2, a corridor 1, so ways reuse ways. A way never crosses the rim but at a doorway.
@@ -75,7 +78,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   the next of sixteen seeds, and past them takes its simplest form, one room of 3 by 3.
 - **The way in** is in the first room of the way in's block that has a cell with rock beside it, at the cell nearest
   its middle, its quiet cells first: the exit door stands on that rock, 1.4 m wide and 2.4 m high, and a body arrives
-  0.4 m in from it, facing into the room.
+  0.4 m past that cell's middle, about 2 m in from the door, facing into the room, as the Forge stands one.
 - **The return portal** stands on the end room's wall like the exit door, as wide and as high: on the room's cell
   farthest from the way in by walk that has rock beside it, its quiet cells first, never on the exit door's wall. It
   takes a player back out to the dungeon's entrance once the Reeve has fallen ("In the Game").
@@ -131,9 +134,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   pillars as its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left
   out.
 - **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
-  two to four in each other room past the way in's, one foe for each ten of its cells, on its quiet cells nearest its
-  middle; when the bands and the Reeve would pass the room's 24 foes, the most rooms that fit, spread evenly along
-  the walk from the way in to the end.
+  two to four in each other room past the way in's, one foe for each ten of its cells, on its cells nearest its
+  middle, its quiet cells first. When the bands and the Reeve would pass the room's 24 foes, the most rooms that
+  fit stand one, spread evenly along the walk from the way in to the end.
 - **The cache** stands 1.6 m from the Reeve's post, the first of the eight ways round it, north first, that is open
   floor clear of every jamb and pillar, facing the post. Shut while the Reeve stands; when he falls it opens and every
   player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot

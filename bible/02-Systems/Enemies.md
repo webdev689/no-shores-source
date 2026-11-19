@@ -164,7 +164,7 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **A forged dungeon's garrison** ([[Dungeons]], "In the rooms") stands where the Forge puts foes rather than on the
   lattice: the Reeve, a Miniboss, alone in the end room, facing the way in; in each other room past the way in's, a
   band drawn from the dungeon's foes above, one for each ten of the room's cells, rounded, two to four, each on one of
-  the room's quiet cells nearest its middle (any of its cells when it has too few), facing out from the middle. When
+  the room's cells nearest its middle, its quiet cells first, facing out from the middle. When
   the bands and the Reeve would pass the room's 24, the rooms that stand one are the most that fit, spread evenly
   along the walk from the way in to the end. Its levels, shields, leash and standing again are any garrison's, at its
   patrol's island band.

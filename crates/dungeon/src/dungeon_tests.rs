@@ -76,6 +76,8 @@ fn the_way_in_stands_its_door_on_rock_and_a_body_arrives_before_it_facing_in() {
         let out = (door_x - middle_x) * dx + (door_y - middle_y) * dy;
         let along = (door_x - middle_x) * -dy + (door_y - middle_y) * dx;
         assert!(out > CELL_M / 2.0 - 0.05 && out < CELL_M / 2.0 && along.abs() < 1e-9, "the door on its wall's middle");
+        let (past, aside) = ((x - middle_x) * -dx + (y - middle_y) * -dy, (x - middle_x) * -dy + (y - middle_y) * dx);
+        assert!((past - 0.4).abs() < 1e-9 && aside.abs() < 1e-9, "the arrival 0.4 m past its cell's middle");
     }
 }
 

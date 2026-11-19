@@ -22,11 +22,12 @@ const TORCH_INSET_M: f64 = 0.35;
 pub const TORCH_REACH_M: f64 = 8.0;
 /// How far along its wall each of the portal's two torches stands from its middle: past its edge, inside its cell.
 const PORTAL_TORCH_M: f64 = 1.15;
-/// The exit door's width and height, how far off its wall it stands, and how far from it a body arrives (m).
+/// The exit door's width and height, how far off its wall it stands, and how far past its cell's middle, away from it,
+/// a body arrives (m), as the Forge stands a body in front of its exit door.
 pub const EXIT_WIDTH_M: f64 = 1.4;
 pub const EXIT_HEIGHT_M: f64 = 2.4;
 const EXIT_OFF_WALL_M: f64 = 0.02;
-const ARRIVE_FROM_DOOR_M: f64 = 0.4;
+const ARRIVE_PAST_MIDDLE_M: f64 = 0.4;
 
 /// A room: its rectangle in the dungeon's cells, its cells and those of them no side of which meets a corridor (row
 /// by row), its ceiling's height, its shape, and how many cells' walk it lies from the way in.
@@ -395,7 +396,7 @@ impl Dungeon {
     pub fn arrival(&self) -> ([f64; 2], [f64; 2]) {
         let [x, y] = self.centre(self.way_in.cell);
         let [dx, dy] = self.way_in.side.unit();
-        ([x - dx * ARRIVE_FROM_DOOR_M, y - dy * ARRIVE_FROM_DOOR_M], [-dx, -dy])
+        ([x - dx * ARRIVE_PAST_MIDDLE_M, y - dy * ARRIVE_PAST_MIDDLE_M], [-dx, -dy])
     }
 
     /// The exit door's middle at its foot, (x, y), on its wall.

@@ -77,7 +77,10 @@ fn rooms_take_their_styles_sizes_heights_and_shapes() {
         let (mut ells, mut could) = (0, 0);
         for seed in 0..600 {
             let block = BlockLayout::sound(seed, Ends::default(), &style, false);
-            assert!(block.rooms.len() <= style.rooms.1, "{}: no more rooms than its most", style.noun);
+            // No part is cut below five cells, so the square is cut at most once each way: four rooms at most.
+            let (fewest, most) = (style.rooms.0.min(3), style.rooms.1.min(4));
+            let rooms = block.rooms.len();
+            assert!((fewest..=most).contains(&rooms), "{}: {rooms} rooms, not {fewest} to {most}", style.noun);
             for room in &block.rooms {
                 assert!(room.width <= style.room_cells.1 && room.depth <= style.room_cells.1);
                 assert!(room.height >= style.heights.0 - 0.2 && room.height <= style.heights.1 + 0.2);
