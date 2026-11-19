@@ -45,7 +45,8 @@ export class DialogueBox {
     this.box.append(this.name, this.words.node);
     this.nowhere = wordsNode(page, 'speech-nowhere');
     this.box.hidden = this.nowhere.node.hidden = true;
-    root.append(this.box, this.nowhere.node);
+    // First in the HUD, so every HUD layer laid before or after the story's stands over the words.
+    root.prepend(this.box, this.nowhere.node);
   }
 
   get open(): boolean {

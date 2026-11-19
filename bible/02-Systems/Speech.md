@@ -27,7 +27,8 @@ line keeps to [[Dialogue]].
   numbers: its lowest pitch, how far above that a syllable may land, the muffle, the volume and a syllable's length.
   A mission's scenes are lists of lines, each a speaker, the words, and, if wanted, `kind: "bark"` and an emote.
   `castOf` and `scenesOf` refuse a speaker without a voice, a voice whose syllable is under 0.04 s, a line by someone
-  not in the cast, a line without words, and an emote or kind they do not know. The dialogue check in
+  not in the cast, a line without words, an emote or kind they do not know, and a speaker, a voice or a scene named `__proto__` (the
+  one key a plain object cannot keep as its own). The dialogue check in
   `cargo xtask check` refuses all of the same, besides holding every scene to [[Dialogue]]'s numbers and marks, so a
   story the speech system cannot read never passes the check.
 - **One voice for everyone.** Each syllable is a buzz through two band-passes set to a vowel rolled for that syllable,
@@ -40,7 +41,9 @@ line keeps to [[Dialogue]].
 - **The dialogue box** stands bottom centre, clear of the vitals and over the sea bar, in the Enhanced Plus window
   with the speaker's name in its header band, both at 22 px. A press finishes the typing, then moves on; a cutscene
   moves on by itself 1.6 s after a line is typed. A speaker whose name is empty is a voice from nowhere: no box, the
-  words alone in the middle of the screen, faint.
+  words alone in the middle of the screen, faint. The box is laid first in the HUD, so the HUD's own layers (the
+  menu, a window, the veil) stand over it, and the marks over heads (barks and emotes) stand under every layer, the box
+  among them.
 - **Barks** stand over the speaker's head, typed and voiced as the box's lines are, held a second once typed, then
   faded. A new bark over a head replaces the last.
 - **Emotes** are pixel art drawn in code at a whole multiple of their grid, by the screen's height (3 at 720 p, 4 at

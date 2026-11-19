@@ -20,3 +20,8 @@ test('no border shorthand or colour, which would clear or repaint what the kit l
 test('the box keeps to the middle, clear of the vitals at the bottom left', () => {
   assert.match(speechCss(), /\.speech-box \{[^}]*left: 50%;[^}]*calc\(100vw - 760px\)/);
 });
+
+test("the marks stand under every one of the HUD's layers, and the box takes no place over them of its own", () => {
+  assert.match(speechCss(), /\.speech-overheads \{[^}]*z-index: -1;/);
+  assert.doesNotMatch(speechCss(), /\.speech-box \{[^}]*z-index/);
+});
