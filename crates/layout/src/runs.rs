@@ -91,10 +91,12 @@ const BACKED_M: f64 = 40.0;
 /// The headings tried from each area.
 const HEADINGS: u32 = 24;
 
-/// The runs a brief asks for, each where its line first fits; one no line fits is left out.
+/// The runs a brief asks for, each where its line first fits and its door leads into rock the section does not close
+/// round; one no line fits is left out.
 #[must_use]
 pub fn find(setting: &Setting, wanted: &[RunBrief], seed: u32) -> Vec<Run> {
     let mut taken: Vec<[f64; 7]> = setting.taken.to_vec();
+    let islands = crate::masses::Islands::of(setting.field, setting.bare);
     let mut used = vec![0_u32; setting.areas.len()];
     let mut found = Vec::new();
     for (number, brief) in wanted.iter().enumerate() {
@@ -117,7 +119,9 @@ pub fn find(setting: &Setting, wanted: &[RunBrief], seed: u32) -> Vec<Run> {
                     let run = shaped(brief, mouth, [sine, -cosine], setting.rise, &|key| {
                         draw(&[start as i64, i64::from(heading), variant, key])
                     });
-                    fits(setting, &run, &taken).then_some((start, run))
+                    let open = (1..=4)
+                        .all(|step| !islands.hold(ahead(run.door, run.facing, BACKED_M * f64::from(step) / 4.0)));
+                    (open && fits(setting, &run, &taken)).then_some((start, run))
                 })
             })
         });

@@ -1,6 +1,6 @@
 //! Continent 1's nodes as the bake lays them, walked by the movement rules: a body walks each of Saltmere's runs from
-//! its mouth along its line to its door, and pressing on past the door gets it nowhere; and up every ramp, the
-//! instances' too, onto the terrace it serves.
+//! its mouth along its line to its door, and pressing on past the door gets it nowhere; up every ramp, the instances'
+//! too, onto the terrace it serves; and up every climb to its lookout on the massif's top.
 
 use layout::field::distance;
 use layout::paths::off_line;
@@ -21,6 +21,7 @@ struct Zone {
     runs: Vec<Run>,
     ring: Vec<[f64; 2]>,
     terraces: Vec<[f64; 7]>,
+    climbs: Vec<[f64; 7]>,
 }
 
 fn zones() -> Vec<Zone> {
@@ -46,6 +47,7 @@ fn zones() -> Vec<Zone> {
                 runs: laid.runs.clone(),
                 ring: laid.ring.clone(),
                 terraces: laid.basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect(),
+                climbs: laid.sculpt.climbs.clone(),
             }
         })
         .collect()
@@ -126,6 +128,28 @@ fn every_terrace_is_walked_up_its_ramps() {
         }
     }
     assert!(ramps > 0, "continent 1 has terraces");
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
+#[test]
+fn every_climb_is_walked_to_its_lookout() {
+    let zones = zones();
+    let (mut climbs, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for pair in layout::carve::lookouts(&zone.climbs) {
+            climbs += 1;
+            let ([foot_x, foot_y, top_x, top_y, ..], lookout) = (pair[0], [pair[1][0], pair[1][1]]);
+            let raised = zone.floor.height_at(top_x, top_y) - zone.floor.height_at(foot_x, foot_y);
+            let (body, _) = walked(zone, [foot_x, foot_y], &[lookout], (60.0 / TICK_SECONDS) as usize);
+            if distance([body.x, body.y], lookout) > THERE_M || raised < 10.0 {
+                failed.push(format!(
+                    "{}: up the climb from {foot_x:.0},{foot_y:.0} the body stops at {:.0},{:.0}, the top {raised:.1} m up",
+                    zone.id, body.x, body.y
+                ));
+            }
+        }
+    }
+    assert!(climbs > 0, "continent 1 has climbs");
     assert!(failed.is_empty(), "{failed:#?}");
 }
 

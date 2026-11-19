@@ -1,8 +1,8 @@
 //! The detail of Saltmere's three zones as the bake plans them: each zone's outcrops in the shape its brief names, no
 //! outcrop a spire the close-up would draw as a point or burying what stands, a whaleback's long ends clad in fallen
 //! rock, and every run its brief asks for still found; continent 1's basins shaped by their kinds, what stands on a
-//! terrace on its level; and the climates with no hint, the swamp's and the desert's, keeping their outcrops under
-//! their massif and off their ways.
+//! terrace on its level; no claim holding a mass of rock that nothing reaches; and the climates with no hint, the
+//! swamp's and the desert's, keeping their outcrops under their massif and off their ways.
 
 use city::solids::{Material, Shape as SolidShape};
 use land::ground::Ground;
@@ -289,4 +289,19 @@ fn no_headstone_stands_in_anything() {
     }
     assert!(stones > 0, "the shelves hold headstones");
     assert!(failed.is_empty(), "{} of {stones}: {:#?}", failed.len(), &failed[..failed.len().min(12)]);
+}
+
+#[test]
+fn no_claim_holds_a_dead_mass() {
+    let ground = &laid_one().2;
+    let mut dead = Vec::new();
+    for id in ZONES {
+        let laid = zone(id);
+        let field = layout::field::Field::read(ground, &laid.sculpt.claim, 40.0);
+        let sculpts = Sculpts::from(vec![laid.sculpt.clone()]);
+        for mass in layout::masses::dead_masses(&field, &sculpts, laid.sculpt.rise) {
+            dead.push(format!("{id}: {:.0} m2 at {:.0},{:.0}", mass.area_m2, mass.middle[0], mass.middle[1]));
+        }
+    }
+    assert!(dead.is_empty(), "{dead:#?}");
 }

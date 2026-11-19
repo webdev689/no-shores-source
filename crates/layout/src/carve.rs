@@ -255,7 +255,6 @@ const MOST_CLIMBS: usize = 2;
 /// along its edge, boring into the rock as it rises so its face stands over it and its drop falls to the floor, clear
 /// of every other floor and well inside the claim; each a climb and its lookout (land's `Sculpt::climbs`).
 fn climbs(field: &Field, areas: &[Area], bare: &Sculpts, rise: f64, seed: u32) -> Vec<[f64; 7]> {
-    let length = rise * 1.15 / CLIMB_STEEPEST;
     let mut found: Vec<[f64; 7]> = Vec::new();
     for (number, area) in areas.iter().enumerate() {
         if found.len() >= 2 * MOST_CLIMBS {
@@ -280,16 +279,32 @@ fn climbs(field: &Field, areas: &[Area], bare: &Sculpts, rise: f64, seed: u32) -
             for side in [1.0, -1.0] {
                 let along = [-radial[1] * side, radial[0] * side];
                 let way = [along[0] * out_cosine + radial[0] * out_sine, along[1] * out_cosine + radial[1] * out_sine];
-                let end = [start[0] + way[0] * length, start[1] + way[1] * length];
-                if climb_clear(field, bare, &found, start, way, length) {
-                    found.push([start[0], start[1], end[0], end[1], CLIMB_HALF_M, 0.0, 1.0]);
-                    found.push([end[0], end[1], end[0], end[1], LOOKOUT_HALF_M, 1.0, 1.0]);
+                if let Some(climb) = climb_along(field, bare, &found, start, way, rise) {
+                    found.extend(climb);
                     break 'tries;
                 }
             }
         }
     }
     found
+}
+
+/// A climb from `start` (on a floor's edge) along `way` up the massif, and its lookout on the top, where they fit
+/// (`climb_clear`): each a capsule of the sculpt's climbs.
+pub(crate) fn climb_along(
+    field: &Field,
+    bare: &Sculpts,
+    taken: &[[f64; 7]],
+    start: [f64; 2],
+    way: [f64; 2],
+    rise: f64,
+) -> Option<[[f64; 7]; 2]> {
+    let length = rise * 1.15 / CLIMB_STEEPEST;
+    let end = [start[0] + way[0] * length, start[1] + way[1] * length];
+    climb_clear(field, bare, taken, start, way, length).then_some([
+        [start[0], start[1], end[0], end[1], CLIMB_HALF_M, 0.0, 1.0],
+        [end[0], end[1], end[0], end[1], LOOKOUT_HALF_M, 1.0, 1.0],
+    ])
 }
 
 /// Whether a climb from `start` along `way` for `length` metres, and its lookout, lie on dry land well inside the

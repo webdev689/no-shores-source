@@ -17,6 +17,7 @@ pub mod field;
 pub mod halls;
 pub mod interiors;
 pub mod marks;
+pub mod masses;
 pub mod paths;
 pub mod pieces;
 pub mod pieces_coast;
@@ -181,6 +182,9 @@ pub fn plan(
         let raised = |[x, y]: [f64; 2]| lifting.raise(x, y, ground.coast.at(x, y));
         basins::seat_on_terraces(&mut seating, &terraces, &raised);
     }
+    // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
+    // found in what is left.
+    let mass_climbs = masses::reach_masses(&field, &mut sculpt);
     // The runs are cut into the rock the carving left, and a run past the edge is read on a wider field, the claim
     // carried out round it by its wing.
     let claim = claim_of(node);
@@ -221,6 +225,9 @@ pub fn plan(
         paths.push(paths::Path { tier: paths::Tier::Footpath, points, crossings: Vec::new(), heights: Vec::new() });
         skyline::lookout(&mut kit, end, [x2 - x1, y2 - y1], &carved);
         skyline::kerb(&mut kit, [x1, y1], [x2, y2], pair[0][4], &carved);
+    }
+    for climb in &mass_climbs {
+        masses::ruin(&mut kit, climb, &carved);
     }
     let walked = paths.len();
     // Each run is walked as a footpath, foes hold its beats, and its end and door are marked for the missions to come.
