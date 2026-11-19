@@ -17,10 +17,13 @@ export const FRONT_FACE: GPUFrontFace = 'ccw';
 const TEXELS_PER_METRE = 40;
 /** The most yards a hull carries, the Frigate's nine with room to spare. */
 export const MOST_YARDS = 12;
-/** A ship's uniforms: her place, look and paint (60 floats), then each yard's pivot and turn. */
-export const PLACE_FLOATS = 60 + MOST_YARDS * 4;
-/** Where in her uniforms each yard's pivot and turn start. */
+/** The most masts a hull steps, the Frigate's three with room to spare. */
+export const MOST_MASTS = 4;
+/** A ship's uniforms: her place, look and paint (60 floats), then each yard's pivot and turn, then each mast's fall. */
+export const PLACE_FLOATS = 60 + MOST_YARDS * 4 + MOST_MASTS * 8;
+/** Where in her uniforms each yard's pivot and turn start, and each mast's fall (`mastFall`). */
 export const YARD_FLOATS_AT = 60;
+export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
 
 const [HULL_PART, SAIL_PART] = [SHIP_PARTS.indexOf('hull'), SHIP_PARTS.indexOf('sail')];
 
@@ -52,6 +55,9 @@ struct Place {
   unused: vec4f,
   // Each yard's pivot on her centreline (x, y) and the cosine and sine of its brace.
   yards: array<vec4f, ${MOST_YARDS}>,
+  // Each mast's fall, two a mast: its foot's height, the cosine and sine of its turn over her side, and 1 while it
+  // shows; then how far astern it has drifted and how far it has sunk.
+  masts: array<vec4f, ${MOST_MASTS * 2}>,
 };
 
 @group(0) @binding(0) var<uniform> place: Place;
@@ -89,6 +95,18 @@ fn vertex_main(
     let yard = place.yards[part.z - 1u];
     at = vec3f(yard.xy + braced(position.xy - yard.xy, yard), position.z);
     facing = vec3f(braced(normal.xy, yard), normal.z);
+  }
+  // A fallen mast goes over her side with its yards, about the line along her at its foot, and drifts astern.
+  if (part.w > 0u) {
+    let fall = place.masts[(part.w - 1u) * 2u];
+    let drift = place.masts[(part.w - 1u) * 2u + 1u];
+    let up = at.z - fall.x;
+    at = vec3f(at.x - drift.x, at.y * fall.y + up * fall.z, fall.x - at.y * fall.z + up * fall.y - drift.y);
+    facing = vec3f(facing.x, facing.y * fall.y + facing.z * fall.z, facing.z * fall.y - facing.y * fall.z);
+    // Gone under, it is drawn as nothing.
+    if (fall.w < 0.5) {
+      at = vec3f(0.0, 0.0, -50.0);
+    }
   }
   let world = (place.turn * vec4f(at, 0.0)).xyz + place.offset.xyz;
   drawn.clip = place.from_eye * vec4f(world, 1.0);

@@ -314,7 +314,10 @@ export class LandScene {
     terrain.drawInto(pass);
     const ship = this.ship;
     // Her rig, once her model has come.
-    if (ship && !this.rig) this.rig = new SailRig(ship.sails);
+    if (ship && !this.rig) {
+      this.rig = new SailRig(ship.sails);
+      this.naval.ownRig = this.rig;
+    }
     const wind = {
       bearing: view.swell?.bearing ?? 0,
       seconds: Math.min(MOST_SAIL_STEP_S, Math.max(0, time - this.sailedAt)),

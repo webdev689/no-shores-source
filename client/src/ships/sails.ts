@@ -2,6 +2,8 @@
 // corners her own model gives each sail: a canvas of grid points filled from the side the wind blows to, flapping in
 // its eye, a gaff swung to leeward, and furled or set as her sails come down or go up.
 
+import { ShipHarm } from './shipHarm.ts';
+
 type Point = readonly [number, number, number];
 
 /** A sail's corners as her export measured them, in her frame (x to her bow, y to starboard, z up), metres. */
@@ -19,6 +21,8 @@ export type SailCorners =
 /** A canvas's grid: points along its foot, and rows from its foot to its head. */
 export const SAIL_COLUMNS = 8;
 export const SAIL_ROWS = 7;
+/** A canvas's cells: one between each four of its grid's points, numbered row by row from its foot. */
+export const SAIL_CELLS = (SAIL_COLUMNS - 1) * (SAIL_ROWS - 1);
 /** How far DFO's Large Boat's gaff and staysail belly set full, metres, and a hanging gaff's and staysail's. */
 const GAFF_BELLY_M = 1.1;
 const GAFF_HANGING_M = 0.12;
@@ -40,6 +44,8 @@ const SET_S = 2;
 export interface SailWind {
   readonly offDeg: number;
   readonly set: boolean;
+  /** Her way through the water (m/s), which leaves her wreckage astern of her. */
+  readonly way?: number;
 }
 
 /** The degrees from a heading to where the wind blows, both radians clockwise from north: to starboard positive. */
@@ -168,8 +174,11 @@ export class SailRig {
   /** The wind's way off her bow and the clock at her last step, which her flag streams by. */
   offDeg = 0;
   time = 0;
+  /** What a fight has done to her rig and hull, as drawn (`ShipHarm`). */
+  harm: ShipHarm;
 
   constructor(corners: readonly SailCorners[]) {
+    this.harm = new ShipHarm(corners);
     this.sails = corners.map((sail) => {
       const poseOf = (pose: number | 'stowed' | null) =>
         sail.kind === 'gaff'
@@ -186,6 +195,7 @@ export class SailRig {
   /** One step of `seconds` at `time` (seconds, for a luff's flapping). */
   step(seconds: number, wind: SailWind, time: number): void {
     [this.offDeg, this.time] = [wind.offDeg, time];
+    this.harm.step(seconds, wind.way ?? 0, time);
     this.setShare = toward(this.setShare, wind.set ? 1 : 0, seconds / SET_S);
     this.sails.forEach((sail, index) => {
       const { kind } = sail.corners;
@@ -205,6 +215,11 @@ export class SailRig {
         Math.abs(off) > LUFF_DEG ? Math.sin((time + index) * 2) * 0.25 : gaff ? (pull >= 0 ? 1 : -1) : pull;
       sail.wind = toward(sail.wind, target, WIND_PER_S * seconds);
     });
+  }
+
+  /** Her rig made whole again, the fight's harm gone with the fight. */
+  mend(): void {
+    this.harm = new ShipHarm(this.sails.map((sail) => sail.corners));
   }
 
   /** Each sail's canvas now, its grid's points in her frame: set and furled mixed as they are being set, the poses
@@ -233,6 +248,35 @@ export class SailRig {
       }
       return points;
     });
+  }
+
+  /** The cell of her standing canvas nearest a point of her frame, and how far its middle is from it (metres); null
+   *  for a rig with no canvas standing. */
+  cellNear(point: Point): { readonly sail: number; readonly cell: number; readonly distanceM: number } | null {
+    let best: { sail: number; cell: number; distanceM: number } | null = null;
+    this.canvas().forEach((points, sail) => {
+      if (this.harm.sailLost(sail, Infinity) || this.harm.isFallen(this.harm.layout.sailMast[sail] ?? -1)) return;
+      for (let row = 0; row < SAIL_ROWS - 1; row++)
+        for (let column = 0; column < SAIL_COLUMNS - 1; column++) {
+          const corner = (row * SAIL_COLUMNS + column) * 3;
+          const middle = [0, 1, 2].map(
+            (axis) =>
+              ((points[corner + axis] ?? 0) +
+                (points[corner + 3 + axis] ?? 0) +
+                (points[corner + SAIL_COLUMNS * 3 + axis] ?? 0) +
+                (points[corner + SAIL_COLUMNS * 3 + 3 + axis] ?? 0)) /
+              4,
+          );
+          const distanceM = Math.hypot(
+            (middle[0] ?? 0) - point[0],
+            (middle[1] ?? 0) - point[1],
+            (middle[2] ?? 0) - point[2],
+          );
+          if (!best || distanceM < best.distanceM)
+            best = { sail, cell: row * (SAIL_COLUMNS - 1) + column, distanceM };
+        }
+    });
+    return best;
   }
 }
 

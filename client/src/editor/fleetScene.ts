@@ -1,7 +1,8 @@
 import type { FightLay, FightLook } from '../rules/fightRules.ts';
 import type { FleetLay } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
-import { Effects, type Mark, type Splash } from '../ships/effects.ts';
+import type { Mark, Splash } from '../ships/effects.ts';
+import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { factionSide } from '../ships/dress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
@@ -11,7 +12,7 @@ import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FleetInput, FleetVessel } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
-import { aimCameraOf, arcsOf, DECK_M, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
+import { aimCameraOf, arcsOf, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 import { SAILS_RUNG } from './sailing.ts';
 
@@ -42,7 +43,9 @@ export class FleetScene {
   readonly play: FleetSloop;
   private readonly marks: MarkDrawer;
   private readonly shown: (hull: number) => number;
-  private readonly effects = new Effects(7);
+  private readonly feel = new FightFeel(7);
+  /** The wind's bearing the sails were last stepped in. */
+  private windBearing = 0;
   private lay: FleetLay | null = null;
   /** Each other ship's rig by her number, for the hull she sails. */
   private readonly rigs = new Map<number, { readonly hull: number; readonly rig: SailRig }>();
@@ -75,15 +78,29 @@ export class FleetScene {
     this.lay = input.look ? this.play.lay(input.look, now) : null;
     const toWindow = (point: readonly [number, number, number]) =>
       [point[0] - view.leftM, point[1] - view.topM, point[2]] as const;
-    const splashes = this.effects.take(this.play.takeEvents(), now, toWindow);
-    const [x, y, heave, fires] = this.play.fires();
-    this.effects.burn(toWindow([x, y, heave + DECK_M]), fires, now, seconds);
-    for (const vessel of this.play.others()) {
-      const [x = 0, y = 0] = vessel.ship;
-      const [heave = 0] = vessel.pose;
-      this.effects.burn(toWindow([x, y, heave + DECK_M]), vessel.state === 'sinking' ? 0 : vessel.fires, now, seconds);
+    return this.feel.frame({
+      events: this.play.takeEvents(),
+      ships: this.feelShips(),
+      balls: this.play.balls(now).map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
+      now,
+      seconds,
+      windBearing: this.windBearing,
+      toWindow,
+    });
+  }
+
+  /** Every ship the room shows, by her number, as the fight's feel sees her: hers, and each other with her rig. */
+  private feelShips(): Map<number, FeelShip> {
+    const own = this.play.session.own();
+    const ships = new Map<number, FeelShip>();
+    for (const vessel of own ? [own, ...this.play.others()] : this.play.others()) {
+      const hull = vessel === own ? SLOOP_HULL : this.hullOf(vessel);
+      const fight = { ...vessel, sail: vessel.hurts.sail, max_sail: vessel.hurts.maxSail };
+      const rig = vessel === own ? null : (this.rigs.get(vessel.id)?.rig ?? null);
+      const side = vessel.captain ? factionSide(vessel.faction) : ('player' as const);
+      ships.set(vessel.id, { vessel: fight, rig, hull, side });
     }
-    return splashes;
+    return ships;
   }
 
   /** Every other ship's footprint on the water while she floats, at her hull's waterline. */
@@ -116,6 +133,7 @@ export class FleetScene {
     const others = this.play.others();
     const sailing = new Set(others.map((vessel) => vessel.id));
     for (const id of this.rigs.keys()) if (!sailing.has(id)) this.rigs.delete(id);
+    this.windBearing = wind.bearing;
     return others.flatMap((vessel) => {
       if (vessel.state === 'sunk') return [];
       const hull = this.hullOf(vessel);
@@ -136,7 +154,16 @@ export class FleetScene {
 
   /** Draws the balls aloft, her lay's arcs and the effects, heights as drawn. */
   draw(pass: GPURenderPassEncoder, view: LandView, shown: number, camera: ShipCamera, now: number): void {
-    const marks: Mark[] = this.effects.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
+    const marks: Mark[] = this.feel.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
+    const ships = this.feelShips();
+    marks.push(
+      ...this.feel.scars(
+        this.play.others().map((vessel) => {
+          const ship = ships.get(vessel.id);
+          return ship && vessel.state !== 'sunk' ? { ship, place: placeOf(vessel, view, shown) } : null;
+        }),
+      ),
+    );
     for (const [x, y, z, radius] of this.play.balls(now))
       marks.push({ x: x - view.leftM, y: y - view.topM, z: z * shown, radius: radius * BALL_DRAWN, colour: BALL });
     marks.push(...arcsOf(arcsLay(this.lay), view, shown));
