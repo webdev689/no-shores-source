@@ -22,25 +22,38 @@ export interface SoundCredit {
 const PEAK = 0.3;
 const LOUD = 0.063;
 const WINDOW_S = 0.02;
-const loaded = new Map<string, { readonly buffer: AudioBuffer; readonly level: number }[]>();
+const loaded = new Map<string, { readonly buffer: AudioBuffer; readonly level: number; readonly rush: number }[]>();
 const lastPlayed = new Map<string, number>();
 let asked = false;
 
-/** How much a recording is turned up or down: its peak to PEAK, unless its loudest 20 ms would then pass LOUD. */
-export function levelOf(channels: readonly Float32Array[], sampleRate: number): number {
+/** A recording's peak, its loudest 20 ms (mean square), and the seconds into it that loudest stretch is centred on. */
+function loudness(channels: readonly Float32Array[], sampleRate: number) {
   const window = Math.max(1, Math.round(sampleRate * WINDOW_S));
-  let [peak, loudest] = [0, 0];
+  let [peak, loudest, rush] = [0, 0, 0];
   for (const samples of channels) {
     let sum = 0;
     for (let index = 0; index < samples.length; index++) {
       const sample = samples[index] ?? 0;
       peak = Math.max(peak, Math.abs(sample));
       sum += sample * sample - (index >= window ? (samples[index - window] ?? 0) ** 2 : 0);
-      loudest = Math.max(loudest, sum / window);
+      if (sum / window > loudest) [loudest, rush] = [sum / window, Math.max(0, index - window / 2) / sampleRate];
     }
   }
+  return { peak, loudest, rush };
+}
+
+/** How much a recording is turned up or down: its peak to PEAK, unless its loudest 20 ms would then pass LOUD. */
+export function levelOf(channels: readonly Float32Array[], sampleRate: number): number {
+  const { peak, loudest } = loudness(channels, sampleRate);
   return Math.min(PEAK / Math.max(0.01, peak), LOUD / Math.max(1e-4, Math.sqrt(loudest)));
 }
+
+/** The seconds into a recording its loudest 20 ms come: a whoosh's rush. */
+export const rushOf = (channels: readonly Float32Array[], sampleRate: number): number =>
+  loudness(channels, sampleRate).rush;
+
+/** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
+export const rushOfCue = (id: string): number => Math.max(0, ...(loaded.get(id) ?? []).map((sound) => sound.rush));
 
 /** A sound's files: a Freesound pick's one, or each variant of one of DFO's own. */
 export const keysOf = (sound: { readonly key: string } | { readonly keys: readonly string[] }): readonly string[] =>
@@ -66,7 +79,9 @@ export function loadSamples(audio: AudioContext): void {
         .then((bytes) => audio.decodeAudioData(bytes))
         .then((buffer) => {
           const variants = loaded.get(id) ?? [];
-          loaded.set(id, [...variants, { buffer, level: levelOf(channelsOf(buffer), buffer.sampleRate) }]);
+          const channels = channelsOf(buffer);
+          const level = levelOf(channels, buffer.sampleRate);
+          loaded.set(id, [...variants, { buffer, level, rush: rushOf(channels, buffer.sampleRate) }]);
         })
         // A sound that cannot be fetched leaves its cue as it was before it was picked.
         .catch(() => undefined);

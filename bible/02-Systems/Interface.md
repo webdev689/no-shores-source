@@ -352,11 +352,13 @@ played last. The Duskraven plays its raven with a fire of its own under it
 ([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
 (`combat/worldCues.ts`):
 
-- **Blows.** A swing as a fighter's attack begins, or as a foe's wound-up blow lands: light (fists, a dagger, a sword,
-  a mace), heavy (a flail, an axe, a warhammer, a greatsword) or a staff's. A blow that lands cuts (a dagger, a sword,
-  an axe, a greatsword) or strikes blunt (the rest, and a gun's ball); an arrow or a bolt strikes as itself. A crit,
-  the element a blow bursts in and an elemental kill's finisher sound over it; a spell's blow is heard as its spell. A
-  blow met by a shield or by a blade, a parry, a guard broken, a kill, a foe's shield struck and broken.
+- **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
+  lands (never before the swing begins, and not once a dodge or a flinch has cut it short), or as a foe's wound-up blow
+  lands: light (fists, a dagger, a sword, a mace), heavy (a flail, an axe, a warhammer, a greatsword) or a staff's.
+  A blow that lands cuts (a dagger, a sword, an axe, a greatsword) or strikes blunt (the rest, and a gun's ball); an
+  arrow or a bolt strikes as itself. A crit, the element a blow bursts in and an elemental kill's finisher sound over
+  it; a spell's blow is heard as its spell. A blow met by a shield or by a blade, a parry, a guard broken, a kill, a
+  foe's shield struck and broken.
 - **Arms.** A weapon drawn or put away (the player's and other players'; foes stand armed). A bow drawn, each shot by
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
