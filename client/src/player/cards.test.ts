@@ -49,8 +49,8 @@ test("one figure's warming leaves another's queued, and warms each view as drawn
       armour: {},
     },
   );
-  forge.warm(armed, ['guard'], 0, 1);
-  forge.warm(bare, ['guard'], 0, 2);
+  forge.warm(armed, () => ['guard'], 0, 1);
+  forge.warm(bare, () => ['guard'], 0, 2);
   for (let pump = 0; pump < 40; pump++) {
     forge.pump();
     await settled();
@@ -64,4 +64,16 @@ test("one figure's warming leaves another's queued, and warms each view as drawn
     assert.ok(ready(bare, view), `the second figure's view ${view}`);
   }
   for (const view of [1, 2, 3]) assert.ok(ready(armed, view, true), `view ${view} mirrored`);
+});
+
+test('a dress warmed again asks for its moves only the first time, as a figure warms each frame', () => {
+  const forge = new Cards(maker, store, looks, {} as never, {} as never);
+  let asked = 0;
+  const moves = () => {
+    asked += 1;
+    return ['guard'];
+  };
+  for (let frame = 0; frame < 3; frame++) forge.warm(armed, moves, 0, 1);
+  forge.warm(bare, moves, 0, 1);
+  assert.equal(asked, 2, 'once for each dress');
 });

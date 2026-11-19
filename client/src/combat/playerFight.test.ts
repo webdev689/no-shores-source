@@ -42,24 +42,26 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
  *  person's hands standing in: each frame's button, pose, pace and spare are kept, what the forge warms, and the room's
  *  last word on the gear. */
 function fightingPlayer(right = 'sword_iron') {
-  type State = { pose?: unknown; pace?: unknown; spare?: unknown };
-  const shown: { attackPressed: boolean; pose: unknown; pace: unknown; spare: unknown }[] = [];
+  type State = { right?: string | null; pose?: unknown; pace?: unknown; spare?: unknown };
+  const shown: { attackPressed: boolean; right: unknown; pose: unknown; pace: unknown; spare: unknown }[] = [];
   const said: { gear: GearMessage | null } = { gear: null };
+  const loads = { count: 0 };
   const hands = {
     swing: null,
     muzzle: null,
     cancel: () => undefined,
+    loaded: () => (loads.count += 1),
     update: (_seconds: number, button: { attackPressed: boolean }, state: State) => {
-      const { pose = null, pace = null, spare = null } = state;
-      shown.push({ attackPressed: button.attackPressed, pose, pace, spare });
+      const { right = null, pose = null, pace = null, spare = null } = state;
+      shown.push({ attackPressed: button.attackPressed, right, pose, pace, spare });
     },
   } as unknown as ConstructorParameters<typeof Walker>[2];
-  const warmed: { right: string | null; owner: unknown }[] = [];
+  const warmed: { right: string | null; glow: unknown; owner: unknown }[] = [];
   const forge = {
     frames: () => 4,
     draws: () => true,
-    warm: (dress: Dress, _anims: unknown, _glow: unknown, owner: unknown) =>
-      warmed.push({ right: dress.outfit.right, owner }),
+    warm: (dress: Dress, _anims: unknown, glow: unknown, owner: unknown) =>
+      warmed.push({ right: dress.outfit.right, glow, owner }),
     walking: () => null,
     pump: () => undefined,
     card: () => null,
@@ -88,16 +90,17 @@ function fightingPlayer(right = 'sword_iron') {
     clock += TICK;
     return player.frame(input, steps, TICK, clock, { running: true, hands: true, markOf: () => null, zoomOf: () => 1 });
   };
-  return { fighting, walker, shown, frame, said, warmed };
+  return { fighting, walker, shown, frame, said, warmed, loads };
 }
 
 test("the other loadout's weapon is composed ahead of a swap, for the figure and for the hands", () => {
   const { walker, shown, frame, warmed } = fightingPlayer();
   walker.spare = { ...walker.you.dress.outfit, right: 'bow_long_iron', left: null };
+  walker.spareGlow = 2;
   frame(controls());
   assert.ok(
-    warmed.some((each) => each.right === 'bow_long_iron' && each.owner !== walker.you.id),
-    'the figure',
+    warmed.some((each) => each.right === 'bow_long_iron' && each.glow === 2 && each.owner !== walker.you.id),
+    'the figure, glowing as it will once worn',
   );
   assert.ok(
     warmed.some((each) => each.right !== 'bow_long_iron' && each.owner === walker.you.id),
@@ -125,6 +128,31 @@ test('a swing pressed reaches the fight, and the first person swings as the rule
   assert.equal(fighting.dress, walker.lookDress);
 });
 
+test('a weapon changed mid-swing is shown as the rules take it up, once the swing is over', () => {
+  const { fighting, walker, shown, frame } = fightingPlayer();
+  frame(controls());
+  frame(controls(['swing'], ['swing']));
+  frame(controls());
+  assert.equal(fighting.own?.action.kind, 'attack');
+  // The other loadout chosen, as the page dresses the player in it at once.
+  walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, right: 'pistolet' } };
+  shown.length = 0;
+  const ruled: string[] = [];
+  for (let tick = 0; tick < 60; tick++) {
+    frame(controls());
+    ruled.push(fighting.own?.action.kind === 'attack' ? 'sword' : 'after');
+  }
+  const swinging = ruled.lastIndexOf('sword');
+  assert.ok(swinging > 10 && swinging < 50, `the swing ran on (${swinging})`);
+  assert.ok(
+    shown.slice(0, swinging + 1).every((each) => each.right === 'sword_iron'),
+    'the sword in hand while the rules swing it',
+  );
+  assert.equal(shown.at(-1)?.right, 'pistolet', 'the gun once they take it up');
+  assert.equal(fighting.arms, startCombatRules(compiled).armsCode('pistolet', null, true), 'the gun asked for');
+  assert.equal(walker.shownDress.outfit.right, 'pistolet');
+});
+
 test('the guard held stands the first person in its pose, and the figure faces where its arms point', () => {
   const { fighting, walker, shown, frame } = fightingPlayer();
   frame(controls());
@@ -136,7 +164,7 @@ test('the guard held stands the first person in its pose, and the figure faces w
 });
 
 test('a gun fires in the first person only as the rules let its shot go: with no ammunition, a pull plays nothing', () => {
-  const { fighting, shown, frame, said } = fightingPlayer('pistolet');
+  const { fighting, shown, frame, said, loads } = fightingPlayer('pistolet');
   const ask = (gear: Parameters<Fighting['askGear']>[0]) => {
     fighting.askGear(gear);
     for (let tick = 0; tick < 20; tick++) frame(controls());
@@ -153,6 +181,14 @@ test('a gun fires in the first person only as the rules let its shot go: with no
   assert.equal(fighting.own?.ammo, 24, 'a full pistolet');
   assert.equal(pull(), 1, 'loaded, the shot plays once, as the rules let it go');
   assert.equal(fighting.own?.ammo, 23);
+  // The hands are loaded as the rules' reload ends, never during it: a quicker reload or a kill can end it early.
+  assert.equal(fighting.own?.action.kind, 'reload');
+  loads.count = 0;
+  frame(controls());
+  assert.equal(loads.count, 0, 'not while the rules reload');
+  while (fighting.own?.action.kind === 'reload') frame(controls());
+  frame(controls());
+  assert.ok(loads.count > 0, 'loaded once the rules are');
   for (let tick = 0; tick < 200; tick++) frame(controls());
   ask({ kind: ASKS.grantAmmo, count: 0 });
   assert.equal(fighting.own?.ammo, 0);

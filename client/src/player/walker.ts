@@ -80,6 +80,8 @@ export class Walker {
   glow: readonly [GlowLook, GlowLook] = NO_GLOW;
   /** What the other loadout dresses the hands in, as the page reads it from the gear: composed ahead of a swap. */
   spare: Outfit | null = null;
+  /** The element the other loadout's weapon glows in, as its figure is composed ahead of a swap. */
+  spareGlow: GlowLook = 0;
   /** The element the last cast glows in: its Art's. */
   castGlow: GlowLook = 0;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
@@ -95,6 +97,9 @@ export class Walker {
   private strokes = 0;
   private swingWas: number | null = null;
   private dress: Dress;
+  /** The dress worn as the page last dressed the player, and the glow the figure shows: the weapon the rules hold. */
+  private worn: Dress;
+  private shownGlow: readonly [GlowLook, GlowLook] = NO_GLOW;
   private shown: Shown = { anim: 'idle', frame: null, frameSeconds: 0.25 };
   private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
@@ -108,6 +113,7 @@ export class Walker {
     this.firstPerson = firstPerson;
     this.forge = forge;
     this.dress = you.dress;
+    this.worn = you.dress;
     this.lookDress = JSON.stringify(you.dress);
   }
 
@@ -129,12 +135,17 @@ export class Walker {
 
   /** What glows this frame: each hand's element while its weapon is drawn, else nothing. */
   get glowing(): readonly [GlowLook, GlowLook] {
-    return this.dress.outfit.drawn ? this.glow : NO_GLOW;
+    return this.dress.outfit.drawn ? this.shownGlow : NO_GLOW;
   }
 
   /** The dress the figure shows this frame: the weapon worn while the hands hold a wall or a ledge. */
   get shownDress(): Dress {
     return this.dress;
+  }
+
+  /** The dress the player wears as last shown, held weapon or not: the arms the fight is asked to take up. */
+  get wornDress(): Dress {
+    return this.worn;
   }
 
   /** How the player's own weapon fights this frame: its glow surging by `surge`, and what their blow met (`contact`,
@@ -192,7 +203,16 @@ export class Walker {
     const facing = fighting ? (dodgeFacing(own.action) ?? own.aim) : player.facing;
     Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
-    const dress = shownDress(you.dress, holding);
+    const worn = shownDress(you.dress, holding);
+    // The rules take up another weapon only at rest: while they are busy, the figure and the hands keep the one held.
+    const kept = this.dress.outfit;
+    const dress = fighting
+      ? {
+          ...worn,
+          outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn: holding && kept.drawn },
+        }
+      : worn;
+    if (!fighting) this.shownGlow = this.glow;
     const { outfit } = dress;
     const speed = Math.hypot(body.vx, body.vy);
     if (body.moving && body.mode === 'ground') this.stride += speed * seconds;
@@ -203,8 +223,11 @@ export class Walker {
     // go too soon to shoot.
     if (fight && ((own && !shooter && own.action.kind !== 'attack') || (shooter && fight.dropped)))
       firstPerson.cancel();
+    // A ranged weapon is loaded whenever the rules are not reloading it, which a quicker reload or a kill makes sooner
+    // than the hands' own clock: the next shot they let go plays.
+    if (fight && own && shooter && own.action.kind !== 'reload') firstPerson.loaded();
     const free = swings && !(own && HELD.has(own.action.kind));
-    firstPerson.glow = outfit.drawn ? this.glow : NO_GLOW;
+    firstPerson.glow = outfit.drawn ? this.shownGlow : NO_GLOW;
     firstPerson.update(fight?.handsSeconds ?? seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,
       left: outfit.left,
@@ -263,23 +286,19 @@ export class Walker {
       const { drawn, right, left, grip } = shown.outfit;
       const draws = (anim: string, held: string | null) => forge.draws(shown.body, anim, held);
       const walking = (action: string) => forge.walking(shown, action);
-      const likely = likelyMoves(
-        drawn ? right : null,
-        drawn ? left : null,
-        draws,
-        drawn ? (grip ?? null) : null,
-        walking,
-      );
+      const likely = () =>
+        likelyMoves(drawn ? right : null, drawn ? left : null, draws, drawn ? (grip ?? null) : null, walking);
       forge.warm(shown, likely, glow, owner);
     };
-    warm(dress, outfit.drawn ? this.glow[0] : 0, you.id);
+    warm(dress, outfit.drawn ? this.shownGlow[0] : 0, you.id);
     // The other loadout's too, so a swap shows it at once.
-    if (this.spare) warm({ ...dress, outfit: { ...this.spare, drawn: true } }, 0, `${you.id} spare`);
+    if (this.spare) warm({ ...dress, outfit: { ...this.spare, drawn: true } }, this.spareGlow, `${you.id} spare`);
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);
     const index = this.loop.frame(this.shown, frames, seconds, clock);
     this.look = { anim: this.shown.anim, frame: index, facing: you.facing };
     this.dress = dress;
+    this.worn = worn;
     this.lookDress = JSON.stringify(dress);
   }
 

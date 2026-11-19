@@ -36,7 +36,7 @@ import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
-import { gearOutfit, spareOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
@@ -273,6 +273,7 @@ async function start(): Promise<void> {
       player.spare = spareOutfit(ownGear, wardrobe, outfit, player.player.loadout);
     }
     player.glow = feel.glow(heldElements(ownGear, player.player.loadout));
+    player.spareGlow = feel.glow(heldElements(ownGear, otherLoadout(player.player.loadout)))[0];
     const bodies = [...foes.placed.values(), ...others.values()].map(
       (placed) => [placed.x, placed.y, placed.z] as const,
     );
@@ -414,7 +415,7 @@ async function start(): Promise<void> {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fighting.player, view: own, ...handsOf(you.dress), looks: player.glowing },
+      { id: fighting.player, view: own, ...handsOf(player.shownDress), looks: player.glowing },
       ...[...fighting.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({ id: number, view, ...handsOf(others.get(number)?.dress) })),
     ];

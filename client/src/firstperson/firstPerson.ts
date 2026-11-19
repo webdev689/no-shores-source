@@ -257,6 +257,11 @@ export class FirstPerson {
     this.hands.cancel();
   }
 
+  /** Ends every reload under way at once: the fight's rules are not reloading, so the next shot they let go plays. */
+  loaded(): void {
+    this.hands.loaded();
+  }
+
   /** Moves the first person on by `seconds`: the swings and shots, the cast, the bob, the chain, the climb, the ride and
    *  the held things. Answers the blow that lands now and whether a shot leaves, and from which hand, so the figure seen
    *  from outside can match them. */
