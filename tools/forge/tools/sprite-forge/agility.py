@@ -137,20 +137,41 @@ def vault(frame, view, yaw):
     return captured('climbup', VAULT_KEYS[frame], yaw), {'fist': {'L': False, 'R': False}}
 
 
-# the right fist's weapon in each held move: its line and its edge's way (body space). The run's raised, the blade up
-# and a little ahead, its edge to the front; the crouch's low and ahead
-HAFTS = {'run': ((-0.0999, -0.5496, 0.8294), (0.0657, -0.8354, -0.5456)),
-         'crouch_idle': ((-0.10, -0.85, -0.50), (0.0, -0.5, 0.86)),
+# the sprint's right thumb, and so its weapon, up and a little ahead, squared to the forearm (`pumping`; the left's
+# mirrored)
+PUMP = (-0.0999, -0.5496, 0.8294)
+# the right fist's weapon in each held move but the run: its line and its edge's way (body space), the crouch's low
+# and ahead
+HAFTS = {'crouch_idle': ((-0.10, -0.85, -0.50), (0.0, -0.5, 0.86)),
          'crouch_walk': ((-0.10, -0.85, -0.50), (0.0, -0.5, 0.86))}
 JUMP_BLADES = (-0.7, 0.1, 0.7)   # poses.py `held`'s own
 
 
+def pumping(p, side):
+    """`side`'s fist laid again where the sprint has it, as a sprinter pumps it: the wrist straight along the forearm
+    and the thumb up and a little ahead (`PUMP`; the clip's hands come palm down). Gives the thumb's way and the
+    forearm's (body space)."""
+    W = p.world()
+    R = root_matrix(p).inverted()
+    H = W[f'hand_{side}']
+    fist = R @ (H.translation + H.to_3x3() @ Vector((0.0, 0.0, -poses.FIST)))
+    shoulder, elbow, wrist = (R @ W[f'{b}_{side}'].translation for b in ('uarm', 'farm', 'hand'))
+    fore = (wrist - elbow).normalized()
+    up = Vector(PUMP if side == 'R' else _mirrored(PUMP))
+    thumb = (up - up.project(fore)).normalized()
+    line = (fist - shoulder).normalized()
+    pole = (elbow - shoulder) - (elbow - shoulder).project(line)
+    poses.grip(p, side, tuple(fist), tuple(thumb), tuple(pole), knuckles=tuple(fore))
+    return thumb, fore
+
+
 def run(frame, view, yaw):
-    """The sprint's stride, the weapon raised in the pumping fist: the blade up and a little ahead, its edge to the
-    front, ready to strike."""
+    """The sprint's stride, both fists pumping thumb up, the weapon raised in the right: out past the thumb, its edge
+    to the front, ready to strike."""
     p = captured('run', frame, yaw)
-    haft, blades = HAFTS['run']
-    return p, {'axe': held(p, haft, blades=blades)}
+    pumping(p, 'L')
+    thumb, fore = pumping(p, 'R')
+    return p, {'axe': held(p, tuple(thumb), blades=tuple(fore), knuckles=tuple(fore))}
 
 
 def crouch_idle(frame, view, yaw):
@@ -211,6 +232,9 @@ def left_hold(p, anim):
     middle: laid in the fist as the move closes it (poses.py `in_fist`), so the arm is the one the body is drawn with."""
     if anim == 'jump':
         return poses.in_fist(p, _forearm_up(p, 'L'), 'L', _mirrored(JUMP_BLADES))
+    if anim == 'run':   # out past the pumping fist's thumb, as the right's
+        thumb, fore = pumping(p, 'L')
+        return poses.in_fist(p, tuple(thumb), 'L', tuple(fore))
     haft, blades = HAFTS[anim]
     return poses.in_fist(p, _mirrored(haft), 'L', _mirrored(blades))
 

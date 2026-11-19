@@ -20,16 +20,16 @@ fn attacks(item: &Item) -> Vec<u32> {
 
 #[test]
 fn a_legendary_climbs_from_248_to_300_and_an_atheric_from_260() {
-    let legendary = Item::new(1, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::MainHand);
+    let legendary = Item::new(1, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
     assert_eq!(attacks(&legendary), [248, 258, 269, 279, 290, 300]);
-    let atheric = Item::new(1, Kind::Bow, Rarity::Atheric, NAMED_LEVEL, Slot::MainHand);
+    let atheric = Item::new(1, Kind::Bow, Rarity::Atheric, NAMED_LEVEL, Slot::Melee);
     assert_eq!(attacks(&atheric).first(), Some(&260));
     assert_eq!(attacks(&atheric).last(), Some(&300));
 }
 
 #[test]
 fn a_lesser_weapon_rises_with_its_level_and_stays_under_a_legendary() {
-    let at = |rarity, level| attacks(&Item::new(1, Kind::Axe, rarity, level, Slot::MainHand));
+    let at = |rarity, level| attacks(&Item::new(1, Kind::GreatAxe, rarity, level, Slot::Melee));
     let ends = |rarity| {
         let climbed = at(rarity, 20);
         (climbed[0], *climbed.last().expect("a weapon's Attack"))
@@ -55,7 +55,7 @@ fn armour_carries_destiny_1s_prestige_from_level_20() {
     assert_eq!(prestige(Rarity::Legendary, 20, false), (18, 27));
     assert_eq!(prestige(Rarity::Legendary, 20, true), (18, 30), "a Breach's climbs to 30");
     assert_eq!(prestige(Rarity::Atheric, 20, false), (21, 30));
-    assert_eq!(Item::new(1, Kind::Shield, Rarity::Atheric, 20, Slot::OffHand).prestige(), 0, "nor does a shield");
+    assert_eq!(Item::new(1, Kind::SwordAndShield, Rarity::Atheric, 20, Slot::Melee).prestige(), 0, "nor a loadout");
 }
 
 #[test]
@@ -66,16 +66,16 @@ fn a_full_set_of_raid_like_armour_defends_to_its_level() {
         upgraded(item, total as usize).defense().expect("armour's Defense")
     };
     let pieces = [full(Kind::Head), full(Kind::Arms), full(Kind::Torso), full(Kind::Legs)];
-    assert_eq!(pieces, [371, 304, 405, 270], "Destiny 1's raid armour at 30: 372, 304, 406, 270");
+    assert_eq!(pieces, [422, 354, 456, 321], "Destiny 1's raid armour at 30, each with a quarter of a shield's share");
     let set: u32 = pieces.iter().sum();
-    assert!((1_349..=1_351).contains(&set), "{set}: about 45 for each of 30 levels");
+    assert!((1_552..=1_554).contains(&set), "{set}: about 45 for each of 30 levels, and the share a shield carried");
     let lesser = Item::new(1, Kind::Head, Rarity::Normal, 1, Slot::Head);
-    assert_eq!(lesser.defense(), Some(9), "a starting cap: 45 times 0.275 times 0.8, less its upgrade");
+    assert_eq!(lesser.defense(), Some(9), "a starting cap: 45 times 0.3125 times 0.8, less its upgrade");
 }
 
 #[test]
 fn columns_unlock_as_the_item_earns_and_only_a_chosen_bought_trait_counts() {
-    let mut item = Item::new(1, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::MainHand);
+    let mut item = Item::new(1, Kind::Sword, Rarity::Legendary, NAMED_LEVEL, Slot::Melee);
     item.layout = vec![
         vec!["light_grip".into(), "weighted".into(), "keen_edge".into()],
         vec!["riposte_master".into(), "guardbreaker".into()],
@@ -112,4 +112,28 @@ fn a_legendarys_last_three_nodes_ask_for_six_essence_each() {
     assert_eq!(cost(Rarity::Atheric, atheric, 2).essence, 1, "an Atheric's own node");
     assert_eq!(cost(Rarity::Normal, columns(Rarity::Normal, true), 0).aurem, 100);
     assert_eq!(node_offsets(weapon).1, 14, "a Legendary weapon's nodes fit its bits");
+}
+
+#[test]
+fn a_shields_block_perk_rolls_and_counts_only_on_a_loadout_with_a_shield() {
+    let pooled = |kind: Kind| {
+        crate::catalogue::catalogue().pool(Column::Perk(2), kind).iter().any(|found| found.id == "bulwark")
+    };
+    for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
+        assert_eq!(pooled(kind), kind.shielded(), "{kind:?}");
+    }
+    // A piece offering it, as a kept one may: its node bought and chosen.
+    let worn = |kind: Kind, layout: Vec<Vec<String>>, column: usize| {
+        let mut item = Item::new(1, kind, Rarity::Rare, 10, kind.slot());
+        item.layout = layout;
+        item.bought |= item.node_bit(column, 0).expect("bulwark's node");
+        item.chosen[column] = 0;
+        item.active_traits().map(str::to_owned).collect::<Vec<_>>()
+    };
+    let pair = |first: &str, second: &str| vec![first.to_owned(), second.to_owned()];
+    let helm = vec![pair("bulwark", "hardy"), pair("unshaken", "scholar")];
+    assert!(worn(Kind::Head, helm, 0).is_empty(), "armour gives no Bulwark");
+    let sword = vec![pair("light_grip", "weighted"), pair("bulwark", "executioner"), pair("honed", "steady")];
+    assert!(worn(Kind::Sword, sword.clone(), 2).is_empty(), "nor a loadout with no shield");
+    assert_eq!(worn(Kind::SwordAndShield, sword, 2), ["bulwark"]);
 }

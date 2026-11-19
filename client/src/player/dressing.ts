@@ -82,13 +82,14 @@ export function dressFrom(text: string): Dress | null {
   if (typeof value['race'] !== 'string' || !Object.hasOwn(RACES, value['race'])) return null;
   const outfit = value['outfit'];
   if (!isRecord(outfit)) return null;
-  const { armour, garments, dyes, right, left, drawn, hair } = outfit;
+  const { armour, garments, dyes, right, left, drawn, grip, hair } = outfit;
   const pieces = ARMOUR_PIECES as readonly string[];
   if (!isRecord(armour) || !Object.entries(armour).every(([piece, set]) => pieces.includes(piece) && isName(set)))
     return null;
   if (!Array.isArray(garments) || garments.length > 40 || !garments.every(isName)) return null;
   if (!isRecord(dyes) || !Object.entries(dyes).every(([garment, dye]) => isName(garment) && isName(dye))) return null;
   if (!(right === null || isName(right)) || !(left === null || isName(left)) || typeof drawn !== 'boolean') return null;
+  if (!(grip === undefined || grip === null || grip === 'hilt')) return null;
   if (!(hair === null || (isRecord(hair) && isName(hair['style']) && isName(hair['colour'])))) return null;
   return value as unknown as Dress;
 }

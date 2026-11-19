@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { blowFrame, blowWay, type Doing, likelyMoves, shownMove } from './playerMoves.ts';
+import { blowFrame, blowWay, type Doing, likelyMoves, onTheMove, shownMove } from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -183,6 +183,14 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
   assert.equal(blow('down', 'axe_iron').anim, 'overhaft');
   assert.equal(blow('down', 'warhammer_iron').anim, 'overhaft');
   assert.equal(blow('up', 'dagger_iron', 'dagger_iron_l').anim, 'thrustpair');
+  const greatsword = {
+    ...doing,
+    right: 'sword_iron',
+    grip: 'hilt',
+    blow: { direction: 'left', second: false, progress: 0 },
+  };
+  assert.equal(shownMove(greatsword as Doing, frames, everything).anim, 'sidehilt', 'a greatsword on its hilt');
+  assert.ok(likelyMoves('sword_iron', null, everything, 'hilt').includes('overhilt'));
   // A shield is drawn in no blow: the weapon's own attack plays.
   const shieldless = (anim: string, held: string | null) => !(held?.startsWith('shield_') && NEXT.test(anim));
   const guarded = {
@@ -225,15 +233,39 @@ test('a dodge rolls through its span, on the ground and in the air; with no roll
   assert.equal(shownMove({ ...dodging, mounted: true }, frames, everything).anim, 'horseidle', 'mounted, the horse');
 });
 
-test("a blow's blade goes the way the forge draws it: down, out, a hand's side cut right and a two-hander's left", () => {
-  assert.deepEqual(['over1h', 'thrustpair', 'side1h', 'sidepair', 'sidehilt', 'sidehaft'].map(blowWay), [
+test("a blow's blade goes the way the forge draws it: down, out, and every hold's side cut across to the left", () => {
+  assert.deepEqual(['over1h', 'thrustpair', 'side1h', 'sidepair', 'sidehilt', 'sidehaft', 'sidestaff'].map(blowWay), [
     'down',
     'up',
-    'right',
-    'right',
+    'left',
+    'left',
+    'left',
     'left',
     'left',
   ]);
   assert.equal(blowWay('slash'), null, 'any other move');
   assert.equal(blowWay('swing2h'), null);
+});
+
+test('moving, a blow, a shot, a reload, an aim and the cast play their own on the move where drawn whole', () => {
+  const walking = (action: string) => onTheMove(action);
+  const moving = { ...doing, moving: true };
+  const blow = (right: string, direction: 'down' | 'up' | 'left' = 'down') =>
+    shownMove({ ...moving, right, blow: { direction, second: false, progress: 0.4 } }, frames, everything, walking);
+  assert.deepEqual(blow('sword_iron'), { anim: 'over1hwalk', frame: 4, frameSeconds: 0 });
+  assert.equal(blow('staff_oak', 'up').anim, 'thruststaffwalk', 'a staff strikes in both hands');
+  assert.equal(shownMove({ ...moving, cast: 0.5 }, frames, everything, walking).anim, 'castwalk');
+  const shot = { ...moving, right: 'thunderlock_iron', blow: { direction: null, second: false, progress: 0.2 } };
+  assert.equal(shownMove(shot, frames, everything, walking).anim, 'gunshotwalk');
+  assert.equal(
+    shownMove({ ...shot, blow: { ...shot.blow, reload: true } }, frames, everything, walking).anim,
+    'gunreloadwalk',
+  );
+  const aim = (right: string) =>
+    shownMove({ ...moving, right, fight: { kind: 'draw', progress: 0.5 } }, frames, classic, walking).anim;
+  assert.deepEqual([aim('bow_long_iron'), aim('pistolet_iron')], ['bowshotwalk', 'pistolshotwalk']);
+  // Standing, or where the figure does not draw it whole, the action's own.
+  assert.equal(shownMove({ ...doing, cast: 0.5 }, frames, everything, walking).anim, 'cast');
+  assert.equal(shownMove({ ...moving, cast: 0.5 }, frames, everything, () => null).anim, 'cast');
+  assert.equal(blowWay('side1hwalk'), blowWay('side1h'), 'a blow on the move goes its standing way');
 });

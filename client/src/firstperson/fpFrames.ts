@@ -1,3 +1,4 @@
+import { type GlowElement, recolourToGlow } from '../elementGlow.ts';
 import type { Strip } from '../forge/compose.ts';
 import type { DyeTable, PaletteSnap, Rgb } from '../forge/dyes.ts';
 import type { WeaponKind } from './weaponMachine.ts';
@@ -102,12 +103,14 @@ export function looksAsked(own: string | null, left: boolean): (string | null)[]
  *  aligned. */
 export type FramesTable = Readonly<Record<string, { readonly at: readonly [number, number]; readonly box?: unknown }>>;
 
-/** A composed first-person picture: RGBA top row first, all or nothing in alpha, and its corner on the design screen. */
+/** A composed first-person picture: RGBA top row first, all or nothing in alpha, and its corner on the design screen.
+ *  A blade laid over its hand says which pixels are the blade's (a byte a pixel, 1 for the blade's). */
 export interface Picture {
   readonly width: number;
   readonly height: number;
   readonly pixels: Uint8Array;
   readonly at: readonly [number, number];
+  readonly weapon?: Uint8Array;
 }
 
 /** The sets drawn in their own colours: leather and chain have no metal to dye, steel is the forge's grey already,
@@ -176,8 +179,14 @@ export function layOver(base: Uint8Array, top: Uint8Array): void {
 }
 
 /** The hand and the weapon laid together by depth (red the high byte, green the low; nearer is smaller): at each
- *  texel the one drawn, and where both are, the nearer. */
-export function layByDepth(hand: Uint8Array, handDepth: Strip, weapon: Uint8Array, weaponDepth: Strip): Uint8Array {
+ *  texel the one drawn, and where both are, the nearer. `mask`, a byte a texel, is set to 1 where the weapon's is. */
+export function layByDepth(
+  hand: Uint8Array,
+  handDepth: Strip,
+  weapon: Uint8Array,
+  weaponDepth: Strip,
+  mask?: Uint8Array,
+): Uint8Array {
   const pixels = new Uint8Array(hand.length);
   const depthAt = (strip: Strip, texel: number) => (strip.data[texel] ?? 0) * 256 + (strip.data[texel + 1] ?? 0);
   for (let texel = 0; texel < pixels.length; texel += 4) {
@@ -186,6 +195,7 @@ export function layByDepth(hand: Uint8Array, handDepth: Strip, weapon: Uint8Arra
     const weaponNearer = depthAt(weaponDepth, texel) < depthAt(handDepth, texel);
     const from = weaponDrawn && (!handDrawn || weaponNearer) ? weapon : handDrawn ? hand : null;
     if (from) pixels.set(from.subarray(texel, texel + 4), texel);
+    if (mask && from === weapon) mask[texel / 4] = 1;
   }
   return pixels;
 }
@@ -219,9 +229,17 @@ export async function firstOf(
   return null;
 }
 
-function placed(source: FrameSource, path: string, strip: Strip, pixels: Uint8Array): Picture | null {
+function placed(
+  source: FrameSource,
+  path: string,
+  strip: Strip,
+  pixels: Uint8Array,
+  weapon?: Uint8Array,
+): Picture | null {
   const corner = source.frames[path]?.at;
-  return corner ? { width: strip.width, height: strip.height, pixels, at: corner } : null;
+  return corner
+    ? { width: strip.width, height: strip.height, pixels, at: corner, ...(weapon ? { weapon } : {}) }
+    : null;
 }
 
 async function whole(
@@ -268,13 +286,15 @@ async function layered(
     hand.colour.height === weapon.colour.height &&
     cornerOf(hand.path) === cornerOf(weapon.path);
   if (!oneCanvas) return left ? layered(source, archive, [record, frame], wielded, hands, false) : null;
+  const blade = new Uint8Array(hand.colour.width * hand.colour.height);
   const pixels = layByDepth(
     source.painter.paint(hand.colour, setRamp(source.dyes, hands, 'Iron')),
     hand.depth,
     source.painter.paint(weapon.colour, metalRamp(source.dyes, wielded.metal)),
     weapon.depth,
+    blade,
   );
-  return placed(source, hand.path, hand.colour, pixels);
+  return placed(source, hand.path, hand.colour, pixels, blade);
 }
 
 /** A bow in its type and metal, with the hands that hold it laid over it in the gauntlets worn. */
@@ -347,7 +367,16 @@ export const CAST_LIGHTS = ['fire', 'frost', 'poison', 'shock', 'magic'] as cons
 /** The casting arm's garments under the light, in order. */
 const CAST_GARMENTS = ['linen', 'gauntlet'] as const;
 
-/** The casting hand's record `record` lit by `element`: its sleeve, its glove and the light, laid in order; in a set's
+/** The light each Art casts with, by its element (the gear crate's numbers): Divine's fire, Storm's shock and
+ *  Shadow's magic, each recoloured to its element's glow. */
+export const ART_LIGHTS: Readonly<Record<GlowElement, (typeof CAST_LIGHTS)[number]>> = {
+  1: 'fire',
+  2: 'shock',
+  3: 'magic',
+};
+
+/** The casting hand's record `record` lit by `element` (its light recoloured to `glow`'s, if given): its sleeve, its
+ *  glove and the light, laid in order; in a set's
  *  gauntlets (`hands`) the set's whole arm under the light, else the sleeve and glove. Placed by the caller, as a
  *  casting hand is placed by its record. */
 export async function castPicture(
@@ -355,14 +384,20 @@ export async function castPicture(
   element: string,
   record: number,
   hands: string | null = null,
+  glow: GlowElement | null = null,
 ): Promise<Picture | null> {
   const layers = hands ? [hands, element] : [...CAST_GARMENTS, element];
   const strips = await Promise.all(layers.map((layer) => source.strip(castPath(layer, record))));
   const [base, ...over] = strips;
   if (!base || over.some((strip) => strip?.width !== base.width || strip.height !== base.height))
-    return hands ? castPicture(source, element, record) : null;
+    return hands ? castPicture(source, element, record, null, glow) : null;
   // A set's arm is dyed as its fists are.
   const pixels = source.painter.paint(base, hands ? setRamp(source.dyes, hands, 'Iron') : null);
-  for (const strip of over) if (strip) layOver(pixels, source.painter.paint(strip, null));
+  over.forEach((strip, index) => {
+    if (!strip) return;
+    const painted = source.painter.paint(strip, null);
+    if (glow && index === over.length - 1) recolourToGlow(painted, glow);
+    layOver(pixels, painted);
+  });
   return { width: base.width, height: base.height, pixels, at: [0, 0] };
 }

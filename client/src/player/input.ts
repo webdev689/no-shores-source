@@ -13,10 +13,15 @@ export const BINDINGS = {
   jump: [' '],
   crouch: ['c'],
   ready: ['z'],
+  melee: ['1'],
+  ranged: ['2'],
   swing: ['mouse2'],
   guard: ['mouse0', 'f'],
   dodge: ['v', 'mouse4'],
-  cast: ['q'],
+  // The Art's spells, on keys DFO's scheme leaves free: the Anima on R, the Tenets on Q (where casting was) and G.
+  anima: ['r'],
+  tenetOne: ['q'],
+  tenetTwo: ['g'],
   perspective: ['mouse3'],
   mount: [','],
 } as const;
@@ -66,12 +71,15 @@ export class Input {
       this.down.delete(name);
       this.releasedSince.add(name);
     };
+    // A digit is named by its key, not its character: Shift (the run) turns 2 into '@', and other layouts differ.
+    const keyName = (event: KeyboardEvent) =>
+      /^Digit\d$/.test(event.code) ? event.code.slice('Digit'.length) : event.key.toLowerCase();
     addEventListener('keydown', (event) => {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
-      press(event.key.toLowerCase());
+      press(keyName(event));
       if (this.locked && event.key === ' ') event.preventDefault();
     });
-    addEventListener('keyup', (event) => release(event.key.toLowerCase()));
+    addEventListener('keyup', (event) => release(keyName(event)));
     addEventListener('blur', () => this.down.clear());
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
     canvas.addEventListener('mousedown', (event) => {

@@ -1,5 +1,5 @@
 {
-  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there.",
+  "about": "The sounds wanted from Freesound: each cue's search words and how long it may run, in seconds. A push that changes this list runs .github/workflows/freesound.yml, which finds candidates for the sound sheet. A cue the owner settled on the sheet names its pick (a Freesound number), keeps the game's own sound, or is made by the game's synthesiser, and is searched no more; `skip` lists the candidates already heard there. `offer` names Freesound numbers shown as candidates before the search's own, such as the recordings DFO plays. `dfo` marks a cue whose sound comes from DFO's own: the name of the one picked, or true while the owner chooses among them on the sheet; such a cue is searched no more.",
   "cues": [
     {
       "id": "ui.hover",
@@ -130,6 +130,900 @@
         3.0
       ],
       "made": "synthesiser"
+    },
+    {
+      "id": "swing.light",
+      "use": "A light weapon swung: a dagger, a sword or a mace",
+      "query": "sword swing whoosh",
+      "seconds": [
+        0.15,
+        0.8
+      ],
+      "picked": 733889
+    },
+    {
+      "id": "swing.heavy",
+      "use": "A heavy weapon swung: an axe, a flail, a warhammer or a greatsword",
+      "query": "swing whoosh",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "picked": 422513
+    },
+    {
+      "id": "swing.staff",
+      "use": "A staff swung in both hands",
+      "query": "staff swing whoosh",
+      "seconds": [
+        0.15,
+        1.0
+      ],
+      "picked": 855844
+    },
+    {
+      "id": "hit.blade",
+      "use": "A blade cuts a body",
+      "query": "sword slash",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "picked": 574820
+    },
+    {
+      "id": "hit.blunt",
+      "use": "A mace, a hammer or a fist strikes a body",
+      "query": "melee hit thud",
+      "seconds": [
+        0.1,
+        0.8
+      ],
+      "skip": [
+        189159,
+        321810,
+        561655
+      ],
+      "picked": 420673
+    },
+    {
+      "id": "block.blade",
+      "use": "A blow met by a blade",
+      "query": "sword clash",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "picked": 326857
+    },
+    {
+      "id": "block.shield",
+      "use": "A blow met by a shield",
+      "query": "shield hit",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        641895,
+        812518,
+        877746
+      ],
+      "picked": 223630
+    },
+    {
+      "id": "parry",
+      "use": "A parry: steel rings off steel",
+      "query": "sword clash ring",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "skip": [
+        616493,
+        873753
+      ],
+      "picked": 326868
+    },
+    {
+      "id": "guard.break",
+      "use": "A guard broken",
+      "query": "metal impact heavy",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "picked": 693582
+    },
+    {
+      "id": "crit",
+      "use": "A crit lands",
+      "query": "heavy impact hit",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        660769,
+        833032
+      ],
+      "picked": 791953
+    },
+    {
+      "id": "kill",
+      "use": "A fighter falls slain",
+      "query": "body fall",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "picked": 82027
+    },
+    {
+      "id": "weapon.draw",
+      "use": "A weapon drawn",
+      "query": "sword unsheathe",
+      "seconds": [
+        0.2,
+        1.2
+      ],
+      "picked": 707339
+    },
+    {
+      "id": "weapon.sheathe",
+      "use": "A weapon put away",
+      "query": "sword sheath",
+      "seconds": [
+        0.2,
+        1.2
+      ],
+      "skip": [
+        56264,
+        180838,
+        426326,
+        700006
+      ],
+      "picked": 107590
+    },
+    {
+      "id": "bow.draw",
+      "use": "A bow drawn",
+      "query": "bow pull",
+      "seconds": [
+        0.3,
+        2.0
+      ],
+      "skip": [
+        341869,
+        649337
+      ],
+      "picked": 536067
+    },
+    {
+      "id": "bow.shot",
+      "use": "An arrow loosed",
+      "query": "bow release arrow",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "picked": 536068
+    },
+    {
+      "id": "crossbow.shot",
+      "use": "A crossbow bolt loosed",
+      "query": "crossbow shot",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "picked": 163453
+    },
+    {
+      "id": "crossbow.reload",
+      "use": "A crossbow wound again",
+      "query": "ratchet crank",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        249810,
+        384919,
+        561475,
+        752211
+      ],
+      "picked": 812058
+    },
+    {
+      "id": "pistol.shot",
+      "use": "A pistolet fired",
+      "query": "black powder pistol",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "offer": [
+        473846
+      ],
+      "skip": [
+        258250,
+        817931
+      ],
+      "picked": 473846
+    },
+    {
+      "id": "musket.shot",
+      "use": "A thunderlock fired",
+      "query": "musket shot",
+      "seconds": [
+        0.3,
+        2.5
+      ],
+      "offer": [
+        564480,
+        244345
+      ],
+      "skip": [
+        234869,
+        244345,
+        347647,
+        593908
+      ],
+      "picked": 648755
+    },
+    {
+      "id": "gun.reload",
+      "use": "A gun loaded again",
+      "query": "gun reload",
+      "seconds": [
+        0.4,
+        4.0
+      ],
+      "offer": [
+        679878,
+        108793,
+        383933
+      ],
+      "picked": 647557
+    },
+    {
+      "id": "gun.empty",
+      "use": "A gun with no shot left",
+      "query": "gun dry fire",
+      "seconds": [
+        0.05,
+        0.6
+      ],
+      "picked": 46265
+    },
+    {
+      "id": "arrow.hit",
+      "use": "An arrow or bolt strikes a body",
+      "query": "arrow",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        205938,
+        259563,
+        443575,
+        521552
+      ],
+      "picked": 384918
+    },
+    {
+      "id": "arrow.stick",
+      "use": "An arrow sticks in wood or earth",
+      "query": "arrow thud",
+      "seconds": [
+        0.1,
+        0.8
+      ],
+      "skip": [
+        205938
+      ],
+      "picked": 387479
+    },
+    {
+      "id": "ball.hit",
+      "use": "A ball strikes stone",
+      "query": "ricochet",
+      "seconds": [
+        0.1,
+        1.2
+      ],
+      "skip": [
+        78092,
+        394184,
+        523403,
+        661794
+      ],
+      "picked": 96629
+    },
+    {
+      "id": "shot.splash",
+      "use": "A shot falls in water",
+      "query": "water plop",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        30341,
+        223806,
+        554595,
+        841834,
+        872596
+      ],
+      "picked": 404829
+    },
+    {
+      "id": "step.ground",
+      "use": "A footstep on earth or grass",
+      "query": "footstep dirt",
+      "seconds": [
+        0.1,
+        0.6
+      ],
+      "skip": [
+        223153,
+        319209,
+        389454,
+        477396
+      ],
+      "dfo": "if/Grass_Footstep"
+    },
+    {
+      "id": "step.stone",
+      "use": "A footstep on stone",
+      "query": "footstep stone",
+      "seconds": [
+        0.1,
+        0.6
+      ],
+      "skip": [
+        386525,
+        390764,
+        517137,
+        815758
+      ],
+      "dfo": "if/Tile_Footstep"
+    },
+    {
+      "id": "step.wood",
+      "use": "A footstep on wood",
+      "query": "footstep wood",
+      "seconds": [
+        0.1,
+        0.6
+      ],
+      "skip": [
+        110100,
+        110101,
+        340983,
+        421153
+      ],
+      "dfo": "if/Wood_Footstep"
+    },
+    {
+      "id": "step.water",
+      "use": "A step wading through water",
+      "query": "footstep water",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        270429,
+        405635,
+        478709,
+        849638
+      ],
+      "dfo": "if/Deep_Water_Footstep"
+    },
+    {
+      "id": "jump",
+      "use": "A jump",
+      "query": "cloth whoosh",
+      "seconds": [
+        0.1,
+        0.6
+      ],
+      "picked": 496188
+    },
+    {
+      "id": "land",
+      "use": "Landing from a jump or a fall",
+      "query": "landing thud",
+      "seconds": [
+        0.1,
+        0.8
+      ],
+      "picked": 203039
+    },
+    {
+      "id": "roll",
+      "use": "A dodge roll",
+      "query": "body roll",
+      "seconds": [
+        0.2,
+        1.2
+      ],
+      "picked": 529563
+    },
+    {
+      "id": "cast.charge",
+      "use": "An Anima gathering as it is cast",
+      "query": "build up whoosh",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        443955,
+        524200,
+        588242,
+        592573,
+        609025,
+        610562,
+        742835,
+        871078
+      ],
+      "picked": 511872
+    },
+    {
+      "id": "spell.tempest",
+      "use": "Tempest: the seeking orbs cast",
+      "query": "magic whoosh",
+      "seconds": [
+        0.3,
+        3.0
+      ],
+      "skip": [
+        19487,
+        87040,
+        582631,
+        585798
+      ],
+      "picked": 715784
+    },
+    {
+      "id": "spell.orb",
+      "use": "A Tempest orb bursts on what it seeks",
+      "query": "energy impact",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        136542,
+        148772,
+        232885,
+        270304,
+        390378,
+        512471,
+        683181,
+        789632,
+        808849,
+        878329
+      ],
+      "picked": 872155
+    },
+    {
+      "id": "spell.quicken",
+      "use": "Quicken: a ring of lightning at the feet",
+      "query": "electric whoosh",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "picked": 274211
+    },
+    {
+      "id": "spell.arclash",
+      "use": "Arc Lash: lightning fanned through a cone",
+      "query": "lightning",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "skip": [
+        127125,
+        350812,
+        363194,
+        592668
+      ],
+      "picked": 649360
+    },
+    {
+      "id": "spell.sunwell",
+      "use": "The Sunwell: a sun over a ring of light",
+      "query": "magic aura",
+      "seconds": [
+        0.5,
+        3.0
+      ],
+      "skip": [
+        170159,
+        853303,
+        878595,
+        879797
+      ],
+      "picked": 853656
+    },
+    {
+      "id": "spell.mend",
+      "use": "Mend: a burst of healing",
+      "query": "healing",
+      "seconds": [
+        0.3,
+        2.0
+      ],
+      "skip": [
+        530488,
+        562292,
+        664265,
+        794532,
+        827665,
+        833035,
+        871892,
+        872577,
+        878312
+      ],
+      "picked": 387722
+    },
+    {
+      "id": "spell.dawnflare",
+      "use": "The Dawnflare: a bird of fire",
+      "query": "fire whoosh",
+      "seconds": [
+        0.3,
+        2.5
+      ],
+      "picked": 426208
+    },
+    {
+      "id": "spell.duskraven",
+      "use": "The Duskraven called to the shoulder",
+      "query": "raven",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "picked": 512780
+    },
+    {
+      "id": "spell.duskraven.fire",
+      "use": "The fire mixed under the Duskraven's raven",
+      "query": "fire whoosh",
+      "seconds": [
+        0.3,
+        2.5
+      ],
+      "picked": 426208
+    },
+    {
+      "id": "spell.ravenbolt",
+      "use": "A Duskraven bolt flies",
+      "query": "spell cast",
+      "seconds": [
+        0.1,
+        1.5
+      ],
+      "skip": [
+        827627
+      ],
+      "picked": 855451
+    },
+    {
+      "id": "spell.daggers",
+      "use": "Dusk Daggers strike in their ring",
+      "query": "magic explosion",
+      "seconds": [
+        0.1,
+        1.2
+      ],
+      "skip": [
+        147288,
+        209127,
+        385966,
+        423281,
+        427823,
+        475136,
+        525166,
+        727592,
+        877976
+      ],
+      "picked": 714258
+    },
+    {
+      "id": "spell.vanish",
+      "use": "Vanish: a puff of dusk",
+      "query": "smoke poof",
+      "seconds": [
+        0.2,
+        1.2
+      ],
+      "picked": 714257
+    },
+    {
+      "id": "anima.storm",
+      "use": "Storm's Anima released",
+      "query": "thunderclap",
+      "seconds": [
+        0.5,
+        3.0
+      ],
+      "skip": [
+        238807,
+        592668,
+        592676,
+        807391,
+        815095
+      ],
+      "picked": 871778
+    },
+    {
+      "id": "anima.divine",
+      "use": "Divine's Anima released",
+      "query": "fire burst magic",
+      "seconds": [
+        0.5,
+        3.0
+      ],
+      "picked": 848736
+    },
+    {
+      "id": "anima.shadow",
+      "use": "Shadow's Anima released",
+      "query": "dark magic",
+      "seconds": [
+        0.5,
+        3.0
+      ],
+      "picked": 855451
+    },
+    {
+      "id": "element.blaze",
+      "use": "A Blaze blow bursts where it lands",
+      "query": "fire impact",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        170274,
+        539972,
+        636024,
+        683178,
+        854644
+      ],
+      "picked": 541478
+    },
+    {
+      "id": "element.volt",
+      "use": "A Volt blow bursts where it lands",
+      "query": "electric impact",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        94128,
+        136542,
+        189630,
+        264779,
+        456827,
+        512471,
+        643861,
+        878329
+      ],
+      "picked": 541480
+    },
+    {
+      "id": "element.cosmic",
+      "use": "A Cosmic blow bursts where it lands",
+      "query": "magic impact",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        376749,
+        422516,
+        446111,
+        473762
+      ],
+      "picked": 541479
+    },
+    {
+      "id": "finish.blaze",
+      "use": "A foe slain by Blaze burns away",
+      "query": "fireball explosion",
+      "seconds": [
+        0.3,
+        2.0
+      ],
+      "skip": [
+        90143,
+        105025,
+        170274,
+        398448,
+        539972,
+        753847,
+        787500,
+        872842
+      ],
+      "picked": 431174
+    },
+    {
+      "id": "finish.volt",
+      "use": "A foe slain by Volt, lightning leaping on",
+      "query": "thunder lightning",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "skip": [
+        19487,
+        108858,
+        403445,
+        445911,
+        477807,
+        512471,
+        536741,
+        853286
+      ],
+      "picked": 127125
+    },
+    {
+      "id": "finish.cosmic",
+      "use": "A foe slain by Cosmic implodes",
+      "query": "implosion",
+      "seconds": [
+        0.3,
+        2.0
+      ],
+      "dfo": "fx-kill-voidrend"
+    },
+    {
+      "id": "status.linked",
+      "use": "Linked: healed in the Sunwell",
+      "query": "buff spell",
+      "seconds": [
+        0.2,
+        1.5
+      ],
+      "skip": [
+        376748,
+        483608,
+        530488,
+        562292,
+        789596,
+        789599,
+        878312
+      ],
+      "picked": 855451
+    },
+    {
+      "id": "status.veil",
+      "use": "Veiled",
+      "query": "magic disappear",
+      "seconds": [
+        0.2,
+        1.2
+      ],
+      "skip": [
+        397106,
+        563375,
+        563483,
+        873669
+      ],
+      "picked": 714258
+    },
+    {
+      "id": "shield.hit",
+      "use": "A foe's element shield struck",
+      "query": "shield impact",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "skip": [
+        456613
+      ],
+      "picked": 223630
+    },
+    {
+      "id": "shield.break",
+      "use": "A foe's element shield breaks",
+      "query": "power down",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "skip": [
+        147867,
+        390729,
+        444134,
+        521348,
+        753899,
+        807391,
+        814954,
+        853703,
+        861043,
+        879915
+      ],
+      "picked": 443465
+    },
+    {
+      "id": "drop.land",
+      "use": "A Vestige or an Ammo box lands on the ground",
+      "query": "item drop",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "picked": 693583
+    },
+    {
+      "id": "ammo.refill",
+      "use": "An Ammo crate opened, the Ranged weapon filled",
+      "query": "ammo pickup",
+      "seconds": [
+        0.1,
+        1.0
+      ],
+      "picked": 653032
+    },
+    {
+      "id": "foe.alert",
+      "use": "A foe notices the player",
+      "query": "growl",
+      "seconds": [
+        0.1,
+        0.6
+      ],
+      "skip": [
+        72126,
+        75143,
+        262430,
+        323018,
+        360545,
+        372534,
+        375980,
+        432751,
+        483795,
+        556879,
+        856777
+      ],
+      "picked": 858795
+    },
+    {
+      "id": "respawn",
+      "use": "Standing again at a spawn",
+      "query": "holy spell",
+      "seconds": [
+        0.3,
+        2.0
+      ],
+      "skip": [
+        83301,
+        234804,
+        252081,
+        422730,
+        442873,
+        474179,
+        474180,
+        478179,
+        714258,
+        812521,
+        831718,
+        838027
+      ],
+      "picked": 807391
     }
   ]
 }

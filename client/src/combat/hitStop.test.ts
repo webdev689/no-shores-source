@@ -33,6 +33,21 @@ test('a blow that harms holds its striker and the one struck still, then their d
   assert.equal(stops.shownSeconds(1, 0.05), 0.05);
 });
 
+test('a crit holds longer than a plain blow, a kill longer still', () => {
+  // The frames at 60 a second its one struck is held still for.
+  const held = (kind: number, crit: boolean) => {
+    const stops = new HitStops();
+    stops.struck([{ ...event(kind), crit }]);
+    let frames = 0;
+    for (let frame = 0; frame < 30; frame += 1) {
+      stops.update(1 / 60);
+      if (stops.shownSeconds(2, 1 / 60) < 1e-9) frames += 1;
+    }
+    return frames;
+  };
+  assert.deepEqual([held(EVENT.hit, false), held(EVENT.hit, true), held(EVENT.killed, false)], [4, 6, 9]);
+});
+
 test('a kill holds longest, a block least; a blow that harms nothing and a dodge hold nothing', () => {
   const held = (kind: number, amount = 10) => {
     const stops = new HitStops();

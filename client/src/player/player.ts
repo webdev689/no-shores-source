@@ -1,5 +1,6 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
+import { MELEE, RANGED_SLOT } from './gear.ts';
 import type { InputFrame } from './input.ts';
 import {
   AIM,
@@ -13,8 +14,8 @@ import {
   type ViewMode,
 } from './playerCamera.ts';
 
-/** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away, and
- *  the cast or chosen move playing. The first person's weapon swings; this only readies it. */
+/** The player: their body, where they look, how the camera is held, whether they ride, their weapon out or away and
+ *  which loadout it is, and the cast or chosen move playing. The first person's weapon swings; this only readies it. */
 export interface Player {
   readonly body: Body;
   /** The body a tick before, which the drawing eases from, and how far it has eased toward `body` (0..1). */
@@ -29,6 +30,8 @@ export interface Player {
   readonly view: ViewMode;
   readonly mounted: boolean;
   readonly drawn: boolean;
+  /** The loadout drawn: the gear's slot, Melee (the first) or Ranged. */
+  readonly loadout: number;
   readonly cast: number | null;
   readonly act: { readonly anim: string; readonly elapsed: number; readonly seconds: number } | null;
   /** The way the figure faces, which only moving or acting turns. */
@@ -60,6 +63,7 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
     view: { ...scrolled(FIRST_PERSON, 1), shown: 2 },
     mounted: false,
     drawn: false,
+    loadout: MELEE,
     cast: null,
     act: null,
     facing: 0,
@@ -70,8 +74,9 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
 /**
  * One frame of the player with DFO's controls: the mouse (with the pointer locked) and the arrow and look keys turn
  * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
- * readies it too; Q casts; comma mounts or dismounts; the wheel and Mouse4 move between first and third person.
- * The body moves in whole ticks of the movement rules; the view turns every frame.
+ * readies it too; 1 draws the Melee loadout and 2 the Ranged; R casts the Art's Anima, Q and G its Tenets; comma
+ * mounts or dismounts; the wheel and Mouse4 move between first and third person. A cast plays once the fight takes
+ * one (`Walker.beginCast`). The body moves in whole ticks of the movement rules; the view turns every frame.
  * `swinging` says a swing is under way, which turns the figure to the view; `toward` is the bearing to the soft lock's
  * target, which a figure on foot faces however it walks; `aiming` says a ranged weapon is held up to aim, which eases
  * the camera into aiming's view.
@@ -99,9 +104,11 @@ export function updatePlayer(
   let drawn = input.pressed('ready') ? !player.drawn : player.drawn;
 
   if (!drawn && input.pressed('swing') && !mounted) drawn = true;
+  const chosen = input.pressed('ranged') ? RANGED_SLOT : input.pressed('melee') ? MELEE : null;
+  const loadout = chosen ?? player.loadout;
+  if (chosen !== null && !mounted) drawn = true;
   let cast = player.cast === null ? null : player.cast + seconds;
   if (cast !== null && cast >= CAST_SECONDS) cast = null;
-  if (cast === null && input.pressed('cast') && !mounted) cast = 0;
   let act = player.act ? { ...player.act, elapsed: player.act.elapsed + seconds } : null;
   if (act && act.elapsed >= act.seconds) act = null;
 
@@ -127,7 +134,7 @@ export function updatePlayer(
   const facing = acting ? yaw : locked ? toward : body.mode !== 'ground' ? body.facing : walked;
   const blend = carry / movement.tickSeconds;
   const aim = aimEased(player.aim, aiming, seconds);
-  return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, cast, act, facing, aim };
+  return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, loadout, cast, act, facing, aim };
 }
 
 /** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate. */

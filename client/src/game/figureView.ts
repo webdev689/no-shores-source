@@ -1,19 +1,22 @@
+import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { PX_PER_M } from '../player/figures.ts';
+import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
+import { GlowCards } from '../player/glowCards.ts';
 import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '../shadow.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 const VIEW_BYTES = 80;
-const CARD_BYTES = 48;
+const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
 
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
-struct Card { feet: vec4f, size: vec4f, root: vec4f }
+struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f }
 @group(2) @binding(0) var<uniform> card: Card;
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
@@ -31,11 +34,22 @@ fn card_point(corner: vec2f, right: vec2f) -> vec3f {
   return vec3f(card.feet.xy + right * across_of(corner), card.feet.z + card.root.y - corner.y * card.size.y);
 }
 
-fn picture_at(corner: vec2f) -> vec4f {
+fn texel_at(corner: vec2f) -> vec2i {
   let size = vec2f(textureDimensions(picture));
   var at = corner;
   if (card.feet.w > 0.5) { at.x = 1.0 - at.x; }
-  return textureLoad(picture, vec2i(min(at * size, size - 1.0)), 0);
+  return vec2i(min(at * size, size - 1.0));
+}
+
+// The picture's texel its feet stand on.
+fn root_texel() -> vec2f {
+  let size = vec2f(textureDimensions(picture));
+  let across = card.root.x / card.size.x;
+  return vec2f(select(across, 1.0 - across, card.feet.w > 0.5), card.root.y / card.size.y) * size;
+}
+
+fn picture_at(corner: vec2f) -> vec4f {
+  return textureLoad(picture, texel_at(corner), 0);
 }
 `;
 
@@ -43,6 +57,7 @@ fn picture_at(corner: vec2f) -> vec4f {
 const SHADER = /* wgsl */ `
 ${CARD}
 ${SHADOW_WGSL}
+${STATUS_WGSL}
 
 struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @location(1) from_eye: vec3f }
 
@@ -51,6 +66,8 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
   let offset = card_point(corner, view.right.xy);
   var out: Out;
   out.position = view.from_eye * vec4f(offset, 1.0);
+  // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
+  if (card.tint.w > 0.5) { out.position.z = out.position.z * 0.999; }
   out.corner = corner;
   out.from_eye = offset;
   return out;
@@ -63,15 +80,19 @@ const LIGHT_ACROSS = vec2f(0.7071068, -0.7071068);
 const SUN_ACROSS = 0.766;
 
 @fragment fn card_fragment(in: Out) -> @location(0) vec4f {
-  let texel = picture_at(in.corner);
+  let root = root_texel();
+  let at = card_texel(card.status, card.look, texel_at(in.corner), vec2i(textureDimensions(picture)), root);
+  if (at.x < 0) { discard; }
+  let texel = textureLoad(picture, at, 0);
   if (texel.a < 0.5) { discard; }
   // A figure's shadow is drawn from its card turned square to the sun about its feet. A point of the card the eye sees
   // that lies behind that one from the sun is asked of the map from past it, so a figure never shades itself.
   let behind = max(across_of(in.corner) * dot(view.right.xy, LIGHT_ACROSS), 0.0);
   let sun = sunlit(in.from_eye + SUN * (behind / SUN_ACROSS + 0.15), SUN);
-  // A figure a blow harms flashes white, the player red, for its share of a flash.
-  let flash = select(vec3f(1.0), vec3f(1.0, 0.16, 0.1), card.root.w > 0.5);
-  return vec4f(mix(texel.rgb * mix(SHADED, 1.0, sun), flash, card.root.z), 1.0);
+  // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
+  let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * mix(SHADED, 1.0, sun), root);
+  if (shown.a < 0.5) { discard; }
+  return vec4f(shown.rgb, 1.0);
 }
 
 // A figure's contact shade: a soft dark disc on the ground at its feet. Where the near shadow map holds the figure's
@@ -136,6 +157,7 @@ export class FigureView implements CardMaker {
   private readonly viewBuffer: GPUBuffer;
   private readonly viewGroup: GPUBindGroup;
   private readonly slots: { buffer: GPUBuffer; texture: GPUTexture | null; group: GPUBindGroup | null }[] = [];
+  private readonly glows: GlowCards;
   /** The frame the cards' uniforms were last written for, and their groups. */
   private written: { fromEye: Float32Array; figures: readonly CardAt[]; groups: GPUBindGroup[] } | null = null;
 
@@ -184,6 +206,7 @@ export class FigureView implements CardMaker {
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
     });
+    this.glows = new GlowCards(gpu, gpu.format, REVERSED_DEPTH.format, SAMPLES);
     this.viewBuffer = device.createBuffer({
       size: VIEW_BYTES,
       usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination,
@@ -203,6 +226,11 @@ export class FigureView implements CardMaker {
     });
     this.gpu.device.queue.writeTexture({ texture }, pixels, { bytesPerRow: width * 4 }, [width, height]);
     return { texture, width, height, root };
+  }
+
+  /** An outline's field as a texture its glow is drawn with. */
+  glow(field: GlowField): GPUTexture {
+    return this.card(field.data, field.width, field.height, [0, 0]).texture;
   }
 
   private slot(index: number, texture: GPUTexture): { buffer: GPUBuffer; group: GPUBindGroup } {
@@ -241,14 +269,22 @@ export class FigureView implements CardMaker {
     values.set(fromEye);
     values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
-    const groups = figures.map(({ card, x, y, z, flip, scale = 1, flash }, index) => {
+    const time = statusClock();
+    // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back
+    // along the stroke and standing behind it.
+    const smeared = figures.filter((shown) => shown.smear);
+    const groups = [...figures, ...smeared].map((shown, index) => {
+      const { card, x, y, z, flip, scale = 1 } = shown;
       const { buffer, group } = this.slot(index, card.texture);
       const metres = scale / PX_PER_M;
+      const smear = index >= figures.length ? shown.smear : null;
+      const [across, up] = smear ? [smear.across * metres, smear.up * metres] : [0, 0];
       const rootX = (flip ? card.width - card.root[0] : card.root[0]) * metres;
       const cardValues = new Float32Array([
-        ...[x - eye[0], y - eye[1], z - eye[2], flip ? 1 : 0],
+        ...[x - eye[0] + Math.cos(yaw) * across, y - eye[1] + Math.sin(yaw) * across, z - eye[2] + up, flip ? 1 : 0],
         ...[card.width * metres, card.height * metres, 0, 0],
-        ...[rootX, card.root[1] * metres, flash?.share ?? 0, flash?.red ? 1 : 0],
+        ...[rootX, card.root[1] * metres, 0, 0],
+        ...cardLookValues(shown, time, !!smear),
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;
@@ -272,14 +308,17 @@ export class FigureView implements CardMaker {
     pass.setPipeline(this.cast);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
-    for (const group of groups) {
+    // A Veiled figure is all but unseen, so it throws no shadow and has no contact shade.
+    groups.forEach((group, index) => {
+      if (index >= figures.length || figures[index]?.veiled) return;
       pass.setBindGroup(2, group);
       pass.draw(6);
-    }
+    });
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
-   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given. */
+   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given; then the outlines of the
+   *  weapons that glow. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -293,14 +332,27 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
-    for (const group of groups) {
+    groups.forEach((group, index) => {
+      if (index >= figures.length || figures[index]?.veiled) return;
       pass.setBindGroup(2, group);
       pass.draw(36);
-    }
+    });
     pass.setPipeline(this.pipeline);
     for (const group of groups) {
       pass.setBindGroup(2, group);
       pass.draw(6);
     }
+    // A Veiled figure's weapon shows no outline: it is all but unseen.
+    const glowing = figures.filter(({ card, veiled }) => card.glow && !veiled);
+    this.glows.draw(
+      pass,
+      fromEye,
+      [Math.cos(yaw), Math.sin(yaw)],
+      performance.now() / 1000,
+      glowing.map(({ card, x, y, z, flip, scale = 1, surge }) => {
+        const [fromX, fromY, fromZ] = [x - eye[0], y - eye[1], z - eye[2]];
+        return { card, x: fromX, y: fromY, z: fromZ, flip, metres: scale / PX_PER_M, surge };
+      }),
+    );
   }
 }

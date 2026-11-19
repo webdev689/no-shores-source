@@ -20,7 +20,8 @@ pub enum TraitColumn {
 }
 
 /// A trait a node may hold: its id, name and words, the column it is offered in, and what it fits: `melee`,
-/// `ranged`, `weapon` or `armour` (which takes a shield too), or for a signature the one named item that carries it.
+/// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks), or
+/// for a signature the one named item that carries it.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct TraitDef {
     pub id: String,
@@ -134,6 +135,13 @@ impl Catalogue {
         self.traits.iter().find(|found| found.id == id)
     }
 
+    /// Whether a trait fits an item of this kind, the named one it is if any: what a roll offers it and what a worn
+    /// piece gives by the same rule.
+    #[must_use]
+    pub fn trait_fits(&self, id: &str, kind: Kind, named: Option<&str>) -> bool {
+        self.trait_def(id).is_some_and(|found| fits(found, kind, named))
+    }
+
     #[must_use]
     pub fn named(&self, id: &str) -> Option<&NamedDef> {
         self.items.iter().find(|found| found.id == id)
@@ -192,6 +200,11 @@ impl Catalogue {
         }
         for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
             self.kind_problems(kind, &mut problems);
+        }
+        for kind in Kind::ALL.into_iter().filter(|kind| kind.weapon()) {
+            if !self.items.iter().any(|item| item.kind == kind && item.rarity == Rarity::Legendary) {
+                problems.push(format!("no Legendary {kind:?}"));
+            }
         }
         for slot in Slot::VESTIGE {
             for rarity in [Rarity::Legendary, Rarity::Atheric] {
@@ -282,7 +295,8 @@ fn fits(found: &TraitDef, kind: Kind, named: Option<&str>) -> bool {
         "melee" => kind.weapon() && !kind.ranged(),
         "ranged" => kind.ranged(),
         "weapon" => kind.weapon(),
-        "armour" => kind.defends(),
+        "armour" => kind.armour(),
+        "shield" => kind.shielded(),
         item => named == Some(item),
     }
 }

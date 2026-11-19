@@ -88,6 +88,7 @@ pub enum Cause {
     Poise = 0,
     Parried = 1,
     GuardBroken = 2,
+    Charged = 3,
 }
 
 /// What a fighter is doing. Every timer counts ticks.
@@ -192,10 +193,18 @@ pub struct Fighter {
     pub kept: Kept,
     /// The swings struck so far, so a pair's blows take turns between the hands.
     pub blows: u32,
+    /// Ticks left of a swap between loadouts, in which no blow or shot starts.
+    pub swap: u32,
+    /// Whether a double pistolet's right shot has gone, so its next is the left's, which it reloads after.
+    pub fired_right: bool,
     /// What its blows' damage is multiplied by: 1 for a player, its kind's for a foe.
     pub might: f64,
     /// What its gear trims of the fight's numbers: nothing for a foe.
     pub trim: crate::trim::Trim,
+    /// What it has been given: Crit, Expose, Charge, Haste, Linked and Veiled, each with its ticks left.
+    pub statuses: crate::status::Statuses,
+    /// The shots its Ranged weapon has left, which its player's gear keeps; none for a foe, whose never run dry.
+    pub ammo: Option<u32>,
 }
 
 /// What a player's controls or a foe's brain asks of a fighter in a tick: the movement's controls and the fight's.
@@ -250,8 +259,12 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         held: Held::default(),
         kept: Kept::default(),
         blows: 0,
+        swap: 0,
+        fired_right: false,
         might: 1.0,
         trim: crate::trim::Trim::PLAIN,
+        statuses: crate::status::Statuses::NONE,
+        ammo: None,
     }
 }
 
@@ -290,16 +303,29 @@ impl Fighter {
     }
 
     /// The fighter holding `arms`, taken up only at rest (or dead): a weapon is never changed in the middle of a swing,
-    /// a guard, a draw or a reload.
+    /// a guard, a draw or a reload. A weapon changed for another, as a loadout for the other, or put away starts a
+    /// swap; one taken up from bare hands is drawn at once, though a swap begun as another was put away runs on.
     #[must_use]
     pub fn holding(&self, arms: Arms) -> Self {
-        if matches!(self.action, Action::Idle | Action::Dead { .. }) { Fighter { arms, ..*self } } else { *self }
+        if !matches!(self.action, Action::Idle | Action::Dead { .. }) {
+            return *self;
+        }
+        let weapon = |arms: Arms| arms.melee != crate::arms::WeaponClass::Fists || arms.ranged.is_some();
+        let changed = (arms.melee, arms.ranged) != (self.arms.melee, self.arms.ranged);
+        let swap = if changed && weapon(self.arms) { crate::tuning::SWAP_TICKS } else { self.swap };
+        Fighter { arms, swap, ..*self }
     }
 
     /// Whether it is staggered by anything: it takes more from every blow.
     #[must_use]
     pub fn staggered(&self) -> bool {
         matches!(self.action, Action::Staggered { .. } | Action::Down { .. })
+    }
+
+    /// Whether its Ranged weapon has a shot to fire.
+    #[must_use]
+    pub fn loaded(&self) -> bool {
+        self.ammo.is_none_or(|left| left > 0)
     }
 
     /// Its chest, where blows and shots aim and a lock's mark stands.

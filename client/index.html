@@ -164,6 +164,18 @@
       #hud:has(> .fight:not([hidden])) .hints {
         bottom: 140px;
       }
+      /* Where the HUD is wide and not yet doubled, the hints stand at the face's next step, over the vitals and the
+         buffs above them, which grow there too. */
+      @media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+        (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+        .hints {
+          font-size: 22px;
+          line-height: 33px;
+        }
+        #hud:has(> .fight:not([hidden])) .hints {
+          bottom: 198px;
+        }
+      }
       /* On foot the fight's display holds the compass; the game's own is the sea's. */
       #hud:has(> .fight:not([hidden])) > .compass-column {
         display: none;

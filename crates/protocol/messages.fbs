@@ -28,8 +28,9 @@ table Ask {
 // 255 sends every foe away; else its role, 1 to 5, in the low four bits when no type is named, and the element of a
 // shield it stands with in the bits above them), whether they ask to respawn, dead past a node's section, an ask of
 // their gear, and the level of the foe asked for (0 for none: combat's own numbers). Then the foe's type's number in
-// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). New
-// fields go at the end, so old readers skip them.
+// the roster (0 none) and its rank (1 Minor to 5 Boss; one the type does not come in takes the type's first). Then a
+// spell cast this tick, by its number among the Arts' (1 Tempest to 9 Vanish, 0 none), and where it is aimed (x, y,
+// z): Dusk Daggers' ring while it is held and as it is let go. New fields go at the end, so old readers skip them.
 table Input {
   sequence: uint;
   controls: [double];
@@ -46,6 +47,8 @@ table Input {
   spawn_level: ubyte;
   spawn_type: ubyte;
   spawn_rank: ubyte;
+  cast: ubyte;
+  cast_aim: [double];
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one
@@ -104,9 +107,10 @@ table Joined {
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
-// it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body, and
-// where they stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks
-// left, 2 dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable.
+// it, their whole fighter in combat's order (crates/combat/src/floats.rs), whose first 22 numbers are its body and
+// whose statuses (each one's ticks left, a Veiled player's among them) follow its action's numbers, and where they
+// stand with a node's section: 0 inside it or on its edge, 1 outside and warned to go back, with the ticks left, 2
+// dead, with the ticks since. A number, not a schema enum, so the TypeScript flatc makes stays erasable.
 table Seen {
   player: uint;
   acknowledged: uint;
@@ -123,7 +127,8 @@ table Seen {
 // glance at its fighter (combat's glance order), its level, and its shield, if it stands with one: its element (the
 // gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
 // its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
-// 1 suspicious, 2 alert, 3 searching).
+// 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
+// leaves after it.
 table Foe {
   id: uint;
   kind: ubyte;
@@ -137,10 +142,14 @@ table Foe {
   faction: ubyte;
   phase: ubyte;
   alert: ubyte;
+  expose: uint;
+  charge: uint;
+  charge_immune: uint;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
-// and who was struck, how much it did, and the stroke a swing came by (combat's 1 to 6, 0 for none).
+// and who was struck, how much it did, the stroke a swing came by (combat's 1 to 6, 0 for none), whether the blow was
+// a crit, and the element it carried (the gear's 1 to 3, 0 for none).
 table Event {
   tick: ulong;
   kind: ubyte;
@@ -149,6 +158,8 @@ table Event {
   defender: uint;
   amount: double;
   stroke: ubyte;
+  crit: bool;
+  element: ubyte;
 }
 
 // A shot in flight, or a gun's ball in the tick it stopped: who shot it, what shot it (combat's number), where it is
@@ -253,11 +264,29 @@ table Naval {
   left: double;
 }
 
+// A spell every player sees: its number in the room; its kind (its spell's number among the Arts', 1 Tempest's orb to
+// 9 Vanish's veil, 10 a Duskraven's bolt); the player who cast it; its Art (1 Storm, 2 Divine, 3 Shadow); where it is
+// (x, y, z); where it heads (a Dawnflare's end, Arc Lash's reach ahead; none for the rest); the foe it seeks (0 none);
+// the ticks it has lasted and its whole life in ticks; and how far it reaches (a ring's or a well's radius, a cone's
+// length).
+table Spell {
+  id: uint;
+  kind: ubyte;
+  caster: uint;
+  art: ubyte;
+  at: [double];
+  heads: [double];
+  seeks: uint;
+  age: uint;
+  life: uint;
+  radius: double;
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
 // her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
-// aloft, what happened in its fight since the last snapshot, and the fight's clock.
+// aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -272,6 +301,7 @@ table Snapshot {
   balls: [Ball];
   naval: [Naval];
   fight_clock: double;
+  spells: [Spell];
   // In a dungeon's room, its cache beside the farthest post: x, y, z, the way it faces (radians clockwise from
   // north), and 1 while it stands open or 0 while it is shut. Empty in any other room.
   cache: [double];
@@ -329,13 +359,17 @@ table GearVestige {
   vaulted: bool;
 }
 
-// A Vestige lying on the ground for this player alone: their number for it, its colour, its slot, and where it lies
-// (x, y, z).
+// A drop lying on the ground for this player alone: their number for it, a Vestige's colour and slot, and where it
+// lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate), where it was thrown from (x, y, z)
+// and how many ticks it has still to fly before it rests.
 table GearDrop {
   id: uint;
   rarity: ubyte;
   slot: ubyte;
   at: [double];
+  kind: ubyte;
+  from: [double];
+  flying: ubyte;
 }
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
@@ -380,6 +414,21 @@ table Gear {
   emblems: [ushort];
   emblem: ushort;
   emblems_sold: [ushort];
+  // The Art they wear (1 Storm, 2 Divine, 3 Shadow); each Art's Core, three slots an Art in the Arts' order, each its
+  // fragment's place in its Art's list (255 none); how far their Anima has charged, and each Tenet recharged, 0 to 1
+  // (1 ready), as the room's tick that sent them had it.
+  art: ubyte;
+  cores: [ubyte];
+  anima: double;
+  tenets: [double];
+  // The Ranged loadout's ammunition: the shots left in the one worn and its capacity (0 with none worn), and the share
+  // of a full capacity kept, 0 to 1, which any Ranged weapon worn holds. Then the Ammo crates carried, and in a social
+  // space the Quartermaster's price for one (0 elsewhere).
+  ammo: ushort;
+  ammo_most: ushort;
+  ammo_share: double;
+  crates: ubyte;
+  crate_price: uint;
   // In a patrol, the entrances of its dungeons, five numbers each in the dungeons' order: x, y, the ground's height
   // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
   // the four entrance models it is (0 to 3).
