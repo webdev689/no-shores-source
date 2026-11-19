@@ -47,6 +47,9 @@ export interface HudFrame {
   readonly blocks?: readonly Block[];
   /** The Art's abilities as the bar shows them (Fighting's abilities); none hides the bar. */
   readonly abilities?: AbilityState | null;
+  /** Whether the player has just stepped onto an Ammo box they cannot take, their ammunition full (DropsShown's
+   *  ammoFull). */
+  readonly ammoFull?: boolean;
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -69,6 +72,8 @@ const RING_HEIGHT = 2.5;
 const PLATE_OVER_M = 1.9;
 /** A word with no striker to meet stands this high over its fighter's feet (metres). */
 const WORD_HIGH_M = 1.2;
+/** What the player is told on stepping onto an Ammo box they cannot take. */
+const AMMO_FULL = 'Ammo full';
 
 /** A point's clip coordinates through the camera: x, y up, and w (0 or less behind it). */
 function clipOf(matrix: ArrayLike<number>, point: readonly [number, number, number]): [number, number, number] {
@@ -299,8 +304,8 @@ export class Hud {
   }
 
   /** The events' words, each where its blow met the body, thrown the way the stroke went, and clear of the plates (in
-   *  first person, those on the player below the crosshair); and a warning over a foe near the player as it begins an
-   *  iron wind-up. */
+   *  first person, those on the player below the crosshair); a warning over a foe near the player as it begins an
+   *  iron wind-up; and "Ammo full" on the player as they step onto an Ammo box they cannot take. */
   private floatWords(frame: HudFrame, seconds: number): void {
     const holding = (id: number) => frame.foes.find((foe) => foe.id === id)?.view.action.kind === 'telegraph';
     const projectWord = (point: readonly [number, number, number]) =>
@@ -324,6 +329,11 @@ export class Hud {
         this.ironTold.add(id);
         this.words.say({ text: 'Dodge!', tone: 'warn', tags: [] }, [view.x, view.y, view.z + 2.3], 0, 0.5);
       }
+    }
+    if (frame.ammoFull && frame.own) {
+      const { x, y, z } = frame.own;
+      const place = frame.firstPerson ? null : ([x, y, z + WORD_HIGH_M] as const);
+      this.words.say({ text: AMMO_FULL, tone: 'plain', tags: [] }, place, 0, 0.5);
     }
     this.words.update(projectWord, frame.width, frame.height, seconds, platesOf(frame));
   }

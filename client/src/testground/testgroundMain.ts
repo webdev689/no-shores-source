@@ -449,6 +449,7 @@ async function start(): Promise<void> {
         // The shots left stand beside the crosshair while the Ranged loadout is drawn.
         ammo: sights && shown.rangedDrawn ? (own?.ammo ?? null) : null,
         ammoMost: gear?.ammoMost ?? null,
+        ammoFull: !!own && dropsShown.ammoFull(gear?.drops ?? [], [own.x, own.y, own.z], (gear?.ammoShare ?? 1) >= 1),
         crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
       },
       seconds,
