@@ -5,7 +5,6 @@
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
   CARRIED,
-  KINDS,
   RARITIES,
   RESOURCE_COUNT,
   SLOTS,
@@ -15,6 +14,7 @@ import {
   itemName,
   isWeapon,
   itemWords,
+  kindName,
   resourceName,
   resourceWords,
   traitOf,
@@ -22,11 +22,13 @@ import {
 } from '../player/gear.ts';
 import type { Press } from './gearScreen.ts';
 
-/** How many items a slot carries beside the one worn, how many Vestiges are carried, and how many of each the vault
- *  keeps (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST` and `VAULT_MOST`). */
+/** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
+ *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
+ *  `CRATES_MOST`). */
 export const CARRIED_MOST = 9;
 export const VESTIGES_MOST = 10;
 export const VAULT_MOST = 20;
+export const CRATES_MOST = 5;
 
 const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
@@ -36,7 +38,7 @@ export interface Card {
   readonly rarity: number;
   readonly kind: string;
   /** Its main number and what it is. */
-  readonly big: { readonly label: string; readonly value: number } | null;
+  readonly big: { readonly label: string; readonly value: number | string } | null;
   readonly rows: readonly (readonly [string, string])[];
   /** A weapon's element, by the gear crate's numbers: 0 for none. */
   readonly element: number;
@@ -90,7 +92,7 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   return {
     name: itemName(item),
     rarity: item.rarity,
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${capital(KINDS[item.kind] ?? '')}`,
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}`,
     big,
     rows,
     element: item.element,
@@ -110,10 +112,9 @@ export function flyoutOf(
   return { worn, cells: Array.from({ length: CARRIED_MOST }, (unused, place) => carried[place] ?? null) };
 }
 
-/** What wearing a carried item in a slot asks: the off hand's flyout wears in the off hand, any other its own. */
-export function wearIn(item: GearItem, slot: number): Press | null {
-  const asks = wearAsks(item);
-  const found = asks.find((each) => each.ask.slot === slot) ?? asks[0];
+/** What wearing a carried item from a slot's flyout asks: wearing it in its own slot, the flyout's. */
+export function wearIn(item: GearItem): Press | null {
+  const [found] = wearAsks(item);
   return found ? { label: 'Equip', ask: found.ask, role: 'primary' } : null;
 }
 
@@ -127,6 +128,8 @@ export type Glyph =
   | 'fruit'
   | 'resource'
   | 'vestige'
+  | 'ammo-box'
+  | 'ammo-crate'
   | 'empty'
   | 'item';
 
@@ -191,6 +194,16 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     count: state.stocks[4] ?? 0,
     words: "Hold it on an item's page to feed it to that item: it grows the item.",
   });
+  const crates = state.crates ?? 0;
+  const full = (state.ammoShare ?? 1) >= 1;
+  const crate = cell('ammo-crate', 'ammo-crate', 'Ammo crate', {
+    count: crates,
+    words: `It fills your Ranged weapon's ammunition at once. You carry five at most.${full ? ' Yours is full.' : ''}`,
+    press:
+      crates > 0 && !full
+        ? { label: 'Hold to fill your ammo', ask: { kind: ASKS.useCrate }, role: 'button', held: true, burst: 'pulse' }
+        : null,
+  });
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) =>
     cell(`resource-${index}`, 'resource', resourceName(index), {
       count: state.resources[index] ?? 0,
@@ -213,7 +226,7 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     currencies,
     vestiges: { held: carried.length, most: VESTIGES_MOST, cells: [...carried, ...empties] },
     tabs: [
-      { id: 'consumables', name: 'Consumables', cells: [fruit].filter(held) },
+      { id: 'consumables', name: 'Consumables', cells: [fruit, crate].filter(held) },
       { id: 'materials', name: 'Materials', cells: [...stocks, ...materials].filter(held) },
     ],
   };

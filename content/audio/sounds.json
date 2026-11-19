@@ -1,7 +1,286 @@
 {
-  "about": "The owner's picks from Freesound, kept on R2 by their hash, each with its credit. Written by tools/freesound/publish.py; the game plays each in place of its synthesised cue.",
+  "about": "The owner's picks, kept on R2 by their hash: Freesound's, each with its credit, written by tools/freesound/publish.py, and DFO's own, by tools/freesound/own.py. The game plays each in place of its synthesised cue, or for its world cue.",
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
   "sounds": {
+    "ammo.refill": {
+      "key": "sounds/fb30d2e5ab1c8c2e78cffe261d3bbe15e2b6ae2f353df31f731602fc8b303660.mp3",
+      "freesound": 653032,
+      "name": "pickup_ammo.wav",
+      "author": "BBBBilly",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/BBBBilly/sounds/653032/",
+      "changes": "Unchanged."
+    },
+    "anima.divine": {
+      "key": "sounds/abf95484be8d0f74ba87c4114f16b3c0fd174a68aa57de72b65b835a92ab3144.mp3",
+      "freesound": 848736,
+      "name": "Powerful Magic Fireball Impact",
+      "author": "mikiko850",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/mikiko850/sounds/848736/",
+      "changes": "Unchanged."
+    },
+    "anima.shadow": {
+      "key": "sounds/f419cfcbe88516521e5943cdb75ae5d641b0e47651ecdae0277da1875d17262c.mp3",
+      "freesound": 855451,
+      "name": "MAGSpel_Wand Spell Cast Dark Quick 008_GMcM_FS1DM",
+      "author": "Bisqo",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Bisqo/sounds/855451/",
+      "changes": "Unchanged."
+    },
+    "anima.storm": {
+      "key": "sounds/bb856f95bda7ce3d2dfb4efab0ae835779c6df6387d36054b7759bb5b195b082.mp3",
+      "freesound": 871778,
+      "name": "Random Spell Design 1_Attack",
+      "author": "CAT-FOX_ALEX",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/CAT-FOX_ALEX/sounds/871778/",
+      "changes": "Unchanged."
+    },
+    "arrow.hit": {
+      "key": "sounds/f3f0a008f52be6858aa94f0bb046c2e7796baba1a1011cdadf7213edd2a94a08.mp3",
+      "freesound": 384918,
+      "name": "Bow Release (Bow and Arrow) 3",
+      "author": "Ali_6868",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Ali_6868/sounds/384918/",
+      "changes": "Unchanged."
+    },
+    "arrow.stick": {
+      "key": "sounds/c446a0c0cf406b3d681a511ebd268c0b7020a18df3c5391e32ee7800dcc97f63.mp3",
+      "freesound": 387479,
+      "name": "Dart Thud 3",
+      "author": "CosmicEmbers",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/CosmicEmbers/sounds/387479/",
+      "changes": "Unchanged."
+    },
+    "ball.hit": {
+      "key": "sounds/eaf7a04bc66e44206145cf5eb7d759530bba12ddba858a88e7efb41795ab7cc2.mp3",
+      "freesound": 96629,
+      "name": "Ricochet metal.wav",
+      "author": "CGEffex",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/CGEffex/sounds/96629/",
+      "changes": "Unchanged."
+    },
+    "block.blade": {
+      "key": "sounds/4427025d194902447f25469c5099a866afb749ff4021879f9528e185c369eaba.mp3",
+      "freesound": 326857,
+      "name": "Sword_Clash (49).wav",
+      "author": "JohnBuhr",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/JohnBuhr/sounds/326857/",
+      "changes": "Unchanged."
+    },
+    "block.shield": {
+      "key": "sounds/7c75cfb8c774b3e82fa9a4a75e1a8dea79ab876d9ec24af3ec38089f83f22b0d.mp3",
+      "freesound": 223630,
+      "name": "Shield Hit 1",
+      "author": "CTCollab",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/CTCollab/sounds/223630/",
+      "changes": "Unchanged."
+    },
+    "bow.draw": {
+      "key": "sounds/15262b014cb04217c44df11be9cdffe9a827dc305b70639b274bf69b3aadbae1.mp3",
+      "freesound": 536067,
+      "name": "Bow Loading",
+      "author": "EminYILDIRIM",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/536067/",
+      "changes": "Unchanged."
+    },
+    "bow.shot": {
+      "key": "sounds/d61533988179586b66eb0e87cad6993ff243c54c69bf63b8c75a6aabf502e094.mp3",
+      "freesound": 536068,
+      "name": "Bow Release Hit",
+      "author": "EminYILDIRIM",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/536068/",
+      "changes": "Unchanged."
+    },
+    "cast.charge": {
+      "key": "sounds/db61cbe39bb5729687c277bcdaff340088869eba657ac59532ffc82a5c15e0e7.mp3",
+      "freesound": 511872,
+      "name": "Riser Hit sfx 025.wav",
+      "author": "AudioPapkin",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/AudioPapkin/sounds/511872/",
+      "changes": "Unchanged."
+    },
+    "crit": {
+      "key": "sounds/c08eae995c85fbd62f13fd4cd42d1af64ab4bbc35abf225c30e51ae84688919d.mp3",
+      "freesound": 791953,
+      "name": "TMNT_2012_inspired_heavy_kick_03092025",
+      "author": "Artninja",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Artninja/sounds/791953/",
+      "changes": "Unchanged."
+    },
+    "crossbow.reload": {
+      "key": "sounds/b5105203877e45541cafa445b7b37a379c183a10ee9d87771ef0537d51e7914b.mp3",
+      "freesound": 812058,
+      "name": "Ratchet strap-8",
+      "author": "nikerk",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/nikerk/sounds/812058/",
+      "changes": "Unchanged."
+    },
+    "crossbow.shot": {
+      "key": "sounds/ab5bd32e3ad08cc3ef6b5f6b33b100cc1527f079be22c924a255bc39b80233a8.mp3",
+      "freesound": 163453,
+      "name": "Crossbow Shot",
+      "author": "LeMudCrab",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/LeMudCrab/sounds/163453/",
+      "changes": "Unchanged."
+    },
+    "drop.land": {
+      "key": "sounds/9648eedc982912c19002a40ada8d4100359cce6498986a1db1709a2fcc19066b.mp3",
+      "freesound": 693583,
+      "name": "drop-item-light1.mp3",
+      "author": "rottako",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/rottako/sounds/693583/",
+      "changes": "Unchanged."
+    },
+    "element.blaze": {
+      "key": "sounds/7b06f8d58cf108f8f513aa5deddeda4e9a177c2cf5944f86f98fcbb0de37a08a.mp3",
+      "freesound": 541478,
+      "name": "Magic Fire Spell Impact & Punch",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/541478/",
+      "changes": "Unchanged."
+    },
+    "element.cosmic": {
+      "key": "sounds/223ffc1e5f98b4ba2e3e59ee347e636634ae567f0763cbd97cd1a5606f9af373.mp3",
+      "freesound": 541479,
+      "name": "Magic Ice Spell Impact & Punch",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/541479/",
+      "changes": "Unchanged."
+    },
+    "element.volt": {
+      "key": "sounds/f8574216552856574477545db00f2cace3121100a225d6e405821f5553616e48.mp3",
+      "freesound": 541480,
+      "name": "Magic Lighting Spell Impact & Punch",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/541480/",
+      "changes": "Unchanged."
+    },
+    "finish.blaze": {
+      "key": "sounds/de9d01525e7b297b3c0188f21715e111cd67c52b3415a8e4722384bb22babe5e.mp3",
+      "freesound": 431174,
+      "name": "Fireball Explosion.wav",
+      "author": "Blankened",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Blankened/sounds/431174/",
+      "changes": "Unchanged."
+    },
+    "finish.cosmic": {
+      "keys": [
+        "sounds/94540c01e4003564a2ad6d81f28ac30498e881c3b74e2d5f210e808990483a5a.wav"
+      ],
+      "name": "Voidrend",
+      "licence": "Ours",
+      "from": "DFO's synthesiser: its kill effect Voidrend, drawn again at 44.1 kHz",
+      "changes": "Unchanged."
+    },
+    "finish.volt": {
+      "key": "sounds/fa7938287ed65ac63e7a342353d1f371a9204e037a58eb118923ec314670922d.mp3",
+      "freesound": 127125,
+      "name": "SN-Thunder-1.wav",
+      "author": "westernsynthetics",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/westernsynthetics/sounds/127125/",
+      "changes": "Unchanged."
+    },
+    "foe.alert": {
+      "key": "sounds/2922ae7a19e220b24a8e322dffc227014516774fa508adfd98984e70a7149d0b.mp3",
+      "freesound": 858795,
+      "name": "Low Fractal Growl Pulse",
+      "author": "bassimat",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/bassimat/sounds/858795/",
+      "changes": "Unchanged."
+    },
+    "guard.break": {
+      "key": "sounds/48d47fdb27a4aa86f7bf66d42f0017dce59a20cde20e88072876314cd4e995fb.mp3",
+      "freesound": 693582,
+      "name": "drop-item-heavy2.mp3",
+      "author": "rottako",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/rottako/sounds/693582/",
+      "changes": "Unchanged."
+    },
+    "gun.empty": {
+      "key": "sounds/d3449e02270bf4c14d2240463d7c194479fdede658165c0cec12a1a7e0ec1b05.mp3",
+      "freesound": 46265,
+      "name": "Coachgun_dry_fire.wav",
+      "author": "PhreaKsAccount",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/PhreaKsAccount/sounds/46265/",
+      "changes": "Unchanged."
+    },
+    "gun.reload": {
+      "key": "sounds/2b6ff2bf6f16a425cbd6605452fa8d70035f28c3d4b9d21202b82c35a675eb41.mp3",
+      "freesound": 647557,
+      "name": "Gun Reload",
+      "author": "SgtFlexxx",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/SgtFlexxx/sounds/647557/",
+      "changes": "Unchanged."
+    },
+    "hit.blade": {
+      "key": "sounds/81cf7d50c5b1cdfff0947f73e0183360736aa95a7fee552b665dc8a9ff77db94.mp3",
+      "freesound": 574820,
+      "name": "Slash2.ogg",
+      "author": "Wenpire",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Wenpire/sounds/574820/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "hit.blunt": {
+      "key": "sounds/52c441be5f417549fef18ec6607d9ac45bc4f5285bd4aa2e1f7910915949fe85.mp3",
+      "freesound": 420673,
+      "name": "Basic Melee Hit",
+      "author": "SypherZent",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/SypherZent/sounds/420673/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "hold.dismantle": {
       "key": "sounds/80500bd0bff2346cc03969e8f15d3a12fc1fa5d0b7d1112ebf478a5bbbfebae9.mp3",
       "freesound": 686849,
@@ -21,6 +300,342 @@
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/TommasoMotteran/sounds/875968/",
       "changes": "Unchanged."
+    },
+    "jump": {
+      "key": "sounds/2e4ae3104c27dc90f9b597745de215ce02bcc0c0e6c304ca7be57d90622cf945.mp3",
+      "freesound": 496188,
+      "name": "Whoosh (Clothing Drag)",
+      "author": "JonasTisell",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/JonasTisell/sounds/496188/",
+      "changes": "Unchanged."
+    },
+    "kill": {
+      "key": "sounds/e08fc65f725404def74d4efd9dfc03c521ff3896cfbcf1aee139e14f39c7db1f.mp3",
+      "freesound": 82027,
+      "name": "Body Fall Over.wav",
+      "author": "raubana",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/raubana/sounds/82027/",
+      "changes": "Unchanged."
+    },
+    "land": {
+      "key": "sounds/863492506d1bc214077f6a85105c790a666074281c3f92b89fb774d61eb8e5c4.mp3",
+      "freesound": 203039,
+      "name": "Dropping Body on Hard Ground.wav",
+      "author": "jjhouse4",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/jjhouse4/sounds/203039/",
+      "changes": "Unchanged."
+    },
+    "musket.shot": {
+      "key": "sounds/c9e655fc2550611d37eb50bdae20067ace42503905d48635c9c3c302ec6d3b58.mp3",
+      "freesound": 648755,
+      "name": "musket_fire_9.wav",
+      "author": "J8054",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/J8054/sounds/648755/",
+      "changes": "Unchanged."
+    },
+    "parry": {
+      "key": "sounds/8534b9e54fd6509c0a68ed7e7fa4de0730c9725fe9416a89a091bab31d60a5de.mp3",
+      "freesound": 326868,
+      "name": "Sword_Clash (7).wav",
+      "author": "JohnBuhr",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/JohnBuhr/sounds/326868/",
+      "changes": "Unchanged."
+    },
+    "pistol.shot": {
+      "key": "sounds/b439a9cde31652b58e9d567d3e5b8d117f96090e72f135ee9d5d608e9426b81d.mp3",
+      "freesound": 473846,
+      "name": "Shotgun Shot 03.wav",
+      "author": "LilMati",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/LilMati/sounds/473846/",
+      "changes": "Unchanged."
+    },
+    "respawn": {
+      "key": "sounds/f56c0f0c7f6ec79142286ab212024590123370c08704e2f663a917eb5df6036f.mp3",
+      "freesound": 807391,
+      "name": "Magic - Finger snap",
+      "author": "Vrymaa",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Vrymaa/sounds/807391/",
+      "changes": "Unchanged."
+    },
+    "roll": {
+      "key": "sounds/c09f8995e7babe771d5378ec43e7391596eed85d03ea38d824a2b2cc8b89f49f.mp3",
+      "freesound": 529563,
+      "name": "Roll.wav",
+      "author": "DrMrSir",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/DrMrSir/sounds/529563/",
+      "changes": "Unchanged."
+    },
+    "shield.break": {
+      "key": "sounds/40a88bc8770938186ba8ea1c305ab50eae5b73fea2ed75e60acd83f91b6f7bc3.mp3",
+      "freesound": 443465,
+      "name": "sci fi device powers down",
+      "author": "squidge316",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/squidge316/sounds/443465/",
+      "changes": "Unchanged."
+    },
+    "shield.hit": {
+      "key": "sounds/7c75cfb8c774b3e82fa9a4a75e1a8dea79ab876d9ec24af3ec38089f83f22b0d.mp3",
+      "freesound": 223630,
+      "name": "Shield Hit 1",
+      "author": "CTCollab",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/CTCollab/sounds/223630/",
+      "changes": "Unchanged."
+    },
+    "shot.splash": {
+      "key": "sounds/061f490d945996e5b5c43400e76b0997e53e9338efbf7148c866d092cf45bf18.mp3",
+      "freesound": 404829,
+      "name": "Water splash",
+      "author": "nilbul",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/nilbul/sounds/404829/",
+      "changes": "Unchanged."
+    },
+    "spell.arclash": {
+      "key": "sounds/3e483a315dfdfc7e7f10d19caca9476a3857b8ae0686c9f1fb1d437333761235.mp3",
+      "freesound": 649360,
+      "name": "Sword_Thunder01.wav",
+      "author": "SonoFxAudio",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/SonoFxAudio/sounds/649360/",
+      "changes": "Unchanged."
+    },
+    "spell.daggers": {
+      "key": "sounds/868bd6cdbc0fed34ae656110c7a1f111635de0aa63825ac86bf5172473de0baf.mp3",
+      "freesound": 714258,
+      "name": "Cloud Poof",
+      "author": "qubodup",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/714258/",
+      "changes": "Unchanged."
+    },
+    "spell.dawnflare": {
+      "key": "sounds/6efe2948027044a596512af15d94d45be0304a05ed12c4400bc70ba376a1585b.mp3",
+      "freesound": 426208,
+      "name": "Fire Torch_whoosh 1 (medium speed).wav",
+      "author": "kev_durr",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/kev_durr/sounds/426208/",
+      "changes": "Unchanged."
+    },
+    "spell.duskraven": {
+      "key": "sounds/b779e6a64489810919d20669949f1bc2e1b18455b3d58d9bfebcac44128e9eb4.mp3",
+      "freesound": 512780,
+      "name": "CrowOrRaven2.wav",
+      "author": "iwanPlays",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/iwanPlays/sounds/512780/",
+      "changes": "Unchanged."
+    },
+    "spell.duskraven.fire": {
+      "key": "sounds/6efe2948027044a596512af15d94d45be0304a05ed12c4400bc70ba376a1585b.mp3",
+      "freesound": 426208,
+      "name": "Fire Torch_whoosh 1 (medium speed).wav",
+      "author": "kev_durr",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/kev_durr/sounds/426208/",
+      "changes": "Unchanged."
+    },
+    "spell.mend": {
+      "key": "sounds/0618489002365ed531ea406ce47585482c0f53162c2f31442511fb082e9f6191.mp3",
+      "freesound": 387722,
+      "name": "Metal Drum 2",
+      "author": "Jagadamba",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Jagadamba/sounds/387722/",
+      "changes": "Unchanged."
+    },
+    "spell.orb": {
+      "key": "sounds/f688db9fe7820467ab0d1567b36cb86f4d2cbbdab6d19f34e67e0821eb4bba42.mp3",
+      "freesound": 872155,
+      "name": "Sound Design Impact 2",
+      "author": "CAT-FOX_ALEX",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/CAT-FOX_ALEX/sounds/872155/",
+      "changes": "Unchanged."
+    },
+    "spell.quicken": {
+      "key": "sounds/b2259ec7927647e635adb14bd50adfe5ead0db049c68fbf2048d99794c2362c0.mp3",
+      "freesound": 274211,
+      "name": "Whoosh_Electric_00.wav",
+      "author": "LittleRobotSoundFactory",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/LittleRobotSoundFactory/sounds/274211/",
+      "changes": "Unchanged."
+    },
+    "spell.ravenbolt": {
+      "key": "sounds/f419cfcbe88516521e5943cdb75ae5d641b0e47651ecdae0277da1875d17262c.mp3",
+      "freesound": 855451,
+      "name": "MAGSpel_Wand Spell Cast Dark Quick 008_GMcM_FS1DM",
+      "author": "Bisqo",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Bisqo/sounds/855451/",
+      "changes": "Unchanged."
+    },
+    "spell.sunwell": {
+      "key": "sounds/244d06d85e7da473f6747738ebd8641b700ec2226373eee518bda2ece584fa1a.mp3",
+      "freesound": 853656,
+      "name": "Sacred Rune Lock \u2013 Holy Magic Seal Activation",
+      "author": "TommasoMotteran",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/TommasoMotteran/sounds/853656/",
+      "changes": "Unchanged."
+    },
+    "spell.tempest": {
+      "key": "sounds/6b58e5398290fc83b7b7d5166d942abb59831f977b44a11e51e712cb37bb1c76.mp3",
+      "freesound": 715784,
+      "name": "Magic Whoosh",
+      "author": "DustyWind",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/DustyWind/sounds/715784/",
+      "changes": "Unchanged."
+    },
+    "spell.vanish": {
+      "key": "sounds/e73c30c76507aa349f6b63e158918043bcc24fbe0ee76840958a6ddb7ea166a3.mp3",
+      "freesound": 714257,
+      "name": "Puff of Smoke",
+      "author": "qubodup",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/714257/",
+      "changes": "Unchanged."
+    },
+    "status.linked": {
+      "key": "sounds/f419cfcbe88516521e5943cdb75ae5d641b0e47651ecdae0277da1875d17262c.mp3",
+      "freesound": 855451,
+      "name": "MAGSpel_Wand Spell Cast Dark Quick 008_GMcM_FS1DM",
+      "author": "Bisqo",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Bisqo/sounds/855451/",
+      "changes": "Unchanged."
+    },
+    "status.veil": {
+      "key": "sounds/868bd6cdbc0fed34ae656110c7a1f111635de0aa63825ac86bf5172473de0baf.mp3",
+      "freesound": 714258,
+      "name": "Cloud Poof",
+      "author": "qubodup",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/714258/",
+      "changes": "Unchanged."
+    },
+    "step.ground": {
+      "keys": [
+        "sounds/4525cfef01730ffce17b4d7c2ff2460fc3552b24c82a1da29e3baa825dd2407d.mp3",
+        "sounds/f965c3d7817dabb7b3d38ea765899c578e74cef639d424b7904c59d67997244f.mp3",
+        "sounds/ac4334e5ca2b69925a133d1f7a7932a9be12b2be9a909bc25d3184bccccd6945.mp3",
+        "sounds/9c47859c9df84bf64df8cb11daa5362aa56404ed151b32fc60bcc3ca7c639200.mp3",
+        "sounds/21ff6f3c3d285536189c3fd116d6acc8ba0e34febf0bf27b17418c0180929e52.mp3",
+        "sounds/026636d5fc40578eb831e9a1e0f59453e47aa052613e5a8340a921d734062ad4.mp3"
+      ],
+      "name": "Grass footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "step.stone": {
+      "keys": [
+        "sounds/d2c0d89eefda33950e4e69ca9d3b9d5d9421b95709a98378a2f66e9b12639f3c.mp3",
+        "sounds/d42179bb321e0d3af5600f37febabea9b7dc1399ec26191fc3ec2b3f4a259298.mp3",
+        "sounds/97e7898ce3103eb058c1c06da0dda62dd87d70bf3c5a65f31edd46e8fb764666.mp3",
+        "sounds/d9ffa5fc405f7b8c8c2110f5250914d4bc8f89e7f2052ea6f077be366997b799.mp3",
+        "sounds/a1c1a5498eb9ef417b71bd9bed867c701231d59261faaa7597f51bcaa4a5749b.mp3",
+        "sounds/699fc3a16cbed67384547a67e46c5adde467a7367f2a691ddaa8e3719af5b0c2.mp3"
+      ],
+      "name": "Tile footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "step.water": {
+      "keys": [
+        "sounds/c5c81531e923255ee717f6f66ac9073d5c2230e19e3de2c6de464795a1910f10.mp3",
+        "sounds/78474590b3ca2c8c77a13d7f53582e2491b5c0537bc9b363f13f6c52b532ae90.mp3",
+        "sounds/f918bb0ce2e097a7d0c5e78ac64e78bd007be5928aae768a95a6eaffb243f123.mp3",
+        "sounds/d168721bbc3977d2e4b0cbff193196fd5e1e78f6af4ab17dc3ff54cd91d45280.mp3",
+        "sounds/3370c3958ce2b413edae03f00a0075fee74f0b0531c0ec9029cd90e71c0ac535.mp3",
+        "sounds/9aeca3473644c6c60ccd8a607bb44d95681f8e7753729d552e18da9a3ba84809.mp3"
+      ],
+      "name": "Deep water footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "step.wood": {
+      "keys": [
+        "sounds/beedc0d5ce30b3ba96ece03882c6689bc48f3671feeda42bbfd2e156ebb31cad.mp3",
+        "sounds/4bfb4432605d6f4015498fcd9a25fe9c1702ae190c794c1a13ba25bc51088216.mp3",
+        "sounds/052e307223658e55260f3b1b9f61b8b02624ef73b781a8b5a16164cb83a188f0.mp3",
+        "sounds/8bf18eec17a4dddb45b1aea9fcb417b76cde0fedd6493709f3391ffc24589a03.mp3",
+        "sounds/11efaff54b8dc24ac902530ec2afb86872ada32c0709b5c4605b29016c21408e.mp3",
+        "sounds/3bc95c98012d7c3653de398daed57963452576ea4193ae11b6ba308b4045c57e.mp3"
+      ],
+      "name": "Wood footsteps",
+      "licence": "CC0",
+      "from": "the recordings the owner chose for DFO's own steps: CC0 or public domain, from OpenGameArt and archive.org",
+      "changes": "Unchanged."
+    },
+    "swing.heavy": {
+      "key": "sounds/877198908523d1afff4d871b4f8721a28d0b928c39901666e1a254152fac4eaa.mp3",
+      "freesound": 422513,
+      "name": "Swinging staff whoosh (strong) 04.wav",
+      "author": "Nightflame",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Nightflame/sounds/422513/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "swing.light": {
+      "key": "sounds/553c24c45259a2deecb09e5c77ceca48ec019bffe6cd63f6e387ad2e9a524734.mp3",
+      "freesound": 733889,
+      "name": "Whoosh 02",
+      "author": "velcronator",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/velcronator/sounds/733889/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "swing.staff": {
+      "key": "sounds/890c7c1324b991b7db4d4505f2addccb6c9e42783a6042f6c8f723e74953d95a.mp3",
+      "freesound": 855844,
+      "name": "Whoosh - Long Bamboo stick - OS ST 13",
+      "author": "Sadiquecat",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Sadiquecat/sounds/855844/",
+      "changes": "Its pitch varies a little each time it plays."
     },
     "ui.back": {
       "key": "sounds/bebb1a082b0621a07b00ee9a5c0d5e403c9e2411601f656709194068271d731f.mp3",
@@ -61,6 +676,26 @@
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/complex_waveform/sounds/213148/",
       "changes": "Its pitch varies a little each time it plays."
+    },
+    "weapon.draw": {
+      "key": "sounds/20f01c96d6fa7967f0f52c6d21df55f6453b43444b7a96acdb85b5f8a5e10e81.mp3",
+      "freesound": 707339,
+      "name": "Unsheathing sword, slow, dramatic.wav",
+      "author": "mht23SD",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/mht23SD/sounds/707339/",
+      "changes": "Unchanged."
+    },
+    "weapon.sheathe": {
+      "key": "sounds/d971ef35192c6620fe124aa05ee79dc78a7dc48a081eb2b450b65eed73801c65.mp3",
+      "freesound": 107590,
+      "name": "sheath_sword.wav",
+      "author": "Qat",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Qat/sounds/107590/",
+      "changes": "Unchanged."
     }
   }
 }

@@ -45,12 +45,13 @@ const LANDED: Readonly<Record<number, number | undefined>> = {
 /** The pushes and the shake the fight's events give player `player`'s view: their blow landing punches it down and
  *  along the stroke, harder for a kill or a guard broken; their blow stopped by a guard knocks it back; a blow landing
  *  on them jolts it up and back and shakes it, as hard as the harm. A blow's events (a hit and the kill it made) push
- *  once, as hard as the hardest, and so does the player's one stroke however many it strikes; a shot pushes nothing:
- *  the feel is the blows'. */
+ *  once, as hard as the hardest, and so does the player's one stroke however many it strikes; a shot or a spell
+ *  pushes nothing: the feel is the blows'. */
 export function kicksOf(events: readonly FightEvent[], player: number): { pushes: Push[]; trauma: number } {
   const blows = new Map<string, FightEvent[]>();
   for (const event of events) {
-    if (event.how === HOW.shot || (event.striker !== player && event.defender !== player)) continue;
+    const notABlow = event.how === HOW.shot || event.how === HOW.spell;
+    if (notABlow || (event.striker !== player && event.defender !== player)) continue;
     const struck = event.striker === player ? 'all' : event.defender;
     const key = `${event.tick}:${event.striker}:${struck}`;
     blows.set(key, [...(blows.get(key) ?? []), event]);

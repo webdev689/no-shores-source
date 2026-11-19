@@ -116,6 +116,7 @@ fn a_flinch_can_be_dodged_out_of_from_its_eighth_tick_and_blow_on_blow_does_not_
         through: 1.0,
         stagger: 1.0,
         element: 0,
+        crit: false,
     };
     let struck = suffer(&midway, &blow, &Verdict::Hit { damage: 5.0, poise: 1.0 });
     assert_eq!(struck.action, Action::Flinch { left: 5 }, "a second blow does not start the flinch again");

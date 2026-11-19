@@ -206,7 +206,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
   a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
   left out: its pictures are another person's ([[Own Work]]).
-- Which of the attack feel's effects go into the game, and at what settings, is the owner's to say.
+- The attack feel plays in the game on #69 at the [[Test Ground]]'s defaults, with the light layer on, as Claude's call
+  under the owner's "Attack visuals should go beyond the limits" ([[Attack Visuals Go Beyond the Limits]]). Which
+  effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
 - The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
@@ -236,8 +238,23 @@ Where the work stands now, for the next session. Each session rewrites this note
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; and the Cloudflare token's leave to edit D1, which CI needs to
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
-  blow shows its element (a trail, a hit's colour) beyond the shield's words; whether a shield comes back after a
-  while; and which foes beyond the patrols' carry them.
+  shield comes back after a while; and which foes beyond the patrols' carry them.
+- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
+  call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
+  cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
+  Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
+  caster's aim, the Armsmith's wares, the seven named armour pieces that gave Bulwark and now give another armour
+  perk, and how every attack looks ("How attacks look"): a crit's 0.11 s hold and a kill's 0.16 s, the chips'
+  leather ramp, the view held still for reduced motion. Left to the owner by the screens' critique: emptying a Core
+  slot, and resting the ability bar with the vitals. The forge's gun puff is blue in its art
+  (`tools/forge/tools/sprite-forge/guns3p.py`); a re-render would change it.
+- **Every world sound on #69 is the owner's pick**, over seven passes on the sound sheet
+  ([[The World Sounds From the Sound Picker]]): 63 Freesound recordings, DFO's own steps and Voidrend
+  ([[DFO's Own Sounds Join the Sound Sheet]]), the Duskraven's fire
+  ([[The Duskraven Sounds With Fire Under Its Raven]]); Exposed, Charged and Haste make none
+  ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
+  owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
+  [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
 - The Roster and emblems are built on Claude's calls ([[The Roster and Emblems as Claude Shapes Them]]); the owner
   can change any. Open for the owner: a join that loads another landmass, to reach a company member across the sea;
   names over other players' heads, green for the company, as Destiny 1 shows them; the Guild tab's own page; more
@@ -252,6 +269,32 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
+  renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+  layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
+  heard in the game, the layer on foot in a browser, the walking blows looked at frame by frame.
+- **Publishing the world's picks**: read the sheet's `marks` with ArtifactData; set each Freesound pick as the cue's
+  `picked` in `content/audio/freesound.json`, and a redone cue's heard numbers in its `skip`; let the `freesound`
+  workflow run, then `tools/freesound/publish.py <download>`. A pick of DFO's own (`dfo:<name>` on the sheet) sets
+  the cue's `dfo` to its name and goes in by `tools/freesound/own.py`. DFO's steps are in DFO's `vendor/cc0-sounds`
+  at its commit `b59b6d2` (branch `ccr-301db909-jfymaq`): a surface's six files go in as one cue's variants. DFO's
+  synthesised sounds come from its `tools/{climb,gather,lock,storefront,naval}Sfx.mjs`: import their `CLIPS` and
+  render each `make()` at 44.1 kHz 16-bit, from a scratch folder, since `navalSfx.mjs` writes `public/sfx` on import.
+
+- **The Arts round (#69)**, tested offline: the weapon glow, Melee and Ranged loadouts, the statuses and verbs with
+  foes' debuff icons, the Arts in the room and drawn in the browser, the Art's screen and the ability bar, the verb
+  perks, loot drops seen on the ground and limited ammo ([[Arts]], [[Gear]], [[Combat]], [[Weapon Glow]]). Not yet
+  seen: any of it on a real GPU, and another player's Veiled figure and cast colour, which need two clients in a live
+  room. Spells look through walls, and their pictures stand upright like the figures ([[Arts]], "Limits").
+- **Its second round, attack visuals beyond the limits (#69)**, tested offline in the Test Ground, and the game's own
+  page headless at 960x540: swing arcs, struck figures, impacts, crits and kills with elemental finishers, damage
+  words, guns, tracers, telegraphs, every spell landing, the Anima moment, the light layer, marks drawn in depth
+  ([[Arts and Loadouts as Claude Shapes Them]], "How attacks look"). Not yet seen: a fight in the game's own view
+  with the player's swing (headless has no pointer lock), the water's order at a coast, any GPU timing (the light's
+  0.4-0.5 ms is an estimate). Left for later: one particle system for `Sparks`, `Bits` and the shots' bits; the
+  marks still copied into new arrays each frame (about 0.4 MB in a busy fight); emitters under the sea still light;
+  `camera.ts` `shifted` keeps the HUD matrix's translation in float32 (about 0.25 m off far out); whether a bow or
+  gun drawn can punch, and in what element.
 - Unchecked: in a headless Test Ground run, the pistolet and the thunderlock showed no first-person pictures within ten
   seconds while the crossbow did, with a 404 in the console. Whether their pictures are missing on R2 or were slow is
   not yet known.

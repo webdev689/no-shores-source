@@ -58,6 +58,8 @@ test('the poise track: nothing to say at rest, filling toward a break, iron red,
   assert.deepEqual(poiseTrackOf({ ...view, action: windUp(true) }), { state: 'iron', fill: 1, word: 'Iron' });
   const staggered = { kind: 'staggered', left: 30, cause: 'poise' } as const;
   assert.deepEqual(poiseTrackOf({ ...view, action: staggered }), { state: 'staggered', fill: 1, word: 'Staggered' });
+  const charged = { kind: 'staggered', left: 30, cause: 'charged' } as const;
+  assert.deepEqual(poiseTrackOf({ ...view, action: charged }), { state: 'staggered', fill: 1, word: 'Charged' });
   assert.deepEqual(poiseTrackOf({ ...view, action: { kind: 'overreach', left: 30 } }), {
     state: 'open',
     fill: 0,

@@ -5,18 +5,20 @@
 use crate::arms::{Arms, Stroke};
 use crate::fighter::{Action, Attack, Cause, CombatInput, Fighter, Held, Intent, Kept, Side, Swing, Weight};
 use crate::shapes::{Shape, Telegraph};
+use crate::status::{STATUS_FLOATS, Statuses};
 use crate::trim::{TRIM_FLOATS, Trim};
 use movement::floats::{BODY_FLOATS, CONTROLS_FLOATS};
 use movement::{Body, Controls};
 
 /// The fight's own numbers after the body's: side, arms, weight, health and its most, stamina and its rest, poise,
 /// its most, its rest and its immunity, aim, target (id + 1, 0 none), the lock's away and unseen counts, the riposte's
-/// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, and the presses kept, in one number),
-/// blows, might; then the action's kind and its numbers.
-pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS;
+/// foe (id + 1) and ticks, counter, punished, missed parry, the buttons (held, the presses kept, the swap's ticks and a
+/// double pistolet's right shot gone, in one number), blows, might; then the action's kind and its numbers; then the
+/// shots its Ranged weapon has left (+ 1, 0 for none counted: a foe's never run dry).
+pub const COMBAT_FLOATS: usize = 23 + 1 + ACTION_NUMBERS + 1;
 const ACTION_NUMBERS: usize = 10;
-/// A whole fighter: its body, the fight's numbers, then its gear's trim.
-pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS + TRIM_FLOATS;
+/// A whole fighter: its body, the fight's numbers, its statuses, then its gear's trim.
+pub const FIGHTER_FLOATS: usize = BODY_FLOATS + COMBAT_FLOATS + STATUS_FLOATS + TRIM_FLOATS;
 /// An intent's numbers: the controls', then the stroke held (0 none), guard, dodge, shoot, pitch, aim, and the point an
 /// aimed shot is laid on (none for the look).
 pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 9;
@@ -24,6 +26,9 @@ pub const INTENT_FLOATS: usize = CONTROLS_FLOATS + 9;
 /// crouched, aim, side, arms, weight, health and its most, stamina, poise and its most, target (id + 1), then the
 /// action's kind and numbers.
 pub const GLANCE_FLOATS: usize = 17 + ACTION_NUMBERS;
+
+/// The most a swap's ticks are kept as, in the buttons' number's six bits for them.
+const SWAP_MOST: u32 = 0x3f;
 
 fn flag(value: bool) -> f64 {
     if value { 1.0 } else { 0.0 }
@@ -159,6 +164,7 @@ fn action_from(kind: f64, numbers: &[f64]) -> Action {
             let cause = match count(at(1)) {
                 1 => Cause::Parried,
                 2 => Cause::GuardBroken,
+                3 => Cause::Charged,
                 _ => Cause::Poise,
             };
             Action::Staggered { left: ticks(0), cause }
@@ -197,7 +203,9 @@ impl Fighter {
             | u32::from(self.kept.attack) << 4
             | u32::from(self.kept.guard) << 8
             | u32::from(self.kept.dodge) << 12
-            | u32::from(self.kept.stroke.map_or(0, |stroke| stroke as u8)) << 16;
+            | u32::from(self.kept.stroke.map_or(0, |stroke| stroke as u8)) << 16
+            | self.swap.min(SWAP_MOST) << 19
+            | u32::from(self.fired_right) << 25;
         let riposte = self.riposte.map_or((0.0, 0.0), |(foe, left)| (f64::from(foe) + 1.0, f64::from(left)));
         let (kind, numbers) = action_floats(&self.action);
         let combat = [
@@ -230,6 +238,9 @@ impl Fighter {
         floats[BODY_FLOATS..BODY_FLOATS + combat.len()].copy_from_slice(&combat);
         let actions = BODY_FLOATS + combat.len();
         floats[actions..actions + numbers.len()].copy_from_slice(&numbers);
+        floats[actions + ACTION_NUMBERS] = self.ammo.map_or(0.0, |left| f64::from(left) + 1.0);
+        let statuses = BODY_FLOATS + COMBAT_FLOATS;
+        floats[statuses..statuses + STATUS_FLOATS].copy_from_slice(&self.statuses.to_floats());
         floats[FIGHTER_FLOATS - TRIM_FLOATS..].copy_from_slice(&self.trim.to_floats());
         floats
     }
@@ -258,7 +269,7 @@ impl Fighter {
             poise_max: at(8),
             poise_rest: count(at(9)),
             poise_immune: count(at(10)),
-            action: action_from(at(23), &combat[24..COMBAT_FLOATS]),
+            action: action_from(at(23), &combat[24..24 + ACTION_NUMBERS]),
             aim: at(11),
             target: id_or_none(at(12)),
             lock_unseen: count(at(14)),
@@ -269,8 +280,14 @@ impl Fighter {
             held: Held { attack: held & 1 != 0, guard: held & 2 != 0, dodge: held & 4 != 0, shoot: held & 8 != 0 },
             kept: kept_of(held),
             blows: count(at(21)),
+            swap: held >> 19 & SWAP_MOST,
+            fired_right: held >> 25 & 1 != 0,
             might: at(22),
-            trim: combat[COMBAT_FLOATS..].try_into().map_or(Trim::PLAIN, Trim::from_floats),
+            ammo: id_or_none(at(24 + ACTION_NUMBERS)),
+            statuses: combat[COMBAT_FLOATS..COMBAT_FLOATS + STATUS_FLOATS]
+                .try_into()
+                .map_or(Statuses::NONE, Statuses::from_floats),
+            trim: combat[COMBAT_FLOATS + STATUS_FLOATS..].try_into().map_or(Trim::PLAIN, Trim::from_floats),
         }
     }
 }
@@ -349,8 +366,8 @@ impl Fighter {
         full[BODY_FLOATS..BODY_FLOATS + combat.len()].copy_from_slice(&combat);
         let actions = BODY_FLOATS + combat.len();
         full[actions..actions + ACTION_NUMBERS].copy_from_slice(&floats[17..]);
-        // A glance carries no trim: the fighter seen reads as untrimmed.
-        full[actions + ACTION_NUMBERS..].copy_from_slice(&crate::trim::Trim::PLAIN.to_floats());
+        // A glance carries no statuses and no trim: the fighter seen reads as holding none, untrimmed.
+        full[FIGHTER_FLOATS - TRIM_FLOATS..].copy_from_slice(&crate::trim::Trim::PLAIN.to_floats());
         Fighter::from_floats(&full)
     }
 }

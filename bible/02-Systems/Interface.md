@@ -21,6 +21,7 @@ code:
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
+  - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
   - client/src/plus/barLoss.ts#pieceAt
@@ -45,8 +46,11 @@ code:
   - client/src/game/acquiredFeed.ts#startAcquiredFeed
   - client/src/game/gains.ts#gainsOf
   - client/src/game/uiSounds.ts#play
-  - client/src/game/soundSamples.ts#playSample
-  - client/src/game/soundSamples.ts#soundCredits
+  - client/src/soundSamples.ts#playSample
+  - client/src/soundSamples.ts#soundCredits
+  - client/src/game/uiSounds.ts#worldOutput
+  - client/src/combat/worldSounds.ts#WorldSounds
+  - client/src/combat/worldCues.ts#eventCues
   - client/src/game/gearCards.ts#cardOf
   - client/src/game/itemPictures.ts#ItemPictures
   - client/src/game/gearDom.ts#HoverCard
@@ -124,10 +128,19 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   the fight), bone for another player's or a captain who is not hostile, and grey once her colours are down; one
   going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
-  writing its percentage inside: never 0% while anything is left. Health at a quarter or less flashes its edge to blood;
+  writing its percentage inside: never 0% while anything is left. Where the HUD is wide (1500 by 900 and up) the window
+  is 330 px wide, health and stamina 33 px tall and their words at 22, and the ability bar beside it grows with it. Health at a quarter or less flashes its edge to blood;
   the stamina flashes white for a swing or a dodge asked with none. Whole and untouched for 4 s (health and stamina
-  short of no whole point, no poise taken), with no foe on the target plate or the boss bar, the window rests out of
-  sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
+  short of no whole point, no poise taken), with no buff and no foe on the target plate or the boss bar, the window
+  rests out of sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
+- **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
+  colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
+  give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
+  in the element's colour that shrinks from the most time it held since it began or was refreshed. Each tells a screen
+  reader what it is and the whole seconds it has left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row
+  over the vitals' health, 24 px each and 6 apart, and keep the window awake while one holds. A foe's debuffs (Expose,
+  then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its plates, 24 px each: over
+  a figure the row is scaled back up as the plate shrinks with distance, so it never reads smaller.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
   ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
@@ -143,9 +156,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   stood, and one first shown is taken as whole, the plate coming with the first blow. The boss bar remembers its
   Bosses alike, but takes one it first shows as it finds it, as it comes before any blow.
 - **The poise track**, a thin bar under the target's and the boss bar's health: the poise filling toward a break in
-  brass; an iron blow wound up, full and hatched in red, "Iron"; staggered, full and white, "Staggered", flashing as
-  the foe it shows breaks and never as the plate turns onto one already staggered; open after a blow that found no
-  one, a brass edge, "Open". With nothing to say it keeps its room unseen.
+  brass; an iron blow wound up, full and hatched in red, "Iron"; staggered, full and white, "Staggered" ("Charged"
+  for a Charge), flashing as the foe it shows breaks and never as the plate turns onto one already staggered; open
+  after a blow that found no one, a brass edge, "Open". With nothing to say it keeps its room unseen.
 - **A foe's shield** ([[Gear]], "Elements and shields") lies over its health on every plate (over a figure, the
   target's and the boss bar), as DFO's Enhanced HUD laid a boss's ward: from the bar's left end, as long as the share
   of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
@@ -157,12 +170,17 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   for no foe farther than 60 m across the ground, nor one whose head the place's blocks have hidden for 0.15 s; seen
   again it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does
   farther off, never growing, its name never under 9 px.
-- **A blow's words** over the world rise and fade over 0.95 s from where each thing happened, fanning up to 36 px
-  either side so a flurry does not stack; a great turn's pops larger and rises farther. What a blow did besides
-  (Staggered, Slain) rides on its number as a small word under it, and the player's blow on a foe winding up that
-  does not break it says "Holds".
-- **Reduced motion.** With it asked for, no piece falls, no word rises (each stands and fades), no edge blinks (it
-  holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
+- **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
+  thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
+  no stroke one side and the other in turn), and kept on the screen. Each pops
+  1.4 times for 2 frames and 1.15 for 2, rises 4 px every 4 frames and blinks out over its last 6, standing 0.95 s; a
+  crit's and a kill's stand 1.2 s at 33 px in gold, stamped Crit or Slain beside the number. A number pushes itself
+  down to stand 24 px clear of any foe's plate and clear of the words already shown. Blows by one striker on one
+  foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
+  did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
+  not break it says "Holds".
+- **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
+  blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
@@ -216,14 +234,17 @@ on the Inventory, which shows it. Once shown it stays, though the room's word go
 stepped rise; the world behind is dimmed, the pointer is free, the game's keys and the HUD under it rest, and the
 focus stays within it, marked in white. On a screen past 1440p the menu, its cards and the HUD's words stand at
 twice their size, the 1280 by 720 layout doubled. Escape steps back: a page's own step first (the Roster's panel, a player's
-details), then an item's page, then a slot's flyout, then the menu. Gear shows as the
+details), then an item's page, then a slot's flyout, then the Art's screen, then the menu; with the room lost none
+of those is shown, and it closes the menu. A tile the focus is given back to (an item's, the Art's diamond) is
+forgotten once it has it. Gear shows as the
 player's room last sent it ([[Gear]]), built again only when that is new or the player moves within the menu, and
 never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
 - **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped;
-  a weapon or a shield is its own layer drawn alone in the pose that holds it, so no hand hides its grip. Each is
+  a loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip; one in
+  both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is
   fitted to its place as Enhanced Plus fits its icons; an icon long and thin (a blade, a staff, a gun) is laid on its
   tile's diagonal, as Destiny lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
   name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
@@ -234,17 +255,23 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it their
-  Attack, Defense, Prestige and Fruit of Dagon. The weapons, the cloak and the emblem stand to its left, the armour to
-  its right, each slot its item's picture with its names. A slot's card shows on hover or focus; a click opens its
-  flyout of the nine it may carry, toward the figure, upward from each side's two lowest slots; a click there wears
-  one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the
-  gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its
-  slot. The emblem's flyout holds every emblem, five a row: those
-  kept to wear with a click, the rest dim, each card saying how it is had.
+- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the Melee
+  and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
+  emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
+  names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
+  it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
+  at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
+  slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
+  it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
+  one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
+  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot. The emblem's
+  flyout holds every emblem, five a row: those kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
-  with the gain or loss in green or red. Along its foot what its presses do.
+  with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
+  stand at 22, as the menu's labels do, in a card 440 px wide. It shows only for a pointer that moves or a focus the
+  keys moved: a page built anew under a resting pointer, or a focus a click left, opens none over what the player
+  looks at.
 - **An item's page** lies over the menu, as Destiny 1's weapon page does: its name on its rarity's band, its kind,
   level, pips and element; its words; its main number large over a meter of it; what it changes over the piece worn;
   the perks its chosen nodes give; and its node grid. Each node is a tile of the kit's stone with its kind's glyph:
@@ -252,13 +279,13 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten
-  places in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the
-  Reader;
+- **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten places
+  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
-  first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its
-  count, shown only while one is held, then empty places to the end of its row of ten. The gear is on the Character
-  page alone.
+  first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
+  shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
+  the Ammo crate; the crate is held ("Hold to fill your ammo") to fill the Ranged weapon's ammunition, and offers
+  nothing at full. The gear is on the Character page alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
@@ -270,7 +297,13 @@ never while a press is held. Each press is an ask the room answers.
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
-  claimed.
+  claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
+  used is spent, not gained.
+- **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
+  that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
+  player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
+  or less, and "No ammo" at none, in the loss colour. Whether the Ranged loadout is drawn is read from the outfit
+  shown.
 - **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
   turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
   refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the
@@ -301,10 +334,46 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them; then the interface's volume, kept in this
-  browser, and the recorded sounds' credits: each one's name, author, licence and source, and what was changed.
+  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface and of the
+  world ("World sounds"), each kept in this browser, and the recorded sounds' credits: each one's name, author,
+  licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
   wash move: no quiver, no shards, and the gains appear without sliding in.
+
+## World sounds
+
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
+[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the
+owner has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. A pick is Freesound's,
+put in by `tools/freesound/publish.py`, or one of DFO's own, by `tools/freesound/own.py`
+([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have, plays any but the one it
+played last. The Duskraven plays its raven with a fire of its own under it
+([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
+(`combat/worldCues.ts`):
+
+- **Blows.** A swing as a fighter's attack begins, or as a foe's wound-up blow lands: light (fists, a dagger, a sword,
+  a mace), heavy (a flail, an axe, a warhammer, a greatsword) or a staff's. A blow that lands cuts (a dagger, a sword,
+  an axe, a greatsword) or strikes blunt (the rest, and a gun's ball); an arrow or a bolt strikes as itself. A crit,
+  the element a blow bursts in and an elemental kill's finisher sound over it; a spell's blow is heard as its spell. A
+  blow met by a shield or by a blade, a parry, a guard broken, a kill, a foe's shield struck and broken.
+- **Arms.** A weapon drawn or put away (the player's and other players'; foes stand armed). A bow drawn, each shot by
+  its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
+  no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
+- **Moving.** A footstep each 2.5 m walked, in time with the first person's bob, never mounted: on wood (the Test
+  Ground's crate), on a block (the city's stone), in water (land below the sea) or on the ground. A jump as a body
+  rises, a landing after a fall of 0.6 m or more, and a dodge's roll.
+- **The Arts.** The player's own Anima gathering as it is cast; each spell as it first appears, an Anima with its
+  Art's release, once a cast; a Tempest orb bursting on what it sought; each Duskraven bolt; Linked and Veiled as
+  they are given (Exposed, Charged and Haste make no sound: [[Exposed, Charged and Haste Make No Sound]]).
+- **The rest.** A drop coming to rest, an Ammo crate used, a foe turning alert, and the player standing again.
+
+Each is heard through a panner (equal power, fading with distance past 2 m, none past 40 m), the listener at the eye
+facing its yaw. At most 16 play at once: the farthest gives way to a nearer one. One fighter's cue plays once in
+0.1 s, and a step, a swing and a blow stray up to 4% in pitch. A figure first seen makes no sound for what it was
+already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
+Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
+The Test Ground makes its own sound at full volume on the first click into its view.
 
 ## The social space's counters
 
@@ -316,9 +385,10 @@ its Vestiges at the top. The room serves each ask only at its own counter ([[Gea
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
   right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
   an empty place a dark Vestige, as the inventory's.
-- **A vendor's stall**: the Quartermaster's armour or the Armsmith's weapons of the day ([[Gear]], "Vendors"). Each
+- **A vendor's stall**: the Quartermaster's armour or the Armsmith's loadouts of the day ([[Gear]], "Vendors"). Each
   ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
-  the player cannot pay it; its card shows what it changes over the piece worn.
+  the player cannot pay it; its card shows what it changes over the piece worn. After the Quartermaster's armour, an
+  Ammo crate every day, with how many of the five are carried; it cannot be held with five.
 - **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held
   to buy; one kept, too dear or for a higher level says so.
 
@@ -349,7 +419,8 @@ the Tailor's stall.
   the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
-- The sounds are the interface's alone; the world and the music have none yet.
+- The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
+  none yet.
 - The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
 - No gamepad or touch layer yet, and so none of DFO's narrow-screen places for the compass.
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card

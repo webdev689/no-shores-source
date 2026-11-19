@@ -5,12 +5,14 @@ use crate::body::{Body, Controls, Mode, Over, TUNING};
 use crate::terrain::Terrain;
 use std::f64::consts::PI;
 
-/// Where the player's controls point the body on the ground, in metres east and south per unit, and how long that is.
+/// Where the player's controls point the body on the ground, in metres east and south per unit, how long that is, and
+/// the share of its pace it moves at there.
 #[derive(Clone, Copy, Debug)]
 struct Wish {
     x: f64,
     y: f64,
     length: f64,
+    pace: f64,
 }
 
 fn ease(current: f64, target: f64, seconds: f64) -> f64 {
@@ -83,6 +85,19 @@ pub fn wrap(angle: f64) -> f64 {
 /// along a lip; climbing a wall too high to grab.
 #[must_use]
 pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terrain, seconds: f64) -> Body {
+    step_body_paced(body, controls, blocks, terrain, seconds, 1.0)
+}
+
+/// One step of the body as `step_body` takes it, moving `pace` times its pace on the ground: a Hasted fighter's.
+#[must_use]
+pub fn step_body_paced(
+    body: &Body,
+    controls: &Controls,
+    blocks: &[Block],
+    terrain: &dyn Terrain,
+    seconds: f64,
+    pace: f64,
+) -> Body {
     // The controls come from a player's machine: held to their range here, a body never takes a NaN from them, and a
     // look turned past half a turn is wrapped, as the fight's rules wrap it, so a browser's step and a room's agree.
     let unit = |value: f64| if value.is_finite() { value.clamp(-1.0, 1.0) } else { 0.0 };
@@ -91,7 +106,7 @@ pub fn step_body(body: &Body, controls: &Controls, blocks: &[Block], terrain: &d
     let (sin, cos) = (libm::sin(controls.yaw), libm::cos(controls.yaw));
     let wish_x = sin * controls.forward + cos * controls.sideways;
     let wish_y = -cos * controls.forward + sin * controls.sideways;
-    let wish = Wish { x: wish_x, y: wish_y, length: (wish_x * wish_x + wish_y * wish_y).sqrt() };
+    let wish = Wish { x: wish_x, y: wish_y, length: (wish_x * wish_x + wish_y * wish_y).sqrt(), pace };
     match body.mode {
         Mode::Mantle | Mode::Vault => going_over(body, seconds),
         Mode::Hang | Mode::Climb => on_wall(body, controls, blocks, terrain, seconds),
@@ -207,7 +222,7 @@ fn on_ground(
     let crouched = if controls.crouch { !body.crouched } else { body.crouched };
     let crouch = ease(body.crouch, if crouched { 1.0 } else { 0.0 }, seconds);
     let facing = if wish.length > 0.0 { libm::atan2(wish.x, -wish.y) } else { body.facing };
-    let pace = pace_of(crouched, controls);
+    let pace = pace_of(crouched, controls) * wish.pace;
     let scale = if wish.length > 0.0 { pace * seconds / wish.length.max(1.0) } else { 0.0 };
     let (x, y) = slide(blocks, terrain, body, wish.x * scale, wish.y * scale);
     let ground = ground_at(blocks, terrain, x, y, body.z);

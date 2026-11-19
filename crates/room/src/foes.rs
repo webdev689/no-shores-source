@@ -379,6 +379,9 @@ impl Room {
             if calls.refill_poise {
                 fighter.poise = 0.0;
             }
+            if calls.cleanse {
+                fighter = combat::status::cleansed(&fighter);
+            }
             if calls.heal > 0.0 {
                 fighter.health = (fighter.health + calls.heal).min(fighter.health_max);
             }
@@ -475,7 +478,7 @@ impl Room {
         self.groups.insert(group, Group { waiting: u32::try_from(near.len()).unwrap_or(u32::MAX), ..entry });
         for defender in near {
             let check = Check::Shape { telegraph: *telegraph, group };
-            let blow = self.empower(blow, defender, false);
+            let blow = self.empower(blow, defender);
             self.pending.push(Pending { blow, how, defender, tick: self.clock, check });
         }
     }

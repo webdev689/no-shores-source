@@ -1,4 +1,6 @@
-import type { FirstPerson } from '../firstperson/firstPerson.ts';
+import type { GlowLook } from '../elementGlow.ts';
+import type { Contact, FirstPerson } from '../firstperson/firstPerson.ts';
+import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Look } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
@@ -48,6 +50,9 @@ export function strokesAfter(strokes: number, swingWas: number | null, progress:
   return progress !== null && (swingWas === null || progress < swingWas) ? strokes + 1 : strokes;
 }
 
+/** Neither hand glows. */
+const NO_GLOW = [0, 0] as const;
+
 /** The dress the figure shows: on a wall or a ledge the hands hold on, so the weapon is worn, not held. */
 export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
@@ -62,11 +67,17 @@ export class Walker {
   player: Player;
   /** The player's figure: where it stands and what it wears. */
   readonly you: Placed;
+  /** The element each hand's weapon glows in (the right, then the left), as the page reads it from the gear. */
+  glow: readonly [GlowLook, GlowLook] = NO_GLOW;
+  /** The element the last cast glows in: its Art's. */
+  castGlow: GlowLook = 0;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
   lookDress: string;
   private readonly firstPerson: FirstPerson;
   private readonly forge: Cards;
+  /** How hard the weapon's glow surges (1 at rest), on the figure and in first person, as the page last said. */
+  private surge = 1;
   /** How far the player has walked, for the first person's bob and stride; and the swings struck, each the other
    *  stroke. */
   private stride = 0;
@@ -93,14 +104,40 @@ export class Walker {
     return this.inFirstPerson ? this.firstPerson.muzzle : null;
   }
 
+  /** The metres walked on the ground so far, which the first person's bob and the footsteps keep time by. */
+  get walked(): number {
+    return this.stride;
+  }
+
   /** Whether the camera is in the head, so the hands are drawn and the figure is not. */
   get inFirstPerson(): boolean {
     return this.player.view.shown <= HIDE_FIGURE_M;
   }
 
+  /** What glows this frame: each hand's element while its weapon is drawn, else nothing. */
+  get glowing(): readonly [GlowLook, GlowLook] {
+    return this.dress.outfit.drawn ? this.glow : NO_GLOW;
+  }
+
   /** The dress the figure shows this frame: the weapon worn while the hands hold a wall or a ledge. */
   get shownDress(): Dress {
     return this.dress;
+  }
+
+  /** How the player's own weapon fights this frame: its glow surging by `surge`, and what their blow met (`contact`,
+   *  null for nothing), which the first person shows. */
+  fought(surge: number, contact: Contact | null): void {
+    this.surge = surge;
+    this.firstPerson.surge = surge;
+    if (contact) this.firstPerson.contact(contact);
+  }
+
+  /** Plays a cast in `glow`, its Art's element: the figure's cast move, its spark in that colour, and the first
+   *  person's casting hands, lit by the Art's light. None on horseback, or while one plays. */
+  beginCast(glow: GlowLook): void {
+    if (this.player.mounted || this.player.cast !== null) return;
+    this.castGlow = glow;
+    this.player = { ...this.player, cast: 0 };
   }
 
   /** One frame of play: the body stepped by `rules` while the pointer is held, the first person's weapon swung, and
@@ -152,6 +189,7 @@ export class Walker {
     if (fight && ((own && !shooter && own.action.kind !== 'attack') || (shooter && fight.dropped)))
       firstPerson.cancel();
     const free = swings && !(own && HELD.has(own.action.kind));
+    firstPerson.glow = outfit.drawn ? this.glow : NO_GLOW;
     firstPerson.update(fight?.handsSeconds ?? seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,
       left: outfit.left,
@@ -161,6 +199,7 @@ export class Walker {
       running: speed > (player.mounted ? GALLOP : RUNNING),
       stride: this.stride,
       casting: player.cast !== null,
+      ...(this.castGlow ? { element: ART_LIGHTS[this.castGlow], castGlow: this.castGlow } : {}),
       climbing: holding ? 0 : 1,
       mounted: player.mounted,
       yaw: player.yaw,
@@ -185,6 +224,7 @@ export class Walker {
         drawn: outfit.drawn,
         right: outfit.right,
         left: outfit.left,
+        grip: outfit.grip ?? null,
         blow: swing && {
           direction: swing.direction,
           reload: swing.reload,
@@ -200,11 +240,18 @@ export class Walker {
       },
       (anim) => forge.frames(dress.body, anim),
       (anim, drawn) => forge.draws(dress.body, anim, drawn),
+      (action) => forge.walking(dress, action),
     );
     const hands = outfit.drawn ? [outfit.right, outfit.left] : [null, null];
     forge.warm(
       dress,
-      likelyMoves(hands[0] ?? null, hands[1] ?? null, (anim, drawn) => forge.draws(dress.body, anim, drawn)),
+      likelyMoves(
+        hands[0] ?? null,
+        hands[1] ?? null,
+        (anim, drawn) => forge.draws(dress.body, anim, drawn),
+        outfit.drawn ? (outfit.grip ?? null) : null,
+      ),
+      outfit.drawn ? this.glow[0] : 0,
     );
     forge.pump();
     const frames = forge.frames(dress.body, this.shown.anim);
@@ -247,7 +294,8 @@ export class Walker {
     const body = shownBody(player);
     const [x, y, z] = [body.x + shift[0], body.y + shift[1], body.z + shift[2]];
     const { view, flip } = viewOf(you.facing, x, y, eyeX, eyeY);
-    const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip);
-    return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, ...(flash ? { flash } : {}) };
+    const glow = this.look.anim === 'cast' ? this.castGlow : this.glowing[0];
+    const card = this.forge.card(you.id, this.dress, this.look.anim, view, this.look.frame, flip, glow);
+    return card && { card, ...cardStand(x, y, eyeX, eyeY), z, flip, surge: this.surge, ...(flash ? { flash } : {}) };
   }
 }

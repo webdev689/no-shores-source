@@ -64,8 +64,8 @@ function duel(answer: Answer): string[] {
     steps.step({} as never, still);
     room.pump(TICK);
   };
-  // The sword is the starting kit's; the shield is handed out and worn, as the room takes arms from gear alone.
-  wear(fighting, () => gear, idle, [KIND.shield]);
+  // A Sword & Shield is handed out and worn in place of the starting sword, as the room takes arms from gear alone.
+  wear(fighting, () => gear, idle, [KIND.swordAndShield]);
   fighting.ask(SWORDSMAN);
   const told: string[] = [];
   let answeredAt = -Infinity;

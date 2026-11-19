@@ -75,10 +75,12 @@ fn give_up(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
 }
 
 /// Its walk home begun, its next fight a fresh one: back in its first phase, its numbers, blows and chains that
-/// phase's, with no blow, chain or roar owed. The room sees it walk home, and the foes it called fall.
+/// phase's, with no blow, chain or roar owed, and its Expose and Charge shed. The room sees it walk home, and the foes
+/// it called fall.
 fn start_home(brain: &mut Brain, why: Homeward) {
     let tells = &mut brain.tells;
     (tells.windup, tells.ended, tells.chained, tells.roar, tells.phase) = (None, None, 0, false, 1);
+    brain.calls.cleanse = true;
     brain.returning = Some(why);
 }
 

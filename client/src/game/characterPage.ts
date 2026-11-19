@@ -1,11 +1,12 @@
 // The character page, after Destiny's: the player's own figure in the middle under their level and its meter, their
-// power beneath it; the weapons and cloak in slots to its left and the armour to its right, each slot its item's own
+// power beneath it; the worn Art's diamond, the Melee and Ranged loadouts (the Ranged with its shots left) and the cloak
+// in rows to its left, level with the armour's rows to its right, each slot its item's own
 // picture in a frame of its rarity. Hovering or focusing a slot shows its item's card; a click opens its flyout of the
 // nine it carries, toward the figure, each worn by a click; a right-click on any opens the item's page.
 
 import { make } from '../editor/dom.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { RARITIES, SLOTS, itemName } from '../player/gear.ts';
+import { RANGED_SLOT, RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
 import { cardOf, flyoutOf, wearIn } from './gearCards.ts';
@@ -43,6 +44,8 @@ export interface PageContext {
   readonly inspect: (item: GearItem) => void;
   /** Whether the player stands at the vault's counter, where an item may be put in or taken out. */
   readonly atVault: boolean;
+  /** The worn Art's diamond, which opens its screen, where the menu has one. */
+  readonly art?: HTMLElement;
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */
@@ -83,6 +86,13 @@ function tileFor(context: PageContext, item: GearItem | null, box: number, class
     });
   } else tile.classList.add('gear-vacant');
   return tile;
+}
+
+/** The ammunition left in the Ranged loadout worn, of its capacity, or none; null with none worn. */
+export function ammoLine(gear: GearState): { readonly words: string; readonly none: boolean } | null {
+  const [left, most] = [gear.ammo ?? 0, gear.ammoMost ?? 0];
+  if (most === 0) return null;
+  return left > 0 ? { words: `Ammo ${left} of ${most}`, none: false } : { words: 'No ammo', none: true };
 }
 
 /** A number of the player's power: its name over it. */
@@ -128,6 +138,8 @@ export function characterPage(
       const named = make('span', itemName(worn), 'gear-slot-item');
       named.style.color = RARITIES[worn.rarity]?.colour ?? '';
       label.append(named);
+      const ammo = index === RANGED_SLOT ? ammoLine(gear) : null;
+      if (ammo) label.append(make('span', ammo.words, `gear-slot-ammo${ammo.none ? ' gear-short' : ''}`));
     }
     holder.append(tile, label);
     if (open === index) {
@@ -138,7 +150,7 @@ export function characterPage(
       for (const item of cells) {
         const cell = tileFor(context, item, CELL_PX, 'gear-cell');
         if (item) {
-          const wear = wearIn(item, index);
+          const wear = wearIn(item);
           cell.setAttribute('aria-label', tileLabel(itemName(item), item.rarity));
           cell.addEventListener('click', () => {
             tip.hide();
@@ -157,9 +169,9 @@ export function characterPage(
     }
     return holder;
   };
-  const side = (slots: readonly number[], label: string) => {
+  const side = (slots: readonly number[], label: string, first: HTMLElement[] = []) => {
     const column = make('div', '', 'gear-side');
-    column.append(make('h2', label, `gear-heading ${ROLES.rule}`), ...slots.map(slot));
+    column.append(make('h2', label, `gear-heading ${ROLES.rule}`), ...first, ...slots.map(slot));
     return column;
   };
   const middle = make('div', '', 'gear-figure');
@@ -183,16 +195,19 @@ export function characterPage(
   const drawn = context.figure ? pictureCanvas(context.figure, box, LARGE_CAP) : make('span', 'Drawing…', 'gear-hint');
   stand.append(drawn);
   const stats = make('div', '', 'gear-stats');
-  const [main, off] = character.attack;
+  const [melee, ranged] = character.attack;
   stats.append(
-    stat('Attack', main === null || main === undefined ? '—' : String(main)),
-    ...(off === null || off === undefined ? [] : [stat('Off hand', String(off))]),
+    stat('Melee', melee === null || melee === undefined ? '—' : String(melee)),
+    stat('Ranged', ranged === null || ranged === undefined ? '—' : String(ranged)),
     stat('Defense', String(character.defense)),
     stat('Prestige', String(character.prestige)),
     stat('Fruit of Dagon', String(character.fruit)),
   );
   middle.append(power, stand, stats);
-  const weapons = side(WEAPONS, 'Weapons');
+  // The worn Art is the weapons' first row, level with the head's, as Destiny stands a subclass over its weapons.
+  const art = make('div', '', 'gear-art');
+  if (context.art) art.append(context.art);
+  const weapons = side(WEAPONS, 'Weapons', [art]);
   weapons.append(emblemSlot(context, open === EMBLEM_SLOT, () => choose(open === EMBLEM_SLOT ? null : EMBLEM_SLOT)));
   page.append(weapons, middle, side(ARMOUR, 'Armour'));
   return page;

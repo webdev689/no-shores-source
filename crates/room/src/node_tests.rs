@@ -1,5 +1,5 @@
 use super::*;
-use movement::{Controls, Mode};
+use movement::{Controls, Mode, Terrain};
 use reach::{RESPAWN_TICKS, WARNING_TICKS};
 use serde_json::json;
 use std::f64::consts::PI;

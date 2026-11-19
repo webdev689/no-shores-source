@@ -20,6 +20,7 @@ import {
   dismantleOnHold,
   glyphImage,
   hintLine,
+  holdToAct,
   itemIcon,
   itemMarks,
   rarityOf,
@@ -35,7 +36,7 @@ const holds = (cell: Cell): boolean => cell.item !== null || cell.glyph === 'ves
 /** What a cell's presses do, in keycaps. */
 function hintsOf(cell: Cell): Hint[] {
   return [
-    ...(cell.press ? [['Click', cell.press.label] as const] : []),
+    ...(cell.press ? [[cell.press.held ? 'Press' : 'Click', cell.press.label] as const] : []),
     ...(cell.other ? [['Right-click', cell.other.label] as const] : []),
   ];
 }
@@ -88,15 +89,18 @@ export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const carried = item?.at === CARRIED;
   if (item && carried) dismantleOnHold(node, item.rarity, () => context.ask({ kind: ASKS.dismantle, item: item.id }));
   const hints: Hint[] = [
-    ...(cell.press ? [['Click', cell.press.label] as const] : []),
+    ...(cell.press ? [[cell.press.held ? 'Press' : 'Click', cell.press.label] as const] : []),
     ['Right-click / X', 'Details'],
     ...(carried ? [[DISMANTLE_KEY, 'Hold to dismantle'] as const] : []),
   ];
   context.tip.over(node, () => (item ? cardNode(cardOf(item), context.picture(item), hints) : cellCard(cell)));
-  node.addEventListener('click', () => {
-    context.tip.hide();
-    if (cell.press) context.ask(cell.press.ask);
-  });
+  const press = cell.press;
+  if (press?.held) holdToAct(node, () => context.ask(press.ask), { charges: () => node, burst: press.burst ?? null });
+  else
+    node.addEventListener('click', () => {
+      context.tip.hide();
+      if (press) context.ask(press.ask);
+    });
   node.addEventListener('contextmenu', (event) => {
     event.preventDefault();
     context.tip.hide();

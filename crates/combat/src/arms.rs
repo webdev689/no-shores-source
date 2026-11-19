@@ -14,6 +14,8 @@ pub enum WeaponClass {
     Axe = 5,
     Warhammer = 6,
     Staff = 7,
+    /// A long sword in both hands on its hilt.
+    Greatsword = 8,
 }
 
 /// The weapons that shoot.
@@ -23,6 +25,8 @@ pub enum Ranged {
     Crossbow = 2,
     Pistolet = 3,
     Thunderlock = 4,
+    /// A pistolet in each hand: the right fires, then the left, before both are loaded.
+    DoublePistolet = 5,
 }
 
 /// What the left hand holds, as far as fighting goes.
@@ -70,6 +74,7 @@ pub const fn weapon(class: WeaponClass) -> Weapon {
         WeaponClass::Axe => (2.0, 22.0, 1.25 * 1.15, 20.0, 1.05, true),
         WeaponClass::Warhammer => (2.0, 24.0, 1.5 * 1.15, 22.0, 1.06, true),
         WeaponClass::Staff => (2.2, 13.0, 1.15, 14.0, 0.97, true),
+        WeaponClass::Greatsword => (2.3, 24.0, 1.3 * 1.15, 21.0, 1.06, true),
     };
     Weapon { reach, damage, weight, stamina, handling, two_handed }
 }
@@ -167,12 +172,22 @@ fn ranged_of(layer: &str) -> Option<Ranged> {
     })
 }
 
-/// What a fighter fights with, from the forge layers in its right and left hands ("" for none) and whether they are
-/// drawn. Put away, it fights with its fists. A shooting weapon in the right hand fights hand to hand with fists.
+/// A left hand on the right's hilt, as the forge's two-handed hilt blows hold a long sword: a greatsword.
+pub const HILT: &str = "hilt";
+
+/// What a fighter fights with, from the forge layers in its right and left hands ("" for none, `HILT` for both on one
+/// sword) and whether they are drawn. Put away, it fights with its fists. A shooting weapon in the right hand fights
+/// hand to hand with fists; a pistolet in each hand is a double pistolet.
 #[must_use]
 pub fn arms_of(right: &str, left: &str, drawn: bool) -> Arms {
     if !drawn {
         return BARE_HANDS;
+    }
+    if left == HILT && melee_of(right) == Some(WeaponClass::Sword) {
+        return Arms { melee: WeaponClass::Greatsword, ranged: None, off_hand: OffHand::Empty };
+    }
+    if ranged_of(right) == Some(Ranged::Pistolet) && ranged_of(left) == Some(Ranged::Pistolet) {
+        return Arms { melee: WeaponClass::Fists, ranged: Some(Ranged::DoublePistolet), off_hand: OffHand::Empty };
     }
     let off_hand = if left.starts_with("shield_") {
         OffHand::Shield
@@ -212,10 +227,11 @@ impl Arms {
             WeaponClass::Axe,
             WeaponClass::Warhammer,
             WeaponClass::Staff,
+            WeaponClass::Greatsword,
         ]
         .into_iter()
         .find(|class| *class as u8 == byte(0));
-        let ranged = [Ranged::Bow, Ranged::Crossbow, Ranged::Pistolet, Ranged::Thunderlock]
+        let ranged = [Ranged::Bow, Ranged::Crossbow, Ranged::Pistolet, Ranged::Thunderlock, Ranged::DoublePistolet]
             .into_iter()
             .find(|ranged| *ranged as u8 == byte(8));
         let off_hand = [OffHand::Empty, OffHand::Shield, OffHand::Weapon, OffHand::Torch]

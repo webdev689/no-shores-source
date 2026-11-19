@@ -12,7 +12,7 @@ use crate::tuning::{ENGAGE_RANGE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, 
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
 use combat::tuning::STRIKE_HEIGHT;
-use combat::{Fighter, FighterId};
+use combat::{Fighter, FighterId, Status};
 
 /// A foe in its room this tick: its id, its fighter, the room, its numbers and its dice.
 #[derive(Clone, Copy, Debug)]
@@ -52,10 +52,11 @@ impl Here<'_, '_> {
         self.find(id).filter(|other| self.hostile(other))
     }
 
-    /// Whether a fighter in hand is of another side and alive.
+    /// Whether a fighter in hand is of another side, alive, and not Veiled: a Veiled fighter is never seen, taken as a
+    /// target nor aimed at, and a foe holding one as its target lets it go.
     #[must_use]
     pub fn hostile(&self, other: &Fighter) -> bool {
-        other.side != self.fighter.side && !other.dead()
+        other.side != self.fighter.side && !other.dead() && !other.statuses.has(Status::Veiled)
     }
 
     /// Whether a fighter of the room, by its id, is another of this foe's side, alive.

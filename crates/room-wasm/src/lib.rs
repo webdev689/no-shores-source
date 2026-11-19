@@ -235,6 +235,7 @@ pub fn snapshot() -> Vec<u8> {
             let tick = room.clock();
             let lines = room.take_lines();
             let shots: Vec<combat::Shot> = room.shots().copied().collect();
+            let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,
@@ -243,6 +244,7 @@ pub fn snapshot() -> Vec<u8> {
                 events: &events,
                 shots: &shots,
                 lines: &lines,
+                spells: &spells,
             };
             protocol::snapshot_bytes(&snapshot)
         }

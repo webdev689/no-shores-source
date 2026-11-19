@@ -63,17 +63,19 @@ test('a card names the item and its kind, its main number, its chosen traits, an
   assert.equal(cardOf(worn, worn).compare, null, 'no comparing a piece with itself');
 });
 
-test('a slot’s flyout holds its nine places, and a carried blade is worn in the slot it is shown under', () => {
-  const blade = item({ id: 3, kind: 1, at: 0, bucket: 1 });
-  const gear = state({ items: [item({ id: 1, at: 3, kind: 12 }), blade, item({ id: 4, at: 0, bucket: 0 })] });
-  const off = flyoutOf(gear, 1);
-  assert.equal(off.worn?.id, 1);
-  assert.equal(off.cells.length, 9);
+test('a slot’s flyout holds its nine places, and a carried loadout is worn in the slot it is shown under', () => {
+  const brace = item({ id: 3, kind: 23, at: 0, bucket: 1 });
+  const gear = state({ items: [item({ id: 1, at: 3, kind: 8 }), brace, item({ id: 4, at: 0, bucket: 0 })] });
+  const ranged = flyoutOf(gear, 1);
+  assert.equal(ranged.worn?.id, 1);
+  assert.equal(ranged.cells.length, 9);
   assert.deepEqual(
-    off.cells.map((each) => each?.id ?? null),
+    ranged.cells.map((each) => each?.id ?? null),
     [3, null, null, null, null, null, null, null, null],
   );
-  assert.deepEqual(wearIn(blade, 1)?.ask, { kind: ASKS.wear, item: 3, slot: 1 });
+  assert.deepEqual(wearIn(brace)?.ask, { kind: ASKS.wear, item: 3, slot: 1 }, 'a double pistolet, Ranged');
+  assert.equal(cardOf(brace).kind, 'Normal Double Pistolet');
+  assert.equal(cardOf(item({ kind: 12 })).kind, 'Normal Sword & Shield');
 });
 
 test('the inventory: Aurem its one currency, stacks shown only while held, and Vestiges open only in a social space', () => {
@@ -111,6 +113,24 @@ test('the inventory: Aurem its one currency, stacks shown only while held, and V
   assert.deepEqual(social.vestiges.cells[0]?.press?.ask, { kind: ASKS.identify, item: 9 });
   assert.equal(social.vestiges.cells[1]?.glyph, 'empty', 'a vaulted Vestige is not carried');
   assert.equal(social.vestiges.held, 1);
+});
+
+test('the Ammo crate stands on the Consumables shelf with its count, held to fill the ammunition when it can', () => {
+  const crateOf = (fields: Partial<GearState>) =>
+    inventoryPageOf(state(fields))
+      .tabs.find((each) => each.id === 'consumables')
+      ?.cells.find((each) => each.glyph === 'ammo-crate');
+  const crate = crateOf({ crates: 3, ammoShare: 0.5 });
+  assert.deepEqual([crate?.name, crate?.glyph, crate?.count], ['Ammo crate', 'ammo-crate', 3]);
+  assert.deepEqual(crate?.press, {
+    label: 'Hold to fill your ammo',
+    ask: { kind: ASKS.useCrate },
+    role: 'button',
+    held: true,
+    burst: 'pulse',
+  });
+  assert.equal(crateOf({ crates: 3, ammoShare: 1 })?.press, null, 'full, nothing to fill');
+  assert.equal(crateOf({ crates: 0, ammoShare: 0 }), undefined, 'none held, not shown');
 });
 
 test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from what is carried', () => {

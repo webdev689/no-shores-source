@@ -66,7 +66,7 @@ pub fn draw_ticks(ranged: Ranged) -> u64 {
     Here::ticks(match ranged {
         Ranged::Bow => DRAW_BOW,
         Ranged::Crossbow => DRAW_CROSSBOW,
-        Ranged::Pistolet => DRAW_PISTOLET,
+        Ranged::Pistolet | Ranged::DoublePistolet => DRAW_PISTOLET,
         Ranged::Thunderlock => DRAW_THUNDERLOCK,
     })
 }

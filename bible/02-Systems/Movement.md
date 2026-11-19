@@ -12,7 +12,7 @@ code:
   - crates/movement/src/floats.rs#fingerprint
   - crates/movement-wasm/src/lib.rs#movement_step
   - crates/movement-wasm/src/lib.rs#set_ground
-  - crates/room/src/lib.rs#standing_on
+  - crates/room/src/floor.rs#standing_on
   - client/src/rules/movementRules.ts#startMovementRules
   - client/src/player/player.ts#updatePlayer
 ---

@@ -1,5 +1,5 @@
 import { button, make } from '../editor/dom.ts';
-import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import { AMMO_FULL, ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import {
   CARRIED,
   COLUMNS,
@@ -15,6 +15,7 @@ import {
   itemName,
   itemNumbers,
   itemWords,
+  kindName,
   nodeShown,
   resourceName,
   wearAsks,
@@ -132,7 +133,9 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       grant.level = Math.min(20, Math.max(1, Number(level.value) || 1));
     });
     const slots = SLOTS.slice(0, 6).map((slot, index) => [String(index), slot] as const);
-    const kinds = KINDS.slice(1, 17).map((kind, index) => [String(index + 1), kind] as const);
+    const kinds = KINDS.map((kind, index) => [String(index), kindName(index)] as const).filter(
+      ([number, name]) => name && number !== String(KINDS.indexOf('cloak')),
+    );
     const lesser = RARITIES.slice(0, 3).map((rarity, index) => [String(index), rarity.name] as const);
     return [
       make('h2', 'Hand out'),
@@ -169,6 +172,10 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       button('50 of every material', () => ask({ kind: ASKS.grantMaterials, count: 50 })),
       button('10,000 XP', () => ask({ kind: ASKS.grantXp, count: 10_000 })),
       button('XP to level 20', () => ask({ kind: ASKS.grantXp, count: 190_000 })),
+      button('Full ammo', () => ask({ kind: ASKS.grantAmmo, count: AMMO_FULL })),
+      button('No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
+      button('5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
+      button('Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
     ];
   };
 
@@ -178,6 +185,8 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       gear?.answered,
       gear?.items.length,
       gear?.drops.length,
+      gear?.ammo,
+      gear?.crates,
       view.atStall,
       view.nodesInReach,
     ]);
@@ -217,6 +226,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     body.replaceChildren(
       make('p', level),
       make('p', heldLine(gear), 'hint'),
+      make('p', `Ammo ${gear.ammo ?? 0} of ${gear.ammoMost ?? 0} · ${gear.crates ?? 0} Ammo crates`, 'hint'),
       ...(opened && opened.at === CARRIED ? [make('p', `The Vestige opened: ${itemName(opened)}.`)] : []),
       make(
         'p',

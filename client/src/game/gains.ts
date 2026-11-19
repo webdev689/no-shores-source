@@ -1,6 +1,6 @@
 // What the player gained between two words from the room on their gear: Aurem, fragments, essence and Fruit of
-// Dagon, each island's resource, and every item, Vestige and emblem new to them. What they spent or moved is not a
-// gain. The feed at the right of the screen shows these as Destiny shows what is picked up.
+// Dagon, each island's resource, ammunition from an Ammo box, Ammo crates, and every item, Vestige and emblem new to
+// them. What they spent or moved is not a gain, nor the ammunition a crate they used gave back. The feed at the right of the screen shows these as Destiny shows what is picked up.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, STOCK_NAMES, itemName, resourceName } from '../player/gear.ts';
@@ -57,6 +57,13 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
     if (grown > 0)
       gains.push(gain(`resource-${index}`, resourceName(index), grown, { glyph: 'resource', tint: index }));
   });
+  const [crates, cratesBefore] = [after.crates ?? 0, before.crates ?? 0];
+  if ((after.ammoShare ?? 0) > (before.ammoShare ?? 0) && crates >= cratesBefore) {
+    const shots = Math.max(1, (after.ammo ?? 0) - (before.ammo ?? 0));
+    gains.push(gain('ammo', 'Ammo', shots, { glyph: 'ammo-box' }));
+  }
+  if (crates > cratesBefore)
+    gains.push(gain('ammo-crate', 'Ammo crate', crates - cratesBefore, { glyph: 'ammo-crate' }));
   const had = new Set(before.items.map((item) => item.id));
   for (const item of after.items)
     if (!had.has(item.id))

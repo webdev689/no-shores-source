@@ -1,0 +1,141 @@
+{
+  "about": "The Arts: Overlook's subclasses (bible/05-Decisions/Arts Are Overlook's Subclasses.md), with Claude's numbers (Arts and Loadouts as Claude Shapes Them.md). Read by the rules (the gear crate) and the client alike. Times in seconds, distances in metres, damage before power as a weapon's is; element by the gear crate's numbers (1 Blaze, 2 Volt, 3 Cosmic).",
+  "cast": { "releaseS": 0.3, "animaKillShare": 0.02 },
+  "arts": [
+    {
+      "id": 1,
+      "key": "storm",
+      "name": "Storm",
+      "element": 2,
+      "blurb": "Agile, and deals damage.",
+      "anima": {
+        "key": "tempest",
+        "name": "Tempest",
+        "text": "Six orbs of lightning leave you and seek the nearest enemies, turning to another when theirs falls.",
+        "rechargeS": 500,
+        "orbs": 6,
+        "releaseOverS": 1,
+        "reach": 30,
+        "speed": 14,
+        "turnPerS": 4,
+        "lifeS": 4,
+        "damage": 18
+      },
+      "tenets": [
+        {
+          "key": "quicken",
+          "name": "Quicken",
+          "text": "You and every player near you move faster for a short time.",
+          "rechargeS": 91,
+          "radius": 12
+        },
+        {
+          "key": "arcLash",
+          "name": "Arc Lash",
+          "text": "Lightning lashes the enemies in front of you, damaging and paralysing them.",
+          "rechargeS": 105,
+          "coneDegrees": 70,
+          "reach": 7,
+          "damage": 16
+        }
+      ],
+      "core": [
+        { "key": "pursuit", "name": "Pursuit", "text": "Tempest sends two more orbs.", "orbs": 2 },
+        { "key": "conduction", "name": "Conduction", "text": "Arc Lash's Charge lasts 50% longer.", "chargeTimes": 1.5 },
+        { "key": "momentum", "name": "Momentum", "text": "Quicken also gives you Crit while it lasts." },
+        { "key": "recharge", "name": "Recharge", "text": "Each Volt kill takes 4% off your Tenets' cooldowns.", "cooldownShare": 0.04 },
+        { "key": "overload", "name": "Overload", "text": "Enemies you Charge are Exposed too." },
+        { "key": "gale", "name": "Gale", "text": "Quicken lasts 3 s longer and reaches 18 m.", "moreS": 3, "radius": 18 }
+      ]
+    },
+    {
+      "id": 2,
+      "key": "divine",
+      "name": "Divine",
+      "element": 1,
+      "blurb": "A master of its craft, raising those beside it.",
+      "anima": {
+        "key": "sunwell",
+        "name": "Sunwell",
+        "text": "An orb of sun hangs where you cast it, linking every player near it: healing them and raising their damage.",
+        "rechargeS": 417,
+        "lifeS": 12,
+        "radius": 10
+      },
+      "tenets": [
+        {
+          "key": "mend",
+          "name": "Mend",
+          "text": "Heals you at once.",
+          "rechargeS": 91,
+          "heal": 40
+        },
+        {
+          "key": "dawnflare",
+          "name": "Dawnflare",
+          "text": "A small bird of fire makes a strafing run ahead of you, burning the enemies near its path.",
+          "rechargeS": 121,
+          "length": 24,
+          "flightS": 1.6,
+          "width": 3,
+          "damage": 14
+        }
+      ],
+      "core": [
+        { "key": "radiance", "name": "Radiance", "text": "The Sunwell reaches 3 m further and lasts 4 s longer.", "moreRadius": 3, "moreS": 4 },
+        { "key": "mercy", "name": "Mercy", "text": "Mend also heals players within 8 m half as much.", "radius": 8, "healShare": 0.5 },
+        { "key": "wings", "name": "Wings", "text": "The Dawnflare makes a second pass back." },
+        { "key": "zeal", "name": "Zeal", "text": "While Linked, each Blaze kill takes 5% off your Tenets' cooldowns.", "cooldownShare": 0.05 },
+        { "key": "searing", "name": "Searing", "text": "The Dawnflare Exposes what it burns." },
+        { "key": "resolve", "name": "Resolve", "text": "Mend gives you Crit." }
+      ]
+    },
+    {
+      "id": 3,
+      "key": "shadow",
+      "name": "Shadow",
+      "element": 3,
+      "blurb": "A master of the mystic.",
+      "anima": {
+        "key": "duskraven",
+        "name": "Duskraven",
+        "text": "A raven of dusk follows you, its bolts making enemies take more damage and healing you for half what they deal.",
+        "rechargeS": 455,
+        "lifeS": 12,
+        "everyS": 0.8,
+        "reach": 22,
+        "speed": 30,
+        "damage": 7,
+        "healShare": 0.5
+      },
+      "tenets": [
+        {
+          "key": "duskDaggers",
+          "name": "Dusk Daggers",
+          "text": "Hold to aim, let go to cast: cosmic daggers whirl there, damaging enemies and Exposing them.",
+          "rechargeS": 121,
+          "reach": 16,
+          "radius": 4,
+          "lifeS": 5,
+          "everyS": 0.5,
+          "damage": 3
+        },
+        {
+          "key": "vanish",
+          "name": "Vanish",
+          "text": "A dodge roll into a short invisibility. Attacking breaks it; a backstab from it always crits.",
+          "rechargeS": 38,
+          "roll": 3
+        }
+      ],
+      "core": [
+        { "key": "hunger", "name": "Hunger", "text": "The Duskraven heals you all it deals, not half.", "healShare": 1 },
+        { "key": "night", "name": "Night", "text": "Vanish's veil lasts 2 s longer.", "moreS": 2 },
+        { "key": "blades", "name": "Blades", "text": "Dusk Daggers reach 1.5 m further and last 2 s longer.", "moreRadius": 1.5, "moreS": 2 },
+        { "key": "hunt", "name": "Hunt", "text": "A crit out of Vanish gives back half its cooldown.", "cooldownShare": 0.5 },
+        { "key": "dread", "name": "Dread", "text": "Each Cosmic kill on an Exposed enemy keeps the Duskraven 2 s longer.", "moreS": 2 },
+        { "key": "cruelty", "name": "Cruelty", "text": "Your crits on Exposed enemies deal 10% more.", "critTimes": 1.1 }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ use combat::fighter::{Action, Attack, FighterId};
 use combat::judge::{answered, overreached, suffer};
 use combat::shapes::{LATE, Telegraph};
 use combat::shots::{Flight, fly, stopped_line};
+use combat::status::crits;
 use combat::strike::reaches;
 use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 use gear::Slot;
@@ -41,6 +42,7 @@ pub enum How {
     Telegraph = 4,
     Iron = 5,
     Shot = 6,
+    Spell = 7,
 }
 
 /// One thing that happened in the fight, at a tick.
@@ -54,6 +56,10 @@ pub struct Event {
     pub amount: f64,
     /// The stroke a swing came by, so a screen throws its blood the way the blade went; none for anything else.
     pub stroke: Option<Stroke>,
+    /// Whether the blow that did it was a crit, and the element it carried (the gear's number, 0 for none), so a
+    /// screen can mark the one and burn the other.
+    pub crit: bool,
+    pub element: u8,
 }
 
 /// What a waiting blow must still ask of its defender when it is judged: a swing whether it reaches them, a
@@ -98,19 +104,30 @@ pub fn how_of_swing(attack: &Attack, defender: FighterId) -> How {
 
 impl Room {
     /// Judges a blow against `then`, the defender as its striker saw it, and settles it now. `hand` is the striking
-    /// player's hand, if a player struck.
-    pub(crate) fn judge_now(&mut self, blow: &Blow, how: How, defender: FighterId, then: &Fighter, hand: Option<Slot>) {
+    /// player's loadout, if a player struck.
+    pub(crate) fn judge_now(
+        &mut self,
+        blow: &Blow,
+        how: How,
+        defender: FighterId,
+        then: &Fighter,
+        hand: Option<Slot>,
+    ) -> Verdict {
         let verdict = judge(blow, then);
         self.settle(blow, how, defender, verdict, hand);
+        verdict
     }
 
-    /// Does what a verdict does to the defender and its striker as they are now, and tells it. A player's blow that
-    /// lands on a foe shares its kill, which pays everyone who shares it.
+    /// Does what a verdict does to the defender and its striker as they are now, its damage weighed by their statuses,
+    /// and tells it. A player's blow that lands on a foe shares its kill, which pays everyone who shares it.
     pub(crate) fn settle(&mut self, blow: &Blow, how: How, defender: FighterId, verdict: Verdict, hand: Option<Slot>) {
         let Some(before) = self.fighter(defender).copied() else { return };
         if before.dead() {
             return;
         }
+        let harms = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
+        let crit = harms && crits(blow, self.fighter(blow.striker), &before);
+        let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = suffer(&before, blow, &verdict);
         self.set_fighter(defender, after);
@@ -134,11 +151,18 @@ impl Room {
         {
             self.mark_struck(blow.striker, defender, hand);
         }
-        self.perks_after(blow.striker, defender, &verdict, after.dead());
+        // No weapon's perk touches a spell, its kill included.
+        if !matches!(blow.kind, BlowKind::Spell(_)) {
+            self.perks_after(blow.striker, defender, &verdict, after.dead());
+        }
+        self.verbs_after(blow, defender, &verdict, after.dead());
+        self.arts_after(blow, &before, &verdict, after.dead() && self.foes.contains_key(&defender));
         if after.dead() && self.foes.contains_key(&defender) {
             self.pay_kill(defender);
         }
-        if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !striker.dead()) {
+        // A spell leaves its caster's soft lock alone: it is not their blade's.
+        let spell = matches!(blow.kind, BlowKind::Spell(_));
+        if let Some(striker) = self.fighter(blow.striker).copied().filter(|striker| !spell && !striker.dead()) {
             self.set_fighter(blow.striker, answered(&striker, defender, &verdict));
         }
         let (kind, amount) = match verdict {
@@ -162,6 +186,8 @@ impl Room {
                 defender,
                 amount,
                 stroke,
+                crit,
+                element: blow.element,
             });
         };
         if let Some((took, broke)) = shielded {
@@ -218,7 +244,9 @@ impl Room {
         defender: FighterId,
         amount: f64,
     ) {
-        self.events.push(Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None });
+        let event =
+            Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None, crit: false, element: 0 };
+        self.events.push(event);
     }
 
     /// Judges every waiting blow whose defender's view has reached it, or that has waited as long as a blow may.
@@ -343,13 +371,13 @@ impl Room {
         if let Some(defender) = struck
             && let Some(then) = self.as_seen(defender, view)
         {
-            let held = self.held(shot.owner, Slot::MainHand);
+            let held = self.held(shot.owner, Slot::Ranged);
             let blow = self.empower_as(combat::judge::shot_blow(shot, [shot.at[0], shot.at[1]]), defender, held);
             // A ball's range is measured as an arrow's: the line it flew to where it struck.
             let [east, south, up] = [stop[0] - shot.at[0], stop[1] - shot.at[1], stop[2] - shot.at[2]];
             let covered = libm::sqrt(east * east + south * south + up * up);
             let blow = held.map_or(blow, |held| Self::at_range(blow, covered, &held.trim));
-            self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::MainHand));
+            self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::Ranged));
         }
         stop
     }
@@ -359,7 +387,7 @@ impl Room {
         if self.players.contains_key(&defender) {
             self.pending.push(Pending { blow: *blow, how, defender, tick: self.clock, check });
         } else if let Some(then) = self.fighter(defender).copied() {
-            self.judge_now(blow, how, defender, &then, Some(Slot::MainHand));
+            self.judge_now(blow, how, defender, &then, Some(Slot::Ranged));
         }
     }
 }
@@ -372,5 +400,6 @@ pub fn how_of(blow: &Blow, iron: bool) -> How {
         BlowKind::Telegraph(_) if iron => How::Iron,
         BlowKind::Telegraph(_) => How::Telegraph,
         BlowKind::Shot(_) => How::Shot,
+        BlowKind::Spell(_) => How::Spell,
     }
 }

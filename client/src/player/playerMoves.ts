@@ -20,6 +20,8 @@ export interface Doing {
   readonly drawn: boolean;
   readonly right: string | null;
   readonly left: string | null;
+  /** Both hands on the right's sword's hilt, a greatsword. */
+  readonly grip?: 'hilt' | null;
   /** The blow being struck or the shot fired: its direction (null for a shot), whether it is the second stroke of the
    *  swing, its progress 0..1, how far through the swing its blow lands (DFO's swing law's by default), and whether a
    *  shot's weapon is reloading. */
@@ -102,6 +104,12 @@ const AIMED_FRAME: Readonly<Record<string, number>> = { gunshot: 1, pistolshot: 
 
 /** Whether the forge draws a held layer (null: the body alone) in a move. */
 export type Draws = (anim: string, held: string | null) => boolean;
+/** An action's own move on the move (the forge's onthemove.py: a blow's `over1hwalk`, the bow's `bowshotwalk`, the
+ *  cast's `castwalk`), where the figure draws it whole: every layer it stacks in the action drawn walking too; else
+ *  null. */
+export type Walking = (action: string) => string | null;
+/** The name the forge gives an action's own on the move. */
+export const onTheMove = (action: string): string => (action === 'bow' ? 'bowshotwalk' : `${action}walk`);
 
 interface Kit {
   readonly idle: string;
@@ -149,9 +157,14 @@ function kitOf(right: string | null, left: string | null, draws: Draws): Kit {
 /** The moves a figure with these hands is likeliest to show next, to compose ahead of need: its rest and walk; its
  *  blows where every swing strikes one, else its attack and a weapon held alone's strokes; a gun's reload, running,
  *  the roll, jumping and crouching. */
-export function likelyMoves(right: string | null, left: string | null, draws: Draws): string[] {
+export function likelyMoves(
+  right: string | null,
+  left: string | null,
+  draws: Draws,
+  grip: 'hilt' | null = null,
+): string[] {
   const kit = kitOf(right, left, draws);
-  const blows = (['down', 'left', 'up'] as const).map((way) => blowOf(way, right, left, draws));
+  const blows = (['down', 'left', 'up'] as const).map((way) => blowOf(way, right, left, draws, grip));
   const struck = blows.filter((blow): blow is string => blow !== null);
   const strokes = right && !left ? [kit.attack, 'thrust', 'chop', 'swing2h'] : [kit.attack];
   const own = [
@@ -182,8 +195,9 @@ function woundUp(progress: number, lands: number): number {
   const start = lands * (1 - STRIKE_PACE.windup);
   return Math.max(0, (progress - start) / Math.max(lands - start, 1e-6));
 }
-/** The hold each weapon strikes in alone: one hand, or both on a haft. */
+/** The hold each weapon strikes in alone: one hand, both on a haft, or a staff in both hands. */
 const HOLD_OF: Readonly<Record<string, string>> = {
+  staff: 'staff',
   sword: '1h',
   dagger: '1h',
   mace: '1h',
@@ -195,25 +209,31 @@ const HOLD_OF: Readonly<Record<string, string>> = {
 /** The blow a swing in `direction` strikes with these hands, where the forge draws it with both: its stroke (down the
  *  overhead, up the thrust, any other the side cut) and its hold (a blade or mace in each hand as a pair, else the
  *  weapon's own). Null where none is drawn. */
-/** One of the owner's blows by name: its stroke and its hold. */
-const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair)$/;
+/** One of the owner's blows by name: its stroke and its hold, standing or on the move. */
+const BLOW_NAME = /^(over|side|thrust)(1h|haft|hilt|pair|staff)(walk)?$/;
 
-/** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down and the thrust
- *  out; the side cut to the right with one hand or a pair (its right blade), to the left with a hilt or a haft, whatever
- *  way the swing was asked. Null for any other move. */
+/** The way a blow's blade goes as the forge draws it, for the striker's right hand: the overhead down, the thrust out,
+ *  and the side cut, captured from one clip in every hold, from the right shoulder across to the left, whatever way the
+ *  swing was asked. Null for any other move. */
 export function blowWay(anim: string): StrokeDirection | null {
-  const [, stroke, hold] = BLOW_NAME.exec(anim) ?? [];
+  const [, stroke] = BLOW_NAME.exec(anim) ?? [];
   if (stroke === 'over') return 'down';
   if (stroke === 'thrust') return 'up';
-  if (stroke === 'side') return hold === 'haft' || hold === 'hilt' ? 'left' : 'right';
+  if (stroke === 'side') return 'left';
   return null;
 }
 
-function blowOf(direction: Direction, right: string | null, left: string | null, draws: Draws): string | null {
+function blowOf(
+  direction: Direction,
+  right: string | null,
+  left: string | null,
+  draws: Draws,
+  grip: 'hilt' | null = null,
+): string | null {
   if (!right) return null;
   const stroke = direction === 'down' ? 'over' : direction === 'up' ? 'thrust' : 'side';
   const pair = !!left?.endsWith('_l') && !left.startsWith('pistolet');
-  const hold = pair ? 'pair' : HOLD_OF[right.split('_')[0] ?? ''];
+  const hold = grip === 'hilt' ? 'hilt' : pair ? 'pair' : HOLD_OF[right.split('_')[0] ?? ''];
   const anim = hold ? `${stroke}${hold}` : null;
   return anim && draws(anim, right) && (!left || draws(anim, left)) ? anim : null;
 }
@@ -240,16 +260,19 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
 }
 
 /**
- * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall the
- * mantle, vault, hang, shimmy or climb (frame by progress, or looping once a second); in the air the jump, its frame
- * by rising or falling; mounted, the horse's walk or gallop; a cast; a blow, the owner's blow for the swing's stroke
- * and the weapon's hold where drawn, else one stroke of the weapon's attack (frames 0-2, the next blow 3-5), up a
- * thrust, down a chop, left or right a two-handed swing where the weapon draws them; a shot, its weapon's own move,
- * then its reload where drawn; crouching; running; else the weapon's own walk and rest, a bow's in its own holds, the
- * walk's steps slowed to the body's speed below a full walk. `draws` says whether the forge draws a held thing in a
- * move.
+ * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall its move by
+ * progress or looping; in the air the jump by rising or falling; mounted, the horse's; a cast; a blow, the owner's blow
+ * for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2, the next blow 3-5); a
+ * shot, its weapon's own move, then its reload; crouching; running; else the weapon's own walk and rest, the walk's
+ * steps slowed below a full walk. `draws` says whether the forge draws a held thing in a move. Moving, a blow, a shot,
+ * a reload, a ranged weapon aimed and the cast play their own on the move where the figure draws it whole (`walking`).
  */
-export function shownMove(doing: Doing, frames: (anim: string) => number, draws: Draws): Shown {
+export function shownMove(
+  doing: Doing,
+  frames: (anim: string) => number,
+  draws: Draws,
+  walking: Walking = () => null,
+): Shown {
   const byProgress = (anim: string, progress: number): Shown => ({
     anim,
     frame: Math.min(frames(anim) - 1, Math.floor(progress * frames(anim))),
@@ -261,7 +284,9 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
   const rolls = draws('roll', null);
   const fight =
     doing.fight?.kind === 'dodge' && (doing.mounted || (doing.mode !== 'air' && !rolls)) ? null : doing.fight;
-  if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop);
+  // Moving, an action plays its own on the move where the figure draws it whole; standing, the action's own.
+  const moved = (anim: string): string => (doing.moving && doing.mode === 'ground' && walking(anim)) || anim;
+  if (fight) return fightMove(doing, fight, frames, draws, byProgress, loop, moved);
   if (doing.act) return byProgress(doing.act.anim, doing.act.progress);
   if (doing.mode === 'mantle' || doing.mode === 'vault') return byProgress(doing.mode, doing.over);
   if (doing.mode === 'hang') return doing.moving ? loop('shimmy', 1 / frames('shimmy')) : byProgress('hang', 0);
@@ -272,13 +297,15 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     if (!doing.moving) return loop('horseidle', WALK_FRAME);
     return doing.speed > 10 ? loop('horsegallop', WALK_FRAME / 4) : loop('horsewalk', WALK_FRAME / 2);
   }
-  if (doing.cast !== null) return byProgress('cast', doing.cast);
+  if (doing.cast !== null) return byProgress(moved('cast'), doing.cast);
   const kit = kitOf(doing.drawn ? doing.right : null, doing.drawn ? doing.left : null, draws);
   const { blow } = doing;
-  if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(kit.reload, blow.progress);
+  if (blow?.reload && kit.reload && draws(kit.reload, doing.right)) return byProgress(moved(kit.reload), blow.progress);
   if (blow && !blow.reload) {
-    const struck = blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws);
-    if (struck) return { anim: struck, frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
+    const struck =
+      blow.direction && doing.drawn && blowOf(blow.direction, doing.right, doing.left, draws, doing.grip ?? null);
+    if (struck)
+      return { anim: moved(struck), frame: blowFrame(blow.progress, blow.lands ?? BLOW_LANDS), frameSeconds: 0 };
     const stroke = blow.direction && STROKE_OF[blow.direction];
     // The owner's strokes for a weapon held alone: an off hand's blade, shield or torch is drawn in none of them.
     const anim = stroke && doing.right && !doing.left && draws(stroke, doing.right) ? stroke : kit.attack;
@@ -287,7 +314,9 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
     const span = frames(anim) / strokes;
     const first = blow.second && strokes === 2 ? span : 0;
     const through = blow.direction === null ? blow.progress * span : strokeFrame(blow.progress, blow.lands, span);
-    return { anim, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
+    // A shot (its weapon's own move) on the move keeps the shot's frames.
+    const shown = blow.direction === null ? moved(anim) : anim;
+    return { anim: shown, frame: first + Math.min(span - 1, Math.floor(through)), frameSeconds: 0 };
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
   if (doing.running && doing.moving) {
@@ -301,10 +330,11 @@ export function shownMove(doing: Doing, frames: (anim: string) => number, draws:
 
 /**
  * The move a fight holds a figure to, from the forge's own moves: the death, then lying fallen; fallen while knocked
- * down; hurt while staggered or flinching (its bow's or staff's own); the roll through a dodge, or where the forge draws
- * none, the jump's frames through the dodge's hop in the air by its rise and fall, or the run where the forge does not
- * draw what it holds in the jump; the parry through a deflect, a shield's block; the
- * guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised through its wind-up
+ * down; hurt while staggered or flinching (its bow's or staff's own), played by how far through it is; the roll
+ * through a dodge, or where the forge draws none, the jump's frames through the dodge's hop in the air by its rise
+ * and fall, or the run where the forge does not draw what it holds in the jump; the parry through a deflect, a
+ * shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised
+ * through its wind-up
  * and held at its end when it overreaches; and a ranged weapon aimed: the bow drawn, a gun held at its shot's aimed
  * frame (`AIMED_FRAME`), a crossbow raised as the first frame of its shot.
  */
@@ -315,6 +345,7 @@ function fightMove(
   draws: Draws,
   byProgress: (anim: string, progress: number) => Shown,
   loop: (anim: string, frameSeconds: number) => Shown,
+  moved: (anim: string) => string,
 ): Shown {
   const right = doing.drawn ? doing.right : null;
   const left = doing.drawn ? doing.left : null;
@@ -336,7 +367,7 @@ function fightMove(
     case 'down':
       return still('fallen');
     case 'struck':
-      return still(own('hurt'));
+      return byProgress(own('hurt'), fight.progress);
     case 'dodge':
       // The roll draws no weapon, held or worn: none is seen through it.
       if (draws('roll', null)) return byProgress('roll', fight.progress);
@@ -352,9 +383,9 @@ function fightMove(
     case 'overreach':
       return still(fight.stroke, 2);
     case 'draw': {
-      if (right?.startsWith('bow')) return byProgress('bow', fight.progress * 0.5);
+      if (right?.startsWith('bow')) return byProgress(moved('bow'), fight.progress * 0.5);
       const shot = kitOf(right, left, draws).attack;
-      return still(shot, AIMED_FRAME[shot] ?? 0);
+      return still(moved(shot), AIMED_FRAME[shot] ?? 0);
     }
   }
 }
