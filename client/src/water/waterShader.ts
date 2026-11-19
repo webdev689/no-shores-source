@@ -73,12 +73,14 @@ fn wind_chop() -> f32 {
   return clamp(0.12 + 0.88 * speed / 5.0, 0.12, 1.8) + 0.25 * sky_state.wind.w;
 }
 
-// Whitecaps the wind raises from a fresh breeze up, in patches drifting downwind.
+// Whitecaps the wind raises from a fresh breeze up, in patches each breaking and fading on its own beat. They stay in
+// place rather than travel, so neither the clock's hourly wrap nor a veering wind moves them; the beat (6 s) divides
+// the hour.
 fn wind_caps(local: vec2f) -> f32 {
   let speed = length(sky_state.wind.xy) * (1.0 + 0.3 * sky_state.wind.z);
-  let moved = local - sky_state.wind.xy / max(length(sky_state.wind.xy), 0.1) * frame.eye.w * 1.2;
-  let patches = value_noise(moved * 0.25) * 0.6 + value_noise(moved * 0.5 + vec2f(7.0, 3.0)) * 0.4;
-  return smoothstep(0.62, 0.8, patches) * smoothstep(6.0, 14.0, speed);
+  let patches = value_noise(local * 0.25) * 0.6 + value_noise(local * 0.5 + vec2f(7.0, 3.0)) * 0.4;
+  let beat = sin(frame.eye.w * TAU / 6.0 + patches * 12.0) * 0.1;
+  return smoothstep(0.62, 0.8, patches + beat) * smoothstep(6.0, 14.0, speed);
 }
 
 // Raindrops' rings near the eye, as hard as it falls: a ring a cell (a third of a metre), spreading and fading on each

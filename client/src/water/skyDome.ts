@@ -1,9 +1,9 @@
 /**
  * The sky the water's passes draw: the dome's colours with the twilight's glow toward the sun, the stars wheeling
  * about the pole, the moon by its phase, the sun's disc and halo, two layers of cloud by the weather, lit by the key
- * light, the lightning's flash and the weather's fog over it all. It reads the water's frame (the pixel's size), so
- * it comes after WATER_WGSL. Every noise scale on a cloud plane is a whole number of quarters: the drift wraps at
- * 1024 cells and the noise repeats every 256, so the wrap never shows.
+ * light, the lightning's flash and the weather's fog over it all. It needs WATER_WGSL's frame (the pixel's size).
+ * Every noise scale on a cloud plane is a whole number of quarters: the drift wraps at 1024 cells and the noise
+ * repeats every 256, so the wrap never shows.
  */
 export const SKY_DOME_WGSL = /* wgsl */ `
 const DECK_OCTAVES = vec4f(1.0, 2.25, 4.75, 9.5);
@@ -109,7 +109,8 @@ fn moon_light(direction: vec3f) -> vec4f {
   let seas = 0.62 + 0.3 * smoothstep(0.35, 0.65, value_noise(on_disc * 2.25 + vec2f(3.0, 7.0))) + 0.08 * value_noise(on_disc * 6.5);
   let face = vec3f(0.97, 0.95, 0.9) * (lit * seas * 0.95 + 0.04) * night;
   let edge = 1.0 - smoothstep(0.9, 1.0, sqrt(inside));
-  return vec4f(mix(out.rgb, face, edge), edge * (0.55 + 0.45 * night));
+  // By day the face only adds to the sky's blue, as the real one does; by night the disc hides the stars behind it.
+  return vec4f(mix(out.rgb, face, edge), edge * (1.0 - sky_state.sun.w));
 }
 
 // The cumulus deck's noise at a point of its plane: the octaves the blur leaves ('keep'), the rest at their mean.

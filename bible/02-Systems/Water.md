@@ -50,14 +50,14 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
 
 - **Depth.** The seabed is seen through the water, bent by the surface and tinted by the water it is seen through:
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
-- **Light.** The sky ([[Sky]]) and its clouds reflect, more at a glancing angle; the sun glints, its glitter blurring far off;
-  a crest glows green where the sun shines through it. Caustics dance on the bed.
+- **Light.** The sky ([[Sky]]) and its clouds reflect, more at a glancing angle; the sun glints, its glitter
+  blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed.
 - **The weather.** The wind's chop runs along the local wind and grows with it: near glassy in a calm, steep in a
-  gale. From a fresh breeze up the wind raises whitecaps in patches drifting downwind. Rain roughens the surface and
+  gale. From a fresh breeze up the wind raises whitecaps in patches that break and fade. Rain roughens the surface and
   dots it near the eye with spreading rings.
 - **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea in a
-  moderate breeze, more in a strong wind, less on calm fresh water. So the reflected clouds lose their fine detail and keep their mean cover. Looking down, their
-  shapes still show; near the horizon they smear into a lighter sky.
+  moderate breeze, more in a strong wind, less on calm fresh water. So the reflected clouds lose their fine detail
+  and keep their mean cover. Looking down, their shapes still show; near the horizon they smear into a lighter sky.
 - **Foam.** Foam is a lace of bubble walls. It covers crests that fold, a breaker's face and the surf behind it, the
   swash's edge and a splash. Each scale of lace gives way to its share as it shrinks toward a pixel.
 - **Fresh water.** A lake lies still under a light chop; a river's chop runs downstream at a pace set by its fall.

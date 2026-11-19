@@ -78,6 +78,7 @@ const CHOP_BEARINGS = 16;
 
 /** The bearing step (of CHOP_BEARINGS) nearest a wind blowing `wind` (m/s east and south). */
 export function chopBearing(wind: readonly [number, number]): number {
+  if (!Number.isFinite(wind[0]) || !Number.isFinite(wind[1])) return 0;
   const step = Math.round((Math.atan2(wind[1], wind[0]) / (2 * Math.PI)) * CHOP_BEARINGS);
   return ((step % CHOP_BEARINGS) + CHOP_BEARINGS) % CHOP_BEARINGS;
 }

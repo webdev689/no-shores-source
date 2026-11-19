@@ -55,7 +55,8 @@ the water's backdrop draws the sky from them, and the water reflects it.
   and colour: grey in rain, tan in sand, and thickest low down, so a valley fills before a hilltop. In thick fog the
   sky itself closes in to the fog's colour.
 - **The overworld camera** stays under the cloud deck. A deck forms from half cover, about 1150 m up, and lowers as
-  the cover closes. Rain brings it down to about 400 m and a storm lower still, and the camera keeps 60 m under it.
+  the cover closes. Steady rain brings it down to about 400 m, the heaviest to about 200 m and a storm a little lower
+  still; the camera keeps 60 m under it, and never comes lower than its floor.
 
 ## Limits
 

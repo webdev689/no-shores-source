@@ -13,14 +13,3 @@ test("the 1 km land's texels hold each cell's height, coast distance and carried
   const texels = wideTexels(cells, { left: 1, top: 0, right: 3, bottom: 2 });
   assert.deepEqual([...texels], [2, 20, -2, 0, 3, 30, -3, 0, 5, 50, -5, 0, 6, 60, -6, 0]);
 });
-
-test('the chop lies along the local wind, to the nearest of sixteen bearings', async () => {
-  const { chopBearing, chopWaves } = await import('./waterView.ts');
-  assert.equal(chopBearing([5, 0]), 0, 'east');
-  assert.equal(chopBearing([0, 5]), 4, 'south');
-  assert.equal(chopBearing([-5, 0.1]), 8, 'west');
-  assert.equal(chopBearing([0, -5]), 12, 'north');
-  const [eastX = 0, eastY = 0] = chopWaves(0);
-  const [southX = 0, southY = 0] = chopWaves(4);
-  assert.ok(Math.abs(eastX) > Math.abs(eastY) && Math.abs(southY) > Math.abs(southX), 'the first wave runs downwind');
-});

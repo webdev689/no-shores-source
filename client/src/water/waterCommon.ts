@@ -46,8 +46,9 @@ export function wideTexels(
 }
 
 /**
- * Noise, the sky's uniform and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise (the
- * distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time` moves.
+ * Noise, the sky's uniform and the caustics: the WGSL the water and the land under it share. `cells` is cellular noise
+ * (the distances to the nearest two of one jittered point a cell), each point dancing on its own clock when `time`
+ * moves.
  * Points are measured from the anchor (ANCHOR_M).
  */
 export const SHARED_WGSL = /* wgsl */ `
@@ -522,11 +523,12 @@ fn scene_distance(pixel: vec2f) -> f32 {
 // The haze between the eye and what it sees: the air's, toward the dome's colour, and the weather's fog, which lies
 // thickest low down (its density falls by e every 60 m up), toward the fog's colour.
 fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
-  let from_height = frame.eye.z / frame.depth_terms.w;
-  let to_height = from_height + direction.z * min(distance_to, 1e5) / frame.depth_terms.w;
+  let eye_height = frame.eye.z / frame.depth_terms.w;
+  let from_height = max(eye_height, 0.0);
+  let to_height = max(eye_height + direction.z * min(distance_to, 1e5) / frame.depth_terms.w, 0.0);
   let rise = to_height - from_height;
-  let low_from = exp(-max(from_height, 0.0) / 60.0);
-  let low_to = exp(-max(to_height, 0.0) / 60.0);
+  let low_from = exp(-from_height / 60.0);
+  let low_to = exp(-to_height / 60.0);
   let low = select(60.0 * (low_from - low_to) / rise, low_from, abs(rise) < 1.0);
   let ground_fog = sky_state.fog.w * 1.5 * clamp(low, 0.0, 1.0) * distance_to;
   let haze = 1.0 - exp(-distance_to / frame.view.z - ground_fog);
