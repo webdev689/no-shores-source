@@ -32,15 +32,19 @@ fn pace_of(crouched: bool, controls: &Controls) -> f64 {
     }
 }
 
-/// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise.
-fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool) -> Body {
+/// Starts a mantle up onto a lip, or a vault over a low, thin block: the body goes over it in time with its rise. None
+/// where the terrain walls the way over, as at a deck's edge: the body is never carried past one.
+fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool, terrain: &dyn Terrain) -> Option<Body> {
     let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let rise = ahead.block.top - body.z;
     let reach_over = if vault { clearing(&ahead.block, body, dir_x, dir_y) + 0.2 } else { TUNING.radius + 0.3 };
     let to = [body.x + dir_x * reach_over, body.y + dir_y * reach_over, if vault { body.z } else { ahead.block.top }];
+    if terrain.walled((body.x, body.y), (to[0], to[1])) {
+        return None;
+    }
     // DFO's mantle time at middling skill: (0.25 + 0.22 rise)(1.3 - 0.5 skill).
     let seconds = (0.25 + 0.22 * rise.max(0.0)) * 1.05;
-    Body {
+    Some(Body {
         mode: if vault { Mode::Vault } else { Mode::Mantle },
         over: Some(Over { from: [body.x, body.y, body.z], to, progress: 0.0, seconds }),
         vx: 0.0,
@@ -49,7 +53,7 @@ fn go_over(body: &Body, ahead: &WallAhead, bearing: f64, vault: bool) -> Body {
         lip: ahead.block.top,
         facing: bearing,
         ..*body
-    }
+    })
 }
 
 /// How far a body goes along (`dir_x`, `dir_y`) before its radius clears the block's far side, head on or slantwise.
@@ -145,7 +149,9 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
         return Body { mode: Mode::Air, vx: back_x, vy: back_y, vz: TUNING.jump, moving: false, ..*body };
     }
     if controls.forward > 0.0 && lip_above <= TUNING.hang + 0.01 {
-        return go_over(body, &ahead, body.facing, false);
+        if let Some(over) = go_over(body, &ahead, body.facing, false, terrain) {
+            return over;
+        }
     }
     let (along_x, along_y) = (libm::cos(body.facing), libm::sin(body.facing));
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
@@ -185,19 +191,23 @@ fn in_air(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Terr
         // A lip too low to hang from, with the feet clear of the ground, is climbed straight over.
         let low_lip = ahead.block.top - TUNING.hang < ground_at(blocks, terrain, x, y, body.z);
         if rise <= TUNING.vault || low_lip {
-            return go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead));
+            // Over it, unless the terrain walls the way past it: then it lands as if no lip stood there.
+            if let Some(over) = go_over(&moved, &ahead, controls.yaw, vaults(rise, &ahead), terrain) {
+                return over;
+            }
+        } else {
+            return Body {
+                z: ahead.block.top - TUNING.hang,
+                mode: Mode::Hang,
+                lip: ahead.block.top,
+                facing: controls.yaw,
+                vx: 0.0,
+                vy: 0.0,
+                vz: 0.0,
+                moving: false,
+                ..moved
+            };
         }
-        return Body {
-            z: ahead.block.top - TUNING.hang,
-            mode: Mode::Hang,
-            lip: ahead.block.top,
-            facing: controls.yaw,
-            vx: 0.0,
-            vy: 0.0,
-            vz: 0.0,
-            moving: false,
-            ..moved
-        };
     }
     let ground = ground_at(blocks, terrain, x, y, body.z);
     if z <= ground {
@@ -237,8 +247,11 @@ fn on_ground(
     if controls.jump && grounded >= TUNING.grounded_to_jump && !controls.mounted {
         let ahead = if controls.forward > 0.0 { wall_ahead(blocks, &next, controls.yaw) } else { None };
         // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
-        if let Some(ahead) = ahead.filter(|ahead| ahead.block.top - next.z <= TUNING.reach) {
-            return go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead));
+        if let Some(over) = ahead
+            .filter(|ahead| ahead.block.top - next.z <= TUNING.reach)
+            .and_then(|ahead| go_over(&next, &ahead, controls.yaw, vaults(ahead.block.top - next.z, &ahead), terrain))
+        {
+            return over;
         }
         let lift = TUNING.jump * if crouched { TUNING.crouched_jump } else { 1.0 };
         return Body {
