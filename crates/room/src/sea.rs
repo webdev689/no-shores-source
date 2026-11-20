@@ -393,7 +393,8 @@ impl Sea {
             } else {
                 ways_ahead(sailing, reach).into_iter().map(held).min().unwrap_or_else(|| held(ship.heading))
             };
-            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS);
+            // Her way is her pace's by the canvas she keeps, never under half.
+            sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * berth.kept[1].max(0.5));
         }
         let wind = steady_wind(&self.swell);
         self.tick_harbour(wind);
@@ -417,7 +418,8 @@ impl Sea {
             })
             .collect();
         let chart = SeaChart { coasts: &self.coasts, charted: &self.chart };
-        let met = self.pirates.tick(TICK_SECONDS, &ships, &chart);
+        let mut met = self.pirates.tick(TICK_SECONDS, &ships, &chart);
+        ports::wary_meet(&mut self.pirates, &self.berths, &ships, &mut met);
         let mut heave = |player| heave_to(&mut self.berths, &mut self.aboard, player);
         let at_sea = (&mut self.clashes, &mut self.pirates);
         let joined = self.fights.take_in(met, &ships, at_sea, &mut heave, (&waters, time));

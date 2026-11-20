@@ -62,7 +62,7 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
     const deck = snapshot.decks(index);
     if (!deck) throw new Error(`snapshot deck ${index} does not read`);
     const [players, boarders] = [Array.from(deck.playersArray() ?? []), Array.from(deck.boardersArray() ?? [])];
-    const aboard = players.map((player, at) => [player, boarders[at] ?? 0] as const);
+    const aboard = players.map((player, index) => [player, boarders[index] ?? 0] as const);
     return { aboard, hull: deck.hull(), snapshot: deck.snapshotArray() ?? new Uint8Array() };
   });
   return { flotsam, kept, told, decks };

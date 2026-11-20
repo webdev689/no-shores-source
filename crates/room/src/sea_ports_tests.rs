@@ -46,6 +46,39 @@ fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
 }
 
 #[test]
+fn a_voyage_sails_at_her_paces_way_by_the_canvas_she_keeps_never_under_half() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.tick();
+    let ticks_waited = super::super::COURSE_EVERY_TICKS as usize;
+    for (canvas, way) in [(0.8, 0.8), (0.2, 0.5)] {
+        ticks(&mut sea, ticks_waited);
+        sea.berths.get_mut(&player).unwrap().kept = [1.0, canvas, 1.0];
+        let from = sea.ships().find(|(each, _)| *each == player).unwrap().1.x;
+        sea.course(player, &[[90_000.0, 50_000.0]], 10).unwrap();
+        sea.tick();
+        let gone = sea.ships().find(|(each, _)| *each == player).unwrap().1.x - from;
+        let whole = 10.0 * super::super::SHIP_SPEED_M_S * movement::TICK_SECONDS;
+        assert!((gone - whole * way).abs() < 1e-9, "{canvas}: {gone} of {whole}");
+    }
+}
+
+#[test]
+fn a_wary_ship_meets_a_player_whose_sloop_she_outguns_and_lets_a_sound_one_be() {
+    let mut sea = sea();
+    let player = sea.join();
+    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
+    sea.pirates.sailing.push(Pirate::standing(1, 7, minor, [50_000.0, 49_400.0], 0.0, false));
+    sea.tick();
+    assert!(!sea.fights.fighting(player), "a wary Minor lets a sound Sloop be");
+    sea.berths.get_mut(&player).unwrap().kept = [0.3, 1.0, 1.0];
+    sea.tick();
+    assert!(sea.fights.fighting(player), "she falls on one holed under GRAPPLE_HULL");
+}
+
+#[test]
 fn a_player_whose_ship_goes_down_washes_up_at_the_nearest_port_city_her_hurts_a_sunk_ships() {
     let (mut sea, player) = met(700.0, Rank::Major);
     let vessel = vessel_mut(&mut sea, player, PLAYER);

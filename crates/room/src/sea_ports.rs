@@ -189,6 +189,33 @@ impl Sea {
     }
 }
 
+/// Each wary ship at sea within `ENGAGE_RANGE` of a player not fighting whose Sloop she would take as her kept hull
+/// leaves her (`naval::captain::wary_takes`, DFO's `takesPrize`) meets them as a bold one does: she leaves the sea, and
+/// the meeting joins `met`.
+pub(super) fn wary_meet(
+    pirates: &mut crate::pirates::Pirates,
+    berths: &BTreeMap<PlayerId, Berth>,
+    ships: &[crate::pirates::Voyager],
+    met: &mut Vec<(PlayerId, crate::pirates::Pirate)>,
+) {
+    let mut at = 0;
+    while at < pirates.sailing.len() {
+        let pirate = pirates.sailing[at];
+        let takes = |ship: &&crate::pirates::Voyager| {
+            let hull = berths.get(&ship.player).map_or(1.0, |berth| berth.kept[0]);
+            let near = libm::hypot(ship.at[0] - pirate.x, ship.at[1] - pirate.y) <= naval::captain::ENGAGE_RANGE;
+            !ship.fighting
+                && near
+                && !met.iter().any(|(player, _)| *player == ship.player)
+                && naval::captain::wary_takes(pirate.commission, hull)
+        };
+        match ships.iter().find(takes).filter(|_| !pirate.bold) {
+            Some(ship) => met.push((ship.player, pirates.sailing.remove(at))),
+            None => at += 1,
+        }
+    }
+}
+
 /// Her hurts kept with her and with her player's character.
 fn keep(berth: &mut Berth, characters: &mut BTreeMap<PlayerId, gear::Character>, player: PlayerId, kept: [f64; 3]) {
     berth.kept = kept;

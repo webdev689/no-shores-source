@@ -127,5 +127,9 @@ pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
     pub kept: Vec<(PlayerId, [f64; 3], f64)>,
     pub told: Vec<(PlayerId, Vec<f64>)>,
-    pub decks: Vec<(Vec<(PlayerId, PlayerId)>, u8, Vec<u8>)>,
+    pub decks: Vec<SeaDeck>,
 }
+
+/// A deck boarded as the snapshot carries it: each boarder's number at sea with theirs on her deck, her hull, and her
+/// deck room's snapshot.
+pub type SeaDeck = (Vec<(PlayerId, PlayerId)>, u8, Vec<u8>);

@@ -173,6 +173,16 @@ will take it, by the room's own tick.
   average, 90 to 95% of them 30 s and over; a fight comes by 5 minutes for 5 to 10% and by 10 for 5 to 10%. Chasing,
   a fight comes by 5 minutes for 10 to 35% (the Grey Tithe's waters the most) and by 10 for 10 to 50%, 25% in the
   pirates'; a wary ship chased never takes the player on, so she stays in sight minutes on end.
+- **How its fights end** ([[Naval Combat]], "How a fight ends"): a fight holds any number of players (`battle.rs`),
+  joined by a player not fighting or a hostile ship at sea within 750 m of it; a captain's ship that sinks lays what
+  floats for each player who fought her (`flotsam.rs`); a struck captain may be boarded, her deck a room on land the
+  sea holds and steps (`deck_fight.rs`, `sea_decks.rs`), whose boarders' land inputs the sea passes to it; a player
+  whose ship sinks, or beaten aboard her, washes up at the nearest port city (`harbour.rs`, `sea_ports.rs`); each ship
+  keeps her hurts, with the player's character, which the sea claims and saves as a node does ([[Accounts]]), and is
+  repaired by a port city. A course's message asks for a repair (1), a boarding (2) or leaving her deck (3). The sea's
+  snapshot carries what floats for each player, each ship's kept hurts and her repair's seconds left, what each player
+  is told beside their fight's view (the naval crate's numbers, or the sea's own: washed up, what a piece held, who
+  joined), and each deck boarded with its boarders and its room's own snapshot.
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused
