@@ -7,3 +7,8 @@
 2026-11-20 13:56 [observation-log] session-start scan: files=5 parsed=5 principles=0
 2026-11-20 13:56 [observation-log] session-start scan: files=5 parsed=5 principles=0
 2026-11-20 checkpoint after the review's apply tasks (10-13): no new observations
+2026-11-19 19:46 [overlook-source] session-start scan: files=0 parsed=0 principles=0
+2026-11-20 11:11 [user] session-start scan: files=4 parsed=4 principles=0
+2026-11-20 checkpoint: 1 observation written (0005)
+2026-11-20T13:38:08Z overlook #63 third audit: checkpoint, no new observations (fixes found by widened tests, each probed to its cause)
+2026-11-20 review: 7 observations from #63's log re-filed as 0006-0012; 6 applied on #100, 1 handed to the owner
