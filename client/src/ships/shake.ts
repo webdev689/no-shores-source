@@ -36,6 +36,11 @@ export class Shake {
     this.jars.push({ magnitude: Math.min(SHAKE.most, magnitude), born: now, phase: this.seed / 65_536 });
   }
 
+  /** The jars among a frame's `cues` (the feel's, a jar's carrying its `kick`), each at `now`. */
+  take(cues: readonly { readonly kick?: number }[], now: number): void {
+    for (const { kick } of cues) if (kick !== undefined) this.kick(kick, now);
+  }
+
   /** How the eye is shaken at `now`: every jar still going, added together; the spent let go. */
   at(now: number): Jar {
     this.jars = this.jars.filter((jar) => now - jar.born < SHAKE.inS + SHAKE.outS);

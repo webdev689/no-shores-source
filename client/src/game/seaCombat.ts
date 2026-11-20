@@ -10,6 +10,7 @@ import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { playCues } from '../ships/fightSounds.ts';
+import { Shake } from '../ships/shake.ts';
 import type { Stir } from '../ships/swellPose.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
@@ -98,6 +99,8 @@ export class SeaCombat {
   private swell: ShelteredSwell | undefined;
   private waterTime = 0;
   private stirred: Stir[] = [];
+  /** The eye jarred by her guns, the balls striking her, falls alongside and magazines near. */
+  private readonly shake = new Shake(1);
 
   constructor(
     room: SeaRoom,
@@ -214,10 +217,15 @@ export class SeaCombat {
     if (!this.naval.fighting) this.going = -1;
     this.down = Math.min(1, Math.max(0, this.down + (this.going * seconds) / PAN_S));
     const camera = cameraOf(this.aiming ? this.naval.aimCamera(orbit, this.fought, this.window, 1) : orbit);
+    const jar = this.shake.at(time);
     return {
-      eye: [camera.eye[0] + this.window.leftM, camera.eye[1] + this.window.topM, camera.eye[2]],
-      yaw: this.orbit.yaw,
-      pitch: this.orbit.pitch,
+      eye: [
+        camera.eye[0] + this.window.leftM + jar.east,
+        camera.eye[1] + this.window.topM + jar.south,
+        camera.eye[2] + jar.up,
+      ],
+      yaw: this.orbit.yaw + jar.yaw,
+      pitch: this.orbit.pitch + jar.pitch,
       fov: FIELD_OF_VIEW,
       near: 0.3,
       far,
@@ -337,7 +345,9 @@ export class SeaCombat {
       water,
       shadow,
     });
-    playCues(worldOutput(), this.naval.takeCues(), eye, this.orbit.yaw);
+    const cues = this.naval.takeCues();
+    this.shake.take(cues, now);
+    playCues(worldOutput(), cues, eye, this.orbit.yaw);
   }
 
   /** The fight's see-through puffs over the finished picture `target`, after the water, hidden where the scene's
