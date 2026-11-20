@@ -5,7 +5,7 @@ mod common;
 
 use combat::arms::{OffHand, WeaponClass, swing_ticks, weapon};
 use combat::fighter::{Action, Swing};
-use combat::strike::struck;
+use combat::strike::{struck, weapon_reach};
 use combat::{CombatInput, Happening, Intent, Stroke, Surroundings, step_fighter};
 use common::{SWORD, foe_at, idle, player_at, run, swinging};
 use movement::{Block, Controls, Flat};
@@ -134,6 +134,39 @@ fn a_blow_strikes_every_foe_its_arc_and_reach_hold_the_locks_target_first_then_t
         vec![3, 8, 2, 4],
         "the lock's target first"
     );
+}
+
+#[test]
+fn a_players_weapon_reaches_a_tenth_further_than_a_foes_and_bare_fists_as_far() {
+    let attack = combat::fighter::Attack {
+        stroke: Stroke::Down,
+        elapsed: 24,
+        strike: 24,
+        end: 60,
+        swing: Swing::Plain,
+        left_hand: false,
+    };
+    // A chop reaches the weapon's reach and a body's radius: 2.15 m in a foe's hands, 2.33 m in a player's.
+    let foe_struck = foe_at(0.0, -2.25, core::f64::consts::PI);
+    assert_eq!(
+        struck(1, &player_at(0.0, 0.0), &attack, &[(2, foe_struck)], &[], &Flat),
+        vec![2],
+        "the player reaches it"
+    );
+    let player_struck = player_at(0.0, -2.25);
+    assert!(
+        struck(1, &foe_at(0.0, 0.0, 0.0), &attack, &[(2, player_struck)], &[], &Flat).is_empty(),
+        "a foe falls short"
+    );
+    let nearer = player_at(0.0, -2.1);
+    assert_eq!(
+        struck(1, &foe_at(0.0, 0.0, 0.0), &attack, &[(2, nearer)], &[], &Flat),
+        vec![2],
+        "and reaches nearer in"
+    );
+    assert!((weapon_reach(WeaponClass::Greatsword, true) - 2.3 * 1.1).abs() < 1e-12);
+    assert_eq!(weapon_reach(WeaponClass::Greatsword, false), 2.3);
+    assert_eq!(weapon_reach(WeaponClass::Fists, true), weapon_reach(WeaponClass::Fists, false));
 }
 
 #[test]

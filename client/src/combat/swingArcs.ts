@@ -182,7 +182,7 @@ export class SwingArcs {
       if (look.brightness <= 0) return true;
       const flared = flaring && arc.flare ? arc.flare.strength * Math.exp(-since / FLARE.fades) : 0;
       const strength = look.brightness * (swing.special ? SPECIAL_BRIGHTER : 1) * (1 + flared);
-      const layer = layerFor(out, eye, arc.feet, { ramp: rampOf(swing), tint: swing.tint, strength });
+      const layer = layerFor(out, eye, { ramp: rampOf(swing), tint: swing.tint, strength });
       const shape: ArcShape = {
         course,
         feet: arc.feet,

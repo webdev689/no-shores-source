@@ -176,9 +176,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     only where the blade went fast, so only the cut shows: the cutting edge white-hot over a dark rim, the blade's sweep
     in lanes that each trail their own length, the oldest fifth dithered out in a 4 by 4 order; a ribbon along the tip
     turns to the eye, so a cut seen edge on still shows; the head is a four-rayed star, a square block for a blunt
-    weapon. It is drawn over its own striker's figure (brought along the eye's line to stand just before the striker's
-    card, so it stays where it is on the screen), so an overhead, a slant or a thrust shows from behind; walls and
-    figures nearer the eye still hide it. Its ramp is the blade's element where the hand glows, gold for a riposte or a
+    weapon. It stands where its blade goes, so its own striker's figure hides what passes behind it, as walls and
+    figures nearer the eye do: from behind, an overhead, a slant or a thrust shows only round its striker
+    ([[The Swing's Arc Never Covers Its Striker]]). Its ramp is the blade's element where the hand glows, gold for a riposte or a
     counter (`#4a2a06`, `#c8901e`, `#ffd95a`, `#fff6d0`), else its metal's, made from the metal's light (daedric red,
     steel blue, dwarven gold), and the element leaves the blade along it ([[Weapon Glow]]). Its weight is the weapon's
     class: a dagger's sweep 0.7 times a sword's wide and long, a mace's 1.2, a flail's 1.4, an axe's, a warhammer's and

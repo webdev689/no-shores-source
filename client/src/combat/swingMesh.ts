@@ -44,11 +44,6 @@ const GLINT = { grows: 0.14, strength: 0.75 } as const;
 /** A thrust's stab as it lands, which shows even end on: it opens from this size by this much (metres) over its life
  *  (seconds), from just before the landing, as strong as this at first and fading as it opens. */
 const STAB = { size: 0.3, grows: 0.5, before: 0.02, lasts: 0.2, strength: 2 } as const;
-/** A figure's card stands this far toward the eye from its feet; an arc is drawn no farther than this short of it,
- *  so a blow shows over its own striker. Nearer than the least, it is drawn where it is. */
-const CARD_STAND_M = 0.35;
-const OVER_CARD_M = 0.12;
-const LEAST_M = 0.3;
 /** Blaze sheds this many embers a second off the head, each living between these (s), rising and drifting (m/s). */
 const EMBERS = { rate: 18, life: [0.45, 0.7], rise: 0.7, drift: 0.5, pixels: 2 } as const;
 /** Volt jolts its strip this far either way (metres) at this many strikes a second, throwing this many forks off the
@@ -73,53 +68,49 @@ export interface ArcShape {
   readonly look: GlowLook;
 }
 
-/** Where an arc's vertices go and how: the numbers laid into, the eye, its ramp, tint and strength, and how far from
- *  the eye across the ground a point of it may stand (its striker's card, less a little). */
+/** Where an arc's vertices go and how: the numbers laid into, the eye, and its ramp, tint and strength. Each vertex
+ *  stands where the blade went, so its own striker's figure, like any other, hides what passes behind it. */
 export interface Layer {
   readonly out: number[];
   readonly eye: Vector;
   readonly ramp: number;
   readonly tint: Colour;
   readonly strength: number;
-  readonly nearest: number;
 }
 
-/** A layer for an arc struck from `feet`, seen from `eye`. */
+/** A layer for an arc seen from `eye`. */
 export function layerFor(
   out: number[],
   eye: Vector,
-  feet: Vector,
   look: { readonly ramp: number; readonly tint: Colour; readonly strength: number },
 ): Layer {
-  const apart = Math.hypot(feet[0] - eye[0], feet[1] - eye[1]) - CARD_STAND_M - OVER_CARD_M;
-  return { out, eye, ...look, nearest: apart > LEAST_M ? apart : Infinity };
-}
-
-/** `point` brought along the line to the eye until it stands no farther across the ground than the layer's nearest:
- *  the same place on the screen, nearer in depth. */
-function pulled(layer: Layer, point: Vector): Vector {
-  const { eye, nearest } = layer;
-  const across = Math.hypot(point[0] - eye[0], point[1] - eye[1]);
-  if (across <= nearest) return point;
-  return add(eye, add(point, eye, -1), nearest / across);
+  return { out, eye, ...look };
 }
 
 type Corner = { readonly point: Vector; readonly age: number; readonly across: number; readonly speed: number };
 
-/** Two triangles from four corners in order round, as `part` across `cells` figure pixels, in `ramp`; pulled toward
- *  the eye unless it lies on the ground. */
+/** Two triangles from four corners in order round, as `part` across `cells` figure pixels, in `ramp`. */
 function layQuad(
   layer: Layer,
   corners: readonly Corner[],
   part: number,
   cells: number,
-  { ramp = layer.ramp, ground = false }: { ramp?: number; ground?: boolean } = {},
+  { ramp = layer.ramp }: { ramp?: number } = {},
 ): void {
   const [first, second, third, fourth] = corners;
   if (!first || !second || !third || !fourth) return;
   for (const corner of [first, second, third, first, third, fourth]) {
-    const point = ground ? corner.point : pulled(layer, corner.point);
-    layer.out.push(...point, corner.age, corner.across, corner.speed, part, ...layer.tint, layer.strength, ramp, cells);
+    layer.out.push(
+      ...corner.point,
+      corner.age,
+      corner.across,
+      corner.speed,
+      part,
+      ...layer.tint,
+      layer.strength,
+      ramp,
+      cells,
+    );
   }
 }
 
@@ -165,10 +156,7 @@ function laySegment(
     across: cover,
     speed: (way + 1) / 2,
   });
-  layQuad(layer, [corner(from, -1), corner(to, -1), corner(to, 1), corner(from, 1)], PART.solid, pixels, {
-    ramp,
-    ground,
-  });
+  layQuad(layer, [corner(from, -1), corner(to, -1), corner(to, 1), corner(from, 1)], PART.solid, pixels, { ramp });
 }
 
 /** An arc's streak `time` into its blow, trailing `trail` seconds: sampled back along the head's own course over the
