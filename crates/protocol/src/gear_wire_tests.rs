@@ -38,6 +38,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Art(gear::arts::ArtAsk::SetCore { art: 2, slot: 1, fragment: 5 }),
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
+        Asked::Grant(Grant::Worn(Kind::Thunderlock)),
     ]
 }
 
