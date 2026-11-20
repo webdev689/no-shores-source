@@ -1,4 +1,5 @@
 // Every hull's model on the GPU, fetched from R2 the first time a ship of that hull is drawn and kept, and a frame's
+import type { ShadowMap } from '../shadow.ts';
 // ships drawn by them: each in her own hull, her side's colours and her rig, a slot of her model each. A hull still
 // coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
 import type { Gpu } from '../gpu.ts';
@@ -107,8 +108,20 @@ export class ShipModels {
     return fetching;
   }
 
-  /** Draws a frame's ships, each by her hull's model once it has come, the ships of one hull in its slots in turn. */
-  draw(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera): void {
+  /** Draws a frame's ships, each by her hull's model once it has come, the ships of one hull in its slots in turn, in
+   *  the sun's shadows when a map is given. */
+  draw(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow?: ShadowMap): void {
+    this.each(ships, (model, ship, slot) =>
+      model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig, shadow),
+    );
+  }
+
+  /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives her. */
+  castInto(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow: ShadowMap): void {
+    this.each(ships, (model, ship, slot) => model.castInto(pass, ship.place, camera, slot, ship.rig, shadow));
+  }
+
+  private each(ships: readonly DrawnShip[], drawn: (model: ShipView, ship: DrawnShip, slot: number) => void): void {
     const used = new Map<HullName, number>();
     for (const ship of ships) {
       const model = this.model(ship.hull);
@@ -116,7 +129,7 @@ export class ShipModels {
       const name = hullName(ship.hull);
       const slot = used.get(name) ?? 0;
       used.set(name, slot + 1);
-      model.drawInto(pass, ship.place, camera, slot, ship.look, ship.rig);
+      drawn(model, ship, slot);
     }
   }
 }

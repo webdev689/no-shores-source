@@ -3,6 +3,7 @@
 // round their masts as each sail is braced. The tags ride in the vertex's spare part bytes.
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import type { SailCorners } from './sails.ts';
+import { mastsOf } from './shipHarm.ts';
 import { type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
 type Point = readonly [number, number, number];
@@ -11,6 +12,10 @@ type Point = readonly [number, number, number];
 const PART_BYTE = 24;
 const SHELL_BYTE = 25;
 const YARD_BYTE = 26;
+const MAST_BYTE = 27;
+/** A spar stands on a mast when its forward end lies within this of the mast along her, metres: the mast itself, its
+ *  yards and tops, and a gaff's or boom's jaws; a bowsprit is far forward of any. */
+const ON_MAST_M = 1.2;
 /** Her breadth is measured in slices this long along her and this deep, metres; a vertex within `SHELL_M` of her
  *  breadth in its slice, facing outboard, is her shell. */
 const SLICE = { alongM: 0.25, acrossM: 0.25, upM: 0.1 } as const;
@@ -46,11 +51,19 @@ export interface Yard {
   readonly pivot: Point;
 }
 
-/** Her mesh's vertices with their tags, her yards, and each sail's pivot (a square sail's yard's; none for others). */
+/** A mast as her spars stand on it: the height of its foot and of its head, in her frame, metres. */
+export interface MastSpan {
+  readonly footZ: number;
+  readonly topZ: number;
+}
+
+/** Her mesh's vertices with their tags, her yards, each sail's pivot (a square sail's yard's; none for others), and
+ *  her masts fore to aft (`mastsOf`), whose spars fall with them. */
 export interface ShipTags {
   readonly vertices: ArrayBuffer;
   readonly yards: readonly Yard[];
   readonly pivots: readonly (Point | null)[];
+  readonly masts: readonly MastSpan[];
 }
 
 const distance = (one: Point, other: Point) => Math.hypot(one[0] - other[0], one[1] - other[1], one[2] - other[2]);
@@ -255,7 +268,28 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
     });
     if (bare.length > 0) mark(bare, mast.lowest);
   }
-  return { vertices, yards, pivots };
+  return { vertices, yards, pivots, masts: tagMasts(view, sparPieces, pointOf, mastsOf(sails).masts) };
+}
+
+/** Tags each spar standing on a mast with the mast's number plus one, and answers each mast's span. */
+function tagMasts(
+  view: DataView,
+  sparPieces: readonly (readonly number[])[],
+  pointOf: (vertex: number) => Point,
+  masts: readonly number[],
+): MastSpan[] {
+  const spans = masts.map(() => ({ footZ: Infinity, topZ: -Infinity }));
+  for (const piece of sparPieces) {
+    const points = piece.map(pointOf);
+    const forward = Math.max(...points.map((point) => point[0]));
+    const mast = masts.findIndex((x) => Math.abs(forward - x) < ON_MAST_M);
+    const span = spans[mast];
+    if (!span) continue;
+    for (const vertex of piece) view.setUint8(vertex * VERTEX_BYTES + MAST_BYTE, mast + 1);
+    for (const point of points)
+      [span.footZ, span.topZ] = [Math.min(span.footZ, point[2]), Math.max(span.topZ, point[2])];
+  }
+  return spans.map((span) => (span.footZ === Infinity ? { footZ: 0, topZ: 0 } : span));
 }
 
 /** A point of her frame turned about a vertical line through `pivot` by `degrees` of brace, its leeward arm aft (the

@@ -11,23 +11,28 @@ function countingGpu() {
     createRenderPipelineAsync: async () => (made.pipelines++, {}),
     createTexture: () => (made.textures++, { createView: () => ({}) }),
     createSampler: () => (made.samplers++, {}),
+    createBindGroupLayout: () => ({}),
+    createPipelineLayout: () => ({}),
     queue: { writeTexture: () => undefined },
   };
   return { gpu: { device, format: 'bgra8unorm' } as unknown as Gpu, made };
 }
 
-test('every hull on a device shares one pipeline, one set of pictures and one sampler', async () => {
+test("every hull on a device shares one pipeline, her shadow's, one set of pictures and one sampler", async () => {
   const { gpu, made } = countingGpu();
   const [one, other] = await Promise.all([shipKit(gpu), shipKit(gpu)]);
   await shipKit(gpu);
   assert.equal(one, other);
-  assert.deepEqual([made.pipelines, made.textures, made.samplers], [1, 1, 1]);
+  assert.deepEqual([made.pipelines, made.textures, made.samplers], [2, 1, 1]);
+  // She is lit through the sun's shadow maps, and casts into them from a shader of her shadow's own.
+  assert.match(made.shaders[0] ?? '', /sunlit\(drawn\.from_eye, normal\)/);
+  assert.match(made.shaders[1] ?? '', /fn cast_vertex/);
   // Its parts are numbered as the pictures are: the hull first, the canvas fourth.
   assert.match(made.shaders[0] ?? '', /const HULL_PART = 0u;/);
   assert.match(made.shaders[0] ?? '', /const SAIL_PART = 3u;/);
   const second = countingGpu();
   await shipKit(second.gpu);
-  assert.equal(second.made.pipelines, 1, 'another device makes its own');
+  assert.equal(second.made.pipelines, 2, 'another device makes its own');
 });
 
 test('a kit whose pipeline failed is made afresh next time', async () => {
@@ -42,5 +47,5 @@ test('a kit whose pipeline failed is made afresh next time', async () => {
   await assert.rejects(shipKit(gpu));
   failing = false;
   await shipKit(gpu);
-  assert.equal(made.pipelines, 2);
+  assert.equal(made.pipelines, 4, 'both pipelines are made again');
 });

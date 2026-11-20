@@ -199,6 +199,14 @@ Boat's sizes; a spanker is a gaff sail:
   sail's head stays on its yard at every brace.
 - **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, a square sail
   gathered in a bundle half a metre deep along its yard, the gaff and the yards home.
+- **Holed and torn.** In a fight ([[Naval Combat]], "How it looks") her canvas is drawn with holes: a cell of a
+  sail's grid (7 by 6 a sail) is left out where a ball passed through it, and more open as her canvas's share falls,
+  each new one beside an old, a third of every sail's cells shot through with none left; a hole never closes for the
+  fight. Her masts stand where her sails' heads and gaffs' luffs stand along her (`mastsOf`), each staysail on the mast
+  its head is set to; when her model loads, every spar whose forward end lies within 1.2 m of a mast is tagged with
+  it, so a fallen mast goes over her side with its yards, tops and gaff, its sails with it. A sail torn away falls
+  from its yard, head first, and floats astern; her flag comes down her mast when she strikes. The harm goes with the
+  fight.
 
 In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
 along the swell's bearing.
@@ -206,7 +214,7 @@ along the swell's bearing.
 Sail (`B`) puts her to sea at the camera's target, heading where the camera looks; the rules refuse her where the
 water is shallower than her draught, and the camera stands back off. Each frame owes her its time in whole ticks, one
 request at a time; time spent waiting on the land worker is caught up, a second at most. The ships layer draws her
-into the land's pass, lit as the land is, so the water sees her ([[Water]]): none inside her, foam at her bow, and her
+into the land's pass, lit as the land is and in the sun's shadows, casting her own ([[Game]], "Drawing"), so the water sees her ([[Water]]): none inside her, foam at her bow, and her
 wake in the ripples. Picking another landmass brings her in.
 
 With `?room=` in the editor's address, Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep
