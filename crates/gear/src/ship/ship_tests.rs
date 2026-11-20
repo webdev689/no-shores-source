@@ -180,6 +180,7 @@ fn infusion_raises_a_kept_module_to_the_fed_ones_level_keeping_its_nodes_for_aur
     let mut character = Character::starting();
     let kept = character.fitted(Slot::Sails).expect("fitted").id;
     character.items.get_mut(&kept).expect("held").0.bought = 1;
+    character.earn_ship_xp(u32::try_from(power::xp_for_level(6)).expect("fits"));
     let fed = carry(&mut character, Kind::Sails, Rarity::Magic, 6);
     let hull = carry(&mut character, Kind::Hull, Rarity::Magic, 9);
     let infuse = Ask::Infuse { item: kept, fed };
