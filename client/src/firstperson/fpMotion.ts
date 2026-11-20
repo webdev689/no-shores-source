@@ -93,7 +93,8 @@ export const LOWERED_GONE = 0.98;
 export function lowerStep(lower: number, climbing: number, seconds: number): number {
   const target = Math.min(1, Math.max(0, climbing));
   const tau = target > lower ? LOWER_DOWN : LOWER_UP;
-  const next = lower + (target - lower) * (1 - Math.exp(-Math.max(0, seconds) / tau));
+  const time = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  const next = lower + (target - lower) * (1 - Math.exp(-time / tau));
   return Math.abs(target - next) < 0.005 ? target : next;
 }
 

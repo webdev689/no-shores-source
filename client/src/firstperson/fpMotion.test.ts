@@ -68,3 +68,9 @@ test('the weapon goes down for a climb quickly, comes back slower, and is gone n
   assert.equal(lowerDrop(0.5), 100);
   assert.equal(lowerDrop(1), 200);
 });
+
+test('a frame of no known length leaves the lowering where it was', () => {
+  const lower = lowerStep(0.5, 1, Number.NaN);
+  assert.equal(lower, 0.5);
+  assert.ok(lowerStep(lower, 1, 0.01) > 0.5, 'and it goes on from there');
+});
