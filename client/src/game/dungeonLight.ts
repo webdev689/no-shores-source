@@ -6,17 +6,20 @@ import { type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeon
 type Colour = readonly [number, number, number];
 type Point = readonly [number, number, number];
 
-/** How a kind of light burns: its colour at its foot, how far it reaches (m), how much it flickers (0 steady), and
- *  how fast it swells and fades, radians a second (none: it holds). */
+/** How a kind of light burns: its colour at its foot, how far it reaches (m), how much it flickers (0 steady), how
+ *  fast it swells and fades, radians a second (none: it holds), and whether still water shows its gleam (unless
+ *  false). */
 export interface Burning {
   readonly colour: Colour;
   readonly reach: number;
   readonly flicker: number;
   readonly pulse?: number;
+  readonly gleams?: boolean;
 }
 
 /** Each kind of light: a wall's torch, the fixtures (`FIXTURE`, in its order), the open portal, and the landmarks'
- *  glows past the fixtures': a spirit's pale green, daylight down a shaft, water's faint teal and a rune's violet. */
+ *  glows past the fixtures': a spirit's pale green, daylight down a shaft, water's faint teal and a rune's violet.
+ *  Water's glow is the water's own, lying on it, so it lights round it but makes no gleam on it. */
 export const LIGHT_KINDS = {
   torch: { colour: [1.5, 0.95, 0.5], reach: 8, flicker: 1 },
   brazier: { colour: [1.8, 0.9, 0.4], reach: 9, flicker: 1.2 },
@@ -28,7 +31,7 @@ export const LIGHT_KINDS = {
   portal: { colour: [0.85, 0.95, 1.4], reach: 8, flicker: 0.2 },
   spirit: { colour: [0.8, 1.25, 0.9], reach: 6, flicker: 0.25 },
   daylight: { colour: [1.1, 1.2, 1.35], reach: 14, flicker: 0 },
-  water: { colour: [0.22, 0.55, 0.6], reach: 5, flicker: 0.1 },
+  water: { colour: [0.22, 0.55, 0.6], reach: 5, flicker: 0.1, gleams: false },
   rune: { colour: [0.85, 0.4, 1.4], reach: 6, flicker: 0, pulse: 0.9 },
 } as const satisfies Record<string, Burning>;
 
@@ -125,8 +128,18 @@ export function falloff(distance: number, reach: number): number {
   return share * share;
 }
 
-/** The light at a point at `time`, from the lights and the faint light of the mood there: what a figure standing
- *  there is lit by. */
+/** Where summed light, each channel, starts to ease, and what it eases toward and never reaches. */
+export const SHOULDER = { knee: 0.8, ceiling: 1.4 } as const;
+
+/** One channel of summed light as it is drawn: as it is up to the knee, and past it eased toward the ceiling, so
+ *  where many lights burn together a wall keeps its colour and its picture rather than clipping to flat. */
+export function shoulder(light: number): number {
+  const over = Math.max(light - SHOULDER.knee, 0);
+  return Math.min(light, SHOULDER.knee) + over / (1 + over / (SHOULDER.ceiling - SHOULDER.knee));
+}
+
+/** The light at a point at `time`, from the lights and the faint light of the mood there, eased past its knee: what
+ *  a figure standing there is lit by. */
 export function lightAt(lights: readonly Light[], point: Point, time: number, mood: Colour): [number, number, number] {
   const light: [number, number, number] = [...mood];
   for (const { at, number, burning } of lights) {
@@ -136,14 +149,16 @@ export function lightAt(lights: readonly Light[], point: Point, time: number, mo
     for (let channel = 0; channel < 3; channel++)
       light[channel] = (light[channel] ?? 0) + (burning.colour[channel] ?? 0) * strength;
   }
-  return light;
+  return [shoulder(light[0]), shoulder(light[1]), shoulder(light[2])];
 }
 
 const vector = (colour: Colour) => `vec3f(${colour.map((value) => value.toFixed(3)).join(', ')})`;
 
 /** The same light in WGSL: `lights_at(point, normal, time, mood)` sums the lights the view holds, each turned by how
- *  squarely it faces the surface; the mood comes from no way at all. */
+ *  squarely it faces the surface, the mood coming from no way at all, and eases the sum as `shoulder` does. */
 export const LIGHT_WGSL = /* wgsl */ `
+const LIGHT_KNEE = ${SHOULDER.knee.toFixed(3)};
+const LIGHT_CEILING = ${SHOULDER.ceiling.toFixed(3)};
 const FLAME = ${vector(FLAME)};
 const CRYSTAL_GLOW = ${vector(CRYSTAL_GLOW)};
 const FUNGUS_GLOW = ${vector(FUNGUS_GLOW)};
@@ -157,7 +172,7 @@ struct Light {
   place: vec4f,
   // its colour, and its reach
   colour: vec4f,
-  // how much it flickers, and how fast it pulses
+  // how much it flickers, how fast it pulses, and how much of a gleam still water shows of it
   shape: vec4f,
 };
 
@@ -168,6 +183,10 @@ fn flicker(time: f32, number: f32, amount: f32) -> f32 {
 
 fn pulse(time: f32, number: f32, rate: f32) -> f32 {
   return select(1.0, 0.8 + 0.2 * cos(time * rate + number * 2.17), rate > 0.0);
+}
+
+fn shoulder(light: f32) -> f32 {
+  return min(light, LIGHT_KNEE) + max(light - LIGHT_KNEE, 0.0) / (1.0 + max(light - LIGHT_KNEE, 0.0) / (LIGHT_CEILING - LIGHT_KNEE));
 }
 
 fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
@@ -182,6 +201,6 @@ fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
     let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
     light += lamp.colour.rgb * share * share * facing * burns;
   }
-  return light;
+  return vec3f(shoulder(light.r), shoulder(light.g), shoulder(light.b));
 }
 `;

@@ -22,7 +22,7 @@ import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
-import { DUNGEON_SHADER, LIGHT_FLOATS, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
+import { DUNGEON_SHADER, LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
@@ -255,12 +255,7 @@ export class DungeonView {
     const away = ({ at: [x, y, z], burning }: Light) => Math.hypot(x - eye[0], y - eye[1], z - eye[2]) - burning.reach;
     const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_LIGHTS);
     const lights = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
-    nearest.forEach(({ at, number, burning }, index) =>
-      lights.set(
-        [...at, number, ...burning.colour, burning.reach, burning.flicker, burning.pulse ?? 0, 0, 0],
-        index * LIGHT_FLOATS,
-      ),
-    );
+    nearest.forEach((light, index) => lights.set(lightFloats(light), index * LIGHT_FLOATS));
     device.queue.writeBuffer(drawn.lights, 0, lights);
     const { layout } = drawn;
     const view = new Float32Array(VIEW_FLOATS.all);

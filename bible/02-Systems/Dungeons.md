@@ -291,11 +291,17 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
   glow's spirit, daylight, water and rune. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
-  lights nearest the eye, and the shader and the figures sum the same light (`lightAt`).
+  lights nearest the eye, and the shader and the figures sum the same light (`lightAt`). Each channel of the sum
+  stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
+  its walls' colour and pictures rather than clipping to flat.
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
   candles, five to eight glowing crystals, a lantern on its chain, a hearth's fire, and six to ten fungi, each a pale
   stalk under a glowing cap. Each is shaped by where it
   stands, so no two are alike.
+- **Glows and water** (`dungeonShaders.ts`): a crystal's and a lantern's glass glow by each triangle's own facing,
+  from 0.55 of their glow edge on to all of it square to the eye, and a little from the lights round them, so a
+  crystal's faces differ. Still water lies dark over a floor of half its cell's mood, under a faint sheen of the mood
+  that grows toward a grazing look, and each light but water's own glow, which lies on it, gleams off it.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.

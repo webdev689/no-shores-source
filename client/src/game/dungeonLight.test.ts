@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { runInNewContext } from 'node:vm';
 import landmarks from '../../../content/dungeon/landmarks.json' with { type: 'json' };
 import {
   type Burning,
@@ -13,6 +14,8 @@ import {
   moodLooks,
   MOODS,
   pulse,
+  shoulder,
+  LIGHT_WGSL,
 } from './dungeonLight.ts';
 import { type DungeonLayout, FIXTURE } from './dungeonLayout.ts';
 
@@ -133,4 +136,45 @@ test("a landmark's glows burn beside the torches and the fixtures, each by its k
   );
   const lit = lightAt(burning, [7, 8, 1], 0, MOODS.sanctum);
   assert.ok(lit[2] > MOODS.sanctum[2] + 0.5, 'the rune lights what stands by it, as the shader lights the walls');
+});
+
+test('summed light keeps its value up to 0.8 and eases toward 1.4 past it, in the shader as for the figures', () => {
+  assert.equal(shoulder(0.5), 0.5);
+  assert.equal(shoulder(0.8), 0.8);
+  assert.ok(shoulder(3) < 1.4 && shoulder(3) > 1.1, `3 maps to ${shoulder(3)}`);
+  for (let light = 0.8; light < 6; light += 0.05) assert.ok(shoulder(light + 0.05) > shoulder(light), 'brighter still');
+  // A room lit far past 1 by its lanterns, its brazier and its torches keeps its colour.
+  const lit = lightAt(
+    [
+      { at: [0, 0, 1], number: 0, burning: LIGHT_KINDS.brazier },
+      { at: [1, 0, 2], number: 1, burning: LIGHT_KINDS.lantern },
+      { at: [-1, 0, 2], number: 2, burning: LIGHT_KINDS.torch },
+    ],
+    [0, 0.5, 1],
+    0,
+    MOODS.mines,
+  );
+  assert.ok(Math.max(...lit) < 1.4 && lit[0] > lit[1] && lit[1] > lit[2], `${lit.join()} warm and under 1.4`);
+  // The shader's own shoulder, read from its WGSL and run over the same numbers.
+  const constant = (name: string) => Number(new RegExp(`const ${name} = ([\\d.]+);`).exec(LIGHT_WGSL)?.[1]);
+  const body = /fn shoulder\(light: f32\) -> f32 \{\s*return ([^;]+);\s*\}/.exec(LIGHT_WGSL)?.[1] ?? 'NaN';
+  const knee = constant('LIGHT_KNEE');
+  const ceiling = constant('LIGHT_CEILING');
+  for (let light = 0; light < 6; light += 0.1) {
+    const shaded = runInNewContext(body, {
+      light,
+      min: Math.min,
+      max: Math.max,
+      LIGHT_KNEE: knee,
+      LIGHT_CEILING: ceiling,
+    });
+    assert.ok(
+      Math.abs(shaded - shoulder(light)) < 1e-6,
+      `${light}: the shader's ${shaded}, the figures' ${shoulder(light)}`,
+    );
+  }
+  assert.match(
+    LIGHT_WGSL,
+    /return vec3f\(shoulder\(light\.r\), shoulder\(light\.g\), shoulder\(light\.b\)\);\s*\}\s*$/,
+  );
 });

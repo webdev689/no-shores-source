@@ -1,10 +1,11 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
 // the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern, crystal and fungus
-// cap glowing in its own colour, and still water dark but for the lights it catches.
+// cap glowing in its own colour, a crystal's and a lantern's glass by their facets, and still water dark over a floor
+// of its cell's mood, catching the lights.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, PORTAL_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
-import { LIGHT_WGSL } from './dungeonLight.ts';
+import { type Light, LIGHT_WGSL } from './dungeonLight.ts';
 
 /** The most lights lighting one frame: the nearest to the eye. */
 export const MOST_LIGHTS = 32;
@@ -14,6 +15,13 @@ export const MOST_LOOKS = 8;
 export const VIEW_FLOATS = { fromEye: 0, eye: 16, lights: 20, grid: 24, moods: 28, all: 28 + MOST_LOOKS * 4 } as const;
 /** A light's three vec4s: where it burns and its number, its colour and reach, and its flicker. */
 export const LIGHT_FLOATS = 12;
+
+/** A light as the shader's `Light` holds it: where it burns and its number, its colour and reach, and its flicker,
+ *  its pulse and how much of a gleam still water shows of it. */
+export function lightFloats({ at, number, burning }: Light): number[] {
+  const gleam = burning.gleams === false ? 0 : 1;
+  return [...at, number, ...burning.colour, burning.reach, burning.flicker, burning.pulse ?? 0, gleam, 0];
+}
 
 export const DUNGEON_SHADER = /* wgsl */ `
 struct View {
@@ -45,6 +53,8 @@ const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
 const WATER = ${DUNGEON_LAYERS.water}u;
 // Still water's own colour, lit as a surface is: dark, so the mood and the lights' gleams tell it.
 const WATER_DEEP = vec3f(0.1, 0.14, 0.16);
+// How much of its cell's mood still water shows however dark it lies, so it reads as water and not a hole.
+const WATER_FLOOR = 0.5;
 // A layer with this bit set is the portal's face, in the picture the rest of its number names.
 const PORTAL = ${PORTAL_FLAG}u;
 
@@ -85,8 +95,9 @@ fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
   return view.moods[min(look, ${MOST_LOOKS - 1}u)].rgb;
 }
 
-// Still water: a slow ripple through its normal; each light a tight, bright gleam off it toward the eye, and the
-// cell's faint light caught more the lower the eye looks across it.
+// Still water: a slow ripple through its normal; each light a tight, bright gleam off it toward the eye, but the
+// water's own glow, which lies on it; under them a floor of the cell's faint light, and over them a sheen of it, for
+// there is no sky to mirror, caught more the lower the eye looks across it.
 fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
   let ripple = 0.04 * vec2f(
     sin(point.x * 2.3 + time * 0.7) + 0.6 * sin(point.y * 3.1 - time * 0.5),
@@ -103,10 +114,22 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
     let half_way = normalize(towards / max(distance, 1e-3) + to_eye);
     let shine = pow(max(dot(rippled, half_way), 0.0), 120.0);
     let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
-    gleam += lamp.colour.rgb * share * share * shine * burns * 3.0;
+    gleam += lamp.colour.rgb * share * share * shine * burns * 3.0 * lamp.shape.z;
   }
   let grazing = pow(1.0 - max(dot(rippled, to_eye), 0.0), 5.0);
-  return WATER_DEEP * lights_at(point, rippled, time, mood) + gleam + mood * grazing * 0.8;
+  let sheen = mood * (0.15 + 0.85 * grazing);
+  return mood * WATER_FLOOR + WATER_DEEP * lights_at(point, rippled, time, mood) + gleam + sheen;
+}
+
+// How much of a glowing facet's glow shows: all of it square to the eye, a little over half edge on.
+fn facing_share(face: vec3f, to_eye: vec3f) -> f32 {
+  return 0.55 + 0.45 * abs(dot(face, to_eye));
+}
+
+// A crystal's or a lantern pane's glow by its facet, and a little lit by the lights round it, so one crystal's faces
+// differ and it reads as a solid, not a flat cut-out. \`face\` is the triangle's own normal, flat across it.
+fn facet(glow: vec3f, point: vec3f, face: vec3f, to_eye: vec3f, time: f32) -> vec3f {
+  return glow * (facing_share(face, to_eye) + 0.15 * lights_at(point, face, time, vec3f(0.0)));
 }
 
 @fragment
@@ -115,6 +138,12 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let portal = (surface.layer & PORTAL) != 0u;
   let layer = surface.layer & ~PORTAL;
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(layer, last)).rgb;
+  // The triangle's own normal, turned to the eye: a piece's smooth normals would round a crystal's facets away.
+  // Derivatives are taken here, before any branch, as they must be.
+  let to_eye = normalize(view.eye.xyz - surface.point);
+  let across = cross(dpdx(surface.point), dpdy(surface.point));
+  let flat_normal = across / max(length(across), 1e-8);
+  let face = flat_normal * select(-1.0, 1.0, dot(flat_normal, to_eye) >= 0.0);
   let time = view.eye.w;
   // Each glow by where it burns, so no two flicker in step.
   let phase = surface.point.x * 0.7 + surface.point.y * 1.3;
@@ -125,12 +154,12 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
     return vec4f(EMBER_GLOW * flicker(time * 0.5, phase, 1.4), 1.0);
   }
   if layer == LANTERN_GLASS {
-    return vec4f(LANTERN_GLOW * flicker(time, phase, 0.35), 1.0);
+    return vec4f(facet(LANTERN_GLOW * flicker(time, phase, 0.35), surface.point, face, to_eye, time), 1.0);
   }
   if layer == CRYSTAL {
     // A slow swell through each crystal, from its foot to its tip.
     let swell = 0.85 + 0.15 * sin(time * 1.3 + phase + surface.point.z * 2.0);
-    return vec4f(CRYSTAL_GLOW * swell, 1.0);
+    return vec4f(facet(CRYSTAL_GLOW * swell, surface.point, face, to_eye, time), 1.0);
   }
   if layer == FUNGUS {
     // A slower breath through each cap.
