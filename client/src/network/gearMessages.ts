@@ -332,7 +332,9 @@ export function gearOf(gear: Gear): GearState {
     cratePrice: gear.cratePrice(),
     standing: {
       pledge: gear.pledge(),
-      reputation: Array.from({ length: gear.reputationLength() }, (unused, index) => Number(gear.reputation(index) ?? 0n)),
+      reputation: Array.from({ length: gear.reputationLength() }, (unused, index) =>
+        Number(gear.reputation(index) ?? 0n),
+      ),
       packages: Array.from(gear.packagesArray() ?? []),
       artLevels: Array.from(gear.artLevelsArray() ?? []),
       artXp: Array.from(gear.artXpArray() ?? []),
