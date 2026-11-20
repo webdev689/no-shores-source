@@ -43,7 +43,7 @@ test('the Journal is This Week: the day’s, the week’s, each reset’s time, 
   assert.ok(root.find('Loading…'));
 });
 
-test('This Week’s Bounties shows the day’s board as the gear carried it, with no press, or why it is shut', async () => {
+test('This Week’s Bounties shows the board as the gear carried it, with no press, or why it is shut', async () => {
   const { root } = fakePage();
   const drawn = activitiesAt(await module, 29_919_420);
   const named = { dungeon: (patrol: string) => patrol, place: (id: string) => id };

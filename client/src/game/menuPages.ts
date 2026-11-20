@@ -1,6 +1,6 @@
-// The menu's pages that need no gear: Journal, This Week now with the day's bounties and its quests still to come; Guild, still to come and
-// saying so; the Ship, the Sloop's details as Manage shows them; and Settings, which keeps the account and the volumes
-// of the interface and the world.
+// The menu's pages that need no gear: Journal, This Week now with the day's bounties and its quests still to come;
+// Guild, still to come and saying so; the Ship, the Sloop's details as Manage shows them; and Settings, which keeps the
+// account and the volumes of the interface and the world.
 
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';

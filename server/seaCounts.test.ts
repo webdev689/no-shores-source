@@ -24,7 +24,7 @@ async function world() {
   return { kept, token };
 }
 
-test('a ship sunk at sea is counted for each player at sea who fought her, never taking a character another room holds', async () => {
+test('a ship sunk is counted for each player at sea who fought her, never taking one another room holds', async () => {
   const { kept, token } = await world();
   const land = 'node-overlook-social:1';
   const account = (await kept.claim(token, land))?.account ?? '';
@@ -45,7 +45,7 @@ test('a ship sunk at sea is counted for each player at sea who fought her, never
   assert.equal((await kept.claim(token, 'node-overlook-social:2'))?.body, '{"kept":2}', 'kept as counted, and let go');
 });
 
-test('a ship down that moved nothing leaves the character as it was kept, and a refused claim counts nothing', async () => {
+test('a ship down that moved nothing leaves the character as kept, and a refused claim counts nothing', async () => {
   const { kept, token } = await world();
   const account = (await kept.claim(token, 'node-overlook-social:1'))?.account ?? '';
   await kept.release(account, 'node-overlook-social:1', '{"kept":1}');
