@@ -1,6 +1,6 @@
 use crate::activity::Activity;
 use crate::bounties::{board, bounty_pay};
-use crate::objectives::{Feat, Objective};
+use crate::objectives::{Feat, Objective, count_ship_down};
 use crate::quests::{Quest, Quests, quests};
 use crate::story::Story;
 use crate::{Character, Difficulty};
@@ -87,6 +87,22 @@ fn a_held_bounty_counts_each_feat_it_names_up_to_its_target_on_its_own_day_alone
     assert!(!character.saw(&ship, 20_777), "a room whose day is behind: yesterday's place 2 would have counted it too");
     assert!(!character.saw(&ship, 20_779), "nor one past it: those bounties ended at the reset");
     assert_eq!(character.activity.today.bounties[&2], 1);
+}
+
+#[test]
+fn a_ship_down_counts_once_for_each_character_held_however_often_its_account_is_listed() {
+    let mut held = BTreeMap::from([("ada", Character::starting()), ("ben", Character::starting())]);
+    for character in held.values_mut() {
+        character.activity.today(20_778).bounties.extend([(2, 0), (3, 0)]);
+    }
+    let downs = [(vec!["ada", "ada", "ben"], 1), (vec!["ada"], 3)];
+    for (fought, rank) in downs {
+        let fighters = held.iter_mut().filter(|(account, _)| fought.contains(account)).map(|(_, character)| character);
+        assert!(count_ship_down(fighters, Some("continent-4"), rank, 20_778));
+    }
+    assert_eq!(held["ada"].activity.today.bounties, BTreeMap::from([(2, 2), (3, 1)]), "once a down, listed twice");
+    assert_eq!(held["ben"].activity.today.bounties, BTreeMap::from([(2, 1), (3, 0)]));
+    assert!(!count_ship_down(held.values_mut(), None, 1, 20_779), "a day not the record's");
 }
 
 #[test]

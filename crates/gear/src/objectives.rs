@@ -114,3 +114,16 @@ impl Character {
         moved
     }
 }
+
+/// Counts a hostile ship sunk or taken toward each character that fought her, by her water (a continent's id, none
+/// off every water) and rank: whether any count moved. Each is a held character the room passes once, so an account
+/// listed twice among her fighters counts once.
+pub fn count_ship_down<'a>(
+    characters: impl IntoIterator<Item = &'a mut Character>,
+    water: Option<&str>,
+    rank: u8,
+    day: u64,
+) -> bool {
+    let sunk = Feat::Sunk { water, rank };
+    characters.into_iter().fold(false, |moved, character| character.saw(&sunk, day) | moved)
+}

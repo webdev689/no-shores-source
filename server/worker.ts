@@ -7,7 +7,6 @@ import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
 import { canonicalRoom, nodeRoom, privateRun, runAsk } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
-import { type ShipDown, countAtSea } from './seaCounts.ts';
 
 interface Env {
   readonly ROOMS: DurableObjectNamespace<RoomHost>;
@@ -73,7 +72,7 @@ export class RoomHost extends DurableObject<Env> {
    *  a player let go of is gone from it, though their socket may still be closing. */
   private readonly players = new Map<
     WebSocket,
-    { readonly player: number; count: Count | undefined; signed: boolean; token: string | null; account: string | null }
+    { readonly player: number; count: Count | undefined; signed: boolean; token: string | null }
   >();
   private keeper: Keeper | null = null;
   /** The wait before an emptied run is forgotten, while it runs. */
@@ -108,7 +107,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    const held = { player, count: undefined, signed: false, token: null, account: null as string | null };
+    const held = { player, count: undefined, signed: false, token: null };
     this.players.set(server, held);
     void this.keeper?.tokenDue(
       player,
@@ -190,9 +189,7 @@ export class RoomHost extends DurableObject<Env> {
       // At sea no character is kept, so the room says only who is there, for the Roster.
       if (this.name === 'sea') {
         held.token = message;
-        void this.env.ACCOUNTS.present(message, this.name)
-          .then((account) => (held.account = account))
-          .catch(() => null);
+        void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
       }
       return;
     }
@@ -219,7 +216,7 @@ export class RoomHost extends DurableObject<Env> {
     const held = this.players.get(socket);
     if (!held) return;
     this.players.delete(socket);
-    if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => null);
+    if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
     // The character's last save reads it now, before the room lets the player go.
     void this.keeper?.leave(held.player);
     this.guarded(() => this.room.leave(held.player), undefined);
@@ -255,22 +252,6 @@ export class RoomHost extends DurableObject<Env> {
     }
   }
 
-  /** Counts each ship gone down at sea toward the bounties and quests of each player here who fought her, by their
-   *  kept characters (`seaCounts.ts`), without waiting for the accounts. */
-  private countShipDowns(): void {
-    const downs = JSON.parse(this.guarded(() => this.room.shipDowns(), '[]')) as ShipDown[];
-    if (downs.length === 0) return;
-    const tokens = new Map<string, string>();
-    for (const held of this.players.values()) if (held.account && held.token) tokens.set(held.account, held.token);
-    const accounts = this.env.ACCOUNTS;
-    const kept = {
-      claim: (token: string, holder: string, anyway?: boolean) => accounts.claim(token, holder, anyway),
-      release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
-    };
-    const count = (ask: string) => this.guarded(() => this.room.countKept(ask), '');
-    countAtSea(downs, tokens, kept, count, Math.floor(Date.now() / MINUTE_MS)).catch(() => undefined);
-  }
-
   /** Ticks the room as often as its clock says, catching up whole ticks the timer was late for. */
   private startTicking(): void {
     if (this.ticking) return;
@@ -286,7 +267,6 @@ export class RoomHost extends DurableObject<Env> {
         this.guarded(() => this.room.tick(), undefined);
         this.ticks++;
       }
-      if (this.name === 'sea') this.countShipDowns();
       const snapshot = this.guarded(() => this.room.snapshot(), new Uint8Array());
       for (const socket of this.open()) {
         const held = this.players.get(socket);
@@ -306,7 +286,7 @@ export class RoomHost extends DurableObject<Env> {
       if (now - this.lastPresent >= PRESENT_EVERY_MS) {
         this.lastPresent = now;
         for (const held of this.players.values())
-          if (held.token) void this.env.ACCOUNTS.present(held.token, this.name).catch(() => null);
+          if (held.token) void this.env.ACCOUNTS.present(held.token, this.name).catch(() => false);
       }
       if (now - this.lastKept >= 1000) {
         this.lastKept = now;

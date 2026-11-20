@@ -3,7 +3,6 @@
  * when they join, saves it while they play, and lets it go when they leave. A hold lapses once its room stops saving,
  * and a claim waits a moment for another room to let go (a player moving between rooms leaves one as they join the
  * next) before taking it anyway, so the room that held it learns from its next save that the player went elsewhere.
- * A claim asked not to take it anyway (the sea's count, `seaCounts.ts`) gives up after the wait instead.
  */
 
 import { companionsOf } from './companies.ts';
@@ -40,10 +39,10 @@ export async function liveAccount(database: Db, token: string, now: number): Pro
 
 /** What the accounts answer the rooms over their binding. */
 export interface Characters {
-  claim(token: string, holder: string, anyway?: boolean): Promise<Claimed | null>;
+  claim(token: string, holder: string): Promise<Claimed | null>;
   save(account: string, holder: string, body: string): Promise<boolean>;
   release(account: string, holder: string, body: string | null): Promise<boolean>;
-  present(token: string, room: string | null): Promise<string | null>;
+  present(token: string, room: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
 }
 
@@ -66,25 +65,23 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
     companions: (account, room) => companionsOf(database, account, room, now()),
-    /** Notes that a session's player is in a room that keeps no character, or with none that they left it: their
-     *  account, or null when the token is no live session. */
+    /** Notes that a session's player is in a room that keeps no character, or with none that they left it; false
+     *  when the token is no live session. */
     async present(token, room) {
       const account = await live(token);
-      if (account === null) return null;
+      if (account === null) return false;
       await present(database, account, room, now());
-      return account;
+      return true;
     },
     /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
-     *  one that lapsed, or, not `anyway`, while another room still holds it after the wait. */
-    async claim(token, holder, anyway = true) {
+     *  one that lapsed. */
+    async claim(token, holder) {
       const account = await live(token);
       if (account === null) return null;
       await database.prepare('INSERT OR IGNORE INTO characters (account_id) VALUES (?1)').bind(account).run();
       for (let waited = 0; ; waited += LOOK_MS) {
-        const last = waited >= WAIT_MS;
-        const held = await take(account, holder, last && anyway);
+        const held = await take(account, holder, waited >= WAIT_MS);
         if (held) return { account, body: held.body };
-        if (last) return null;
         await wait(LOOK_MS);
       }
     },
