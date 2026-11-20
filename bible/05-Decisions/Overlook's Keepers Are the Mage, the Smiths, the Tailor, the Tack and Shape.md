@@ -34,9 +34,9 @@ time left, and the footer's keys.
 - **The Tailor** sells dyes for the armour and emblems, new every day.
 - **The Tack** sells horse cosmetics, new every day.
 - **Shape**, a mysterious figure, comes on Friday and stays until Sunday evening, for now only in Overlook, at one
-  place each week, chosen at random and kept all that week. He sells random Legendary and Atheric gear for **Shapes**,
-  a new currency found only in Elite and Abyss content: the tiers the owner named for the seas a voyage chooses,
-  today Rough and Storm.
+  place each week, chosen at random and kept all that week. Shape sells random Legendary and Atheric gear for
+  **Shapes**, a new currency found only in Elite and Abyss content: the tiers the owner named for the seas a voyage
+  chooses ("The Tiers Are Normal, Elite and Abyss", on pull request #82), today Rough and Storm.
 - **One screen for every keeper**, after the references, and every keeper speaks lines of their own, true to the lore,
   under [[Dialogue]].
 - The numbers and the rest left open are Claude's: [[Factions and Vendors as Claude Shapes Them]].

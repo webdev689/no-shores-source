@@ -81,7 +81,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   does. The element's line says the share the spells hold ("Spells at 70%"). Spell and fragment cards give their
   numbers at the level worn, the harm and healing by its power and how long a spell and its buffs last by its lasting
   (the Sunwell's healing a second too), with what differs at level 5 muted under them; the rest as written. A fragment
-  not owned stands dim under a padlock, its card saying how it is had ("Rise the Art at the Stormcallers' counter, or
+  not owned stands dim under a padlock, its card saying how it is had ("Raise the Art at the Stormcallers' counter, or
   buy it there from their first rank."), and choosing it in a slot's flyout is refused before it is asked, with the
   refusal's sound and words. Until the room has said where the player stands, every Art shows level 1 with every
   fragment owned, so the screen locks nothing the room would allow.
@@ -231,7 +231,7 @@ The numbers are an Art's at level 5.
 - **The spells' view.** Every spell in the snapshot is kept and drawn gliding between the snapshots as the figures
   do (below). The fight keeps the last spell the player cast, with the room tick it was asked at, so an Anima's sigil
   starts as it is asked.
-- **The Test Ground** has an Arts panel: the Art worn, each Art's level (a grant, 39, setting it with no XP and every
+- **The Test Ground** has an Arts panel: the Art worn, each Art's level (a grant, 42, setting it with no XP and every
   fragment owned, the Test Ground alone), each Core slot, and a button that fills the Anima and readies
   the Tenets, so every spell can be tried at once ([[Test Ground]]). After each ask, the room's next word sets every
   list back to what it holds, so a refused choice does not stay shown.

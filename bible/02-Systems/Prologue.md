@@ -131,8 +131,9 @@ keepers she names marked with an alert over their heads and some of them answeri
 the player is farther than 6 m, the HUD says "Follow" over her name, as often as they lag, for as long as the walk
 lasts. The player walks freely the whole time: it is no
 cutscene. What she says (`content/story/welcome.json`) is the state of the world as Overlook's people know it and what
-the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying nothing, three ports standing and
-ruins no one agrees about, and the town's memory (the vault's keeper is not sure whether he has kept it forty years or
+the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying nothing (the owner's "The Grey
+Tithe Take a Tenth, and Overlook Does Not Pay", on pull request #77), three ports standing and ruins no one agrees
+about (the owner's three port cities, on pull request #75), and the town's memory (the vault's keeper is not sure whether he has kept it forty years or
 thirty, and three people name four builders of the beacon). Begun, it is kept as played in the browser
 (`overlook.welcome`); it is due from the story's end, so a reload before it begins brings it on the next arrival in
 Overlook's social space. Leaving the social space ends it where she is, and leaving before the stranger has gone

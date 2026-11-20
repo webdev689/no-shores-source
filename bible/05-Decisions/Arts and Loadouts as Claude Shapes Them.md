@@ -27,6 +27,8 @@ scale elsewhere: a player has 100 health, a sword's blow does 14 before power, a
 | Named pieces | One Legendary for each kind; the old ones keep their names under their new kind (The Reefwall becomes an Atheric Sword & Shield); new ones for the new kinds |
 | Vendors | The Armsmith sells four Melee pieces and two Ranged a day |
 
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Weaponsmith sells them, two Melee to each Ranged.
+
 ## Verbs and statuses
 
 A status is kept on a fighter by the room: its kind, the ticks left, who gave it. Foes show their debuffs as icons on
@@ -274,6 +276,8 @@ A loadout's perks, these and the rest, work while it is drawn, beside the armour
 | Ammo box | Dropped on a kill for each player who earned it: Minor 20%, Major 35%, Elite 60%, Miniboss and Boss always. Taken, it gives back a quarter of the capacity, at least one shot |
 | Ammo crate | A consumable: held in the Consumables shelf, it fills the worn Ranged weapon's ammo at once, and is refused and kept with none worn. Five carried at most; the Quartermaster sells them for 250 Aurem; a Miniboss or Boss drops one for each player |
 | Shown | The shots left beside the crosshair while the Ranged weapon is drawn, and under the Ranged slot on the Character page |
+
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Weaponsmith sells the Ammo crate.
 
 ## Not now
 

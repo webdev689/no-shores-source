@@ -306,7 +306,7 @@ never while a press is held. Each press is an ask the room answers.
   it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
   one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
   keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot.
-- **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). In the Emblem slot's place stands the
+- **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). Among the slots stands the
   Appearance button: a wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner. It opens the
   Appearance screen in the page's place, as the Art's diamond opens the Art's screen, the focus on the worn emblem. At
   its left the display: the player's figure turning a view every 1.2 s through the forge's five views and their
@@ -333,7 +333,7 @@ never while a press is held. Each press is an ask the room answers.
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
 - **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten places
-  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
+  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
   shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
@@ -481,8 +481,8 @@ as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is d
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Emblem slot and
-the Tailor's stall.
+Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Appearance
+button's corner and screen, and the Tailor's wares.
 
 ## Limits
 

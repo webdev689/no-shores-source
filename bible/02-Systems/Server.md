@@ -104,8 +104,10 @@ on Cloudflare.
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
-  file names: a Vestige opened at the Reader's, the vault at a vault's, a ware at its own vendor's, an emblem at the Tailor's; the Test Ground's
-  course serves them all within 4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
+  file names: a Vestige opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
+  the Tailor's, a coat or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
+  at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
+  4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
   nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
@@ -212,7 +214,9 @@ a city has the same pads and walls.
 A node's file holds its id, kind, name and continent; its section's ring and spawns; the rect its window covers (the
 ring's bounds and 100 m past them, beyond the 60 m where a body dies); the exact window of the ground over that rect,
 city terraces included; the boxes of the city a body runs into there; and, for a social space, the counters that
-serve a player's gear (the Reader's, the vaults', the Quartermaster's, the Armsmith's and the Tailor's). The bake takes about 8 s for the nine
+serve a player's gear (the Mage's, the vaults', the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the
+three factions'), Shape's eight places (`shape_spots`, Overlook's alone) and whether it opens (`open`: a room refuses
+to open on a social space that does not, `open_node`; [[Only Overlook's Social Space Opens for Now]]). The bake takes about 8 s for the nine
 continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
 called `index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
@@ -261,7 +265,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Reader's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Quartermaster's price for one |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; and in a social space every faction's wares ([[Factions]]) |
 
 ## The host
 

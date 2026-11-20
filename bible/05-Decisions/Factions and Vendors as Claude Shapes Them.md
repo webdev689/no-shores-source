@@ -46,7 +46,7 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 |---|---|
 | What | Each faction sells its cape, a full armour set (head, torso, arms and legs) and two weapons, a Melee and a Ranged: seven named Legendary pieces each (`content/gear/items.json`, `faction`) |
 | The pieces | Stormcallers: Stormcaller Helm, Hauberk, Gauntlets and Greaves, Squallbreak (sword and shield) and Thunderstring (bow). Lamplighters: Lamplighter Hood, Vestments, Gloves and Boots, Wickstaff (staff) and Dawnflight (bow). The Veiled: Veiled Cowl, Coat, Grips and Treads, Hushguard (dagger and shield) and Nightpin (bow) |
-| Ranks | Armour from rank 2, weapons from rank 3, as Destiny's; the cape to the pledged alone, as before |
+| Ranks | Armour from rank 2, weapons from rank 3, as Destiny's; the cape to the pledged alone |
 | Pledge | Armour and weapons need the rank, not the pledge: a switch keeps the reputation earned, so it keeps what that reputation buys |
 | Prices | Armour 6,000 Aurem a piece and weapons 9,000 (Destiny's weapons cost twice an armour piece's Marks); no limit on how many, as Destiny's had none |
 | Level | Named items are made at level 20, so a faction's armour and weapons are worn from level 20; the cape stays level 1 |
@@ -74,16 +74,16 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 
 | Keeper | Where | What |
 |---|---|---|
-| The Mage | The alcove by the portico, where the Reader stood | Identifies Vestiges, free, as Destiny's Cryptarch decrypted engrams |
-| The Armorsmith | Next but one | Six pieces of armour a day, three Rare and three Magic, at the buyer's level (the Quartermaster's, renamed) |
-| The Weaponsmith | Next | Six weapons a day, two Melee to each Ranged, and the Ammo crate (the Armsmith's, renamed) |
-| The Tailor | Next | Six emblems a day as before, and four dyes a day of the twelve sold |
+| The Mage | The alcove by the portico | Identifies Vestiges, free, as Destiny's Cryptarch decrypted engrams |
+| The Armorsmith | Next but one | Six pieces of armour a day, three Rare and three Magic, at the buyer's level |
+| The Weaponsmith | Next | Six weapons a day, two Melee to each Ranged, and the Ammo crate |
+| The Tailor | Next | Six emblems a day, and four dyes a day of the twelve sold |
 | The Tack | The last alcove on that side | Four horse pieces a day of the ten coats and bardings sold |
 | The three factions | The other side, past the vault: the Stormcallers, the Lamplighters (Elder Maren Hale) between, the Veiled | Pledge, cape, packages, the Art's rise and fragments |
 | Shape | One of eight places on the plaza, by the week | Four Legendary and two Atheric pieces a week, named items at level 20, 7 Shapes for a Legendary and 15 for an Atheric |
 
-The Harbourmaster keeps her alcove, and a chandler's stall the last on the factions' side, for life; the fishmonger's,
-cartographer's, herbalist's and smith's stalls gave their alcoves to the new keepers.
+The Harbourmaster keeps her alcove, and a chandler's stall stands last on the factions' side, for life; no other stall
+stands in the arcades.
 
 ## Shape and Shapes
 
@@ -116,7 +116,7 @@ cartographer's, herbalist's and smith's stalls gave their alcoves to the new kee
 | Stormcaller | An anole man in a blue tunic and cloak, steel gauntlets |
 | Elder Maren Hale | An old human woman, white-haired, in yellow robes and a white formal cloak |
 | The Veiled | A grey-haired felid woman in a hooded grey robe |
-| Shape | An anole in a hooded grey robe |
+| Shape | An anole in a hooded grey robe, spoken of as he |
 
 ## Locked social spaces
 
@@ -135,7 +135,7 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 | Currencies | A faction's top shows Aurem and the four materials an Art's rise takes; the Mage's shows none |
 | Countdown | "Stock refresh" for the smiths, the Tailor and the Tack (to midnight, UTC); "Leaves in" for Shape; none for the Mage and the factions |
 | A short ware | Stays held to buy, red with "Not enough"; the room refuses it and the keeper answers |
-| Shape away | "Shape has gone. He comes again on Friday." |
+| Shape away | "Shape is away. He comes on Fridays." |
 
 ## Elder Maren Hale's welcome
 
@@ -157,6 +157,6 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 | Worn | Set in brass with a brass corner; a dim piece's card says how it is had |
 | A dye | Takes the armour's padding with the armour |
 | A coat | Takes only the hide (the forge publishes no mane mask), so the mane stays grey |
-| A barding | Always over the horse's own texels; depth decides only between it and the rider |
+| A barding | Over the horse's own texels where it lies no more than 0.15 m behind them, so its far side and its inside stay hidden; depth decides between it and the rider |
 | The Art's level | Five pips by its name; the bar under the three diamonds; brass when full or at the highest |
 | Before the room's word | Every Art shows level 1 with every fragment owned, so the screen locks nothing the room would allow |

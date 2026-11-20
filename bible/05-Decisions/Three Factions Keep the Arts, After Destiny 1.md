@@ -30,7 +30,7 @@ status: in force
 - **A faction raises its Art and sells its Core fragments.**
 - **An Art has levels 1 to 5**, and gains XP as gear does. Once the XP is reached, its faction raises it a level for a
   cost, and the player chooses a Core fragment at each level.
-- **Each level makes the Anima and the Tenets stronger and last longer.** Level 5 is the Arts' power as it was.
+- **Each level makes the Art and its Tenets stronger and last longer.** Level 5 is the Arts' power as it was.
 - **A player pledges to one faction**, and may switch at any time, for a cost.
 - **Pledged, a player may buy the faction's cape.** Worn, it earns faction XP in the world, with no cap
   ([[Gear and Power Follow Destiny 1 Vanilla]] said a cloak adds to its faction's reputation while worn).
