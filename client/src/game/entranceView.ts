@@ -133,7 +133,7 @@ export class EntranceView implements Drawer {
   }
 
   /** Writes the view's terms: the eye from the entrances' origin, and the time. */
-  private prepare(fromEye: Float32Array, shot: Shot, time: number): Drawn | null {
+  private termsWritten(fromEye: Float32Array, shot: Shot, time: number): Drawn | null {
     const drawn = this.drawn;
     if (!drawn) return null;
     const uniforms = new Float32Array(VIEW_BYTES / 4);
@@ -152,7 +152,7 @@ export class EntranceView implements Drawer {
   }
 
   castInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void {
-    const drawn = this.prepare(fromEye, shot, time);
+    const drawn = this.termsWritten(fromEye, shot, time);
     if (!drawn) return;
     pass.setPipeline(this.pipelines.modelsCast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.modelsCast));
@@ -160,7 +160,7 @@ export class EntranceView implements Drawer {
   }
 
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: Shot, time: number, shadow: ShadowMap): void {
-    const drawn = this.prepare(fromEye, shot, time);
+    const drawn = this.termsWritten(fromEye, shot, time);
     if (!drawn) return;
     pass.setPipeline(this.pipelines.models);
     pass.setBindGroup(1, shadow.receiverGroup(this.pipelines.models));

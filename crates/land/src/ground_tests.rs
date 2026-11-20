@@ -238,3 +238,14 @@ fn a_city_s_pads_level_the_ground_dry_and_hold_through_a_window_and_its_saved_fo
         assert_eq!(back.height_at(x, y).to_bits(), ground.height_at(x, y).to_bits());
     }
 }
+
+#[test]
+fn roads_added_later_are_found_and_level_across_as_drawn_ones() {
+    let mut ground = ground_with(&Edits::default());
+    assert!(!ground.on_road(20_000.0, 10_000.0));
+    let course: Vec<(f64, f64)> = (0..=50).map(|step| (19_900.0 + f64::from(step) * 4.0, 10_000.0)).collect();
+    ground.add_roads(&[(course, 4.0)]);
+    assert!(ground.on_road(20_000.0, 10_000.0) && !ground.on_road(20_000.0, 10_003.0));
+    let across = [9_999.0, 10_000.0, 10_001.0].map(|y| ground.height_at(20_000.0, y));
+    assert!((across[0] - across[2]).abs() < 0.2, "the added path's bed is level across: {across:?}");
+}

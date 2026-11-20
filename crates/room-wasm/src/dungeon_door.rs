@@ -150,14 +150,16 @@ pub fn dungeon_json(text: &[u8]) -> String {
 }
 
 /// Opens the room of a patrol's dungeon by its number, from the patrol's node file's text: its garrison at the patrol's
-/// island band. Answers whether the text was a patrol's and the number one of its dungeons.
+/// island band, and locked while its patrol is. Answers whether the text was a patrol's and the number one of its
+/// dungeons.
 pub fn open_dungeon(text: &[u8], number: usize) -> bool {
     let Ok(node) = serde_json::from_slice::<NodeFile>(text) else { return false };
     if node.kind != NodeKind::Patrol {
         return false;
     }
     let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
-    keep(Opened::Land { room: Box::new(room), node: None });
+    let refusal = node.locked.then(|| format!("{} is locked", node.name));
+    keep(Opened::Land { room: Box::new(room), node: None, refusal });
     true
 }
 
@@ -174,12 +176,14 @@ pub unsafe extern "C" fn room_open_dungeon(address: *const u8, length: usize, nu
 }
 
 /// A new player's number, standing before the door of the open patrol's entrance numbered `number`, facing away from
-/// it; 0 when the room is no patrol, has no such entrance or is full.
+/// it; 0 when the room is no patrol, has no such entrance, is full or its node is locked.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join_at(number: u32) -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, .. } => usize::try_from(number).ok().and_then(|number| room.join_at(number)),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
+        Opened::Land { room, refusal: None, .. } => {
+            usize::try_from(number).ok().and_then(|number| room.join_at(number))
+        }
+        Opened::Land { .. } | Opened::Sea(_) | Opened::Fleet(_) => None,
     })
     .flatten()
     .unwrap_or(0)

@@ -26,7 +26,7 @@ const small = {
 } as unknown as DungeonLayout;
 
 test('the camera and the shots stop on the rock beside the open cells too', () => {
-  assert.deepEqual(courseOf(small), [{ minX: 3.2, minY: 0, maxX: 3.5, maxY: 0.7, top: 3.2 }]);
+  assert.deepEqual(courseOf(small), [{ minX: 3.2, minY: 0, maxX: 3.5, maxY: 0.7, top: 3.2, bottom: 0 }]);
   const seen = seenBlocks(small);
   // The box, the rock cell east of the corridor, and the cells round the two open ones past the grid's edge.
   const rock = seen.slice(1).map((block) => [block.minX, block.minY]);
@@ -40,8 +40,8 @@ test('the camera and the shots stop on the rock beside the open cells too', () =
   );
   assert.ok(!rock.some(([x, y]) => x === 0 && y === 0), 'never an open cell');
   assert.ok(
-    seen.slice(1).every((block) => block.top > 5.6),
-    'over every ceiling',
+    seen.slice(1).every((block) => block.top > 5.6 && block.bottom === 0),
+    'from the floor to over every ceiling',
   );
 });
 

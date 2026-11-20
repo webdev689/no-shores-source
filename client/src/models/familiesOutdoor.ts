@@ -414,8 +414,10 @@ export const OUTDOOR_FAMILIES = {
       eaves = long.y0 + long.height * 0.78;
     const radius = Math.min(long.length, long.depth) * 0.32;
     along.prism(stone, long.middleX, long.middleZ, radius, radius, long.y0, curb, 8);
+    // The posts stand under the ridge and carry it, so no gap shows between them and the roof (DFO's stop at the
+    // eaves); their tops stop just under the slopes either side of the ridge.
     for (const x of [long.middleX - radius - 0.1, long.middleX + radius])
-      along.box(wood, [x, x + 0.1], [long.y0, eaves], [long.middleZ - 0.06, long.middleZ + 0.06]);
+      along.box(wood, [x, x + 0.1], [long.y0, long.y1 - 0.1], [long.middleZ - 0.06, long.middleZ + 0.06]);
     along.box(
       wood,
       [long.middleX - radius - 0.1, long.middleX + radius + 0.1],

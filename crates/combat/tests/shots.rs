@@ -176,7 +176,7 @@ fn an_arrow_falls_as_it_flies_and_stops_at_a_block_or_the_first_body_on_its_line
         flying = next;
     }
     assert!(flying.at[2] < 1.1 && flying.at[1] < -7.0);
-    let wall = [Block { min_x: -2.0, min_y: -4.2, max_x: 2.0, max_y: -4.0, top: 3.0 }];
+    let wall = [Block { min_x: -2.0, min_y: -4.2, max_x: 2.0, max_y: -4.0, top: 3.0, bottom: 0.0 }];
     let bodies = [(2, [0.0, -6.0, 0.0]), (3, [0.0, -3.0, 0.0]), (1, [0.0, -0.5, 0.0])];
     let mut stop = None;
     let mut shot = arrow;

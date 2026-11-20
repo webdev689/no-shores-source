@@ -39,4 +39,6 @@ is kept; where Overlook must choose, the choice is Claude's, with its reason. Th
 | The Tailor | Six a day of twelve, Magic 500 Aurem, Rare 2,500, some from a level | Destiny 1's Outfitter sold a day's choice for Glimmer, Rare dearer, some by rank |
 | Where emblems show | Roster rows, the menu's header, details, the company on the HUD, the Emblem slot, the Tailor | Destiny 1's rosters, character screen, loading screens and kiosk |
 
+Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: emblems are also had at a faction's first rank; the Appearance button stands where the Emblem slot was, and they show in its corner and on its screen ([[The Character Page Opens Appearance From an Icon Button]]).
+
 Links: [[Accounts]], [[Interface]], [[Gear]], [[Gear as Claude Shapes It]].

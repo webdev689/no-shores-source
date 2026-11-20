@@ -44,7 +44,7 @@ fn a_foe_chasing_a_player_onto_a_top_no_step_reaches_climbs_after_them_and_strik
     // A crate to mantle onto, a ledge to catch on a jump, and a wall to climb, each with the player on top and the
     // foe off one corner of the block, so it never walks square into a side unless it means to.
     for top in [1.1, 2.3, 3.5] {
-        let block = Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top };
+        let block = Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top, bottom: 0.0 };
         let mut room = Room::new(vec![block], (0.0, 0.0));
         let player = room.join().expect("a room with space");
         let feet = [0.6, -11.3, top];
@@ -68,7 +68,7 @@ fn a_foe_chasing_a_player_onto_a_top_no_step_reaches_climbs_after_them_and_strik
 /// How high a foe sent from south of a wall 2.3 m tall and 2 m thick, `long` metres from end to end, to a place
 /// north of it climbed, and whether it reached the place.
 fn sent_past_a_wall(long: f64) -> (f64, bool) {
-    let wall = Block { min_x: -long / 2.0, min_y: -1.0, max_x: long / 2.0, max_y: 1.0, top: 2.3 };
+    let wall = Block { min_x: -long / 2.0, min_y: -1.0, max_x: long / 2.0, max_y: 1.0, top: 2.3, bottom: 0.0 };
     let mut room = Room::new(vec![wall], (0.0, 25.0));
     let place = [0.3, -6.0, 0.0];
     let foe = put(&mut room, -0.4, 6.0, 0.0);
@@ -93,7 +93,7 @@ fn a_foe_sent_to_a_place_goes_over_a_wall_when_that_is_shorter_and_round_it_when
 
 #[test]
 fn a_foe_set_down_short_of_its_climb_finds_its_way_up_again() {
-    let block = Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top: 3.5 };
+    let block = Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top: 3.5, bottom: 0.0 };
     let mut room = Room::new(vec![block], (0.0, 0.0));
     let place = [0.6, -11.3, 3.5];
     let foe = put(&mut room, -4.3, -2.6, 0.4);
@@ -121,7 +121,7 @@ fn a_foe_set_down_short_of_its_climb_finds_its_way_up_again() {
 /// A room round a ledge 2.3 m up, with a player standing on it near its southern edge, and a foe of a type put at
 /// `foe_at`, facing `facing`.
 fn by_a_ledge(number: u8, foe_at: [f64; 3], facing: f64) -> (Room, PlayerId, FighterId) {
-    let ledge = Block { min_x: 0.0, min_y: -3.0, max_x: 6.0, max_y: -1.0, top: 2.3 };
+    let ledge = Block { min_x: 0.0, min_y: -3.0, max_x: 6.0, max_y: -1.0, top: 2.3, bottom: 0.0 };
     let mut room = Room::new(vec![ledge], (3.0, 10.0));
     let player = room.join().expect("a room with space");
     room.players.get_mut(&player).unwrap().fighter.body = Body { z: 2.3, ..movement::standing(2.95, -1.28) };
@@ -150,7 +150,7 @@ fn a_foe_beneath_a_player_at_a_ledge_s_edge_goes_up_rather_than_swing_at_them_fr
 fn a_foe_in_the_air_by_a_lip_in_reach_catches_it_and_goes_up_whatever_it_thinks() {
     // Just off the ground by the ledge's southern face, rising, as on a jump for the lip; with no one about, its
     // thinking asks nothing of it.
-    let ledge = Block { min_x: 0.0, min_y: -3.0, max_x: 6.0, max_y: -1.0, top: 2.3 };
+    let ledge = Block { min_x: 0.0, min_y: -3.0, max_x: 6.0, max_y: -1.0, top: 2.3, bottom: 0.0 };
     let mut room = Room::new(vec![ledge], (3.0, 10.0));
     let foe = put(&mut room, 2.95, -0.6, 0.0);
     let found = room.foes.get_mut(&foe).unwrap();
@@ -186,7 +186,7 @@ fn a_foe_fighting_on_a_ledge_holds_at_its_edge_as_it_steps_back_from_its_blows()
 #[test]
 fn foes_crowding_a_player_at_the_foot_of_a_tall_wall_never_take_hold_of_it() {
     // Six foes come at a player walking back and forth along a 4 m wall; those waiting their turn stand by its face.
-    let wall = Block { min_x: -20.0, min_y: -1.0, max_x: 20.0, max_y: 1.0, top: 4.0 };
+    let wall = Block { min_x: -20.0, min_y: -1.0, max_x: 20.0, max_y: 1.0, top: 4.0, bottom: 0.0 };
     let types = [::foes::roster::COLLECTOR, ::foes::roster::RUNNER, ::foes::roster::ENFORCER];
     let (mut grabs, mut blows) = (0, 0);
     for run in 0..4_u32 {

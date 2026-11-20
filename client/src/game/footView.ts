@@ -98,7 +98,15 @@ export class FootView {
     this.swings.set(shown.swings);
     const matrix = shifted(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
-      { ...fight, matrix, width: viewport.width, height: viewport.height, lost: null, rejoining: foot.rejoining },
+      {
+        ...fight,
+        matrix,
+        width: viewport.width,
+        height: viewport.height,
+        lost: null,
+        rejoining: foot.rejoining,
+        groundAt,
+      },
       seconds,
     );
     const drawn = blood.drawn;

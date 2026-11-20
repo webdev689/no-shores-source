@@ -18,11 +18,17 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "land", workspace: &["world"], outside: &["serde", "serde_json"], door: false },
     CrateRule {
         name: "land-wasm",
-        workspace: &["city", "land", "naval", "sailing", "sky", "world"],
+        workspace: &["city", "land", "layout", "naval", "sailing", "sky", "world"],
         outside: &["serde_json"],
         door: true,
     },
     CrateRule { name: "city", workspace: &["land", "world"], outside: &["serde", "serde_json", "libm"], door: false },
+    CrateRule {
+        name: "layout",
+        workspace: &["city", "land", "world"],
+        outside: &["serde", "serde_json", "libm"],
+        door: false,
+    },
     CrateRule { name: "movement", workspace: &[], outside: &["libm"], door: false },
     CrateRule {
         name: "movement-wasm",
@@ -64,7 +70,12 @@ pub const CRATES: &[CrateRule] = &[
         door: true,
     },
     // A tool run at build time: it bakes what the rooms read, so it may use the rules that make the land.
-    CrateRule { name: "bake", workspace: &["city", "land", "world"], outside: &["serde", "serde_json"], door: false },
+    CrateRule {
+        name: "bake",
+        workspace: &["city", "land", "layout", "world"],
+        outside: &["serde", "serde_json"],
+        door: false,
+    },
     CrateRule { name: "xtask", workspace: &["*"], outside: &["*"], door: false },
 ];
 

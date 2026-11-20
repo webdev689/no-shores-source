@@ -16,6 +16,8 @@ export class LocalRoom implements RoomLink {
   private readonly snapshot: (snapshot: Snapshot) => void;
   private readonly gear: (gear: GearMessage) => void;
   private carry = 0;
+  /** The world's minute the room was last told, which turns the day's wares and brings Shape and takes him away. */
+  private minute = -1;
   readonly player: number;
   readonly dressed = [];
   /** A room in the page is joined once and never lost. */
@@ -38,9 +40,18 @@ export class LocalRoom implements RoomLink {
     this.door = door;
     this.snapshot = snapshot;
     this.gear = gear;
+    this.keepMinute();
     this.player = player;
     const welcome = readFromRoom(door.joined(this.player));
     this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
+  }
+
+  /** Tells the room the world's minute whenever it has turned, as the servers' rooms are told it. */
+  private keepMinute(): void {
+    const minute = Math.floor(Date.now() / 60_000);
+    if (minute === this.minute) return;
+    this.minute = minute;
+    this.door.minute(minute);
   }
 
   /** Opens a room on a course from the compiled `room-wasm` module, its player standing at `spawn`, with its stall and
@@ -57,7 +68,6 @@ export class LocalRoom implements RoomLink {
     if (!door.open(spawn, blocks)) throw new Error('the course is not one a room can stand on');
     door.epoch(Date.now());
     door.furnish(furnishing.stall, furnishing.nodes);
-    door.day(Math.floor(Date.now() / 86_400_000));
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -72,7 +82,6 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.open(spawn, blocks, true)) throw new Error('the course is not one a room can stand on');
-    door.day(Math.floor(Date.now() / 86_400_000));
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -159,6 +168,7 @@ export class LocalRoom implements RoomLink {
 
   /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */
   pump(seconds: number): void {
+    this.keepMinute();
     this.carry += seconds;
     while (this.carry >= this.door.tickSeconds) {
       this.carry -= this.door.tickSeconds;

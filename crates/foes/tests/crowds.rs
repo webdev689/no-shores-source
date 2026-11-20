@@ -140,7 +140,7 @@ fn a_shield_bearer_waiting_on_its_ring_keeps_its_guard_up_while_its_target_walks
 #[test]
 fn foes_hunting_and_searching_one_place_stand_behind_the_first_there_rather_than_shove_it() {
     // Four foes fight the player, who steps behind a wall out of their sight: each runs to where it last saw them.
-    let wall = movement::Block { min_x: -10.0, min_y: 2.0, max_x: 10.0, max_y: 3.0, top: 3.0 };
+    let wall = movement::Block { min_x: -10.0, min_y: 2.0, max_x: 10.0, max_y: 3.0, top: 3.0, bottom: 0.0 };
     let room = Room::new(12).course(vec![wall]).player(PLAYER, 0.0, 0.0, 0.0);
     let (mut room, ids) = ringed(room, 5.0, &[-60.0, -20.0, 20.0, 60.0]);
     room.run(30, &mut still(0.0));

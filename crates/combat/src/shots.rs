@@ -220,7 +220,7 @@ pub fn fly(shot: &Shot, blocks: &[Block], terrain: &dyn Terrain, bodies: &[(Figh
 
 /// How far along the segment (0 to 1) it enters a block's box, if it does.
 fn entry(block: &Block, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
-    let low = [block.min_x, block.min_y, 0.0];
+    let low = [block.min_x, block.min_y, block.bottom];
     let high = [block.max_x, block.max_y, block.top];
     let (mut enter, mut leave) = (0.0_f64, 1.0_f64);
     for axis in 0..3 {

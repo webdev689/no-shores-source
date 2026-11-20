@@ -6,6 +6,7 @@ code:
   - client/src/overworld/overworldInput.ts#pressMove
   - client/src/overworld/overworldPick.ts#pickAt
   - client/src/overworld/overworldMarks.ts#placeMarks
+  - client/src/game/seaMarks.ts#landingChoice
   - client/src/overworld/seaRoute.ts#planSeaRoute
   - client/src/overworld/voyage.ts#shipAt
   - client/src/overworld/islandView.ts#frameSide
@@ -79,6 +80,10 @@ ports. A mark is 24 m tall with the eye 260 m over it and grows with the eye's h
 size from the sea camera and from the bird's-eye view. On the screen it is held between 20 and 96 px. A mark that asks
 to be held stays at the picture's edge when off it, with an arrow pointing to it. Marks are laid farthest first, so a
 pointer picks the nearest.
+
+A locked node's mark ([[World Map]], "Seen whole, reached by nodes") is grey, with a lock for its glyph and "Locked"
+for its distance. A click on it chooses nothing and the view's line says "<name> is locked" (`landingChoice`), so no
+landing is ever made there.
 
 ## The island's side
 

@@ -22,7 +22,7 @@ pub const THROW_M: f64 = 2.0;
 pub const FAN_HALF: f64 = 1.2;
 
 /// What lies on the ground.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Dropped {
     Vestige(Vestige),
     AmmoBox,
@@ -31,7 +31,7 @@ pub enum Dropped {
 
 /// A drop lying for one player: their number for it, what it is, where it rests and where it was thrown from, the tick
 /// it comes to rest and the tick it is gone.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Drop {
     pub player: PlayerId,
     pub id: u32,
@@ -94,7 +94,7 @@ impl Room {
     /// Lays a drop for a player, numbered as their own: a Vestige by its number, anything else a fresh one.
     pub(crate) fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
         let Some(found) = self.players.get_mut(&player) else { return };
-        let id = match what {
+        let id = match &what {
             Dropped::Vestige(vestige) => vestige.id,
             Dropped::AmmoBox | Dropped::Crate => found.character.take_id(),
         };
@@ -120,8 +120,8 @@ impl Room {
             let character = &mut found.character;
             let taken = clock >= drop.rests
                 && near
-                && match drop.what {
-                    Dropped::Vestige(vestige) => character.pick_up(vestige),
+                && match &drop.what {
+                    Dropped::Vestige(vestige) => character.pick_up(vestige.clone()),
                     Dropped::AmmoBox => character.take_ammo_box(),
                     Dropped::Crate => character.take_crate(),
                 };

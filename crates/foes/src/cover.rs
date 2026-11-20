@@ -89,15 +89,9 @@ fn alignment(cover: u16, toward: f64) -> f64 {
 /// and no wall of the terrain between.
 fn free(blocks: &[Block], terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> bool {
     let knee = |point: [f64; 3]| [point[0], point[1], point[2] + TUNING.step];
-    let radius = TUNING.radius;
-    let inside = |block: &Block| {
-        block.top > to[2] + TUNING.step
-            && to[0] > block.min_x - radius
-            && to[0] < block.max_x + radius
-            && to[1] > block.min_y - radius
-            && to[1] < block.max_y + radius
-    };
-    clear_line(blocks, terrain, knee(from), knee(to)) && !blocks.iter().any(inside)
+    // A body's room where it stops, as the moves judge it, so a floor overhead is not in the way.
+    clear_line(blocks, terrain, knee(from), knee(to))
+        && movement::blocks::room_at(blocks, to[0], to[1], to[2], TUNING.height)
 }
 
 /// Where at a spot it hides from a target's chest and where it fires at it: the spot hidden and the shortest step

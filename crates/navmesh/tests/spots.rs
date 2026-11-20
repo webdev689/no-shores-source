@@ -15,7 +15,7 @@ const SOUTH: u16 = 1 << 8;
 const WEST: u16 = 1 << 12;
 
 fn block(min_x: f64, min_y: f64, max_x: f64, max_y: f64, top: f64) -> Block {
-    Block { min_x, min_y, max_x, max_y, top }
+    Block { min_x, min_y, max_x, max_y, top, bottom: 0.0 }
 }
 
 /// Every spot of a mesh, in its order.

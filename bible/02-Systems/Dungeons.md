@@ -198,7 +198,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A room for each at each sea.** A patrol's dungeon is the room `node-<patrol id>--dungeon-<number>`, and
   `node-<patrol id>--rough--dungeon-<number>` or `--storm--dungeon-<number>` at the harder seas ([[Server]]). It opens
   from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's island
-  band, raised by its seas.
+  band, raised by its seas. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), it takes no
+  player, as the patrol's own room takes none, by an entrance or otherwise.
 - **Its world is the dungeon's frame**: x east and y south from the north-west corner, the floor at 0 m. Every point
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.

@@ -16,14 +16,17 @@ interface Env {
   readonly ACCOUNTS: Service<CharacterKeeper>;
 }
 
-/** A day, milliseconds: the vendors' wares change with it. */
-const DAY_MS = 86_400_000;
+/** A minute, milliseconds: the room's clock for its vendors' days and Shape's weeks. */
+const MINUTE_MS = 60_000;
 
 /** How often the sea says again who is there: half of how long the accounts keep its word. */
 const PRESENT_EVERY_MS = 30_000;
 
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
+
+/** The close code for a player turned away from a locked node's room. */
+const LOCKED = 4003;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
@@ -86,9 +89,10 @@ export class RoomHost extends DurableObject<Env> {
     const entrance = entranceOf(request);
     const player = this.guarded(() => (entrance === null ? 0 : this.room.joinAt(entrance)) || this.room.join(), 0);
     if (player === 0) {
-      // A full room still takes the socket, to say why it closes.
+      // A full room, or a locked node's, still takes the socket, to say why it closes.
+      const locked = this.guarded(() => this.room.refusal(), null);
       server.accept();
-      server.close(1013, 'the room is full');
+      server.close(locked === null ? 1013 : LOCKED, locked ?? 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
     server.binaryType = 'arraybuffer';
@@ -144,7 +148,7 @@ export class RoomHost extends DurableObject<Env> {
     const ready =
       text !== null && (named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon));
     const opened = ready && this.room.difficulty(named.seas);
-    return opened && this.room.reseed(seeds) && this.room.day(Math.floor(Date.now() / DAY_MS));
+    return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
@@ -221,6 +225,8 @@ export class RoomHost extends DurableObject<Env> {
     const tickMs = this.room.tickSeconds * 1000;
     this.started = Date.now() - this.ticks * tickMs;
     this.guarded(() => this.room.epoch(this.started), undefined);
+    // Before the first tick, so a room just opened or woken from rest answers its first gear and asks by today.
+    this.guarded(() => this.room.minute(Math.floor(Date.now() / MINUTE_MS)), false);
     this.ticking = setInterval(() => {
       const due = Math.floor((Date.now() - this.started) / tickMs);
       if (this.ticks >= due) return;
@@ -252,7 +258,7 @@ export class RoomHost extends DurableObject<Env> {
       if (now - this.lastKept >= 1000) {
         this.lastKept = now;
         void this.keeper?.due(now);
-        this.guarded(() => this.room.day(Math.floor(now / DAY_MS)), false);
+        this.guarded(() => this.room.minute(Math.floor(now / MINUTE_MS)), false);
       }
     }, tickMs);
   }
