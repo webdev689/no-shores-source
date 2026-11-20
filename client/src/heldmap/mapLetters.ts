@@ -127,10 +127,10 @@ function cornerBox(corner: Corner, ink: { width: number; height: number }, size:
 
 /** Where the key goes on a map `ink` wide and high: the corner it stands in while that stays clear of land (`land`)
  *  and of every word's and mark's box (`taken`), else the first clear corner, lower left first; with none clear, one
- *  row on the margin under the map, `rowWidth` wide. So it moves only when it must, and never back and forth while
- *  the map stands still. */
+ *  row `rowWidth` wide in the middle of the parchment's margin under the map, `ink.margin` high. So it moves only when
+ *  it must, and never back and forth while the map stands still. */
 export function keyPlace(
-  ink: { readonly width: number; readonly height: number },
+  ink: { readonly width: number; readonly height: number; readonly margin: number },
   size: { readonly width: number; readonly height: number },
   rowWidth: number,
   taken: readonly Rect[],
@@ -143,7 +143,8 @@ export function keyPlace(
     const box = cornerBox(corner, ink, size);
     if (clear(box)) return { corner, box };
   }
-  return { corner: 'margin', box: { x: (ink.width - rowWidth) / 2, y: ink.height, width: rowWidth, height: LINE_PX } };
+  const y = ink.height + (ink.margin - LINE_PX) / 2;
+  return { corner: 'margin', box: { x: (ink.width - rowWidth) / 2, y, width: rowWidth, height: LINE_PX } };
 }
 
 /** The key's words' widest width, and its width laid in one row, as `painter` measures them in the map's face. */
@@ -231,13 +232,12 @@ function paintShip(painter: Painter, ship: { x: number; y: number; heading: numb
 function paintKey(painter: Painter, place: KeyPlace): void {
   const { box } = place;
   const row = place.corner === 'margin';
-  if (!row) {
-    painter.fillStyle = 'rgba(238, 222, 190, 0.6)';
-    painter.fillRect(box.x, box.y, box.width, box.height);
-    painter.lineWidth = 1;
-    painter.strokeStyle = 'rgba(58, 40, 22, 0.45)';
-    painter.strokeRect(box.x + 0.5, box.y + 0.5, box.width - 1, box.height - 1);
-  }
+  // On the margin its box keeps the words readable over the parchment's torn edge.
+  painter.fillStyle = row ? 'rgba(238, 222, 190, 0.9)' : 'rgba(238, 222, 190, 0.6)';
+  painter.fillRect(box.x, box.y, box.width, box.height);
+  painter.lineWidth = 1;
+  painter.strokeStyle = 'rgba(58, 40, 22, 0.45)';
+  painter.strokeRect(box.x + 0.5, box.y + 0.5, box.width - 1, box.height - 1);
   painter.textAlign = 'left';
   let [x, y] = row
     ? [box.x + KEY.padding, box.y + LINE_PX / 2]

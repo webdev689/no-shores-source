@@ -153,6 +153,8 @@ export interface HeldMapFrame {
   /** The parchment where it is in its rise, and its picture of words, marks and key, as large. */
   readonly parchment: Rect;
   readonly lettering: HTMLCanvasElement;
+  /** Whether the picture changed since it was last sent to the device. */
+  readonly letteringChanged: boolean;
 }
 
 const INK_BYTES = 96;
@@ -291,10 +293,11 @@ export class HeldMapView {
   }
 
   /** The parchment's picture copied to the device, its texture made again only when its size changes. */
-  private lettersOf(picture: HTMLCanvasElement): { texture: GPUTexture; group: GPUBindGroup } {
+  private lettersOf(picture: HTMLCanvasElement, changed: boolean): { texture: GPUTexture; group: GPUBindGroup } {
     const { device } = this.gpu;
     const size: [number, number] = [Math.max(1, picture.width), Math.max(1, picture.height)];
     let letters = this.letters;
+    const made = !letters || letters.texture.width !== size[0] || letters.texture.height !== size[1];
     if (!letters || letters.texture.width !== size[0] || letters.texture.height !== size[1]) {
       letters?.texture.destroy();
       const texture = device.createTexture({
@@ -308,7 +311,7 @@ export class HeldMapView {
       });
       letters = this.letters = { texture, group };
     }
-    if (picture.width > 0 && picture.height > 0)
+    if ((made || changed) && picture.width > 0 && picture.height > 0)
       device.queue.copyExternalImageToTexture(
         { source: picture },
         { texture: letters.texture, premultipliedAlpha: true },
@@ -349,7 +352,7 @@ export class HeldMapView {
     new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, 0, 0, 0]);
     const { parchment } = frame;
     new Float32Array(uniforms, 80, 4).set([parchment.x, parchment.y, parchment.width, parchment.height]);
-    const letters = this.lettersOf(frame.lettering);
+    const letters = this.lettersOf(frame.lettering, frame.letteringChanged);
     device.queue.writeBuffer(this.inkUniforms, 0, uniforms);
     this.sheetDrawer.draw(encoder, target, screen.width, screen.height, [sheetQuad]);
     const pass = encoder.beginRenderPass({

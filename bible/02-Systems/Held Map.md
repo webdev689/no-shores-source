@@ -58,16 +58,17 @@ war, and a click on it sets the ship's destination.
 - **The key** names the four holders by their colours. It stands in a corner of the map whose box covers no
   discovered land (the coast field asked every 4 px across it), no name and no mark: the corner it stands in while
   that stays clear, else the first clear one, lower left, lower right, upper left, upper right. With every corner
-  taken it is laid in one row on the parchment's margin under the map. So it moves only when it must, and never back
-  and forth while the map stands still (`keyPlace`).
-- **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not a port (the waters' table names the three, [[Three Port Cities
-  Remain, and the Others Are Desolate and Destroyed]]) is drawn with a ruin's glyph, a dashed diamond, and named
-  "Ruins of <name>" (`ruinedPlaces`); until the waters are open every city is drawn as a port. The ship is a
-  red-brown arrow along its heading. The voyage under way is inked as a dashed red-brown line.
-- **Lettering.** Every name, glyph, the ship's arrow and the key is part of the parchment: painted each frame in the
-  page's face at 11 px, ringed in the parchment's colour, onto a picture of the parchment (`paintLettering`), which
-  the ink's pass lays down over the ink, before the gauntlets are drawn. So the hands cover them as they cover the
-  parchment. Only the card that offers Set sail stands over the picture as a page element.
+  taken it is laid in one row, on a box of the parchment's colour, in the middle of the parchment's margin under the
+  map. So it moves only when it must, and never back and forth while the map stands still (`keyPlace`).
+- **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
+  a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
+  is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
+  open every city is drawn as a port. The ship is a red-brown arrow along its heading. The voyage under way is inked
+  as a dashed red-brown line.
+- **Lettering.** Every name, glyph, the ship's arrow and the key is part of the parchment: painted, whenever they
+  change, in the page's face at 11 px, ringed in the parchment's colour, onto a picture of the parchment
+  (`paintLettering`), which the ink's pass lays down over the ink, before the gauntlets are drawn. So the hands cover
+  them as they cover the parchment. Only the card that offers Set sail stands over the picture as a page element.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.

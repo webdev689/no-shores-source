@@ -84,7 +84,7 @@ test('the held map letters in its ink pass, which is drawn before the gauntlets'
   assert.doesNotMatch(map, /held-mark|held-ship/, 'no word or mark is a page element over the picture');
 });
 
-const INK = { width: 400, height: 300 } as const;
+const INK = { width: 400, height: 300, margin: 20 } as const;
 const SIZE = { width: 100, height: 80 } as const;
 const noLand = () => false;
 
@@ -97,7 +97,6 @@ test('the key keeps its corner while it stays clear, and moves only when a word 
   assert.equal(moved.corner, 'lower-right');
   // The word gone again, the key stays where it moved: it never moves back and forth.
   assert.equal(keyPlace(INK, SIZE, 380, [], noLand, moved).corner, 'lower-right');
-  assert.equal(keyPlace(INK, SIZE, 380, [], noLand, moved).corner, 'lower-right');
 });
 
 test('the key never covers land: it takes a clear corner, or the margin under the map when every corner is taken', () => {
@@ -105,7 +104,7 @@ test('the key never covers land: it takes a clear corner, or the margin under th
   assert.equal(keyPlace(INK, SIZE, 380, [], landLowerLeft, null).corner, 'lower-right');
   const everywhere = () => true;
   const margin: KeyPlace = keyPlace(INK, SIZE, 380, [], everywhere, null);
-  assert.deepEqual(margin, { corner: 'margin', box: { x: 10, y: 300, width: 380, height: 14 } });
+  assert.deepEqual(margin, { corner: 'margin', box: { x: 10, y: 303, width: 380, height: 14 } });
 });
 
 test('land under a box is a discovered island’s, asked across the whole box', () => {
