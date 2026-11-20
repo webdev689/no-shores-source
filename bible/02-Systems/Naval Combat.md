@@ -247,6 +247,12 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   Miniboss 1.2), going about at land and at the edge of home waters, which no hostile ship enters (one a fight among
   captains left inside them may sail out). Her temper is her
   seed's: an Elite and a Miniboss are always bold, any other one in four.
+- **Coming for the player.** A bold ship that has sighted a player who is not fighting comes for them (`come_for`):
+  she steers to intercept, heading to where their ship will be when she can reach it at her way on that player's
+  clock (lead pursuit; straight at them where she cannot reach them, as when they sail away faster), turning at most
+  at a Sloop's helm rate, 10 degrees a second of her clock. She keeps after the one she came for while they stay in
+  her sight and out of a fight, until she meets them (750 m) or loses them. A wary ship keeps her own course: the
+  player may chase her, evade her or let her pass. The voyage's hold eases the player's pace as a bold ship closes.
 - **Her clock.** As DFO's sea keeps the world's time, she sails on the clock of the player nearest her: their
   voyage's pace (144 m/s at ×60), the world's own while they lie at rest, and real time where another player sails
   within 1.2 km of that one, a shared sea.
@@ -311,9 +317,9 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
   come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
 - Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
-- A hostile ship keeps her course from where she comes; none steers for the player, so a bold one meets only a player
-  who sails within 750 m of her, and fights at sea grow rare now that ships come kilometres out (measured: [[Server]],
-  "The sea"). The Grey Tithe keeps to lanes only where the room is opened with the ports.
+- A bold ship steers for the player but sails at her rank's way, a fifth of a Sloop's or less, so a voyage sailing
+  away from her outruns her; fights come mostly to a player who sails toward a ship or chases her (measured:
+  [[Server]], "The sea"). A ship coming for the player turns about at a coast as any ship does.
 - A pirate sails on the clock of the player nearest her, while another player's voyage is held as if she closed on
   them at their own: for the few ticks one player is nearest while she bears down on another, she may close faster
   than that one's hold allows.
