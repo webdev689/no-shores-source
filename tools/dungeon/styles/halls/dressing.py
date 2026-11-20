@@ -124,7 +124,7 @@ def ceiling_a(kit):
         found['brass'] += stud((math.cos(turn) * 0.5, math.sin(turn) * 0.5, -0.1), DOWN, 0.026, 0.018, 4)
     pendant = [(0.0, 0.0), (0.1, -0.02), (0.12, -0.08), (0.09, -0.15), (0.05, -0.2), (0.065, -0.25), (0.0, -0.33)]
     found['brass'] += forms.turned(pendant, (0.0, 0.0, -0.04), 0, 360, 8)
-    return forms.made(kit, found, 'ceiling.a')
+    return kit.under_dome(forms.made(kit, found, 'ceiling.a'))
 
 
 def ceiling_b(kit):
@@ -149,7 +149,7 @@ def ceiling_b(kit):
         found['brass'] += forms.turned([(0.0, -0.01), (0.05, 0.012), (0.055, 0.024), (0.0, 0.01)], cup, 0, 360, 4)
         found['iron'] += shapes.cone((cup[0], cup[1], cup[2] + 0.01), (cup[0], cup[1], cup[2] + 0.06), 0.008, 0.0,
                                      3)[:-1]
-    return forms.made(kit, found, 'ceiling.b')
+    return kit.under_dome(forms.made(kit, found, 'ceiling.b'))
 
 
 def ceiling_c(kit):
@@ -168,7 +168,7 @@ def ceiling_c(kit):
     hook = [(0.0, 0.0, -0.5), (0.0, 0.0, -0.6)] + [(0.06 + 0.06 * math.cos(a), 0.0, -0.6 + 0.06 * math.sin(a))
                                                     for a in bend]
     found['iron'] += tube(hook + [(0.13, 0.0, -0.54)], 0.012, 4, 0.05)
-    return forms.made(kit, found, 'ceiling.c')
+    return kit.under_dome(forms.made(kit, found, 'ceiling.c'))
 
 
 def floor_a(kit):

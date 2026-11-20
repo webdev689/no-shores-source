@@ -39,6 +39,11 @@ def footprint_floor(landmark):
     return [((0, 0, 0), (width, 0, 0), (width, depth, 0)), ((0, 0, 0), (width, depth, 0), (0, depth, 0))]
 
 
+def under_dome(faces):
+    """Faces bent down as the smallest dome falls away from the origin."""
+    return [[((x, y, z - envelope.dome_drop(math.hypot(x, y))), uv) for (x, y, z), uv in face] for face in faces]
+
+
 def broken(module, faces_or_triangles):
     return envelope.problems(module, faces_or_triangles)
 
@@ -119,7 +124,7 @@ class KitEnvelopes(unittest.TestCase):
         self.fails('crypt.feature.b', shapes.box(-0.5, 0, 0, 0.5, 0.3, 3.1), 'z > 3')
 
     def test_ceiling_hangs_by_the_least_ceiling(self):
-        self.passes('crypt.ceiling.a', shapes.cone((0, 0, 0), (0, 0, -0.8), 0.3))
+        self.passes('crypt.ceiling.a', under_dome(shapes.cone((0, 0, 0), (0, 0, -0.8), 0.3)))
         self.fails('crypt.ceiling.a', shapes.cone((0, 0, 0), (0, 0, -0.9), 0.3), 'hangs at most 0.8')
         self.passes('caverns.ceiling.b', shapes.cone((0, 0, 0), (0, 0, -1.9), 0.3))
         self.fails('crypt.ceiling.c', shapes.box(-0.2, -0.2, -0.3, 0.2, 0.2, 0.1), 'z > 0')
@@ -129,9 +134,27 @@ class KitEnvelopes(unittest.TestCase):
         arms = shapes.box(-0.9, -0.1, -0.2, 0.9, 0.1, 0)
         self.fails('sanctum.ceiling.c', arms, 'x > 0.8')
         self.fails('halls.ceiling.a', shapes.box(-0.1, -0.85, -0.2, 0.1, 0.1, 0), 'y < -0.8')
-        self.passes('crypt.ceiling.b', shapes.box(-0.8, -0.8, -0.2, 0.8, 0.8, 0))
+        self.passes('crypt.ceiling.b', under_dome(shapes.box(-0.8, -0.8, -0.2, 0.8, 0.8, 0)))
         self.passes('cells.ceiling.c', arms)
         self.passes('caverns.ceiling.a', arms)
+
+    def test_a_ceiling_piece_under_a_dome_or_a_vault_keeps_under_the_smallest_domes_curve(self):
+        boss = shapes.box(-0.4, -0.4, -0.2, 0.4, 0.4, 0)
+        self.fails('halls.ceiling.a', boss, "smallest dome's curve")
+        self.passes('halls.ceiling.a', under_dome(boss))
+        lifted = [[((x, y, z + 0.003), uv) for (x, y, z), uv in face] for face in under_dome(boss)]
+        self.fails('crypt.ceiling.b', lifted, "smallest dome's curve")
+        self.passes('cells.ceiling.a', boss)
+        self.passes('caverns.ceiling.c', boss)
+
+    def test_the_smallest_dome_is_the_pages(self):
+        path = os.path.join(HERE, '..', '..', 'client', 'src', 'game', 'dungeonCeilings.ts')
+        with open(path) as file:
+            source = file.read()
+        dome = float(source.split('const RISE_M = {')[1].split('dome:')[1].split('}')[0])
+        share = float(source.split('const RISE_SHARE =')[1].split(';')[0])
+        self.assertEqual(envelope.DOME_RADIUS_M, catalog.CELL_M)
+        self.assertAlmostEqual(envelope.DOME_RISE_M, min(dome, envelope.DOME_RADIUS_M * share))
 
     def test_floor(self):
         self.passes('crypt.floor.b', shapes.box(-1.6, -1.6, -0.2, 1.6, 1.6, 0.05))

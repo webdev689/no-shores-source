@@ -38,6 +38,11 @@ SKIRT_M = -0.05
 # Under a dome or a vault the ceiling curves down from a ceiling piece's origin, laid at its top, so a wide piece
 # pokes through the curve: one keeps within this of its origin, metres.
 APEX_HALF_M = 0.8
+# The smallest dome, over a room two cells square, rises this high over this radius, metres (dungeonCeilings.ts). It
+# falls away fastest, so a ceiling piece under its curve is under every dome's and vault's. The curve falls away
+# convexly, so a triangle whose corners are under it is under it throughout.
+DOME_RADIUS_M = 3.2
+DOME_RISE_M = 1.92
 # The code's torch flame stands on the sconce's cup, at x ±0.06, y 0.29..0.41, z -0.15..-0.07 (metres). Something
 # must reach in under the flame's foot: a cup's floor or a solid cup, not an arm ending at its edge.
 CUP = ((-0.04, 0.04), (0.31, 0.39), (-0.155, -0.065))
@@ -48,6 +53,12 @@ EXAMPLES = 1
 
 def _box(x=(-FAR, FAR), y=(-FAR, FAR), z=(-FAR, FAR)):
     return (x[0], y[0], z[0], x[1], y[1], z[1])
+
+
+def dome_drop(reach):
+    """How far the smallest dome's underside lies below its top at `reach` metres from it, seen from above."""
+    share = min(1.0, reach / DOME_RADIUS_M)
+    return DOME_RISE_M * (1 - math.sqrt(1 - share * share))
 
 
 def _within(why, x=None, y=None, z=None):
@@ -346,6 +357,12 @@ def kit_problems(module, piece, triangles):
     height = max((corner[2] for corners in triangles for corner in corners), default=0.0)
     apex = catalog.STYLES[style]['ceiling'] == 'apex'
     found += _broken(module, triangles, kit_rules(piece, catalog.least_ceiling(style), height, apex))
+    if apex and piece.startswith('ceiling.'):
+        above = list(dict.fromkeys(corner for corners in triangles for corner in corners
+                                   if corner[2] > TOUCH_M - dome_drop(math.hypot(corner[0], corner[1]))))
+        if above:
+            found.append(f"{module}: {len(above)} corner(s) rise into the smallest dome's curve (radius "
+                         f'{DOME_RADIUS_M:g}, rise {DOME_RISE_M:g}) over its top, e.g. {_quote(above[:EXAMPLES])}')
     if piece == 'sconce' and not any(reaches(corners, _box(*CUP)) for corners in triangles):
         found.append(f"{module}: nothing holds the code's flame: the cup stands at (0, 0.35, -0.15..-0.07)")
     return found

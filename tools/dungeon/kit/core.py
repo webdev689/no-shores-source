@@ -11,6 +11,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 import catalog
+import envelope
 from details import seeded
 
 PARTS = catalog.PARTS
@@ -288,5 +289,15 @@ def jitter(item, amount, seed=None):
     draw = seeded(seed, 'jitter', amount, points)
     for vertex in item.data.vertices:
         vertex.co += Vector([draw.uniform(-amount, amount) for _ in range(3)])
+    item.data.update()
+    return item
+
+
+def under_dome(item):
+    """Bends a ceiling piece down as the smallest dome falls away from its top (envelope.dome_drop), where an arched
+    style lays it, so no point of it rises through the curve; a larger dome or a vault falls away less, and the piece
+    hangs just under it. Gives the object."""
+    for vertex in item.data.vertices:
+        vertex.co.z -= envelope.dome_drop(math.hypot(vertex.co.x, vertex.co.y))
     item.data.update()
     return item

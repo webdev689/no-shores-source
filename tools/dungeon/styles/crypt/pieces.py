@@ -201,7 +201,7 @@ def ceiling_a(kit):
             forms.made(kit, _petals(-0.1, 0.17, 16, 8, 0.03, 22.5), 'relief', smooth=60.0),
             kit.lathe([(0.0, -0.19), (0.05, -0.19), (0.07, -0.235), (0.045, -0.28), (0.0, -0.29)], sides=8,
                       part='trim')]
-    return cull(kit.join(made, 'ceiling.a'), ceiling=0.0)
+    return kit.under_dome(cull(kit.join(made, 'ceiling.a'), ceiling=0.0))
 
 
 def ceiling_b(kit):
@@ -211,7 +211,7 @@ def ceiling_b(kit):
         made.append(forms.made(kit, forms.long_bone((side * 0.31, -0.29, -0.08), (-side * 0.31, 0.29, -0.08), 0.026,
                                                     5), 'relief'))
     made.append(forms.made(kit, forms.placed(forms.skull(1), (0.0, -0.21, -0.27), tilt=90, size=2.2), 'relief'))
-    return cull(kit.join(made, 'ceiling.b'), ceiling=0.0)
+    return kit.under_dome(cull(kit.join(made, 'ceiling.b'), ceiling=0.0))
 
 
 def ceiling_c(kit):
@@ -226,7 +226,7 @@ def ceiling_c(kit):
         made.append(ring)
     made.append(kit.lathe([(0.0, -0.06), (0.075, -0.06), (0.08, -0.12), (0.045, -0.165), (0.0, -0.175)], sides=8,
                           part='trim'))
-    return cull(kit.join(made, 'ceiling.c'), ceiling=0.0)
+    return kit.under_dome(cull(kit.join(made, 'ceiling.c'), ceiling=0.0))
 
 
 def floor_a(kit):

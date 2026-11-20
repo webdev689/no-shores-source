@@ -18,9 +18,6 @@ SLENDER_R = 0.045
 # The wall's three: a middle shaft and two smaller beside it, engaged in the wall.
 TRIPLE = [((0.0, 0.1), 0.095, 8), ((0.19, 0.07), 0.065, 6), ((-0.19, 0.07), 0.065, 6)]
 EIGHTH = math.radians(22.5)
-# The smallest dome, over a room two cells square, rises this high over this radius (dungeonCeilings.ts), metres.
-DOME_RADIUS_M = 3.2
-DOME_RISE_M = 1.92
 # How far out a boss's ribs run: the envelope keeps a piece at a dome's top within 0.8 of it.
 RIB_REACH_M = 0.74
 
@@ -191,7 +188,7 @@ def ceiling_a(kit):
     censer = [(0.0, 0.0), (0.04, 0.02), (0.13, 0.1), (0.15, 0.16), (0.12, 0.2), (0.05, 0.29), (0.0, 0.33)]
     made.append(kit.mesh(motifs.lobed(censer, lobes=4, depth=0.08, centre=(0.0, 0.0, -1.62), sides=8), 'brass',
                          'censer', ROUND))
-    return under_dome(kit.join(made))
+    return kit.under_dome(kit.join(made))
 
 
 def ceiling_b(kit):
@@ -200,7 +197,7 @@ def ceiling_b(kit):
                (0.0, -0.24)]
     made = [motifs.turned(kit, profile, 0.0, 0.0, 0.0, 16, 'trim')]
     made += [rib(kit, number * TAU / 4, (0.3, -0.12), (RIB_REACH_M, -0.012), part='stone') for number in range(4)]
-    return under_dome(kit.join(made))
+    return kit.under_dome(kit.join(made))
 
 
 def ceiling_c(kit):
@@ -220,17 +217,7 @@ def ceiling_c(kit):
         middle = turn + TAU / 16
         ends.append((0.5 * math.cos(middle), 0.5 * math.sin(middle), -0.01))
     made.append(kit.mesh(motifs.keeled(ends + ends[:1], 0.032, 0.065, down), 'trim', 'liernes', None, False))
-    return under_dome(kit.join(made))
-
-
-def under_dome(item):
-    """A ceiling piece bent down as the smallest dome falls away from its top, where the piece is laid, so no point
-    of it rises through the curve; a larger dome or a vault falls away less, and the piece hangs just under it."""
-    for vertex in item.data.vertices:
-        reach = min(1.0, math.hypot(vertex.co.x, vertex.co.y) / DOME_RADIUS_M)
-        vertex.co.z -= DOME_RISE_M * (1 - math.sqrt(1 - reach * reach))
-    item.data.update()
-    return item
+    return kit.under_dome(kit.join(made))
 
 
 def down(point, direction):

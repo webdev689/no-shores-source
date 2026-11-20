@@ -1,8 +1,9 @@
 """The kit a style's `build(kit)` makes its pieces with: every shape of shapes.py and details.py as a Blender object,
 taking the same numbers (the dungeon's frame: x east, y south, z up, metres) and, by keyword, `part` (one of the 19
 parts; stones gives its own), `name` and `smooth` (shade's angle, 35 by default; None is flat); and core.py's tools
-to move, copy, mirror, array, join, bevel and jitter them. Each object's material is named by its part, and its UVs
-are in metres. The plain helpers (scatter, sag_path, helix, arch_curve, seeded) give points, not objects.
+to move, copy, mirror, array, join, bevel and jitter them, and to bend a ceiling piece under a dome. Each object's
+material is named by its part, and its UVs are in metres. The plain helpers (scatter, sag_path, helix, arch_curve,
+seeded) give points, not objects.
 """
 import functools
 
@@ -10,7 +11,7 @@ import details
 import shapes
 from details import arch_curve, helix, sag_path, scatter, seeded  # noqa: F401
 from kit.core import (CELL_M, PARTS, UV_LAYER, array, bevel, copy, jitter, join, mesh, mirror, rotate,  # noqa: F401
-                      rotate_z, scale, set_part, shade, start, translate, triangles)
+                      rotate_z, scale, set_part, shade, start, translate, triangles, under_dome)
 
 
 def _maker(shape, part, closed=True):

@@ -10,6 +10,7 @@ code:
   - tools/dungeon/envelope.py#kit_budget
   - tools/dungeon/envelope.py#walk_zone
   - tools/dungeon/envelope.py#edge_steps
+  - tools/dungeon/envelope.py#dome_drop
   - tools/dungeon/export.py#pack
   - tools/dungeon/kit/core.py#bevel
   - tools/dungeon/preview.py#sheet
@@ -47,7 +48,7 @@ Two files in `content/dungeon/` say what every style builds, and the rules, the 
 | `pillar.base`, `.shaft`, `.capital` | a great room's pillars | within 0.35 m of the middle from 0.25 m to 2.4 m |
 | `wall.base`, `.shaft`, `.cap` | a wall set, as `kits.json` spaces them | 0.3 m off the wall below 2.4 m |
 | `feature.a`, `feature.b` | a room's set pieces on its walls | 0.3 m off the wall, 3 m high at most |
-| `ceiling.a`, `.b`, `.c` | bosses, beams or stalactites | hanging no lower than 2.4 m; within 0.8 m of the middle under domes and vaults |
+| `ceiling.a`, `.b`, `.c` | bosses, beams or stalactites | hanging no lower than 2.4 m; under domes and vaults, within 0.8 m of the middle and under the smallest dome |
 | `floor.a`, `floor.b` | slabs, runners, drains, circles, scree, rails | 0.05 m high at most |
 | `sconce` | each torch's bracket, holding the code's flame | |
 | `portal`, `exit` | the arches round the return portal and the exit door | clear of the door's face |
@@ -84,9 +85,10 @@ ceiling piece 600, a door 1,500, a portal 2,500. A landmark keeps 12,000.
   there can be walked through.
 - **Where pieces meet the room.** The page lays no floor under a landmark, so along its footprint's edge, away from
   its solids, its floor meets the room's at z 0 within 2 mm, or a skirt closes its side down to 0.05 m below it.
-  Where a style's ceilings are domes and vaults, a ceiling piece hangs at a dome's top or on a vault's ridge, and
-  keeps within 0.8 m of its middle so the curve does not cut it. The sanctum's bosses also bend down as the
-  smallest dome falls away, so none of their ribs shows through it.
+  Where a style's ceilings are domes and vaults, a ceiling piece hangs at a dome's top or on a vault's ridge. It
+  keeps within 0.8 m of its middle, and at or under the curve of the smallest dome, over a room two cells square
+  (its radius 3.2 m, its rise 1.92 m), so no dome or vault cuts it. The kit's `under_dome` bends a piece down
+  along that curve.
 - **The same bytes every build.** Blender's bevel works its UVs out in an order that changes between runs, so the
   kit takes a bevelled corner's UV again from its face's own map. The workflow builds every pack twice and fails if
   any byte differs.
@@ -127,5 +129,3 @@ surface. Each part wears the cell's look's pictures, the climate's timber, the i
   but a run of trim longer than 3.2 m always crosses one.
 - The sheets frame each piece alone from one side, so a door is seen from its corridor and a piece missing its
   hidden faces looks hollow there.
-- The crypt's and the halls' bosses are flat on top, so under the smallest dome their rims rise into its curve by
-  up to 0.04 m.
