@@ -157,7 +157,9 @@ pub fn open_sea(text: &[u8], seed: u32) -> bool {
         Err(_) => world::layout::parse(text).ok().map(|layout| (layout, Vec::new())),
     };
     let Some((layout, ports)) = opened else { return false };
-    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports))));
+    let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports);
+    sea.set_hull_decks(deck_door::hull_decks().to_vec());
+    keep(Opened::Sea(Box::new(sea)));
     true
 }
 
@@ -189,6 +191,17 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             },
         },
         Opened::Sea(sea) => {
+            // A boarder's inputs on her deck are a land room's.
+            if sea.on_deck(player)
+                && let Ok(input) = protocol::read_input(bytes)
+            {
+                return match sea.deck_input(player, input) {
+                    Ok(()) => TAKEN,
+                    Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                    Err(Refused::BadLook) => NOT_AN_INPUT,
+                    Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                };
+            }
             let asked = match protocol::read_sea_input(bytes) {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
@@ -204,6 +217,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 }
                 Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(SeaInput::Board) => return if sea.board(player).is_ok() { TAKEN } else { REFUSED },
+                Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
                         if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
@@ -239,29 +253,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
 #[must_use]
 pub fn snapshot() -> Vec<u8> {
     with_open(|opened| match opened {
-        Opened::Land { room, .. } => {
-            let changed = room.take_dress_changes();
-            let events = room.take_events();
-            let dressed: Vec<(PlayerId, &str)> =
-                changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-            let players: Vec<Seen> = room.seen().collect();
-            let foes: Vec<FoeSeen> = room.foes_seen().collect();
-            let tick = room.clock();
-            let lines = room.take_lines();
-            let shots: Vec<combat::Shot> = room.shots().copied().collect();
-            let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
-            let snapshot = protocol::Snapshot {
-                tick,
-                players: &players,
-                dressed: &dressed,
-                foes: &foes,
-                events: &events,
-                shots: &shots,
-                lines: &lines,
-                spells: &spells,
-            };
-            protocol::snapshot_bytes(&snapshot)
-        }
+        Opened::Land { room, .. } => land_snapshot(room),
         Opened::Sea(sea) => {
             let fights = sea.fight_views();
             let aboard: Vec<(u32, u32, movement::Body)> =
@@ -269,8 +261,16 @@ pub fn snapshot() -> Vec<u8> {
             let kind = |piece: naval::fight::Piece| piece as u8;
             let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
             let kept = sea.ships().filter_map(|(player, _)| sea.kept(player).map(|(kept, left)| (player, kept, left)));
-            let told = sea.told().to_vec();
-            let harbour = protocol::SeaHarbour { flotsam: flotsam.collect(), kept: kept.collect(), told };
+            let (flotsam, kept, told) = (flotsam.collect(), kept.collect(), sea.told().to_vec());
+            let decks = sea
+                .decks_mut()
+                .iter_mut()
+                .map(|deck| {
+                    let aboard = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
+                    (aboard, deck.pirate.commission.hull().number(), land_snapshot(&mut deck.room))
+                })
+                .collect();
+            let harbour = protocol::SeaHarbour { flotsam, kept, told, decks };
             protocol::sea_snapshot_bytes(
                 sea.clock(),
                 &sea.ships().collect::<Vec<_>>(),
@@ -287,6 +287,31 @@ pub fn snapshot() -> Vec<u8> {
         }
     })
     .unwrap_or_default()
+}
+
+/// A room on land's snapshot after its last tick, taking the dresses changed, what happened and its lines since the
+/// last: a deck boarded at sea sends its own the same way.
+fn land_snapshot(room: &mut Room) -> Vec<u8> {
+    let changed = room.take_dress_changes();
+    let events = room.take_events();
+    let dressed: Vec<(PlayerId, &str)> = changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
+    let players: Vec<Seen> = room.seen().collect();
+    let foes: Vec<FoeSeen> = room.foes_seen().collect();
+    let tick = room.clock();
+    let lines = room.take_lines();
+    let shots: Vec<combat::Shot> = room.shots().copied().collect();
+    let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
+    let snapshot = protocol::Snapshot {
+        tick,
+        players: &players,
+        dressed: &dressed,
+        foes: &foes,
+        events: &events,
+        shots: &shots,
+        lines: &lines,
+        spells: &spells,
+    };
+    protocol::snapshot_bytes(&snapshot)
 }
 
 /// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.

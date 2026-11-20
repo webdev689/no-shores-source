@@ -179,6 +179,7 @@ pub struct Sea {
     fights: Fights,
     clashes: Vec<Clash>,
     harbour: crate::harbour::Harbour,
+    decks: decks::Decks,
 }
 
 /// A point to the nearest whole metre, or None for one that is not a number or lies outside the world's frame.
@@ -209,6 +210,7 @@ impl Sea {
                 flotsam: crate::flotsam::Flotsam::new(seed),
                 ..Default::default()
             },
+            decks: decks::Decks::default(),
         }
     }
 
@@ -222,6 +224,7 @@ impl Sea {
 
     pub fn leave(&mut self, player: PlayerId) {
         self.stop_repair(player);
+        self.leave_decks(player);
         self.harbour.characters.remove(&player);
         self.berths.remove(&player);
         self.fights.leave(player);
@@ -397,6 +400,7 @@ impl Sea {
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let (outcomes, sank) = self.fights.step(&waters, wind, time);
         self.after_fights(outcomes, &sank);
+        self.tick_decks();
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
         step_clashes(&mut self.clashes, &mut self.pirates, &players, (&waters, wind, time));
@@ -416,7 +420,8 @@ impl Sea {
         let met = self.pirates.tick(TICK_SECONDS, &ships, &chart);
         let mut heave = |player| heave_to(&mut self.berths, &mut self.aboard, player);
         let at_sea = (&mut self.clashes, &mut self.pirates);
-        self.fights.take_in(met, &ships, at_sea, &mut heave, (&waters, time));
+        let joined = self.fights.take_in(met, &ships, at_sea, &mut heave, (&waters, time));
+        self.tell_joined(&joined);
     }
 
     /// Every ship at sea, in the order of its player's number.
@@ -556,6 +561,8 @@ fn sail(sailing: &mut Sailing, distance: f64) {
     }
 }
 
+#[path = "sea_decks.rs"]
+pub mod decks;
 #[path = "sea_ports.rs"]
 mod ports;
 

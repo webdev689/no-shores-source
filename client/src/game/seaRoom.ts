@@ -2,6 +2,7 @@
 // set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, pirate and fight the room
 // last showed, with its word on the player's body on deck.
 import {
+  askBytes,
   courseBytes,
   faceBytes,
   helmBytes,
@@ -11,7 +12,8 @@ import {
   walkBytes,
 } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import { fightViewOf, ordersNumbers } from '../network/seaFight.ts';
+import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
+import type { SeenDeck, SeenFlotsam, SeenKept } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts';
@@ -46,6 +48,13 @@ export class SeaRoom {
   /** The player's own fight as the room last showed it, and its events since they were last taken. */
   private fight: FightView | null = null;
   private events: FightEvent[] = [];
+  /** The sea's events of the player's fight since they were last taken, and what the sea told them beside it. */
+  private naval: NavalEvent[] = [];
+  private told: number[][] = [];
+  /** Their ship's kept hurts and repair, what floats for them, and the deck they stand on, as the room last said. */
+  kept: SeenKept | null = null;
+  flotsam: readonly SeenFlotsam[] = [];
+  deck: SeenDeck | null = null;
   /** The room's tick by its last snapshot (none before the first), the tick the last course was sent at, and a course
    *  waiting to be sent. */
   private tick: number | null = null;
@@ -106,11 +115,17 @@ export class SeaRoom {
     const walking = snapshot.players.find((seen) => seen.player === this.own);
     this.onDeck = walking ? { acknowledged: walking.acknowledged, body: walking.body } : null;
     this.words += 1;
+    this.kept = snapshot.kept.find((kept) => kept.player === this.own) ?? null;
+    this.flotsam = snapshot.flotsam.filter((piece) => piece.player === this.own);
+    this.deck = snapshot.decks.find((deck) => deck.aboard.some(([player]) => player === this.own)) ?? null;
+    this.told.push(...snapshot.told.filter((told) => told.player === this.own).map((told) => [...told.numbers]));
     const own = snapshot.fights.find((fight) => fight.player === this.own);
     if (own) {
       const who = { name: shipName(own.faction, own.hull), faction: own.faction, rank: own.rank };
-      this.fight = fightViewOf(own.view, who, shipName);
-      this.events.push(...this.fight.events);
+      const view = fightViewOf(own.view, who, shipName);
+      this.fight = view;
+      this.events.push(...view.events);
+      this.naval.push(...view.naval);
     } else if (this.fight?.over === null) this.fight = null;
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.
   }
@@ -145,6 +160,18 @@ export class SeaRoom {
     this.events = [];
     if (shown.over) this.fight = null;
     return shown;
+  }
+
+  /** The sea's events of the player's fight and what the sea told them beside it, each since last taken. */
+  takeTold(): { naval: NavalEvent[]; told: number[][] } {
+    const taken = { naval: this.naval, told: this.told };
+    [this.naval, this.told] = [[], []];
+    return taken;
+  }
+
+  /** Asks the sea for her repair, to board a captain who struck, or to leave her deck. */
+  ask(ask: Parameters<typeof askBytes>[0]): void {
+    this.link.send(askBytes(ask));
   }
 
   /** Whether the player is in a fight, as the room last said. */

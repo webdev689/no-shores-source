@@ -5,7 +5,7 @@
 use super::{Berth, Sea, Ship};
 use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
-use crate::harbour::{HELD, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
+use crate::harbour::{HELD, JOINED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
@@ -20,7 +20,10 @@ impl Sea {
             match outcome {
                 Outcome::Fighting { player, ship } => self.moor(player, ship, None),
                 Outcome::Released { player, ship, kept } => self.moor(player, ship, Some(kept)),
-                Outcome::Sunk { player, at } => self.wash_up(player, at, true),
+                Outcome::Sunk { player, at } => {
+                    self.leave_decks(player);
+                    self.wash_up(player, at, true);
+                }
             }
         }
         for ship in sank {
@@ -87,13 +90,11 @@ impl Sea {
         Ok(())
     }
 
-    /// The player boards a captain who struck alongside their ship (`Fights::board`), and everyone in the fight is told.
-    pub fn board(&mut self, player: PlayerId) -> Result<(), crate::battle::BoardRefused> {
-        let (ship, _) = self.fights.board(player)?;
-        let tick = self.clock as f64;
-        let told = told_numbers(&Event::Boarding { ship }, tick).unwrap_or_default();
-        self.harbour.told.push((player, told));
-        Ok(())
+    /// The hurts a player's ship keeps, with her and in their character.
+    pub(super) fn keep_hurts(&mut self, player: PlayerId, kept: [f64; 3]) {
+        if let Some(berth) = self.berths.get_mut(&player) {
+            keep(berth, &mut self.harbour.characters, player, kept);
+        }
     }
 
     /// A player's repair stops where it stood, as they sail or leave.
@@ -120,6 +121,20 @@ impl Sea {
             let rarity = held.vestige.map_or(0.0, |vestige| f64::from(vestige.rarity as u8) + 1.0);
             let parts = [f64::from(u8::from(held.ammo_box)), f64::from(u8::from(held.ammo_crate))];
             self.harbour.told.push((player, vec![HELD, tick, f64::from(id), rarity, parts[0], parts[1]]));
+        }
+    }
+
+    /// Every player in a fight told of who joined it.
+    pub(super) fn tell_joined(&mut self, joined: &[(crate::battle::Joined, Vec<PlayerId>)]) {
+        let tick = self.clock as f64;
+        for (who, told) in joined {
+            let numbers = match *who {
+                crate::battle::Joined::Player(player) => vec![JOINED, tick, f64::from(player), 0.0, 0.0],
+                crate::battle::Joined::Hostile(commission) => {
+                    vec![JOINED, tick, 0.0, f64::from(commission.faction), f64::from(commission.rank.number())]
+                }
+            };
+            self.harbour.told.extend(told.iter().map(|player| (*player, numbers.clone())));
         }
     }
 
@@ -175,3 +190,7 @@ fn keep(berth: &mut Berth, characters: &mut BTreeMap<PlayerId, gear::Character>,
         character.ship = kept.map(|share| (share.clamp(0.0, 1.0) * whole).round() as u16);
     }
 }
+
+#[cfg(test)]
+#[path = "sea_ports_tests.rs"]
+mod tests;

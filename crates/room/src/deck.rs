@@ -10,11 +10,13 @@ use std::collections::VecDeque;
 /// How near the spot behind her wheel a body stands to take the helm, metres.
 pub const WHEEL_REACH_M: f64 = 0.8;
 
-/// A ship's deck: its grid of heights, and the spot behind her wheel (x, y in her frame) where the helm is kept.
+/// A ship's deck: its grid of heights, the spot behind her wheel (x, y in her frame) where the helm is kept, and the
+/// grid's bounds (its north-west and south-east corners in her frame).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Deck {
     pub heights: Heights,
     pub helm: [f64; 2],
+    pub bounds: [[f64; 2]; 2],
 }
 
 /// Why a step on deck was refused.
@@ -122,7 +124,7 @@ pub fn test_deck() -> Deck {
     let mut heights = vec![Some(0.8); columns * rows];
     heights[35 * columns + 10] = None;
     let heights = Heights::new(-1.0, -3.5, 0.1, columns, rows, heights).unwrap_or_else(|| unreachable!());
-    Deck { heights, helm: [0.0, 2.7] }
+    Deck { heights, helm: [0.0, 2.7], bounds: [[-1.0, -3.5], [1.0, 3.5]] }
 }
 
 #[cfg(test)]

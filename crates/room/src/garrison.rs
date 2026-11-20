@@ -151,10 +151,28 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         None => (blocks, first, GROUND_AROUND),
     };
     let bounds = ground_around(walked, middle, around);
-    match floor {
-        Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
-        Floor::Land(_) => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
+    match (floor, section) {
+        (Floor::Flat, _) => NavMesh::bake(walked, bounds, &navmesh::AGENT),
+        // A deck's mesh covers her ring alone: her planks and the walls round them.
+        (Floor::Deck(_), Some(section)) => NavMesh::bake_on(walked, floor, ring_bounds(&section.ring), &navmesh::AGENT),
+        _ => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
     }
+}
+
+/// The bounds of a ring.
+fn ring_bounds(ring: &[[f64; 2]]) -> navmesh::Bounds {
+    let start = navmesh::Bounds {
+        min_x: f64::INFINITY,
+        min_y: f64::INFINITY,
+        max_x: f64::NEG_INFINITY,
+        max_y: f64::NEG_INFINITY,
+    };
+    ring.iter().fold(start, |bounds, &[x, y]| navmesh::Bounds {
+        min_x: bounds.min_x.min(x),
+        min_y: bounds.min_y.min(y),
+        max_x: bounds.max_x.max(x),
+        max_y: bounds.max_y.max(y),
+    })
 }
 
 /// Open ground a course's navmesh covers beyond its blocks and its spawn, each way.

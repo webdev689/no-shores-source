@@ -132,6 +132,9 @@ pub struct Harbour {
 /// A player told they washed up: the code, the sea's tick, the port by its number among the port cities, and whether
 /// their ship went down (1) or they were beaten aboard her enemy (0).
 pub const WASHED_UP: f64 = 20.0;
+/// A player told that someone joined their fight: the code, the tick, the player's number (0 for a hostile ship),
+/// and a hostile ship's faction and rank (0 for a player).
+pub const JOINED: f64 = 22.0;
 /// A player told what a piece they gathered held: the code, the tick, the piece, the Vestige's rarity (0 none, else
 /// the gear crate's number and one), and whether it held an Ammo box and an Ammo crate (1 or 0).
 pub const HELD: f64 = 21.0;

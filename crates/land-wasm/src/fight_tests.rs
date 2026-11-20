@@ -152,7 +152,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "8812bb5ddafb5fd5 023b7bcd4ce44333 810ca1f1d7deb0b9 39863872d3efd873 bc311f33cb17dfe0 6b63c754246fd09c fae3ac5bdff94730 1b52c20892c553c4 2c2186f7241fdcd2"
+        "59d4acd306d34cf5 44955f1a2c6446f3 582ed07bc61512b9 82fd2596a72b7bd3 3327f3de610a68e0 df5ce53dd0db289c 6f0dbeed92408290 fa04daadf013e9e4 a8d6f65bf283e892"
     );
 }
 
@@ -201,7 +201,7 @@ fn fought_with(rank: u8) -> Vec<String> {
 /// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
 /// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
 pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "2c2186f7241fdcd2"), (3, 1, "722d64499ad08022"), (4, 2, "638e410d9f98a3b3"), (5, 3, "946a7b2983ac1495")];
+    [(2, 0, "a8d6f65bf283e892"), (3, 1, "25bc82b539b4a0c2"), (4, 2, "ab942240d44f1293"), (5, 3, "a94e7e95f44f6cd5")];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {

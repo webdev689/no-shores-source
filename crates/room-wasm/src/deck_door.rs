@@ -47,7 +47,8 @@ pub fn deck_of(text: &str, name: &str) -> Result<Deck, String> {
     let heights = deck.heights_cm.iter().flatten().map(|height| height.map(|cm| f64::from(cm) / 100.0)).collect();
     let heights = Heights::new(deck.west_m, deck.north_m, deck.cell_m, deck.columns, deck.rows, heights)
         .ok_or_else(|| format!("{name}'s deck grid does not hold its heights"))?;
-    Ok(Deck { heights, helm: deck.helm })
+    let east_south = [deck.west_m + deck.cell_m * deck.columns as f64, deck.north_m + deck.cell_m * deck.rows as f64];
+    Ok(Deck { heights, helm: deck.helm, bounds: [[deck.west_m, deck.north_m], east_south] })
 }
 
 /// The Sloop's deck, read once from the manifest built in.
@@ -58,6 +59,18 @@ pub fn sloop_deck() -> &'static Deck {
 
 /// The Sloop's build as JSON: her name, her hull and canvas whole, her crew, her guns on each side, and the loads her
 /// guns take, in the order a gunner steps through them.
+/// Every hull's deck as the built-in manifest has it, by her hull's number: the Sloop's, the Schooner's, the Brig's and
+/// the Frigate's.
+pub fn hull_decks() -> &'static [Deck] {
+    static DECKS: OnceLock<Vec<Deck>> = OnceLock::new();
+    DECKS.get_or_init(|| {
+        ["sloop", "schooner", "brig", "frigate"]
+            .iter()
+            .map(|name| deck_of(MANIFEST, name).unwrap_or_else(|why| panic!("the built-in manifest: {why}")))
+            .collect()
+    })
+}
+
 #[must_use]
 pub fn sloop_build_json() -> String {
     let loads: Vec<String> = Shot::CYCLE.iter().map(|shot| format!("\"{}\"", shot.name())).collect();

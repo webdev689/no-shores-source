@@ -57,7 +57,7 @@ table Input {
 // In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the
 // helm, a step of the player's walk on her deck instead: its controls in the movement crate's order and its number,
 // 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2). Or an ask: her repair
-// by a port city (1), or to board a captain who struck (2).
+// by a port city (1), to board a captain who struck (2), or to leave her deck once her crew has fallen (3).
 table Course {
   points: [double];
   pace: ushort;
@@ -87,6 +87,15 @@ table Kept {
   sail: double;
   crew: double;
   repair_left: double;
+}
+
+// A captain's deck that players boarded: each boarder's number at sea and in turn their number on her deck, her hull
+// (as Pirate numbers it), and her deck room's own snapshot (a FromRoom message of a room on land, in her own frame).
+table Deck {
+  players: [uint];
+  boarders: [uint];
+  hull: ubyte;
+  snapshot: [ubyte];
 }
 
 // What the sea tells one player this tick beside their fight's view: one event in the naval crate's numbers
@@ -326,7 +335,8 @@ table Spell {
 // pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on her deck in
 // her own frame (x to her starboard, y to her stern, z over her waterline); in a fleet room, every ship, the balls
 // aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land;
-// and at sea what floats for each player, each player's ship's kept hurts, and what each player is told this tick.
+// and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick, and
+// each deck boarded.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -345,6 +355,7 @@ table Snapshot {
   flotsam: [Flotsam];
   kept: [Kept];
   told: [Told];
+  decks: [Deck];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the

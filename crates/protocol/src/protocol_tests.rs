@@ -4,6 +4,9 @@ use combat::fighter::{Action, Side, Weight, fighter, player};
 use combat::shots::loose;
 use combat::{CombatInput, Fighter};
 use movement::{Controls, Flat, TICK_SECONDS, standing, step_body};
+use naval::ranks::Commission;
+use room::pirates::Pirate;
+use room::sea::Ship;
 use room::{EventKind, How};
 
 /// An input with these controls and nothing else.

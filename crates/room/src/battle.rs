@@ -39,6 +39,13 @@ pub enum BoardRefused {
 pub const QUIET: Orders =
     Orders { helm: Helm { steer: 0.0, crab: false, climb: 0 }, aim: None, fire: false, brace: false, load: None };
 
+/// Who joined a fight under way: a player, or a hostile ship of a commission.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Joined {
+    Player(PlayerId),
+    Hostile(Commission),
+}
+
 /// A player's place in a fight: their ship's number in it and the orders it is stepped by.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Crew {
@@ -55,6 +62,8 @@ pub struct SeaFight {
     pub events: Vec<Event>,
     pub hostiles: BTreeMap<ShipId, Pirate>,
     pub fought: Vec<PlayerId>,
+    /// The captains whose holds were opened, who lay nothing more when they go down.
+    pub opened: Vec<ShipId>,
 }
 
 /// What became of a player in a fight this tick: still in it, where their ship lies; out of it afloat, where it left
@@ -89,7 +98,7 @@ fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
 
 impl SeaFight {
     fn new(fight: Fight, hostiles: BTreeMap<ShipId, Pirate>) -> Self {
-        SeaFight { fight, crews: BTreeMap::new(), events: Vec::new(), hostiles, fought: Vec::new() }
+        SeaFight { fight, crews: BTreeMap::new(), events: Vec::new(), hostiles, fought: Vec::new(), opened: Vec::new() }
     }
 
     /// Whether any of its ships still in it lies within `ENGAGE_RANGE` of `at`.
@@ -170,6 +179,43 @@ impl Fights {
         Ok((id, pirate))
     }
 
+    /// The fight and number of the captain who sailed at sea as `pirate`, a ship of the sea's own numbering.
+    fn holding(&mut self, pirate: u32) -> Option<(&mut SeaFight, ShipId)> {
+        self.list.iter_mut().find_map(|fought| {
+            let id = fought.hostiles.iter().find(|(_, held)| held.id == pirate).map(|(id, _)| *id)?;
+            Some((fought, id))
+        })
+    }
+
+    /// Where the captain who sailed at sea as `pirate` lies.
+    pub fn position_of(&mut self, pirate: u32) -> Option<[f64; 2]> {
+        let (fought, id) = self.holding(pirate)?;
+        fought.fight.vessel(id).map(|vessel| [vessel.ship.x, vessel.ship.y])
+    }
+
+    /// The captain who sailed at sea as `pirate` is scuttled, and her fight told.
+    pub fn scuttle_by(&mut self, pirate: u32) {
+        if let Some((fought, id)) = self.holding(pirate) {
+            let told = fought.fight.scuttle(id);
+            fought.events.extend(told);
+        }
+    }
+
+    /// Her hold opened, she lays nothing more when she goes down.
+    pub fn forget_hold(&mut self, pirate: u32) {
+        if let Some((fought, id)) = self.holding(pirate) {
+            fought.opened.push(id);
+        }
+    }
+
+    /// A player leaves their fight afloat: their ship leaves it, with the hurts she keeps.
+    pub fn release(&mut self, player: PlayerId) -> Option<[f64; 3]> {
+        let (fought, crew) = self.of_mut(player)?;
+        let kept = fought.fight.vessel(crew.ship).map(|vessel| kept_of(&vessel.damage));
+        self.leave(player);
+        kept
+    }
+
     /// A player leaves the sea: their ship leaves their fight, and a fight left with no player ends with them.
     pub fn leave(&mut self, player: PlayerId) {
         if let Some((fought, crew)) = self.of_mut(player) {
@@ -230,7 +276,8 @@ impl Fights {
     /// After the sea's ships sailed: each ship that met a player (`met`) begins their fight; rivals that met begin
     /// a clash; each player at sea not fighting (`ships`) who comes within `ENGAGE_RANGE` of a fight joins it, or of a
     /// clash takes it for their fight; and each hostile ship within `ENGAGE_RANGE` of a fight joins it. `heave` brings
-    /// a player's ship to rest for it and answers her with the hurts she keeps.
+    /// a player's ship to rest for it and answers her with the hurts she keeps. Answers who joined a fight under way
+    /// (a player, or a hostile ship's commission) and the players already in it.
     pub fn take_in(
         &mut self,
         met: Vec<(PlayerId, Pirate)>,
@@ -238,7 +285,8 @@ impl Fights {
         (clashes, pirates): (&mut Vec<Clash>, &mut Pirates),
         heave: &mut impl FnMut(PlayerId) -> Option<(PlayerId, Ship, [f64; 3])>,
         (waters, time): (&impl Waters, f64),
-    ) {
+    ) -> Vec<(Joined, Vec<PlayerId>)> {
+        let mut joined = Vec::new();
         for (player, pirate) in met {
             let Some(own) = heave(player) else { continue };
             self.begin_met(own, &pirate, waters, time);
@@ -258,7 +306,16 @@ impl Fights {
             let Some(own) = heave(player) else { continue };
             match clash {
                 Some(clash) => self.begin_from_clash(clash, own, waters, time),
-                None => _ = self.join(own, waters, time),
+                None => {
+                    let before = self
+                        .list
+                        .iter()
+                        .find(|fought| fought.near(at))
+                        .map(|fought| fought.crews.keys().copied().collect());
+                    if self.join(own, waters, time) {
+                        joined.push((Joined::Player(player), before.unwrap_or_default()));
+                    }
+                }
             }
         }
         let joining: Vec<usize> = (0..pirates.sailing.len())
@@ -269,8 +326,13 @@ impl Fights {
             .collect();
         for at in joining.into_iter().rev() {
             let pirate = pirates.sailing.remove(at);
-            self.join_hostile(&pirate, waters, time);
+            let before = self.list.iter().find(|fought| fought.near([pirate.x, pirate.y]));
+            let before = before.map(|fought| fought.crews.keys().copied().collect()).unwrap_or_default();
+            if self.join_hostile(&pirate, waters, time) {
+                joined.push((Joined::Hostile(pirate.commission), before));
+            }
         }
+        joined
     }
 
     /// One tick: each fight over last tick lets its players go; each other steps by its players' orders (the climb,
@@ -302,6 +364,9 @@ impl Fights {
             }
             for event in &fought.events {
                 let Event::Gone { ship, end: End::Sunk } = *event else { continue };
+                if fought.opened.contains(&ship) {
+                    continue;
+                }
                 let (Some(pirate), Some(vessel)) = (fought.hostiles.get(&ship), fought.fight.vessel(ship)) else {
                     continue;
                 };

@@ -13,10 +13,7 @@ use combat::{Intent, Shot, Status};
 use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
 use naval::fight::Orders;
-use naval::ranks::Commission;
 use naval::wire::{orders_from, orders_numbers};
-use room::pirates::Pirate;
-use room::sea::Ship;
 use room::{
     CLEAR_FOES, Cast, Event, FoeSeen, Input, PlayerId, SHIELD_SHIFT, Seen, Shown, SpawnAsk, SpellSeen, Standing,
 };
@@ -41,6 +38,8 @@ pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../g
 
 pub mod fleet;
 pub mod gear_wire;
+mod sea_snapshot;
+pub use sea_snapshot::{SeaHarbour, sea_snapshot_bytes};
 
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
 /// aim's mark (x, y, z, none as NaN).
@@ -159,6 +158,8 @@ pub enum SeaInput {
     Repair,
     /// To board a captain who struck.
     Board,
+    /// To leave her deck once her crew has fallen.
+    LeaveDeck,
 }
 
 /// What a message to the sea room asks, or why it does not read: the helm when it asks for it, a step when it carries
@@ -170,7 +171,8 @@ pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
         0 => {}
         1 => return Ok(SeaInput::Repair),
         2 => return Ok(SeaInput::Board),
-        other => return Err(format!("an ask is a repair (1) or a boarding (2), not {other}")),
+        3 => return Ok(SeaInput::LeaveDeck),
+        other => return Err(format!("an ask is a repair (1), a boarding (2) or leaving a deck (3), not {other}")),
     }
     match course.helm() {
         0 => {}
@@ -469,114 +471,7 @@ fn spells_vector<'built>(
     builder.create_vector(&each)
 }
 
-/// Everything at sea after the sea room's tick `tick`: every ship, every captain's with her faction, rank and hull,
-/// each player's fight as the naval crate's numbers (`naval::wire::view_numbers`, its other captains parted off into a
-/// field of their own) with its captain's commission and hull, and each player off the helm with the number of their
-/// last step taken and their body on deck.
-#[must_use]
-pub fn sea_snapshot_bytes(
-    tick: u64,
-    ships: &[(PlayerId, Ship)],
-    pirates: &[Pirate],
-    fights: &[(PlayerId, Vec<f64>, Commission)],
-    aboard: &[(PlayerId, u32, Body)],
-    harbour: &SeaHarbour,
-) -> Vec<u8> {
-    let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let each: Vec<_> = aboard
-        .iter()
-        .map(|&(player, acknowledged, body)| {
-            let fighter = Some(builder.create_vector(&body.to_floats()));
-            let anim = Some(builder.create_string(""));
-            let args =
-                messages::SeenArgs { player, acknowledged, anim, facing: body.facing, fighter, ..Default::default() };
-            messages::Seen::create(&mut builder, &args)
-        })
-        .collect();
-    let players = Some(builder.create_vector(&each));
-    let each: Vec<_> = ships
-        .iter()
-        .map(|&(player, Ship { x, y, heading, rate, .. })| {
-            messages::Ship::create(&mut builder, &messages::ShipArgs { player, x, y, heading, pace: rate })
-        })
-        .collect();
-    let ships = Some(builder.create_vector(&each));
-    let each: Vec<_> = pirates
-        .iter()
-        .map(|pirate| {
-            let Pirate { id, x, y, heading, level, sight_m: sight, commission: Commission { faction, rank }, .. } =
-                *pirate;
-            let hull = rank.hull().number();
-            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight };
-            messages::Pirate::create(&mut builder, &args)
-        })
-        .collect();
-    let pirates = Some(builder.create_vector(&each));
-    let each: Vec<_> = fights
-        .iter()
-        .map(|(player, numbers, commission)| {
-            let (view, others) = naval::wire::parted(numbers);
-            let (view, faction, rank) =
-                (Some(builder.create_vector(&view)), commission.faction, commission.rank.number());
-            let others = (!others.is_empty()).then(|| builder.create_vector(&others));
-            let hull = commission.hull().number();
-            messages::SeaFight::create(
-                &mut builder,
-                &messages::SeaFightArgs { player: *player, view, faction, rank, others, hull },
-            )
-        })
-        .collect();
-    let fights = Some(builder.create_vector(&each));
-    let each: Vec<_> = harbour
-        .flotsam
-        .iter()
-        .map(|&(player, id, [x, y], kind)| {
-            messages::Flotsam::create(&mut builder, &messages::FlotsamArgs { player, id, x, y, kind })
-        })
-        .collect();
-    let flotsam = Some(builder.create_vector(&each));
-    let each: Vec<_> = harbour
-        .kept
-        .iter()
-        .map(|&(player, [hull, sail, crew], repair_left)| {
-            messages::Kept::create(&mut builder, &messages::KeptArgs { player, hull, sail, crew, repair_left })
-        })
-        .collect();
-    let kept = Some(builder.create_vector(&each));
-    let each: Vec<_> = harbour
-        .told
-        .iter()
-        .map(|(player, numbers)| {
-            let numbers = Some(builder.create_vector(numbers));
-            messages::Told::create(&mut builder, &messages::ToldArgs { player: *player, numbers })
-        })
-        .collect();
-    let told = Some(builder.create_vector(&each));
-    let args = messages::SnapshotArgs {
-        tick,
-        players,
-        ships,
-        pirates,
-        fights,
-        flotsam,
-        kept,
-        told,
-        ..messages::SnapshotArgs::default()
-    };
-    finish_snapshot(builder, &args)
-}
-
-/// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
-/// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
-/// her repair has left, and what each player is told this tick.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SeaHarbour {
-    pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
-    pub kept: Vec<(PlayerId, [f64; 3], f64)>,
-    pub told: Vec<(PlayerId, Vec<f64>)>,
-}
-
-fn finish_snapshot<'builder>(
+pub(crate) fn finish_snapshot<'builder>(
     mut builder: flatbuffers::FlatBufferBuilder<'builder>,
     args: &messages::SnapshotArgs<'builder>,
 ) -> Vec<u8> {

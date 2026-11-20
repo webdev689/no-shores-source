@@ -7,6 +7,7 @@ import { type GearAsk, type GearState, askOffset, gearOf } from './gearMessages.
 import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { withOthers } from './seaFight.ts';
+import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -181,7 +182,8 @@ export type FromRoomMessage =
       readonly fights: readonly SeenSeaFight[];
       /** Every spell in a room on land, which every player sees. */
       readonly spells: readonly SeenSpell[];
-    } & FleetPart)
+    } & FleetPart &
+      HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
 
 /** One tick's input beyond its number: the intent's numbers (the controls', then the fight's), what the player's figure
@@ -246,7 +248,7 @@ export function inputBytes(sequence: number, parts: InputParts): Uint8Array<Arra
 export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -255,7 +257,7 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
 export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(64);
   const facing = Course.createFacingVector(builder, [heading]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -265,14 +267,23 @@ export function walkBytes(sequence: number, controls: readonly number[]): Uint8A
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
   const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
 /** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
 export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0));
+  return builder.asUint8Array().slice();
+}
+
+/** What a player asks of the sea as its bytes, in a course's message: her repair by a port city, to board a captain
+ *  who struck, or to leave her deck once her crew has fallen. */
+export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
+  const builder = new flatbuffers.Builder(32);
+  const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, number));
   return builder.asUint8Array().slice();
 }
 
@@ -280,7 +291,7 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0));
   return builder.asUint8Array().slice();
 }
 
@@ -407,6 +418,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       fights,
       spells: spellsOf(snapshot),
       ...fleetOf(snapshot),
+      ...harbourOf(snapshot),
     };
   } catch {
     return null;

@@ -4,11 +4,13 @@ use land::ground::Ground;
 use movement::blocks::ground_at;
 use movement::{Block, Body, Terrain, standing};
 
-/// The ground a room's fighters stand on: open ground at 0 m, or a node's window of the land.
+/// The ground a room's fighters stand on: open ground at 0 m, a node's window of the land, or a ship's deck in her own
+/// frame (its grid of heights over her waterline, a wall off her planks).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Floor {
     Flat,
     Land(Box<Ground>),
+    Deck(Box<movement::Heights>),
 }
 
 impl Terrain for Floor {
@@ -16,6 +18,7 @@ impl Terrain for Floor {
         match self {
             Floor::Flat => 0.0,
             Floor::Land(ground) => ground.height_at(x, y),
+            Floor::Deck(heights) => heights.height_at(x, y),
         }
     }
 }

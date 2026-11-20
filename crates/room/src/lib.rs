@@ -10,6 +10,7 @@ pub mod battle;
 pub mod chart;
 pub mod clash;
 pub mod deck;
+mod deck_fight;
 mod drops;
 pub mod fleet;
 mod floor;
