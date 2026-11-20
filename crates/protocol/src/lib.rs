@@ -39,6 +39,7 @@ pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../g
 pub mod fleet;
 pub mod gear_wire;
 mod sea_snapshot;
+pub mod ship_wire;
 pub use sea_snapshot::{SeaHarbour, sea_snapshot_bytes};
 
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
@@ -401,6 +402,9 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 expose: statuses.left(Status::Expose),
                 charge: statuses.left(Status::Charge),
                 charge_immune: statuses.charge_immune,
+                leader: foe.companion.map_or(0, |companion| companion.leader),
+                given: foe.companion.map_or(0, |companion| companion.given),
+                family: foe.companion.map_or(0, |companion| companion.family),
             };
             messages::Foe::create(&mut builder, &args)
         })

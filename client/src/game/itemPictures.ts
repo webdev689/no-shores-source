@@ -9,6 +9,7 @@ import type { Dress } from '../player/dressing.ts';
 import { KINDS, MELEE, WORN } from '../player/gear.ts';
 import { gearOutfit } from '../player/gearLooks.ts';
 import { type Picture, addedBy } from '../player/picture.ts';
+import { isModule } from './shipGear.ts';
 
 /** The view an item is drawn in, from the front; and the move each loadout is held up in, a melee one on guard, a
  *  pair on its own guard. Armour is drawn standing. */
@@ -65,6 +66,8 @@ export class ItemPictures {
   /** The picture of `item` worn on `body`, or null while it is drawn or where the forge draws nothing of it;
    *  `ready` is called once it is drawn. A picture the forge failed to draw is asked again the next time. */
   pictureOf(item: GearItem, body: Dress, ready: () => void): Picture | null {
+    // A module is no figure's to wear: its glyph stands for it.
+    if (isModule(item.kind)) return null;
     const look = this.lookOf(item, body);
     if (!look) return null;
     const { key, worn, bare, anim, onePiece, alone } = look;

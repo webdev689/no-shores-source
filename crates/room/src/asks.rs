@@ -68,6 +68,9 @@ pub enum Grant {
     Ammo(u16),
     /// This many Ammo crates more, up to the five carried.
     Crates(u16),
+    /// A First Mate and a Bosun of this level signed on and sent ashore, as far as the crew has room: to see
+    /// companions fight.
+    Officers(u8),
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -108,6 +111,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         Ask::Vend { vendor, .. } => Some(CounterKind::Vendor(*vendor)),
         Ask::BuyCrate => Some(CounterKind::Vendor(Vendor::Quartermaster)),
         Ask::BuyEmblem { .. } => Some(CounterKind::Tailor),
+        Ask::Recruit { .. } => Some(crate::crew::MUSTER),
         _ => None,
     }
 }
@@ -135,7 +139,9 @@ impl Room {
         let at_counter = counter_for(ask).is_some_and(|wanted| {
             self.counters.iter().flatten().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
-        Here { social: at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH)), day: self.day }
+        let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
+        let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
+        Here { social, day: self.day, pledge, rank }
     }
 
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
@@ -200,8 +206,10 @@ impl Room {
         let code = match asked {
             Asked::Gear(ask) => {
                 let here = self.here(player, &ask);
+                let deck = matches!(self.floor, crate::Floor::Deck(_));
                 let Some(found) = self.players.get_mut(&player) else { return };
-                match found.character.ask(ask, here, &dice) {
+                let ship_ask = crate::crew::of_the_ship(&ask, &found.character);
+                match if deck && ship_ask { Err(Refusal::NotHere) } else { found.character.ask(ask, here, &dice) } {
                     Ok(gear::Done::Identified(item)) => {
                         found.identified = item;
                         0
@@ -307,6 +315,18 @@ impl Room {
             Grant::Crates(count) => {
                 for _ in 0..count.min(gear::ammo::CRATES_MOST) {
                     character.take_crate();
+                }
+            }
+            Grant::Officers(level) => {
+                use gear::crew::{ASHORE_MOST, Duty, Officer, Post};
+                for post in [Post::FirstMate, Post::Bosun] {
+                    let mut officer = Officer::new(0, post, gear::Rarity::Magic, level);
+                    (officer.given, officer.family) = (post as u8 * 5, post as u8 * 3);
+                    let ashore = character.crew.ashore().count() < ASHORE_MOST;
+                    let signed = character.sign_on(officer).and_then(|id| character.crew.officers.get_mut(&id));
+                    if let Some(signed) = signed.filter(|_| ashore) {
+                        signed.duty = Duty::Ashore;
+                    }
                 }
             }
             Grant::Status { .. } | Grant::ArtsReady => {}

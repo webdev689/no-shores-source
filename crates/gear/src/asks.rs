@@ -72,6 +72,35 @@ pub enum Ask {
     UseCrate,
     /// Buys an Ammo crate: at the Quartermaster's counter only.
     BuyCrate,
+    /// Feeds a carried module into a kept one of its kind, raising it to the fed one's level (`ship::infuse`).
+    Infuse {
+        item: u32,
+        fed: u32,
+    },
+    /// Signs on one of the officers of the day at the counter of the faction pledged to (`crew::recruit`).
+    Recruit {
+        faction: u8,
+        offer: u8,
+    },
+    /// Puts an officer at their post, ashore or aboard.
+    Station {
+        officer: u32,
+        duty: crate::crew::Duty,
+    },
+    Dismiss {
+        officer: u32,
+    },
+    /// Buys an officer's node, and chooses one bought.
+    Train {
+        officer: u32,
+        column: u8,
+        node: u8,
+    },
+    ChooseOfficer {
+        officer: u32,
+        column: u8,
+        node: u8,
+    },
 }
 
 /// Why an ask was refused.
@@ -116,6 +145,13 @@ pub enum Refusal {
     CratesFull,
     /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
     NoRanged = 119,
+    NoSuchOfficer = 130,
+    /// The player is pledged to no faction, whose counter signs officers on.
+    NoPledge = 131,
+    /// Eight officers are kept already.
+    CrewFull = 132,
+    /// Two officers are ashore already.
+    AshoreFull = 133,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -126,11 +162,14 @@ pub enum Done {
     Identified(u32),
 }
 
-/// Where the player is when they ask, and the day, whose wares the vendors show.
+/// Where the player is when they ask, and the day, whose wares the vendors show; the faction they are pledged to (0
+/// none) and their rank with it, whose counter signs officers on.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Here {
     pub social: bool,
     pub day: u64,
+    pub pledge: u8,
+    pub rank: u32,
 }
 
 impl Character {
@@ -157,6 +196,12 @@ impl Character {
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
+            Ask::Infuse { item, fed } => self.infuse(item, fed),
+            Ask::Recruit { faction, offer } => self.recruit(faction, offer, here),
+            Ask::Station { officer, duty } => self.station(officer, duty),
+            Ask::Dismiss { officer } => self.dismiss(officer),
+            Ask::Train { officer, column, node } => self.train(officer, usize::from(column), node),
+            Ask::ChooseOfficer { officer, column, node } => self.choose_officer(officer, usize::from(column), node),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.
@@ -173,7 +218,8 @@ impl Character {
         if !item.kind.fits(slot) {
             return Err(Refusal::DoesNotFit);
         }
-        if item.level > self.level() {
+        let level = if slot.ship() { self.ship_level() } else { self.level() };
+        if item.level > level {
             return Err(Refusal::TooLow);
         }
         if item.rarity == Rarity::Atheric
@@ -181,7 +227,7 @@ impl Character {
                 worn.rarity == Rarity::Atheric
                     && worn.id != id
                     && worn_slot != slot
-                    && worn_slot.loadout() == slot.loadout()
+                    && worn_slot.group() == slot.group()
             })
         {
             return Err(Refusal::OneAtheric);
@@ -199,7 +245,8 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        let wares = vendor::wares(vendor, here.day, self.level());
+        let level = if vendor.for_ship() { self.ship_level() } else { self.level() };
+        let wares = vendor::wares(vendor, here.day, level);
         let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
         let cost = vendor::price(item.rarity);
         if self.materials.aurem < cost {
@@ -255,6 +302,15 @@ impl Character {
         }
         let cost = item.cost_of(column);
         let stock = item.kind.stock();
+        if stock == Stock::Ship {
+            let price = crate::ship::materials::price_of(item.kind, cost);
+            if self.materials.aurem < cost.aurem || !self.materials.ship.affords(&price) {
+                return Err(Refusal::Short);
+            }
+            self.materials.aurem -= cost.aurem;
+            self.materials.ship.pay(&price);
+            return self.bought(id, column, node, bit);
+        }
         let resource = usize::from(item.resource.unwrap_or_default());
         let held = &self.materials;
         if held.aurem < cost.aurem
@@ -275,10 +331,16 @@ impl Character {
                 materials.armor_fragments -= cost.fragments;
                 materials.armor_essence -= cost.essence;
             }
+            Stock::Ship => {}
         }
         if cost.resource > 0 {
             materials.resources[resource] -= cost.resource;
         }
+        self.bought(id, column, node, bit)
+    }
+
+    /// Lights a node paid for, choosing it if its column had none.
+    fn bought(&mut self, id: u32, column: usize, node: u8, bit: u32) -> Result<Option<Done>, Refusal> {
         let item = self.held_mut(id)?;
         item.bought |= bit;
         if let Some(chosen) = item.chosen.get_mut(column).filter(|chosen| **chosen == NONE_CHOSEN) {
@@ -324,6 +386,12 @@ impl Character {
             Rarity::Atheric => (300, 5, 2 + back),
         };
         self.materials.add_aurem(aurem);
+        if stock == Stock::Ship {
+            let [first, _] = crate::ship::materials::made_of(item.kind);
+            self.materials.ship.add(first, fragments * 2);
+            self.materials.ship.add(crate::ship::materials::ShipMaterial::Heartwood, essence);
+            return;
+        }
         self.materials.add(Stuff::Fragments(stock), fragments);
         self.materials.add(Stuff::Essence(stock), essence);
     }
@@ -359,6 +427,9 @@ impl Character {
             return Err(Refusal::NoFruit);
         }
         let item = self.held_mut(id)?;
+        if item.kind.module() {
+            return Err(Refusal::DoesNotFit);
+        }
         if item.xp >= item.xp_most() {
             return Err(Refusal::FullOfXp);
         }

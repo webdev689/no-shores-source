@@ -14,6 +14,7 @@ import { type Flashes, dissolveShare } from './flashes.ts';
 import type { MarkedFoe } from './foeBars.ts';
 import { ironOutline } from './glints.ts';
 import { overheadMarks } from './overheads.ts';
+import { officerName } from './companions.ts';
 
 type Point = readonly [number, number, number];
 
@@ -179,12 +180,15 @@ export class FoeFigures {
     return out;
   }
 
-  /** Each foe as the display marks it: its type's name and faction from the roster, where its figure is drawn. */
+  /** Each foe as the display marks it: its type's name and faction from the roster, where its figure is drawn; a
+   *  companion by their officer's own name, an ally of no faction. */
   marked(fight: Fighting): MarkedFoe[] {
     return [...fight.foes.values()].map((kept) => {
       const figure = this.figures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
       const type = shownType(this.roster, kept);
+      if (kept.companion)
+        return { ...kept, name: officerName(kept.companion), faction: '', factionNumber: 0, view, ally: true };
       return {
         ...kept,
         name: type?.name ?? 'Foe',

@@ -7,8 +7,8 @@ use crate::power::xp_for_level;
 use crate::rarity::Rarity;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
-const AFIELD: Here = Here { social: false, day: 0 };
-const IN_TOWN: Here = Here { social: true, day: 0 };
+const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0 };
+const IN_TOWN: Here = Here { social: true, day: 0, pledge: 0, rank: 0 };
 
 fn give(character: &mut Character, kind: Kind, rarity: Rarity, level: u8, bucket: Slot) -> u32 {
     let id = character.take_id();
@@ -227,7 +227,7 @@ fn a_vendor_sells_the_days_wares_in_a_social_space_for_aurem_at_the_buyers_level
     assert_eq!((today.len() - ranged, ranged), (4, 2), "two Melee to each Ranged");
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(12);
-    let here = Here { social: true, day: 20_400 };
+    let here = Here { social: true, day: 20_400, pledge: 0, rank: 0 };
     let vend = Ask::Vend { vendor: Vendor::Armsmith, ware: 0 };
     assert_eq!(character.ask(vend, here, &DICE), Err(Refusal::Short), "no Aurem yet");
     character.materials.add_aurem(5_000);

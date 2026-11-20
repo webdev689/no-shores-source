@@ -1,5 +1,6 @@
-// The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Ship, the Sloop's details as
-// Manage shows them; and Settings, which keeps the account and the volumes of the interface and the world.
+// The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Sloop's papers as Manage
+// shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account and the
+// volumes of the interface and the world.
 
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
@@ -19,7 +20,7 @@ export function laterPage(name: string, words: string): HTMLElement {
   return page;
 }
 
-/** The Ship page: her name, then each part of her papers, those still to come marked Later. */
+/** Its papers: its name, then each part of them. */
 export function shipPage(panel: ShipPanel | null): HTMLElement {
   const page = make('div', '', `gear-ship ${ROLES.panel}`);
   if (!panel) {
@@ -31,7 +32,6 @@ export function shipPage(panel: ShipPanel | null): HTMLElement {
     const section = make('section', '', 'gear-ship-part');
     const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
     heading.append(make('span', part.heading));
-    if (part.later) heading.append(make('span', 'Later', `gear-chip ${ROLES.chip}`));
     section.append(heading);
     for (const [label, value] of part.rows) {
       const row = make('div', '', 'gear-ship-row');

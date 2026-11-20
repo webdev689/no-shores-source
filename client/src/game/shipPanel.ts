@@ -1,5 +1,5 @@
-// What Manage shows of the player's Sloop: what the naval rules say she is, her measure, where her voyage stands, and
-// the parts of managing her still to come, marked Later.
+// What Manage shows of the player's Sloop: what the naval rules say it is, its measure, where its voyage stands and
+// its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {
@@ -34,11 +34,10 @@ export interface Kept {
   readonly repair: string;
 }
 
-/** One part of the panel: its heading and its rows, label and value; or a part still to come. */
+/** One part of the panel: its heading and its rows, label and value. */
 export interface PanelPart {
   readonly heading: string;
   readonly rows: readonly (readonly [string, string])[];
-  readonly later: boolean;
 }
 
 /** The panel: her name, and its parts in order. */
@@ -116,7 +115,6 @@ export function shipPanelOf(
           ['Beam', metres(measure.beamM)],
           ['Draught', metres(measure.draughtM)],
         ],
-        later: false,
       },
       ...(voyage
         ? [
@@ -127,13 +125,10 @@ export function shipPanelOf(
                 ['Pace', `×${voyage.paceStep}`],
                 ['Now', voyage.voyageNote],
               ] as const,
-              later: false,
             },
           ]
         : []),
-      ...(kept ? [{ heading: 'Repair', rows: [['Repair her  R', kept.repair]] as const, later: false }] : []),
-      { heading: 'Cargo', rows: [], later: true },
-      { heading: 'Crew', rows: [], later: true },
+      ...(kept ? [{ heading: 'Repair', rows: [['Repair its  R', kept.repair]] as const }] : []),
     ],
   };
 }

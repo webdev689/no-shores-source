@@ -148,7 +148,11 @@ fn a_fleet_snapshot_reads_back_as_every_ship_and_what_happened() {
     let first = fight.vessel(3).unwrap();
     assert_eq!(vessels[0].ship().unwrap().iter().collect::<Vec<_>>(), first.ship.to_floats().to_vec());
     assert_eq!(vessels[0].pose().unwrap().iter().collect::<Vec<_>>(), first.pose.to_floats().to_vec());
-    assert_eq!(vessels[0].hurts().unwrap().iter().collect::<Vec<_>>(), [240.0, 240.0, 96.0, 96.0, 0.0, 0.0]);
+    assert_eq!(
+        vessels[0].hurts().unwrap().iter().collect::<Vec<_>>(),
+        [240.0, 240.0, 96.0, 96.0, 10.0, 10.0],
+        "its hull, canvas and ten hands"
+    );
     assert_eq!((vessels[0].acknowledged(), vessels[1].acknowledged()), (12, 0));
     assert_eq!((vessels[0].load(), vessels[2].mode()), (1, 0), "round shot, cruising");
     let colours: Vec<_> = vessels.iter().map(|vessel| (vessel.faction(), vessel.rank())).collect();

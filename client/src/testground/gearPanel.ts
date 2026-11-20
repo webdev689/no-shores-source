@@ -32,6 +32,9 @@ export interface GearView {
 
 /** How long a Fruit of Dagon is held before it is eaten, in milliseconds. */
 const HOLD_MS = 800;
+/** The room's grant of a First Mate and a Bosun of a level, sent ashore (the protocol's GRANT_OFFICERS).
+ *  shortcut: named here, not in `ASKS`, while another change holds gearMessages.ts; move it there after. */
+const GRANT_OFFICERS = 39 as GearAsk['kind'];
 
 /** An item's name in its rarity's colour. */
 function named(item: GearItem): HTMLElement {
@@ -162,6 +165,7 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
       button('No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
       button('5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
       button('Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
+      button('Two officers ashore', () => ask({ kind: GRANT_OFFICERS, level: grant.level })),
     ];
   };
 

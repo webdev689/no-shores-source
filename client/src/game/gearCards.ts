@@ -11,16 +11,16 @@ import {
   STOCK_NAMES,
   VAULTED,
   WORN,
-  itemName,
   isWeapon,
   itemWords,
-  kindName,
   resourceName,
   resourceWords,
   traitOf,
   wearAsks,
 } from '../player/gear.ts';
 import type { Press } from './gearScreen.ts';
+import { gearKindName, gearName, isModule } from './shipGear.ts';
+import type { ShipGlyph } from './shipGlyphs.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
  *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
@@ -90,15 +90,15 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
   return {
-    name: itemName(item),
+    name: gearName(item),
     rarity: item.rarity,
-    kind: `${RARITIES[item.rarity]?.name ?? ''} ${kindName(item.kind)}`,
+    kind: `${RARITIES[item.rarity]?.name ?? ''} ${gearKindName(item.kind)}`,
     big,
     rows,
     element: item.element,
     traits: traitsShown(item),
     words: itemWords(item),
-    compare: worn && worn.id !== item.id ? { replaces: itemName(worn), rows: changes } : null,
+    compare: worn && worn.id !== item.id ? { replaces: gearName(worn), rows: changes } : null,
   };
 }
 
@@ -131,6 +131,7 @@ export type Glyph =
   | 'ammo-box'
   | 'ammo-crate'
   | 'empty'
+  | ShipGlyph
   | 'item';
 
 /** One cell of the inventory's grid. */
@@ -253,9 +254,12 @@ export function vaultOf(state: GearState): Vault {
     const moving = place === VAULTED ? 'Take out' : 'Put in the vault';
     const items = (weapons: boolean) =>
       state.items
-        .filter((item) => item.at === place && isWeapon(item.kind) === weapons)
+        // A module carried stands on the ship's tab; one already in the vault is still shown, to be taken out.
+        .filter(
+          (item) => item.at === place && !(place === CARRIED && isModule(item.kind)) && isWeapon(item.kind) === weapons,
+        )
         .map((item) =>
-          cell(`item-${item.id}`, 'item', itemName(item), {
+          cell(`item-${item.id}`, 'item', gearName(item), {
             rarity: item.rarity,
             item,
             press: {

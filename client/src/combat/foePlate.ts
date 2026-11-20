@@ -12,7 +12,7 @@ import { foeDebuffs, StatusRow } from './statusIcons.ts';
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
  *  3 searching); its faction's number, which picks its emblem (none without it); its shield, if it stands with one;
- *  and its debuffs. */
+ *  its debuffs; and whether it is a companion. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -24,6 +24,8 @@ export interface MarkedFoe {
   readonly factionNumber?: number;
   readonly shield?: FoeShield | null;
   readonly statuses?: FoeStatuses;
+  /** A companion fighting beside the players, whose plate is drawn in the players' colour. */
+  readonly ally?: boolean;
 }
 
 /** A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, as long as the
@@ -137,7 +139,8 @@ export class FoePlate {
       this.health.forget(this.seen?.get(foe.id) ?? this.firstSeen);
     }
     const { dataset } = this.root;
-    if (dataset['band'] !== rankBand(foe.rank)) dataset['band'] = rankBand(foe.rank);
+    const band = foe.ally ? 'ally' : rankBand(foe.rank);
+    if (dataset['band'] !== band) dataset['band'] = band;
     const faction = String(foe.factionNumber ?? 0);
     if (this.emblem.dataset['faction'] !== faction) this.emblem.dataset['faction'] = faction;
     const mark = rankMark(foe.rank) ?? '';

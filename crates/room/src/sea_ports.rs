@@ -44,6 +44,7 @@ impl Sea {
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
             self.tell_down(ship);
+            self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
         }
     }
 
@@ -224,6 +225,13 @@ impl Sea {
         let kept = self.berths.get(&player)?.kept;
         let repair = self.harbour.repairs.under_way.get(&player);
         Some(repair.map_or((kept, 0.0), |repair| (repair.now(), repair.left())))
+    }
+
+    /// How much farther a player's ship sights ships, by its Lookout and its modules (`gear::ship::trim`); 1 for a
+    /// player whose character the sea does not hold.
+    #[must_use]
+    pub fn lookout(&self, player: PlayerId) -> f64 {
+        self.harbour.characters.get(&player).map_or(1.0, |character| character.ship_trim().sight)
     }
 
     /// Every piece floating at sea, each for its player.

@@ -56,7 +56,8 @@ pub(crate) struct Foe {
 }
 
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
-/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield.
+/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield; and the companion
+/// it is, if one, whose faction is the players' (0).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -69,6 +70,7 @@ pub struct FoeSeen {
     pub fighter: Fighter,
     pub level: u8,
     pub shield: Option<gear::element::Shield>,
+    pub companion: Option<crate::Companion>,
 }
 
 /// A corner nearer a foe's feet than a tick's run is as good as reached, in metres.
@@ -200,11 +202,12 @@ impl Room {
     pub(crate) fn spawn_asked(&mut self) {
         for (asker, ask, level) in std::mem::take(&mut self.spawns) {
             let SpawnAsk::Foe { foe_type: number, rank, shield } = ask else {
-                let gone: Vec<FighterId> = self.foes.keys().copied().collect();
-                for foe in gone {
-                    self.board.forget(foe);
+                // Companions are no one's to send away.
+                let gone: Vec<FighterId> = self.foes.keys().copied().filter(|id| !self.is_companion(*id)).collect();
+                for foe in &gone {
+                    self.board.forget(*foe);
+                    self.foes.remove(foe);
                 }
-                self.foes.clear();
                 self.groups.clear();
                 self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
                 continue;
@@ -212,7 +215,7 @@ impl Room {
             let (Some(foe_type), Some(player)) = (foe_type(number), self.fighter(asker).copied()) else {
                 continue;
             };
-            if self.foes.len() >= self.foes_most {
+            if self.foes.len().saturating_sub(self.ashore.standing.len()) >= self.foes_most {
                 continue;
             }
             let rank = foe_type.rank_or_first(Rank::from_number(rank));
@@ -258,9 +261,9 @@ impl Room {
     }
 
     /// The foes standing alive: a garrison stands again and a Boss calls only while these leave room under the limit,
-    /// so the fallen, lying their ten seconds, never hold them back.
+    /// so the fallen, lying their ten seconds, never hold them back. Companions are not foes.
     pub(crate) fn living_foes(&self) -> usize {
-        self.foes.values().filter(|foe| !foe.fighter.dead()).count()
+        self.foes.iter().filter(|(id, foe)| !foe.fighter.dead() && !self.is_companion(**id)).count()
     }
 
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
@@ -434,6 +437,8 @@ impl Room {
             .collect();
         let (mut found, mut perfect) = (false, false);
         for (defender, then) in caught {
+            // As gear's power has it between a companion and a foe; between two foes, as it stands.
+            let blow = self.empower(blow, defender);
             let verdict = judge(&blow, &then);
             self.settle(&blow, how, defender, verdict, None);
             match verdict {
@@ -442,10 +447,11 @@ impl Room {
             }
         }
         let reach = shape_reach(telegraph) + SHAPE_MARGIN;
+        // A companion's blow waits on no player: it harms none.
         let near: Vec<FighterId> = self
             .players
             .iter()
-            .filter(|(_, player)| !player.fighter.dead())
+            .filter(|(_, player)| !player.fighter.dead() && player.fighter.side != foe.side)
             .filter(|(_, player)| {
                 combat::sight::apart(
                     [player.fighter.body.x, player.fighter.body.y],
@@ -554,12 +560,13 @@ impl Room {
                 kind: brain.role() as u8,
                 foe_type: brain.foe_type.number,
                 rank: brain.rank as u8,
-                faction: brain.foe_type.faction,
+                faction: found.fighter.side.number(),
                 phase: brain.phase(),
                 alert: brain.alertness() as u8,
                 fighter: found.fighter,
                 level: found.level,
                 shield: found.shield,
+                companion: self.companion(foe),
             }
         })
     }

@@ -9,6 +9,7 @@ use crate::battle::Sank;
 use gear::character::{Character, Vestige};
 use gear::dice::{Dice, Purpose};
 use gear::rewards::{Foe, worth};
+use gear::ship::found::{Source, salvage};
 use naval::fight::{Event, Piece};
 use naval::random::Mulberry32;
 use naval::ranks::Rank;
@@ -34,7 +35,7 @@ pub fn pieces_of(rank: Rank) -> usize {
 }
 
 /// The foe whose kill a piece of a ship of her rank drops as: the rewards' foes, plainest to strongest, by her rank.
-fn foe_of(rank: Rank) -> Foe {
+pub(crate) fn foe_of(rank: Rank) -> Foe {
     match rank {
         Rank::Minor => Foe::Skirmisher,
         Rank::Major => Foe::Swordsman,
@@ -62,12 +63,14 @@ pub struct Floating {
     pub wind: [f64; 2],
 }
 
-/// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room.
+/// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room,
+/// and the ship's salvage taken (`gear::ship::found`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Held {
     pub vestige: Option<Vestige>,
     pub ammo_box: bool,
     pub ammo_crate: bool,
+    pub salvage: gear::ship::found::Taken,
 }
 
 /// Every piece floating at sea, the next one's number, and the seed their contents are rolled from.
@@ -173,7 +176,15 @@ fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &m
         .filter(|vestige| character.pick_up(*vestige));
     let ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();
     let ammo_crate = gear::ammo::drops_crate(rank) && character.take_crate();
-    Held { vestige, ammo_box, ammo_crate }
+    let salvage = ship_salvage(piece, &dice, character);
+    Held { vestige, ammo_box, ammo_crate, salvage }
+}
+
+/// A piece's ship salvage, its own roll: ship materials and now and then a module, as the ship's rules hold them for
+/// a piece of a ship of its rank (`gear::ship::found`), taken where there is room.
+fn ship_salvage(piece: &Floating, dice: &Dice, character: &mut Character) -> gear::ship::found::Taken {
+    let source = Source::Flotsam { rank: piece.rank.number(), chest: piece.kind == Piece::Chest };
+    character.take_salvage(salvage(source, piece.level, dice))
 }
 
 #[cfg(test)]

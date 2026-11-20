@@ -78,3 +78,22 @@ fn a_harder_seas_pieces_hold_a_vestige_as_often_as_a_harder_voyage_pays_one_on_l
         }
     }
 }
+
+#[test]
+fn every_piece_gathered_holds_ship_materials_for_the_ship_and_what_was_taken_is_its() {
+    let mut flotsam = Flotsam::new(1);
+    flotsam.lay(&sank(Rank::Boss, vec![1]), 0, (1, 0));
+    let mut characters = BTreeMap::from([(1, Character::starting())]);
+    let mut gathered = Vec::new();
+    for clock in 1..=4 {
+        let at = flotsam.for_player(1).next().map_or([0.0, 0.0], |piece| piece.at);
+        gathered.extend(flotsam.tick(clock, &[(1, at)], &mut characters));
+    }
+    let stock = |taken: gear::ship::materials::ShipStock| taken.timber + taken.canvas + taken.iron;
+    assert!(!gathered.is_empty() && gathered.iter().all(|(_, _, held)| stock(held.salvage.materials) >= 1));
+    let taken: u16 = gathered.iter().map(|(_, _, held)| stock(held.salvage.materials)).sum();
+    assert_eq!(stock(characters[&1].materials.ship), taken);
+    for module in gathered.iter().filter_map(|(_, _, held)| held.salvage.module) {
+        assert!(characters[&1].item(module).is_some_and(|item| item.kind.module()));
+    }
+}

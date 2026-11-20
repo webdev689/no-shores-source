@@ -22,7 +22,7 @@ test('a heading reads as whole degrees and the nearest of the eight points', () 
   assert.equal(compassOf(-Math.PI / 4), '315° NW');
 });
 
-test('Manage shows her vessel and her voyage, with cargo and crew marked Later', () => {
+test('Manage shows its vessel and its voyage, and nothing marked Later', () => {
   const build = sloopBuildOf(BUILD);
   assert.ok(build);
   const panel = shipPanelOf(
@@ -32,13 +32,8 @@ test('Manage shows her vessel and her voyage, with cargo and crew marked Later',
   );
   assert.equal(panel.title, 'Your Sloop');
   assert.deepEqual(
-    panel.parts.map((part) => [part.heading, part.later]),
-    [
-      ['Vessel', false],
-      ['Voyage', false],
-      ['Cargo', true],
-      ['Crew', true],
-    ],
+    panel.parts.map((part) => part.heading),
+    ['Vessel', 'Voyage'],
   );
   const vessel = new Map(panel.parts[0]?.rows);
   assert.deepEqual(

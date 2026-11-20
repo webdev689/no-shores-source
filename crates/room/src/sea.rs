@@ -393,6 +393,7 @@ impl Sea {
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * berth.kept[1].max(0.5));
         }
         self.tick_harbour();
+        self.fights.fit(&self.harbour.characters);
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
         self.after_fights(outcomes, &sank);
         self.tick_decks();
@@ -583,4 +584,4 @@ mod sea_tests;
 
 #[cfg(test)]
 #[path = "fight_measure_tests.rs"]
-mod fight_measure_tests;
+pub(crate) mod fight_measure_tests;

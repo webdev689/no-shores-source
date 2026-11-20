@@ -29,7 +29,7 @@ test('a fleet snapshot the server wrote reads back as its ships and what happene
   );
   const [first] = fleet.vessels;
   assert.deepEqual(Array.from(first?.ship ?? []), [200_000, 300_000, 0.5, 1.5, -0.25, 3, 1, 2]);
-  assert.deepEqual(first?.hurts, { hull: 240, maxHull: 240, sail: 96, maxSail: 96, crew: 0, maxCrew: 0 });
+  assert.deepEqual(first?.hurts, { hull: 240, maxHull: 240, sail: 96, maxSail: 96, crew: 10, maxCrew: 10 });
   assert.deepEqual([first?.state, first?.load, fleet.vessels[2]?.mode], ['afloat', 1, 'cruise']);
   assert.deepEqual(
     fleet.vessels.map((vessel) => [vessel.faction, vessel.rank]),

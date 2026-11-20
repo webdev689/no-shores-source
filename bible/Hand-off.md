@@ -204,6 +204,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The held map tinted by holder, each water's name coloured by its difficulty; the tiers renamed Normal, Elite and
     Abyss.
 
+- Ships' own power, modules and crew, on pull request #99 (branch `claude/ship-power`, into #75), tested offline and
+  not yet merged ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Ship Power]], [[Crew]]):
+  a ship's level, Attack, Defense and Prestige by the character's law; four modules with the gear's grid, ship
+  materials, salvage, the Shipwright and infusion; officers at posts that change its fight, ashore as companions,
+  recruited at a pledged faction's counter or taken from won decks; ten hands who load its guns and board with the
+  player. The sea's fights measured by ship level are in #99's description.
+
 ## Waiting on the owner
 
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
@@ -211,6 +218,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
   change: a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in
   [[Foes]].
+- **#99, ship power and crew**, merges into #75 through the Ship & Seas session. Recruiting needs #92's pledge
+  (`room::crew::pledge_of`); every call beyond the design note is listed in #99's description, the owner's to change.
 - **#75, the sea, waits on the owner's yes to merge**, after #71, which deploys the page and the rooms. Left open
   there: the sky and the light do not follow the weather yet; off the helm the room now takes a change of pace (a
   rule of the server's); under a player's fire a Frigate lasts about 5% longer than a Sloop of her rank; one voyage in contested
@@ -289,7 +298,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   following the weather; the long contested hold, to explain. #82's decisions (the owner's loop) wait to be built
   and overlap this sea: flotsam stays the gear loop's drops, and the seas chosen bring their own weather.
 - **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
-  the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call it
+  the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship opens her cabin in the game yet
   ([[Hulls]], "What the code needs"). Splitting each ship into
   parts for upgrades (hull, cannons, sails and wheel), and the cabin's decoration from DFO's `decor/`, were raised and
@@ -411,11 +420,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   of a hold; the feed counts nothing in the ten seconds after a room first gives the gear, while the player's character
   is claimed, and stands low and under the card over the menu; sound wakes only on a press or key, so none waits to play
   at once; a quick tap's build-up is silent; recordings levelled by loudness as well as peak; credits say CC BY 4.0 and
-  which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check each pick before it
+  which recordings vary in pitch; the Freesound tools refuse a page that links two licences, check each pick before its
   goes to R2, and keep each pick's own page in the run. The design pass: the hover card above the footer, the footer and
   the item page at the names' size on a wide screen, empty Vestige places as dark Vestiges, the vault's rows of ten
   where the menu is wide, three wares a row, glyphs at whole multiples. Left as they are: the Roster's rows and its
-  count, and a shelf of more than six gains showing only its last six. The `freesound` workflow runs on this push: if it
+  count, and a shelf of more than six gains showing only its last six. The `freesound` workflow runs on this push: if its
   ends red with "Picks not read whole", Freesound's own pages link more than one licence, and `pages/pick-*.html` in its
   download shows where.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
