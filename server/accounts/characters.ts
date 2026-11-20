@@ -5,6 +5,7 @@
  * next) before taking it anyway, so the room that held it learns from its next save that the player went elsewhere.
  */
 
+import { companionsOf } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { present } from './people.ts';
 import { hashOf } from './secrets.ts';
@@ -29,6 +30,7 @@ export interface Characters {
   save(account: string, holder: string, body: string): Promise<boolean>;
   release(account: string, holder: string, body: string | null): Promise<boolean>;
   present(token: string, room: string | null): Promise<boolean>;
+  companions(account: string): Promise<string[]>;
 }
 
 /** The characters on a database, with a clock and a way to wait. */
@@ -58,6 +60,9 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     return session?.account_id ?? null;
   };
   return {
+    /** A player's companions, their company's members longest there first, or the player alone: whom a run lets in
+     *  beside them. */
+    companions: (account) => companionsOf(database, account),
     /** Notes that a session's player is in a room that keeps no character, or with none that they left it; false
      *  when the token is no live session. */
     async present(token, room) {

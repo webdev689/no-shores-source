@@ -36,6 +36,11 @@ export async function companyOf(
   return { ...company, members: results.map((row) => row.account_id) };
 }
 
+/** A player's companions: their company's members, longest there first, or the player alone. */
+export async function companionsOf(database: Db, account: string): Promise<string[]> {
+  return (await companyOf(database, account))?.members ?? [account];
+}
+
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the
  *  longest there. */
 async function leave(database: Db, account: string): Promise<void> {

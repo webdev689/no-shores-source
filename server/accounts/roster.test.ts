@@ -376,3 +376,13 @@ test('the Roster reads no table of every account to find those in a room', async
     assert.deepEqual(scans, [], sql);
   }
 });
+
+test('a player’s companions are their company’s members, longest there first, or themselves alone', async () => {
+  const { player, kept, tokens } = await world('Ada', 'Ben', 'Cal');
+  await player('Ada').ask('company/invite', { name: 'Ben' });
+  await player('Ben').ask('company/accept', { name: 'Ada' });
+  const account = async (name: string) => (await kept.claim(tokens[name] ?? '', `room:${name}`))?.account ?? '';
+  const [ada, ben, cal] = [await account('Ada'), await account('Ben'), await account('Cal')];
+  assert.deepEqual(await kept.companions(ben), [ada, ben]);
+  assert.deepEqual(await kept.companions(cal), [cal]);
+});

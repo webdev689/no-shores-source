@@ -199,11 +199,13 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 
 ## In the rooms
 
-- **A room for each at each difficulty.** A patrol's dungeon is the room `node-<patrol id>--dungeon-<number>`, and
-  `node-<patrol id>--elite--dungeon-<number>` or `--abyss--dungeon-<number>` at the harder difficulties ([[Server]]).
-  It opens from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's
-  island band, raised by its difficulty. Its first clear at Normal pays the day's while it is its island's dungeon of
-  the day; at Elite or Abyss it pays none, since it carries no day's modifier.
+- **One shared room at Normal, and runs above it.** A patrol's dungeon at Normal is one shared room,
+  `node-<patrol id>--dungeon-<number>` ([[Server]]). It opens from its patrol's node file, refused for a node that is
+  no patrol, and its garrison stands at the patrol's island band. Its first clear pays the day's while it is its
+  island's dungeon of the day; set to a harder tier it would pay none, since it carries no day's modifier. At Elite
+  or Abyss a patrol's dungeon is only a run, `node-<patrol id>--elite--dungeon-<number>--run-<instance>` or
+  `--abyss--`, as every Elite Dungeon is; a sea island's dungeon is shared at Normal and a run above it. A run opens
+  from its name alone (`runAsk`, `open_run`) and lets in one company.
 - **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
   as it opens; at Abyss it carries five revives the company shares, and a wipe starts it over ([[Activities]]).
 

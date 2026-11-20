@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { handle } from './accounts/accounts.ts';
+import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
 import { sqliteForTests } from './accounts/sqliteForTests.ts';
 import { Keeper, type KeptRoom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
@@ -329,4 +330,34 @@ test('a character the room’s gate shuts is let go untouched, and its player se
     true,
   );
   assert.equal(back.held.get(3), '{"level":1}', 'as it was kept, at once');
+});
+
+test('a run’s room keeps only the company of those kept in it, and anyone once none is', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben', 'Cal']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const room = roomOf();
+  for (const player of [1, 2, 3, 4]) room.held.set(player, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const name = 'node-krakens-grotto--run-k3j4h5g6';
+  const keeper = new Keeper(kept, room, name, (player, why) => sent.push([player, why])).forCompany();
+  const [now, here] = [() => made.clock.now, () => true];
+  assert.equal(await keeper.signIn(1, tokens['Ada'] ?? '', now, here), true, 'the first comes in');
+  assert.equal(await keeper.signIn(2, tokens['Cal'] ?? '', now, here), false);
+  assert.deepEqual(sent, [[2, "This run is another company's."]]);
+  assert.equal(room.held.get(2), '{"starting":true}', 'never given the kept character');
+  assert.equal(await keeper.signIn(3, tokens['Ben'] ?? '', now, here), true, 'in Ada’s company');
+  await keeper.leave(1);
+  await keeper.leave(3);
+  assert.equal(await keeper.signIn(4, tokens['Cal'] ?? '', now, here), true, 'none kept: open to whoever has the name');
 });

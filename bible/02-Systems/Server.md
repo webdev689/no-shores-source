@@ -36,6 +36,8 @@ code:
   - crates/room-wasm/src/run_door.rs#open_run
   - crates/room-wasm/src/run_door.rs#activities_json
   - server/roomNames.ts#nodeRoom
+  - server/roomNames.ts#runAsk
+  - server/keeping.ts#forCompany
   - crates/room/src/course.rs#stand_foe_at
   - crates/room-wasm/src/course_door.rs#stand_foe
   - crates/room/src/garrison.rs#garrisoned
@@ -246,8 +248,8 @@ city terraces included; the boxes of the city a body runs into there; and, for a
 serve a player's gear (the Reader's, the vaults', the Quartermaster's, the Armsmith's and the Tailor's). The bake takes about 8 s for the nine
 continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
-called `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2`, of at most 64
-characters.
+called `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2--run-00000000`,
+of at most 64 characters.
 
 ## Messages
 
@@ -303,11 +305,27 @@ so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
   continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
-  node at a voyage's harder difficulty, a room of its own; `--dungeon-0`, `-1` or `-2` after either is one of a
-  patrol's dungeons at that difficulty, opened from the patrol's baked file; `fleet-<name>` a fleet's place on the
-  open sea;
-  any other name is the Test Ground's course,
-  `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon whose node is no patrol. Any other spelling of a node's room is no room, but for the tiers' old names: `--rough` and `--storm` are read as `--elite` and `--abyss` (`canonicalRoom`), so a page that still builds them joins its room and loads again. A name is 64 characters at most.
+  node at a voyage's harder difficulty, a room of its own; `node-<patrol>--dungeon-0`, `-1` or `-2` is one of a
+  patrol's dungeons, one room shared at Normal, opened from the patrol's baked file; `fleet-<name>` a fleet's place
+  on the open sea; any other name is the Test Ground's course, `content/testground/course.json`, which the client
+  reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon
+  whose node is no patrol. Any other spelling of a node's room is no room, but for the tiers' old names: `--rough`
+  and `--storm` are read as `--elite` and `--abyss` (`canonicalRoom`), so a page that still builds them joins its
+  room and loads again. A name is 64 characters at most.
+- **Runs** (`roomNames.ts`): a name ending `--run-<instance>`, eight lowercase letters or digits, is a private room,
+  a run ([[Activities]]): `node-<patrol>--elite--dungeon-<n>--run-<i>` or `--abyss--` a patrol's dungeon at Elite or
+  Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, and `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
+  the week's two. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
+  Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). No name opens a shared
+  Elite or Abyss dungeon, a private Normal one, or a run without its whole instance. A run and a sea island's
+  dungeon open from their name alone, with no node file: `runAsk` makes the ask the room module's `open_run` takes,
+  at the minute the first player joins. One no rule lays answers 404.
+- **A run keeps to its company** (`Keeper.forCompany`): a character is given only while no one is kept in it, or to
+  one in the company of someone kept there (`companions`, [[Accounts]]); any other is let go untouched, and the
+  socket closed with 4003 and "This run is another company's.". A player who sends no token plays unkept, as in
+  every node's room; the instance, drawn at random, keeps others out in practice. An emptied run's room stays as
+  its company left it for `RUN_LINGER_MS`, a minute, through a dropped connection, and is then forgotten: the next
+  to come opens a fresh run.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
@@ -318,8 +336,8 @@ so every decision is Rust and the shell only carries bytes and time.
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
-- A browser's one text message is its session's token. In a node's room the player's character is claimed with it
-  from the [[Accounts]], saved as it changes and let go when they leave. A character the node's gate shuts
+- A browser's one text message is its session's token. In a node's room or a dungeon's the player's character is claimed
+  with it from the [[Accounts]], saved as it changes and let go when they leave. A character the node's gate shuts
   ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. At sea, where no
   character is kept, the room tells the accounts the player is there, again every 30 seconds, and that they left, for
   the Roster. A second text message, or any other, closes the socket.

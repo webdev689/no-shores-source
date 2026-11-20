@@ -4,12 +4,16 @@
  * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
  * player who sends no token, or whose token is no session, plays a character that is not kept. Should another room
  * take the character (the same player joined elsewhere), this room's next save learns it, and the player is let go.
+ * A run's room is kept to one company (`forCompany`).
  */
 
 import type { Characters as Kept } from './accounts/characters.ts';
 
-/** What a room keeps characters with: claiming, saving and letting go. */
-type Characters = Pick<Kept, 'claim' | 'save' | 'release'>;
+/** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
+type Characters = Pick<Kept, 'claim' | 'save' | 'release' | 'companions'>;
+
+/** Why a run's room sends a player away who is in no company of those kept in it. */
+export const ANOTHER_COMPANY = "This run is another company's.";
 
 /** What the keeper needs of the room. */
 export interface KeptRoom {
@@ -55,6 +59,7 @@ export class Keeper {
   private readonly lost: (player: number, why?: string) => void;
   private readonly held = new Map<number, Held>();
   private readonly wait: (millis: number) => Promise<void>;
+  private company = false;
 
   constructor(
     characters: Characters | null,
@@ -70,6 +75,13 @@ export class Keeper {
     this.wait = wait;
   }
 
+  /** Keeps this room to one company: a character is given only while no one is kept here, or to one in the company of
+   *  someone kept here; any other is let go untouched, its player sent away with the reason. */
+  forCompany(): this {
+    this.company = true;
+    return this;
+  }
+
   /** Claims a player's character with their session's token and gives it to them; whether it is now kept. `here`
    *  says whether the player is still in the room once the claim is answered. */
   async signIn(player: number, token: string, now: () => number, here: () => boolean): Promise<boolean> {
@@ -83,7 +95,12 @@ export class Keeper {
       claimed = await characters.claim(token, holder).catch(() => undefined);
     }
     if (!claimed) return false;
-    const shut = this.room.shut(player, claimed.body);
+    // Asked before the checks, so nothing waits between judging the company and keeping the character.
+    const companions = this.company
+      ? await characters.companions(claimed.account).catch(() => [claimed.account])
+      : null;
+    const shut =
+      this.room.shut(player, claimed.body) || (companions && !this.keptWith(companions) ? ANOTHER_COMPANY : '');
     if (shut !== '') {
       // Left as kept: the gate shuts here, so nothing of this room may be saved over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
@@ -107,6 +124,11 @@ export class Keeper {
       inFlight: null,
     });
     return true;
+  }
+
+  /** Whether no one is kept here, or someone among `companions` is. */
+  private keptWith(companions: readonly string[]): boolean {
+    return this.held.size === 0 || [...this.held.values()].some((held) => companions.includes(held.account));
   }
 
   /** Notes that a player's character changed. */
