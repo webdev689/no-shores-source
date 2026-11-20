@@ -29,7 +29,7 @@ import {
   WORD_PX,
 } from '../heldmap/mapLayout.ts';
 import { startWatersRules } from '../rules/watersRules.ts';
-import { mapWatersOf } from './friendlyShips.ts';
+import { mapWatersOf } from './pageWaters.ts';
 import { sitesOf } from './worldData.ts';
 
 // The held map's lettering laid out on the real world, as the game hands it the waters the rules open (mapLayout.ts).

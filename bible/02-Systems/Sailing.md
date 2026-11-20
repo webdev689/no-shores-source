@@ -281,7 +281,6 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 ## Limits
 
-- One hull, the Sloop; the others are planned ([[Hulls]]).
 - A walker on deck stands on her heights, not her shape: no stairs below, no rigging to climb, and a body's edge
   may brush a rail it stands within a cell of. The tops of her rails and bulwarks lie past her walls, where no body
   comes.
@@ -291,5 +290,3 @@ A body walks her deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 - No current or cargo yet, and no crew but the stand-ins aboard ([[Game]]). Hulls are kept apart only in a fight
   ([[Naval Combat]]), as every fleet room is.
 - She waits while the land worker makes a close-up (about every 400 m), then catches up.
-- A fleet room's host does not hand it the world time yet, so its sea is the weather's at world time 0: the browser
-  predicting its ships must take the same time, and the room's snapshots do not carry it.

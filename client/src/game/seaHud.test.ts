@@ -4,7 +4,7 @@ import type { FightCaptain, ShipState } from '../rules/fightRules.ts';
 import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
-import { type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
+import { seaPlace, type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
   ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
@@ -45,7 +45,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   const bars: unknown[] = [];
   const hud = new Proxy(
     {},
-    { get: (_, key) => (key === 'seaBar' ? (bar: unknown) => bars.push(bar) : () => undefined) },
+    { get: (_target, key) => (key === 'seaBar' ? (bar: unknown) => bars.push(bar) : () => undefined) },
   );
   const sea = (fight: unknown) =>
     ({
@@ -66,4 +66,16 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   show(fight);
   assert.notEqual(bars[0], null, 'out of a fight the bar stands');
   assert.equal(bars[1], null, 'in one it is hidden');
+});
+
+test('the place line names the water she is in as the helm does, managing her too', () => {
+  const waterWords = 'The Lantern Sea, Overlook’s home waters';
+  const here = (helmView: boolean, managing: boolean) =>
+    ({ boarding: { words: null }, helmView, aboard: { walking: false, managing }, waterWords }) as never;
+  const state = { landing: false, island: 'Saltmere', region: 'The Pale Expanse' };
+  const shown = { landfall: null } as never;
+  assert.deepEqual(seaPlace(here(true, false), shown, state), ['At the helm', waterWords]);
+  assert.deepEqual(seaPlace(here(false, true), shown, state), ['Managing the Sloop', waterWords]);
+  const nowhere = { boarding: { words: null }, helmView: false, aboard: { walking: false, managing: true } } as never;
+  assert.deepEqual(seaPlace(nowhere, shown, state), ['Managing the Sloop', 'The Pale Expanse']);
 });

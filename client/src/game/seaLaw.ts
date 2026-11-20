@@ -243,3 +243,9 @@ export function paceToAskAgain(
 /** What the voyage's line adds while the pace is eased under the dial's for the view. */
 export const easedNote = (sailed: SailedPace, dial: Pace): string =>
   sailed < dial ? ' · Sailing at true speed while you watch close.' : '';
+
+/** What the sea's note says of its room: only a link lost, or a room being joined again; nothing while all is well. */
+export function roomWords(room: { readonly rejoining: boolean } | null, lost: boolean): string {
+  if (room) return room.rejoining ? ' · Reconnecting…' : '';
+  return lost ? ' · The sea room was lost: sailing on alone' : '';
+}

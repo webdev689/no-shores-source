@@ -491,3 +491,7 @@ mod fleet_door_tests;
 #[cfg(test)]
 #[path = "garrison_door_tests.rs"]
 mod garrison_door_tests;
+
+#[cfg(test)]
+#[path = "load_tests.rs"]
+mod load_tests;

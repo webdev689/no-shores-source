@@ -204,7 +204,12 @@ fn home_waters_send_no_one_and_each_holder_sends_her_own_faction() {
 fn ranks_come_by_their_band_and_a_level_evenly_from_it() {
     for (low, high) in [(1, 4), (10, 13), (13, 16), (19, 22), (26, 30)] {
         let water = OneWater { levels: Some((low, high)), ..PIRATE_WATER };
-        let ships = brought(&water, 60, 4, [0.0, 0.0], 0);
+        let here = water.water([0.0, 0.0]).unwrap();
+        // The roll itself, a few thousand times, as a ship coming to a player at rest draws it.
+        let mut pirates = Pirates::new(u32::from(low));
+        let ship = voyager(1, [0.0, 0.0], 0, false);
+        let ships: Vec<Pirate> = (0..6_000).filter_map(|_| pirates.come(&ship, here, &water, &|_| f64::MAX)).collect();
+        assert_eq!(ships.len(), 6_000, "every roll in open pirate water sends a ship");
         let shares = crate::sighting::RANKS_BY_BAND.iter().rev().find(|(from, _)| low >= *from).unwrap().1;
         for (rank, expected) in RANKS_AT_SEA.into_iter().zip(shares) {
             let seen = ships.iter().filter(|pirate| pirate.commission.rank == rank).count() as f64;

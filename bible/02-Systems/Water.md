@@ -142,8 +142,8 @@ deep. A diver's camera comes in close rather than sink into the bed.
 - The page draws the weather's waves of the view's middle everywhere in view, raised or lowered by the shelter grid
   round it (16 cells a side, reaching six times the eye's height, asked again every 2 s); the server judges each point
   by its own.
-- A fight takes the swell and the wind where it began, and keeps them. A sea room knows no port, so its fights have
-  no roadstead's calm. Clashes among captains alone take the weather where their ships are, each tick.
+- A fight takes the swell and the wind where it began, and keeps them, calm by a port city's roadstead as the sea
+  is; a fight among captains alone keeps its start's weather too.
 - The World Editor's sea is a moderate sea's; only its wind is the weather's.
 - A wake runs straight back along her heading: a ship turning drags it round with her.
 - Spray is drawn on the water round her bow, not thrown into the air.

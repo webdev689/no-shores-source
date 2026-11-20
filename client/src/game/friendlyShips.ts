@@ -3,18 +3,8 @@
 // their way, each drawn as her hull in friendly colours, her sails set and filled, posed on the swell.
 import type { ShipMark } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
-import { CHART_CELL_M } from '../overworld/discovery.ts';
-import type { MapWaters } from '../heldmap/watersWash.ts';
-import {
-  LAND_CELL,
-  SEAM_BIT,
-  startWatersRules,
-  type TrafficShip,
-  type WatersGrid,
-  type WatersRules,
-  type WatersTable,
-} from '../rules/watersRules.ts';
-import type { WorldData } from './worldData.ts';
+import type { TrafficShip } from '../rules/watersRules.ts';
+import type { OpenWaters } from './pageWaters.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import { hullSails, hullWaterline } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
@@ -22,8 +12,6 @@ import type { DrawnShip } from '../ships/shipModels.ts';
 import { poseOnSwell } from '../ships/swellPose.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
 
-/** The pace every friendly ship keeps, m/s (`crates/world/src/traffic.rs`). */
-export const FRIENDLY_SPEED_M_S = 5;
 /** How often the rules are asked where the ships are, seconds: a few times a second. */
 export const ASK_EVERY_S = 0.25;
 /** How fast a ship as drawn closes on where she is reckoned to be, a share a second: a turn onto her next leg is eased
@@ -39,36 +27,15 @@ const UNDER_WAY = 4;
 /** World time: seconds since the Unix epoch, from the page's clock, so every machine sails the same ships. */
 export const worldTimeS = (): number => Date.now() / 1000;
 
-/** The waters as the page opens them once: their rules, and their table and grid at the held map's own cell in the
- *  map's terms. */
-export interface OpenWaters {
-  readonly rules: WatersRules;
-  readonly map: MapWaters;
-}
-
-/** The waters' table and grid in the held map's terms: each cell's water by index, -1 on land, and the seam apart. */
-export function mapWatersOf(table: WatersTable, grid: WatersGrid): MapWaters {
-  const water = Int16Array.from(grid.cells, (cell) => (cell === LAND_CELL ? -1 : cell & ~SEAM_BIT));
-  const seam = Uint8Array.from(grid.cells, (cell) => (cell !== LAND_CELL && (cell & SEAM_BIT) !== 0 ? 1 : 0));
-  const { columns, rows, cellM } = grid;
-  return { columns, rows, cellM, water, seam, waters: table.waters, mainPorts: table.mainPorts };
-}
-
-/** Opens the waters on the room's module with the world's layout and every city as a port it may sail from. */
-export function openWaters(module: WebAssembly.Module, world: WorldData): OpenWaters {
-  const rules = startWatersRules(module);
-  const ports = world.cities.map(({ id, name, continent, centre }) => ({ id, name, continent, centre }));
-  const table = rules.open(world.layoutText, ports);
-  return { rules, map: mapWatersOf(table, rules.grid(CHART_CELL_M)) };
-}
-
-/** A friendly ship as drawn this frame: her id and hull, where she is and her heading (radians clockwise from north). */
+/** A friendly ship as drawn this frame: her id and hull, where she is and her heading (radians clockwise from north),
+ *  and whether she lies at anchor at her route's end. */
 export interface FriendlySailing {
   readonly id: number;
   readonly hull: number;
   readonly x: number;
   readonly y: number;
   readonly heading: number;
+  readonly lying?: boolean;
 }
 
 /** The sea a ship rides: its swell, and how deep it is at a point. */
@@ -87,22 +54,35 @@ interface Track {
 
 const headingOf = ([east, south]: readonly [number, number]) => Math.atan2(east, -south);
 
-/** Where a ship answered at `answeredS` is reckoned at `nowS`: on along her leg at her pace. */
-export function reckoned(answer: TrafficShip, answeredS: number, nowS: number): readonly [number, number] {
-  const run = FRIENDLY_SPEED_M_S * (nowS - answeredS);
+/** Whether a ship has arrived and lies at anchor at her route's end. */
+const lyingOf = (answer: TrafficShip) => answer.progressM >= answer.lengthM;
+
+/** Where a ship answered at `answeredS` is reckoned at `nowS`: on along her leg at `speedMS`, or where she lies. */
+export function reckoned(
+  answer: TrafficShip,
+  answeredS: number,
+  nowS: number,
+  speedMS: number,
+): readonly [number, number] {
+  const run = lyingOf(answer) ? 0 : speedMS * (nowS - answeredS);
   return [answer.position[0] + answer.direction[0] * run, answer.position[1] + answer.direction[1] * run];
 }
 
-/** The friendly ships round the eye, asked of the rules every `ASK_EVERY_S` and eased between answers, each one's rig
- *  kept from frame to frame. */
+/** The friendly ships round the eye, asked of the rules every `ASK_EVERY_S` and eased between answers at the pace the
+ *  waters' table gives (`speedMS`), each one's rig kept from frame to frame. */
 export class FriendlyShips {
   private readonly ask: (centre: readonly [number, number], radiusM: number, timeS: number) => TrafficShip[];
+  private readonly speedMS: number;
   private readonly tracks = new Map<number, Track>();
   private readonly rigs = new Map<number, SailRig>();
   private sinceAsk = Infinity;
 
-  constructor(ask: (centre: readonly [number, number], radiusM: number, timeS: number) => TrafficShip[]) {
+  constructor(
+    ask: (centre: readonly [number, number], radiusM: number, timeS: number) => TrafficShip[],
+    speedMS: number,
+  ) {
     this.ask = ask;
+    this.speedMS = speedMS;
   }
 
   /** The ships within `radiusM` of `centre` at world time `nowS`, `seconds` on since the last frame, nearest first. */
@@ -117,7 +97,7 @@ export class FriendlyShips {
         const track = this.tracks.get(id);
         const heading = headingOf(answer.direction);
         // A ship already drawn keeps where she was drawn: the gap to her new answer is closed over the next frames.
-        const drawnNow = track && reckoned(track.answer, track.answeredS, nowS);
+        const drawnNow = track && reckoned(track.answer, track.answeredS, nowS, this.speedMS);
         const offset =
           track && drawnNow
             ? {
@@ -135,9 +115,10 @@ export class FriendlyShips {
       const { offset } = track;
       [offset.x, offset.y] = [offset.x * keep, offset.y * keep];
       offset.heading = Math.atan2(Math.sin(offset.heading), Math.cos(offset.heading)) * keep;
-      const [x, y] = reckoned(track.answer, track.answeredS, nowS);
+      const [x, y] = reckoned(track.answer, track.answeredS, nowS, this.speedMS);
       const heading = headingOf(track.answer.direction) + offset.heading;
-      sailing.push({ id, hull: track.answer.hull, x: x + offset.x, y: y + offset.y, heading });
+      const lying = lyingOf(track.answer);
+      sailing.push({ id, hull: track.answer.hull, x: x + offset.x, y: y + offset.y, heading, lying });
     }
     const away = (ship: FriendlySailing) => Math.hypot(ship.x - centre[0], ship.y - centre[1]);
     return sailing.sort((one, other) => away(one) - away(other));
@@ -163,7 +144,7 @@ export class FriendlyShips {
       }
       rig.step(seconds, wind, time);
       const { lengthM, beamM } = hullWaterline(ship.hull);
-      const lies = { ...ship, underWay: true };
+      const lies = { ...ship, underWay: !ship.lying };
       const pose = poseOnSwell(water.swell, water.depthAt, lies, (lengthM / 2) * scale, (beamM / 2) * scale, time);
       const place = {
         x: ship.x,
@@ -199,29 +180,50 @@ export function waterOf(swell: Swell | undefined, heightAt: (x: number, y: numbe
   };
 }
 
-/** One frame of the friendly ships within `radiusM` of `centre`, `scale` times their size: their footprints join
- *  `hulls` (the first kept first, the rest nearest `centre` first, as many as the water holds). */
+/** A frame's time: `seconds` on since the last, at the page's `time`; and how many friendly ships of each hull the
+ *  ships layer can still draw (`slots`). */
+export interface FriendlyStep {
+  readonly seconds: number;
+  readonly time: number;
+  readonly slots: (hull: number) => number;
+}
+
+/** The nearest `slots(hull)` of each hull among `ships` (nearest first), in their order. */
+function drawable(ships: readonly FriendlySailing[], slots: (hull: number) => number): FriendlySailing[] {
+  const counted = new Map<number, number>();
+  return ships.filter(({ hull }) => {
+    const before = counted.get(hull) ?? 0;
+    counted.set(hull, before + 1);
+    return before < slots(hull);
+  });
+}
+
+/** One frame of the friendly ships within `radiusM` of `centre`, `scale` times their size: only those the ships layer
+ *  can draw are rigged, posed and footprinted, and their footprints join `hulls` (the first kept first, the rest
+ *  nearest `centre` first, as many as the water holds). The compass hears of every one. */
 export function friendlyFrame(
   fleet: FriendlyShips,
   view: { readonly centre: readonly [number, number]; readonly radiusM: number; readonly scale: number },
   water: FriendlyWater,
   hulls: readonly HullMask[],
-  seconds: number,
-  time: number,
+  step: FriendlyStep,
 ): FriendlyFrame {
+  const { seconds, time } = step;
   const near = fleet.near(view.centre, view.radiusM, worldTimeS(), seconds);
-  const ships = fleet.drawn(near, view.scale, water, water.swell?.bearing ?? 0, seconds, time);
+  const drawn = drawable(near, step.slots);
+  const ships = fleet.drawn(drawn, view.scale, water, water.swell?.bearing ?? 0, seconds, time);
   const away = (mask: HullMask) => Math.hypot(mask.x - view.centre[0], mask.y - view.centre[1]);
   const [first, ...rest] = hulls;
-  const others = [...rest, ...friendlyHulls(near, view.scale)].sort((one, other) => away(one) - away(other));
+  const others = [...rest, ...friendlyHulls(drawn, view.scale)].sort((one, other) => away(one) - away(other));
   return { ships, hulls: (first ? [first, ...others] : others).slice(0, HULLS), marks: friendlyMarks(near) };
 }
 
-/** Each ship's footprint on the water, `scale` times her size, under way. */
+/** Each ship's footprint on the water, `scale` times her size: under way, or still at anchor. */
 export function friendlyHulls(ships: readonly FriendlySailing[], scale: number): HullMask[] {
-  return ships.map(({ x, y, heading, hull }) => {
+  return ships.map(({ x, y, heading, hull, lying }) => {
     const { lengthM, beamM } = hullWaterline(hull);
-    return { x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way: UNDER_WAY };
+    const way = lying ? 0 : UNDER_WAY;
+    return { x, y, heading, halfLength: (lengthM / 2) * scale, halfBeam: (beamM / 2) * scale, way };
   });
 }
 
@@ -230,33 +232,37 @@ export function friendlyMarks(ships: readonly FriendlySailing[]): ShipMark[] {
   return ships.map(({ x, y }) => ({ x, y, kind: 'friendly' }));
 }
 
-/** The waters and their friendly traffic as the game holds them: opened once a page, off the first frame (about
- *  0.6 s in WebAssembly), then the ships drawn round the eye each frame at sea and on foot. */
+/** The friendly traffic as the game holds it: none until the page's one opening of the waters, then the ships drawn
+ *  round the eye each frame at sea and on foot, at most `perHull` of each hull with the room's own among them. */
 export class FriendlyTraffic {
-  waters: OpenWaters | null = null;
-  private readonly fleet = new FriendlyShips((centre, radiusM, timeS) =>
-    this.waters ? this.waters.rules.shipsNear(centre, radiusM, timeS) : [],
-  );
+  private fleet: FriendlyShips | null = null;
+  private readonly perHull: number;
 
-  /** Opens the waters on the room's module once it has come, after the next frame; `opened` hears them. */
-  constructor(module: Promise<WebAssembly.Module>, world: WorldData, opened: (waters: OpenWaters) => void) {
-    const open = () =>
-      module
-        .then((compiled) => (this.waters = openWaters(compiled, world)))
-        .then(opened, (error: unknown) => console.error('the waters could not be opened:', error));
-    requestAnimationFrame(() => setTimeout(open));
+  constructor(waters: Promise<OpenWaters>, perHull: number) {
+    this.perHull = perHull;
+    const ask =
+      ({ rules }: OpenWaters) =>
+      (centre: readonly [number, number], radiusM: number, timeS: number) =>
+        rules.shipsNear(centre, radiusM, timeS);
+    void waters.then(
+      (open) => (this.fleet = new FriendlyShips(ask(open), open.table.friendlySpeedMS)),
+      () => undefined,
+    );
   }
 
   /** At sea: the ships within the view's reach of hers, at the size every ship is drawn now, as hers is
-   *  (`shownScale`), their footprints joining the sea's. */
+   *  (`shownScale`), their footprints joining the sea's, as many of each hull as the room's own leave room for. */
   atSea(shown: SeaFrame, water: FriendlyWater, seconds: number, time: number): FriendlyFrame {
+    if (!this.fleet) return { ships: [], hulls: shown.hulls, marks: [] };
     const view = { centre: shown.focus, radiusM: shown.shot.far, scale: shown.ships[0]?.place.scale ?? 1 };
-    return friendlyFrame(this.fleet, view, water, shown.hulls, seconds, time);
+    const slots = (hull: number) => this.perHull - shown.ships.filter((ship) => ship.hull === hull).length;
+    return friendlyFrame(this.fleet, view, water, shown.hulls, { seconds, time, slots });
   }
 
   /** On foot: the ships within `SEEN_FROM_LAND_M` of the eye, at their true size. */
   onFoot(eye: readonly number[], water: FriendlyWater, seconds: number, time: number): FriendlyFrame {
+    if (!this.fleet) return { ships: [], hulls: [], marks: [] };
     const view = { centre: [eye[0] ?? 0, eye[1] ?? 0] as const, radiusM: SEEN_FROM_LAND_M, scale: 1 };
-    return friendlyFrame(this.fleet, view, water, [], seconds, time);
+    return friendlyFrame(this.fleet, view, water, [], { seconds, time, slots: () => this.perHull });
   }
 }

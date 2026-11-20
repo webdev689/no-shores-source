@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
+  - client/src/heldmap/heldMap.ts#layoutKey
   - client/src/heldmap/heldMapLaw.ts#stageOf
   - client/src/heldmap/heldMapLaw.ts#clampView
   - client/src/heldmap/heldMapView.ts#HeldMapView
@@ -50,7 +51,7 @@ war, and a click on it sets the ship's destination.
   it is. A discovered island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
   engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
 - **The waters** ([[The Waters Come From the Islands]]). The page opens the waters once, just after its first frame
-  (about 0.6 s in WebAssembly, `FriendlyTraffic`), and takes their grid at the coast field's own 4.8 km cell
+  (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
   ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
   at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (her ships' slate), the pirates red `#d95c5c`,
   Contested amber `#b8862f`. None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
@@ -58,8 +59,8 @@ war, and a click on it sets the ship's destination.
   Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
   soft over a cell or two and never stepped. The contested waters and the seam are hatched over their wash with fine
   diagonal lines in a dark amber (`#6b4a12` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at
-  0.3), each 7 device pixels apart (`HATCHES`). Fog of war is as it was: the wash is laid for the sea charted when the
-  map is raised.
+  0.3), each 7 device pixels apart (`HATCHES`). The wash is laid for the sea charted when the map is raised, so fog
+  of war hides what it hides from the rest of the map.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
   point, the name and a ring round it inked in the band's colour on the difficulty ramp
   ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green `#256327` at level 1, gold `#6a5507` at 8,
@@ -90,7 +91,10 @@ war, and a click on it sets the ship's destination.
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
-  over the picture as a page element. How it reads:
+  over the picture as a page element. They are laid out again only when something the layout reads has changed
+  (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the charted sea, the ship's point
+  and heading, the places and islands known, the place chosen); a still frame lays out nothing (at 1920 × 1080,
+  0.02 ms against 8 ms). How it reads:
   - *Sizes.* In the page's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.

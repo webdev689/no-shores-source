@@ -1,7 +1,9 @@
 //! The room's snapshot after its tick: every player and foe on land, every ship at sea, a fleet's ships. Taken once
 //! a tick (`prepare`), then sent to each player as theirs (`snapshot_for`): at sea what floats, each ship's kept hurts,
 //! what the sea tells and each deck boarded go only to the player they are for, and a deck's own snapshot only to its
-//! boarders.
+//! boarders; and each player is sent only the ships near them: the hostile ships their ship keeps at sea (within
+//! `KEEP_SHARE` times her sight, as she reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in
+//! their fight.
 
 use crate::{Opened, with_open};
 use room::{FoeSeen, PlayerId, Room, Seen};
@@ -13,11 +15,17 @@ enum Prepared {
     Sea(Box<SeaParts>),
 }
 
+/// How far off a player is sent the other players' ships, metres: the page's farthest view at sea
+/// (`client/src/game/sea.ts`, its horizon's `farM`).
+pub const PLAYERS_SEEN_M: f64 = 60_000.0;
+
 struct SeaParts {
     tick: u64,
     ships: Vec<(PlayerId, room::sea::Ship)>,
     pirates: Vec<room::pirates::Pirate>,
     fights: Vec<(PlayerId, Vec<f64>, naval::ranks::Commission)>,
+    /// The players in each fight.
+    crews: Vec<Vec<PlayerId>>,
     aboard: Vec<(PlayerId, u32, movement::Body)>,
     harbour: protocol::SeaHarbour,
 }
@@ -25,10 +33,28 @@ struct SeaParts {
 impl SeaParts {
     fn bytes(
         &self,
+        (ships, pirates): (&[(PlayerId, room::sea::Ship)], &[room::pirates::Pirate]),
         fights: &[(PlayerId, Vec<f64>, naval::ranks::Commission)],
         harbour: &protocol::SeaHarbour,
     ) -> Vec<u8> {
-        protocol::sea_snapshot_bytes(self.tick, &self.ships, &self.pirates, fights, &self.aboard, harbour)
+        protocol::sea_snapshot_bytes(self.tick, ships, pirates, fights, &self.aboard, harbour)
+    }
+
+    /// The ships and hostile ships `player` is sent: none but their own before their ship is at sea.
+    fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::pirates::Pirate>) {
+        let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
+        let crew = self.crews.iter().find(|crew| crew.contains(&player));
+        let seen = |(other, ship): &&(PlayerId, room::sea::Ship)| {
+            *other == player
+                || crew.is_some_and(|crew| crew.contains(other))
+                || own.is_some_and(|[x, y]| {
+                    let (east, south) = (ship.x - x, ship.y - y);
+                    east * east + south * south <= PLAYERS_SEEN_M * PLAYERS_SEEN_M
+                })
+        };
+        let ships = self.ships.iter().filter(seen).copied().collect();
+        let pirates = self.pirates.iter().filter(|pirate| own.is_some_and(|at| pirate.kept_by(at))).copied().collect();
+        (ships, pirates)
     }
 }
 
@@ -59,11 +85,13 @@ pub fn prepare() {
                     (aboard, deck.pirate.commission.hull().number(), land_snapshot(&mut deck.room), hold)
                 })
                 .collect();
+            let crews = sea.fights().map(|(_, fought)| fought.crews.keys().copied().collect()).collect();
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
                 pirates: sea.pirates(),
                 fights,
+                crews,
                 aboard,
                 harbour: protocol::SeaHarbour { flotsam, kept, told, decks },
             }))
@@ -99,7 +127,8 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.0 == player).cloned().collect();
-            parts.bytes(&fights, &harbour)
+            let (ships, pirates) = parts.near(player);
+            parts.bytes((&ships, &pirates), &fights, &harbour)
         }
     })
 }
@@ -113,7 +142,7 @@ pub fn snapshot() -> Vec<u8> {
     PREPARED.with(|kept| match kept.borrow().as_ref() {
         None => Vec::new(),
         Some(Prepared::Everyone(bytes)) => bytes.clone(),
-        Some(Prepared::Sea(parts)) => parts.bytes(&parts.fights, &parts.harbour),
+        Some(Prepared::Sea(parts)) => parts.bytes((&parts.ships, &parts.pirates), &parts.fights, &parts.harbour),
     })
 }
 

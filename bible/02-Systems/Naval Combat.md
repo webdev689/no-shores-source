@@ -219,7 +219,8 @@ Pass]]) with Claude's numbers:
   higher one piece of each player's is a chest, rolled as a foe one rank higher. A piece looks like a crate or a barrel
   (half each by its draw) or a chest.
 - **Striking, and boarding.** A captain who strikes lies hove to with her colours down. For 90 s any player in the
-  fight may board her: their ship within 30 m of hers, both under 2 m/s. With no one aboard by then she is scuttled
+  fight may board her: their ship within 30 m of hers, both under 2 m/s, and her deck holding a crew (the pirates have
+  no deck Boss, so their Boss is not boarded). With no one aboard by then she is scuttled
   (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player her
   colours are down and to come alongside; E asks to board her (`seaAfter.ts` `boardable`, the fight's controls let E
   through), and the sea's line says "Boarders away" as the boarder goes from their helm to her deck.
@@ -271,7 +272,12 @@ Pass]]) with Claude's numbers:
   their character (`ship`, in ten-thousandths), across sessions, until repaired; she starts every fight with them, and
   her voyage sails at her pace times the canvas she keeps (never under half), in the room and the page alike. Where
   the sea last kept her is kept too (`ship_at`, to the metre): back at sea she lies there, whatever the page first
-  said, and the page is told (`MOORED`).
+  said, and the page is told (`MOORED`). The sea sails no course of hers before the accounts have answered for her
+  character: a course asked meanwhile waits, and sails once they answer with none kept (or the page sends an input
+  before its token); given back later, even mid-fight, she is moored where it was kept, that fight over for her. A fight's waters run past the world's
+  edge, but she is kept within it: where the fight has her, where she washes up and where her next course starts.
+  What changes her character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up) is sent
+  to the player as their gear, five times a second at most, and so saved within 2 s ([[Accounts]]).
 - **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers "Repair
   her" (R): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
   and men), 100 s at most. Setting a course, heaving to for a fight or leaving the sea stops it where it stood.
@@ -366,8 +372,9 @@ captain's number comes with her in the view, so one leaving the fight never move
   sails, slowly then fast, for 3 s until its head is in the water, then drifts astern and is gone after 40 s.
 - **Fire**: flames and dark smoke up from her deck, along a third of her length, for each fire the view gives her.
 - **Struck** (`Struck`): her flag comes down her mast in 4 s to a metre over its foot and is gone.
-- **Sinking** (`Sinking`): over 20 s she settles, slowly then fast, by her worse-hit end (her bow if her holes lie
-  forward of her middle, trimmed 10 degrees), lists up to 20 degrees to the side most holed, and goes under; from
+- **Sinking** (`Sinking`): over 20 s she is drawn in the pose the rules send (their `founder`: she lists up to 32
+  degrees to the side her seed says, trims 20 degrees by one end, settles slowly and then plunges), the page adding
+  none of its own; from
   halfway down until 8 s after, foam and rising bubbles fill the water over her length. Her flotsam (`Flotsam`:
   crates, barrels and a chest, which the rules lay) rides the swell the water draws where it lies (bobbing 0.12 m every
   4 s where the page draws none), drawn at the size the view draws ships and lit and shadowed as the land is, each
@@ -520,7 +527,7 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 ## Limits
 
 - Every captain sails her rank's hull, the Tithe's and the pirates' alike; there is no iron ram bow (the Tithe Ram)
-  and no Fluyt yet, no other classes, and no ambient traffic.
+  and no Fluyt yet, and no other classes.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where
   the fight has them, without their pose or hurts.
 - On her deck the camera stays level while she rolls, as on the player's own deck, so the crosshair aims a hair off
@@ -541,6 +548,6 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   than that one's hold allows.
 - A page laying its guns is not told which of a ship's masts have fallen, so its lay may meet rig a ball now passes.
 - She cruises on her course until she sees a player's ship; DFO's captains wander between waypoints.
-- No magazine blast yet. A fleet room's fights do not send the sea's own events.
+- No magazine blast yet.
 - Hulls are kept apart by their boxes on the flat; the player's helm is not refused a turn into another hull, as Come
   Sail Away's was, she is pushed back out of it.

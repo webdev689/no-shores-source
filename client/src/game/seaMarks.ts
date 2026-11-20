@@ -4,10 +4,12 @@
 import type { SeenPirate } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
-import type { Point2 } from '../overworld/ground.ts';
+import type { Point2, Vec3 } from '../overworld/ground.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
 import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHostiles.ts';
+import type { Landmass } from './landmass.ts';
+import { portOf } from './nodes.ts';
 import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
 
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
@@ -15,6 +17,25 @@ import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
 const MARK_EDGES = { sea: { top: 96, foot: 120 }, side: { top: 96, foot: 48 } } as const;
 /** Marks at sea nearer each other on the picture than this are one: the nearer is shown. */
 const MARK_GAP_PX = 30;
+/** A mark stands this far over the ground it marks, metres. */
+const MARK_RISE_M = 2;
+
+/** A landmass's marks: each node over its ground (its social space on the city's level), and its port over its
+ *  harbour. */
+export function islandMarksOf(landmass: Landmass): Mark[] {
+  const marks: Mark[] = landmass.nodes.map((node) => {
+    const ground =
+      node.kind === 'social' && landmass.plan ? landmass.plan.social.level : landmass.heightAt(...node.centre);
+    const place: Vec3 = [node.centre[0], node.centre[1], Math.max(0, ground) + MARK_RISE_M];
+    return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true };
+  });
+  const harbour = portOf(landmass.plan)?.harbour;
+  if (landmass.plan && harbour) {
+    const port = { id: `${landmass.plan.id}-port`, kind: 'port', name: landmass.plan.name, edge: true } as const;
+    marks.push({ ...port, at: [harbour[0], harbour[1], MARK_RISE_M] });
+  }
+  return marks;
+}
 
 /** The marks laid for the view (`sail` over the ship, `landing` over an island's side, else none), the ship at `ship`
  *  among `hostiles`, from `pose` on a picture of `viewport`: those placed, for a click to pick, and each as the HUD

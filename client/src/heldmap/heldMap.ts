@@ -98,6 +98,10 @@ export class HeldMap {
   private keySize: { width: number; height: number } | null = null;
   private measuredFonts = '';
   private letteredShape = '';
+  /** The last layout, and what it read: laid out again only when that has changed. */
+  private readonly laidOut = new Kept<Lettering>();
+  /** Counts the times the charted sea and its waters were set, which the layout reads but no key can cheaply hold. */
+  private chartings = 0;
   private phase: Phase = { kind: 'closed' };
   private mapView: View = { left: 0, top: 0, scale: 1 };
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
@@ -132,6 +136,7 @@ export class HeldMap {
   /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins. */
   setWaters(waters: MapWaters): void {
     this.waters = new HeldMapWaters(waters);
+    this.chartings++;
     if (this.charted) this.view.setWash(this.waters.chart(this.charted));
   }
 
@@ -157,6 +162,7 @@ export class HeldMap {
     if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.view.setCharted(charted);
     this.charted = charted;
+    this.chartings++;
     if (this.waters) this.view.setWash(this.waters.chart(charted));
     this.ink = stageOf(viewport).ink;
     this.mapView = viewOn(ship, this.ink, WORLD);
@@ -298,7 +304,9 @@ export class HeldMap {
       [this.measuredFonts, this.keySize] = [fonts, null];
       this.widths.clear();
     }
-    const lettering = this.layout(scene, stage.sprite, drop);
+    const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
+    const lettering = this.laidOut.made(reads, () => this.layout(scene, stage.sprite));
+    this.layoutCard(drop);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering]);
     const letteringChanged = shape !== this.letteredShape;
@@ -353,7 +361,7 @@ export class HeldMap {
   /** What is lettered on the map this frame (`layOut`): each place on it and each charted water named, the ship's
    *  arrow and the key, all clear of the gauntlets on the painting at `sprite`; and the card over the parchment,
    *  `drop` pixels down its lowering. */
-  private layout(scene: HeldMapScene, sprite: Rect, drop: number): Lettering {
+  private layout(scene: HeldMapScene, sprite: Rect): Lettering {
     const onSheet = (x: number, y: number) => x >= 0 && y >= 0 && x <= this.ink.width && y <= this.ink.height;
     this.placed = [];
     const places = [];
@@ -384,7 +392,6 @@ export class HeldMap {
       current: this.key,
     });
     this.key = lettering.key;
-    this.layoutCard(drop);
     return lettering;
   }
 
@@ -420,5 +427,30 @@ export class HeldMap {
       this.card.replaceChildren(make('div', words, 'held-card-words'), seas, sail);
     }
     this.card.style.transform = `translate(${this.ink.x + this.ink.width / 2}px, ${this.ink.y + drop - 12}px) translate(-50%, -100%)`;
+  }
+}
+
+/** What the map's layout reads, as one string: the map's view, the stage's ink and hands, the face's loading, how often
+ *  the charted sea was set, the ship's point and heading, the places and islands known, and the place chosen. */
+export function layoutKey(
+  view: View,
+  stage: { readonly ink: Rect; readonly sprite: Rect },
+  fonts: string,
+  chartings: number,
+  scene: HeldMapScene,
+  chosen: string | null,
+): string {
+  const { ship, heading, places, knownIslands } = scene;
+  return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ship, heading, places, knownIslands, chosen]);
+}
+
+/** A value made again only when its key changes: the held map's layout, keyed by `layoutKey`. */
+export class Kept<Value> {
+  private key: string | null = null;
+  private value: Value | undefined;
+
+  made(key: string, make: () => Value): Value {
+    if (key !== this.key || this.value === undefined) [this.value, this.key] = [make(), key];
+    return this.value;
   }
 }
