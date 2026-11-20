@@ -678,6 +678,8 @@ def _():
             probs.append(f'run-worker.sh: --allowedTools lacks mcp__{s}__*')
     if 'TASK_OBSERVER_ROLE=worker' not in rw:
         probs.append('run-worker.sh: TASK_OBSERVER_ROLE=worker missing')
+    if 'npm run -s wasm' not in rw or '"$MAIN/node_modules"' not in rw or 'cargo test -q -p protocol' not in rw:
+        probs.append("run-worker.sh: a worktree's ignored builds (node_modules, generated/, the WebAssembly, the protocol's fixtures) are not prepared, so its client tests fail")
     if 'Skill superpowers:verification-before-completion, the reviewer sub-agent, then Skill ponytail:ponytail-review' not in tpl:
         probs.append('brief template lost the ALWAYS verification + reviewer + ponytail line')
     if 'OBSERVATIONS:' not in tpl:

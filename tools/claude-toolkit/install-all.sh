@@ -197,6 +197,11 @@ json.dump(s, open(p, 'w'), indent=2)
 EOF
 # task-observer (rebelytics, pinned 56e89071): logs task friction and tool clashes to
 # $SHARED_DIR/task-observer for review. Workers get TASK_OBSERVER_ROLE=worker from run-worker.sh.
+# Its log outlives a container on the repository's orphan branch toolkit-data (toolkit-data-save.sh): taken back here,
+# never over a newer copy this container already holds.
+if [ -n "${REPO_DIR:-}" ] && git -C "$REPO_DIR" fetch -q origin toolkit-data 2>/dev/null; then
+  mkdir -p "$SHARED_DIR" && git -C "$REPO_DIR" archive FETCH_HEAD task-observer | tar -x -C "$SHARED_DIR" --skip-old-files
+fi
 bash "$KIT_DIR/task-observer/install.sh"
 # MarkItDown: turn uploaded PDF/Word/Excel/PowerPoint files into Markdown: `markitdown file.xlsx > file.md`
 pip install --break-system-packages -q "markitdown[pdf,docx,xlsx,pptx]==0.1.7"

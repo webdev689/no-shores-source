@@ -21,10 +21,9 @@ fn main() -> ExitCode {
     let command = std::env::args().nth(1);
     match command.as_deref() {
         Some("check") => {
-            if !toolchain::run_all() {
-                return ExitCode::FAILURE;
-            }
-            report_repo_checks()
+            let code = if toolchain::run_all() { report_repo_checks() } else { ExitCode::FAILURE };
+            println!("{}", checked_commit());
+            code
         }
         Some("repo") => report_repo_checks(),
         Some("shaders") => {
@@ -38,6 +37,24 @@ fn main() -> ExitCode {
             println!("{USAGE}");
             ExitCode::from(2)
         }
+    }
+}
+
+/// The commit a check ran on, and whether the tree held changes not in it, as its last line: so a log of the check
+/// says what it covered, and a claim of "tested" can be held to the commit it names.
+fn checked_commit() -> String {
+    let git = |args: &[&str]| {
+        std::process::Command::new("git")
+            .args(args)
+            .output()
+            .ok()
+            .filter(|output| output.status.success())
+            .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_owned())
+    };
+    match (git(&["rev-parse", "--short=12", "HEAD"]), git(&["status", "--porcelain"])) {
+        (Some(head), Some(changes)) if changes.is_empty() => format!("checked {head}, nothing uncommitted"),
+        (Some(head), Some(_)) => format!("checked {head} with uncommitted changes"),
+        _ => "checked: no commit could be read".to_owned(),
     }
 }
 
