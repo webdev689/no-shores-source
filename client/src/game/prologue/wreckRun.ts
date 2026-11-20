@@ -25,6 +25,7 @@ import { type Shot, shotOfOrbit } from '../camera.ts';
 import type { FootFight, FootFrame } from '../foot.ts';
 import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
+import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
@@ -48,8 +49,6 @@ const THULE = { type: 12, rank: 5, over: 3 } as const;
 const OVER_THE_HEAD_M = 2.1;
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 const CAMERA_CLEARANCE_M = 0.3;
-/** The menu's key as foot's hints list it: the story has no menu, so its hints leave it out. */
-const MENU_HINT = ' · M menu';
 
 /**
  * The wreck played, as `Foot` plays a node: the player on both ships' decks in a room of the page's own on the
@@ -89,6 +88,7 @@ export class WreckRun {
   private readonly unseen = new Set<number>();
   /** Every foe the run has stood, by its number in the room: its wave's foe and zone. */
   private readonly stood = new Map<number, Standing>();
+  private readonly crew = new WreckCrew();
 
   private constructor(
     context: WreckContext,
@@ -124,8 +124,9 @@ export class WreckRun {
     const module = await context.roomModule;
     const course = courseOf(layout);
     const combat = startCombatRules(module);
-    // The open sea under the decks: no land's window, only the blocks.
-    for (const rules of [movement, combat]) rules.setGround(null);
+    // The open sea under the decks: only the blocks, held round their edge as the room holds them, for the walk and
+    // the fight's own steps alike (in a fight the fight's prediction steps the player's body).
+    for (const rules of [movement, combat]) rules.setRim(course);
     const [x, y] = layout.wake.at;
     const { facing } = layout.wake;
     walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
@@ -138,6 +139,8 @@ export class WreckRun {
       (snapshot) => fight?.receive(snapshot),
       (gear) => (level.value = gear.level),
     );
+    // The prologue's player has no Art yet: one comes after it, with the factions.
+    room.forbidArts();
     fight = new Fighting(combat, room);
     return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, level, origin });
   }
@@ -204,13 +207,14 @@ export class WreckRun {
     return kept ? { health: kept.view.health, healthMax: kept.view.healthMax } : null;
   }
 
-  /** World points over heads, for barks and emotes: Thule's as 'thule', each wave's foe's by its crew and number,
-   *  'tithe-<number>' or 'pirate-<number>'. */
+  /** World points over heads, for barks: Thule's as 'thule', each wave's foe's by its crew and number,
+   *  'tithe-<number>' or 'pirate-<number>', and each of the Brig's crew's as 'crew-<number>'. */
   heads(): ReadonlyMap<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
     for (const [id, placed] of this.foes.placed) {
       const foe = this.stood.get(id);
-      const name = id === this.thule ? 'thule' : `${foe && titheCrew(foe.type) ? 'tithe' : 'pirate'}-${id}`;
+      const side = this.crew.has(id) ? 'crew' : foe && titheCrew(foe.type) ? 'tithe' : 'pirate';
+      const name = id === this.thule ? 'thule' : `${side}-${id}`;
       heads.set(name, [placed.x, placed.y, placed.z + OVER_THE_HEAD_M]);
     }
     return heads;
@@ -241,6 +245,13 @@ export class WreckRun {
     for (const zone of asks.open) this.openGate(zone);
     if (asks.checkpoint) room.setSpawn(...asks.checkpoint);
     if (asks.bringBack) room.putPlayer(...asks.bringBack);
+    this.crew.stand(asks.stand, {
+      room,
+      figures: this.foes,
+      foes: this.fight.foes,
+      layout: this.layout,
+      level: this.level.value,
+    });
     for (const foe of asks.stand) {
       const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level.value);
       if (id === 0) continue;
@@ -350,7 +361,7 @@ export class WreckRun {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      { id: fight.player, player: true, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
     ];
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
@@ -379,13 +390,16 @@ export class WreckRun {
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).map((line) => line.replace(MENU_HINT, ''));
+    // The story has no menu, so its keys leave the menu's out.
+    const hints = dead ? [] : footHints(fight.arts?.art ?? 0).filter(([key]) => key !== 'M');
     return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
   }
 
-  /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, and the room let go of. */
+  /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, the wreck's rim taken from the page's
+   *  movement, and the room let go of. */
   leave(): void {
     showAnimaEdge(QUIET);
+    this.context.movement.setHeights(null);
     this.room = null;
   }
 }

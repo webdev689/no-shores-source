@@ -2,7 +2,7 @@
 // someone not in the cast, or a speaker without a voice, since every line on screen must be heard.
 import type { VoiceProfile } from './voice.ts';
 
-/** The feelings an emote over a head can show, each a glyph and a sound together (glyphs.ts). */
+/** The feelings a line may name. A scene keeps them as written; no glyph or sound shows them. */
 export const EMOTE_KINDS = ['alert', 'question', 'fear', 'anger', 'cheer', 'pain', 'silence'] as const;
 export type EmoteKind = (typeof EMOTE_KINDS)[number];
 

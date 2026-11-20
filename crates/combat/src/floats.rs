@@ -285,6 +285,7 @@ impl Fighter {
             fired_right: held >> 25 & 1 != 0,
             might: at(22),
             ammo: id_or_none(at(24 + ACTION_NUMBERS)),
+            ally: false,
             statuses: combat[COMBAT_FLOATS..COMBAT_FLOATS + STATUS_FLOATS]
                 .try_into()
                 .map_or(Statuses::NONE, Statuses::from_floats),

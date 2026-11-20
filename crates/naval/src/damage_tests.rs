@@ -7,33 +7,33 @@ fn hurt(hull: f64, sail: f64, crew: f64) -> Hurt {
 }
 
 #[test]
-fn a_round_ball_into_a_captains_hull_does_4_to_6_and_takes_1_or_2_men() {
+fn a_round_ball_into_a_captains_hull_does_6_to_9_half_again_dfos_and_takes_1_or_2_men() {
     let harm = |zone: Zone, roll: f64| shot_harm(&SWIVEL, zone, false, roll, SHIP_TOUGHNESS);
-    assert_eq!(harm(Zone::Hull, 0.0), hurt(4.0, 0.0, 1.0));
-    assert_eq!(harm(Zone::Hull, 0.74), hurt(5.0, 1.0, 1.0));
-    assert_eq!(harm(Zone::Hull, 0.75), hurt(5.0, 1.0, 2.0));
-    assert_eq!(harm(Zone::Hull, 1.0), hurt(6.0, 1.0, 2.0));
-    assert_eq!(harm(Zone::Holed, 0.0).hull, 6.0);
-    assert_eq!(harm(Zone::Holed, 1.0).hull, 8.0);
-    assert_eq!(harm(Zone::Rig, 0.0), hurt(0.0, 3.0, 0.0));
-    assert_eq!(harm(Zone::Rig, 0.375), hurt(0.0, 4.0, 1.0));
-    assert_eq!(harm(Zone::Rig, 1.0).sail, 5.0);
+    assert_eq!(harm(Zone::Hull, 0.0), hurt(6.0, 1.0, 1.0));
+    assert_eq!(harm(Zone::Hull, 0.1), hurt(7.0, 1.0, 1.0));
+    assert_eq!(harm(Zone::Hull, 0.2), hurt(7.0, 1.0, 2.0));
+    assert_eq!(harm(Zone::Hull, 1.0), hurt(9.0, 1.0, 2.0));
+    assert_eq!(harm(Zone::Holed, 0.0).hull, 9.0);
+    assert_eq!(harm(Zone::Holed, 1.0).hull, 12.0);
+    assert_eq!(harm(Zone::Rig, 0.0), hurt(0.0, 5.0, 0.0));
+    assert_eq!(harm(Zone::Rig, 0.375), hurt(0.0, 6.0, 1.0));
+    assert_eq!(harm(Zone::Rig, 1.0).sail, 7.0);
 }
 
 #[test]
 fn a_brace_halves_hull_and_canvas_but_never_men() {
     let braced = shot_harm(&SWIVEL, Zone::Hull, true, 1.0, SHIP_TOUGHNESS);
-    assert_eq!(braced, hurt(3.0, 0.0, 2.0));
+    assert_eq!(braced, hurt(4.0, 0.0, 2.0));
 }
 
 #[test]
 fn chain_tears_canvas_and_grape_takes_men() {
     let chain = shot_harm(&loaded(&SWIVEL, Shot::Chain), Zone::Rig, false, 0.5, SHIP_TOUGHNESS);
-    assert_eq!(chain.sail, 16.0);
+    assert_eq!(chain.sail, 24.0);
     let grape = shot_harm(&loaded(&SWIVEL, Shot::Grape), Zone::Hull, false, 0.0, SHIP_TOUGHNESS);
-    assert_eq!(grape.crew, 5.0);
+    assert_eq!(grape.crew, 7.0);
     let player = shot_harm(&SWIVEL, Zone::Hull, false, 0.5, PLAYER_CREW_TOUGHNESS);
-    assert_eq!(player.crew, 1.0, "floor(2 / 3.2 + 0.5)");
+    assert_eq!(player.crew, 1.0, "floor(3 / 3.2 + 0.5)");
 }
 
 #[test]

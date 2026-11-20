@@ -75,9 +75,10 @@ export function rosterFrom(text: string): FoeType[] {
 /** The roster, read through a door of its own on the compiled `room-wasm` module: the rules' own, never a copy. */
 export const rosterOf = (module: WebAssembly.Module): FoeType[] => rosterFrom(startRoomDoor(module).roster());
 
-/** Each faction with types, as `[number, name]`, in the roster's order. */
+/** Each faction with types, as `[number, name]`, in the roster's order; the Brig's crew (0), on the players' side,
+ *  are no faction. */
 export function factionsOf(roster: readonly FoeType[]): [number, string][] {
-  const factions = new Map(roster.map((type) => [type.faction, type.factionName]));
+  const factions = new Map(roster.filter((type) => type.faction !== 0).map((type) => [type.faction, type.factionName]));
   return [...factions];
 }
 

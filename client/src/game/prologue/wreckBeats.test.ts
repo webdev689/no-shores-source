@@ -80,7 +80,7 @@ test("leaving the wreck hands the HUD back clean: no death, hints, prompt or fig
       calls.some((call) => call.startsWith(done)),
       done,
     );
-  assert.ok(calls.includes('stage.parts.objective.clear()') && calls.includes('stage.parts.screen.bars(false)'));
+  assert.ok(calls.includes('stage.parts.hud.tasks.show()') && calls.includes('stage.parts.screen.bars(false)'));
 });
 
 test('the throw overboard begins black, as the fight faded out, and only then fades in', () => {
@@ -204,7 +204,7 @@ test('a death on the way through the wreck says the player will rise at the last
   fight.frame(tick(0.016));
   own.dead = true;
   fight.frame(tick(0.016));
-  assert.ok(calls.includes('stage.parts.objective.show(Fallen, You will rise at the last checkpoint., 4)'));
+  assert.ok(calls.includes('stage.parts.hud.toast(You will rise at the last checkpoint.)'), 'said while they lie dead');
 });
 
 test('the player felled by Thule is never told they will rise: the boss fight ends there', async () => {

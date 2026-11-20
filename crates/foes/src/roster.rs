@@ -1,10 +1,10 @@
-//! The enemy types, every faction's: each a number the wire carries, its faction, the name over its bar, where it is
-//! met (on land or on a deck), the role it fights in, the forge layers in its hands (so the client dresses it alike),
-//! the ranks it comes in, what it changes of its role's numbers, and a Boss's own phases. And a new foe of a type, at
-//! a rank.
+//! The fighters the rules drive, every faction's and the Brig's crew's: each a number the wire carries, its faction,
+//! the name over its bar, where it is met (on land or on a deck), the role it fights in, the forge layers in its hands
+//! (so the client dresses it alike), the ranks it comes in, what it changes of its role's numbers, and a Boss's own
+//! phases. And a new foe of a type, at a rank.
 
 use crate::brain::Brain;
-use crate::factions::{GREY_TITHE, PIRATES, faction};
+use crate::factions::{CREW, GREY_TITHE, PIRATES, faction};
 use crate::ranks::{CORVANE, Phase, Rank, THULE, phase, phases, ranked};
 use crate::roles::{Numbers, Role, numbers};
 use Domain::{Deck, Land};
@@ -74,8 +74,9 @@ pub const REEVE: u8 = 6;
 pub const DECKHAND: u8 = 7;
 pub const HIGH_ASSESSOR: u8 = 18;
 
-/// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases.
-pub const ROSTER: [FoeType; 18] = [
+/// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases. The Brig's
+/// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do.
+pub const ROSTER: [FoeType; 20] = [
     row(RUNNER, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(COLLECTOR, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
     row(CROSSBOWMAN, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
@@ -109,6 +110,8 @@ pub const ROSTER: [FoeType; 18] = [
             &[Rank::Boss],
         )
     },
+    row(19, CREW, Deck, "Crew", Swordsman, "sword_iron", "", LOW),
+    row(20, CREW, Deck, "Crew", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
 ];
 
 /// The type a number names, or none.
@@ -130,10 +133,10 @@ impl FoeType {
         rank.filter(|rank| self.ranks.contains(rank)).or_else(|| self.ranks.first().copied()).unwrap_or(Rank::Major)
     }
 
-    /// The side its foes fight on: its faction's.
+    /// The side it fights on: its faction's, or the players' for the crew.
     #[must_use]
     pub fn side(&self) -> Side {
-        faction(self.faction).map_or(Side::Faction(self.faction), |faction| faction.side())
+        faction(self.faction).map_or(Side::from_number(self.faction), |faction| faction.side())
     }
 
     /// Its numbers as a Major: its role's, in its hands, with its own changes.
@@ -163,7 +166,8 @@ impl FoeType {
 }
 
 /// A new foe of a type at a rank (its first, if it does not come in that one) standing at (x, y) facing `facing`: its
-/// fighter (its faction's side, its type's arms, weight, health, poise and might at that rank) and its brain.
+/// fighter (its type's side, its type's arms, weight, health, poise and might at that rank, an ally on the players'
+/// side) and its brain.
 #[must_use]
 pub fn spawn(foe_type: &'static FoeType, rank: Rank, x: f64, y: f64, facing: f64) -> (Fighter, Brain) {
     let rank = foe_type.rank_or_first(Some(rank));
@@ -174,5 +178,6 @@ pub fn spawn(foe_type: &'static FoeType, rank: Rank, x: f64, y: f64, facing: f64
     let mut fighter = combat::fighter(foe_type.side(), body, arms, numbers.weight, numbers.health, numbers.poise);
     fighter.aim = facing;
     fighter.might = numbers.might;
+    fighter.ally = fighter.side.is_players();
     (fighter, Brain::new(foe_type, rank, facing))
 }

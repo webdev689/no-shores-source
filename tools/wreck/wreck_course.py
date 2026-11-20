@@ -142,11 +142,30 @@ def squares(grid):
     return found
 
 
-def blocks(grid):
+def joined(rows, first):
+    """The squares joined to the square `first` (row, column) through squares that hold ground, whatever their height;
+    every other none: flotsam and wreckage afloat no body reaches stand no one."""
+    found = [[None] * len(line) for line in rows]
+    stack = [first]
+    while stack:
+        row, column = stack.pop()
+        if not (0 <= row < len(rows) and 0 <= column < len(rows[row])):
+            continue
+        if rows[row][column] is None or found[row][column] is not None:
+            continue
+        found[row][column] = rows[row][column]
+        stack.extend(((row + 1, column), (row - 1, column), (row, column + 1), (row, column - 1)))
+    return found
+
+
+def blocks(grid, start=None):
     """The squares as blocks in the game's frame (x east, y south, the sea at 0): each run of one height along a row
-    one block, runs alike in the rows after it joined."""
+    one block, runs alike in the rows after it joined. With `start` (the game's x, y), only the squares joined to the
+    one under it."""
     size = CELL_M * SQUARE_CELLS
     rows = squares(grid)
+    if start is not None:
+        rows = joined(rows, (int((start[1] + grid['north']) // size), int((start[0] - grid['west']) // size)))
     runs = []
     for line in rows:
         found = []

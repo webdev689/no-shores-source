@@ -68,7 +68,7 @@ fn a_swordsman_parries_some_swings_in_time_never_sooner_than_it_could_and_ripost
         if let Some(Verdict::Parried) = verdict {
             parried += 1;
             let pressed = pressed.expect("a parry was pressed");
-            let window = u64::from(parry_window(combat::Side::Faction(1)));
+            let window = u64::from(parry_window(false));
             assert!(lands - pressed < window, "its window spans the landing: pressed {pressed}, lands {lands}");
             riposted += usize::from(riposte);
         }

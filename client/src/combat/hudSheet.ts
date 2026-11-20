@@ -54,6 +54,7 @@ function platesCss(): string {
 .fight-hud .plate[data-band='red'] { --fill: ${FILLS.red}; }
 .fight-hud .plate[data-band='orange'] { --fill: ${FILLS.orange}; }
 .fight-hud .plate[data-band='yellow'] { --fill: ${FILLS.yellow}; }
+.fight-hud .plate[data-band='green'] { --fill: ${FILLS.green}; }
 .fight-hud .level { display: flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box;
   border-width: 2px; border-style: solid; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1;
   color: ${TONES.word}; text-shadow: ${HALO}; }

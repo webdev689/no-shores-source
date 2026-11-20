@@ -1,6 +1,7 @@
 import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import type { Flames } from '../../cinema/flames.ts';
 import type { Gpu } from '../../gpu.ts';
+import type { HullMask } from '../../water/hullMask.ts';
 import type { Drawer } from '../scene.ts';
 import { WRECK } from './skies.ts';
 import type { Story } from './story.ts';
@@ -63,6 +64,9 @@ export interface WreckDrawn {
 export class WreckScenery {
   /** The zones whose heaps stand. */
   readonly standing = new Set<number>();
+  /** Where the sea is not drawn: its ships' waterlines and its rafts, which the swell would rise through. Every beat
+   *  that draws the wreck hands them to the water. */
+  readonly hulls: readonly HullMask[];
   private view: WreckView | null = null;
   private state: 'coming' | 'drawn' | 'failed' = 'coming';
   private left = false;
@@ -70,6 +74,7 @@ export class WreckScenery {
 
   constructor(gpu: Gpu, drawn: Promise<WreckDrawn>, layout: WreckLayout, origin: readonly [number, number]) {
     this.origin = origin;
+    this.hulls = layout.dry;
     layout.zones.forEach((zone, index) => {
       if (zone.gate) this.standing.add(index);
     });

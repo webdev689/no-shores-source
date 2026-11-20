@@ -267,20 +267,26 @@ fn a_kill_gives_crit_with_keen_eye_and_cuts_the_tenets_with_spellfeed() {
     assert!((tenets[0] - 0.53).abs() < 1e-9 && (tenets[1] - 0.28).abs() < 1e-9, "3% off each: {tenets:?}");
 }
 
+/// The damage a blow of `kind` from a sword of `element` and `perk` deals, in a room with Arts or without.
+fn struck(perk: &str, element: Element, kind: BlowKind, arts: bool) -> f64 {
+    let (mut room, player, [first, _]) = room_wearing(Kind::Sword, perk);
+    if !arts {
+        room.forbid_arts();
+    }
+    let found = room.players.get_mut(&player).expect("in");
+    found.character.items.get_mut(&WORN).expect("worn").0.element = Some(element);
+    room.empower(blow(player, kind), first).damage
+}
+
 #[test]
 fn a_weapon_in_the_arts_element_strikes_harder_with_attuned() {
-    let struck = |perk: &str, element: Element, kind: BlowKind| {
-        let (mut room, player, [first, _]) = room_wearing(Kind::Sword, perk);
-        let found = room.players.get_mut(&player).expect("in");
-        found.character.items.get_mut(&WORN).expect("worn").0.element = Some(element);
-        room.empower(blow(player, kind), first).damage
-    };
-    let plain = struck("light_grip", Element::Volt, SWING);
-    assert!((struck("attuned", Element::Volt, SWING) - plain * 1.1).abs() < 1e-9, "Volt, as Storm worn");
-    assert!((struck("attuned", Element::Blaze, SWING) - plain).abs() < 1e-9, "another element");
-    let spell = struck("light_grip", Element::Volt, BlowKind::Spell(1));
+    let plain = struck("light_grip", Element::Volt, SWING, true);
+    assert!((struck("attuned", Element::Volt, SWING, true) - plain * 1.1).abs() < 1e-9, "Volt, as Storm worn");
+    assert!((struck("attuned", Element::Blaze, SWING, true) - plain).abs() < 1e-9, "another element");
+    assert!((struck("attuned", Element::Volt, SWING, false) - plain).abs() < 1e-9, "no Art worn here");
+    let spell = struck("light_grip", Element::Volt, BlowKind::Spell(1), true);
     assert!(
-        (struck("attuned", Element::Volt, BlowKind::Spell(1)) - spell).abs() < 1e-9,
+        (struck("attuned", Element::Volt, BlowKind::Spell(1), true) - spell).abs() < 1e-9,
         "no weapon's perk touches a spell"
     );
 }

@@ -50,11 +50,13 @@ export class Naval {
   /** Each call's own number: a captain answering a call since ended or made again is not taken up. */
   private call = 0;
   private adopted: FightView | null = null;
+  /** The answer the last fight to end by itself ended on, until another begins. */
+  private ended: FightView | null = null;
   /** The fight's events the last step took, for whatever else hears them (the sea's sounds). */
   heard: readonly FightEvent[] = [];
   private readonly effects = new Effects(1);
   private readonly marks: MarkDrawer;
-  private farewell: { readonly lines: string[]; readonly until: number } | null = null;
+  private farewell: { readonly lines: string[]; readonly said: string[]; readonly until: number } | null = null;
 
   constructor(marks: MarkDrawer) {
     this.marks = marks;
@@ -65,9 +67,9 @@ export class Naval {
     return this.fight !== null;
   }
 
-  /** The fight's last answer, while one is on. */
+  /** The fight's last answer: while one is on, else the one a fight ended on, so its end is never missed. */
   get view(): FightView | null {
-    return this.fight?.view ?? null;
+    return this.fight?.view ?? this.ended;
   }
 
   /** Whether a fight is on or being called: either way her own helm stands. */
@@ -94,7 +96,7 @@ export class Naval {
         this.calling = false;
         if (fighting === 'sent off') return;
         if (typeof fighting === 'string') fail(new Error(fighting));
-        else this.fight = fighting;
+        else [this.fight, this.ended] = [fighting, null];
       })
       .catch((error: unknown) => {
         if (call !== this.call) return;
@@ -106,7 +108,7 @@ export class Naval {
   /** Takes up a fight begun elsewhere: the sea room's. */
   join(fighting: Fighting): void {
     this.end();
-    this.fight = fighting;
+    [this.fight, this.ended] = [fighting, null];
   }
 
   /** Ends the fight, if one is on or called. */
@@ -144,8 +146,8 @@ export class Naval {
       this.effects.burn(toWindow([x, y, heave + DECK_M]), ship.state === 'sinking' ? 0 : ship.fires, time, seconds);
     }
     if (answer.over) {
-      this.farewell = { lines: fighting.lines(time), until: time + FAREWELL_S };
-      [this.fight, this.adopted] = [null, null];
+      this.farewell = { lines: fighting.lines(time), said: fighting.said(time), until: time + FAREWELL_S };
+      [this.fight, this.adopted, this.ended] = [null, null, answer];
       fighting.end().catch(() => undefined);
     }
     return splashes;
@@ -188,6 +190,12 @@ export class Naval {
     if (this.fight) return this.fight.lines(now);
     if (this.farewell && this.farewell.until > now) return this.farewell.lines;
     return this.calling ? ['Calling a captain…'] : [];
+  }
+
+  /** DFO's messages now: the fight's, or a fight's last for a while after it ends. */
+  said(now: number): string[] {
+    if (this.fight) return this.fight.said(now);
+    return this.farewell && this.farewell.until > now ? this.farewell.said : [];
   }
 
   /** Draws her Sloop, the balls aloft, the lay's arcs and the effects, heights as drawn. */

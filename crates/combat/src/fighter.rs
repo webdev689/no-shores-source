@@ -205,6 +205,9 @@ pub struct Fighter {
     pub statuses: crate::status::Statuses,
     /// The shots its Ranged weapon has left, which its player's gear keeps; none for a foe, whose never run dry.
     pub ammo: Option<u32>,
+    /// Whether it is driven by the rules on the players' side, as the Brig's crew are: it fights by a foe's rules (its
+    /// reach, parry window and telegraphed blows) while no player strikes it, nor it a player.
+    pub ally: bool,
 }
 
 /// What a player's controls or a foe's brain asks of a fighter in a tick: the movement's controls and the fight's.
@@ -264,6 +267,7 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         trim: crate::trim::Trim::PLAIN,
         statuses: crate::status::Statuses::NONE,
         ammo: None,
+        ally: false,
     }
 }
 
@@ -274,6 +278,12 @@ pub fn player(body: Body, arms: Arms) -> Fighter {
 }
 
 impl Fighter {
+    /// Whether a player fights as it: on the players' side, and no ally the rules drive.
+    #[must_use]
+    pub fn is_player(&self) -> bool {
+        self.side.is_players() && !self.ally
+    }
+
     #[must_use]
     pub fn dead(&self) -> bool {
         matches!(self.action, Action::Dead { .. })

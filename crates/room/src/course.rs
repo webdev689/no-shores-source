@@ -1,21 +1,43 @@
 //! What a page playing a course alone may ask of its own room, and a server never does: a room laid over the open
 //! sea, a foe of the roster stood where the page puts it, every foe sent away at once, the spawn the next respawn
 //! stands the player at, the player stood somewhere at once, and a block stood on the course after it opened or taken
-//! from it. A story level is played so: its waves placed, its checkpoints kept, a fall into the sea brought back,
-//! its ways closed until a wave falls.
+//! from it. A story level is played so: its waves placed, its checkpoints kept, its ways closed until a wave falls, and
+//! every body held on its blocks.
 
 use crate::{Floor, PlayerId, Room};
 use ::foes::{Rank, foe_type};
 use combat::fighter::FighterId;
 use movement::blocks::ground_at;
-use movement::{Block, Body, standing};
+use movement::{Block, Body, Heights, standing};
+
+pub use movement::heights::RIM_CELL_M;
 
 impl Room {
-    /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: a body that falls off them
-    /// stands in the sea at 0, and its foes' navmesh is the blocks' tops alone.
+    /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: the rim round the blocks
+    /// holds every body on them, as a ship's deck holds its crew, and its foes' navmesh is the blocks' tops alone. It
+    /// holds as many foes as a node, for a wreck's boarders and the crew who fight them.
     #[must_use]
     pub fn over_sea(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Sea, blocks, vec![spawn], None)
+        let rim = Heights::rim(&blocks, RIM_CELL_M);
+        Self { foes_most: crate::NODE_FOES_MOST, ..Self::on(Floor::Sea(Box::new(rim)), blocks, vec![spawn], None) }
+    }
+
+    /// A foe found off the course laid over the sea, where nothing it walks reaches, stands again at its post, as it
+    /// was posted: the rim holds bodies, so only a foe set down there comes to it.
+    pub(crate) fn keep_on_course(&mut self) {
+        let Floor::Sea(rim) = &self.floor else { return };
+        let astray: Vec<(FighterId, [f64; 3], f64)> = self
+            .foes
+            .iter()
+            .filter(|(_, foe)| !rim.stands_at(foe.fighter.body.x, foe.fighter.body.y))
+            .filter_map(|(id, foe)| foe.brain.home().map(|home| (*id, home.at, home.facing)))
+            .collect();
+        for (id, [x, y, _], facing) in astray {
+            let body = Body { facing, ..self.on_top(x, y) };
+            if let Some(foe) = self.foes.get_mut(&id) {
+                foe.fighter.body = body;
+            }
+        }
     }
 
     /// A body standing at (x, y) on the top of the highest block under it, or on the floor where none stands.
