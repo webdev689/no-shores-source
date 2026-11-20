@@ -280,3 +280,18 @@ test('a second tab that searches while its account’s run is being started join
   assert.deepEqual(all[0]?.sent, ['{"run":"node-krakens-grotto--run-k3j4h5g6"}'], 'the first tab goes in');
   assert.equal((await seeking(finder, tokens['Ada'] ?? '')).closed.length, 0, 'once told, a search again is taken');
 });
+
+test('of two searches of one account looked up at once, the newer socket is kept whichever answers first', async () => {
+  const queue = new Queue();
+  assert.equal(queue.join(seeker(2, 'ada', 5_000)), null, 'the second lookup answers first');
+  assert.equal(queue.join(seeker(1, 'ada', 5_100)), 1, 'the first, older, is the one let go');
+  assert.deepEqual(queue.due(65_000).map(sockets), [[2]]);
+  const { tokens, finderOf } = await world(['Ada']);
+  const finder = finderOf('node-krakens-grotto');
+  const [older, newer] = [new FakeSocket(), new FakeSocket()];
+  const [first, second] = [finder.opened(older), finder.opened(newer)];
+  const asked = finder.heard(first, tokens['Ada'] ?? '');
+  await finder.heard(second, tokens['Ada'] ?? '');
+  await asked;
+  assert.deepEqual([older.closed, newer.closed], [[4003, 'You are finding a company in another tab.'], []]);
+});

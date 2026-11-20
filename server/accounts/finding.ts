@@ -56,9 +56,11 @@ const together = (one: Seeker, other: Seeker) =>
 export class Queue {
   private waiting: Seeker[] = [];
 
-  /** Puts a seeker in: the socket of the same account's earlier search, which this one replaces, or null. */
+  /** Puts a seeker in: the socket of the same account's older search to let go, or null. The newer socket stays
+   *  whichever lookup answered first, so a search is never ended by an older tab's. */
   join(seeker: Seeker): number | null {
     const earlier = this.waiting.find((one) => one.account === seeker.account) ?? null;
+    if (earlier && earlier.socket > seeker.socket) return seeker.socket;
     this.waiting = [...this.waiting.filter((one) => one !== earlier), seeker];
     return earlier?.socket ?? null;
   }
