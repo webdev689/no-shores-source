@@ -53,13 +53,17 @@ war, and a click on it sets the ship's destination.
   diagonal lines in the ink, 7 screen pixels apart. Fog of war is as it was: the wash is laid for the sea charted when
   the map is raised.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
-  point, the middle of its sea cell farthest from land, from other waters and from the frame's edge (`labelPoints`,
-  chamfer distances in cells), once any of its sea is charted, held inside the map's edges.
-- **The key** names the four holders by their colours. It stands in a corner of the map whose box covers no
-  discovered land (the coast field asked every 4 px across it), no name and no mark: the corner it stands in while
-  that stays clear, else the first clear one, lower left, lower right, upper left, upper right. With every corner
-  taken it is laid in one row, on a box of the parchment's colour, in the middle of the parchment's margin under the
-  map. So it moves only when it must, and never back and forth while the map stands still (`keyPlace`).
+  point, the name and a ring round it inked in the band's colour on the difficulty ramp
+  ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green at level 1, gold at 8, orange at 15, red at 22
+  and deep purple at 30, blended between and read at the band's middle (`difficultyColour`), dark enough to read as
+  ink. Its label point is the middle of its sea cell farthest from land, from other waters and from the frame's edge
+  (`labelPoints`, chamfer distances in cells), once any of its sea is charted, held inside the map's edges.
+- **The key** names the four holders by their colours, and under them the difficulty ramp, "Levels 1" to "30". It stands
+  in a corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name and
+  no mark: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
+  left, upper right. With every corner taken it is laid in one row, on a box of the parchment's colour, in the middle of
+  the parchment's margin under the map. So it moves only when it must, and never back and forth while the map stands
+  still (`keyPlace`).
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are

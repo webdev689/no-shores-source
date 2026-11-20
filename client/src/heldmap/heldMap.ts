@@ -374,7 +374,7 @@ export class HeldMap {
     const widths = keyWidths(this.painter);
     const land = (box: Rect) => landUnder(this.field, scene.knownIslands, this.mapView, box);
     this.key = this.waters
-      ? keyPlace({ ...this.ink, margin }, keySize(widths.words), widths.row, taken, land, this.key)
+      ? keyPlace({ ...this.ink, margin }, keySize(widths.words, widths.ramp), widths.row, taken, land, this.key)
       : null;
     this.layoutCard(drop);
     return { letters, ship, key: this.key };

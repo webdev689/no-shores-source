@@ -125,6 +125,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]
 - [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
+- [[The Held Map Colours Each Water's Name by Its Difficulty]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -42,6 +42,35 @@ export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [
   ['contested', 'Contested'],
 ];
 
+/** The difficulty ramp from the easiest level to the hardest: green, gold, orange, red, deep purple, each dark enough
+ *  to read as ink on the parchment. */
+const DIFFICULTY_STOPS: readonly (readonly [number, readonly [number, number, number]])[] = [
+  [1, [47, 125, 50]],
+  [8, [154, 123, 10]],
+  [15, [176, 86, 26]],
+  [22, [163, 36, 31]],
+  [30, [90, 31, 110]],
+];
+
+/** The colour of a level on the difficulty ramp, blended between its stops. */
+export function levelColour(level: number): string {
+  const last = DIFFICULTY_STOPS.length - 1;
+  const after = DIFFICULTY_STOPS.findIndex(([stop]) => level <= stop);
+  const [high, highColour] = DIFFICULTY_STOPS[after < 0 ? last : Math.max(1, after)] ?? DIFFICULTY_STOPS[last]!;
+  const [low, lowColour] = DIFFICULTY_STOPS[after < 0 ? last - 1 : Math.max(0, after - 1)] ?? DIFFICULTY_STOPS[0]!;
+  const share = Math.min(1, Math.max(0, (level - low) / (high - low)));
+  const channel = (index: 0 | 1 | 2) =>
+    Math.round(lowColour[index] + (highColour[index] - lowColour[index]) * share)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${channel(0)}${channel(1)}${channel(2)}`;
+}
+
+/** A water's colour on the difficulty ramp, by the middle of its level band; the ink's own with no band. */
+export function difficultyColour(levels: readonly [number, number] | null): string | null {
+  return levels ? levelColour((levels[0] + levels[1]) / 2) : null;
+}
+
 /** The wash a cell at a time: `colour` RGBA, its colour the holders' of the sea round it blended over the cells either
  *  side, its alpha the share of them that is charted sea, the colour multiplied by it; `hatch` the share of them that
  *  is contested. */

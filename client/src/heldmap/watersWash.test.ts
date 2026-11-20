@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ruinedPlaces } from './heldMapWaters.ts';
-import { chartedWaters, HOLDER_COLOURS, labelPoints, type MapWaters, washOf, waterWords } from './watersWash.ts';
+import {
+  chartedWaters,
+  difficultyColour,
+  HOLDER_COLOURS,
+  labelPoints,
+  levelColour,
+  type MapWaters,
+  washOf,
+  waterWords,
+} from './watersWash.ts';
 
 const HOLDERS = ['home', 'contested', 'grey-tithe', 'pirates'] as const;
 /** A land cell, and the seam's bit on a sea cell's water, in the rows the tests write. */
@@ -112,4 +121,23 @@ test('a city that is no port is drawn as ruins and named so; the ports as they a
     ],
   );
   assert.equal(ruinedPlaces([place('ashgrove', 'Ashgrove')], null)[0]?.kind, 'port', 'before the waters are open');
+});
+
+test('the difficulty ramp runs green at the easiest level to deep purple at the hardest, blended between', () => {
+  assert.equal(levelColour(1), '#2f7d32');
+  assert.equal(levelColour(30), '#5a1f6e');
+  assert.equal(levelColour(22), '#a3241f', 'a stop is its own colour');
+  assert.equal(levelColour(0), '#2f7d32', 'under the easiest, the easiest');
+  assert.equal(levelColour(40), '#5a1f6e', 'past the hardest, the hardest');
+  const greens = [1, 8, 15, 22].map((level) => Number.parseInt(levelColour(level).slice(3, 5), 16));
+  assert.ok(
+    greens.every((green, index) => index === 0 || green < (greens[index - 1] ?? 0)),
+    `${greens}`,
+  );
+});
+
+test('a water takes the colour of the middle of her level band; one with no band takes none', () => {
+  assert.equal(difficultyColour([1, 4]), levelColour(2.5));
+  assert.equal(difficultyColour([26, 30]), levelColour(28));
+  assert.equal(difficultyColour(null), null);
 });

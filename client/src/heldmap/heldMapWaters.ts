@@ -3,7 +3,15 @@
 // the parchment's ink (mapLetters.ts).
 import type { MapPlace } from './heldMap.ts';
 import type { MapLetter } from './mapLetters.ts';
-import { chartedWaters, labelPoints, type MapWaters, washOf, type WatersWash, waterWords } from './watersWash.ts';
+import {
+  chartedWaters,
+  difficultyColour,
+  labelPoints,
+  type MapWaters,
+  washOf,
+  type WatersWash,
+  waterWords,
+} from './watersWash.ts';
 
 /** The places the map names, a city that is no port named and marked as the ruins it is; before the waters are open,
  *  as they come. */
@@ -48,7 +56,8 @@ export class HeldMapWaters {
       if (x < 0 || y < 0 || x > ink.width || y > ink.height) return [];
       const text = waterWords(water);
       const half = Math.min(widthOf(text) / 2, ink.width / 2);
-      return [{ text, x: Math.min(Math.max(x, half), ink.width - half), y, kind: 'water', chosen: false }];
+      const colour = difficultyColour(water.levels) ?? undefined;
+      return [{ text, x: Math.min(Math.max(x, half), ink.width - half), y, kind: 'water', chosen: false, colour }];
     });
   }
 }

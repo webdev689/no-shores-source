@@ -49,7 +49,7 @@ test('the words, marks and key are painted on the parchment’s picture, never l
     letters: [
       { text: 'Overlook', x: 100, y: 50, kind: 'port', chosen: false },
       { text: 'Ruins of Fenhallow', x: 300, y: 80, kind: 'ruin', chosen: false },
-      { text: 'The Mistwrack, 16-19', x: 200, y: 200, kind: 'water', chosen: false },
+      { text: 'The Mistwrack, 16-19', x: 200, y: 200, kind: 'water', chosen: false, colour: '#b0561a' },
     ],
     ship: { x: 150, y: 150, heading: 0 },
     key: { corner: 'lower-left', box: { x: 14, y: 300, width: 100, height: 80 } },
@@ -67,11 +67,26 @@ test('the words, marks and key are painted on the parchment’s picture, never l
     'Grey Tithe',
     'Pirates',
     'Contested',
+    'Levels 1',
+    '30',
   ]);
   assert.ok(
     calls.some((call) => call.name === 'setLineDash'),
     'a ruin’s glyph is dashed',
   );
+});
+
+test('a water’s name and the ring round it are inked in her difficulty’s colour', () => {
+  const { painter, calls } = recorder();
+  const water = { text: 'The Fen Deeps, 22-26', x: 200, y: 200, kind: 'water', chosen: false, colour: '#a3241f' };
+  paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, { letters: [water], ship: null, key: null });
+  const ring = calls.findIndex((call) => call.name === 'arc');
+  const stroke = calls.findIndex((call, index) => index > ring && call.name === 'stroke');
+  assert.ok(ring >= 0 && stroke > ring, 'a ring is drawn round the name');
+  const named = calls.findIndex((call) => call.name === 'fillText' && call.args[0] === water.text);
+  assert.ok(named > stroke, 'the name is lettered over its ring');
+  const box = letterBox(water, 120);
+  assert.ok(box.width > 120 && box.height > 14, 'the ring counts in the name’s box, so nothing is laid over it');
 });
 
 test('the held map letters in its ink pass, which is drawn before the gauntlets', async () => {
