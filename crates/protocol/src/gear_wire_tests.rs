@@ -199,3 +199,37 @@ fn a_ruins_plaza_sells_nothing_and_a_port_citys_its_wares() {
     assert!(wares > 0 && emblems > 0 && price > 0, "a port city's plaza shows the day's wares anywhere on it");
     assert_eq!(sold(Vec::new()), (0, 0, 0), "a ruin's plaza, with no counters, shows none");
 }
+
+#[test]
+fn the_ships_part_carries_its_power_stores_hands_and_each_officer_in_their_grid() {
+    let (mut room, player) = furnished();
+    for _ in 0..room::asks::ASK_EVERY_TICKS {
+        room.tick();
+    }
+    room.input(player, Input { sequence: 8, ask: Some(Asked::Grant(Grant::Officers(6))), ..Input::default() })
+        .expect("taken");
+    room.tick();
+    let character = room.player(player).map(|found| found.character.clone()).expect("a player of the room");
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let ship = gear.ship().expect("the ship's part");
+    assert_eq!(
+        (ship.level(), ship.attack(), ship.defense(), ship.prestige()),
+        (character.ship_level(), character.ship_attack(), character.ship_defense(), character.ship_prestige()),
+    );
+    let held = character.materials.ship;
+    let stocks: Vec<u16> = ship.stocks().expect("its stocks").iter().collect();
+    assert_eq!(stocks, [held.timber, held.canvas, held.iron, held.heartwood], "Timber, Canvas, Iron, Heartwood");
+    assert_eq!((ship.hands(), ship.hands_most()), (10, 10), "a whole crew of the Sloop's ten");
+    let officers: Vec<_> = ship.officers().expect("its officers").iter().collect();
+    assert_eq!(officers.len(), 2, "the First Mate and the Bosun granted");
+    for (shown, kept) in officers.iter().zip(character.crew.officers.values()) {
+        assert_eq!((shown.id(), shown.post(), shown.grade()), (kept.id, kept.post as u8, kept.grade as u8));
+        assert_eq!((shown.given(), shown.family(), shown.level()), (kept.given, kept.family, kept.level()));
+        assert_eq!(shown.duty(), 2, "both sent ashore");
+        assert_eq!(shown.columns().map(|columns| columns.len()), Some(kept.columns().len()), "their grid whole");
+        assert!((shown.to_next() - kept.to_next()).abs() < 1e-12);
+    }
+    assert_eq!(ship.offers().map(|offers| offers.len()), Some(0), "none offered away from a counter");
+    assert_eq!(ship.trim().map(|trim| trim.len()), Some(character.ship_trim().to_floats().len()));
+}
