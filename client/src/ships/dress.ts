@@ -10,13 +10,15 @@ export type ShipSide = (typeof SHIP_SIDES)[number];
 export type Colour = readonly [number, number, number];
 
 /** A side's colours: her hull's paint, her stripe's and her canvas's (each null where her pictures stand as painted),
- *  her flag's ground and the faction whose emblem it bears (null for none). */
+ *  her flag's ground, the faction whose emblem it bears (null for none) and the colour the emblem's tones are shaded
+ *  from on her flag (null for the emblem's own). */
 export interface ShipDress {
   readonly hull: Colour | null;
   readonly stripe: Colour | null;
   readonly canvas: Colour | null;
   readonly flag: Colour;
   readonly emblem: number | null;
+  readonly emblemTint: Colour | null;
 }
 
 /** A colour from its hex code, `#rrggbb`. */
@@ -29,15 +31,23 @@ export function colourOf(hex: string): Colour {
 export const OVERLOOK_BLUE = colourOf('#2f5d9a');
 
 export const DRESSES: Readonly<Record<ShipSide, ShipDress>> = {
-  player: { hull: null, stripe: null, canvas: null, flag: OVERLOOK_BLUE, emblem: null },
-  friendly: { hull: null, stripe: OVERLOOK_BLUE, canvas: colourOf('#f1ede2'), flag: OVERLOOK_BLUE, emblem: null },
+  player: { hull: null, stripe: null, canvas: null, flag: OVERLOOK_BLUE, emblem: null, emblemTint: null },
+  friendly: {
+    hull: null,
+    stripe: OVERLOOK_BLUE,
+    canvas: colourOf('#f1ede2'),
+    flag: OVERLOOK_BLUE,
+    emblem: null,
+    emblemTint: null,
+  },
   tithe: {
     hull: colourOf('#59636b'),
     stripe: colourOf('#ebe0c2'),
     canvas: colourOf('#8f9092'),
-    // A darker slate than her hull, so the balance's grey stone stands out on it.
-    flag: colourOf('#2e3438'),
+    // Her canvas grey, so at fight range her flag never reads as the pirates' black; the balance in dark slate.
+    flag: colourOf('#8f9092'),
     emblem: 1,
+    emblemTint: colourOf('#2e3438'),
   },
   pirate: {
     hull: colourOf('#1d1c1c'),
@@ -45,6 +55,7 @@ export const DRESSES: Readonly<Record<ShipSide, ShipDress>> = {
     canvas: colourOf('#4b4640'),
     flag: colourOf('#151414'),
     emblem: 2,
+    emblemTint: null,
   },
 };
 
