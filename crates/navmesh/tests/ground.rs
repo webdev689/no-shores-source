@@ -139,5 +139,5 @@ fn a_path_runs_through_a_roofed_tunnel_cut_in_a_terrain_at_the_ground_beneath_it
     let up = path(&navmesh, [-8.0, 0.0, -0.8], [0.0, 0.0, 6.0]);
     let climb = up.windows(2).find(|pair| pair[1][2] - pair[0][2] > 5.0).expect("the rock's top is climbed onto");
     let [x, y, _] = climb[0];
-    assert!(x < -3.0 || x > 3.0 || y.abs() > 1.5, "the climb starts in the tunnel: {up:?}");
+    assert!(!(-3.0..=3.0).contains(&x) || y.abs() > 1.5, "the climb starts in the tunnel: {up:?}");
 }
