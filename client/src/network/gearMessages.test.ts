@@ -157,3 +157,12 @@ test("the ship's part of the gear message reads back: her power, materials, hand
   bare.finish(Gear.endGear(bare));
   assert.equal(gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array()))).ship, null, 'none sent');
 });
+
+test("the ship's and crew's asks carry the numbers the protocol reads them by", async () => {
+  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
+  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  assert.deepEqual(
+    [ASKS.infuse, ASKS.recruit, ASKS.station, ASKS.dismiss, ASKS.train, ASKS.chooseOfficer],
+    ['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER'].map(number),
+  );
+});

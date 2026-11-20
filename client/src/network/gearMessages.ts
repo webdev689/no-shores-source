@@ -27,13 +27,14 @@ export const ASKS = {
   buyCrate: 16,
   /** A module fed into another of its kind: the kept one in `item`, the fed one in `count`. */
   infuse: 17,
-  /** The crew's: an officer of the day signed on (`node` the offer), one stationed (`item` the officer, `slot` 0
-   *  aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen (`column`, `node`). */
-  recruit: 50,
-  station: 51,
-  dismiss: 52,
-  train: 53,
-  chooseOfficer: 54,
+  /** The crew's: an officer of the day signed on (`column` the faction pledged to, `node` the offer), one stationed
+   *  (`item` the officer, `slot` 0 aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen
+   *  (`column`, `node`). */
+  recruit: 58,
+  station: 59,
+  dismiss: 60,
+  train: 61,
+  chooseOfficer: 62,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,

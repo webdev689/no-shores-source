@@ -464,6 +464,8 @@ export function startGearWindow(
         art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip),
       }),
     };
+    // An officer paid off while their page was open leaves no page for Escape to step back from.
+    if (view === 'ship' && !gear.ship?.officers.some((officer) => officer.id === slot)) slot = null;
     const worn = view === 'character' && arts ? gear.arts : undefined;
     const cores = worn ? coresOf(worn) : {};
     const core = worn ? (cores[worn.art] ?? []) : [];

@@ -1,5 +1,6 @@
 // The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Sloop's papers as Manage
-// shows them (`shipPages.ts` puts her power and crew beside them); and Settings, which keeps the account and the volumes of the interface and the world.
+// shows them (`shipPages.ts` puts her power and crew beside them); and Settings, which keeps the account and the
+// volumes of the interface and the world.
 
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';

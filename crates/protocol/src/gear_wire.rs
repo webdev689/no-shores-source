@@ -158,7 +158,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
             Ask::Infuse { item, fed } => args = messages::AskArgs { kind: INFUSE, item, count: fed, ..args },
-            Ask::Recruit { faction, offer } => args = messages::AskArgs { kind: RECRUIT, column: faction, node: offer, ..args },
+            Ask::Recruit { faction, offer } => {
+                args = messages::AskArgs { kind: RECRUIT, column: faction, node: offer, ..args }
+            }
             Ask::Station { officer, duty } => {
                 args = messages::AskArgs { kind: STATION, item: officer, slot: duty_code(duty), ..args };
             }

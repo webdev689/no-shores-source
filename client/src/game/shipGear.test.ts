@@ -105,8 +105,8 @@ test('modules are named by their kind and rarity, and the new refusals are said 
   assert.equal(gearName(item({ kind: 24, rarity: 3, named: 'the_long_nines' })), 'The Long Nines');
   assert.equal(gearKindName(27), 'Rigging');
   assert.equal(gearKindName(2), 'Sword');
-  assert.equal(answerSaid(131), 'Officers sign on through the faction you are pledged to.');
-  assert.equal(answerSaid(133), 'Two officers are ashore already.');
+  assert.equal(answerSaid(132), 'Officers sign on through the faction you are pledged to.');
+  assert.equal(answerSaid(134), 'Two officers are ashore already.');
   assert.equal(answerSaid(15), 'You do not have enough for it.');
 });
 
@@ -202,14 +202,15 @@ test("an officer's nodes train and are chosen by the crew's asks, priced in Aure
 test('the muster offers the officers of the day for their wage, or says why there are none', () => {
   const offered = musterOf(
     state({ aurem: 2_000, ship: ship({ offers: [officer({ id: 0, wage: 1_500 }), officer({ id: 1, wage: 4_000 })] }) }),
+    3,
   );
   assert.deepEqual(
     offered.map((offer) => [offer.ask, offer.affordable]),
     [
-      [{ kind: ASKS.recruit, node: 0 }, true],
-      [{ kind: ASKS.recruit, node: 1 }, false],
+      [{ kind: ASKS.recruit, column: 3, node: 0 }, true],
+      [{ kind: ASKS.recruit, column: 3, node: 1 }, false],
     ],
   );
-  assert.deepEqual(musterOf(state({ ship: ship({}) })), []);
+  assert.deepEqual(musterOf(state({ ship: ship({}) }), 3), []);
   assert.match(NO_OFFERS, /pledged/);
 });

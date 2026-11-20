@@ -60,12 +60,12 @@ export function gearName(item: Pick<GearItem, 'named' | 'kind' | 'rarity' | 'nam
 /** A kind's name, a module's among them. */
 export const gearKindName = (kind: number): string => moduleOf(kind)?.name ?? kindName(kind);
 
-/** Why the room refused an ask of the ship or her crew, past the gear's own refusals. */
+/** Why the room refused an ask of her crew, past the gear's own refusals: answered one past each refusal's number. */
 const SHIP_REFUSALS: Readonly<Record<number, string>> = {
-  130: 'There is no such officer.',
-  131: 'Officers sign on through the faction you are pledged to.',
-  132: 'You already keep eight officers.',
-  133: 'Two officers are ashore already.',
+  131: 'There is no such officer.',
+  132: 'Officers sign on through the faction you are pledged to.',
+  133: 'You already keep eight officers.',
+  134: 'Two officers are ashore already.',
 };
 export const answerSaid = (answer: number): string => SHIP_REFUSALS[answer] ?? answerText(answer);
 
@@ -286,12 +286,13 @@ export interface Offered {
   readonly ask: GearAsk;
 }
 
-export const musterOf = (state: GearState): readonly Offered[] =>
+/** The officers of the day, each signed on at the counter of `pledge`, the faction the player is pledged to. */
+export const musterOf = (state: GearState, pledge: number): readonly Offered[] =>
   (state.ship?.offers ?? []).map((offer) => ({
     officer: officerShown(offer),
     wage: offer.wage,
     affordable: state.aurem >= offer.wage,
-    ask: { kind: ASKS.recruit, node: offer.id },
+    ask: { kind: ASKS.recruit, column: pledge, node: offer.id },
   }));
 
 /** What the muster says with no officer offered: they sign on only through a faction pledged to. */

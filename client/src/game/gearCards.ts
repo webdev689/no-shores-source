@@ -254,7 +254,10 @@ export function vaultOf(state: GearState): Vault {
     const moving = place === VAULTED ? 'Take out' : 'Put in the vault';
     const items = (weapons: boolean) =>
       state.items
-        .filter((item) => item.at === place && !isModule(item.kind) && isWeapon(item.kind) === weapons)
+        // A module carried stands on the ship's tab; one already in the vault is still shown, to be taken out.
+        .filter(
+          (item) => item.at === place && !(place === CARRIED && isModule(item.kind)) && isWeapon(item.kind) === weapons,
+        )
         .map((item) =>
           cell(`item-${item.id}`, 'item', gearName(item), {
             rarity: item.rarity,
