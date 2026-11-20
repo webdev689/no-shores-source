@@ -260,7 +260,9 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
 - **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
   pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
-- **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
+- **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress
+  panel pick a Melee and a Ranged kind, and picking one wears it: the one carried, or a Normal one of their level
+  handed out.
 - **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
   item of any kind, rarity and level, any named item, 50 of every material, and XP; and ammunition full or none, five
   Ammo crates, and one used. The panel shows the shots left and the crates carried; with no Ranged weapon worn, the
@@ -342,7 +344,7 @@ in a loop. For the chosen figure it sets:
 - **Armour:** a set for each piece, or one set for all.
 - **Clothes:** worn in the order they are ticked, each in one of Daggerfall's dyes.
 - **Hands:** what is in each hand, and whether it is drawn. The left can carry a torch, or a lantern, which only the
-  first person draws.
+  first person draws. The player's own pick a loadout to wear instead ("The hands", above).
 - **Dress as:** one of the forge's dressed looks.
 
 The player's entry plays any move once. Each other figure's entry sets its move, facing and turning.

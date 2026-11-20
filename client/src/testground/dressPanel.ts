@@ -5,6 +5,7 @@ import { ARMOUR_PIECES, type Outfit } from '../forge/outfit.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { type Dress, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
+import { KINDS, kindName, slotOf } from '../player/gear.ts';
 
 const pairs = (keys: readonly string[]) => keys.map((key) => [key, key] as const);
 
@@ -34,9 +35,39 @@ function checkbox(checked: boolean, onChange: (checked: boolean) => void): HTMLI
   return box;
 }
 
+/** The player's own hands: the kinds their gear wears in its Melee and Ranged loadouts (0 for none), and the ask that
+ *  wears another kind. */
+export interface OwnHands {
+  readonly worn: { readonly melee: number; readonly ranged: number };
+  wear(kind: number): void;
+}
+
+/** The kinds worn in a loadout's slot (0 Melee, 1 Ranged), as `[number, name]` options. */
+export const loadoutKinds = (slot: number) =>
+  KINDS.flatMap((name, kind) => (name && slotOf(kind) === slot ? [[String(kind), kindName(kind)] as const] : []));
+
+/** What the player's hands hold: a loadout of each kind their gear can wear, worn through it when picked, since the
+ *  room fights only with what a worn loadout puts in their hands. */
+function ownHands(hands: OwnHands): HTMLElement[] {
+  const pick = (slot: number, worn: number) =>
+    choice(
+      [...(worn ? [] : [['', 'none worn'] as const]), ...loadoutKinds(slot)],
+      worn ? String(worn) : '',
+      (value) => {
+        if (value) hands.wear(Number(value));
+      },
+    );
+  return [
+    labelled('Melee', pick(0, hands.worn.melee)),
+    labelled('Ranged', pick(1, hands.worn.ranged)),
+    make('p', 'Your hands hold what your gear wears. Picking a weapon wears it; 1 and 2 draw them.', 'hint'),
+  ];
+}
+
 /**
  * The chosen figure's dress: its body, race and skin tone, hair, armour by piece, garments, what each hand holds and
  * whether it is drawn, each garment's dye, and one of the forge's dressed looks to start from. `changed` follows each edit.
+ * The player's own hands (`own`) hold what their gear wears, so theirs pick a loadout to wear instead of a layer.
  */
 export function dressControls(
   looks: ForgeLooks,
@@ -44,6 +75,7 @@ export function dressControls(
   placed: Placed,
   garmentFilter: { text: string },
   changed: () => void,
+  own: OwnHands | null = null,
 ): HTMLElement[] {
   const drawn = looks.bodies[placed.dress.body]?.layers ?? {};
   const wardrobe = wardrobeOf(placed.dress.body, drawn);
@@ -171,16 +203,22 @@ export function dressControls(
     labelled('Set', wholeSet),
     ...armour,
     make('h2', 'In hand'),
-    labelled(
-      'Right',
-      choice([['', 'nothing'], ...pairs(wardrobe.right)], outfit.right ?? '', (value) =>
-        wear({ right: value || null }),
-      ),
-    ),
-    labelled(
-      'Left',
-      choice([['', 'nothing'], ...pairs(wardrobe.left)], outfit.left ?? '', (value) => wear({ left: value || null })),
-    ),
+    ...(own
+      ? ownHands(own)
+      : [
+          labelled(
+            'Right',
+            choice([['', 'nothing'], ...pairs(wardrobe.right)], outfit.right ?? '', (value) =>
+              wear({ right: value || null }),
+            ),
+          ),
+          labelled(
+            'Left',
+            choice([['', 'nothing'], ...pairs(wardrobe.left)], outfit.left ?? '', (value) =>
+              wear({ left: value || null }),
+            ),
+          ),
+        ]),
     labelled(
       'Drawn',
       checkbox(outfit.drawn, (drawnOut) => wear({ drawn: drawnOut })),

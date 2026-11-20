@@ -53,6 +53,9 @@ pub enum Grant {
         rarity: Rarity,
         level: u8,
     },
+    /// A loadout of this kind worn: the first one carried, or else a Normal one of the player's level handed out. The
+    /// Test Ground's hands take up a weapon this way, so the room fights with what the figure holds.
+    Worn(Kind),
     /// This many of every material, and as much again of Aurem a hundred times over.
     Materials(u16),
     Xp(u32),
@@ -283,6 +286,7 @@ impl Room {
                 item.element = gear::element::rolled(kind, rarity, &dice);
                 return carry(character, item);
             }
+            Grant::Worn(kind) => return wear_kind(character, kind, &dice),
             Grant::Materials(count) => {
                 use gear::character::Stuff;
                 use gear::kinds::Stock;
@@ -311,6 +315,32 @@ impl Room {
         }
         0
     }
+}
+
+/// Wears a loadout of `kind`: the one worn already, the first carried, or else a Normal one of the character's level
+/// handed out; refused for anything but a Melee or a Ranged kind.
+fn wear_kind(character: &mut gear::Character, kind: Kind, dice: &Dice) -> u8 {
+    let slot = kind.slot();
+    if !matches!(slot, Slot::Melee | Slot::Ranged) {
+        return answer_code(Err(Refusal::NoSuchItem));
+    }
+    if character.worn(slot).is_some_and(|item| item.kind == kind) {
+        return 0;
+    }
+    let carried = character.items.values().find(|(item, at)| item.kind == kind && *at == gear::At::Carried);
+    let id = if let Some((item, _)) = carried {
+        item.id
+    } else {
+        let mut item = gear::vestige::rolled(character.take_id(), kind, Rarity::Normal, slot, character.level(), dice);
+        item.element = gear::element::rolled(kind, Rarity::Normal, dice);
+        let id = item.id;
+        let code = carry(character, item);
+        if code != 0 {
+            return code;
+        }
+        id
+    };
+    answer_code(character.ask(Ask::Wear { item: id, slot }, Here::default(), dice).map(|_| ()))
 }
 
 /// Carries a granted item, if its slot has room.

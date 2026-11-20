@@ -1,7 +1,7 @@
 import { button, make } from '../editor/dom.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { choice, dressControls, labelled } from './dressPanel.ts';
+import { type OwnHands, choice, dressControls, labelled } from './dressPanel.ts';
 import type { Placed } from '../player/figures.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { type FoeType, factionsOf, rankChoices } from '../rules/roster.ts';
@@ -18,6 +18,9 @@ export interface PanelState {
   readonly chosen: Placed | null;
   readonly fps: number;
   readonly playerId: number;
+  /** The kinds the player's gear wears in its Melee and Ranged loadouts (the gear crate's numbers, 0 for none), which
+   *  their hands hold; null before the room first sends their gear. */
+  readonly worn: { readonly melee: number; readonly ranged: number } | null;
   readonly playing: boolean;
   readonly status: string;
 }
@@ -31,6 +34,8 @@ export interface PanelHandlers {
   fps(value: number): void;
   /** Plays a move once on the player. */
   act(anim: string): void;
+  /** Wears a loadout of this kind (the gear crate's number) through the player's gear, so the room fights with it. */
+  wear(kind: number): void;
   /** Stands a foe of a type and a rank, with a shield if asked, at a level (0, a foe of none) before the player, or
    *  sends every foe away. */
   fight(foe: FoeAsk, level: number): void;
@@ -108,6 +113,11 @@ function foeControls(roster: readonly FoeType[], fight: PanelHandlers['fight']):
   return section;
 }
 
+/** The player's own hands, when the chosen figure is theirs: what their gear wears, and the ask that wears another. */
+function own(state: PanelState, chosen: Placed, wear: PanelHandlers['wear']): OwnHands | null {
+  return chosen.id === state.playerId && state.worn ? { worn: state.worn, wear } : null;
+}
+
 /** The Test Ground's panel: the foes to stand from the rules' `roster`, the figures, and the chosen one's move, facing
  *  and dress. */
 export function startPanel(
@@ -168,7 +178,7 @@ export function startPanel(
     // field keeps its focus; another player's move changes every tick, so it is left out.
     const moveShown = (placed: Placed) => placed.id !== state.playerId && !state.remote.has(placed);
     const figures = state.figures.map((each) => [each.id, moveShown(each) ? each.anim : '', each.dress]);
-    const key = JSON.stringify([figures, state.chosen?.id, Object.keys(state.looks.bodies).length]);
+    const key = JSON.stringify([figures, state.chosen?.id, Object.keys(state.looks.bodies).length, state.worn]);
     if (key === shown) return;
     shown = key;
     const speed = make('input');
@@ -195,7 +205,14 @@ export function startPanel(
         ? [
             make('h2', 'Chosen figure'),
             ...moving(state, chosen),
-            ...dressControls(state.looks, state.hair, chosen, garmentFilter, handlers.change),
+            ...dressControls(
+              state.looks,
+              state.hair,
+              chosen,
+              garmentFilter,
+              handlers.change,
+              own(state, chosen, handlers.wear),
+            ),
           ]
         : []),
     );

@@ -24,7 +24,7 @@ import { abilityPictures } from '../player/artGlyphs.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearState } from '../network/gearMessages.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
@@ -130,6 +130,7 @@ async function start(): Promise<void> {
   let cards: Cards | null = null;
   // Declared before the panel: a foe asked for while the forge loads is not asked for.
   let fight: Fighting | null = null;
+  const asks = new PanelAsks();
   const showPanel = startPanel(element<HTMLElement>('#panel'), roster, {
     add: () => {
       const ahead = 3;
@@ -156,10 +157,10 @@ async function start(): Promise<void> {
       walker.player = { ...walker.player, act: { anim, elapsed: 0, seconds } };
     },
     fight: (foe, level) => fight?.ask(foe, level),
+    wear: (kind) => asks.ask(fight, { kind: ASKS.grantWorn, itemKind: kind }),
   });
   // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
   let gear: GearState | null = null;
-  const asks = new PanelAsks();
   const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => asks.ask(fight, ask));
   // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
   let aimPlace: AimPlace = AIM;
@@ -185,6 +186,7 @@ async function start(): Promise<void> {
     chosen,
     fps,
     playerId: PLAYER_ID,
+    worn: gear && { melee: worn(gear, 0)?.kind ?? 0, ranged: worn(gear, 1)?.kind ?? 0 },
     playing: input.locked,
     status: line,
   });
