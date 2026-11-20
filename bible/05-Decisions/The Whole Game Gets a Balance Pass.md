@@ -12,6 +12,9 @@ Asked which fights it should cover (the prologue only, or the whole game), the o
 ## What it settles
 
 - Foes are eased and the player hits harder, everywhere: the prologue, patrols, dungeons and bosses alike.
+- Shown the pass (every player blow on a foe twice, every foe blow on a player half, at every level, foes' health and
+  ranks as they were), the owner chose "Keep it, play it first": "Play with the two multipliers, then say which foes
+  still feel off; a later pass tunes those one by one."
 
 ## Claude's calls
 

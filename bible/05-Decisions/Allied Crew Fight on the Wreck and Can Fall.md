@@ -15,6 +15,10 @@ arrives, able to win or die, so helping them matters.
 
 - On the wreck, the Brig's surviving crew fight the boarders, with green health bars.
 - They can win their fights or fall.
+- The crew and the players cannot harm each other. Asked "Right now you cannot hurt your own crew on the wreck, and
+  they cannot hurt you: your swings, shots and spells pass through them. Is that what you want?", the owner chose
+  "No friendly fire": "Keep it as built: crew and player can't harm each other, so swinging into a crowded fight never
+  kills an ally."
 
 ## Claude's calls
 
@@ -24,8 +28,7 @@ arrives, able to win or die, so helping them matters.
   toward the zone's checkpoint. At most 18 crew live at once, so the boarders always have room.
 - The crew are Minors at the boarders' level, a swordsman and a skirmisher in turn, in the looks of the Brig's three
   plain hands. The named speakers are never stood there, so none can die on the wreck and speak after it.
-- The crew and the players cannot harm each other: no player's blow, shot or spell lands on a crewman, nor a
-  crewman's on a player.
+
 - An ally's plate shows no alert mark: it would tell the player nothing of a threat to them.
 
 [[Prologue]].

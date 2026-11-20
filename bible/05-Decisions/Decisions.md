@@ -132,6 +132,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ships Sail and Hit Half Again Harder in Sea Fights]]
 - [[Quests Get a Task Tracker, and the Placeholder Panel Goes]]
 - [[Speech Blurbs Show Their Text Without Glyphs]]
+- [[HTML Is Avoided Where It Can Be]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
 - [[Weather and Day and Night Come From DFO, Much Improved]]
