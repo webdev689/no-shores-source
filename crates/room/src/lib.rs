@@ -314,7 +314,9 @@ impl Room {
         let past = std::mem::take(&mut self.past);
         let ids: Vec<PlayerId> = self.players.keys().copied().collect();
         for id in ids {
-            self.dress_in_turn(id);
+            if let Some(found) = self.players.get_mut(&id) {
+                found.dress_in_turn(self.clock);
+            }
             self.answer_due(id);
             let mut taken = 0;
             while taken < CATCH_UP {
@@ -386,21 +388,6 @@ impl Room {
         let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
         found.fighter = next;
         self.happened(id, &next, happening, &view);
-    }
-
-    /// A dress waiting its turn is taken at once the first time, then once DRESS_EVERY ticks have passed since the
-    /// last change; and the dress shown to others follows the cosmetics worn (`Player::dress_again`).
-    fn dress_in_turn(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if !found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY)
-            && let Some(dress) = found.dress_next.take()
-        {
-            found.dress_sent = dress;
-            found.dressed_at = Some(clock);
-            found.dressed_with = None;
-        }
-        found.dress_again();
     }
 
     /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never

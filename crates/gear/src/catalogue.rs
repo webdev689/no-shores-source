@@ -208,7 +208,10 @@ impl Catalogue {
             self.kind_problems(kind, &mut problems);
         }
         for kind in Kind::ALL.into_iter().filter(|kind| kind.weapon()) {
-            if !self.items.iter().any(|item| item.kind == kind && item.rarity == Rarity::Legendary) {
+            // A faction's piece is sold at its counter alone, so it is no Legendary a Vestige, Shape or package gives.
+            let found =
+                |item: &&NamedDef| item.kind == kind && item.rarity == Rarity::Legendary && item.faction.is_none();
+            if !self.items.iter().any(|item| found(&item)) {
                 problems.push(format!("no Legendary {kind:?}"));
             }
         }
@@ -224,6 +227,10 @@ impl Catalogue {
 
     fn item_problems(&self, item: &NamedDef, problems: &mut Vec<String>) {
         let id = &item.id;
+        let known = |key: &str| crate::factions::factions().factions.iter().any(|faction| faction.key == key);
+        if item.faction.as_deref().is_some_and(|key| !known(key)) {
+            problems.push(format!("{id}: its faction is none the factions' file holds"));
+        }
         if item.kind == Kind::Cloak {
             if !item.layout.is_empty() || item.resource.is_some() {
                 problems.push(format!("cloak {id} has no nodes and asks for no resource"));

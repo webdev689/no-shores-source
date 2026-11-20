@@ -7,8 +7,11 @@ import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'no
 import { join } from 'node:path';
 
 const SCHEMA = 'crates/protocol/messages.fbs';
-// The content whose entries cross the wire by their place in its lists: cosmetics, emblems, factions, items and Arts.
-const NUMBERED = ['cosmetics', 'emblems', 'factions', 'items'].map((name) => `content/gear/${name}.json`);
+// The content whose entries cross the wire by their place in its lists: cosmetics, emblems, factions, items, island
+// resources, rolled names and Arts.
+const NUMBERED = ['cosmetics', 'emblems', 'factions', 'items', 'resources', 'rolled'].map(
+  (name) => `content/gear/${name}.json`,
+);
 NUMBERED.push('content/arts/arts.json');
 const OUT = 'generated/messages';
 const pinned = /^VERSION=(\S+)$/m.exec(readFileSync('tools/install-flatc.sh', 'utf8'))?.[1] ?? '';

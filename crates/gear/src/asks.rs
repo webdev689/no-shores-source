@@ -214,7 +214,7 @@ impl Character {
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
             Ask::Pledge { faction } => self.pledge(faction, here),
-            Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here),
+            Ask::BuyFactionWare { faction, ware } => self.buy_faction_ware(faction, ware, here, dice),
             Ask::CollectPackage { faction } => self.collect_package(faction, here, dice),
             Ask::RiseArt { art, fragment } => self.rise_art(art, fragment, here),
             Ask::BuyFragment { art, fragment } => self.buy_fragment(art, fragment, here),

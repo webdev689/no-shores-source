@@ -281,6 +281,10 @@ fn others_see_only_the_cosmetics_a_player_keeps_and_wears() {
     character.cosmetics.kept.push("harbour_blue".to_owned());
     character.cosmetics.dye = "harbour_blue".to_owned();
     room.tick();
+    assert_eq!(room.take_dress_changes(), [], "a change of dress waits its turn, as one the page sends does");
+    for _ in 0..crate::players::DRESS_EVERY {
+        room.tick();
+    }
     let changes = room.take_dress_changes();
     let [(_, relayed)] = changes.as_slice() else { panic!("the dress relayed again: {changes:?}") };
     assert_eq!(relayed_cosmetics(relayed), [Some("harbour_blue".to_owned()), None, None], "the dye worn, unasked");

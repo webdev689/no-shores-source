@@ -20,8 +20,8 @@ const EPOCH_PAST_MONDAY: u64 = 3 * DAY_MINUTES;
 /// When in the week (from Monday 00:00 UTC) he comes and goes: Friday 09:00, Xur's Friday, to Sunday 21:00.
 pub const COMES_AT: u64 = 4 * DAY_MINUTES + 9 * 60;
 pub const GOES_AT: u64 = 6 * DAY_MINUTES + 21 * 60;
-/// How many places on the plaza he may stand at (the city's `visitor_spots`, which reach the room as its `shape_spots`), and how many pieces he sells a week, the
-/// first `LEGENDARIES` of them Legendary and the rest Atheric.
+/// How many places on the plaza he may stand at (the city's `visitor_spots`, which reach the room as its
+/// `shape_spots`), and how many pieces he sells a week, the first `LEGENDARIES` of them Legendary and the rest Atheric.
 pub const PLACES: usize = 8;
 pub const WARES: usize = 6;
 const LEGENDARIES: usize = 4;
@@ -51,6 +51,9 @@ pub fn price(rarity: Rarity) -> u16 {
     if rarity == Rarity::Atheric { 15 } else { 7 }
 }
 
+/// What he sells in a week: Legendary then Atheric pieces at level 20, no piece twice, by the week's dice. Their
+/// numbers are none until bought.
+#[must_use]
 pub fn wares(week: u64) -> Vec<Item> {
     let mut wares = drawn(week, Rarity::Legendary, LEGENDARIES);
     wares.extend(drawn(week, Rarity::Atheric, WARES - LEGENDARIES));

@@ -196,9 +196,16 @@ impl Character {
     }
 
     /// Buys one of a faction's wares at its counter, by its place among them, carried with its slot's items: the cape
-    /// pledged to it, one kept at a time; its armour and weapons from their ranks, pledged or not, as a switch keeps
-    /// the reputation earned.
-    pub(crate) fn buy_faction_ware(&mut self, faction: u8, ware: u8, here: Here) -> Result<Option<Done>, Refusal> {
+    /// pledged to it, one kept at a time, at any level; its armour and weapons from their ranks, pledged or not, as a
+    /// switch keeps the reputation earned, and from level 20, the level they are made at. A weapon may roll an
+    /// element, as every weapon made does.
+    pub(crate) fn buy_faction_ware(
+        &mut self,
+        faction: u8,
+        ware: u8,
+        here: Here,
+        dice: &Dice,
+    ) -> Result<Option<Done>, Refusal> {
         factions().faction(faction).ok_or(Refusal::NoSuchFaction)?;
         if !here.social {
             return Err(Refusal::NotHere);
@@ -215,6 +222,8 @@ impl Character {
             }
         } else if self.rank(faction) < rank {
             return Err(Refusal::RankTooLow);
+        } else if self.level() < NAMED_LEVEL {
+            return Err(Refusal::TooLow);
         }
         if self.carried_in(slot) >= CARRIED_MOST {
             return Err(Refusal::CarriedFull);
@@ -224,7 +233,8 @@ impl Character {
         }
         self.materials.aurem -= aurem;
         let id = self.take_id();
-        let item = crate::vestige::named_item(id, named, slot);
+        let mut item = crate::vestige::named_item(id, named, slot);
+        item.element = crate::element::rolled(item.kind, item.rarity, dice);
         self.items.insert(id, (item, crate::character::At::Carried));
         Ok(None)
     }
