@@ -5,54 +5,32 @@
 use crate::sea::{Coast, on_land};
 use land::sea::{FULL_DEPTH_M, SEED, SeaHere, Swell};
 use sailing::waters::{Spot, Waters, weather_wind};
-use std::collections::BTreeMap;
 use world::geometry::Point;
 use world::layout::Layout;
 
-/// A room's place in the weather: the world's waters, for the shelter of its coasts, and the world time its clock
-/// started at, seconds since the Unix epoch (0 until its host says).
+/// A room's place in the weather: the world's waters, for the shelter of its coasts, the port cities' roadsteads,
+/// calm by their harbours, and the world time its clock started at, seconds since the Unix epoch (0 until its host
+/// says).
 #[derive(Debug)]
 pub struct SeaWeather {
     waters: world::waters::Waters,
+    roadsteads: Vec<Point>,
     pub world_start_s: f64,
-    /// Each clash's swell and wind, kept from where it began, under each of its captains' numbers.
-    clashes: BTreeMap<u32, (Swell, [f64; 2])>,
 }
 
 impl SeaWeather {
     #[must_use]
-    pub fn new(layout: &Layout) -> Self {
-        Self { waters: world::waters::Waters::new(layout), world_start_s: 0.0, clashes: BTreeMap::new() }
+    pub fn new(layout: &Layout, harbours: &crate::harbour::Harbours) -> Self {
+        let roadsteads = harbours.ports.iter().map(|(_, [x, y])| Point::new(x.round() as i64, y.round() as i64));
+        Self { waters: world::waters::Waters::new(layout), roadsteads: roadsteads.collect(), world_start_s: 0.0 }
     }
 
     /// The swell and the sailing wind at world point `at` at `time`, the room's seconds: the weather there then, the
     /// swell sheltered by the coasts upwind.
     #[must_use]
     pub fn at(&self, at: [f64; 2], time: f64) -> (Swell, [f64; 2]) {
-        let here = SeaHere::at(&self.waters, &[], at[0], at[1], self.world_start_s + time);
+        let here = SeaHere::at(&self.waters, &self.roadsteads, at[0], at[1], self.world_start_s + time);
         (Swell::under(SEED, &here), weather_wind(here.wind))
-    }
-}
-
-impl SeaWeather {
-    /// Takes the weather at `at` and `time` for a clash among the captains numbered `captains`, kept while it lasts.
-    pub fn begin_clash(&mut self, captains: &[u32], at: [f64; 2], time: f64) -> (Swell, [f64; 2]) {
-        let weather = self.at(at, time);
-        for &captain in captains {
-            self.clashes.insert(captain, weather.clone());
-        }
-        weather
-    }
-
-    /// The weather a clash among `captains` began in; none for one this room never began.
-    #[must_use]
-    pub fn of_clash(&self, mut captains: impl Iterator<Item = u32>) -> Option<&(Swell, [f64; 2])> {
-        captains.find_map(|captain| self.clashes.get(&captain))
-    }
-
-    /// Forgets the weather of every clash but those among `captains`.
-    pub fn keep_clashes(&mut self, captains: &[u32]) {
-        self.clashes.retain(|captain, _| captains.contains(captain));
     }
 }
 
@@ -112,8 +90,10 @@ mod tests {
     #[test]
     fn a_fight_in_the_lee_of_a_coast_rolls_lower_than_one_out_on_the_open_sea() {
         let text = r#"{ "continents": [{ "id": "square", "outline": [[1000000, 1000000], [1100000, 1000000], [1100000, 1100000], [1000000, 1100000]] }], "isles": [] }"#;
-        let weather =
-            SeaWeather { world_start_s: 1_790_000_000.0, ..SeaWeather::new(&world::layout::parse(text).unwrap()) };
+        let weather = SeaWeather {
+            world_start_s: 1_790_000_000.0,
+            ..SeaWeather::new(&world::layout::parse(text).unwrap(), &crate::harbour::Harbours::default())
+        };
         let wind = world::weather::air_at(1_050_000.0, 1_050_000.0, 1_790_000_000.0).wind;
         let strength = (wind[0] * wind[0] + wind[1] * wind[1]).sqrt();
         let lee = [1_050_000.0 + wind[0] / strength * 51_000.0, 1_050_000.0 + wind[1] / strength * 51_000.0];

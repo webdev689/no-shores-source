@@ -14,11 +14,13 @@ use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
-use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
+use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
 use serde::Deserialize;
 use std::cell::RefCell;
 
 mod deck_door;
+mod snapshot_door;
+pub use snapshot_door::snapshot;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
@@ -158,7 +160,9 @@ pub fn open_sea(text: &[u8], seed: u32) -> bool {
         Err(_) => world::layout::parse(text).ok().map(|layout| (layout, Vec::new())),
     };
     let Some((layout, ports)) = opened else { return false };
-    keep(Opened::Sea(Box::new(Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports))));
+    let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports);
+    sea.set_hull_decks(deck_door::hull_decks().to_vec());
+    keep(Opened::Sea(Box::new(sea)));
     true
 }
 
@@ -190,6 +194,17 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             },
         },
         Opened::Sea(sea) => {
+            // A boarder's inputs on her deck are a land room's.
+            if sea.on_deck(player)
+                && let Ok(input) = protocol::read_input(bytes)
+            {
+                return match sea.deck_input(player, input) {
+                    Ok(()) => TAKEN,
+                    Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                    Err(Refused::BadLook) => NOT_AN_INPUT,
+                    Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                };
+            }
             let asked = match protocol::read_sea_input(bytes) {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
@@ -207,6 +222,10 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                         Err(WalkRefused::NotAboard) => REFUSED,
                     };
                 }
+                Ok(SeaInput::Repair) => return if sea.repair(player).is_ok() { TAKEN } else { REFUSED },
+                // shortcut: no boarding is taken until the page can fight on her deck; take it (`sea.board`) once it can.
+                Ok(SeaInput::Board) => return REFUSED,
+                Ok(SeaInput::LeaveDeck) => return if sea.leave_deck(player).is_ok() { TAKEN } else { REFUSED },
                 Ok(helm @ (SeaInput::LeaveHelm | SeaInput::TakeHelm)) => {
                     let asked =
                         if helm == SeaInput::LeaveHelm { sea.leave_helm(player) } else { sea.take_helm(player) };
@@ -235,55 +254,6 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
         },
     });
     answer.unwrap_or(NO_SUCH_PLAYER)
-}
-
-/// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
-/// snapshot, and the shots in flight with the balls just fired, as a snapshot's bytes; at sea, every ship. Empty with no room open.
-#[must_use]
-pub fn snapshot() -> Vec<u8> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => {
-            let changed = room.take_dress_changes();
-            let events = room.take_events();
-            let dressed: Vec<(PlayerId, &str)> =
-                changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-            let players: Vec<Seen> = room.seen().collect();
-            let foes: Vec<FoeSeen> = room.foes_seen().collect();
-            let tick = room.clock();
-            let lines = room.take_lines();
-            let shots: Vec<combat::Shot> = room.shots().copied().collect();
-            let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
-            let snapshot = protocol::Snapshot {
-                tick,
-                players: &players,
-                dressed: &dressed,
-                foes: &foes,
-                events: &events,
-                shots: &shots,
-                lines: &lines,
-                spells: &spells,
-            };
-            protocol::snapshot_bytes(&snapshot)
-        }
-        Opened::Sea(sea) => {
-            let fights: Vec<_> = sea.fight_views().collect();
-            let aboard: Vec<(u32, u32, movement::Body)> =
-                sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
-            protocol::sea_snapshot_bytes(
-                sea.clock(),
-                &sea.ships().collect::<Vec<_>>(),
-                &sea.pirates(),
-                &fights,
-                &aboard,
-            )
-        }
-        Opened::Fleet(fleet) => {
-            let happened = fleet.take_events();
-            let acknowledged = |ship| fleet.acknowledged(ship);
-            protocol::fleet::fleet_snapshot_bytes(fleet.clock(), fleet.fight(), &acknowledged, &happened)
-        }
-    })
-    .unwrap_or_default()
 }
 
 /// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.
@@ -426,10 +396,22 @@ pub extern "C" fn room_tick() {
     });
 }
 
-/// The snapshot's bytes after the last tick.
+/// The snapshot's bytes after the last tick, every player's part in it.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot() -> u64 {
-    hand_over(snapshot())
+    hand_over(snapshot_door::snapshot())
+}
+
+/// Takes the snapshot after the last tick, for `room_snapshot_for` to hand each player their part of it.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_snapshot_prepare() {
+    snapshot_door::prepare();
+}
+
+/// The prepared snapshot's bytes as one player is sent them: at sea only what is theirs of the sea's own part.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_snapshot_for(player: PlayerId) -> u64 {
+    hand_over(snapshot_door::snapshot_for(player))
 }
 
 /// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).

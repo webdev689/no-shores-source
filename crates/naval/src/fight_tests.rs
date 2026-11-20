@@ -1,10 +1,12 @@
 use super::*;
+use crate::arms::Side;
 use crate::arms::{PIRATE_SLOOP, SLOOP_ARMS};
 use crate::ballistics::Ball;
 use crate::captain::Temper;
 use crate::damage::{Hurt, Zone};
 use crate::gunnery::{Lay, lay, lay_on};
 use crate::laying::Sighted;
+use crate::shots::ShotEvent;
 use crate::shots::step_balls;
 use sailing::waters::Spot;
 
@@ -196,6 +198,7 @@ fn the_rest_of_the_volley_that_made_her_strike_cannot_sink_her() {
         flight: 0.5,
         gun: crate::guns::Gun { hull, ..gun },
         shot: Shot::Round,
+        sail: None,
     };
     fight.strike(&hit(10.0), &mut events);
     assert_eq!(captain(&fight).damage.state, State::Struck);
@@ -356,6 +359,7 @@ fn a_captain_her_fires_made_strike_is_graced_against_the_volley_then_aloft() {
         flight: 0.5,
         gun: crate::guns::Gun { hull: 100.0, ..crate::guns::SWIVEL },
         shot: Shot::Round,
+        sail: None,
     };
     let mut events = Vec::new();
     fight.strike(&hit, &mut events);
@@ -376,6 +380,7 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_her() {
             flight: 0.5,
             gun,
             shot: Shot::Round,
+            sail: None,
         };
         let before = captain(&fight).damage.clone();
         for _ in 0..10 {

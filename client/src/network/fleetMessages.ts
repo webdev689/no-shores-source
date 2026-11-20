@@ -167,6 +167,8 @@ export interface FleetPart {
   readonly balls: readonly AloftBall[];
   readonly naval: readonly NavalEvent[];
   readonly fightClock: number;
+  /** The world time the fleet room's clock started at, seconds since the Unix epoch (0 from a room that sends none). */
+  readonly worldStart: number;
 }
 
 /** Exactly `length` numbers, or a throw: the message is not whole. */
@@ -241,5 +243,5 @@ export function fleetOf(snapshot: Snapshot): FleetPart {
       left: event?.left() ?? 0,
     };
   });
-  return { vessels, balls, naval, fightClock: snapshot.fightClock() };
+  return { vessels, balls, naval, fightClock: snapshot.fightClock(), worldStart: snapshot.worldStart() };
 }

@@ -53,6 +53,8 @@ export interface FleetRules {
   ): { readonly ship: Float64Array; readonly pose: Pose } | null;
   /** Her look's lay among the ships she sees, with her load (1 round to 4 heated); null when no side bears. */
   lay(own: LaySighted, load: number, look: FleetLook, time: number, others: readonly LaySighted[]): FleetLay | null;
+  /** Sets the world time the fleet room opened at, so its predictions sail in the room's weather. */
+  setWorldStart(seconds: number): void;
 }
 
 interface FleetExports {
@@ -61,6 +63,7 @@ interface FleetExports {
   release(address: number, length: number): void;
   fleet_predict(address: number, length: number): bigint;
   fleet_lay(address: number, length: number): bigint;
+  room_world_start(seconds: number): void;
 }
 
 /** A ship's numbers, a pose's, and a gun's in a lay's answer. */
@@ -97,6 +100,7 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
     return out;
   };
   return {
+    setWorldStart: (seconds) => exports.room_world_start(seconds),
     predict: (ship, hurts, time, helms) => {
       const request = [...Array.from(ship), hurts.wrecked ? 1 : 0, hurts.sail, hurts.maxSail, time];
       for (const helm of helms) request.push(helm.steer, helm.crab ? 1 : 0, helm.climb);

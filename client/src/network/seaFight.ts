@@ -59,6 +59,87 @@ export function withOthers(view: ArrayLike<number>, others: ArrayLike<number> | 
   return new Float64Array([...numbers.slice(0, OTHERS_AT), ...between, ...numbers.slice(OTHERS_AT)]);
 }
 
+/** The part of her a ball struck, and what floats looks like (crates/naval/src/fight_events.rs). */
+export const PARTS = ['hull', 'sail', 'rig'] as const;
+export const PIECES = ['crate', 'barrel', 'chest'] as const;
+
+/** What the sea's fights tell beside the World Editor's events, each on the fight's tick it happened on: a ball's
+ *  splash (x, y), a ball that struck a ship (where, in her own frame), a sail torn away (her sail index, as her
+ *  manifest lists them), a mast fallen (0 fore to aft), her colours struck, her going down, a piece of what floats laid
+ *  (by its number) or gathered (by a player's number), and players gone aboard her. Ships go by the view's numbers. */
+export type NavalEvent =
+  | { kind: 'Splash'; tick: number; at: [number, number] }
+  | { kind: 'Hit'; tick: number; ship: number; at: Point; part: (typeof PARTS)[number] }
+  | { kind: 'SailLost'; tick: number; ship: number; sail: number }
+  | { kind: 'MastFell'; tick: number; ship: number; mast: number }
+  | { kind: 'Struck'; tick: number; ship: number }
+  | { kind: 'Sinking'; tick: number; ship: number }
+  | { kind: 'Flotsam'; tick: number; id: number; at: [number, number]; kind_of: (typeof PIECES)[number] }
+  | { kind: 'Gathered'; tick: number; id: number; by: number }
+  | { kind: 'Boarding'; tick: number; ship: number };
+
+/** A sea fight's view: the World Editor's fight view, and what the sea's fights tell beside it. */
+export type SeaFightView = FightView & { naval: NavalEvent[] };
+
+/** One of the sea's own events from its numbers (its kind, 11 to 19, read already), reading on with `next`; none for a
+ *  kind that is not one of them. */
+export function navalEventOf(kind: number, next: () => number): NavalEvent | null {
+  const named = <T>(names: readonly T[]): T => {
+    const name = names[next()];
+    if (name === undefined) throw new Error('a fight’s number names nothing');
+    return name;
+  };
+  switch (kind) {
+    case 11:
+      return { kind: 'Splash', tick: next(), at: [next(), next()] };
+    case 12:
+      return { kind: 'Hit', tick: next(), ship: next(), at: [next(), next(), next()], part: named(PARTS) };
+    case 13:
+      return { kind: 'SailLost', tick: next(), ship: next(), sail: next() };
+    case 14:
+      return { kind: 'MastFell', tick: next(), ship: next(), mast: next() };
+    case 15:
+      return { kind: 'Struck', tick: next(), ship: next() };
+    case 16:
+      return { kind: 'Sinking', tick: next(), ship: next() };
+    case 17:
+      return { kind: 'Flotsam', tick: next(), id: next(), at: [next(), next()], kind_of: named(PIECES) };
+    case 18:
+      return { kind: 'Gathered', tick: next(), id: next(), by: next() };
+    case 19:
+      return { kind: 'Boarding', tick: next(), ship: next() };
+    default:
+      return null;
+  }
+}
+
+/** One of the sea's own events as the fight's feel reads it among the World Editor's (`ships/fightFeel.ts`
+ *  `FeelEvent`); none for a ball's splash and hit, which its shot's own events carry. */
+export function feelOf(event: NavalEvent): FightEvent | null {
+  const feel = ((): object | null => {
+    switch (event.kind) {
+      case 'SailLost':
+        return { kind: 'sail-lost', ship: event.ship, sail: event.sail };
+      case 'MastFell':
+        return { kind: 'mast-fell', ship: event.ship, mast: event.mast };
+      case 'Struck':
+        return { kind: 'struck', ship: event.ship };
+      case 'Sinking':
+        return { kind: 'sinking', ship: event.ship };
+      case 'Flotsam':
+        return { kind: 'flotsam', id: event.id, at: event.at, item: event.kind_of };
+      case 'Gathered':
+        return { kind: 'gathered', id: event.id, by: event.by };
+      case 'Boarding':
+        return { kind: 'boarding', ship: event.ship };
+      default:
+        return null;
+    }
+  })();
+  // The rules' fight events are the World Editor's; the feel reads these beside them by their kinds.
+  return feel as FightEvent | null;
+}
+
 /** Who a fight's captain is: her name, her faction and her rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 /** A captain the room has not named: a Major of the pirates. */
@@ -70,7 +151,7 @@ export function fightViewOf(
   numbers: ArrayLike<number>,
   who: Commissioned = PIRATE_MAJOR,
   nameOf: (faction: number, hull: number) => string = () => 'Sloop',
-): FightView {
+): SeaFightView {
   let read = 0;
   const next = (): number => {
     if (read >= numbers.length) throw new Error('a fight’s numbers run short');
@@ -132,12 +213,27 @@ export function fightViewOf(
     const [launches, ends] = [guns.map((gun) => gun.launch), guns.map((gun) => gun.end)];
     lay = { side, elevation, reach, ends, radius, on_target: onTarget, launches };
   }
-  const events = Array.from({ length: next() }, (): FightEvent => {
-    switch (next()) {
+  const naval: NavalEvent[] = [];
+  // The hit the room tells just before its ball's, where on her it struck and on which part, for that ball's hit.
+  let struck: Extract<NavalEvent, { kind: 'Hit' }> | null = null;
+  const told = Array.from({ length: next() }, (): FightEvent | null => {
+    const kind = next();
+    if (kind > 10) {
+      const event = navalEventOf(kind, next);
+      if (!event) throw new Error('a fight’s event is of no kind');
+      naval.push(event);
+      if (event.kind === 'Hit') struck = event;
+      return feelOf(event);
+    }
+    switch (kind) {
       case 1:
         return { kind: 'muzzle', ship: next(), point: point(), launch: point() };
-      case 2:
-        return { kind: 'hit', ship: next(), by: next(), zone: named(ZONES), point: point() };
+      case 2: {
+        const hit = { kind: 'hit', ship: next(), by: next(), zone: named(ZONES), point: point() } as const;
+        const along = struck?.ship === hit.ship ? { at: struck.at, part: struck.part } : {};
+        struck = null;
+        return { ...hit, ...along };
+      }
       case 3:
         return { kind: 'splash', point: point() };
       case 4:
@@ -161,5 +257,6 @@ export function fightViewOf(
     }
   });
   if (read !== numbers.length) throw new Error('a fight’s numbers run on past its view');
-  return { clock, player, captain, others, balls, lay, events, over, fingerprint: '' };
+  const events = told.filter((event): event is FightEvent => event !== null);
+  return { clock, player, captain, others, balls, lay, events, over, fingerprint: '', naval };
 }

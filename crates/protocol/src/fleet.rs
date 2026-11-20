@@ -181,14 +181,17 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
         Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),
+        // The sea's own events (its splashes, hits, torn rig, colours, flotsam and boarding) cross only at sea.
+        _ => return None,
     })
 }
 
 /// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken
-/// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, and the fight's clock.
+/// (`acknowledged`), the balls aloft, what happened in the fight since the last snapshot, the fight's clock, and the
+/// world time the room's clock started at (`world_start`), which sets its weather.
 #[must_use]
 pub fn fleet_snapshot_bytes(
-    tick: u64,
+    (tick, world_start): (u64, f64),
     fight: &Fight,
     acknowledged: &impl Fn(ShipId) -> Option<u32>,
     happened: &[(u64, Event)],
@@ -268,6 +271,7 @@ pub fn fleet_snapshot_bytes(
         balls,
         naval,
         fight_clock: fight.clock,
+        world_start,
         ..messages::SnapshotArgs::default()
     };
     super::finish_snapshot(builder, &args)

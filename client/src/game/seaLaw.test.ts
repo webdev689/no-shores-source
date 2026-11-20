@@ -187,6 +187,9 @@ test("the page sails its ship at the room's pace and draws her to where the room
   assert.equal(heldNote(60, held), ' · Held to ×1: a pirate near');
   assert.equal(heldNote(60, { ...held, pace: 60 }), '', 'sailing at the dial, nothing to say');
   assert.equal(heldNote(60, null), '');
+  const torn = { x: 0, y: -1_000 - SHIP_SPEED * 0.6, pace: 1 };
+  const sailedOn = followed(voyage, 1_000, 1, 60, torn, null, 0.6);
+  assert.ok(Math.abs(sailedOn - (1_000 + SHIP_SPEED * 0.6)) < 1e-9, `at the way her canvas leaves: ${sailedOn}`);
 });
 
 test("the pace eases down DFO's ladder from the dial's step to the world's own time, and back up to the dial", () => {

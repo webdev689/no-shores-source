@@ -96,6 +96,7 @@ pub struct Fleet {
     players: BTreeMap<PlayerId, Helmsman>,
     next_ship: ShipId,
     events: Vec<(u64, Event)>,
+    world_start_s: f64,
 }
 
 impl Default for Fleet {
@@ -111,13 +112,22 @@ impl Fleet {
     pub fn new() -> Self {
         let (swell, wind) = open_sea_at(FLEET_AT, 0.0);
         let fight = Fight::new(SEED);
-        Self { clock: 0, swell, wind, fight, players: BTreeMap::new(), next_ship: 1, events: Vec::new() }
+        let players = BTreeMap::new();
+        Self { clock: 0, swell, wind, fight, players, next_ship: 1, events: Vec::new(), world_start_s: 0.0 }
     }
 
     /// Sets the world time the room's clock started at, seconds since the Unix epoch: its sea takes the weather then,
     /// as a browser predicting it does (`room-wasm`'s fleet door), and keeps it while the room lasts.
     pub fn set_world_start(&mut self, seconds: f64) {
         (self.swell, self.wind) = open_sea_at(FLEET_AT, seconds);
+        self.world_start_s = seconds;
+    }
+
+    /// The world time the room's clock started at, seconds since the Unix epoch: a browser predicting it takes the
+    /// same weather by it.
+    #[must_use]
+    pub fn world_start(&self) -> f64 {
+        self.world_start_s
     }
 
     /// The room's time, seconds: what the swell rolls by.

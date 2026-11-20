@@ -6,14 +6,18 @@
 
 mod arts;
 pub mod asks;
+pub mod battle;
 pub mod chart;
 pub mod clash;
 pub mod deck;
+mod deck_fight;
 mod drops;
 pub mod fleet;
 mod floor;
+pub mod flotsam;
 mod foes;
 mod garrison;
+pub mod harbour;
 mod judging;
 pub mod patrol;
 mod perks;

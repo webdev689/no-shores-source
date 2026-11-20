@@ -48,15 +48,28 @@ code:
   - crates/room/src/clash.rs#Clash
   - crates/naval/src/fight.rs#among
   - client/src/ships/shipBars.ts#placeShipBars
+  - crates/naval/src/rigging.rs#Rigging
+  - crates/naval/src/rigging.rs#masts_of
+  - crates/naval/src/fight_events.rs#Event
+  - crates/naval/src/captain/mod.rs#wary_takes
+  - crates/room/src/battle.rs#Fights
+  - crates/room/src/flotsam.rs#Flotsam
+  - crates/room/src/harbour.rs#Harbours
+  - crates/room/src/harbour.rs#Repair
+  - crates/room/src/deck_fight.rs
+  - crates/room/src/sea_decks.rs#Decks
+  - crates/foes/src/crews.rs#deck_crew
+  - client/src/game/seaAfter.ts#SeaAfter
+  - client/src/network/seaHarbour.ts#harbourOf
 ---
 # Naval Combat
 
 Broadsides, and rams, between players' Sloops and the enemy factions' captains, each in her rank's hull: DFO's naval
 combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one
-captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. What the sea's fights
-become next, each ending in a sinking or a boarding, is decided and not yet built
-([[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[Hulls]],
-[[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]).
+captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. At sea a fight ends
+in a sinking and what floats, or in a captain striking and a boarding; a player who loses washes up at a port city,
+and the damage stays until repaired ([[The Sea Is a Patrol Zone, and the Ship Is Gear]],
+[[The Waters Come From the Islands]], [[Hulls]], [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]).
 
 ## The fight
 
@@ -98,11 +111,23 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
 - **The harm** of a ball is DFO's: by where it struck (holed within 1.1 m of the water under it, 40% more; the hull
   above; the canvas), 85 to 115% by its own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
 - **A ship** has hull, canvas and men. A captain strikes at her rank's share of her hull (a Major's quarter) or with no
-  men left, and goes down over 22 s at none, listing and trimming by her seed and settling slowly, then fast. The rest
-  of the volley that made her strike cannot sink her. The player's Sloop is wrecked at none, never sunk: no sail sets,
-  her oars pull 35%, her guns are silent. Fires (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35%
-  of her way. Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15
-  s, with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
+  men left. Any ship, the player's Sloop too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
+  by her seed (a player's by none) and settling slowly, then fast; going down, her guns are silent and her helm takes
+  no orders. The rest of the volley that made a captain strike cannot sink her. A player's Sloop never strikes. Fires
+  (three at most) burn hull, canvas and men for 15 s. Bare poles leave 35% of her way. Braced, she takes half the harm
+  to hull and canvas, but her guns are silent and do not load. Unhurt for 15 s, with no ship within 700 m that would
+  take her, her hands mend her to half of her hull and of the canvas her standing sails hold.
+- **Her rig** (`rigging.rs`). Each sail's share of her canvas is the pull it gives at its crest over her whole canvas's
+  (`sailing::helm::canvas`). A ball on her canvas counts its canvas harm to the sail whose box it entered first; once a
+  sail's harm passes its due (its share of her whole canvas) it tears away (`SailLost`), and her canvas holds no more
+  than her standing sails' shares, so her drive loses its share. A bare spar struck again, every sail of its mast gone,
+  brings the mast down (`MastFell`), and balls pass where its sails stood. Her masts are where her square sails and
+  gaffs stand, their fore edges taken from the bow aft, one mast while each lies within 2 m of the last; a staysail
+  stands on her foremost mast: the Sloop has one, the Schooner two, the Brig two and the Frigate three.
+- **What a tick tells** (`fight_events.rs`), beside the World Editor's events and each on the fight's tick it happened
+  on: a ball's splash where it fell; a ball that struck a ship, where in her own frame and on her hull, a sail still set
+  or her rig where its sail is gone; a sail torn away; a mast fallen; colours struck; a ship going down; a piece of what
+  floats laid, and gathered; and players gone aboard her.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
 
 ## The captain
@@ -173,6 +198,70 @@ make one; its chance to set her alight is that share of the Sloop's ball's. So e
 much hull, canvas, men and fire from her, whatever hull fires it. Each gun reloads and scatters as the Sloop's. Her
 balls fly from her own mouths, a ball meets her own hull's and sails' boxes, and she rams, is rammed and is kept apart
 by her own hull's box. A captain sizing up a ship reckons her hit share against that ship's hull.
+
+## How a fight ends
+
+At sea ([[Server]], "The sea"), each a rule the owner chose ([[The Sea's Fights, Waves and Close Views Get a Detailed
+Pass]]) with Claude's numbers:
+
+- **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where she went, 3 pieces for a
+  Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought her, kept for that player alone
+  as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
+  of their pieces gathers it. Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
+  her rank at her level (her water's): its Vestige by the rewards' foe her rank names (a Minor the Skirmisher's chance,
+  a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one), an Ammo box by her rank,
+  and from a Miniboss or a Boss an Ammo crate; what the player has no room for is lost with the piece. For an Elite or
+  higher one piece of each player's is a chest, rolled as a foe one rank higher. A piece looks like a crate or a barrel
+  (half each by its draw) or a chest.
+- **Striking, and boarding.** A captain who strikes lies hove to with her colours down. For 90 s any player in the
+  fight may board her: their ship within 30 m of hers, both under 2 m/s. With no one aboard by then she is scuttled
+  (`Sinking`) and lays what floats. A struck captain never sails off from the fight. Until the page can fight on her
+  deck the sea room takes no boarding ask, so every struck captain is scuttled after her 90 s (see "Limits").
+- **Her deck** (`deck_fight.rs`, `sea_decks.rs`). The sea room holds the deck fight, so the one authority over the fight
+  knows when her deck is won and when the last boarder leaves, and no second room is trusted with it: a room on land
+  built as a node's room is, its floor her deck's grid of heights from her hull's manifest (in her own frame, a wall off
+  her planks), its ring her deck's bounds, its spawn amidships (at her helm where no plank lies there). So the land
+  combat runs unchanged on her deck, with each boarder's character. Her crew is her faction's deck types for her rank
+  (`foes::crews`): a Minor three Minors; a Major four, the Bosun (the pirates' Brute) a Major; an Elite five, the Bosun
+  an Elite; a Miniboss six, the Tithe-Mate (the pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six.
+  The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
+  pirates' Skirmisher, Swordsman and Archer), standing two abreast along her deck from 2 m forward of amidships, 1.6 m
+  apart, facing aft, at her level. Clearing her deck opens her hold: what floats, twice over, every chest a rank higher
+  still, for each boarder. A boarder leaves her deck (back aboard their own ship) once her crew has fallen, and a
+  minute after it fell every boarder still aboard is sent back; she is scuttled when the last one has left her. A
+  boarder's own ship takes no orders or course while they stand on her deck. Her deck room fights with the boarder's
+  character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
+- **Losing.** A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
+  up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, planned as the traffic's routes
+  are): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
+  of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
+  player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at. Every
+  boarder of a deck lost is let go of the fight, and she is scuttled with no one aboard.
+- **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
+  their character (`ship`, in ten-thousandths), across sessions, until repaired; she starts every fight with them, and
+  her voyage sails at her pace times the canvas she keeps (never under half), in the room and the page alike. Where
+  the sea last kept her is kept too (`ship_at`, to the metre): back at sea she lies there, whatever the page first
+  said, and the page is told (`MOORED`).
+- **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers "Repair
+  her" (R): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
+  and men), 100 s at most. Setting a course, heaving to for a fight or leaving the sea stops it where it stood.
+- **Its weather.** Each fight at sea, and each fight among captains alone (`clash.rs`), takes the swell and the wind
+  where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and
+  keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps
+  its own, and what floats drifts down the wind of the fight it came from.
+- **Many in a fight** (`battle.rs`). Any player not fighting who comes within 750 m of a ship of a fight joins it, a
+  fight with players in it too, their Sloop hove to under a number of their own; every player in it fights every
+  captain, and players never harm one another (a ball passes through a ship of its own flag). A hostile ship at sea
+  within 750 m of a fight joins it on her own side, under sail where she lay: she fights players and captains of other
+  factions. Each player sees the fight from their own ship: their view numbers it as the player's and the fight's first
+  captain as its captain. A player whose ship goes down leaves it; when its last captain has left it, its players sail
+  on from where it left them, each keeping her hurts. Everyone in it is told who joins.
+- **Wary captains** fall on a ship they outgun, by DFO's `takesPrize` (`navalAI.js`: "a wary one only a prize she
+  outguns WARY_ODDS to one, or one crippled or holed under GRAPPLE_HULL", `WARY_ODDS = 1.25`, `GRAPPLE_HULL = 0.35`):
+  in a fight by her own mind, and at sea a wary ship steers for a player not fighting in her sight whose Sloop she
+  would take as her kept hull leaves it (`come_for`), and meets them within 750 m (`wary_takes`).
+- **What a player is told** goes to that player alone: the sea's snapshot is cut for each player, what floats, kept
+  hurts, the sea's own messages and a deck's own snapshot reaching only those they are for.
 
 ## Ramming
 
@@ -317,14 +406,14 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   lasts while one of them fights on; then one who struck, sank or runs leaves the sea, and the rest sail on from where
   it left them. Two that sailed on meet again only once out of each other's sight. A fight with no ship a player keeps at
   sea (within 1.1 times her sight) leaves the sea, as a ship does. Ships of one faction never meet.
-- **Joining.** A player not fighting who comes within 750 m of any ship of such a fight joins it: their Sloop heaves
-  to there and is put into it, and its captains choose whom to fight by their own law, the one each fights reckoned
-  nearer.
+- **Joining.** A player not fighting who comes within 750 m of any ship of such a fight, or of a fight with players in
+  it, joins it: their Sloop heaves to there and is put into it with the hurts she keeps, and its captains choose whom
+  to fight by their own law, the one each fights reckoned nearer ("How a fight ends").
 - **The meeting.** A bold ship within 750 m of a player who is not fighting meets them: she leaves the sea and the fight
   begins with her where she lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it each tick
-  by the player's orders on the fight of many ships, so her stem may ram the captain's, on waters made from the coasts
-  (open sea, the swell on it, dry land on them), until she sinks or is gone; its last view is shown once, and the player
-  sails on from where it left them.
+  by the players' orders on the fight of many ships, so her stem may ram the captain's, on waters made from the coasts
+  (open sea, the swell on it, dry land on them), until every captain has sunk or gone; its last view is shown once,
+  and the players sail on from where it left them, keeping their hurts.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws her to her true size as on the sea's other views near her ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
@@ -355,23 +444,27 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 
 - Every captain sails her rank's hull, the Tithe's and the pirates' alike; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, no other classes, and no ambient traffic.
-- At sea a fight holds one player at most: a player joins only a fight among captains, and a ship at sea never joins
-  a fight already under way. In the game's fight only the first captain's fires and DFO's messages show.
+- A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where
+  the fight has them, without their pose or hurts.
+- The page cannot yet fight on a captain's deck: on foot on her deck among her crew, as on land, the deck standing where
+  her ship lies on the swell. Until it can, the sea room takes no boarding, so her deck room and her hold are the
+  room's law alone, tested in the room.
+- A player washed up walks into the port city's social space once the page has opened the landmass it stands on, as
+  it does for any coast she nears.
 - A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her
   hull are seldom reached; striking at them would take men who stand more blows, a Major's too.
 - Two captains of one rank keep pace: a bold one gives up the chase of a wary one sailing away after 150 s.
-- Players' balls do not strike other players' ships, and players do not ram one another.
+- Players do not ram one another.
 - At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port) and no notoriety. A voyage near a
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
-  come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
-- Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
+  come over. A fight's land is the coasts' outlines.
 - Above ×10 a bold ship is sighted only ahead, within her cone, kilometres out; at ×10 and below, and at rest, she
   comes anywhere a wary one does, where she cannot meet a ship holding her course. Following a coast round, she does not plan her way round an island.
 - A pirate sails on the clock of the player nearest her, while another player's voyage is held as if she closed on
   them at their own: for the few ticks one player is nearest while she bears down on another, she may close faster
   than that one's hold allows.
-- Her canvas is always drawn, so her sails always take balls; it does not come down as her sail share falls.
+- A page laying its guns is not told which of a ship's masts have fallen, so its lay may meet rig a ball now passes.
 - She cruises on her course until she sees a player's ship; DFO's captains wander between waypoints.
-- No boarding, crew, sounds, flotsam or magazine blast yet: the rest of step 3 of the pick.
+- No magazine blast yet. A fleet room's fights do not send the sea's own events.
 - Hulls are kept apart by their boxes on the flat; the player's helm is not refused a turn into another hull, as Come
   Sail Away's was, she is pushed back out of it.

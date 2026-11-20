@@ -266,8 +266,20 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   within 750 m meets her: the ship heaves to, her voyage kept, and the view pans down to the fight, every ship in it
   easing to her true size as on any view near her (above), her plate over her (her faction's emblem, her name over a bar
   of her hull coloured by her rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
-  at sea where the room has them; coming within 750 m of such a fight joins it the same way, every captain in it under
-  her own plate.
+  at sea where the room has them; coming within 750 m of such a fight, or of one with other players in it, joins it the
+  same way, every captain in it under her own plate.
+- **What a fight leaves** (`seaAfter.ts`, [[Naval Combat]], "How a fight ends"). The sea's status line says, for 6 s
+  each, who joins the fight ("Player 4 joined the fight.", "The Pirate Schooner joined the fight."), a captain's
+  colours struck ("Her colours are down."), the boarding, each piece of what floats gathered and what it held
+  ("Gathered a chest: a Rare Vestige, an Ammo box."; what found no room, "nothing you had room for"), and washing up
+  ("Your ship went down: you washed up at Sunspire, your ship moored at its roadstead.", or "Beaten aboard her: …").
+  Washed up, the fight's view goes back up, the ship lies where the room moored her, and once the landmass of that
+  port city is open the player walks into its social space behind the veil ("Washed up at Sunspire. Your ship lies at
+  its moorings."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel shows her hull, canvas and men
+  as the sea keeps them and a Repair part: R asks for her repair, which the panel shows with its seconds left
+  ("Repairing her: 13 s left"), "She is whole", or where it is had. Her voyage sails at the way her kept canvas
+  leaves her, as the room sails her (`seaLaw.ts` `followed`). Back at sea after a session, she lies where the room
+  last kept her.
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
   `friendlyShips.ts`). The page asks the waters' rules where they are at world time, seconds since the Unix epoch by
   the page's clock (the sea room sends none), four times a second within the sea view's reach of her (its far plane),

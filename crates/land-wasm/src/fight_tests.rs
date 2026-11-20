@@ -152,7 +152,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "49e20f562691827e 7f013fb901d391db 916dfb0368cdedcf 338af9ce6a11a35b 00b8e38b76ed207e 9a3f9e9c57274829 6cbb04440a2976c0 e0179864104bcfd5 a623d439809d7fff"
+        "2ccc2fc797da7cbe eae574b66b61049b dd9bdf721f315bcf 078f737c5ae0dd3b e5f57d8b5b8ace5e 05539b67502dea89 2147140665442c40 0e9a4dfe4da17d75 f9c5191fadbd711f"
     );
 }
 
@@ -201,7 +201,7 @@ fn fought_with(rank: u8) -> Vec<String> {
 /// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
 /// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
 pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "a623d439809d7fff"), (3, 1, "dae4b33e4b7e1942"), (4, 2, "81f162d1dc26f3bf"), (5, 3, "896b671a348de13b")];
+    [(2, 0, "f9c5191fadbd711f"), (3, 1, "a6a3918566c1aee2"), (4, 2, "d728a4c9a6ebc25f"), (5, 3, "ead19c39dfa3345b")];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
@@ -221,4 +221,37 @@ fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
         answer(&fight_begin_json(begin.as_bytes())).get("error").is_some()
     };
     assert!(refused("0") && refused("6") && refused("2.5") && refused("\"boss\""));
+}
+
+#[test]
+fn a_balls_hit_tells_where_on_her_it_struck_and_the_sea_fights_own_events_are_told() {
+    use naval::damage::Zone;
+    use naval::fight::{Part, Piece};
+    let gun = naval::guns::SWIVEL;
+    let shot = naval::guns::Shot::Round;
+    let hit = ShotEvent::Hit {
+        shooter: 0,
+        target: 1,
+        zone: Zone::Hull,
+        point: [1.0, 2.0, 3.0],
+        flight: 0.5,
+        gun,
+        shot,
+        sail: None,
+    };
+    let events = [
+        Event::Hit { ship: 1, at: [4.0, -1.0, 2.0], part: Part::Hull },
+        Event::SailLost { ship: 1, sail: 0 },
+        Event::Struck { ship: 1 },
+        Event::Shot(hit),
+        Event::Flotsam { id: 7, at: [5.0, 6.0], kind: Piece::Chest },
+    ];
+    let told = events_json(&events);
+    assert_eq!(told.len(), 4, "her new hit is told with the shot's");
+    // As the fight tells them: her torn sail and her colours between the hit and its ball's.
+    assert_eq!(told[0]["kind"], "sail-lost");
+    assert_eq!(told[1]["kind"], "struck");
+    assert_eq!((told[2]["kind"].as_str(), told[2]["part"].as_str()), (Some("hit"), Some("hull")));
+    assert_eq!(told[2]["at"], serde_json::json!([4.0, -1.0, 2.0]));
+    assert_eq!((told[3]["kind"].as_str(), told[3]["item"].as_str()), (Some("flotsam"), Some("chest")));
 }

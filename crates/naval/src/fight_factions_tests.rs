@@ -1,4 +1,5 @@
 use super::*;
+use crate::arms::Side;
 use crate::captain::{Mode, Temper};
 use crate::damage::Hurt;
 use crate::gunnery::reload_seconds;

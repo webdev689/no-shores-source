@@ -41,7 +41,7 @@ export interface RoomDoor {
    *  a layout. */
   openSea(layoutText: string, seed: number, worldStartS?: number): boolean;
   /** Opens a fleet room on the open sea. */
-  openFleet(): boolean;
+  openFleet(worldStartS?: number): boolean;
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
@@ -57,6 +57,10 @@ export interface RoomDoor {
   /** Every player, or every ship (with a fleet's balls and what happened), after the last tick, as a snapshot's
    *  bytes. */
   snapshot(): Uint8Array;
+  /** Takes the snapshot after the last tick, for `snapshotFor` to cut each player's from. */
+  snapshotPrepare(): void;
+  /** The prepared snapshot as one player is sent it: at sea only what is theirs of the sea's own part. */
+  snapshotFor(player: number): Uint8Array;
   /** Lays out a course's stall, where a social space's asks are answered, and its resource nodes; false with no
    *  course open. */
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
@@ -103,6 +107,8 @@ interface RoomExports {
   room_input(player: number, address: number, length: number): number;
   room_tick(): void;
   room_snapshot(): bigint;
+  room_snapshot_prepare(): void;
+  room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
   room_difficulty(seas: number): number;
@@ -157,7 +163,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       exports.room_world_start(worldStartS);
       return opened;
     },
-    openFleet: () => exports.room_open_fleet() === 1,
+    openFleet: (worldStartS = 0) => {
+      const opened = exports.room_open_fleet() === 1;
+      exports.room_world_start(worldStartS);
+      return opened;
+    },
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
     joined: (player) => take(exports.room_joined(player)),
@@ -166,6 +176,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       ANSWERS[lend(bytes, (address) => exports.room_input(player, address, bytes.length))] ?? 'not an input',
     tick: () => exports.room_tick(),
     snapshot: () => take(exports.room_snapshot()),
+    snapshotPrepare: () => exports.room_snapshot_prepare(),
+    snapshotFor: (player) => take(exports.room_snapshot_for(player)),
     furnish: (stall, nodes) => {
       const numbers = [
         stall?.x ?? Number.NaN,

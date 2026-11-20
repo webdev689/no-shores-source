@@ -46,25 +46,28 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
     .unwrap_or_default()
 }
 
-/// A player's character as it is kept between sessions, as JSON's bytes; empty on land with no such player, and at
-/// sea, where no one holds gear.
+/// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it; empty
+/// with no such player, at sea before the accounts gave it, and in a fleet room.
 #[must_use]
 pub fn character(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.kept_character(player),
-        Opened::Sea(_) | Opened::Fleet(_) => None,
+        Opened::Sea(sea) => sea.kept_character(player),
+        Opened::Fleet(_) => None,
     })
     .flatten()
     .map(String::into_bytes)
     .unwrap_or_default()
 }
 
-/// Gives a player on land the character kept for them, from JSON's bytes; false if it is not one or they are not in.
+/// Gives a player the character kept for them, from JSON's bytes, at sea their ship the hurts kept in it; false if
+/// it is not one or they are not in.
 pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
     let Ok(text) = std::str::from_utf8(bytes) else { return false };
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.restore_character(player, text),
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => sea.restore_character(player, text),
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }

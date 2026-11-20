@@ -38,6 +38,7 @@ import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
+import { SeaAfter, portCities } from './seaAfter.ts';
 import { waterNamer } from './seaHostiles.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
@@ -169,6 +170,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const waterHere = () => waterOf(scene.land?.swell, landmass.heightAt);
   let foot: Foot | null = null;
   let sea: Sea | null = null;
+  let afterFights: SeaAfter | null = null;
   let [ready, waited] = [false, 0];
   let wasDead = false;
   let wasWalking = false;
@@ -253,6 +255,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       );
       const waters = startWatersRules(await roomModule);
       sea.waterAt = waterNamer(waters, waters.open(world.layoutText, portsOf(world.cities)));
+      afterFights = new SeaAfter(portCities(portsOf(world.cities)));
     }
     sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
@@ -402,7 +405,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   hud.onLeaveHelm(leaveHelm);
   hud.onTakeHelm(takeHelm);
   // The Ship tab's papers: her voyage only while she is at sea.
-  const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
+  const shipNow = () =>
+    shipPanelOnceBuilt(
+      builtSloop(),
+      sloop.waterline,
+      flow.mode === 'sea' ? sea : null,
+      SeaAfter.keptOf(sea?.sighted ?? null),
+    );
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
   startGearWindow(hudRoot, link, gearHere, shipNow, joinAt);
   addEventListener('keydown', (event) => {
@@ -431,6 +440,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'n') openMap();
     else if (key === 'b') manage();
     else if (key === 'h') leaveHelm();
+    else if (key === 'r' && flow.mode === 'sea' && sea?.aboard.active) sea.sighted?.ask('repair');
     else if (key === 'e' && sea?.aboard.walking) takeHelm();
     else if (key === 'e' && flow.mode === 'foot') foot?.use();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
@@ -535,19 +545,26 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const more = { hulls: fleet.hulls, after, focus: shown.focus, ...(swell ? { swell } : {}) };
     scene.draw(shown.shot, size, clock, seconds, standing([...shown.ships, ...fleet.ships], shown.figures), more);
     showStanding({ kind: 'inside' });
-    showSeaHud(hud, here, shown, {
-      landing: flow.mode === 'landing',
-      onSea: flow.mode === 'sea' && !flow.menu,
-      island: ISLANDS[landmass.id],
-      region: REGION,
-      clock,
-      build: builtSloop,
-      waterline: sloop.waterline,
-      charting: charting.busy,
-      friendly: fleet.marks,
-    });
+    showSeaHud(
+      hud,
+      here,
+      { ...shown, note: afterFights?.note(shown.note, here.sighted, clock) ?? shown.note },
+      {
+        landing: flow.mode === 'landing',
+        onSea: flow.mode === 'sea' && !flow.menu,
+        island: ISLANDS[landmass.id],
+        region: REGION,
+        clock,
+        build: builtSloop,
+        waterline: sloop.waterline,
+        charting: charting.busy,
+        friendly: fleet.marks,
+      },
+    );
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
+    const ashore = flow.mode === 'sea' ? afterFights?.ashore(landmass) : null;
+    if (ashore) travel(ashore.washUp, () => goFoot(ashore.node, arrivalFacing(ashore.node, landmass.plan, null)));
   };
 
   /** The GPU's work for the frame drawn last. */

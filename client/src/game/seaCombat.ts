@@ -109,6 +109,11 @@ export class SeaCombat {
     this.orbit = { yaw: heading, pitch: ORBIT.pitch };
   }
 
+  /** The fight as the room last showed it. */
+  get view(): FightView {
+    return this.last;
+  }
+
   /** Whether the view has come back up after the fight: the sea takes over. */
   get done(): boolean {
     return this.going === -1 && this.down === 0;

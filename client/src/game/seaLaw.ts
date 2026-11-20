@@ -183,7 +183,8 @@ export interface RoomWord {
 
 /** How far along her voyage the ship is `dt` seconds on: at the pace the room last sailed her at and drawn toward where
  *  it has her, the room being the law; while it has not taken her course yet (`room` null), at the pace it last sailed
- *  her at (`held`) while she was under way, else at the pace she is sailed at (`sailed`). */
+ *  her at (`held`) while she was under way, else at the pace she is sailed at (`sailed`). Each by `way`, the share of
+ *  her pace the canvas she keeps leaves her, as the room sails her (crates/room/src/sea.rs). */
 export function followed(
   voyage: Voyage,
   travelledM: number,
@@ -191,12 +192,13 @@ export function followed(
   sailed: SailedPace,
   room: RoomWord | null,
   held: number | null = null,
+  way = 1,
 ): number {
   const seconds = Math.max(0, dt);
   // The room sails her at its last pace until it takes the course: matching it, she never drifts off where it has her.
-  const asked = SHIP_SPEED * (held !== null && held > 0 ? held : sailed);
+  const asked = SHIP_SPEED * way * (held !== null && held > 0 ? held : sailed);
   if (!room) return travelledM + asked * seconds;
-  const ahead = travelledM + SHIP_SPEED * room.pace * seconds;
+  const ahead = travelledM + SHIP_SPEED * way * room.pace * seconds;
   const there = alongNear(voyage, [room.x, room.y], ahead, FOLLOW.windowM);
   return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);
 }

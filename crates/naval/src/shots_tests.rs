@@ -41,7 +41,7 @@ fn east_ball(height: f64, elevation: f64, born: f64) -> Ball {
 /// Ship `id` with her hull and canvas: the shooter's own (0) flies the players' flag, any other the pirates'.
 fn ship(id: ShipId, hull: Block, rig: Vec<Block>) -> Target {
     let flag = if id == 0 { Flag::Player } else { Flag::Faction(PIRATES) };
-    Target { id, flag, hull, rig, alive: true }
+    Target { id, flag, hull, up: vec![true; rig.len()], rig, alive: true }
 }
 
 fn upright(centre: [f64; 3], half: [f64; 3]) -> Block {

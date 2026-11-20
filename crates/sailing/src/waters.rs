@@ -72,12 +72,6 @@ impl Waters for OpenSea<'_> {
     }
 }
 
-/// A steady wind where a swell runs, at a ship's rated wind (m/s, east and south): a test's, or a seed's own swell's.
-#[must_use]
-pub fn steady_wind(swell: &Swell) -> [f64; 2] {
-    [WIND_RATED * libm::sin(swell.bearing), -WIND_RATED * libm::cos(swell.bearing)]
-}
-
 /// The weather's wind a ship is rated for, metres a second: a moderate sea's middle (`world::weather::WIND_M_S`).
 pub const RATED_M_S: f64 = 6.5;
 

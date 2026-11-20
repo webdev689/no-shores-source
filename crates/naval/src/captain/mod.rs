@@ -49,6 +49,20 @@ pub const WRECK_SPARE_S: f64 = 30.0;
 /// under this share, or at these odds.
 pub const PIRATE_RUNS_AT: f64 = 0.3;
 pub const GRAPPLE_HULL: f64 = 0.35;
+
+/// Whether a wary captain of `commission`, sound, falls on a player's Sloop met at sea with `hull_share` of her hull
+/// left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one she outguns `WARY_ODDS` to one by
+/// their fighting powers.
+#[must_use]
+pub fn wary_takes(commission: Commission, hull_share: f64) -> bool {
+    if hull_share < GRAPPLE_HULL {
+        return true;
+    }
+    let arms = arms_of(commission.hull());
+    let her = Captain::new(commission, 0, 0.0, arms);
+    let prize = Power::player(&crate::arms::LARGE_BOAT, hull_share);
+    odds(&her.power(&commission.damage()), &prize, [arms, arms_of(HullKind::Sloop)]) >= WARY_ODDS
+}
 pub const WARY_ODDS: f64 = 1.25;
 /// The share of pirates who are bold, by their seed's own draw.
 pub const BOLD_SHARE: f64 = 0.25;

@@ -180,7 +180,7 @@ export class Sea {
   }
 
   /** The other ships the sea room shows round her, every other player's and every hostile one; none out of a room. */
-  get sighted(): Pick<SeaRoom, 'others' | 'pirates'> | null {
+  get sighted(): SeaRoom | null {
     return this.room;
   }
 
@@ -471,8 +471,12 @@ export class Sea {
     const place = scale === 1 ? truePlace : this.drawn.placeOf('own', own, scale, this.water, 0, time);
     const lying: Lying = { ...ship, scale, heave: place.z, pitch: place.pitch, roll: place.roll };
     if (combat?.done) {
-      this.passage.placeAt(combat.lying);
+      this.passage.placeAt(this.room?.takeWashed() ?? combat.lying);
       this.combat = null;
+    } else if (!combat) {
+      // Out of a fight, where the room moored her is where she lies.
+      const moored = this.room?.takeWashed();
+      if (moored) this.passage.placeAt(moored);
     }
     const others = this.room?.others ?? [];
     const pirates = this.room?.pirates ?? [];

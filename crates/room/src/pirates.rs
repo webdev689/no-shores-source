@@ -79,7 +79,8 @@ impl Pirate {
 }
 
 /// A player's ship at sea as the hostile ships see her: where she is, her heading, the pace she was set to (0 at
-/// rest), whether she is fighting, and the clock her waters run at (her pace as she sails, 1 at rest).
+/// rest), whether she is fighting, the clock her waters run at (her pace as she sails, 1 at rest), and the share of
+/// her hull she keeps, by which a wary ship sizes her up.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Voyager {
     pub player: PlayerId,
@@ -88,6 +89,7 @@ pub struct Voyager {
     pub pace: u16,
     pub fighting: bool,
     pub clock: f64,
+    pub hull: f64,
 }
 
 /// The pirates at sea, each player's wait for their next roll, and each pair of ships that fought and both sailed on,
@@ -146,12 +148,14 @@ fn round_the_coast(
     }
 }
 
-/// A bold ship's heading after `seconds` at her `clock`, and the player she comes for: the one she came for while still
-/// in her sight and not fighting, else the nearest such; she steers to intercept them, at most at the helm's rate. A
-/// wary ship, or one with no one to come for, keeps her heading.
+/// A ship's heading after `seconds` at her `clock`, and the player she comes for: the one she came for while still in
+/// her sight and not fighting, else the nearest such; she steers to intercept them, at most at the helm's rate. A bold
+/// ship comes for anyone; a wary one only for a Sloop she would take (`wary_takes`, DFO's `takesPrize`). One with no
+/// one to come for keeps her heading.
 fn come_for(pirate: &Pirate, ships: &[Voyager], (seconds, clock): (f64, f64)) -> (f64, Option<PlayerId>) {
     let at = [pirate.x, pirate.y];
-    let open = |ship: &&Voyager| pirate.bold && !ship.fighting && pirate.sees(ship.at);
+    let takes = |ship: &Voyager| pirate.bold || naval::captain::wary_takes(pirate.commission, ship.hull);
+    let open = |ship: &&Voyager| !ship.fighting && pirate.sees(ship.at) && takes(ship);
     let kept = ships.iter().filter(open).find(|ship| Some(ship.player) == pirate.quarry);
     let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
     let Some(ship) = kept.or_else(nearest) else { return (pirate.heading, None) };

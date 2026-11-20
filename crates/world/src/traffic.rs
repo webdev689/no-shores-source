@@ -145,6 +145,37 @@ pub fn hull_of(id: u64) -> u8 {
     }
 }
 
+/// The sea's ways across a world, planned round land as the traffic's routes are: what a ship sails between two
+/// points of open water.
+pub struct SeaWays {
+    land: routes::Land,
+    mask: routes::Mask,
+}
+
+impl SeaWays {
+    #[must_use]
+    pub fn new(layout: &Layout, waters: &Waters) -> Self {
+        Self { land: routes::Land::new(layout), mask: routes::Mask::new(waters) }
+    }
+
+    /// The length of the sea's way from `from` to `to`, metres; none where no way joins them.
+    #[must_use]
+    pub fn length(&self, from: Point, to: Point) -> Option<f64> {
+        let path = self.mask.route(&self.land, from, to)?;
+        let leg = |pair: &[Point]| {
+            let (east, south) = ((pair[1].x - pair[0].x) as f64, (pair[1].y - pair[0].y) as f64);
+            (east * east + south * south).sqrt()
+        };
+        Some(path.windows(2).map(leg).sum())
+    }
+}
+
+impl std::fmt::Debug for SeaWays {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("SeaWays")
+    }
+}
+
 /// The traffic of a world: its ports and the routes between them.
 #[derive(Debug, Clone)]
 pub struct Traffic {

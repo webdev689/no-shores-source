@@ -178,7 +178,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "b454c407736418e5";
+pub const SEA_CLASH_HASH: &str = "ae8a0d7e43e836e5";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
@@ -351,4 +351,34 @@ fn a_browser_predicts_a_fighter_on_a_nodes_ground_as_its_room_steps_it() {
     assert_eq!(stepped(), expected, "on the node's window, the same step as its room's");
     let land = movement::Terrain::height_at(&floor, expected.body.x, expected.body.y);
     assert!(land > 1.0 && (expected.body.z - land).abs() < 1e-6, "walking on the land, well above 0 m");
+}
+
+#[test]
+fn what_the_sea_tells_a_player_goes_to_them_alone() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let (first, second) = (room_join(), room_join());
+    for player in [first, second] {
+        assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    }
+    room_tick();
+    let mut character = gear::Character::starting();
+    character.ship_at = Some([60_000, 50_000]);
+    assert!(gear_door::restore_character(first, character.to_json().as_bytes()));
+    snapshot_door::prepare();
+    let told = |player| {
+        let bytes = snapshot_door::snapshot_for(player);
+        let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        snapshot.told().map_or(0, |told| told.len())
+    };
+    assert_eq!((told(first), told(second)), (1, 0), "her ship moored where it was kept is her word alone");
+}
+
+#[test]
+fn the_sea_takes_no_boarding_until_the_page_can_fight_on_her_deck() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED);
 }

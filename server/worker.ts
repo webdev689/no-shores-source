@@ -109,8 +109,10 @@ export class RoomHost extends DurableObject<Env> {
       save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
     };
-    // Only the game's nodes keep characters: the Test Ground grants gear to try it, and at sea no one holds any.
-    this.keeper = new Keeper(name.startsWith('node-') ? characters : null, room, name, (player) => {
+    // The game's nodes and the sea keep characters (at sea, with their ship's hurts): the Test Ground grants gear to try
+    // it, and a fleet room is the World Editor's.
+    const keeps = name.startsWith('node-') || name === 'sea';
+    this.keeper = new Keeper(keeps ? characters : null, room, name, (player) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
@@ -120,7 +122,7 @@ export class RoomHost extends DurableObject<Env> {
         crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
         Date.now() / 1000,
       );
-    if (name.startsWith('fleet-')) return this.room.openFleet();
+    if (name.startsWith('fleet-')) return this.room.openFleet(Date.now() / 1000);
     const node = /^node-(.+)$/.exec(name)?.[1];
     // Every room on land rolls its loot from a seed of its own that no player sees.
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
@@ -148,7 +150,7 @@ export class RoomHost extends DurableObject<Env> {
       held.signed = true;
       held.count = count;
       void this.keeper?.signIn(player, message, Date.now, () => this.players.get(socket) === held);
-      // At sea no character is kept, so the room says only who is there, for the Roster.
+      // At sea the room also says who is there, for the Roster.
       if (this.name === 'sea') {
         held.token = message;
         void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
@@ -218,16 +220,20 @@ export class RoomHost extends DurableObject<Env> {
         this.guarded(() => this.room.tick(), undefined);
         this.ticks++;
       }
-      const snapshot = this.guarded(() => this.room.snapshot(), new Uint8Array());
+      // Taken once, then cut for each player: what the sea tells one goes to them alone.
+      this.guarded(() => this.room.snapshotPrepare(), undefined);
       for (const socket of this.open()) {
         const held = this.players.get(socket);
+        const snapshot = held
+          ? this.guarded(() => this.room.snapshotFor(held.player), new Uint8Array())
+          : new Uint8Array();
         // Each player's own gear goes to them alone, when it changed.
         const gear = held ? this.guarded(() => this.room.gear(held.player), new Uint8Array()) : new Uint8Array();
         if (held && gear.length > 0) this.keeper?.changed(held.player);
         try {
           // Gear first, so the browser predicts a change of trim or arms from this snapshot on.
           if (gear.length > 0) socket.send(gear);
-          socket.send(snapshot);
+          if (snapshot.length > 0) socket.send(snapshot);
         } catch {
           // A socket that closed between the check and the send misses this snapshot; the rest still get theirs.
         }

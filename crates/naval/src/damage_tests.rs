@@ -50,7 +50,7 @@ fn a_captain_strikes_at_a_quarter_of_her_hull_and_sinks_at_none() {
     assert_eq!(damage.apply(hurt(1.0, 0.0, 0.0), 2.0, 0.0), Some(State::Struck), "66 of 264 left");
     assert!(!damage.fighting());
     assert_eq!(damage.apply(hurt(100.0, 0.0, 0.0), 3.0, 0.0), Some(State::Sinking));
-    assert_eq!(damage.step(21.9, 25.0), None);
+    assert_eq!(damage.step(19.9, 23.0), None);
     assert_eq!(damage.step(0.2, 25.2), Some(State::Sunk));
     assert_eq!(damage.apply(hurt(5.0, 0.0, 0.0), 30.0, 0.0), None, "a sunk ship takes no more");
 }
@@ -73,12 +73,22 @@ fn the_rest_of_the_volley_that_struck_her_cannot_sink_her() {
 }
 
 #[test]
-fn the_players_sloop_is_wrecked_never_sunk() {
+fn the_players_sloop_never_strikes_and_goes_down_at_none() {
     let mut damage = Damage::new(&LARGE_BOAT, true);
     assert_eq!(damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0), None, "a player's boat never strikes");
-    assert_eq!(damage.apply(hurt(50.0, 0.0, 0.0), 2.0, 0.0), Some(State::Wrecked));
-    assert_eq!(damage.step(30.0, 40.0), None);
-    assert_eq!(damage.state, State::Wrecked);
+    assert_eq!(damage.apply(hurt(50.0, 0.0, 0.0), 2.0, 0.0), Some(State::Sinking));
+    assert_eq!(damage.step(19.9, 22.0), None);
+    assert_eq!(damage.step(0.2, 22.2), Some(State::Sunk));
+}
+
+#[test]
+fn a_scuttled_ship_goes_down_from_where_she_lies() {
+    let mut damage = Damage::new(&PIRATE_SLOOP, false);
+    damage.apply(hurt(200.0, 0.0, 0.0), 1.0, 0.0);
+    assert_eq!(damage.state, State::Struck);
+    damage.scuttle();
+    assert_eq!((damage.state, damage.sink_t), (State::Sinking, 0.0));
+    assert_eq!(damage.step(SINK_SECONDS, 30.0), Some(State::Sunk));
 }
 
 #[test]
@@ -128,18 +138,13 @@ fn her_way_falls_with_her_canvas_to_bare_poles() {
 #[test]
 fn her_hands_mend_her_only_in_quiet_waters_and_to_half() {
     let mut damage = Damage::new(&LARGE_BOAT, true);
-    damage.apply(hurt(240.0, 96.0, 0.0), 0.0, 0.0);
-    assert_eq!(damage.state, State::Wrecked);
+    damage.apply(hurt(200.0, 96.0, 0.0), 0.0, 0.0);
+    assert_eq!(damage.state, State::Afloat);
     assert!(!damage.mend(1.0, 10.0, false, false), "struck 10 s ago");
     assert!(!damage.mend(1.0, 20.0, true, false), "a hostile ship near");
     assert!(damage.mend(1.0, 20.0, false, false));
-    assert!((damage.hull - 240.0 * 0.002).abs() < 1e-12, "{}", damage.hull);
+    assert!((damage.hull - (40.0 + 240.0 * 0.002)).abs() < 1e-12, "{}", damage.hull);
     let mut now = 20.0;
-    while damage.state == State::Wrecked {
-        now += 1.0;
-        damage.mend(1.0, now, false, false);
-    }
-    assert!(damage.hull > 240.0 * FIELD_REFLOAT, "afloat again past 15%");
     for _ in 0..400 {
         now += 1.0;
         damage.mend(1.0, now, false, false);
@@ -151,7 +156,7 @@ fn her_hands_mend_her_only_in_quiet_waters_and_to_half() {
 fn going_down_she_lists_and_trims_by_her_seed_and_settles_slow_then_fast() {
     let mut damage = Damage::new(&PIRATE_SLOOP, false);
     damage.apply(hurt(264.0, 0.0, 0.0), 0.0, 0.0);
-    damage.step(11.0, 11.0);
+    damage.step(SINK_SECONDS / 2.0, 10.0);
     let (drop, pitch, roll) = founder(&damage, 0b01, 6.0);
     assert!((roll - (SINK_LIST_DEG / 2.0).to_radians()).abs() < 1e-12, "seed bit 0: one way");
     assert!((pitch - (SINK_PITCH_DEG / 2.0).to_radians()).abs() < 1e-12);
