@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
-import { fightDisplay } from './fightDisplay.ts';
+import { fightDisplay, fightNotices } from './fightDisplay.ts';
 import { FightFeel } from './fightFeel.ts';
 
 const vessel: FightVessel = {
@@ -96,4 +96,31 @@ test('while her guns are laid the card is on the captain where they fall, as DFO
   const lay = { ...VIEW.lay!, ends: [end(196), end(204)] };
   const model = fightDisplay({ ...VIEW, lay }, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(model.card?.name, 'Pirate Brig', 'the far one laid on, not the nearer Sloop');
+});
+
+test("the broadside warning over the sight names the nearest captain running out her guns, as DFO's warning does", () => {
+  const quiet = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  assert.equal(quiet.warn, null, 'none while no battery is run out');
+  const running = {
+    ...VIEW,
+    captain: captain('Pirate Brig', 200, { run_out: [1] }),
+    others: [captain('Tithe Sloop', 70, { state: 'struck', run_out: [1], number: 2 })],
+  };
+  const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
+  assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at her');
+});
+
+test("the panel's messages are notices; what the card, plates, sight and warning show does not repeat as text", () => {
+  const lines = [
+    'Pirate Brig, 200 m off, closing: hull 60/60, sails 40/40, 8 men.',
+    'Tithe Sloop, 70 m off, struck: hull 30/60, sails 40/40, 8 men.',
+    'Laying the starboard guns: on target.',
+    'Broadside from the Pirate Brig: C to brace.',
+    'The Tithe Sloop surrenders!',
+    'The starboard guns are reloading (2.3 s).',
+  ];
+  assert.deepEqual(fightNotices(lines, VIEW), [
+    'The Tithe Sloop surrenders!',
+    'The starboard guns are reloading (2.3 s).',
+  ]);
 });

@@ -34,6 +34,8 @@ code:
   - client/src/combat/hitWords.ts#wordsOf
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
+  - client/src/plus/notices.ts#NoticeStack
+  - client/src/ships/fightDisplay.ts#fightNotices
   - client/src/ships/shipBars.ts#drawShipBars
   - client/src/ships/shipBars.ts#HullLosses
   - client/src/game/gearScreen.ts#characterOf
@@ -112,7 +114,19 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   so the bars hold still from frame to frame.
 - **Where it is worn.** The [[Game]]'s heads-up display lays the kit's sheet once. The sea bar is a window, its groups
   (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
-  the status line is a chip; the menu is a window under a header.
+  the status line is a chip; the menu is a window under a header. At sea, every surface wears its role:
+  - sailing: the sea bar (window, rails), the status line (chip), the place line and the hints (the on-foot words,
+    outlined), the dock or landing offer and Take the helm (primary); a sighting's hostile marks wear her rank's colour
+    and emblem, and the sighting's words stand in the status line;
+  - the fight: her plate and the card (panel), the rose's sides (chip), the bars (track and meter), the tally and the
+    broadside warning over the sight (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
+    over her masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line,
+    its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
+  - her deck: the place line (her hold's take on its second line) and the hints, as on foot;
+  - washing up: the status line's words, then the veil's;
+  - Manage's panel: a window under a header, each part's heading ruled, Back to the sea a button on its footer;
+  - what floats: the Acquired feed's rows and the gold marks over the water;
+  - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
   way while they show. On foot the status line stands under the place's name, and under a boss's bar while one

@@ -441,8 +441,12 @@ captain's number comes with her in the view, so one leaving the fight never move
 - **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`, shown by the HUD at sea and by
   `ships/fightOverlay.ts` in the World Editor): her plate at the bottom right with its battery rose, the card under
   the compass on the ship the look is on (the captain nearest where her laid guns fall, else the nearest), and her volley's tally under the sight, in every fight from its first frame to its
-  last ([[Interface]], "The sea fight's readout"). The panel leaves her own hurts and guns to it. On a struck ship's
-  deck it gives way to the fight on foot's display.
+  last ([[Interface]], "The sea fight's readout"). The panel leaves her own hurts and guns to it. While a captain afloat
+  stands with her guns run out, DFO's warning stands over the sight: "Broadside from the Pirate Brig - C: brace". At
+  sea the panel's lines are not written over the world: each captain's hurts are her plate and the card, the lay the
+  sight's aim line and the broadside the warning, and DFO's messages ("The Tithe Sloop surrenders!") stand as notices
+  at the top right; the hints are the fight's keys alone. On a struck ship's deck it gives way to the fight on foot's
+  display.
 - **From above**: at the raised view, where the ships are drawn larger ([[Overworld]]), every puff, ball, hole and
   piece of flotsam is drawn as many times larger about the point it came from, as the wakes are, so the fight reads
   from there; close in, all are their true size. The sea's splashes push its ripples as wide.
