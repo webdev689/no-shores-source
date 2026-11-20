@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CAMERA, cameraOrbit, rayHit } from '../player/playerCamera.ts';
-import { cellHeight, HULL_DECKS, railSpot } from './deck.ts';
-import { HULL_NAMES } from './hulls.ts';
-import { sparBoxes } from './spars.ts';
+import { cellHeight, HULL_DECKS, railSpot } from '../ships/deck.ts';
+import { HULL_NAMES } from '../ships/hulls.ts';
+import { sparBoxes } from '../ships/spars.ts';
 
 type Point = readonly [number, number, number];
 
