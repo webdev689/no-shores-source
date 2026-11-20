@@ -203,9 +203,32 @@ function stretched(z: number, stretch: Place['stretch']): number {
   return stretch.from + z * (stretch.to - stretch.from);
 }
 
+const NO_RISE: readonly [number, number] = [0, 0];
+
+/** How far a triangle's UV (metres) runs for each metre up it, in its own plane: a stretch that lifts a corner moves
+ *  its UV that far along the picture, so a stretched piece keeps its picture's scale whichever way it was unwrapped
+ *  (grain up a post along u, stones up a shaft along v). A flat face gains nothing. */
+export function uvPerZ(positions: Float32Array, uvs: Float32Array, corners: readonly number[]): [number, number] {
+  const point = (corner: number, axis: number) => positions[(corners[corner] ?? 0) * 3 + axis] ?? 0;
+  const mapped = (corner: number, axis: number) => uvs[(corners[corner] ?? 0) * 2 + axis] ?? 0;
+  const first = [0, 1, 2].map((axis) => point(1, axis) - point(0, axis));
+  const second = [0, 1, 2].map((axis) => point(2, axis) - point(0, axis));
+  const [firstSquared, across, secondSquared] = [dot(first, first), dot(first, second), dot(second, second)];
+  const determinant = firstSquared * secondSquared - across * across;
+  if (!(Math.abs(determinant) > 1e-12)) return [0, 0];
+  // The UV's gradient in the plane is a·first + b·second, its dot with each edge that edge's UV change.
+  const along = (axis: number): number => {
+    const [one, two] = [mapped(1, axis) - mapped(0, axis), mapped(2, axis) - mapped(0, axis)];
+    const onFirst = (one * secondSquared - two * across) / determinant;
+    const onSecond = (two * firstSquared - one * across) / determinant;
+    return onFirst * (first[2] ?? 0) + onSecond * (second[2] ?? 0);
+  };
+  return [along(0), along(1)];
+}
+
 /** Lays a piece into `mesh` where `place` says, each triangle in the picture `pictureOf` gives its part, facing the
- *  way the piece's own normals face it, each corner keeping its own normal and its UV in pictures of TILE_M (v runs
- *  down a picture). A stretched corner's v moves with its height, so a stretched shaft's picture keeps its scale. */
+ *  way the piece's own normals face it, each corner keeping its own normal and its UV in pictures (v runs down a
+ *  picture). A stretched corner's UV moves with its height along its triangle's own `uvPerZ`. */
 export function layModule(
   mesh: MeshBuilder,
   module: ModuleMesh,
@@ -223,10 +246,10 @@ export function layModule(
     const [x, y, z] = turnAbout(local, place.turns);
     return [x + shiftX + place.origin[0], y + shiftY + place.origin[1], z + place.origin[2]];
   };
-  const mapping = (vertex: number): readonly [number, number] => {
+  const mapping = (vertex: number, perZ: readonly [number, number]): readonly [number, number] => {
     const rise = stretched(positions[vertex * 3 + 2], place.stretch) - positions[vertex * 3 + 2];
     const tile = PART_TILE_M[module.parts[vertex]] ?? TILE_M;
-    return [uvs[vertex * 2] / tile, -(uvs[vertex * 2 + 1] + rise) / tile];
+    return [(uvs[vertex * 2] + rise * perZ[0]) / tile, -(uvs[vertex * 2 + 1] + rise * perZ[1]) / tile];
   };
   for (let first = 0; first + 2 < module.indices.length; first += 3) {
     const vertices = [module.indices[first], module.indices[first + 1], module.indices[first + 2]];
@@ -244,7 +267,9 @@ export function layModule(
       const length = Math.hypot(x, y, z);
       return length > 1e-6 ? [x / length, y / length, z / length] : normal;
     });
-    mesh.tri(pictureOf(module.parts[vertices[0]]), corners, normal, vertices.map(mapping), kept);
+    const perZ = place.stretch ? uvPerZ(positions, uvs, vertices) : NO_RISE;
+    const mapped = vertices.map((vertex) => mapping(vertex, perZ));
+    mesh.tri(pictureOf(module.parts[vertices[0]]), corners, normal, mapped, kept);
   }
 }
 

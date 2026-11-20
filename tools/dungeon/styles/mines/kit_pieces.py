@@ -36,13 +36,10 @@ def make(kit, faces, part='wood', name='mines', smooth=None, closed=True):
     return kit.mesh(faces, part, name, smooth, closed)
 
 
-def post_uv(base_top, cap_top, piece):
-    """UVs for a post cut in three, its grain up it: u its height in a set LOW_M high, v round it. The page adds a
-    stretched shaft's rise to v, so the shaft's v takes away the rise of LOW_M's stretch, and its grain runs straight
-    up there and leans a little in taller rooms."""
-    span = LOW_M - cap_top - base_top
-    if piece == 'shaft':
-        return lambda point, mapped: (base_top + span * point[2], mapped[1] - base_top - (span - 1.0) * point[2])
+def post_uv(cap_top, piece):
+    """UVs for a post cut in three, its grain up it: u its height, v round it. The page moves a stretched corner's UV
+    along its triangle's own gradient, so the shaft's u lands at its height in any room; the cap's u is its height
+    in a set LOW_M high."""
     lift = LOW_M - cap_top if piece == 'cap' else 0.0
     return lambda point, mapped: (lift + point[2], mapped[1])
 
@@ -52,13 +49,13 @@ def wall_post(kit, z0, z1, piece):
     the sill to the bolster; its ends lie in the next piece and are left open."""
     return make(kit, timber((0.0, POST_MID, z0), (0.0, POST_MID, z1), POST_HALF * 2, POST_Y[1] - POST_Y[0],
                             up=(0.0, 1.0, 0.0), chamfer=0.028, facets=0.01, check='top', caps=OPEN,
-                            uv=post_uv(BASE_TOP, CAP_TOP, piece), seed='mines.wall.post'))
+                            uv=post_uv(CAP_TOP, piece), seed='mines.wall.post'))
 
 
 def pillar_post(kit, z0, z1, piece):
     return make(kit, timber((0.0, 0.0, z0), (0.0, 0.0, z1), PILLAR_HALF * 2, PILLAR_HALF * 2, up=(0.0, 1.0, 0.0),
                             chamfer=0.03, facets=0.012, check='top', caps=OPEN,
-                            uv=post_uv(PILLAR_BASE_TOP, PILLAR_CAP_TOP, piece), seed='mines.pillar.post'))
+                            uv=post_uv(PILLAR_CAP_TOP, piece), seed='mines.pillar.post'))
 
 
 def back_wedge(kit, side, height, name):

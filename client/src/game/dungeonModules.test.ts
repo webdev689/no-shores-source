@@ -10,6 +10,7 @@ import {
   layModule,
   loadStylePack,
   type ModuleMesh,
+  uvPerZ,
   PARTS,
   partPicture,
   type Place,
@@ -194,6 +195,28 @@ test("each corner keeps its piece's UV in pictures, v down, and its own normal, 
   const curved = laid(bent, { origin: [0, 0, 0], turns: 0 });
   near(curved.normals[0], [0.6, 0.8, 0]);
   near(curved.normals[2], [-0.6, 0.8, 0]);
+});
+
+test("a stretched corner's UV moves along its triangle's own gradient: grain up a post along u keeps its scale", () => {
+  const post = triangle([
+    [0, 0, 0],
+    [0.2, 0, 0],
+    [0, 0, 1],
+  ]);
+  // Unwrapped with u up the post and v round it, as timber's grain runs.
+  post.uvs.set([0, 0, 0, 0.2, 1, 0]);
+  post.parts.fill(PARTS.indexOf('wood'));
+  const { uvs } = laid(post, { origin: [0, 0, 0], turns: 0, stretch: { from: 0.5, to: 3.5 } });
+  near(uvs[0], [0.5 / 3.2, -0]);
+  near(uvs[1], [0.5 / 3.2, -0.2 / 3.2]);
+  near(uvs[2], [3.5 / 3.2, -0]);
+  // A flat top gains nothing however far it is lifted.
+  const top = triangle([
+    [0, 0, 1],
+    [1, 0, 1],
+    [0, 1, 1],
+  ]);
+  assert.deepEqual(uvPerZ(top.positions, top.uvs, [0, 1, 2]), [0, 0]);
 });
 
 test('a rope, a cloth, bones, carving and brass take finer pictures, so they come out their own size', () => {
