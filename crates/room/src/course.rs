@@ -10,9 +10,7 @@ use combat::fighter::FighterId;
 use movement::blocks::ground_at;
 use movement::{Block, Body, Heights, standing};
 
-/// The cell of the rim held round a course laid over the sea, metres: the squares a wreck's ground is laid in
-/// (tools/wreck/wreck_course.py), so its rim follows them to the square.
-pub const RIM_CELL_M: f64 = 0.3;
+pub use movement::heights::RIM_CELL_M;
 
 impl Room {
     /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: the rim round the blocks

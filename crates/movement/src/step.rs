@@ -158,8 +158,11 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
     let along = controls.sideways * pace * seconds;
     let moved = Body { x: body.x + along_x * along, y: body.y + along_y * along, ..*body };
-    // Off the end of the block, there is nothing to hold.
-    let (x, y) = if wall_ahead(blocks, &moved, body.facing).is_some() { (moved.x, moved.y) } else { (body.x, body.y) };
+    // Off the end of the block there is nothing to hold, and past the terrain's wall (a rim round a course laid over the
+    // sea) nowhere to be.
+    let holds =
+        wall_ahead(blocks, &moved, body.facing).is_some() && !terrain.walled((body.x, body.y), (moved.x, moved.y));
+    let (x, y) = if holds { (moved.x, moved.y) } else { (body.x, body.y) };
     let mut z = body.z;
     if climbing {
         z = (z + controls.forward * TUNING.climb * seconds).max(terrain.height_at(x, y));

@@ -64,3 +64,29 @@ fn a_body_climbing_the_rail_from_the_deck_goes_no_further_than_its_top() {
     assert!(body.x <= 3.0 && rim.stands_at(body.x, body.y), "held at the wall's top, over the deck: {body:?}");
     assert_ne!(body.mode, Mode::Air, "never let go over the sea");
 }
+
+#[test]
+fn a_body_climbing_a_wall_shimmies_along_it_no_further_than_the_rim() {
+    // A deck with a tall wall along its north edge, both ending at x 3: the wall's end stands at the rim's.
+    let blocks = vec![
+        Block { min_x: -3.0, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 2.0 },
+        Block { min_x: -3.0, min_y: -1.8, max_x: 3.0, max_y: -1.5, top: 5.2 },
+    ];
+    let rim = Heights::rim(&blocks, 0.3);
+    let start = Body { z: 2.0, ..movement::standing(2.5, -1.0) };
+    let north = Controls { forward: 1.0, yaw: 0.0, ..Controls::default() };
+    let mut body = start;
+    for _ in 0..120 {
+        if body.mode == Mode::Climb {
+            break;
+        }
+        body = press(body, north, &blocks, &rim, 1);
+    }
+    assert_eq!(body.mode, Mode::Climb, "on the wall: {body:?}");
+    let east = Controls { sideways: 1.0, yaw: 0.0, ..Controls::default() };
+    body = press(body, east, &blocks, &rim, 240);
+    assert!(rim.stands_at(body.x, body.y), "held over the deck: {body:?}");
+    let down = Controls { crouch: true, yaw: 0.0, ..Controls::default() };
+    body = press(body, down, &blocks, &rim, 120);
+    assert!(body.z >= 2.0 && rim.stands_at(body.x, body.y), "let go onto the deck, not the sea: {body:?}");
+}

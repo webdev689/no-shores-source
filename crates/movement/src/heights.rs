@@ -9,6 +9,10 @@ use crate::terrain::Terrain;
 
 /// How far a wall stands over the highest cell, metres: past any step or slope a body walks up.
 pub const WALL_RISE_M: f64 = 10.0;
+/// The cell of the rim held round a course laid over the sea, metres: the squares a wreck's ground is laid in
+/// (tools/wreck/wreck_course.py), so its rim follows them to the square. The room and the page's own steps take it
+/// from here, so their rims agree to the bit.
+pub const RIM_CELL_M: f64 = 0.3;
 /// The numbers a grid's shape crosses as, before its heights: its west and north edges, its cell, columns and rows.
 pub const SHAPE_FLOATS: usize = 5;
 

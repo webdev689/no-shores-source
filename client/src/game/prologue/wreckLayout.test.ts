@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HULL_FIT, HULLS } from '../../water/hullMask.ts';
-import { courseOf, inArea, layoutAt, readWreck, rimOf, topAt } from './wreckLayout.ts';
+import { courseOf, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
 const course = courseOf(layout);
@@ -51,22 +51,22 @@ test('the wreck is spread out: over 2000 m2 of ground across some 70 by 50 m', (
   assert.ok(east - west > 65 && south - north > 50, `${(east - west).toFixed(0)} by ${(south - north).toFixed(0)} m`);
 });
 
-test('the rim round the ground holds every block and nothing past them, cell for cell', () => {
-  const [west = 0, north = 0, cell = 0, columns = 0, rows = 0, ...heights] = rimOf(course);
-  assert.equal(heights.length, columns * rows);
-  const held = (x: number, y: number) => {
-    const [column, row] = [Math.floor((x - west) / cell), Math.floor((y - north) / cell)];
-    return column >= 0 && column < columns && row >= 0 && row < rows && heights[row * columns + column] === 0;
-  };
-  for (const block of course) {
-    assert.ok(held(block.minX + cell / 2, block.minY + cell / 2), 'a block holds its corner cell');
-    assert.ok(held(block.maxX - cell / 2, block.maxY - cell / 2), 'and its far one');
-  }
+test("the ground's blocks lie on whole squares, as the rules' rim round them is laid, and no fire on the sea is over them", () => {
+  // The rules lay their rim in 0.3 m cells from the westmost and northmost block (crates/movement RIM_CELL_M).
+  const cell = 0.3;
+  const west = Math.min(...course.map((block) => block.minX));
+  const north = Math.min(...course.map((block) => block.minY));
+  const whole = (value: number, from: number) =>
+    Math.abs((value - from) / cell - Math.round((value - from) / cell)) < 1e-6;
+  for (const block of course)
+    assert.ok(
+      whole(block.minX, west) && whole(block.maxX, west) && whole(block.minY, north) && whole(block.maxY, north),
+      `a block on whole squares: ${JSON.stringify(block)}`,
+    );
+  const over = (x: number, y: number) =>
+    course.some((block) => x >= block.minX && x <= block.maxX && y >= block.minY && y <= block.maxY);
   for (const fire of layout.fires.filter((each) => each.at[2] < 0.2))
-    assert.ok(!held(fire.at[0], fire.at[1]), `the sea a fire burns on at ${fire.at.join(', ')}`);
-  const ground = heights.filter((height) => height === 0).length * cell * cell;
-  const area = course.reduce((sum, block) => sum + (block.maxX - block.minX) * (block.maxY - block.minY), 0);
-  assert.ok(Math.abs(ground - area) < 1, `the rim holds the ground's ${area.toFixed(0)} m2: ${ground.toFixed(0)}`);
+    assert.ok(!over(fire.at[0], fire.at[1]), `the sea a fire burns on at ${fire.at.join(', ')}`);
 });
 
 test("no sea is drawn inside the wreck's hulls or over its rafts: a footprint over every ship and raft", () => {

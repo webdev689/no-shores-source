@@ -258,9 +258,9 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - **Nothing falls off.** The room over the sea holds a rim round the wreck's ground, a grid of 0.3 m cells, open
   where a block covers a cell and a wall everywhere else, as a ship's deck holds her crew ([[Movement]]): a body
   walks, jumps, vaults and climbs anywhere over the decks and the rafts and is held at their edge, its rails and
-  open breaks alike, while what falls or flies over the sea meets it at 0 m. The page's own movement holds the same
-  rim (`rimOf`), to the bit. A foe found off it is stood
-  again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
+  open breaks alike, while what falls or flies over the sea meets it at 0 m. A body hanging on a wall shimmies along
+  it no further than the rim. The page's own steps, its walk and its fight's prediction alike, stand on the same rim,
+  made by the rules from the blocks (`setRim`), to the bit. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
   back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, her gun deck and
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
@@ -324,8 +324,6 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   gun inside her deck is walked through, and her hatches are walked over.
 - Every wall is climbable ([[Movement]]): a player climbs a rail, or a heap still standing, and is held at its top by
   the wreck's rim, or brought back by the level.
-- The fight's own prediction of the player's blows and dodges in the page stands on open ground, not the rim: at the
-  wreck's very edge a dodge may show a step past it before the room holds the player there.
 - The heaps are not in the foes' navmesh: a foe that runs at one stops against it until it clears.
 - The sea fight has no touch controls, like the rest of the game ([[Interface]]: no gamepad or touch layer yet).
 - No figures swim or float in the forge, so no men are drawn in the water by the wrecks; the calm's talk asks only

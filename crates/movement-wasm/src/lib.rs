@@ -7,6 +7,7 @@
 use land::ground::Ground;
 use movement::blocks::ground_at;
 use movement::floats::{BLOCK_FLOATS, BODY_FLOATS, CONTROLS_FLOATS};
+use movement::heights::RIM_CELL_M;
 use movement::{Block, Body, Controls, Heights, TICK_SECONDS, TUNING, Terrain, standing, step_body};
 use std::cell::RefCell;
 
@@ -77,6 +78,22 @@ pub fn set_heights(bytes: &[u8]) -> bool {
     let kept = deck.is_some();
     LAND.with(|land| *land.borrow_mut() = deck.map_or(OnLand::Open, OnLand::Deck));
     kept
+}
+
+/// Keeps the rim round a course laid over the sea, from its blocks' numbers, five each, for every step after, in place
+/// of any ground: the rim the sea room holds its bodies by (`Heights::rim`), to the bit. Answers whether the numbers
+/// were blocks.
+pub fn set_rim(bytes: &[u8]) -> bool {
+    let floats: Vec<f64> = floats_of(bytes).collect();
+    if !floats.len().is_multiple_of(BLOCK_FLOATS) {
+        return false;
+    }
+    let blocks: Vec<Block> = floats
+        .chunks_exact(BLOCK_FLOATS)
+        .map(|numbers| Block::from_floats(numbers.try_into().unwrap_or(&[0.0; BLOCK_FLOATS])))
+        .collect();
+    LAND.with(|land| *land.borrow_mut() = OnLand::Deck(Heights::rim(&blocks, RIM_CELL_M)));
+    true
 }
 
 /// Steps the body in `bytes` by one tick under its controls on the kept course, and writes the next body over it.
@@ -184,6 +201,16 @@ pub unsafe extern "C" fn movement_set_ground(address: *const u8, length: usize) 
 pub unsafe extern "C" fn movement_set_heights(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_heights(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the rim round the blocks written at `address`, `length` bytes; 1 if they were blocks, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn movement_set_rim(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_rim(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps the section written at `address`, `length` bytes of JSON; 1 if it was one, 0 cleared.

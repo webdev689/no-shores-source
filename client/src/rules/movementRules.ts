@@ -71,6 +71,10 @@ export interface MovementRules {
    *  numbers it (`Heights::to_floats`), the same heights to the bit as the sea room's; null, or numbers that are not a
    *  grid, is open ground at 0 m. Answers whether a deck was set. */
   setHeights(grid: readonly number[] | null): boolean;
+  /** Stands every later step on the rim round a course laid over the sea, as the sea room holds its bodies: the
+   *  movement crate makes it from the blocks (`Heights::rim`), so it agrees with the room's to the bit. Answers whether
+   *  the blocks were taken. */
+  setRim(blocks: readonly Block[]): boolean;
   /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres), by the room's own
    *  reach rules, the body standing as `standing` says (a room's last word) or inside; null clears it. */
   setSection(
@@ -116,6 +120,7 @@ interface MovementExports {
   movement_set_course(address: number, length: number): number;
   movement_set_ground(address: number, length: number): number;
   movement_set_heights(address: number, length: number): number;
+  movement_set_rim(address: number, length: number): number;
   movement_standing(address: number, length: number): void;
   movement_step(address: number, length: number): void;
   movement_set_section(address: number, length: number): number;
@@ -252,6 +257,17 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
         return exports.movement_set_ground(address, bytes.length) === 1;
       } finally {
         exports.release(address, bytes.length);
+      }
+    },
+    setRim: (blocks) => {
+      const floats = blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
+      const address = exports.reserve(Math.max(1, floats.length) * 8);
+      const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
+      floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));
+      try {
+        return exports.movement_set_rim(address, floats.length * 8) === 1;
+      } finally {
+        exports.release(address, Math.max(1, floats.length) * 8);
       }
     },
     setHeights: (grid) => {

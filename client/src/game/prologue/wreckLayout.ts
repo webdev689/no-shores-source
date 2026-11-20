@@ -58,10 +58,6 @@ export interface WreckLayout {
   readonly drawn: { readonly mesh: string; readonly light: string };
 }
 
-/** The cell of the rim that holds bodies on the wreck's blocks, metres: the squares its ground is laid in. The room's
- *  own is crates/room's RIM_CELL_M. */
-export const RIM_CELL_M = 0.3;
-
 const RADIANS = Math.PI / 180;
 
 /** A block from a box's west, north, east and south edges and its top. */
@@ -144,35 +140,6 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
     flightBack: layout.flightBack.map(([x, y, z]) => [x + east, y + south, z] as const),
     dry: layout.dry.map((mask) => ({ ...mask, x: mask.x + east, y: mask.y + south })),
   };
-}
-
-/**
- * The rim round a course laid over the sea, as the numbers a grid of heights crosses to the page's movement as
- * (crates/movement Heights::from_floats): its west and north edges, its cell, columns and rows, then each cell's
- * height, 0 where a block covers the cell's middle and none (NaN) elsewhere. It is the room's own rim
- * (Heights::rim), worked out the same way to the bit, so the page holds a body at the wreck's edge where the room
- * does.
- */
-export function rimOf(blocks: readonly CourseBlock[], cell = RIM_CELL_M): number[] {
-  const west = Math.min(...blocks.map((block) => block.minX));
-  const north = Math.min(...blocks.map((block) => block.minY));
-  const east = Math.max(...blocks.map((block) => block.maxX));
-  const south = Math.max(...blocks.map((block) => block.maxY));
-  const count = (span: number) => (span > 0 && Number.isFinite(span) ? Math.ceil(span / cell) : 0);
-  const [columns, rows] = [count(east - west), count(south - north)];
-  const heights = new Array<number>(columns * rows).fill(Number.NaN);
-  const span = (low: number, high: number, start: number, most: number): readonly [number, number] => [
-    Math.max(0, Math.ceil((low - start) / cell - 0.5)),
-    Math.min(most - 1, Math.floor((high - start) / cell - 0.5)),
-  ];
-  for (const block of blocks) {
-    const [left, right] = span(block.minX, block.maxX, west, columns);
-    const [top, bottom] = span(block.minY, block.maxY, north, rows);
-    for (let row = top; row <= bottom; row++)
-      for (let column = left; column <= right; column++) heights[row * columns + column] = 0;
-  }
-  const shaped = columns * rows > 0;
-  return [shaped ? west : 0, shaped ? north : 0, cell, columns, rows, ...heights];
 }
 
 /** Every block a body stands on in the wreck, its heaps aside. */
