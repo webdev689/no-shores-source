@@ -111,8 +111,8 @@ pub fn watch_court(frame: &Frame, laid: &mut Laid) {
         Material::Gold,
     );
     laid.solids.push(cap);
-    for side in [-22.0, 22.0] {
-        laid.solids.extend(brazier(frame, OBELISK_TOWARD_M, side));
+    for side in [-19.0, 19.0] {
+        laid.solids.extend(brazier(frame, OBELISK_TOWARD_M - 9.0, side));
     }
     let from = -HALF_DEPTH_M;
     let to = RANGE_SEAWARD_M - 1.0;
