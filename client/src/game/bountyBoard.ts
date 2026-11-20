@@ -109,7 +109,7 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
   const bar = make('div', '', `gear-board-bar ${ROLES.track}`);
   const fill = make('div', '', ROLES.meter);
   const left = make('span', '', 'gear-board-left');
-  bar.append(fill, left);
+  bar.append(fill);
   const write = () => {
     const reset = resetAt();
     const until = reset === null ? null : reset - now();
@@ -119,7 +119,7 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
   write();
   const timer = setInterval(() => (page.isConnected ? write() : clearInterval(timer)), 1_000);
   const side = make('div', '', 'gear-board-side');
-  side.append(grid, bar);
+  side.append(grid, bar, left);
   page.append(side, card);
   const first = rows.find((row) => row.place === chosenPlace) ?? rows[0];
   if (first) show(first);

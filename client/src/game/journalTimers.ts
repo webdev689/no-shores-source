@@ -6,6 +6,7 @@ import { ROLES } from '../plus/kit.ts';
 import type { ThisWeek, WeekDungeon, WeekRow } from './activityWords.ts';
 import { pressOf } from './gearDom.ts';
 import { countdownWords, whenWords } from './journalWords.ts';
+import './activityScreens.css';
 import './journal.css';
 
 /** A line of the timers: its name, what is said of it, and this character's word on it. */

@@ -1,6 +1,7 @@
 /* The Journal's timers panel, after DFO's timers window: it lies over the page from its top, its head standing still
    and its list scrolling under it. */
 .journal-timers {
+  box-sizing: border-box;
   position: absolute;
   inset: 0 0 auto;
   z-index: 5;
@@ -10,7 +11,10 @@
   display: flex;
   flex-direction: column;
   padding: 16px 20px 18px;
-  background: #0a0c11;
+}
+/* DFO's window ground, solid, so nothing under the panel shows through the kit's panel role. */
+#hud .journal-timers {
+  background-color: #0a0c11;
 }
 .journal-timers[hidden] {
   display: none;
@@ -51,10 +55,6 @@
 }
 .journal-timer-row + .journal-timer-row {
   border-top: 1px solid rgba(163, 152, 128, 0.18);
-}
-.journal-timer-text {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 .journal-timer-name::before {
   content: '◆ ';
@@ -211,10 +211,12 @@
 @media (max-width: 899px) {
   .journal {
     grid-template-columns: minmax(0, 1fr);
+    align-content: start;
     row-gap: 16px;
     overflow-y: auto;
   }
   .journal-quests {
+    min-height: auto;
     overflow: visible;
   }
   .journal-cards {
@@ -250,4 +252,20 @@
   #hud .gear-hourglass:focus-visible img {
     transition: transform 240ms steps(4);
   }
+}
+
+/* In the timers a line's words and its state wrap within the row, so a long word on a week's dungeon or a gate's
+   reason never pushes past the clock at its right. */
+.journal-timer-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.journal-timer-row .gear-week-row {
+  flex-wrap: wrap;
+}
+.journal-timer-row .gear-week-what > * {
+  white-space: normal;
+}
+.journal-timer-row .gear-week-state {
+  flex: 0 1 auto;
 }
