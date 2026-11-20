@@ -164,7 +164,7 @@ export class SkyDriver {
     this.strikes = this.strikes.filter((strike) => worldS - strike.atS <= STRIKE_KEPT_S);
     const flash = flashOfAll(this.strikes, worldS, eye);
     const look = lookOf(reading, worldS, flash);
-    this.uniform.write(look, lamps, [eye[0], eye[1]]);
+    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
     const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
     const held = heldLight(look, lamps);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held };
@@ -184,7 +184,7 @@ export class SkyDriver {
     const { worldS, strikes } = told;
     const reading = { ...law.at(eye[0], eye[1], Math.max(0, groundM), told.hourS, climate), ...told.weather };
     const look = lookOf(reading, worldS, flashOfAll(strikes, worldS, eye));
-    this.uniform.write(look, lamps, [eye[0], eye[1]]);
+    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
     const sails = windBearing(told.weather.wind);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes, sails, held: heldLight(look, lamps) };
     return SKY_NOW.current;

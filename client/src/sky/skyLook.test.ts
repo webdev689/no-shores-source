@@ -107,3 +107,20 @@ test('the key light passes from the sun to a risen moon only while it is dark, s
   assert.deepEqual(dusk(0.01).key.slice(0, 3), readingAt(0.01).sun, 'the sun is the key while it is up');
   assert.ok(dusk(-0.1).keyBright > 0.01, 'the moon is the key once the sun is well set');
 });
+
+test("a flash lights the ground's light from above and below and the fog alike, not the sky alone", () => {
+  const night = readingAt(-0.5, { cloud: 1, storm: 1, falling: 1 });
+  const [dark, lit] = [lookOf(night, 0, 0), lookOf(night, 0, 0.5)];
+  const rise = (pick: (look: typeof dark) => readonly number[]) => luminance(pick(lit)) - luminance(pick(dark));
+  const fromAbove = rise((look) => look.ambientSky);
+  assert.ok(fromAbove > 0.05, `from above: ${fromAbove}`);
+  assert.ok(rise((look) => look.ambientGround) > fromAbove * 0.6, 'what the ground throws back takes the flash too');
+  assert.ok(rise((look) => look.fogColour) > 0.1, 'the air the rain hazes is lit');
+});
+
+test("in a sandstorm the light from above is the dust's: warm, and as bright as the dusty sky", () => {
+  const [clear, dusty] = [lookOf(readingAt(0.6), 0, 0), lookOf(readingAt(0.6, { sand: 1 }), 0, 0)];
+  const warmth = (colour: readonly number[]) => (colour[0] ?? 0) / Math.max(1e-6, colour[2] ?? 0);
+  assert.ok(warmth(dusty.ambientSky) > warmth(clear.ambientSky) * 1.3, `${dusty.ambientSky.join()}`);
+  assert.ok(warmth(dusty.ambientSky) > 1, 'more red than blue');
+});

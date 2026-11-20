@@ -2,6 +2,7 @@
 // rules, the forge's figures with the first person's hands, and the Sloop's model, all at once.
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
+import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { openCards } from '../player/cards.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
@@ -15,6 +16,7 @@ const SEA_SHIPS = 16;
 /** The forge's figures and the first person's hands, read from the forge's published renders. */
 async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
+  loadForgedBirds((path) => store.strip(path));
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
 }
 

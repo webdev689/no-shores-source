@@ -60,10 +60,13 @@ the water's backdrop draws the sky from them, and the water reflects it.
   deck whose cover is the weather's: scattered puffs in fair weather, a closed grey deck when overcast. In a storm the
   deck is lower and darker. The key light lights the clouds, brighter on their side toward it, with a silver edge
   round the sun and darker undersides. At sunset they take the glow's colours, and at night the moon lights them.
-- **Lightning** lights the sky and the clouds from within for the flash's moment; the water's reflection carries it.
+- **Lightning** lights the sky and the clouds from within for the flash's moment, and the air and the land under
+  them: the ground's light from above, what it throws back, and the haze. The water's reflection carries it.
 - **Haze and fog.** Distant land fades into the sky's colour near the horizon. The weather's fog adds its own density
   and colour: grey in rain, tan in sand, and thickest near sea level, so a low coast fills before the hills above it.
-  In thick fog the sky itself closes in to the fog's colour.
+  The fog lies between the eye and the clouds: in thick fog the sky closes in to the fog's colour, the clouds fading
+  into it, and nothing behind a closed deck (stars, the moon, the sun's disc) shows through. In a sandstorm the light
+  from above is the dust's, so the land under it is lit warm.
 - **The overworld camera** stays under the cloud deck. A deck forms from half cover, about 1150 m up, and lowers as
   the cover closes. Steady rain brings it down to about 400 m, the heaviest to about 200 m and a storm a little lower
   still; the camera keeps 60 m under it, and never comes lower than its floor.
@@ -77,9 +80,9 @@ what show the ground there.
   a fire's warm light from the solid's middle, reaching some ten metres from a lantern and up to sixty from a great
   fire. They flicker gently, each on its own beat, and are lit only as the daylight fades, coming up through the dusk.
   The glowing surfaces themselves burn brighter at night than by day.
-- **A carried light.** A torch or a lantern in the player's left hand lights round them on foot at night, a lamp at
-  their hand, in first person and third alike: a torch's reaches some eleven metres and flickers, a lantern's
-  thirteen and is steadier.
+- **A carried light.** A torch or a lantern in the player's left hand lights round them at night, on foot and walking
+  the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
+  flickers, a lantern's thirteen and is steadier.
 - **The nearest sixteen.** Each frame the carried light and the lamps nearest the eye (counting their reach) go to the
   sky's uniform, at most sixteen, so the cost stays bounded. The last of them fade as the next lamp nears, so none
   switches on or off as the eye moves. Every lit surface (the land, the plants, the city, the ships, the marks and the
@@ -90,7 +93,9 @@ what show the ground there.
   dimmed already.
 - **Wet and snow.** The weather's wetness darkens the land and the city's stone and gives them a sheen toward a
   grazing eye; once the ground is soaked, rain stands in puddles in the flat hollows of the land and the plaza. Snow
-  that has fallen in the last twenty minutes whitens the flat ground near the snow line. Wet leaves glisten.
+  that has fallen in the last twenty minutes whitens the flat ground and the city's flat stone where the weather laid
+  it: on the ground under the eye, where it is read, and higher, fading out 100 to 300 m lower down, which is warmer.
+  Puddles lie only where no snow does. Wet leaves glisten.
 
 ## Limits
 
@@ -98,5 +103,5 @@ what show the ground there.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
 - Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
-- A carried torch or lantern lights round the player ashore; walking the Sloop's deck it does not yet.
+- Standing at the Sloop's helm, the player's torch or lantern lights nothing; only walking her deck does it.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.
