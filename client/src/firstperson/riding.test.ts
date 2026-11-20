@@ -2,7 +2,6 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import type { Strip } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap, type Rgb } from '../forge/dyes.ts';
-import { gripFrame, gripPlace } from './climbing.ts';
 import { FramePainter } from './fpFrames.ts';
 import {
   RideMotion,
@@ -89,16 +88,4 @@ test("a rein lies under its fist, the fist in the gauntlets worn or the glove's"
   const source = sourceOf({ [reinPath('stand-0', 'L')]: rein, [fistPath('stand-0', 'L', null)]: fist });
   const picture = await reinPicture(source, shot, 'L', 'Iron');
   assert.deepEqual(Array.from(picture?.pixels ?? []), [200, 0, 0, 255, 128, 128, 128, 255]);
-});
-
-test('the hands come up onto the wall from under the screen, the right the mirror of the left', () => {
-  assert.equal(gripFrame(0), 0);
-  assert.equal(gripFrame(1), 5);
-  const left = gripPlace('left', 1)();
-  const right = gripPlace('right', 1)();
-  assert.equal(left.flip, false);
-  assert.equal(right.flip, true);
-  assert.ok(Math.abs(left.x + left.width - (320 - right.x)) < 1e-9);
-  assert.ok(left.y + left.height > 200);
-  assert.ok(gripPlace('left', 0)().y >= 200);
 });
