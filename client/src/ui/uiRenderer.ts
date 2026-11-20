@@ -1,0 +1,159 @@
+// The interface's renderer: its atlas of glyphs and tiles, and each frame's quads drawn in one pass over whatever the
+// frame drew before it, at the frame's end, on the canvas's own texture.
+import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { ATLAS_SIZE, Shelves } from './atlas.ts';
+import type { Glyph } from './glyphs.ts';
+import { type Box, type Colour, QUAD_FLOATS, QuadList, UNCLIPPED } from './quads.ts';
+import { type Face, layLine } from './text.ts';
+import { UI_SHADER } from './uiShader.ts';
+
+/** Bytes a quad takes. */
+const QUAD_BYTES = QUAD_FLOATS * 4;
+
+export class UiRenderer {
+  readonly quads = new QuadList();
+  readonly face: Face;
+  private readonly gpu: Gpu;
+  private readonly pipeline: GPURenderPipeline;
+  private readonly atlas: GPUTexture;
+  private readonly view: GPUBuffer;
+  private readonly binding: GPUBindGroup;
+  private readonly shelves = new Shelves();
+  private readonly placed = new Map<Glyph | string, Box | null>();
+  private instances: GPUBuffer | null = null;
+
+  constructor(gpu: Gpu, face: Face) {
+    this.gpu = gpu;
+    this.face = face;
+    const { device, format } = gpu;
+    const module = device.createShaderModule({ code: UI_SHADER });
+    const attribute = (shaderLocation: number) => ({
+      shaderLocation,
+      offset: shaderLocation * 16,
+      format: 'float32x4' as const,
+    });
+    this.pipeline = device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module,
+        entryPoint: 'vertex_main',
+        buffers: [{ arrayStride: QUAD_BYTES, stepMode: 'instance', attributes: [0, 1, 2, 3, 4].map(attribute) }],
+      },
+      fragment: {
+        module,
+        entryPoint: 'fragment_main',
+        targets: [
+          {
+            format,
+            blend: {
+              color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
+              alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
+            },
+          },
+        ],
+      },
+      primitive: { topology: 'triangle-strip' },
+    });
+    this.atlas = device.createTexture({
+      size: [ATLAS_SIZE, ATLAS_SIZE],
+      format: 'rgba8unorm',
+      usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
+    });
+    this.view = device.createBuffer({ size: 16, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    this.binding = device.createBindGroup({
+      layout: this.pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: this.view } },
+        { binding: 1, resource: this.atlas.createView() },
+      ],
+    });
+  }
+
+  /** Where `glyph` lies in the atlas, laid there as it is first wanted: its cells white, the rest clear. */
+  glyphTexels(glyph: Glyph): Box | null {
+    if (this.placed.has(glyph)) return this.placed.get(glyph) ?? null;
+    const box = this.shelves.place(glyph.width, glyph.height);
+    if (box) {
+      const pixels = new Uint8Array(glyph.cells.length * 4);
+      glyph.cells.forEach((cell, index) => pixels.fill(cell ? 255 : 0, index * 4, index * 4 + 4));
+      this.write(box, pixels);
+    }
+    this.placed.set(glyph, box);
+    return box;
+  }
+
+  /** Where the tile `key` lies in the atlas, laid there from `pixels` (RGBA, `width` by `height`) the first time. */
+  tileTexels(key: string, width: number, height: number, pixels: () => Uint8Array): Box | null {
+    if (this.placed.has(key)) return this.placed.get(key) ?? null;
+    const box = this.shelves.place(width, height);
+    if (box) this.write(box, pixels());
+    this.placed.set(key, box);
+    return box;
+  }
+
+  /** `words` at `size` (a whole multiple of the face's grid) with their line's top-left at `x`, `y` (device pixels),
+   *  each unit `scale` device pixels, in `colour`; under them a hard shadow `shadow` units down and right where
+   *  given. */
+  text(
+    words: string,
+    where: { readonly x: number; readonly y: number; readonly size: number; readonly scale: number },
+    colour: Colour,
+    clip: Box = UNCLIPPED,
+    shadow?: { readonly colour: Colour; readonly step: number },
+  ): void {
+    const { x, y, size, scale } = where;
+    const { glyphs } = layLine(this.face, words, size);
+    const draw = (offset: number, tone: Colour) => {
+      for (const laid of glyphs) {
+        const texels = this.glyphTexels(laid.glyph);
+        if (!texels) continue;
+        const box = {
+          x: x + (laid.x + offset) * scale,
+          y: y + (laid.y + offset) * scale,
+          width: laid.glyph.width * size * scale,
+          height: laid.glyph.height * size * scale,
+        };
+        this.quads.add(box, tone, clip, texels);
+      }
+    };
+    if (shadow) draw(shadow.step, shadow.colour);
+    draw(0, colour);
+  }
+
+  /** Draws the frame's quads over what the canvas holds, and starts the next frame's list. */
+  present(width: number, height: number): void {
+    const { device, context } = this.gpu;
+    const data = this.quads.data;
+    if (this.quads.count > 0) {
+      if (!this.instances || this.instances.size < data.byteLength) {
+        this.instances?.destroy();
+        this.instances = device.createBuffer({
+          size: Math.max(data.byteLength, QUAD_BYTES * 256) * 2,
+          usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
+        });
+      }
+      device.queue.writeBuffer(this.instances, 0, data);
+      device.queue.writeBuffer(this.view, 0, new Float32Array([width, height, 0, 0]));
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({
+        colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: 'load', storeOp: 'store' }],
+      });
+      pass.setPipeline(this.pipeline);
+      pass.setBindGroup(0, this.binding);
+      pass.setVertexBuffer(0, this.instances);
+      pass.draw(4, this.quads.count);
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+    }
+    this.quads.clear();
+  }
+
+  private write(box: Box, pixels: Uint8Array): void {
+    this.gpu.device.queue.writeTexture(
+      { texture: this.atlas, origin: [box.x, box.y] },
+      pixels as Uint8Array<ArrayBuffer>,
+      { bytesPerRow: box.width * 4 },
+      [box.width, box.height],
+    );
+  }
+}
