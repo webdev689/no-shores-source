@@ -297,7 +297,7 @@ so every decision is Rust and the shell only carries bytes and time.
   patrol's dungeons at that difficulty, opened from the patrol's baked file; `fleet-<name>` a fleet's place on the
   open sea;
   any other name is the Test Ground's course,
-  `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon whose node is no patrol. Any other spelling of a node's room is no room. A name is 64 characters at most.
+  `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon whose node is no patrol. Any other spelling of a node's room is no room, but for the tiers' old names: `--rough` and `--storm` are read as `--elite` and `--abyss` (`canonicalRoom`), so a page that still builds them joins its room and loads again. A name is 64 characters at most.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.

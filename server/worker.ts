@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
-import { nodeRoom } from './roomNames.ts';
+import { canonicalRoom, nodeRoom } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -34,9 +34,11 @@ const MESSAGE_MOST = 8192;
  *  carries every player to every socket. A room on land holds fewer players than this; the sea counts on it. */
 const MAX_PLAYERS = 64;
 
-/** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens. */
+/** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
+ *  name (`canonicalRoom`). */
 function roomName(request: Request): string | null {
-  return /^\/room\/([a-z0-9-]{1,64})$/.exec(new URL(request.url).pathname)?.[1] ?? null;
+  const name = /^\/room\/([a-z0-9-]{1,64})$/.exec(new URL(request.url).pathname)?.[1];
+  return name === undefined ? null : canonicalRoom(name);
 }
 
 /** The entrance a join into a patrol's room asks to stand at, `?entrance=<number>`: as a player comes out of that

@@ -18,3 +18,20 @@ export function nodeRoom(
   if (id === '' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
   return { id, seas: difficulty, dungeon: number === undefined ? null : Number(number) };
 }
+
+/** The tiers' old names in a node's room, by their names now. */
+const OLD_TIERS = new Map([
+  ['rough', 'elite'],
+  ['storm', 'abyss'],
+]);
+
+/** A room's one name: a node's tier suffix spelled the old way (`--rough`, `--storm`) as it is spelled now, any other
+ *  name as it is. */
+export function canonicalRoom(name: string): string {
+  if (!name.startsWith('node-')) return name;
+  const [node = '', tier = '', ...rest] = name.split('--');
+  const now = OLD_TIERS.get(tier);
+  // A page loaded before the rename still builds the old names: it joins the room it meant, and the welcome's new
+  // protocol hash makes it load again.
+  return now === undefined ? name : [node, now, ...rest].join('--');
+}
