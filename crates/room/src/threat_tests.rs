@@ -1,5 +1,10 @@
 use super::*;
 
+/// Pirates none of whom comes for the ship.
+fn wary(at: &[[f64; 2]]) -> Vec<([f64; 2], bool)> {
+    at.iter().map(|&point| (point, false)).collect()
+}
+
 const NORTH: [f64; 2] = [0.0, -1.0];
 
 #[test]
@@ -18,7 +23,7 @@ fn the_ladder_steps_down_by_fives() {
 
 #[test]
 fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_inside_her_ring() {
-    let ahead = |metres: f64| held_pace(60, [0.0, 0.0], 0.0, [[0.0, -metres]]);
+    let ahead = |metres: f64| held_pace(60, [0.0, 0.0], 0.0, wary(&[[0.0, -metres]]));
     // Closing at 12 + 2.4 m/s with 0.6 s of warning: 8.64 m of her way to the pirate's 750 m sight for each step.
     assert_eq!(ahead(2_000.0), 60, "1250 m short of her sight asks no less than the pace");
     assert_eq!(ahead(1_000.0), 25, "250 m short: 28.9, down the ladder");
@@ -30,17 +35,26 @@ fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_inside_h
 
 #[test]
 fn a_pirate_off_the_way_or_astern_leaves_the_pace_alone_but_her_hold_holds_whatever_the_way() {
-    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, [[900.0, 0.0]]), 60, "abeam, the way passes her by");
-    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, [[0.0, 1_000.0]]), 60, "astern");
-    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, [[0.0, 650.0]]), 1, "astern but within her hold");
-    assert_eq!(held_pace(100, [0.0, 0.0], 0.0, []), 100, "an empty sea");
-    assert_eq!(held_pace(0, [0.0, 0.0], 0.0, [[0.0, -100.0]]), 0, "at rest she stays at rest");
+    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, wary(&[[900.0, 0.0]])), 60, "abeam, the way passes her by");
+    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, wary(&[[0.0, 1_000.0]])), 60, "astern");
+    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, wary(&[[0.0, 650.0]])), 1, "astern but within her hold");
+    assert_eq!(held_pace(100, [0.0, 0.0], 0.0, wary(&[])), 100, "an empty sea");
+    assert_eq!(held_pace(0, [0.0, 0.0], 0.0, wary(&[[0.0, -100.0]])), 0, "at rest she stays at rest");
 }
 
 #[test]
 fn the_nearest_ask_holds_among_several_pirates() {
     let pirates = [[0.0, -2_000.0], [0.0, -1_000.0], [3_000.0, 0.0]];
-    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, pirates), 25);
+    assert_eq!(held_pace(60, [0.0, 0.0], 0.0, wary(&pirates)), 25);
     let east = std::f64::consts::FRAC_PI_2;
-    assert_eq!(held_pace(60, [0.0, 0.0], east, pirates), 60, "heading east, the two to the north are passed by");
+    assert_eq!(held_pace(60, [0.0, 0.0], east, wary(&pirates)), 60, "heading east, the two to the north are passed by");
+}
+
+#[test]
+fn a_ship_coming_for_her_holds_her_to_the_near_enemy_pace_ahead_of_her_beam_and_lets_go_astern() {
+    let coming = |east: f64, south: f64| held_pace(60, [0.0, 0.0], 0.0, [([east, south], true)]);
+    assert_eq!(coming(1_000.0, 0.0), 5, "abeam: held to the near-enemy pace");
+    assert_eq!(coming(0.0, -20_000.0), 5, "dead ahead, far off");
+    assert_eq!(coming(0.0, 1_000.0), 60, "astern, she turned away: out of reach");
+    assert_eq!(coming(0.0, 650.0), 1, "within her hold whatever the way");
 }

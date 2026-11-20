@@ -145,7 +145,7 @@ pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
 }
 
 /// What a ship's message asks of the sea room: a course; in a fight, her orders; off the helm, a numbered step of the
-/// player's walk on her deck; or the helm left or taken again.
+/// player's walk on her deck; or the helm left or taken again; or the hostile ship she chases.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeaInput {
     Course(Vec<[f64; 2]>, u16),
@@ -155,6 +155,8 @@ pub enum SeaInput {
     Walk(u32, Controls),
     LeaveHelm,
     TakeHelm,
+    /// The hostile ship she chases, by her number, or none.
+    Chase(Option<u32>),
 }
 
 /// What a message to the sea room asks, or why it does not read: the helm when it asks for it, a step when it carries
@@ -166,7 +168,8 @@ pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
         0 => {}
         1 => return Ok(SeaInput::LeaveHelm),
         2 => return Ok(SeaInput::TakeHelm),
-        other => return Err(format!("the helm is left (1) or taken (2), not {other}")),
+        3 => return Ok(SeaInput::Chase(Some(course.chase()).filter(|&ship| ship != 0))),
+        other => return Err(format!("the helm is left (1) or taken (2), or a chase (3), not {other}")),
     }
     if let Some(walk) = course.walk() {
         let numbers: Vec<f64> = walk.iter().collect();
@@ -218,6 +221,16 @@ pub fn helm_bytes(leave: bool) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
     let args = messages::CourseArgs { helm: if leave { 1 } else { 2 }, ..messages::CourseArgs::default() };
     let course = messages::Course::create(&mut builder, &args);
+    builder.finish(course, None);
+    builder.finished_data().to_vec()
+}
+
+/// A chase of the hostile ship numbered `ship` (0 none), as its bytes, written from Rust for tests.
+#[must_use]
+pub fn chase_bytes(ship: u32) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let course =
+        messages::Course::create(&mut builder, &messages::CourseArgs { helm: 3, chase: ship, ..Default::default() });
     builder.finish(course, None);
     builder.finished_data().to_vec()
 }
@@ -486,7 +499,9 @@ pub fn sea_snapshot_bytes(
             let Pirate { id, x, y, heading, level, sight_m: sight, commission: Commission { faction, rank }, .. } =
                 *pirate;
             let hull = rank.hull().number();
-            let args = messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight };
+            let way = room::sighting::way_of(rank);
+            let args =
+                messages::PirateArgs { id, x, y, heading, faction, rank: rank.number(), hull, level, sight, way };
             messages::Pirate::create(&mut builder, &args)
         })
         .collect();

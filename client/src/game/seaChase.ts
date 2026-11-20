@@ -4,15 +4,12 @@
 import type { SeenPirate } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
-import { hostileName, sightedHostiles } from './seaHostiles.ts';
+import { HOSTILE_PREFIX, hostileName, sightedHostiles } from './seaHostiles.ts';
 
 /** Within this of her she is met (crates/naval/src/captain `ENGAGE_RANGE`), metres. */
 export const MET_M = 750;
 /** Seconds between the chase's plans. */
 export const CHASE_EVERY_S = 0.5;
-/** A hostile ship's way at sea by her rank, 1 Minor to 5 Boss, metres a second at the world's own time
- *  (crates/room/src/sighting.rs `way_of`): she sails on the clock of the player she sails by, as the player does. */
-const RANK_WAYS = [2.16, 2.4, 2.64, 2.88, 2.4] as const;
 
 /** Where a ship sailing from `from` at `speed` meets one at `there` sailing at `velocity` (east and south, metres a
  *  second), soonest: lead pursuit. Where she is, if she cannot be reached. */
@@ -34,26 +31,38 @@ export function interceptPoint(from: Point2, speed: number, there: Point2, veloc
   return [there[0] + velocity[0] * time, there[1] + velocity[1] * time];
 }
 
-/** Where the player's ship at `ship` meets `pirate`: both on the same clock, so at their ways at the world's own time. */
+/** Where the player's ship at `ship` meets `pirate`: both on the same clock, so at their ways at the world's own time,
+ *  hers as the room sends it (none from a room that sends none: where she is). */
 export function meetingPoint(ship: Point2, pirate: SeenPirate): Point2 {
-  const way = RANK_WAYS[pirate.rank - 1] ?? RANK_WAYS[1];
+  const way = pirate.way ?? 0;
   const velocity: Point2 = [Math.sin(pirate.heading) * way, -Math.cos(pirate.heading) * way];
   return interceptPoint(ship, SHIP_SPEED, [pirate.x, pirate.y], velocity);
 }
 
-/** The ship's chase, if any: whom, and the seconds since its last plan. */
+/** The ship's chase, if any: whom, and the seconds since its last plan; `tell` tells the sea room whom she chases (null
+ *  none), so the one chased is met within 750 m whatever her temper. */
 export class Chase {
   private quarry: { readonly id: number; readonly name: string } | null = null;
   private since = 0;
+  private readonly tell: (ship: number | null) => void;
 
-  /** Chases `pirate` from the ship at `ship`: where to plan her course for now. */
-  start(pirate: SeenPirate, ship: Point2): Point2 {
+  constructor(tell: (ship: number | null) => void = () => undefined) {
+    this.tell = tell;
+  }
+
+  /** Chases the ship of the mark `markId`, if she is among `pirates` sighted from the ship at `ship`: where to plan
+   *  her course for now; null for no such ship. */
+  begin(markId: string, pirates: readonly SeenPirate[], ship: Point2): Point2 | null {
+    const pirate = sightedHostiles(pirates, ship).find((each) => `${HOSTILE_PREFIX}${each.id}` === markId);
+    if (!pirate) return null;
     [this.quarry, this.since] = [{ id: pirate.id, name: hostileName(pirate) }, 0];
+    this.tell(pirate.id);
     return meetingPoint(ship, pirate);
   }
 
-  /** Ends the chase: met, lost, or another course set. */
+  /** Ends the chase for another course set, telling the room. */
   stop(): void {
+    if (this.quarry) this.tell(null);
     this.quarry = null;
   }
 
@@ -69,8 +78,9 @@ export class Chase {
     const id = this.quarry.id;
     const pirate = sightedHostiles(pirates, ship).find((each) => each.id === id);
     // Lost from sight, or met: within a captain's 750 m a bold one takes the ship on, and a wary one is caught up.
+    // The room ends its side itself, once she has left the sea.
     if (!pirate || Math.hypot(pirate.x - ship[0], pirate.y - ship[1]) <= MET_M) {
-      this.stop();
+      this.quarry = null;
       return null;
     }
     this.since += seconds;

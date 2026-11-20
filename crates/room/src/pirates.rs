@@ -99,6 +99,8 @@ pub struct Pirates {
     waits: BTreeMap<PlayerId, f64>,
     pub sailing: Vec<Pirate>,
     parted: Vec<[u32; 2]>,
+    /// The ship each player chases, by her number: met within `ENGAGE_RANGE` whatever her temper.
+    chasing: BTreeMap<PlayerId, u32>,
 }
 
 #[cfg(test)]
@@ -123,7 +125,33 @@ fn clock_at(pirate: &Pirate, ships: &[Voyager]) -> f64 {
         .min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
     let Some(nearest) = nearest else { return 1.0 };
     let shared = ships.iter().any(|other| other.player != nearest.player && apart(other.at, nearest.at) <= SHARE_M);
-    if shared { 1.0 } else { nearest.clock }
+    // One coming for the player keeps their voyage's pace while the hold eases theirs, so she closes on them.
+    let coming = pirate.quarry == Some(nearest.player);
+    if shared {
+        1.0
+    } else if coming {
+        f64::from(nearest.pace.max(1))
+    } else {
+        nearest.clock
+    }
+}
+
+/// Where a ship blocked on `heading` sails instead: the open heading nearest her last, `last`, a twelfth of a half
+/// turn at a time either way, so she follows a coast round; none open, she goes about.
+fn round_the_coast(
+    at: [f64; 2],
+    (heading, last): (f64, f64),
+    step: f64,
+    chart: &impl Chart,
+) -> (f64, Option<[f64; 2]>) {
+    let ahead = |way: f64| [at[0] + libm::sin(way) * step, at[1] - libm::cos(way) * step];
+    let turns = (1..=12).flat_map(|turn| [f64::from(turn), -f64::from(turn)]).map(|turn| heading + turn * TAU / 24.0);
+    let open = turns.filter(|&way| chart.open(at, ahead(way)));
+    let off = |way: f64| ((way - last + TAU / 2.0).rem_euclid(TAU) - TAU / 2.0).abs();
+    match open.min_by(|one, other| off(*one).total_cmp(&off(*other))) {
+        Some(way) => (way.rem_euclid(TAU), Some(ahead(way))),
+        None => ((heading + TAU / 2.0).rem_euclid(TAU), None),
+    }
 }
 
 /// A bold ship's heading after `seconds` at her `clock`, and the player she comes for: the one she came for while still
@@ -152,7 +180,16 @@ impl Pirates {
             waits: BTreeMap::new(),
             sailing: Vec::new(),
             parted: Vec::new(),
+            chasing: BTreeMap::new(),
         }
+    }
+
+    /// The player chases the ship numbered `ship`, or none.
+    pub fn chase(&mut self, player: PlayerId, ship: Option<u32>) {
+        match ship {
+            Some(ship) => self.chasing.insert(player, ship),
+            None => self.chasing.remove(&player),
+        };
     }
 
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
@@ -175,8 +212,12 @@ impl Pirates {
             if chart.open(at, ahead) {
                 [sailed.x, sailed.y] = ahead;
             } else {
-                // Land or home water ahead: she goes about.
-                sailed.heading = (sailed.heading + TAU / 2.0).rem_euclid(TAU);
+                // Land or home water ahead: she follows it round, or goes about.
+                let (way, there) = round_the_coast(at, (heading, pirate.heading), step, chart);
+                sailed.heading = way;
+                if let Some([x, y]) = there {
+                    [sailed.x, sailed.y] = [x, y];
+                }
             }
         }
         self.sailing.retain(|pirate| ships.iter().any(|ship| pirate.kept_by(ship.at)));
@@ -185,15 +226,21 @@ impl Pirates {
             if ship.fighting || met.iter().any(|&(taken, _)| taken == ship.player) {
                 continue;
             }
+            let chased = self.chasing.get(&ship.player).copied();
+            let meets = |pirate: &Pirate| pirate.bold || chased == Some(pirate.id);
             let sighted = self
                 .sailing
                 .iter()
-                .position(|pirate| pirate.bold && apart([pirate.x, pirate.y], ship.at) <= ENGAGE_RANGE);
+                .position(|pirate| meets(pirate) && apart([pirate.x, pirate.y], ship.at) <= ENGAGE_RANGE);
             if let Some(index) = sighted {
                 met.push((ship.player, self.sailing.remove(index)));
             }
         }
         self.waits.retain(|player, _| ships.iter().any(|ship| ship.player == *player));
+        let sailing = &self.sailing;
+        self.chasing.retain(|player, ship| {
+            ships.iter().any(|at_sea| at_sea.player == *player) && sailing.iter().any(|pirate| pirate.id == *ship)
+        });
         for ship in ships {
             let wait = self.waits.entry(ship.player).or_insert(FIRST_ROLL_S);
             *wait -= seconds;

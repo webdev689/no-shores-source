@@ -10,6 +10,8 @@ use naval::fight::HOSTILE_NEAR_M;
 
 /// Real seconds of warning a ship always has before a pirate's sight.
 pub const WARN_S: f64 = 0.6;
+/// A ship coming for the voyage holds it while she bears no more than 10 degrees abaft its beam (the sine of 10°).
+const ABAFT_BEAM: f64 = 0.173_648_177_666_930_33;
 /// The slowest pace a pirate's cap brings a voyage down to, short of her hold.
 pub const FOE_PACE: f64 = 5.0;
 /// A pirate's reach: her sight, past the ring inside which she holds the voyage.
@@ -39,9 +41,12 @@ pub fn step_down(rate: f64) -> f64 {
 }
 
 /// The pace a ship set to `pace` sails at, at `at` heading `heading` (radians clockwise from north), with pirates at
-/// `pirates`: her pace, held down as one's sight comes near along her way, and to 1 within the hold of any.
+/// `pirates`, each with whether she is coming for this ship: her pace, held down as one's sight comes near along her
+/// way, and to 1 within the hold of any. One coming for her holds her to `FOE_PACE` while forward of her beam, however
+/// her way leads: on the voyage's own clock she then sails faster than the ship, and meets her. Astern, she is out of
+/// reach and the hold lets go: turning away evades her.
 #[must_use]
-pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterator<Item = [f64; 2]>) -> u16 {
+pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterator<Item = ([f64; 2], bool)>) -> u16 {
     if pace == 0 {
         return 0;
     }
@@ -49,10 +54,15 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
     // The fastest rank's way, so the warning holds whoever comes.
     let closing = SHIP_SPEED_M_S + PIRATE_WAY_M_S * FASTEST_WAY;
     let (mut ratio, mut held) = (f64::INFINITY, false);
-    for [x, y] in pirates {
+    for ([x, y], coming) in pirates {
         let (east, south) = (x - at[0], y - at[1]);
-        held |= (east * east + south * south).sqrt() <= HOSTILE_NEAR_M;
-        ratio = ratio.min(metres_to_reach(east, south, REACH_M, way) / (WARN_S * closing));
+        let apart = (east * east + south * south).sqrt();
+        held |= apart <= HOSTILE_NEAR_M;
+        // Coming on a collision course she stays at one bearing, abeam of a crossing ship: up to 10 degrees abaft it.
+        let ahead = east * way[0] + south * way[1] >= -ABAFT_BEAM * apart;
+        let cap =
+            if coming && ahead { FOE_PACE } else { metres_to_reach(east, south, REACH_M, way) / (WARN_S * closing) };
+        ratio = ratio.min(cap);
     }
     if held {
         return 1;

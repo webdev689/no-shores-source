@@ -220,6 +220,11 @@ impl Sea {
         self.aboard.remove(&player);
     }
 
+    /// The player chases the hostile ship numbered `ship`, or none: within 750 m of her she is met, whatever her temper.
+    pub fn chase(&mut self, player: PlayerId, ship: Option<u32>) {
+        self.pirates.chase(player, ship);
+    }
+
     /// The player leaves the helm and stands behind the wheel on their ship's deck. Her helmsman keeps her course: under
     /// way she sails on, at rest she stays.
     pub fn leave_helm(&mut self, player: PlayerId) -> Result<(), HelmRefused> {
@@ -371,13 +376,14 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         self.fights.retain(|_, fought| fought.fight.over().is_none());
-        let pirates: Vec<[f64; 2]> = self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
+        let pirates: Vec<_> = self.pirates().iter().map(|pirate| ([pirate.x, pirate.y], pirate.quarry)).collect();
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
             // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
-            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, pirates.iter().copied());
+            let near = pirates.iter().map(|&(at, quarry)| (at, quarry == Some(*player)));
+            let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, near.clone());
             sailing.ship.rate = if self.fights.contains_key(player) {
                 0
             } else {
