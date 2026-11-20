@@ -164,8 +164,8 @@ test('by hand the rooms deploy whatever changed; with no deploy found they deplo
 });
 
 test('on main, the page is published only once the rooms have deployed or had nothing to deploy', () => {
-  const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
-  const pages = /\n  pages:\n((?: {4}.*\n|\s*\n)*)/.exec(ci)?.[1] ?? '';
+  const checks = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const pages = /\n  pages:\n((?: {4}.*\n|\s*\n)*)/.exec(checks)?.[1] ?? '';
   assert.match(pages, /needs: \[check, rooms\]/, 'the page waits for the rooms');
   const when = /if: >-\n((?: {6}.*\n)*)/.exec(pages)?.[1]?.replace(/\s+/g, ' ') ?? '';
   assert.ok(when.includes("needs.rooms.outputs.deploy == 'no' || needs.rooms.outputs.deployed == 'yes'"), when);
