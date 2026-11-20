@@ -1,10 +1,10 @@
 """The Ravager, the Husk gone ranged. After the owner's own in project-final: the Husk's body, red, reading apart by
 what it carries, not its colour: a ragged crystal hood closed over its skull in place of the Husk's great crystal,
-open at the front so the face reads in its shadow with two eyes glowing through, swept back to a peak, ragged points
-hanging off its rim; a mantle of two rows of dark shards hanging from the shoulders, open at the front and longer
-behind; and a crystal blade grown out of each fist, its edge the weapon when cornered. Project-final's gun-blades are
-reshaped: no firearms, so it hurls the shards that grow on its blades, a layer of their own the game takes away as
-they are thrown. In a townsman's vest. Drawn by render.py; its moves are ravager_moves.py's."""
+open at the front so the face reads in its shadow with two eyes glowing through, swept back to a peak; a mantle of
+two rows of dark shards hanging from the shoulders, open at the front and longer behind; and a crystal blade grown
+out of each fist, its edge the weapon when cornered. Project-final's gun-blades are reshaped: no firearms, so it
+hurls the shards that grow on its blades, a layer of their own the game takes away as they are thrown. In a
+townsman's vest. Drawn by render.py; its moves are ravager_moves.py's."""
 import numpy as np
 
 import growth
@@ -31,9 +31,8 @@ CLUSTERS = [
 
 
 def hood(fighter, crystal, eye):
-    """A dark cowl over the skull but its face, a shell of the skin, and over it shards, swept back to a peak; ragged
-    points off its rim about the face; and two eyes glowing in the shadow under it, on the face's own skin. Returns
-    the cowl, and the rest."""
+    """A dark cowl over the skull but its face, a shell of the skin, and over it shards, swept back to a peak; and two
+    eyes glowing in the shadow under it, on the face's own skin. Returns the cowl, and the rest."""
     p, ways, piece = growth.skin_of(fighter)
     head = np.nonzero(piece == 'skull')[0]
     front = p[head, 1].min()
@@ -47,10 +46,6 @@ def hood(fighter, crystal, eye):
         # laid back and down at rest, so they sweep back once its head bows with its hunch
         made.append(growth.shard(f'ravager_hood_{k}', p[at], ways[at] + np.array((0.0, 0.9, -0.5)),
                                  0.04 + peak + pick.uniform(0, 0.03), 0.04, pick.uniform(0, np.pi), crystal))
-    rim = head[np.abs(p[head, 1] - front - 0.06) < 0.02]
-    for k, at in enumerate(pick.choice(rim, size=min(6, len(rim)), replace=False)):
-        made.append(growth.shard(f'ravager_rim_{k}', p[at] + np.array((0.0, -0.02, 0.0)), (0.0, -0.3, -1.0),
-                                 pick.uniform(0.05, 0.08), 0.018, k, crystal))
     for side in (1.0, -1.0):
         at = growth.nearest(p, np.array((0.032 * side, front, 1.635)))
         made.append(growth.shard(f'ravager_eye_{side:+.0f}', p[at], ways[at], 0.02, 0.016, 0.0, eye, widest=0.5))

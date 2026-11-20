@@ -14,10 +14,10 @@ STEADY = ('spine', 'chest', 'neck', 'head')        # its tremor while it aims: t
 
 
 def armed(pose, wrists, pitches=(AHEAD, AHEAD)):
-    """Each wrist laid, its blade pointed forward and a little out, pitched up by its angle in degrees: past 90, up
-    and back over the shoulder."""
+    """Each wrist laid, its blade pointed forward and splayed out, so both read from the front, pitched up by its
+    angle in degrees: past 90, up and back over the shoulder."""
     for side, wrist, pitch in zip('LR', wrists, pitches):
-        out = 0.2 if side == 'L' else -0.2
+        out = 0.55 if side == 'L' else -0.55
         a = np.radians(pitch)
         way = (out, -np.cos(a), np.sin(a))
         laid(pose, side, wrist, way, up=(0.0, 0.0, 1.0) if abs(way[2]) < 0.7 else (0.0, -1.0, 0.0))

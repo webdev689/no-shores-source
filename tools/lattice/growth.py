@@ -38,8 +38,9 @@ def crystal_material(strain, glow=GLOW_STRENGTH):
     """A strain's crystal, and its darker twin for the roots of its shards."""
     colours = STRAINS[strain]
     bright = glowing(f'lattice.crystal_{strain}', colours['crystal'], glow, colours['glow'])
+    # matte: a broad dark face (a shield's, a rib's) that mirrored the light would render as noise at a sprite's samples
     DEEP[bright.name] = glowing(f'lattice.deep_{strain}', tuple(c * 0.4 for c in colours['crystal']), glow * 0.25,
-                                colours['glow'], rough=0.3, spec=0.5)
+                                colours['glow'], rough=0.65, spec=0.3)
     return bright
 
 
