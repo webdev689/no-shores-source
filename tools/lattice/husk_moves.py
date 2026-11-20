@@ -28,7 +28,8 @@ WALK_BODY = [
 ]
 
 
-def shamble(frame, view, yaw):
+def shambling(frame):
+    """The walk's pose at `frame`, and whether the right hand clenches: the Ravager walks it too, its arms its own."""
     if frame < 8:
         legs = summed(through([CONTACT_L, PASSING_L, CONTACT_R], frame / 8), scaled(DRAG, np.sin(np.pi * frame / 8)))
     else:
@@ -40,6 +41,11 @@ def shamble(frame, view, yaw):
         'spine': (shudder * 6, 0, 0), 'clav_L': (0, 0, -hitch), 'uarm_L': (roll * 1.2, 0, 0),
         'uarm_R': (-swing * 2, 0, 0)})
     rot['head'] = head   # the head's own, never shaken: its cock is the move
+    return rot, clench
+
+
+def shamble(frame, view, yaw):
+    rot, clench = shambling(frame)
     return drawn(rot, yaw, right_fist=clench)
 
 

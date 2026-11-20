@@ -47,6 +47,7 @@ def main():
     layers.LOOKS = os.path.join(sys.argv[sys.argv.index('--out') + 1], 'forgeLooks.json')   # never the studio's
     layers.BODIES[name] = {'spec': 488, 'moves': 'male', 'base': 'male', 'gear': {}}   # its own body, as a child's is
     layers.CHILD = dict(getattr(foe, 'MAKE', {}))   # its make over the man's: the forge lays it on as a child's
+    layers.WORK = getattr(foe, 'WORK', layers.WORK)   # a larger work frame for a foe the forge's would cut off
     poses.ANIMS.update({move: pose for move, (pose, _) in foe.MOVES.items()})
     layers.ANIMS.update({move: len(keys) for move, (_, keys) in foe.MOVES.items()})   # before the forge loads its body
     outfit = getattr(foe, 'OUTFIT', [])
