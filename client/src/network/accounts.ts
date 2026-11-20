@@ -85,6 +85,9 @@ const LAPSED = 'Your sign-in lapsed after 30 days away. Sign in again.';
 /** Where the page keeps the nonce of the Discord sign-in it began, for the tab alone. */
 const NONCE_KEY = 'overlook.discord';
 const TOKEN = /^[0-9a-f]{64}$/;
+/** What the page says of a Discord sign-in that came back and went through: a new session, or Discord linked. */
+export const DISCORD_SIGNED_IN = 'Signed in with Discord.';
+export const DISCORD_LINKED = 'Discord is linked.';
 
 /** A random 32 bytes in hex, as the accounts make their tokens. */
 function nonceOf(): string {
@@ -110,6 +113,9 @@ export class AccountLink {
   said: string | null = null;
   /** The session being asked for, while it is. */
   private asking: Promise<Account | null> | null = null;
+  /** How long an ask may go unanswered, milliseconds, before it is given up as out of reach: a host that never
+   *  answers would otherwise hold whatever waits on it until the browser's own limit. */
+  patienceMs = 10_000;
 
   constructor(base: string, kept: Kept, ask: typeof fetch = (...given) => fetch(...given), passing: Kept = kept) {
     this.base = base.replace(/\/+$/, '');
@@ -151,10 +157,10 @@ export class AccountLink {
       this.said = answer;
       return;
     }
-    if (answer['linked'] === true) this.said = 'Discord is linked.';
+    if (answer['linked'] === true) this.said = DISCORD_LINKED;
     else if (typeof answer['token'] === 'string' && TOKEN.test(answer['token'])) {
       this.kept.setItem(this.key, answer['token']);
-      this.said = 'Signed in with Discord.';
+      this.said = DISCORD_SIGNED_IN;
     }
   }
 
@@ -168,6 +174,7 @@ export class AccountLink {
           ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
         },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        signal: AbortSignal.timeout(this.patienceMs),
       });
       const read = (await answer.json().catch(() => ({}))) as Record<string, unknown>;
       if (answer.ok) return read;

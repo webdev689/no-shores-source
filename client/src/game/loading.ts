@@ -1,8 +1,8 @@
-// What the game loads before the player can arrive, all at once so no load waits on another: the world, the RMB
-// index, the movement rules, the forge's figures and first person, and the Sloop.
-import { loadForgedBirds } from '../combat/forgedBirds.ts';
+// What the game loads before anything is shown: the world's layout and edits, the RMB index's blocks, the movement
+// rules, the forge's figures with the first person's hands, and the Sloop's model, all at once.
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
+import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { openCards } from '../player/cards.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
@@ -20,8 +20,8 @@ async function openForge(gpu: Gpu, figures: FigureView) {
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
 }
 
-/** Loads everything the game starts from, from the page's `base`; a missing RMB index is null, as the land allows. */
-export async function loadGameAssets(gpu: Gpu, base: string, figures: FigureView) {
+/** Everything the game needs loaded first, from the pages served under `base`. */
+export async function loadParts(gpu: Gpu, base: string, figureView: FigureView) {
   const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
     fetch(`${base}world/rmb/index.json`)
@@ -33,7 +33,7 @@ export async function loadGameAssets(gpu: Gpu, base: string, figures: FigureView
         return answer.arrayBuffer();
       })
       .then(startMovementRules),
-    openForge(gpu, figures),
+    openForge(gpu, figureView),
     loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'), SEA_SHIPS)),
   ]);
   return { world, rmbText, movement, forge, firstPerson, store, sloop };

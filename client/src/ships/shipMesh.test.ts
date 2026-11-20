@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readShipMesh, VERTEX_BYTES } from './shipMesh.ts';
+import { readShipMesh, shipSails, VERTEX_BYTES } from './shipMesh.ts';
 
 const WATERLINE = { length_m: 6, beam_m: 2, draught_m: 0.5 };
 
@@ -59,4 +59,22 @@ test('a mesh without a waterline, or with counts that are not whole, is refused'
   assert.throws(() => readShipMesh(header({ name: 'flat', vertices: 0, indices: 0, waterline: flat })), /waterline/);
   const half = { name: 'half', vertices: 0.5, indices: 0, waterline: WATERLINE };
   assert.throws(() => readShipMesh(header(half)), /whole/);
+});
+
+test("the Brig's sails are her two staysails, six square sails each on its four corners, and her gaff", () => {
+  const sails = shipSails('brig');
+  assert.deepEqual(
+    sails.map((sail) => sail.kind),
+    ['stay', 'stay', 'square', 'square', 'square', 'square', 'square', 'square', 'gaff'],
+  );
+  for (const sail of sails)
+    if (sail.kind === 'square') {
+      const corners = [sail.foot_port, sail.foot_starboard, sail.head_port, sail.head_starboard];
+      assert.ok(corners.every((corner) => corner.length === 3 && corner.every(Number.isFinite)));
+      assert.ok(sail.head_port[2] > sail.foot_port[2] && sail.foot_port[1] < 0 && sail.foot_starboard[1] > 0);
+    }
+  assert.deepEqual(
+    shipSails('sloop').map((sail) => sail.kind),
+    ['stay', 'gaff'],
+  );
 });

@@ -2,7 +2,8 @@
 // the playing song's next bar line; a new song begins on it while the old fades over a bar; a fight that ends fades
 // over two bars, never cut. A sting (a boss waking or falling, a fight won or lost) begins on the bar line and holds
 // the next song until it has played. The ambience is lowered under the music as a fight grows and let back after.
-// A sea song out of danger plays whole, once through. A place whose score is not written is silent.
+// A sea song out of danger plays whole, once through. A place whose score is not written is silent. The story's songs
+// play in the layers of the mood it asks, and its cut stops everything at once.
 
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
@@ -30,6 +31,7 @@ import { saltmereScore } from './saltmereScore.ts';
 import { ROLES, type Role, type Song, TICKS_PER_BEAT, songSeconds } from './score.ts';
 import { type SeaSong, seaSongs } from './seaScore.ts';
 import { START_LEAD_S, SongPlayer, songTail } from './songPlayer.ts';
+import { type StorySong, storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
@@ -56,6 +58,7 @@ export interface Scores {
   readonly social: Song | null;
   readonly sea: Readonly<Record<SeaSong, Song>>;
   readonly bosses: Readonly<Record<Boss, BossScore>>;
+  readonly story: Readonly<Record<StorySong, Song>>;
 }
 
 /** Every score the game plays. */
@@ -66,6 +69,7 @@ export function overlookScores(): Scores {
     social: saltmereScore(),
     sea: seaSongs(),
     bosses: { boarding: { ...boarding, defeat: boarding.end }, reckoning: reckoningScore(), wrath: wrathScore() },
+    story: storyScores(),
   };
 }
 
@@ -85,6 +89,8 @@ export function songOf(scores: Scores, cue: Cue): Song | null {
       const final = phases[phases.length - 1] ?? null;
       return cue.part === 'last' ? (last ?? final) : (phases[cue.part - 1] ?? final);
     }
+    case 'story':
+      return scores.story[cue.song];
   }
 }
 
@@ -110,6 +116,8 @@ const UNDUCK_S = 4;
 /** The social space's theme plays whole, the ambience a little under it. */
 const ALL_ROLES: ReadonlySet<Role> = new Set(ROLES);
 const SOCIAL_DUCK = 0.8;
+/** The story's songs played once through: the ram, which the crash cuts short. */
+const ONCE: ReadonlySet<StorySong> = new Set(['ram']);
 
 const barOf = (song: Song): number => song.ticksPerBar * song.secondsPerTick;
 const beatOf = (song: Song): number => TICKS_PER_BEAT * song.secondsPerTick;
@@ -190,7 +198,7 @@ export class MusicDirector {
     const verdict = hear(this.memory, hearing, seconds, this.songClock);
     this.memory = verdict.memory;
     const bus = this.output();
-    if (!bus) return this.hush();
+    if (!bus || verdict.cut) return this.hush();
     if (bus.out !== this.bus?.out) this.wire(bus);
     const now = this.clockOf(bus.audio);
     const { scores } = this;
@@ -204,8 +212,11 @@ export class MusicDirector {
     // The social space's theme and a sea song out of danger play whole, at their own level.
     const whole = verdict.cue.kind === 'social' || voyage;
     const roles = whole ? ALL_ROLES : MOOD_ROLES[verdict.mood];
-    this.follow(song, roles, whole ? 1 : MOOD_LEVEL[verdict.mood], now, !voyage);
-    const under = !song ? 1 : whole ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
+    const story = verdict.cue.kind === 'story' ? verdict.cue.song : null;
+    const once = voyage || (story !== null && ONCE.has(story));
+    this.follow(song, roles, whole ? 1 : MOOD_LEVEL[verdict.mood], now, !once);
+    // The story's songs leave its sea and storm heard under them, as the social space's theme leaves the harbour.
+    const under = !song ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
     // A sting is music too: the ambience stays lowered under it.
     this.duck(now < this.holdUntil ? Math.min(under, MOOD_DUCK.combat) : under);
   }
@@ -264,8 +275,10 @@ export class MusicDirector {
       this.current = null;
       return;
     }
-    // A song still fading out is brought back where it stands, never begun again over itself.
-    const fading = playing ? null : this.players.find((player) => player.song === song && !player.idle(now));
+    // A song still fading out is brought back where it stands, never begun again over itself; while a sting holds,
+    // it is begun anew once the sting has played, so a boss's wake never sounds over the song it leads into.
+    const fading =
+      playing || now < this.holdUntil ? null : this.players.find((player) => player.song === song && !player.idle(now));
     const same =
       playing?.song === song ? playing : fading ? { player: fading, song, roles: ALL_ROLES, level: 0 } : null;
     if (same) {

@@ -33,9 +33,10 @@ code:
 Where a foe can walk, and the way there. A room bakes its course into a navmesh once, when it starts; foes then ask
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
 steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
-course and 30 m of ground about it; a node's room over a 70 m square of its own land by its first spawn, where its
-garrison stands ([[Enemies]]); a dungeon's room over the whole dungeon ([[Dungeons]]). Its [[Foes]] find their way
-and their firing spots by it, and climb and drop where its links say.
+course and 30 m of ground about it (a course laid over open sea, its blocks' tops alone); a node's room over a 70 m
+square of its own land by its first spawn, where its garrison stands ([[Enemies]]); a dungeon's room over the whole
+dungeon ([[Dungeons]]). Its [[Foes]] find their way and their firing spots by it, and climb and drop where its links
+say.
 
 ## How it works
 
@@ -53,11 +54,12 @@ and their firing spots by it, and climb and drop where its links say.
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
    of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk or a link joins is
-   kept: a block's top that neither a step nor a link reaches is dropped. An anchored bake keeps instead the part
-   joined to the floor nearest a point it is given, the way in of a dungeon, whose rock stands as walls 10 m tall
-   ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon bakes in cells of 0.4 m, an eighth
-   of its own, so every wall of it lies on a cell's edge and the bake holds a third of the columns 0.25 m would; its
-   jambs and pillars are the bake's colliders.
+   kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
+   no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
+   anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
+   rock stands as walls 10 m tall ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon
+   bakes in cells of 0.4 m, an eighth of its own, so every wall of it lies on a cell's edge and the bake holds a third
+   of the columns 0.25 m would; its jambs and pillars are the bake's colliders.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so

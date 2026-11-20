@@ -20,7 +20,7 @@ import type { NodeInfo } from './worldData.ts';
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
  *  ask a room in the page for (none but under `npm run dev`), the session's token the rooms keep the player's
- *  character by (null for none), and the ways into a patrol's dungeons and out. */
+ *  character by (null for none), read as each room connects, and the ways into a patrol's dungeons and out. */
 export interface FootContext {
   readonly movement: MovementRules;
   readonly land: LandWorker;
@@ -30,7 +30,7 @@ export interface FootContext {
   readonly roomModule: Promise<WebAssembly.Module>;
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
-  readonly session: Promise<string | null>;
+  readonly session: () => Promise<string | null>;
   readonly trips: Trips;
 }
 

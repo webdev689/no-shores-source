@@ -104,13 +104,22 @@ impl NavMesh {
         Self::bake_colliders(&colliders, bounds, agent)
     }
 
+    /// Bakes the walkable surface of blocks laid over open sea at 0 across `bounds`, as ships' decks are: the sea is
+    /// no floor, so the mesh is the blocks' tops alone, and every part of them a body could stand in is kept, since no
+    /// ground joins them into one.
+    #[must_use]
+    pub fn bake_over_sea(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        Self::baked(&colliders, None, bounds, agent, (None, true), true)
+    }
+
     /// Bakes a course's blocks standing on a terrain, which may dip below 0, as a seabed does: its height is read at
     /// every cell's centre, and the ground is floor where its slope is within the agent's. A terrain that answers a
     /// height that is not a number is baked as open ground at 0.
     #[must_use]
     pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, (None, true))
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, (None, true), false)
     }
 
     /// Bakes as `bake_on` does, but keeps the part a walk joins to the floor nearest `anchor` rather than the largest:
@@ -125,13 +134,13 @@ impl NavMesh {
         anchor: [f64; 3],
     ) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, (Some(anchor), false))
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, (Some(anchor), false), false)
     }
 
     /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        Self::baked(colliders, None, bounds, agent, (None, true))
+        Self::baked(colliders, None, bounds, agent, (None, true), false)
     }
 
     fn baked(
@@ -140,16 +149,17 @@ impl NavMesh {
         bounds: Bounds,
         agent: &Agent,
         (anchor, climbed): (Option<[f64; 3]>, bool),
+        over_sea: bool,
     ) -> Self {
         let floor: &dyn Terrain = match &ground {
             Some(heights) => heights,
             None => &Flat,
         };
         // The solid is let go of once the open surface is built: the two at once would double the bake's memory.
-        let mut field = compact::build(&raster::voxelise(colliders, floor, bounds, agent), agent);
+        let mut field = compact::build(&raster::voxelise(colliders, floor, bounds, agent, !over_sea), agent);
         let links = if climbed { links::bake(colliders, floor) } else { Vec::new() };
         let joins = links::joins(&field, &links);
-        regions::partition(&mut field, &joins, anchor);
+        regions::partition(&mut field, &joins, anchor, over_sea);
         let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
         let outlines = contours::build(&field);
         let grid = field.grid;
