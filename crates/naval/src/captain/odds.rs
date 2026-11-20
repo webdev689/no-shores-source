@@ -132,6 +132,21 @@ pub fn odds(one: &Power, other: &Power, [own, theirs]: [&Arms; 2]) -> f64 {
     }
 }
 
+/// Whether a wary captain of `commission` at `strength` (`Captain::raised`), sound, falls on a player's Sloop met at
+/// sea with `hull_share` of her hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one
+/// she outguns `WARY_ODDS` to one by their fighting powers.
+#[must_use]
+pub fn wary_takes(commission: crate::ranks::Commission, strength: f64, hull_share: f64) -> bool {
+    if hull_share < super::GRAPPLE_HULL {
+        return true;
+    }
+    let arms = crate::arms::arms_of(commission.hull());
+    let her = super::Captain::new(commission, 0, 0.0, arms).raised(strength);
+    let prize = Power::player(&crate::arms::LARGE_BOAT, hull_share);
+    let sloop = crate::arms::arms_of(sailing::HullKind::Sloop);
+    odds(&her.power(&commission.damage_at(strength)), &prize, [arms, sloop]) >= super::WARY_ODDS
+}
+
 #[cfg(test)]
 #[path = "odds_tests.rs"]
 mod tests;

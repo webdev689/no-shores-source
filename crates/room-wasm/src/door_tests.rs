@@ -178,23 +178,23 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "f88bb30aef7fa764";
+pub const SEA_CLASH_HASH: &str = "ba87501518ddb7fb";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
 #[test]
 fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fingerprint() {
     // The second island's waters are contested, so both factions come; on this seed two of them meet about 5 km from
-    // the player by tick 6099, and the player sails there.
+    // the player by tick 6522, and the player sails there.
     let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
-    assert!(open_sea(layout.as_bytes(), 66));
+    assert!(open_sea(layout.as_bytes(), 484));
     room_world_start(CLASH_START_S);
     let player = room_join();
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     let (mut hash, mut clashed, mut three) = (0xcbf2_9ce4_8422_2325_u64, false, false);
     for tick in 1..=16_000 {
-        if tick == 6_100 {
-            assert_eq!(input(player, &protocol::course_bytes(&[[53_350.0, 53_617.0]], 10)), TAKEN);
+        if tick == 6_523 {
+            assert_eq!(input(player, &protocol::course_bytes(&[[53_327.0, 53_450.0]], 10)), TAKEN);
         }
         room_tick();
         with_open(|opened| {
@@ -278,6 +278,7 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     assert_eq!(message.gear().unwrap().items().unwrap().len(), 5, "the second player's own starting kit");
     assert!(open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     assert!(gear(first).is_empty(), "the sea keeps no gear");
+    assert!(set_difficulty(1), "a sea takes its tier, as a node's room does");
     assert!(!furnish(&bytes_of(&[7.0, 15.0])));
 }
 

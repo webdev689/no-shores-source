@@ -26,7 +26,7 @@ fn a_bands_row_holds_from_its_level_to_the_next_and_its_shares_sum_to_one() {
         RANKS_AT_SEA.map(|rank| ranks.iter().filter(|&&each| each == rank).count() as f64 / 10_000.0)
     };
     let near = |one: [f64; 4], other: [f64; 4]| one.iter().zip(other).all(|(a, b)| (a - b).abs() < 1e-3);
-    for (low, row) in [(1, 0), (7, 0), (10, 1), (12, 1), (13, 2), (16, 2), (19, 3), (22, 3), (26, 4)] {
+    for (low, row) in [(1, 0), (3, 0), (4, 1), (7, 2), (10, 3), (12, 3), (13, 4), (16, 5), (19, 6), (22, 7), (26, 8)] {
         assert!(near(shares(low), RANKS_BY_BAND[row].1), "band from {low}: {:?}", shares(low));
     }
     for (_, row) in RANKS_BY_BAND {
@@ -34,6 +34,28 @@ fn a_bands_row_holds_from_its_level_to_the_next_and_its_shares_sum_to_one() {
     }
     assert_eq!(rank_for(19, 1.0 - f64::EPSILON / 4.0), Rank::Miniboss, "the top of a roll: the row's highest rank");
     assert_eq!(rank_for(1, 1.0 - f64::EPSILON / 4.0), Rank::Elite);
+}
+
+#[test]
+fn each_islands_band_has_a_row_and_each_rank_moves_one_way_from_row_to_row() {
+    let lows: Vec<u8> = gear::world::ISLANDS.iter().map(|&(_, low, _)| low).collect();
+    assert_eq!(RANKS_BY_BAND.map(|(from, _)| from).to_vec(), lows, "a row from each island's lowest level");
+    let column = |rank: usize| RANKS_BY_BAND.map(|(_, row)| row[rank]);
+    assert!(column(0).windows(2).all(|pair| pair[1] < pair[0]), "fewer Minors each band: {:?}", column(0));
+    assert!(column(2).windows(2).all(|pair| pair[1] > pair[0]), "more Elites each band: {:?}", column(2));
+    assert!(column(3).windows(2).all(|pair| pair[1] >= pair[0]), "Minibosses never fewer: {:?}", column(3));
+}
+
+#[test]
+fn a_hostile_ships_chance_at_a_roll_rises_evenly_with_the_waters_band() {
+    let chance = |low: u8, high: u8| hostile_chance(Some((low, high)));
+    assert!((chance(1, 4) - 0.18).abs() < 1e-12, "the first band");
+    assert!((chance(26, 30) - 0.36).abs() < 1e-12, "the last band");
+    assert!((chance(13, 16) - 0.27).abs() < 1e-12, "the middle band, halfway");
+    let rising: Vec<f64> = gear::world::ISLANDS.iter().map(|&(_, low, high)| chance(low, high)).collect();
+    let steps: Vec<f64> = rising.windows(2).map(|pair| pair[1] - pair[0]).collect();
+    assert!(steps.iter().all(|step| (step - 0.0225).abs() < 1e-12), "even steps: {rising:?}");
+    assert!((hostile_chance(None) - 0.18).abs() < 1e-12, "a water with no band rolls as the first");
 }
 
 #[test]

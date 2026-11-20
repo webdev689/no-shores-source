@@ -28,6 +28,10 @@ code:
   - client/src/editor/naval.ts#Naval
   - client/src/editor/fighting.ts#Fighting
   - client/src/editor/aim.ts#lookReach
+  - client/src/editor/aimCamera.ts#AimCamera
+  - client/src/editor/naval.ts#aimOf
+  - client/src/ships/aimView.ts#AimView
+  - client/src/game/seaSight.ts#aimLineOf
   - client/src/ships/effects.ts#Effects
   - client/src/ships/fightFeel.ts#FightFeel
   - client/src/rules/feelEvents.ts#feelOf
@@ -147,17 +151,25 @@ so she never tacks.
   the nearest that struck her within 320 m. What she remembers of a chase, a wreck, her mark's way and the side she
   presented is let go when she marks another ship.
 - **Her course.** She bends round every hull about her that will pass within both their reaches (each half of half her
-  box's beam and length) and 15 m, the bends of each summed, as DFO's traffic does. Far off, she steers to intercept. A
-  ship running from her she runs down astern, then sheers out to its beam. Otherwise she brings the side that costs
-  least to bear on where her balls will meet him, bent off the beam to open or close her range of 50 m, and once
-  presented keeps station with sail. She bends round his hull and sounds the land ahead, swinging off a foul course.
+  box's beam and length) and 15 m, the bends of each summed, as DFO's traffic does. Far off, she steers to intercept,
+  until the range is her reach and what her turning circle and her helm's ease close as she comes round: so she is
+  round to her broadside as the range comes to her reach, as a player who turns at it is, and rank, not the order of
+  the turns, decides the fight. A ship running from her she runs down astern, then sheers out to its beam. Otherwise
+  she brings the side that costs least to bear on where her balls will meet him, laid abeam once she will be round
+  within her reach, else bent off the beam to open or close her range of 50 m, and once presented keeps station with
+  sail. She bends round his hull and sounds the land ahead, swinging off a foul course.
 - **Her guns.** A side loaded, in reach, near her beam, bearing soon and whose lay would strike runs out: the tell.
+  Her reach is reckoned centre to centre as a player's balls strike her: her guns' reach, her own half beam out to her
+  mouths, and the mark's depth along the line of fire (half her length end-on, half her beam abeam); her lay strikes if
+  it passes through the mark's middle or her near side.
   It fires no sooner than 1.3 s on, within her gunners' window, long or short by their want of skill. One run out too
   long unfired, or that loses its mark, is run in. She never fires on a wreck.
 - **When she breaks off.** A captain runs below her rank's share of her hull (a Major's 30%); a wary one runs from a
   ship that outguns her. A chase that gains nothing in 150 s is given up, and a wreck left after 30 s. She leaves the
-  fight when she has sunk, or lies past 1.9 km from every ship she may fight (each player's, and each afloat captain's
-  of another faction) and is not fighting; the editor's fight ends when its one captain leaves.
+  fight when she has sunk, or, not fighting, lies past 1.9 km from every ship she may fight (each player's, and each
+  afloat captain's of another faction), or, engaged by no captain, has lain out of all their guns' reach for 150 s, as
+  long as she gives a chase: so a wary ship a player chased into a fight she will not take breaks off, and the fight
+  ends for both. The editor's fight ends when its one captain leaves.
 
 ## Ranks and factions
 
@@ -174,6 +186,12 @@ the Frigate. Her rank scales her, a Major at the numbers of the rest of this not
 | Elite | ×1.8 | ×1.1 | ×1.1 | ×0.9 | ×0.8 | always bold | under 30% | at 20% |
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
+
+Her level raises her as a foe's raises it on land ([[A Ship's Level Raises Her Strength, and the Tiers Reach the
+Sea]], [[Foes]]): her hull, her men and her guns' harm are the table's times the land's `foe_health_times` at her level,
+1.07 a level (×1.31 at level 4, ×6.2 at level 27, `Pirate::strength`, `Captain::raised`); a ship of level 0, as the
+editor stands one, is the table's. A wary ship sizes a Sloop up at her raised strength. Her way, reload, aim and when
+she runs and strikes stay her rank's.
 
 Her men are as many as her hull makes them (6 to 94, whole men), so hull and men give out in the same proportion at
 every rank: a hull hit takes a man or two, and her men give out at about four fifths of her hull, as a Major's do. Her
@@ -209,8 +227,10 @@ Pass]]) with Claude's numbers:
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought her, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
   of their pieces gathers it. Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
-  her rank at her level (her water's): its Vestige by the rewards' foe her rank names (a Minor the Skirmisher's chance,
-  a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one), an Ammo box by her rank,
+  her rank at her level (her water's, raised by the sea's tier): its Vestige by the rewards' foe her rank names
+  (a Minor the Skirmisher's chance,
+  a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one; at Elite or Abyss times
+  the tier's reward, as a harder voyage's kill on land, `vestige_chance`), an Ammo box by her rank,
   and from a Miniboss or a Boss an Ammo crate; what the player has no room for is lost with the piece. For an Elite or
   higher one piece of each player's is a chest, rolled as a foe one rank higher. A piece looks like a crate or a barrel
   (half each by its draw) or a chest.
@@ -417,22 +437,35 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 
 - **Who comes.** Each player at sea rolls half a minute after reaching the water and then every 60 to 140 s; a roll that
   falls due while they fight comes as the fight ends. While fewer than three hostile ships sail within their sight of
-  them, a roll brings a ship 0.8 of the time, and she is hostile 0.3 of that (DFO's open sea: 30 of its factions' 100).
+  them, a roll brings a hostile ship by the band of the water the player is in, so her water sets how many come
+  (`hostile_chance`): 0.18 in the first island's band (1 to 4), rising evenly by 0.0225 a band to 0.36 in the last (26
+  to 30); a water with no band rolls as the first. (DFO's open sea brought one 0.24 of the time in every water.)
   The water at the player's ship decides who comes ([[The Waters Come From the Islands]], [[World Map]], "Waters"):
   none in Overlook's home waters (the roll is spent), a pirate in the pirates' waters, a Tithe ship in the Grey Tithe's,
   and either, half each, in a contested water or on the seam. Her rank comes by the lowest level of her water's band:
 
   | Band starts at | Minor | Major | Elite | Miniboss |
   |---|---|---|---|---|
-  | under 10 | 0.50 | 0.40 | 0.10 | 0 |
-  | 10 to 12 | 0.35 | 0.45 | 0.20 | 0 |
-  | 13 to 18 | 0.25 | 0.45 | 0.25 | 0.05 |
-  | 19 to 25 | 0.15 | 0.45 | 0.30 | 0.10 |
-  | 26 and up | 0.10 | 0.40 | 0.35 | 0.15 |
+  | 1 (and none) | 0.50 | 0.40 | 0.10 | 0 |
+  | 4 | 0.45 | 0.42 | 0.13 | 0 |
+  | 7 | 0.40 | 0.43 | 0.17 | 0 |
+  | 10 | 0.35 | 0.45 | 0.20 | 0 |
+  | 13 | 0.25 | 0.45 | 0.25 | 0.05 |
+  | 16 | 0.20 | 0.45 | 0.27 | 0.08 |
+  | 19 | 0.15 | 0.45 | 0.30 | 0.10 |
+  | 22 | 0.13 | 0.43 | 0.32 | 0.12 |
+  | 26 | 0.10 | 0.40 | 0.35 | 0.15 |
+
+  A row for each island's band; the rows at 4, 7, 16 and 22 lie evenly between the five they came from, so each rank
+  moves one way from band to band (Minors fewer, Elites and Minibosses more).
 
   No Boss comes by a roll: the Boss Frigate sails only at the Grey Tithe's sea strike, which is not built. Her level is
-  drawn evenly from the band, as a garrison foe's is; it is carried and shown, and her strength in a fight stays her
-  rank's. Her faction and rank are drawn as she comes and kept on her (`sighting.rs`). The rolls wait real seconds, and
+  drawn evenly from the band, as a garrison foe's is, and raised by the sea's tier as a foe's on land: two levels in an
+  Elite sea, three in an Abyss one (`Difficulty::raise`), the ranks that come the same. A host sets a sea's tier as it
+  sets a node's room's (`Sea::set_difficulty`, the door's `room_difficulty`); the server opens one sea, at Normal.
+  Her level raises her strength
+  in a fight (above, "Ranks and factions"). Her faction and rank are drawn as she comes and kept on her
+  (`sighting.rs`). The rolls wait real seconds, and
   are drawn from a seed the sea takes as it opens (the server's from the runtime's random numbers, the page's from its
   own), so each sea sends its ships in an order of its own, as DFO draws its rolls ([[Pirates Must Be Met at Sea]]).
 - **Sight.** A ship is sighted from `max(5 000 m, 30 s × (12 + 2.4) m/s × pace)` of a player, their voyage's pace (at
@@ -469,8 +502,10 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **The voyage held.** As DFO holds a fast journey, a voyage eases down as a hostile ship comes near along its way: its
   pace is capped so the player takes 0.6 s of real time or more to reach her sight (750 m), closing at their ship's 12
   m/s and the fastest rank's 2.88, down DFO's ladder by fives, never under ×5. Her way is judged along every leg of her course she would
-  sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a hostile ship of either
-  temper, sailing or in a fight among captains, it is held to ×1, the world's own time (`threat.rs`). The room sails
+  sail through that tick at her own pace, so no turn of a course slips past it. Within 700 m of a hostile ship that
+  would engage this player (bold, chased by them, one `wary_takes` would fall on their Sloop, or one in a fight among
+  captains, which a player in sight joins), it is held to ×1, the world's own time (`threat.rs`, `holds`); a wary ship
+  that will not engage caps the pace by the ladder alone. The room sails
   each ship at that pace and sends it as her pace; the page sails its own at the room's pace, drawn to where the room
   has her, and the voyage's line says it is held.
 - **Rivals meet** (`clash.rs`). A bold ship within 750 m of a ship of another faction, neither in a fight, meets the
@@ -490,11 +525,43 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws her to her true size as on the sea's other views near her ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
-  let go to fire, a left click to hold fire, the wheel for the load and C to brace; the sea's own wait for its end.
+  let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, and
+  C to brace; the sea's own wait for its end, and the sea bar is hidden.
   Every captain in it is drawn with her name over a bar of her hull, her plate as far over her highest sail as the
   Sloop's stands over hers (`plateOverM`). Then the view pans back up. Hostile ships at sea
   are drawn as the Overworld's ships are, each in her hull and her faction's colours with her footprint on the water, those fighting each other where
   the room has them. A ship that comes into view is drawn under the sails she sails by, already set (`seaShips.ts`).
+
+## The aim, as DFO's
+
+The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and Aims as DFO's Does]]). Ported from
+DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
+
+- **The eye** (`AimCamera`, in the game's fight) eases out to the aim eye over DFO's 0.22 s, smoothstepped, and home
+  again on the release; swinging the look across her bow carries it to the other battery's eye eased in her own frame,
+  so her way never drags it. On its way out from her ports it stops 1.2 m short of any ship afloat alongside (her
+  waterline's box, from her draught to a metre over her upper gun line). A crippled ship's guns are silent: her eye
+  never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
+- **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
+  (DFO's look is free); out of the aim the orbit keeps its own clamp, 0.05 to 1.2 rad down.
+- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at 13 px in
+  the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
+  along the fire from her ports), "(longest)" within a metre of their longest throw, " - on target" in red while the
+  side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
+- **What the aim shows** (`aimOf`, drawn by `AimView`): each gun's unscattered flight to where the rules stop it, a
+  ribbon 0.003 of the view's height across at any distance, dashed every 6 m of flight (the second half 0.35 as
+  strong) and marching out at 9 m/s; each splash a ring flat on the sea, at least 1.6 m across its radius, and a post
+  of light 3.4 m tall over it; each strike a 2.2 m mark where the ball meets her. DFO's three tones: brass laid, red
+  on target, grey while the side cannot fire (loading, braced, her guns silent). The ring is blended over the sea; the
+  posts, strikes and arcs are light added onto the frame, unlit and unfogged; all are drawn over the finished
+  picture after the water, hidden where the world's depth stands nearer.
+- **The wheel**: while aiming a notch steps the load, but only after 0.18 s of quiet since the last, so a trackpad's
+  stream of small turns steps it once; out of the aim it zooms the fight's camera, a notch half again nearer or
+  farther, from 11.4 m (DFO's nearest) to the fight camera's own 75 m.
+- **The screen**: a captain's plate stands under the compass, never over it.
+
+The World Editor's own aim keeps its eye at once (`aimCameraOf`) and draws its lay as marks, as "In the World Editor"
+says; the game's fight draws it over the water.
 
 ## In a fleet room
 
