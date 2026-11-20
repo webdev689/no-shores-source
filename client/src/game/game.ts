@@ -12,6 +12,7 @@ import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { FigureView } from './figureView.ts';
+import { musiciansOf } from './audio/music/band.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
@@ -407,7 +408,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
-    music.onFoot(world, here.node, shown.fight, seconds);
+    const listener = [walker.player.body.x, walker.player.body.y] as const;
+    music.onFoot(world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     ambience.onFoot(here.node, landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
