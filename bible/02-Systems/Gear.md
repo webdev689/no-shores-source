@@ -329,8 +329,16 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - **Rare and finer** pieces are armour sets of the forge: Rare in chain, steel or iron, Legendary in silver, elven,
   dwarven or the knights' set, Atheric in daedric, ebony, adamantium or mithril, the first the forge draws for every
   piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots).
-- **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; the hands hold the loadout
-  drawn, in the rarity's metal.
+- **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
+  cloak in its faction's dye whatever its rarity. The hands hold the loadout drawn, in the rarity's metal.
+- **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them.
+  A dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) in place of the
+  forge's own on every armour piece's layer, its padding and every garment but the cloak; never on a weapon, a shield,
+  a sheath, the cloak or the hair. A coat lays its ramp on the horse's hide by its light (texels of the hide's hue,
+  25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them. A barding is the forge's own
+  layer stacked over the horse in every mounted move, drawn over the hide whatever its depth, and in the riding view
+  its own published strip. Own Colours, Bay and Bare change nothing. Another player's dress naming a dye, coat or
+  barding that is not one of its kind is refused as any broken dress is.
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.
 
 ## Limits

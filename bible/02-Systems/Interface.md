@@ -69,7 +69,9 @@ code:
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsPage
   - client/src/game/emblemArt.ts#emblemPixels
-  - client/src/game/emblemSlot.ts#emblemSlot
+  - client/src/game/emblemSlot.ts#appearanceButton
+  - client/src/game/appearance/appearancePage.ts#appearancePage
+  - client/src/forge/cosmetics.ts#rampOf
   - client/src/game/companyHud.ts#startCompanyHud
   - client/src/game/stationPages.ts#vaultPage
   - client/src/game/stationPages.ts#vendorPage
@@ -294,15 +296,25 @@ never while a press is held. Each press is an ask the room answers.
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
 - **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the Melee
   and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
-  emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
+  Appearance button stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
   names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
   it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
   at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
   slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
   it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
   one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
-  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot. The emblem's
-  flyout holds every emblem, five a row: those kept to wear with a click, the rest dim, each card saying how it is had.
+  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot.
+- **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). In the Emblem slot's place stands the
+  Appearance button: a wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner. It opens the
+  Appearance screen in the page's place, as the Art's diamond opens the Art's screen, the focus on the worn emblem. At
+  its left the display: the player's figure turning a view every 1.2 s through the forge's five views and their
+  mirrors (still with less motion asked for), in the dye worn, and under it their horse from the side in its coat and
+  barding. At its right, under engraved headings counting what is kept, EMBLEM (five a row) and DYE, COAT and BARDING
+  (eight a row), every one of the catalogues: kept pieces lit and worn with a click or Enter, the rest dim, each card
+  saying how it is had ("Sold by the Tailor.", "Reach the Lamplighters' second rank."); the worn one of each kind in
+  brass with a brass corner. A dye's tile is its ramp over a cuirass, a coat's a swatch, a barding's the horse's head
+  and chest wearing it. Hovering or focusing a dye, coat or barding shows it on the display before it is worn. Escape
+  goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
