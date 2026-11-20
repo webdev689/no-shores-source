@@ -11,6 +11,23 @@ export const STRIKE_KEPT_S = 80;
 /** Over this long, world seconds, the weather eases from one air into the next, as the eye boards or lands. */
 export const AIR_EASE_S = 20;
 
+/** The light on what the eye holds, against a clear afternoon's: the sky's from above, the key's on a face half turned
+ *  to it, and each lamp's falling to nothing at its reach, as every lit shader takes them, held under 1.2. */
+export function heldLight(look: SkyLook, lamps: readonly Lamp[]): [number, number, number] {
+  const lit = (sky: SkyLook, part: number) => (sky.ambientSky[part] ?? 0) + (sky.keyLight[part] ?? 0) * 0.65 * 0.5;
+  const lamped = (part: number) =>
+    lamps.reduce((sum, lamp) => {
+      const near = Math.max(
+        0,
+        1 - (lamp.fromEye[0] ** 2 + lamp.fromEye[1] ** 2 + lamp.fromEye[2] ** 2) / lamp.reachM ** 2,
+      );
+      return sum + (lamp.light[part] ?? 0) * near * near;
+    }, 0);
+  const share = (part: number) =>
+    Math.min(1.2, (lit(look, part) + lamped(part)) / Math.max(1e-3, lit(AFTERNOON, part)));
+  return [share(0), share(1), share(2)];
+}
+
 /** A reading `share` of the way from `from` to `to`: the weather's numbers mixed, the heavens `to`'s. */
 export function mixReading(from: SkyReading, to: SkyReading, share: number): SkyReading {
   const mix = (start: number, end: number) => start + (end - start) * share;
@@ -39,6 +56,9 @@ export interface SkyNow {
   readonly worldS: number;
   /** Every strike within reach in the last STRIKE_KEPT_S seconds, earliest first. */
   readonly strikes: readonly Strike[];
+  /** The light on what the eye holds in its hands, against a clear afternoon's (1): the sky's, the key's and the
+   *  lamps' within reach, a carried flame among them. */
+  readonly held: readonly [number, number, number];
   /** The way the sails' wind blows at the eye, radians clockwise from north (as a swell's bearing runs): the wind the
    *  rules sail a ship in there. Null until the law has come. */
   readonly sails: number | null;
@@ -46,7 +66,16 @@ export interface SkyNow {
 
 /** The page's one view of the sky. */
 export const SKY_NOW: { current: SkyNow } = {
-  current: { reading: null, look: AFTERNOON, climate: 'sea', eye: [0, 0, 0], worldS: 0, strikes: [], sails: null },
+  current: {
+    reading: null,
+    look: AFTERNOON,
+    climate: 'sea',
+    eye: [0, 0, 0],
+    worldS: 0,
+    strikes: [],
+    sails: null,
+    held: [1, 1, 1],
+  },
 };
 
 /** A strike's light at an eye `distanceM` away, `ageS` after it: a bright stroke and two return strokes, gone in a
@@ -113,7 +142,8 @@ export class SkyDriver {
     const look = lookOf(reading, worldS, flash);
     this.uniform.write(look, lamps, [eye[0], eye[1]]);
     const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
-    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails };
+    const held = heldLight(look, lamps);
+    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held };
     return SKY_NOW.current;
   }
 

@@ -4,6 +4,7 @@ import type { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
 import { gripFrame, gripPicture, gripPlace } from './climbing.ts';
 import { FirstPersonView, type ScreenQuad } from './firstPersonView.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import {
   type FrameSource,
   type FramesTable,
@@ -502,6 +503,6 @@ export class FirstPerson {
       const [x, y] = zoomedOnScreen(quad.x, quad.y + jolt, zoom);
       return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
     });
-    this.view.draw(encoder, colourView, width, height, zoomed);
+    this.view.draw(encoder, colourView, width, height, zoomed, SKY_NOW.current.held);
   }
 }

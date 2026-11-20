@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AIR_EASE_S, SkyDriver } from './skyDriver.ts';
+import { AIR_EASE_S, heldLight, SkyDriver } from './skyDriver.ts';
+import { lookOf } from './skyLook.ts';
+import { AFTERNOON } from './skyUniform.ts';
 import type { SkyLaw, SkyReading } from './skyLaw.ts';
 
 /** A reading in an air: the sea's cloudy and wet, the desert's clear and dry. */
@@ -62,4 +64,17 @@ test("the weather is read at the ground under the eye, not at the camera's heigh
   const driver = await driverAt({ now: 1000 });
   assert.equal(driver.frame([0, 0, 1500], 'sea', [], 0).reading?.snowShare, 0, 'a camera high over the sea');
   assert.equal(driver.frame([0, 0, 1502], 'sea', [], 1500).reading?.snowShare, 1, 'a player on a high peak');
+});
+
+test('the hands are lit as the world round them: whole by day, dark at night, warm by a torch they carry', () => {
+  assert.deepEqual(heldLight(AFTERNOON, []), [1, 1, 1]);
+  const night = lookOf({ ...readingIn('sea', 0), sun: [0, 0, -1], daylight: 0, cloud: 0.2, falling: 0 }, 0, 0);
+  const dark = heldLight(night, []);
+  assert.ok(
+    dark.every((part) => part < 0.25),
+    `a moonless night: ${dark}`,
+  );
+  const torch = { fromEye: [0, 0, -0.5] as const, reachM: 11, light: [1, 0.58, 0.26] as const };
+  const lit = heldLight(night, [torch]);
+  assert.ok((lit[0] ?? 0) > 0.8 && (lit[0] ?? 0) > (lit[2] ?? 0) * 1.5, `a torch at the hand lights them warm: ${lit}`);
 });

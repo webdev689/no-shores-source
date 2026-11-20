@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { carriedLight, flicker, type LampPlace, lampsLit, lampsRound } from './lamps.ts';
-import { AFTERNOON, LAMPS_MOST, skyNumbers, WRAP_M } from './skyUniform.ts';
+import { AFTERNOON, LAMPS_MOST, PUDDLE_WRAP_M, skyNumbers, WRAP_M } from './skyUniform.ts';
 
 const place = (x: number, seed = 0): LampPlace => ({ at: [x, 0, 2], reachM: 10, light: [1, 0.6, 0.3], seed });
 
@@ -72,8 +72,9 @@ test('a great fire farther off is lit before a nearer lantern whose light falls 
 
 test("the eye's place goes to the uniform wrapped, marked known; without it, unknown", () => {
   const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3]);
-  const row = 13 * 4;
+  const row = 14 * 4;
   assert.deepEqual([...known.slice(row, row + 4)], [0, 5, WRAP_M - 3, 1]);
+  assert.deepEqual([...known.slice(row - 4, row - 2)], [5, PUDDLE_WRAP_M - 3], 'and wrapped finely for the puddles');
   const unknown = skyNumbers(AFTERNOON, []);
   assert.deepEqual([...unknown.slice(row, row + 4)], [0, 0, 0, 0]);
 });
