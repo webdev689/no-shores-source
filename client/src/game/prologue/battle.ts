@@ -267,6 +267,7 @@ export class Battle implements Beat {
     const { hud, objective } = this.story.stage.parts;
     objective.clear();
     hud.hints([]);
+    hud.seaFight(null);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));
     // The calm draws her sails, and each wreck's, on from where the fight left them.
     const { sailing } = this.story;

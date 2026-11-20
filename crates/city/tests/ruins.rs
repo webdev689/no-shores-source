@@ -87,7 +87,12 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert!(port.works.iter().any(|solid| solid.material == Material::Roof));
     assert!(!ruin.works.iter().any(|solid| solid.material == Material::Roof));
     let heaps = ruin.works.iter().filter(|solid| solid.material == Material::Rubble).count();
-    let wall = port.works.iter().filter(|solid| solid.material == Material::Stone && solid.size[2] == 18.0).count();
+    // A wall piece is a stone block at least the wall's height: taller where the ground under it rises.
+    let wall = port
+        .works
+        .iter()
+        .filter(|solid| solid.material == Material::Stone && solid.shape == Shape::Block && solid.size[2] >= 18.0)
+        .count();
     assert!(heaps >= wall / 3 + ruin.gates.len(), "{heaps} heaps for {wall} pieces");
     assert!(!port.works.iter().any(|solid| solid.material == Material::Rubble));
     // The piers broken off: each of the ruin's is shorter than the port's.

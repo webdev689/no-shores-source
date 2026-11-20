@@ -524,7 +524,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       arrive();
     });
   }
-  installQaViews(window, location.search, !rooms, { node: () => playing.foot?.node ?? null, arrive: goFoot, walker });
   startFrames(
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },

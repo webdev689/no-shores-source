@@ -236,8 +236,8 @@ impl Room {
         }
     }
 
-    /// Sends every foe but the companions away at once, and with them every blow a foe struck that has not landed: only players' blows
-    /// still wait.
+    /// Sends every foe but the companions away at once, and with them every blow a foe struck that has not landed:
+    /// only players' blows still wait.
     pub(crate) fn send_foes_away(&mut self) {
         // Companions are no one's to send away.
         let gone: Vec<FighterId> = self.foes.keys().copied().filter(|id| !self.is_companion(*id)).collect();
