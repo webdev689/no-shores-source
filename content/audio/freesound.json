@@ -1149,7 +1149,13 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 475350,
+      "cut": [
+        24,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "amb.sea.wash",
@@ -1167,7 +1173,13 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 706471,
+      "cut": [
+        73,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "amb.sea.rigging",
@@ -1185,7 +1197,8 @@
       "seconds": [
         10.0,
         180.0
-      ]
+      ],
+      "picked": 397620
     },
     {
       "id": "amb.sea.rain",
@@ -1221,7 +1234,8 @@
       "seconds": [
         0.3,
         4.0
-      ]
+      ],
+      "picked": 234180
     },
     {
       "id": "amb.sea.hull.slap",
@@ -1248,7 +1262,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 72853
     },
     {
       "id": "amb.sea.block.knock",
@@ -1266,7 +1281,13 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 867645,
+      "cut": [
+        228,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "story.wind",
@@ -1275,7 +1296,8 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 612721
     },
     {
       "id": "story.creak",
@@ -1284,7 +1306,8 @@
       "seconds": [
         10.0,
         180.0
-      ]
+      ],
+      "picked": 483355
     },
     {
       "id": "story.crash",
@@ -1293,7 +1316,8 @@
       "seconds": [
         1.0,
         8.0
-      ]
+      ],
+      "picked": 257752
     },
     {
       "id": "story.splash",
@@ -1311,7 +1335,8 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 504641
     },
     {
       "id": "story.fire",
@@ -1320,7 +1345,8 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 213345
     },
     {
       "id": "story.whoosh",
@@ -1329,7 +1355,8 @@
       "seconds": [
         0.5,
         4.0
-      ]
+      ],
+      "picked": 807446
     },
     {
       "id": "sea.cannon.fire",
@@ -1338,7 +1365,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 565794
     },
     {
       "id": "sea.ball.hull",
@@ -1356,6 +1384,9 @@
       "seconds": [
         0.5,
         5.0
+      ],
+      "skip": [
+        273834
       ]
     },
     {
@@ -1365,6 +1396,9 @@
       "seconds": [
         2.0,
         15.0
+      ],
+      "skip": [
+        256688
       ]
     },
     {
@@ -1374,7 +1408,13 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 486594,
+      "cut": [
+        59,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "amb.shore.lap",
@@ -1383,7 +1423,13 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 634194,
+      "cut": [
+        12,
+        60
+      ],
+      "mono": true
     }
   ]
 }

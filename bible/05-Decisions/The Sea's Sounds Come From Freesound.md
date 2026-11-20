@@ -27,4 +27,32 @@ surf".
 - Each is picked by the owner on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]). Until a
   pick comes, the synthesiser's sound plays, and the sea fight's new sounds are silent.
 
+The owner picked on the sea sound sheet and said "Picks done. Some sections didnt have listings to pick":
+
+| Sound | Pick |
+|---|---|
+| The open sea's swell | richwise's "Brean Sands Beach" (475350, CC0) |
+| Its wind | bruno.auzet's "strong wind on coastal path" (706471, CC0) |
+| Its timbers | laft2k's "Wood Creaking" (397620, CC0) |
+| A rope's creak | Terhen's "Balloon_Creak_Long_Rub_6" (234180, CC BY) |
+| Sailcloth flapping | Benboncan's "Parachute" (72853, CC BY) |
+| The story's storm waves | bassimat's "Powerful Storm Waves" (867645, CC0) |
+| Its gale | klankbeeld's "room-tone wind 06" (612721, CC BY) |
+| Its timbers groaning | craigsmith's "Large Wood Ship Creaking" (483355, CC0) |
+| The ram's crash | Kodack's "Wooden Ship Break" (257752, CC0) |
+| The deep | Fission9's "Underwater Ambience" (504641, CC0) |
+| The wreck's fire | peridactyloptrix's "Stove door open, interior ambience" (213345, CC0) |
+| The rush through cloud | Logicogonist's "whoosh bass 1" (807446, CC0) |
+| A cannon fired | stomachache's "Distant Cannon Fire (simulated)" (565794, CC0) |
+| The surf | klangfabrik's "STYLIZED WAVE TRACK" (486594, CC0) |
+| The harbour's lapping | kevp888's "BeachAndHarbour" (634194, CC BY) |
+
+For a ball falling in the sea and a ship breaking up, the owner chose None of these over the one candidate each had.
+The wash, the rigging, both rains, the hull's creak and slap, the bow's thump, the blocks, the story's splash and a
+ball striking a hull had no candidates yet, and are searched again.
+
+Claude's call: the five picks longer than two minutes or about it (the swell, the sea's wind, the surf, the lapping
+and the storm waves) play their steadiest minute, mono, found by their loudness second by second, so the game holds
+a minute of each rather than up to five.
+
 [[Ambience]], [[Naval Combat]].
