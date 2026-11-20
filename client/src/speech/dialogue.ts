@@ -86,6 +86,13 @@ export class DialogueBox {
     resolve?.();
   }
 
+  /** Ends at once and takes the box and the voice from nowhere off the page. */
+  remove(): void {
+    this.skip();
+    this.box.remove();
+    this.nowhere.node.remove();
+  }
+
   /** The typewriter and its voice. */
   frame(seconds: number): void {
     const talk = this.talk;

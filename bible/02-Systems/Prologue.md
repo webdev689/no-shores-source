@@ -4,6 +4,7 @@ status: live
 code:
   - client/src/game/prologue/prologue.ts#Prologue
   - client/src/game/prologue/storyStart.ts#startStory
+  - client/src/game/prologue/takeOrGiveBack.ts#takeOrGiveBack
   - client/src/game/prologue/stage.ts#Stage
   - client/src/game/prologue/beat.ts#BEATS
   - client/src/game/prologue/tap.ts#tapToStart
@@ -67,6 +68,11 @@ takes them straight to Overlook's social space. While the story plays the menu (
 story lets go of what it alone drew with on the GPU (the Brig's and the Frigate's views, the birds, the fire and any
 wreck still drawn); the Frigate's view is made only once a beat draws her, so a player who sees only the intro never
 makes it.
+
+A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
+gives back everything it took, the last first: the screen hands the page back its touches and the canvas its ease,
+the dialogue box, the marks, the objective and the nameplate leave the HUD, the GPU lets go of what was made, and the
+player wears the look the game gave them. The player then arrives at Overlook.
 
 | Beat | What happens | Played or shown |
 |---|---|---|

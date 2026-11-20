@@ -101,6 +101,12 @@ export class Overheads {
     this.layer.replaceChildren();
   }
 
+  /** Takes the layer and all it shows off the page. */
+  remove(): void {
+    this.clear();
+    this.layer.remove();
+  }
+
   private width(): number {
     return this.layer.clientWidth || globalThis.innerWidth || Infinity;
   }

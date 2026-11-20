@@ -45,6 +45,7 @@ import { stormPlaces } from './places.ts';
 import { Prologue } from './prologue.ts';
 import { Sailing } from './sailing.ts';
 import { Stage } from './stage.ts';
+import { takeOrGiveBack } from './takeOrGiveBack.ts';
 
 /** What the game hands the story. */
 export interface StoryGame {
@@ -86,102 +87,117 @@ export interface Started {
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {
   const { gpu, scene, hudRoot } = game;
-  const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
-  const brigView = new ShipView(gpu, brigMesh, shipSails('brig'));
-  let frigateView: ShipView | null = null;
-  const hulls = {
-    brig: brigView,
-    sloop: game.sloop,
-    get frigate(): ShipView {
-      frigateView ??= new ShipView(gpu, frigateMesh, shipSails('frigate'));
-      return frigateView;
-    },
-  };
-  const islands = new Islands({
-    open: (id) => openLandmass(game.land, game.world, game.rmbText, id),
-    scene,
-    drawersOn: game.drawersOn,
-    terrainFor: game.terrainFor,
-    home: game.home,
-  });
+  // The story's own words are read, and refused if they do not hold, before it takes anything from the page.
   const readCast = castOf(cast);
-  const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
-  const screen = new Screen(hudRoot, game.canvas);
-  const stage = new Stage({
-    gpu,
-    canvas: game.canvas,
-    hudRoot,
-    hud: game.hud,
-    scene,
-    figures: game.figures,
-    footView: game.footView,
-    forge: game.forge,
-    firstPerson: game.firstPerson,
-    hulls,
-    birds,
-    flames,
-    screen,
-    dialogue: new DialogueBox(hudRoot, worldOutput),
-    overheads: new Overheads(hudRoot, worldOutput),
-    ambience: new Ambience(worldOutput),
-    objective: new Objective(hudRoot),
-    cast: readCast,
-    scenes: scenesOf(scenes, readCast),
-    roster: game.roster,
-    landDrawers: () => islands.drawers,
-    landmass: () => islands.landmass,
-    keepClose: (point) => scene.keepClose(point, game.closeSource, () => undefined),
+  const readScenes = scenesOf(scenes, readCast);
+  const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
+  return takeOrGiveBack((took) => {
+    const brigView = new ShipView(gpu, brigMesh, shipSails('brig'));
+    let frigateView: ShipView | null = null;
+    took(() => {
+      for (const view of [brigView, frigateView]) view?.destroy();
+    });
+    const hulls = {
+      brig: brigView,
+      sloop: game.sloop,
+      get frigate(): ShipView {
+        frigateView ??= new ShipView(gpu, frigateMesh, shipSails('frigate'));
+        return frigateView;
+      },
+    };
+    const islands = new Islands({
+      open: (id) => openLandmass(game.land, game.world, game.rmbText, id),
+      scene,
+      drawersOn: game.drawersOn,
+      terrainFor: game.terrainFor,
+      home: game.home,
+    });
+    const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
+    took(() => birds.destroy());
+    took(() => flames.destroy());
+    // The screen takes the page's touches and its canvas's ease for the game until it is removed.
+    const screen = new Screen(hudRoot, game.canvas);
+    took(() => screen.remove());
+    const dialogue = new DialogueBox(hudRoot, worldOutput);
+    took(() => dialogue.remove());
+    const overheads = new Overheads(hudRoot, worldOutput);
+    took(() => overheads.remove());
+    const objective = new Objective(hudRoot);
+    took(() => objective.remove());
+    const nameplate = new Nameplate(hudRoot);
+    took(() => nameplate.remove());
+    const stage = new Stage({
+      gpu,
+      canvas: game.canvas,
+      hudRoot,
+      hud: game.hud,
+      scene,
+      figures: game.figures,
+      footView: game.footView,
+      forge: game.forge,
+      firstPerson: game.firstPerson,
+      hulls,
+      birds,
+      flames,
+      screen,
+      dialogue,
+      overheads,
+      ambience: new Ambience(worldOutput),
+      objective,
+      cast: readCast,
+      scenes: readScenes,
+      roster: game.roster,
+      landDrawers: () => islands.drawers,
+      landmass: () => islands.landmass,
+      keepClose: (point) => scene.keepClose(point, game.closeSource, () => undefined),
+    });
+    const sailing = new Sailing({
+      brig: { waterline: brigMesh.waterline, sails: shipSails('brig') },
+      sloop: { waterline: game.sloop.waterline, sails: shipSails('sloop') },
+      frigate: { waterline: frigateMesh.waterline, sails: shipSails('frigate') },
+    });
+    const places = stormPlaces(game.home.landmass, scene.land?.swell?.bearing ?? 0);
+    const look = keptLook(localStorage) ?? FIRST_LOOK;
+    const dress = armouredDress(look);
+    const story = {
+      stage,
+      sailing,
+      brig: new Brig(places.storm, places.heading),
+      lightning: new Lightning(17, (distanceKm: number) => stage.parts.ambience.thunder(distanceKm)),
+      places,
+      land: game.land,
+      movement: game.movement,
+      walker: game.walker,
+      firstPerson: game.firstPerson,
+      input: game.input,
+      roomModule: game.roomModule,
+      marks: game.marks,
+      link: game.link,
+      look,
+      dress,
+    };
+    // The player wears the story's look from its first beat; one that cannot begin leaves them as the game made them.
+    const gameDress = game.walker.you.dress;
+    game.walker.you.dress = dress;
+    took(() => (game.walker.you.dress = gameDress));
+    const wreckContext = {
+      movement: game.movement,
+      walker: game.walker,
+      forge: game.forge,
+      roomModule: game.roomModule,
+      groundAt: (x: number, y: number) => scene.groundAt(x, y),
+      gpu,
+      hulls: { brig: brigMesh, frigate: frigateMesh },
+    };
+    const prologue = new Prologue(story, islands, nameplate, wreckContext, from);
+    const leave = () => {
+      stage.leave();
+      prologue.leave();
+      // The Sloop is the game's own, drawn after the story too; the rest was the story's alone.
+      for (const view of [brigView, frigateView]) view?.destroy();
+      birds.destroy();
+      flames.destroy();
+    };
+    return { prologue, epilogue: new Epilogue(stage, game.forge), look: () => story.look, leave };
   });
-  const sailing = new Sailing({
-    brig: { waterline: brigMesh.waterline, sails: shipSails('brig') },
-    sloop: { waterline: game.sloop.waterline, sails: shipSails('sloop') },
-    frigate: { waterline: frigateMesh.waterline, sails: shipSails('frigate') },
-  });
-  const places = stormPlaces(game.home.landmass, scene.land?.swell?.bearing ?? 0);
-  const look = keptLook(localStorage) ?? FIRST_LOOK;
-  const dress = armouredDress(look);
-  const story = {
-    stage,
-    sailing,
-    brig: new Brig(places.storm, places.heading),
-    lightning: new Lightning(17, (distanceKm: number) => stage.parts.ambience.thunder(distanceKm)),
-    places,
-    land: game.land,
-    movement: game.movement,
-    walker: game.walker,
-    firstPerson: game.firstPerson,
-    input: game.input,
-    roomModule: game.roomModule,
-    marks: game.marks,
-    link: game.link,
-    look,
-    dress,
-  };
-  game.walker.you.dress = dress;
-  const wreckContext = {
-    movement: game.movement,
-    walker: game.walker,
-    forge: game.forge,
-    roomModule: game.roomModule,
-    groundAt: (x: number, y: number) => scene.groundAt(x, y),
-    gpu,
-    hulls: { brig: brigMesh, frigate: frigateMesh },
-  };
-  let prologue: Prologue;
-  try {
-    prologue = new Prologue(story, islands, new Nameplate(hudRoot), wreckContext, from);
-  } catch (error) {
-    // A story that cannot begin gives the page back its touches and its canvas's ease for the game.
-    screen.remove();
-    throw error;
-  }
-  const leave = () => {
-    stage.leave();
-    prologue.leave();
-    // The Sloop is the game's own, drawn after the story too; the rest was the story's alone.
-    for (const view of [brigView, frigateView]) view?.destroy();
-    birds.destroy();
-    flames.destroy();
-  };
-  return { prologue, epilogue: new Epilogue(stage, game.forge), look: () => story.look, leave };
 }
