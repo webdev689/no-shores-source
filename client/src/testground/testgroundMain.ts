@@ -31,6 +31,7 @@ import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { type WorldOutput, WorldSounds } from '../combat/worldSounds.ts';
 import { loadSamples } from '../soundSamples.ts';
 import { type CardAt, type Cards, openCards } from '../player/cards.ts';
+import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { COURSE, RESOURCE_NODES, STALL, START, WOODEN } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
@@ -199,6 +200,7 @@ async function start(): Promise<void> {
   });
   showPanel(panelState({ bodies: {} }, { bodies: {} }, status));
   const { forge, store, looks, hair } = await openCards(scene);
+  loadForgedBirds((path) => store.strip(path));
   cards = forge;
   // The first person swings in the direction the fight's rules began the swing with.
   const strokeShare = () => {
