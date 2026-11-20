@@ -68,6 +68,9 @@ pub enum Grant {
     Ammo(u16),
     /// This many Ammo crates more, up to the five carried.
     Crates(u16),
+    /// An Art, by its number, at this level (1 to `gear::arts::LEVEL_MOST`) with no XP toward the next, owning all
+    /// its fragments: to try its spells at every level.
+    ArtLevel { art: u8, level: u8 },
 }
 
 /// A resource node in a room: where it stands, and which island's resource it gives (its place in the catalogue's
@@ -333,6 +336,18 @@ impl Room {
             Grant::Crates(count) => {
                 for _ in 0..count.min(gear::ammo::CRATES_MOST) {
                     character.take_crate();
+                }
+            }
+            Grant::ArtLevel { art, level } => {
+                use gear::arts::{FRAGMENTS, LEVEL_MOST, arts};
+                let Some(at) = arts().arts.iter().position(|found| found.id == art) else {
+                    return gear::arts::ArtRefusal::NoSuchArt as u8;
+                };
+                character.arts = std::mem::take(&mut character.arts).kept();
+                character.arts.levels[at] = level.clamp(1, LEVEL_MOST);
+                character.arts.xp[at] = 0;
+                if let Some(owned) = character.arts.owned.as_mut() {
+                    owned[at] = (1 << FRAGMENTS) - 1;
                 }
             }
             Grant::Status { .. } | Grant::ArtsReady => {}

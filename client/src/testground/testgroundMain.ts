@@ -464,7 +464,7 @@ async function start(): Promise<void> {
     showPanel(panelState(looks, hair, line + composing + failure));
     const atStall = Math.hypot(player.player.body.x - STALL.x, player.player.body.y - STALL.y) <= STALL_REACH;
     showGear({ gear, atStall, nodesInReach: nodesInReach(player.player.body, RESOURCE_NODES, gear) });
-    showArts(fighting.arts);
+    showArts(fighting.arts, gear?.standing);
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);

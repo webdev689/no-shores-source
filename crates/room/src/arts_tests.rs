@@ -255,6 +255,27 @@ fn the_room_answers_the_arts_asks_and_the_test_ground_readies_every_spell() {
 }
 
 #[test]
+fn the_test_ground_sets_an_art_s_level_and_owns_all_its_fragments() {
+    let (mut room, player) = room_with_player();
+    let character = |room: &Room| room.player(player).expect("in").character.clone();
+    room.players.get_mut(&player).expect("in").character.arts.owned = Some(vec![0; 3]);
+    room.players.get_mut(&player).expect("in").character.arts.xp = vec![500; 3];
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 2, level: 3 }));
+    let now = character(&room);
+    assert_eq!((now.art_level(2), now.art_xp(2), now.art_level(1)), (3, 0, 5));
+    assert!((0..6).all(|fragment| now.owns_fragment(2, fragment)));
+    assert!(!now.owns_fragment(1, 0), "another Art's fragments stay as they were");
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 2, level: 9 }));
+    assert_eq!(character(&room).art_level(2), 5, "a level past the highest is the highest");
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 2, level: 0 }));
+    assert_eq!(character(&room).art_level(2), 1);
+    room.answer(player, Asked::Grant(Grant::ArtLevel { art: 7, level: 2 }));
+    assert_eq!(room.player(player).expect("in").answer, 110, "an Art the rules do not know");
+    room.answer(player, Asked::Art(ArtAsk::Wear { art: 2 }));
+    assert_eq!(character(&room).spell_shares(), (0.6, 0.6), "the worn Art's level 1 shares");
+}
+
+#[test]
 fn wearing_another_art_starts_it_empty_so_no_recharge_runs_at_another_art_s_pace() {
     let (mut room, player) = room_with_player();
     room.ready_arts(player);

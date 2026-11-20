@@ -461,7 +461,7 @@ export function startGearWindow(
       },
       atVault: view === 'vault',
       ...(gear.arts && {
-        art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip),
+        art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip, gear.standing),
       }),
     };
     const worn = view === 'character' && arts ? gear.arts : undefined;
@@ -480,6 +480,7 @@ export function startGearWindow(
           {
             worn: worn.art,
             cores,
+            standing: gear.standing,
             ask: (asked) => {
               if (asked.kind === 'setCore') artPending = asked.slot;
               now.ask(gearAskOf(asked));
