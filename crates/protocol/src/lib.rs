@@ -405,6 +405,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 leader: foe.companion.map_or(0, |companion| companion.leader),
                 given: foe.companion.map_or(0, |companion| companion.given),
                 family: foe.companion.map_or(0, |companion| companion.family),
+                post: foe.companion.map_or(0, |companion| companion.post as u8),
             };
             messages::Foe::create(&mut builder, &args)
         })

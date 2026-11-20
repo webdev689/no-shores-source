@@ -74,7 +74,7 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.deepEqual(foe?.statuses, { expose: 200, charge: 0, chargeImmune: 90 });
   // A foe is no one's companion; the officer ashore beside player 9 is, named by their names' places.
   assert.equal(foe?.companion, null);
-  assert.deepEqual(snapshot.foes[1]?.companion, { leader: 9, given: 2, family: 5 });
+  assert.deepEqual(snapshot.foes[1]?.companion, { leader: 9, given: 2, family: 5, post: 4 });
   const own = { crit: 0, expose: 0, charge: 0, haste: 30, linked: 0, veiled: 150, chargeImmune: 0 };
   assert.deepEqual(statusesOf(snapshot.players[1]?.fighter ?? []), own);
   assert.deepEqual(
