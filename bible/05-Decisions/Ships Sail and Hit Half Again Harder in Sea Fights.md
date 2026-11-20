@@ -10,11 +10,16 @@ status: in force
 > "Ship combat damage is a too low against other ships"
 
 Asked how much more (twice the speed and damage, half again, or twice the speed and three times the damage), the
-owner chose "1.5x speed, 1.5x damage".
+owner chose "1.5x speed, 1.5x damage", the option that read: "Half again as fast, half again the damage."
 
 ## What it settles
 
-- In every sea fight, every ship sails half again as fast as before.
-- Guns deal half again the damage to ships.
+- In every sea fight, ships are "Half again as fast, half again the damage."
+
+## Claude's calls
+
+- Half again as fast: every ship's sails and oars pull half again as hard in a fight as at sea.
+- Half again the damage: every blow one ship strikes another, her balls and her ram alike, on her hull, her sails and
+  her men. A fire her shot starts burns as before; whether it should burn half again too is asked of the owner.
 
 [[Naval Combat]].

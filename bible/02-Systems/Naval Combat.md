@@ -92,7 +92,7 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **What stops a ball** is the first hull of another flag, water or ground it meets: a player's ball passes through
   another player's ship, and a captain's through any ship of her own faction. A ball tears through any canvas it crosses
   (once a ship) and flies on. The water is the swell's surface under it, and the ground the land's, sampled every 4 m.
-- **The harm** of a ball is half again DFO's (`SHOT_HARM`, [[Ships Sail and Hit Half Again Harder in Sea Fights]]): by
+- **The harm** of a ball is half again DFO's (`FIGHT_HARM`, [[Ships Sail and Hit Half Again Harder in Sea Fights]]): by
   where it struck (holed within 1.1 m of the water under it, 40% more; the hull above; the canvas), 85 to 115% by its
   own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
 - **A ship** has hull, canvas and men. A captain strikes at her rank's share of her hull (a Major's quarter) or with no
@@ -165,10 +165,10 @@ DFO's law of the ram. A player's stem, 1 m above her waterline at her bow, strik
 it comes within 1.2 m of, at the face it stands farthest outside of: her side, or her bow or stern. It rams when her
 way along her keel, at the most over the last 0.6 s, closes on that face at 1.6 m/s or more.
 
-- **The blow** is 0.15 of the lesser of the two whole hulls, times the closing way over 8 m/s (never more than whole),
-  and 0.4 of that into her bow or stern. It never takes her hull under a quarter, where she strikes: a ram brings a
-  ship to strike and no further. It takes a man for every 40 points it deals, over her men's toughness, by a roll
-  drawn from the fight's stream.
+- **The blow** is half again DFO's 0.15 of the lesser of the two whole hulls (`FIGHT_HARM`), times the closing way over
+  8 m/s (never more than whole), and 0.4 of that into her bow or stern. It never takes her hull under a quarter, where
+  she strikes: a ram brings a ship to strike and no further. It takes a man for every 40 points it deals, over her men's
+  toughness, by a roll drawn from the fight's stream.
 - **The recoil**: the rammer takes 0.6 of the blow back (half that braced), and a ram is only as hard as she can pay
   for within her own room over her line, one point short of it, so her own ram never makes her strike and a hull at its
   line rams nothing. A wreck rams nothing.
