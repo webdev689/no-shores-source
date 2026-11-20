@@ -24,4 +24,5 @@ No style taste: only the project's written rules. Read-only: change no file, the
 sub-agents.
 
 Write the report to {REPORT}: the findings, numbered, then questions that are the owner's to answer, then a last line
-exactly "Verdict: nothing beyond the approval" or "Verdict: N findings" (N the number of findings).
+exactly "Verdict: nothing beyond the approval, reviewed {REVIEWED}" or "Verdict: N findings, reviewed {REVIEWED}" (N the
+number of findings).

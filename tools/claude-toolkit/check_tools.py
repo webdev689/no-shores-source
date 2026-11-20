@@ -662,6 +662,13 @@ def _():
     out('FAIL' if hits else 'PASS', 'context7 key', f'key value found on disk in: {hits[:6]}' if hits else f'key value in none of {n} config/log/kit/memory/transcript files')
 
 
+@check('toolkit-data')
+def _():
+    rc, o = sh(['bash', KIT + '/toolkit-data-test.sh'], timeout=300)
+    out('PASS' if rc == 0 else 'FAIL', 'toolkit-data', "toolkit-data.sh keeps two sessions' parallel saves and refuses a "
+        'log never restored (toolkit-data-test.sh)' if rc == 0 else o.strip()[-300:])
+
+
 @check('worker kit')
 def _():
     rw = open(KIT + '/workers/run-worker.sh').read()

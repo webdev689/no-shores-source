@@ -21,8 +21,10 @@ fn main() -> ExitCode {
     let command = std::env::args().nth(1);
     match command.as_deref() {
         Some("check") => {
+            // Read before the check, which takes minutes: a commit made meanwhile was never checked.
+            let checked = checked_commit();
             let code = if toolchain::run_all() { report_repo_checks() } else { ExitCode::FAILURE };
-            println!("{}", checked_commit());
+            println!("{checked}");
             code
         }
         Some("repo") => report_repo_checks(),

@@ -7,7 +7,7 @@ code:
   - tools/claude-toolkit/workers/run-worker.sh
   - tools/claude-toolkit/workers/brief-common-template.md
   - tools/claude-toolkit/workers/fidelity-review.sh
-  - tools/claude-toolkit/toolkit-data-save.sh
+  - tools/claude-toolkit/toolkit-data.sh
 ---
 # Toolkit
 
@@ -28,8 +28,10 @@ when to install it and what each session does at its start and end; this note sa
   skill by reading its `SKILL.md` (`find ~/.claude/plugins/cache -path '*skills/<name>/SKILL.md'`), and hand Serena
   and claude-mem work to a worker.
 - `SHARED_DIR` defaults to `~/toolkit-data`, which a cloud container loses at its end. The task-observer log carries
-  over on the repository's orphan branch `toolkit-data`: `toolkit-data-save.sh` saves it at a session's end, taking in
-  first what a parallel session saved, and the install restores it, never over a newer copy. The claude-mem store, an
+  over on the repository's orphan branch `toolkit-data`: the install restores it (`toolkit-data.sh restore`), never over
+  a file this container already holds, and `toolkit-data.sh save` at a session's end commits it over the commit it was
+  restored from and lets git merge that onto the branch, so a parallel session's save is kept; a log never restored is
+  never saved over the branch. `toolkit-data-test.sh`, run by check-tools, holds that. The claude-mem store, an
   archive the repository keeps out of git, carries over only where `SHARED_DIR` points at storage that survives.
 - The SkillsMP and Context7 keys are network secrets the proxy adds to requests; their variables hold only the
   placeholder `proxy-injected`, which check-tools' key check passes without scanning. A real key is still looked for

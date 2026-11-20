@@ -6,13 +6,16 @@
 # usage: fidelity-review.sh <file holding the owner's approval, verbatim> <base>..<head> [report file]
 KIT_DIR=${KIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
 set -u
-[ $# -ge 2 ] && [ -s "$1" ] || { echo "usage: fidelity-review.sh <approval file> <base>..<head> [report file]" >&2; exit 2; }
+[ $# -ge 2 ] && [ -s "$1" ] && [[ $2 == ?*..?* ]] ||
+  { echo "usage: fidelity-review.sh <approval file> <base>..<head> [report file]" >&2; exit 2; }
 APPROVAL=$(cd "$(dirname "$1")" && pwd)/$(basename "$1"); RANGE=$2; BASE=${RANGE%%..*}; HEAD=${RANGE##*..}
 git rev-parse -q --verify "$BASE^{commit}" >/dev/null && git rev-parse -q --verify "$HEAD^{commit}" >/dev/null ||
   { echo "fidelity-review.sh: $RANGE is not a range of two commits" >&2; exit 2; }
-REPORT=${3:-$HOME/wt/reports/fidelity-$(git rev-parse --short "$HEAD").md}
+REPORT=$(realpath -m "${3:-$HOME/wt/reports/fidelity-$(git rev-parse --short "$HEAD").md}")
+REVIEWED=$(git rev-parse --short=12 "$HEAD")
 mkdir -p "$(dirname "$REPORT")"; rm -f "$REPORT"
-BRIEF=$(sed -e "s|{APPROVAL}|$APPROVAL|g; s|{RANGE}|$RANGE|g; s|{REPORT}|$REPORT|g" "$KIT_DIR/workers/fidelity-brief.md")
+BRIEF=$(sed -e "s|{APPROVAL}|$APPROVAL|g; s|{RANGE}|$RANGE|g; s|{REPORT}|$REPORT|g; s|{REVIEWED}|$REVIEWED|g" \
+  "$KIT_DIR/workers/fidelity-brief.md")
 # The reviewer reads the change's own files: a worktree at its head, whatever this checkout holds.
 WT=$(mktemp -d)/fidelity; REPO=$(git rev-parse --show-toplevel)
 git -C "$REPO" worktree add -q --detach "$WT" "$HEAD" || exit 2
