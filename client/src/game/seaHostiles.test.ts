@@ -90,7 +90,7 @@ const water = (name: string, holder: WaterNamed['holder'], levels: [number, numb
 test('the status line names the water, its band and its holder', () => {
   assert.equal(waterWords(water('The Fen Deeps', 'grey-tithe', [22, 26])), 'The Fen Deeps, levels 22-26, Grey Tithe');
   assert.equal(waterWords(water('The Lantern Sea', 'home', [1, 4])), 'The Lantern Sea, Overlook’s home waters');
-  assert.equal(waterWords(water('The Cairn Straits', 'contested', [4, 7])), 'The Cairn Straits, levels 4-7, contested');
+  assert.equal(waterWords(water('The Cairn Straits', 'contested', [4, 7])), 'The Cairn Straits, levels 4-7, Contested');
   assert.equal(waterWords(water('The Mistwrack', 'pirates', [16, 19])), 'The Mistwrack, levels 16-19, Pirates');
   for (const each of [
     water('The Sunscorch Coves', 'contested', [10, 13]),

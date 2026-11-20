@@ -29,7 +29,6 @@ import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Shot } from './camera.ts';
-import { boardable } from './seaAfter.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { worldOutput } from './uiSounds.ts';
@@ -83,6 +82,8 @@ function roomSource(room: SeaRoom, first: FightView): FightSource {
 }
 
 export class SeaCombat {
+  /** The sea room, whose last word says whether a boarding would be taken now. */
+  private readonly room: Pick<SeaRoom, 'mayBoard'>;
   private readonly naval: Naval;
   private readonly marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>;
   /** The hull a ship is drawn as: her own once her model has come. */
@@ -127,6 +128,7 @@ export class SeaCombat {
   ) {
     this.shown = shown;
     this.marks = marks;
+    this.room = room;
     this.naval = new Naval(marks, shown);
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
@@ -424,7 +426,7 @@ export class SeaCombat {
   /** The fight's readout at `now`: her plate and rose, the card on the nearest captain, E to board one struck
    *  alongside, and her last volley's tally; none once the fight is over. */
   display(now: number): SeaFightModel | null {
-    return this.naval.display(now, { boardable: boardable(this.last), boardKey: 'E' });
+    return this.naval.display(now, { boardable: this.room.mayBoard, boardKey: 'E' });
   }
 
   /** The panel's lines: the captains' hurts, the broadside warning, and DFO's messages. */

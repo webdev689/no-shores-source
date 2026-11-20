@@ -5,6 +5,7 @@
 import type { SeenPirate } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
+import { HOLDER_WORDS as MAP_HOLDER_WORDS } from '../heldmap/watersWash.ts';
 import { emblemUrl, markPicture } from '../plus/emblems.ts';
 import { rankMark } from '../rules/roster.ts';
 import type { WaterHolder, WatersRules, WatersTable } from '../rules/watersRules.ts';
@@ -86,20 +87,16 @@ export function waterNamer(rules: WatersRules, table: WatersTable): (point: Poin
   };
 }
 
-const HOLDER_WORDS: Readonly<Record<WaterHolder, string>> = {
-  'home': 'Overlook’s home waters',
-  'contested': 'contested',
-  'grey-tithe': 'Grey Tithe',
-  'pirates': 'Pirates',
-};
+/** Each holder's word, as the held map's key names it. */
+const HOLDER_WORDS = new Map(MAP_HOLDER_WORDS);
 
 /** The water as the status line names it: "The Fen Deeps, levels 22-26, Grey Tithe"; home waters by their holder
  *  alone. */
 export function waterWords(water: WaterNamed): string {
   const name = water.name ?? 'Open sea';
-  if (water.holder === 'home') return `${name}, ${HOLDER_WORDS.home}`;
+  if (water.holder === 'home') return `${name}, Overlook’s home waters`;
   const band = water.levels ? `, levels ${water.levels[0]}-${water.levels[1]}` : '';
-  return `${name}${band}, ${HOLDER_WORDS[water.holder]}`;
+  return `${name}${band}, ${HOLDER_WORDS.get(water.holder) ?? water.holder}`;
 }
 
 /** How long the voyage's line holds what the watch said, seconds. */
