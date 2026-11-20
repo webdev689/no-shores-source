@@ -1,95 +1,101 @@
-// Fires that burn, smoke and throw embers. Each frame's parts are worked out on the CPU from the fire's seed and the
-// clock, so a fire looks the same every time it is drawn, then laid over the finished picture after the water and
-// drawn again into the light layer, where it lights what stands round it.
+// Fires that burn, smoke and throw embers. A fire's parts are worked out on the CPU from its seed and the clock once a
+// frame of its flicker (flameParts.ts), so a fire looks the same every time it is drawn, then laid over the finished
+// picture after the water and drawn again into the light layer, where it lights what stands round it.
 import { LIGHT_DEPTH, LIGHT_TARGET } from '../combat/lightLayer.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
-import { FLAMES_WGSL, PART } from './flamesShader.ts';
+import { FLAMES_WGSL, NOISE_SEEDS, PART, PART_KINDS } from './flamesShader.ts';
 import { inverted } from './inverted.ts';
-import { hashUnit, smoothNoise } from './seeded.ts';
-
-type Point = readonly [number, number, number];
-type Wind = readonly [number, number];
-
-/** A fire: where its base burns (world metres), how tall its tallest flame stands, and its seed. */
-export interface Fire {
-  readonly at: Point;
-  readonly sizeM: number;
-  readonly seed: number;
-}
-
-/** A fire at one moment: its tongues of flame, its smoke and its embers, each in world metres. */
-export interface FireParts {
-  readonly tongues: readonly { position: Point; height: number; width: number; lean: Wind }[];
-  readonly smoke: readonly { position: Point; radius: number; age: number; opacity: number }[];
-  readonly embers: readonly { position: Point; brightness: number }[];
-}
-
-const TONGUES = 5;
-const PUFFS = 12;
-const EMBERS = 10;
-const SMOKE_LIFE_S = 4;
-const EMBER_LIFE_S = 1.8;
-
-/** The fire's parts at `seconds` in a `wind` (m/s east and south). The flames wander in height within a band and
- *  lean a little downwind; the smoke rises, grows, thins and leans further; the embers fly up and burn out. */
-export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
-  const { at, sizeM: size, seed } = fire;
-  const lot = (salt: number) => hashUnit(seed * 7_919 + salt);
-  const rise = 0.6 + 0.9 * Math.sqrt(size);
-  const tongues = Array.from({ length: TONGUES }, (_slot, index) => {
-    const angle = lot(index) * Math.PI * 2;
-    const out = index === 0 ? 0 : size * 0.22 * lot(index + 10);
-    const flicker = smoothNoise(seed * 13 + index, seconds * 3.2 + lot(index + 20) * 50);
-    return {
-      position: [at[0] + Math.cos(angle) * out, at[1] + Math.sin(angle) * out, at[2]] as Point,
-      height: size * (0.55 + 0.45 * flicker) * (index === 0 ? 1 : 0.75),
-      width: size * (index === 0 ? 0.32 : 0.22),
-      lean: [wind[0] * 0.04, wind[1] * 0.04] as Wind,
-    };
-  });
-  const smoke = Array.from({ length: PUFFS }, (_slot, index) => {
-    const age = (seconds / SMOKE_LIFE_S + index / PUFFS + lot(index + 40)) % 1;
-    const aloft = age * SMOKE_LIFE_S;
-    const swirl = size * 0.3 * Math.sin(aloft * 1.7 + index);
-    return {
-      position: [
-        at[0] + wind[0] * aloft * 0.7 + swirl,
-        at[1] + wind[1] * aloft * 0.7 + swirl * 0.6,
-        at[2] + size * 0.8 + aloft * rise,
-      ] as Point,
-      radius: size * (0.35 + 1.6 * age),
-      age,
-      opacity: 0.55 * Math.min(1, age * 6) * (1 - age),
-    };
-  });
-  const embers = Array.from({ length: EMBERS }, (_slot, index) => {
-    const age = (seconds / EMBER_LIFE_S + index / EMBERS + lot(index + 60)) % 1;
-    const aloft = age * EMBER_LIFE_S;
-    const angle = lot(index + 70) * Math.PI * 2 + aloft * 2;
-    const out = size * 0.3 * (0.3 + age);
-    return {
-      position: [
-        at[0] + Math.cos(angle) * out + wind[0] * aloft * 0.5,
-        at[1] + Math.sin(angle) * out + wind[1] * aloft * 0.5,
-        at[2] + size * 0.3 + aloft * (rise + 0.4),
-      ] as Point,
-      brightness: (1 - age) ** 1.5 * (0.7 + 0.3 * smoothNoise(seed + index, seconds * 9)),
-    };
-  });
-  return { tongues, smoke, embers };
-}
+import { FIRE_TEXELS_PER_METRE, type Fire, fireFrame, fireParts, type Point, type Wind } from './flameParts.ts';
 
 /** Floats a part takes: where it stands from the eye and its kind, its shape and lean, its colour and strength. */
 const PART_FLOATS = 12;
-const SMOKE_COLOUR = [0.13, 0.12, 0.12] as const;
-const EMBER_COLOUR = [1, 0.55, 0.15] as const;
-/** How far a fire's light reaches from its middle, in times its height: the deck round it and whoever stands there. */
-export const GLOW_REACH = 3;
 /** The light at a fire's middle, as the light layer takes it before its cut, which steps each channel on its own. Its
  *  green is half its red, so green's first step falls with red's second, and its blue never steps: the light runs
  *  from a red rim through orange to a gold heart, never a yellow, grey or pink step. */
 export const GLOW_COLOUR = [0.6, 0.3, 0.03] as const;
+/** The most parts drawn in a frame: forty large fires, some burning along edges, fit well inside it. */
+export const MOST_PARTS = 16_384;
 const PREMULTIPLIED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
+
+/** A fire's parts in one frame of its flicker, packed as instances in world metres: what it shows, then its glows. */
+interface Packed {
+  readonly frame: number;
+  readonly shown: Float64Array;
+  readonly glows: Float64Array;
+}
+const packedOf = new WeakMap<Fire, Packed>();
+
+/** The fire's packed parts at `time`, worked out again only when its frame turns; a change in the wind is taken up
+ *  then. Its tongues go after its smoke, the core one last, so the brightest flame stands over the rest. Each part
+ *  carries its kind and a noise seed of its own from the fire's, so its licks and edges never hang on its slot. */
+function packedFire(fire: Fire, time: number, wind: Wind): Packed {
+  const frame = fireFrame(fire, time);
+  const known = packedOf.get(fire);
+  if (known?.frame === frame) return known;
+  const parts = fireParts(fire, time, wind);
+  const shown: number[] = [];
+  const glows: number[] = [];
+  let part = 0;
+  const add = (into: number[], place: Point, kind: number, ...rest: number[]) =>
+    into.push(...place, kind + PART_KINDS * (Math.abs(Math.trunc(fire.seed) * 131 + part++) % NOISE_SEEDS), ...rest);
+  for (const puff of parts.smoke)
+    add(shown, puff.position, PART.smoke, puff.radius, 0, 0, 0, puff.age, puff.warmth, puff.opacity, puff.radius);
+  for (const wisp of parts.wisps)
+    add(shown, wisp.position, PART.wisp, wisp.radius, 0, 0, 0, wisp.heat, parts.held, 0, wisp.radius);
+  for (const tongue of parts.tongues.toReversed())
+    add(shown, tongue.position, PART.tongue, tongue.width, tongue.height, ...tongue.lean, parts.held, 0, 0, 1);
+  for (const ember of parts.embers)
+    add(
+      shown,
+      ember.position,
+      PART.ember,
+      ember.texels / 2 / FIRE_TEXELS_PER_METRE,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      ember.brightness,
+    );
+  for (const glow of parts.glows)
+    add(glows, glow.position, PART.glow, glow.reach, 0, 0, 0, ...GLOW_COLOUR, glow.strength);
+  const packed = { frame, shown: Float64Array.from(shown), glows: Float64Array.from(glows) };
+  packedOf.set(fire, packed);
+  return packed;
+}
+
+/** The fires' parts at `time`, each as `PART_FLOATS` floats measured from `eye`, into `into` from its start: every
+ *  fire's smoke, wisps, flames and embers, then every glow. Gives how many of each were written; past the buffer's
+ *  room, parts are left out before any glow is. */
+export function packFires(
+  fires: Iterable<Fire>,
+  time: number,
+  wind: Wind,
+  eye: Point,
+  into: Float32Array,
+): { shown: number; glows: number } {
+  const most = Math.floor(into.length / PART_FLOATS);
+  const all = Array.from(fires, (fire) => packedFire(fire, time, wind));
+  const glows = Math.min(
+    most,
+    all.reduce((sum, packed) => sum + packed.glows.length / PART_FLOATS, 0),
+  );
+  let slot = 0;
+  const copy = (from: Float64Array, room: number) => {
+    for (let start = 0; start < from.length && slot < room; start += PART_FLOATS, slot++) {
+      const offset = slot * PART_FLOATS;
+      into[offset] = (from[start] ?? 0) - eye[0];
+      into[offset + 1] = (from[start + 1] ?? 0) - eye[1];
+      into[offset + 2] = (from[start + 2] ?? 0) - eye[2];
+      into.set(from.subarray(start + 3, start + PART_FLOATS), offset + 3);
+    }
+  };
+  for (const packed of all) copy(packed.shown, most - glows);
+  const shown = slot;
+  for (const packed of all) copy(packed.glows, most);
+  return { shown, glows: slot - shown };
+}
 
 /** Fires, lit and put out by id, drawn as one of the scene's drawers over the water and into the light layer. */
 export class Flames {
@@ -105,6 +111,7 @@ export class Flames {
   private readonly fires = new Map<number, Fire>();
   private nextId = 1;
   private instances: GPUBuffer | null = null;
+  private readonly values = new Float32Array(MOST_PARTS * PART_FLOATS);
   private counts = { shown: 0, glows: 0 };
 
   constructor(gpu: Gpu) {
@@ -154,10 +161,11 @@ export class Flames {
     this.view = device.createBuffer({ size: 144, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
   }
 
-  /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. */
-  light(base: Point, sizeM: number, seed: number): number {
+  /** Lights a fire `sizeM` tall (half a metre to four) with its base at `base` (world metres); gives its id. With
+   *  `along`, the run in metres of an edge burning from `base` (a rail, a spar), it burns all along that edge. */
+  light(base: Point, sizeM: number, seed: number, along?: Point): number {
     const id = this.nextId++;
-    this.fires.set(id, { at: base, sizeM, seed });
+    this.fires.set(id, along ? { at: base, sizeM, seed, along } : { at: base, sizeM, seed });
     return id;
   }
 
@@ -182,33 +190,14 @@ export class Flames {
 
   /** Works out the fires' parts at `time`, measured from the eye of `shot`; they are drawn over the water. */
   drawInto(_pass: GPURenderPassEncoder, fromEye: Float32Array, shot: { readonly eye: Point }, time: number): void {
-    const shown: number[] = [];
-    const glows: number[] = [];
-    const add = (into: number[], place: Point, kind: number, shape: readonly number[], colour: readonly number[]) =>
-      into.push(place[0] - shot.eye[0], place[1] - shot.eye[1], place[2] - shot.eye[2], kind, ...shape, ...colour);
-    for (const fire of this.fires.values()) {
-      const parts = fireParts(fire, time, this.wind);
-      for (const puff of parts.smoke)
-        add(shown, puff.position, PART.smoke, [puff.radius, 0, 0, 0], [...SMOKE_COLOUR, puff.opacity]);
-      for (const tongue of parts.tongues)
-        add(shown, tongue.position, PART.tongue, [tongue.width, tongue.height, ...tongue.lean], [1, 1, 1, 1]);
-      for (const ember of parts.embers)
-        add(shown, ember.position, PART.ember, [fire.sizeM * 0.025, 0, 0, 0], [...EMBER_COLOUR, ember.brightness]);
-      const flicker = Math.max(...parts.tongues.map((tongue) => tongue.height)) / fire.sizeM;
-      const middle: Point = [fire.at[0], fire.at[1], fire.at[2] + fire.sizeM * 0.5];
-      add(glows, middle, PART.glow, [fire.sizeM * GLOW_REACH, 0, 0, 0], [...GLOW_COLOUR, flicker]);
-    }
-    this.counts = { shown: shown.length / PART_FLOATS, glows: glows.length / PART_FLOATS };
-    if (shown.length === 0) return;
-    const values = Float32Array.from([...shown, ...glows]);
-    if (!this.instances || this.instances.size < values.byteLength) {
-      this.instances?.destroy();
-      this.instances = this.device.createBuffer({
-        size: Math.max(4096, values.byteLength * 2),
-        usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
-      });
-    }
-    this.device.queue.writeBuffer(this.instances, 0, values);
+    this.counts = packFires(this.fires.values(), time, this.wind, shot.eye, this.values);
+    if (this.counts.shown === 0) return;
+    const used = this.values.subarray(0, (this.counts.shown + this.counts.glows) * PART_FLOATS);
+    this.instances ??= this.device.createBuffer({
+      size: this.values.byteLength,
+      usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination,
+    });
+    this.device.queue.writeBuffer(this.instances, 0, used);
     const toEye = inverted(fromEye) ?? new Float32Array(16);
     this.device.queue.writeBuffer(
       this.view,
