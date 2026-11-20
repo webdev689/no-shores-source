@@ -276,8 +276,10 @@ fn a_bridge_over_a_bodys_head_is_walked_under_and_a_wall_from_the_ground_is_not(
     let bridge = Block { bottom: AGENT.height, ..block(-1.0, -10.0, 1.0, 10.0, AGENT.height + 0.3) };
     let route = path(&bake(&[bridge]), [-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]);
     assert_eq!(route.len(), 2, "straight under it: {route:?}");
+    // A body's head meets a lower one, so the way across is over it: up onto its deck and off the far side.
     let low = Block { bottom: AGENT.height - 0.1, ..bridge };
-    assert!(bake(&[low]).find_path([-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]).is_none(), "a body's head meets it");
+    let over = path(&bake(&[low]), [-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]);
+    assert!(over.iter().any(|point| point[2] == low.top), "a body's head meets it: {over:?}");
 }
 
 /// Two upper floors 3 m up either side of a way running north and south, a bridge between them over the way, and
@@ -324,6 +326,8 @@ fn a_path_that_runs_under_the_bridge_and_climbs_onto_it_ends_on_its_deck() {
 
 #[test]
 fn a_slab_thinner_than_a_voxel_at_a_body_s_chest_is_no_way_under() {
+    // The way across is over it, onto its top.
     let slab = Block { bottom: 1.05, ..block(-1.0, -10.0, 1.0, 10.0, 1.2) };
-    assert!(bake(&[slab]).find_path([-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]).is_none(), "a body's chest meets it");
+    let over = path(&bake(&[slab]), [-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]);
+    assert!(over.iter().any(|point| point[2] == slab.top), "a body's chest meets it: {over:?}");
 }

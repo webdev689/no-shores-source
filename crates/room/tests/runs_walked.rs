@@ -357,6 +357,10 @@ fn every_terrace_is_walked_up_its_ramps() {
     assert!(failed.is_empty(), "{failed:#?}");
 }
 
+/// How far across a spoke's ramp from its middle the lines up it beside the middle's run, metres: within any ramp's
+/// half width.
+const SPOKE_LINES_M: [f64; 4] = [4.0, -4.0, 8.0, -8.0];
+
 #[test]
 fn every_ruins_spoke_is_walked_from_its_plaza_up_or_down_onto_its_tier() {
     let zones = zones();
@@ -366,10 +370,20 @@ fn every_ruins_spoke_is_walked_from_its_plaza_up_or_down_onto_its_tier() {
             walked_up += 1;
             // From the plaza's edge along the ramp and on 3 m onto the tier.
             let length = distance([foot_x, foot_y], [top_x, top_y]);
-            let on = [top_x + (top_x - foot_x) / length * 3.0, top_y + (top_y - foot_y) / length * 3.0];
+            let way = [(top_x - foot_x) / length, (top_y - foot_y) / length];
+            let on = [top_x + way[0] * 3.0, top_y + way[1] * 3.0];
             let moved = zone.floor.height_at(on[0], on[1]) - zone.floor.height_at(foot_x, foot_y);
-            let (body, _) = walked(zone, [foot_x, foot_y], &[[top_x, top_y], on], (60.0 / TICK_SECONDS) as usize);
-            if distance([body.x, body.y], on) > THERE_M || moved.abs() < 1.0 {
+            // A ruin's broken walls stand on its broad ramps, so the body walks the first of a few lines up the ramp,
+            // side by side, that none stands across.
+            let walk = |off: f64| {
+                let shift = |[x, y]: [f64; 2]| [x - way[1] * off, y + way[0] * off];
+                let ends = [shift([top_x, top_y]), shift(on)];
+                let (body, _) = walked(zone, shift([foot_x, foot_y]), &ends, (60.0 / TICK_SECONDS) as usize);
+                (distance([body.x, body.y], ends[1]) <= THERE_M, body)
+            };
+            let (middle, body) = walk(0.0);
+            let reached = middle || SPOKE_LINES_M.iter().any(|&off| walk(off).0);
+            if !reached || moved.abs() < 1.0 {
                 failed.push(format!(
                     "{}: along the spoke from {foot_x:.0},{foot_y:.0} the body stops at {:.0},{:.0}, {moved:+.1} m",
                     zone.id, body.x, body.y

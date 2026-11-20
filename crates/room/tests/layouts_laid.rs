@@ -9,7 +9,7 @@ use layout::Layout;
 use layout::brief::AreaKind;
 use layout::field::distance;
 use layout::paths::off_line;
-use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
+use movement::{Block, Blocks, Controls, Mode, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
 use std::sync::OnceLock;
@@ -93,40 +93,45 @@ fn a_body_walks_through_the_saltgrass_downs_gate_and_out_along_its_gorge() {
         .expect("a gorge runs out of the gate");
     let length = distance(gate.at, [gorge[2], gorge[3]]);
     let way = [(gorge[2] - gate.at[0]) / length, (gorge[3] - gate.at[1]) / length];
-    let across = [-way[1], way[0]];
     let path = layout
         .paths
         .iter()
         .find(|path| path.points.last().is_some_and(|&end| distance(end, gate.at) < gate.radius))
         .expect("a way reaches the gate");
-    // Along the way to the gate, round its palisade's end, and on out along the gorge.
-    let mut waypoints: Vec<[f64; 2]> = path.points.clone();
-    let beside = [gate.at[0] + across[0] * 16.0, gate.at[1] + across[1] * 16.0];
-    waypoints.push(beside);
-    waypoints.extend((1..=6).map(|step| {
+    // The gate's arch and its palisade close the cleft, so the body walks the way up to the gate, then from past the
+    // arch on out along the gorge, over nothing it would have to climb.
+    let past = [gate.at[0] + way[0] * PAST_ARCH_M, gate.at[1] + way[1] * PAST_ARCH_M];
+    let gorge_out = std::iter::once(past).chain((1..=6).map(|step| {
         let out = (f64::from(step) * 25.0).min(length - 5.0);
-        [beside[0] + way[0] * out, beside[1] + way[1] * out]
+        [gate.at[0] + way[0] * out, gate.at[1] + way[1] * out]
     }));
     let floor = Floor::Land(Box::new(laid.ground.clone()));
     let blocks = Blocks::new(layout.boxes.iter().map(Block::from_floats).collect());
-    let mut body = standing_on(&floor, &blocks, waypoints[0][0], waypoints[0][1]);
-    let (mut next, mut highest) = (1, 0.0_f64);
-    for _ in 0..(600.0 / TICK_SECONDS) as usize {
-        let Some(target) = waypoints.get(next) else { break };
-        let (east, south) = (target[0] - body.x, target[1] - body.y);
-        if (east * east + south * south).sqrt() < 1.5 {
-            // Past the gate, on its own floor, not over another layout's rock.
-            let own = laid.ground.height_at(body.x, body.y) - buried(laid, layout, [body.x, body.y]);
-            highest = highest.max(body.z - own);
-            next += 1;
-            continue;
+    for leg in [path.points.clone(), gorge_out.collect()] {
+        let mut body = standing_on(&floor, &blocks, leg[0][0], leg[0][1]);
+        let (mut next, mut highest) = (1, 0.0_f64);
+        for _ in 0..(600.0 / TICK_SECONDS) as usize {
+            let Some(target) = leg.get(next) else { break };
+            let (east, south) = (target[0] - body.x, target[1] - body.y);
+            if (east * east + south * south).sqrt() < 1.5 {
+                // On its own floor, not over another layout's rock.
+                let own = laid.ground.height_at(body.x, body.y) - buried(laid, layout, [body.x, body.y]);
+                highest = highest.max(body.z - own);
+                next += 1;
+                continue;
+            }
+            let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
+            body = step_body(&body, &controls, &blocks, &floor, TICK_SECONDS);
+            let on_a_wall = matches!(body.mode, Mode::Hang | Mode::Climb | Mode::Mantle);
+            assert!(!on_a_wall, "the body takes hold of a wall at {:.0},{:.0}", body.x, body.y);
         }
-        let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
-        body = step_body(&body, &controls, &blocks, &floor, TICK_SECONDS);
+        assert_eq!(next, leg.len(), "the body stops at {:.0},{:.0} before {:?}", body.x, body.y, leg.get(next));
+        assert!(highest < 0.5, "the body walks {highest:.1} m over its own floor");
     }
-    assert_eq!(next, waypoints.len(), "the body stops at {:.0},{:.0} before {:?}", body.x, body.y, waypoints.get(next));
-    assert!(highest < 0.5, "the body walks {highest:.1} m over its own floor");
 }
+
+/// How far out along the gorge from the gate's middle a body starts clear of its arch, metres.
+const PAST_ARCH_M: f64 = 6.0;
 
 #[test]
 fn every_set_piece_at_an_areas_middle_stands() {

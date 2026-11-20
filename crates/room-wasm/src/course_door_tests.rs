@@ -6,7 +6,7 @@ use protocol::wire::overlook::wire as messages;
 
 /// Opens a course with a deck 2.3 m up from x -5 to 5, its spawn on it.
 fn open_deck() {
-    let numbers: [f64; 7] = [0.0, 0.0, -5.0, -4.0, 5.0, 4.0, 2.3];
+    let numbers: [f64; 8] = [0.0, 0.0, -5.0, -4.0, 5.0, 4.0, 2.3, 0.0];
     assert!(open(&numbers.iter().flat_map(|value| value.to_le_bytes()).collect::<Vec<u8>>()));
 }
 
