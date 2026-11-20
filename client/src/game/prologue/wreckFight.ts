@@ -266,7 +266,16 @@ export class WreckFight implements Beat {
     const hostile = fight.foes.filter((foe) => foe.view.side === 'foes' && foe.view.health > 0);
     const engaged = hostile.some((foe) => foe.view.target === fight.player);
     const action = fight.own?.action.kind;
-    return { seconds, x: body.x, y: body.y, yaw, action, foes: hostile.length, engaged, boss: this.fought || run.arena };
+    return {
+      seconds,
+      x: body.x,
+      y: body.y,
+      yaw,
+      action,
+      foes: hostile.length,
+      engaged,
+      boss: this.fought || run.arena,
+    };
   }
 
   /** A death before the boss fight says what happens, for as long as the player lies dead: the room raises them at
