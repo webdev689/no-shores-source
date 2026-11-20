@@ -8,8 +8,10 @@ import arts from '../../../../content/arts/arts.json' with { type: 'json' };
 import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'json' };
 import emblems from '../../../../content/gear/emblems.json' with { type: 'json' };
 import items from '../../../../content/gear/items.json' with { type: 'json' };
-import { ASKS, type GearItem, type GearState, type Standing } from '../../network/gearMessages.ts';
+import { ASKS, type GearItem, type GearState, type GearStanding } from '../../network/gearMessages.ts';
 import { CARRIED, SLOTS, itemWords } from '../../player/gear.ts';
+import { fragmentWords } from '../artLevels.ts';
+import { called } from '../factionNames.ts';
 import { ARTS } from '../artsCards.ts';
 import { CARRIED_MOST, VESTIGES_MOST } from '../gearCards.ts';
 import { type Row, type Ware, itemWare } from './npcWares.ts';
@@ -37,10 +39,10 @@ export function factionOf(id: number) {
 }
 
 /** A standing for a player the room has said nothing of yet: pledged to none, every Art at level 1. */
-const NO_STANDING: Standing = { pledge: 0, reputation: [], packages: [], artLevels: [], artXp: [], artOwned: [] };
+const NO_STANDING: GearStanding = { pledge: 0, reputation: [], packages: [], artLevels: [], artXp: [], artOwned: [] };
 
 /** The player's rank with a faction and the meter to the next: every rank is the same span of reputation. */
-export function reputationOf(id: number, standing: Standing = NO_STANDING) {
+export function reputationOf(id: number, standing: GearStanding = NO_STANDING) {
   const earned = standing.reputation[factionOf(id)?.place ?? -1] ?? 0;
   const rank = Math.floor(earned / PER_RANK);
   const into = earned - rank * PER_RANK;
@@ -83,15 +85,13 @@ function riseMore(gear: GearState, fragments: number, essence: number) {
   return { more: more.join(', '), held };
 }
 
-/** A faction as a sentence names it, from its name alone: "the Veiled", "the Stormcallers". */
-const called = ({ name }: { readonly name: string }) => `the ${name.replace(/^The /, '')}`;
-/** The same at a sentence's start. */
-const opening = (faction: { readonly name: string }) => `T${called(faction).slice(1)}`;
+/** A faction as a sentence names it at its start: "The Veiled", "The Stormcallers". */
+const opening = (faction: { readonly name: string }) => `T${called(faction.name).slice(1)}`;
 
 /** What a faction's armour and weapons are drawn in: its own colour, by name. */
 function colourWords(id: number): string {
   const faction = factionOf(id)?.faction;
-  return faction ? `Drawn in ${faction.gear.colour}, a colour none but ${called(faction)} wear.` : '';
+  return faction ? `Drawn in ${faction.gear.colour}, a colour none but ${called(faction.name)} wear.` : '';
 }
 
 /** The faction's pieces as the room made them, and how many the player carries in a piece's slot. */
@@ -172,7 +172,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
     name: 'Package',
     rarity: 2,
     picture: { kind: 'package' },
-    about: `From ${called(faction)}`,
+    about: `From ${called(faction.name)}`,
     words: 'A Vestige and Aurem, left for you as your rank rose.',
     note: room ? '' : 'Ten Vestiges carried',
     ask: room ? { kind: ASKS.collectPackage, column: id } : null,
@@ -184,7 +184,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
   const pledge: Ware = {
     ...plain,
     key: 'pledge',
-    name: pledged ? `Pledged to ${called(faction)}` : `Pledge to ${called(faction)}`,
+    name: pledged ? `Pledged to ${called(faction.name)}` : `Pledge to ${called(faction.name)}`,
     picture: { kind: 'emblem', emblem: faction.emblem },
     about: pledged ? 'Pledged' : switching ? 'Your pledge moves here' : 'Your first pledge is free',
     words: faction.words,
@@ -258,7 +258,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
         rarity: 3,
         picture: { kind: 'fragment', art: art.id, fragment: place },
         about: 'Learned as your Art rises',
-        words: fragment.text,
+        words: fragmentWords(fragment, level),
         ask: { kind: ASKS.riseArt, column: art.id, node: place },
       })),
     });
@@ -274,7 +274,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
         rarity: 3,
         picture: { kind: 'fragment', art: art.id, fragment: place },
         about: `A fragment of the ${art.name} Art`,
-        words: fragment.text,
+        words: fragmentWords(fragment, level),
         price: mine || !ranked ? null : { amount: factions.fragmentAurem, currency: 'aurem' },
         short: !mine && ranked && short,
         note: mine ? 'Owned' : ranked ? '' : `From rank ${factions.fragmentRank}`,

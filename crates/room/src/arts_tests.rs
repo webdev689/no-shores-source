@@ -278,6 +278,9 @@ fn a_test_ground_player_joins_with_every_art_at_its_highest_owning_every_fragmen
     let player = wreck.join().expect("a room with space");
     let found = wreck.player(player).expect("in");
     assert_eq!((found.character.art_level(1), found.character.owns_fragment(1, 0)), (1, false), "a story level");
+    wreck.answer(player, Asked::Grant(Grant::ArtLevel { art: 1, level: 5 }));
+    let found = wreck.player(player).expect("in");
+    assert_eq!(found.character.art_level(1), 1, "the Test Ground's grants are the Test Ground's alone");
 }
 
 #[test]

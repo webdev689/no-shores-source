@@ -1,6 +1,6 @@
 // A player's gear for the keepers' screens' tests: an empty state and an item, each filled in by the fields a test
 // names.
-import type { GearItem, GearState, Standing } from '../../network/gearMessages.ts';
+import type { GearItem, GearState, GearStanding } from '../../network/gearMessages.ts';
 
 export const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -26,7 +26,7 @@ export const item = (fields: Partial<GearItem>): GearItem => ({
   ...fields,
 });
 
-export const standing = (fields: Partial<Standing>): Standing => ({
+export const standing = (fields: Partial<GearStanding>): GearStanding => ({
   pledge: 0,
   reputation: [0, 0, 0],
   packages: [0, 0, 0],

@@ -198,7 +198,7 @@ export interface GearState {
   readonly crates?: number;
   readonly cratePrice?: number;
   /** Where they stand with the factions (content/gear/factions.json's order). */
-  readonly standing?: Standing;
+  readonly standing?: GearStanding;
   /** The cosmetics they keep and the dye, coat and barding they wear, by their place in content/gear/cosmetics.json;
    *  and in a social space, those the Tailor and the Tack sell today. */
   readonly cosmetics?: readonly number[];
@@ -216,7 +216,7 @@ export interface GearState {
  *  content/gear/factions.json's order, the reputation earned and the packages it holds; for each Art in
  *  content/arts/arts.json's order, its level (1 to 5), its XP toward the next and the fragments it owns, one bit each
  *  by place. */
-export interface Standing {
+export interface GearStanding {
   readonly pledge: number;
   readonly reputation: readonly number[];
   readonly packages: readonly number[];

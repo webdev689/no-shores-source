@@ -250,10 +250,10 @@ the factions' counters are in [[Factions]].
   and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes. **Shapes** come
   only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
-- The room keeps the minute, set by its host each second (and by the page as its own room steps, playing alone),
-  whose day sets the wares and whose week sets Shape. It
-  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place, his
-  wares and the minutes until he goes with a player's gear while they stand in a social space, sends them again as the
+- The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
+  room steps, playing alone), whose day sets the wares and whose week sets Shape. It
+  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware, 16 an Ammo
   crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its place in `node`).
 
@@ -293,7 +293,8 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 ## Elements and shields
 
 - **A weapon's element** ([[Weapons Carry Blaze, Volt or Cosmic, and Foes Carry Shields]]): Blaze, Volt or Cosmic,
-  or none. It is rolled as the weapon is made, as a Vestige opens, a vendor stocks it or the Test Ground grants it, by
+  or none. It is rolled as the weapon is made, as a Vestige opens, a vendor stocks it, a faction sells it or the Test
+  Ground grants it, by
   rarity: one in ten for Normal, one in five for Magic, about one in three for Rare, one in two for Legendary and
   Atheric; it is not guaranteed. Armour carries none. A blow carries the element of the loadout that struck it, none
   from the fists; a shot keeps the one it was loosed with.
@@ -335,15 +336,20 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   cloak in its faction's dye whatever its rarity. The hands hold the loadout drawn, in the rarity's metal; a faction's
   weapon in its faction's metal and colour.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them.
-  A dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) in place of the
+  A dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once
+  to the game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches
+  draw the same sixteen colours; each dye and faction colour keeps ten steps at least and stands apart from every
+  other (a test measures it). The ramp lies in place of the
   forge's own on every armour piece's layer, its padding and every garment but the cloak; never on a weapon, a shield,
   a sheath, the cloak or the hair. A coat lays its ramp on the horse's hide by its light (texels of the hide's hue,
   25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them; the ride from the saddle
-  has its own hide test, so a coat covers its hide and leaves the bridle. A barding is the forge's own layer stacked
+  has its own hide test and its own hide top, measured on its strips, so a coat covers its hide, leaves the bridle and
+  takes the same steps as on the figure. A barding is the forge's own layer stacked
   over the horse in every mounted move, drawn over the hide unless it lies more than 0.15 m behind it, so its far side
   and inside stay hidden, and in the riding view its own published strip. In first person the gauntlets and boots
-  take the worn dye as the figure's armour does. Own Colours, Bay and Bare change nothing. Another player's dress naming a dye, coat or
-  barding that is not one of its kind is refused as any broken dress is.
+  take the worn dye as the figure's armour does. Own Colours, Bay and Bare change nothing. The room puts the worn
+  dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
+  player's dress naming one that is not of its kind is refused as any broken dress is.
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.
 
 ## Limits

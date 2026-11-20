@@ -332,7 +332,7 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten places
+- **Inventory.** Aurem and the Shapes held along the top, each named under its count; under it the Vestiges carried, "Vestiges 3/10" over ten places
   in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Mage;
   then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
   first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
@@ -346,7 +346,8 @@ never while a press is held. Each press is an ask the room answers.
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
   or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
-  shows a pickup: a row each, its picture in a well of its rarity, its name and how many. Rows slide in, stay four
+  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; Shapes gained and every
+  dye, coat or barding newly kept among them. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
@@ -436,11 +437,12 @@ Every keeper of a counter in the social space, and Shape, keeps a screen, as Des
 window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
-- **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
+- **The vault**, after Destiny 1's, in the keepers' screen's right column under the vault keeper, who greets and
+  thanks in lines of his own: what it keeps on the left and what the player carries on the right, each in
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
   right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
   an empty place a dark Vestige, as the inventory's.
-- **A keeper's screen** (`npcPage`), one for every keeper but the vault's, after the owner's Destiny 1 references: the
+- **A keeper's screen** (`npcPage`), one for every counter, after the owner's Destiny 1 references: the
   keeper large at the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by
   whole pixels and breathing between the idle's two frames (still with less motion asked for), over a ground lit in
   their colour (a faction's in its Art's element, the rest brass), with their mark and their title in capitals above
@@ -461,8 +463,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   waiting held to collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a
   Legendary cloak worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so),
   ARMOUR and WEAPONS (the faction's four armour pieces and two weapons as the room makes them, each card naming the
-  colour it is drawn in; dim with "From rank 2" or "From rank 3" until the rank, "Its slot carries nine" while its slot
-  is full), ART (the faction's Art: its level as five pips, its bar, and when the bar is
+  colour it is drawn in; dim with "From rank 2" or "From rank 3" until the rank, then "From level 20" below the level
+  they are made at, "Its slot carries nine" while its slot is full), ART (the faction's Art: its level as five pips, its bar, and when the bar is
   full a Rise press with the rise's price that opens a choice of the fragments not owned; with all six owned it rises
   at once, "No fragment left to choose") and FRAGMENTS (the Art's six, owned lit, the rest dim with their price, sold
   from the first rank).
@@ -472,7 +474,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
   refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
   a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]]. Once typed whole, the line is read to a
-  screen reader from a polite live copy.
+  screen reader from a polite live copy, as every line of the dialogue box is; the currencies are read with their
+  names.
 
 ## Emblems
 

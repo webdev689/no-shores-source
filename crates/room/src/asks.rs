@@ -246,7 +246,7 @@ impl Room {
                 }
             }
             Asked::Gather { node } => self.gather(player, node),
-            Asked::Grant(grant) if self.section.is_none() => self.grant(player, grant),
+            Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
         };

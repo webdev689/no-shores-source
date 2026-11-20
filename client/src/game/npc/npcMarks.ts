@@ -103,6 +103,21 @@ const SIGNS: Readonly<Record<string, readonly string[]>> = {
   ],
 };
 
+/** A barding's mark, a horse's head, 11 × 11. */
+const BARDING = [
+  '...........',
+  '.....dd....',
+  '....dcd....',
+  '...dccdd...',
+  '..dccccdd..',
+  '.dcccccccd.',
+  '.dccdcccccd',
+  '..dd.dccccd',
+  '.....dcccd.',
+  '.....dcccd.',
+  '.....ddddd.',
+];
+
 /** The glyph of Shapes: a stone cut on no plan, pale as the Pale Expanse. */
 const SHAPES_GLYPH = [
   '.....aa.....',
@@ -161,4 +176,6 @@ export const keeperMarkSvg = (kind: string): string => {
   return map ? markSvg(map, BRASS) : '';
 };
 export const shapesSvg = (): string => markSvg(SHAPES_GLYPH, SHAPES);
+/** A barding's mark, for a row that names the barding beside it: the gains feed's. */
+export const bardingSvg = (): string => markSvg(BARDING, BRASS);
 export const svgUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;

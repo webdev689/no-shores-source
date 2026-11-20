@@ -56,10 +56,19 @@ CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.e
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
 Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
-C=(); [ "$MODE" = "--resume" ] && C=(-c)
-claude "${C[@]}" -p "$(cat "$BRIEF")" --append-system-prompt "$CAVE
+work() {   # work <prompt> [-c]: one headless run, its output to the log
+  claude "${@:2}" -p "$1" --append-system-prompt "$CAVE
 
 $NOTE" --strict-mcp-config --mcp-config "$CFG" \
-  --allowedTools "Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*" \
-  --max-turns 600 </dev/null >> "$OUT/$NAME.log" 2>&1
-echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
+    --allowedTools "Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*" \
+    --max-turns 600 </dev/null >> "$OUT/$NAME.log" 2>&1
+  echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
+}
+C=(); [ "$MODE" = "--resume" ] && C=(-c)
+work "$(cat "$BRIEF")" "${C[@]}"
+# The branch is the deliverable: a run that ends with its edits uncommitted is resumed once to commit them.
+left=$(git status --porcelain | grep -vc 'graphify-out/')
+if [ "$left" -gt 0 ]; then
+  echo "WORKER $NAME UNCOMMITTED $left files: resumed once to commit" >> "$OUT/$NAME.log"
+  work "Your run ended with $left files changed and not committed. Re-read your inbox, finish what your brief and inbox still ask, run the brief's checks, commit on your branch with the brief's trailer, write your report and give the final reply the brief asks for." -c
+fi

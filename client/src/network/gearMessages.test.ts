@@ -49,13 +49,14 @@ test('a players own gear the server wrote reads back whole, every column spelled
 });
 
 test('where a player stands crosses as the server wrote it, away from Shape and while he is here', async () => {
-  // gear_wire_tests.rs writes both: the furnished player at the stall, a fresh standing, and then pledged to the
-  // Lamplighters at rank 3, Arts at levels 3, 1 and 5, the Ember Plate barding worn and 9 Shapes on a Friday noon.
+  // gear_wire_tests.rs writes both: the furnished player at the Test Ground's stall, its Arts mastered, and then
+  // pledged to the Lamplighters at rank 3, Arts at levels 3, 1 and 5, the Ember Plate barding worn and 9 Shapes on a
+  // Friday noon.
   const away = readFromRoom(await written('gear.bin'));
   const here = readFromRoom(await written('gear_shape.bin'));
   assert.ok(away?.kind === 'gear' && here?.kind === 'gear');
-  const fresh = { pledge: 0, reputation: [0, 0, 0], packages: [0, 0, 0], artLevels: [1, 1, 1], artXp: [0, 0, 0] };
-  assert.deepEqual(away.standing, { ...fresh, artOwned: [0, 0, 0] });
+  const fresh = { pledge: 0, reputation: [0, 0, 0], packages: [0, 0, 0], artLevels: [5, 5, 5], artXp: [0, 0, 0] };
+  assert.deepEqual(away.standing, { ...fresh, artOwned: [0b11_1111, 0b11_1111, 0b11_1111] }, 'every fragment owned');
   assert.deepEqual(away.cosmetics, [23, 16, 0], 'the start pieces: bare, bay, own colours');
   assert.deepEqual(away.worn, { dye: 0, coat: 16, barding: 23 });
   assert.deepEqual([away.shapes, away.shape], [0, null], 'he is away');

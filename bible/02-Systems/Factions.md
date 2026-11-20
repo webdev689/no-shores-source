@@ -50,13 +50,15 @@ keeps a counter in Overlook's plaza ([[Cities]]).
 - **The faction's wares.** Each faction sells seven named Legendary pieces (`content/gear/items.json`, with its
   faction's key; `wares` lists them in that file's order, the cape first): its cape, level 1, for 2,500 Aurem, only to a
   player pledged to it, one kept at a time; a full armour set from rank 2 for 6,000 Aurem a piece; and a Melee and a
-  Ranged weapon from rank 3 for 9,000 (`terms`). Armour and weapons need the rank alone, pledged or not, and are made at
-  level 20. One ask buys any of them (`buy_faction_ware`, by its place among the faction's), refused for a slot that
+  Ranged weapon from rank 3 for 9,000 (`terms`). Armour and weapons need the rank alone, pledged or not, and are made
+  and sold at level 20, refused below it; a weapon rolls its element as it is bought, as every weapon made does. One
+  ask buys any of them (`buy_faction_ware`, by its place among the faction's), refused for a slot that
   carries nine. No Vestige, package or Shape offers a faction's piece (`vestige_pool`), and one dismantled gives back as
   a Normal piece with the third of its Essence, so faction gear bought and broken makes no Essence.
 - **Its own colour.** Each faction's armour and weapons are drawn in a colour no dye sells (`factions.json`'s
-  `gear.look`, four colours laid as a 16-step ramp): the armour in its guild set (`gear.armour`), each layer named for
-  its faction in the outfit's dyes (`gearOutfit`), which `rampsOf` lays over any dye worn; the weapons in its metal
+  `gear.look`, four colours laid as a 16-step ramp and snapped to the game's palette): the armour in its guild set
+  (`gear.armour`), each layer and the padding under it named for its faction in the outfit's dyes (`gearOutfit`), which
+  `rampsOf` lays over any dye worn; the weapons in its metal
   (`gear.metal`), their colour where the forge dyes a weapon (a bow, a staff, a shield, in hand or put away). The dress
   carries it, so other players see it; first person lays it on the gauntlets, boots, bow, staff and shield.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each

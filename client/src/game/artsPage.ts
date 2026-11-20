@@ -10,7 +10,7 @@ import './arts.css';
 import { make } from '../editor/dom.ts';
 import { ELEMENTS, answerText } from '../player/gear.ts';
 import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
-import type { Standing } from '../network/gearMessages.ts';
+import type { GearStanding } from '../network/gearMessages.ts';
 import { ROLES } from '../plus/kit.ts';
 import {
   ARTS,
@@ -64,7 +64,7 @@ export type ArtsEntrance = 'open' | 'wear' | null;
 export interface ArtsPageContext {
   readonly worn: number;
   readonly cores: Cores;
-  readonly standing?: Standing | undefined;
+  readonly standing?: GearStanding | undefined;
   readonly ask: (ask: ArtsAsk) => void;
   readonly tip: HoverCard;
   readonly close: () => void;
@@ -456,7 +456,7 @@ export function artDiamond(
   worn: number,
   open: () => void,
   tip: HoverCard | null = null,
-  standing?: Standing,
+  standing?: GearStanding,
 ): HTMLElement {
   const art = artOf(worn) ?? ARTS[0];
   const holder = make('div', '', 'gear-slot-holder arts-holder');

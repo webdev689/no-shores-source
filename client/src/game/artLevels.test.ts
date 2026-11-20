@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import type { Standing } from '../network/gearMessages.ts';
+import type { GearStanding } from '../network/gearMessages.ts';
 import {
   GIVES,
   HEALS_A_SECOND,
@@ -21,7 +21,7 @@ import {
 } from './artLevels.ts';
 import { type Art, artOf, coreChoices, fragmentCard, fragmentNumbers, spellCard, spellNumbers } from './artsCards.ts';
 
-const standing = (levels: number[], earned: number[], owned: number[]): Standing => ({
+const standing = (levels: number[], earned: number[], owned: number[]): GearStanding => ({
   pledge: 0,
   reputation: [0, 0, 0],
   packages: [0, 0, 0],

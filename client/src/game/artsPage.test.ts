@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type FakeElement, findAll, onFakePage } from '../combat/page.test.ts';
-import type { Standing } from '../network/gearMessages.ts';
+import type { GearStanding } from '../network/gearMessages.ts';
 import { levelOf, shareWords } from './artLevels.ts';
 import { artOf } from './artsCards.ts';
 import { type ArtsPageContext, levelBlock, levelPips } from './artsPage.ts';
@@ -26,7 +26,7 @@ function onPage<Result>(run: () => Result): Result {
 
 const attributes = (node: FakeElement): Record<string, string> =>
   (node as unknown as { attributes: Record<string, string> }).attributes;
-const standing = (level: number, earned: number): Standing => ({
+const standing = (level: number, earned: number): GearStanding => ({
   pledge: 0,
   reputation: [0, 0, 0],
   packages: [0, 0, 0],
@@ -34,7 +34,7 @@ const standing = (level: number, earned: number): Standing => ({
   artXp: [earned, 0, 0],
   artOwned: [0, 0, 0],
 });
-const context = (shown: Standing): ArtsPageContext => ({
+const context = (shown: GearStanding): ArtsPageContext => ({
   worn: 1,
   cores: {},
   standing: shown,
@@ -57,7 +57,7 @@ test('the pips light up to the level and say it aloud', () => {
 test('the bar is empty at level 1, part full, full and ready to rise, and full at level 5, with its share', () => {
   const storm = artOf(1);
   assert.ok(storm);
-  const cases: [Standing, string, string, string][] = [
+  const cases: [GearStanding, string, string, string][] = [
     [standing(1, 0), '0%', '0 of 8,000', 'Spells at 60%'],
     [standing(2, 4000), '25%', '4,000 of 16,000', 'Spells at 70%'],
     [standing(1, 8000), '100%', "Ready to rise at the Stormcallers' counter", 'Spells at 60%'],

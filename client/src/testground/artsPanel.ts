@@ -4,7 +4,7 @@
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { button, make } from '../editor/dom.ts';
 import type { ArtState } from '../network/artMessages.ts';
-import { ASKS, type GearAsk, type Standing } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearStanding } from '../network/gearMessages.ts';
 import { labelled } from './dressPanel.ts';
 
 /** How many slots an Art's Core has. */
@@ -28,7 +28,7 @@ export const levelAsk = (art: number, level: number): GearAsk => ({ kind: ASKS.g
 export function startArtsPanel(
   root: HTMLElement,
   ask: (asked: GearAsk) => void,
-): (state: ArtState | null, standing?: Standing) => void {
+): (state: ArtState | null, standing?: GearStanding) => void {
   const worn = make('select');
   worn.append(...arts.arts.map((art) => Object.assign(make('option', art.name), { value: String(art.id) })));
   let shown: ArtState | null = null;

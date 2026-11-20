@@ -7,6 +7,7 @@ import type { GearState } from '../../network/gearMessages.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { RARITIES } from '../../player/gear.ts';
 import { EMBLEMS } from '../emblemArt.ts';
+import { owned } from '../factionNames.ts';
 
 /** A row of the screen: the emblems, or one kind of cosmetic. */
 export type AppearanceKind = 'emblem' | CosmeticKind;
@@ -51,11 +52,9 @@ export const rarityNumber = (name: string): number =>
     RARITIES.findIndex((each) => each.name.toLowerCase() === name),
   );
 
-/** A faction's name as its own: the Stormcallers', the Veiled's. */
-function factionOwn(number: number): string {
-  const name = (factions.factions.find((each) => each.id === number)?.name ?? 'faction').replace(/^The /, '');
-  return `the ${name}${name.endsWith('s') ? "'" : "'s"}`;
-}
+/** A faction's name as its own, by its number: the Stormcallers', the Veiled's. */
+const factionOwn = (number: number): string =>
+  owned(factions.factions.find((each) => each.id === number)?.name ?? 'faction');
 
 /** How a cosmetic is had, in a sentence. */
 export function howHad(source: CosmeticSource, kind: CosmeticKind): string {

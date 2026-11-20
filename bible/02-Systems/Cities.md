@@ -109,8 +109,9 @@ city stands on it:
 
 **Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
-room opens none on it. In the page, over another city's island its social space's landing says "Opens later" and
-cannot be chosen, and a page asked to start there starts in Overlook. Shape visits Overlook alone (the same file's `shapeVisits`),
+room opens none on it. In the page, Sunspire's and Rimeholt's social spaces, the two other ports, say "Opens later"
+over their landing (the same file's `later`) and cannot be chosen; the six desolate cities' social spaces show no mark
+and cannot be landed at; and a page asked to start at any of them starts in Overlook. Shape visits Overlook alone (the same file's `shapeVisits`),
 the only social node whose file carries his places.
 
 **Its people.** Each keeper stands behind their counter in their own dress (`client/src/game/keepers.ts`), Elder

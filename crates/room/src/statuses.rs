@@ -23,11 +23,14 @@ impl Room {
         if status == Status::Linked {
             self.spells.linked.remove(&fighter);
         }
-        // Overload: a foe the player Charges is Exposed too.
-        let overloads =
-            from.and_then(|from| self.players.get(&from)).is_some_and(|by| by.character.fragment("overload").is_some());
-        if status == Status::Charge && overloads {
-            self.give(fighter, Status::Expose, None, from);
+        // Overload: a foe the player Charges is Exposed too, as long as the Art that holds it lasts at its level.
+        let by = from.and_then(|from| self.players.get(&from)).map(|by| &by.character);
+        let overload = by.filter(|by| by.fragment("overload").is_some()).map(|by| by.art_shares(by.art().id).1);
+        if status == Status::Charge
+            && let Some(lasting) = overload
+        {
+            let lasts = combat::ticks(f64::from(Status::Expose.ticks()) / 60.0 * lasting);
+            self.give(fighter, Status::Expose, Some(lasts), from);
         }
         true
     }

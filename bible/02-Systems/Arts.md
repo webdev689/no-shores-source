@@ -146,8 +146,14 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   empty, one from before levels owns what its Cores held, and a broken one is made whole on reading ([[Gear]]).
 - **Levels.** Kills fill the worn Art's bar, and its faction raises it a level for a price, a fragment of the
   player's choice owned at each rise; the faction also sells fragments ([[Factions]]). The level weighs every spell:
-  its harm and healing, and how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs they give, at 0.6
-  of the numbers below at level 1 up to the numbers below at level 5.
+  its harm and healing, and how long it and everything it gives lasts (the Sunwell, the Duskraven and Dusk Daggers;
+  Haste, the Crits and the veil; Arc Lash's Charge, the Expose that Dusk Daggers, Searing and the Duskraven's bolts
+  give, the Sunwell's Linked linger, Overload's Expose with a Charge, and the seconds each fragment adds), at 0.6 of
+  the numbers below at level 1 up to the numbers below at level 5. A spell keeps its Art's
+  shares and Core from its cast: a spell still out after a swap keeps the Core of the Art that cast it, and Linked
+  heals by the share of the Sunwell that gave it, even after its caster leaves. The cards show each number with the
+  worn Core folded in, and a fragment's words name its seconds at the level worn. A Test Ground player starts every
+  Art at level 5 owning every fragment.
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
   already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.

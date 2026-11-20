@@ -6,6 +6,8 @@
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, STOCK_NAMES, itemName, resourceName } from '../player/gear.ts';
+import { cosmeticRamp } from '../forge/cosmetics.ts';
+import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
 import { bardingSvg, shapesSvg, svgUrl } from './npc/npcMarks.ts';
@@ -50,8 +52,10 @@ const gain = (key: string, name: string, count: number, fields: Partial<Gain> = 
   ...fields,
 });
 
-/** A dye's or a coat's colours as a picture: a band of each, darkest first. */
-function bandsSvg(colours: readonly string[]): string {
+/** A dye's or a coat's colours as a picture: a band of each, darkest first, on the palette as the figure draws them. */
+function bandsSvg(id: string): string {
+  const ramp = cosmeticRamp(id, GAME_PALETTE) ?? [];
+  const colours = ramp.filter((_rgb, step) => step % 5 === 0).map((rgb) => `rgb(${rgb.join(' ')})`);
   const size = colours.length;
   const bands = colours.map((colour, place) => `<rect x="${place}" width="1" height="${size}" fill="${colour}"/>`);
   const frame = `xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"`;
@@ -62,7 +66,7 @@ function bandsSvg(colours: readonly string[]): string {
 function cosmeticGain(number: number): Gain[] {
   const cosmetic = cosmetics.cosmetics[number];
   if (!cosmetic) return [];
-  const icon = svgUrl(cosmetic.kind === 'barding' ? bardingSvg() : bandsSvg(cosmetic.look));
+  const icon = svgUrl(cosmetic.kind === 'barding' ? bardingSvg() : bandsSvg(cosmetic.id));
   return [gain(`cosmetic-${number}`, cosmetic.name, 1, { rarity: rarityNamed(cosmetic.rarity), icon })];
 }
 

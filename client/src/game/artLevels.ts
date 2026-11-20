@@ -4,7 +4,8 @@
 
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
-import type { Standing } from '../network/gearMessages.ts';
+import type { GearStanding } from '../network/gearMessages.ts';
+import { owned } from './factionNames.ts';
 
 /** An Art's highest level, where its spells are as written. */
 export const LEVEL_MOST = 5;
@@ -23,7 +24,7 @@ export interface ArtLevel {
 
 /** Where the player stands with the Art numbered `art`. Until the room has said, an Art is at level 1 owning every
  *  fragment, so the screen locks nothing the room may allow; the room refuses what it must. */
-export function levelOf(standing: Standing | undefined, art: number): ArtLevel {
+export function levelOf(standing: GearStanding | undefined, art: number): ArtLevel {
   const place = arts.arts.findIndex((each) => each.id === art);
   const level = Math.min(LEVEL_MOST, Math.max(1, standing?.artLevels[place] ?? 1));
   const bar = arts.levels.xp[level - 1] ?? 0;
@@ -51,10 +52,7 @@ export function factionOf(art: number): (typeof factions.factions)[number] | und
 }
 
 /** A faction's counter in words: "the Stormcallers' counter", "the Veiled's counter". */
-function counterOf(name: string): string {
-  const plain = name.replace(/^The /, '');
-  return `the ${plain}${plain.endsWith('s') ? "'" : "'s"} counter`;
-}
+const counterOf = (name: string): string => `${owned(name)} counter`;
 
 const RANKS = ['first', 'second', 'third', 'fourth', 'fifth'];
 
