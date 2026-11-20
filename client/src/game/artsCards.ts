@@ -8,7 +8,7 @@ import { FRAGMENT_MAPS } from './artFragments.ts';
 import { EMBLEM_FRAME, EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { ArtState } from '../network/artMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
-import { GIVES, LEVEL_MOST, lastingAt, scaled } from './artLevels.ts';
+import { GIVES, HEALS_A_SECOND, LEVEL_MOST, lastingAt, powerAt, scaled } from './artLevels.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -105,7 +105,10 @@ export function spellNumbers(spell: Spell, level = LEVEL_MOST): [string, string]
       ? [[label, written(scaled(spell.key, field, value, level))] as [string, string]]
       : [];
   });
-  return [...rows, ...givesRow(spell.key, level)];
+  const linked = HEALS_A_SECOND[spell.key];
+  const heals: [string, string][] =
+    linked === undefined ? [] : [['Heals a second', String(Math.round(linked * powerAt(level) * 10) / 10)]];
+  return [...rows, ...heals, ...givesRow(spell.key, level)];
 }
 
 /** A fragment's numbers the room scales by an Art's `level`, as its card's rows: the seconds it adds and what it

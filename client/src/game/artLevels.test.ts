@@ -5,6 +5,7 @@ import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import type { Standing } from '../network/gearMessages.ts';
 import {
   GIVES,
+  HEALS_A_SECOND,
   LASTING_LIFE,
   LASTING_MORE,
   barWords,
@@ -103,6 +104,7 @@ test('a spell’s numbers at each level are scaled as the room scales them, the 
   assert.deepEqual(spellNumbers(divine.anima, 2), [
     ['Radius', '10 m'],
     ['Lasts', '8.4 s'],
+    ['Heals a second', '3.5'],
   ]);
   assert.deepEqual(spellNumbers(divine.tenets[0] ?? divine.anima, 4), [['Heals', '36']]);
   const shadow = art(3);
@@ -152,4 +154,5 @@ test('the screen scales exactly what the room scales, and the buffs last what co
   assert.equal(GIVES['momentum']?.[1], seconds('HASTE'), 'Momentum’s Crit lasts as long as Quicken’s Haste');
   assert.equal(GIVES['resolve']?.[1], seconds('CRIT'));
   assert.equal(GIVES['vanish']?.[1], seconds('VEILED'));
+  assert.equal(HEALS_A_SECOND['sunwell'], Number(/LINKED_HEAL: f64 = ([\d.]+)/.exec(status)?.[1]));
 });
