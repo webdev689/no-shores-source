@@ -440,6 +440,15 @@ table Gear {
   dungeons: [double];
   // Whether they have finished the prologue, as kept with their character.
   prologue_done: bool;
+  // Their day's and week's record as kept with their character (gear's Activity): the day it is for and the tiers of
+  // the dungeon of the day cleared then (0 Normal, 1 Elite, 2 Abyss); the week it is for, whether they cleared the
+  // Elite and the Abyss Dungeon of the week, and whether they hold the Abyss boon. The page judges each by its own day.
+  activity_day: uint;
+  cleared: [ubyte];
+  activity_week: uint;
+  week_elite: bool;
+  week_abyss: bool;
+  boon: bool;
 }
 
 // What a room sends: exactly one of these is present.

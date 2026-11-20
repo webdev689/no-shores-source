@@ -329,6 +329,14 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .flat_map(|entrance| [entrance.at[0], entrance.at[1], entrance.at[2], entrance.yaw, entrance.model as f64])
         .collect();
     let dungeons = (!dungeons.is_empty()).then(|| builder.create_vector(&dungeons));
+    let (today, this_week) = (&character.activity.today, &character.activity.this_week);
+    let cleared: Vec<u8> = gear::Difficulty::ALL
+        .into_iter()
+        .enumerate()
+        .filter(|(_, tier)| today.cleared.contains(tier))
+        .filter_map(|(number, _)| u8::try_from(number).ok())
+        .collect();
+    let cleared = Some(builder.create_vector(&cleared));
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -366,6 +374,12 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
         dungeons,
         prologue_done: character.story.prologue,
+        activity_day: u32::try_from(today.day).unwrap_or(u32::MAX),
+        cleared,
+        activity_week: u32::try_from(this_week.week).unwrap_or(u32::MAX),
+        week_elite: this_week.elite,
+        week_abyss: this_week.abyss,
+        boon: this_week.boon,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

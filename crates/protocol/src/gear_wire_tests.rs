@@ -215,3 +215,19 @@ fn a_players_gear_says_whether_they_finished_the_prologue() {
     room.tick();
     assert!(done(&room));
 }
+
+#[test]
+fn a_players_gear_carries_their_days_and_weeks_record_as_kept() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let mut character = room.player(player).expect("in the room").character.clone();
+    let cleared = [gear::Difficulty::Elite, gear::Difficulty::Abyss].into_iter().collect();
+    character.activity.today = gear::activity::Today { day: 20_778, cleared, ..Default::default() };
+    character.activity.this_week = gear::activity::ThisWeek { week: 2_968, elite: true, abyss: false, boon: true };
+    assert!(room.restore_character(player, &character.to_json()));
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    assert_eq!((gear.activity_day(), gear.activity_week()), (20_778, 2_968));
+    assert_eq!(gear.cleared().map(|tiers| tiers.iter().collect::<Vec<u8>>()), Some(vec![1, 2]));
+    assert_eq!((gear.week_elite(), gear.week_abyss(), gear.boon()), (true, false, true));
+}

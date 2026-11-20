@@ -185,6 +185,20 @@ export interface GearState {
   readonly dungeons?: readonly number[];
   /** Whether they have finished the prologue, as kept with their character. */
   readonly prologueDone?: boolean;
+  /** Their day's and week's record, as kept with their character. */
+  readonly activity?: ActivityRecord;
+}
+
+/** Their day's and week's record, as kept with their character (`Gear`'s comment says each field): the day it is for
+ *  and the tiers of the dungeon of the day cleared then (0 Normal, 1 Elite, 2 Abyss); the week it is for, whether
+ *  they cleared each of the week's two, and whether they hold the Abyss boon. The page judges each by its own day. */
+export interface ActivityRecord {
+  readonly day: number;
+  readonly cleared: readonly number[];
+  readonly week: number;
+  readonly elite: boolean;
+  readonly abyss: boolean;
+  readonly boon: boolean;
 }
 
 /** No node chosen in a column, and no resource. */
@@ -301,6 +315,14 @@ export function gearOf(gear: Gear): GearState {
     cratePrice: gear.cratePrice(),
     dungeons: Array.from(gear.dungeonsArray() ?? []),
     prologueDone: gear.prologueDone(),
+    activity: {
+      day: gear.activityDay(),
+      cleared: Array.from(gear.clearedArray() ?? []),
+      week: gear.activityWeek(),
+      elite: gear.weekElite(),
+      abyss: gear.weekAbyss(),
+      boon: gear.boon(),
+    },
   };
 }
 
