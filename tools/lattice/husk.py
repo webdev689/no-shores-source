@@ -2,20 +2,25 @@
 skull, shoulders and spine, a torn wound round each, rendered as the forge renders a layer. Run from tools/forge/ with
 Blender's module:
 
-    python -I ../lattice/husk.py --body male --anims idle,walk --out <folder>
+    python -I ../lattice/husk.py --body male --anims husk_walk,husk_lunge --out <folder>
 
-It writes the forge's strips, `body_<move>` and `lattice_husk_<move>` with their depth twins, into <folder>/<body>.
+It writes the forge's strips with their depth twins into <folder>/<body>: the body, the townsman's clothes it wears
+(OUTFIT), `lattice_husk` (the crystal and the torn edges round it) and `lattice_gore` (the torn flesh and the blood),
+both over any cloth: the shirt torn where the crystal broke through it, and soaked.
 Nothing inside tools/forge/ changes: the forge's index, keys and fitted lists go to <folder> too."""
 import os
 import sys
 
 FORGE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'forge', 'tools', 'sprite-forge')
 sys.path.insert(0, os.path.abspath(FORGE))
+sys.path.insert(1, os.path.dirname(os.path.abspath(__file__)))   # its own moves; -I leaves its folder off
 
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 
 import anatomy  # noqa: E402
+import clothes  # noqa: E402
+import husk_moves  # noqa: E402
 import layers  # noqa: E402
 import materials  # noqa: E402
 from body import blob, blob_mesh  # noqa: E402
@@ -28,6 +33,8 @@ WOUND_RED = (0.09, 0.01, 0.008)
 FLESH_RED = (0.2, 0.055, 0.045)   # torn flesh round a wound, raw and wet
 BLOOD_RED = (0.07, 0.004, 0.004)   # blood run from each wound, dark and wet
 SEED = 7
+OUTFIT = ['shirt_long_round', 'belt', 'breeches', 'boots']   # a townsman's plainest, from the forge's wardrobe
+THROUGH_CLOTH = clothes.ORDER['belt'] + 0.0015   # past every cloth's band, so a shard shows wherever it breaks out
 
 # Each cluster: the body's piece it breaks out of, the joint that carries it, where its middle is (the piece's vertex
 # scoring highest), how many shards within `spread` metres of it, their length and width in metres, and how far each
@@ -99,7 +106,8 @@ def torn(at, normal, width, pick):
 
 def gore(husk, wounds, pick):
     """The flesh torn round each wound, and the blood run down the skin from it and from the mouth: shells of the skin
-    as the forge paints a face, so they bend with the body. The blood lies under the flesh, both under any cloth."""
+    as the forge paints a face, so they bend with the body. Both stand just past a shirt's band off the skin, so the
+    cloth is soaked with the blood and torn open on the flesh; the blood lies under the flesh."""
     skin = husk.skins[0]
     p = skin.rest
     mouth = p[MOUTH(p)].mean(axis=0)
@@ -114,8 +122,8 @@ def gore(husk, wounds, pick):
         across = (p[:, 0] - wander) ** 2 + 0.3 * (p[:, 1] - at[1]) ** 2
         blood |= (across < max(width * 0.6, 0.012) ** 2) & (p[:, 2] < at[2]) & (p[:, 2] > at[2] - pick.uniform(0.2, 0.5))
     plain = materials.plain
-    husk.skins.append(skin.shell('lattice_blood', plain('lattice.blood', BLOOD_RED, rough=0.2, spec=0.8), blood, 0.0025))
-    husk.skins.append(skin.shell('lattice_flesh', plain('lattice.flesh', FLESH_RED, rough=0.3, spec=0.6), flesh, 0.004))
+    husk.skins.append(skin.shell('lattice_blood', plain('lattice.blood', BLOOD_RED, rough=0.2, spec=0.8), blood, 0.0065))
+    husk.skins.append(skin.shell('lattice_flesh', plain('lattice.flesh', FLESH_RED, rough=0.3, spec=0.6), flesh, 0.0075))
     return [husk.skins[-2].ob, husk.skins[-1].ob]
 
 
@@ -148,20 +156,26 @@ def grow(husk, crystal, wound):
         ob = linked(mesh.name, mesh)
         hang(husk.parts, ob, cluster['joint'])
         made.append(ob)
-    return made + gore(husk, wounds, pick)
+    return made, gore(husk, wounds, pick)
 
 
 def husk_layers(body, classify, want=None):
     husk = layers.Bare(body, 'axe')
-    grown = grow(husk, crystal_material(), materials.plain('lattice.wound', WOUND_RED, rough=0.25, spec=0.7))
+    grown, gored = grow(husk, crystal_material(), materials.plain('lattice.wound', WOUND_RED, rough=0.25, spec=0.7))
     skins = {sk.ob.name: sk.ob for sk in husk.skins}
     hands = [ob for kinds in husk.hands.values() for ob in kinds.values()]
     return [layers.Layer('body', husk, [skins['body'], *hands], classify),
-            layers.Layer('lattice_husk', husk, grown, classify)]
+            layers.Layer('lattice_husk', husk, grown, classify, order=THROUGH_CLOTH),
+            layers.Layer('lattice_gore', husk, gored, classify, order=THROUGH_CLOTH)]
 
 
 if __name__ == '__main__':
     layers.LOOKS = os.path.join(sys.argv[sys.argv.index('--out') + 1], 'forgeLooks.json')   # never the studio's
-    layers.build_layers = husk_layers
-    sys.argv += ['--layers', 'body,lattice_husk']
+    husk_moves.register()
+    # the wardrobe asks DFO's game code what may be worn under each garment, and that code is not here: the outfit is
+    # fixed, so what lies under each garment is the outfit's own garments in a lower band
+    clothes.unders = lambda name: [g for g in OUTFIT if g != name and clothes.order_of(g) < clothes.order_of(name)]
+    dressed = layers.wardrobe_layers
+    layers.wardrobe_layers = lambda body, classify, want=None: husk_layers(body, classify) + dressed(body, classify, want)
+    sys.argv += ['--set', 'wardrobe', '--layers', ','.join(['body', 'lattice_husk', 'lattice_gore', *OUTFIT])]
     layers.main()
