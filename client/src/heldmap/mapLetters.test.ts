@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Lettering } from './mapLayout.ts';
-import { fontOf, INK, LIGHT_INK, paintLettering, type Painter, PARCHMENT } from './mapLetters.ts';
+import { INK } from './mapKey.ts';
+import { fontOf, LIGHT_INK, paintLettering, type Painter, PARCHMENT } from './mapLetters.ts';
 import { levelColour } from './watersWash.ts';
 
 /** A 2D context that records what is painted, each word 6 pixels a letter wide. */

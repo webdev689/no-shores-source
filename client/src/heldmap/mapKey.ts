@@ -7,8 +7,9 @@ import { HOLDER_COLOURS, HOLDER_WORDS, levelColour } from './watersWash.ts';
 
 /** The face the key is lettered in, as the map's smaller words, and its inks: iron-gall, and the parchment's own
  *  colour, which fills the panel. Its lengths are units, pixels at a scale of 1. */
-export const KEY_FONT = "500 13px 'Pixelify Mended', 'Pixelify Sans Variable', monospace";
-const INK = '#3a2816';
+export const FACE = "'Pixelify Mended', 'Pixelify Sans Variable', monospace";
+export const KEY_FONT = `500 13px ${FACE}`;
+export const INK = '#3a2816';
 const PANEL = 'rgba(238, 222, 190, 0.92)';
 /** The panel's padding, a line and the gap between rows, its swatches' size and the gap after them, the gap between
  *  its two columns of holders, and its inset from the map's corner. */

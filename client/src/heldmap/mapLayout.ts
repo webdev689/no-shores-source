@@ -178,9 +178,8 @@ function waterSpots(ask: LayoutAsk, water: { x: number; y: number }, width: numb
  *  Every name stands inside the map and clear of the hands, of every mark and of every name laid before it. */
 export function layOut(ask: LayoutAsk): Lettering {
   const { scale, ink } = ask;
-  const sheet: Rect = { x: 0, y: 0, width: ink.width, height: ink.height };
   const within = (box: Rect) =>
-    box.x >= sheet.x && box.y >= sheet.y && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
+    box.x >= 0 && box.y >= 0 && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
   const taken: Rect[] = [...ask.covers];
   const marks: Rect[] = ask.places.map((place) => markBox(place.kind, place.x, place.y, scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, scale));
