@@ -243,14 +243,15 @@ test("a plant planted with its foot, turn and scale stands on the caller's groun
   const tree = cast.kinds.find((kind) => kind.layer === 'tall' && kind.swayM > 0);
   assert.ok(tree, 'the tundra grows trees');
   const [tileX, tileY] = [-3, 11];
-  const at = [tileX * TILE_M + 10, tileY * TILE_M + 20] as const;
+  const spot = [tileX * TILE_M + 10, tileY * TILE_M + 20] as const;
   // The land's sampler says sea there: an island's ground is the caller's own.
   const sea: GroundAt = { height: -20, slope: 0, water: 'sea', mark: 0 };
   const ground: ScatterGround = {
     ...groundOf(() => ({ ...FLAT, slope: 0 })),
     sample: () => sea,
     grows: false,
-    planted: (x, y) => (x === tileX && y === tileY ? [{ kind: tree.name, at, z: 7.5, turn: 1.25, scale: 2 }] : []),
+    planted: (x, y) =>
+      x === tileX && y === tileY ? [{ kind: tree.name, at: spot, z: 7.5, turn: 1.25, scale: 2 }] : [],
   };
   const plants = scatterTile(cast, 'tall', tileX, tileY, ground);
   assert.equal(plants.length, PLANTED_FLOATS, 'the one planted, and nothing the sea or the ground would grow');
@@ -258,7 +259,7 @@ test("a plant planted with its foot, turn and scale stands on the caller's groun
   assert.ok(Math.abs((plants[3] ?? 0) - (7.5 - 0.1)) < 1e-5, 'on its own foot, sunk as any is');
   const unscaled = scatterTile(cast, 'tall', tileX, tileY, {
     ...ground,
-    planted: (x, y) => (x === tileX && y === tileY ? [{ kind: tree.name, at, z: 7.5 }] : []),
+    planted: (x, y) => (x === tileX && y === tileY ? [{ kind: tree.name, at: spot, z: 7.5 }] : []),
   });
   assert.ok(Math.abs((plants[5] ?? 0) - 2 * (unscaled[5] ?? 0)) < 1e-5, 'twice as wide');
   assert.ok(Math.abs((plants[6] ?? 0) - 2 * (unscaled[6] ?? 0)) < 1e-5, 'twice as tall');
