@@ -26,6 +26,8 @@ export interface CityPlan {
     readonly spawns: readonly Point[];
     readonly stations?: readonly StationInfo[];
     readonly visitor_spots?: readonly Point[];
+    readonly ways?: Ways;
+    readonly posts?: readonly Post[];
   };
   readonly pads: readonly Pad[];
 }
@@ -36,6 +38,53 @@ export interface StationInfo {
   readonly kind: string;
   readonly keeper: Point;
   readonly counter: Point;
+}
+
+/** A point of a social space's ways (the city crate's `WayPoint`): where it stands, and what it is, as
+ *  "counter:mage" or "view:seaward-2", or "" for a plain turn. */
+export interface WayPoint {
+  readonly at: Point;
+  readonly name: string;
+}
+
+/** The ways a social space's townsfolk walk: its points, and the links between them by their place among the points,
+ *  each walked either way. */
+export interface Ways {
+  readonly points: readonly WayPoint[];
+  readonly links: readonly (readonly [number, number])[];
+}
+
+/** What someone does at a post: a move the forge draws for every townsfolk garment, an instrument's naming it. */
+export type Task =
+  | 'idle'
+  | 'sweep'
+  | 'carry'
+  | 'smith'
+  | 'gesture'
+  | 'drink'
+  | 'dance'
+  | 'juggle'
+  | 'charm'
+  | 'hold'
+  | 'pray'
+  | 'beg'
+  | 'lean_cane'
+  | 'play_lute'
+  | 'play_flute'
+  | 'play_recorder'
+  | 'play_tambourine';
+
+/** Who keeps a post: one person always there, one walking the posts of a round in turn, or the walkers by. */
+export type Keep = 'kept' | 'visited' | { readonly round: number };
+
+/** A place where someone works, plays or stays (the city crate's `Post`): their task, where they stand and face (the
+ *  compass bearing, `bearingTo`), who keeps it, and the way point it is reached from, by its place among the points. */
+export interface Post {
+  readonly task: Task;
+  readonly at: Point;
+  readonly facing: number;
+  readonly keep: Keep;
+  readonly reached_from: number;
 }
 
 /** How far past a section's ring its window of the ground reaches, as the bake cuts it: past the 60 m where a body
@@ -56,7 +105,7 @@ export function windowRect(ring: readonly Point[]): Rect {
 
 /** A city's social space as a node: `<city id>-social`, named for its city, its plaza's section and spawns. */
 export function socialNode(plan: CityPlan, continent: string): NodeInfo {
-  const { ring, spawns, stations = [], visitor_spots: visitorSpots = [] } = plan.social;
+  const { ring, spawns, stations = [], visitor_spots: visitorSpots = [], ways, posts = [] } = plan.social;
   return {
     id: `${plan.id}-social`,
     kind: 'social',
@@ -67,6 +116,7 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
     centre: ringMiddle(ring),
     stations,
     visitorSpots,
+    ...(ways ? { ways, posts } : {}),
   };
 }
 

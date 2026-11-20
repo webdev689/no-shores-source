@@ -1,6 +1,6 @@
 // Overlook's plaza for the welcome's tests, laid as the city crate lays it.
-import type { StationInfo } from '../nodes.ts';
-import { plazaFrameOf } from '../townsfolk.ts';
+import type { Post, StationInfo, Task, Ways } from '../nodes.ts';
+import { plazaFrameOf, plazaPoint } from '../townsfolk.ts';
 import type { NodeInfo } from '../worldData.ts';
 
 /** Overlook's plaza as the city crate lays it, its middle at (1000, 2000), the sea to the south (+y): the arcades'
@@ -28,6 +28,99 @@ export const SPAWNS = [
   [1060, 2056],
 ] as const;
 export const FRAME = plazaFrameOf({ bounds: [870, 1940, 1130, 2060], spawns: SPAWNS });
+
+/** The townsfolk's ways and posts as `townsfolk_life` lays them for a plaza 120 m deep, in the plaza's own frame
+ *  (metres toward the sea, across): rows and columns, the line before the counters and the line at the parapet, each
+ *  linking the points on it in turn; customers before each counter, lookers at seven views and talkers at five
+ *  benches; a smith, a band of four with a dancer, a juggler, and a sweeper's round of the obelisk's ring. */
+const ROWS = [-38, -14, 14, 34];
+const COLUMNS = [-110, -70, -20, 20, 70, 110];
+const [COUNTER_LINE, PARAPET_LINE] = [-46.5, 52];
+const LINES: readonly { readonly row: boolean; readonly held: number; readonly ends: readonly [number, number] }[] = [
+  ...ROWS.map((held) => ({ row: true, held, ends: [-110, 110] as const })),
+  ...COLUMNS.map((held) => ({
+    row: false,
+    held,
+    ends: [Math.abs(held) > 32 ? COUNTER_LINE : -38, PARAPET_LINE] as const,
+  })),
+  { row: true, held: PARAPET_LINE, ends: [-110, 110] },
+  { row: false, held: -32.5, ends: [COUNTER_LINE, -38] },
+  { row: false, held: 32.5, ends: [COUNTER_LINE, -38] },
+  { row: true, held: COUNTER_LINE, ends: [-118, -32] },
+  { row: true, held: COUNTER_LINE, ends: [32, 118] },
+];
+const placed: [number, number][] = [];
+const points: { at: readonly [number, number]; name: string }[] = [];
+const posts: Post[] = [];
+const pointAt = (toward: number, across: number, name = ''): number => {
+  const found = placed.findIndex(([one, two]) => Math.abs(one - toward) < 1e-6 && Math.abs(two - across) < 1e-6);
+  if (found >= 0) {
+    if (!points[found]?.name) (points[found] as { name: string }).name = name;
+    return found;
+  }
+  placed.push([toward, across]);
+  points.push({ at: plazaPoint(FRAME, toward, across), name });
+  return points.length - 1;
+};
+const within = (line: (typeof LINES)[number], [toward, across]: readonly [number, number]) =>
+  (line.row ? across : toward) >= line.ends[0] - 1e-6 && (line.row ? across : toward) <= line.ends[1] + 1e-6;
+const post = (task: Task, toward: number, across: number, facing: number, keep: Post['keep'], from: number) =>
+  posts.push({ task, at: plazaPoint(FRAME, toward, across), facing, keep, reached_from: from });
+for (const line of LINES)
+  for (const other of LINES.filter((each) => each.row !== line.row)) {
+    const crossing = (line.row ? [line.held, other.held] : [other.held, line.held]) as [number, number];
+    if (within(line, crossing) && within(other, crossing)) pointAt(...crossing);
+  }
+// The sea is south (+y): facing landward is north (0), seaward south (pi); across runs west (+across is -x).
+const [LANDWARD, SEAWARD, WEST, EAST] = [0, Math.PI, -Math.PI / 2, Math.PI / 2];
+for (const { kind, counter } of STATIONS) {
+  const across = 1000 - counter[0];
+  post('hold', -48.5, across, LANDWARD, 'visited', pointAt(COUNTER_LINE, across, `counter:${kind}`));
+}
+const forge = 1000 - (STATIONS.find((station) => station.kind === 'weaponsmith')?.counter[0] ?? 0);
+const between = forge + Math.sign(forge) * (86 / 12);
+post('smith', -48.9, between, LANDWARD, 'kept', pointAt(COUNTER_LINE, between, 'smith'));
+[-110, -80, -40, 0, 40, 80, 110].forEach((across, nth) =>
+  post('idle', 58.4, across, SEAWARD, 'visited', pointAt(PARAPET_LINE, across, `view:seaward-${nth + 1}`)),
+);
+[-80, -40, 0, 40, 80].forEach((across, nth) => {
+  const task = Math.abs(across) > 60 ? 'drink' : 'gesture';
+  const from = pointAt(34, across, `bench:${nth + 1}`);
+  post(task, 42.6, across - 0.75, WEST, 'visited', from);
+  post(task, 42.6, across + 0.75, EAST, 'visited', from);
+});
+const band = pointAt(-14, -45, 'band');
+const BAND: readonly [Task, number][] = [
+  ['play_lute', -48.3],
+  ['play_flute', -46.1],
+  ['play_recorder', -43.9],
+  ['play_tambourine', -41.7],
+];
+for (const [task, across] of BAND) post(task, -3.5, across, LANDWARD, 'kept', band);
+post('dance', -7.5, -45, SEAWARD, 'kept', band);
+post('juggle', -4, 45, LANDWARD, 'kept', pointAt(-14, 45, 'juggler'));
+const SWEPT: readonly (readonly [number, number])[] = [
+  [-11, -7],
+  [-11, 7],
+  [11, 7],
+  [11, -7],
+];
+SWEPT.forEach(([toward, across], nth) => {
+  const [nextToward, nextAcross] = SWEPT[(nth + 1) % SWEPT.length] as readonly [number, number];
+  const facing = Math.atan2(-(nextAcross - across), -(nextToward - toward));
+  post('sweep', toward, across, facing, { round: 0 }, pointAt(toward < 0 ? -14 : 14, across, `ring:${nth + 1}`));
+});
+const links: [number, number][] = [];
+for (const line of LINES) {
+  const lying = placed
+    .map((place, index) => ({ place, index }))
+    .filter(({ place }) => Math.abs(place[line.row ? 0 : 1] - line.held) < 1e-6 && within(line, place))
+    .sort((one, two) => one.place[line.row ? 1 : 0] - two.place[line.row ? 1 : 0]);
+  for (let nth = 1; nth < lying.length; nth++) links.push([lying[nth - 1]?.index ?? 0, lying[nth]?.index ?? 0]);
+}
+export const WAYS: Ways = { points, links };
+export const POSTS: readonly Post[] = posts;
+
 /** The plaza as a node of the world. */
 export const SOCIAL: NodeInfo = {
   id: 'overlook-social',
@@ -38,6 +131,8 @@ export const SOCIAL: NodeInfo = {
   spawns: SPAWNS,
   centre: [1000, 2000],
   stations: STATIONS,
+  ways: WAYS,
+  posts: POSTS,
 };
 
 /** The courtyard's solids a body walks among, in the plaza's own frame (metres toward the sea, across), as the city

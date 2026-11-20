@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { KEEPERS } from './keepers.ts';
-import { type Plaza, Townsfolk, WALKERS, inPlaza, plazaFrameOf, plazaPoint, shapeSpot } from './townsfolk.ts';
+import { type Plaza, Townsfolk, inPlaza, plazaFrameOf, plazaOf, plazaPoint, shapeSpot } from './townsfolk.ts';
+import { POSTS, SOCIAL } from './welcome/plazaForTests.ts';
 
 /** A plaza 260 m across and 120 m deep, its middle at (1000, 2000), the sea to the south (+y). */
 const PLAZA: Plaza = {
@@ -20,54 +21,30 @@ const PLAZA: Plaza = {
 };
 
 test('a keeper stands behind each counter, facing the plaza across it', () => {
-  const people = new Townsfolk(PLAZA, 7).step(0);
-  assert.equal(people.length, PLAZA.stations.length + WALKERS);
+  const people = new Townsfolk(PLAZA, 7).peopleAt(0);
+  assert.equal(people.length, PLAZA.stations.length, 'a plaza with no ways has its keepers alone');
   const [reader] = people;
-  assert.deepEqual([reader?.x, reader?.y, reader?.walking], [960.8, 1946.6, false]);
+  assert.deepEqual([reader?.x, reader?.y, reader?.anim], [960.8, 1946.6, 'idle']);
   assert.ok(Math.abs(Math.abs(reader?.facing ?? 0) - Math.PI) < 1e-9, 'facing south, to the counter');
   assert.equal(reader?.dress.outfit.garments[0], 'plain_robes_hooded');
 });
 
-test('the townsfolk walk the open lanes and stop at the stations and the parapet, the same for the same seed', () => {
-  const folk = new Townsfolk(PLAZA, 11);
-  const again = new Townsfolk(PLAZA, 11);
-  const counters = new Set<number>();
-  let looked = false;
-  for (let tick = 0; tick < 60 * 600; tick += 15) {
-    const people = folk.step(0.25).slice(PLAZA.stations.length);
-    assert.deepEqual(people, again.step(0.25).slice(PLAZA.stations.length));
-    for (const person of people) {
-      const [toward, across] = [person.y - 2000, person.x - 1000];
-      assert.ok(Math.abs(across) <= 112 && toward >= -49 && toward <= 53, `inside the plaza: ${across}, ${toward}`);
-      assert.ok(Math.hypot(toward, across) > 9, 'never on the obelisk’s plinth');
-      for (const brazier of [-95, -45, 45, 95]) assert.ok(Math.hypot(toward, across - brazier) > 1, 'past braziers');
-      if (toward < -48) counters.add(Math.round(across));
-      if (toward > 50) looked = true;
-    }
+test('the townsfolk keep their routines on the ways after the keepers, dressed the same each visit', () => {
+  const plaza = plazaOf(SOCIAL);
+  const [folk, again] = [new Townsfolk(plaza, 11), new Townsfolk(plaza, 11)];
+  const keepers = plaza.stations.length;
+  assert.ok(folk.townsfolk >= POSTS.filter((post) => post.keep === 'kept').length + 14);
+  const moves = new Set<string>();
+  for (let second = 5_000_000; second < 5_000_600; second += 5) {
+    const people = folk.peopleAt(second);
+    assert.equal(people.length, keepers + folk.townsfolk);
+    assert.deepEqual(people, again.peopleAt(second), 'the same in another browser');
+    for (const person of people.slice(keepers)) moves.add(person.anim);
   }
-  assert.ok(counters.size >= 2, 'customers come to the counters');
-  assert.ok(looked, 'someone looks out over the city');
-});
-
-test('with every arcade staffed, no one walks onto the portico’s steps going to a counter or back', () => {
-  const columns = [-105, -90, -75, -60, -45, -39, 39, 45, 60, 75, 90, 105];
-  const stations = columns.map((across) => ({
-    kind: 'smith',
-    keeper: [1000 + across, 1946.6] as const,
-    counter: [1000 + across, 1948.4] as const,
-  }));
-  for (const seed of [3, 5, 8]) {
-    const folk = new Townsfolk({ ...PLAZA, stations }, seed);
-    let served = 0;
-    for (let tick = 0; tick < 60 * 900; tick += 15) {
-      for (const person of folk.step(0.25).slice(stations.length)) {
-        const [toward, across] = [person.y - 2000, person.x - 1000];
-        assert.ok(!(toward < -42 && Math.abs(across) < 26), `on the portico: ${across}, ${toward}`);
-        if (toward < -48) served += 1;
-      }
-    }
-    assert.ok(served > 0, 'and customers still reach the counters');
-  }
+  for (const move of ['walk', 'smith', 'sweep', 'play_lute', 'dance', 'juggle', 'hold', 'idle', 'gesture'])
+    assert.ok(moves.has(move), `someone at ${move}`);
+  const ids = folk.peopleAt(0).map((person) => person.id);
+  assert.deepEqual(ids, [...ids.keys()], 'each with their own number');
 });
 
 test('each keeper who deals with a player wears their own dress at their counter; the harbourmaster as before', () => {
@@ -79,7 +56,7 @@ test('each keeper who deals with a player wears their own dress at their counter
       counter: [1060 + index * 14, 1948.4] as const,
     })),
   ];
-  const people = new Townsfolk({ ...PLAZA, stations }, 7).step(0);
+  const people = new Townsfolk({ ...PLAZA, stations }, 7).peopleAt(0);
   const keeperAt = (kind: string) => people[stations.findIndex((station) => station.kind === kind)];
   assert.deepEqual(keeperAt('mage')?.dress, KEEPERS.mage.dress);
   assert.deepEqual(keeperAt('vault')?.dress, KEEPERS.vault.dress);
@@ -91,18 +68,18 @@ test('each keeper who deals with a player wears their own dress at their counter
 });
 
 test('a keeper away from their counter is not drawn there; Shape stands at his spot facing the middle, then goes', () => {
-  const folk = new Townsfolk(PLAZA, 7);
-  const away = folk.step(0, { away: new Set(['mage']) });
-  assert.equal(away.length, PLAZA.stations.length - 1 + WALKERS);
+  const folk = new Townsfolk({ ...plazaOf(SOCIAL), stations: PLAZA.stations }, 7);
+  const away = folk.peopleAt(0, { away: new Set(['mage']) });
+  assert.equal(away.length, PLAZA.stations.length - 1 + folk.townsfolk);
   assert.ok(!away.some((person) => person.dress === KEEPERS.mage.dress));
   const spot = [1095, 2002.5] as const;
-  const here = folk.step(0, { shape: spot });
+  const here = folk.peopleAt(0, { shape: spot });
   const shape = here.at(-1);
-  assert.equal(here.length, PLAZA.stations.length + WALKERS + 1);
-  assert.deepEqual([shape?.x, shape?.y, shape?.walking], [1095, 2002.5, false]);
+  assert.equal(here.length, PLAZA.stations.length + folk.townsfolk + 1);
+  assert.deepEqual([shape?.x, shape?.y, shape?.anim], [1095, 2002.5, 'idle']);
   assert.equal(shape?.dress, KEEPERS.shape.dress);
   assert.ok(Math.abs((shape?.facing ?? 0) + Math.PI / 2) < 0.05, 'facing west, to the middle');
-  assert.equal(folk.step(0).length, PLAZA.stations.length + WALKERS, 'gone when the room says he left');
+  assert.equal(folk.peopleAt(0).length, PLAZA.stations.length + folk.townsfolk, 'gone when the room says he left');
 });
 
 test("Shape's spot is the visitor spot his week's place indexes, and none while he is away", () => {

@@ -1,62 +1,38 @@
-// The people of a social space, as the Tower's: a keeper behind each station's counter, and townsfolk walking the
-// plaza's open lanes, stopping at the stations and at the seaward parapet to look over the city. Seeded, so a visit's
-// people move the same however its frames fall. Each walks only the lanes the courtyard leaves clear: before the
-// arcades, either side of the obelisk's plinth and its braziers, and inside the benches; to a counter and back, along
-// the landward lane to its column first, so no one crosses the portico's steps.
+// The people of a social space, as the Tower's: a keeper behind each station's counter, and townsfolk at their
+// routines on the plan's ways and posts (`life/`): working, playing and walking by to the counters, the views and
+// the benches, the same in every browser at the same moment. Their dress, drawn from the plaza's seed, is the same
+// each visit.
 
-import social from '../../../content/world/social.json' with { type: 'json' };
 import type { Dress, Race } from '../player/dressing.ts';
 import type { Outfit } from '../forge/outfit.ts';
 import { KEEPERS, keeperOf } from './keepers.ts';
-import { type StationInfo, bearingTo } from './nodes.ts';
+import { seeded } from './life/seeded.ts';
+import { TownLife } from './life/townLife.ts';
+import { type Post, type StationInfo, type Ways, bearingTo } from './nodes.ts';
 import type { NodeInfo } from './worldData.ts';
 
 type Point = readonly [number, number];
 
-/** How many townsfolk walk a plaza, their pace (metres a second), and how long they stand at each kind of stop. */
-export const WALKERS = 14;
-const WALK_M_S = 1.25;
-const PAUSE_S = { lane: [1, 5], station: [6, 14], view: [8, 16] } as const;
-/** The lanes, in the plaza's own frame (`content/world/social.json`, which the city crate's tests read too): metres
- *  toward the sea from its middle, the first the lane before the arcades, and metres across it, each landward or
- *  leftward first. Clear of the portico's steps, the obelisk's plinth and braziers, and the benches. */
-export const TOWARD = lanesOf(social.lanes.toward, 'toward');
-export const ACROSS = lanesOf(social.lanes.across, 'across');
-/** The lane before the arcades, metres toward the sea: clear of the portico's steps. */
-export const LANDWARD_LANE = TOWARD[0];
-/** Where a customer stands before a counter, and a looker at the parapet, metres toward the sea. */
-export const AT_COUNTER = social.lanes.atCounter;
-export const AT_PARAPET = social.lanes.atParapet;
-/** A list of lanes as read, checked once: at least one, each further on than the one before. */
-function lanesOf(lanes: readonly number[], way: string): readonly [number, ...number[]] {
-  const [first, ...rest] = lanes;
-  if (first === undefined || lanes.some((lane, nth) => nth > 0 && lane <= (lanes[nth - 1] as number)))
-    throw new Error(`content/world/social.json: the ${way} lanes are not listed in order: ${lanes.join(', ')}`);
-  return [first, ...rest];
-}
-
-/** How often a walker on the landward lane goes to a station, and on the seaward lane to the parapet. */
-const TO_STATION = 0.3;
-const TO_VIEW = 0.25;
-
-/** One of the plaza's people as drawn: their number among them, where they stand and face, whether walking, and
- *  their dress. */
+/** One of the plaza's people as drawn: their number among them, where they stand and face, their move (the forge's
+ *  name for it), and their dress. */
 export interface Townsperson {
   readonly id: number;
   readonly x: number;
   readonly y: number;
   readonly facing: number;
-  readonly walking: boolean;
+  readonly anim: string;
   readonly dress: Dress;
 }
 
-/** What a plaza is to its people: its bounds (west, north, east, south), spawns and stations, and the places Shape
- *  may stand on his weekends, one a week. */
+/** What a plaza is to its people: its bounds (west, north, east, south), spawns and stations, the places Shape may
+ *  stand on his weekends, one a week, and the ways and posts of its townsfolk. */
 export interface Plaza {
   readonly bounds: readonly [number, number, number, number];
   readonly spawns: readonly Point[];
   readonly stations: readonly StationInfo[];
   readonly visitorSpots?: readonly Point[];
+  readonly ways?: Ways;
+  readonly posts?: readonly Post[];
 }
 
 /** The keepers away from their counters while a scene of their own walks them round the plaza (the elder's welcome),
@@ -82,8 +58,10 @@ export interface PlazaFrame {
   readonly seaward: Point;
 }
 
-/** A social space's plaza, from its node: its ring's bounds, spawns, stations and visitor spots. */
-export function plazaOf(node: Pick<NodeInfo, 'ring' | 'spawns' | 'stations' | 'visitorSpots'>): Plaza {
+/** A social space's plaza, from its node: its ring's bounds, spawns, stations, visitor spots, ways and posts. */
+export function plazaOf(
+  node: Pick<NodeInfo, 'ring' | 'spawns' | 'stations' | 'visitorSpots' | 'ways' | 'posts'>,
+): Plaza {
   const eastings = node.ring.map((point) => point[0]);
   const southings = node.ring.map((point) => point[1]);
   const bounds = [
@@ -92,7 +70,8 @@ export function plazaOf(node: Pick<NodeInfo, 'ring' | 'spawns' | 'stations' | 'v
     Math.max(...eastings),
     Math.max(...southings),
   ] as const;
-  return { bounds, spawns: node.spawns, stations: node.stations ?? [], visitorSpots: node.visitorSpots ?? [] };
+  const { spawns, stations = [], visitorSpots = [], ways, posts = [] } = node;
+  return { bounds, spawns, stations, visitorSpots, ...(ways ? { ways, posts } : {}) };
 }
 
 export function plazaFrameOf(plaza: Pick<Plaza, 'bounds' | 'spawns'>): PlazaFrame {
@@ -114,17 +93,6 @@ export function inPlaza({ middle, seaward }: PlazaFrame, point: Point): { toward
 /** A point of the plaza's frame in the world. */
 export function plazaPoint({ middle, seaward }: PlazaFrame, toward: number, across: number): [number, number] {
   return [middle[0] + seaward[0] * toward - seaward[1] * across, middle[1] + seaward[1] * toward + seaward[0] * across];
-}
-
-/** A small seeded stream of numbers in [0, 1). */
-function seeded(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = Math.imul(state ^ (state >>> 15), 1 | state);
-    mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed;
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 const outfit = (garments: string[], dyes: Record<string, string>, armour: Outfit['armour'] = {}): Outfit => ({
@@ -173,37 +141,21 @@ function dressOf(index: number, clothes: Outfit | null, random: () => number): D
   return { body, race, tone: random(), outfit: outfit(garments, dyes as Record<string, string>) };
 }
 
-interface Walker {
-  readonly id: number;
-  readonly dress: Dress;
-  at: [number, number];
-  /** Where they head on the lanes' grid, or a stop off it, and the grid point they leave the stop by; and the points
-   *  still to walk to after `to` before they stop. */
-  to: [number, number];
-  ahead: [number, number][];
-  lane: [number, number];
-  pause: number;
-  facing: number;
-  stop: 'lane' | 'station' | 'view';
-}
-
 /**
- * A plaza's people. `step` moves them on by some seconds and answers where each stands: the keepers first, at their
- * counters, then the townsfolk.
+ * A plaza's people. `peopleAt` answers where each stands and what they do at a moment of the world clock: the keepers
+ * first, at their counters, then the townsfolk at their routines, then Shape while he is here.
  */
 export class Townsfolk {
-  private readonly random: () => number;
   private readonly keepers: { readonly kind: string; readonly person: Townsperson }[];
-  private readonly walkers: Walker[] = [];
+  private readonly life: TownLife | null;
+  private readonly dresses: readonly Dress[];
   private readonly frame: PlazaFrame;
-  private readonly stations: readonly StationInfo[];
   /** Shape's number among the plaza's people, after the keepers and the townsfolk. */
   private readonly shapeId: number;
 
   constructor(plaza: Plaza, seed: number) {
-    this.random = seeded(seed);
+    const random = seeded(seed);
     this.frame = plazaFrameOf(plaza);
-    this.stations = plaza.stations;
     this.keepers = plaza.stations.map((station, index) => ({
       kind: station.kind,
       person: {
@@ -211,124 +163,32 @@ export class Townsfolk {
         x: station.keeper[0],
         y: station.keeper[1],
         facing: bearingTo(station.keeper, station.counter),
-        walking: false,
-        dress: keeperOf(station.kind)?.dress ?? dressOf(index, OTHER_KEEPERS[station.kind] ?? null, this.random),
+        anim: 'idle',
+        dress: keeperOf(station.kind)?.dress ?? dressOf(index, OTHER_KEEPERS[station.kind] ?? null, random),
       },
     }));
-    this.shapeId = this.keepers.length + WALKERS;
-    for (let index = 0; index < WALKERS; index++) {
-      const lane: [number, number] = [this.pick(TOWARD.length), this.pick(ACROSS.length)];
-      const start = this.world(TOWARD[lane[0]] ?? 0, ACROSS[lane[1]] ?? 0);
-      const walker: Walker = {
-        id: this.keepers.length + index,
-        dress: dressOf(index + 1, null, this.random),
-        at: [start[0], start[1]],
-        to: [start[0], start[1]],
-        ahead: [],
-        lane,
-        pause: this.random() * PAUSE_S.lane[1],
-        facing: this.random() * 2 * Math.PI,
-        stop: 'lane',
-      };
-      this.walkers.push(walker);
-    }
+    this.life = plaza.ways ? new TownLife(plaza.ways, plaza.posts ?? [], seed) : null;
+    const count = this.life?.routines.length ?? 0;
+    this.dresses = Array.from({ length: count }, (unused, index) => dressOf(index + 1, null, random));
+    this.shapeId = this.keepers.length + count;
   }
 
-  private pick(count: number): number {
-    return Math.min(count - 1, Math.floor(this.random() * count));
+  /** How many townsfolk keep routines here, keepers and Shape aside. */
+  get townsfolk(): number {
+    return this.dresses.length;
   }
 
-  /** How far across the plaza a point of the world stands, metres. */
-  private acrossOf(point: Point): number {
-    return inPlaza(this.frame, point).across;
-  }
-
-  /** A point of the plaza's frame in the world. */
-  private world(toward: number, across: number): [number, number] {
-    return plazaPoint(this.frame, toward, across);
-  }
-
-  /** Where a walker heads next from the lane's grid point they stand at: a neighbour on the lanes, or now and then a
-   *  station's counter from the landward lane, or the parapet from the seaward one. */
-  private next(walker: Walker): void {
-    const [row, column] = walker.lane;
-    const station = this.stations[this.pick(Math.max(1, this.stations.length))];
-    if (row === 0 && station && this.random() < TO_STATION) {
-      const across = this.acrossOf(station.counter);
-      walker.to = this.world(TOWARD[0], across);
-      walker.ahead = [this.world(AT_COUNTER, across)];
-      walker.stop = 'station';
-      return;
-    }
-    if (row === TOWARD.length - 1 && this.random() < TO_VIEW) {
-      walker.to = this.world(AT_PARAPET, ACROSS[column] ?? 0);
-      walker.stop = 'view';
-      return;
-    }
-    const moves: [number, number][] = [
-      [row - 1, column],
-      [row + 1, column],
-      [row, column - 1],
-      [row, column + 1],
-    ];
-    const open = moves.filter(([one, two]) => one >= 0 && one < TOWARD.length && two >= 0 && two < ACROSS.length);
-    const lane = open[this.pick(open.length)] ?? [row, column];
-    walker.lane = lane;
-    walker.to = this.world(TOWARD[lane[0]] ?? 0, ACROSS[lane[1]] ?? 0);
-    walker.stop = 'lane';
-  }
-
-  /** Moves everyone on by `seconds`, and answers where each stands: the keepers at their counters but those away,
-   *  the townsfolk, and Shape at his spot while he is here, idle, facing the plaza's middle. */
-  step(seconds: number, { away = new Set(), shape = null }: PlazaNow = {}): Townsperson[] {
+  /** Where everyone stands and what they do at world time `worldS`, seconds: the keepers at their counters but those
+   *  away, the townsfolk, and Shape at his spot while he is here, idle, facing the plaza's middle. */
+  peopleAt(worldS: number, { away = new Set(), shape = null }: PlazaNow = {}): Townsperson[] {
     const people = this.keepers.filter((keeper) => !away.has(keeper.kind)).map((keeper) => keeper.person);
-    for (const walker of this.walkers) {
-      let left = seconds;
-      let walking = false;
-      while (left > 0) {
-        if (walker.pause > 0) {
-          const waited = Math.min(walker.pause, left);
-          walker.pause -= waited;
-          left -= waited;
-          continue;
-        }
-        const [east, south] = [walker.to[0] - walker.at[0], walker.to[1] - walker.at[1]];
-        const distance = Math.hypot(east, south);
-        if (distance < 1e-6) {
-          const onward = walker.ahead.shift();
-          if (onward) {
-            walker.to = onward;
-            continue;
-          }
-          if (walker.stop !== 'lane') {
-            // Back to the lane they left by, after a while at the counter or the parapet.
-            const [low, high] = PAUSE_S[walker.stop];
-            walker.pause = low + this.random() * (high - low);
-            const { seaward } = this.frame;
-            walker.facing = walker.stop === 'view' ? bearingTo([0, 0], seaward) : bearingTo(seaward, [0, 0]);
-            const back = this.world(TOWARD[walker.lane[0]] ?? 0, ACROSS[walker.lane[1]] ?? 0);
-            // From a counter, back up to the landward lane at its column before along it.
-            walker.to = walker.stop === 'station' ? this.world(TOWARD[0], this.acrossOf(walker.at)) : back;
-            walker.ahead = walker.stop === 'station' ? [back] : [];
-            walker.stop = 'lane';
-          } else {
-            walker.pause = PAUSE_S.lane[0] + this.random() * (PAUSE_S.lane[1] - PAUSE_S.lane[0]);
-            this.next(walker);
-          }
-          continue;
-        }
-        const stride = Math.min(distance, WALK_M_S * left);
-        walker.at = [walker.at[0] + (east / distance) * stride, walker.at[1] + (south / distance) * stride];
-        walker.facing = Math.atan2(east, -south);
-        left -= stride / WALK_M_S;
-        walking = true;
-      }
-      const [x, y] = walker.at;
-      people.push({ id: walker.id, x, y, facing: walker.facing, walking, dress: walker.dress });
-    }
+    (this.life?.everyoneAt(worldS) ?? []).forEach(({ place, facing, anim }, index) => {
+      const id = this.keepers.length + index;
+      people.push({ id, x: place[0], y: place[1], facing, anim, dress: this.dresses[index] as Dress });
+    });
     if (shape) {
       const facing = bearingTo(shape, this.frame.middle);
-      people.push({ id: this.shapeId, x: shape[0], y: shape[1], facing, walking: false, dress: KEEPERS.shape.dress });
+      people.push({ id: this.shapeId, x: shape[0], y: shape[1], facing, anim: 'idle', dress: KEEPERS.shape.dress });
     }
     return people;
   }

@@ -75,6 +75,9 @@ pub fn visitor_spots(frame: &Frame) -> Vec<[f64; 2]> {
 const ROWS_M: [f64; 4] = [-38.0, -14.0, 14.0, 34.0];
 const COLUMNS_M: [f64; 6] = [-110.0, -70.0, -20.0, 20.0, 70.0, 110.0];
 const COUNTER_LINE_IN_M: f64 = 13.5;
+/// The short ways down from the first row to the line before the counters either side of the portico, metres across,
+/// so the counters nearest it are reached the short way.
+const BESIDE_PORTICO_M: f64 = 32.5;
 const PARAPET_LINE_IN_M: f64 = 8.0;
 /// Where a customer stands before a counter, a looker at the parapet, and talkers before a bench, metres in from
 /// the plaza's edges; the benches the talkers stand at, metres across, the outer two's drinking.
@@ -111,6 +114,9 @@ pub fn townsfolk_life(frame: &Frame, stations: &[Station]) -> (Ways, Vec<Post>) 
     let mut lines: Vec<Line> = ROWS_M.map(|held| Line { row: true, held, ends: [COLUMNS_M[0], COLUMNS_M[5]] }).into();
     lines.extend(COLUMNS_M.map(|held| Line { row: false, held, ends: column_ends(held) }));
     lines.push(Line { row: true, held: parapet_line, ends: [COLUMNS_M[0], COLUMNS_M[5]] });
+    for side in [-1.0, 1.0] {
+        lines.push(Line { row: false, held: side * BESIDE_PORTICO_M, ends: [counter_line, ROWS_M[0]] });
+    }
     for side in [-1.0, 1.0] {
         let ends = [side * ARCADE_M[0], side * ARCADE_M[1]];
         lines.push(Line { row: true, held: counter_line, ends: [ends[0].min(ends[1]), ends[0].max(ends[1])] });
