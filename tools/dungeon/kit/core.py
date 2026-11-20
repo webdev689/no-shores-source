@@ -253,8 +253,8 @@ def _uv_map(face, layer):
 def bevel(item, width=0.02, segments=1, degrees=30.0):
     """Chamfers (one segment) or rounds an object's edges where its faces meet at more than `degrees`, in place.
     Blender's bevel works its corners' UVs out in an order that changes from run to run, so their last bits do:
-    each corner's UV is taken again from the map of the face it lay on before the bevel, found by its plane, and the
-    build stays the same bytes."""
+    each face's UVs are taken again from one old face's map, its own (found by its plane) or, for a chamfer, the
+    old face it touches that faces most its way, and the build stays the same bytes."""
     bm = bmesh.new()
     bm.from_mesh(item.data)
     layer = bm.loops.layers.uv.active
@@ -264,13 +264,16 @@ def bevel(item, width=0.02, segments=1, degrees=30.0):
     if edges:
         bmesh.ops.bevel(bm, geom=edges, offset=width, offset_type='OFFSET', segments=segments, profile=0.5,
                         affect='EDGES', clamp_overlap=True)
-    on = [lambda point, plane=plane: abs(plane[0].dot(point) - plane[1]) < PLANE_M for plane in planes]
     for face in bm.faces if edges else ():
         own = next((plane for plane in planes if plane[0].dot(face.normal) > 0.9999
                     and abs(plane[0].dot(face.calc_center_median()) - plane[1]) < PLANE_M), None)
-        for loop in face.loops:
-            plane = own or next((plane for plane, lies in zip(planes, on) if lies(loop.vert.co)), None)
-            if plane is not None:
+        # A chamfer lies in no old face: it takes one map, the old face it touches that faces most its way, so no
+        # corner of it is mapped by another face's and its picture is not dragged across it.
+        touched = [plane for plane in planes
+                   if any(abs(plane[0].dot(loop.vert.co) - plane[1]) < PLANE_M for loop in face.loops)]
+        plane = own or max(touched, key=lambda each: each[0].dot(face.normal), default=None)
+        if plane is not None:
+            for loop in face.loops:
                 loop[layer].uv = plane[2](loop.vert.co)
     bm.to_mesh(item.data)
     bm.free()

@@ -37,6 +37,9 @@ def read_build(folder):
             sys.exit(f'{path}: {refusal}')
         if header.get('style') != style:
             sys.exit(f"{path} holds the style {header.get('style')!r}, not {style!r}")
+        names = [module.get('name') for module in header.get('modules', [])]
+        if names != catalog.required(style):
+            sys.exit(f'{path} holds {names}, not the modules kits.json and landmarks.json ask of {style}')
         packs[style] = data
     blend = os.path.join(folder, 'modules.blend')
     if not os.path.isfile(blend):
@@ -50,11 +53,16 @@ def main():
     parser.add_argument('folder', help="the build's --out folder")
     args = parser.parse_args()
     packs, blend = read_build(os.path.abspath(args.folder))
+    styles = {style: put(data, 'dungeon', 'modules', 'application/octet-stream') for style, data in packs.items()}
+    # Blender stamps each mesh with a seed of its own, so the .blend differs every build: while every pack is the
+    # one the manifest names, its model is the one already published.
+    committed = json.load(open(MANIFEST)) if os.path.isfile(MANIFEST) else {}
+    same = committed.get('styles') == styles and committed.get('base') == PUBLIC and committed.get('source')
     manifest = {
         'base': PUBLIC,
         'parts': list(catalog.PARTS),
-        'styles': {style: put(data, 'dungeon', 'modules', 'application/octet-stream') for style, data in packs.items()},
-        'source': put(blend, 'dungeon', 'blend', 'application/octet-stream'),
+        'styles': styles,
+        'source': committed['source'] if same else put(blend, 'dungeon', 'blend', 'application/octet-stream'),
     }
     for key in [*manifest['styles'].values(), manifest['source']]:
         published(manifest, key)

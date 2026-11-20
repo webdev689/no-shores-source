@@ -35,7 +35,9 @@ def named(style, made):
         return {}, [f'{style}: build(kit) gave {type(made).__name__}, not {{name: object}}']
     for key, item in made.items():
         module = f'{style}.{key}' if key in catalog.PIECES else key
-        if not isinstance(item, bpy.types.Object) or item.type != 'MESH':
+        if module in found:
+            problems.append(f'{module}: given twice (as {key!r} and by its other name): give it once')
+        elif not isinstance(item, bpy.types.Object) or item.type != 'MESH':
             problems.append(f'{module}: {item!r} is not a mesh object')
         elif item.name in seen:
             problems.append(f'{module}: the same object as {seen[item.name]}: give each its own (kit.copy)')
@@ -94,6 +96,10 @@ def main():
     problems, built = [], {}
     for style in styles:
         began = time.time()
+        # A style that fails writes no pack, so an older one left in the folder would be published beside it.
+        stale = os.path.join(out, f'{style}.modules')
+        if os.path.exists(stale):
+            os.remove(stale)
         modules, triangles, found = build_style(style)
         problems += found
         built[style] = (modules, triangles)

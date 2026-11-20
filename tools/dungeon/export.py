@@ -50,7 +50,7 @@ def pack(style, modules):
             'bounds': [round(value, 4) for value in low + high],
         })
     header = {'format': FORMAT, 'style': style, 'parts': list(catalog.PARTS), 'modules': entries}
-    text = json.dumps(header, separators=(',', ':')).encode()
+    text = json.dumps(header, separators=(',', ':'), allow_nan=False).encode()
     # Spaces after the JSON start the vertices on a 4-byte boundary, so a reader views them in place.
     text += b' ' * (-(4 + len(text)) % 4)
     return struct.pack('<I', len(text)) + text + bytes(vertices) + struct.pack(f'<{len(indices)}I', *indices)

@@ -154,6 +154,12 @@ class KitEnvelopes(unittest.TestCase):
         self.assertEqual(envelope.kit_budget('pillar.capital'), 750)
         self.assertEqual(envelope.kit_budget('ceiling.c'), 600)
 
+    def test_the_way_through_a_door_is_the_rules_doorway(self):
+        rules = os.path.join(HERE, '..', '..', 'crates', 'dungeon', 'src', 'dungeon.rs')
+        with open(rules) as file:
+            line = next(line for line in file if line.startswith('pub const DOORWAY_HALF_M'))
+        self.assertEqual(float(line.split('=')[1].strip(' ;\n')), envelope.DOORWAY_HALF_M)
+
     def test_an_unknown_module_fails(self):
         self.assertTrue(broken('crypt.nothing', [corner_at((0, 0, 0))]))
 
@@ -188,6 +194,15 @@ class LandmarkEnvelopes(unittest.TestCase):
         half = footprint_floor(landmark)[:1]
         found = broken('crypt.bone-pit', half)
         self.assertTrue(any('floor is open' in problem for problem in found), found)
+
+    def test_a_landmark_floor_sunk_or_raised_where_a_body_stands_is_open(self):
+        landmark = catalog.landmark('caverns.stone-teeth')
+        floor = footprint_floor(landmark)
+        for lift in (-0.5, 3.0):
+            moved = [tuple((x, y, z + lift) for x, y, z in corners) for corners in floor]
+            found = broken('caverns.stone-teeth', moved)
+            self.assertTrue(any('floor is open' in problem for problem in found), (lift, found))
+        self.assertFalse(any('floor is open' in problem for problem in broken('caverns.stone-teeth', floor)))
 
 
 def read_pack(data):

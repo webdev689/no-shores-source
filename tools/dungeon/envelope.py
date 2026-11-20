@@ -12,6 +12,9 @@ TOUCH_M = 0.002
 # Far enough to stand for "unbounded" on an axis, metres.
 FAR = 1000.0
 # A dungeon lays a few hundred kit pieces, so each kind of piece has its own budget, the most repeated the least.
+# The way through a doorway, metres either side of its middle: the rules' jambs stand from here (DOORWAY_HALF_M in
+# crates/dungeon/src/dungeon.rs), so a door piece's reveal is where a body stops.
+DOORWAY_HALF_M = 0.8
 KIT_TRIANGLES = {
     'door': 1500, 'pillar.base': 500, 'pillar.shaft': 350, 'pillar.capital': 750, 'wall.base': 250,
     'wall.shaft': 150, 'wall.cap': 350, 'feature': 1500, 'ceiling': 600, 'floor': 300, 'sconce': 150,
@@ -73,7 +76,8 @@ def kit_rules(piece, least, height):
     if piece in ('door.a', 'door.b'):
         return (_within('a doorway edge spans x ±1.6; faces stand at most 0.12 proud', x=(-1.6, 1.6), y=(-0.12, 0.42))
                 + _within('a door piece stands at most 3.4 high', z=(None, 3.4))
-                + [('stand in the way through (|x| < 0.8 below z 2.3)', _box(x=(-0.8, 0.8), z=(-FAR, 2.3)))])
+                + [(f'stand in the way through (|x| < {DOORWAY_HALF_M} below z 2.3)',
+                    _box(x=(-DOORWAY_HALF_M, DOORWAY_HALF_M), z=(-FAR, 2.3)))])
     if piece == 'pillar.base':
         return (_within('a base stands z 0..0.6', z=(0, 0.6))
                 + _band('stand past ±0.55 below z 0.25', (-FAR, 0.25), half_x=0.55, half_y=0.55)
@@ -205,21 +209,31 @@ def walk_zone(triangles, landmark):
 
 
 def floor_gaps(triangles, landmark):
-    """The points of a grid over the footprint, FLOOR_STEP_M apart, that no triangle covers seen from above."""
+    """The points of a grid over the footprint, FLOOR_STEP_M apart, that no floor covers seen from above. Where a body
+    can stand, outside every solid grown by WALK_GROW_M, only a floor within WALK_LOW_M of the room's own counts (a
+    puddle's dip hides under a foot), so a sunk or a raised one leaves the body hanging; over a solid (a pit, a basin,
+    a lake) anything that closes the void does."""
     width, depth = (cells * catalog.CELL_M for cells in landmark['cells'])
     bucket_m = 4 * FLOOR_STEP_M
-    buckets = {}
-    for corners in triangles:
-        (ax, ay, _), (bx, by, _), (cx, cy, _) = corners
-        area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
-        if abs(area) < 1e-9:
-            continue
-        xs, ys = (ax, bx, cx), (ay, by, cy)
-        for column in range(int(min(xs) // bucket_m), int(max(xs) // bucket_m) + 1):
-            for row in range(int(min(ys) // bucket_m), int(max(ys) // bucket_m) + 1):
-                buckets.setdefault((column, row), []).append((ax, ay, bx, by, cx, cy, area))
 
-    def covered(x, y):
+    def bucketed(chosen):
+        buckets = {}
+        for corners in chosen:
+            (ax, ay, _), (bx, by, _), (cx, cy, _) = corners
+            area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
+            if abs(area) < 1e-9:
+                continue
+            xs, ys = (ax, bx, cx), (ay, by, cy)
+            for column in range(int(min(xs) // bucket_m), int(max(xs) // bucket_m) + 1):
+                for row in range(int(min(ys) // bucket_m), int(max(ys) // bucket_m) + 1):
+                    buckets.setdefault((column, row), []).append((ax, ay, bx, by, cx, cy, area))
+        return buckets
+
+    anywhere = bucketed(triangles)
+    level = bucketed([corners for corners in triangles
+                      if all(-WALK_LOW_M <= corner[2] <= WALK_LOW_M for corner in corners)])
+
+    def covered(buckets, x, y):
         for ax, ay, bx, by, cx, cy, area in buckets.get((int(x // bucket_m), int(y // bucket_m)), ()):
             first = ((bx - x) * (cy - y) - (cx - x) * (by - y)) / area
             second = ((cx - x) * (ay - y) - (ax - x) * (cy - y)) / area
@@ -227,10 +241,11 @@ def floor_gaps(triangles, landmark):
                 return True
         return False
 
+    solids = _grown(landmark)
     columns, rows = round(width / FLOOR_STEP_M), round(depth / FLOOR_STEP_M)
     points = [((column + 0.5) * FLOOR_STEP_M, (row + 0.5) * FLOOR_STEP_M) for column in range(columns)
               for row in range(rows)]
-    return [point for point in points if not covered(*point)]
+    return [point for point in points if not covered(anywhere if _over(point, solids) else level, *point)]
 
 
 def landmark_problems(landmark, triangles):
