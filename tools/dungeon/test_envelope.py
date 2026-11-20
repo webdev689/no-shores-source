@@ -266,6 +266,16 @@ class LandmarkEnvelopes(unittest.TestCase):
         # A kit piece's puddle lies on the room's floor, which runs under it, so its edge shows no void.
         puddle = square(-0.5, -0.5, 0.5, 0.5, 0.01)
         self.assertEqual(envelope.problems('caverns.floor.b', puddle, water=puddle), [])
+        # Two sheets at different heights meeting along one line leave the drop between them open.
+        upper, lower = square(2.0, 2.0, 3.2, 4.4, -0.1), square(3.2, 2.0, 4.4, 4.4, -0.3)
+        steps = frame(1.0) + square(2.2, 2.2, 4.2, 4.2, -0.4) + upper + lower
+        found = envelope.problems('caverns.still-lake', steps, water=upper + lower)
+        self.assertTrue(any('still water' in problem for problem in found), found)
+        # Water that runs on down a face of its own, a falling sheet, shows water under its edge.
+        falling = [((3.2, 2.0, -0.1), (3.2, 4.4, -0.1), (3.2, 4.4, -0.3)), ((3.2, 2.0, -0.1), (3.2, 4.4, -0.3),
+                                                                          (3.2, 2.0, -0.3))]
+        wet = upper + falling + lower
+        self.assertEqual(envelope.problems('caverns.still-lake', steps + falling, water=wet), [])
 
     def test_a_landmark_floor_off_the_rooms_over_a_solid_at_its_edge_passes(self):
         rest = [face for x0, y0, x1, y1 in ((0, 0, 0.6, 3.2), (5.8, 0, 6.4, 3.2), (0.6, 1.2, 5.8, 3.2))

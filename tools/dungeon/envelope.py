@@ -318,35 +318,44 @@ def _closed(skirt, along, top):
 
 
 def water_edges(triangles, water):
-    """The points WATER_OUT_M past the middle of each edge of still water (level water's triangles, an edge one of
-    them alone has) where none of the other triangles covers it at or over the water: each (x, y, the water's
-    height)."""
-    still = [corners for corners in water if max(c[2] for c in corners) - min(c[2] for c in corners) <= LEVEL_M]
+    """The points WATER_OUT_M past the middle of each edge of still water (a level water triangle's edge that no
+    other water triangle has, level or running down a face) where none of the other triangles covers it at or over
+    the water: each (x, y, the water's height)."""
+    def key(ends):
+        return tuple(sorted(tuple(round(value, 4) for value in end) for end in ends))
+
+    shared = {}
+    for corners in water:
+        for k in range(3):
+            edge = key((corners[k], corners[(k + 1) % 3]))
+            shared[edge] = shared.get(edge, 0) + 1
     kept = {tuple(corners) for corners in water}
     others = _bucketed([corners for corners in triangles if tuple(corners) not in kept])
-    edges = {}
-    for corners in still:
+    found = []
+    for corners in water:
+        if max(c[2] for c in corners) - min(c[2] for c in corners) > LEVEL_M:
+            continue
         for k in range(3):
             ends, third = (corners[k], corners[(k + 1) % 3]), corners[(k + 2) % 3]
-            key = tuple(sorted(tuple(round(value, 4) for value in end[:2]) for end in ends))
-            edges.setdefault(key, []).append((ends, third))
-    found = []
-    for sides in edges.values():
-        if len(sides) != 1:
-            continue
-        ((ax, ay, az), (bx, by, _)), third = sides[0]
-        length = math.hypot(bx - ax, by - ay)
-        if length < 1e-6:
-            continue
-        middle = ((ax + bx) / 2, (ay + by) / 2)
-        out = ((by - ay) / length, -(bx - ax) / length)
-        if out[0] * (third[0] - middle[0]) + out[1] * (third[1] - middle[1]) > 0:
-            out = (-out[0], -out[1])
-        x, y = middle[0] + out[0] * WATER_OUT_M, middle[1] + out[1] * WATER_OUT_M
-        top = max(_heights(others, x, y), default=None)
-        if top is None or top < az - TOUCH_M:
-            found.append((x, y, az))
+            if shared[key(ends)] == 1:
+                found += _bare(others, ends, third)
     return found
+
+
+def _bare(others, ends, third):
+    """The point WATER_OUT_M past the middle of still water's edge `ends`, away from its triangle's `third` corner,
+    if none of `others` covers it at or over the water there."""
+    (ax, ay, az), (bx, by, _) = ends
+    length = math.hypot(bx - ax, by - ay)
+    if length < 1e-6:
+        return []
+    middle = ((ax + bx) / 2, (ay + by) / 2)
+    out = ((by - ay) / length, -(bx - ax) / length)
+    if out[0] * (third[0] - middle[0]) + out[1] * (third[1] - middle[1]) > 0:
+        out = (-out[0], -out[1])
+    x, y = middle[0] + out[0] * WATER_OUT_M, middle[1] + out[1] * WATER_OUT_M
+    top = max(_heights(others, x, y), default=None)
+    return [(x, y, az)] if top is None or top < az - TOUCH_M else []
 
 
 def _water_problem(module, edges):
