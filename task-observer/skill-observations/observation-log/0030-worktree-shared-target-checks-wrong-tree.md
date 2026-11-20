@@ -1,12 +1,12 @@
 ---
-id: 6
+id: 30
 title: "A worktree with target/ linked to the main checkout's ran cargo xtask check on the main checkout's tree"
 status: open
 type: internal
 skill: ["superpowers:using-git-worktrees"]
 proposes_skill: []
 target_file: ["bible/03-Code/Toolkit.md", "CLAUDE.local.md"]
-siblings_checked: "0004 (worktree tests need the ignored builds): its recipe links target/, which caused this. bible/03-Code/Testing.md 'Measuring' (#100, on main) already warns that two trees sharing a target folder write their binaries to one path, for speed comparisons only. No skill-families.md in this workspace"
+siblings_checked: "0004 (worktree tests need the ignored builds): its recipe links target/, which caused this. 0012 (a baseline worktree sharing the target dir overwrote the current tree's test binary, actioned as Testing.md's 'Measuring', #100): the same cause, there for speed comparisons only. No skill-families.md in this workspace"
 area: "Toolkit, Workers: a worktree ready to test"
 date: 2026-11-20
 session_context: "The comprehensive audit of #102, #95 and #96: the follow-up's fixes made in a worktree, /home/user/overlook-audit, set up with node_modules, generated/ and target/ linked from the main checkout"
