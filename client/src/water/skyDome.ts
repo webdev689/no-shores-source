@@ -37,6 +37,16 @@ fn twilight_glow() -> vec3f {
   return colour * strength * (1.0 - 0.85 * sky_state.zenith.w);
 }
 
+// The fog's colour along 'direction', lit through by the sun: warm toward its bearing while it is low, as a bank glows
+// at dawn and dusk (none under a closed deck, as the glow), and a little brighter toward it by day.
+fn fog_light(direction: vec3f) -> vec3f {
+  let level = normalize(direction.xy + vec2f(1e-5, 0.0));
+  let sun_level = normalize(sky_state.sun.xy + vec2f(1e-5, 0.0));
+  let toward = 0.5 + 0.5 * dot(level, sun_level);
+  let ahead = pow(max(dot(normalize(direction), sky_state.sun.xyz), 0.0), 8.0) * max(sky_state.sun.z, 0.0);
+  return sky_state.fog.rgb + twilight_glow() * pow(toward, 4.0) * 0.45 + sky_state.key_light.rgb * ahead * 0.15;
+}
+
 // The dome's own colour along 'direction', without cloud, stars or bodies: the gradient the weather has set, the glow
 // low toward the sun's bearing, the pink band and the earth's shadow opposite it, and the fog's veil.
 fn sky_haze(direction: vec3f) -> vec3f {
@@ -62,7 +72,7 @@ fn sky_haze(direction: vec3f) -> vec3f {
   colour = mix(colour, sky_state.horizon.rgb * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
   // The weather's fog closes in overhead as well, wholly near the horizon.
   let veil = 1.0 - exp(-sky_state.fog.w * 150.0 / max(up, 0.05));
-  return mix(colour, sky_state.fog.rgb, veil);
+  return mix(colour, fog_light(direction), veil);
 }
 
 // The stars along a direction: turned back about the pole (as high as the place's latitude, due north) by the
