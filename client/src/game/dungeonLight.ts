@@ -6,14 +6,17 @@ import { type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeon
 type Colour = readonly [number, number, number];
 type Point = readonly [number, number, number];
 
-/** How a kind of light burns: its colour at its foot, how far it reaches (m), and how much it flickers (0 steady). */
+/** How a kind of light burns: its colour at its foot, how far it reaches (m), how much it flickers (0 steady), and
+ *  how fast it swells and fades, radians a second (none: it holds). */
 export interface Burning {
   readonly colour: Colour;
   readonly reach: number;
   readonly flicker: number;
+  readonly pulse?: number;
 }
 
-/** Each kind of light: a wall's torch, the fixtures (`FIXTURE`, in its order), and the open portal. */
+/** Each kind of light: a wall's torch, the fixtures (`FIXTURE`, in its order), the open portal, and the landmarks'
+ *  glows past the fixtures': a spirit's pale green, daylight down a shaft, water's faint teal and a rune's violet. */
 export const LIGHT_KINDS = {
   torch: { colour: [1.5, 0.95, 0.5], reach: 8, flicker: 1 },
   brazier: { colour: [1.8, 0.9, 0.4], reach: 9, flicker: 1.2 },
@@ -23,6 +26,10 @@ export const LIGHT_KINDS = {
   hearth: { colour: [1.9, 0.8, 0.32], reach: 9.5, flicker: 1.3 },
   fungus: { colour: [0.6, 1.2, 0.5], reach: 5.5, flicker: 0.1 },
   portal: { colour: [0.85, 0.95, 1.4], reach: 8, flicker: 0.2 },
+  spirit: { colour: [0.8, 1.25, 0.9], reach: 6, flicker: 0.25 },
+  daylight: { colour: [1.1, 1.2, 1.35], reach: 14, flicker: 0 },
+  water: { colour: [0.22, 0.55, 0.6], reach: 5, flicker: 0.1 },
+  rune: { colour: [0.85, 0.4, 1.4], reach: 6, flicker: 0, pulse: 0.9 },
 } as const satisfies Record<string, Burning>;
 
 /** The fixtures' kinds by their number in the layout. */
@@ -33,6 +40,15 @@ export const FIXTURE_KINDS: readonly Burning[] = [
   LIGHT_KINDS.lantern,
   LIGHT_KINDS.hearth,
   LIGHT_KINDS.fungus,
+];
+
+/** A landmark's glows by their kind's number (`landmarks.json` `glowKinds`): the fixtures' kinds, then its own. */
+export const GLOW_KINDS: readonly Burning[] = [
+  ...FIXTURE_KINDS,
+  LIGHT_KINDS.spirit,
+  LIGHT_KINDS.daylight,
+  LIGHT_KINDS.water,
+  LIGHT_KINDS.rune,
 ];
 
 /** The faint light everywhere, by style: the crypt's cold grey-blue, the halls' plain grey, the cells' sickly green,
@@ -79,6 +95,12 @@ export function flicker(time: number, number: number, amount = 1): number {
   return 1 - amount * (0.12 - wave);
 }
 
+/** How bright a pulsing light burns at `time`, by its number: from full to six tenths and back, `rate` radians a
+ *  second; a light that does not pulse is always full. */
+export function pulse(time: number, number: number, rate = 0): number {
+  return rate > 0 ? 0.8 + 0.2 * Math.cos(time * rate + number * 2.17) : 1;
+}
+
 /** How much of a light reaches `distance` metres off: all of it at the light, none at `reach`. */
 export function falloff(distance: number, reach: number): number {
   const share = Math.max(0, 1 - distance / reach);
@@ -91,7 +113,8 @@ export function lightAt(lights: readonly Light[], point: Point, time: number, mo
   const light: [number, number, number] = [...mood];
   for (const { at, number, burning } of lights) {
     const distance = Math.hypot(at[0] - point[0], at[1] - point[1], at[2] - point[2]);
-    const strength = falloff(distance, burning.reach) * flicker(time, number, burning.flicker);
+    const strength =
+      falloff(distance, burning.reach) * flicker(time, number, burning.flicker) * pulse(time, number, burning.pulse);
     for (let channel = 0; channel < 3; channel++)
       light[channel] = (light[channel] ?? 0) + (burning.colour[channel] ?? 0) * strength;
   }
@@ -116,13 +139,17 @@ struct Light {
   place: vec4f,
   // its colour, and its reach
   colour: vec4f,
-  // how much it flickers
+  // how much it flickers, and how fast it pulses
   shape: vec4f,
 };
 
 fn flicker(time: f32, number: f32, amount: f32) -> f32 {
   let wave = 0.07 * sin(time * 9.3 + number * 2.17) + 0.05 * sin(time * 15.1 + number * 4.41);
   return 1.0 - amount * (0.12 - wave);
+}
+
+fn pulse(time: f32, number: f32, rate: f32) -> f32 {
+  return select(1.0, 0.8 + 0.2 * cos(time * rate + number * 2.17), rate > 0.0);
 }
 
 fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
@@ -134,7 +161,8 @@ fn lights_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
     let share = max(0.0, 1.0 - distance / lamp.colour.w);
     // Half the light wraps round, so a face turned a little away from a light still catches some.
     let facing = 0.5 + 0.5 * dot(normal, towards / max(distance, 1e-3));
-    light += lamp.colour.rgb * share * share * facing * flicker(time, lamp.place.w, lamp.shape.x);
+    let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
+    light += lamp.colour.rgb * share * share * facing * burns;
   }
   return light;
 }

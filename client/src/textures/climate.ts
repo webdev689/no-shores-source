@@ -8,7 +8,8 @@ export type Season = 'summer' | 'winter' | 'rain';
 export const CLIMATES: readonly Climate[] = ['desert', 'mountain', 'temperate', 'swamp'];
 export const SEASONS: readonly Season[] = ['summer', 'winter', 'rain'];
 
-const CLIMATE_BASE: Readonly<Record<Climate, number>> = { desert: 0, mountain: 100, temperate: 300, swamp: 400 };
+/** The archive each climate's sets start from. */
+export const CLIMATE_BASE: Readonly<Record<Climate, number>> = { desert: 0, mountain: 100, temperate: 300, swamp: 400 };
 
 /** The texture sets by their number within a climate. */
 const SET = {

@@ -9,8 +9,16 @@ import { COLOUR } from './dungeonMesh.ts';
 export const PORTAL_FLAG = 256;
 
 /** The dungeon's own plain layers, below the city's: candle wax, lit as a surface; an ember's, a lantern's glass, a
- *  crystal's and a fungus cap's glow, each drawn as its colour. A dungeon's pictures never reach them. */
-export const DUNGEON_LAYERS = { fungus: 247, wax: 248, ember: 249, lanternGlass: 250, crystal: 251 } as const;
+ *  crystal's and a fungus cap's glow, each drawn as its colour; and water, drawn by the lights it catches. A
+ *  dungeon's pictures never reach them. */
+export const DUNGEON_LAYERS = {
+  water: 246,
+  fungus: 247,
+  wax: 248,
+  ember: 249,
+  lanternGlass: 250,
+  crystal: 251,
+} as const;
 
 /** A picture wanted: Daggerfall's archive and record (a negative archive for a glow drawn as a colour), what it is named for,
  *  and the factor each channel is painted at, if any. */
@@ -60,6 +68,7 @@ export function smallBook(climate: CityClimate, wanted: Iterable<Wanted>): Small
       if (archive === COLOUR.lanternGlass) return DUNGEON_LAYERS.lanternGlass;
       if (archive === COLOUR.crystal) return DUNGEON_LAYERS.crystal;
       if (archive === COLOUR.fungus) return DUNGEON_LAYERS.fungus;
+      if (archive === COLOUR.water) return DUNGEON_LAYERS.water;
       return layers.get(`${archive}.${record}`) ?? 0;
     },
   };

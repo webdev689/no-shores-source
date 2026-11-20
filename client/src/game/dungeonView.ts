@@ -266,7 +266,10 @@ export class DungeonView {
     const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_LIGHTS);
     const lights = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
     nearest.forEach(({ at, number, burning }, index) =>
-      lights.set([...at, number, ...burning.colour, burning.reach, burning.flicker, 0, 0, 0], index * LIGHT_FLOATS),
+      lights.set(
+        [...at, number, ...burning.colour, burning.reach, burning.flicker, burning.pulse ?? 0, 0, 0],
+        index * LIGHT_FLOATS,
+      ),
     );
     device.queue.writeBuffer(drawn.lights, 0, lights);
     const { layout } = drawn;

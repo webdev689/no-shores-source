@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { falloff, FIXTURE_KINDS, flicker, LIGHT_KINDS, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
+import landmarks from '../../../content/dungeon/landmarks.json' with { type: 'json' };
+import {
+  type Burning,
+  falloff,
+  FIXTURE_KINDS,
+  flicker,
+  GLOW_KINDS,
+  LIGHT_KINDS,
+  lightAt,
+  moodLooks,
+  MOODS,
+  pulse,
+} from './dungeonLight.ts';
 import { type DungeonLayout, FIXTURE } from './dungeonLayout.ts';
 
 test('a light is all there where it burns and gone at its reach', () => {
@@ -53,4 +65,43 @@ test("rock takes the look of the open cell beside it, so a wall bulged into it k
     cellLooks: [0, -1, 1, -1, -1, -1],
   } as unknown as DungeonLayout;
   assert.deepEqual(Array.from(moodLooks(layout)), [0, 1, 1, 0, 0, 1]);
+});
+
+test("a landmark's glows burn by their kind's number: the fixtures' kinds, then a spirit, daylight, water and a rune", () => {
+  assert.equal(GLOW_KINDS.length, landmarks.glowKinds.length);
+  landmarks.glowKinds.forEach((name, kind) =>
+    assert.equal(GLOW_KINDS[kind], LIGHT_KINDS[name as keyof typeof LIGHT_KINDS], name),
+  );
+  FIXTURE_KINDS.forEach((burning, kind) => assert.equal(GLOW_KINDS[kind], burning));
+  for (const landmark of landmarks.landmarks)
+    for (const [, , , kind] of landmark.glows) assert.ok(GLOW_KINDS[kind], `${landmark.module} glows as kind ${kind}`);
+});
+
+test('a spirit glows pale green, daylight cool and far and steady, water a faint teal, and a rune violet', () => {
+  const sum = ({ colour }: Burning) => colour[0] + colour[1] + colour[2];
+  const { spirit, daylight, water, rune } = LIGHT_KINDS;
+  assert.ok(spirit.colour[1] > spirit.colour[0] && spirit.colour[1] > spirit.colour[2], 'a spirit green');
+  assert.ok(Math.min(...spirit.colour) > spirit.colour[1] / 2, 'and pale');
+  assert.ok(daylight.colour[2] >= daylight.colour[1] && daylight.colour[1] >= daylight.colour[0], 'daylight cool');
+  for (const burning of Object.values(LIGHT_KINDS) as Burning[]) {
+    if (burning !== daylight) assert.ok(daylight.reach > burning.reach, 'daylight reaches farthest');
+    if (burning !== water) assert.ok(sum(water) < sum(burning), 'water the faintest');
+  }
+  assert.equal(daylight.flicker, 0);
+  assert.ok(water.colour[1] > water.colour[0] && water.colour[2] > water.colour[0], 'water teal');
+  assert.ok(water.flicker > 0 && water.flicker < LIGHT_KINDS.candles.flicker, 'and gently stirring');
+  assert.ok(rune.colour[0] > rune.colour[1] && rune.colour[2] > rune.colour[1], 'a rune violet');
+});
+
+test('a rune swells and fades slowly; a light that does not pulse is always full', () => {
+  for (let time = 0; time < 20; time += 0.25) {
+    assert.equal(pulse(time, 2), 1);
+    assert.ok(pulse(time, 2, 0.9) >= 0.6 - 1e-9 && pulse(time, 2, 0.9) <= 1 + 1e-9);
+  }
+  const rune = [{ at: [0, 0, 1] as const, number: 0, burning: LIGHT_KINDS.rune }];
+  const strength = (time: number) => lightAt(rune, [1, 0, 1], time, MOODS.sanctum)[2];
+  assert.ok(Math.abs(strength(0.1) - strength(0)) < 0.01 * strength(0), 'no flicker from moment to moment');
+  assert.ok(Math.abs(strength(Math.PI / 0.9) - strength(0)) > 0.2 * strength(0), 'but dimmer half a pulse on');
+  const daylight = [{ at: [0, 0, 3] as const, number: 0, burning: LIGHT_KINDS.daylight }];
+  assert.deepEqual(lightAt(daylight, [1, 0, 0], 3.7, MOODS.crypt), lightAt(daylight, [1, 0, 0], 0, MOODS.crypt));
 });

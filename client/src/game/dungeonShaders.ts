@@ -1,6 +1,6 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
 // the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern, crystal and fungus
-// cap glowing in its own colour.
+// cap glowing in its own colour, and still water dark but for the lights it catches.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, PORTAL_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
@@ -42,6 +42,9 @@ const EMBER = ${DUNGEON_LAYERS.ember}u;
 const LANTERN_GLASS = ${DUNGEON_LAYERS.lanternGlass}u;
 const CRYSTAL = ${DUNGEON_LAYERS.crystal}u;
 const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
+const WATER = ${DUNGEON_LAYERS.water}u;
+// Still water's own colour, lit as a surface is: dark, so the mood and the lights' gleams tell it.
+const WATER_DEEP = vec3f(0.1, 0.14, 0.16);
 // A layer with this bit set is the portal's face, in the picture the rest of its number names.
 const PORTAL = ${PORTAL_FLAG}u;
 
@@ -82,6 +85,30 @@ fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
   return view.moods[min(look, ${MOST_LOOKS - 1}u)].rgb;
 }
 
+// Still water: a slow ripple through its normal; each light a tight, bright gleam off it toward the eye, and the
+// cell's faint light caught more the lower the eye looks across it.
+fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
+  let ripple = 0.04 * vec2f(
+    sin(point.x * 2.3 + time * 0.7) + 0.6 * sin(point.y * 3.1 - time * 0.5),
+    sin(point.y * 2.7 - time * 0.6) + 0.6 * sin(point.x * 3.7 + time * 0.4),
+  );
+  let rippled = normalize(normal + vec3f(ripple, 0.0));
+  let to_eye = normalize(view.eye.xyz - point);
+  var gleam = vec3f(0.0);
+  for (var index = 0u; index < u32(view.lights.x); index++) {
+    let lamp = lights[index];
+    let towards = lamp.place.xyz - point;
+    let distance = length(towards);
+    let share = max(0.0, 1.0 - distance / lamp.colour.w);
+    let half_way = normalize(towards / max(distance, 1e-3) + to_eye);
+    let shine = pow(max(dot(rippled, half_way), 0.0), 120.0);
+    let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
+    gleam += lamp.colour.rgb * share * share * shine * burns * 3.0;
+  }
+  let grazing = pow(1.0 - max(dot(rippled, to_eye), 0.0), 5.0);
+  return WATER_DEEP * lights_at(point, rippled, time, mood) + gleam + mood * grazing * 0.8;
+}
+
 @fragment
 fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let last = textureNumLayers(pictures) - 1u;
@@ -116,7 +143,11 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
     return vec4f(PORTAL_LIGHT * shimmer, 1.0);
   }
   let normal = normalize(surface.normal);
-  let light = lights_at(surface.point, normal, time, mood_at(surface.point, normal));
+  let mood = mood_at(surface.point, normal);
+  if layer == WATER {
+    return vec4f(water_at(surface.point, normal, time, mood), 1.0);
+  }
+  let light = lights_at(surface.point, normal, time, mood);
   if layer == WAX_LAYER {
     return vec4f(WAX * light, 1.0);
   }
