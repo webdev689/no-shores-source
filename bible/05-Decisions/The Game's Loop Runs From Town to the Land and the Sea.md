@@ -43,7 +43,8 @@ status: in force
   things are**: [[Where You Go and the Seas You Choose Set the Difficulty]]. **Prestige**:
   [[Prestige Stays as Built, With a Costly Infusion]]. **The days and the weeks**:
   [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]. **What opens when**:
-  [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]].
+  [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]]. **The story**:
+  [[The Story Is Nine Missions, With Side Quests Between Them]].
 - **Nothing of it is built yet**: these decisions put the game's plan straight first.
 
 It builds on [[Gear and Power Follow Destiny 1 Vanilla]], [[The World Map]] and
