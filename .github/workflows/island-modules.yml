@@ -9,6 +9,7 @@ on:
   push:
     paths:
       - tools/islands/**
+      - tools/r2.py
       - content/islands/kits.json
       - .github/workflows/island-modules.yml
   workflow_dispatch:
