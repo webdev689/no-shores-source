@@ -213,7 +213,9 @@ test('wall sets stand on straight walls every `wallEvery` cells, where each styl
   });
   const all = [...paired.values()].reduce((sum, count) => sum + count, 0);
   assert.ok(all > 100, `${all} sets beside another along a wall`);
-  assert.ok((paired.get('caverns') ?? 0) > 0, 'a pair in the caverns, whose caves’ straight walls are short');
+  // A cave's set stands only where its rock is near flat, so two in a run are rare there.
+  for (const style of ['crypt', 'halls', 'cells', 'sanctum'] as const)
+    assert.ok((paired.get(style) ?? 0) > 0, `a pair in the ${style}`);
 });
 
 test('in the caverns a set stands on a cave room’s rock, set back into it, its cap meeting the rock, none in head height past its room', () => {

@@ -259,8 +259,10 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   wall where `wallIn` says, the cap's top where the ceiling comes lowest over it, and in the mines a timber set on
   both walls of a way with a beam across; up to `features` a room on its quiet cells' walls; and a sconce at every
   torch, round the code-built flame, and arches round the portal and the exit door. Only the caverns stand sets on a
-  cave's rock (`cave rooms`): a set or a feature there stands back as far as the rock does most behind it, and a
-  set's cap rises to where the rock comes highest over it, so it meets the rock all over.
+  cave's rock (`cave rooms`). A set or a feature on a cave's rock stands back as far as the rock does most behind
+  it, and only where the rock over it, as drawn, comes out no more than 0.1 m past that (`caveWallRange`); elsewhere
+  that spot is skipped and a feature tries its room's next wall. A set's cap rises to where the rock comes highest
+  over it, so it meets the rock all over.
 - **Overhead and underfoot**, by the style's `ceiling` and `floor`: a boss at a dome's top and every second cell of a
   vault's ridge; a beam across the way on every flat cell; stalactites from one cave cell in six, where its rock comes
   lowest, their roots in the rock; slabs on one quiet cell in four, a runner or rails along the straight corridors, a
@@ -277,7 +279,9 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   boxes. Its glows burn as lights beside the torches and the fixtures (`burningOf`).
 - **Its ceilings** (`dungeonCeilings.ts`): a room's ceiling is flat, a barrel vault across its narrower side, a dome
   over its middle, or rough rock over a cave. A vault rises up to 1.6 m and a dome up to 2.2 m, each at most 0.6 of
-  its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m.
+  its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m. The
+  wall the portal or the exit door stands on is flat up to 3.1 m, the most an arch round either rises, across the
+  ±1.3 m an arch spans and the rest of its side; above that its bulges ease back in.
   Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
 - **Its light** (`dungeonLight.ts`): each torch, fixture and landmark's glow burns in its own colour, reach and
   flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
@@ -312,6 +316,8 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
 - A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
   rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
 - No fountain or cart is laid: each is wider than a cell.
+- A cave's rock is rough enough that a caverns wall set, which spans most of its wall, stands on about one spot in
+  fifteen of those its runs offer.
 - Movement has no ceilings: a dungeon's are never reached because nothing in it can be climbed, and a jump rises
   about half a metre.
 - A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end

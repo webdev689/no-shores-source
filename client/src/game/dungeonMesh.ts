@@ -5,7 +5,7 @@
 // face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
-import { besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
+import { ARCH_M, besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { uvOf } from './dungeonUv.ts';
 
@@ -378,6 +378,12 @@ export function dungeonMesh(
     const form = room >= 0 ? layout.rooms[room]?.ceiling : undefined;
     return form === 'vault' || form === 'dome' || isCave(layout, index);
   };
+  // The portal's and the exit door's walls, as `cell * 4 + side`: in a cave they stand flat under their arches.
+  const [portalEast, portalSouth] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
+  const portalCell =
+    Math.floor((layout.portal.y - portalSouth * 0.5) / cell) * columns +
+    Math.floor((layout.portal.x - portalEast * 0.5) / cell);
+  const arched = new Set([portalCell * 4 + layout.portal.side, layout.wayIn.cell * 4 + layout.wayIn.side]);
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
@@ -407,7 +413,8 @@ export function dungeonMesh(
         };
         const next = besideOf(layout, column, row, side);
         if (next === null) {
-          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling);
+          const flat = arched.has(index * 4 + side) ? ARCH_M.top : 0;
+          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling, flat);
           else wall(mesh, look, where, [0, ceiling], trims);
           // Over the wall's head, up to a vault, a dome or a cave's rock.
           return closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, () => ceiling, height);

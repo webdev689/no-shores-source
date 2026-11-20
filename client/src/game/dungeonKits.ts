@@ -4,7 +4,7 @@
 // them as content/dungeon/kits.json says. Only a doorway's, a torch's, the exit's and the portal's own pieces stand
 // on their cells' walls, and nothing stands in an alcove or on a landmark.
 import kits from '../../../content/dungeon/kits.json' with { type: 'json' };
-import { caveBulge, ceilingHeights, isCave } from './dungeonCeilings.ts';
+import { caveWallRange, ceilingHeights, isCave } from './dungeonCeilings.ts';
 import {
   alcove,
   besideCell,
@@ -48,6 +48,8 @@ const RULES: Readonly<Record<StyleKey, Rule>> = kits.styles;
 export const HEAD_M = 2.4;
 /** How far round a wall piece no prop may stand (m). */
 const CLEAR_M = 0.05;
+/** The most a cave's rock may come out past a wall piece's back over it (m): any more and the rock swallows it. */
+const BURIED_M = 0.1;
 /** The style whose wall pieces stand in timber sets: on both walls of a way, a beam across it over them. */
 const SETS_STYLE: StyleKey = 'mines';
 /** How many strips the page cuts a curved ceiling into each way (`dungeonCeilings.ts`): a cave's rock comes lowest
@@ -129,23 +131,30 @@ function put(site: Site, cell: number, pieces: readonly Piece[]): boolean {
   return true;
 }
 
+/** How far a piece reaches either side of its origin along its wall. */
+const halfOf = ({ bounds }: ModuleMesh) => Math.max(-bounds[0], bounds[3]);
+
 /** Whether a cell may hold a piece that is not a doorway's, a torch's, the exit's or the portal's own. */
 const free = (site: Site, cell: number) =>
   isOpen(site.layout, cell) && !site.busy.has(cell) && !site.covered.has(cell) && !alcove(site.layout, cell);
 
 /** A base, a shaft and a cap on a cell's wall: the base on the floor, the shaft stretched up to the cap. Under a
  *  vault or a dome the cap's top is where the ceiling comes lowest over it, so none shows through. On a cave's rock
- *  the set stands back as far as the rock does most behind it, and the cap's top is where the rock comes highest
- *  over it, so it meets the rock all over, what stands above hidden in it. None where a prop stands against the wall
- *  or the wall is too low. */
+ *  the set stands back as `setBack` says, and the cap's top is where the rock comes highest over it, so it meets the
+ *  rock all over, what stands above hidden in it. None where a prop stands against the wall or the wall is too low. */
 function wallSet(site: Site, [cell, side]: Wall): Piece[] | null {
   const pieces = ['wall.base', 'wall.shaft', 'wall.cap'];
   const [base, shaft, cap] = pieces.map((piece) => pieceOf(site, cell, piece));
   if (!base || !shaft || !cap || !free(site, cell) || site.walled.has(cell * 4 + side)) return null;
   const { layout } = site;
   const cave = isCave(layout, cell);
-  const half = Math.max(...[base, shaft, cap].map(({ bounds }) => Math.max(-bounds[0], bounds[3])));
-  const back = setBack(layout, cell, side, half, layout.ceilings[cell] ?? 0);
+  const high = layout.ceilings[cell] ?? 0;
+  // The cap's top rises over the wall's head, so its foot stands no lower on the wall than its height under it.
+  const back = setBack(layout, cell, side, [
+    [Math.max(halfOf(base), halfOf(shaft)), 0, high],
+    [halfOf(cap), high - (cap.bounds[5] - cap.bounds[2]), high],
+  ]);
+  if (back === null) return null;
   const [x, y] = wallPoint(layout, cell, side);
   const [east, south] = stepOf(side);
   const turns = wallTurns(side);
@@ -283,31 +292,33 @@ function timberSets(site: Site): void {
   });
 }
 
-/** How far a piece on a cave's wall, `halfWidth` m either side of its middle and `top` m high, stands back into the
- *  rock, so its back meets the rock where the wall stands back most behind it; none on a hewn wall. */
-function setBack(layout: DungeonLayout, cell: number, side: number, halfWidth: number, top: number): number {
+/** How far a piece on the middle of a cell's wall stands back into the rock: none on a hewn wall. On a cave's rock its
+ *  back meets the rock where the wall stands back most over its spans (each half its width, and the heights it stands
+ *  from and to), never out of the wall's line; null where the rock there comes out more than `BURIED_M` past that,
+ *  which would swallow the piece. */
+function setBack(
+  layout: DungeonLayout,
+  cell: number,
+  side: number,
+  spans: readonly (readonly [half: number, from: number, to: number])[],
+): number | null {
   if (!isCave(layout, cell)) return 0;
-  const [x, y] = wallPoint(layout, cell, side);
-  const [east, south] = stepOf(side);
-  const half = halfWidth / layout.cell;
-  const rise = Math.min(1, top / (layout.ceilings[cell] ?? 1));
-  const shares = [-1, -0.5, 0, 0.5, 1];
-  const backs = shares.flatMap((share) =>
-    shares.map((upShare) => {
-      const along = share * half;
-      return caveBulge(
-        x + south * along * layout.cell,
-        y - east * along * layout.cell,
-        0.5 + along,
-        ((upShare + 1) / 2) * rise,
-      );
-    }),
+  const [column, row] = columnRow(layout, cell);
+  const middle = layout.cell / 2;
+  const ranges = spans.map(([half, from, to]) =>
+    caveWallRange(
+      { column, row, side, cell: layout.cell },
+      layout.ceilings[cell] ?? 0,
+      [middle - half, middle + half],
+      [from, to],
+    ),
   );
-  return Math.max(0, ...backs);
+  const back = Math.max(0, ...ranges.map(([, most]) => most));
+  return back - Math.min(...ranges.map(([least]) => least)) <= BURIED_M + EPS ? back : null;
 }
 
 /** Up to `features` a room, each on a wall of a quiet cell that holds nothing else, drawn by kitHash; on a cave's
- *  wall it stands back into the rock. */
+ *  wall it stands back into the rock, and where the rock would swallow it the next wall is tried. */
 function features(site: Site): void {
   const { layout } = site;
   const walls = new Map<number, { cell: number; side: number; order: number }[]>();
@@ -330,7 +341,8 @@ function features(site: Site): void {
       if (!module) continue;
       const [x, y] = wallPoint(layout, cell, side);
       const [east, south] = stepOf(side);
-      const back = setBack(layout, cell, side, Math.max(-module.bounds[0], module.bounds[3]), module.bounds[5]);
+      const back = setBack(layout, cell, side, [[halfOf(module), module.bounds[2], module.bounds[5]]]);
+      if (back === null) continue;
       const place: Place = { origin: [x + east * back, y + south * back, 0], turns: wallTurns(side) };
       const fits = module.bounds[5] <= (layout.ceilings[cell] ?? 0);
       const clear = fits && !crowded(layout, site.props, planOf(module, place), CLEAR_M);
