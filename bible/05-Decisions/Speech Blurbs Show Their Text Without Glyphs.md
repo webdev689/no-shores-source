@@ -10,3 +10,7 @@ status: in force
 ## What it settles
 
 - A speech blurb shows its words alone: its glyphs are removed ([[Speech]]).
+
+## Claude's calls
+
+- The scenes keep their emotes in their files, unshown, so a later look for them needs no content change.
