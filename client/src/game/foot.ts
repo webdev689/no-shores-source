@@ -38,6 +38,7 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
+import type { Hint } from './gearDom.ts';
 import { HINTS, footHints } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { type Rect, windowRect } from './nodes.ts';
@@ -105,7 +106,7 @@ export interface FootFrame {
   readonly marks: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly string[];
+  readonly hints: readonly Hint[];
 }
 
 /** Cuts a node's window of the land over the rect, and its city's boxes there, and stands the movement rules and the
@@ -427,10 +428,11 @@ export class Foot {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
+      { id: fight.player, player: true, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({
         id: number,
+        player: true,
         view,
         ...handsOf(this.otherPlayers.placed.get(number)?.dress),
       })),

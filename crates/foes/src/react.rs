@@ -92,14 +92,14 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let lands = match threat.lands {
         Some(lands) => {
             let Action::Attack(attack) = striker.action else { return None };
-            let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.side.is_players());
+            let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.is_player());
             let aimed_here = striker.target == Some(here.me) || facing <= stroke_shape(attack.stroke).half_arc + 0.5;
             (distance <= reach + THREAT_MARGIN && aimed_here).then_some(lands)?
         }
         None => {
             let ranged = striker.arms.ranged?;
             // An aimed shot flies faster than its weapon's plain one: the room's word on its speed comes first.
-            let weapon = if striker.side.is_players() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
+            let weapon = if striker.is_player() { shot_numbers(ranged).0 } else { foe_speed(ranged) };
             let speed = if threat.speed > 0.0 { threat.speed } else { weapon };
             if speed <= 0.0 || facing > 0.2 {
                 return None;
@@ -149,7 +149,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let press = match answer {
         // A block is a guard raised so its parry window has closed before the blow lands, or one already held; raised
         // any later it would parry, which this answer is not.
-        Answer::Guard if held || lands > tick + u64::from(parry_window(fighter.side)) => tick,
+        Answer::Guard if held || lands > tick + u64::from(parry_window(fighter.is_player())) => tick,
         Answer::Parry | Answer::Dodge if press + PRESS_LATEST <= lands => press,
         _ => return None,
     };

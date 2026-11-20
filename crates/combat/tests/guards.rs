@@ -10,7 +10,7 @@ use combat::judge::{answered, shot_blow, suffer, swing_blow, telegraph_blow};
 use combat::shapes::{Shape, Telegraph, TelegraphOrder};
 use combat::shots::loose;
 use combat::tuning::{PARRIED, PARRY_WINDOW, parry_window};
-use combat::{CombatInput, Happening, Side, Verdict, judge};
+use combat::{CombatInput, Happening, Verdict, judge};
 use common::{SWORD_AND_SHIELD, foe_at, guarding, idle, player_at, run};
 use core::f64::consts::PI;
 
@@ -35,8 +35,8 @@ fn a_press_opens_a_parry_window_of_a_fifth_of_a_second_and_then_the_guard_blocks
 #[test]
 fn a_foe_s_press_opens_three_quarters_of_a_player_s_window() {
     let blow = swing_blow(1, &player_at(0.0, -1.5), &CHOP, 2);
-    let window = parry_window(Side::Faction(1));
-    assert_eq!((window, parry_window(Side::Players)), (9, PARRY_WINDOW));
+    let window = parry_window(false);
+    assert_eq!((window, parry_window(true)), (9, PARRY_WINDOW));
     let (raised, _) = run(foe_at(0.0, 0.0, 0.0), guarding(0.0), window, None);
     assert_eq!(judge(&blow, &raised), Verdict::Parried, "open through its ninth tick");
     let (late, _) = run(raised, guarding(0.0), 1, None);

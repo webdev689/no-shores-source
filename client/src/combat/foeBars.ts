@@ -78,6 +78,8 @@ export class FoeBars {
   private readonly hud: HTMLElement;
   private readonly over: HTMLElement;
   private readonly overheads = new Map<number, FoePlate>();
+  /** Where each plate was last laid, kept for one fading out of the cone, which lays out nothing new. */
+  private readonly places = new Map<number, { readonly lift: number; readonly front: number }>();
   private readonly layout = new BarLayout();
   private readonly sight = new PlateSight();
   /** How much of each plate the cone shows, as last drawn. */
@@ -152,45 +154,66 @@ export class FoeBars {
       seen.push({ foe, spot, since, off, held });
     }
     // A Boss nearest the crosshair takes the cone too, though its bar stands under the compass, not over its head.
-    this.aimed = aimedFoe(new Map(seen.map(({ foe, off }) => [foe.id, off])), this.aimed);
-    const shown: { foe: MarkedFoe; x: number; y: number; depth: number; since: number; cone: number; scale: number }[] =
-      [];
+    const offs = new Map(seen.map(({ foe, off }) => [foe.id, off]));
+    this.aimed = aimedFoe(offs, this.aimed, new Map(seen.map(({ foe, spot }) => [foe.id, spot.depth])));
+    const shown: {
+      foe: MarkedFoe;
+      x: number;
+      y: number;
+      depth: number;
+      since: number;
+      cone: number;
+      want: number;
+      scale: number;
+    }[] = [];
     for (const { foe, spot, since, off, held } of seen) {
       if (foe.rank === BOSS_RANK) continue;
       const want = coneWant(foe.id === this.aimed ? off : null, held);
       const cone = coneStep(this.cones.get(foe.id) ?? null, want, seconds);
       this.cones.set(foe.id, cone);
       if (cone <= 0) continue;
-      shown.push({ foe, ...spot, since, cone, scale: plateScale(spot.depth, camera?.focal ?? NaN) });
+      shown.push({ foe, ...spot, since, cone, want, scale: plateScale(spot.depth, camera?.focal ?? NaN) });
     }
-    const spots = shown.map(({ foe, x, y, depth, scale }) => ({
-      key: foe.id,
-      x,
-      y,
-      depth,
-      width: OVERHEAD_SIZES[plateTier(foe.rank)].width * scale,
-      height: height * scale,
-    }));
+    // A plate fading out lays out nothing new, so the one taking its place is not lifted over it and then let down.
+    const spots = shown
+      .filter(({ want }) => want > 0)
+      .map(({ foe, x, y, depth, scale }) => ({
+        key: foe.id,
+        x,
+        y,
+        depth,
+        width: OVERHEAD_SIZES[plateTier(foe.rank)].width * scale,
+        height: height * scale,
+      }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
-    this.columns = spots.map(({ x, y, width }) => ({
-      left: x - width / 2,
-      right: x + width / 2,
-      top: -Infinity,
-      bottom: y,
-    }));
+    this.columns = shown.map(({ foe, x, y, scale }) => {
+      const width = OVERHEAD_SIZES[plateTier(foe.rank)].width * scale;
+      return { left: x - width / 2, right: x + width / 2, top: -Infinity, bottom: y };
+    });
     for (const { foe, x, y, since, cone, scale } of shown) {
       const plate = this.overheads.get(foe.id) ?? new FoePlate(this.over, 'overhead');
       this.overheads.set(foe.id, plate);
-      plate.show(foe, seconds, alertMark(foe.alert, since));
-      const place = laid.get(foe.id) ?? { lift: 0, front: 0 };
+      showNode(plate.root, true);
+      // An ally's alertness is the boarders' business, not the player's to read.
+      plate.show(foe, seconds, foe.view.side === 'players' ? '' : alertMark(foe.alert, since));
+      const place = laid.get(foe.id) ?? this.places.get(foe.id) ?? { lift: 0, front: 0 };
+      this.places.set(foe.id, place);
       const moved = `translate(${x.toFixed(1)}px, ${(y - place.lift).toFixed(1)}px)`;
       setStyle(plate.root, 'transform', scale < 1 ? `${moved} scale(${scale.toFixed(3)})` : moved);
       plate.scaled(scale);
       setStyle(plate.root, 'opacity', cone < 1 ? cone.toFixed(2) : '');
       setStyle(plate.root, 'z-index', String(shown.length - place.front));
     }
+    // A plate out of the cone is hidden, kept for its foe's next showing; one whose foe has gone or fallen is let go.
+    const drawn = new Set(shown.map(({ foe }) => foe.id));
+    const standing = new Set(foes.filter((foe) => foe.view.action.kind !== 'dead').map((foe) => foe.id));
     for (const [id, plate] of this.overheads) {
-      if (laid.has(id)) continue;
+      if (drawn.has(id)) continue;
+      this.places.delete(id);
+      if (standing.has(id)) {
+        showNode(plate.root, false);
+        continue;
+      }
       plate.root.remove();
       this.overheads.delete(id);
     }

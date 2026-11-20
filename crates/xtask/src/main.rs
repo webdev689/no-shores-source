@@ -48,6 +48,7 @@ fn checked_commit() -> String {
     let git = |args: &[&str]| {
         std::process::Command::new("git")
             .args(args)
+            .current_dir(files::repo_root())
             .output()
             .ok()
             .filter(|output| output.status.success())

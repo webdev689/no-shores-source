@@ -1,16 +1,15 @@
 // Elder Maren Hale's welcome, played on foot in Overlook's social space once the stranger has gone: she comes to the
-// player and walks them round the plaza (`walk.ts`), saying each stop's lines in the dialogue box, the keepers she
-// names marked over their heads, and the HUD saying to follow her while the player lags. It is no cutscene: the player
+// player and walks them round the plaza (`walk.ts`), saying each stop's lines in the dialogue box, and the HUD saying
+// to follow her while the player lags. It is no cutscene: the player
 // walks where they like the whole time. While she walks, her counter stands empty; opening it ends the walk, and she
 // is back behind it, the plaza's own figure of her. Due once the story ends, kept in the browser with the stops said,
 // so a walk ended early (the place left, the page reloaded, the player gone far from her) takes up from them on the
 // next arrival; played once every stop is said, or once her counter is opened.
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
-import type { Cast, EmoteKind, Line } from '../../speech/cast.ts';
+import type { Cast, Line } from '../../speech/cast.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { KEEPERS } from '../keepers.ts';
-import type { StationInfo } from '../nodes.ts';
 import { ACTOR_IDS, actorCards, overHead } from '../prologue/actors.ts';
 import { headOnView } from '../prologue/stage.ts';
 import { awayFromCounters, plazaFrameOf, plazaOf } from '../townsfolk.ts';
@@ -23,10 +22,6 @@ export const WELCOME_KEY = 'overlook.welcome';
 export const WELCOME_SAID_KEY = 'overlook.welcome.said';
 /** Her figure's number among the story's placed figures, clear of the stranger's. */
 const MAREN_ID = ACTOR_IDS + 90;
-/** The mark over a keeper she names. */
-const NAMED_EMOTE: EmoteKind = 'alert';
-/** Her head's name for the speech over it, and her speaker's. */
-const HER_HEAD = 'maren';
 
 /** The welcome's mark in the browser: due once the story ends, played once given, forgone once left before it. */
 type WelcomeMark = 'due' | 'played' | 'forgone';
@@ -57,17 +52,12 @@ export function keepWelcome(kept: Pick<Storage, 'setItem'>, mark: WelcomeMark, s
   }
 }
 
-/** What the welcome speaks and marks with: the dialogue box, the marks over heads, and the HUD's prompt. */
+/** What the welcome speaks with: the dialogue box, and the HUD's prompt. */
 export interface WelcomeVoice {
   readonly dialogue: {
     play(lines: readonly Line[], cast: Cast, options: { auto: boolean }): Promise<void>;
     skip(): void;
     frame(seconds: number): void;
-    remove(): void;
-  };
-  readonly overheads: {
-    emote(head: string, kind: EmoteKind): void;
-    frame(seconds: number, heads: ReadonlyMap<string, readonly [number, number] | null>): void;
     remove(): void;
   };
   readonly objective: { show(word: string, line: string, seconds?: number): void; clear(): void; remove(): void };
@@ -128,7 +118,6 @@ export class Welcome {
    *  where she is, her words wait, and no stop's scene begins, so she never talks over a keeper. */
   frame(
     shot: Shot,
-    viewport: { readonly width: number; readonly height: number },
     seconds: number,
     clock: number,
     you: { readonly x: number; readonly y: number },
@@ -149,11 +138,6 @@ export class Welcome {
     const passed = held ? 0 : seconds;
     const { maren } = this.walk;
     this.z = this.parts.groundAt(maren.x, maren.y) ?? this.z;
-    const heads = new Map<string, readonly [number, number] | null>();
-    const seen = (point: readonly [number, number, number]) => headOnView(onScreen(shot, viewport, point), viewport);
-    heads.set(HER_HEAD, seen(overHead({ ...maren, z: this.z })));
-    for (const station of this.namedOthers()) heads.set(station.kind, seen(keeperHead(station, this.parts.groundAt)));
-    this.voice.overheads.frame(passed, heads);
     this.voice.dialogue.frame(passed);
     const anim = maren.walking && !held ? 'walk' : 'idle';
     return actorCards(
@@ -181,7 +165,6 @@ export class Welcome {
 
   /** Says a stop's lines, its keepers marked; once said, she walks on. */
   private say(scene: string): void {
-    for (const station of this.namedOthers()) this.voice.overheads.emote(station.kind, NAMED_EMOTE);
     const lines = this.parts.scenes[scene] ?? [];
     const said = () => {
       if (this.done) return;
@@ -193,11 +176,6 @@ export class Welcome {
       console.error(`the welcome's ${scene} could not be played:`, error);
       said();
     });
-  }
-
-  /** The keepers a stop names but her own counter, where she is the one speaking, her words over her own head. */
-  private namedOthers(): readonly StationInfo[] {
-    return this.walk.named.filter((station) => station.kind !== HER_COUNTER);
   }
 
   /** The follow prompt, shown whenever the player lags and hidden as they catch up, for as long as the walk lasts. */
@@ -212,13 +190,6 @@ export class Welcome {
     this.done = true;
     awayFromCounters.delete(HER_COUNTER);
     this.voice.dialogue.remove();
-    this.voice.overheads.remove();
     this.voice.objective.remove();
   }
-}
-
-/** The point over a keeper's head behind their counter. */
-function keeperHead(station: StationInfo, groundAt: (x: number, y: number) => number | null) {
-  const [x, y] = station.keeper;
-  return overHead({ x, y, z: groundAt(x, y) ?? 0 });
 }

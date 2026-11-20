@@ -250,7 +250,7 @@ fn landed(next: &mut Fighter, blow: &Blow, damage: f64, poise: f64) {
         next.poise_immune = stagger + POISE_IMMUNE;
     } else if blow.knocks_down {
         next.action = Action::Down { left: KNOCKED_DOWN };
-    } else if next.side.is_players() && flinches(&next.action) {
+    } else if next.is_player() && flinches(&next.action) {
         next.action = Action::Flinch { left: FLINCH };
     }
 }

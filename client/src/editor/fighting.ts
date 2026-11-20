@@ -52,11 +52,9 @@ export function wordsFor(event: FightEvent, captain: string): string | null {
   return null;
 }
 
-/** The name of the captain a ship number names in a view (1 the first, each other after her from 2), if it carries
- *  her. shortcut: the sea room's view leaves out a captain gone from the fight, so after one has gone a later one's
- *  words may carry a neighbour's name; send each captain's number on the wire if names ever differ within a faction. */
+/** The name of the captain a ship number names in a view, by the number each carries, if it carries her. */
 function captainNamed(view: FightView, ship: number): string | null {
-  return ship <= 1 ? view.captain.name : (view.others?.[ship - 2]?.name ?? null);
+  return [view.captain, ...(view.others ?? [])].find((captain) => captain.id === ship)?.name ?? null;
 }
 
 /** The owner's fight in the World Editor: the rules' last answer, the ticks the page owes it, the presses waiting
@@ -208,8 +206,13 @@ export class Fighting {
     if (lay) lines.push(`Laying the ${lay.side} guns${lay.on_target ? ': on target.' : '.'}`);
     if (captains.some((each) => each.run_out.length > 0 && each.state === 'afloat'))
       lines.push('BROADSIDE! Brace (C).');
+    return [...lines, ...this.said(now)];
+  }
+
+  /** DFO's messages still standing at `now`, oldest first. */
+  said(now: number): string[] {
     this.messages = this.messages.filter((message) => message.until > now);
-    return [...lines, ...this.messages.map((message) => message.text)];
+    return this.messages.map((message) => message.text);
   }
 
   /** Ends the fight: the captain and her balls are gone. */

@@ -6,6 +6,7 @@ import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/l
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { RETRY_AFTER_MS } from '../forge/stripCache.ts';
+import { stripsOf } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import { type Composer, PageComposer, WorkerComposer } from './composer.ts';
 import { type Dress, type Wardrobe, figureOf, layerRamps, wardrobeOf } from './dressing.ts';
@@ -209,14 +210,20 @@ export class Cards {
   }
 
   /** The figure a frame of `dress` draws, with what its move carries in hand, and the key it is kept by. */
-  private framed(dress: Dress, anim: string, view: number, frame: number, flip: boolean, glow: GlowLook) {
+  /** The layers a dress draws in a move, as drawn or mirrored. */
+  private figured(dress: Dress, anim: string, flip: boolean) {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
     const gear = [...dressed.gear, ...carried];
     // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
     const held = [dress.outfit.right, dress.outfit.left, ...carried];
-    const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
+    return { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
+  }
+
+  private framed(dress: Dress, anim: string, view: number, frame: number, flip: boolean, glow: GlowLook) {
+    const layers = this.looks.bodies[dress.body]?.layers ?? {};
+    const figure = this.figured(dress, anim, flip);
     const { dyes, dye, coat } = dress.outfit;
     // The coat counts only where the move draws the horse; the barding is in the figure only there.
     const horse = layers[HORSE_LAYER]?.includes(anim) ? (coat ?? null) : null;
@@ -309,13 +316,21 @@ export class Cards {
     const others = this.queued.filter((queued) => queued.owner !== owner);
     this.queued.splice(0, this.queued.length, ...others);
     const kept = structuredClone(dress);
+    const strips = new Set<string>();
     for (const anim of anims()) {
       if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
+      for (const flip of [false, true]) {
+        const figure = this.figured(kept, anim, flip);
+        for (const path of stripsOf({ figure, anim, view: 0, frame: 0, ramps: {}, glow }, this.looks)) strips.add(path);
+      }
       for (let view = 0; view < VIEWS; view++)
         for (let frame = 0; frame < this.frames(dress.body, anim); frame++)
           for (const flip of MIRRORED.has(view) ? [false, true] : [false])
             this.queued.push({ dress: kept, anim, view, frame, flip, glow, owner, key });
     }
+    // Fetching a move's strips takes far longer than composing its frames (a second against milliseconds), and a blow
+    // is over sooner: so every strip the dress plays is fetched now, and its first blow is not shown as a still.
+    this.composer.prefetch([...strips]);
   }
 
   /** Lets go of a figure that has left: the last card it showed is no longer kept for it. */

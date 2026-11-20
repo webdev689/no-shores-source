@@ -1,6 +1,7 @@
-//! A raised guard: no foe of any type or rank stands before one for long without trying something; walled off by it,
-//! a foe steps round to its open side and strikes there, or chops at it again; a new target's guard starts it afresh;
-//! and a foe in reach keeps its swing's beat while its target sways about the edge of its reach.
+//! A raised guard: no foe of any type or rank (the crew aside, who never strike a player) stands before one for long
+//! without trying something; walled off by it, a foe steps round to its open side and strikes there, or chops at it
+//! again; a new target's guard starts it afresh; and a foe in reach keeps its swing's beat while its target sways about
+//! the edge of its reach.
 
 mod common;
 
@@ -28,7 +29,7 @@ fn attacking(action: &Action) -> bool {
 
 #[test]
 fn no_foe_of_any_type_or_rank_stands_eight_seconds_before_a_raised_guard_without_trying_something() {
-    for foe_type in &ROSTER {
+    for foe_type in ROSTER.iter().filter(|foe_type| !foe_type.side().is_players()) {
         for rank in foe_type.ranks {
             let mut room = Room::new(3).player(PLAYER, 0.0, 0.0, 0.0).foe(10, foe_type.number, *rank, 0.0, -5.0, PI);
             let (mut last, mut longest, mut was) = (0, 0, false);

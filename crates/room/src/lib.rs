@@ -82,6 +82,8 @@ pub struct Room {
     section: Option<Section>,
     /// Whether players' asks for foes are taken: a course's room takes them, a node's only once told to.
     takes_foe_asks: bool,
+    /// Whether players' Arts work here: everywhere but the prologue's wreck, where the player has none yet.
+    arts: bool,
     pub(crate) clock: u64,
     next_fighter: FighterId,
     /// How many players have joined: the next stands at the spawn this many turns on.
@@ -119,6 +121,8 @@ pub struct Room {
     pub(crate) seed: u64,
     pub(crate) foes_most: usize,
     pub(crate) garrison: Vec<garrison::Post>,
+    /// A mission's or a dungeon's garrison as one encounter, giving ground as it falls.
+    pub(crate) encounter: Option<garrison::Encounter>,
     pub(crate) world_seed: u64,
     /// How many rolls the room has made for players, so no two share one, even in one tick.
     pub(crate) rolls: u64,
@@ -163,6 +167,7 @@ impl Room {
             floor,
             spawn_points,
             takes_foe_asks: section.is_none(),
+            arts: true,
             section,
             clock: 0,
             next_fighter: 1,
@@ -188,6 +193,7 @@ impl Room {
             seed: SEED,
             foes_most: FOES_MOST,
             garrison: Vec::new(),
+            encounter: None,
             world_seed: SEED,
             rolls: 0,
             past: VecDeque::new(),
@@ -219,12 +225,6 @@ impl Room {
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
-    }
-
-    /// Takes players' asks for foes from now on, as a course's room does: a node's room run in a page playing alone,
-    /// where the page asks for foes to fight on the node's land. A server's node room never takes them.
-    pub fn take_foe_asks(&mut self) {
-        self.takes_foe_asks = true;
     }
 
     /// A new player, standing at the next spawn in turn with nothing drawn; none when the room is full.
@@ -289,6 +289,7 @@ impl Room {
         self.spawn_asked();
         self.keep_patrol();
         self.step_foes();
+        self.keep_on_course();
         self.fly_shots();
         self.step_arts();
         self.judge_waiting();
@@ -364,50 +365,6 @@ impl Room {
             }
         }
         self.past = past;
-    }
-
-    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
-    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
-    fn stand_stalled(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if found.stepped + VIEW_LAG >= clock - found.joined {
-            return;
-        }
-        if matches!(found.standing, Standing::Dead { .. }) {
-            found.stepped += 1;
-            return;
-        }
-        let standing = combat::Intent {
-            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
-            combat: combat::CombatInput::default(),
-        };
-        let view = self.fighters();
-        let Some(found) = self.players.get_mut(&id) else { return };
-        found.stepped += 1;
-        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
-        found.fighter = next;
-        self.happened(id, &next, happening, &view);
-    }
-
-    /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
-    /// behind the last nor more than SEEN_STEP past it, never further back than a view may lag).
-    fn next_input(&mut self, id: PlayerId) -> Option<(Input, u64)> {
-        let clock = self.clock;
-        let found = self.players.get_mut(&id)?;
-        if found.stepped >= clock - found.joined + SLACK_TICKS {
-            return None;
-        }
-        let input = found.waiting.pop_front()?;
-        found.stepped += 1;
-        found.acknowledged = found.acknowledged.wrapping_add(1);
-        let seen = input
-            .seen
-            .min(clock)
-            .min(found.seen + players::SEEN_STEP)
-            .max(found.seen)
-            .max(clock.saturating_sub(VIEW_LAG));
-        Some((input, seen))
     }
 
     /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a

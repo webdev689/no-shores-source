@@ -51,6 +51,8 @@ export interface FightVessel {
  *  her mode, whether she is hostile to the player, her sides run out, and, from the land worker's fight, what her
  *  hurts and her going down do to her pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
+  /** Her number in the fight, as its events name her (`ship`): the first captain 1, each other her own after. */
+  readonly id: number;
   readonly name: string;
   readonly faction: number;
   readonly rank: number;

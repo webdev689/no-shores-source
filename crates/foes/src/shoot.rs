@@ -11,8 +11,9 @@ use crate::cover::{Post, hold};
 use crate::dice::Purpose;
 use crate::pace;
 use crate::senses::{Here, Sight};
-use crate::steer::Ask;
+use crate::steer::{Ask, way_to};
 use crate::tell::{aim_ready, aimed};
+use crate::tuning::HOME_REACHED;
 use crate::tuning::{
     AIMED_SHARE, AIMED_SPEED, DRAW_BOW, DRAW_CROSSBOW, DRAW_PISTOLET, DRAW_THUNDERLOCK, KITE_CAUGHT, KITE_COOLDOWN,
     KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, SWING_FACE, WINDUP_LEAST,
@@ -138,6 +139,16 @@ pub fn turn(here: &Here<'_, '_>, board: &mut Board, target: FighterId) -> bool {
 pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Ask {
     let tick = here.tick();
     let (me, target) = (here.me, sight.id);
+    if tick < brain.broken_until {
+        // Broken, it holds its fire and falls back behind its post's cover, or any; in the open it steps back to its
+        // place in its group by the room's routes, facing its target, or holds where it stands.
+        board.forget(me);
+        let place = brain.home.filter(|home| apart(here.at(), [home.at[0], home.at[1]]) > HOME_REACHED);
+        let way = place.and_then(|home| way_to(here, home.at));
+        let back = || way.map_or_else(|| Ask::facing(sight.toward), |way| Ask::stepping(way, 1.0, sight.toward));
+        let covered = |cover| crate::cover::hide_at(here, cover, sight);
+        return hold(brain, here, board, sight, false).unwrap_or_else(|| brain.cover.map_or_else(back, covered));
+    }
     let has = turn(here, board, target);
     let walked = std::mem::take(&mut brain.bow.walked);
     let (kite_in, kite_out) = (KITE_IN * here.numbers.standoff, KITE_OUT * here.numbers.standoff);

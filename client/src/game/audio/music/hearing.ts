@@ -51,15 +51,18 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
     if (event.kind === KILLED && event.striker === player) kills++;
   }
   const here = own ? ([own.x, own.y] as const) : null;
-  const foes = fight.foes.map((foe): HeardFoe => ({
-    id: foe.id,
-    name: foe.name,
-    rank: foe.rank,
-    alert: foe.alert,
-    distance: here ? Math.hypot(foe.view.x - here[0], foe.view.y - here[1]) : Infinity,
-    health: foe.view.healthMax > 0 ? foe.view.health / foe.view.healthMax : 1,
-    engaged: struck.has(foe.id) || (foe.alert === ALERT && foe.view.target === player),
-  }));
+  // An ally on the players' side (the Brig's crew on the wreck) fights alert by them: no danger to them.
+  const foes = fight.foes
+    .filter((foe) => foe.view.side !== 'players')
+    .map((foe): HeardFoe => ({
+      id: foe.id,
+      name: foe.name,
+      rank: foe.rank,
+      alert: foe.alert,
+      distance: here ? Math.hypot(foe.view.x - here[0], foe.view.y - here[1]) : Infinity,
+      health: foe.view.healthMax > 0 ? foe.view.health / foe.view.healthMax : 1,
+      engaged: struck.has(foe.id) || (foe.alert === ALERT && foe.view.target === player),
+    }));
   return {
     place,
     dead: own?.action.kind === 'dead',
