@@ -15,6 +15,8 @@ code:
   - crates/room/src/crew.rs#pledge_of
   - crates/room/src/crew.rs#MUSTER
   - crates/room/src/ship_power.rs#officers_join
+  - crates/room/src/boarding_hands.rs#boarding
+  - crates/room/src/companions.rs#keep_companions
   - crates/naval/src/arms.rs#LARGE_BOAT
 ---
 # Crew
@@ -31,6 +33,11 @@ specification ([[Pick - Crew and Ship Power]]).
   10.1 s with none left. Her ship never strikes for want of them: the player is always aboard.
 - The share left is kept with her hurts until a port city repairs her, and the ship's panel shows her hands of her
   complement.
+- **Boarding** (`room::boarding_hands`): over a struck ship's rail with each player come two of their hands and as many
+  more as her First Mate and her perks lead aboard, never more than she has left. They fight her crew on the players'
+  side with a foe's own brain, as swordsmen of the deck roster at their ship's level, by gear's power as a matched
+  player's; a kill they have a hand in is their player's, and her deck is won once her crew is down whoever of them
+  stands. Each who falls is a man she has lost once the player is back aboard.
 
 ## Officers
 
@@ -46,6 +53,12 @@ specification ([[Pick - Crew and Ship Power]]).
   their post's own work is times.
 - **They earn** where they serve: those aboard or at their post from the sea's fights (a captain going down pays them
   the ship's experience), those ashore from the fights on land the player has a hand in.
+
+## Ashore
+
+- Two officers sent ashore stand beside their player in a land room as companions, by DFO's own rules: their post's
+  type in the pirates' clothes, at their own level, following and fighting with a foe's brain on the players' side,
+  knocked out rather than killed and resting eight minutes ([[Gear]], "Companions"). A boarded deck has none.
 
 ## Posts
 

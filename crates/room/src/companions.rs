@@ -26,6 +26,8 @@ const STRAYED: f64 = 40.0;
 const FALLEN: f64 = 6.0;
 /// How long one knocked out rests before coming ashore again: eight minutes of room time, in ticks.
 pub(crate) const KNOCKED_OUT_TICKS: u64 = 8 * 60 * 60;
+/// The deck roster's type a hand who boards fights as: a swordsman.
+pub(crate) const HAND_TYPE: u8 = 14;
 /// What their perks add: Weathered to their health, Brawler to their blows' harm, Steady Nerve to their poise.
 const WEATHERED: f64 = 1.15;
 const BRAWLER: f64 = 1.1;
@@ -52,6 +54,10 @@ pub struct Companion {
 pub(crate) struct Ashore {
     pub standing: BTreeMap<FighterId, Companion>,
     pub resting: BTreeMap<(PlayerId, u32), u64>,
+    /// A boarded deck's hands who came over her rail with their player, by fighter (`boarding_hands.rs`).
+    pub hands: BTreeMap<FighterId, crate::boarding_hands::Hand>,
+    /// How many of each player's hands have fallen on this deck.
+    pub fallen: BTreeMap<PlayerId, u8>,
 }
 
 /// The type in the pirates' deck roster each post fights as, in its clothes: the First Mate a swordsman, the Gunner
@@ -109,6 +115,7 @@ impl Room {
         }
         self.ashore.resting.retain(|_, until| *until > clock);
         if deck {
+            self.keep_hands();
             return;
         }
         let leaders: Vec<PlayerId> = self.players.keys().copied().collect();
@@ -212,6 +219,14 @@ impl Room {
     /// above their level's Defense. None for any other blow.
     pub(crate) fn companion_times(&self, striker: FighterId, defender: FighterId) -> Option<f64> {
         let level_of = |id: FighterId| self.foes.get(&id).map(|foe| foe.level);
+        if let Some(hand) = self.ashore.hands.get(&striker) {
+            let attack = (ATTACK_PER_LEVEL * f64::from(hand.level)) as u32;
+            return Some(gear::power::by_player(attack, hand.level, level_of(defender)?));
+        }
+        if let Some(hand) = self.ashore.hands.get(&defender) {
+            let defense = (DEFENSE_PER_LEVEL * DEFENSE_OVER * f64::from(hand.level)) as u32;
+            return Some(gear::power::on_player(defense, hand.level, level_of(striker)?));
+        }
         if let Some(companion) = self.ashore.standing.get(&striker) {
             let attack = (ATTACK_PER_LEVEL * f64::from(companion.level)) as u32;
             let brawler = if companion.brawler { BRAWLER } else { 1.0 };
@@ -225,15 +240,16 @@ impl Room {
     /// Whom a blow's kill is shared by, and by which of their loadouts: a player's own blow by the loadout it came
     /// from, a companion's by their leader as the leader strikes now.
     pub(crate) fn credited(&self, striker: FighterId, hand: Option<gear::Slot>) -> Option<(PlayerId, gear::Slot)> {
-        match self.ashore.standing.get(&striker) {
-            Some(companion) => Some((companion.leader, self.striking(companion.leader))),
+        let leader = self.ashore.standing.get(&striker).map(|companion| companion.leader);
+        match leader.or_else(|| self.ashore.hands.get(&striker).map(|boarded| boarded.leader)) {
+            Some(leader) => Some((leader, self.striking(leader))),
             None => hand.map(|hand| (striker, hand)),
         }
     }
 
-    /// Whether a fighter is a companion.
+    /// Whether a fighter is on the players' side by a player's leave: a companion, or a hand who boarded with them.
     pub(crate) fn is_companion(&self, id: FighterId) -> bool {
-        self.ashore.standing.contains_key(&id)
+        self.ashore.standing.contains_key(&id) || self.ashore.hands.contains_key(&id)
     }
 
     /// The companion a fighter is, if one.

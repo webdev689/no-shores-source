@@ -7,6 +7,7 @@
 mod arts;
 pub mod asks;
 pub mod battle;
+pub mod boarding_hands;
 pub mod chart;
 pub mod clash;
 mod companions;

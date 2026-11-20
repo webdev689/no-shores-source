@@ -146,8 +146,8 @@ fn a_captain_sails_her_own_way_whatever_the_players_fitting() {
 #[ignore = "a measurement, run by hand"]
 fn fights_by_ship_level() {
     const FIGHTS: usize = 6;
-    println!("| Rank | Her level | Ship level | Won | Sunk | Her hull lost |");
-    println!("|---|---|---|---|---|---|");
+    eprintln!("| Rank | Her level | Ship level | Won | Sunk | Her hull lost |");
+    eprintln!("|---|---|---|---|---|---|");
     for rank in [Rank::Minor, Rank::Major, Rank::Elite, Rank::Miniboss, Rank::Boss] {
         for level in [5_u8, 12, 20] {
             for ship in [1, level.saturating_sub(3).max(1), level] {

@@ -73,8 +73,13 @@ impl Sea {
         let boarded = &mut self.decks.boarded[index];
         // A deck room just made always has room; only one already full refuses, and it keeps its boarders.
         let Some(boarder) = boarded.room.board_at(spot) else { return Err(crate::battle::BoardRefused::NoneAlongside) };
-        if let Some(text) = self.harbour.characters.get(&player).map(gear::Character::to_json) {
-            boarded.room.restore_character(boarder, &text);
+        if let Some(character) = self.harbour.characters.get(&player) {
+            boarded.room.restore_character(boarder, &character.to_json());
+            // Her hands left of her complement, and those her First Mate and perks lead aboard beside the player.
+            let left = f64::from(character.ship[2]) / f64::from(gear::character::SHIP_WHOLE);
+            let hands = (left * naval::arms::LARGE_BOAT.crew).round() as u16;
+            let count = crate::boarding_hands::boarding(hands, character.ship_trim().boarders);
+            boarded.room.board_hands(boarder, count, character.ship_level());
         }
         boarded.aboard.insert(player, boarder);
         // The boarders already aboard are drawn in their dress by the one just come, who had no welcome to carry it.
@@ -123,12 +128,16 @@ impl Sea {
         let Some(deck) = self.decks.boarded.get_mut(index) else { return };
         let Some(boarder) = deck.aboard.remove(&player) else { return };
         let kept = deck.room.kept_character(boarder).and_then(|text| gear::Character::from_json(&text));
+        let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             (character.ship, character.ship_at) = (held.ship, held.ship_at);
             // What only the sea changes while they fight on foot: their ship's experience, materials and crew.
             (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
             character.crew.clone_from(&held.crew);
+            // Her hands who fell on the deck are men she has lost, kept until a port city repairs her.
+            let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
+            character.ship[2] = character.ship[2].saturating_sub(man.saturating_mul(u16::from(fallen)));
             self.harbour.characters.insert(player, character);
         }
         if deck.aboard.is_empty() {
