@@ -77,7 +77,7 @@ pub struct Orders {
     pub defend: bool,
 }
 
-/// How a foe holds up, as the room sends it: steady, broken by its leader's fall, or raging.
+/// How a foe holds up: steady, broken by its leader's fall, or raging.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mood {
     Steady = 0,

@@ -14,6 +14,9 @@ status: in force
 > such as a wave or a drop): "Do all of the above. Really flesh this out and build this to 100%. Take your time and
 > dont return until complete"
 
+> Told that a foe breaking or raging would pop the [[Speech]] system's fear or anger emote over its head, with its
+> sound: "Dont use the blurbs please"
+
 ## What it settles
 
 - Each garrison group has a leader, its highest rank. When it falls, the others break: they fall back to cover, or
@@ -23,5 +26,6 @@ status: in force
 - The Grey Tithe has a group tactic of its own, such as a shield front with Minors screening an Elite
   ([[Enemy Factions Start With the Grey Tithe]]).
 - Missions have arrivals, such as a wave or a drop.
+- A foe's group uses none of the speech's blurbs: no emote or bark pops over a foe as it breaks or rages.
 - All five are built in full, as the owner asked: "Really flesh this out and build this to 100%". Claude's choices in
   building them are listed in [[Foe Groups as Claude Builds Them]], for the owner to change.

@@ -25,7 +25,6 @@ code:
   - crates/room/src/groups.rs#lead_groups
   - crates/room/src/groups.rs#give_ground
   - crates/room/src/groups.rs#arrive
-  - client/src/combat/foeMoods.ts#FoeMoods
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
   - client/src/rules/roster.ts#rankMark
@@ -246,9 +245,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   an icon for its Expose in Cosmic purple and its Charge in Volt blue, and once a Charge ends, a faded Charge while it
   cannot be Charged again, each over a thin line that shrinks as its time runs out ([[Combat]], "Statuses";
   [[Interface]]). A Charged foe's poise track says "Charged". A Veiled player is no foe's target ([[Foes]]).
-- **How it holds up**: over a foe as it breaks, the fear emote ([[Speech]], a drop of sweat in blue), and as it starts
-  to rage, the anger emote (a red mark), each popped once with its sound and standing just over its plate; neither
-  shows where a block or the land hides its head. The room sends each foe's mood: steady, broken or raging.
+- **A group's break** shows in how its foes move, with no blurb over them
+  ([[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]): the broken fall back or run, and the one
+  that rages charges in, its guard down.
 - **Their dress**: the Grey Tithe in grey over leather or iron by role (Runner and Deckhand in leather; Crossbowman
   and Pistoleer women in leather; the Marksman under a grey hooded cloak; Collector and Tithe-Mate iron under a grey
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with

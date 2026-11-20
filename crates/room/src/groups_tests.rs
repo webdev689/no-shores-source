@@ -7,7 +7,7 @@ use super::garrison_tests::{node, run, stand_player};
 use super::groups::Stage;
 use super::leash_tests::whole;
 use super::*;
-use crate::{FoeSeen, PlayerId};
+use crate::PlayerId;
 use ::foes::roles::Role;
 use ::foes::{Mood, Seen, notice};
 use combat::fighter::Action;
@@ -95,8 +95,6 @@ fn a_leaders_fall_breaks_the_rest_of_its_group_one_of_them_raging() {
     for id in followers.iter().filter(|id| !raging.contains(id)) {
         assert_eq!(mood(&room, *id), Mood::Broken, "the rest break");
     }
-    let seen: Vec<FoeSeen> = room.foes_seen().filter(|foe| followers.contains(&foe.foe)).collect();
-    assert!(seen.iter().all(|foe| foe.mood == mood(&room, foe.foe) as u8), "and the room sends how each holds up");
     // The break lasts its time; the rage, its fight.
     whole(&mut room, player);
     run(&mut room, u64::from(combat::ticks(::foes::tuning::BREAK)));

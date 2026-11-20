@@ -366,7 +366,6 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 expose: statuses.left(Status::Expose),
                 charge: statuses.left(Status::Charge),
                 charge_immune: statuses.charge_immune,
-                mood: foe.mood,
             };
             messages::Foe::create(&mut builder, &args)
         })

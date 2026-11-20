@@ -11,10 +11,6 @@ import type { Foot, FootFrame } from './foot.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { Drawer } from './scene.ts';
 import { SwingView } from './swingView.ts';
-import { worldOutput } from './uiSounds.ts';
-import type { EmoteSink } from '../combat/foeMoods.ts';
-import { EMOTES } from '../speech/glyphs.ts';
-import { Overheads } from '../speech/overheads.ts';
 
 type Point = readonly [number, number, number];
 
@@ -24,18 +20,6 @@ type Point = readonly [number, number, number];
 export type FootShown = Pick<Foot, 'boxes' | 'fight' | 'rejoining'> & {
   readonly node: Pick<NodeInfo, 'spawns' | 'centre'>;
 };
-
-/** The speech's emotes, heard in the world's sound, over the foes' heads in `layer`. */
-function emotesIn(layer: HTMLElement): EmoteSink {
-  const overheads = new Overheads(layer, worldOutput);
-  return {
-    emote: (head, kind) => {
-      overheads.emote(head, kind);
-      return EMOTES[kind].lifeS;
-    },
-    frame: (seconds, heads) => overheads.frame(seconds, heads),
-  };
-}
 
 /** The land is drawn a little off the ground bodies stand on, so what lies on it (the marks of telegraphed blows, the
  *  blood) is drawn this much higher, in metres, or the drawn land would hide it. */
@@ -62,7 +46,7 @@ export class FootView {
     this.root.className = 'fight';
     this.root.hidden = true;
     hudRoot.prepend(this.root);
-    this.hud = new Hud(this.root, abilityPictures, forge, beside, emotesIn);
+    this.hud = new Hud(this.root, abilityPictures, forge, beside);
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */
