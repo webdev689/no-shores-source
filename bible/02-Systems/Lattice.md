@@ -20,6 +20,7 @@ code:
   - tools/lattice/heart_moves.py
   - tools/lattice/armoury.py
   - tools/lattice/wave.py
+  - tools/lattice/props.py
 ---
 # Lattice
 
@@ -61,6 +62,13 @@ compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, O
   its own make, built from the forge's armour kit (its bands, plates, blades, cuffs and helm shells), so it is graded
   and shaded as every set is. Its crystal is drawn grey and graded red, purple in its shadows; every plate's edge is
   rolled in the seam's own light, purple. `python -I ../lattice/armoury.py --body male --anims idle --out <folder>`.
+- **Its props** (`props.py`), for the places it corrupts and for world events
+  ([[The Lattice Has Props of Its Own, Made in Blender]]): each built in Blender at the origin, in metres, in either
+  crystal, from the same shards its foes are grown with, on its own patch of blackened ground crusted with crystal.
+  Crystal growths (the blighted ground alone, a spire, a cluster, a vein); the ports' things overtaken (a crusted
+  rock, a crate, a barrel, a cart, a wall, a lamppost, a boat); its own structures (a nest, a pylon, a shrine); and
+  what an event leaves (a fissure, a crater). `python -I ../lattice/props.py --out <folder> [--props spire,crate]
+  [--strain red]` draws a picture of each.
 - **Sizes.** The Bulwark is drawn at 1.2 times a man and the Heart at 3 times, each on a larger work frame. Every
   move has rows under the ground for what it brings down before its feet (a maul's head, an anchor's crown).
 
@@ -76,6 +84,8 @@ Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge
   pictures are not on R2.
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.
+- The props are pictures only: not painted with the game's pictures, not exported as meshes the game loads, and not
+  placed in the world.
 - The body's skin is coloured by the game as it composes a frame; the ashen skin each foe needs is not chosen yet.
 - The game is to play the wave at a foe's death, tinted and scaled, fading the foe's figure; it does not yet.
 - Left for the game to draw, since a picture's light cannot change from frame to frame: the Idol's beam and its

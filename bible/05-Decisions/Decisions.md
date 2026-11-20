@@ -156,6 +156,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Heart Is the Port's People Fused Into One Giant]]
 - [[The Lattice Is Drawn Whole Before It Comes Into the Game]]
 - [[The Lattice's Armour and Weapons Take Daedric's Place]]
+- [[The Lattice Has Props of Its Own, Made in Blender]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
