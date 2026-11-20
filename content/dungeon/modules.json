@@ -1,4 +1,1 @@
-{
-  "base": "",
-  "styles": {}
-}
+{"base":"https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/","parts":["stone","stoneAlt","floor","ceiling","trim","wood","iron","bone","relief","cloth","rope","ore","brass","water","glow","ember","crystal","fungus","wax"],"styles":{"crypt":"dungeon/9df09094ec9fbcca5363ae4813ee403cefb44a66350f2c02f70e3650bb206077.modules","halls":"dungeon/4442f92c36f6b8c3f71be713087aa663b54d0315aea7304fb6990d0bf1c114a9.modules","cells":"dungeon/40504ba56932b3c8558513da025a9f9b3183a9afd388b2cf6970d6790086fd3a.modules","sanctum":"dungeon/d8e3e1d7de55f9f8fe314fb2d7d7cf9c555676561bac5a00c7042ad999b44b26.modules","caverns":"dungeon/35e3460ca75919136c5ff7501f69f636bf0e5cab8c41291a89dd0919781dadcc.modules","mines":"dungeon/c84d3e75e208b9d71b22695b89e5260299f3896070d0b148ed7dcacd9aa5f3c6.modules"},"source":"dungeon/2af4cf91c524169acc8b17d94d88be0d732befa4a1d6bd011fd973c5931e6e10.blend"}
