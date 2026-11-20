@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
-import { canonicalRoom, nodeRoom, privateRun, runAsk } from './roomNames.ts';
+import { canonicalRoom, nodeRoom, privateRun, runAsk, socketsMost } from './roomNames.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -35,10 +35,6 @@ const AGAIN = 1013;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
-
-/** The most sockets a room holds: a guard against one client opening sockets without end, since every snapshot
- *  carries every player to every socket. A room on land holds fewer players than this; the sea counts on it. */
-const MAX_PLAYERS = 64;
 
 /** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
  *  name (`canonicalRoom`). */
@@ -94,7 +90,7 @@ export class RoomHost extends DurableObject<Env> {
       this.opened = null;
       return new Response('No such room', { status: 404 });
     }
-    if (this.players.size >= MAX_PLAYERS) return new Response('The room is full', { status: 503 });
+    if (this.players.size >= socketsMost(this.name)) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     // A join at an entrance that is not one is the room's ordinary join.
     const entrance = entranceOf(request);

@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { COMPANY_MOST } from './accounts/companies.ts';
-import { RUN_MOST, canonicalRoom, nodeRoom, privateRun, runAsk, runFull, seaDungeonRoom } from './roomNames.ts';
+import {
+  RUN_MOST,
+  canonicalRoom,
+  nodeRoom,
+  privateRun,
+  runAsk,
+  runFull,
+  seaDungeonRoom,
+  socketsMost,
+} from './roomNames.ts';
 
 test('a node has one room at each difficulty, by one spelling each', () => {
   assert.deepEqual(nodeRoom('tidewall'), { id: 'tidewall', seas: 0, dungeon: null, run: null });
@@ -176,4 +185,12 @@ test('a run holds four, a company’s most, and only a run is ever full this way
   assert.equal(runFull('node-krakens-grotto--run-k3j4h5g6', 4), null);
   assert.equal(runFull('node-krakens-grotto--run-k3j4h5g6', 5), 'This run is full.');
   assert.equal(runFull('node-saltgrass-downs', 65), null, 'no run');
+});
+
+test('a run takes twice a company of sockets at join, signed in or not, and any other room 64', () => {
+  assert.equal(socketsMost('node-krakens-grotto--run-k3j4h5g6'), RUN_MOST * 2);
+  assert.deepEqual(
+    ['sea', 'node-saltgrass-downs', 'sea-dungeon-continent-4-caverns-0a1b2c3d'].map(socketsMost),
+    [64, 64, 64],
+  );
 });

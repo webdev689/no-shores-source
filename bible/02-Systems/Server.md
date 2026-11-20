@@ -336,8 +336,10 @@ so every decision is Rust and the shell only carries bytes and time.
   with 4003 and those words, since joining again would find it the same. A run holds four accounts (`RUN_MOST`, a
   company's most), judged as each signs in: a fifth account is sent away with 4003 and "This run is full.", so the
   page takes them back as from a shut gate, saying why, while a member signing in again on a new socket is kept and
-  their old socket let go. An emptied run's room stays as its company left it for `RUN_LINGER_MS`, a minute,
-  through a dropped connection, and is then forgotten: the next to come opens a fresh run.
+  their old socket let go. Its sockets are held to twice that, eight, signed in or not (`socketsMost`), so those
+  that never sign in are not without end in their five seconds. An emptied run's room stays as its company left it
+  for `RUN_LINGER_MS`, a minute, through a dropped connection, and is then forgotten: the next to come opens a fresh
+  run.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
@@ -355,8 +357,8 @@ so every decision is Rust and the shell only carries bytes and time.
   the Roster. A second text message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
-- A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the
-  room's WebAssembly ever trap, every socket is closed and the object starts over.
+- A full room closes the socket saying so; past 64 sockets, the sea's guard, or a run's eight, a join is turned
+  away (503). Should the room's WebAssembly ever trap, every socket is closed and the object starts over.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
   sends every player the snapshot after each tick, and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
   still get the tick. When the last player leaves it stops, and the room goes with the object.

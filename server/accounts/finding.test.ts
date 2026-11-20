@@ -264,6 +264,18 @@ test('a socket that sends no token in time is let go, and only those with a toke
   assert.equal(finder.waiting, 1, 'a seeker with a token gets in');
 });
 
+test('a finder takes twice its most of sockets in all, silent ones too, till the silent are let go', async () => {
+  const { made, finderOf } = await world([]);
+  const finder = finderOf('node-krakens-grotto');
+  for (let opened = 0; opened < FINDING_MOST * 2 - 1; opened++) finder.opened(new FakeSocket());
+  assert.equal(finder.full, false);
+  finder.opened(new FakeSocket());
+  assert.equal(finder.full, true, 'silent sockets, within the wait');
+  made.clock.now += TOKEN_WAIT_MS;
+  await finder.tick();
+  assert.deepEqual([finder.open, finder.full], [0, false]);
+});
+
 test('a second tab that searches while its account’s run is being started joins no second group', async () => {
   const names = ['Ada', 'Ben', 'Cal', 'Dee'];
   const { made, tokens } = await world(names);

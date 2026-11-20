@@ -89,6 +89,14 @@ export function privateRun(room: string): boolean {
 /** The most a run holds: a company's most (`accounts/companies.ts`), as an Elite Dungeon's run is for. */
 export const RUN_MOST = 4;
 
+/** The most sockets a room holds: a guard against one client opening sockets without end, since every snapshot
+ *  carries every player to every socket. A room on land holds fewer players than 64; the sea counts on it. A run
+ *  holds twice a company, signed in or not: a member's rejoin may come before the room sees their old socket close,
+ *  and a socket that never signs in is kept up to five seconds (`TOKEN_WAIT_MS`). */
+export function socketsMost(room: string): number {
+  return privateRun(room) ? RUN_MOST * 2 : 64;
+}
+
 /** Why a run sends away a player whose account would make it more than RUN_MOST accounts, counting theirs; null for
  *  a run with room, or a room that is no run. */
 export function runFull(room: string, accounts: number): string | null {

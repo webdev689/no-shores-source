@@ -16,8 +16,9 @@ import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
 export const FIND_WAIT_MS = 60_000;
 /** The levels a band spans: those within one ten are matched together. */
 export const BAND_LEVELS = 10;
-/** The most sockets with a token one finder holds: a guard, as the rooms' is. A socket with none is let go once
- *  TOKEN_WAIT_MS has passed, so silent ones never fill it. */
+/** The most sockets with a token one finder holds: a guard, as the rooms' is. It holds twice this in all, silent ones
+ *  too, and lets go one that sent no token once TOKEN_WAIT_MS has passed, so silent ones fill it for that long at
+ *  most. */
 export const FINDING_MOST = 64;
 /** Why a search ends whose account searches in another tab. */
 const ANOTHER_TAB = 'You are finding a company in another tab.';
@@ -222,9 +223,10 @@ export class Finder {
     return this.sockets.size;
   }
 
-  /** Whether it holds as many sockets with a token as it takes. */
+  /** Whether it holds as many sockets with a token as it takes, or as many sockets in all. */
   get full(): boolean {
-    return [...this.sockets.values()].filter((held) => held.heard).length >= FINDING_MOST;
+    const heard = [...this.sockets.values()].filter((held) => held.heard).length;
+    return heard >= FINDING_MOST || this.sockets.size >= FINDING_MOST * 2;
   }
 
   /** Closes a socket, taking it out of the queue first. */
