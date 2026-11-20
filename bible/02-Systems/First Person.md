@@ -11,14 +11,15 @@ code:
   - client/src/firstperson/fpFrames.ts#weaponPicture
   - client/src/firstperson/heldPictures.ts#gunPicture
   - client/src/firstperson/riding.ts#RideMotion
-  - client/src/firstperson/climbing.ts#gripPlace
+  - client/src/firstperson/climbHands.ts#ClimbHands
+  - client/src/firstperson/climbing.ts#climbPlace
 ---
 # First Person
 
 What the player holds in first person, from the [[Sprite Forge]]'s first-person pictures, as DFO plays it
 ([[The Player Plays as in DFO]]). The [[Test Ground]] hands `FirstPerson` the attack button and the player's state each
 frame: what is in each hand, the gauntlets and boots worn, whether the hands are drawn, walking or running, the metres
-walked, a cast, a climb, a ride and the look's bearing. It answers the blow that lands or the shot that leaves, and from
+walked, a cast, a climb, a ride and the look's bearing and tilt. It answers the blow that lands or the shot that leaves, and from
 which hand, and reports the swing or shot under way, so the figure seen from outside plays a matching move.
 
 ## How it works
@@ -181,6 +182,24 @@ painting of a left hand as drawn and the right its mirror, each 93 pixels from t
 the screen's foot. Each hand opens as it comes and closes on the stone as it arrives. In an armour set's gauntlets the
 arm is the set's, dyed as its fists are; with none it is the linen sleeve and the leather glove, laid as drawn, undyed.
 
+The hands move as the climbing body does, as DFO's climbing hands do
+([[First-Person Hands Climb, Shimmy and Reach When Looking Away]]):
+
+- **Hanging still**, they sway a little with the body.
+- **Shimmying**, the hand the body goes toward lets go, lifts, opens and reaches first, and the other closes up after
+  it: a grip every quarter metre along the lip. A hand holding the lip keeps its stone as the body passes it.
+- **Climbing**, they go hand over hand, a grip every 0.45 m: one holds while the other reaches, and a hand holding its
+  stone goes down the view as the body climbs past it.
+- **Going over a top**, they go down the view as the body rises past them, press open on the top and let go as it
+  stands. A vault plants them on the top and lets go as the body passes over.
+- **Looking away from the wall**, from 40 degrees off its face and wholly by 75, the hand on that side lets go and
+  becomes the reaching arm: up from that side's edge, open toward the middle, feeling for a hold. The other holds on.
+  Looked back, it comes back onto the stone.
+
+The fists stay on the wall, not the screen: turning or tilting the view carries them across it with the stone, and
+up the view no further than the sleeve's slack. Only the reaching arm stays on the screen. Looked 50 degrees or more
+down, the hands go out of the view, wholly by 80.
+
 ### Riding
 
 On a horse the first person shows the Courser's head and neck from the saddle, its texels 0.8 as wide as tall, centred
@@ -199,7 +218,6 @@ rein, not its fist up.
 - No weapon shows wear, and no gun's flash lights the room.
 - The swing's pace takes no account of the player's Speed and Strength or the weapon's weight, nor a pair's off hand
   feeling its weapon heavier. A Greatsword's swings are the sword's pictures in first person, at its own pace.
-- The climbing hands only hold on: no shimmy, no reach while looking away from the wall, no press over a top.
 - The horse is always the forge's bay. There is no cart, bench wagon, petting or feeding.
 - A cast always shows both casting hands; no spell is held ready in a free hand beside a weapon.
 - The tools, the instruments and the held map are not drawn.
