@@ -328,7 +328,7 @@ captain's number comes with her in the view, so one leaving the fight never move
   over where it fell for about 2.5 s; and a push on the water's ripples ([[Water]], "In the water").
 - **A hit** (`Hit`, its point in her frame and the part struck; until the rules send them, the world point turned into
   her frame and the zone): on her hull, 32 chips, most of her side's paint, burst out of her side and fall to the
-  water, and a dark ragged hole, a few blots about the point, stays there for the fight; on a sail (a rig hit within
+  water, and a ragged hole, a dark middle in a rim of splintered raw timber that reads on any paint, stays there for the fight; on a sail (a rig hit within
   1.5 m of a cell of canvas), that cell is shot through for good, with a few shreds drifting down; elsewhere in her
   rig, a puff of splinters at the spar. A ram's stem throws her splinters but leaves no hole.
 - **Torn sails**: her sails' holes grow with her canvas's harm ([[Sailing]], "Her sails"). A sail torn away

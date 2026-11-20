@@ -55,6 +55,9 @@ export interface Cue {
 
 type Window = (point: Point) => readonly [number, number, number];
 
+/** A hole's dark middle and its rim of raw timber splintered out. */
+const HOLE = [0.05, 0.04, 0.03] as const;
+const RAW_TIMBER = [0.66, 0.5, 0.32] as const;
 /** A sail is struck where a ball passed this close to one of its cells' middles, metres. */
 const SAIL_REACH_M = 1.5;
 /** A fire's flames rise from this far over the Sloop's waterline (metres): just over her deck. */
@@ -295,12 +298,13 @@ export class FightFeel {
       const axes = shipAxes(place.heading, place.pitch, place.roll);
       const size = place.scale ?? 1;
       drawn.ship.rig.harm.scars.forEach((scar, index) => {
-        // A ragged hole: a few dark blots of its own sizes about the point, standing just proud of her side.
+        // A ragged hole: a dark middle in a rim of splintered raw timber, its blots each its own size, standing just
+        // proud of her side; the pale rim reads on any paint, a black hull's too.
         for (let blot = 0; blot < 4; blot++) {
           const turn = index * 2.1 + blot * 1.9;
           const spot: Point = [
             scar.at[0] + Math.cos(turn) * scar.size * 0.6 * (blot > 0 ? 1 : 0),
-            scar.at[1] + (scar.at[1] >= 0 ? 1 : -1) * scar.size * 0.15,
+            scar.at[1] + (scar.at[1] >= 0 ? 1 : -1) * scar.size * (blot === 0 ? 0.3 : 0.1),
             scar.at[2] + Math.sin(turn) * scar.size * 0.4 * (blot > 0 ? 1 : 0),
           ];
           const off = offOf(axes, spot);
@@ -309,7 +313,7 @@ export class FightFeel {
             y: place.y + off[1] * size,
             z: place.z + off[2] * size,
             radius: scar.size * (blot === 0 ? 0.8 : 0.45 + ((index + blot) % 3) * 0.1) * size,
-            colour: blot === 0 ? [0.05, 0.04, 0.03] : [0.12, 0.09, 0.07],
+            colour: blot === 0 ? HOLE : RAW_TIMBER,
           });
         }
       });
