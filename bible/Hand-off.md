@@ -197,6 +197,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The sea by the weather, every ship riding the swell, wakes and bow waves that read from above ([[Water]]).
   - The fights' ends: sinking and what floats, striking, losing (washed up at the nearest port city by sea), damage
     kept until repaired at a port, fights for many players, sails torn away and masts falling ([[Naval Combat]]).
+  - Boarding: E on a struck ship alongside, then the fight on her deck on foot among her crew, her deck riding her
+    ship; won, her hold's take and a minute to go back aboard ([[Naval Combat]], "Boarding").
+  - The fight's look from the room's own events on every fight path: flash and smoke that thins, splashes of water,
+    splinters and holes, torn sails, falling masts, a sinking's foam, and what floats under gold marks.
   - The held map tinted by holder, each water's name coloured by its difficulty; the tiers renamed Normal, Elite and
     Abyss.
 
