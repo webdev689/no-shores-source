@@ -5,11 +5,11 @@ import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'js
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
 import { GAME_PALETTE } from '../appearance/gamePalette.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../../network/gearMessages.ts';
-import { RARITIES, SLOTS, itemName, kindName } from '../../player/gear.ts';
+import { RARITIES, SLOTS, STOCK_NAMES, itemName, kindName } from '../../player/gear.ts';
 import type { KeeperKind } from '../keepers.ts';
 import { KEEPERS } from '../keepers.ts';
 import { emblemOf } from '../emblemArt.ts';
-import { CRATES_MOST } from '../gearCards.ts';
+import { CRATES_MOST, type Card, cardOf } from '../gearCards.ts';
 import { vendorsOf } from '../gearScreen.ts';
 import { factionRows } from './factionRows.ts';
 
@@ -113,6 +113,13 @@ function soldOnce(gear: GearState, aurem: number, level: number, kept: boolean, 
     note: kept ? 'Kept' : low ? `From level ${level}` : '',
     ask: kept || low ? null : ask,
   };
+}
+
+/** An item ware's card: the item's own, beside the piece `worn` in its slot, saying the ware's words where it has
+ *  its own (a faction piece's colour, the cape's reputation). */
+export function wareCard(ware: Ware, item: GearItem, worn: GearItem | null): Card {
+  const card = cardOf(item, worn);
+  return ware.words ? { ...card, words: ware.words } : card;
 }
 
 /** An item sold for a price: its picture, its rarity and kind, red when short. A short ware is still held to buy: the
@@ -287,9 +294,8 @@ export function purseOf(kind: KeeperKind, gear: GearState): Coin[] {
   const aurem: Coin = { glyph: 'aurem', amount: gear.aurem, name: 'Aurem' };
   if (KEEPERS[kind].faction === undefined) return kind === 'mage' ? [] : [aurem];
   const stocks = ['weapon-fragments', 'armor-fragments', 'weapon-essence', 'armor-essence'] as const;
-  const names = ['Weapon Fragments', 'Armor Fragments', 'Weapon Essence', 'Armor Essence'];
   return [
     aurem,
-    ...stocks.map((glyph, place) => ({ glyph, amount: gear.stocks[place] ?? 0, name: names[place] ?? '' })),
+    ...stocks.map((glyph, place) => ({ glyph, amount: gear.stocks[place] ?? 0, name: STOCK_NAMES[place] ?? '' })),
   ];
 }

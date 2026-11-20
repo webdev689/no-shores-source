@@ -1,7 +1,8 @@
 // What the story leaves to play on foot in Overlook's social space: the stranger's last moment (`Epilogue`), and once
 // she has gone, Elder Maren Hale's welcome. The browser keeps it due from the story's end until it is given, with the
 // stops said, so a reload or a leaving before its end brings it on the next arrival in a social space, from where it
-// was; leaving the place before the stranger has gone forgoes it. A browser that keeps nothing keeps it in the page.
+// was; leaving the place before the stranger has gone forgoes it. A browser that has played the story and holds no
+// mark of the welcome is welcomed on its next arrival. A browser that keeps nothing keeps it in the page.
 // Under `npm run dev` (or a built page on localhost), `?welcome=1` plays it at once on arriving in a social space,
 // played or not, as `?prologue=<beat>` starts the story where asked.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
@@ -12,6 +13,7 @@ import { DialogueBox } from '../../speech/dialogue.ts';
 import { Overheads } from '../../speech/overheads.ts';
 import type { Shot } from '../camera.ts';
 import { OPEN_AT, type Opening } from '../gearScreen.ts';
+import { prologuePlayed } from '../prologue/beat.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { Objective } from '../prologue/objective.ts';
 import { worldOutput } from '../uiSounds.ts';
@@ -24,6 +26,7 @@ import {
   welcomeDue,
   welcomePlayed,
   welcomeSaid,
+  welcomeUnmarked,
 } from './welcome.ts';
 
 type You = { readonly x: number; readonly y: number; readonly z: number; readonly facing: number };
@@ -83,10 +86,13 @@ export class AfterStory {
     if (epilogue && !epilogue.done) return epilogue.frame(shot, viewport, seconds, clock, you, veiled);
     if (!veiled && node.kind === 'social' && !this.arrived) {
       this.arrived = true;
-      const [asked, due] = [this.asked, welcomeDue(this.parts.kept)];
+      const kept = this.parts.kept;
+      // A browser that has played the story and holds no mark of the welcome is welcomed all the same.
+      const due = welcomeDue(kept) || (prologuePlayed(kept) && welcomeUnmarked(kept));
+      const asked = this.asked;
       [this.epilogue, this.asked] = [null, false];
-      const said = asked ? [] : welcomeSaid(this.parts.kept);
-      if (asked || due) this.welcome = Welcome.begin(node, this.parts, this.voice, you, said);
+      const said = asked ? [] : welcomeSaid(kept);
+      if (asked || due) this.welcome = Welcome.begin(node, this.parts, this.voice, you, said, shot, viewport);
     }
     const cards = this.welcome?.frame(shot, viewport, seconds, clock, you, held) ?? [];
     if (this.welcome?.done) this.welcome = null;

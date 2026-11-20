@@ -45,6 +45,8 @@ export const welcomeSaid = (kept: Pick<Storage, 'getItem'>): string[] =>
 
 export const welcomePlayed = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === 'played';
 export const welcomeDue = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === 'due';
+/** Whether the browser holds no mark of the welcome at all: neither due, played nor forgone. */
+export const welcomeUnmarked = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === null;
 
 export function keepWelcome(kept: Pick<Storage, 'setItem'>, mark: WelcomeMark, said: Iterable<string> = []): void {
   try {
@@ -91,16 +93,25 @@ export class Welcome {
   private prompting = false;
   done = false;
 
-  /** The welcome in a social space with the player at `you`, taken up after the scenes `said`; null where its plaza
-   *  has none of her counters. */
+  /** The welcome in a social space with the player at `you`, seen through `shot`, taken up after the scenes `said`;
+   *  null where its plaza has none of her counters. She starts out of the shot where she can. */
   static begin(
     node: NodeInfo,
     parts: WelcomeParts,
     voice: () => WelcomeVoice,
-    you: { readonly x: number; readonly y: number },
-    said: readonly string[] = [],
+    you: { readonly x: number; readonly y: number; readonly z: number },
+    said: readonly string[],
+    shot: Shot,
+    viewport: { readonly width: number; readonly height: number },
   ): Welcome | null {
-    const walk = WelcomeWalk.round(node.stations ?? [], plazaFrameOf(plazaOf(node)), [you.x, you.y], said);
+    const seen = ([x, y]: readonly [number, number]) => {
+      const feet = { x, y, z: parts.groundAt(x, y) ?? you.z };
+      const onView = (point: readonly [number, number, number]) =>
+        headOnView(onScreen(shot, viewport, point), viewport);
+      return onView([feet.x, feet.y, feet.z]) !== null || onView(overHead(feet)) !== null;
+    };
+    const frame = plazaFrameOf(plazaOf(node));
+    const walk = WelcomeWalk.round(node.stations ?? [], frame, [you.x, you.y], said, seen);
     return walk ? new Welcome(walk, parts, voice()) : null;
   }
 
@@ -124,7 +135,9 @@ export class Welcome {
     held = false,
   ): CardAt[] {
     if (this.done) return [];
-    if (!held) {
+    // Behind a screen the prompt is cleared, as the screen stands under it; it comes back on the first frame after.
+    if (held) this.prompt(false);
+    else {
       const asked = this.walk.step(seconds, [you.x, you.y]);
       if (asked.say) this.say(asked.say);
       if (this.walk.phase === 'done') {

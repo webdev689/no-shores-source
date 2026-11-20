@@ -4,6 +4,7 @@
 // arcades, either side of the obelisk's plinth and its braziers, and inside the benches; to a counter and back, along
 // the landward lane to its column first, so no one crosses the portico's steps.
 
+import social from '../../../content/world/social.json' with { type: 'json' };
 import type { Dress, Race } from '../player/dressing.ts';
 import type { Outfit } from '../forge/outfit.ts';
 import { KEEPERS, keeperOf } from './keepers.ts';
@@ -16,15 +17,24 @@ type Point = readonly [number, number];
 export const WALKERS = 14;
 const WALK_M_S = 1.25;
 const PAUSE_S = { lane: [1, 5], station: [6, 14], view: [8, 16] } as const;
+/** The lanes, in the plaza's own frame (`content/world/social.json`, which the city crate's tests read too): metres
+ *  toward the sea from its middle, the first the lane before the arcades, and metres across it, each landward or
+ *  leftward first. Clear of the portico's steps, the obelisk's plinth and braziers, and the benches. */
+export const TOWARD = lanesOf(social.lanes.toward, 'toward');
+export const ACROSS = lanesOf(social.lanes.across, 'across');
 /** The lane before the arcades, metres toward the sea: clear of the portico's steps. */
-export const LANDWARD_LANE = -38;
-/** The lanes, in the plaza's own frame: metres toward the sea from its middle, and metres across it. Clear of the
- *  portico's steps, the obelisk's plinth and braziers, and the benches. */
-export const TOWARD = [LANDWARD_LANE, -14, 14, 34] as const;
-export const ACROSS = [-110, -70, -20, 20, 70, 110] as const;
+export const LANDWARD_LANE = TOWARD[0];
 /** Where a customer stands before a counter, and a looker at the parapet, metres toward the sea. */
-export const AT_COUNTER = -48.5;
-export const AT_PARAPET = 52;
+export const AT_COUNTER = social.lanes.atCounter;
+export const AT_PARAPET = social.lanes.atParapet;
+/** A list of lanes as read, checked once: at least one, each further on than the one before. */
+function lanesOf(lanes: readonly number[], way: string): readonly [number, ...number[]] {
+  const [first, ...rest] = lanes;
+  if (first === undefined || lanes.some((lane, nth) => nth > 0 && lane <= (lanes[nth - 1] as number)))
+    throw new Error(`content/world/social.json: the ${way} lanes are not listed in order: ${lanes.join(', ')}`);
+  return [first, ...rest];
+}
+
 /** How often a walker on the landward lane goes to a station, and on the seaward lane to the parapet. */
 const TO_STATION = 0.3;
 const TO_VIEW = 0.25;

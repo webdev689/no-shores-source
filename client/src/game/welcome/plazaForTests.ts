@@ -79,6 +79,16 @@ export const SOLIDS: readonly {
   { name: 'seaward parapet', at: [60.5, 0], half: [0.5, 130] },
 ];
 
+/** Where Shape may stand, in the plaza's own frame, as `visitor_spots` lays them for a plaza 120 m deep: beside each
+ *  brazier, landward of the two outer benches, and before the portico's two ends. */
+export const SHAPE_SPOTS: readonly (readonly [number, number])[] = [
+  ...[-95, -45, 45, 95].map((across) => [2.5, across] as const),
+  [40, -120],
+  [40, 120],
+  [-32, -30],
+  [-32, 30],
+];
+
 /** The solid a body of `radius` at a place of the plaza's frame stands in, if any. */
 export function solidAt(toward: number, across: number, radius: number): string | null {
   for (const { name, at, round, half } of SOLIDS) {

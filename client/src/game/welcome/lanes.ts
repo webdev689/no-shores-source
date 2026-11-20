@@ -1,8 +1,9 @@
 // The way across a social space's plaza by the townsfolk's lanes (`townsfolk.ts`): along its rows, metres toward the
 // sea, from the first column to the last; along the line where customers stand before each arcade's counters, from the
-// arcade's start to its last column; and along its columns, metres across it, from the landward lane (the outer ones
-// from the counters) out to where lookers stand at the parapet. The courtyard leaves every lane clear of its solids.
-// From off the lanes a walker goes straight to the nearest point of them, and off them straight to where it is going.
+// arcade's start to its last column; along its columns, metres across it, from the landward lane (the outer ones from
+// the counters) out to where lookers stand at the parapet; and along that line, from the first column to the last.
+// The courtyard leaves every lane clear of its solids. From off the lanes a walker goes straight to the nearest point
+// of them, and off them straight to where it is going.
 import { ACROSS, AT_COUNTER, AT_PARAPET, type PlazaFrame, TOWARD, inPlaza, plazaPoint } from '../townsfolk.ts';
 
 type Point = readonly [number, number];
@@ -21,12 +22,14 @@ interface Lane {
 const NEAR = 1e-6;
 /** Where an arcade starts across the plaza from its middle, either side of the portico, metres. */
 const ARCADE_START_M = 32;
-const [FIRST_ROW, LAST_ROW] = [TOWARD[0], TOWARD[TOWARD.length - 1] ?? TOWARD[0]];
-const [FIRST_COLUMN, LAST_COLUMN] = [ACROSS[0], ACROSS[ACROSS.length - 1] ?? ACROSS[0]];
+const FIRST_ROW = Math.min(...TOWARD);
+const [FIRST_COLUMN, LAST_COLUMN] = [Math.min(...ACROSS), Math.max(...ACROSS)];
 const ROWS: readonly Lane[] = [
   ...TOWARD.map((line) => ({ line, from: FIRST_COLUMN, to: LAST_COLUMN })),
   { line: AT_COUNTER, from: FIRST_COLUMN, to: -ARCADE_START_M },
   { line: AT_COUNTER, from: ARCADE_START_M, to: LAST_COLUMN },
+  // Where lookers stand at the parapet, seaward of the benches.
+  { line: AT_PARAPET, from: FIRST_COLUMN, to: LAST_COLUMN },
 ];
 /** The columns before an arcade reach down to its counters; the two before the portico stop at the landward lane. */
 const COLUMNS: readonly Lane[] = ACROSS.map((line) => ({
@@ -39,12 +42,10 @@ const clamp = (value: number, lane: Lane) => Math.min(lane.to, Math.max(lane.fro
 const apart = (one: Place, two: Place) => Math.hypot(one.toward - two.toward, one.across - two.across);
 const keeps = (lane: Lane, along: number) => Math.abs(lane.line - along) < NEAR;
 
-/** The point of the lanes nearest `place`. Seaward of the last row, among the benches, only a column's: from it the way
- *  on runs along the benches, not across them. */
+/** The point of the lanes nearest `place`. */
 export function onLanes(place: Place): Place {
-  const rows = place.toward > LAST_ROW ? [] : ROWS;
   const points = [
-    ...rows.map((row) => ({ toward: row.line, across: clamp(place.across, row) })),
+    ...ROWS.map((row) => ({ toward: row.line, across: clamp(place.across, row) })),
     ...COLUMNS.map((column) => ({ toward: clamp(place.toward, column), across: column.line })),
   ];
   return points.reduce((best, each) => (apart(each, place) < apart(best, place) ? each : best));

@@ -5,6 +5,9 @@ import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { ASKS } from '../../network/gearMessages.ts';
 import { KINDS, slotOf } from '../../player/gear.ts';
 import { factionRows, rankRewards, reputationOf } from './factionRows.ts';
+import { fragmentWords } from '../artLevels.ts';
+import { ARTS } from '../artsCards.ts';
+import { wareCard } from './npcWares.ts';
 import { item, standing, state } from './stateForTests.ts';
 
 /** The Stormcallers (faction 1, first in the list) keep the Storm Art (Art 1, first). */
@@ -25,6 +28,22 @@ const SOLD = factions.factions.flatMap((faction) =>
     }),
 );
 const RANK = factions.reputationPerRank;
+test('a faction piece’s card says the colour it is drawn in, and the cape’s what it earns', () => {
+  const rows = factionRows(
+    STORM,
+    state({ standing: standing({ pledge: STORM, reputation: [3 * RANK, 0, 0] }), level: 20, factionWares: SOLD }),
+    false,
+  );
+  const cardWords = (heading: string) => {
+    const ware = row(rows, heading)?.wares[0];
+    if (ware?.picture.kind !== 'item') return assert.fail(`no piece under ${heading}`);
+    return wareCard(ware, ware.picture.item, null).words;
+  };
+  assert.match(cardWords('Armour'), /Drawn in Squall, a colour none but the Stormcallers wear\.$/);
+  assert.match(cardWords('Weapons'), /Drawn in Squall/);
+  assert.match(cardWords('Cape'), /Earns their reputation while you wear it, pledged to them\.$/);
+});
+
 test('unpledged, the first pledge is free and no cape is sold', () => {
   const rows = factionRows(STORM, state({ standing: standing({}), factionWares: SOLD }), false);
   assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Art', 'Fragments', 'Armour', 'Weapons']);
@@ -93,6 +112,15 @@ test('the Art not ready shows its bar; ready, a Rise press opens a choice of the
     choosing?.wares.map((ware) => ware.ask),
     [2, 3, 4, 5].map((node) => ({ kind: ASKS.riseArt, column: STORM, node })),
   );
+  // Each fragment is said as it works at the level the rise makes.
+  const core = ARTS.find((each) => each.id === STORM)?.core ?? [];
+  const atLevel = (level: number) =>
+    [2, 3, 4, 5].map((place) => fragmentWords(core[place] as (typeof core)[number], level));
+  assert.deepEqual(
+    choosing?.wares.map((ware) => ware.words),
+    atLevel(2),
+  );
+  assert.notDeepEqual(atLevel(2), atLevel(1), 'a fragment of this choice works longer a level up');
 });
 
 test('ready with every fragment owned, the Rise asks at once with no fragment to choose, and says so', () => {
@@ -120,7 +148,7 @@ test('a rise that needs fragments is short without them; at the highest level th
   );
 });
 
-test('fragments owned are lit; the rest are sold from rank 1', () => {
+test('fragments owned or sold are lit; the rest are sold from rank 1', () => {
   const low = row(factionRows(STORM, state({ standing: standing({ artOwned: [1, 0, 0] }) }), false), 'Fragments');
   assert.deepEqual(
     low?.wares.slice(0, 2).map((ware) => [ware.dim, ware.note, ware.ask]),
@@ -131,6 +159,7 @@ test('fragments owned are lit; the rest are sold from rank 1', () => {
   );
   const ranked = standing({ reputation: [10_000, 0, 0] });
   const sold = row(factionRows(STORM, state({ standing: ranked, aurem: 7_500 }), false), 'Fragments')?.wares[0];
+  assert.equal(sold?.dim, false, 'one that may be bought is lit, as the armour is');
   assert.deepEqual(sold?.ask, { kind: ASKS.buyFragment, column: STORM, node: 0 });
   assert.deepEqual(sold?.price, { amount: 7_500, currency: 'aurem' });
 });

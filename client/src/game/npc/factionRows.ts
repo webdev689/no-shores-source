@@ -136,7 +136,7 @@ function gearRows(id: number, gear: GearState, rank: number, pledged: boolean): 
           key: 'cape',
           // Named cloaks are made at level 1, so any level may wear one.
           about: `${ware.about.split(' · ')[0] ?? ''} · any level`,
-          words: 'Earns their reputation while you wear it, pledged to them.',
+          words: `${itemWords(kept ?? cape)} Earns their reputation while you wear it, pledged to them.`,
           price: kept ? null : ware.price,
           short: !kept && ware.short,
           note: kept ? 'Kept' : full ? 'Nine cloaks carried' : '',
@@ -261,7 +261,8 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
         rarity: 3,
         picture: { kind: 'fragment', art: art.id, fragment: place },
         about: 'Learned as your Art rises',
-        words: fragmentWords(fragment, level),
+        // Said at the level the rise makes, as the fragment works once learned.
+        words: fragmentWords(fragment, level + 1),
         ask: { kind: ASKS.riseArt, column: art.id, node: place },
       })),
     });
@@ -282,7 +283,8 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
         short: !mine && ranked && short,
         note: mine ? 'Owned' : ranked ? '' : `From rank ${factions.fragmentRank}`,
         ask: mine || !ranked ? null : { kind: ASKS.buyFragment, column: art.id, node: place },
-        dim: !mine,
+        // Dimmed only while it cannot be bought yet, as the armour and weapons are.
+        dim: !mine && !ranked,
       };
     }),
   });

@@ -35,7 +35,7 @@ import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { KEEPERS } from './keepers.ts';
-import { isKeeperView, keyBeside, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
+import { isKeeperView, keyBeside, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
@@ -291,7 +291,15 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
   startCompanyHud(root, link);
-  const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
+  // The page shown takes the step first when it has one of its own (a panel, a player's details, a keeper's choice);
+  // either way the hold under way is let go, so a step back never buys what was being held.
+  const stepOnce = () => {
+    letGo();
+    const step = new Event(STEP_BACK, { cancelable: true });
+    if (body.firstElementChild?.dispatchEvent(step) !== false) back();
+    render();
+  };
+  const stepBack = pressOf('Back', stepOnce, 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */
   let bannered: Emblem | null = null;
@@ -511,7 +519,13 @@ export function startGearWindow(
     const opens: readonly Hint[] =
       gear.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
     const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
-    const aside = worn ? ARTS_HINTS : dressing ? APPEARANCE_HINTS : null;
+    const aside = worn
+      ? ARTS_HINTS
+      : dressing
+        ? APPEARANCE_HINTS
+        : isKeeperView(view) && npcChoosing()
+          ? npcHints(view)
+          : null;
     const hints = shown ? HINTS.item : (aside ?? (view === 'inventory' ? shelfHints : (HINTS[view] ?? npcHints(view))));
     hinted(hints ?? []);
     actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || aside ? [stepBack] : [close]));
@@ -560,12 +574,7 @@ export function startGearWindow(
       if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
-        // The page shown takes the step first when it has one of its own (a panel, a player's details); either way
-        // the hold under way is let go, so a step back never buys what was being held.
-        letGo();
-        const step = new Event(STEP_BACK, { cancelable: true });
-        if (body.firstElementChild?.dispatchEvent(step) !== false) back();
-        render();
+        stepOnce();
       } else if (key === 'x' && !typing && document.activeElement instanceof HTMLElement) {
         // X shows the focused piece's details, as a right-click does.
         if (document.activeElement.dataset['details'] === undefined) return;

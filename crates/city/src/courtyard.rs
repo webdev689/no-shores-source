@@ -227,21 +227,38 @@ mod tests {
         }
     }
 
-    /// The townsfolk's lanes (`client/src/game/townsfolk.ts`), metres toward the sea and across: Shape stands off them,
-    /// so no one walks through him.
-    const LANES_TOWARD: [f64; 4] = [-38.0, -14.0, 14.0, 34.0];
-    const LANES_ACROSS: [f64; 6] = [-110.0, -70.0, -20.0, 20.0, 70.0, 110.0];
+    /// The townsfolk's lanes as the page walks them (`content/world/social.json`), metres toward the sea and across.
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Lanes {
+        toward: Vec<f64>,
+        across: Vec<f64>,
+        at_counter: f64,
+        at_parapet: f64,
+    }
 
+    #[derive(serde::Deserialize)]
+    struct Social {
+        lanes: Lanes,
+    }
+
+    /// Shape stands off every lane, the line before the counters and the line at the parapet among them, so no one
+    /// walks through him.
     #[test]
     fn every_visitor_spot_stands_off_the_townsfolks_lanes() {
+        let social: Social =
+            serde_json::from_str(include_str!("../../../content/world/social.json")).expect("social.json reads");
+        let Lanes { toward: rows, across: columns, at_counter, at_parapet } = social.lanes;
+        assert!(!rows.is_empty() && !columns.is_empty());
+        let rows: Vec<f64> = rows.into_iter().chain([at_counter, at_parapet]).collect();
         for [x, y] in visitor_spots(&FRAME) {
             let off = [x - FRAME.middle[0], y - FRAME.middle[1]];
             let toward = off[0] * FRAME.seaward[0] + off[1] * FRAME.seaward[1];
             let across = off[0] * FRAME.across()[0] + off[1] * FRAME.across()[1];
-            let nearest = LANES_TOWARD
+            let nearest = rows
                 .iter()
                 .map(|lane| (lane - toward).abs())
-                .chain(LANES_ACROSS.iter().map(|lane| (lane - across).abs()))
+                .chain(columns.iter().map(|lane| (lane - across).abs()))
                 .fold(f64::INFINITY, f64::min);
             assert!(nearest > 4.0, "the spot {toward} toward the sea, {across} across, stands {nearest} m off a lane");
         }
