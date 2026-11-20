@@ -1,6 +1,7 @@
-//! A run's modifiers, each one hook: Brawler, Marksman, Lightswitch and Burn weigh only the blows they name; Burn's
-//! Art's spells deal twice; Ironclad shields more foes and keeps every shield it would have stood with; Juggler drops
-//! no ammunition; Trickle slows recharges and Exposure halves heals; and a room with no run is as it was.
+//! A run's modifiers, each one hook: Brawler, Marksman, Lightswitch (a foe's swing or telegraphed blow) and Burn weigh
+//! only the blows they name; Burn's Art's spells deal twice; Ironclad shields more foes and keeps every shield it
+//! would have stood with; Juggler drops no ammunition; Trickle slows recharges and Exposure halves heals; and a room
+//! with no run is as it was.
 
 use super::*;
 use crate::{Floor, NodeKind, PlayerId, Section};
@@ -58,6 +59,20 @@ fn each_modifier_weighs_only_the_blows_it_names() {
     assert_eq!((room.recharge_times(), room.heal_times(), room.shield_chance()), (1.5, 0.5, 0.5));
     room.run = None;
     assert_eq!((room.recharge_times(), room.heal_times(), room.shield_chance()), (1.0, 1.0, 0.2));
+}
+
+#[test]
+fn lightswitch_doubles_a_foes_telegraphed_blow_on_a_player_and_never_a_players_own() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("in");
+    let foe: FighterId = crate::arts::arts_tests::stand_foe(&mut room, 3.0, 0.0, 100.0);
+    let slam = BlowKind::Telegraph(combat::shapes::Shape::Slam);
+    let mut times = |modifiers: Vec<Modifier>| {
+        room.run = Some(run_of(modifiers));
+        [room.modded_blow(&blow_of(foe, slam), player), room.modded_blow(&blow_of(player, slam), foe)]
+    };
+    assert_eq!(times(vec![Modifier::Lightswitch]), [2.0, 1.0]);
+    assert_eq!(times(vec![]), [1.0, 1.0]);
 }
 
 /// The shields a patrol's garrison stands with, its run's modifiers known before it stands.
