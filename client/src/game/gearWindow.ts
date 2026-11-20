@@ -11,6 +11,8 @@ import { ROLES } from '../plus/kit.ts';
 import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artDiamond, artsPage } from './artsPage.ts';
 import { coresOf, gearAskOf } from './artsCards.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
+import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
+import { APPEARANCE_KEY } from './emblemSlot.ts';
 import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
 import {
   ACCOUNT_CHANGED,
@@ -181,6 +183,8 @@ export function startGearWindow(
   /** Whether the Character page shows the worn Art's screen, and the Core slot whose flyout is open on it. */
   let arts = false;
   let artSlot: number | null = null;
+  /** Whether the Character page shows the Appearance screen. */
+  let appearance = false;
   /** The Art and Core the Art's screen was last built with (null while it is not shown), and the Core slot whose ask
    *  waits on the room's word. */
   let artsBuilt: { readonly art: number; readonly core: readonly (number | null)[] } | null = null;
@@ -231,11 +235,12 @@ export function startGearWindow(
    *  shown (the room lost), none of those stands on the page, so the menu closes at once. */
   const back = () => {
     letGo();
-    if (!here()?.gear) [inspecting, slot, artSlot, arts] = [null, null, null, false];
+    if (!here()?.gear) [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
     if (inspecting !== null) inspecting = null;
     else if (slot !== null) slot = null;
     else if (artSlot !== null) artSlot = null;
     else if (arts) [arts, returnTo] = [false, ART_DIAMOND_KEY];
+    else if (appearance) [appearance, returnTo] = [false, APPEARANCE_KEY];
     else return shut();
     play('back');
   };
@@ -245,7 +250,7 @@ export function startGearWindow(
     letGo();
     const opening = view === null;
     [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
-    [arts, artSlot] = [false, null];
+    [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
     play(opening ? 'open' : 'tab');
@@ -403,7 +408,7 @@ export function startGearWindow(
         });
     }
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    const state = JSON.stringify([view, slot, arts, artSlot, artPending, shelf, inspecting, drawn, now === null]);
+    const state = JSON.stringify([view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn, !now]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
     const holding = pressing || screen.querySelector('.gear-holding') !== null;
     if (holding || (gear === shownGear && state === shownState)) {
@@ -463,7 +468,11 @@ export function startGearWindow(
       ...(gear.arts && {
         art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip),
       }),
+      appearance: () => ((appearance = true), (slot = null), render()),
     };
+    const dressing = view === 'character' && appearance;
+    const closeLooks = () => ((appearance = false), (returnTo = APPEARANCE_KEY), render());
+    const looks = dressing ? appearancePage({ ...context, forge: now.forge ?? null, dress, close: closeLooks }) : null;
     const worn = view === 'character' && arts ? gear.arts : undefined;
     const cores = worn ? coresOf(worn) : {};
     const core = worn ? (cores[worn.art] ?? []) : [];
@@ -494,7 +503,7 @@ export function startGearWindow(
           (chosen) => ((artSlot = chosen), render()),
         )
       : view === 'character'
-        ? characterPage(context, slot, (chosen) => ((slot = chosen), render()))
+        ? (looks ?? characterPage(context, slot, (chosen) => ((slot = chosen), render())))
         : view === 'inventory'
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
           : view === 'vault'
@@ -514,9 +523,10 @@ export function startGearWindow(
     const opens: readonly Hint[] =
       gear.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
     const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
-    const hints = shown ? HINTS.item : worn ? ARTS_HINTS : view === 'inventory' ? shelfHints : HINTS[view];
+    const aside = worn ? ARTS_HINTS : dressing ? APPEARANCE_HINTS : null;
+    const hints = shown ? HINTS.item : (aside ?? (view === 'inventory' ? shelfHints : HINTS[view]));
     hinted(hints ?? []);
-    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || worn ? [stepBack] : [close]));
+    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || aside ? [stepBack] : [close]));
     // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
     // goes back to the item's tile.
     const found = (key: string | null | undefined) =>

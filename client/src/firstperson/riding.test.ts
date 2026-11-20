@@ -82,6 +82,25 @@ test("a gallop's frames are sunk halfway toward its lowest ears, and the hands w
   assert.deepEqual(horse?.at, [(320 - 4 * 0.8) / 2, 200 - 20 + 4]);
 });
 
+test('the horse from the saddle wears the coat on its hide and the barding over it; the bay is as forged', async () => {
+  const shot = { strip: 'stand', k: 0, turn: '' as const, key: 'stand-0' };
+  const hide = [140, 100, 50, 255];
+  const horse: Strip = { width: 2, height: 1, data: new Uint8Array([...hide, 200, 0, 0, 255]) };
+  const plate: Strip = { width: 2, height: 1, data: new Uint8Array([0, 0, 0, 0, 0, 0, 200, 255]) };
+  const tinted: DyeTable = { ...dyes, palette: [...band, [200, 0, 0], [140, 100, 50], [0, 0, 200]] };
+  const source = {
+    ...sourceOf({ [ridePath('stand-0')]: horse, [ridePath('stand-0_warhorse')]: plate }),
+    painter: new FramePainter(tinted, new PaletteSnap(tinted.palette)),
+  };
+  const bay = Array.from((await horsePicture(source, shot))?.pixels ?? []);
+  assert.deepEqual(bay, [...hide, 200, 0, 0, 255]);
+  const [red = 0, green = 0, blue = 0, , ...plated] = Array.from(
+    (await horsePicture(source, shot, 'grey', 'ember_plate'))?.pixels ?? [],
+  );
+  assert.ok(red === green && green === blue, 'a grey hide');
+  assert.deepEqual(plated, [0, 0, 200, 255], 'the barding over the blanket');
+});
+
 test("a rein lies under its fist, the fist in the gauntlets worn or the glove's", async () => {
   const shot = { strip: 'stand', k: 0, turn: '' as const, key: 'stand-0' };
   const rein = from(0, 2, 1);

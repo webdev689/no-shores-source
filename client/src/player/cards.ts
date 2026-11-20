@@ -140,26 +140,47 @@ export class Cards {
   }
 
   /** A figure's frame as plain pixels, for a page to draw rather than the scene: composed now, never kept. Given
-   *  `alone`, one of its layers, that layer is drawn by itself: a weapon in hand whole, with no hand over its grip. */
-  async picture(dress: Dress, anim: string, view: number, frame = 0, alone?: string): Promise<Picture | null> {
+   *  `alone`, one or more of its layers, those are drawn by themselves: a weapon in hand whole, with no hand over its
+   *  grip, or a horse without its rider. Given `flip`, the view is drawn mirrored, its gear kept on its own sides. */
+  async picture(
+    dress: Dress,
+    anim: string,
+    view: number,
+    frame = 0,
+    alone?: string | readonly string[],
+    flip = false,
+  ): Promise<Picture | null> {
     const own = this.looks.bodies[dress.body];
-    const figure = figureOf(dress, own?.layers ?? {}, anim);
+    const layers = own?.layers ?? {};
+    const dressed = figureOf(dress, layers, anim);
+    const held = [dress.outfit.right, dress.outfit.left];
+    const figure = flip ? { ...dressed, gear: mirroredGear(dressed.gear, anim, layers, held) } : dressed;
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
     const strip = (path: string) => this.store.strip(path);
-    // The forge renders each layer by itself; read as a body that draws that layer alone, it stacks nothing else.
+    // The forge renders each layer by itself; read as a body that draws those layers alone, it stacks nothing else.
+    const only = typeof alone === 'string' ? [alone] : alone;
     const looks =
-      alone && own
-        ? { ...this.looks, bodies: { [dress.body]: { ...own, layers: { [alone]: own.layers[alone] ?? [] } } } }
+      only && own
+        ? {
+            ...this.looks,
+            bodies: {
+              [dress.body]: { ...own, layers: Object.fromEntries(only.map((layer) => [layer, layers[layer] ?? []])) },
+            },
+          }
         : this.looks;
     const composed = await composeFrame(figure, anim, view, frame, looks, this.colours, ramps, strip);
-    return (
-      composed && {
-        width: composed.width,
-        height: composed.height,
-        pixels: new Uint8ClampedArray(composed.pixels),
-        root: composed.root,
-      }
-    );
+    if (!composed) return null;
+    const { width, height } = composed;
+    const pixels = new Uint8ClampedArray(composed.pixels);
+    // A view drawn mirrored, as the scene draws the other side.
+    if (flip)
+      for (let row = 0; row < height; row++)
+        for (let across = 0; across < width; across++) {
+          const from = (row * width + across) * 4;
+          pixels.set(composed.pixels.subarray(from, from + 4), (row * width + width - 1 - across) * 4);
+        }
+    const root = flip ? ([width - 1 - composed.root[0], composed.root[1]] as const) : composed.root;
+    return { width, height, pixels, root };
   }
 
   /** What a body can wear, as the forge draws it; null for a body it has not. */
@@ -198,7 +219,8 @@ export class Cards {
     // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
     const held = [dress.outfit.right, dress.outfit.left, ...carried];
     const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
-    return { figure, key: JSON.stringify([figure, dress.outfit.dyes, anim, view, frame, glow]) };
+    const { dyes, dye, coat } = dress.outfit;
+    return { figure, key: JSON.stringify([figure, dyes, dye ?? null, coat ?? null, anim, view, frame, glow]) };
   }
 
   /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A

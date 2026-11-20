@@ -1,5 +1,6 @@
 import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
-import type { Figure, ForgeBody, ForgeLooks, IndexLook } from '../forge/looks.ts';
+import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp } from '../forge/cosmetics.ts';
+import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type ArmourPiece, type Outfit, outfitLayers } from '../forge/outfit.ts';
 
 /** Overlook's three races: a Human's skin is a tone; Felid and Anole wear the forge's own bodies. */
@@ -68,6 +69,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 /** A name a dress may hold: short text. Names the forge does not draw are left for it to pass over. */
 const isName = (value: unknown): value is string => typeof value === 'string' && value.length <= 64;
+/** A cosmetic a dress may wear: none, or one of the catalogue's of its kind. */
+const isWorn = (value: unknown, kind: CosmeticKind) =>
+  value === undefined || value === null || (typeof value === 'string' && cosmeticOf(value)?.kind === kind);
+/** A cloak's layers, which keep their own dye under a dye worn. */
+const CLOAK = /(^|_)cloak(_|$)/;
 
 /** The dress another player's browser sent, as text, if it is one: each field of a dress's shape, its names short, so
  *  a broken or hostile one never reaches the forge. */
@@ -91,6 +97,8 @@ export function dressFrom(text: string): Dress | null {
   if (!(right === null || isName(right)) || !(left === null || isName(left)) || typeof drawn !== 'boolean') return null;
   if (!(grip === undefined || grip === null || grip === 'hilt')) return null;
   if (!(hair === null || (isRecord(hair) && isName(hair['style']) && isName(hair['colour'])))) return null;
+  if (!isWorn(outfit['dye'], 'dye') || !isWorn(outfit['coat'], 'coat') || !isWorn(outfit['barding'], 'barding'))
+    return null;
   return value as unknown as Dress;
 }
 
@@ -99,7 +107,8 @@ export function dressFrom(text: string): Dress | null {
 export function figureOf(dress: Dress, drawn: ForgeBody['layers'], anim?: string): Figure {
   const { gear, hair } = outfitLayers(dress.outfit, drawn, anim);
   const race = RACES[dress.race];
-  return { body: dress.body, race, tone: race ? null : dress.tone, hair, gear };
+  const barding = bardingLayer(dress.outfit.barding);
+  return { body: dress.body, race, tone: race ? null : dress.tone, hair, gear, ...(barding && { barding }) };
 }
 
 /** One of the forge's dressed looks as an outfit: its armour by piece and set, its garments, its weapon drawn. */
@@ -142,7 +151,8 @@ export const plainDress = (race: Race, tone: number): Dress => ({
 export const PLAIN_DYE = 'LightBrown';
 
 /** The ramp each dyed layer a figure wears is laid on: a metal layer its set's or metal's, a garment and its hangs
- *  their garment's dye. Layers that keep their own colours have none. */
+ *  their garment's dye (a clothing dye, or a cosmetic dye's look); with a dye worn, every armour layer and garment but
+ *  the cloak its ramp; and the ridden horse (HORSE_LAYER) its coat's. Layers that keep their own colours have none. */
 export function rampsOf(
   gear: readonly string[],
   outfit: Outfit,
@@ -151,14 +161,26 @@ export function rampsOf(
 ): Record<string, readonly Rgb[]> {
   const metal = new Set(looks.metal ?? []);
   const dyed = new Set(looks.dye ?? []);
+  const worn = cosmeticRamp(outfit.dye);
+  const armour = new Set(ARMOUR_PIECES.map((piece) => `${piece}_${outfit.armour[piece] ?? ''}`));
+  // The dye worn takes every armour piece, the padding under it and every garment; never a weapon, a shield, the cloak
+  // or the hair.
+  const takesDye = (layer: string) =>
+    armour.has(layer) || layer.startsWith('under_') || (dyed.has(layer) && !metal.has(layer) && !CLOAK.test(layer));
   const ramps: Record<string, readonly Rgb[]> = {};
   for (const layer of gear) {
-    const ramp = metal.has(layer)
-      ? table.armour[metalOfLayer(layer) ?? '']
-      : dyed.has(layer)
-        ? table.clothing[outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE]
-        : undefined;
+    const garment = outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE;
+    const ramp =
+      worn && takesDye(layer)
+        ? worn
+        : metal.has(layer)
+          ? table.armour[metalOfLayer(layer) ?? '']
+          : dyed.has(layer)
+            ? (table.clothing[garment] ?? cosmeticRamp(garment) ?? undefined)
+            : undefined;
     if (ramp) ramps[layer] = ramp;
   }
+  const coat = cosmeticRamp(outfit.coat);
+  if (coat) ramps[HORSE_LAYER] = coat;
   return ramps;
 }

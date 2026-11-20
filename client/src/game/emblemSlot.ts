@@ -1,23 +1,29 @@
 import { make } from '../editor/dom.ts';
-import { ASKS } from '../network/gearMessages.ts';
-import { RARITIES } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
-import { EMBLEMS, type Emblem, emblemImage, emblemOf } from './emblemArt.ts';
-import { cardNode, closeOffHover, hintLine, rarityOf } from './gearDom.ts';
+import { svgUrl, wardrobeSvg } from './appearance/appearanceMarks.ts';
+import { rarityNumber } from './appearance/appearanceModel.ts';
+import { type Emblem, emblemImage, emblemOf } from './emblemArt.ts';
+import { cardNode, hintLine, rarityOf } from './gearDom.ts';
 
-/** The Emblem slot's number among the character page's slots, past the seven of gear. */
-export const EMBLEM_SLOT = 7;
-/** An emblem's sign in the slot and in the flyout, at whole multiples of its 24 cells. */
-const SLOT_SIGN_PX = 72;
-const CELL_SIGN_PX = 48;
+/** The wardrobe mark at three pixels a cell, and the emblem worn beside it at one. */
+const MARK_PX = 48;
+const SIGN_PX = 24;
+/** A card with nothing on it yet. */
+const emptyCard = {
+  name: '',
+  rarity: 0,
+  kind: 'Emblem, Dye, Coat, Barding',
+  big: null,
+  rows: [],
+  element: 0,
+  traits: [],
+  words: '',
+  compare: null,
+};
 
-/** An emblem's rarity, by the gear's numbers. */
-const rarityNumber = (emblem: Emblem) =>
-  Math.max(
-    0,
-    RARITIES.findIndex((each) => each.name.toLowerCase() === emblem.rarity),
-  );
+/** The key of the Appearance button, which takes the focus back once the screen closes. */
+export const APPEARANCE_KEY = 'appearance';
 
 /** An emblem's sign as an image of whole pixels. */
 function signImage(emblem: Emblem, size: number): HTMLImageElement {
@@ -29,17 +35,7 @@ function signImage(emblem: Emblem, size: number): HTMLImageElement {
 /** An emblem's card: its name and rarity, its nameplate, and how it is had. */
 export function emblemCard(emblem: Emblem, kept: boolean, worn: boolean): HTMLElement {
   const card = cardNode(
-    {
-      name: emblem.name,
-      rarity: rarityNumber(emblem),
-      kind: 'Emblem',
-      big: null,
-      rows: [],
-      element: 0,
-      traits: [],
-      words: '',
-      compare: null,
-    },
+    { ...emptyCard, name: emblem.name, rarity: rarityNumber(emblem.rarity), kind: 'Emblem' },
     null,
     [],
   );
@@ -52,50 +48,46 @@ export function emblemCard(emblem: Emblem, kept: boolean, worn: boolean): HTMLEl
 }
 
 /**
- * The Emblem slot, after Destiny 1's General items: the emblem worn, and a flyout of every emblem, those kept to be
- * worn with a click and the rest dim, each saying how it is had.
+ * The Appearance button, in the place the Emblem slot had: the wardrobe mark, with the emblem worn small in its corner.
+ * Its card says what it opens; pressed, it opens the Appearance screen through the page's `appearance`, the focus on
+ * the emblem worn.
  */
-export function emblemSlot(context: PageContext, open: boolean, choose: () => void): HTMLElement {
+export function appearanceButton(context: PageContext): HTMLElement {
   const { gear, tip } = context;
   const worn = emblemOf(gear.emblem ?? 0);
-  const kept = new Set(gear.emblems ?? []);
   const holder = make('div', '', 'gear-slot-holder');
-  const tile = make('button', '', `gear-slot gear-emblem ${ROLES.tile}`);
-  rarityOf(tile, rarityNumber(worn));
-  tile.append(signImage(worn, SLOT_SIGN_PX));
-  tile.dataset['key'] = 'slot-emblem';
-  tile.classList.toggle('gear-open', open);
-  tile.setAttribute('aria-expanded', String(open));
-  tile.setAttribute('aria-label', `Emblem: ${worn.name}`);
-  tile.addEventListener('click', choose);
-  tip.over(tile, () => emblemCard(worn, true, true));
+  const tile = make('button', '', `gear-slot appearance-button ${ROLES.tile}`);
+  tile.type = 'button';
+  rarityOf(tile, rarityNumber(worn.rarity));
+  const mark = make('img', '', 'appearance-mark');
+  Object.assign(mark, { src: svgUrl(wardrobeSvg()), width: MARK_PX, height: MARK_PX, alt: '' });
+  const sign = signImage(worn, SIGN_PX);
+  sign.classList.add('appearance-sign');
+  tile.append(mark, sign);
+  tile.dataset['key'] = APPEARANCE_KEY;
+  tile.setAttribute('aria-label', `Appearance: ${worn.name}`);
+  tile.addEventListener('click', () => {
+    tip.hide();
+    context.appearance?.();
+    const found = () => document.querySelector<HTMLElement>(`[data-key="emblem-${CSS.escape(worn.id)}"]`);
+    requestAnimationFrame(() => found()?.focus());
+  });
+  if (!context.appearance) tile.setAttribute('aria-disabled', 'true');
+  tip.over(tile, () => {
+    const card = cardNode(
+      {
+        ...emptyCard,
+        name: 'Appearance',
+        words: "Your emblem, the dye on your armour, and your horse's coat and barding.",
+      },
+      null,
+      [['Click', 'Open']],
+    );
+    card.querySelector('.gear-card-body')?.append(make('p', `Emblem: ${worn.name}`, 'appearance-how'));
+    return card;
+  });
   const label = make('div', '', 'gear-slot-words');
-  label.append(make('span', 'Emblem', 'gear-slot-name'), make('span', worn.name, 'gear-slot-item'));
+  label.append(make('span', 'Appearance', 'gear-slot-name'), make('span', worn.name, 'gear-slot-item'));
   holder.append(tile, label);
-  if (open) {
-    const flyout = make('div', '', `gear-flyout ${ROLES.panel}`);
-    flyout.append(make('div', `Emblems · ${kept.size} of ${EMBLEMS.length} kept`, 'gear-flyout-head'));
-    const grid = make('div', '', 'gear-flyout-grid gear-emblem-grid');
-    EMBLEMS.forEach((emblem, number) => {
-      const has = kept.has(number);
-      const cell = make('button', '', `gear-cell ${ROLES.tile}${has ? '' : ' gear-vacant'}`);
-      rarityOf(cell, has ? rarityNumber(emblem) : null);
-      cell.append(signImage(emblem, CELL_SIGN_PX));
-      cell.dataset['key'] = `emblem-${emblem.id}`;
-      cell.setAttribute('aria-label', `${emblem.name}${has ? '' : ', not kept'}`);
-      if (has)
-        cell.addEventListener('click', () => {
-          tip.hide();
-          context.ask({ kind: ASKS.wearEmblem, item: number });
-        });
-      else cell.setAttribute('aria-disabled', 'true');
-      cell.classList.toggle('gear-open', emblem.id === worn.id);
-      tip.over(cell, () => emblemCard(emblem, has, emblem.id === worn.id), flyout);
-      grid.append(cell);
-    });
-    flyout.append(grid);
-    holder.append(flyout);
-    closeOffHover(holder, choose);
-  }
   return holder;
 }

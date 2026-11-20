@@ -1,4 +1,7 @@
-import { type FrameSource, type Picture, setRamp } from './fpFrames.ts';
+import type { Strip } from '../forge/compose.ts';
+import { bardingLayer, bardingLook, cosmeticRamp, hideShade } from '../forge/cosmetics.ts';
+import type { Rgb } from '../forge/dyes.ts';
+import { type FrameSource, type Picture, layOver, setRamp } from './fpFrames.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
 
 /** How the horse goes: standing, walking or galloping. */
@@ -124,10 +127,39 @@ function centred(pixels: Uint8Array, width: number, height: number, sink: number
   return { width, height, pixels, at: corner };
 }
 
-/** The horse's head and neck from the saddle in the shot, as the forge graded it, on Daggerfall's colours. */
-export async function horsePicture(source: FrameSource, shot: RideShot): Promise<Picture | null> {
-  const [strip, sink] = await Promise.all([source.strip(ridePath(shot.key)), rideSink(source, shot)]);
-  return strip && centred(source.painter.paint(strip, null), strip.width, strip.height, sink);
+/** The horse's head and neck from the saddle in the shot, as the forge graded it, on Daggerfall's colours: its hide in
+ *  the coat worn (none keeps the bay's), the barding worn laid over it. */
+export async function horsePicture(
+  source: FrameSource,
+  shot: RideShot,
+  coat: string | null = null,
+  barding: string | null = null,
+): Promise<Picture | null> {
+  const layer = bardingLayer(barding);
+  const [strip, over, sink] = await Promise.all([
+    source.strip(ridePath(shot.key)),
+    layer ? source.strip(ridePath(`${shot.key}_${bardingLook(layer)}`)) : Promise.resolve(null),
+    rideSink(source, shot),
+  ]);
+  if (!strip) return null;
+  const ramp = cosmeticRamp(coat);
+  const pixels = source.painter.paint(ramp ? coated(strip, ramp) : strip, null);
+  if (over && over.width === strip.width && over.height === strip.height)
+    layOver(pixels, source.painter.paint(over, null));
+  return centred(pixels, strip.width, strip.height, sink);
+}
+
+/** A ride strip with a coat laid on the horse's hide, by its own light, as the third person's horse takes it. */
+function coated(strip: Strip, ramp: readonly Rgb[]): Strip {
+  const data = Uint8ClampedArray.from(strip.data);
+  const rgb = [0, 0, 0];
+  for (let texel = 0; texel < data.length; texel += 4) {
+    if (!data[texel + 3]) continue;
+    [rgb[0], rgb[1], rgb[2]] = [data[texel] ?? 0, data[texel + 1] ?? 0, data[texel + 2] ?? 0];
+    hideShade(rgb, ramp);
+    data.set(rgb, texel);
+  }
+  return { ...strip, data };
 }
 
 /** A hand on the reins in the shot: its rein from the fist to the bit, undyed, with the fist over it in the gauntlets
