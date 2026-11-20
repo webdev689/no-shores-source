@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import { FoePlate, type MarkedFoe, poiseTrackOf, wardOf } from './foePlate.ts';
+import { FoePlate, type MarkedFoe, plateTier, poiseTrackOf, THIRDS, wardOf } from './foePlate.ts';
 import { findAll, onFakePage } from './page.test.ts';
 
 const view: FighterView = {
@@ -160,4 +160,19 @@ test('an ally on the players’ side shows a green health bar; a foe its rank’
     assert.equal(plate.root.dataset['band'], 'red');
     plate.show({ ...rat(2, { side: 'players' }), rank: 1 }, 1 / 60);
     assert.equal(plate.root.dataset['band'], 'green');
+  }));
+
+test('a plate’s tier goes with its foe’s rank, and every bar holds its thirds’ marks, which only an Elite’s and up over a figure show', () =>
+  onFakePage((root) => {
+    assert.deepEqual([1, 2, 3, 4, 5].map(plateTier), ['minor', 'major', 'elite', 'elite', 'elite']);
+    const plate = new FoePlate(root, 'overhead');
+    plate.show({ ...rat(1), rank: 1 }, 0);
+    assert.equal(plate.root.dataset['tier'], 'minor');
+    plate.show({ ...rat(2), rank: 3 }, 1 / 60);
+    assert.equal(plate.root.dataset['tier'], 'elite', 'turned onto an Elite');
+    assert.deepEqual(
+      findAll(root, 'third-mark').map((mark) => mark.style['left']),
+      THIRDS.map((share) => `${share * 100}%`),
+    );
+    assert.deepEqual(THIRDS, [1 / 3, 2 / 3]);
   }));

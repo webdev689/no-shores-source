@@ -1,7 +1,8 @@
 // Whom the player is fighting, after DFO's Enhanced HUD: the foe their blow last reached, the one their soft lock takes,
 // or one winding up a telegraphed blow at them. The target plate shows it for a while after the last exchange and then
 // fades, so a foe left behind stops being furniture at the top of the screen; it goes at once when the foe dies. The
-// foes fought in the last minute, either way, keep their plates over their heads whatever the player looks at.
+// foes fought, either way, keep their plates over their heads whatever the player looks at for as long as the target
+// plate would stand, fading as it fades, so a fight's plates go a few seconds after it moves on, as Destiny's do.
 import type { FightEvent } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';
@@ -12,8 +13,6 @@ export const TARGET_SECONDS = 6;
 export const TARGET_FADE_SECONDS = 1.5;
 /** A foe winding up at the player takes the target unless the player struck another this recently, in seconds. */
 export const THREAT_YIELD_SECONDS = 2;
-/** A foe the player struck or was struck by this recently is one they fought, in seconds. */
-export const FOUGHT_SECONDS = 60;
 
 /** A foe as the target reads it: its number and how it stands. */
 export interface TargetFoe {
@@ -62,7 +61,7 @@ export class FoeTarget {
     this.sinceStruck += seconds;
     this.left -= seconds;
     for (const [id, since] of this.fought) {
-      if (since + seconds >= FOUGHT_SECONDS || !foes.has(id)) this.fought.delete(id);
+      if (since + seconds >= TARGET_SECONDS || !foes.has(id)) this.fought.delete(id);
       else this.fought.set(id, since + seconds);
     }
     const reached: number[] = [];
@@ -95,9 +94,12 @@ export class FoeTarget {
     return { id: this.shown, share: Math.min(1, this.left / TARGET_FADE_SECONDS) };
   }
 
-  /** Whether the player fought `id` in the last minute, struck or struck by, or it is the target. */
-  foughtWith(id: number): boolean {
-    return this.fought.has(id) || this.shown === id;
+  /** How much the fight holds `id`'s plate, 1 down to 0: as the target plate would stand from the last blow it traded
+   *  with the player, struck or struck by. Being the target alone holds none: a foe winding up at the player, or one
+   *  the soft lock let go, shows by the cone like any other. */
+  foughtShare(id: number): number {
+    const since = this.fought.get(id);
+    return since === undefined ? 0 : Math.max(0, Math.min(1, (TARGET_SECONDS - since) / TARGET_FADE_SECONDS));
   }
 
   private take(id: number): void {

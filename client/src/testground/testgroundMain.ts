@@ -460,6 +460,8 @@ async function start(): Promise<void> {
         height: canvas.clientHeight,
         events,
         blocks: COURSE,
+        // The course's flat ground hides nothing.
+        groundAt: null,
         player: fighting.player,
         firstPerson: inFirstPerson,
         pressed: shown.pressed,
