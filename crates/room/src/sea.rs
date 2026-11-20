@@ -200,6 +200,11 @@ impl Sea {
         self.aboard.remove(&player);
     }
 
+    /// The player chases the hostile ship numbered `ship`, or none: within 750 m of her she is met, whatever her temper.
+    pub fn chase(&mut self, player: PlayerId, ship: Option<u32>) {
+        self.pirates.chase(player, ship);
+    }
+
     /// The player leaves the helm and stands behind the wheel on their ship's deck. Her helmsman keeps her course: under
     /// way she sails on, at rest she stays.
     pub fn leave_helm(&mut self, player: PlayerId) -> Result<(), HelmRefused> {

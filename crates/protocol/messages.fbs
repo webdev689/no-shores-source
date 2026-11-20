@@ -56,7 +56,8 @@ table Input {
 // turned to `facing` when it holds one heading (radians clockwise from north).
 // In a fight, her orders instead, in the naval crate's numbers (crates/naval/src/wire.rs), and no points. Off the
 // helm, a step of the player's walk on her deck instead: its controls in the movement crate's order and its number,
-// 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2).
+// 1, 2, 3 and so on from the helm left. Or the helm left (1), or taken again at the wheel (2), or a chase (3): the
+// hostile ship she chases by her number, `chase`, 0 for none.
 table Course {
   points: [double];
   pace: ushort;
@@ -65,6 +66,7 @@ table Course {
   walk_sequence: uint;
   helm: ubyte;
   facing: [double];
+  chase: uint;
 }
 
 // A player's orders for one tick in a fleet room, numbered 1, 2, 3 and so on: her helm (the rudder from -1, to port,
@@ -188,7 +190,8 @@ table Ship {
 // A captain's ship at sea, a pirate's or the Grey Tithe's: her number, where she is, her heading in radians clockwise
 // from north, her faction (1 the Grey Tithe, 2 pirates), her rank (1 Minor to 5 Boss) and the hull her rank sails (0
 // the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop); then her level (0
-// none) and the distance she is sighted from, metres (0 from a room that sends none).
+// none), the distance she is sighted from, metres (0 from a room that sends none), and her way at sea, metres a second
+// at the world's own time (0 from a room that sends none).
 table Pirate {
   id: uint;
   x: double;
@@ -199,6 +202,7 @@ table Pirate {
   hull: ubyte;
   level: ubyte;
   sight: double;
+  way: double;
 }
 
 // A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and

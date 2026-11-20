@@ -134,6 +134,8 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let off_the_steps = protocol::course_bytes(&[[50_000.0, 150_000.0]], 3);
     assert_eq!(input(second, &off_the_steps), TOO_SOON, "one course each half second, dropped as a flood");
     assert_eq!(input(second, b"no course"), NOT_AN_INPUT);
+    assert_eq!(input(second, &protocol::chase_bytes(3)), TAKEN, "a chase is taken, whoever she is");
+    assert_eq!(input(second, &protocol::chase_bytes(0)), TAKEN, "and let go");
     for _ in 0..room::sea::COURSE_EVERY_TICKS {
         room_tick();
     }
@@ -176,7 +178,7 @@ fn the_sea_opens_on_a_layout_with_its_ports_whose_lanes_the_tithe_patrols() {
 }
 
 /// Both tests hold this value: roomDoor.test.ts runs the same sea through WebAssembly, as the servers and the page do.
-pub const SEA_CLASH_HASH: &str = "afe8aa2beff540ac";
+pub const SEA_CLASH_HASH: &str = "b454c407736418e5";
 /// The world time the sea opens at, so the weather its fights sail in is the same every run.
 pub const CLASH_START_S: f64 = 1_790_151_200.0;
 
