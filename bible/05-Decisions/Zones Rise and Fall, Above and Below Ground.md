@@ -52,6 +52,11 @@ The owner's answers to the questions that followed:
 > with stone blocks, as the Chalk Adit is, or the land gains real 3D rock (cave ceilings, overhanging cliffs, natural
 > arches, tunnel mouths, lit and collided like the rest): "Add real 3D rock (Recommended)"
 
+> Asked, since a hamlet's RMB blocks stood only 10 to 32 m apart round its plaza so no ramp up to a raised block
+> fitted, whether in zones with heights a hamlet's blocks are laid with lanes wide enough for a ramp and each block
+> uphill stands on its own terrace with a ramp up from the plaza, the lanes between blocks are gentle slopes, or the
+> hamlet stays whole on one terrace: "Wider lanes, blocks step (Recommended)"
+
 ## What it settles
 
 - **A zone's land varies in height**, instead of flat floors joined by canyon lanes round circular basins: areas on
@@ -71,5 +76,7 @@ The owner's answers to the questions that followed:
   judge, before the Saltgrass Downs and the Driftwood Moors.
 - **The land gains real 3D rock**: cave ceilings, overhanging cliffs, natural arches and tunnel mouths, lit and
   collided like the rest, where the ground's one height a point cannot reach.
+- **A hamlet's blocks step up on terraces** where the brief asks for heights: its blocks are laid with lanes wide enough
+  for a ramp, and each block uphill stands on its own terrace with a ramp up from the plaza.
 
 It builds on [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]. [[Handcrafted Playspaces Are Scripted in Blender]] builds on it.

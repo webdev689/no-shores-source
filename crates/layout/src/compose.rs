@@ -54,6 +54,10 @@ fn shape(count: usize) -> &'static [[f64; 2]] {
 const LANE_M: f64 = 10.0;
 const LANE_WANDER_M: f64 = 22.0;
 const OUT_OF_LINE_M: f64 = 14.0;
+/// Where the brief asks for heights, how wide a hamlet's lanes are, metres, and how much wider some are: room between
+/// its blocks for a ramp up from its plaza to each block's terrace (basins.rs).
+const STEPPED_LANE_M: f64 = 44.0;
+const STEPPED_WANDER_M: f64 = 10.0;
 
 /// Where a cluster's block stands: its place in blocks from the cluster's middle, spaced by `across` and `down` (each a
 /// spacing in blocks and a sideways shift in metres), turned with the cluster.
@@ -74,17 +78,17 @@ fn offset(cell: [f64; 2], turns: u8) -> [f64; 2] {
     }
 }
 
-/// Stands every area's blocks, an area at a time in the order placed, into one seating.
+/// Stands every area's blocks, an area at a time in the order placed, into one seating; where the brief asks for
+/// `heights`, a hamlet's lanes are wide enough for the ramps up to its blocks' terraces.
 #[must_use]
 pub fn stand(
     areas: &[Area],
-    blocks_wanted: &[u8],
-    moduled: &[bool],
+    (blocks_wanted, moduled): (&[u8], &[bool]),
     book: &Book,
-    ground: &Ground,
-    field: &Field,
-    seed: u32,
+    (ground, field): (&Ground, &Field),
+    (seed, heights): (u32, bool),
 ) -> Seating {
+    let (lane, wander) = if heights { (STEPPED_LANE_M, STEPPED_WANDER_M) } else { (LANE_M, LANE_WANDER_M) };
     let section: Vec<bool> =
         (0..field.columns * field.rows).map(|at| field.claimed[at] && field.inside[at] >= 12.0).collect();
     let mut seating = Seating::default();
@@ -118,7 +122,7 @@ pub fn stand(
         let spread = |slot: usize, axis: i64| {
             let draw =
                 |salt: i64| f64::from(hash32(&[i64::from(seed), number as i64, slot as i64, salt]) % 1000) / 1000.0;
-            (1.0 + (LANE_M + LANE_WANDER_M * draw(axis)) / BLOCK_M, (draw(axis + 7) - 0.5) * 2.0 * OUT_OF_LINE_M)
+            (1.0 + (lane + wander * draw(axis)) / BLOCK_M, (draw(axis + 7) - 0.5) * 2.0 * OUT_OF_LINE_M)
         };
         let mut best: Option<(f64, u8)> = None;
         for turns in 0..4_u8 {

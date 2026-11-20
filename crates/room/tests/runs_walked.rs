@@ -143,6 +143,54 @@ fn walked_on(zone: &Zone, body: movement::Body, waypoints: &[[f64; 2]], ticks: u
     (body, next)
 }
 
+/// Whether a body walked as `walked` climbed, hung or mantled on the way: walking, it never should.
+fn walked_climbing(zone: &Zone, from: [f64; 2], waypoints: &[[f64; 2]], ticks: usize) -> (movement::Body, usize, bool) {
+    let mut body = standing_on(&zone.floor, &zone.blocks, from[0], from[1]);
+    let (mut next, mut climbed) = (0, false);
+    for _ in 0..ticks {
+        let Some(target) = waypoints.get(next) else { break };
+        let (east, south) = (target[0] - body.x, target[1] - body.y);
+        if (east * east + south * south).sqrt() < THERE_M {
+            next += 1;
+            continue;
+        }
+        let controls = Controls { forward: 1.0, yaw: libm::atan2(east, -south), ..Controls::default() };
+        body = step_body(&body, &controls, &zone.blocks, &zone.floor, TICK_SECONDS);
+        climbed |= matches!(body.mode, movement::Mode::Climb | movement::Mode::Hang | movement::Mode::Mantle);
+    }
+    (body, next, climbed)
+}
+
+#[test]
+fn every_run_is_walked_into_from_its_area_and_back_out() {
+    let zones = zones();
+    let (mut runs, mut failed) = (0, Vec::new());
+    for zone in &zones {
+        for run in &zone.runs {
+            runs += 1;
+            // From 8 m inside its area's floor, out through its mouth into its first beat, and back.
+            let length = distance(run.line[0], run.line[1]).max(1e-9);
+            let way = [(run.line[1][0] - run.line[0][0]) / length, (run.line[1][1] - run.line[0][1]) / length];
+            let inside = [run.mouth[0] - way[0] * 8.0, run.mouth[1] - way[1] * 8.0];
+            let there_and_back = [run.mouth, run.line[1], run.line[2], run.line[1], run.mouth, inside];
+            let (body, passed, climbed) =
+                walked_climbing(zone, inside, &there_and_back, (120.0 / TICK_SECONDS) as usize);
+            if passed < there_and_back.len() || climbed {
+                failed.push(format!(
+                    "{}: {} stops at {:.0},{:.0} past {passed} of its waypoints{}",
+                    zone.id,
+                    run.name,
+                    body.x,
+                    body.y,
+                    if climbed { ", climbing" } else { "" }
+                ));
+            }
+        }
+    }
+    assert!(runs > 0, "continent 1 has runs");
+    assert!(failed.is_empty(), "{failed:#?}");
+}
+
 #[test]
 fn every_run_is_walked_to_its_door_and_no_further() {
     let zones = zones();
@@ -226,9 +274,44 @@ fn every_terrace_is_walked_up_its_ramps() {
     let zones = zones();
     let (mut ramps, mut failed) = (0, Vec::new());
     for zone in &zones {
-        for &[x1, y1, x2, y2, half, level, _] in zone.terraces.iter().filter(|terrace| terrace[5] == terrace[6]) {
+        // A terrace laid in strips (a hamlet block's) is one terrace: each strip with the strips touching it at its
+        // level, any of them the one a ramp tops onto.
+        let level_ones: Vec<[f64; 7]> =
+            zone.terraces.iter().copied().filter(|terrace| terrace[5] == terrace[6]).collect();
+        let touching = |first: &[f64; 7], second: &[f64; 7]| {
+            first[5] == second[5]
+                && layout::paths::segments_apart(
+                    [[first[0], first[1]], [first[2], first[3]]],
+                    [[second[0], second[1]], [second[2], second[3]]],
+                ) <= first[4] + second[4] + 0.01
+        };
+        let joined = |start: usize| {
+            let mut group = vec![start];
+            let mut at = 0;
+            while at < group.len() {
+                let next: Vec<usize> = (0..level_ones.len())
+                    .filter(|&other| !group.contains(&other) && touching(&level_ones[group[at]], &level_ones[other]))
+                    .collect();
+                group.extend(next);
+                at += 1;
+            }
+            group
+        };
+        let mut seen: Vec<usize> = Vec::new();
+        for (number, &[x1, y1, ..]) in level_ones.iter().enumerate() {
+            if seen.contains(&number) {
+                continue;
+            }
+            let group = joined(number);
+            seen.extend(&group);
+            let level = level_ones[number][5];
             let serving = zone.terraces.iter().filter(|ramp| {
-                ramp[5] == 0.0 && ramp[6] == level && off_line([ramp[2], ramp[3]], [x1, y1], [x2, y2]) < half
+                ramp[5] == 0.0
+                    && ramp[6] == level
+                    && group.iter().any(|&each| {
+                        let [x1, y1, x2, y2, half, ..] = level_ones[each];
+                        off_line([ramp[2], ramp[3]], [x1, y1], [x2, y2]) < half
+                    })
             });
             let mut served = false;
             for &[foot_x, foot_y, top_x, top_y, ..] in serving {

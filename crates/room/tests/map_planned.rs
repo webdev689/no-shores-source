@@ -330,7 +330,7 @@ fn fly_list() {
 }
 
 #[test]
-fn the_vales_hamlet_stands_whole_on_its_terrace_over_the_land() {
+fn the_vales_hamlet_steps_up_its_hillside_block_by_block() {
     let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
     let hamlet = laid.areas.iter().find(|area| area.name == "Gullwing").expect("the hamlet is laid out");
     let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
@@ -349,9 +349,9 @@ fn the_vales_hamlet_stands_whole_on_its_terrace_over_the_land() {
     let (low, high) =
         raised.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), &each| (low.min(each), high.max(each)));
     assert!(raised.len() >= 4, "the hamlet has its buildings: {}", raised.len());
-    // Its one floor rolls only with the massif's own height, never by a step between its blocks.
     assert!(low >= 4.0, "every building stands up on the hamlet's terrace: {raised:?}");
-    assert!(high - low < 2.0, "its buildings stand {:.1} m apart in height: {raised:?}", high - low);
+    // A block up its hillside stands a step over the plaza's, on a terrace of its own.
+    assert!(high - low >= 1.5, "its buildings stand {:.1} m apart in height: {raised:?}", high - low);
 }
 
 #[test]

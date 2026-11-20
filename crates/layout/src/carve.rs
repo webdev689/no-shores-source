@@ -222,7 +222,12 @@ pub fn carve(
                 };
             }
             let water = (area.kind == AreaKind::Mill).then(|| along_water(field, area.at)).flatten();
-            basin(area, seating, paths, water, &mut draw)
+            let basin = basin(area, seating, paths, water, &mut draw);
+            // With heights, a hamlet's blocks step up its hillside on terraces of their own.
+            if heights && area.kind == AreaKind::Hamlet {
+                return Basin { terraces: crate::basins::hamlet_steps(area, seating, paths), ..basin };
+            }
+            basin
         })
         .zip(moduled.iter().chain(std::iter::repeat(&false)))
         .map(|(basin, &module)| if module { Basin { terraces: Vec::new(), ..basin } } else { basin })
@@ -231,8 +236,8 @@ pub fn carve(
     // floor, as does every way graded to it.
     let mut floors: Vec<[f64; 5]> = Vec::new();
     let (mut terraces, mut raised): (Vec<[f64; 7]>, Vec<[f64; 7]>) = (Vec::new(), Vec::new());
-    // With heights, a ruin's spokes rise or fall from its middle to tiers of their own; a hamlet stands whole at its
-    // level, as its blocks start at its plaza's edge, leaving no room for a ramp up to a tier.
+    // With heights, a ruin's spokes rise or fall from its middle to tiers of their own; a hamlet's blocks stand on
+    // terraces of their own (its basin's), on its floor at its level.
     let held = crate::heights::floors_of(&basins, areas, (levels, rise, heights), (&mut floors, &mut raised));
 
     let grades = if levels.iter().any(|&level| level > 0.0) {

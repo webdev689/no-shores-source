@@ -481,6 +481,23 @@ fn a_terraced_massif_stands_in_plateaus_and_walls_every_floor() {
 }
 
 #[test]
+fn a_terraced_top_holds_over_a_raised_floor_without_a_step_where_a_bucket_ends() {
+    // A raised floor along y = 31: its reach ends inside the bucket row from y = 32 to 64 unless it is found as far off
+    // as the top holds over it.
+    let mut sculpt: Vec<Sculpt> = terraced(true).into();
+    sculpt[0].levels = vec![[-1200.0, 31.0, 1200.0, 31.0, 10.0, 0.5, 0.5]];
+    let held = Sculpts::from(sculpt);
+    for column in -20..=20 {
+        let x = f64::from(column) * 53.0;
+        for step in 0..400 {
+            let (y, next) = (40.0 + f64::from(step) * 0.1, 40.0 + f64::from(step + 1) * 0.1);
+            let jump = (held.raise(x, next, 1000.0) - held.raise(x, y, 1000.0)).abs();
+            assert!(jump < 1.0, "the top steps {jump:.1} m between {y:.1} and {next:.1} at {x}");
+        }
+    }
+}
+
+#[test]
 fn a_terraced_massif_stands_whole_round_a_roofed_floor() {
     let roofed = [0.0, 300.0, 400.0, 300.0, 6.0];
     let base = terraced(true);

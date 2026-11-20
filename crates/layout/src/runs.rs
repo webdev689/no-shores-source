@@ -68,6 +68,8 @@ pub const SHORTEST_M: f64 = 200.0;
 pub const LONGEST_M: f64 = 400.0;
 /// How far the first passage runs in from the mouth before the first beat, metres.
 const ENTRY_M: [f64; 2] = [22.0, 34.0];
+/// The least a ledge climbs from the floor it leaves to its end, a share of the massif's height: a fifth.
+const LEDGE_CLIMBS: f64 = 0.2;
 /// A passage between two beats, metres from one's edge to the next's.
 const PASSAGE_M: [f64; 2] = [10.0, 40.0];
 /// How far a passage turns at its bend, radians (about 26 to 49 degrees): enough that one beat never sees the next.
@@ -116,7 +118,14 @@ pub fn find(setting: &Setting, wanted: &[RunBrief], seed: u32) -> Vec<Run> {
                 let (sine, cosine) = land::exact::sin_cos(turn);
                 let mouth = mouth_of(setting, &setting.areas[start], [sine, -cosine])?;
                 (0..3).find_map(|variant| {
-                    let run = shaped(brief, mouth, [sine, -cosine], setting.rise, &|key| {
+                    // An open run leaves its area at the level its floor stands at, raised or not; a building run
+                    // keeps to the land's own level, its entry (a keep's gate, an undercroft's chapel and stair, a
+                    // mine's mouth) built for it. A ledge climbs most of the massif from where it starts.
+                    let base = if brief.kind.building() { 0.0 } else { setting.bare.floor_share(mouth[0], mouth[1]) };
+                    if brief.kind == RunKind::Ledge && end_level(setting.rise) - base < LEDGE_CLIMBS {
+                        return None;
+                    }
+                    let run = shaped(brief, (mouth, base), [sine, -cosine], setting.rise, &|key| {
                         draw(&[start as i64, i64::from(heading), variant, key])
                     });
                     let open = (1..=4)
@@ -165,7 +174,13 @@ fn ahead(from: [f64; 2], way: [f64; 2], out: f64) -> [f64; 2] {
 
 /// A run's shape from its mouth along `way`: three to five beats, each passage bent at its middle and turned back,
 /// so the line wanders either side of its heading; the passages' lengths chosen so the whole is 200 to 400 m.
-fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], rise: f64, draw: &dyn Fn(i64) -> f64) -> Run {
+fn shaped(
+    brief: &RunBrief,
+    (mouth, base): ([f64; 2], f64),
+    way: [f64; 2],
+    rise: f64,
+    draw: &dyn Fn(i64) -> f64,
+) -> Run {
     let between = |range: [f64; 2], key: i64| range[0] + (range[1] - range[0]) * draw(key);
     let count = 3 + (draw(1) * 3.0).floor().min(2.0) as usize;
     // Fewer beats are larger, so a run of three is still long enough.
@@ -177,7 +192,9 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], rise: f64, draw: &dy
     let radii: Vec<f64> = (0..count)
         .map(|at| if at + 1 == count { between(END_M, 10 + at as i64) } else { between(beat_m, 10 + at as i64) })
         .collect();
-    let entry = between(ENTRY_M, 2);
+    // A gorge's long enough for its ramp from the floor it leaves down to its own, no steeper than a rampart climbs.
+    let down = if brief.kind == RunKind::Gorge { base * rise / RAMPART_STEEPEST } else { 0.0 };
+    let entry = between(ENTRY_M, 2).max(down);
     let fixed: f64 = entry + radii[0] + radii.windows(2).map(|pair| pair[0] + pair[1]).sum::<f64>();
     let gaps = (count - 1) as f64;
     let wanted_m = between([SHORTEST_M + 20.0, LONGEST_M - 40.0], 3);
@@ -201,7 +218,7 @@ fn shaped(brief: &RunBrief, mouth: [f64; 2], way: [f64; 2], rise: f64, draw: &dy
         flat.extend([true, false, false, true]);
         beats.push(Beat { at, radius: pair[1], level: 0.0 });
     }
-    let levels = levels_of(brief.kind, &line, &flat, rise);
+    let levels = levels_of(brief.kind, &line, &flat, (rise, base));
     for beat in &mut beats {
         beat.level = line.iter().position(|point| *point == beat.at).map_or(0.0, |at| levels[at]);
     }
@@ -233,28 +250,36 @@ const RAMPART_STEEPEST: f64 = 0.6;
 /// Each line point's level, a share of the massif's height (`rise` metres), by how far along the passages (not the
 /// beats, which are flat: `flat` marks a segment ending in a beat) it lies: a ledge climbs the whole way to its end
 /// level, a rampart climbs to the top no steeper than `RAMPART_STEEPEST` (in its first two fifths at the least),
-/// keeps to it and drops into a cut at its end; the rest keep to the floor.
-fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool], rise: f64) -> Vec<f64> {
+/// keeps to it and drops into a cut at its end; the rest keep to the floor. Each starts at `base`, the level of the
+/// floor it leaves: a ledge and a rampart climb from it, and a gorge's entry ramps down from it to the floor.
+fn levels_of(kind: RunKind, line: &[[f64; 2]], flat: &[bool], (rise, base): (f64, f64)) -> Vec<f64> {
     let mut climbed = vec![0.0];
     for (pair, &level) in line.windows(2).zip(&flat[1..]) {
         let length = if level { 0.0 } else { crate::field::distance(pair[0], pair[1]) };
         climbed.push(climbed.last().copied().unwrap_or(0.0) + length);
     }
     let whole = climbed.last().copied().unwrap_or(0.0).max(1e-9);
-    let end = END_LEVEL.min(1.0 - DOOR_FACE_M / rise.max(1e-9)).max(0.0);
+    let end = end_level(rise);
     // The massif's top stands up to 1.15 of its height (the land crate's sculpts).
     let up = (rise * 1.15 / RAMPART_STEEPEST).clamp(0.4 * whole, 0.75 * whole);
     climbed
         .iter()
         .map(|along| match kind {
-            RunKind::Ledge => end * along / whole,
+            RunKind::Ledge => base + (end - base).max(0.0) * along / whole,
             RunKind::Rampart => {
                 let down = ((along / whole - 0.8) / 0.2).clamp(0.0, 1.0);
-                (along / up).min(1.0) - (1.0 - end) * down
+                base + (1.0 - base) * (along / up).min(1.0) - (1.0 - end) * down
             }
             _ => 0.0,
         })
+        .enumerate()
+        .map(|(at, level)| if at == 0 && kind == RunKind::Gorge { base } else { level })
         .collect()
+}
+
+/// The level a ledge climbs to and a rampart drops to at its end: under the massif's top by a door's face.
+fn end_level(rise: f64) -> f64 {
+    END_LEVEL.min(1.0 - DOOR_FACE_M / rise.max(1e-9)).max(0.0)
 }
 
 /// How far a point lies outside a ring, metres (negative inside).

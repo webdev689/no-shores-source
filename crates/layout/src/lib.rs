@@ -142,7 +142,7 @@ pub fn plan(
     let patrol = node.kind == NodeKind::Patrol;
     let (areas, wanted) = place_areas(node, &field, brief, links, seed);
     let moduled = modules::standing(&areas, brief.heights);
-    let mut seating = compose::stand(&areas, &wanted, &moduled, book, ground, &field, seed);
+    let mut seating = compose::stand(&areas, (&wanted, &moduled), book, (ground, &field), (seed, brief.heights));
     let mut buildings = std::mem::take(&mut seating.buildings);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x400D, draws: 0, into: &mut seating };
     for building in &mut buildings {

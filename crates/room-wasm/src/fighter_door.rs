@@ -17,7 +17,7 @@ thread_local! {
     static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
 }
 
-/// Keeps a course for predicting a fighter without a room: the blocks, five numbers each. Answers whether they made
+/// Keeps a course for predicting a fighter without a room: the blocks, six numbers each (`BLOCK_FLOATS`). Answers whether they made
 /// one.
 pub fn set_course(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);

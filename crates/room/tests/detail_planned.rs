@@ -231,12 +231,13 @@ fn what_stands_on_a_terrace_stands_on_its_level() {
     let (layouts, _, ground) = laid_one();
     let (mut standing, mut failed) = (0, Vec::new());
     for laid in layouts {
-        let levels =
-            laid.basins.iter().flat_map(|basin| basin.terraces.iter()).filter(|terrace| terrace[5] == terrace[6]);
-        for &[x1, y1, x2, y2, half, ..] in levels {
+        // Each level terrace with its area's kind: a graveyard's shelves hold graves.
+        let levels = laid.areas.iter().zip(&laid.basins).flat_map(|(area, basin)| {
+            basin.terraces.iter().filter(|terrace| terrace[5] == terrace[6]).map(move |terrace| (area.kind, terrace))
+        });
+        for (kind, &[x1, y1, x2, y2, half, ..]) in levels {
             let on = |at: [f64; 2]| off_line(at, [x1, y1], [x2, y2]) < half - 1.0;
-            // A shelf (a platform is a disc) holds graves.
-            let shelf = (x2 - x1).abs() + (y2 - y1).abs() > 1.0;
+            let shelf = kind == layout::brief::AreaKind::Graveyard;
             if shelf && !laid.seating.solids.iter().any(|solid| on([solid.at[0], solid.at[1]])) {
                 failed.push(format!("{}: no graves on the shelf at {x1:.0},{y1:.0}", laid.id));
             }

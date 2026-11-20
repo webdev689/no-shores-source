@@ -166,18 +166,25 @@ impl From<Vec<Sculpt>> for Sculpts {
             for (number, outcrop) in sculpt.outcrops.iter().enumerate() {
                 spread(outcrop.reach(), &mut |entry| entry.1.push(number as u32));
             }
+            // A terraced massif's top holds over each climb, run and raised floor out to its hold's fall (`top_at`), so
+            // each is found that far off, or the top would step where a bucket stops finding it.
+            let past = if sculpt.terraced {
+                (HOLD_M + HOLD_FALL_M).max(CLIFF_RUN_M + RUN_BLEND_M)
+            } else {
+                CLIFF_RUN_M + RUN_BLEND_M
+            };
             for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.climbs.iter().enumerate() {
-                let reach = half + CLIFF_RUN_M + RUN_BLEND_M;
+                let reach = half + past;
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.2.push(number as u32));
             }
             for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.runs.iter().enumerate() {
-                let reach = half + CLIFF_RUN_M + RUN_BLEND_M;
+                let reach = half + past;
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.3.push(number as u32));
             }
             for (number, &[x1, y1, x2, y2, half, ..]) in sculpt.levels.iter().enumerate() {
-                let reach = half * (1.0 + WANDER) + CLIFF_RUN_M + RUN_BLEND_M;
+                let reach = half * (1.0 + WANDER) + past;
                 let bounds = [x1.min(x2) - reach, y1.min(y2) - reach, x1.max(x2) + reach, y1.max(y2) + reach];
                 spread(bounds, &mut |entry| entry.4.push(number as u32));
             }

@@ -230,11 +230,13 @@ fn nothing_stands_on_a_runs_line() {
 }
 
 #[test]
-fn a_ledge_climbs_most_of_the_massif() {
+fn a_ledge_climbs_a_fifth_of_the_massif_at_the_least() {
     each_run(&|laid, run, floor| {
         if run.kind == layout::brief::RunKind::Ledge {
+            // From the floor it leaves, raised or not; the massif stands at least 0.7 of its rise anywhere.
             let (mouth, end) = (floor(run.mouth), run.beats.last().map_or(0.0, |beat| floor(beat.at)));
-            assert!(end - mouth >= 0.35 * laid.sculpt.rise, "{}: {} climbs {} m", laid.id, run.name, end - mouth);
+            let least = 0.2 * 0.7 * laid.sculpt.rise;
+            assert!(end - mouth >= least, "{}: {} climbs {:.1} m of {least:.1}", laid.id, run.name, end - mouth);
         }
     });
 }

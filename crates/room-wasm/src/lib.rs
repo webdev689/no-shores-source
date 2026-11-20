@@ -103,7 +103,7 @@ fn keep(opened: Opened) {
     OPEN.with(|open| *open.borrow_mut() = Some(opened));
 }
 
-/// Opens a new room on a course: the spawn's x and y, then the blocks, five numbers each, little-endian floats.
+/// Opens a new room on a course: the spawn's x and y, then the blocks, six numbers each (`BLOCK_FLOATS`), little-endian floats.
 /// Answers whether the numbers made a course.
 pub fn open(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);

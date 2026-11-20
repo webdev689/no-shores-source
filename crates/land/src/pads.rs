@@ -126,9 +126,12 @@ impl Pads {
         nearest
     }
 
-    /// The pads reaching into a rectangle (west, north, east, south), in their order.
+    /// The pads that set the ground's height anywhere in a rectangle (west, north, east, south), in their order: those
+    /// reaching into it, and those within a seam's reach past it (`seam_near`), whose edges the land there blends to.
     #[must_use]
     pub fn within(&self, west: f64, north: f64, east: f64, south: f64) -> Self {
+        let reach = EDGE_M + PAST_M;
+        let (west, north, east, south) = (west - reach, north - reach, east + reach, south + reach);
         let kept = self
             .pads
             .iter()
@@ -212,5 +215,9 @@ mod tests {
         let kept = pads().within(120.0, 120.0, 200.0, 200.0);
         assert_eq!(kept.level_at(140.0, 140.0), Some(20.0));
         assert_eq!(kept.level_at(10.0, 10.0), None);
+        // A pad just past the window's edge still blends the land inside it, so the window keeps it.
+        let near = pads().within(151.0, 100.0, 200.0, 200.0);
+        assert_eq!(near.seam_near(151.0, 120.0), pads().seam_near(151.0, 120.0));
+        assert!(near.seam_near(151.0, 120.0).is_some());
     }
 }
