@@ -220,9 +220,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full
   check. Tested in a local room (`npm run server`, the built page headless): Shape present with his six wares, "From
   level 20" and the right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its
-  colour. Not yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and
-  faction gear, a faction set worn in the page (composed offline from the published strips), and Maren's walk: her
-  start, her coming by the lanes and her welcome of a browser that played the story before are tested offline. The
+  colour; Maren greeting a browser that had played the story before, the keys' hints giving way while she speaks. Not
+  yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction
+  gear, a faction set worn in the page (composed offline from the published strips), and Maren's whole walk (her start
+  and her coming by the lanes are tested offline; headless frames take about a second each). The
   open questions are in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge
   re-render. Sunspire's and Rimeholt's ports are #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
