@@ -172,8 +172,9 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   the shot flies at its chest, an arrow or a bolt laid high enough for its fall over the flight; with none, or one the
   look has turned from, along the look. Holding the trigger fires again as the weapon reloads.
 - **An aimed shot.** Holding the aim raises the weapon: the fighter moves at half its pace with no running, its lock
-  lets go and takes none, and its arms point at the aim's mark, the point under its player's crosshair. A fresh pull
-  fires onto the mark, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
+  lets go and takes none, and it faces where its player looks, through its reload too while the aim is held
+  ([[Aiming, the Figure Faces Straight Ahead]]). A fresh pull fires onto the aim's mark, the point under its player's
+  crosshair, an arrow laid for its fall; with no mark, along the look, and with one inside the fighter's own
   round across the ground (looking straight down at its feet), down onto it along the look's bearing. An aimed shot
   strikes half again as hard as a quick one: a crossbow's or a gun's at once, a bow's by its draw, from a quick shot's
   power at none to half again at a full second; a foe's drawn shot strikes as a quick one, times its might. Letting

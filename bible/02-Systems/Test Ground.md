@@ -346,9 +346,10 @@ so a tick the rules hold it still between steps shows no stand. A sword's swing 
 the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
 the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
 it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
-Sprints]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
-figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
-though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
+Sprints]]). Swinging, casting or aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the
+Figure Faces Straight Ahead]]). Dodging, a figure (the player's, another player's or a foe's) faces the way its hop
+goes, so its roll is drawn going that way, though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls
+the Way It Goes]]).
 
 ## Dressing
 
