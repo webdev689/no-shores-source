@@ -1,11 +1,11 @@
 //! A voyage held as pirates close, by DFO's law for a fast journey: the pace a ship sails at is capped so that she
 //! takes `WARN_S` real seconds or more to reach a pirate's sight along her way, never under `FOE_PACE`, and within
-//! `HOSTILE_NEAR_M` of a pirate she is held to the world's own time, where her guns can answer.
+//! `HOSTILE_NEAR_M` of a pirate who would engage her she is held to the world's own time, where her guns can answer.
 
-use crate::pirates::PIRATE_WAY_M_S;
+use crate::pirates::{PIRATE_WAY_M_S, Pirate};
 use crate::sea::SHIP_SPEED_M_S;
 use crate::sighting::FASTEST_WAY;
-use naval::captain::ENGAGE_RANGE;
+use naval::captain::{ENGAGE_RANGE, wary_takes};
 use naval::fight::HOSTILE_NEAR_M;
 
 /// Real seconds of warning a ship always has before a pirate's sight.
@@ -39,9 +39,10 @@ pub fn step_down(rate: f64) -> f64 {
 }
 
 /// The pace a ship set to `pace` sails at, at `at` heading `heading` (radians clockwise from north), with pirates at
-/// `pirates`: her pace, held down as one's sight comes near along her way, and to 1 within the hold of any.
+/// `pirates`, each with whether she would engage this ship (`holds`): her pace, held down as one's sight comes near
+/// along her way, and to 1 within the hold of one that would engage.
 #[must_use]
-pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterator<Item = [f64; 2]>) -> u16 {
+pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterator<Item = ([f64; 2], bool)>) -> u16 {
     if pace == 0 {
         return 0;
     }
@@ -49,9 +50,9 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
     // The fastest rank's way, so the warning holds whoever comes.
     let closing = SHIP_SPEED_M_S + PIRATE_WAY_M_S * FASTEST_WAY;
     let (mut ratio, mut held) = (f64::INFINITY, false);
-    for [x, y] in pirates {
+    for ([x, y], engages) in pirates {
         let (east, south) = (x - at[0], y - at[1]);
-        held |= (east * east + south * south).sqrt() <= HOSTILE_NEAR_M;
+        held |= engages && (east * east + south * south).sqrt() <= HOSTILE_NEAR_M;
         ratio = ratio.min(metres_to_reach(east, south, REACH_M, way) / (WARN_S * closing));
     }
     if held {
@@ -65,6 +66,15 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let rate = capped as u16;
     rate
+}
+
+/// Whether a hostile ship holds a voyage at `at`, its hull at `hull` of whole, that she would meet: she is within her
+/// hold of it and bold, or chased by its player (`chased`, her number), or wary and one she would fall on
+/// (`wary_takes`). A ship beyond her hold, or one that will not engage, caps the pace only by the ladder.
+#[must_use]
+pub fn holds(pirate: &Pirate, at: [f64; 2], chased: Option<u32>, hull: f64) -> bool {
+    libm::hypot(pirate.x - at[0], pirate.y - at[1]) <= HOSTILE_NEAR_M
+        && (pirate.bold || chased == Some(pirate.id) || wary_takes(pirate.commission, hull))
 }
 
 #[cfg(test)]

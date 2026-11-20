@@ -15,7 +15,7 @@ use crate::clash::{Clash, ship_at, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates, Voyager};
 use crate::sea_weather::SeaWeather;
-use crate::threat::held_pace;
+use crate::threat::{held_pace, holds};
 use core::f64::consts::{PI, TAU};
 use movement::{Controls, TICK_SECONDS};
 use naval::fight::Orders;
@@ -369,10 +369,15 @@ impl Sea {
             aboard.tick(&self.deck, self.clock);
         }
         let time = self.clock as f64 * TICK_SECONDS;
-        let pirates: Vec<[f64; 2]> = self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
+        let (pirates, sailing_count) = (self.pirates(), self.pirates.sailing.len());
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
+            // A ship in a clash is joined by a player who comes in sight of it, so she holds as a bold one does.
+            let (chased, hull) = (self.pirates.chased(*player), berth.kept[0]);
+            let pirates: Vec<([f64; 2], bool)> = (pirates.iter().enumerate())
+                .map(|(at, p)| ([p.x, p.y], at >= sailing_count || holds(p, [ship.x, ship.y], chased, hull)))
+                .collect();
             // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
             let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, pirates.iter().copied());
@@ -569,3 +574,7 @@ mod ports;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;
+
+#[cfg(test)]
+#[path = "fight_measure_tests.rs"]
+mod fight_measure_tests;

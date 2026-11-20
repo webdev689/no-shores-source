@@ -1,5 +1,5 @@
 use super::*;
-use crate::captain::wary_takes;
+use crate::captain::{CHASE_GIVE_UP_S, Temper, wary_takes};
 use crate::damage::{Hurt, SINK_SECONDS, Zone};
 use crate::ranks::{PIRATES, Rank};
 use crate::rigging::masts_of;
@@ -182,4 +182,17 @@ fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
         [crate::arms::arms_of(elite.hull()), crate::arms::arms_of(HullKind::Sloop)],
     );
     assert_eq!(wary_takes(elite, 0.6), odds >= crate::captain::WARY_ODDS, "DFO's odds of five to four");
+}
+
+#[test]
+fn a_wary_captain_who_will_not_engage_breaks_off_once_out_of_reach_for_her_give_up_time() {
+    let commission = Commission { faction: PIRATES, rank: Rank::Minor };
+    let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Wary).unwrap();
+    assert!(!wary_takes(commission, 1.0), "she will not fall on a whole Sloop");
+    let mut fight = Fight::meet(at(0.0, 0.0), at(0.0, -400.0), commission, seed, &Open, 0.0);
+    let early = run(&mut fight, ((CHASE_GIVE_UP_S - 5.0) * 60.0) as u32);
+    assert!(!early.iter().any(|event| matches!(event, Event::Gone { .. })), "not before her give-up time");
+    let late = run(&mut fight, 10 * 60);
+    assert!(late.contains(&Event::Gone { ship: CAPTAIN, end: End::Gone }), "she has broken off: {:?}", fight.over());
+    assert_eq!(fight.over(), Some(End::Gone), "and the fight is over for both");
 }

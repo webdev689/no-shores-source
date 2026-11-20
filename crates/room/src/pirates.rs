@@ -11,7 +11,8 @@ use crate::PlayerId;
 use crate::sea::SHIP_SPEED_M_S;
 use crate::sighting::{
     AHEAD_ARC_RAD, COME_OUT, Chart, HELM_TURN_RAD_S, KEEP_SHARE, LANE_REACH_M, SIGHT_LEAST_M, SLOW_PACE, WaterHere,
-    along_lane, faction_of, intercept_heading, level_in, meeting_arc, rank_for, sight_for, turned_toward, way_of,
+    along_lane, faction_of, hostile_chance, intercept_heading, level_in, meeting_arc, rank_for, sight_for,
+    turned_toward, way_of,
 };
 use naval::captain::course::heading_to;
 use naval::captain::{ENGAGE_RANGE, Temper, temper_for};
@@ -25,10 +26,6 @@ use std::f64::consts::TAU;
 /// (seconds).
 pub const FIRST_ROLL_S: f64 = 30.0;
 pub const ROLL_EVERY_S: [f64; 2] = [60.0, 140.0];
-/// A roll's chance of a ship, and of that ship being hostile (DFO's open sea: 30 of its factions' 100); any other
-/// ship does not sail here.
-pub const SHIP_CHANCE: f64 = 0.8;
-pub const PIRATE_SHARE: f64 = 0.3;
 /// No roll launches while this many hostile ships sail within their sight of the player.
 pub const DENSITY: usize = 3;
 /// A hostile ship stands no nearer than this to any player (metres).
@@ -188,6 +185,12 @@ impl Pirates {
         };
     }
 
+    /// The ship the player chases, if any.
+    #[must_use]
+    pub fn chased(&self, player: PlayerId) -> Option<u32> {
+        self.chasing.get(&player).copied()
+    }
+
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
     /// nearest her if it is farther than hers, sails on and goes once no player keeps her; then each player's roll
     /// comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player this tick, with that player, for
@@ -246,11 +249,11 @@ impl Pirates {
             }
             *wait = self.draws.between(ROLL_EVERY_S[0], ROLL_EVERY_S[1]);
             let near = self.sailing.iter().filter(|pirate| pirate.sees(ship.at)).count();
-            if near >= DENSITY || self.draws.draw() >= SHIP_CHANCE || self.draws.draw() >= PIRATE_SHARE {
+            // Home waters send no one: the roll is spent. Elsewhere the water's band sets its chance.
+            let Some(water) = chart.water(ship.at) else { continue };
+            if near >= DENSITY || self.draws.draw() >= hostile_chance(water.levels) {
                 continue;
             }
-            // Home waters send no one: the roll is spent.
-            let Some(water) = chart.water(ship.at) else { continue };
             if let Some(pirate) = self.come(ship, water, chart, &nearest) {
                 self.sailing.push(pirate);
                 self.next_id += 1;

@@ -6,11 +6,11 @@ use super::{
     DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S, Sailor,
     carry_of, floats, her_of, sail_hurt, sighting_of, sink_depth,
 };
-use crate::arms::{LARGE_BOAT, arms_of, unposed};
-use crate::captain::Mode;
+use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
+use crate::captain::{CHASE_GIVE_UP_S, Mode};
 use crate::damage::{PLAYER_CREW_TOUGHNESS, SHIP_TOUGHNESS, State, Zone, founder, shot_harm};
-use crate::gunnery::{Lay, volley};
+use crate::gunnery::{Lay, lay, volley};
 use crate::guns::{fire_chance, rig_fire, shot_reach};
 use crate::rigging::Torn;
 use crate::shots::{Flag, ShipId, ShotEvent, step_balls};
@@ -270,25 +270,39 @@ impl Fight {
         }
     }
 
-    /// A captain who has sunk leaves the fight, as does one past every ship she may fight (each player's, and each
-    /// afloat captain's of another faction) and not fighting.
     fn see_off(&mut self, events: &mut Vec<Event>) {
-        let foes: Vec<(Flag, [f64; 2])> = self
+        let foes: Vec<(Flag, [f64; 2], f64)> = self
             .ships
             .values()
             .filter(|vessel| vessel.in_fight() && vessel.damage.fighting())
-            .map(|vessel| (vessel.flag(), [vessel.ship.x, vessel.ship.y]))
+            .map(|vessel| {
+                let reach =
+                    lay(&vessel.ship, &vessel.pose, arms_of(vessel.hull), Side::Starboard, vessel.guns.load, 0.0, None);
+                (vessel.flag(), [vessel.ship.x, vessel.ship.y], reach.reach)
+            })
             .collect();
+        // The ships a captain engages: one of them stays in her fight however far she is out of reach.
+        let hunted: Vec<ShipId> = (self.ships.values().filter_map(|vessel| vessel.command()))
+            .filter(|command| command.gone.is_none() && command.her.mode == Mode::Engage)
+            .filter_map(|command| command.her.target())
+            .collect();
+        let clock = self.clock;
         for id in self.ids(true) {
             let Some(vessel) = self.ships.get_mut(&id) else { continue };
             let (at, own) = ([vessel.ship.x, vessel.ship.y], vessel.flag());
-            let apart = foes.iter().filter(|(flag, _)| *flag != own).map(|(_, foe)| distance(at, *foe));
-            let nearest = apart.fold(f64::INFINITY, f64::min);
+            let others = || foes.iter().filter(|(flag, ..)| *flag != own);
+            let nearest = others().map(|(_, foe, _)| distance(at, *foe)).fold(f64::INFINITY, f64::min);
+            let out_of_reach = !hunted.contains(&id) && others().all(|(_, foe, reach)| distance(at, *foe) > *reach);
             let (sunk, struck) = (vessel.damage.state == State::Sunk, vessel.damage.state == State::Struck);
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
+            let engaging = command.her.mode == Mode::Engage;
+            // Out of every foe's guns and not engaging: she breaks off once that has lasted her give-up time.
+            command.out_of_reach_since =
+                if out_of_reach && !engaging && !struck { command.out_of_reach_since.or(Some(clock)) } else { None };
+            let broke_off = command.out_of_reach_since.is_some_and(|since| clock - since >= CHASE_GIVE_UP_S);
             let end = if sunk {
                 Some(End::Sunk)
-            } else if nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage && !struck {
+            } else if (nearest > DESPAWN_BEYOND || broke_off) && !engaging && !struck {
                 // One who struck lies hove to for boarders until she is scuttled.
                 Some(End::Gone)
             } else {
