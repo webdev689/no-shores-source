@@ -43,7 +43,7 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
 - A hull rides the [[Water]]'s swell: its height, pitch and roll from the swell under its bow, stern and beam, in place
   of the mod's sine bob over a flat sea.
 - It grounds on the [[Land]]: the ground's depth under its hull against its draft, in place of Daggerfall's tile map.
-- Wind: one steady wind along the swell's bearing, until weather drives both.
+- Wind: the weather's wind where a ship is ([[Weather]]); the long swell stays one swell.
 - The water parts round a hull: no water inside it, a wake and bow spray (ripples and foam).
 
 ## What stays behind

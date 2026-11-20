@@ -3,8 +3,9 @@
 // quietly; the player fighting (striking, struck, or a foe engaging them) brings in the fight's layers; several foes,
 // an Elite or a Miniboss, or the player's health low bring in the peak; a Boss engaged plays its own score, its phase
 // by its health. Each mood holds a few seconds after its cause, so a fight falls back to silence only once no foe has
-// engaged for a while. A death, a boss's fall, a boss's waking and a fight won are moments of their own (stings). Pure:
-// the game's state and the memory in, the mood, the score and any sting out; the director plays them on bar lines.
+// engaged for a while. A death, a boss's fall, a boss's waking and a fight won are moments of their own (stings). At
+// sea out of danger a sea song comes now and then, in fair skies, with minutes of silence after. Pure: the game's
+// state, the memory and a die in, the mood, the score and any sting out; the director plays them on bar lines.
 
 import type { Climate, Place } from '../place.ts';
 import type { Role } from './score.ts';
@@ -65,13 +66,24 @@ export interface HeardFoe {
 }
 
 /** The sea as the music hears it: whether the player is in a fight, the hostile captains in it and the strongest's
- *  rank, the player's hull as a share, and the hostile ships near. */
+ *  rank, the player's hull as a share, the hostile ships near, and whether she lies off a coast to land on. */
 export interface HeardSea {
   readonly fighting: boolean;
   readonly captains: number;
   readonly strongest: number;
   readonly hull: number;
   readonly hostilesNear: number;
+  readonly landfall: boolean;
+}
+
+/** The sky as the music hears it: how hard rain or snow falls, the storm, the fog, the wind (m/s), and whether it
+ *  is night, dusk gone. */
+export interface HeardSky {
+  readonly falling: number;
+  readonly storm: number;
+  readonly fog: number;
+  readonly windMS: number;
+  readonly night: boolean;
 }
 
 /** One frame as the music hears it: where the player is, whether they lie dead, their health as a share, whether
@@ -84,6 +96,7 @@ export interface Hearing {
   readonly kills: number;
   readonly foes: readonly HeardFoe[];
   readonly sea: HeardSea | null;
+  readonly sky: HeardSky | null;
 }
 
 /** The ranks: an Elite and a Miniboss bring the peak, a Boss its own score. */
@@ -118,6 +131,12 @@ export interface Memory {
   readonly fell: number;
   readonly mood: Mood;
   readonly cue: Cue;
+  /** The sea song playing out of danger and when it ends; none before the clock reaches `restUntil`. */
+  readonly voyage: { readonly song: SeaSong; readonly until: number } | null;
+  readonly restUntil: number;
+  /** Whether she lay off a coast to land on last frame, and when landfall last began. */
+  readonly offCoast: boolean;
+  readonly landedAt: number;
 }
 
 export const QUIET: Memory = {
@@ -132,7 +151,56 @@ export const QUIET: Memory = {
   fell: -Infinity,
   mood: 'silent',
   cue: { kind: 'none' },
+  voyage: null,
+  restUntil: -Infinity,
+  offCoast: false,
+  landedAt: -Infinity,
 };
+
+/** After a sea song, or danger, this many seconds of silence at least, and at most, before another may come. */
+export const REST_S: readonly [number, number] = [4 * 60, 8 * 60];
+/** A sea song is never played in rain or snow this hard, a storm this strong, or fog this thick. */
+const FOUL = { falling: 0.05, storm: 0.15, fog: 0.3 } as const;
+/** Under this wind, m/s, the sea is still. */
+export const STILL_WIND_MS = 4;
+
+/** Whether the sky is fair enough for a sea song; with no reading yet, it is. */
+export const fairForSong = (sky: HeardSky | null): boolean =>
+  !sky || (sky.falling < FOUL.falling && sky.storm < FOUL.storm && sky.fog < FOUL.fog);
+
+/** The sea song for a fair sky: the night's after dusk, the still sea's in a light wind, else the open sea's. */
+export const voyageSongFor = (sky: HeardSky | null): SeaSong =>
+  sky?.night ? 'night' : sky && sky.windMS < STILL_WIND_MS ? 'calm' : 'open';
+
+/** How the law hears the sea songs: each one's length played once through, seconds, and a die for the rests. */
+export interface SongClock {
+  readonly lengthOf: (song: SeaSong) => number;
+  readonly random: () => number;
+}
+const SONG_CLOCK: SongClock = { lengthOf: () => 180, random: Math.random };
+
+/** The sea song out of danger this frame, and when the next may come. Danger, leaving the sea or a sky turning foul
+ *  ends one and begins a rest; landfall plays as the ship comes off a coast, whatever the rest or the sky. */
+function voyageOf(
+  memory: Memory,
+  clock: number,
+  calm: boolean,
+  hearing: Hearing,
+  songs: SongClock,
+): Pick<Memory, 'voyage' | 'restUntil' | 'offCoast' | 'landedAt'> {
+  // Ashore she lies at the coast: sailing out from it is no landfall.
+  const offCoast = hearing.sea ? hearing.sea.landfall : true;
+  const rest = () => clock + REST_S[0] + (REST_S[1] - REST_S[0]) * songs.random();
+  let { voyage, restUntil, landedAt } = memory;
+  const ended = voyage && (!calm || clock >= voyage.until || (voyage.song !== 'landfall' && !fairForSong(hearing.sky)));
+  if (ended) [voyage, restUntil] = [null, rest()];
+  if (!calm) return { voyage, restUntil: Math.max(restUntil, clock + REST_S[0]), offCoast, landedAt };
+  const begin = (song: SeaSong) => ({ song, until: clock + songs.lengthOf(song) });
+  // A ship along the edge of a coast's reach comes off it again and again: landfall comes once in a rest's while.
+  if (offCoast && !memory.offCoast && clock - landedAt >= REST_S[0]) [voyage, landedAt] = [begin('landfall'), clock];
+  else if (!voyage && clock >= restUntil && fairForSong(hearing.sky)) voyage = begin(voyageSongFor(hearing.sky));
+  return { voyage, restUntil, offCoast, landedAt };
+}
 
 export interface Verdict {
   readonly memory: Memory;
@@ -172,11 +240,12 @@ export function seaSongFor(sea: HeardSea): SeaSong {
 }
 
 /** The music for one frame, `seconds` after the last. */
-export function hear(memory: Memory, hearing: Hearing, seconds: number): Verdict {
+export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: SongClock = SONG_CLOCK): Verdict {
   const clock = memory.clock + seconds;
   if (hearing.dead) {
     const sting: Sting | null = memory.dead ? null : { kind: 'defeat', cue: memory.cue };
-    return { memory: { ...QUIET, clock, dead: true }, mood: 'silent', cue: { kind: 'none' }, sting };
+    const rest = { restUntil: Math.max(memory.restUntil, clock + REST_S[0]) };
+    return { memory: { ...QUIET, ...rest, clock, dead: true }, mood: 'silent', cue: { kind: 'none' }, sting };
   }
   const { place, foes, sea } = hearing;
   let sting: Sting | null = null;
@@ -225,9 +294,11 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number): Verdict
         : 'silent';
   const playing = mood !== 'silent';
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
+  const voyage = voyageOf(memory, clock, atSea && !playing && !boss, hearing, songs);
   let cue: Cue = { kind: 'none' };
   if (boss) cue = { kind: 'boss', boss: boss.boss, part: bossPart(bossFoe?.health ?? 1) };
   else if (seaSong) cue = { kind: 'sea', song: seaSong };
+  else if (voyage.voyage) cue = { kind: 'sea', song: voyage.voyage.song };
   else if (playing && place.kind !== 'sea') cue = { kind: 'family', family: FAMILY_OF[place.climate] };
   else if (place.kind === 'social') cue = { kind: 'social' };
   // A boss part holds while the boss is out of sight a moment: its health is not heard then.
@@ -235,7 +306,20 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number): Verdict
   const fightOver = (memory.mood === 'combat' || memory.mood === 'peak') && (mood === 'tension' || mood === 'silent');
   const killed = (memory.killed || hearing.kills > 0) && mood !== 'silent' && mood !== 'tension';
   if (!sting && fightOver) sting = { kind: memory.killed ? 'victory' : 'cadence', cue: memory.cue };
-  const next: Memory = { clock, lastFight, lastPeak, lastDanger, dead: false, boss, seaSong, killed, fell, mood, cue };
+  const next: Memory = {
+    ...voyage,
+    clock,
+    lastFight,
+    lastPeak,
+    lastDanger,
+    dead: false,
+    boss,
+    seaSong,
+    killed,
+    fell,
+    mood,
+    cue,
+  };
   return { memory: next, mood, cue, sting };
 }
 

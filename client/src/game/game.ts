@@ -33,7 +33,7 @@ import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
-import { type Drawer, GameScene } from './scene.ts';
+import { type Drawer, GameScene, type Overlay } from './scene.ts';
 import { Sea } from './sea.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
@@ -451,11 +451,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
     const hands = walker.inFirstPerson
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
+      ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
-    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands });
+    const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
+    scene.draw(shown.shot, size, clock, seconds, standing([], shown.figures, fight), { after: hands, carried });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
@@ -494,7 +495,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     });
     for (const stir of shown.stirs) scene.stir(stir);
     music.atSea(here, seconds);
-    const voyage = { sailing: shown.sailing, pace: shown.pace, deck: here.helmView || here.aboard.active };
+    const voyage = { ...shown, deck: here.helmView || here.aboard.active, feet: walker.player.body };
     ambience.atSea(landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
@@ -520,9 +521,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const after = mapFrame
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => heldMap?.draw(encoder, view, mapFrame)
       : shown.firstPerson
-        ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus };
+    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true };
     scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {

@@ -67,6 +67,7 @@ const island: Hearing = {
   kills: 0,
   foes: [],
   sea: null,
+  sky: null,
 };
 const brute = (more: Partial<HeardFoe>): HeardFoe => ({
   id: 1,

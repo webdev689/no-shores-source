@@ -379,15 +379,14 @@ never while a press is held. Each press is an ask the room answers.
 
 ## World sounds
 
-`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
-[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the
-owner has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the [[Test
+Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner has
+picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
 `content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. A pick is Freesound's,
-put in by `tools/freesound/publish.py`, or one of DFO's own, by `tools/freesound/own.py`
-([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have, plays any but the one it
-played last. The Duskraven plays its raven with a fire of its own under it
-([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
-(`combat/worldCues.ts`):
+put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
+`tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
+plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it ([[The Duskraven
+Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules (`combat/worldCues.ts`):
 
 - **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
   lands (never before the swing begins, and not once a dodge or a flinch has cut it short), or as a foe's wound-up blow

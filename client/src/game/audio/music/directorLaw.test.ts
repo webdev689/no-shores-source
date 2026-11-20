@@ -17,7 +17,16 @@ import {
 } from './directorLaw.ts';
 
 const ISLAND: Hearing['place'] = { kind: 'island', climate: 'swamp', node: 'patrol' };
-const calm: Hearing = { place: ISLAND, dead: false, health: 1, struck: false, kills: 0, foes: [], sea: null };
+const calm: Hearing = {
+  place: ISLAND,
+  dead: false,
+  health: 1,
+  struck: false,
+  kills: 0,
+  foes: [],
+  sea: null,
+  sky: null,
+};
 const foe = (more: Partial<HeardFoe> = {}): HeardFoe => ({
   id: 1,
   name: 'Brute',
@@ -28,7 +37,7 @@ const foe = (more: Partial<HeardFoe> = {}): HeardFoe => ({
   engaged: false,
   ...more,
 });
-const quietSea: HeardSea = { fighting: false, captains: 0, strongest: 0, hull: 1, hostilesNear: 0 };
+const quietSea: HeardSea = { fighting: false, captains: 0, strongest: 0, hull: 1, hostilesNear: 0, landfall: false };
 
 /** The law run over frames of `seconds` each, from `memory`; the last verdict, with every sting met on the way. */
 function run(frames: readonly Hearing[], memory: Memory = QUIET, seconds = 0.1) {
@@ -157,7 +166,7 @@ test("the social space plays Saltmere's theme while nothing threatens", () => {
   assert.equal(run([social]).mood, 'silent');
 });
 
-test('sailing is ambience alone; a hostile ship closing brings the tension, a fight the fight, held in one sea song', () => {
+test('at sea a hostile ship closing brings the tension, a fight the fight, held in one sea song', () => {
   const sailing: Hearing = { ...calm, place: { kind: 'sea' }, sea: quietSea };
   assert.equal(run([sailing]).mood, 'silent');
   const closing = run([{ ...sailing, sea: { ...quietSea, hostilesNear: 1, strongest: 2 } }]);

@@ -3,6 +3,8 @@
 use crate::helm::WIND_RATED;
 use land::ground::{Ground, WaterAt};
 use land::sea::Swell;
+use sky::air::Air;
+use sky::weather::weather_at;
 
 /// The bed's height at a point and the water's surface over it, metres; no surface where the point is dry.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -51,8 +53,27 @@ impl Waters for OpenSea<'_> {
     }
 }
 
-/// The one steady wind until weather drives it: where the swell runs, at a ship's rated wind (m/s, east and south).
+/// The wind along the swell at a ship's rated strength (m/s, east and south): a still world's, which the rules' tests
+/// sail in where no weather is asked.
 #[must_use]
 pub fn steady_wind(swell: &Swell) -> [f64; 2] {
     [WIND_RATED * libm::sin(swell.bearing), -WIND_RATED * libm::cos(swell.bearing)]
+}
+
+/// The weather's usual wind, m/s: the breeze a ship is rated for.
+pub const USUAL_WIND_M_S: f64 = 6.5;
+
+/// The weather's wind (m/s, east and south) as a ship's sails feel it: scaled so its usual breeze is her rated wind.
+/// The helm holds it within her shares, so a gale drives her at most twice as hard and a near calm still gives way.
+#[must_use]
+pub fn sail_wind(weather_wind: [f64; 2]) -> [f64; 2] {
+    weather_wind.map(|part| part * WIND_RATED / USUAL_WIND_M_S)
+}
+
+/// The sails' wind at a point of the map at `world_s`, in the open sea's air. It holds for a minute of world time,
+/// read at the minute's start, so a browser predicting a ship anywhere in the minute reads the room's wind exactly.
+#[must_use]
+pub fn sea_wind_at(at: [f64; 2], world_s: f64) -> [f64; 2] {
+    let minute = (world_s / 60.0).floor() * 60.0;
+    sail_wind(weather_at(&Air::of_sea(at[1]), at[0], at[1], 0.0, minute).wind)
 }

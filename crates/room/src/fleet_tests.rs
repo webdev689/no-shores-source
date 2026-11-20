@@ -168,12 +168,14 @@ fn her_ship_is_her_orders_stepped_by_the_rules_to_the_bit() {
     let (fleet, player) = rowing(120);
     let swell = Swell::default();
     let waters = OpenSea { swell: &swell };
-    let wind = steady_wind(&swell);
     let sail = naval::arms::LARGE_BOAT.sail;
     let whole = naval::fight::Hurts::from_numbers(false, sail, sail);
     let mut ship =
         Ship { x: AT[0], y: AT[1], heading: AT[2], ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    for helm in std::iter::once(STANDING.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120)) {
+    let helms = std::iter::once(STANDING.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120));
+    // Her first helm is stepped on the room's first tick, in the weather's wind where she is at each tick's time.
+    for (tick, helm) in (1..).zip(helms) {
+        let wind = sea_wind_at([ship.x, ship.y], f64::from(tick) * TICK_SECONDS);
         ship = sail_hurt(&ship, helm, whole, &waters, wind, 0.0).0;
     }
     let room = ship_of(&fleet, player).map(|ship| ship.to_floats().map(f64::to_bits));

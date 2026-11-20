@@ -39,7 +39,7 @@ fn rival_ships_fight_where_the_fight_has_them_until_one_strikes_or_runs_and_the_
     while !clashes.is_empty() && ticks < 20 * 60 * 60 {
         ticks += 1;
         let time = f64::from(ticks) / 60.0;
-        step_clashes(&mut clashes, &mut pirates, &players, (&Open, wind, time));
+        step_clashes(&mut clashes, &mut pirates, &players, (&Open, |_| wind, time));
         for clash in &clashes {
             for (shown, (id, _)) in clash.ships().zip(&clash.crews) {
                 let ship = clash.fight.vessel(*id).map(|vessel| vessel.ship);
@@ -68,12 +68,12 @@ fn the_one_who_strikes_leaves_the_sea_and_the_winner_sails_on_from_where_she_lie
     let mut clashes = vec![Clash::begin(met, &Open, 0.0)];
     let wind = steady_wind(&land::sea::Swell::default());
     let mut pirates = Pirates::default();
-    step_clashes(&mut clashes, &mut pirates, &[[0.0, 1_000.0]], (&Open, wind, 1.0 / 60.0));
+    step_clashes(&mut clashes, &mut pirates, &[[0.0, 1_000.0]], (&Open, |_| wind, 1.0 / 60.0));
     let Some(loser) = clashes[0].fight.ships.get_mut(&(CAPTAIN + 1)) else { panic!("the second ship") };
     let hull = loser.damage.hull - loser.damage.max_hull * 0.2;
     let struck = loser.damage.apply(naval::damage::Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     assert_eq!(struck, Some(State::Struck));
-    step_clashes(&mut clashes, &mut pirates, &[[0.0, 1_000.0]], (&Open, wind, 2.0 / 60.0));
+    step_clashes(&mut clashes, &mut pirates, &[[0.0, 1_000.0]], (&Open, |_| wind, 2.0 / 60.0));
     assert!(clashes.is_empty(), "nobody fights on");
     let sailing: Vec<(u32, u32)> = pirates.sailing.iter().map(|pirate| (pirate.id, pirate.seed)).collect();
     assert_eq!(sailing, [(3, met[0].seed)]);
@@ -88,7 +88,7 @@ fn a_clash_no_player_is_near_leaves_the_sea_and_one_a_player_sights_is_theirs() 
     let wind = steady_wind(&land::sea::Swell::default());
     let mut clashes = vec![Clash::begin(met, &Open, 0.0)];
     let mut pirates = Pirates::default();
-    step_clashes(&mut clashes, &mut pirates, &[[3_000.0, 0.0]], (&Open, wind, 0.0));
+    step_clashes(&mut clashes, &mut pirates, &[[3_000.0, 0.0]], (&Open, |_| wind, 0.0));
     assert!(clashes.is_empty() && pirates.sailing.is_empty(), "past every player, gone");
     let mut clashes = vec![Clash::begin(met, &Open, 0.0)];
     assert!(sighted(&mut clashes, [1_200.0, 0.0]).is_none(), "800 m from the nearest: out of sight");
