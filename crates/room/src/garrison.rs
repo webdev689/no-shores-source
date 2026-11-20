@@ -1,15 +1,18 @@
-//! A node's garrison: the Grey Tithe's groups at posts on the navmesh its room bakes by its first spawn, idle and
-//! facing outward, each foe at least SPAWN_CLEAR from every spawn. The room's world seed, mixed from the node's id,
-//! draws who stands where, each foe's level from its island's band and its shield, so every machine stands the same;
-//! the seas raise the levels once the host sets them. A cleared group stands again STAND_AGAIN later, once no player is
-//! within CLEAR_AROUND of its post and the living foes leave it room; each foe is leashed to its post (the foes crate).
+//! A node's garrison: the Grey Tithe's groups at posts on the navmesh its room bakes by its first spawn, each foe at
+//! least SPAWN_CLEAR from every spawn. Each group walks a beat from its post (`beat.rs`), but for a Boss's or a
+//! Miniboss's, which holds its post. The room's world seed, mixed from the node's id, draws who stands where, each
+//! foe's level from its island's band and its shield, and each beat, so every machine stands the same; the seas raise
+//! the levels once the host sets them. A cleared group stands again STAND_AGAIN later, once no player is within
+//! CLEAR_AROUND of its post and the living foes leave it room; each foe is leashed to its place in its group.
 //! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
 use crate::{Floor, NODE_FOES_MOST, NodeKind, Room, SEED};
+use ::foes::Alertness;
 use ::foes::Rank::{Boss, Elite, Major, Miniboss, Minor};
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, HIGH_ASSESSOR, MARKSMAN, REEVE, RUNNER};
 use ::foes::{Rank, foe_type};
+use beat::{Beat, LAG};
 use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
@@ -35,7 +38,9 @@ const LATTICE: f64 = 5.0;
 const FROM_EDGE: f64 = 10.0;
 const FROM_SQUARE: f64 = 5.0;
 const POSTS_APART: f64 = 20.0;
-const SPREAD: f64 = 2.5;
+pub(crate) const SPREAD: f64 = 2.5;
+/// The beats are drawn from a stream of their own, so drawing them leaves every post where it stood.
+const BEAT_STREAM: u64 = 0x6265_6174;
 
 /// A group as the seed draws it: its foes by type and rank, the first standing in its middle when it leads, and
 /// whether its post is the one farthest from the spawns.
@@ -45,14 +50,15 @@ struct Group {
     farthest: bool,
 }
 
-/// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing, and its level
-/// before the seas (0 for none) and its shield's element, if it stands with one; the fighters of it standing now, and
-/// the tick the last of them fell.
+/// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing there, and its
+/// level before the seas (0 for none) and its shield's element, if it stands with one; its beat, unless it holds its
+/// post; the fighters of it standing now, and the tick the last of them fell.
 #[derive(Debug)]
 pub(crate) struct Post {
     pub at: [f64; 3],
     pub members: Vec<(u8, Rank, [f64; 3], f64)>,
     pub girds: Vec<(u8, Option<gear::Element>)>,
+    pub beat: Option<Beat>,
     pub standing: Vec<FighterId>,
     pub cleared_at: Option<u64>,
 }
@@ -235,12 +241,14 @@ impl Room {
         let mut draws = draws_of(self.world_seed);
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         let mut open = open_points(&section, ground_middle(&section, first));
+        let lattice = open.clone();
+        let mut beats = draws_of(self.world_seed ^ BEAT_STREAM);
         for group in groups(kind, &mut draws) {
             while !open.is_empty() {
                 let pick = if group.farthest { farthest(&open, &section) } else { index(&mut draws, open.len()) };
                 let point = open.remove(pick);
                 open.retain(|&other| apart([other.0, other.1], [point.0, point.1]) >= POSTS_APART);
-                if let Some(post) = self.post_at(&group, point, &section, &mut draws) {
+                if let Some(post) = self.post_at(&group, point, (&section, &lattice), (&mut draws, &mut beats)) {
                     self.garrison.push(post);
                     break;
                 }
@@ -261,10 +269,17 @@ impl Room {
         }
     }
 
-    /// A group's post at a point, each foe placed on the navmesh: a leader in the middle facing the nearest spawn, the
-    /// rest round it facing outward. None when the mesh does not reach the point, or a place falls outside the section
-    /// or within SPAWN_CLEAR of a spawn.
-    fn post_at(&self, group: &Group, (x, y): (f64, f64), section: &Section, draws: &mut Mulberry32) -> Option<Post> {
+    /// A group's post at a point, each foe placed on the navmesh: a group that holds its post with a leader in the
+    /// middle facing the nearest spawn and the rest round it facing outward; one that walks a beat drawn from the
+    /// `lattice` in its places at the beat's first point. None when the mesh does not reach the point, or a place falls
+    /// outside the section or within SPAWN_CLEAR of a spawn.
+    fn post_at(
+        &self,
+        group: &Group,
+        (x, y): (f64, f64),
+        (section, lattice): (&Section, &[(f64, f64)]),
+        (draws, beats): (&mut Mulberry32, &mut Mulberry32),
+    ) -> Option<Post> {
         let at = self.nav.nearest_point([x, y, self.floor.height_at(x, y)])?;
         let round = &group.members[usize::from(group.leads)..];
         let start = draws.draw() * TAU;
@@ -279,6 +294,15 @@ impl Room {
             let place = [at[0] + libm::sin(outward) * SPREAD, at[1] - libm::cos(outward) * SPREAD, at[2]];
             members.push((number, rank, self.nav.nearest_point(place)?, outward));
         }
+        // A Boss's or a Miniboss's group, at the farthest post, holds it: the one fight a player seeks out there.
+        let beat =
+            (!group.farthest).then(|| Beat::drawn((&self.nav, &self.floor), at, lattice, section, beats)).flatten();
+        if let Some(beat) = &beat {
+            let places = beat.places((&self.nav, &self.floor), members.len(), false);
+            for (member, (place, facing)) in members.iter_mut().zip(places) {
+                (member.2, member.3) = (place, facing);
+            }
+        }
         let clear = |place: &[f64; 3]| {
             inside(&section.ring, place[0], place[1])
                 && section.spawns.iter().all(|&[sx, sy]| apart([place[0], place[1]], [sx, sy]) >= SPAWN_CLEAR)
@@ -287,6 +311,7 @@ impl Room {
             at,
             members,
             girds: Vec::new(),
+            beat,
             standing: Vec::new(),
             cleared_at: None,
         })
@@ -308,6 +333,10 @@ impl Room {
             .collect();
         self.garrison[post].standing = standing;
         self.garrison[post].cleared_at = None;
+        let clock = self.clock;
+        if let Some(beat) = self.garrison[post].beat.as_mut() {
+            beat.restart(clock);
+        }
     }
 
     /// A garrison level raised by the room's seas; 0, none, stays none.
@@ -336,9 +365,11 @@ impl Room {
         }
     }
 
-    /// Each tick: a group whose last foe has fallen is cleared from that tick, and stands again once STAND_AGAIN has
-    /// passed, no player stands within CLEAR_AROUND of its post, and the living foes leave room for it.
+    /// Each tick each group walks its beat; a group whose last foe has fallen is cleared from that tick, and stands
+    /// again once STAND_AGAIN has passed, no player stands within CLEAR_AROUND of its post, and the living foes leave
+    /// room for it.
     pub(crate) fn keep_garrison(&mut self) {
+        self.walk_beats();
         for post in 0..self.garrison.len() {
             let found = &self.garrison[post];
             let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
@@ -359,6 +390,37 @@ impl Room {
     }
 }
 
+impl Room {
+    /// Each group with a beat walks on along it while all its living foes are idle and none is LAG from its place,
+    /// and each of them is given its place: its leader the beat's, the rest round it in turn.
+    fn walk_beats(&mut self) {
+        for post in 0..self.garrison.len() {
+            let Some(mut beat) = self.garrison[post].beat.take() else { continue };
+            let living: Vec<FighterId> = self.garrison[post]
+                .standing
+                .iter()
+                .copied()
+                .filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()))
+                .collect();
+            let ready = living.iter().all(|id| {
+                let foe = &self.foes[id];
+                let near = foe.brain.home().is_some_and(|home| {
+                    apart([foe.fighter.body.x, foe.fighter.body.y], [home.at[0], home.at[1]]) <= LAG
+                });
+                near && foe.brain.alertness() == Alertness::Idle && !foe.brain.returning()
+            });
+            let marching = beat.step(self.clock, ready);
+            let places = beat.places((&self.nav, &self.floor), living.len(), marching);
+            for (id, (place, facing)) in living.iter().zip(places) {
+                if let Some(foe) = self.foes.get_mut(id) {
+                    foe.brain.keep_to(place, facing, marching);
+                }
+            }
+            self.garrison[post].beat = Some(beat);
+        }
+    }
+}
+
 /// The open point farthest from the nearest spawn; the first of any as far.
 fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
     let from_spawns = |&(x, y): &(f64, f64)| {
@@ -373,6 +435,9 @@ fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
     best
 }
 
+#[path = "beat.rs"]
+mod beat;
+
 #[cfg(test)]
 #[path = "garrison_tests.rs"]
 mod garrison_tests;
@@ -384,3 +449,11 @@ mod gird_tests;
 #[cfg(test)]
 #[path = "leash_tests.rs"]
 mod leash_tests;
+
+#[cfg(test)]
+#[path = "crowd_tests.rs"]
+mod crowd_tests;
+
+#[cfg(test)]
+#[path = "beat_tests.rs"]
+mod beat_tests;

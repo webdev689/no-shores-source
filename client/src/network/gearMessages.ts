@@ -121,9 +121,6 @@ export interface GearDrop {
   readonly flying: number;
 }
 
-/** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
- *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
- *  item a Vestige last opened to, `answered` how many asks have been answered. */
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
 export interface GearNode {
   readonly index: number;
@@ -132,6 +129,9 @@ export interface GearNode {
   readonly resource: number;
 }
 
+/** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
+ *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
+ *  item a Vestige last opened to, `answered` how many asks have been answered. */
 export interface GearState {
   readonly xp: bigint;
   readonly level: number;

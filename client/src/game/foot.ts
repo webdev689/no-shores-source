@@ -21,10 +21,11 @@ import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
-import { gearOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { PlacedLoop } from '../player/playerMoves.ts';
 import { OtherPlayers, type Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
 import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
@@ -147,6 +148,7 @@ export class Foot {
   private readonly steps: MovementRules;
   private readonly otherPlayers: OtherPlayers;
   private readonly otherGlides = new Glides();
+  private readonly folkLoops = new WeakMap<Placed, PlacedLoop>();
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
   /** The attack feel as made: the blows' arcs, hit-stops, the camera's kick and the lunge. */
@@ -273,8 +275,10 @@ export class Foot {
     if (wardrobe) {
       const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
       walker.you.dress = { ...walker.you.dress, outfit };
+      walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
     }
     walker.glow = heldElements(gear, loadout);
+    walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
@@ -421,7 +425,7 @@ export class Foot {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      { id: fight.player, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({
         id: number,
@@ -444,7 +448,10 @@ export class Foot {
       const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const drawing = walker.you.dress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';
+    const held = gear?.gear;
+    // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
+    const full = (held?.ammoShare ?? 1) >= 1;
     const fought: FootFight = {
       own: ownView,
       foes: foes.marked(fight),
@@ -458,10 +465,17 @@ export class Foot {
       abilities: fight.abilities,
       // The shots left stand beside the crosshair, wherever it shows.
       ammo: sights ? (ownView?.ammo ?? null) : null,
-      ammoMost: this.gear?.gear?.ammoMost ?? null,
+      ammoMost: held?.ammoMost ?? null,
+      ammoFull: !!ownView && this.drops.ammoFull(held?.drops ?? [], [ownView.x, ownView.y, ownView.z], full),
       crosshair: sights
         ? { charge: drawing ? Math.min(1, ownView.action.elapsed / FIGHT_TICKS.drawFull) : null }
         : null,
+      arms: {
+        gear: this.gear?.gear ?? null,
+        loadout: walker.player.loadout,
+        drawn: walker.you.dress.outfit.drawn,
+        dress: walker.you.dress,
+      },
     };
     const edge = this.standing;
     const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
@@ -516,12 +530,14 @@ export class Foot {
       if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
-    // A social space's people, each keeping a step of its own.
+    // A social space's people, each keeping a step of its own, their walk's frames at the pace they walk.
+    const seconds = frameTicks * this.context.movement.tickSeconds;
     for (const one of this.folk) {
       const { view, flip } = viewOf(one.facing, one.x, one.y, eyeX, eyeY);
       const frames = forge.frames(one.dress.body, one.anim);
-      const own = clock + one.id * STRIDE_APART_S;
-      const frame = one.frame === null ? frameAt(own, frames, OTHERS_FPS) : Math.min(one.frame, frames - 1);
+      const loop = this.folkLoops.get(one) ?? new PlacedLoop();
+      this.folkLoops.set(one, loop);
+      const frame = loop.frame(one, frames, seconds, clock + one.id * STRIDE_APART_S, OTHERS_FPS);
       const card = forge.card(one.id, one.dress, one.anim, view, frame, flip);
       if (card) cards.push({ card, ...cardStand(one.x, one.y, eyeX, eyeY), z: one.z, flip });
     }

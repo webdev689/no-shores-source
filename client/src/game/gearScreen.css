@@ -222,6 +222,13 @@
     margin-left: 0;
   }
 }
+/* Narrower still, the tabs' words take the face's smallest sharp step: at the names' size the longest ran past their
+   tabs' edges under 1100 px. */
+@media (max-width: 1099px) {
+  #hud .gear-tab {
+    font-size: var(--type-s);
+  }
+}
 /* The chosen tab is a lit press: the kit's brass bevel on its primary ground. */
 #hud .gear-tab.gear-chosen {
   color: var(--brass-lit);
@@ -389,9 +396,9 @@ img.gear-glyph {
   color: var(--word);
 }
 #hud button.gear-slot:hover,
-#hud button.gear-cell:hover,
+#hud .gear-cell:not(.gear-vacant):hover,
 #hud button.gear-slot:focus-visible,
-#hud button.gear-cell:focus-visible {
+#hud .gear-cell:not(.gear-vacant):focus-visible {
   border-color: var(--rar, var(--brass-lit));
   background-color: #171a20;
   box-shadow:
@@ -491,8 +498,7 @@ img.gear-glyph {
   width: 24px;
   height: 24px;
 }
-.gear-cell.gear-none,
-.gear-material.gear-none {
+.gear-cell.gear-none {
   opacity: 0.6;
 }
 .gear-count {
@@ -613,7 +619,8 @@ img.gear-glyph {
     max-width: 280px;
   }
 }
-/* A slot's flyout opens toward the figure, and upward from each side's lowest slot, never off the screen's edge. */
+/* A slot's flyout opens toward the figure, and upward from each side's two lowest slots, never off the screen's edge:
+   its three rows hang lower than the next slot down, so from the second lowest it would pass the menu's foot. */
 .gear-flyout {
   position: absolute;
   top: -8px;
@@ -622,7 +629,21 @@ img.gear-glyph {
   border: 2px solid transparent;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
 }
-.gear-side > .gear-slot-holder:last-child .gear-flyout {
+/* A strip over the 10 px between a slot and its grid, so the mouse crossing it stays on the grid. */
+.gear-flyout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+}
+.gear-character > .gear-side:first-child .gear-flyout::before {
+  right: 100%;
+}
+.gear-character > .gear-side:last-child .gear-flyout::before {
+  left: 100%;
+}
+.gear-side > .gear-slot-holder:nth-last-child(-n + 2) .gear-flyout {
   top: auto;
   bottom: -8px;
 }
@@ -1278,36 +1299,9 @@ img.gear-glyph {
   grid-template-columns: repeat(auto-fill, 64px);
   gap: 6px;
 }
-.gear-grid > .gear-empty,
-.gear-list > .gear-empty {
-  grid-column: 1 / -1;
-}
-.gear-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 6px;
-}
-.gear-material {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 12px 6px 8px;
-  border: 2px solid transparent;
-}
-.gear-material img.gear-glyph {
-  width: 36px;
-  height: 36px;
-}
-.gear-material-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.gear-material b {
-  font-size: var(--type-m);
-  font-weight: 500;
+/* A shelf's rows are ten long at every width, so its empty places end each row, as its page lays them. */
+.gear-inventory .gear-grid {
+  grid-template-columns: repeat(10, 64px);
 }
 /* The Vestiges carried: their name and count over a rule, then ten places in two rows of five, as Destiny 2's
    engrams stand; an empty place is a dark Vestige. */

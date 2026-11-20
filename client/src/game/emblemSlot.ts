@@ -4,7 +4,7 @@ import { RARITIES } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
 import { EMBLEMS, type Emblem, emblemImage, emblemOf } from './emblemArt.ts';
-import { cardNode, hintLine, rarityOf } from './gearDom.ts';
+import { cardNode, closeOffHover, hintLine, rarityOf } from './gearDom.ts';
 
 /** The Emblem slot's number among the character page's slots, past the seven of gear. */
 export const EMBLEM_SLOT = 7;
@@ -95,6 +95,7 @@ export function emblemSlot(context: PageContext, open: boolean, choose: () => vo
     });
     flyout.append(grid);
     holder.append(flyout);
+    closeOffHover(holder, choose);
   }
   return holder;
 }

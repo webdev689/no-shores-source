@@ -88,14 +88,21 @@ fn each_kind_stands_its_drawn_groups_idle_on_the_ground_facing_out_and_clear_of_
             assert!(room.nav.nearest_point([x, y, foe.fighter.body.z]).is_some(), "on the navmesh");
         }
         for post in &room.garrison {
+            let holds = post.members[0].1 >= Miniboss;
+            assert_eq!(post.beat.is_none(), holds, "{kind:?}: a Boss's or a Miniboss's group holds its post");
             for (index, &(_, _, place, facing)) in post.members.iter().enumerate() {
-                let leads =
-                    index == 0 && matches!(kind, NodeKind::Dungeon | NodeKind::Boss) && post.members[0].1 >= Miniboss;
-                let toward = if leads {
-                    let [near_x, near_y] = respawn_point(&section(), place[0], place[1]).unwrap();
-                    bearing([place[0], place[1]], [near_x, near_y])
-                } else {
-                    bearing([post.at[0], post.at[1]], [place[0], place[1]])
+                let toward = match (&post.beat, index) {
+                    (None, 0) => {
+                        let [near_x, near_y] = respawn_point(&section(), place[0], place[1]).unwrap();
+                        bearing([place[0], place[1]], [near_x, near_y])
+                    }
+                    // A group that walks a beat stands its leader at its post facing its way to the beat's next point.
+                    (Some(beat), 0) => {
+                        assert_eq!(place, post.at, "{kind:?}: its leader at its post");
+                        let way = room.nav.find_path(place, beat.points()[1]).unwrap();
+                        bearing([place[0], place[1]], [way[1][0], way[1][1]])
+                    }
+                    _ => bearing([post.at[0], post.at[1]], [place[0], place[1]]),
                 };
                 assert!(wrap(facing - toward).abs() < 0.3, "{kind:?}: faces {facing}, not {toward}");
             }

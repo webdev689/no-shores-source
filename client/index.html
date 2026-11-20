@@ -137,10 +137,12 @@
         color: var(--dim);
         margin-bottom: 10px;
       }
+      /* A long line of keys wraps short of the Acquired feed at the right. */
       .hints {
         position: absolute;
         left: 28px;
         bottom: 22px;
+        max-width: calc(100vw - 384px);
         font-size: 11px;
         line-height: 19px;
         color: var(--ink);
@@ -160,12 +162,13 @@
       #hud:has(> .sea-bar:not([hidden])):has(> .landfall:not([hidden])) .hints {
         bottom: 148px;
       }
-      /* On foot the hints stand over the fight's vitals panel, 126 px tall from the screen's foot. */
+      /* On foot the fight's Arts and weapons hold the bottom left, and the prompt for E stands over them where they
+         meet: the hints stand over both. */
       #hud:has(> .fight:not([hidden])) .hints {
-        bottom: 140px;
+        bottom: 156px;
       }
-      /* Where the HUD is wide and not yet doubled, the hints stand at the face's next step, over the vitals and the
-         buffs above them, which grow there too. */
+      /* Where the HUD is wide and not yet doubled, the hints stand at the face's next step, over the Arts and weapons
+         and the prompt, which grow there too. */
       @media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
         (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
         .hints {
@@ -173,19 +176,25 @@
           line-height: 33px;
         }
         #hud:has(> .fight:not([hidden])) .hints {
-          bottom: 198px;
+          bottom: 200px;
         }
       }
       /* On foot the fight's display holds the compass; the game's own is the sea's. */
       #hud:has(> .fight:not([hidden])) > .compass-column {
         display: none;
       }
+      /* On foot the vitals hold the top left, so the place's name stands at the top right, as far from the compass. */
+      #hud:has(> .fight:not([hidden])) .place {
+        left: auto;
+        right: 28px;
+        text-align: right;
+      }
       /* A boss's bar under the compass takes the top from the place's name while it shows. */
       #hud:has(> .fight.bossed:not([hidden])) .place {
         visibility: hidden;
       }
       /* At sea the line stands under the compass. */
-      .status {
+      #hud > .status {
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
@@ -195,19 +204,42 @@
         white-space: nowrap;
         text-shadow: 1px 1px 0 #000;
       }
-      /* On foot the fight's column holds the top's middle, so the line stands under the place's name, and under a
-         boss's bar while one shows. */
-      #hud:has(> .fight:not([hidden])) .status {
-        left: 28px;
+      /* On foot the fight's column holds the top's middle, so the line stands under the place's name at the top right,
+         at the words' size and no wider than the place's name may be, and under a boss's bar while one shows. */
+      #hud:has(> .fight:not([hidden])) > .status {
+        left: auto;
+        right: 28px;
         top: 84px;
+        max-width: calc(50vw - min(260px, 30vw) - 60px);
+        padding: 5px 10px;
         transform: none;
+        font-size: 11px;
+        white-space: normal;
+        text-align: right;
       }
-      #hud:has(> .fight.bossed:not([hidden])) .status {
-        top: 114px;
+      #hud:has(> .fight.bossed:not([hidden])) > .status {
+        top: 128px;
+      }
+      @media (min-width: 1500px) and (min-height: 900px) {
+        #hud:has(> .fight:not([hidden])) > .status {
+          font-size: 22px;
+        }
+      }
+      /* Past 1440p the place's name stands at twice its size: the line stands under it. The compass's column stands
+         doubled too, so the line keeps clear of it as of the single one, and under the doubled boss bar while one
+         shows. */
+      @media (min-width: 2400px) and (min-height: 1300px) {
+        #hud:has(> .fight:not([hidden])) > .status {
+          top: 140px;
+          max-width: calc(50vw - min(520px, 30vw) - 60px);
+        }
+        #hud:has(> .fight.bossed:not([hidden])) > .status {
+          top: 232px;
+        }
       }
       /* In a fight at sea the ships' plates hold the top, a Boss's under the compass: the line stands under it, and
          the place's name gives way. */
-      #hud:has(> svg:not(:empty)) .status {
+      #hud:has(> svg:not(:empty)) > .status {
         top: 114px;
       }
       #hud:has(> svg:not(:empty)) .place {

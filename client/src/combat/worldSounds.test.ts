@@ -123,15 +123,23 @@ test("the player's sword cuts a foe where the foe stands, the listener at the ey
   assert.deepEqual([listener.forwardX.value, listener.forwardZ.value], [0, -1], 'yaw 0 looks north');
 });
 
-test('a swing as it begins, once; nothing for what a figure first seen was already doing', () => {
+test("a swing's whoosh as its rush meets the blow, once; nothing for what a figure first seen was already doing", () => {
   const { output, play, played } = fakeSound();
-  const sounds = new WorldSounds(() => output, play);
+  // The whoosh's rush comes 2 ticks into it: a blow landing on tick 8 is heard from tick 6.
+  const sounds = new WorldSounds(
+    () => output,
+    play,
+    () => 2 / 60,
+  );
   const attack = (elapsed: number) =>
     view({ action: { kind: 'attack', stroke: 1, elapsed, strike: 8, end: 16, swing: 'plain', leftHand: false } });
-  sounds.frame(frameOf({ own: attack(3) }));
+  sounds.frame(frameOf({ own: attack(7) }));
   sounds.frame(frameOf({ own: view() }));
   sounds.frame(frameOf({ own: attack(0) }));
-  sounds.frame(frameOf({ own: attack(1) }));
+  sounds.frame(frameOf({ own: attack(5) }));
+  assert.deepEqual(played, [], 'not while it is raised');
+  sounds.frame(frameOf({ own: attack(6) }));
+  sounds.frame(frameOf({ own: attack(7) }));
   assert.deepEqual(
     played.map(({ id }) => id),
     ['swing.light'],
