@@ -1,3 +1,4 @@
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { levelsOf } from '../textures/levels.ts';
 import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipPictures.ts';
@@ -5,7 +6,7 @@ import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
-import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { loadShip, type ShipMesh, shipSails, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 
 /** Where a ship is drawn: her middle in window metres (her height as drawn), her heading (radians clockwise from
  *  north), her bow's rise and her heel to starboard (radians), and how many times her size (1 unless said). */
@@ -41,9 +42,8 @@ export function shipTurn(heading: number, pitch: number, roll: number): Float32A
 /** A part's picture repeats at this many texels a metre over her, as a forged model's do. */
 const TEXELS_PER_METRE = 40;
 
-const SHIP_SHADER = /* wgsl */ `
+export const SHIP_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
-const AMBIENT = 0.35;
 // Her UVs are metres; a picture repeats every SHIP_PICTURE_TEXELS / TEXELS_PER_METRE of them, standing upright.
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});
 
@@ -65,6 +65,7 @@ struct Drawn {
   @location(0) normal: vec3f,
   @location(1) uv: vec2f,
   @location(2) @interpolate(flat) part: u32,
+  @location(3) from_eye: vec3f,
 };
 
 @vertex
@@ -77,6 +78,7 @@ fn vertex_main(
   var drawn: Drawn;
   let world = (place.turn * vec4f(position, 0.0)).xyz + place.offset.xyz;
   drawn.clip = place.from_eye * vec4f(world, 1.0);
+  drawn.from_eye = world;
   drawn.normal = (place.turn * vec4f(normal.xyz, 0.0)).xyz;
   drawn.uv = uv * PICTURE_PER_M;
   drawn.part = part.x;
@@ -88,7 +90,8 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   // Sails and planks are single faces seen from both sides: the side seen is lit.
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   let colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
-  return vec4f(colour * place.shade.x * (AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0)), 1.0);
+  let light = sky_ambient(normal) + sky_direct(normal, sky_dapple(drawn.from_eye)) + sky_lamps(drawn.from_eye, normal);
+  return vec4f(colour * place.shade.x * light, 1.0);
 }
 `;
 
@@ -166,6 +169,24 @@ function picturesTexture(device: GPUDevice): GPUTexture {
   return texture;
 }
 
+/** The pictures each device holds, and how many ships draw with them: every ship shares one upload, let go once the
+ *  last of them is. */
+const SHARED_PICTURES = new WeakMap<GPUDevice, { readonly texture: GPUTexture; holders: number }>();
+
+export function holdPictures(device: GPUDevice): GPUTexture {
+  const held = SHARED_PICTURES.get(device) ?? { texture: picturesTexture(device), holders: 0 };
+  held.holders += 1;
+  SHARED_PICTURES.set(device, held);
+  return held.texture;
+}
+
+export function releasePictures(device: GPUDevice): void {
+  const held = SHARED_PICTURES.get(device);
+  if (!held || --held.holders > 0) return;
+  held.texture.destroy();
+  SHARED_PICTURES.delete(device);
+}
+
 /** How many ships of one model are drawn in a frame: every ship a fleet room holds, its sixteen players' and four
  *  captains'. */
 export const SHIP_SLOTS = 20;
@@ -187,6 +208,7 @@ export class ShipView {
   private readonly indexCount: number;
   private readonly canvasIndices: GPUBuffer | null;
   private readonly canvasIndexCount: number;
+  private pictures: GPUTexture | null;
   /** Her waterline, for her footprint on the water and her wake. */
   readonly waterline: Waterline;
   /** Her sails' corners, for each ship's rig. */
@@ -239,7 +261,8 @@ export class ShipView {
         })
       : null;
     if (this.canvasIndices) gpu.device.queue.writeBuffer(this.canvasIndices, 0, grid);
-    const pictures = picturesTexture(gpu.device).createView({ dimension: '2d-array' });
+    this.pictures = holdPictures(gpu.device);
+    const pictures = this.pictures.createView({ dimension: '2d-array' });
     const pictured = gpu.device.createSampler({
       addressModeU: 'repeat',
       addressModeV: 'repeat',
@@ -293,6 +316,7 @@ export class ShipView {
     this.device.queue.writeBuffer(drawn.uniforms, 0, values);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.bindGroup);
+    skyUniformFor(this.device).bindAuto(pass, this.pipeline, [1, 2]);
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     pass.drawIndexed(this.indexCount);
@@ -309,4 +333,21 @@ export class ShipView {
     pass.setIndexBuffer(this.canvasIndices, 'uint32');
     pass.drawIndexed(this.canvasIndexCount);
   }
+
+  /** Lets go of her buffers on the GPU, and of the pictures she shares; she is never drawn again. */
+  destroy(): void {
+    for (const buffer of [this.vertices, this.indices, this.canvasIndices]) buffer?.destroy();
+    for (const slot of this.slots) {
+      slot.uniforms.destroy();
+      slot.canvas?.destroy();
+    }
+    if (this.pictures) releasePictures(this.device);
+    this.pictures = null;
+  }
+}
+
+/** A published ship drawn by her name (the Sloop, the Brig): her mesh fetched as the manifest names it, her sails'
+ *  corners from it, up to `slots` of her a frame. */
+export async function shipViewNamed(gpu: Gpu, name: string, slots = SHIP_SLOTS): Promise<ShipView> {
+  return new ShipView(gpu, await loadShip(name), shipSails(name), slots);
 }

@@ -7,7 +7,7 @@ use crate::dice::Purpose;
 use crate::ranks::Phase;
 use crate::senses::{Here, Sight};
 use crate::tuning::{
-    AIMED_SHARE, BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
+    BLOW_CHANCE, BLOW_NEAR, CHAIN_CHANCE, CHAIN_LEAST, CHAIN_WINDUP, CLASSIC_TICKS_A_TICK, COOLDOWN_ELITE,
     COOLDOWN_ORDINARY, FEINT_AT, FEINT_CHANCE, FEINT_GAP, IRON_ELITE, ROAR, WINDUP_ELITE, WINDUP_LEAST, WINDUP_VARY,
     WORD_WAIT,
 };
@@ -136,16 +136,23 @@ pub fn windup_near(here: &Here<'_, '_>, spot: [f64; 3]) -> bool {
     })
 }
 
-/// The shapes it may throw at its target from here: in reach its blows of reach; out of it the gap-closers whose band
-/// it stands in, a charge's lane and a leap's line clear of the blocks.
+/// The shapes it may throw at its target from here: in reach its blows of reach, but only at a target that, moving as
+/// it moves now, still stands in reach as the blow's wind-up ends; out of it the gap-closers whose band it stands in, a
+/// charge's lane and a leap's line clear of the blocks.
 fn pool(here: &Here<'_, '_>, sight: &Sight, reach: f64) -> Vec<Shape> {
     let near = sight.distance <= reach + 0.5;
     let feet = here.feet();
+    let body = sight.fighter.body;
+    let stays = |seconds: f64| {
+        let then = [sight.spot[0] + body.vx * seconds, sight.spot[1] + body.vy * seconds];
+        apart(here.at(), then) <= reach + 0.5
+    };
     here.numbers
         .shapes
         .iter()
         .copied()
         .filter(|shape| *shape != Shape::Aimed && GAP_CLOSERS.contains(shape) != near)
+        .filter(|shape| GAP_CLOSERS.contains(shape) || stays(numbers(*shape).windup * WINDUP_VARY.0))
         .filter(|shape| match shape {
             Shape::Charge => {
                 let length = numbers(Shape::Charge).length.min(sight.distance + 1.0);
@@ -164,13 +171,15 @@ fn pool(here: &Here<'_, '_>, sight: &Sight, reach: f64) -> Vec<Shape> {
 }
 
 /// A holder's telegraphed blow at its target, if it throws one this tick: off its cooldown, ready, nobody else winding
-/// up near its target, a shape that reaches, and the roll (unless `forced`, as against a guard it will not swing into).
+/// up near its target, a shape that reaches, the roll (unless `forced`, as against a guard it will not swing into), and
+/// its crowd's pace: `paced` says whether a blow landing at the tick it is handed, the soonest one could, may begin.
 pub fn throw(
     brain: &mut Brain,
     here: &Here<'_, '_>,
     sight: &Sight,
     reach: f64,
     forced: bool,
+    paced: impl FnOnce(u64) -> bool,
 ) -> Option<TelegraphOrder> {
     let ready = matches!(here.fighter.action, Action::Idle) && here.tick() >= brain.tells.blow_ready && sight.seen;
     if !ready || windup_near(here, sight.spot) {
@@ -178,6 +187,9 @@ pub fn throw(
     }
     let shapes = pool(here, sight, reach);
     if shapes.is_empty() || !(forced || here.dice.roll(Purpose::Blow) < chance_a_tick()) {
+        return None;
+    }
+    if !paced(here.tick() + u64::from(combat::ticks(WINDUP_LEAST))) {
         return None;
     }
     let pick = (here.dice.roll(Purpose::Shape) * shapes.len() as f64) as usize;
@@ -195,10 +207,9 @@ pub fn aim_ready(brain: &Brain, here: &Here<'_, '_>, sight: &Sight) -> bool {
         && !windup_near(here, sight.spot)
 }
 
-/// An archer's aimed shot in place of a plain one, one in three by `roll`, when it may throw.
-pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, roll: f64) -> Option<TelegraphOrder> {
-    (aim_ready(brain, here, sight) && roll < AIMED_SHARE)
-        .then(|| order(brain, here, Shape::Aimed, sight.toward, sight.distance, false))
+/// An archer's aimed shot in place of a plain one, once its shooting has found it ready and rolled for one.
+pub fn aimed(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight) -> TelegraphOrder {
+    order(brain, here, Shape::Aimed, sight.toward, sight.distance, false)
 }
 
 /// What follows a wind-up that has ended: a feint's swing at once; once the room says whether the blow landed (it

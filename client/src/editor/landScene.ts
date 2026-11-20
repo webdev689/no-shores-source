@@ -35,6 +35,8 @@ import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
 import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
+import { type SkyLaw, startSkyLaw, windBearing } from '../sky/skyLaw.ts';
+import { worldSeconds } from '../sky/worldClock.ts';
 
 /** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
 export interface GroundSource extends SailSource, FightSource {
@@ -52,7 +54,7 @@ export interface Drawn {
 }
 
 /** Copies the land's multisampled depth into one float a pixel, which the water's shaders can read. */
-const DEPTH_COPY = /* wgsl */ `
+export const DEPTH_COPY = /* wgsl */ `
 @group(0) @binding(0) var depths: texture_depth_multisampled_2d;
 
 @vertex
@@ -152,6 +154,8 @@ export class LandScene {
   /** The picture's overlay, which the editor clears each frame: each captain's bar is drawn on it. */
   private readonly overlay: SVGSVGElement;
   private readonly shipPlates = new ShipPlates();
+  /** The sky's law, for the wind her sails feel: the rules sail her in the weather's, at the wall's world time. */
+  private law: SkyLaw | null = null;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
     this.gpu = gpu;
@@ -165,6 +169,11 @@ export class LandScene {
     );
     this.marks = new MarkView(gpu);
     this.naval = new Naval(this.marks);
+    fetch(`${import.meta.env.BASE_URL}land.wasm`)
+      .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`land.wasm: ${answer.status}`))))
+      .then(startSkyLaw)
+      .then((law) => (this.law = law))
+      .catch(fail);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -313,9 +322,11 @@ export class LandScene {
     const ship = this.ship;
     // Her rig and a captain's, once her model has come.
     if (ship && !this.rigs) this.rigs = [new SailRig(ship.sails), new SailRig(ship.sails)];
+    const her = this.sailing?.floats();
+    const wind = her && this.law?.seaWind(her[0] ?? 0, her[1] ?? 0, worldSeconds(Date.now()));
     const sails = this.rigs && {
       rig: this.rigs[1],
-      bearing: view.swell?.bearing ?? 0,
+      bearing: wind ? windBearing(wind) : (view.swell?.bearing ?? 0),
       seconds: Math.min(MOST_SAIL_STEP_S, Math.max(0, time - this.sailedAt)),
     };
     this.sailedAt = time;

@@ -1,16 +1,20 @@
 //! What a foe knows: itself and its room this tick, and whom it fights. Its target it sees with nothing between their
 //! chests, and hunts where it last saw it for a while after losing sight. With no target, what it sees and hears stirs
-//! its awareness; once alert, it takes the nearest it sees within its range and its arc.
+//! its awareness; once alert, it takes one it sees within its range and its arc: the nearest, unless the foes already
+//! at it make another sooner to strike (share).
 
 use crate::World;
 use crate::awareness::{latch, stir, strongest, woken};
+use crate::board::Board;
 use crate::brain::Brain;
 use crate::dice::Dice;
 use crate::noises::stir_of;
 use crate::roles::Numbers;
-use crate::tuning::{ENGAGE_RANGE, HUNT, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
+use crate::share::sooner;
+use crate::tuning::{ENGAGE_RANGE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
+use combat::tuning::STRIKE_HEIGHT;
 use combat::{Fighter, FighterId, Status};
 
 /// A foe in its room this tick: its id, its fighter, the room, its numbers and its dice.
@@ -58,6 +62,19 @@ impl Here<'_, '_> {
         other.side != self.fighter.side && !other.dead() && !other.statuses.has(Status::Veiled)
     }
 
+    /// Whether a fighter of the room, by its id, is another of this foe's side, alive.
+    #[must_use]
+    pub fn ally(&self, id: FighterId, other: &Fighter) -> bool {
+        id != self.me && other.side == self.fighter.side && !other.dead()
+    }
+
+    /// The way round something by the sign of `turn` (1 clockwise, -1 not); dead on, the way its number picks, the
+    /// same on every machine.
+    #[must_use]
+    pub fn way_round(&self, turn: f64) -> f64 {
+        if turn > 0.0 || (turn == 0.0 && self.me.is_multiple_of(2)) { 1.0 } else { -1.0 }
+    }
+
     /// How far it fights from.
     #[must_use]
     pub fn range(&self) -> f64 {
@@ -83,8 +100,9 @@ pub struct Sight {
 }
 
 /// Its target this tick, chosen or kept, with the brain's memory and awareness brought up to date: a target seen keeps
-/// it fully aware; with none, the strongest sight or noise stirs it, and once alert it takes the nearest it sees.
-pub fn sense(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
+/// it fully aware; with none, the strongest sight or noise stirs it, and once alert it takes the nearest it sees, or
+/// one the foes at the nearest make sooner to strike.
+pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Sight> {
     let heard = core::mem::take(&mut brain.awareness.heard);
     let called = woken(brain, here, &heard);
     if let Some(sight) = kept(brain, here) {
@@ -103,8 +121,8 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     if !brain.awareness.alert {
         return None;
     }
-    let (_, id, other, _) =
-        seen.into_iter().min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))?;
+    let nearest = *seen.iter().min_by(|first, second| first.0.total_cmp(&second.0).then(first.1.cmp(&second.1)))?;
+    let (_, id, other, _) = *sooner(brain, here, board, (nearest.1, nearest.0), &seen).unwrap_or(&nearest);
     brain.target = Some(id);
     brain.last_seen = Some(feet(&other));
     brain.seen_at = here.tick();
@@ -119,7 +137,7 @@ fn stirring<'here>(here: &'here Here<'_, '_>) -> impl Iterator<Item = (f64, [f64
     here.world.fighters.iter().filter(|(_, other)| here.hostile(other)).filter_map(move |(_, other)| heard(other))
 }
 
-fn feet(fighter: &Fighter) -> [f64; 3] {
+pub(crate) fn feet(fighter: &Fighter) -> [f64; 3] {
     [fighter.body.x, fighter.body.y, fighter.body.z]
 }
 
@@ -149,7 +167,7 @@ fn kept(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
 /// Every fighter of another side it sees: within its range, within its arc, nothing between their chests. Each with
 /// its distance, its id and what seeing it adds to awareness this tick: most near and dead ahead, nothing at the edge
 /// of its range or its arc.
-fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64)> {
+pub(crate) fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64)> {
     let at = here.at();
     let edge = libm::cos(SIGHT_ARC);
     here.world
@@ -167,15 +185,20 @@ fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64)> {
         .collect()
 }
 
-fn sight(here: &Here<'_, '_>, id: FighterId, other: &Fighter, seen: bool, last: Option<[f64; 3]>) -> Sight {
+pub(crate) fn sight(here: &Here<'_, '_>, id: FighterId, other: &Fighter, seen: bool, last: Option<[f64; 3]>) -> Sight {
     let spot = last.unwrap_or_else(|| here.feet());
     let at = here.at();
+    let across = apart(at, [spot[0], spot[1]]);
+    // Near across but on a ledge over it or under it, out of a blow's height, a target is as far as the way there: the
+    // foe climbs or drops to it rather than swing at it in vain.
+    let off_floor = across <= OFF_FLOOR_NEAR && (spot[2] - here.feet()[2]).abs() > STRIKE_HEIGHT;
+    let walk = || here.world.routes.length(here.feet(), spot).map_or(across, |walk| walk.max(across));
     Sight {
         id,
         fighter: *other,
         seen,
         spot,
-        distance: apart(at, [spot[0], spot[1]]),
+        distance: if off_floor { walk() } else { across },
         toward: bearing(at, [spot[0], spot[1]]),
     }
 }

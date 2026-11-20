@@ -131,21 +131,25 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let sword = paid.worn(Slot::Melee).expect("the sword");
     assert_eq!(sword.xp, 90, "the weapon that struck earns it");
 
+    // The brute's own drop is a roll of the room's dice, so the captain's is told from it and counted from what the
+    // player holds.
+    let held = room.player(player).expect("in").character.vestiges_held(false);
+    let earlier: Vec<u32> = room.drops_for(player).map(|drop| drop.id).collect();
     let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).copied().collect();
-    let vestige = lying.iter().find(|drop| matches!(drop.what, Dropped::Vestige(_)));
-    let at = vestige.expect("a captain always leaves a Vestige").at;
+    let vestige = lying.iter().find(|drop| matches!(drop.what, Dropped::Vestige(_)) && !earlier.contains(&drop.id));
+    let Drop { id, at, .. } = *vestige.expect("a captain always leaves a Vestige");
     assert_eq!(room.drops_for(onlooker).count(), 0);
     room.tick();
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0, "it lies 6 m away");
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held, "it lies 6 m away");
     move_to(&mut room, player, at[0], at[1]);
     for _ in 0..REST_TICKS {
         room.tick();
     }
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 1, "walked over, it is taken");
-    assert!(room.drops_for(player).all(|drop| !matches!(drop.what, Dropped::Vestige(_))));
+    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held + 1, "walked over, it is taken");
+    assert!(room.drops_for(player).all(|drop| drop.id != id));
 }
 
 #[test]
@@ -379,4 +383,52 @@ fn a_shield_takes_blows_before_health_and_its_own_element_breaks_it_fastest() {
     let (_, broke, harmed, _) = strike(&mut room, None, 1.0, 91);
     assert!(broke);
     assert!((harmed - (plain - 1.0)).abs() < 1e-6, "{harmed}");
+}
+
+#[test]
+fn the_test_grounds_hands_pass_over_a_carried_weapon_above_the_players_level_and_hand_out_one_of_theirs() {
+    use crate::asks::Grant;
+    use gear::Kind;
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    room.answer(player, Asked::Grant(Grant::Item { kind: Kind::Crossbow, rarity: Rarity::Normal, level: 50 }));
+    let ranged = |room: &Room| room.player(player).and_then(|found| found.character.worn(Slot::Ranged)).cloned();
+    let crossbows = |room: &Room| {
+        room.player(player)
+            .expect("in")
+            .character
+            .items
+            .values()
+            .filter(|(item, _)| item.kind == Kind::Crossbow)
+            .count()
+    };
+    for kind in [Kind::Crossbow, Kind::Bow, Kind::Crossbow] {
+        room.answer(player, Asked::Grant(Grant::Worn(kind)));
+        assert_eq!(room.player(player).expect("in").answer, 0, "{kind:?} worn, never refused as too high");
+        let worn = ranged(&room).expect("a Ranged weapon worn");
+        assert_eq!((worn.kind, worn.level), (kind, 1));
+    }
+    assert_eq!(crossbows(&room), 2, "the level 50 one kept, and the one handed out worn again");
+}
+
+#[test]
+fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wears_one() {
+    use crate::asks::Grant;
+    use gear::{Item, Kind, character::At};
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    let [mace, bow] = [Kind::Mace, Kind::Bow].map(|kind| {
+        let id = character.take_id();
+        character.items.insert(id, (Item::new(id, kind, Rarity::Atheric, 1, kind.slot()), At::Carried));
+        id
+    });
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Mace)));
+    room.answer(player, Asked::Grant(Grant::Worn(Kind::Bow)));
+    let found = room.player(player).expect("in");
+    assert_eq!(found.answer, 0, "a bow worn, not refused for its Atheric");
+    let worn = found.character.worn(Slot::Ranged).expect("a bow worn");
+    assert_eq!((worn.kind, worn.rarity), (Kind::Bow, Rarity::Normal), "a Normal one handed out");
+    assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
+    assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
 }

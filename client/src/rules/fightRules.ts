@@ -48,7 +48,8 @@ export interface FightVessel {
 }
 
 /** A captain's Sloop in a fight: her name, her faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
- *  her mode, whether she is hostile to the player, and her sides run out. */
+ *  her mode, whether she is hostile to the player, her sides run out, and, from the land worker's fight, what her
+ *  hurts and her going down do to her pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
   readonly name: string;
   readonly faction: number;
@@ -56,6 +57,10 @@ export interface FightCaptain extends FightVessel {
   readonly mode: CaptainMode;
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
+  readonly founder?: readonly [number, number, number];
+  /** While she goes down: how she will lie once sunk (as `founder`), and in how many seconds. */
+  readonly sunk_founder?: readonly [number, number, number];
+  readonly sinks_in?: number;
 }
 
 export type FightEvent =
@@ -113,18 +118,31 @@ export interface FightView {
   readonly balls: readonly (readonly [number, number, number, number])[];
   readonly lay: FightLay | null;
   readonly events: readonly FightEvent[];
-  readonly over: 'sunk' | 'gone' | null;
+  /** How it ended: the last captain sunk or gone, or (an ambush) every captain beaten, sunk or struck. */
+  readonly over: 'sunk' | 'gone' | 'beaten' | null;
   readonly fingerprint: string;
 }
 
-/** A fight's begin request. */
-export function beginRequest(ship: ShipFloats, seed: number, time: number): string {
-  return JSON.stringify({ ship: [...ship], seed, time });
+/** A captain a fight begins with, where she is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
+ *  east and south, her heading (radians clockwise from north), her faction (1 the Grey Tithe, 2 pirates) and rank
+ *  (1 Minor to 5 Boss), and her way (m/s) if she comes on under sail. */
+export interface CaptainAt {
+  readonly x: number;
+  readonly y: number;
+  readonly heading: number;
+  readonly faction: number;
+  readonly rank: number;
+  readonly way?: number;
 }
 
-/** A fight's step request. */
-export function stepRequest(orders: FightOrders, time: number, ticks: number): string {
-  return JSON.stringify({ ...orders, time, ticks });
+/** A fight's begin request: with `captains`, each set upon her where given; without, one called onto the ring. */
+export function beginRequest(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): string {
+  return JSON.stringify({ ship: [...ship], seed, time, ...(captains ? { captains } : {}) });
+}
+
+/** A fight's step request: its orders, the swell's time, its ticks and the world's time for its wind. */
+export function stepRequest(orders: FightOrders, time: number, ticks: number, world: number): string {
+  return JSON.stringify({ ...orders, time, ticks, world });
 }
 
 /** A fight's answer, or the rules' refusal as an error. */

@@ -19,6 +19,12 @@ impl Block {
     fn holds(&self, x: f64, y: f64, margin: f64) -> bool {
         x > self.min_x - margin && x < self.max_x + margin && y > self.min_y - margin && y < self.max_y + margin
     }
+
+    /// Whether a point stands on its top, its edges included: blocks that tile a deck share their edges, so a point on
+    /// a seam stands on both and none falls between them.
+    fn under(&self, x: f64, y: f64) -> bool {
+        x >= self.min_x && x <= self.max_x && y >= self.min_y && y <= self.max_y
+    }
 }
 
 /// The ground under a point: the higher of the terrain and the highest block top at or below `z` plus a step.
@@ -26,12 +32,13 @@ impl Block {
 pub fn ground_at(blocks: &[Block], terrain: &dyn Terrain, x: f64, y: f64, z: f64) -> f64 {
     blocks
         .iter()
-        .filter(|block| block.holds(x, y, 0.0) && block.top <= z + TUNING.step)
+        .filter(|block| block.under(x, y) && block.top <= z + TUNING.step)
         .fold(terrain.height_at(x, y), |ground, block| if block.top > ground { block.top } else { ground })
 }
 
-/// The first block standing in the way at a point: one whose top is above a step over `z`.
-fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64) -> Option<&Block> {
+/// The first block standing in the way of a body at a point: one whose top is above a step over `z`.
+#[must_use]
+pub fn blocking_at(blocks: &[Block], x: f64, y: f64, z: f64) -> Option<&Block> {
     blocks.iter().find(|block| block.holds(x, y, TUNING.radius) && block.top > z + TUNING.step)
 }
 

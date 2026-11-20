@@ -7,8 +7,14 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 
 - **Enemy factions.** Whether presence shifts over time, what sets one faction apart, and where each is present
   ([[Enemy Factions Start With the Grey Tithe]]).
-- **Hulls.** Which hulls the ranks of ships sail, and whether Claude builds them in Blender or the owner models them
-  ([[Hulls]]).
+- **Being the pirate.** Whether a player may attack merchantmen for their cargo, and what notoriety it brings
+  ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
+- **The opening voyage.** The Grey Tithe's attack, the ram, the deck fight and Thule, to be talked through before
+  it is built ([[Overlook Is a Shared World After Destiny 1]]). The prologue's first attackers at sea are pirates, its
+  own call; the lore has the opening's ships the Grey Tithe's, unknown under grey sails. The chart that disagrees with
+  the coast is not in it yet ([[The Game Shows the Mystery and Explains Almost None of It]]).
+- **Crew as companions.** Which of DFO's companion systems the crew comes from: its naval `crewCompanions`, its
+  fleet's `companionSlots`, or another.
 - **The Grey Tithe.** Its roster, its boss on land and where its garrisons stand are built as Claude chose them, to
   rename or change ([[The Enemies as Claude Builds Them]]). How deep the Covenant under them goes, and when the
   player learns it. Whether its sails are unmarked, as the lore has them, or fly its colours and flag, as its ships at
@@ -22,6 +28,3 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near
   ([[The World Map]]) and the small islands of the sea that appear and fade in the owner's loop decisions, on their
   own branch.
-- **The opening.** The prologue's first attackers are pirates, its own call; the lore has the opening's ships the Grey
-  Tithe's, unknown under grey sails. The chart that disagrees with the coast is not in it yet
-  ([[The Game Shows the Mystery and Explains Almost None of It]]).

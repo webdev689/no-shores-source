@@ -160,8 +160,8 @@ pub enum End {
     Gone,
 }
 
-/// The fight: its clock (seconds), its stream of chances, its ships by number, the balls aloft, and each player's
-/// stem as the ram's law keeps it.
+/// The fight: its clock (seconds), its stream of chances, its ships by number, the balls aloft, each player's
+/// stem as the ram's law keeps it, and whether it is an ambush (`Fight::ambush`), which keeps rules of its own.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fight {
     pub clock: f64,
@@ -169,6 +169,7 @@ pub struct Fight {
     pub ships: BTreeMap<ShipId, Vessel>,
     pub balls: Vec<Ball>,
     stems: BTreeMap<ShipId, ram::Stem>,
+    ambush: bool,
 }
 
 /// What a player's hurts leave her helm: whether she is a wreck, the canvas she has left, and the share of her way it
@@ -285,7 +286,8 @@ impl Fight {
     #[must_use]
     pub fn new(seed: u32) -> Self {
         let ships = BTreeMap::new();
-        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls: Vec::new(), stems: BTreeMap::new() }
+        let stems = BTreeMap::new();
+        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls: Vec::new(), stems, ambush: false }
     }
 
     /// A player's Sloop and one captain's, a Major of the pirates, put to sea on the ring round her, where the water
@@ -361,6 +363,38 @@ impl Fight {
         fight
     }
 
+    /// The player's Sloop, as `put_to_sea` puts her, set upon by `captains` (each where and how she is given, under a
+    /// number from `CAPTAIN` on, her temper drawn from her own seed), and every chance of the fight drawn from `seed`.
+    /// Each comes to fight her at once: bold, whatever her temper, and cruising straight for her when out of sight.
+    /// A captain set where the water does not float her is refused: aground, she could never close nor sink.
+    /// An ambush is fought to the end: no captain sails off, the player's ship is never wrecked (a ball or a fire
+    /// leaves her a point of hull), and it is over once every captain is beaten (`Fight::beaten`).
+    pub fn ambush(
+        ship: Ship,
+        captains: &[(Ship, Commission, u32)],
+        seed: u32,
+        waters: &impl Waters,
+        time: f64,
+    ) -> Result<Fight, String> {
+        let mut fight = Fight { ambush: true, ..Fight::new(seed) };
+        fight.put_to_sea(PLAYER, ship, waters, time);
+        if let Some(player) = fight.ships.get_mut(&PLAYER) {
+            player.damage.least_hull = 1.0;
+        }
+        for (&(captain, commission, her_seed), id) in captains.iter().zip(CAPTAIN..) {
+            if pose_of(&captain, &SLOOP, waters, time).aground {
+                return Err(format!("Captain {id} is set where the water does not float her."));
+            }
+            fight.enlist(id, captain, commission, her_seed, waters, time);
+            if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&id).map(|vessel| &mut vessel.sailor) {
+                command.her.temper = crate::captain::Temper::Bold;
+                let toward = crate::captain::course::heading_to([captain.x, captain.y], [ship.x, ship.y]);
+                command.her.cruise = toward.rem_euclid(TAU);
+            }
+        }
+        Ok(fight)
+    }
+
     /// A captain of `commission` under number `id` in her Sloop at `ship`, cruising on its heading, her temper drawn
     /// from `seed`, her hull as strong as her rank makes it and striking where her rank strikes.
     fn enlist(&mut self, id: ShipId, ship: Ship, commission: Commission, seed: u32, waters: &impl Waters, time: f64) {
@@ -401,6 +435,15 @@ impl Fight {
             last = Some(command.gone?);
         }
         last
+    }
+
+    /// Whether an ambush is won: it had captains and every one is beaten, sunk, going down or struck (her crew have
+    /// given up the fight). Any other fight is never beaten: it is over only once its captains have left it.
+    #[must_use]
+    pub fn beaten(&self) -> bool {
+        let beaten = |vessel: &Vessel| matches!(vessel.damage.state, State::Struck | State::Sinking | State::Sunk);
+        let mut captains = self.ships.values().filter(|vessel| vessel.command().is_some()).peekable();
+        self.ambush && captains.peek().is_some() && captains.all(beaten)
     }
 
     /// Every number the fight holds, in a fixed order: what its fingerprint is taken over.
@@ -486,3 +529,7 @@ mod ram_tests;
 #[cfg(test)]
 #[path = "fight_factions_tests.rs"]
 mod faction_tests;
+
+#[cfg(test)]
+#[path = "fight_ambush_tests.rs"]
+mod ambush_tests;

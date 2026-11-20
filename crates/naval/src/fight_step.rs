@@ -21,13 +21,20 @@ impl Fight {
     /// One tick. `orders` are the players' in the order they are taken: each steps her ship once, so a player whose
     /// orders are late is caught up by several in one tick, and one with none this tick lies as she was, riding the
     /// swell. Then the captains, the guns, the volleys, the balls, the hurts, mending, and the captains who leave.
-    pub fn step(&mut self, orders: &[(ShipId, Orders)], waters: &impl Waters, wind: [f64; 2], time: f64) -> Vec<Event> {
+    /// Each ship sails in the wind where she is, `wind_at` her place (m/s, east and south).
+    pub fn step(
+        &mut self,
+        orders: &[(ShipId, Orders)],
+        waters: &impl Waters,
+        wind_at: &impl Fn([f64; 2]) -> [f64; 2],
+        time: f64,
+    ) -> Vec<Event> {
         let mut events = Vec::new();
         let seconds = TICK_SECONDS;
         self.clock += seconds;
-        self.sail_players(orders, waters, wind, time, &mut events);
+        self.sail_players(orders, waters, wind_at, time, &mut events);
         for id in self.ids(true) {
-            self.sail_captain(id, waters, wind, time);
+            self.sail_captain(id, waters, wind_at, time);
         }
         self.keep_apart(waters, time);
         self.rams(&mut events);
@@ -35,7 +42,7 @@ impl Fight {
             vessel.guns.step(seconds);
         }
         for id in self.ids(true) {
-            self.captain_fires(id, wind, &mut events);
+            self.captain_fires(id, wind_at, &mut events);
         }
         for (id, order) in orders.iter().filter(|(_, order)| order.fire) {
             self.player_fires(*id, order, &mut events);
@@ -57,7 +64,7 @@ impl Fight {
                 }
             }
         }
-        self.mend(wind, &mut events);
+        self.mend(wind_at, &mut events);
         self.see_off(&mut events);
         events
     }
@@ -68,7 +75,7 @@ impl Fight {
         &mut self,
         orders: &[(ShipId, Orders)],
         waters: &impl Waters,
-        wind: [f64; 2],
+        wind_at: &impl Fn([f64; 2]) -> [f64; 2],
         time: f64,
         events: &mut Vec<Event>,
     ) {
@@ -80,6 +87,7 @@ impl Fight {
             {
                 events.push(Event::Load { ship: *id, shot });
             }
+            let wind = wind_at([player.ship.x, player.ship.y]);
             let (ship, refused) = sail_hurt(&player.ship, order.helm, Hurts::of(&player.damage), waters, wind, time);
             if let Some(wrecked) = refused {
                 events.push(Event::NoSail { ship: *id, wrecked });
@@ -95,10 +103,11 @@ impl Fight {
 
     /// A captain's tick: her helm among the ships she may fight, her step held back by her canvas, and her pose as
     /// she lists and founders.
-    fn sail_captain(&mut self, id: ShipId, waters: &impl Waters, wind: [f64; 2], time: f64) {
+    fn sail_captain(&mut self, id: ShipId, waters: &impl Waters, wind_at: &impl Fn([f64; 2]) -> [f64; 2], time: f64) {
         let (sightings, traffic) = (self.sightings(id), self.traffic(id));
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
+        let wind = wind_at([vessel.ship.x, vessel.ship.y]);
         let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
         let is_water = |x, y| floats(waters, x, y, time);
         let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
@@ -113,11 +122,12 @@ impl Fight {
     }
 
     /// A captain's guns after her step: run out at her enemy, and fired as her rank arms and paces them.
-    fn captain_fires(&mut self, id: ShipId, wind: [f64; 2], events: &mut Vec<Event>) {
+    fn captain_fires(&mut self, id: ShipId, wind_at: &impl Fn([f64; 2]) -> [f64; 2], events: &mut Vec<Event>) {
         let sightings = self.sightings(id);
         let Some(vessel) = self.ships.get_mut(&id) else { return };
         let Sailor::Captain(command) = &mut vessel.sailor else { return };
         let enemy = command.her.target().and_then(|target| sightings.iter().find(|seen| seen.id == target));
+        let wind = wind_at([vessel.ship.x, vessel.ship.y]);
         let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
         let battery = command.her.aim(&her, enemy, &mut self.draws);
         if let Some(side) = battery.run_out {
@@ -186,13 +196,14 @@ impl Fight {
     }
 
     /// Each player's hands mend her if nothing hurt her lately and no captain who would take her lies near.
-    fn mend(&mut self, wind: [f64; 2], events: &mut Vec<Event>) {
+    fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2], events: &mut Vec<Event>) {
         let captains = self.ids(true);
         for id in self.ids(false) {
             let Some(sighting) = self.ships.get(&id).map(|player| sighting_of(id, player)) else { continue };
             let hostile_near = captains.iter().any(|captain| {
                 let Some(vessel) = self.ships.get(captain) else { return false };
                 let Some(command) = vessel.command() else { return false };
+                let wind = wind_at([vessel.ship.x, vessel.ship.y]);
                 let her = her_of((&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
                 let would = command.her.would_take(&her, &sighting);
                 would && distance([vessel.ship.x, vessel.ship.y], [sighting.ship.x, sighting.ship.y]) < HOSTILE_NEAR_M
@@ -208,7 +219,7 @@ impl Fight {
     }
 
     /// A captain who has sunk leaves the fight, as does one past every ship she may fight (each player's, and each
-    /// afloat captain's of another faction) and not fighting.
+    /// afloat captain's of another faction) and not fighting; an ambush's captains leave it only by sinking.
     fn see_off(&mut self, events: &mut Vec<Event>) {
         let foes: Vec<(Flag, [f64; 2])> = self
             .ships
@@ -225,7 +236,7 @@ impl Fight {
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let end = if sunk {
                 Some(End::Sunk)
-            } else if nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage {
+            } else if !self.ambush && nearest > DESPAWN_BEYOND && command.her.mode != Mode::Engage {
                 Some(End::Gone)
             } else {
                 None

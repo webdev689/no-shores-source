@@ -1,4 +1,4 @@
-import type { FightOrders, FightView } from '../rules/fightRules.ts';
+import type { CaptainAt, FightOrders, FightView } from '../rules/fightRules.ts';
 import type { Brush, GroundPatch, Helm, LandPatch, LandView, Pose, ShipFloats } from '../rules/landRules.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { ShoreField } from '../water/shore.ts';
@@ -35,7 +35,13 @@ export type LandRequest =
       readonly time: number;
       readonly ticks: number;
     }
-  | { readonly kind: 'fight-begin'; readonly ship: ShipFloats; readonly seed: number; readonly time: number }
+  | {
+      readonly kind: 'fight-begin';
+      readonly ship: ShipFloats;
+      readonly seed: number;
+      readonly time: number;
+      readonly captains?: readonly CaptainAt[];
+    }
   | { readonly kind: 'fight-step'; readonly orders: FightOrders; readonly time: number; readonly ticks: number }
   | { readonly kind: 'fight-end' };
 
@@ -90,8 +96,9 @@ export interface LandWorker {
   ground(left: number, top: number, step: number, width: number, height: number): Promise<CloseGround>;
   /** A ship sailed over the open landmass. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed>;
-  /** A fight begun round the ship over the open landmass, stepped by the player's orders, and ended. */
-  fightBegin(ship: ShipFloats, seed: number, time: number): Promise<FightView>;
+  /** A fight begun round the ship over the open landmass (with `captains`, those set upon her), stepped by the
+   *  player's orders, and ended. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): Promise<FightView>;
   fightStep(orders: FightOrders, time: number, ticks: number): Promise<FightView>;
   fightEnd(): Promise<void>;
 }
@@ -154,7 +161,8 @@ export function startLandWorker(): LandWorker {
       if (!ground || !shore) throw new Error('the land worker answered no ground');
       return { patch: ground, field: shore };
     },
-    fightBegin: async (ship, seed, time) => fought(await ask({ kind: 'fight-begin', ship, seed, time })),
+    fightBegin: async (ship, seed, time, captains) =>
+      fought(await ask({ kind: 'fight-begin', ship, seed, time, ...(captains ? { captains } : {}) })),
     fightStep: async (orders, time, ticks) => fought(await ask({ kind: 'fight-step', orders, time, ticks })),
     fightEnd: async () => {
       await ask({ kind: 'fight-end' });

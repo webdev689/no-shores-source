@@ -83,6 +83,12 @@ export class ShotMachine {
     return true;
   }
 
+  /** Ends a reload under way at once: the fight's rules have loaded the weapon, which may be sooner than its own clock
+   *  (a quicker reload, a kill that reloads it). A shot's frames still play out. */
+  load(): void {
+    if (this.state === 'cooling') [this.state, this.clock] = ['idle', 0];
+  }
+
   /** Moves the cycle on by `seconds`: answers 'hit' as the shot leaves and 'ready' as the reload ends. */
   step(seconds: number): ShotEvent {
     const tick = Math.max(0, seconds);

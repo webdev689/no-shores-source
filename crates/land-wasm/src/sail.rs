@@ -1,26 +1,27 @@
-//! A ship sailed over the open landmass. The request is little-endian 64-bit numbers: a ship, her helm, the world's
-//! time at her first tick, and how many ticks to step. The answer is a header (`{}`, or `{ "error" }`) and then her
-//! numbers after the last tick and her pose then, as 64-bit numbers too. The Sloop sails in the steady wind.
+//! A ship sailed over the open landmass. The request is little-endian 64-bit numbers: a ship, her helm, the swell's
+//! time at her first tick, how many ticks to step, and the world's time then. The answer is a header (`{}`, or
+//! `{ "error" }`) and then her numbers after the last tick and her pose then, as 64-bit numbers too. The Sloop sails
+//! in the weather's wind where she is.
 
 use super::{OPEN, error_view, view_bytes};
 use land::sea::Swell;
 use sailing::floats::{HELM_FLOATS, SHIP_FLOATS};
 use sailing::pose::pose_of;
 use sailing::ship::{Helm, SAILS_SET, Ship, step_ship};
-use sailing::waters::{LandWaters, steady_wind};
+use sailing::waters::{LandWaters, sea_wind_at};
 use sailing::{SLOOP, TICK_SECONDS};
 use serde_json::json;
 use std::f64::consts::TAU;
 
-/// A ship, her helm, the time and the ticks.
-pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 2;
+/// A ship, her helm, the time, the ticks and the world's time.
+pub const REQUEST_FLOATS: usize = SHIP_FLOATS + HELM_FLOATS + 3;
 /// The most ticks one request may step: a second's.
 pub const MOST_TICKS: f64 = 60.0;
 /// What no ship's numbers pass: a place a million kilometres out; a way (or her canvas's share of it) of 10 m/s, twice
 /// what any rig makes in the strongest sea wind; a swing of 45 degrees a second, twice her oars'; a world time past
 /// 30 years, where the swell's phases lose their bits.
 const MOST_PLACE_M: f64 = 1e9;
-const MOST_WAY: f64 = 10.0;
+pub(crate) const MOST_WAY: f64 = 10.0;
 const MOST_TURN_DEG: f64 = 45.0;
 const MOST_TIME_S: f64 = 1e9;
 
@@ -67,8 +68,8 @@ pub(crate) fn ticks_from(time: f64, ticks: f64) -> Result<(f64, u32), String> {
     Ok((time, ticks as u32))
 }
 
-/// The request's ship, helm, time and ticks, each number checked.
-fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32), String> {
+/// The request's ship, helm, time, ticks and world time, each number checked.
+fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, f64), String> {
     let numbers: Vec<f64> =
         request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
     if request.len() != REQUEST_FLOATS * 8 || numbers.len() != REQUEST_FLOATS {
@@ -78,30 +79,31 @@ fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32), String> {
         return Err(format!("a sail request is {REQUEST_FLOATS} finite numbers"));
     }
     let ship = ship_from(&numbers[..SHIP_FLOATS])?;
-    let [steer, crab, climb, time, ticks] = numbers[SHIP_FLOATS..] else {
+    let [steer, crab, climb, time, ticks, world] = numbers[SHIP_FLOATS..] else {
         return Err(format!("a sail request is {REQUEST_FLOATS} numbers"));
     };
     let helm = helm_from(steer, crab, climb)?;
     let (time, ticks) = ticks_from(time, ticks)?;
-    Ok((ship, helm, time, ticks))
+    let (world, _) = ticks_from(world, 0.0)?;
+    Ok((ship, helm, time, ticks, world))
 }
 
 /// Steps the ship the request holds over the open landmass and answers her and her pose.
 #[must_use]
 pub fn sail_bytes(request: &[u8]) -> Vec<u8> {
-    let sailed = read(request).and_then(|(ship, helm, time, ticks)| {
+    let sailed = read(request).and_then(|(ship, helm, time, ticks, world)| {
         OPEN.with(|open| {
             let open = open.borrow();
             let landmass = open.as_ref().ok_or("no landmass is open")?;
             let swell = Swell::default();
             let waters = LandWaters { ground: &landmass.surface, swell: &swell };
-            let wind = steady_wind(&swell);
             let mut ship = ship;
             for tick in 0..ticks {
                 // A rung's climb is a press: it acts on the first tick alone.
                 let helm = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
-                let now = time + f64::from(tick) * TICK_SECONDS;
-                ship = step_ship(&ship, &helm, &SLOOP, wind, &waters, now, TICK_SECONDS);
+                let (now, world) = (time + f64::from(tick) * TICK_SECONDS, world + f64::from(tick) * TICK_SECONDS);
+                ship =
+                    step_ship(&ship, &helm, &SLOOP, sea_wind_at([ship.x, ship.y], world), &waters, now, TICK_SECONDS);
             }
             let pose = pose_of(&ship, &SLOOP, &waters, time + f64::from(ticks) * TICK_SECONDS);
             Ok(ship.to_floats().into_iter().chain(pose.to_floats()).collect::<Vec<f64>>())

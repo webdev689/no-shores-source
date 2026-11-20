@@ -69,8 +69,9 @@ def height_in(x, y, corners):
     return first * az + second * bz + third * cz
 
 
-def deck_of(triangles):
-    """Her deck from her triangles (corners in her frame, part, how level), in the walk's frame."""
+def deck_of(triangles, helm_aft=HELM_AFT_M):
+    """Her deck from her triangles (corners in her frame, part, how level), in the walk's frame, with her helm
+    `helm_aft` metres aft of her middle."""
     triangles = list(triangles)
     # The walk's frame from hers: x her starboard (her y), y her stern (less her x).
     walk = [([(y, -x, z) for x, y, z in corners], part, rise) for corners, part, rise in triangles]
@@ -119,7 +120,7 @@ def deck_of(triangles):
         'columns': right - left,
         'rows': bottom - top,
         'heights_cm': [line[left:right] for line in standing[top:bottom]],
-        'helm': [0.0, HELM_AFT_M],
+        'helm': [0.0, helm_aft],
     }
 
 
@@ -182,7 +183,9 @@ def main():
     ship = manifest['ships'].get(name)
     if ship is None:
         sys.exit(f'the manifest names no ship {name!r}')
-    ship['deck'] = deck_of(mesh_triangles(published(manifest, ship['mesh'])))
+    # Her helm stays where her export measured it from her model; the Sloop's, by its old number.
+    helm_aft = ship.get('deck', {}).get('helm', [0.0, HELM_AFT_M])[1]
+    ship['deck'] = deck_of(mesh_triangles(published(manifest, ship['mesh'])), helm_aft)
     write_manifest(manifest)
     cells = sum(height is not None for line in ship['deck']['heights_cm'] for height in line)
     print(f"{name}: a deck of {ship['deck']['columns']} by {ship['deck']['rows']} cells, {cells} to stand on")

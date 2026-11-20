@@ -1,4 +1,5 @@
 import { type LandRules, startLand } from '../rules/landRules.ts';
+import { worldSeconds } from '../sky/worldClock.ts';
 import { shoreField } from '../water/shore.ts';
 import type { LandAnswer, LandRequest } from './landClient.ts';
 
@@ -46,15 +47,15 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     return;
   }
   if (request.kind === 'sail') {
-    const sailed = rules.sail(request.ship, request.helm, request.time, request.ticks);
+    const sailed = rules.sail(request.ship, request.helm, request.time, request.ticks, worldSeconds(Date.now()));
     scope.postMessage({ ticket, sailed }, [sailed.ship.buffer]);
     return;
   }
   if (request.kind === 'fight-begin' || request.kind === 'fight-step') {
     const fight =
       request.kind === 'fight-begin'
-        ? rules.fightBegin(request.ship, request.seed, request.time)
-        : rules.fightStep(request.orders, request.time, request.ticks);
+        ? rules.fightBegin(request.ship, request.seed, request.time, request.captains)
+        : rules.fightStep(request.orders, request.time, request.ticks, worldSeconds(Date.now()));
     scope.postMessage({ ticket, fight }, []);
     return;
   }

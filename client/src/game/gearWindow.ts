@@ -27,7 +27,7 @@ import {
 } from './gearScreen.ts';
 import { inventoryPage } from './inventoryPage.ts';
 import { itemPage } from './itemPage.ts';
-import { ItemPictures } from './itemPictures.ts';
+import { ItemPictures } from '../player/itemPictures.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
@@ -38,7 +38,7 @@ import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
 import { startAcquiredFeed } from './acquiredFeed.ts';
-import { chime, installInterfaceSounds, play } from './uiSounds.ts';
+import { chime, play } from './uiSounds.ts';
 
 /** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
 const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
@@ -117,7 +117,8 @@ function tabPress(tab: Tab, open: () => void): HTMLButtonElement {
  * used; and an item's page laid over either when one is inspected. While it is open the world behind it is dimmed,
  * the pointer is free and the game's keys rest; Escape steps back: the item's page, then a slot's flyout, then the
  * menu. Gear shows as the player's room last sent it, built again only when that changes or the player moves within
- * it, each press an ask the room answers; where no room keeps gear it says so.
+ * it, each press an ask the room answers; where no room keeps gear it says so. While `resting` (the story plays) it
+ * never opens, so its keys stay the story's.
  */
 export function startGearWindow(
   root: HTMLElement,
@@ -125,6 +126,7 @@ export function startGearWindow(
   here: () => GearHere | null,
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
+  resting: () => boolean = () => false,
 ): void {
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
@@ -293,7 +295,6 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
   startCompanyHud(root, link);
-  installInterfaceSounds(root);
   const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */
@@ -419,6 +420,10 @@ export function startGearWindow(
     const beside = [held?.nextElementSibling, held?.previousElementSibling]
       .map((node) => (node instanceof HTMLElement ? node.dataset['key'] : undefined))
       .find(Boolean);
+    // A key's focus in a slot's grid goes back to its slot as the grid closes; a pointer's would open the slot's card.
+    const slotted = held?.matches(':focus-visible')
+      ? held.closest('.gear-slot-holder')?.querySelector<HTMLElement>('.gear-slot')?.dataset['key']
+      : undefined;
     const within = held !== null && screen.contains(held);
     tip.hide();
     ends(gear);
@@ -521,7 +526,7 @@ export function startGearWindow(
       // The page is read from its name, so no card opens over it unasked.
       shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
     else {
-      const next = again ?? found(returnTo) ?? found(beside);
+      const next = again ?? found(returnTo) ?? found(beside) ?? found(slotted);
       // Given back once, the tile to return to is forgotten, so it never takes the focus from a later choice.
       returnTo = null;
       if (next) next.focus();
@@ -538,6 +543,7 @@ export function startGearWindow(
   };
   for (const event of ['pointerup', 'pointercancel', 'blur']) addEventListener(event, released);
   addEventListener(OPEN_AT, (event) => {
+    if (resting()) return;
     const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
     if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
   });
@@ -550,7 +556,7 @@ export function startGearWindow(
     (event) => {
       const key = event.key.toLowerCase();
       const typing = event.target instanceof HTMLInputElement;
-      const opens = !typing && (key === 'i' || key === 'o');
+      const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game.
       if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();

@@ -4,11 +4,11 @@
 // item page's large drawing. Drawn once each, on the player's own body, from the front.
 
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import type { Cards } from '../player/cards.ts';
-import type { Dress } from '../player/dressing.ts';
-import { KINDS, MELEE, WORN } from '../player/gear.ts';
-import { gearOutfit } from '../player/gearLooks.ts';
-import { type Picture, addedBy } from '../player/picture.ts';
+import type { Cards } from './cards.ts';
+import type { Dress } from './dressing.ts';
+import { KINDS, MELEE, WORN } from './gear.ts';
+import { gearOutfit } from './gearLooks.ts';
+import { type Picture, addedBy } from './picture.ts';
 
 /** The view an item is drawn in, from the front; and the move each loadout is held up in, a melee one on guard, a
  *  pair on its own guard. Armour is drawn standing. */

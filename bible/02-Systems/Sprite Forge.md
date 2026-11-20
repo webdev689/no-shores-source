@@ -51,6 +51,11 @@ holds the depth of each pixel in red and green, and the part of the body (torso,
 horse, hair) in blue. The forge's index (`forgeLooks.json`) gives each move's cell and the root, where the feet stand.
 It also holds each layer's moves, and the order, cover and under values that decide which layer shows where two meet.
 
+The forge also draws the [[Arts]]' birds (`artbirds.py`): Dawnflare's bird of fire and Duskraven's raven, each in
+four wing beats and the five views a figure is drawn in, a little from above, rendered at four times their size with
+Cycles and averaged down, each texel's light weighted by its cover, as light alone for the page to colour in the
+caster's element. They are published as `@art/arts/birds/<bird>-<view>-<beat>.png`.
+
 The Lattice's foes are drawn by it, with their own looks and moves, from beside it: [[Lattice]].
 
 ## Where it lives
@@ -98,6 +103,10 @@ python -I tools/sprite-forge/forgepoints.py --body male
 
 A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
+The `forge` workflow renders the Arts' birds and adds them to what is published with the repository's Cloudflare token
+whenever `artbirds.py` or its pinned packages change on main, or when a run is asked for on a branch; its log ends with
+the manifest, which a commit takes into `content/forge/renders.json`. It installs only the exact wheels
+`artbirds-requirements.txt` names by their hashes, and its checkout keeps no git credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
 doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.

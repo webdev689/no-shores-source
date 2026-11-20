@@ -86,12 +86,12 @@ test('ships are marked within 900 m of the player, and none farther', () => {
   assert.deepEqual(SHIP_MARK_COLOURS, { hostile: '#ee5745', ship: '#ebe0c2', struck: '#8f8f8f' });
 });
 
-test('the compass stands 18 px down, 520 px wide or 60% of a narrower screen, and what stands under it 10 px under its rule', () => {
+test('the compass stands 18 px down, 520 px wide or 60% of a narrower view, and what stands under it 10 px under its rule', () => {
   assert.equal(UNDER_COMPASS, COMPASS.top + COMPASS.height + COMPASS.rule + COMPASS.gap);
   assert.equal(UNDER_COMPASS, 56);
   const css = compassCss();
   assert.match(css, /\.compass-column \{ position: absolute; left: 0; right: 0; top: 18px;[^}]*gap: 10px;/);
-  assert.match(css, /\.compass \{[^}]*width: min\(520px, 60vw\); height: 26px;[^}]*border-bottom: 2px solid/);
+  assert.match(css, /\.compass \{[^}]*width: min\(520px, 60%\); height: 26px;[^}]*border-bottom: 2px solid/);
   assert.match(css, /\.compass-needle \{ position: absolute; left: 50%;/, 'the needle under the middle');
   assert.match(css, /\.compass-strip \{[^}]*mask-image: linear-gradient\(90deg, transparent/, 'its ends fade');
 });

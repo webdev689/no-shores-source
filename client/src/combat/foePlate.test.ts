@@ -42,6 +42,7 @@ const rat = (id: number, changes: Partial<FighterView> = {}): MarkedFoe => ({
   phase: 1,
   alert: 2,
   factionNumber: 1,
+  level: 7,
 });
 
 test('the poise track: nothing to say at rest, filling toward a break, iron red, staggered white, open after a miss', () => {
@@ -137,4 +138,17 @@ test('a shield’s ward stands over its foe’s health from the bar’s left end
     assert.equal(ward()?.hidden, true, 'broken');
     plate.show(rat(2), 1 / 60);
     assert.equal(ward()?.hidden, true, 'a foe with none');
+  }));
+
+test('the plate’s square shows its foe’s level, not its faction’s emblem; a foe of no level leaves it empty', () =>
+  onFakePage((root) => {
+    const plate = new FoePlate(root, 'overhead');
+    const square = () => findAll(root, 'level')[0];
+    plate.show(rat(1), 0);
+    assert.equal(square()?.textContent, '7');
+    assert.equal(findAll(root, 'emblem').length, 0, 'the emblem is kept for later, off the plate');
+    plate.show({ ...rat(2), level: 12 }, 1 / 60);
+    assert.equal(square()?.textContent, '12', 'turned onto another foe');
+    plate.show({ ...rat(3), level: 0 }, 1 / 60);
+    assert.equal(square()?.textContent, '');
   }));

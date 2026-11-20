@@ -1,4 +1,11 @@
-import { beginRequest, type FightOrders, type FightView, readFight, stepRequest } from './fightRules.ts';
+import {
+  beginRequest,
+  type CaptainAt,
+  type FightOrders,
+  type FightView,
+  readFight,
+  stepRequest,
+} from './fightRules.ts';
 import type { Block } from './movementRules.ts';
 
 /** A river as the land generates it: its course through cell centres, source first, with the flow at each point. */
@@ -31,6 +38,8 @@ export interface LandView {
   /** The biome's low ground (red, green, blue, 0..1) and snow line in metres; absent for a landmass with no biome. */
   readonly ground?: readonly [number, number, number];
   readonly snowM?: number;
+  /** The biome's key, which the weather reads its air by; absent for a landmass with no biome. */
+  readonly climate?: string;
   /** The sea's swell, the same over every landmass. */
   readonly swell?: Swell;
 }
@@ -156,11 +165,13 @@ export interface LandRules {
   /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
   cityPlan(): string | null;
   /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
-  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea, every chance drawn from `seed`. */
-  fightBegin(ship: ShipFloats, seed: number, time: number): FightView;
+  /** Her ship sailed `ticks` from the swell's `time`, in the weather's wind at world time `world` (seconds). */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
+  /** A fight begun round the ship: a pirate captain put to sea, or `captains` set upon her where given, every chance
+   *  drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
-  fightStep(orders: FightOrders, time: number, ticks: number): FightView;
+  fightStep(orders: FightOrders, time: number, ticks: number, world: number): FightView;
   /** The fight ended. */
   fightEnd(): void;
 }
@@ -199,6 +210,7 @@ interface ViewHeader {
   readonly rect?: [number, number, number, number];
   readonly ground?: [number, number, number] | null;
   readonly snow_m?: number | null;
+  readonly climate?: string | null;
   readonly swell?: { waves: SeaWave[]; full_depth_m: number; gone_depth_m: number; bearing: number };
 }
 
@@ -236,6 +248,7 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       problems: header.problems ?? [],
       ...(header.ground ? { ground: header.ground } : {}),
       ...(typeof header.snow_m === 'number' ? { snowM: header.snow_m } : {}),
+      ...(typeof header.climate === 'string' ? { climate: header.climate } : {}),
       ...(header.swell
         ? {
             swell: {
@@ -324,15 +337,15 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    fightBegin: (ship, seed, time) =>
-      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time)))),
-    fightStep: (orders, time, ticks) =>
-      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks)))),
+    fightBegin: (ship, seed, time, captains) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, captains)))),
+    fightStep: (orders, time, ticks, world) =>
+      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world)))),
     fightEnd: () => {
       exports.land_fight_end();
     },
-    sail: (ship, helm, time, ticks) => {
-      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks]);
+    sail: (ship, helm, time, ticks, world) => {
+      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks, world]);
       const packed = send(exports.land_sail, new Uint8Array(request.buffer));
       const address = Number(packed >> 32n);
       const length = Number(packed & 0xffff_ffffn);

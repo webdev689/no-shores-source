@@ -1,4 +1,5 @@
 use crate::files::repo_root;
+use crate::shaders;
 use std::process::Command;
 
 /// One toolchain step: a name for the report, a program and its arguments.
@@ -13,10 +14,12 @@ struct Step {
 enum Program {
     Cargo,
     Npm,
+    /// The shaders written out, validated here with naga.
+    Shaders,
 }
 
 /// The toolchains' own checks, Rust and TypeScript side by side, in the order a failure is cheapest to read.
-const STEPS: [Step; 11] = [
+const STEPS: [Step; 13] = [
     Step { name: "messages (FlatBuffers)", program: Program::Npm, args: &["run", "-s", "schema"] },
     Step { name: "format (Rust)", program: Program::Cargo, args: &["fmt", "--all", "--check"] },
     Step { name: "format (TypeScript)", program: Program::Npm, args: &["run", "-s", "format:check"] },
@@ -27,6 +30,8 @@ const STEPS: [Step; 11] = [
     },
     Step { name: "lints (TypeScript)", program: Program::Npm, args: &["run", "-s", "lint"] },
     Step { name: "types (TypeScript)", program: Program::Npm, args: &["run", "-s", "types"] },
+    Step { name: "shaders (written out)", program: Program::Npm, args: &["run", "-s", "shaders"] },
+    Step { name: "shaders (valid WGSL)", program: Program::Shaders, args: &[] },
     Step { name: "tests (Rust)", program: Program::Cargo, args: &["test", "--workspace", "--locked"] },
     Step { name: "rules for the browser (WebAssembly)", program: Program::Npm, args: &["run", "-s", "wasm"] },
     Step { name: "tests (TypeScript)", program: Program::Npm, args: &["run", "-s", "test"] },
@@ -36,16 +41,33 @@ const STEPS: [Step; 11] = [
 
 /// Runs each step and stops at the first that fails.
 pub fn run_all() -> bool {
+    run_matching("")
+}
+
+/// Runs each step whose name starts with `prefix`, and stops at the first that fails.
+pub fn run_matching(prefix: &str) -> bool {
     let root = repo_root();
     if !root.join("node_modules").is_dir() {
         println!("== the TypeScript tools are not installed: run `npm ci` first");
         return false;
     }
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_owned());
-    for step in STEPS {
+    for step in STEPS.iter().filter(|step| step.name.starts_with(prefix)) {
         let program = match step.program {
             Program::Cargo => cargo.as_str(),
             Program::Npm => "npm",
+            Program::Shaders => {
+                println!("== {}: naga over {}", step.name, shaders::WRITTEN);
+                let problems = shaders::problems_written(&root);
+                for problem in &problems {
+                    println!("{problem}");
+                }
+                if !problems.is_empty() {
+                    println!("== {} failed", step.name);
+                    return false;
+                }
+                continue;
+            }
         };
         println!("== {}: {program} {}", step.name, step.args.join(" "));
         let passed =

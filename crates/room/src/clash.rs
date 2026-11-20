@@ -77,14 +77,14 @@ pub fn step_clashes(
     clashes: &mut Vec<Clash>,
     pirates: &mut Pirates,
     players: &[[f64; 2]],
-    (waters, wind, time): (&impl Waters, [f64; 2], f64),
+    (waters, wind_at, time): (&impl Waters, impl Fn([f64; 2]) -> [f64; 2], f64),
 ) {
     let near = |clash: &Clash| {
         clash.ships().any(|ship| players.iter().any(|&at| apart(at, [ship.x, ship.y]) <= DESPAWN_BEYOND))
     };
     clashes.retain(near);
     for clash in clashes.iter_mut() {
-        clash.fight.step(&[], waters, wind, time);
+        clash.fight.step(&[], waters, &wind_at, time);
     }
     for clash in clashes.iter().filter(|clash| clash.settled()) {
         pirates.back_from_clash(clash.sail_on());

@@ -147,11 +147,11 @@ fn a_quick_shot_takes_the_lock_and_flies_at_its_foe_and_aiming_lets_the_lock_go(
 
 #[test]
 fn a_quick_shot_flies_along_the_look_when_the_look_has_turned_from_the_locked_foe() {
-    // Locked on a foe 6 m due south, the look turned due north: the lock holds a while, but the shot goes ahead.
+    // Locked on a foe 6 m due south, the look turned due north: the lock lets go at once, and the shot goes ahead.
     let view = [(2, foe_at(0.0, 6.0, 0.0))];
     let locked = Fighter { target: Some(2), ..holding(Ranged::Pistolet) };
     let (fired, happening) = player_tick(1, &locked, &asking(0.0, TRIGGER), &view, &[], &movement::Flat);
-    assert_eq!(fired.target, Some(2), "the lock still holds");
+    assert_eq!(fired.target, None, "the look is past the lock's arc");
     let Some(Happening::Loosed(ball)) = happening else { panic!("a shot: {happening:?}") };
     assert!(ball.velocity[1] < 0.0 && ball.velocity[0].abs() < 1e-6, "north, along the look: {:?}", ball.velocity);
 }
