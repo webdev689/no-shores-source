@@ -34,7 +34,7 @@ fn step_request(leg: [f64; 8], time: f64) -> String {
     };
     let (fire, brace) = (fire == 1.0, brace == 1.0);
     format!(
-        r#"{{ "time": {time}, "ticks": {ticks}, "helm": {{ "steer": {steer}, "crab": false, "climb": {climb} }}, "aim": {aim}, "fire": {fire}, "brace": {brace}, "load": {load} }}"#
+        r#"{{ "time": {time}, "ticks": {ticks}, "world": 0, "helm": {{ "steer": {steer}, "crab": false, "climb": {climb} }}, "aim": {aim}, "fire": {fire}, "brace": {brace}, "load": {load} }}"#
     )
 }
 
@@ -152,7 +152,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "b4b2b472c1c548e2 47f35009e4c474b7 8ff59cbbbab5b793 5b2d1d8fe9f53cb7 078ad1af53744762 bc7cd318e0ad73dd c4dcc79b6e20cda4 f639d699a4272179 b3e44646db9f037b"
+        "c260ed1b87a55f96 3e3cf79d73048acd e0a707ba134c007d 7457ac571a36f721 a81bb7c4ec03b693 a3f46472de9dc940 df0568337743bf82 0cc4e3527362c792 1e66754088cb7811"
     );
 }
 
@@ -201,7 +201,7 @@ fn fought_with(rank: u8) -> Vec<String> {
 /// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
 /// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
 pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "b3e44646db9f037b"), (3, 1, "86e891e908116796"), (4, 2, "b5e7bff5475ac613"), (5, 3, "5435058f01f34d6f")];
+    [(2, 0, "1e66754088cb7811"), (3, 1, "a15bd5863db0e594"), (4, 2, "39e8d50cd0683313"), (5, 3, "87e130cc9080c3a4")];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {

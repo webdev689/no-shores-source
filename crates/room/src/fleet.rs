@@ -143,6 +143,11 @@ impl Fleet {
         self.world_start_s
     }
 
+    /// Sets the wall's time at the room's first tick, milliseconds since 1970: the world time its clock started at.
+    pub fn set_epoch(&mut self, unix_ms: f64) {
+        self.set_world_start(unix_ms / 1000.0);
+    }
+
     /// The room's time, seconds: what the swell rolls by.
     #[must_use]
     pub fn time(&self) -> f64 {
@@ -154,7 +159,13 @@ impl Fleet {
         self.clock
     }
 
-    /// The swell and the wind the room's ships sail in.
+    /// The swell the room's ships ride.
+    #[must_use]
+    pub fn swell(&self) -> &Swell {
+        &self.swell
+    }
+
+    /// The swell and the wind the room's ships sail in: the weather where it opened, kept while it lasts.
     #[must_use]
     pub fn weather(&self) -> (&Swell, [f64; 2]) {
         (&self.swell, self.wind)
@@ -230,7 +241,8 @@ impl Fleet {
         self.fit();
         let swell = self.swell.clone();
         let waters = OpenSea { swell: &swell };
-        let events = self.fight.step(&orders, &waters, self.wind, time);
+        let wind = self.wind;
+        let events = self.fight.step(&orders, &waters, &|_| wind, time);
         let gone: Vec<ShipId> = events
             .iter()
             .filter_map(|event| if let Event::Gone { ship, .. } = event { Some(*ship) } else { None })

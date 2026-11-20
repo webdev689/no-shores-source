@@ -1,5 +1,6 @@
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { DRESSES, PLAYER_LOOK, SHIP_SIDES, type ShipLook } from './dress.ts';
 import { flagFlat, flagGrid } from './flag.ts';
@@ -309,6 +310,8 @@ export class ShipView {
     pass.setPipeline(pipeline);
     pass.setBindGroup(0, drawn.bindGroup);
     pass.setBindGroup(1, group);
+    // The sky lights what is drawn; a shadow's cast needs none of it.
+    if (pipeline === this.kit.pipeline) skyUniformFor(this.device).bindShared(pass, [2]);
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     pass.drawIndexed(this.indexCount);

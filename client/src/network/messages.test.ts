@@ -28,6 +28,7 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     dressed,
     node,
     protocol: PROTOCOL,
+    epoch: 1_234_567.25,
   });
   const snapshot = readFromRoom(await written('snapshot.bin'));
   assert.equal(snapshot?.kind, 'snapshot');

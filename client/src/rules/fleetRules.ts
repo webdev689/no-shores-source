@@ -49,6 +49,7 @@ export interface FleetRules {
     ship: ArrayLike<number>,
     hurts: { readonly wrecked: boolean; readonly sail: number; readonly maxSail: number },
     time: number,
+    epoch: number,
     helms: readonly Helm[],
   ): { readonly ship: Float64Array; readonly pose: Pose } | null;
   /** Its look's lay among the ships it sees, with its load (1 round to 4 heated); null when no side bears. */
@@ -101,8 +102,8 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
   };
   return {
     setWorldStart: (seconds) => exports.room_world_start(seconds),
-    predict: (ship, hurts, time, helms) => {
-      const request = [...Array.from(ship), hurts.wrecked ? 1 : 0, hurts.sail, hurts.maxSail, time];
+    predict: (ship, hurts, time, epoch, helms) => {
+      const request = [...Array.from(ship), hurts.wrecked ? 1 : 0, hurts.sail, hurts.maxSail, time, epoch];
       for (const helm of helms) request.push(helm.steer, helm.crab ? 1 : 0, helm.climb);
       const out = ask(exports.fleet_predict, request);
       if (out.length !== SHIP_FLOATS + POSE_FLOATS) return null;

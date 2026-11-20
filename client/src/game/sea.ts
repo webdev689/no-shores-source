@@ -9,6 +9,7 @@ import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
 import { Boarding } from './deckBoarding.ts';
@@ -366,7 +367,7 @@ export class Sea {
   /** One frame at sea. */
   frame(input: SeaInput): SeaFrame {
     const { seconds: dt, time, viewport } = input;
-    const windBearing = input.swell?.bearing ?? 0;
+    const windBearing = SKY_NOW.current.sails ?? input.swell?.bearing ?? 0;
     this.shots.viewport = viewport;
     this.water.swell = input.swell;
     this.keepRoom(dt, time);

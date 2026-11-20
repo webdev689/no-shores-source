@@ -9,6 +9,7 @@ code:
   - client/src/game/audio/music/songPlayer.ts#SongPlayer
   - client/src/game/audio/music/directorLaw.ts#hear
   - client/src/game/audio/music/directorLaw.ts#MOOD_ROLES
+  - client/src/game/audio/music/directorLaw.ts#voyageSongFor
   - client/src/game/audio/music/director.ts#MusicDirector
   - client/src/game/audio/music/director.ts#overlookScores
   - client/src/game/audio/music/hearing.ts#hearFoot
@@ -84,7 +85,7 @@ const song = makeSong(
 
 Each frame it hears where the player is (the social space, an island and its climate, or the sea), the
 player's health, the blows they gave and took, and every foe's rank, alert, distance and health; at sea, the hostile
-ships within 1,000 m and the fight.
+ships within 1,000 m, the fight, whether it lies off a coast to land on, and the sky over it.
 
 | Mood | When | Layers | Level | Ambience |
 |---|---|---|---|---|
@@ -109,11 +110,17 @@ ships within 1,000 m and the fight.
   its fall; the player dead plays the score's defeat. A fight that ends plays the family's cadence, or its victory
   if the player killed a foe in it. A sting holds the next song until it ends; where none is written, silence
   stands in.
-- **The sea.** Sailing is silent. A hostile ship closing brings in a sea song's tension; the fight, its fight. The
-  song is chosen as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or
-  over, else the sea fight.
+- **The sea.** Out of danger a sea song comes now and then, played whole and once through: the sea at night once dusk
+  is gone, the still sea in a wind under 4 m/s, the open sea otherwise. After a song 4 to 8 minutes of silence pass
+  before another may come, and after any danger or time ashore at least four. None plays in rain or snow, a storm or
+  fog; a sky turning foul fades the one playing. As it comes off a coast where it may dock or go ashore, landfall
+  plays once through, whatever the sky or the silence, and not again for four minutes.
+- **Danger at sea.** A hostile ship closing brings in a sea song's tension; the fight, its fight. The song is chosen
+  as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or over, else the
+  sea fight.
 - **The social space.** Saltmere's theme plays whole there while nothing threatens, the ambience at 0.8.
-- **A hidden page** falls silent at once; the music starts again from the song's top when the page is seen.
+- **A hidden page** falls silent at once; the music starts again from the song's top when the page is seen, but a
+  sea song cut short by it is not begun again.
 
 ## The scores
 
@@ -170,7 +177,7 @@ dBFS, peaks -2 to -6; a tension 4 to 6 dB under its fight; Saltmere's theme -21.
 
 - One fight score serves every climate of its family: the coast and the highland share green's.
 - Saltmere's theme begins from its top each time the player comes into the social space.
-- The still sea, the open sea, the sea at night and landfall play nowhere yet: sailing is ambience alone.
+- The sea songs out of danger play while it is at sea, whether it is under way or hove to.
 - A boss's score is chosen by the name over its bar.
 - At its peak a family's fight renders 12 to 15 times faster than it plays in headless Chromium: under a tenth of one
   audio core.

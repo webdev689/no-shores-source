@@ -23,6 +23,7 @@ import { dragCamera, keyTurn, type pressMove, zoomCamera } from '../overworld/ov
 import type { Mark } from '../overworld/overworldMarks.ts';
 import type { Lying } from '../ships/deck.ts';
 import { lookOf, type Shot } from './camera.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import { CloseZoom } from './seaClose.ts';
 import { HELM, helmEye } from './seaLaw.ts';
 
@@ -116,7 +117,7 @@ export class SeaShots {
   /** The wheel's notches, positive in, zoom the camera over the ship, and past its lowest bring the view in close. */
   zoom(notches: number): void {
     if (this.view.kind !== 'sail') return;
-    const ceiling = ceilingFor(null);
+    const ceiling = ceilingFor(SKY_NOW.current.reading);
     const atLowest = this.camera.heightTarget <= heightBand(ceiling)[0] + 1e-6;
     this.camera = zoomCamera(this.camera, this.close.zoom(notches, atLowest), ceiling);
   }
@@ -147,7 +148,7 @@ export class SeaShots {
     heightAt: (x: number, y: number) => number,
   ): { readonly overworld: Shot; readonly seaShot: Shot; readonly pose: CameraPose } {
     const feet: [number, number, number] = [ship.x, ship.y, 0];
-    const stepped = stepCamera(this.camera, { feet, dt: seconds, ceiling: ceilingFor(null), heightAt });
+    const stepped = stepCamera(this.camera, { feet, dt: seconds, ceiling: ceilingFor(SKY_NOW.current.reading), heightAt });
     this.camera = stepped.camera;
     let shot = stepped.shot;
     if (this.view.kind === 'sail') this.seaRig = { ...this.camera, height: shot.height, tilt: shot.tilt };

@@ -53,14 +53,17 @@ fn helm_of(numbers: &[f64]) -> Option<Helm> {
 }
 
 /// The player's ship stepped by each helm in turn, as the fleet room steps it: from the ship's numbers, whether
-/// it is a wreck, its sail and its whole sail, the room's time for its pose, then three numbers a helm. Answers the
-/// ship's numbers and its pose at that time; none for numbers that are not that.
+/// it is a wreck, its sail and its whole sail, the room's time for its pose, the room's world time at its first tick
+/// (which the wind needs not: the room's wind is the one it opened in), then three numbers a helm. Answers the ship's
+/// numbers and its pose at that time; none for numbers that are not that.
 #[must_use]
 pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let (Some(ship), Some(rest)) = (numbers.get(..SHIP_FLOATS).and_then(ship_of), numbers.get(SHIP_FLOATS..)) else {
         return Vec::new();
     };
-    let Some((&[wrecked, sail, max_sail, time], helms)) = rest.split_first_chunk::<4>() else { return Vec::new() };
+    let Some((&[wrecked, sail, max_sail, time, _epoch], helms)) = rest.split_first_chunk::<5>() else {
+        return Vec::new();
+    };
     if !numbers.iter().all(|number| number.is_finite()) || !helms.len().is_multiple_of(HELM_FLOATS) {
         return Vec::new();
     }

@@ -53,7 +53,7 @@ fn idle_both() -> Vec<(ShipId, Orders)> {
 
 fn run(fight: &mut Fight, orders: &[(ShipId, Orders)], ticks: u32) -> Vec<Event> {
     let start = fight.clock;
-    (0..ticks).flat_map(|tick| fight.step(orders, &Open, WIND, start + f64::from(tick) * TICK_SECONDS)).collect()
+    (0..ticks).flat_map(|tick| fight.step(orders, &Open, &|_| WIND, start + f64::from(tick) * TICK_SECONDS)).collect()
 }
 
 #[test]

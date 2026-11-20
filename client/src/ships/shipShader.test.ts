@@ -13,7 +13,9 @@ function countingGpu() {
     createSampler: () => (made.samplers++, {}),
     createBindGroupLayout: () => ({}),
     createPipelineLayout: () => ({}),
-    queue: { writeTexture: () => undefined },
+    // The sky's uniform, which the hull's light reads.
+    createBuffer: () => ({}),
+    queue: { writeTexture: () => undefined, writeBuffer: () => undefined },
   };
   return { gpu: { device, format: 'bgra8unorm' } as unknown as Gpu, made };
 }

@@ -5,6 +5,7 @@
 // A drawer of the same shape as the game's scene takes (client/src/game/scene.ts `Drawer`), by structure.
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import type { ShadowMap } from '../shadow.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { FAR_STRIDE, type GroundMesh, groundHeight, groundLook, groundMesh } from './isleGround.ts';
 import {
   type IsleManifest,
@@ -194,6 +195,8 @@ export class IslesView {
     const frame = this.frame;
     [frame.triangles, frame.draws, frame.near, frame.middle, frame.far] = [0, 0, 0, 0, 0];
     const { ground, modules } = this.pipelines;
+    // The sky lights both, at its own group; a gap below it holds nothing.
+    skyUniformFor(this.gpu.device).bindShared(pass, [2]);
     for (const drawn of this.drawn) {
       const distance = this.distanceOf(drawn, shot);
       if (distance >= FARTHEST_M) continue;

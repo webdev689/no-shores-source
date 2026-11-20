@@ -1,10 +1,11 @@
 //! The weather a fight at sea is fought in: the swell and the wind where it began, at the world time it began, kept
 //! while it lasts. A room counts its own ticks; the world time it opened at, handed in by its host, sets them in the
-//! world's weather (`world::weather`).
+//! world's weather: the swell's by `world::weather`, the wind's by the sky's (`sky::weather`).
 
 use crate::sea::{Coast, on_land};
+use crate::winds::epoch_of;
 use land::sea::{FULL_DEPTH_M, SEED, SeaHere, Swell};
-use sailing::waters::{Spot, Waters, weather_wind};
+use sailing::waters::{Spot, Waters, sea_wind_at};
 use world::geometry::Point;
 use world::layout::Layout;
 
@@ -25,12 +26,13 @@ impl SeaWeather {
         Self { waters: world::waters::Waters::new(layout), roadsteads: roadsteads.collect(), world_start_s: 0.0 }
     }
 
-    /// The swell and the sailing wind at world point `at` at `time`, the room's seconds: the weather there then, the
-    /// swell sheltered by the coasts upwind.
+    /// The swell and the sailing wind at world point `at` at `time`, the room's seconds: the sea's weather there then,
+    /// the swell sheltered by the coasts upwind; the sky's wind there then (`sea_wind_at`).
     #[must_use]
     pub fn at(&self, at: [f64; 2], time: f64) -> (Swell, [f64; 2]) {
-        let here = SeaHere::at(&self.waters, &self.roadsteads, at[0], at[1], self.world_start_s + time);
-        (Swell::under(SEED, &here), weather_wind(here.wind))
+        let world_s = self.world_start_s + time;
+        let here = SeaHere::at(&self.waters, &self.roadsteads, at[0], at[1], world_s);
+        (Swell::under(SEED, &here), sky_wind(at, world_s))
     }
 }
 
@@ -39,7 +41,12 @@ impl SeaWeather {
 #[must_use]
 pub fn open_sea_at(at: [f64; 2], world_time_s: f64) -> (Swell, [f64; 2]) {
     let air = world::weather::air_at(at[0], at[1], world_time_s);
-    (Swell::under(SEED, &SeaHere::open_sea(&air)), weather_wind(air.wind))
+    (Swell::under(SEED, &SeaHere::open_sea(&air)), sky_wind(at, world_time_s))
+}
+
+/// The sails' wind at world point `at` at `unix_s`, seconds since the Unix epoch: the sky's, on its own clock.
+fn sky_wind(at: [f64; 2], unix_s: f64) -> [f64; 2] {
+    sea_wind_at(at, epoch_of(unix_s * 1000.0))
 }
 
 /// The bed under the open sea in a fight, metres below its level: the swell's full depth, and more.

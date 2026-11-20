@@ -45,7 +45,7 @@ fn command(fight: &Fight, id: ShipId) -> &Command {
 
 fn tick(fight: &mut Fight) -> Vec<Event> {
     let time = fight.clock;
-    fight.step(&[], &Open, WIND, time)
+    fight.step(&[], &Open, &|_| WIND, time)
 }
 
 fn elite(faction: u8) -> Commission {

@@ -1,6 +1,7 @@
 // What every hull's view draws with, made once a device and shared: the ship shader, its pipeline (built off the
 // frame, so a hull first seen at sea does not stall one), and its parts' and the sides' flags' pictures and sampler.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
 import { levelsOf } from '../textures/levels.ts';
 import type { Picture } from '../textures/picture.ts';
@@ -157,11 +158,13 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   } else if (drawn.part == SAIL_PART && place.canvas.w > 0.0) {
     colour = place.canvas.rgb * clamp(light / SAIL_LIGHT, 0.75, 1.15);
   }
-  // The land's light: the sky's, what the water throws back onto its sides, and the sun where the shadows let it.
-  let ambient = AMBIENT + BOUNCE * (1.0 - abs(normal.z));
-  let direct = max(dot(normal, SUN), 0.0);
-  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0);
-  return vec4f(colour * place.shade.x * (ambient + (1.0 - ambient) * direct * sun), 1.0);
+  // The land's light: the sky's, what the water throws back onto its sides, the key light where the shadows and the
+  // clouds let it, and the lamps near.
+  let ambient = sky_ambient(normal) * (1.0 + (BOUNCE / AMBIENT) * (1.0 - abs(normal.z)));
+  let direct = max(dot(normal, sky_state.key.xyz), 0.0);
+  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0) * sky_dapple(drawn.from_eye);
+  let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
+  return vec4f(colour * place.shade.x * light, 1.0);
 }
 `;
 
@@ -251,6 +254,7 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
       ],
     });
     const shadows = shadowLayouts(device);
+    const sky = skyUniformFor(device);
     const buffers: GPUVertexBufferLayout[] = [
       {
         arrayStride: VERTEX_BYTES,
@@ -263,7 +267,9 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
       },
     ];
     const drawing = device.createRenderPipelineAsync({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [placeLayout, shadows.receiver] }),
+      layout: device.createPipelineLayout({
+        bindGroupLayouts: [placeLayout, shadows.receiver, sky.empty, sky.layout],
+      }),
       vertex: { module, entryPoint: 'vertex_main', buffers },
       fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
       primitive: { topology: 'triangle-list', frontFace: FRONT_FACE },

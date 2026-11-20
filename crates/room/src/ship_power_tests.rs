@@ -71,7 +71,7 @@ fn fought_with(character: &Character, (pirate, commission): (Pirate, Commission)
     for tick in 1..LONGEST_TICKS {
         fight.fit(PLAYER, fitting(character, &hostiles));
         let orders = plain_orders(&fight, PLAYER, tick, 300.0);
-        fight.step(&[(PLAYER, orders)], &Open, [1.5, 0.0], 0.0);
+        fight.step(&[(PLAYER, orders)], &Open, &|_| [1.5, 0.0], 0.0);
         sunk |= fight.vessel(PLAYER).is_some_and(|own| matches!(own.damage.state, State::Sinking | State::Sunk));
         let other_ship = fight.vessel(CAPTAIN).expect("in the fight");
         let done = other_ship.command().is_some_and(|command| command.struck_at.is_some() || command.gone.is_some());

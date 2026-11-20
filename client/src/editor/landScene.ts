@@ -37,6 +37,8 @@ import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
 import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
+import { type SkyLaw, startSkyLaw, windBearing } from '../sky/skyLaw.ts';
+import { worldSeconds } from '../sky/worldClock.ts';
 
 /** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
 export interface GroundSource extends SailSource, FightSource {
@@ -154,6 +156,8 @@ export class LandScene {
   private fleet: FleetScene | null = null;
   /** Each captain's plate over the picture, and the fight's readout beside it. */
   private readonly fightOverlay: FightOverlay;
+  /** The sky's law, for the wind its sails feel: the rules sail it in the weather's, at the wall's world time. */
+  private law: SkyLaw | null = null;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
     this.gpu = gpu;
@@ -165,6 +169,11 @@ export class LandScene {
     this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
     this.marks = new MarkView(gpu);
     this.naval = new Naval(this.marks, (hull) => this.models.shown(hull));
+    fetch(`${import.meta.env.BASE_URL}land.wasm`)
+      .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`land.wasm: ${answer.status}`))))
+      .then(startSkyLaw)
+      .then((law) => (this.law = law))
+      .catch(fail);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.depthCopy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -316,8 +325,11 @@ export class LandScene {
       this.rig = new SailRig(ship.sails);
       this.naval.ownRig = this.rig;
     }
+    // The sails feel the weather's wind where the Sloop is, at the wall's world time; the swell's until the law comes.
+    const here = this.sailing?.floats();
+    const weather = here && this.law?.seaWind(here[0] ?? 0, here[1] ?? 0, worldSeconds(Date.now()));
     const wind = {
-      bearing: view.swell?.bearing ?? 0,
+      bearing: weather ? windBearing(weather) : (view.swell?.bearing ?? 0),
       seconds: Math.min(MOST_SAIL_STEP_S, Math.max(0, time - this.sailedAt)),
     };
     this.sailedAt = time;

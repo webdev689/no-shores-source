@@ -176,7 +176,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in its parts' pictures, flying Overlook's blue at its masthead.
   Like the World Editor's, it rides the swell the sea draws and heels into its turns ([[Sailing]], "Drawn at sea").
-  Its sails are set while it is under way and furled at rest, filled by the weather's wind ([[World Map]]).
+  Its sails are set while it is under way and furled at rest, filled by the weather's wind ([[World Map]], [[Weather]]).
   The Overworld is not to scale: the Sloop is drawn 75 m long (four times its length), so one reads from the raised
   view, and every hull the same four times its own, so a Frigate reads larger than a Sloop. Every other player's ship
   is the Sloop too. A captain's ship is drawn as the hull the wire carries for it, in its side's colours, and as the
@@ -369,19 +369,22 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 
 ## Drawing
 
-`GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
-drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
-draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each tested by hand
-against the scene's depth, so the water's sky and its surface near a coast never cover them. The fight's solid marks
-write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the marks and arcs give
-their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The attack feel"), under
-the first person's hands. Off foot, or with no mark or arc to draw, it is not run. The game adds the
-open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
-its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
-`world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`
-([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
-(`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
-The land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
+`GameScene` reads the sky over the eye each frame with the lamps lit round it, a torch or lantern in the player's left
+hand among them ([[Sky]]), then draws the open landmass in rings round the eye, the exact ground round the player or
+the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
+what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
+tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
+
+The fight's solid marks write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the
+marks and arcs give their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The
+attack feel"), under the first person's hands. Off foot, or with no mark or arc to draw, it is not run.
+
+The game adds the open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView`
+([[Cities]]), drawn in its continent's climate once the forged models' tables and the RMB blocks its plan names have
+come from the pages' `world/` folder; the blocks are kept for every later city. Its nature is the nature layer's
+`NatureView` ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
+(`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture. The
+land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
 
 **The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
 texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:

@@ -14,6 +14,8 @@ code:
   - crates/sailing/src/waters.rs#weather_wind
   - crates/sailing/src/pose.rs#lag_of
   - crates/room/src/sea_weather.rs#SeaWeather
+  - crates/sailing/src/waters.rs#sail_wind
+  - crates/sailing/src/waters.rs#sea_wind_at
   - crates/sailing/src/waters.rs#OpenSea
   - crates/land/src/exact.rs#fingerprint
   - crates/land-wasm/src/sail.rs#sail_bytes
@@ -62,18 +64,20 @@ sail the other hulls ([[Hulls]]) by the same laws.
   sail running dead before it) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail its rudder
   swings it at its steerage, read at its way over its rig's gain: 3 degrees a second at no way, about 12 at its best
-  way in its rated wind. On its oars it swings at 20.
+  way in the usual breeze. On its oars it swings at 20.
 - **The ladder.** W climbs a rung, S comes down one: oars astern, oars at rest, oars ahead, sails set. A and D steer;
   backing water, the helm answers the other way. Shift with A or D pulls it sideways on its oars.
 - **A step.** Its swing and its way move toward what its rung asks, at the mod's rates under DFO's responsive helm.
   With its sails struck and its oars at rest, it coasts to a stop, faster for the share of its way its canvas made.
   It moves in its own frame, then swings, as the mod's boat did. Its heading stays in [0, 2π).
-- **The wind.** It sails in the weather's wind where it is ([[World Map]], "Weather and travel"): its way, and its
-  strength over 6.5 m/s (a moderate sea's middle) as a share of its rated wind (1.5), held between 0.3 and 2 of it
-  (`sea_wind`), so a calm's light air still moves it and a storm's gale does not run away with it
-  (`weather_wind`). The sea room's fights, the fleet room, a clash and the World Editor all take it. A fight takes the
-  wind where and when it began, and keeps it while it lasts (`sea_weather.rs`). A room counts its own ticks: its host
-  hands it the world time it opened at (`room_world_start`).
+- **The wind.** The [[Weather]]'s wind where it is ([[World Map]], "Weather and travel"), held for a minute of
+  world time at a time and read at the minute's start. Its sails feel it scaled so the weather's usual breeze
+  (6.5 m/s) is its rated wind (1.5 m/s), and the helm holds it between 0.3 and 2 times that: a gale drives it at most
+  twice as hard, a near calm still gives way. Every ship sails in the wind where it is, in a fight, among captains
+  alone and in a fleet room alike, and the World Editor takes it too. A room's world time is its host's wall at its
+  first tick, which its welcome carries, so a browser predicting its ship reads the same wind by the same rules; an
+  order the room takes just after a world minute turns can bring a small correction. A fight takes the sea's weather
+  where and when it began, and keeps it while it lasts (`sea_weather.rs`).
 - **Its pose.** It takes the mean of the water under its bow, stern, sides and middle at its waterline as its height,
   and its slope along and across it as its pitch and roll, each felt through its inertia: every wave answered as a
   first-order lag answers it, its time constant 0.02 s a metre of its waterline's length (`lag_of`), so a bigger hull
@@ -220,7 +224,8 @@ Boat's sizes; a spanker is a gaff sail:
   from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with the
   fight.
 
-In the editor its sails are set on the helm's top rung; at sea, while it is under way. The wind is the weather's.
+In the editor its sails are set on the helm's top rung; at sea, while it is under way. They are drawn in the wind
+the rules sail it in, where it is, which the page reads from the sky's law.
 
 Sail (`B`) puts it to sea at the camera's target, heading where the camera looks; the rules refuse it where the
 water is shallower than its draught, and the camera stands back off. Each frame owes it its time in whole ticks, one

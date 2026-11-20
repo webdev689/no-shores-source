@@ -15,14 +15,12 @@ use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
 use sailing::TICK_SECONDS;
-use sailing::waters::{LandWaters, Waters, weather_wind};
+use sailing::waters::{LandWaters, Waters, sea_wind_at};
 use serde_json::{Value, json};
 use std::cell::RefCell;
 
 thread_local! {
     static FIGHT: RefCell<Option<Fight>> = const { RefCell::new(None) };
-    /// The fight's wind: the weather's where and when it began, kept while it lasts.
-    static WIND: RefCell<[f64; 2]> = const { RefCell::new([0.0; 2]) };
 }
 
 /// The farthest a look may lay, metres: past every gun's reach.
@@ -260,7 +258,6 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         let fight = Fight::begin(ship, commission, seed, &waters, time)?;
         let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
-        WIND.with(|wind| *wind.borrow_mut() = weather_wind(world::weather::air_at(ship.x, ship.y, time).wind));
         Ok(answer)
     })
 }
@@ -274,7 +271,7 @@ fn ray_of(ray: &Value) -> Result<[[f64; 3]; 2], String> {
 }
 
 /// The orders a step request holds, each checked.
-fn orders_of(request: &Value) -> Result<(Orders, f64, u32), String> {
+fn orders_of(request: &Value) -> Result<(Orders, f64, u32, f64), String> {
     let helm = &request["helm"];
     let crab = if helm["crab"].as_bool().ok_or("the helm crabs or not")? { 1.0 } else { 0.0 };
     let helm = helm_from(number(&helm["steer"], "the rudder")?, crab, number(&helm["climb"], "the climb")?)?;
@@ -300,19 +297,19 @@ fn orders_of(request: &Value) -> Result<(Orders, f64, u32), String> {
     let fire = request["fire"].as_bool().ok_or("the fire is given or not")?;
     let brace = request["brace"].as_bool().ok_or("the brace is held or not")?;
     let (time, ticks) = ticks_from(number(&request["time"], "the time")?, number(&request["ticks"], "the ticks")?)?;
-    Ok((Orders { helm, aim, fire, brace, load }, time, ticks))
+    let (world, _) = ticks_from(number(&request["world"], "the world's time")?, 0.0)?;
+    Ok((Orders { helm, aim, fire, brace, load }, time, ticks, world))
 }
 
 fn step(request: &[u8]) -> Result<Value, String> {
     let request: Value =
         serde_json::from_slice(request).map_err(|error| format!("a fight request is JSON: {error}"))?;
-    let (orders, time, ticks) = orders_of(&request)?;
+    let (orders, time, ticks, world) = orders_of(&request)?;
     OPEN.with(|open| {
         let open = open.borrow();
         let landmass = open.as_ref().ok_or("no landmass is open")?;
         let swell = Swell::default();
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
-        let wind = WIND.with(|wind| *wind.borrow());
         FIGHT.with(|slot| {
             let mut slot = slot.borrow_mut();
             let fight = slot.as_mut().ok_or("no fight is on")?;
@@ -328,7 +325,8 @@ fn step(request: &[u8]) -> Result<Value, String> {
                 } else {
                     Orders { helm: sailing::ship::Helm { climb: 0, ..orders.helm }, fire: false, load: None, ..orders }
                 };
-                events.extend(fight.step(&[(PLAYER, now)], &waters, wind, time + f64::from(tick) * TICK_SECONDS));
+                let wind_at = |at| sea_wind_at(at, world + f64::from(tick) * TICK_SECONDS);
+                events.extend(fight.step(&[(PLAYER, now)], &waters, &wind_at, time + f64::from(tick) * TICK_SECONDS));
             }
             Ok(view(fight, &events, orders.aim.as_ref(), &waters, time + f64::from(ticks) * TICK_SECONDS))
         })

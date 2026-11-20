@@ -8,6 +8,7 @@ description = "How a ship sails: the helm, its sails against the wind, its pose 
 
 [dependencies]
 land = { path = "../land" }
+sky = { path = "../sky" }
 libm.workspace = true
 
 [lints]

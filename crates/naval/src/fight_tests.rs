@@ -67,7 +67,9 @@ fn alongside(x: f64, temper: Temper) -> Fight {
 }
 
 fn run(fight: &mut Fight, orders: &Orders, ticks: u32) -> Vec<Event> {
-    (0..ticks).flat_map(|tick| fight.step(&[(PLAYER, *orders)], &Open, WIND, f64::from(tick) * TICK_SECONDS)).collect()
+    (0..ticks)
+        .flat_map(|tick| fight.step(&[(PLAYER, *orders)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS))
+        .collect()
 }
 
 #[test]
@@ -322,7 +324,7 @@ fn a_captain_sails_round_land_that_lies_between_it_and_the_player() {
     let mut closest = f64::INFINITY;
     // Head to wind it rows (its oars beat its canvas there), so give it five minutes.
     for tick in 0..60 * 300 {
-        fight.step(&[(PLAYER, IDLE)], &Headland, WIND, f64::from(tick) * TICK_SECONDS);
+        fight.step(&[(PLAYER, IDLE)], &Headland, &|_| WIND, f64::from(tick) * TICK_SECONDS);
         let ship = captain(&fight).ship;
         closest = closest.min((ship.x * ship.x + ship.y * ship.y).sqrt());
     }
@@ -415,7 +417,7 @@ fn a_captain_coming_to_engage_is_round_to_its_broadside_as_the_range_comes_to_it
         };
         let mut came = None;
         for _ in 0..600 * 60 {
-            fight.step(&[(PLAYER, IDLE)], &Open, WIND, 0.0);
+            fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, 0.0);
             let (apart, reach, off_beam) = gauge(&fight);
             if apart <= reach {
                 came = Some(off_beam);
