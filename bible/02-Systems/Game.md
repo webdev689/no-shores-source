@@ -107,12 +107,12 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   place's name and the status line at the top right, the keys (over the Arts and weapons), the menus and the veil;
   while a boss's bar shows, the status line stands under it ([[Interface]]).
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
-  swing arc over its striker (none through the eyes), with the smear its strike leaves behind the striker's card; the
-  hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
-  crosshair shows); and the lunge driving a striker's figure into its blow. Only the drawing moves, never the rules or
-  their clock (`combat/attackFeel.ts`). A player who asks for reduced motion keeps a still view: no kick, no shake, no
-  lunge carrying the eye and no Anima push-in; the Anima's edge frame still shows. The feel's light is on too: the
-  brightest marks and arcs light what stands round them ("Drawing").
+  swing arc where its blade goes, its striker's figure hiding what passes behind it (none through the eyes), with the
+  smear its strike leaves behind the striker's card; the hit-stop holding the fighters a blow lands on; the camera's
+  kick (moving the view but never turning it while a crosshair shows); and the lunge driving a striker's figure into its
+  blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for reduced
+  motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge frame
+  still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").
 - **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole figure
   white for two, its outline white for two, then its outline for one in the blow's element's light (steel `#cfe0ff` for
   a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames only for a blow of

@@ -298,24 +298,23 @@ const vertices = (mesh: Float32Array) =>
     return { place: [value(0), value(1), value(2)] as const, part: value(6), ramp: value(11), first: value(3) };
   });
 
-test('an arc is brought along the eye’s line until it stands over its own striker’s card, never moved on the screen', () => {
-  const arcs = new SwingArcs();
-  play(arcs, [
-    [0, 0.3],
-    [0.12, 0.42],
-  ]);
-  const card = Math.hypot(FEET[0] - EYE[0], FEET[1] - EYE[1]) - 0.35;
-  const laid = vertices(arcs.mesh(EYE, LOOK));
-  assert.ok(laid.length > 0);
-  for (const { place } of laid) assert.ok(Math.hypot(place[0] - EYE[0], place[1] - EYE[1]) < card, 'over its card');
-  // The same arc seen from close by is not brought in: each of its points lies on the line from the eye to the far one.
-  const near = new SwingArcs();
-  play(near, [
-    [0, 0.3],
-    [0.12, 0.42],
-  ]);
-  const far = vertices(near.mesh([10, 20.5, 1.6], LOOK));
-  assert.equal(far.length, laid.length);
+test('an arc stands where its blade goes, seen from behind as from by: its own striker’s figure hides what passes behind', () => {
+  const course = courseOf(swing());
+  const pivot = [FEET[0] + course.offset[0], FEET[1] + course.offset[1], FEET[2] + course.offset[2]] as const;
+  // From 10 m behind its striker, as the camera stands, and from half a metre behind, on the same line.
+  for (const eye of [EYE, [10, 20.5, 1.6] as Vector]) {
+    const arcs = new SwingArcs();
+    play(arcs, [
+      [0, 0.3],
+      [0.12, 0.42],
+    ]);
+    const laid = vertices(arcs.mesh(eye, LOOK)).filter((vertex) => vertex.part === PART.band);
+    assert.ok(laid.length > 0);
+    for (const { place } of laid) {
+      const from = Math.hypot(place[0] - pivot[0], place[1] - pivot[1], place[2] - pivot[2]);
+      assert.ok(from <= course.tip * 1.06 + 1e-4, `within the blade from ${eye.join(',')}: ${from.toFixed(2)} m`);
+    }
+  }
 });
 
 test('a blade’s element sets its arc’s ramp, a riposte’s is gold, a bare one burns in its metal', () => {
