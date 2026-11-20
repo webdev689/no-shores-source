@@ -115,7 +115,7 @@ they play in holds it while they are there.
   to that one run alone. Any other is let go untouched, and the player sent away saying "This run is another
   company's.".
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
-  that is not kept. The Test Ground's room grants gear to try it, and the sea holds none, so neither keeps
+  that is not kept, or in a run, which keeps no one unkept, is sent away. The Test Ground's room grants gear to try it, and the sea holds none, so neither keeps
   characters; nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.
 
 ## The Roster

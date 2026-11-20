@@ -513,3 +513,26 @@ test('a run is full by its four accounts: a member signing in again is kept, a f
   assert.equal(await keeper.signIn(6, tokens['Eve'] ?? '', now, here), false);
   assert.deepEqual(sent.at(-1), [6, 'This run is full.']);
 });
+
+test('a run sends away a player whose kept body it cannot read, since it keeps no one unkept', async () => {
+  const { clock, kept, token } = await world();
+  const account = (await kept.claim(token, 'node-a:1'))?.account ?? '';
+  await kept.release(account, 'node-a:1', 'not readable');
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const sent: [number, string | undefined, boolean | undefined][] = [];
+  const run = new Keeper(kept, room, 'node-krakens-grotto--run-k3j4h5g6', (player, why, rejoinable) => {
+    sent.push([player, why, rejoinable]);
+  }).forCompany();
+  assert.equal(
+    await run.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(sent, [[1, ACCOUNTS_TROUBLE, false]]);
+  assert.equal((await kept.claim(token, 'node-b:1'))?.body, 'not readable', 'let go untouched');
+});

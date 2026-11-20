@@ -133,6 +133,8 @@ export class Keeper {
     if (!here() || !given || this.held.has(player)) {
       // Gone already, or kept as nothing this room can read: let it go untouched rather than save over it.
       await characters.release(claimed.account, holder, null).catch(() => false);
+      // A run keeps no one unkept, and joining again would find the same body.
+      if (this.company && !given && here()) this.lost(player, ACCOUNTS_TROUBLE, false);
       return false;
     }
     // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes

@@ -336,7 +336,8 @@ so every decision is Rust and the shell only carries bytes and time.
   dropped finds it theirs still; any other is let go untouched, and the socket closed with 4003 and "This run is another company's.". It keeps no one unkept: a token that is no session,
   or no token five seconds after the join (a claim's own waits), closes with 4003 and "Sign in to enter this run.",
   and a claim or a company the accounts never gave, each asked again after a claim's waits, closes with 1013 and
-  "Something went wrong. Try again.", which the page joins again on. A run holds four accounts (`RUN_MOST`, a
+  "Something went wrong. Try again.", which the page joins again on; a kept character the room cannot read closes
+  with 4003 and those words, since joining again would find it the same. A run holds four accounts (`RUN_MOST`, a
   company's most), judged as each signs in: a fifth account is sent away with 4003 and "This run is full.", so the
   page takes them back as from a shut gate, saying why, while a member signing in again on a new socket is kept and
   their old socket let go. An emptied run's room stays as its company left it for `RUN_LINGER_MS`, a minute,
