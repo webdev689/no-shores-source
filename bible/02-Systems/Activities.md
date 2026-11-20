@@ -182,9 +182,11 @@ One engine counts both, since the owner's side quests and the board's bounties a
   feat (`Feat`) as it happens, and `Character::saw` counts it toward each bounty held today and each side quest held,
   up to its target; the account keeps the count. A room whose day is not the record's counts no bounty.
 - **The rooms count** each foe felled for each player who shares its kill, each resource node gathered, and each
-  dungeon cleared for each player the room keeps as its cache opens, the way the clear pays; a shared dungeon's
-  cache counts again each time it reopens. A room knows its island from its node's file, or from the patrol, the
-  Elite Dungeon or the sea island its dungeon is of (`Room::set_island`); a room on no island counts no place.
+  dungeon cleared for each player the room keeps as its cache opens, the way the clear pays. A dungeon's room counts
+  its clear for an account once a day at most (`Run::count_clear`), though its end post stands again and its cache
+  opens again, so one dungeon farms no "Clear 3 dungeons."; a run is a room of its own, so each run counts. A room
+  knows its island from its node's file, or from the patrol, the Elite Dungeon or the sea island its dungeon is of
+  (`Room::set_island`); a room on no island counts no place.
 - **The bounty board** stands free in Overlook's plaza, seaward of the braziers on the Reader's side and away from
   the Harbourmaster ([[Cities]], `city::board`), and opens after the prologue, on the counters' pattern of the
   plaza's keepers: the bake writes its counter on the plaza's node file, and the room serves its asks there. It is

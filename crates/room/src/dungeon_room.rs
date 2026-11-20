@@ -249,12 +249,16 @@ impl Room {
             }
             let level = self.at_seas(post.girds.first().map_or(0, |&(level, _)| level));
             let players: Vec<PlayerId> = self.players.keys().copied().collect();
-            let cleared = gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty };
+            let (cleared, day) =
+                (gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty }, self.day());
             for player in players {
                 self.lay_cache_vestige(player, &cache, level);
                 self.pay_clear(player, level, &cache);
-                // Counted as the clear pays, for those the room keeps.
-                if self.players.get(&player).is_some_and(|found| found.owner.is_some()) {
+                // Counted as the clear pays, for those the room keeps, once a day each however often the cache opens.
+                let owner = self.players.get(&player).and_then(|found| found.owner.clone());
+                let first =
+                    owner.is_some_and(|owner| self.run.as_mut().is_some_and(|run| run.count_clear(&owner, day)));
+                if first {
                     self.saw(player, &cleared);
                 }
             }

@@ -127,8 +127,8 @@ on Cloudflare.
   their levels. A foe's kill pays every player whose blow landed on it in its last ten seconds and could harm it, each their own XP and Aurem and perhaps a Vestige, which lies where the foe fell for them
   alone for two minutes and is picked up by walking within 1.5 m.
 - **Counts:** the room counts each foe felled for each player its kill pays, each node gathered, and each dungeon
-  cleared for each kept player in it as its cache opens, toward their bounties and side quests, on the island its
-  node's file or its dungeon names ([[Activities]], "Quests and bounties").
+  cleared for each kept player in it as its cache opens, once a day for each account, toward their bounties and side
+  quests, on the island its node's file or its dungeon names ([[Activities]], "Quests and bounties").
 - **Asks:** an input may carry an ask of the player's gear, answered in turn with it, and the answer kept to send
   them. A social space's room serves each of its asks within 4 m of that ask's counter, which its node
   file names: a Vestige opened at the Reader's, the vault at a vault's, a ware at its own vendor's, an emblem at the Tailor's; the Test Ground's

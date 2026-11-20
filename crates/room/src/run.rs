@@ -43,6 +43,8 @@ pub struct Run {
     /// Whether its cache has stood open: a run once won is never wiped, though its end post stands again later and
     /// shuts the cache.
     pub won: bool,
+    /// The day it last counted a clear on, and the accounts it counted one for then (`count_clear`).
+    pub cleared_for: (u64, std::collections::BTreeSet<String>),
 }
 
 impl Run {
@@ -51,6 +53,15 @@ impl Run {
     #[must_use]
     pub fn today(patrol: &str, number: usize) -> Self {
         Run { pays: Pays::Today { patrol: patrol.to_owned(), number }, ..Run::default() }
+    }
+
+    /// Notes a clear counted toward an account's bounties and quests on `day`: false for one counted already that day,
+    /// since a cleared end post stands again two minutes on with no player near, and its cache opens again.
+    pub(crate) fn count_clear(&mut self, owner: &str, day: u64) -> bool {
+        if self.cleared_for.0 != day {
+            self.cleared_for = (day, std::collections::BTreeSet::new());
+        }
+        self.cleared_for.1.insert(owner.to_owned())
     }
 }
 
