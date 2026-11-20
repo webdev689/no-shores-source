@@ -1,8 +1,9 @@
-import type { FightLay, FightLook, FightVessel, FightView } from '../rules/fightRules.ts';
+import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { type AimDrawn, AimView } from '../ships/aimView.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
+import { fightDisplay } from '../ships/fightDisplay.ts';
 import { type Cue, type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import type { MarkView } from '../ships/markView.ts';
 import { factionSide } from '../ships/dress.ts';
@@ -14,23 +15,18 @@ import type { ShipCamera } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Afloat } from './afloat.ts';
 import { aimEye, type Lying, lookBearing, lookRange } from './aim.ts';
-import { type FightInput, type FightSource, Fighting } from './fighting.ts';
-import type { Orbit } from './orbit.ts';
+import { AimCamera, type AimHull, aimHullOf } from './aimCamera.ts';
+import { type FightInput, type FightSource, Fighting, sideReady } from './fighting.ts';
+import { cameraOf, type Orbit } from './orbit.ts';
 import { SAILS_RUNG, type Sailing } from './sailing.ts';
 
 /** Where a ship's numbers hold her rung (crates/sailing/src/floats.rs). */
 export const SHIP_RUNG = 7;
-/** A ball is drawn this many times its size, to be seen; the lay's arcs a dot every this many seconds of flight. */
+/** A ball is drawn this many times its size, to be seen. */
 const BALL_DRAWN = 2;
-const ARC_STEP_S = 0.1;
-/** An arc whose ball is still aloft past its life is drawn this far (seconds); a strike's mark is this big and a
- *  landing zone's ring this many dots (metres, dots). */
+/** An arc whose ball is still aloft past its life is drawn this far (seconds). */
 const ARC_LONGEST_S = 4;
-const STRIKE_M = 0.25;
-const ZONE_DOTS = 24;
 const BALL = [0.12, 0.12, 0.12] as const;
-const ARC = [0.95, 0.95, 0.85] as const;
-const ON_TARGET = [0.95, 0.2, 0.15] as const;
 /** An arc is drawn in this many pieces of its flight, and a landing's ring is never smaller than this (metres). */
 const ARC_PIECES = 24;
 const LEAST_RING_M = 1.6;
@@ -62,10 +58,9 @@ export class Naval {
   private own: FightingShip | null = null;
   private windBearing = 0;
   private readonly marks: MarkDrawer;
-  /** What draws the aim over the water, where the marks' device can; until the page draws it there
-   *  (`drawAimOver`), the lay's arcs are drawn as marks. */
+  /** What draws the aim over the water (`drawAimOver`), where the marks' device can; and the eye it is laid from. */
   private readonly aimView: AimView | null;
-  aimOverWater = false;
+  private readonly aimEye = new AimCamera();
   /** The hull a ship is drawn as: her own once her model has come. */
   private readonly shown: (hull: number) => number;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
@@ -201,9 +196,17 @@ export class Naval {
     return lookOf(orbit, sailing, view, from);
   }
 
-  /** The camera while aiming (`aimCameraOf`). */
-  aimCamera(orbit: Orbit, sailing: FightingShip, view: Window, shown: number): Orbit {
-    return aimCameraOf(orbit, sailing, view, shown);
+  /** The camera `seconds` on (`easedAimOf`): eased out to her battery while `aiming` and her guns can speak, short
+   *  of her captain's hull, and home again. */
+  aimCamera(orbit: Orbit, sailing: Aboard, view: Window, shown: number, aiming: boolean, seconds: number): Orbit {
+    const answer = this.fight?.view;
+    const captain = answer?.captain;
+    const alongside =
+      captain && captain.state !== 'sunk'
+        ? [aimHullOf(captain.ship, captain.pose[0] ?? 0, this.shown(hullOfCaptain(captain)))]
+        : [];
+    const speaks = aiming && answer?.player.state === 'afloat';
+    return easedAimOf(this.aimEye, orbit, sailing, view, shown, speaks, alongside, seconds);
   }
 
   /** Her footprint on the water while she floats, at her hull's waterline. */
@@ -237,6 +240,12 @@ export class Naval {
     return this.calling ? ['Calling a captain…'] : [];
   }
 
+  /** The fight's readout at `now` (`fightDisplay`): her plate and rose, the card on the nearest captain with `board`'s
+   *  key while she can be boarded, and her last volley's tally; none out of a fight. */
+  display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {
+    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board) : null;
+  }
+
   /** Her captain's ship while she floats, heights as drawn: in her hull and her faction's colours, her sails stepped
    *  `seconds` on in the wind blowing toward `bearing`, set as her rung says. */
   ships(
@@ -256,8 +265,8 @@ export class Naval {
     return [{ hull: ship.hull, place, rig: ship.rig, look: { side: ship.side } }];
   }
 
-  /** Draws the balls aloft, the lay's arcs and the effects, heights as drawn: each effect and ball `scale` times its
-   *  size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is drawn (by default her
+  /** Draws the balls aloft and the effects (the lay is `drawAimOver`'s), heights as drawn: each effect and ball
+   *  `scale` times its size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is drawn (by default her
    *  own Sloop and her captain's); what floats on the drawn swell (`sea.water`, its height at a window point) where
    *  the page has one, all in the sun's shadows when a map is given. */
   draw(
@@ -293,9 +302,8 @@ export class Naval {
           radius: radius * BALL_DRAWN * scale,
           colour: BALL,
         });
-      if (!this.aimOverWater) marks.push(...arcsOf(answer.lay, view, shown));
     }
-    // The balls and the lay first: past the most marks a frame draws, the effects' last puffs wait.
+    // The balls first: past the most marks a frame draws, the effects' last puffs wait.
     const floated = this.feel.marks(now, scale, sea.water ?? null, camera.eye);
     marks.push(...floated.map((mark) => ({ ...mark, z: mark.z * shown })));
     this.marks.drawInto(pass, marks, camera, sea.shadow);
@@ -342,55 +350,45 @@ export function lookOf(orbit: Orbit, ship: Aboard, view: Window, from?: readonly
   return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
 }
 
-/** The camera while aiming from a Sloop: at DFO's aim eye on the side looked at, along the orbit's yaw and pitch. */
-export function aimCameraOf(orbit: Orbit, ship: Aboard, view: Window, shown: number): Orbit {
+/** The camera while laying from a Sloop (DFO's aim camera): `orbit`'s eye eased by `camera` out to the aim eye on the
+ *  side looked at while `aiming`, short of each hull `alongside`, and home again once let go; along the orbit's yaw
+ *  and pitch, heights as drawn. */
+export function easedAimOf(
+  camera: AimCamera,
+  orbit: Orbit,
+  ship: Aboard,
+  view: Window,
+  shown: number,
+  aiming: boolean,
+  alongside: readonly AimHull[],
+  seconds: number,
+): Orbit {
   const lying = lyingOf(ship, view);
-  const [x, y, z] = aimEye(lying, lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1);
+  const [eastM, southM, upM] = cameraOf(orbit).eye;
+  const home = [eastM + view.leftM, southM + view.topM, upM / shown] as const;
+  const want = aiming ? (lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1) : null;
+  const eye = camera.eye(home, want, lying, alongside, seconds);
+  if (eye === home) return orbit;
   const ahead = 3;
   const flat = Math.cos(orbit.pitch) * ahead;
   return {
     ...orbit,
-    targetX: x - view.leftM + Math.sin(orbit.yaw) * flat,
-    targetY: y - view.topM - Math.cos(orbit.yaw) * flat,
-    targetZ: (z - Math.sin(orbit.pitch) * ahead) * shown,
+    targetX: eye[0] - view.leftM + Math.sin(orbit.yaw) * flat,
+    targetY: eye[1] - view.topM - Math.cos(orbit.yaw) * flat,
+    targetZ: (eye[2] - Math.sin(orbit.pitch) * ahead) * shown,
     distance: ahead,
   };
-}
-
-/** A lay's arcs, red on target: each gun's unscattered flight in dots up to where the rules say it stops, a mark where
- *  it strikes her, and the landing zone's ring where it splashes. */
-export function arcsOf(lay: FightLay | null, view: Window, shown: number): Mark[] {
-  if (!lay) return [];
-  const colour = lay.on_target ? ON_TARGET : ARC;
-  const placed = (x: number, y: number, z: number, radius: number, tint: Mark['colour']): Mark => ({
-    x: x - view.leftM,
-    y: y - view.topM,
-    z: z * shown,
-    radius,
-    colour: tint,
-  });
-  return lay.launches.flatMap(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0], index) => {
-    const end = lay.ends[index] ?? null;
-    const dots: Mark[] = [];
-    for (let time = ARC_STEP_S; time < (end?.time ?? ARC_LONGEST_S); time += ARC_STEP_S)
-      dots.push(placed(x + east * time, y + south * time, z + up * time - (9.81 * time * time) / 2, 0.07, colour));
-    if (end?.strike) dots.push(placed(...end.strike, STRIKE_M, ON_TARGET));
-    if (end?.water) {
-      const [endX, endY, endZ] = end.point;
-      for (let step = 0; step < ZONE_DOTS; step++) {
-        const turn = (step / ZONE_DOTS) * 2 * Math.PI;
-        const ring = [endX + Math.cos(turn) * lay.radius, endY + Math.sin(turn) * lay.radius] as const;
-        dots.push(placed(ring[0], ring[1], endZ, 0.07, colour));
-      }
-    }
-    return dots;
-  });
 }
 
 /** What the aim shows of a lay (DFO's drawn aim): each gun's unscattered flight to where the rules stop it, where the
  *  volley falls on the sea and where it meets her, the landing ring (never under DFO's least), and its tone: grey while
  *  the side laid cannot fire (loading, braced, her guns silent), red while it can and would strike her, else brass. */
-export function aimOf(lay: FightLay | null, player: FightVessel, view: Window, shown: number): AimDrawn | null {
+export function aimOf(
+  lay: FightLay | null,
+  player: Parameters<typeof sideReady>[0],
+  view: Window,
+  shown: number,
+): AimDrawn | null {
   if (!lay) return null;
   const placed = ([x, y, z]: readonly [number, number, number] | readonly number[]) =>
     [(x ?? 0) - view.leftM, (y ?? 0) - view.topM, (z ?? 0) * shown] as const;
@@ -402,8 +400,7 @@ export function aimOf(lay: FightLay | null, player: FightVessel, view: Window, s
     });
   });
   const ends = lay.ends.filter((end) => end !== null);
-  const side = lay.side === 'port' ? 0 : 1;
-  const ready = player.state === 'afloat' && !player.guns.braced && (player.guns.left[side] ?? 0) <= 0;
+  const ready = sideReady(player, lay.side);
   return {
     arcs,
     zone: ends.filter((end) => end.water && !end.strike).map((end) => placed(end.point)),

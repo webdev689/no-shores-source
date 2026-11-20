@@ -161,6 +161,27 @@ test('a line for each captain within a few hundred metres, nearest first, in pla
   assert.ok(!lines.some((line) => line.includes('Far Sloop')));
 });
 
+test('the panel leaves her own hurts and guns to the plate and the rose: it has no line of hers', async () => {
+  const fighting = await begun(source({}).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  const lines = fighting.lines(1);
+  assert.ok(lines.length > 0 && !lines.some((line) => line.startsWith('Your Sloop')), lines.join(' | '));
+});
+
+test('the lay is said on target only while its side can fire', async () => {
+  const lay = { side: 'port', launches: [], elevation: 0, reach: 300, ends: [], radius: 2, on_target: true } as const;
+  const said = async (left: readonly [number, number]) => {
+    const player = { ...vessel, guns: { ...vessel.guns, left } };
+    const fighting = await begun(source({ lay, player }).fights);
+    fighting.advance(0.1, IDLE, 1, failed);
+    await settle();
+    return fighting.lines(1).find((line) => line.startsWith('Laying'));
+  };
+  assert.equal(await said([0, 0]), 'Laying the port guns: on target.');
+  assert.equal(await said([4.2, 0]), 'Laying the port guns.', 'reloading');
+});
+
 test("every captain's strike and sinking is told by her own name", async () => {
   const others = [brig(2, [40, 0]), brig(3, [90, 0], { name: 'Tithe Frigate' })];
   const events: FightEvent[] = [

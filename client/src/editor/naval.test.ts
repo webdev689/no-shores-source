@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightLay, FightVessel, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
-import type { FightSource } from './fighting.ts';
+import { aimEye } from './aim.ts';
+import { type FightSource, Fighting } from './fighting.ts';
 import type { Sailed } from '../terrain/landClient.ts';
-import { aimOf, arcsOf, Naval } from './naval.ts';
-import type { Orbit } from './orbit.ts';
+import { aimOf, Naval } from './naval.ts';
+import { cameraOf, type Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
 const vessel: FightVessel = {
@@ -155,39 +156,6 @@ test("the look's ray runs from the aim eye along the camera's look", async () =>
   assert.ok(Math.abs(east - Math.cos(0.2)) < 1e-9 && Math.abs(south) < 1e-9 && Math.abs(up + Math.sin(0.2)) < 1e-9);
 });
 
-test('each arc ends where its gun stops: a strike mark on her, a zone where it splashes', () => {
-  const lay: FightLay = {
-    side: 'starboard',
-    launches: [
-      [0, 0, 5, 10, 0, 0],
-      [0, 2, 5, 20, 0, 0],
-    ],
-    elevation: 0,
-    reach: 300,
-    ends: [
-      { time: 0.5, point: [5, 0, 3.77], water: false, strike: [5, 0, 3.77] },
-      { time: 1, point: [20, 2, 0.1], water: true, strike: null },
-    ],
-    radius: 2,
-    on_target: true,
-  };
-  const marks = arcsOf(lay, WINDOW, 1);
-  const dots = marks.filter((mark) => mark.radius < 0.1 && mark.z !== 0.1);
-  assert.ok(
-    dots.filter((dot) => dot.y === 0).every((dot) => dot.x <= 5 + 1e-9),
-    'the first arc stops on her side',
-  );
-  assert.ok(
-    dots.filter((dot) => dot.y === 2).every((dot) => dot.x <= 20 + 1e-9),
-    'the second at its splash',
-  );
-  const strikes = marks.filter((mark) => mark.radius >= 0.1 && mark.x === 5 && mark.z === 3.77);
-  assert.equal(strikes.length, 1, 'a strike mark where it meets her');
-  const zone = marks.filter((mark) => Math.abs(Math.hypot(mark.x - 20, mark.y - 2) - 2) < 1e-9 && mark.z === 0.1);
-  assert.ok(zone.length >= 12, 'a ring of the zone radius round the splash');
-  assert.ok(!marks.some((mark) => mark.z === 3.77 && mark.radius < 0.1), 'no zone on her side');
-});
-
 const LAID: FightLay = {
   side: 'starboard',
   launches: [
@@ -229,4 +197,29 @@ test("the aim's tone: hot on target while the side can fire, laid off it, not re
   assert.equal(aimOf(LAID, braced, WINDOW, 1)?.tone, 'idle');
   assert.equal(aimOf(LAID, { ...vessel, state: 'wrecked' }, WINDOW, 1)?.tone, 'idle');
   assert.equal(aimOf(null, vessel, WINDOW, 1), null);
+});
+
+test("the World Editor's aim eases the eye out to her battery and home again, as the sea's fight does", async () => {
+  const naval = new Naval(drawer);
+  const answering: FightSource = {
+    fightBegin: async () => VIEW,
+    fightStep: async () => VIEW,
+    fightEnd: async () => {},
+  };
+  naval.join(Fighting.joined(answering, 'land', VIEW, 0));
+  const sailing = await sloop();
+  const orbit: Orbit = { targetX: 0, targetY: 0, targetZ: 6, distance: 40, yaw: Math.PI / 2, pitch: 0.2 };
+  const battery = aimEye({ x: 0, y: 0, heading: 0, heave: 0 }, 1);
+  const off = (seen: Orbit) => {
+    const [x, y, z] = cameraOf(seen).eye;
+    return Math.hypot(x - battery[0], y - battery[1], z - battery[2]);
+  };
+  const home = off(orbit);
+  const first = off(naval.aimCamera(orbit, sailing, WINDOW, 1, true, 1 / 60));
+  assert.ok(first > home * 0.8, `a frame in it has barely left the orbit (${first} of ${home} m)`);
+  let seen = orbit;
+  for (let frame = 0; frame < 120; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, true, 1 / 60);
+  assert.ok(off(seen) < 0.05, 'two seconds on it stands at the battery');
+  for (let frame = 0; frame < 240; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, false, 1 / 60);
+  assert.equal(seen, orbit, 'let go, it is home');
 });

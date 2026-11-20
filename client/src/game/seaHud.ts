@@ -109,6 +109,8 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const ship = { canLeave: here.inRoom, canManage: true };
   hud.seaBar(onSea && !atHelm && !aboard.active && !deck && !here.fight ? { ...shown, ...ship } : null);
   showSight(here, deck !== null);
+  // Her plate, the battery rose, the card and the tally in a fight; on a struck ship's deck the fight on foot's own.
+  hud.seaFight(deck ? null : (here.fight?.display(state.clock) ?? null));
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);

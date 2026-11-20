@@ -9,6 +9,7 @@ import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
 import { cameraOf, type Orbit } from '../editor/orbit.ts';
 import { SAILS_RUNG } from '../editor/sailing.ts';
 import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
+import type { SeaFightModel } from '../plus/seaFight.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { playCues } from '../ships/fightSounds.ts';
@@ -28,6 +29,7 @@ import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Shot } from './camera.ts';
+import { boardable } from './seaAfter.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { worldOutput } from './uiSounds.ts';
@@ -126,7 +128,6 @@ export class SeaCombat {
     this.shown = shown;
     this.marks = marks;
     this.naval = new Naval(marks, shown);
-    this.naval.aimOverWater = true;
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
     this.last = first;
@@ -420,7 +421,13 @@ export class SeaCombat {
     return this.captains.map(bar).filter((shown) => shown !== null);
   }
 
-  /** The panel's lines: both ships' hurts and her guns, the broadside warning, and DFO's messages. */
+  /** The fight's readout at `now`: her plate and rose, the card on the nearest captain, E to board one struck
+   *  alongside, and her last volley's tally; none once the fight is over. */
+  display(now: number): SeaFightModel | null {
+    return this.naval.display(now, { boardable: boardable(this.last), boardKey: 'E' });
+  }
+
+  /** The panel's lines: the captains' hurts, the broadside warning, and DFO's messages. */
   lines(now: number): string[] {
     return this.naval.lines(now);
   }

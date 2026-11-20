@@ -224,6 +224,8 @@ export function seaFightCss(): string {
 .seafight-tally { position: absolute; top: calc(50% + 64px); left: 50%; translate: -50% 0; font-size: 12px;
   letter-spacing: 0.1em; text-transform: uppercase; color: ${TONES.brassHi}; }
 .seafight-tally.miss { color: #b3a684; }
+/* In a sea fight the sea's status line stands in the top right corner, off the sky the aim looks at. */
+#hud:has(> .seafight:not([hidden])) > .status { left: auto; right: 28px; top: 22px; transform: none; }
 `;
 }
 

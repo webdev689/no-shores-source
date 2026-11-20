@@ -8,7 +8,7 @@ import type { Mark } from '../overworld/overworldMarks.ts';
 import { emblemUrl, markPicture } from '../plus/emblems.ts';
 import { rankMark } from '../rules/roster.ts';
 import type { WaterHolder, WatersRules, WatersTable } from '../rules/watersRules.ts';
-import { rankColour, shipName } from '../ships/shipBars.ts';
+import { rankColour, shipName, sightedWords } from '../ships/shipBars.ts';
 import { distanceText } from './hudLaw.ts';
 
 /** The least distance a hostile ship is sighted from, metres (crates/room/src/sighting.rs), read for a room that sends
@@ -124,8 +124,7 @@ export class SeaWatch {
     const words = water && waterWords(water);
     const entered = words !== null && this.water !== null && words !== this.water;
     if (words !== null) this.water = words;
-    if (nearest)
-      this.said = { words: `A ${hostileName(nearest)} sighted, ${distanceText(apart(nearest, ship))} off.`, age: 0 };
+    if (nearest) this.said = { words: sightedWords(hostileName(nearest), apart(nearest, ship)), age: 0 };
     else if (entered) this.said = { words: `Entering ${words}.`, age: 0 };
   }
 

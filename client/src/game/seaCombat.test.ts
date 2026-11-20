@@ -257,3 +257,17 @@ test("her own gun's kick shakes the fight's eye, and it stands still again withi
   assert.ok(moved(shaken) > 0.005, `${moved(shaken)}`);
   assert.ok(moved(kicked.frame(0.1, 2.5, 1000, () => undefined)) < 1e-9);
 });
+
+test("the fight's readout: her plate and rose, the card on the nearest captain, E to board one struck alongside", () => {
+  const display = (view: FightView) => new SeaCombat(ROOM, view, MARKS, 0).display(1);
+  const model = display(FIRST);
+  assert.ok(model, 'a fight on shows it');
+  assert.equal(model.ship?.name, 'Your Sloop');
+  assert.equal(model.ship?.port.ready, true);
+  assert.equal(model.card?.name, 'Pirate Sloop');
+  assert.match(model.card?.sub ?? '', / - 640 m$/);
+  const struck = { ...captain, ship: [5010, 6000, 2, 0, 0, 0, 0, 0], state: 'struck' } as const;
+  const still = { ...vessel, ship: [5000, 6000, 0.4, 0, 0, 0, 0, 0] };
+  assert.equal(display({ ...FIRST, player: still, captain: struck })?.card?.boardKey, 'E', 'alongside and still');
+  assert.equal(display({ ...FIRST, captain: { ...struck, ship: [5300, 6000, 2] } })?.card?.boardKey, null, 'too far');
+});
