@@ -6,6 +6,7 @@ pub mod drainage;
 pub mod edits;
 pub mod erosion;
 pub mod exact;
+mod fades;
 pub mod grid;
 pub mod ground;
 pub mod heap;

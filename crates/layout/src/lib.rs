@@ -17,6 +17,7 @@ pub mod compose;
 pub mod dressing;
 pub mod field;
 pub mod halls;
+mod hamlets;
 pub mod heights;
 pub mod interiors;
 pub mod ledges;

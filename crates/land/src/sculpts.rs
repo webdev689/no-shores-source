@@ -6,6 +6,7 @@
 //! same land.
 
 use crate::exact::{fbm, smooth};
+use crate::fades::{Fade, Fades, inside_claim};
 pub use crate::outcrops::{BAND_M, Outcrop, Shape};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -23,7 +24,7 @@ const CLIMB_EDGE_M: f64 = 2.0;
 /// How far past the nearest of a climb's or run's capsules another still sways its level, metres.
 const RUN_BLEND_M: f64 = 3.0;
 /// A bucket's side, metres, for finding the shapes near a point.
-const BUCKET_M: f64 = 32.0;
+pub(crate) const BUCKET_M: f64 = 32.0;
 /// How much a floor's or outcrop's edge wanders out from its stated reach, as a share: never in, so what was placed
 /// stays on it.
 pub const WANDER: f64 = 0.35;
@@ -104,24 +105,7 @@ pub struct Sculpts {
     bases: Vec<Vec<f64>>,
 }
 
-/// A sculpt's buckets over its reach, row by row from its north-west bucket: what the fade is in each.
-#[derive(Debug, Clone, Default, PartialEq)]
-struct Fades {
-    west: i64,
-    north: i64,
-    columns: i64,
-    rows: i64,
-    each: Vec<Fade>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Fade {
-    Whole,
-    None,
-    Measured,
-}
-
-fn bucket(value: f64) -> i64 {
+pub(crate) fn bucket(value: f64) -> i64 {
     (value / BUCKET_M).floor() as i64
 }
 
@@ -229,7 +213,7 @@ fn blended(parts: &[(f64, f64)]) -> (f64, f64) {
 }
 
 /// The distance from a point to a segment.
-fn to_segment(x: f64, y: f64, from: [f64; 2], to: [f64; 2]) -> f64 {
+pub(crate) fn to_segment(x: f64, y: f64, from: [f64; 2], to: [f64; 2]) -> f64 {
     along_segment(x, y, from, to).0
 }
 
@@ -249,66 +233,6 @@ fn face(off: f64) -> f64 {
     let climbed = smooth(0.0, 1.0, off / CLIFF_RUN_M) * STRATA;
     let stratum = climbed.floor();
     (stratum + smooth(0.55, 1.0, climbed - stratum)) / STRATA
-}
-
-/// How far a point lies inside a claim (positive) or outside it (negative): in its ring, or in the wing that carries
-/// it furthest.
-fn inside_claim(ring: &[[f64; 2]], wings: &[[f64; 5]], x: f64, y: f64) -> f64 {
-    wings.iter().fold(inside_ring(ring, x, y), |inside, &[x1, y1, x2, y2, half]| {
-        inside.max(half - to_segment(x, y, [x1, y1], [x2, y2]))
-    })
-}
-
-/// How far a point lies inside a ring (positive) or outside it (negative), by its nearest edge.
-fn inside_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
-    let mut inside = false;
-    let mut nearest = f64::INFINITY;
-    for (at, &from) in ring.iter().enumerate() {
-        let to = ring[(at + 1) % ring.len()];
-        if (from[1] > y) != (to[1] > y) && x < from[0] + (y - from[1]) / (to[1] - from[1]) * (to[0] - from[0]) {
-            inside = !inside;
-        }
-        nearest = nearest.min(to_segment(x, y, from, to));
-    }
-    if inside { nearest } else { -nearest }
-}
-
-impl Fades {
-    /// A claim's buckets over its reach: a bucket whose middle lies further inside the claim than the bucket's half
-    /// diagonal is wholly in it, and one further past it than the fade and that half diagonal is wholly past; there
-    /// the fade is exactly 1 or 0, as `smooth` clamps it.
-    fn of(claim: &[[f64; 2]], wings: &[[f64; 5]], [west, north, east, south]: [f64; 4]) -> Self {
-        if claim.len() < 3 {
-            return Self::default();
-        }
-        let (west, north) = (bucket(west), bucket(north));
-        let (columns, rows) = (bucket(east) - west + 1, bucket(south) - north + 1);
-        let half_diagonal = BUCKET_M * std::f64::consts::FRAC_1_SQRT_2 + 1e-6;
-        let each = (0..rows)
-            .flat_map(|row| (0..columns).map(move |column| (column, row)))
-            .map(|(column, row)| {
-                let x = ((west + column) as f64 + 0.5) * BUCKET_M;
-                let y = ((north + row) as f64 + 0.5) * BUCKET_M;
-                let inside = inside_claim(claim, wings, x, y);
-                if inside > half_diagonal {
-                    Fade::Whole
-                } else if inside < -FADE_M - half_diagonal {
-                    Fade::None
-                } else {
-                    Fade::Measured
-                }
-            })
-            .collect();
-        Self { west, north, columns, rows, each }
-    }
-
-    fn at(&self, x: f64, y: f64) -> Fade {
-        let (column, row) = (bucket(x) - self.west, bucket(y) - self.north);
-        if column < 0 || row < 0 || column >= self.columns || row >= self.rows {
-            return Fade::Measured;
-        }
-        self.each[(row * self.columns + column) as usize]
-    }
 }
 
 impl Sculpts {

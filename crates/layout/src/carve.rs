@@ -228,7 +228,7 @@ pub fn carve(
             let basin = basin(area, seating, paths, water, &mut draw);
             // With heights, a hamlet's blocks step up its hillside on terraces of their own.
             if heights && area.kind == AreaKind::Hamlet {
-                return Basin { terraces: crate::basins::hamlet_steps(area, seating, paths), ..basin };
+                return Basin { terraces: crate::hamlets::steps(area, seating, paths), ..basin };
             }
             basin
         })
