@@ -261,7 +261,7 @@ fn a_foe_falling_back_with_its_group_runs_to_its_new_place_its_target_kept_then_
 #[test]
 fn a_foe_broken_with_cover_near_falls_back_behind_it_its_guard_up() {
     // A wall 4 m long and higher than a head, 8 m north of the player, a step east of the line to the foe.
-    let wall = Block { min_x: 0.5, min_y: -8.5, max_x: 4.5, max_y: -8.0, top: 2.5 };
+    let wall = Block { min_x: 0.5, min_y: -8.5, max_x: 4.5, max_y: -8.0, top: 2.5, bottom: 0.0 };
     let room = Room::new(3).course(vec![wall]).player(PLAYER, 0.0, 0.0, 0.0);
     let mut room = room.foe(10, COLLECTOR, Major, 0.0, -3.0, PI).alert(10, PLAYER);
     room.run(30, &mut still(0.0));
