@@ -8,7 +8,7 @@ def build(kit):
     return {
         **rocks.pieces(kit, 'basalt', name),
         'shore.drift': growth.mangrove(kit, f'{name}.shore.drift'),
-        'tree.a': trees.palm(kit, f'{name}.tree.a', lean=1.2, fronds=11, droop=1.3, rings=False),
+        'tree.a': trees.palm(kit, f'{name}.tree.a', lean=1.0, fronds=12, droop=1.3, rings=False),
         'tree.b': trees.broadleaf(kit, f'{name}.tree.b', trunk_share=0.5, limbs=4, masses=7, buttress=5),
         'tree.c': trees.broadleaf(kit, f'{name}.tree.c', trunk_share=0.72, limbs=5, masses=7, part='leafAlt',
                                   slender=1.2, flat=0.5, buttress=6),

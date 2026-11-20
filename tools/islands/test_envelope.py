@@ -96,6 +96,14 @@ class Envelope(unittest.TestCase):
             whole = right + triangles(shapes.box(-2.5, -0.7, 0, -1.4, 0.7, 5.5))
             self.assertEqual(envelope.problems('common.test.arch', whole), [])
 
+    def test_a_canopy_over_a_solid_does_not_stand_in_it(self):
+        tree = {'role': 'tree', 'size': [4.0, 4.0, 8.0], 'solids': [[0, 0, 0.3]]}
+        with mock.patch.dict(catalog.MODULES, {'common.test.tree': tree}):
+            canopy = triangles(shapes.box(-2, -2, 6, 2, 2, 8) + shapes.box(1.7, 1.7, 0, 2, 2, 6))
+            self.assertTrue(any('solid at (0' in problem for problem in envelope.problems('common.test.tree', canopy)))
+            trunk = canopy + triangles(shapes.box(-0.2, -0.2, 0, 0.2, 0.2, 6))
+            self.assertEqual(envelope.problems('common.test.tree', trunk), [])
+
     def test_a_name_outside_the_contract_fails(self):
         self.assertTrue(envelope.problems('temperate.tree.z', filling('temperate.tree.a')))
 

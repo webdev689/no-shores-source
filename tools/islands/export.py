@@ -1,11 +1,10 @@
 """A kit's pack, `<kit>.modules`: every module's triangles in the island module's frame, tagged by part.
 
 The bytes: a u32 little-endian header length, the header as UTF-8 JSON (format, style (the kit), parts, and each
-module's name,
-vertexStart, vertexCount, indexStart, indexCount and bounds), then every vertex (28 bytes: position 3 × f32 metres;
-normal 4 × snorm8, the 4th 0; UV 2 × f32 metres; part 4 × u8, the first the part's number), then every index (u32),
-each module's counted from its own first vertex. `pack` takes plain arrays, so it runs without Blender; `gather`
-reads them off a Blender object.
+module's name, vertexStart, vertexCount, indexStart, indexCount and bounds), then every vertex (28 bytes: position 3
+× f32 metres; normal 4 × snorm8, the 4th 0; UV 2 × f32 metres; part 4 × u8, the first the part's number), then every
+index (u32), each module's counted from its own first vertex. `pack` takes plain arrays, so it runs without Blender;
+`gather` reads them off a Blender object.
 """
 import json
 import struct

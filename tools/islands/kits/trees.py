@@ -101,16 +101,16 @@ def snag(kit, module, part='wood', bark='bark', twist=0.0, snow=False, vines=0, 
 
 
 def palm(kit, module, lean=0.0, fronds=12, droop=1.5, part='leaf', fruit='wood', rings=True, seed=None):
-    """A palm: a trunk (its foot leaning `lean` metres west of its top), ringed where old fronds fell with `rings`,
-    a head of `fronds` drooping fronds and a cluster of fruit under them."""
+    """A palm: a trunk (its top leaning `lean` × 0.6 metres east of its foot), ringed where old fronds fell with
+    `rings`, a head of `fronds` drooping fronds and a cluster of fruit under them."""
     x, y, z = _size(module)
-    head = (lean * 0.45, 0.0, z * 0.84)
-    foot = (-lean * 0.55, 0.0, -SINK_M)
+    head = (lean * 0.6, 0.0, z * 0.84)
+    foot = (0.0, 0.0, -SINK_M)
     steps = 8
     points = kit.bent(foot, head, (lean * -0.25, 0, 0), steps)
     radii = [0.3 - 0.11 * step / steps + (0.04 if rings and step % 2 else 0.0) for step in range(steps + 1)]
     made = [kit.tube(points, radii, sides=7, part='bark')]
-    reach = x / 2 - abs(lean) * 0.45 - 0.08
+    reach = x / 2 - abs(lean) * 0.6 - 0.08
     for number in range(fronds):
         heading = 360 * number / fronds + (17 if number % 2 else 0)
         up = 0.55 if number % 3 == 0 else 0.25
@@ -150,11 +150,11 @@ def windswept(kit, module, part='leaf', seed=None):
     """A pine bent by the wind: a trunk leaning hard east, its few masses streaming out to the east."""
     x, y, z = _size(module)
     seed = seed or module
-    made = [limb(kit, (-x * 0.3, 0, -SINK_M), (x * 0.18, 0, z * 0.82), 0.34, 0.12, bow=(-1.4, 0, 0.4), sides=6,
+    made = [limb(kit, (0, 0, -SINK_M), (x * 0.3, 0, z * 0.82), 0.34, 0.12, bow=(-1.4, 0, 0.4), sides=6,
                  steps=5)]
     for number, (cx, cy, cz, sx) in enumerate([(x * 0.1, 0, z * 0.74, x * 0.5), (x * 0.24, -0.8, z * 0.66,
                                                                                  x * 0.44),
-                                               (x * 0.2, 0.9, z * 0.6, x * 0.4), (-x * 0.06, 0.2, z * 0.52, x * 0.34)]):
+                                               (x * 0.2, 0.9, z * 0.6, x * 0.4), (-x * 0.1, 0.2, z * 0.52, x * 0.4)]):
         made.append(limb(kit, (cx - sx * 0.4, cy * 0.3, cz - 0.6), (cx + sx * 0.3, cy, cz + 0.3), 0.1, 0.04,
                          sides=4, steps=2))
         made.append(mass(kit, cx, cy, cz, sx, y * 0.5, z - cz if number == 0 else z * 0.14, f'{seed}.{number}',

@@ -13,6 +13,8 @@ SKIRT_M = 0.8
 # The least share of its size a module's mesh spans: across x and along y, and up.
 FILL_ACROSS = 0.7
 FILL_UP = 0.8
+# A solid's mesh must come this near the ground, metres.
+STANDS_M = 0.5
 BUDGET = {
     'tree': 1800, 'shrub': 300, 'grass': 300, 'shore': 600, 'boulder': 600, 'drift': 600, 'outcrop': 1200,
     'stack': 1200, 'cliff': 1600, 'wreck': 2500, 'wreckBit': 600, 'ruin': 1500, 'door': 3000, 'landmark': 9000,
@@ -48,7 +50,10 @@ def contract_problems():
 
 
 def _stands_in(corners, x, y, r):
-    """Whether a triangle has a corner within the disc, or lies over its middle (seen from above)."""
+    """Whether a triangle near the ground (a corner under STANDS_M) has a corner within the disc, or lies over its
+    middle seen from above: a canopy or an overhang high over a solid does not stand in it."""
+    if min(corner[2] for corner in corners) > STANDS_M:
+        return False
     if any((corner[0] - x) ** 2 + (corner[1] - y) ** 2 <= r * r for corner in corners):
         return True
     (ax, ay), (bx, by), (cx, cy) = ((corner[0], corner[1]) for corner in corners)

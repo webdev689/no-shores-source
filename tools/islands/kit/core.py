@@ -273,7 +273,6 @@ def jitter(item, amount, seed=None):
     return item
 
 
-
 def fit(item, low, high):
     """Moves and stretches an object so its bounds run exactly from corner `low` to corner `high` (module numbers):
     a built-up piece made to fill its size. Its UVs stretch with it: keep the stretch near 1."""

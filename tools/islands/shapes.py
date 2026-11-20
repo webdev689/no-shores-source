@@ -4,7 +4,7 @@ it, a corner a point (x, y, z) in the island module's frame and its UV (u, v) in
 Faces wind by the right-hand rule in the module's numbers, facing out. UVs, metres (a picture covers 3.2): a flat
 face by its own plane, u rightward as one faces it and v up it (a top or a floor by x, and v north); a sweep (a
 cylinder, cone or lathe round its axis, a ring, an arch, a rope) u along the sweep and v along its profile, so a
-cylinder's u runs round it and its v up it. Seams lie at the back (-y) or in a hollow.
+cylinder's u runs round it and its v up it. Seams lie at the back (+y) or in a hollow.
 """
 import math
 import random
@@ -177,7 +177,7 @@ def _frame(axis, seam):
     return seam, cross(axis, seam)
 
 
-def revolve(profile, start=(0.0, 0.0, 0.0), axis=(0.0, 0.0, 1.0), sides=16, seam=(0.0, -1.0, 0.0)):
+def revolve(profile, start=(0.0, 0.0, 0.0), axis=(0.0, 0.0, 1.0), sides=16, seam=(0.0, 1.0, 0.0)):
     """A profile [(radius, height), ...] turned round an axis from `start`, capped where it ends off the axis. The
     seam faces `seam` (the back); u runs round it, rightward as one faces it, v up the profile."""
     axis = unit(axis)
@@ -199,18 +199,18 @@ def revolve(profile, start=(0.0, 0.0, 0.0), axis=(0.0, 0.0, 1.0), sides=16, seam
     return faces
 
 
-def frustum(start, end, radius_start, radius_end, sides=12, seam=(0.0, -1.0, 0.0)):
+def frustum(start, end, radius_start, radius_end, sides=12, seam=(0.0, 1.0, 0.0)):
     """A cylinder, cone or frustum from point `start` to point `end`, its radii at each; a radius of 0 is a point."""
     axis = sub(end, start)
     return revolve([(radius_start, 0.0), (radius_end, length(axis))], start, axis, sides, seam)
 
 
-def cylinder(start, end, radius, sides=12, seam=(0.0, -1.0, 0.0)):
+def cylinder(start, end, radius, sides=12, seam=(0.0, 1.0, 0.0)):
     """A cylinder from point `start` to point `end`: a column, a beam, an axle, a candle."""
     return frustum(start, end, radius, radius, sides, seam)
 
 
-def cone(start, end, radius_start, radius_end=0.0, sides=12, seam=(0.0, -1.0, 0.0)):
+def cone(start, end, radius_start, radius_end=0.0, sides=12, seam=(0.0, 1.0, 0.0)):
     """A cone (or a frustum, with `radius_end`) from `start` to `end`: a stalactite, a spike, a capital's bell."""
     return frustum(start, end, radius_start, radius_end, sides, seam)
 
@@ -218,7 +218,7 @@ def cone(start, end, radius_start, radius_end=0.0, sides=12, seam=(0.0, -1.0, 0.
 def prism(start, end, radius, sides=6, turn=0.0):
     """An n-sided prism from `start` to `end`, its corners `radius` out, turned `turn` degrees: a square post is
     sides=4, turn=45."""
-    seam = (math.sin(math.radians(turn)), -math.cos(math.radians(turn)), 0.0)
+    seam = (math.sin(math.radians(turn)), math.cos(math.radians(turn)), 0.0)
     return frustum(start, end, radius, radius, sides, seam)
 
 
@@ -228,7 +228,7 @@ def lathe(profile, x=0.0, y=0.0, z=0.0, sides=16):
     return revolve(profile, (x, y, z), (0.0, 0.0, 1.0), sides)
 
 
-def ring(centre, radius, tube, axis=(0.0, 0.0, 1.0), sides=16, tube_sides=6, seam=(0.0, -1.0, 0.0)):
+def ring(centre, radius, tube, axis=(0.0, 0.0, 1.0), sides=16, tube_sides=6, seam=(0.0, 1.0, 0.0)):
     """A ring (torus) round `centre`: `radius` to the middle of its tube, `tube` the tube's radius, lying square to
     `axis`: an iron hoop, a door ring, a chain's link. u runs round the ring, v round the tube from its inside."""
     axis = unit(axis)
