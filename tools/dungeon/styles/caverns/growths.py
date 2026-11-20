@@ -18,9 +18,9 @@ JOIN_FLUTE = 0.3
 SIDES = 24
 _PILLAR_FLUTES = forms.flutes(PILLAR, 6)
 _PILLAR_NOISE = forms.Noise(PILLAR)
-# A cluster's root reaches this far up into the roof's rock, metres: the page hangs it from the highest rock over
-# it, so wherever the roof stands lower the root still meets it.
-ROOT_M = 0.4
+# A cluster's root rises no higher than z 0: the page hangs it from the highest rock over it, so wherever the roof
+# stands lower the rock buries the root.
+ROOT_M = 0.0
 
 
 def _pillar_ring(turn, radius, depth, lumps, z):
@@ -167,7 +167,7 @@ def wall_cap():
 
 
 def _root(radius, depth, seed, stretch):
-    """The rock a cluster hangs from: a lumpy swelling of the roof, reaching ROOT_M up into it and open there. Gives
+    """The rock a cluster hangs from: a lumpy swelling of the roof, open at z 0. Gives
     its faces and how far it hangs at a reach (share of its radius) from its middle."""
     noise = forms.Noise(seed)
     shares = (1.05, 1.0, 0.82, 0.55, 0.25, 0.0)
