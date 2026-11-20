@@ -36,12 +36,13 @@ const STEADY_NERVE: f64 = 1.2;
 /// it; their Attack is a weapon of their level.
 const DEFENSE_OVER: f64 = 1.15;
 
-/// A companion standing in the room: their leader, their officer's number and names' places in
+/// A companion standing in the room: their leader, their officer's number, post and names' places in
 /// `content/gear/crew.json`, their level, whether Brawler is theirs, and whether they were knocked out this tick.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Companion {
     pub leader: PlayerId,
     pub officer: u32,
+    pub post: Post,
     pub given: u8,
     pub family: u8,
     pub level: u8,
@@ -173,7 +174,8 @@ impl Room {
         foe.brain.heels(HEELS[place.min(ASHORE_MOST - 1)]);
         foe.brain.posted_at(spot, at.aim);
         let (given, family) = (officer.given, officer.family);
-        let companion = Companion { leader, officer: officer.id, given, family, level, brawler, out: false };
+        let companion =
+            Companion { leader, officer: officer.id, post: officer.post, given, family, level, brawler, out: false };
         self.ashore.standing.insert(id, companion);
     }
 
@@ -250,6 +252,11 @@ impl Room {
     /// Whether a fighter is on the players' side by a player's leave: a companion, or a hand who boarded with them.
     pub(crate) fn is_companion(&self, id: FighterId) -> bool {
         self.ashore.standing.contains_key(&id) || self.ashore.hands.contains_key(&id)
+    }
+
+    /// Whether a fighter fights for the players: a player, or one at a player's leave.
+    pub(crate) fn on_players_side(&self, id: FighterId) -> bool {
+        self.players.contains_key(&id) || self.is_companion(id)
     }
 
     /// The companion a fighter is, if one.

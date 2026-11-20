@@ -72,8 +72,16 @@ pub fn foes() -> Vec<FoeSeen> {
     // An officer ashore beside player 9: a pirate swordsman's figure on the players' side.
     let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
     let mate = fighter(Side::Players, standing(1.0, 1.8), sword, Weight::Medium, 100.0, 50.0);
-    let companion =
-        room::Companion { leader: 9, officer: 1, given: 2, family: 5, level: 4, brawler: false, out: false };
+    let companion = room::Companion {
+        leader: 9,
+        officer: 1,
+        post: gear::crew::Post::Lookout,
+        given: 2,
+        family: 5,
+        level: 4,
+        brawler: false,
+        out: false,
+    };
     let ashore = FoeSeen { foe: 13, kind: 2, foe_type: 14, faction: 0, fighter: mate, level: 4, ..brute };
     vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
@@ -373,6 +381,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!((foe.leader(), foe.given(), foe.family()), (0, 0, 0), "a foe is no one's companion");
     let ashore = read.foes().unwrap().get(1);
     assert_eq!((ashore.leader(), ashore.given(), ashore.family()), (9, 2, 5), "a companion's names");
+    assert_eq!(ashore.post(), 4, "and their post, the Lookout");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

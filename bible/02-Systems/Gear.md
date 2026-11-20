@@ -51,6 +51,7 @@ code:
   - crates/room/src/companions.rs#companion_times
   - crates/room/src/companions.rs#type_of
   - client/src/combat/companions.ts#officerName
+  - client/src/player/foeDress.ts#officerDress
 ---
 # Gear
 
@@ -312,7 +313,7 @@ Officers ashore fight beside their player, as DFO's crew companions did
 - **Who.** Each officer on duty ashore (two at most) stands as a fighter on the players' side beside a player in a
   land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain: the First Mate a pirate
   swordsman, the Gunner and the Lookout pirate archers, the Bosun a pirate brute, the Carpenter a pirate skirmisher,
-  each at Major, in the pirates' clothes. A boarded deck has none yet.
+  each at Major, dressed by their post (below). A boarded deck has none yet.
 - **Following.** Their place is 1.8 m behind the leader, 1.1 m either side when two are ashore; their post moves there
   each tick, and with no one to fight they walk back once 2.5 m from it (3.7 m for the second). One 40 m from the
   leader, or 6 m below a leader on the ground, is put back at their place at once.
@@ -324,9 +325,12 @@ Officers ashore fight beside their player, as DFO's crew companions did
   aboard or at their post, or whose player leaves, goes.
 - **Kills.** A kill a companion had a hand in their leader shares as though they had struck it. On land, every kill a
   player shares pays its XP to each of their officers ashore too.
-- **Seen.** The snapshot carries them among the foes, with their leader and their names' places in
-  `content/gear/crew.json`; the browser draws them in their type's clothes and names them over their heads in the
-  players' blue. The Test Ground's grants sign on a First Mate and a Bosun and send them ashore.
+- **Heat.** What a companion deals, kills and takes moves the fight's heat as a player's would ([[Foes]], "The
+  director"): their health is a player's, unraised by level.
+- **Seen.** The snapshot carries them among the foes, with their leader, their names' places in
+  `content/gear/crew.json` and their post; the browser draws them in their post's own clothes in the crew's blue, with
+  their type's weapons (`officerDress`), so no two posts look alike, and names them over their heads in the players'
+  blue. The Test Ground's grants sign on a First Mate and a Bosun and send them ashore.
 
 ## Limits
 
@@ -341,5 +345,3 @@ Officers ashore fight beside their player, as DFO's crew companions did
   and a Normal head or arms piece shows nothing over the figure.
 - No Breach items exist yet; cloaks belong to no faction.
 - The traits' and items' words are English only.
-- The fight's heat counts what players deal, not what their companions deal. The Gunner and the Lookout ashore are
-  drawn alike, both as the pirates' archer.
