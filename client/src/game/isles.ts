@@ -1,7 +1,7 @@
 // The sea's islands as the page holds them: each the room tells of, built once through the room module (its plan in
 // its own frame, its ground in the world's metres), for the view to draw, the voyage to keep clear of, the ship to be
 // offered a landing at and the player to walk.
-import { type IsleBuilt, islePlanner } from '../network/islePlans.ts';
+import type { IsleBuilt } from '../network/islePlans.ts';
 import type { SeenIsle } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import { type IslePlan, type IsleShown, readIslePlan } from '../islands/islePlan.ts';
@@ -21,23 +21,26 @@ export interface IsleHeld {
 /** An island's key: its number and its seed, as a sea that opens again numbers its new islands from 1. */
 const keyOf = (seen: SeenIsle): string => `${seen.id}:${seen.seed}`;
 
-/** The islands the room told the page of, each built once it is first seen, at most one a frame. */
+/** Builds an island from its seed and climate, its ground's middle at `at` (`islePlanWorker`, off the frame). */
+export type IslePlanner = (seed: string, climate: string, at: Point2) => Promise<IsleBuilt | null>;
+
+/** The islands the room told the page of, each built once it is first seen, one at a time. */
 export class Isles {
-  private readonly build: Promise<(seed: string, climate: string, at: Point2) => IsleBuilt | null>;
-  private planner: ((seed: string, climate: string, at: Point2) => IsleBuilt | null) | null = null;
+  private readonly planner: IslePlanner;
   private readonly climates: readonly (string | null)[];
   private readonly held = new Map<string, IsleHeld | null>();
+  /** The island being built, by its key. */
+  private building: string | null = null;
   private seen: readonly SeenIsle[] = [];
 
   /** `climates` each continent's, in the layout's order, which its water's islands are dressed by. */
-  constructor(module: Promise<WebAssembly.Module>, climates: readonly (string | null)[]) {
-    this.build = module.then(islePlanner);
-    void this.build.then((planner) => (this.planner = planner));
+  constructor(planner: IslePlanner, climates: readonly (string | null)[]) {
+    this.planner = planner;
     this.climates = climates;
   }
 
-  /** Takes the room's latest word, and builds the first island seen that is not built yet: whether an island the
-   *  room tells of is new to the page since the last word. */
+  /** Takes the room's latest word, and sets the first island seen that is not built yet building, if none is: whether
+   *  an island the room tells of is new to the page since the last word. */
   update(seen: readonly SeenIsle[]): boolean {
     const before = new Set(this.seen.map(keyOf));
     this.seen = seen;
@@ -45,27 +48,39 @@ export class Isles {
     // An island the room no longer tells of is let go of: it faded, or the player sailed out of its sight.
     const told = new Set(seen.map(keyOf));
     for (const key of this.held.keys()) if (!told.has(key)) this.held.delete(key);
-    const planner = this.planner;
     const next = seen.find((isle) => !this.held.has(keyOf(isle)));
-    if (!planner || !next) return changed;
+    if (this.building !== null || !next) return changed;
+    const key = keyOf(next);
     const climate = this.climates[next.continent] ?? null;
-    const built = climate ? planner(next.seed, climate, next.at) : null;
-    // A plan the page cannot read is an island it cannot stand on: it is not shown at all.
+    this.building = key;
+    void (climate ? this.planner(next.seed, climate, next.at) : Promise.resolve(null))
+      .then((built) => this.take(next, climate, built))
+      .catch((error: unknown) => {
+        console.warn(`island ${next.id} could not be built:`, error);
+        this.take(next, climate, null);
+      });
+    return changed;
+  }
+
+  /** An island built, kept while the room still tells of it; one the page cannot read or stand on is not shown. */
+  private take(seen: SeenIsle, climate: string | null, built: IsleBuilt | null): void {
+    const key = keyOf(seen);
+    this.building = null;
+    if (!this.seen.some((each) => keyOf(each) === key)) return;
     let plan: IslePlan | null = null;
     try {
       plan = built ? readIslePlan(built.json) : null;
     } catch (error) {
-      console.warn(`island ${next.id} does not read:`, error);
+      console.warn(`island ${seen.id} does not read:`, error);
     }
     if (!built || !plan || !climate) {
-      this.held.set(keyOf(next), null);
-      return changed;
+      this.held.set(key, null);
+      return;
     }
     const own = Float64Array.from(built.heights);
-    own[0] = (own[0] ?? 0) - next.at[0];
-    own[1] = (own[1] ?? 0) - next.at[1];
-    this.held.set(keyOf(next), { seen: next, climate, plan, heights: built.heights, own });
-    return changed;
+    own[0] = (own[0] ?? 0) - seen.at[0];
+    own[1] = (own[1] ?? 0) - seen.at[1];
+    this.held.set(key, { seen, climate, plan, heights: built.heights, own });
   }
 
   /** Every island the room tells of now, built or not yet. */
