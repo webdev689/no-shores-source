@@ -16,6 +16,8 @@ status: in force
 > the level square kept; the target's own plate over its head left until the owner has played with which plates show): "Yep do all that
 > you recommended"
 
+Claude's choices in building it, for the owner to change: [[Plates as Claude Shows Them]].
+
 ## What it settles
 
 - A foe not fought shows its plate only when it is the one nearest the crosshair, within about 5 degrees of it, or

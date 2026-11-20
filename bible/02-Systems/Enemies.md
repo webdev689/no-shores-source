@@ -197,12 +197,14 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **Over a figure, a plate's size goes with its rank**, as Destiny's bars do
   ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a Minor's bar short and thin, a Major's as a ship's, an
   Elite's and a Miniboss's longer and cut in thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
-- **Plates are never overbearing.** The cone round the crosshair shows one plate, the foe in sight nearest it, within
-  6 degrees of its body (a Boss there takes the cone and shows none over its head); the foe the soft lock holds shows its
-  plate wherever it is, and so do the foes fought in the last 6 s, theirs fading as the target plate does. None is seen
-  through a block or the land, nor past 60 m; each shrinks with distance as its figure does ([[Interface]]).
-- **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
-  just clear, and the plates hold still from frame to frame ([[Interface]]).
+- **Plates are never overbearing.** The cone round the crosshair shows one plate: the foe whose body the crosshair is
+  on, the nearest of them, else the foe in sight nearest it, within 6 degrees of its body (a Boss there takes the cone
+  and shows none over its head); the foe the soft lock holds shows its plate wherever it is, and so do the foes fought
+  in the last 6 s, theirs fading as the target plate does. None is seen through a block or the land, nor past 60 m; each
+  shrinks with distance as its figure does ([[Interface]]; Claude's calls in [[Plates as Claude Shows Them]]).
+- **Plates never overlap**, but for one fading out of the cone, which holds its place for its quarter second. The
+  nearest foe's stays over it, in front; a farther one that would cover it is lifted just clear, and the plates hold
+  still from frame to frame ([[Interface]]).
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
   screen: its level, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
   track under it. A Boss has no plate over its head.
