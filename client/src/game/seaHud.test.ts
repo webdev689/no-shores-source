@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, ShipState } from '../rules/fightRules.ts';
-import { seaShipMarks } from './seaHud.ts';
+import type { Hud } from './hud.ts';
+import type { Sea } from './sea.ts';
+import type { SeaFrame } from './seaFrame.ts';
+import { type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
   ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
@@ -36,4 +39,31 @@ test('in a fight it marks its captains: red while she would take the player, gre
     { x: 50, y: 50, kind: 'struck' },
     { x: 60, y: 60, kind: 'struck' },
   ]);
+});
+
+test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing there', () => {
+  const bars: unknown[] = [];
+  const hud = new Proxy(
+    {},
+    { get: (_, key) => (key === 'seaBar' ? (bar: unknown) => bars.push(bar) : () => undefined) },
+  );
+  const sea = (fight: unknown) =>
+    ({
+      helmView: false,
+      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
+      boarding: { words: null },
+      waterWords: null,
+      fight,
+      sighted: null,
+      inRoom: true,
+    }) as unknown as Sea;
+  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
+  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [] };
+  const show = (fight: unknown) =>
+    showSeaHud(hud as unknown as Hud, sea(fight), shown as unknown as SeaFrame, state as unknown as SeaHudState);
+  show(null);
+  const fight = { lines: () => ['Fighting'], captains: [], aimingNow: false, view: { lay: null } };
+  show(fight);
+  assert.notEqual(bars[0], null, 'out of a fight the bar stands');
+  assert.equal(bars[1], null, 'in one it is hidden');
 });

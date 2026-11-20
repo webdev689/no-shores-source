@@ -95,6 +95,8 @@ export class BarLayout {
           pushed = true;
         }
       }
+      // Never over the compass at the top of the screen: a plate high in the view stands under its foot.
+      bottom = Math.max(bottom, UNDER_COMPASS + spot.height);
       const target = spot.y - bottom;
       if (target > 0) lifted.add(key);
       const shown = this.lifts.get(key);

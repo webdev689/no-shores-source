@@ -11,6 +11,7 @@ import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import type { SeaRoom } from './seaRoom.ts';
+import { aimLineOf, SeaSight } from './seaSight.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 
 /** What the display reads off the game besides the sea: whether a landing is being chosen or the sea's controls are
@@ -53,6 +54,19 @@ export function seaShipMarks(
   ];
 }
 
+/** The sight over the display, made the first time the guns are laid. */
+let sight: SeaSight | null = null;
+
+/** The sight while the player lays her guns in a fight: the crosshair and the aim line. */
+function showSight(here: Sea, onDeck: boolean): void {
+  const fight = here.fight;
+  const aiming = fight !== null && fight.aimingNow && !onDeck;
+  if (!aiming && !sight) return;
+  const parent = document.querySelector<HTMLElement>('.hud');
+  if (!sight && parent) sight = new SeaSight(parent);
+  sight?.show(aiming, fight ? aimLineOf(fight.view.lay, fight.view.player) : null);
+}
+
 /** Shows one frame at sea, `shown`, on the display. */
 export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudState): void {
   const { island, region, onSea } = state;
@@ -77,8 +91,10 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.compass(
     atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
   );
-  const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
-  hud.seaBar(onSea && !atHelm && !aboard.active && !deck ? { ...shown, ...ship } : null);
+  // In a fight the sea bar goes: its map, pace, Manage and Leave wait for the fight's end, as its keys do.
+  const ship = { canLeave: here.inRoom, canManage: true };
+  hud.seaBar(onSea && !atHelm && !aboard.active && !deck && !here.fight ? { ...shown, ...ship } : null);
+  showSight(here, deck !== null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);

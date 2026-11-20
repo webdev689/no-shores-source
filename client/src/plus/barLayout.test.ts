@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BarLayout, type BarSpot } from './barLayout.ts';
+import { UNDER_COMPASS } from './compass.ts';
 
 const bar = (key: number, x: number, depth: number, y = 300): BarSpot => ({ key, x, y, width: 120, height: 26, depth });
 
@@ -91,4 +92,10 @@ test('a bar gone is forgotten, and comes back at its place at once', () => {
   layout.lay([bar(1, 400, 10)], 1 / 60);
   const back = layout.lay([bar(1, 400, 10), bar(2, 420, 12)], 1 / 60);
   assert.equal(back.get(2)?.lift, 28);
+});
+
+test('a plate over a figure high on the screen, or lifted over another, stands under the compass, never over it', () => {
+  const high = [bar(1, 400, 10, 40), bar(2, 410, 20, UNDER_COMPASS + 30)];
+  const drawn = boxes(high, new BarLayout().lay(high, Infinity));
+  for (const [, top] of drawn) assert.ok(top >= UNDER_COMPASS, `a plate's top at ${top} px`);
 });

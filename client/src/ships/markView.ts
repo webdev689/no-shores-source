@@ -206,7 +206,8 @@ export class MarkView {
   private readonly uniforms: GPUBuffer;
   private readonly bindGroup: GPUBindGroup;
 
-  private readonly gpu: Gpu;
+  /** The device it draws with, which the aim draws with too. */
+  readonly gpu: Gpu;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
