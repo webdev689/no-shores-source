@@ -24,6 +24,7 @@ pub(super) fn section() -> Section {
     Section {
         ring: vec![[-200.0, -200.0], [200.0, -200.0], [200.0, 200.0], [-200.0, 200.0]],
         spawns: vec![[0.0, 180.0], [15.0, 185.0]],
+        falls_kill: false,
     }
 }
 

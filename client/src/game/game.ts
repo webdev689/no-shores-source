@@ -440,7 +440,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   const showStanding = (shown: Standing) => {
     hud.reach(shown);
-    const dead = shown.kind === 'dead';
+    // The world drains to grey only once death is told: a fall plays out in colour first.
+    const dead = shown.kind === 'dead' && shown.told;
     if (dead && !wasDead) document.exitPointerLock();
     if (dead !== wasDead) canvas.classList.toggle('dead', dead);
     wasDead = dead;

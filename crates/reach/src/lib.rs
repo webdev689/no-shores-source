@@ -1,4 +1,5 @@
-//! Where a body may go: a node's section of the land, the warning past its edge, death beyond it, and the respawn.
+//! Where a body may go: a node's section of the land, the warning past its edge, death beyond it, death by a fall in a
+//! social space, and the respawn.
 //! Judged once a tick, the same on the server and in any browser that predicts it: the maths is + - * /, square root
 //! and comparisons, which every machine rounds alike.
 
@@ -8,15 +9,27 @@ pub const TICKS_PER_SECOND: u32 = 60;
 pub const WARNING_TICKS: u32 = 10 * TICKS_PER_SECOND;
 /// How far past the section's edge a body dies at once, metres.
 pub const LIMIT_M: f64 = 60.0;
+/// How far below where it last stood a body in the air dies, in a social space, metres.
+pub const FALL_M: f64 = 6.0;
 /// How long after death a respawn is offered: 4 s.
 pub const RESPAWN_TICKS: u32 = 4 * TICKS_PER_SECOND;
 
 /// A node's section of the land, in metres (x east, y south): its edge, a closed ring whose last point does not repeat
-/// its first, and the places a body may respawn.
+/// its first, the places a body may respawn, and whether a fall of FALL_M kills there (a social space's does).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Section {
     pub ring: Vec<[f64; 2]>,
     pub spawns: Vec<[f64; 2]>,
+    pub falls_kill: bool,
+}
+
+/// Where a body is, metres: its feet (x east, y south, z up), and whether it is in the air.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Place {
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub aloft: bool,
 }
 
 /// Where a body stands with its section.
@@ -26,26 +39,32 @@ pub enum Standing {
     Inside,
     /// Outside and warned to go back: it dies once `ticks_left` more ticks pass outside.
     Warned { ticks_left: u32 },
-    /// Dead for `ticks` ticks, 0 on the tick it died. Only a respawn ends it.
-    Dead { ticks: u32 },
+    /// Dead for `ticks` ticks, 0 on the tick it died; by a fall, or else by straying. Only a respawn ends it.
+    Dead { ticks: u32, fell: bool },
 }
 
 impl Standing {
-    /// The standing one tick on, for a body now at (x, y). Outside the ring the count runs down from WARNING_TICKS;
-    /// back inside ends it; at 0, or LIMIT_M or more past the edge, the body dies.
+    /// The standing one tick on, for a body now at `at` that last stood at the height `stood`. Where falls kill, a body
+    /// in the air FALL_M or more below `stood` dies at once, inside the ring or out. Outside the ring the count runs
+    /// down from WARNING_TICKS; back inside ends it; at 0, or LIMIT_M or more past the edge, the body dies, measured
+    /// flat.
     #[must_use]
-    pub fn tick(self, section: &Section, x: f64, y: f64) -> Self {
+    pub fn tick(self, section: &Section, at: Place, stood: f64) -> Self {
         let left = match self {
-            Standing::Dead { ticks } => return Standing::Dead { ticks: ticks.saturating_add(1) },
+            Standing::Dead { ticks, fell } => return Standing::Dead { ticks: ticks.saturating_add(1), fell },
             Standing::Inside => WARNING_TICKS,
             Standing::Warned { ticks_left } => ticks_left,
         };
+        if section.falls_kill && at.aloft && stood - at.z >= FALL_M {
+            return Standing::Dead { ticks: 0, fell: true };
+        }
+        let Place { x, y, .. } = at;
         if inside(&section.ring, x, y) {
             return Standing::Inside;
         }
         let ticks_left = left.saturating_sub(1);
         if ticks_left == 0 || distance_to_ring(&section.ring, x, y) >= LIMIT_M {
-            Standing::Dead { ticks: 0 }
+            Standing::Dead { ticks: 0, fell: false }
         } else {
             Standing::Warned { ticks_left }
         }
@@ -54,8 +73,15 @@ impl Standing {
     /// Whether the body may respawn: dead for RESPAWN_TICKS or more.
     #[must_use]
     pub fn may_respawn(self) -> bool {
-        matches!(self, Standing::Dead { ticks } if ticks >= RESPAWN_TICKS)
+        matches!(self, Standing::Dead { ticks, .. } if ticks >= RESPAWN_TICKS)
     }
+}
+
+/// The height a body's fall is measured from, one tick on, from `stood` before it: where its feet are while they are
+/// down (on the ground, on a wall or a lip), kept while it is in the air, so a jump's rise is never a footing.
+#[must_use]
+pub fn stood(stood: f64, at: Place) -> f64 {
+    if at.aloft { stood } else { at.z }
 }
 
 /// Whether (x, y) lies inside the ring or on its edge, by the even-odd rule. A ring of fewer than three points holds

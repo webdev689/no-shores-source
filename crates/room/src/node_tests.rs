@@ -16,6 +16,7 @@ fn section() -> Section {
     Section {
         ring: vec![[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0], [-50.0, 50.0]],
         spawns: vec![[0.0, 0.0], [30.0, -40.0]],
+        falls_kill: false,
     }
 }
 
@@ -64,6 +65,9 @@ impl Driver {
     }
 }
 
+/// Dead this tick by straying.
+const STRAYED: Standing = Standing::Dead { ticks: 0, fell: false };
+
 fn flat_node() -> Room {
     Room::node(Floor::Flat, Vec::new(), section())
 }
@@ -79,12 +83,13 @@ fn a_body_that_walks_out_is_warned_and_dies_ten_seconds_later() {
         assert_eq!(walker.play(&mut room, STILL, false).standing, Standing::Warned { ticks_left: left });
     }
     let dead = walker.play(&mut room, STILL, false);
-    assert_eq!(dead.standing, Standing::Dead { ticks: 0 }, "600 ticks, 10 s, outside");
+    assert_eq!(dead.standing, STRAYED, "600 ticks, 10 s, outside");
     let moved = walker.play(&mut room, SOUTH, false);
+    let at = |seen: &Seen| (seen.fighter.body.x, seen.fighter.body.y, seen.fighter.body.z);
     assert_eq!(
-        (moved.fighter.body, moved.standing),
-        (dead.fighter.body, Standing::Dead { ticks: 1 }),
-        "a dead body is still"
+        (at(&moved), moved.standing),
+        (at(&dead), Standing::Dead { ticks: 1, fell: false }),
+        "a body dead on the flat stays where it stands, whatever is asked"
     );
     assert_eq!(moved.acknowledged, dead.acknowledged + 1, "its inputs are still taken");
 }
@@ -107,7 +112,7 @@ fn sixty_metres_past_the_edge_kills_at_once() {
     let mut runner = Driver::join(&mut room);
     let (to_edge, _) = runner.until(&mut room, RUN_NORTH, |standing| standing == Standing::Inside);
     let (outside, dead) = runner.until(&mut room, RUN_NORTH, |standing| matches!(standing, Standing::Warned { .. }));
-    assert_eq!(dead.standing, Standing::Dead { ticks: 0 });
+    assert_eq!(dead.standing, STRAYED);
     assert!(outside + 1 < WARNING_TICKS, "dead after {outside} ticks outside, before the count ran out");
     assert!(dead.fighter.body.y <= -110.0, "60 m past the edge at {}", dead.fighter.body.y);
     assert!(to_edge > 0);
@@ -117,16 +122,17 @@ fn sixty_metres_past_the_edge_kills_at_once() {
 fn a_respawn_is_refused_for_four_seconds_then_stands_the_body_at_the_nearest_spawn() {
     let mut room = flat_node();
     let mut runner = Driver::join(&mut room);
-    let (_, dead) = runner.until(&mut room, RUN_NORTH, |standing| standing != Standing::Dead { ticks: 0 });
-    assert_eq!(dead.standing, Standing::Dead { ticks: 0 });
+    let (_, dead) = runner.until(&mut room, RUN_NORTH, |standing| standing != STRAYED);
+    assert_eq!(dead.standing, STRAYED);
+    let mut lying = dead.fighter.body;
     for ticks in 1..=RESPAWN_TICKS {
         let asked = runner.play(&mut room, NORTH, true);
-        assert_eq!(
-            (asked.standing, asked.fighter.body),
-            (Standing::Dead { ticks }, dead.fighter.body),
-            "refused at {ticks}"
-        );
+        assert_eq!(asked.standing, Standing::Dead { ticks, fell: false }, "refused at {ticks}");
+        let body = asked.fighter.body;
+        assert!(body.y >= lying.y - 0.2 && body.z == 0.0, "it slides to a stop on the floor, not walking on: {body:?}");
+        lying = body;
     }
+    assert_eq!((lying.vx, lying.vy), (0.0, 0.0), "at rest where it lies");
     let back = runner.play(&mut room, NORTH, true);
     assert_eq!(back.standing, Standing::Inside);
     assert_eq!(
@@ -142,8 +148,8 @@ fn a_respawn_is_refused_for_four_seconds_then_stands_the_body_at_the_nearest_spa
 fn a_body_dead_and_silent_still_stands_a_tick_at_a_time_so_the_time_is_not_banked() {
     let mut room = flat_node();
     let mut runner = Driver::join(&mut room);
-    let (_, dead) = runner.until(&mut room, RUN_NORTH, |standing| standing != Standing::Dead { ticks: 0 });
-    assert_eq!(dead.standing, Standing::Dead { ticks: 0 });
+    let (_, dead) = runner.until(&mut room, RUN_NORTH, |standing| standing != STRAYED);
+    assert_eq!(dead.standing, STRAYED);
     for _ in 0..600 {
         room.tick();
     }
@@ -235,4 +241,147 @@ fn a_node_s_room_bakes_its_paths_and_firing_spots_on_its_land() {
     for [x, y, z] in route.iter().copied().chain(spots.iter().map(|spot| spot.point)) {
         assert!((z - floor.height_at(x, y)).abs() < 0.05, "{x}, {y} at {z} m stands on the land");
     }
+}
+
+/// Land at 0 m with a platform raised `high` metres over its north (y below 10), and a body's floor, the land, under
+/// it: the platform's ground ends in a 1 m blend down to the land, as a city's terraces do.
+fn raised(high: f64) -> Floor {
+    let grid = |value: f64| {
+        json!({ "width": 4, "height": 4, "left_m": -2000.0, "top_m": -2000.0, "cell_m": 1000.0,
+            "first_column": 0, "first_row": 0, "data": vec![value; 16] })
+    };
+    let ground = json!({ "land": grid(0.0), "lake_level": vec![-5000.0; 16], "rivers": [], "roads": [], "towns": [],
+        "coast": grid(5000.0), "across": grid(-50.0), "pads": [{ "bounds": [-50.0, -50.0, 50.0, 10.0], "level": high }],
+        "seed": 7 });
+    Floor::Land(Box::new(serde_json::from_value(ground).unwrap()))
+}
+
+/// A social space's room on a platform `high` metres up (`raised`) whose spawn is in its middle; or, for `social`
+/// false, a patrol's.
+fn ledge(high: f64, social: bool) -> Room {
+    Room::node(raised(high), Vec::new(), Section { spawns: vec![[0.0, 0.0]], falls_kill: social, ..section() })
+}
+
+/// The land's height under the platform's edge, south of its blend.
+const BELOW: f64 = 0.5;
+
+/// Runs south off the platform's edge, then lets go of the controls; answers every tick seen until the body has lain on
+/// the land below for 2 s.
+fn run_off(room: &mut Room) -> Vec<Seen> {
+    let mut runner = Driver::join(room);
+    let mut seen: Vec<Seen> = Vec::new();
+    for _ in 0..600 {
+        let off = seen.last().is_some_and(|seen| seen.fighter.body.y > 12.0);
+        seen.push(runner.play(room, if off { STILL } else { Controls { yaw: PI, ..RUN_NORTH } }, false));
+        if seen.len() > 120 && seen.iter().rev().take(120).all(|seen| seen.fighter.body.z == BELOW) {
+            break;
+        }
+    }
+    seen
+}
+
+#[test]
+fn in_a_social_space_running_off_a_ledge_kills_six_metres_down_and_the_body_falls_on_to_lie_on_the_floor() {
+    let seen = run_off(&mut ledge(20.0, true));
+    let died = seen.iter().position(|seen| seen.standing != Standing::Inside).expect("it died");
+    let dead = &seen[died];
+    assert_eq!(dead.standing, Standing::Dead { ticks: 0, fell: true }, "dead by a fall, inside the ring");
+    let at = dead.fighter.body;
+    assert!(at.mode == Mode::Air && at.z <= 14.0 && at.z > 13.7, "6 m below the platform, in the air: {at:?}");
+    let before = seen[died - 1].fighter.body;
+    assert!(before.z > 14.0, "alive until 6 m down: {before:?}");
+    assert!(seen[..died].iter().all(|seen| seen.standing == Standing::Inside), "never warned, inside the ring");
+    let lies = seen.last().unwrap();
+    assert_eq!(lies.standing, Standing::Dead { ticks: u32::try_from(seen.len() - 1 - died).unwrap(), fell: true });
+    let body = lies.fighter.body;
+    assert_eq!((body.z, body.mode), (BELOW, Mode::Ground), "it lies on the land");
+    assert!(body.y > at.y + 1.0, "carried on south as it fell, from {} to {}", at.y, body.y);
+    let fell: Vec<f64> = seen[died..].iter().map(|seen| seen.fighter.body.z).collect();
+    assert!(fell.windows(2).all(|pair| pair[1] <= pair[0]), "falling all the way down, never steered back up");
+}
+
+#[test]
+fn a_drop_short_of_six_metres_lands_alive_and_one_past_it_does_not() {
+    assert!(run_off(&mut ledge(5.5, true)).iter().all(|seen| seen.standing == Standing::Inside));
+    assert!(run_off(&mut ledge(7.0, true)).iter().any(|seen| seen.standing == Standing::Dead { ticks: 0, fell: true }));
+}
+
+#[test]
+fn away_from_a_social_space_a_long_fall_does_no_harm() {
+    let seen = run_off(&mut ledge(20.0, false));
+    assert!(seen.iter().all(|seen| seen.standing == Standing::Inside));
+    assert_eq!(seen.last().unwrap().fighter.body.z, BELOW);
+}
+
+#[test]
+fn jumping_on_the_flat_of_a_social_space_never_kills() {
+    let mut room = ledge(20.0, true);
+    let mut jumper = Driver::join(&mut room);
+    for tick in 0..900 {
+        let jump = Controls { jump: tick % 2 == 0, forward: 0.5, yaw: PI / 2.0, ..STILL };
+        assert_eq!(jumper.play(&mut room, jump, false).standing, Standing::Inside, "at {tick}");
+    }
+}
+
+#[test]
+fn walking_down_stairs_and_down_a_long_slope_in_a_social_space_never_kills() {
+    // Forty steps of 0.25 m south off the platform, 10 m in all, then the land falling away 0.2 m a metre.
+    let step = |index: u32| {
+        let (y, top) = (10.0 + 0.3 * f64::from(index), 10.0 - 0.25 * f64::from(index + 1));
+        Block { min_x: -5.0, min_y: y, max_x: 5.0, max_y: y + 0.3, top, bottom: 0.0 }
+    };
+    let social = Section { spawns: vec![[0.0, 0.0]], falls_kill: true, ..section() };
+    let mut room = Room::node(raised(10.0), (0..40).map(step).collect(), social.clone());
+    let mut walker = Driver::join(&mut room);
+    for tick in 0..450 {
+        let seen = walker.play(&mut room, SOUTH, false);
+        assert_eq!(seen.standing, Standing::Inside, "at {tick}, {:?}", seen.fighter.body);
+    }
+    assert_eq!(room.seen().next().unwrap().fighter.body.z, BELOW, "down the stairs to the land");
+    let slope = |column: f64| 800.0 - 200.0 * column;
+    let grid = |value: &dyn Fn(f64) -> f64| {
+        let data: Vec<f64> = (0..16).map(|cell| value(f64::from(cell % 4))).collect();
+        json!({ "width": 4, "height": 4, "left_m": -1000.0, "top_m": -2000.0, "cell_m": 1000.0,
+            "first_column": 0, "first_row": 0, "data": data })
+    };
+    let ground = json!({ "land": grid(&slope), "lake_level": vec![-5000.0; 16], "rivers": [], "roads": [],
+        "towns": [], "coast": grid(&|_| 5000.0), "across": grid(&|_| -50.0), "pads": [], "seed": 7 });
+    let hill = Floor::Land(Box::new(serde_json::from_value(ground).unwrap()));
+    let wide = Section { ring: vec![[-900.0, -900.0], [900.0, -900.0], [900.0, 900.0], [-900.0, 900.0]], ..social };
+    let mut room = Room::node(hill, Vec::new(), Section { spawns: vec![[0.0, 0.0]], ..wide });
+    let mut runner = Driver::join(&mut room);
+    let east = Controls { yaw: PI / 2.0, ..RUN_NORTH };
+    let start = room.seen().next().unwrap().fighter.body.z;
+    for tick in 0..1800 {
+        let seen = runner.play(&mut room, east, false);
+        assert_eq!(seen.standing, Standing::Inside, "at {tick}, {:?}", seen.fighter.body);
+    }
+    let end = room.seen().next().unwrap().fighter.body;
+    assert!(start - end.z > 20.0, "down the slope {} m, from {start} to {}", start - end.z, end.z);
+}
+
+#[test]
+fn a_body_that_fell_and_whose_inputs_stopped_still_falls_to_the_floor() {
+    let mut room = ledge(20.0, true);
+    let mut runner = Driver::join(&mut room);
+    let (_, dead) = runner.until(&mut room, Controls { yaw: PI, ..RUN_NORTH }, |standing| standing == Standing::Inside);
+    assert_eq!(dead.standing, Standing::Dead { ticks: 0, fell: true });
+    for _ in 0..300 {
+        room.tick();
+    }
+    let body = room.seen().next().unwrap().fighter.body;
+    assert_eq!((body.z, body.mode), (BELOW, Mode::Ground), "stepped as it waits, it lies on the land: {body:?}");
+}
+
+#[test]
+fn a_body_the_section_killed_is_not_stood_again_by_the_fight_s_own_respawn() {
+    let mut room = ledge(20.0, true);
+    let player = Driver::join(&mut room).player;
+    let found = room.players.get_mut(&player).unwrap();
+    found.fighter.action = combat::fighter::Action::Dead { elapsed: combat::tuning::RESPAWN };
+    found.standing = Standing::Dead { ticks: 0, fell: true };
+    room.tick();
+    let seen = room.seen().next().unwrap();
+    assert_eq!(seen.standing, Standing::Dead { ticks: 1, fell: true }, "still dead, until it asks to respawn");
+    assert!(seen.fighter.dead(), "not made whole behind the section's back");
 }

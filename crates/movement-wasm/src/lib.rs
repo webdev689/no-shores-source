@@ -197,10 +197,11 @@ pub unsafe extern "C" fn movement_set_section(address: *const u8, length: usize)
     u32::from(reach_door::set_section(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// One tick of a body at (x, y) against the kept section, as `reach_door::packed` numbers it.
+/// One tick of a body with its feet at (x, y, z), in the air for `aloft` 1, against the kept section, as
+/// `reach_door::packed` numbers it.
 #[unsafe(no_mangle)]
-pub extern "C" fn movement_reach_tick(x: f64, y: f64) -> u32 {
-    reach_door::tick(x, y)
+pub extern "C" fn movement_reach_tick(x: f64, y: f64, z: f64, aloft: u32) -> u32 {
+    reach_door::tick(reach::Place { x, y, z, aloft: aloft != 0 })
 }
 
 /// Respawns a body that died at (x, y) once allowed, writing the spawn's two numbers at `address`; 1 if it did.

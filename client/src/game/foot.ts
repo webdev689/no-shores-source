@@ -37,6 +37,7 @@ import { type FoeType, rosterOf } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
+import { FallWatch } from './fallWatch.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import { HINTS, footHints } from './hints.ts';
@@ -157,6 +158,8 @@ export class Foot {
   private readonly feel: AttackFeel;
   private readonly drops = new DropsShown();
   private readonly sounds = new WorldSounds(worldOutput);
+  /** The player's fall in a social space, once the room says they fell: the held shot, the tumble, its sounds. */
+  private readonly falling = new FallWatch();
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
@@ -334,6 +337,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
+    walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.player.facing);
     const aimed = () => playerCamera(walker.player, movement, this.boxes, AIM, groundAt);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
@@ -354,7 +358,12 @@ export class Foot {
     // draw rings it); while it shows, the kick moves the view but never turns it, so it stays where shots land.
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
-    const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
+    const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
+    const shot = this.falling.shot(
+      shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M),
+      [fallX, fallY, fallZ],
+      seconds,
+    );
     const [eyeX, eyeY] = shot.eye;
     const frameTicks = seconds / movement.tickSeconds;
     // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
@@ -371,7 +380,15 @@ export class Foot {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) });
+      const facesEye = walker.fall !== null;
+      figures.push({
+        ...own,
+        veiled: veiledIn(fight, fight.player),
+        charged,
+        exposed,
+        smear: smear(fight.player),
+        facesEye,
+      });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
@@ -422,6 +439,10 @@ export class Foot {
       landed: dropped.landed,
       crates: this.gearHeld.gear?.crates ?? null,
     });
+    const { fall } = walker;
+    const fell = { id: fight.player, feet: [body.x, body.y, body.z] as const, tumbling: !!fall?.tumbling };
+    const heard = { ...fell, lying: fall?.tumbling === false };
+    this.falling.hear(heard, fight.others, this.otherPlayers.placed, { seconds, eye: shot.eye, quiet: paused });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({
       right: dress?.outfit.right ?? null,
@@ -481,7 +502,9 @@ export class Foot {
       },
     };
     const edge = this.standing;
-    const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
+    // While a fall plays, no keys are listed: none does anything until Respawn is offered.
+    const dead = edge.kind === 'dead' ? (edge.told ? HINTS.dead : []) : null;
+    const hints = dead ?? footHints(fight.arts?.art ?? 0);
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
@@ -530,7 +553,11 @@ export class Foot {
       const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
       const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
-      if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
+      // One dead of a fall leans to face the eye, so it shows whole seen from the ledge above.
+      const fell = fight.others.get(number)?.standing;
+      const facesEye = fell?.kind === 'dead' && fell.fell;
+      const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY);
+      if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled, facesEye });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
     // A social space's people, each keeping a step of its own, their walk's frames at the pace they walk.
@@ -551,7 +578,8 @@ export class Foot {
   get standing(): Standing {
     const standing = this.fight.standing;
     if (standing.kind === 'inside') return standingOf('inside', 0);
-    return standingOf(standing.kind, standing.ticks);
+    const fell = standing.kind === 'dead' && standing.fell;
+    return standingOf(standing.kind, standing.ticks, fell, this.falling.told(fell));
   }
 
   /** Asks the room to stand the player again at the section's spawn nearest where they died, once it offers it. */
@@ -565,6 +593,7 @@ export class Foot {
     this.otherPlayers.clear();
     this.plaza?.close();
     this.prompt?.remove();
+    this.falling.close();
     // An Anima's edge frame cast just before leaving must not stay over the next place.
     showAnimaEdge(QUIET);
   }

@@ -3,7 +3,15 @@ import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
-import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
+import {
+  countdownText,
+  deathWords,
+  KIND_WORDS,
+  type MarkKind,
+  type Standing,
+  vignette,
+  WARNING_SECONDS,
+} from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
@@ -82,6 +90,7 @@ export class Hud {
   private readonly count = make('div', '', 'count');
   private readonly shade = make('div', '', 'vignette');
   private readonly death = make('div', '', 'death');
+  private readonly deathWhy = make('div', '', 'death-why');
   private readonly respawn: HTMLButtonElement;
   /** The keys' hints, which the fight's display keeps its arrows clear of (`FootView`). */
   readonly hintList = make('div', '', 'hints');
@@ -128,11 +137,7 @@ export class Hud {
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
     this.respawn = hudButton('Respawn', () => this.respawnWanted(), 'primary');
-    this.death.append(
-      make('div', 'You died', 'death-words'),
-      make('div', 'You strayed too far from the area.', 'death-why'),
-      this.respawn,
-    );
+    this.death.append(make('div', 'You died', 'death-words'), this.deathWhy, this.respawn);
     this.veilNode.append(this.veilText);
     this.voyage = hudButton('', () => this.voyageWanted());
     this.landfall = hudButton('', () => this.landfallWanted(), 'primary');
@@ -194,14 +199,16 @@ export class Hud {
     say(this.placeKind, kind);
   }
 
-  /** Shows the player's standing against their section's edge: the warning and its count, or death. */
+  /** Shows the player's standing against their section's edge: the warning and its count, or death once it is told,
+   *  saying how they died. */
   reach(standing: Standing): void {
     const shade = String(vignette(standing, WARNING_SECONDS));
     if (this.shade.style.opacity !== shade) this.shade.style.opacity = shade;
     this.warning.hidden = standing.kind !== 'warned';
     if (standing.kind === 'warned') say(this.count, countdownText(standing.secondsLeft));
-    this.death.hidden = standing.kind !== 'dead';
+    this.death.hidden = standing.kind !== 'dead' || !standing.told;
     if (standing.kind === 'dead') {
+      say(this.deathWhy, deathWords(standing.fell));
       this.respawn.disabled = !standing.canRespawn;
       this.respawn.textContent = standing.canRespawn ? 'Respawn' : 'Respawn…';
     }
