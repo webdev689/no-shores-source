@@ -12,7 +12,7 @@ pub struct Layer {
 pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "network", may_import: &["rules"] },
-    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships"] },
+    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships", "islands"] },
     Layer { name: "terrain", may_import: &["rules", "water"] },
     Layer {
         name: "game",
@@ -34,6 +34,7 @@ pub const LAYERS: &[Layer] = &[
             "ships",
             "plus",
             "combat",
+            "islands",
         ],
     },
     Layer { name: "water", may_import: &["rules"] },
@@ -53,6 +54,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "city", may_import: &["models", "textures", "rules", "water"] },
     Layer { name: "heldmap", may_import: &["editor", "overworld", "forge", "firstperson", "plus"] },
     Layer { name: "plus", may_import: &[] },
+    Layer { name: "islands", may_import: &["rules", "water", "textures", "models"] },
 ];
 
 /// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork
