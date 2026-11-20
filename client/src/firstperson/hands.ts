@@ -11,7 +11,7 @@ import {
   strikePicture,
 } from './handsLaw.ts';
 import { CARRY_FRAMES, Carry, ONE_HANDED_RELOAD, Recoil, SHOOTER_FEEL, ShotMachine, reloadDip } from './shotMachine.ts';
-import { type AttackInput, DIRECTIONS, type Direction, RECORD_OF, WeaponMachine } from './weaponMachine.ts';
+import { type AttackInput, DIRECTIONS, type Direction, type Pace, RECORD_OF, WeaponMachine } from './weaponMachine.ts';
 
 /** What the hands set off this frame: a blow landing and the hand that threw it, and a bolt, an arrow or a shot
  *  leaving, with the hand it left (`hand`, null when nothing left). */
@@ -143,8 +143,25 @@ export class Hands {
     }
   }
 
-  /** Moves the hands on by `seconds` with this frame's button, holding as `plan` says (null: nothing in hand). */
-  update(seconds: number, input: AttackInput, plan: HandsPlan | null, motion: { running: boolean; stride: number }) {
+  /** Ends every reload under way at once: the fight's rules have loaded the weapons, so the next shot they let go plays. */
+  loaded(): void {
+    // A brace's rules wait only out the first gun's frames before the other fires: they load both once both have fired.
+    if (this.plan?.volley && this.arms.some((arm) => arm.shot?.loaded)) return;
+    for (const arm of this.arms) {
+      arm.shot?.load();
+      arm.melee?.load();
+    }
+  }
+
+  /** Moves the hands on by `seconds` with this frame's button, holding as `plan` says (null: nothing in hand). A strike
+   *  begun now keeps a fight's `pace`, as its rules time the swing. */
+  update(
+    seconds: number,
+    input: AttackInput,
+    plan: HandsPlan | null,
+    motion: { running: boolean; stride: number },
+    pace: Pace | null = null,
+  ) {
     this.clock += seconds;
     this.stride = motion.stride;
     this.hold(plan);
@@ -152,9 +169,9 @@ export class Hands {
     const note = (next: HandsEvents) => {
       if (next.hand) events = next;
     };
-    if (this.arms.length === 1 && this.arms[0]) note(this.single(this.arms[0], seconds, input));
+    if (this.arms.length === 1 && this.arms[0]) note(this.single(this.arms[0], seconds, input, pace));
     else if (this.plan?.volley) note(this.volley(seconds, input));
-    else if (this.arms.length === 2) note(this.turns(seconds, input));
+    else if (this.arms.length === 2) note(this.turns(seconds, input, pace));
     for (const arm of this.arms) {
       arm.rise = arm.recoil.step(seconds);
       const other = this.arms.find((each) => each !== arm);
@@ -216,19 +233,25 @@ export class Hands {
     return events;
   }
 
-  private stepArm(arm: Arm, seconds: number, input: AttackInput, opening?: () => number): HandsEvents {
+  private stepArm(
+    arm: Arm,
+    seconds: number,
+    input: AttackInput,
+    opening?: () => number,
+    pace: Pace | null = null,
+  ): HandsEvents {
     if (arm.melee) {
-      const { blow, loose } = arm.melee.update(seconds, input, opening);
+      const { blow, loose } = arm.melee.update(seconds, input, opening, pace);
       const hand = blow || loose ? arm.hand : null;
       return { blow: blow && { direction: blow.direction, hand: arm.hand }, loose, hand };
     }
     return arm.shot?.step(seconds) === 'hit' ? { blow: null, loose: true, hand: arm.hand } : NOTHING;
   }
 
-  private single(arm: Arm, seconds: number, input: AttackInput): HandsEvents {
+  private single(arm: Arm, seconds: number, input: AttackInput, pace: Pace | null): HandsEvents {
     if (arm.melee) {
       const wasBusy = arm.melee.busy;
-      const events = this.stepArm(arm, seconds, input);
+      const events = this.stepArm(arm, seconds, input, undefined, pace);
       if (!wasBusy && arm.melee.busy) this.last = arm.hand;
       return events;
     }
@@ -246,7 +269,7 @@ export class Hands {
   /** A pair takes turns: a blow or a shot at a time. A pull the law gives a gun still reloading falls to the blade. A
    *  press while a blow's follow-through still plays ends it and throws the next, as a lone weapon's strike starts
    *  again. */
-  private turns(seconds: number, input: AttackInput): HandsEvents {
+  private turns(seconds: number, input: AttackInput, pace: Pace | null): HandsEvents {
     let events = NOTHING;
     for (const arm of [...this.arms]) {
       const next = this.advance(arm, seconds);
@@ -269,7 +292,7 @@ export class Hands {
       return events;
     }
     this.begun(arm.hand);
-    const opened = this.stepArm(arm, 0, PULL, () => (flurry ? FLURRY_FROM_FRAME : 0));
+    const opened = this.stepArm(arm, 0, PULL, () => (flurry ? FLURRY_FROM_FRAME : 0), pace);
     return opened.hand ? opened : events;
   }
 

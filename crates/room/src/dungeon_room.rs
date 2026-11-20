@@ -115,7 +115,14 @@ impl Room {
         let end = dungeon.end();
         let reeve = self.placed(dungeon, end, 1).first().copied().unwrap_or([arrival[0], arrival[1], 0.0]);
         let members = vec![(REEVE, Miniboss, reeve, bearing([reeve[0], reeve[1]], arrival))];
-        self.garrison.push(Post { at: reeve, members, girds: Vec::new(), standing: Vec::new(), cleared_at: None });
+        self.garrison.push(Post {
+            at: reeve,
+            members,
+            girds: Vec::new(),
+            standing: Vec::new(),
+            cleared_at: None,
+            beat: None,
+        });
         let mut draws = draws_of(self.world_seed);
         for room in band_rooms(dungeon, self.foes_most) {
             let found = &dungeon.rooms[room];
@@ -132,7 +139,14 @@ impl Room {
                 })
                 .collect();
             let at = places.first().copied().unwrap_or([middle[0], middle[1], 0.0]);
-            self.garrison.push(Post { at, members, girds: Vec::new(), standing: Vec::new(), cleared_at: None });
+            self.garrison.push(Post {
+                at,
+                members,
+                girds: Vec::new(),
+                standing: Vec::new(),
+                cleared_at: None,
+                beat: None,
+            });
         }
         self.gird_and_stand(levels);
         self.cache = self.cache_by(reeve);

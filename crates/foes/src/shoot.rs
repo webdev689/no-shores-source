@@ -9,18 +9,19 @@ use crate::board::Board;
 use crate::brain::Brain;
 use crate::cover::{Post, hold};
 use crate::dice::Purpose;
+use crate::pace;
 use crate::senses::{Here, Sight};
 use crate::steer::Ask;
-use crate::tell::aimed;
+use crate::tell::{aim_ready, aimed};
 use crate::tuning::{
-    DRAW_BOW, DRAW_CROSSBOW, DRAW_PISTOLET, DRAW_THUNDERLOCK, KITE_CAUGHT, KITE_COOLDOWN, KITE_CORNERED, KITE_IN,
-    KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, SWING_FACE,
+    AIMED_SHARE, AIMED_SPEED, DRAW_BOW, DRAW_CROSSBOW, DRAW_PISTOLET, DRAW_THUNDERLOCK, KITE_CAUGHT, KITE_COOLDOWN,
+    KITE_CORNERED, KITE_IN, KITE_MAX, KITE_OUT, RANGED_LEASE, SHOT_GAP, SWING_FACE, WINDUP_LEAST,
 };
 use combat::fighter::Action;
 use combat::lock::sees;
-use combat::shots::toward;
+use combat::shots::{FALL, Shot, by_foe, foe_speed, loose, shot_numbers, toward};
 use combat::sight::{apart, off};
-use combat::{FighterId, Ranged};
+use combat::{Fighter, FighterId, Ranged};
 use core::f64::consts::PI;
 
 /// What a shooter keeps: whether it is kiting and until when, when it may kite again, until when it fights close,
@@ -45,6 +46,20 @@ pub struct Bow {
     pub closing: bool,
 }
 
+/// An aimed shot as it leaves a foe's own weapon along `bearing`, its line `ahead` long: faster than a plain one, an
+/// arrow or a bolt aimed up for its fall over the line, a ball straight.
+#[must_use]
+pub fn aimed_shot(id: FighterId, foe: &Fighter, bearing: f64, ahead: f64) -> Shot {
+    let ranged = foe.arms.ranged.unwrap_or(Ranged::Bow);
+    let falls = shot_numbers(ranged).0 > 0.0;
+    let flight = ahead / (foe_speed(ranged) * AIMED_SPEED);
+    let rise = if falls { 0.5 * FALL * flight * flight } else { 0.0 };
+    let pitch = libm::atan2(rise, ahead.max(0.1));
+    let mut shot = by_foe(&loose(id, ranged, foe.chest(), bearing, pitch, 1.0));
+    shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
+    shot
+}
+
 /// The ticks a shooter draws its weapon before it looses.
 #[must_use]
 pub fn draw_ticks(ranged: Ranged) -> u64 {
@@ -63,16 +78,24 @@ fn pitch(here: &Here<'_, '_>, sight: &Sight) -> f64 {
 }
 
 /// Holding its aim until it has drawn `drawn` ticks, then pulling the trigger once `loose` allows; and, from rest,
-/// raising its weapon when `may` allows. Answers the ask and whether it let a shot go this tick.
-fn draw(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, drawn: u64, may: bool, loose: bool) -> (Ask, bool) {
+/// raising its weapon when `may` allows. Its turn gone on (`held` false), the shot the turn gated goes with it: it
+/// lowers its weapon. Answers the ask and whether it let a shot go this tick.
+fn draw(
+    brain: &mut Brain,
+    here: &Here<'_, '_>,
+    sight: &Sight,
+    drawn: u64,
+    (held, may): (bool, bool),
+    loose: impl FnOnce() -> bool,
+) -> (Ask, bool) {
     let mut ask = Ask::facing(sight.toward);
     ask.combat.pitch = pitch(here, sight);
     let facing = off(brain.heading, sight.toward) <= SWING_FACE / 4.0;
     match here.fighter.action {
         Action::Draw { .. } => {
             // Counted from its raising, not the draw's own count, which a bow's full charge caps.
-            ask.combat.aim = true;
-            ask.combat.shoot = loose && here.tick() > brain.bow.raised + drawn;
+            ask.combat.aim = held;
+            ask.combat.shoot = held && here.tick() > brain.bow.raised + drawn && loose();
             if ask.combat.shoot {
                 brain.bow.shot_ready = here.tick() + Here::ticks(here.dice.between(Purpose::ShotGap, SHOT_GAP));
                 return (ask, true);
@@ -174,16 +197,21 @@ pub fn fire(
         && ready
         && facing
         && (aim || !covered)
-        && let Some(order) = aimed(brain, here, sight, roll)
+        && aim_ready(brain, here, sight)
+        && roll < AIMED_SHARE
+        && pace::may_shoot(here, board, sight.id, tick + Here::ticks(WINDUP_LEAST))
     {
         board.hand_on(sight.id, here.me, tick);
         let mut ask = Ask::facing(sight.toward);
-        ask.combat.telegraph = Some(order);
+        ask.combat.telegraph = Some(aimed(brain, here, sight));
         return ask;
     }
     let drawn = draw_ticks(here.fighter.arms.ranged.unwrap_or(Ranged::Bow));
     let (may, loose) = if covered { (has && !aim, clear) } else { (has && clear, true) };
-    let (ask, loosed) = draw(brain, here, sight, drawn, may, loose);
+    // Drawn, it looses into the beat between its allies' blows at its target, not on top of one.
+    let lands = pace::shot_lands(here, sight.spot);
+    let loose = || loose && pace::may_shoot(here, board, sight.id, lands);
+    let (ask, loosed) = draw(brain, here, sight, drawn, (has, may), loose);
     if loosed {
         board.hand_on(sight.id, here.me, tick);
     }

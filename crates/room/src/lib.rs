@@ -12,6 +12,7 @@ mod drops;
 pub mod dungeon_ground;
 mod dungeon_room;
 mod entrances;
+mod fallen;
 pub mod fleet;
 mod floor;
 mod foes;
@@ -43,11 +44,10 @@ pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
-use combat::fighter::{Action, FighterId, player};
+use combat::fighter::{FighterId, player};
 use combat::judge::swing_blow;
 use combat::shots::Line;
 use combat::strike::struck;
-use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
@@ -477,40 +477,6 @@ impl Room {
         }
     }
 
-    /// A player dead long enough stands again at the spawn nearest where they fell, whole; a foe dead long enough is
-    /// gone.
-    fn raise_the_dead(&mut self) {
-        let mut raised = Vec::new();
-        let fallen: Vec<(PlayerId, Fighter)> = self
-            .players
-            .iter()
-            .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
-            .map(|(id, found)| (*id, found.fighter))
-            .collect();
-        for (id, fighter) in fallen {
-            let body = self.stand_again(fighter.body.x, fighter.body.y);
-            let graced = self.clock + GRACE;
-            if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = found.armed(player(body, fighter.arms));
-                found.graced = graced;
-                raised.push(id);
-            }
-        }
-        for id in raised {
-            self.tell(EventKind::Respawned, None, id, id, 0.0);
-        }
-        let gone: Vec<FighterId> = self
-            .foes
-            .iter()
-            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
-            .map(|(id, _)| *id)
-            .collect();
-        for id in gone {
-            self.foes.remove(&id);
-            self.board.forget(id);
-        }
-    }
-
     /// Every fighter now, players then foes, each in the order of their numbers.
     #[must_use]
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
@@ -574,6 +540,8 @@ impl Room {
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
+mod climb_tests;
+#[cfg(test)]
 mod faction_tests;
 #[cfg(test)]
 mod fair_tests;
@@ -588,8 +556,14 @@ mod loadout_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]
+mod pace_tests;
+#[cfg(test)]
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
 #[cfg(test)]
+mod ring_tests;
+#[cfg(test)]
 mod room_tests;
+#[cfg(test)]
+mod spread_tests;

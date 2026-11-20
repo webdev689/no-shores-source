@@ -21,6 +21,10 @@ code:
   - crates/navmesh/src/raster.rs#sample
   - crates/navmesh/src/spots.rs#Spot
   - crates/navmesh/src/spots.rs#bake
+  - crates/navmesh/src/links.rs#Link
+  - crates/navmesh/src/links.rs#bake
+  - crates/navmesh/src/lib.rs#crossing
+  - crates/navmesh/src/lib.rs#path_length
   - crates/room/src/foes.rs#MeshSpots
   - crates/room/src/foes.rs#MeshRoutes
 ---
@@ -31,7 +35,7 @@ it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in
 steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
 course and 30 m of ground about it; a node's room over a 70 m square of its own land by its first spawn, where its
 garrison stands ([[Enemies]]); a dungeon's room over the whole dungeon ([[Dungeons]]). Its [[Foes]] find their way
-and their firing spots by it.
+and their firing spots by it, and climb and drop where its links say.
 
 ## How it works
 
@@ -48,12 +52,12 @@ and their firing spots by it.
    (0.5 m, two voxels). The floor is then eroded by the body's radius (0.35 m), so a path's centre keeps clear of
    every wall and drop.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
-   of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk joins is kept: a
-   block's top that no step reaches is dropped. An anchored bake keeps instead the part joined to the floor nearest
-   a point it is given, the way in of a dungeon, whose rock stands as walls 10 m tall ([[Movement]]'s grid of
-   heights) with flat tops larger than its floor. A dungeon bakes in cells of 0.4 m, an eighth of its own, so every
-   wall of it lies on a cell's edge and the bake holds a third of the columns 0.25 m would; its jambs and pillars are
-   the bake's colliders.
+   of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk or a link joins is
+   kept: a block's top that neither a step nor a link reaches is dropped. An anchored bake keeps instead the part
+   joined to the floor nearest a point it is given, the way in of a dungeon, whose rock stands as walls 10 m tall
+   ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon bakes in cells of 0.4 m, an eighth
+   of its own, so every wall of it lies on a cell's edge and the bake holds a third of the columns 0.25 m would; its
+   jambs and pillars are the bake's colliders.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
@@ -62,19 +66,34 @@ and their firing spots by it.
 6. **Heights.** Each corner is set on the surface nearest its own level: a block's top, or the ground, blended
    between cell centres.
 
+**Links** join two floors that no step joins, where the [[Movement]] rules carry a body between them. Along every side
+of every block, a metre apart and no nearer its ends than 0.5 m, the bake stands a body by the side and steps it by the
+rules themselves, with the controls a foe crosses with: walked square into the side with jump pressed (a vault, a
+mantle, or a jump that catches the lip and mantles) and with none (a climb up a wall too high to grab), and walked off
+the top's edge (a drop). A link is laid where the rules set the body down steady on a floor of the mesh, from where a
+walker starting across stands nearest the side and from a run's tick (about 0.13 m) farther off, within two seconds
+and the time a climb takes up the whole rise. It goes up or down any height the rules allow: they have no fall damage.
+It costs the metres a walk covers in the time crossing took: a mantle onto the Test Ground's crate 2.4 m, a catch and
+mantle onto its ledge 3.6 m, the climb of its tall wall 12.9 m, a drop off that wall 2.9 m. The regions keep the floors
+it joins (step 3). Ramps are not blocks the rules know: no link is tried over one.
+
 **A path** finds the poly under each end (by its height, where floors stand over each other, or the nearest within
-0.5 m), runs A* across the polys' neighbours, and pulls the line taut through the shared edges (the funnel). Its
-waypoints run from the start to the goal, both included, each on the surface walked there. There is no path when an
-end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk joins, so a goal on another
-island has no path without a search. The search keeps its buffers from one path to the next, so a path costs the
-polys it visits, not the whole mesh.
+0.5 m), runs A* across the polys' neighbours and the links leaving them, each link at its cost, and pulls the line taut
+through the shared edges (the funnel), on either side of each link. A walker standing on a shared edge is already
+through it: the funnel opens past it, never back to the edge's far end. Its waypoints run from the start to the goal,
+both included, each on the surface walked there; a link's start and end stand in it, one after the other. There is no
+path when an end is off the mesh or nothing joins them. The bake numbers the islands of polys a walk or a link joins, so
+a goal on another island has no path without a search. A path's length, as a foe weighs a walk, counts each link at its
+cost rather than its leg across. The search keeps its buffers from one path to the next, so a path costs the polys it
+visits, not the whole mesh.
 
 **Obstacles** are circles laid over the mesh while a room runs, such as a big foe's body. Each blocks every poly it
 touches. A path goes round them where it can, and through them where it must: they steer a path, they never sever
 it. A foe asking for a path walks through its own obstacle, and a foe standing in one walks out. Each change bumps
 the mesh's epoch, so a foe knows its path may be stale.
 
-**What a walk reaches** floods the polys joined to a start once, then answers for any point: on one of them, and
+**What a walk reaches** floods the polys joined to a start once, across shared edges and along links, then answers for
+any point: on one of them, and
 within 1 m of its surface. **The nearest point** answers where a path to a body off the mesh should end: the point
 itself on the mesh, else the nearest point of a poly on its level within 1.5 m, else within 4 m. It reads only the
 polys filed near the point.
@@ -86,7 +105,11 @@ within 1 m of the one it was found for and no obstacle changes, as long as the f
 on its last poly or one beside it. A goal off the mesh is placed on it once a tick, however many foes walk for it: at
 its nearest point, or, for a goal high on a block's top with no floor near its level, at the point nearest the ground
 beneath it, so a foe goes round to the block's foot rather than walk into its side. A foe that stands as near a goal
-off the mesh as the mesh reaches walks on to it straight, so a player past the mesh's edge is followed there.
+off the mesh as the mesh reaches walks on to it straight, so a player past the mesh's edge is followed there. A foe
+within a run's tick of the start of a link its way crosses is pointed a metre on along the link's bearing, square to
+the block's side and exactly along its axis, and told whether to press jump ([[Foes]]): walked slantwise into a side, a
+body slides along it rather than climb. A foe's own step that would walk it off an edge more than a step high is
+refused.
 
 **Firing spots** are baked with the mesh, for shooters to fight from ([[Foes]]). On a lattice of 1.6 m over the
 walkable surface, each point is probed along 16 bearings (each a sixteenth of a turn, clockwise from north) at an eye
@@ -101,7 +124,9 @@ spots add a few milliseconds to a bake.
 
 Every number is a 64-bit float, sums run in a fixed order, and lengths come from `libm`, so the server and every
 browser bake the same mesh and find the same paths ([[Agree to the Bit]]). A test pins one path
-over the [[Test Ground]]'s course by its fingerprint.
+over the [[Test Ground]]'s course by its fingerprint. A run on that course, a player up its ledge and a swordsman
+climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door_tests.rs`) and through WebAssembly
+(`server/climb.test.ts`), and both hold the same value.
 
 ## Limits
 
@@ -110,6 +135,13 @@ over the [[Test Ground]]'s course by its fingerprint.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.
 - The nearest point does not check a line of sight, so behind a thin wall it may answer the far side.
 - The grid's cells stay 0.25 m however large the room, so a bake's time and memory grow with its area. Tested
-  offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course bakes in about 60 and 90 ms, a node's
-  60 m square in 40 to 60 and 70 to 80 ms, and an open field 200 m across in about 0.9 and 1.2 s, needing some
-  170 MB while it bakes.
+  offline, natively and in Node's WebAssembly: the [[Test Ground]]'s course, its 115 links among it, bakes in about
+  90 and 100 ms, its links some 6 ms of that natively; a node's 70 m square in 85 to 95 ms natively, and 115 ms in
+  WebAssembly; an open field 200 m across in about 0.9 and 1.2 s, needing some 170 MB while it bakes.
+- A node's room bakes none of its city's blocks, so its foes neither climb nor drop there. Mistfall's square baked
+  with its seven boxes lays 475 links, and they take some 45 ms more natively.
+- A link crosses one side. A wall too thin to stand on is crossed only where it is vaulted (1.2 m high and 0.8 m
+  deep at most); a taller thin wall is gone round. A ledge too narrow for the erosion to leave floor is not climbed.
+- The regions keep the floors a link joins either way, so a floor reached only by a drop is kept though no walk
+  leaves it.
+- A foe's dodge, or a charge or a leap, is the fight's own move, not a step: it may carry the foe off an edge.

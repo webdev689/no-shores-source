@@ -77,7 +77,7 @@ pub fn stir_of(fighter: &Fighter) -> Option<Noise> {
 #[must_use]
 pub fn running(fighter: &Fighter, tick: u64) -> Option<Noise> {
     let body = &fighter.body;
-    let speed = (body.vx * body.vx + body.vy * body.vy).sqrt();
+    let speed = libm::sqrt(body.vx * body.vx + body.vy * body.vy);
     let runs = !fighter.dead() && body.mode == movement::Mode::Ground && speed > movement::TUNING.walk + 0.1;
     let beat = tick.is_multiple_of(u64::from(combat::ticks(RUN_EVERY)));
     (runs && beat).then(|| Noise::by(fighter, RUN_LOUDNESS, RUN_REACH))

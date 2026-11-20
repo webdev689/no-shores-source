@@ -1,4 +1,5 @@
 use super::*;
+use combat::fighter::Action;
 use combat::shapes::{Shape, Telegraph, TelegraphOrder};
 use combat::{Blow, BlowKind, CombatInput, Intent, Stroke, Verdict};
 use core::f64::consts::{FRAC_PI_2, PI};
@@ -513,7 +514,7 @@ fn a_shooter_caught_by_a_target_that_follows_it_fights_close_a_while_rather_than
             let apart = combat::sight::apart([me.x, me.y], [them.x, them.y]);
             let forward = if apart > 1.6 { pace } else { 0.0 };
             let mut input = asking(&room, sequence, None, Controls { forward, yaw, ..Controls::default() });
-            input.intent.combat.attack = (apart < 2.0 && sequence % 45 == 0).then_some(Stroke::Down);
+            input.intent.combat.attack = (apart < 2.0 && sequence % 90 == 0).then_some(Stroke::Down);
             room.input(player, input).unwrap();
             room.tick();
             let whole = room.players[&player].fighter.health_max;

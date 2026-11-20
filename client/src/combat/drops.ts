@@ -2,7 +2,7 @@
 // and bouncing twice to rest, then standing upright as its own picture turned to the eye, with a thin line of its
 // rarity's colour rising out of its top, taller the rarer it is, a glint climbing it, a Legendary's and an Atheric's
 // pulsing. The line rises as the drop comes to rest. Each is drawn as the marks are, the line as light added to what
-// stands behind it.
+// stands behind it. An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of.
 
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
@@ -236,6 +236,11 @@ export function markLine(
   }
 }
 
+/** How near the player's feet come to a drop to take it, across and up, metres (crates/room/src/drops.rs
+ *  PICK_UP_REACH). */
+const REACH_M = 1.5;
+const REACH_UP_M = 2;
+
 /** A drop's key among the others: what it is and its number. */
 const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
 
@@ -249,6 +254,8 @@ export class DropsShown {
   /** When each drop's flight began, on the page's clock. */
   private readonly began = new Map<string, number>();
   private readonly rested = new Set<string>();
+  /** The Ammo boxes at rest the player stood on at the last `ammoFull`, their ammunition full. */
+  private refused = new Set<string>();
 
   frame(
     drops: readonly GearDrop[],
@@ -293,5 +300,17 @@ export class DropsShown {
         this.rested.delete(key);
       }
     return { marks, rested, landed };
+  }
+
+  /** Whether the player, their feet at `feet` and their ammunition `full`, has just stepped onto an Ammo box at rest,
+   *  which the room leaves lying for that: once each time they step onto one, never while they stand there. Asked
+   *  after `frame`, which knows which drops rest. */
+  ammoFull(drops: readonly GearDrop[], feet: Point, full: boolean): boolean {
+    const was = this.refused;
+    const under = (drop: GearDrop) =>
+      Math.hypot(feet[0] - drop.at[0], feet[1] - drop.at[1]) <= REACH_M && Math.abs(feet[2] - drop.at[2]) <= REACH_UP_M;
+    const boxes = drops.filter((drop) => drop.kind === DROPPED.ammoBox && this.rested.has(keyOf(drop)) && under(drop));
+    this.refused = new Set(full ? boxes.map(keyOf) : []);
+    return [...this.refused].some((key) => !was.has(key));
   }
 }

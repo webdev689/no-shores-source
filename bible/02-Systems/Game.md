@@ -104,13 +104,13 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's, the Arts' line ("R Anima · Q G Tenets") adding how to aim Dusk Daggers only while Shadow is worn.
   Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand at 22 px a line,
-  over the vitals and the buffs above them.
+  over the Arts and weapons.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
-  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
-  foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
-  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
-  place, the keys (over the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the
-  top of the screen, and the status line stands under the place's name, under the boss's bar ([[Interface]]).
+  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
+  Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
+  view, the marks of telegraphed blows, the tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
+  place's name and the status line at the top right, the keys (over the Arts and weapons), the menus and the veil;
+  while a boss's bar shows, the status line stands under it ([[Interface]]).
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
   swing arc over its striker (none through the eyes), with the smear its strike leaves behind the striker's card; the
   hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
@@ -138,8 +138,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
   plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
-  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
-  is found again only once they have walked a step. The fight never takes them for targets.
+  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step, the walk's frames at
+  the pace they stroll. The floor under each is found again only once they have walked a step. The fight never takes
+  them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
   player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its

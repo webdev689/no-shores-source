@@ -4,10 +4,10 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import type { GearItem } from '../network/gearMessages.ts';
-import { Cards } from '../player/cards.ts';
-import { plainDress } from '../player/dressing.ts';
-import { KINDS, WORN } from '../player/gear.ts';
-import type { Picture } from '../player/picture.ts';
+import { Cards } from './cards.ts';
+import { plainDress } from './dressing.ts';
+import { KINDS, WORN } from './gear.ts';
+import type { Picture } from './picture.ts';
 import { ItemPictures } from './itemPictures.ts';
 
 // A figure one pixel wide and three tall: skin, a fist, skin. A sword held in the fist lies behind it at the grip.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
-import { keysOf, levelOf, soundCredits, variantOf } from './soundSamples.ts';
+import { keysOf, levelOf, rushOf, soundCredits, variantOf } from './soundSamples.ts';
 
 test("every recorded sound is kept under its hash; Freesound's carry their whole credit, DFO's say where they came from", () => {
   const sounds = Object.entries(bank.sounds);
@@ -43,4 +43,14 @@ test('a held tone is levelled by its loudness, a click by its peak', () => {
   // The tone's loudest 20 ms is its whole: turned down to -24 dBFS, well under the click's peak level.
   assert.ok(Math.abs(levelOf([tone], rate) - 0.063 / Math.SQRT1_2) < 0.002);
   assert.equal(levelOf([click], rate), 0.3);
+});
+
+test("a whoosh's rush is where its loudest 20 ms come", () => {
+  const rate = 44100;
+  // Quiet hiss, then a burst 90 ms in, as a heavy swing's recording rises to its rush.
+  const whoosh = Float32Array.from({ length: rate / 3 }, (unused, index) => {
+    const seconds = index / rate;
+    return (Math.abs(seconds - 0.09) < 0.01 ? 0.8 : 0.02) * Math.sin(index);
+  });
+  assert.ok(Math.abs(rushOf([whoosh], rate) - 0.09) < 0.002, `rush at ${rushOf([whoosh], rate)}`);
 });

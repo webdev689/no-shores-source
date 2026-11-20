@@ -4,7 +4,7 @@
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, gearHands, worn } from './gear.ts';
+import { MELEE, RANGED_SLOT, gearHands, worn } from './gear.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
 const RARE = 2;
@@ -106,3 +106,12 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
     ...gearHands(state, wardrobe, loadout),
   };
 }
+
+/** The outfit of `gearOutfit` with the other loadout than `loadout` in its hands, or null with no weapon worn there. */
+export function spareOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit, loadout = MELEE): Outfit | null {
+  const spare = gearOutfit(state, wardrobe, outfit, otherLoadout(loadout));
+  return spare.right ? spare : null;
+}
+
+/** The loadout a swap from `loadout` takes up. */
+export const otherLoadout = (loadout: number): number => (loadout === MELEE ? RANGED_SLOT : MELEE);

@@ -1,6 +1,21 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { blowFrame, blowWay, type Doing, likelyMoves, onTheMove, shownMove } from './playerMoves.ts';
+import { BOW_LOOSED } from '../firstperson/weaponMachine.ts';
+import type { Action, FighterView } from '../rules/fighters.ts';
+import { plainDress } from './dressing.ts';
+import { fightOf } from './fightMoves.ts';
+import type { Placed } from './figures.ts';
+import {
+  blowFrame,
+  blowWay,
+  type Doing,
+  FULL_WALK,
+  likelyMoves,
+  Loop,
+  onTheMove,
+  PlacedLoop,
+  shownMove,
+} from './playerMoves.ts';
 
 const FRAMES: Record<string, number> = {
   attack_sword: 6,
@@ -62,6 +77,50 @@ test('on foot: rest, walk, run and crouch, the weapon in hand choosing its own r
   assert.equal(shownMove({ ...doing, left: 'shield_kite_iron' }, frames, classic).anim, 'guard');
 });
 
+test('a walk slower than a full walk steps as much slower, so the feet keep to the ground; never faster', () => {
+  const walking = (speed: number) => shownMove({ ...doing, moving: true, speed }, frames, classic).frameSeconds;
+  // A garrison's patrol strolls at about 1.53 m/s: its steps last 2.9 times a full walk's.
+  assert.ok(Math.abs(walking(1.53) - (0.25 * FULL_WALK) / 1.53) < 1e-12);
+  assert.equal(walking(FULL_WALK), 0.25);
+  assert.equal(walking(5.4), 0.25, 'faster than a full walk, short of a run, at the full walk’s pace');
+  const bow = { ...doing, right: 'bow_long_iron', moving: true, speed: FULL_WALK / 2 };
+  assert.deepEqual(shownMove(bow, frames, classic), { anim: 'walk_bow', frame: null, frameSeconds: 0.5 });
+  assert.equal(shownMove({ ...doing, speed: 1 }, frames, classic).frameSeconds, 0.25, 'the rest is not slowed');
+});
+
+test('a loop that slows goes on from the frame it shows, never jumping; it starts where the clock has it', () => {
+  const loop = new Loop();
+  const shown = (frameSeconds: number) => ({ anim: 'walk', frame: null, frameSeconds });
+  assert.equal(loop.frame(shown(0.25), 4, 1 / 60, 10.3), 1, 'the clock’s frame first: 41 frames in');
+  let was = 1;
+  for (let step = 1; step <= 240; step++) {
+    // Slowing from a full walk's frames to a stroll's half way through: a frame from the clock would jump back.
+    const now = loop.frame(shown(step < 120 ? 0.25 : 0.72), 4, 1 / 60, 10.3 + step / 60);
+    assert.ok(now === was || now === (was + 1) % 4, `frame ${was} to ${now} at step ${step}`);
+    was = now;
+  }
+  assert.equal(loop.frame({ anim: 'mantle', frame: 2, frameSeconds: 0 }, 4, 1 / 60, 20), 2, 'a fixed frame as it is');
+});
+
+test('a figure the page moves walks at the pace it moved: a townsperson’s stroll steps slower than a full walk', () => {
+  const dress = plainDress('human', 0.3);
+  const one: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'walk', frame: null, spin: false };
+  const loop = new PlacedLoop();
+  let changes = 0;
+  let was = loop.frame(one, 4, 1 / 60, 0, 6);
+  for (let step = 1; step <= 120; step++) {
+    one.y -= 1.25 / 60;
+    const now = loop.frame(one, 4, 1 / 60, step / 60, 6);
+    if (now !== was) changes++;
+    was = now;
+  }
+  // Two seconds at 1.25 m/s: 2.5 m, a frame each 1.1 m as a full walk's frames are drawn; at 6 a second, 12 frames.
+  assert.equal(changes, 2);
+  one.anim = 'idle';
+  const idle = [1, 2, 3].map((step) => loop.frame(one, 4, 1 / 6, 2 + step / 6, 6));
+  assert.equal(new Set(idle).size, 3, 'any other move loops at its own pace');
+});
+
 test('a blow plays one stroke of its swing; up thrusts, down chops, sideways swings two-handed', () => {
   const blow = (direction: 'downLeft' | 'up' | 'down' | 'left', second: boolean, progress: number) =>
     shownMove({ ...doing, blow: { direction, second, progress } }, frames, classic);
@@ -97,7 +156,7 @@ test("a shot plays its weapon's own move whole, then its reload; a brace fires r
   assert.deepEqual(shot('thunderlock', null, false, true, 0.99), { anim: 'gunshot', frame: 5, frameSeconds: 0 });
   assert.deepEqual(shot('thunderlock', null, true, false, 0.5), { anim: 'gunreload', frame: 2, frameSeconds: 0 });
   assert.equal(shot('pistolet', null, true, false, 0).anim, 'pistolreload');
-  assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
+  assert.deepEqual(shot('pistolet', 'pistolet_l', false, true, 0.2), { anim: 'braceshot', frame: 3, frameSeconds: 0 });
   assert.equal(shot('crossbow_iron', null, false, false, 0.5).anim, 'bow');
   assert.equal(shot('crossbow_iron', null, true, false, 0.5).anim, 'idle_bow');
 });
@@ -165,13 +224,89 @@ test('running with a gun or a crossbow drawn plays its own run; put away, the pl
   assert.ok(likelyMoves('crossbow_iron', null, classic).includes('xbowrun'));
 });
 
-test('a gun aimed holds its shot at the frame it is aimed, before it fires; a bow is drawn through its draw', () => {
-  const aimed = (right: string, left: string | null = null) =>
-    shownMove({ ...doing, right, left, fight: { kind: 'draw', progress: 0.5 } }, frames, classic);
-  assert.deepEqual(aimed('thunderlock_iron'), { anim: 'gunshot', frame: 1, frameSeconds: 0 });
-  assert.deepEqual(aimed('pistolet_iron'), { anim: 'pistolshot', frame: 1, frameSeconds: 0 });
-  assert.deepEqual(aimed('pistolet_iron', 'pistolet_iron_l'), { anim: 'braceshot', frame: 0, frameSeconds: 0 });
-  assert.equal(aimed('bow_long_elven').anim, 'bow');
+/** Each ranged kind as the figure holds it: its hands, its shot's move, the frame its shot leaves on (a gun's flash, a
+ *  bow's or a crossbow's loose, as the forge draws them) and how far through the first person's shot it leaves. */
+const RANGED = [
+  { kind: 'bow', right: 'bow_long_iron', left: null, shot: 'bow', loose: 2, leaves: BOW_LOOSED },
+  { kind: 'crossbow', right: 'crossbow_iron', left: null, shot: 'bow', loose: 2, leaves: 1 / 7 },
+  { kind: 'pistolet', right: 'pistolet', left: null, shot: 'pistolshot', loose: 2, leaves: 1 / 6 },
+  { kind: 'double pistolet', right: 'pistolet', left: 'pistolet_l', shot: 'braceshot', loose: 1, leaves: 1 / 6 },
+  { kind: 'thunderlock', right: 'thunderlock_gilded', left: null, shot: 'gunshot', loose: 2, leaves: 1 / 7 },
+] as const;
+/** A foe's aimed shot, its wind-up 40 ticks. */
+const aimedShot = (elapsed: number): Action => ({
+  kind: 'telegraph',
+  shape: 'aimed',
+  elapsed,
+  windup: 40,
+  origin: [0, 0, 0],
+  bearing: 0,
+  ahead: 0,
+  iron: false,
+  feintAt: null,
+});
+
+for (const { kind, right, left, shot, loose, leaves } of RANGED)
+  test(`a ${kind} aimed is held on the frame before its shot leaves, standing and walking; its shot plays on`, () => {
+    const hands: Doing = { ...doing, right, left };
+    const bow = kind === 'bow';
+    // As the walker asks: a bow's draw is the first person's, held at half its shot; any other the fight's draw.
+    const aimed = (moving: boolean) =>
+      shownMove(
+        bow
+          ? { ...hands, moving, blow: { direction: null, second: false, progress: 0.5 } }
+          : { ...hands, moving, fight: { kind: 'draw', progress: 1 } },
+        frames,
+        everything,
+        onTheMove,
+      );
+    assert.deepEqual(aimed(false), { anim: shot, frame: loose - 1, frameSeconds: 0 }, 'standing');
+    assert.deepEqual(aimed(true), { anim: onTheMove(shot), frame: loose - 1, frameSeconds: 0 }, 'walking');
+    const drawn = shownMove({ ...hands, fight: { kind: 'draw', progress: 1 } }, frames, everything);
+    assert.equal(drawn.frame, loose - 1, "a foe's full draw the same");
+    const fired = (progress: number, second = false) =>
+      shownMove({ ...hands, blow: { direction: null, second, progress } }, frames, everything).frame;
+    assert.deepEqual(
+      [fired(bow ? 0.5 : 0), fired(leaves - 0.001), fired(leaves), fired(0.999)],
+      [loose - 1, loose - 1, loose, frames(shot) / (left ? 2 : 1) - 1],
+      'loosed from the aim: held until the shot leaves, then its flash or loose, then the rest',
+    );
+    if (left) assert.deepEqual([fired(0, true), fired(leaves, true)], [2, 3], 'the left raised, then fired');
+    // A foe's aimed shot draws through its wind-up and holds its own weapon aimed, never the bow's move without a bow.
+    const foe = (elapsed: number) =>
+      shownMove({ ...hands, fight: fightOf({ action: aimedShot(elapsed) } as FighterView) }, frames, everything);
+    assert.deepEqual(foe(24), { anim: shot, frame: loose - 1, frameSeconds: 0 }, "a foe's aimed shot");
+  });
+
+test("the player's bow is held at its full draw while the first person's is drawn, and looses only as the arrow leaves", () => {
+  const bow = (progress: number, moving = false) =>
+    shownMove(
+      { ...doing, right: 'bow_long_iron', moving, blow: { direction: null, second: false, progress } },
+      frames,
+      everything,
+      onTheMove,
+    );
+  // The forge's bow move: drawing, fully drawn, loosed, lowered.
+  assert.deepEqual(
+    [0, 0.25, 0.5, 0.6].map((share) => bow(share).frame),
+    [0, 1, 1, 1],
+    'drawn, then held fully drawn',
+  );
+  assert.deepEqual(
+    [BOW_LOOSED, 0.9].map((share) => bow(share).frame),
+    [2, 3],
+    'loosed, then lowered',
+  );
+  assert.deepEqual(bow(0.5, true), { anim: 'bowshotwalk', frame: 1, frameSeconds: 0 }, 'on the move too');
+  assert.equal(
+    shownMove(
+      { ...doing, right: 'crossbow_iron', blow: { direction: null, second: false, progress: 0.5 } },
+      frames,
+      classic,
+    ).frame,
+    2,
+    "a crossbow's shot plays its frames straight through",
+  );
 });
 
 test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, landing on the fifth", () => {
@@ -214,6 +349,31 @@ test("the owner's blows: the swing's stroke in the weapon's hold, nine frames, l
   const likely = likelyMoves('sword_iron', null, everything);
   assert.ok(['over1h', 'side1h', 'thrust1h'].every((anim) => likely.includes(anim)));
   assert.ok(!likely.includes('chop') && !likely.includes('attack_sword'));
+});
+
+test('a blow struck on the move walks on once its frames have played, rather than stand mid-stride', () => {
+  const onTheMove = (action: string) => `${action}walk`;
+  const blowAt = (progress: number, moving: boolean) =>
+    shownMove(
+      { ...doing, moving, speed: 3, blow: { direction: 'down', second: false, progress } },
+      frames,
+      everything,
+      onTheMove,
+    );
+  // A sword's blow lands 0.4 through its swing; its last frame shows 0.55 of that after.
+  assert.deepEqual([blowAt(0.6, true).anim, blowAt(0.6, true).frame], ['over1hwalk', 8]);
+  assert.equal(blowAt(0.63, true).anim, 'walk', 'walking on while the swing runs out');
+  assert.deepEqual([blowAt(0.9, false).anim, blowAt(0.9, false).frame], ['over1h', 8], 'standing, it holds its last');
+});
+
+test('what a fight holds a figure to, and its blows on the move, are composed ahead too', () => {
+  const onTheMoveOf = (action: string) => `${action}walk`;
+  const likely = likelyMoves('sword_iron', null, everything, null, onTheMoveOf);
+  for (const anim of ['over1hwalk', 'side1hwalk', 'thrust1hwalk', 'parry', 'hurt', 'roll'])
+    assert.ok(likely.includes(anim), anim);
+  assert.ok(likelyMoves('sword_iron', 'shield_kite_iron', everything).includes('block'), "a shield's block");
+  const staff = likelyMoves('staff_iron', null, everything);
+  assert.ok(staff.includes('hurt_staff') && staff.includes('parry_staff'), "a staff's own");
 });
 
 test('a bow drawn stands, walks and sprints in its own holds; undrawn there, it rests in the left fist', () => {

@@ -143,7 +143,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       leave: () => trips.leave(),
     },
   };
-  const footView = new FootView(gpu, hudRoot);
+  const footView = new FootView(gpu, hudRoot, forge, [hud.hintList]);
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   /** The held map, made when it is first asked for, since its coasts are worked out then. */

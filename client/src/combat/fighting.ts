@@ -134,6 +134,9 @@ export class Fighting {
   swingsBegun = 0;
   /** Times the player's fighter lowered an aimed weapon unfired, since the page last asked. */
   drawsDropped = 0;
+  /** Shots the player's fighter let go, since the page last asked: none while the rules refuse one (no ammunition, a
+   *  reload, a swap). */
+  shotsLoosed = 0;
   /** The shots the player's fighter let go, as its own ticks predicted them, since the page last asked: each once,
    *  when first predicted, or when the room's word made an input let go a shot it had not. */
   fired: Fired[] = [];
@@ -334,7 +337,10 @@ export class Fighting {
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
     this.fighter = predicted.fighter;
     asked.fired = predicted.fired;
-    if (predicted.fired) this.fired.push(predicted.fired);
+    if (predicted.fired) {
+      this.fired.push(predicted.fired);
+      this.shotsLoosed += 1;
+    }
     if (drawing && this.fighter[ACTION_AT] === IDLE) this.drawsDropped += 1;
     if ((this.fighter[BLOWS_AT] ?? 0) !== before) {
       this.swingsBegun += 1;
@@ -366,7 +372,10 @@ export class Fighting {
             const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
             // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
             // has been drawn already.
-            if (replayed.fired && !asked.fired) this.fired.push(replayed.fired);
+            if (replayed.fired && !asked.fired) {
+              this.fired.push(replayed.fired);
+              this.shotsLoosed += 1;
+            }
             asked.fired = replayed.fired ?? asked.fired;
             return replayed.fighter;
           },

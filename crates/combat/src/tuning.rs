@@ -1,6 +1,7 @@
 //! Every number a fight turns on, in one place: seconds as ticks of 1/60 s, distances in metres, angles in radians.
 
-use crate::arms::OffHand;
+use crate::arms::{OffHand, SWING_PACE};
+use crate::fighter::Side;
 
 const DEGREES: f64 = core::f64::consts::PI / 180.0;
 
@@ -29,7 +30,8 @@ pub const STAGGER_TAKEN: f64 = 1.25;
 /// A press is kept this many ticks: one made while the fighter is busy (a dodge in a swing's blow, a guard late in a
 /// wind-up) is acted on as soon as it can be.
 pub const PRESS_KEPT: u8 = 8;
-/// A swap between loadouts, the weapon held changed: no blow or shot starts for this long.
+/// A swap between loadouts, the weapon held changed: no blow or shot starts for this long. A click or a pull made in it
+/// is kept for its end.
 pub const SWAP_TICKS: u32 = 24;
 
 /// A swing: moving while it is struck, and how fast its aim turns after the soft lock's target.
@@ -38,9 +40,17 @@ pub const AIM_TURN: f64 = 540.0 * DEGREES / 60.0;
 /// The soft lock steers a blow at its target when the target is within the weapon's reach and this.
 pub const STEER_REACH: f64 = 2.5;
 
-/// The guard: a press opens a parry window this long; a press this soon after an unused window opens none.
+/// The guard: a player's press opens a parry window this long (a foe's, `parry_window`); a press this soon after an
+/// unused window opens none.
 pub const PARRY_WINDOW: u32 = 12;
 pub const PARRY_RUSHED: u32 = 30;
+
+/// The parry window a side's press opens. A foe's is the swings' share of a player's (`SWING_PACE`): it reads a swing
+/// at the fight's pace, and the lead its raised guard needs to block a blow rather than parry it comes down with it.
+#[must_use]
+pub fn parry_window(side: Side) -> u32 {
+    if side.is_players() { PARRY_WINDOW } else { (f64::from(PARRY_WINDOW) * SWING_PACE + 0.5) as u32 }
+}
 /// The guard's arc either side of its aim, by what the left hand holds, and how fast it turns.
 pub const GUARD_ARC: f64 = 60.0 * DEGREES;
 pub const SHIELD_ARC: f64 = 80.0 * DEGREES;
@@ -87,13 +97,11 @@ pub const PUNISH_TAKEN: f64 = 1.3;
 pub const PUNISH_PERFECT: f64 = 1.5;
 pub const PUNISH_IRON: u32 = 18;
 
-/// The soft lock: how far it takes a target, how far it holds one, the arc it looks in, how far turned away it lets
-/// go, and for how long turned away or out of sight.
+/// The soft lock: how far it takes a target, how far it holds one, the arc it looks in (it lets go the tick the look
+/// leaves it, at the owner's word), and for how long out of sight.
 pub const LOCK_RANGE: f64 = 9.0;
 pub const LOCK_BREAK: f64 = 15.0;
 pub const LOCK_ARC: f64 = 70.0 * DEGREES;
-pub const LOCK_AWAY: f64 = 110.0 * DEGREES;
-pub const LOCK_AWAY_TICKS: u32 = 30;
 pub const LOCK_UNSEEN_TICKS: u32 = 90;
 /// A swing or a guard keeps its lock's target over a better one unless that one is better by this much (in the score
 /// `choose` ranks by), so the lock does not flick between two foes side by side.

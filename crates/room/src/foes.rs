@@ -8,16 +8,16 @@
 use crate::judging::{Check, Group, How, Pending};
 use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
-use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, foe_type, notice, spawn, think};
+use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, aimed_shot, foe_type, notice, spawn, think};
 use combat::fighter::{Action, FighterId, Side};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
-use combat::shots::{FALL, by_foe, foe_speed, loose, shot_numbers};
+use combat::shots::shot_numbers;
 use combat::{Fighter, Happening, Ranged, Surroundings, Verdict, judge, step_fighter};
 use core::cell::{Cell, RefCell};
 use core::f64::consts::{FRAC_PI_2, PI};
 use movement::blocks::ground_at;
-use movement::{TICK_SECONDS, TUNING, Terrain};
+use movement::{Block, TICK_SECONDS, TUNING, Terrain};
 use navmesh::{NavMesh, Way};
 use std::collections::BTreeMap;
 
@@ -38,8 +38,7 @@ pub const CLEAR_FOES: u8 = 255;
 const ON_MESH: f64 = 1.5;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
-/// An aimed shot leaves faster and strikes harder than a plain one.
-const AIMED_SPEED: f64 = 1.3;
+/// An aimed shot strikes harder than a plain one.
 const AIMED_DAMAGE: f64 = 1.4;
 
 /// A foe as the room keeps it: its fighter, its brain, which holds its type, rank and phase, the Boss that called it,
@@ -78,13 +77,14 @@ const CORNER_REACHED: f64 = TUNING.run * TICK_SECONDS;
 type Placed = ([f64; 3], Option<[f64; 3]>);
 
 /// Routes across the room's navmesh: the next corner on the way, to the nearest point the mesh reaches when the goal
-/// stands off it (a block's top no step reaches, or the ground beneath one too high for any floor near it), and
-/// straight on where the mesh knows no way. Each foe's way is kept for the next tick, and a goal off the mesh is placed
-/// on it once a tick, however many foes walk for it.
+/// stands off it (a block's top no walk or link reaches, or the ground beneath one too high for any floor near it),
+/// and straight on where the mesh knows no way; at a link's start, square along it. Each foe's way is kept for the
+/// next tick, and a goal off the mesh is placed on it once a tick, however many foes walk for it.
 #[derive(Debug)]
 struct MeshRoutes<'mesh> {
     mesh: &'mesh NavMesh,
     floor: &'mesh crate::Floor,
+    blocks: &'mesh [Block],
     /// The foe thinking now, whose way is walked.
     asking: Cell<FighterId>,
     ways: RefCell<BTreeMap<FighterId, Way>>,
@@ -93,8 +93,19 @@ struct MeshRoutes<'mesh> {
 }
 
 impl<'mesh> MeshRoutes<'mesh> {
-    fn new(mesh: &'mesh NavMesh, floor: &'mesh crate::Floor, ways: BTreeMap<FighterId, Way>) -> Self {
-        Self { mesh, floor, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
+    fn new(
+        mesh: &'mesh NavMesh,
+        floor: &'mesh crate::Floor,
+        blocks: &'mesh [Block],
+        ways: BTreeMap<FighterId, Way>,
+    ) -> Self {
+        Self { mesh, floor, blocks, asking: Cell::new(0), ways: RefCell::new(ways), placed: RefCell::default() }
+    }
+
+    /// The point to walk for along a path: a metre on square along the link the way crosses from `from`, if it stands
+    /// at one's start, else the corner ahead.
+    fn onward(&self, way: &Way, points: &[[f64; 3]], from: [f64; 3], to: [f64; 3]) -> [f64; 3] {
+        self.mesh.crossing(way, from).map_or_else(|| ahead(points, from, to), |link| link.ahead_of(from))
     }
 
     fn placed(&self, goal: [f64; 3]) -> Option<[f64; 3]> {
@@ -116,7 +127,7 @@ impl ::foes::Routes for MeshRoutes<'_> {
         let mut ways = self.ways.borrow_mut();
         let way = ways.entry(self.asking.get()).or_default();
         if let Some(points) = self.mesh.find_path_kept(way, from, to) {
-            return Some(ahead(&points, from, to));
+            return Some(self.onward(way, &points, from, to));
         }
         let Some(reachable) = self.placed(to) else { return Some(to) };
         // Standing as near the goal as the mesh reaches, or nearer, the foe walks on to it straight, off the mesh:
@@ -126,17 +137,20 @@ impl ::foes::Routes for MeshRoutes<'_> {
             return Some(to);
         }
         let path = self.mesh.find_path_kept(way, from, reachable);
-        Some(path.map_or(to, |points| ahead(&points, from, to)))
+        Some(path.map_or(to, |points| self.onward(way, &points, from, to)))
+    }
+
+    fn drops(&self, from: [f64; 3], to: [f64; 3]) -> bool {
+        ground_at(self.blocks, self.floor, to[0], to[1], from[2]) < from[2] - TUNING.step
+    }
+
+    fn crossing(&self, from: [f64; 3]) -> Option<::foes::Crossing> {
+        let link = self.mesh.crossing(self.ways.borrow().get(&self.asking.get())?, from)?;
+        Some(::foes::Crossing { bearing: link.bearing, jump: link.jump })
     }
 
     fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
-        let points = self.mesh.find_path(from, to)?;
-        Some(
-            points
-                .windows(2)
-                .map(|pair| combat::sight::apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]))
-                .sum(),
-        )
+        self.mesh.path_length(from, to)
     }
 
     fn walkable(&self, point: [f64; 3]) -> bool {
@@ -332,7 +346,7 @@ impl Room {
             .collect();
         let ids: Vec<FighterId> = self.foes.keys().copied().collect();
         let mut intents = Vec::with_capacity(ids.len());
-        let routes = MeshRoutes::new(&self.nav, &self.floor, std::mem::take(&mut self.ways));
+        let routes = MeshRoutes::new(&self.nav, &self.floor, &self.blocks, std::mem::take(&mut self.ways));
         {
             let spots = MeshSpots { mesh: &self.nav };
             let world = World {
@@ -474,12 +488,7 @@ impl Room {
     /// a bolt aimed up for its fall over the line's length, as a drawn shot is; a ball straight.
     fn aimed_shot(&mut self, id: FighterId, foe: &Fighter, telegraph: &Telegraph) {
         let ranged = foe.arms.ranged.unwrap_or(Ranged::Bow);
-        let falls = shot_numbers(ranged).0 > 0.0;
-        let flight = telegraph.ahead / (foe_speed(ranged) * AIMED_SPEED);
-        let rise = if falls { 0.5 * FALL * flight * flight } else { 0.0 };
-        let pitch = libm::atan2(rise, telegraph.ahead.max(0.1));
-        let mut shot = by_foe(&loose(id, ranged, foe.chest(), telegraph.bearing, pitch, 1.0));
-        shot.velocity = shot.velocity.map(|speed| speed * AIMED_SPEED);
+        let mut shot = aimed_shot(id, foe, telegraph.bearing, telegraph.ahead);
         shot.damage = shot_numbers(ranged).1 * AIMED_DAMAGE * foe.might;
         self.shots.push((shot, None));
         // Loosed like any shot: heard, and seen coming by the foes of other sides it may strike.

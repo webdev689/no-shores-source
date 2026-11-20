@@ -4,7 +4,7 @@
 mod common;
 
 use combat::lock::{choose, hold, take};
-use combat::tuning::{LOCK_AWAY_TICKS, LOCK_UNSEEN_TICKS};
+use combat::tuning::LOCK_UNSEEN_TICKS;
 use common::{foe_at, player_at};
 use core::f64::consts::PI;
 use movement::{Block, Flat};
@@ -41,10 +41,13 @@ fn it_lets_go_when_the_foe_dies_walks_away_is_lost_or_the_look_stays_turned_away
     let mut dead = foe_at(0.0, -4.0, PI);
     dead.action = combat::Action::Dead { elapsed: 0 };
     assert_eq!(hold(&me, 0.0, &[(2, dead)], &[], &Flat).target, None);
-    let turned = (0..=LOCK_AWAY_TICKS).fold(me, |held, _| hold(&held, PI, &near, &[], &Flat));
-    assert_eq!(turned.target, None, "turned away for half a second");
-    let glance = (0..LOCK_AWAY_TICKS).fold(me, |held, _| hold(&held, PI, &near, &[], &Flat));
-    assert_eq!(hold(&glance, 0.0, &near, &[], &Flat).target, Some(2), "a glance away keeps it");
+    let degrees = PI / 180.0;
+    assert_eq!(
+        hold(&me, 69.0 * degrees, &near, &[], &Flat).target,
+        Some(2),
+        "a look within the arc it takes in keeps it"
+    );
+    assert_eq!(hold(&me, 71.0 * degrees, &near, &[], &Flat).target, None, "a look past 70 degrees lets go at once");
     let wall = [Block { min_x: -1.0, min_y: -2.5, max_x: 1.0, max_y: -2.0, top: 3.0 }];
     let lost = (0..=LOCK_UNSEEN_TICKS).fold(me, |held, _| hold(&held, 0.0, &near, &wall, &Flat));
     assert_eq!(lost.target, None, "out of sight for a second");

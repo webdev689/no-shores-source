@@ -7,7 +7,7 @@ mod common;
 use common::{Room, still, swinging};
 use core::f64::consts::PI;
 use foes::director::{DEALT_GAIN, KILL_GAIN, REST};
-use foes::tuning::{PATIENCE, RING_GAP, SWING_DELAY};
+use foes::tuning::{BEAT, PATIENCE, RING_GAP, SWING_DELAY};
 use foes::{Board, Caps, Director, Pressed, Rank};
 
 const PLAYER: u32 = 1;
@@ -106,7 +106,7 @@ fn a_holder_keeps_its_turn_when_the_caps_drop_until_it_hands_it_on() {
 
 #[test]
 fn the_bias_leaves_a_fight_at_rest_as_tuned_and_presses_a_hot_one_by_at_most_three_tenths() {
-    let tuned = Pressed { patience: PATIENCE, swing_delay: SWING_DELAY, ring_gap: RING_GAP };
+    let tuned = Pressed { patience: PATIENCE, swing_delay: SWING_DELAY, ring_gap: RING_GAP, beat: BEAT };
     for heat in [0.0, 0.25, REST, 0.6] {
         assert_eq!(at(heat).bias(), 0.0);
         assert_eq!(at(heat).pressed(), tuned, "exactly today's numbers at heat {heat}");
@@ -115,7 +115,7 @@ fn the_bias_leaves_a_fight_at_rest_as_tuned_and_presses_a_hot_one_by_at_most_thr
     let mut last = tuned;
     for heat in [0.7, 0.85, 1.0] {
         let pressed = at(heat).pressed();
-        assert!(pressed.patience < last.patience && pressed.ring_gap < last.ring_gap);
+        assert!(pressed.patience < last.patience && pressed.ring_gap < last.ring_gap && pressed.beat < last.beat);
         assert!(pressed.swing_delay.0 < last.swing_delay.0 && pressed.swing_delay.1 < last.swing_delay.1);
         last = pressed;
     }
@@ -125,6 +125,7 @@ fn the_bias_leaves_a_fight_at_rest_as_tuned_and_presses_a_hot_one_by_at_most_thr
         (last.swing_delay.0, SWING_DELAY.0),
         (last.swing_delay.1, SWING_DELAY.1),
         (last.ring_gap, RING_GAP),
+        (last.beat, BEAT),
     ] {
         assert!((share(pressed, tuned) - 0.7).abs() < 1e-12, "full heat takes off three tenths: {pressed} of {tuned}");
     }

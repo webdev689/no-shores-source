@@ -187,9 +187,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top. A shot stops where it first
   enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, passes over a
   solid lower than itself, and falls onto the floor alone (`floor_at`).
-- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with the jambs and
-  pillars as its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left
-  out.
+- **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as
+  its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
+  lays no links: a body climbs nothing in a dungeon, so no foe paths up a solid's side or off its top.
 - **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
   nearest its middle, its quiet cells first, round its props. When the bands and the Reeve would pass the room's 24 foes, the most rooms that

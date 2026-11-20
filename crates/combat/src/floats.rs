@@ -51,11 +51,11 @@ fn none_or_id(id: Option<u32>) -> f64 {
     id.map_or(0.0, |id| f64::from(id) + 1.0)
 }
 
-/// The presses kept, from the buttons' number: four bits a press's ticks, then the stroke.
+/// The presses kept, from the buttons' number: four bits a press's ticks, then the stroke; the trigger's last.
 fn kept_of(held: u32) -> Kept {
     let nibble = |shift: u32| u8::try_from(held >> shift & 0xf).unwrap_or_default();
     let stroke = u8::try_from(held >> 16 & 0x7).ok().and_then(Stroke::from_number);
-    Kept { attack: nibble(4), stroke, guard: nibble(8), dodge: nibble(12) }
+    Kept { attack: nibble(4), stroke, guard: nibble(8), dodge: nibble(12), shoot: nibble(26) }
 }
 
 /// An action's kind and numbers.
@@ -205,7 +205,8 @@ impl Fighter {
             | u32::from(self.kept.dodge) << 12
             | u32::from(self.kept.stroke.map_or(0, |stroke| stroke as u8)) << 16
             | self.swap.min(SWAP_MOST) << 19
-            | u32::from(self.fired_right) << 25;
+            | u32::from(self.fired_right) << 25
+            | u32::from(self.kept.shoot) << 26;
         let riposte = self.riposte.map_or((0.0, 0.0), |(foe, left)| (f64::from(foe) + 1.0, f64::from(left)));
         let (kind, numbers) = action_floats(&self.action);
         let combat = [
@@ -222,7 +223,8 @@ impl Fighter {
             f64::from(self.poise_immune),
             self.aim,
             none_or_id(self.target),
-            f64::from(self.lock_away),
+            // A slot pages already deployed read; the lock no longer counts a look turned away.
+            0.0,
             f64::from(self.lock_unseen),
             riposte.0,
             riposte.1,
@@ -271,7 +273,6 @@ impl Fighter {
             action: action_from(at(23), &combat[24..24 + ACTION_NUMBERS]),
             aim: at(11),
             target: id_or_none(at(12)),
-            lock_away: count(at(13)),
             lock_unseen: count(at(14)),
             riposte: id_or_none(at(15)).map(|foe| (foe, count(at(16)))),
             counter: count(at(17)),
