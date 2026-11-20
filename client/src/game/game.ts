@@ -13,11 +13,12 @@ import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { mainPortsOf } from '../rules/roster.ts';
+import { startWatersRules } from '../rules/watersRules.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
-import { SLOOP_HULL } from '../ships/hulls.ts';
+import { HULL_NAMES, SLOOP_HULL } from '../ships/hulls.ts';
 import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { FigureView } from './figureView.ts';
 import { standingDrawers } from './standingDrawers.ts';
@@ -36,12 +37,13 @@ import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
+import { waterNamer } from './seaHostiles.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
-import { arrivalAt, loadWorld, type NodeInfo } from './worldData.ts';
+import { arrivalAt, loadWorld, type NodeInfo, portsOf } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -230,11 +232,18 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea = new Sea(
         landmass,
         continents.map((each) => each.outline),
-        { waterline: sloop.waterline, marks: new MarkView(gpu), shown: (hull) => shipModels.shown(hull) },
+        {
+          waterline: sloop.waterline,
+          marks: new MarkView(gpu),
+          shown: (hull) => shipModels.shown(hull),
+          warm: () => Promise.all(HULL_NAMES.map((name) => shipModels.load(HULL_NAMES.indexOf(name)))),
+        },
         anchorage,
         heading,
         { movement, walker, forge },
       );
+      const waters = startWatersRules(await roomModule);
+      sea.waterAt = waterNamer(waters, waters.open(world.layoutText, portsOf(world.cities)));
     }
     sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.
@@ -243,7 +252,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     await sea.enterRoom(
       rooms
         ? async (snapshot) => RoomConnection.open(rooms('sea'), snapshot, undefined, await session)
-        : async (snapshot) => LocalRoom.openSea(await roomModule, world.layoutText, snapshot),
+        : async (snapshot) =>
+            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities)),
     );
   };
 
@@ -406,6 +416,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       sea?.backToSea();
       change({ kind: 'back' });
     } else if (key === 'escape') change({ kind: 'back' });
+    else if (key === 'enter' && flow.mode === 'sea' && !flow.menu && sea?.chaseChosen()) return;
     else if (key === 'l' || (key === 'enter' && flow.mode === 'sea' && !flow.menu)) goAshore();
     else if (key === ' ' && flow.mode === 'sea') stopOrResume();
     else if (key === 'n') openMap();

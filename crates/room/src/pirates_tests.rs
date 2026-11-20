@@ -285,3 +285,43 @@ fn a_bold_ship_meets_the_nearest_rival_in_sight_and_two_that_parted_meet_only_on
     pirates.sailing[1].x = 400.0;
     assert_eq!(pirates.meet_rivals().len(), 1, "in sight again, they meet again");
 }
+
+#[test]
+fn a_bold_ship_comes_for_a_player_in_her_sight_at_the_helms_rate_and_a_wary_one_keeps_her_course() {
+    // A player 4 km east of her at rest; she heads north.
+    let player = voyager(1, [4_000.0, 0.0], 0, false);
+    let mut pirates = Pirates {
+        sailing: vec![standing(1, [0.0, 0.0], 0.0, true), standing(2, [0.0, 100.0], 0.0, false)],
+        ..Pirates::default()
+    };
+    pirates.tick(1.0, &[player], &PIRATE_WATER);
+    let (bold, wary) = (pirates.sailing[0], pirates.sailing[1]);
+    assert!((bold.heading - HELM_TURN_RAD_S).abs() < 1e-9, "a helm's turn toward him: {}", bold.heading);
+    assert_eq!(bold.quarry, Some(1));
+    assert_eq!((wary.heading, wary.quarry), (0.0, None), "the wary one sails on");
+    for _ in 0..30 {
+        pirates.tick(1.0, &[player], &PIRATE_WATER);
+    }
+    let heading = pirates.sailing[0].heading;
+    assert!((heading - TAU / 4.0).abs() < 0.01, "come round to him, east: {heading}");
+    let far = voyager(1, [5_400.0, 0.0], 0, false);
+    pirates.sailing[0].heading = 0.0;
+    pirates.tick(1.0, &[far], &PIRATE_WATER);
+    assert_eq!((pirates.sailing[0].heading, pirates.sailing[0].quarry), (0.0, None), "out of her sight: lost");
+}
+
+#[test]
+fn a_bold_ship_leads_a_player_under_way_and_lets_one_fighting_be() {
+    // He is 3 km north and 200 m east, sailing south at x10, past her: she heads for where he will be, south of him.
+    let straight = libm::atan2(200.0, 3_000.0);
+    let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], straight, true)], ..Pirates::default() };
+    let player = Voyager { heading: TAU / 2.0, ..voyager(1, [200.0, -3_000.0], 10, false) };
+    for _ in 0..20 {
+        pirates.tick(0.1, &[player], &PIRATE_WATER);
+    }
+    let heading = pirates.sailing[0].heading;
+    assert!(heading > straight + 0.01 && heading < TAU / 4.0, "ahead of where he is: {heading}");
+    let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], 0.0, true)], ..Pirates::default() };
+    pirates.tick(1.0, &[voyager(1, [4_000.0, 0.0], 0, true)], &PIRATE_WATER);
+    assert_eq!((pirates.sailing[0].heading, pirates.sailing[0].quarry), (0.0, None));
+}

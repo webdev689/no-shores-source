@@ -163,13 +163,16 @@ will take it, by the room's own tick.
   ship sails at her pace held down as a pirate comes near, and the snapshot's pace for her is the one she sailed at. The
   sea opens on a seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number), round a
   layout file's text, or `{ "layout", "ports" }` with the ports as the waters' door takes them, whose lanes between the
-  port cities the Grey Tithe patrols; with a layout alone it has no lanes.
+  port cities the Grey Tithe patrols; with a layout alone it has no lanes. The server opens it with the port cities
+  read from the land files (`server/seaPorts.ts`), as the page does (`portsOf`).
 - **Measured** (`measure_tests.rs`, by hand in release): 20 players in each kind of water of the world's layout, each
-  voyaging at ×60 straight out 150 km and back for ten minutes. The first hostile ship is
-  sighted within the ten minutes by 17 of 20 in the pirates' waters (median 120 s), 17 in the Grey Tithe's (139 s), 15
-  in contested ones (191 s) and 9 in home waters (313 s, a ship of the waters beside them). A ship stays in sight 50
-  to 58 s on average, 86 to 93% of them 30 s and over (64% from home waters, seen across the border). No player met a
-  fight by 5 minutes or by 10: ships keep their courses, so few come within 750 m ([[Naval Combat]], "Limits").
+  voyaging at ×60 straight out 150 km and back for ten minutes, then the same with each chasing every ship she sights
+  (her course for the nearest each half second). With bold ships coming for the player and no chasing, the first
+  ship is sighted by 16 of 20 in the pirates' waters (median 119 s), 14 in the Grey Tithe's (208 s), 12 in contested
+  ones (135 s) and 9 in home waters (194 s, ships of the waters beside them); a ship stays in sight 40 to 75 s on
+  average, 90 to 95% of them 30 s and over; a fight comes by 5 minutes for 5 to 10% and by 10 for 5 to 10%. Chasing,
+  a fight comes by 5 minutes for 10 to 35% (the Grey Tithe's waters the most) and by 10 for 10 to 50%, 25% in the
+  pirates'; a wary ship chased never takes the player on, so she stays in sight minutes on end.
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused

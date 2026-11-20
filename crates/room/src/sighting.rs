@@ -117,6 +117,42 @@ pub fn along_lane([east, south]: [f64; 2], slant: f64) -> f64 {
     if off(one) <= off(other) { one } else { other }
 }
 
+/// A ship's helm turns her at most this fast, radians a second of her clock: the Sloop's helm (the page's
+/// `HELM_TURN`), so a captain coming for a player turns as a player can.
+pub const HELM_TURN_RAD_S: f64 = 10.0 * PI / 180.0;
+
+/// The heading (radians clockwise from north) from `from`, sailing at `speed`, to where a ship at `at` sailing at
+/// `velocity` (east and south, metres a second) will be when she can be reached: lead pursuit. Straight at her where
+/// she cannot be reached, as when she is the faster sailing away.
+#[must_use]
+pub fn intercept_heading(from: [f64; 2], speed: f64, at: [f64; 2], velocity: [f64; 2]) -> f64 {
+    let gap = [at[0] - from[0], at[1] - from[1]];
+    // Solving |gap + velocity t| = speed t for the soonest t past now.
+    let square = velocity[0] * velocity[0] + velocity[1] * velocity[1] - speed * speed;
+    let linear = 2.0 * (gap[0] * velocity[0] + gap[1] * velocity[1]);
+    let constant = gap[0] * gap[0] + gap[1] * gap[1];
+    let soonest = if square.abs() < 1e-12 {
+        (linear < 0.0).then(|| -constant / linear)
+    } else {
+        let room = linear * linear - 4.0 * square * constant;
+        (room >= 0.0).then(|| {
+            let [one, other] = [(-linear - room.sqrt()) / (2.0 * square), (-linear + room.sqrt()) / (2.0 * square)];
+            let soonest = one.min(other);
+            if soonest > 0.0 { soonest } else { one.max(other) }
+        })
+    };
+    let time = soonest.filter(|&time| time > 0.0).unwrap_or(0.0);
+    let ahead = [gap[0] + velocity[0] * time, gap[1] + velocity[1] * time];
+    libm::atan2(ahead[0], -ahead[1]).rem_euclid(TAU)
+}
+
+/// A heading turned toward `want` by at most `most` radians, the shorter way round.
+#[must_use]
+pub fn turned_toward(heading: f64, want: f64, most: f64) -> f64 {
+    let off = (want - heading + PI).rem_euclid(TAU) - PI;
+    (heading + off.clamp(-most, most)).rem_euclid(TAU)
+}
+
 #[cfg(test)]
 #[path = "sighting_tests.rs"]
 mod tests;

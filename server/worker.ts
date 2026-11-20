@@ -6,6 +6,7 @@ import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
 import { nodeRoom } from './roomNames.ts';
+import { SEA_PORTS } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
 interface Env {
@@ -114,7 +115,10 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
     if (name === 'sea')
-      return this.room.openSea(JSON.stringify(layout), crypto.getRandomValues(new Uint32Array(1))[0] ?? 0);
+      return this.room.openSea(
+        JSON.stringify({ layout, ports: SEA_PORTS }),
+        crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
+      );
     if (name.startsWith('fleet-')) return this.room.openFleet();
     const node = /^node-(.+)$/.exec(name)?.[1];
     // Every room on land rolls its loot from a seed of its own that no player sees.
