@@ -294,7 +294,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   leather; a Normal one shows nothing.
 - **Rare and finer** pieces are armour sets of the forge: Rare in chain, steel or iron, Legendary in silver, elven,
   dwarven or the knights' set, Atheric in daedric, ebony, adamantium or mithril, the first the forge draws for every
-  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots).
+  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots). Daedric's armour and weapons
+  are to give way to the Lattice's own, not yet drawn ([[The Lattice's Armour and Weapons Take Daedric's Place]]).
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; the hands hold the loadout
   drawn, in the rarity's metal.
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.

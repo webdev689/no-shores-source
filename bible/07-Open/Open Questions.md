@@ -23,6 +23,10 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   emblem; its foes' numbers on their roles, without the parries and guards the roles give, and with their own blows;
   the Heart's fight, its phases and the Husks it tears out; the skin each foe is coloured. Its looks and moves are
   Claude's to change ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[The Lattice as Claude Shapes It]]).
+- **The Lattice's armour and weapons.** What the set that takes Daedric's place is called and how it looks (which
+  strain, how much flesh); whether it covers every piece and weapon the forge draws in Daedric, in third and first
+  person, with the horse's barding; and whether the Atheric gear keeps it where Daedric stood
+  ([[The Lattice's Armour and Weapons Take Daedric's Place]], [[Gear]]).
 - **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
   ([[Raum's Lore Is Adapted Into One Mystery]]).
 - **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near

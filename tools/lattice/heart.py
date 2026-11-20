@@ -209,17 +209,18 @@ def anchor(iron, rust, crystal):
 
 
 def torn(flesh, hollow, blood):
-    """The person it tears out of itself, gripped by the head in its left fist and hanging from it, looking out,
-    bloodied: shown only as it is torn out and flung (heart_moves.py `tear`)."""
+    """The person it tears out of itself, gripped by the head in its left fist and hanging from its palm, looking out,
+    bloodied: shown only as it is torn out and flung, the palm turned down to hold it (heart_moves.py `tear`)."""
     wrist, way = growth.forearm('L')
-    ahead = np.array((0.0, -1.0, 0.0))
-    across = np.cross(way, ahead) / np.linalg.norm(np.cross(way, ahead))
-    head = wrist + way * 0.1
-    body = [blob(head, (0.034, 0.03, 0.04), along=tuple(way)), seg(head + way * 0.05, head + way * 0.17, 0.05, 0.032),
-            *(seg(head + way * 0.06 + across * 0.05 * s, head + way * 0.2 + across * 0.07 * s, 0.014) for s in (1, -1)),
-            *(seg(head + way * 0.17 + across * 0.022 * s, head + way * 0.34 + across * 0.03 * s, 0.018) for s in (1, -1))]
-    soaked = [seg(head + way * 0.06 + ahead * 0.02, head + way * 0.2 + ahead * 0.03, 0.035, 0.02)]
-    face = faces(head - ahead * 0.03 + way * 0.01, ahead, up=-way)
+    down = np.array((-1.0, 0.0, 0.0))   # the way the left palm faces at rest (rig.py `solve_arm`)
+    ahead = np.cross(way, down) / np.linalg.norm(np.cross(way, down))
+    across = way
+    head = wrist + way * 0.1 + down * 0.05
+    body = [blob(head, (0.034, 0.03, 0.04), along=tuple(down)), seg(head + down * 0.05, head + down * 0.17, 0.05, 0.032),
+            *(seg(head + down * 0.06 + across * 0.05 * s, head + down * 0.2 + across * 0.07 * s, 0.014) for s in (1, -1)),
+            *(seg(head + down * 0.17 + across * 0.022 * s, head + down * 0.34 + across * 0.03 * s, 0.018) for s in (1, -1))]
+    soaked = [seg(head + down * 0.06 + ahead * 0.02, head + down * 0.2 + ahead * 0.03, 0.035, 0.02)]
+    face = faces(head - ahead * 0.03 + down * 0.01, ahead, up=-down)
     made = []
     for name, blobs, paint in (('heart_torn', body, flesh), ('heart_torn_blood', soaked, blood),
                                ('heart_torn_face', face, hollow)):

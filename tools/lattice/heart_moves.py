@@ -148,7 +148,9 @@ def tear(frame, view, yaw):
                  {'spine': (recoil * 0.6, 0, 0), 'chest': (recoil * 0.4, 0, recoil * 0.8)})
     rot['head'] = (14 + recoil * 0.5, -recoil * 0.6, 0)
     pose, gear = drawn(rot, yaw, fist, True)
-    return held(pose, CARRIED, (wrist, way)), gear
+    laid(pose, 'R', *CARRIED, up=(1.0, 0.0, 0.0))
+    held_up = 2 <= frame <= 9   # the palm turned down while it holds what it tore out, so that hangs from it
+    return laid(pose, 'L', wrist, way, up=(0.0, 0.0, 1.0) if held_up else (-1.0, 0.0, 0.0)), gear
 
 
 MOVES = {'heart_stand': (stand, range(1)), 'heart_idle': (idle, IDLE), 'heart_walk': (walk, WALK),
