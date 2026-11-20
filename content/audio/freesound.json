@@ -1087,7 +1087,7 @@
     },
     {
       "id": "ship.runout",
-      "use": "A battery runs out its guns, the tell before her broadside",
+      "use": "A battery runs out its guns, the tell before its broadside",
       "query": "cannon carriage roll wood",
       "seconds": [
         0.6,
@@ -1097,7 +1097,7 @@
     },
     {
       "id": "ship.ready",
-      "use": "A side of her guns is loaded and ready",
+      "use": "A side of its guns is loaded and ready",
       "query": "wood knock metal tap",
       "seconds": [
         0.2,
