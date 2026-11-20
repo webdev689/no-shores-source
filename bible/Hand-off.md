@@ -196,14 +196,19 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **#95, fewer plates, sized by rank, after Destiny**, a draft from branch `ccr-800481d9-kbbd62`, waits on the
   owner's yes ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate,
-  the foe in sight nearest it (whole within 4°, none past 6°); the soft lock's foe and the foes fought in the last 6 s
-  show wherever they are; a Minor's bar short and thin, an Elite's and up 176 px and cut in thirds over a figure;
-  the land hides plates. Tested offline: the full check, and headless pictures of the Saltgrass Downs garrison
-  before and after (three plates on wary foes, then none; one plate as the view crosses them) and of each tier in the
-  Test Ground. Claude's calls, listed in its description, are the owner's to change: the cone's numbers, no second
-  plate by the cone while the foe at the crosshair is already fought or locked, the bars' sizes, thirds only over
-  figures (not on the target plate), ships' plates left as they are. Not yet seen on a real GPU or in a fight played
-  by hand. The target's own plate over its head is to be looked at again once the rest has been played.
+  the foe in sight nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and
+  shows none over its head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's
+  bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates.
+  Three audits of it (the code; its fidelity to the approval and its records; its frame cost and look) are fixed on
+  it, each fix with a test seen to fail without it. Tested offline: the full check; headless on the built page,
+  walking into the Saltgrass Downs garrison, six plates on `main` against one on #95, over the foe at the crosshair
+  (the foes stayed wary, so no blow was traded in the pictures); and each rank's plate whole and at three quarters.
+  Claude's calls, listed in its description, are the owner's to change: the cone's numbers and its hold; no second
+  plate by the cone while the foe at the crosshair is fought, locked or a Boss; a fought plate fading within the 6 s,
+  as the target plate does; the bars' sizes; thirds only over figures; the words of blows clear only of plates drawn;
+  ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
+  to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
+  writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
 - **#74, the prologue**, is merged into `main` (`bd54d43`). Every call inside the beats is in
   [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
   sound.
