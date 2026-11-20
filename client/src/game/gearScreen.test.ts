@@ -111,22 +111,51 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 
-test('each vendor’s stall shows its wares of the day, bought for their price in Aurem', () => {
-  const wares = [
-    item({ id: 0, kind: 13, rarity: 2, level: 9, price: 2_000 }),
-    item({ id: 1, kind: 14, rarity: 1, level: 9, price: 600 }),
-    item({ id: 0, kind: 2, rarity: 2, level: 9, price: 2_000, attack: 120 }),
-    item({ id: 1, kind: 12, rarity: 1, level: 9, price: 600 }),
+test('each vendor’s stall shows its six wares of the day, bought for their price in Aurem, the Shipwright’s last', () => {
+  const six = (first: Partial<GearItem>, second: Partial<GearItem>) => [
+    item({ id: 0, level: 9, price: 2_000, ...first }),
+    item({ id: 1, level: 9, price: 600, ...second }),
+    ...[2, 3, 4, 5].map((id) => item({ id, ...first })),
   ];
-  const [quartermaster, armsmith] = vendorsOf(state({ wares, aurem: 1_000 }));
+  const wares = [
+    ...six({ kind: 13, rarity: 2 }, { kind: 14, rarity: 1 }),
+    ...six({ kind: 2, rarity: 2, attack: 120 }, { kind: 12, rarity: 1 }),
+    ...six({ kind: 25, rarity: 1, bucket: 8, defense: 40 }, { kind: 24, rarity: 0, bucket: 7 }),
+  ];
+  const [quartermaster, armsmith, shipwright] = vendorsOf(state({ wares, aurem: 1_000 }));
   assert.equal(quartermaster?.name, 'The Quartermaster');
   assert.deepEqual(
-    quartermaster?.wares.map((ware) => [ware.kind, ware.affordable]),
+    quartermaster?.wares.slice(0, 2).map((ware) => [ware.kind, ware.affordable]),
     [
       ['Rare Head', false],
       ['Magic Torso', true],
     ],
   );
+  assert.equal(quartermaster?.wares.length, 6);
   assert.deepEqual(armsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
   assert.equal(armsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
+  assert.equal(shipwright?.name, 'The Shipwright');
+  assert.deepEqual(
+    shipwright?.wares.slice(0, 2).map((ware) => [ware.tile.name, ware.kind, ware.press.ask]),
+    [
+      ['Tarred Hull', 'Magic Hull', { kind: ASKS.vend, column: 2, node: 0 }],
+      ['Guns', 'Normal Guns', { kind: ASKS.vend, column: 2, node: 1 }],
+    ],
+  );
+});
+
+test("a module's page fits it in its own slot, never feeds it, and prices its nodes in the ship's materials", () => {
+  const column = { kind: 0, traits: [], xp: 0, aurem: 200, fragments: 4, essence: 0, resource: 2 };
+  const sails = item({ id: 9, kind: 26, rarity: 1, bucket: 9, at: 0, xpMost: 100, columns: [column] });
+  const detail = itemDetailOf(sails, state({ stocks: [0, 0, 0, 0, 3] }));
+  assert.equal(detail.kind, 'Magic Sails');
+  assert.deepEqual(
+    detail.presses.map((press) => press.ask),
+    [
+      { kind: ASKS.wear, item: 9, slot: 9 },
+      { kind: ASKS.dismantle, item: 9 },
+    ],
+    'no Fruit of Dagon for a module',
+  );
+  assert.equal(detail.columns[0]?.nodes[0]?.cost, 'Costs 200 Aurem, 4 Canvas, 2 Timber.');
 });

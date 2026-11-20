@@ -4,7 +4,7 @@ import './roster.css';
 import { make } from '../editor/dom.ts';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import { RARITIES, answerText, itemName } from '../player/gear.ts';
+import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
@@ -31,6 +31,8 @@ import { ItemPictures } from './itemPictures.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { answerSaid } from './shipGear.ts';
+import { harbourPage, shipTab } from './shipPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
@@ -56,6 +58,7 @@ const STATIONS: Readonly<Record<Station, string>> = {
   quartermaster: 'The Quartermaster',
   armsmith: 'The Armsmith',
   tailor: 'The Tailor',
+  harbourmaster: 'The Harbourmaster',
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
 const BANNER_SCALE = 3;
@@ -80,6 +83,8 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   quartermaster: [['Hold', 'Buy']],
   armsmith: [['Hold', 'Buy']],
   tailor: [['Hold', 'Buy']],
+  harbourmaster: [['Hold', 'Buy, or sign an officer on']],
+  ship: [['Click', 'Open a module or an officer']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],
@@ -95,7 +100,7 @@ const FIRST_SHELF = 'consumables';
 
 const isTab = (view: View): view is Tab => (TABS as readonly string[]).includes(view);
 /** The views drawn from the player's gear; the rest need none. */
-const ofGear = (view: View) => view === 'character' || view === 'inventory' || !isTab(view);
+const ofGear = (view: View) => view === 'character' || view === 'inventory' || view === 'ship' || !isTab(view);
 
 /** A tab's press: its name, the key that opens it on a keycap, and Later on one still to come. */
 function tabPress(tab: Tab, open: () => void): HTMLButtonElement {
@@ -338,18 +343,15 @@ export function startGearWindow(
 
   /** A page that needs no gear, built again only when what it shows changes. */
   const plainPage = (shown: View): HTMLElement => {
-    const panel = shown === 'ship' ? ship() : null;
-    const key = JSON.stringify([shown, panel]);
+    const key = JSON.stringify([shown]);
     if (plain?.key === key) return plain.page;
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     const page =
       later !== undefined
         ? laterPage(TAB_PRESSES[shown as Tab].label, later)
-        : shown === 'ship'
-          ? shipPage(panel)
-          : shown === 'social'
-            ? rosterPage(link, travel)
-            : settingsPage(link);
+        : shown === 'social'
+          ? rosterPage(link, travel)
+          : settingsPage(link);
     plain = { key, page };
     return page;
   };
@@ -402,7 +404,9 @@ export function startGearWindow(
         });
     }
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    const state = JSON.stringify([view, slot, arts, artSlot, artPending, shelf, inspecting, drawn, now === null]);
+    // The ship's papers change at sea, so her tab is built again with them.
+    const papers = view === 'ship' ? ship() : null;
+    const state = JSON.stringify([view, slot, arts, artSlot, artPending, shelf, inspecting, drawn, !now, papers]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
     const holding = pressing || screen.querySelector('.gear-holding') !== null;
     if (holding || (gear === shownGear && state === shownState)) {
@@ -427,7 +431,8 @@ export function startGearWindow(
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
       const why = now ? 'Loading…' : (lost ?? 'Your gear shows here on foot, when playing online.');
-      body.replaceChildren(make('p', why, 'gear-hint gear-empty'));
+      // Her papers show without the room's word on her power and crew.
+      body.replaceChildren(view === 'ship' ? shipPage(papers) : make('p', why, 'gear-hint gear-empty'));
       hinted([]);
       actions.replaceChildren(close);
       return;
@@ -437,7 +442,7 @@ export function startGearWindow(
     // A refusal is heard once, when it comes.
     if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
     if (fresh) refusedAt = gear.answered;
-    answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
+    answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerSaid(gear.answer);
     answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
     const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
     const context: PageContext = {
@@ -492,11 +497,16 @@ export function startGearWindow(
         ? characterPage(context, slot, (chosen) => ((slot = chosen), render()))
         : view === 'inventory'
           ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
-          : view === 'vault'
-            ? vaultPage(context)
-            : view === 'tailor'
-              ? tailorPage(context)
-              : vendorPage(context, view === 'quartermaster' ? 0 : 1);
+          : view === 'ship'
+            ? // On her tab the officer whose page is open stands in the slot's place, so Escape steps back from it.
+              shipTab(context, papers, [shelf, slot], (part, officer) => (([shelf, slot] = [part, officer]), render()))
+            : view === 'harbourmaster'
+              ? harbourPage(context)
+              : view === 'vault'
+                ? vaultPage(context)
+                : view === 'tailor'
+                  ? tailorPage(context)
+                  : vendorPage(context, view === 'quartermaster' ? 0 : 1);
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
