@@ -111,6 +111,20 @@ test('between ticks the body is drawn eased from the tick before toward the last
   assert.ok(Math.abs(shown.y - (halfway.previous.y + halfway.body.y) / 2) < 1e-12);
 });
 
+test('between ticks a move over a lip is drawn eased too, and a new one starts from its own start', () => {
+  const player = start();
+  const move = (progress: number) => ({ from: [0, 0, 0] as const, to: [0, 1, 2] as const, progress, seconds: 0.5 });
+  const going = {
+    ...player,
+    previous: { ...player.body, over: move(0.2) },
+    body: { ...player.body, over: move(0.4) },
+    blend: 0.5,
+  };
+  assert.ok(Math.abs((shownBody(going).over?.progress ?? 0) - 0.3) < 1e-12);
+  const anew = { ...going, previous: { ...player.body, over: move(1) }, body: { ...player.body, over: move(0.1) } };
+  assert.equal(shownBody(anew).over?.progress, 0.1);
+});
+
 test('going over a lip, the body’s centre passes behind the wall’s face, but its card stays in front', () => {
   // The course's ledge: x 0 to 6, its face at y -1, its lip 2.3 m up. The player walks north at it, jumps and goes over.
   const ledge = { face: -1, lip: 2.3 };

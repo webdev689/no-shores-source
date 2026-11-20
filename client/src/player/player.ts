@@ -137,16 +137,19 @@ export function updatePlayer(
   return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, loadout, cast, act, facing, aim };
 }
 
-/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate. */
+/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate, a move over
+ *  a lip too while the same move goes on. */
 export function shownBody(player: Player): Body {
   const { body, previous, blend } = player;
   const between = (from: number, to: number) => from + (to - from) * blend;
+  const going = body.over && previous.over && previous.over.progress <= body.over.progress ? previous.over : null;
   return {
     ...body,
     x: between(previous.x, body.x),
     y: between(previous.y, body.y),
     z: between(previous.z, body.z),
     crouch: between(previous.crouch, body.crouch),
+    over: body.over && going ? { ...body.over, progress: between(going.progress, body.over.progress) } : body.over,
   };
 }
 
