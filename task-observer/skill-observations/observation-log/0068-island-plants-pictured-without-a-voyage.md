@@ -1,5 +1,5 @@
 ---
-id: 67
+id: 68
 title: "A sea island's game-only drawing (Flora's plants) has no picture route: the World Editor draws modules, and the game needs a voyage"
 status: open
 type: open-source
