@@ -67,25 +67,19 @@ impl Harbours {
         let traffic = Traffic::new(layout, &waters, ports);
         let roadstead = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
         let ports = traffic.ports.iter().zip(&traffic.roadsteads).map(|(port, at)| (port.id.clone(), roadstead(at)));
-        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters)) }
+        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters, &traffic.roadsteads)) }
     }
 
     /// The port nearest `at` by the sea's way there (round land, as the traffic's routes are planned), by its number
-    /// among them; in a straight line to one no way reaches, or with no ways planned.
+    /// among them; in a straight line where no port's way reaches, or with no ways planned.
     #[must_use]
     pub fn nearest(&self, at: [f64; 2]) -> Option<usize> {
-        let point = |[x, y]: [f64; 2]| world::geometry::Point::new(x.round() as i64, y.round() as i64);
-        let by_sea: Vec<Option<f64>> =
-            self.ports.iter().map(|port| self.ways.as_ref()?.length(point(at), point(port.1))).collect();
-        // Where some port is reached by sea, one no way reaches is no nearer for a short straight line.
-        let unreached = if by_sea.iter().any(Option::is_some) { f64::INFINITY } else { 0.0 };
-        let lengths: Vec<f64> = self
-            .ports
-            .iter()
-            .zip(&by_sea)
-            .map(|(port, sea)| sea.unwrap_or(unreached + libm::hypot(port.1[0] - at[0], port.1[1] - at[1])))
-            .collect();
-        (0..lengths.len()).min_by(|one, other| lengths[*one].total_cmp(&lengths[*other]))
+        let point = world::geometry::Point::new(at[0].round() as i64, at[1].round() as i64);
+        if let Some(port) = self.ways.as_ref().and_then(|ways| ways.nearest(point)) {
+            return Some(port);
+        }
+        let straight = |port: &(String, [f64; 2])| libm::hypot(port.1[0] - at[0], port.1[1] - at[1]);
+        (0..self.ports.len()).min_by(|one, other| straight(&self.ports[*one]).total_cmp(&straight(&self.ports[*other])))
     }
 
     /// Whether `at` lies within `REPAIR_REACH_M` of a port's roadstead.

@@ -15,6 +15,8 @@ const DIAGONAL_COST: u64 = 7_071;
 
 /// How many cells round a roadstead are searched for the clear cell its path starts from.
 const START_SEARCH_CELLS: i64 = 20;
+/// A cell no port's way reaches, in `Mask::nearest_ports`.
+pub(super) const NO_PORT: u8 = u8::MAX;
 
 /// A point in whole metres.
 fn rounded(point: [f64; 2]) -> Point {
@@ -119,7 +121,7 @@ impl Mask {
     }
 
     /// The nearest clear cell to a point that a straight leg reaches without touching land; ties to the lower cell.
-    fn start_cell(&self, land: &Land, point: Point) -> Option<usize> {
+    pub(super) fn start_cell(&self, land: &Land, point: Point) -> Option<usize> {
         let column = (point.x as f64 / MASK_CELL_M).floor() as i64;
         let row = (point.y as f64 / MASK_CELL_M).floor() as i64;
         let mut cells: Vec<(i128, usize)> = Vec::new();
@@ -165,16 +167,7 @@ impl Mask {
                 path.reverse();
                 return Some(path);
             }
-            let (column, row) = ((cell % self.columns) as i64, (cell / self.columns) as i64);
-            for (dx, dy) in [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)] {
-                let diagonal = dx != 0 && dy != 0;
-                if !self.clear_at(column + dx, row + dy)
-                    || (diagonal && !(self.clear_at(column + dx, row) && self.clear_at(column, row + dy)))
-                {
-                    continue;
-                }
-                let next = (row + dy) as usize * self.columns + (column + dx) as usize;
-                let step = if diagonal { DIAGONAL_COST } else { STRAIGHT_COST };
+            for (next, step) in self.steps(cell) {
                 let reached = cost[cell] + step;
                 if reached < cost[next] {
                     cost[next] = reached;
@@ -184,6 +177,53 @@ impl Mask {
             }
         }
         None
+    }
+
+    /// The clear cells a path steps to from `cell`, eight neighbours, never cutting a corner past an unclear cell, each
+    /// with the step's cost.
+    fn steps(&self, cell: usize) -> impl Iterator<Item = (usize, u64)> + '_ {
+        let (column, row) = ((cell % self.columns) as i64, (cell / self.columns) as i64);
+        [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)].into_iter().filter_map(
+            move |(dx, dy)| {
+                let diagonal = dx != 0 && dy != 0;
+                let open = self.clear_at(column + dx, row + dy)
+                    && (!diagonal || (self.clear_at(column + dx, row) && self.clear_at(column, row + dy)));
+                let step = if diagonal { DIAGONAL_COST } else { STRAIGHT_COST };
+                open.then(|| ((row + dy) as usize * self.columns + (column + dx) as usize, step))
+            },
+        )
+    }
+
+    /// Each cell's nearest of `ports` by the cheapest path of clear cells, the leg from a port to the cell its path
+    /// starts from counted: `NO_PORT` where none reaches. One search from every port at once, so the nearest from any
+    /// point is a lookup; ties go to the lower port, so every machine reckons the same.
+    pub(super) fn nearest_ports(&self, land: &Land, ports: &[Point]) -> Vec<u8> {
+        assert!(ports.len() < usize::from(NO_PORT), "a port's number fits below NO_PORT");
+        let mut best = vec![(u64::MAX, NO_PORT); self.clear.len()];
+        let mut open = BinaryHeap::new();
+        for (port, &at) in ports.iter().enumerate() {
+            let Some(cell) = self.start_cell(land, at) else { continue };
+            let middle = self.point(cell);
+            let (dx, dy) = (i128::from(middle.x - at.x), i128::from(middle.y - at.y));
+            let here = (((dx * dx + dy * dy) as f64).sqrt() as u64, port as u8);
+            if here < best[cell] {
+                best[cell] = here;
+                open.push(Reverse((here, cell)));
+            }
+        }
+        while let Some(Reverse(((cost, port), cell))) = open.pop() {
+            if (cost, port) > best[cell] {
+                continue;
+            }
+            for (next, step) in self.steps(cell) {
+                let reached = (cost + step, port);
+                if reached < best[next] {
+                    best[next] = reached;
+                    open.push(Reverse((reached, next)));
+                }
+            }
+        }
+        best.into_iter().map(|(_, port)| port).collect()
     }
 
     /// The route between two roadsteads: from each to its nearest reachable clear cell, A* between those cells, then

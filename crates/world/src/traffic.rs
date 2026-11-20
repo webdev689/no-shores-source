@@ -145,28 +145,29 @@ pub fn hull_of(id: u64) -> u8 {
     }
 }
 
-/// The sea's ways across a world, planned round land as the traffic's routes are: what a ship sails between two
-/// points of open water.
+/// The sea's ways to a world's ports, planned round land as the traffic's routes are: each cell of open water knows
+/// its nearest port by the way a ship sails there, found once when they are made.
 pub struct SeaWays {
     land: routes::Land,
     mask: routes::Mask,
+    nearest: Vec<u8>,
 }
 
 impl SeaWays {
+    /// The ways to `ports` (each a point of open water, at most 254 of them).
     #[must_use]
-    pub fn new(layout: &Layout, waters: &Waters) -> Self {
-        Self { land: routes::Land::new(layout), mask: routes::Mask::new(waters) }
+    pub fn new(layout: &Layout, waters: &Waters, ports: &[Point]) -> Self {
+        let (land, mask) = (routes::Land::new(layout), routes::Mask::new(waters));
+        let nearest = mask.nearest_ports(&land, ports);
+        Self { land, mask, nearest }
     }
 
-    /// The length of the sea's way from `from` to `to`, metres; none where no way joins them.
+    /// The number of the port nearest `at` by the sea's way, among those the ways were made to; none where no port's
+    /// way reaches it.
     #[must_use]
-    pub fn length(&self, from: Point, to: Point) -> Option<f64> {
-        let path = self.mask.route(&self.land, from, to)?;
-        let leg = |pair: &[Point]| {
-            let (east, south) = ((pair[1].x - pair[0].x) as f64, (pair[1].y - pair[0].y) as f64);
-            (east * east + south * south).sqrt()
-        };
-        Some(path.windows(2).map(leg).sum())
+    pub fn nearest(&self, at: Point) -> Option<usize> {
+        let port = self.nearest[self.mask.start_cell(&self.land, at)?];
+        (port != routes::NO_PORT).then_some(usize::from(port))
     }
 }
 

@@ -232,8 +232,8 @@ Pass]]) with Claude's numbers:
   boarder's own ship takes no orders or course while they stand on her deck. Her deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
 - **Losing.** A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
-  up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, planned as the traffic's routes
-  are): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
+  up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, on the traffic's sea mask: one
+  search from every port when the room opens gives each cell of open water its nearest, so asking is a lookup): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
   of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
   player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at. Every
   boarder of a deck lost is let go of the fight, and she is scuttled with no one aboard.

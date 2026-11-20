@@ -267,3 +267,14 @@ fn a_port_listed_twice_sails_once() {
     assert_eq!(traffic.ports.len(), 3);
     assert_eq!(traffic.routes.len(), 3);
 }
+
+#[test]
+fn the_nearest_port_by_sea_is_a_lookup_and_a_tie_goes_to_the_lower_port() {
+    let text = r#"{ "continents": [{ "id": "far", "outline": [[4000000, 100000], [4010000, 100000], [4010000, 110000], [4000000, 110000]] }], "isles": [] }"#;
+    let layout = crate::layout::parse(text).unwrap();
+    let ports = [Point::new(102_500, 502_500), Point::new(302_500, 502_500)];
+    let ways = SeaWays::new(&layout, &Waters::new(&layout), &ports);
+    assert_eq!(ways.nearest(Point::new(202_500, 502_500)), Some(0), "twenty cells from each: the lower port");
+    assert_eq!(ways.nearest(Point::new(207_500, 502_500)), Some(1));
+    assert_eq!(ways.nearest(Point::new(100_000, 900_000)), Some(0));
+}

@@ -51,7 +51,8 @@ fn the_nearest_port_city_is_nearest_by_the_seas_way_round_land_not_in_a_straight
     // A long thin continent between where she went down and the port city a straight line finds nearest.
     let text = r#"{ "continents": [{ "id": "wall", "outline": [[500000, 100000], [520000, 100000], [520000, 900000], [500000, 900000]] }], "isles": [] }"#;
     let layout = world::layout::parse(text).unwrap();
-    let ways = SeaWays::new(&layout, &world::waters::Waters::new(&layout));
+    let points = [world::geometry::Point::new(545_000, 500_000), world::geometry::Point::new(480_000, 300_000)];
+    let ways = SeaWays::new(&layout, &world::waters::Waters::new(&layout), &points);
     let ports = vec![("across".into(), [545_000.0, 500_000.0]), ("along".into(), [480_000.0, 300_000.0])];
     let harbours = Harbours { ports, ways: Some(ways) };
     assert_eq!(harbours.nearest([480_000.0, 500_000.0]), Some(1), "round the wall the far side lies 800 km off");
