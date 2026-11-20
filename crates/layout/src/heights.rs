@@ -6,7 +6,6 @@
 //! low keeps down; no stretch of any way climbs steeper than a track may, and ways side by side stand at one level.
 
 use crate::areas::Area;
-use crate::basins::Basin;
 use crate::brief::{AreaKind, Brief};
 use crate::field::distance;
 use crate::paths::{Path, off_line};
@@ -15,7 +14,7 @@ use crate::paths::{Path, off_line};
 const BESIDE_M: f64 = 10.0;
 /// The steepest a way climbs to a place over it, a rise a metre: under a track's 0.18 where the massif's local height
 /// stands its highest, 1.15 times its own.
-const STEEPEST: f64 = 0.14;
+pub const STEEPEST: f64 = 0.14;
 
 /// The level an area's floor stands at by its kind, as a share of the massif's height.
 #[must_use]
@@ -61,13 +60,18 @@ pub fn levels(areas: &[Area], brief: &Brief) -> Vec<f64> {
         .collect()
 }
 
-/// The level of each point of each way, as a share of the massif's height (`rise` metres): an area's where the point lies
-/// on its basin's floor; else the lower of its way's two areas' levels (`joined`), raised wherever a higher point lies
+/// The level of each point of each way, as a share of the massif's height (`rise` metres): the floor's (`held_at`) where
+/// the point lies on an area's basin; else the lower of its way's two areas' levels (`joined`), raised wherever a higher point lies
 /// near enough along the ways that the way would climb steeper than `STEEPEST` from it, so it ramps up to it instead,
 /// and lowered likewise toward a place lower than it. Points of different ways within 10 m are joined, so ways side by
 /// side stand within a walkable slope of one another.
 #[must_use]
-pub fn graded(paths: &[Path], joined: &[[usize; 2]], basins: &[Basin], (levels, rise): (&[f64], f64)) -> Vec<Vec<f64>> {
+pub fn graded(
+    paths: &[Path],
+    joined: &[[usize; 2]],
+    held_at: &dyn Fn([f64; 2]) -> Option<f64>,
+    (levels, rise): (&[f64], f64),
+) -> Vec<Vec<f64>> {
     let points: Vec<[f64; 2]> = paths.iter().flat_map(|path| path.points.iter().copied()).collect();
     let starts: Vec<usize> = paths
         .iter()
@@ -78,15 +82,7 @@ pub fn graded(paths: &[Path], joined: &[[usize; 2]], basins: &[Basin], (levels, 
         })
         .collect();
     let way_of = |point: usize| starts.iter().rposition(|&start| start <= point).unwrap_or(0);
-    let held: Vec<Option<f64>> = points
-        .iter()
-        .map(|&at| {
-            let on = |basin: &Basin| {
-                basin.floors.iter().any(|&[x1, y1, x2, y2, half]| off_line(at, [x1, y1], [x2, y2]) <= half)
-            };
-            basins.iter().zip(levels).find(|(basin, _)| on(basin)).map(|(_, &level)| level)
-        })
-        .collect();
+    let held: Vec<Option<f64>> = points.iter().map(|&at| held_at(at)).collect();
     let lower = |way: usize| joined.get(way).map_or(0.0, |&[from, to]| levels[from].min(levels[to]));
     let mut level: Vec<f64> =
         (0..points.len()).map(|point| held[point].unwrap_or_else(|| lower(way_of(point)))).collect();
@@ -167,6 +163,71 @@ pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -
         .map_or(0.0, |(_, share)| share)
 }
 
+/// Each basin's floors as carved, at its area's level: at the land's own level as `floors`, else as raised floors
+/// (`raised`); with heights a hamlet's or a ruin's tiered. Returns them all, with their levels, as the ways' grading holds
+/// them.
+pub fn floors_of(
+    basins: &[crate::basins::Basin],
+    areas: &[Area],
+    (levels, rise, heights): (&[f64], f64, bool),
+    (floors, raised): (&mut Vec<[f64; 5]>, &mut Vec<[f64; 7]>),
+) -> Vec<[f64; 7]> {
+    let mut held: Vec<[f64; 7]> = Vec::new();
+    for ((basin, &level), area) in basins.iter().zip(levels).zip(areas) {
+        let tiered = heights && matches!(area.kind, AreaKind::Hamlet | AreaKind::Ruin);
+        for (number, &[x1, y1, x2, y2, half]) in basin.floors.iter().enumerate() {
+            let (near, far) = if distance([x1, y1], area.at) <= distance([x2, y2], area.at) {
+                ([x1, y1], [x2, y2])
+            } else {
+                ([x2, y2], [x1, y1])
+            };
+            let tier =
+                if tiered && number > 0 { (level + TIERS[(number - 1) % TIERS.len()]).clamp(0.0, 0.95) } else { level };
+            // A tiered area's bowl is a plaza at its middle; each lobe or spoke a ramp up or down to a flat tier where
+            // its block stands, so no building is tilted across a slope.
+            let half = if tiered && number == 0 { half.min(area.radius * 0.55) } else { half };
+            let length = distance(near, far);
+            let ramp = ((tier - level).abs() * rise / STEEPEST).min(length * 0.6);
+            let turn = if length > 0.0 { ramp / length } else { 0.0 };
+            let foot = [near[0] + (far[0] - near[0]) * turn, near[1] + (far[1] - near[1]) * turn];
+            let capsules = if tier == level {
+                vec![[near[0], near[1], far[0], far[1], half, level, level]]
+            } else {
+                vec![
+                    [near[0], near[1], foot[0], foot[1], half, level, tier],
+                    [foot[0], foot[1], far[0], far[1], half, tier, tier],
+                ]
+            };
+            for capsule in capsules {
+                held.push(capsule);
+                if level > 0.0 || tier > 0.0 {
+                    raised.push(capsule);
+                } else {
+                    floors.push([capsule[0], capsule[1], capsule[2], capsule[3], half]);
+                }
+            }
+        }
+    }
+    held
+}
+
+/// The level of the basin floor under a point, as a share of the massif's height: of the first of the capsules
+/// (`[x1, y1, x2, y2, half, from, to]`) it lies on, at its place along it; none off them all.
+#[must_use]
+pub fn on_capsules(capsules: &[[f64; 7]], at: [f64; 2]) -> Option<f64> {
+    capsules.iter().find(|&&[x1, y1, x2, y2, half, ..]| off_line(at, [x1, y1], [x2, y2]) <= half).map(
+        |&[x1, y1, x2, y2, _, from, to]| {
+            let (from_end, to_end) = (distance(at, [x1, y1]), distance(at, [x2, y2]));
+            let along = if from_end + to_end > 0.0 { from_end / (from_end + to_end) } else { 0.0 };
+            from + (to - from) * along
+        },
+    )
+}
+
+/// The tiers a lobe or a spoke of a raised area's basin rises or falls to from its middle, in turn, as shares of the
+/// massif's height: so a hamlet steps up its hillside and a ruin lies on broken ground.
+pub const TIERS: [f64; 3] = [0.1, 0.2, -0.1];
+
 /// A point's level waiting to be spread, highest first, ties by its place.
 #[derive(Debug, Clone, Copy)]
 struct Raised(f64, usize);
@@ -194,10 +255,23 @@ impl Ord for Raised {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::basins::Basin;
     use crate::paths::Tier;
 
     fn way(points: &[[f64; 2]]) -> Path {
         Path { tier: Tier::Track, points: points.to_vec(), crossings: Vec::new(), heights: Vec::new() }
+    }
+
+    /// Each basin's floors held at its level.
+    fn held_by(basins: &[Basin], levels: &[f64]) -> impl Fn([f64; 2]) -> Option<f64> {
+        let capsules: Vec<[f64; 7]> = basins
+            .iter()
+            .zip(levels)
+            .flat_map(|(basin, &level)| {
+                basin.floors.iter().map(move |&[x1, y1, x2, y2, half]| [x1, y1, x2, y2, half, level, level])
+            })
+            .collect();
+        move |at| on_capsules(&capsules, at)
     }
 
     fn basin_at(at: [f64; 2]) -> Basin {
@@ -212,7 +286,8 @@ mod tests {
     #[test]
     fn a_way_holds_the_lower_places_level_and_ramps_up_to_the_higher() {
         let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0])];
-        let graded = graded(&[way(&straight(0.0))], &[[0, 1]], &basins, (&[0.1, 0.6], 28.0));
+        let held = held_by(&basins, &[0.1, 0.6]);
+        let graded = graded(&[way(&straight(0.0))], &[[0, 1]], &held, (&[0.1, 0.6], 28.0));
         let levels = &graded[0];
         assert!((levels[0] - 0.1).abs() < 1e-9 && (levels[20] - 0.6).abs() < 1e-9, "each end at its area's level");
         for pair in levels.windows(2).skip(2).take(16) {
@@ -226,7 +301,8 @@ mod tests {
     #[test]
     fn a_way_between_two_places_up_high_keeps_up() {
         let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0])];
-        let graded = graded(&[way(&straight(0.0))], &[[0, 1]], &basins, (&[0.6, 0.6], 28.0));
+        let held = held_by(&basins, &[0.6, 0.6]);
+        let graded = graded(&[way(&straight(0.0))], &[[0, 1]], &held, (&[0.6, 0.6], 28.0));
         assert!(graded[0].iter().all(|level| (level - 0.6).abs() < 1e-9), "{:?}", graded[0]);
     }
 
@@ -234,7 +310,8 @@ mod tests {
     fn ways_side_by_side_stand_at_one_level() {
         let basins = [basin_at([0.0, 0.0]), basin_at([200.0, 0.0]), basin_at([0.0, 6.0])];
         let ways = [way(&straight(0.0)), way(&straight(6.0))];
-        let graded = graded(&ways, &[[0, 1], [2, 1]], &basins, (&[0.0, 0.6, 0.0], 28.0));
+        let held = held_by(&basins, &[0.0, 0.6, 0.0]);
+        let graded = graded(&ways, &[[0, 1], [2, 1]], &held, (&[0.0, 0.6, 0.0], 28.0));
         for (one, other) in graded[0].iter().zip(&graded[1]) {
             assert!((one - other).abs() * 28.0 <= STEEPEST * 6.0 + 1e-9, "{one} beside {other}");
         }

@@ -336,7 +336,11 @@ levels, raised wherever a higher point lies near enough along the ways that the 
 from it, and lowered likewise toward a lower place's floor; points of different ways within 10 m count as one way.
 So a place up high stands on its platform over the ways with a ramp up to it, a way between two places up high runs
 along a causeway, one between two places down low keeps down, and no stretch of any way climbs steeper than a track
-may, nor two ways side by side stand further apart than such a slope. A raised area's floors and every stretch of way off the land's own
+may, nor two ways side by side stand further apart than such a slope. A hamlet's and a ruin's floor is tiered: its bowl a
+plaza at its middle (0.55 of its reach at most), each of its lobes or spokes in turn a ramp up 0.1, up 0.2 or down 0.1
+of the massif's height at the steepest a track takes, onto a flat tier where its block stands; so a hamlet steps up
+its hillside and a ruin lies on broken ground, and no building stands across a slope. A way's points on a basin hold
+the level of the tier under them. A raised area's floors and every stretch of way off the land's own
 level are carved as the sculpt's raised floors ([[Land]]); a terrace stands its area's level higher, a ramp's foot at
 the level of the land under it; a lookout's climb starts at its floor's level, and a pocket opens at its way's. What
 was stood on the land before the carving is lifted onto it. A retaining wall stands only where a cliff rises from the

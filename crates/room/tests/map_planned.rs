@@ -329,3 +329,26 @@ fn fly_list() {
     std::fs::create_dir_all(path.parent().expect("a folder")).expect("the folder is made");
     std::fs::write(&path, serde_json::to_string(&views).expect("the views write")).expect("the list is written");
 }
+
+#[test]
+fn the_vales_hamlet_steps_up_its_hillside_in_tiers() {
+    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let hamlet = laid.areas.iter().find(|area| area.name == "Gullwing").expect("the hamlet is laid out");
+    let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
+    // How far the carving raises the land under each of its buildings.
+    let raised: Vec<f64> = laid
+        .seating
+        .buildings
+        .iter()
+        .map(|building| {
+            let [west, north, east, south] = building.footprint;
+            [(west + east) / 2.0, (north + south) / 2.0]
+        })
+        .filter(|&at| distance(at, hamlet.at) < hamlet.radius + 60.0)
+        .map(|at| carved.raise(at[0], at[1], 1000.0))
+        .collect();
+    let (low, high) =
+        raised.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), &each| (low.min(each), high.max(each)));
+    assert!(raised.len() >= 4, "the hamlet has its buildings: {}", raised.len());
+    assert!(high - low >= 2.5, "its buildings stand {:.1} m apart in height: {raised:?}", high - low);
+}

@@ -225,15 +225,11 @@ pub fn carve(
     // floor, as does every way graded to it.
     let mut floors: Vec<[f64; 5]> = Vec::new();
     let (mut terraces, mut raised): (Vec<[f64; 7]>, Vec<[f64; 7]>) = (Vec::new(), Vec::new());
-    for (basin, &level) in basins.iter().zip(levels) {
-        if level > 0.0 {
-            raised.extend(basin.floors.iter().map(|&[x1, y1, x2, y2, half]| [x1, y1, x2, y2, half, level, level]));
-        } else {
-            floors.extend_from_slice(&basin.floors);
-        }
-    }
+    // With heights, a hamlet's lobes and a ruin's spokes rise or fall from its middle to tiers of their own.
+    let held = crate::heights::floors_of(&basins, areas, (levels, rise, heights), (&mut floors, &mut raised));
+
     let grades = if levels.iter().any(|&level| level > 0.0) {
-        crate::heights::graded(paths, joined, &basins, (levels, rise))
+        crate::heights::graded(paths, joined, &|at| crate::heights::on_capsules(&held, at), (levels, rise))
     } else {
         Vec::new()
     };

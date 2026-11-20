@@ -264,8 +264,9 @@ fn retaining(kit: &mut Kit, area: &Area, (paths, outcrops): (&[Path], &[Outcrop]
         let angle = start + arc * f64::from(piece) / f64::from(pieces);
         let (sine, cosine) = land::exact::sin_cos(angle);
         let (outward, tangent) = ([sine, -cosine], [cosine, sine]);
-        // The floor's edge wanders out to 1.35 of its reach; the wall stands its half-thickness in front of the foot.
-        let mut out = area.radius;
+        // Walked out from the area's middle, since a tiered area's floor may end short of its reach; the floor's edge
+        // wanders out to 1.35 of its reach; the wall stands its half-thickness in front of the foot.
+        let mut out = 0.0;
         // A mesa standing on the floor is not the cliff: the foot lies past the floor's edge.
         let foot = |out: f64| {
             let at = ahead(area.at, outward, out, 0.0);
