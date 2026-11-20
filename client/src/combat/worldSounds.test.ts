@@ -6,6 +6,7 @@ import { EVENT } from './cues.ts';
 import type { KeptFoe } from './fighting.ts';
 import { SpellEffects } from './spellEffects.ts';
 import { type HeardFight, type WorldFrame, WorldSounds, voiceToDrop } from './worldSounds.ts';
+import { listen } from '../listener.ts';
 
 const SWORD = 2;
 const PLAYER = 1;
@@ -121,6 +122,18 @@ test("the player's sword cuts a foe where the foe stands, the listener at the ey
   assert.ok(rate !== 1 && Math.abs(rate - 1) <= 0.04, 'a blow strays a little in pitch');
   assert.deepEqual([listener.positionX.value, listener.positionY.value, listener.positionZ.value], [0, 2, 3]);
   assert.deepEqual([listener.forwardX.value, listener.forwardZ.value], [0, -1], 'yaw 0 looks north');
+});
+
+test("at sea the ambience counts the listener's frame from her ship: a blow is placed in that frame, by the ear", () => {
+  const { output, play, played, listener } = fakeSound();
+  const ship = [-500, 700] as const;
+  // The ambience hears the sea round her ship each frame, the eye as its ear, before and after the fight's sounds.
+  listen(output.audio, [0, 3, 2], 0, ship);
+  const sounds = new WorldSounds(() => output, play);
+  sounds.frame(frameOf({ events: [hit()] }));
+  listen(output.audio, [0, 3, 2], 0, ship);
+  assert.deepEqual(played.map(({ at }) => at), [[505, 0, -700]]);
+  assert.deepEqual([listener.positionX.value, listener.positionY.value, listener.positionZ.value], [500, 2, -697]);
 });
 
 test("a swing's whoosh as its rush meets the blow, once; nothing for what a figure first seen was already doing", () => {

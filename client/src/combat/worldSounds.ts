@@ -7,6 +7,7 @@ import type { FightEvent } from '../network/messages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Fired } from '../rules/combatRules.ts';
 import { type Action, type FighterView, type StatusName, fighterView } from '../rules/fighters.ts';
+import { audioPoint, listen } from '../listener.ts';
 import { playSample, rushOfCue } from '../soundSamples.ts';
 import { blowLook } from './cues.ts';
 import type { Fighting } from './fighting.ts';
@@ -156,7 +157,7 @@ export class WorldSounds {
     this.clock += frame.seconds;
     const hidden = typeof document !== 'undefined' && document.hidden;
     const output = frame.quiet || hidden ? null : this.live();
-    if (output) listen(output.audio.listener, frame.eye, frame.yaw);
+    if (output) listen(output.audio, frame.eye, frame.yaw);
     const heard: { readonly cue: string; readonly at: Point; readonly key: number | null }[] = [];
     const hear = (cue: string | null, place: Point | null, key: number | null) => {
       if (cue && place) heard.push({ cue, at: place, key });
@@ -327,8 +328,8 @@ export class WorldSounds {
       refDistance: NEAR_M,
       maxDistance: MOST_M,
     });
-    // The world's east, south and up are the listener's x, z and y.
-    [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = [place[0], place[2], place[1]];
+    // Placed in the listener's frame, whose origin the ambience may have moved to her ship.
+    [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = audioPoint(audio, place);
     panner.connect(out);
     const source = this.play(audio, panner, cue, STRAYS.test(cue) ? 1 + (Math.random() - 0.5) * STRAY : 1);
     if (!source) {
@@ -347,18 +348,4 @@ export class WorldSounds {
       panner.disconnect();
     });
   }
-}
-
-/** The listener at the eye facing its yaw (clockwise from north, -y), up the world's up. */
-export function listen(listener: AudioListener, eye: Point, yaw: number): void {
-  const [ahead, along] = [Math.sin(yaw), -Math.cos(yaw)];
-  // Browsers without the listener's parameters take its older calls.
-  if (!(listener.positionX as AudioParam | undefined)) {
-    listener.setPosition(eye[0], eye[2], eye[1]);
-    listener.setOrientation(ahead, 0, along, 0, 1, 0);
-    return;
-  }
-  [listener.positionX.value, listener.positionY.value, listener.positionZ.value] = [eye[0], eye[2], eye[1]];
-  [listener.forwardX.value, listener.forwardY.value, listener.forwardZ.value] = [ahead, 0, along];
-  [listener.upX.value, listener.upY.value, listener.upZ.value] = [0, 1, 0];
 }
