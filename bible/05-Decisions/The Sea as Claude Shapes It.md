@@ -113,3 +113,19 @@ Her rank, by the lowest level of her water's band:
 - **The key**: one framed panel, "Held by" and "Levels", each swatch painted as the map shows that holder. It stands
   in a clear corner. With none clear, it takes the place that costs least: a water's name it covers counts 10, land
   under it 5, any other name 1.
+
+### The fights' ends
+
+- **Sinking**: any ship at no hull goes down over 20 s. She leaves each player who fought her 3, 4, 5, 6 or 8 pieces,
+  Minor to Boss, each a kill's drop by the gear loop's law; from an Elite up, one piece is a chest a rank higher.
+  They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are gathered within 25 m.
+- **Striking**: a struck ship lies hove to 90 s, then is scuttled.
+- **Boarding**: within 30 m of her, both ships under 2 m/s. Her crew are 3 hands at a Minor, 3 and a heavy at a
+  Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and her Boss at a Boss. A deck won is held 60 s,
+  then she is scuttled.
+- **Losing**: washed up at the port city nearest by the sea's way; a sunk ship comes back with 10% of her hull, 25%
+  of her canvas and half her men.
+- **Repair**: free at a port city, within 3 km of its roadstead, at rest: a second for each hundredth missing, 100 s
+  at most.
+- **Limits**: a player or a hostile ship within 750 m of a fight joins it. A wary captain falls on a Sloop by DFO's
+  own rule: one she outguns 1.25 to one, or one holed under 0.35 of her hull.
