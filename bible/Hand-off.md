@@ -249,6 +249,53 @@ Where the work stands now, for the next session. Each session rewrites this note
   log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
   research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
 
+## In progress: Overlook's hub (branch `claude/game-experience-factions-94un6s`, not yet passing the check)
+
+The owner's words are in [[Overlook Becomes a Hub of Courts and Ways, After the Tower]] ("Build this to perfection
+... Return when this is 100%"; then wall adornments and banners); every call is in [[Overlook's Hub as Claude Shapes
+It]]. Paused when the owner's usage limit was reached; nothing is reviewed, audited or seen whole yet.
+
+Built on the branch (each part committed, merged from its worker's branch `wk/hub-*`):
+- **The hub** (`crates/city/src/hub/`, Overlook's own social plan; other cities keep the courtyard): the seaward walk
+  and spawns, the Watch Court (obelisk, two vault houses, the Mage's study, the notice board's landing
+  `hub::BOARD_LANDING_M` for the activities session's board), two stone ranges with arched passages, the West Court
+  (Tailor, fountain, bandstand) and the Forge Yard (Weaponsmith, Armorsmith, anvil yard), the Beacon Walk with its
+  market lane and the portico, the Hall of the Arts inside the Beacon's now hollow base (the three factions' chapels,
+  the war table), the Stair Yard round the base's east side (the Tack's stable at the Harbour Stair's head), sealed
+  gates, and the harbour way down the city's switchback and ramps to the quay (Harbourmaster, chandler) and the pier,
+  with two ships moored there (drawn on foot). The ring is the outline of every walked rectangle (`hub/ring.rs`).
+  Adornments are placed in `hub/adorn.rs` (banners, sconces, lanterns, bunting, signs, planters, ivy, statues, quay
+  things) but their modules are not built yet, so they stand nowhere.
+- **Ramps** for every city's avenues (`crates/city/src/ramps.rs`, sloped pads in `land::pads`), a switchback at each
+  avenue's head and a flight from each harbour avenue onto the quay; drawn by the page; walked in a room test.
+- **The fall**: in a social space a fall of 6 m or more kills at once; dead bodies fall on; the camera holds and turns
+  after the tumbling body; "You fell." once it lands (`crates/reach`, `client/src/game/fallLaw.ts`, `fallWatch.ts`).
+- **Townsfolk on ways** (`crates/city/src/life.rs`, `client/src/game/life/`): A* over the plan's ways, keeping right,
+  routines looped on the world clock (every browser sees the same), workers and players at posts, the band heard by
+  distance, Maren on the ways. `life/check.rs` walks every way with the movement rules.
+- **Stalls** (`tools/modules`: every keeper's stall, the chapels, ranges and gate, sealed gate, war table, bandstand,
+  fountain, market stalls, props) and cloth colours: committed as the worker left them when stopped, unreviewed; the
+  manifest is the last local bake's. Renders were in a scratch folder the container loses.
+
+Left to do, in order:
+1. Bake the modules (`/root/wt/bpyenv` held bpy 5.3.0; `pip install bpy==5.3.0` on Python 3.13 again), check the
+   manifest, give every stall a `sign` socket and every fronted module a `front` socket (the hub stands modules by
+   `front`, `counter`, `keeper`, `wall`, `end-1`, `smith-1/2`, `player-1..4`), and drop any real-world symbol (the
+   armoury's shields carried crosses).
+2. Build the adornments family (the brief was `/root/wt/reports/brief-hub-adorn.md`; the list is the names
+   `hub/adorn.rs` asks for: `banner-overlook(-long)`, the three faction banners, `bunting-24/12`, `sconce`,
+   `lantern-hung`, `wall-brazier`, `shop-sign-<keeper>`, `planter`, `flower-box`, `ivy`, `potted-tree`,
+   `statue-keeper`, `statue-sentinel`, `shield-wall`, `weapon-rack-wall`, `rug-long`, `nets-and-rope`, `crab-pots`,
+   `fish-crates`, `mooring-posts`, `well`, `cart`, `sacks-grain`, `amphorae`).
+3. Run `cargo test -p city hub::` (keepers in stalls, Shape's eight places, every way walked clear on continent 1)
+   and `cargo test -p room --test hub_walked`; fix each fault at its cause; then `cargo xtask check` whole.
+4. Pictures in a local room of every court, the Hall, the Harbour Stair, the road and the pier; the fall; the
+   townsfolk. The worker's pictures showed a "Return to the area" warning flashing during a fall: drop it.
+5. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Modules, Reach, Movement, Navmesh, Ambience,
+   Interface, Code Map), independent audits, then the draft pull request's description for the owner.
+- Coordination: the activities session (#97) reads `Social.board` from its branch and checks its board against the
+  ways; whichever merges second sets `Social.board` from `hub::BOARD_LANDING_M`. It keeps `gear::clock`'s moves.
+
 ## Waiting on the owner
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
   none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
@@ -265,23 +312,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
-- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,
-  based on `main`, waits on the owner's yes to merge, which deploys the page and the rooms. The owner named the
-  factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
-  "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
-  and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
-  characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
-  rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
-  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's
-  "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full
-  check. Tested in a local room (`npm run server`, the built page headless): Shape present with his six wares, "From
-  level 20" and the right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its
-  colour; Maren greeting a browser that had played the story before, the keys' hints giving way while she speaks. Not
-  yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction
-  gear, a faction set worn in the page (composed offline from the published strips), and Maren's whole walk (her start
-  and her coming by the lanes are tested offline; headless frames take about a second each). The
-  open questions are in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge
-  re-render. Sunspire's and Rimeholt's ports are #75's; this round only locks their social spaces.
+- **#92 (Overlook's factions, faction gear, Art levels, keepers, Shape, appearance, Elder Maren Hale's welcome)** is
+  merged and deployed (2a1236a9). Its calls are in [[Factions and Vendors as Claude Shapes Them]]; its open questions
+  in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
