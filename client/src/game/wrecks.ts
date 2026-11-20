@@ -73,32 +73,34 @@ export class Wrecks {
         });
   }
 
-  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world. */
-  drawInto(pass: GPURenderPassEncoder, camera: ShipCamera): void {
+  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, `scale` times her size. */
+  drawInto(pass: GPURenderPassEncoder, camera: ShipCamera, scale: number): void {
     for (const { wreck, view } of this.drawn) {
       if (!view) continue;
       const place = {
         x: wreck.at[0],
         y: wreck.at[1],
-        z: -settledDepth(wreck.ship),
+        z: -settledDepth(wreck.ship) * scale,
         heading: wreck.heading,
         pitch: 0,
         roll: wreck.heel,
+        scale,
       };
       view.drawInto(pass, place, camera, 0, WRECK_LOOK);
     }
   }
 }
 
-/** A city's drawer with its wrecks drawn after it, in the same pass: the city itself where it has none. */
-export function withWrecks(gpu: Gpu, city: Drawer, plan: CityPlan): Drawer {
+/** A city's drawer with its wrecks drawn after it, in the same pass, at the size ships are drawn at now (`shipScale`,
+ *  as the sea draws every ship, true size on foot): the city itself where it has none. */
+export function withWrecks(gpu: Gpu, city: Drawer, plan: CityPlan, shipScale: () => number): Drawer {
   if (!plan.wrecks?.length) return city;
   const wrecks = new Wrecks(gpu, plan.wrecks);
   return {
     castInto: city.castInto?.bind(city),
     drawInto: (pass, fromEye, shot, time, shadow) => {
       city.drawInto(pass, fromEye, shot, time, shadow);
-      wrecks.drawInto(pass, { fromEye, eye: shot.eye });
+      wrecks.drawInto(pass, { fromEye, eye: shot.eye }, shipScale());
     },
   };
 }

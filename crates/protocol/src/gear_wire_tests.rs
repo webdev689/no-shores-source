@@ -147,3 +147,25 @@ fn the_gear_for_the_clients_test_is_written() {
     let (room, player) = furnished();
     std::fs::write(format!("{folder}/gear.bin"), gear_bytes(&room, player).expect("written")).expect("written");
 }
+
+#[test]
+fn a_ruins_plaza_sells_nothing_and_a_port_citys_its_wares() {
+    use room::asks::{Counter, CounterKind};
+    let sold = |counters: Vec<Counter>| {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        room.counters = Some(counters);
+        let player = room.join().expect("a room with space");
+        room.tick();
+        let bytes = gear_bytes(&room, player).expect("a player of the room");
+        let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+        (
+            gear.wares().map_or(0, |wares| wares.len()),
+            gear.emblems_sold().map_or(0, |sold| sold.len()),
+            gear.crate_price(),
+        )
+    };
+    let port = vec![Counter { kind: CounterKind::Reader, at: [500.0, 500.0] }];
+    let (wares, emblems, price) = sold(port);
+    assert!(wares > 0 && emblems > 0 && price > 0, "a port city's plaza shows the day's wares anywhere on it");
+    assert_eq!(sold(Vec::new()), (0, 0, 0), "a ruin's plaza, with no counters, shows none");
+}

@@ -50,3 +50,23 @@ fn a_tithe_ship_heads_the_way_of_her_lane_nearer_her_slant() {
     assert!((along_lane([1.0, 0.0], 4.0) - 1.5 * PI).abs() < 1e-12, "west, slanting west");
     assert!((along_lane([0.0, -1.0], 6.0)).abs() < 1e-12, "north, slanting a little west of north");
 }
+
+#[test]
+fn lead_pursuit_heads_where_the_ship_will_be_and_straight_at_one_that_cannot_be_reached() {
+    let close = |one: f64, other: f64| (one - other).abs() < 1e-9;
+    assert!(close(intercept_heading([0.0, 0.0], 3.0, [0.0, -1_000.0], [0.0, 0.0]), 0.0), "at rest: straight at her");
+    // She is 1 km north sailing east at 3 m/s; a chaser at 5 m/s meets her where 3-4-5 says: 750 m east of her.
+    let lead = intercept_heading([0.0, 0.0], 5.0, [0.0, -1_000.0], [3.0, 0.0]);
+    assert!(close(lead, libm::atan2(750.0, 1_000.0)), "{lead}");
+    let away = intercept_heading([0.0, 0.0], 2.4, [0.0, -1_000.0], [0.0, -12.0]);
+    assert!(close(away, 0.0), "the faster sailing away: straight at her");
+}
+
+#[test]
+fn a_heading_turns_toward_another_by_at_most_the_most_the_shorter_way() {
+    let close = |one: f64, other: f64| (one - other).abs() < 1e-12;
+    assert!(close(turned_toward(0.0, 1.0, 0.1), 0.1));
+    assert!(close(turned_toward(0.1, 6.2, 0.5), 6.2), "past north the short way");
+    assert!(close(turned_toward(1.0, 1.05, 0.1), 1.05), "near enough, there");
+    assert!((HELM_TURN_RAD_S - 10.0_f64.to_radians()).abs() < 1e-12);
+}

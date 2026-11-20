@@ -69,27 +69,24 @@ interface MarkNode {
   readonly note: HTMLElement;
   readonly arrow: HTMLElement;
   readonly badge: HTMLElement;
+  /** The hostile look the mark was last dressed in ('' for none). */
+  readonly dress: { worn: string };
 }
 
 /** Dresses a mark as a hostile ship, or undresses it: her rank's colour on its ring and arrow, her faction's emblem in
  *  it, and over it a Miniboss's mark, the plates' own. */
 function dressHostile(shown: MarkNode, look: HostileLook | undefined): void {
-  shown.root.style.setProperty('--kind', look?.colour ?? '');
-  const emblem = look?.emblem ? `url("${look.emblem}") center / 62% no-repeat, rgba(10, 13, 17, 0.6)` : '';
-  if (shown.glyph.style.background !== emblem) shown.glyph.style.background = emblem;
-  shown.glyph.style.imageRendering = look ? 'pixelated' : '';
+  // A mark keeps its dress from frame to frame: it is laid again only when her look changes.
+  const dress = look ? `${look.colour} ${look.emblem ?? ''} ${look.badge ?? ''}` : '';
   shown.badge.hidden = !look?.badge;
-  if (look?.badge) {
-    Object.assign(shown.badge.style, {
-      position: 'absolute',
-      left: '-7px',
-      top: 'calc(var(--size) / -2 - 12px)',
-      width: '14px',
-      height: '8px',
-      background: `url("${look.badge}") center / contain no-repeat`,
-      imageRendering: 'pixelated',
-    });
-  }
+  if (shown.dress.worn === dress) return;
+  shown.dress.worn = dress;
+  shown.root.style.setProperty('--kind', look?.colour ?? '');
+  shown.glyph.style.background = look?.emblem
+    ? `url("${look.emblem}") center / 62% no-repeat, rgba(10, 13, 17, 0.6)`
+    : '';
+  shown.glyph.style.imageRendering = look ? 'pixelated' : '';
+  shown.badge.style.background = look?.badge ? `url("${look.badge}") center / contain no-repeat` : '';
 }
 
 /** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
@@ -305,12 +302,20 @@ export class Hud {
     const [glyph, name, note] = [make('span', '', 'glyph'), make('span', '', 'name'), make('span', '', 'note')];
     const arrow = make('span', '▲', 'arrow');
     const badge = make('span', '', 'badge');
+    Object.assign(badge.style, {
+      position: 'absolute',
+      left: '-7px',
+      top: 'calc(var(--size) / -2 - 12px)',
+      width: '14px',
+      height: '8px',
+      imageRendering: 'pixelated',
+    });
     root.append(arrow, glyph, name, note, badge);
     root.addEventListener('click', (event) => {
       event.stopPropagation();
       this.markChosen(id);
     });
-    const shown = { root, glyph, name, note, arrow, badge };
+    const shown = { root, glyph, name, note, arrow, badge, dress: { worn: '' } };
     this.markLayer.append(root);
     this.marksShown.set(id, shown);
     return shown;

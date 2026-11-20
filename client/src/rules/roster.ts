@@ -75,6 +75,11 @@ export function rosterFrom(text: string): FoeType[] {
 /** The roster, read through a door of its own on the compiled `room-wasm` module: the rules' own, never a copy. */
 export const rosterOf = (module: WebAssembly.Module): FoeType[] => rosterFrom(startRoomDoor(module).roster());
 
+/** The port cities' ids, read through a door of its own on the compiled `room-wasm` module: every other city is a
+ *  ruin. */
+export const mainPortsOf = (module: WebAssembly.Module): string[] =>
+  JSON.parse(startRoomDoor(module).mainPorts()) as string[];
+
 /** Each faction with types, as `[number, name]`, in the roster's order. */
 export function factionsOf(roster: readonly FoeType[]): [number, string][] {
   const factions = new Map(roster.map((type) => [type.faction, type.factionName]));

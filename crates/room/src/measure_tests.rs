@@ -13,7 +13,7 @@ const TICKS_A_SECOND: usize = 60;
 const MINUTES: usize = 10;
 const LEG_M: f64 = 150_000.0;
 
-fn world() -> (world::layout::Layout, Vec<Port>) {
+pub(crate) fn world() -> (world::layout::Layout, Vec<Port>) {
     let layout = world::layout::parse(include_str!("../../../content/world/layout.json")).unwrap();
     let ports = (1..=9)
         .map(|n| {
@@ -45,6 +45,13 @@ fn there_and_back(from: [f64; 2], bearing: f64) -> Vec<[f64; 2]> {
 #[test]
 #[ignore = "a measurement, printed by hand in release"]
 fn measure_the_sea_by_its_waters() {
+    measure(false);
+    measure(true);
+}
+
+/// The sea measured, its players chasing every hostile ship they sight or not: each chaser sets her course for the
+/// nearest each half second, and back to her own once none is in sight.
+fn measure(chase: bool) {
     let (layout, ports) = world();
     let charted = crate::chart::Charted::new(&layout, &ports);
     let mut sea = Sea::new(&layout, crate::deck::test_deck(), 0x5ea, &ports);
@@ -91,15 +98,34 @@ fn measure_the_sea_by_its_waters() {
     let mut first_sighted: BTreeMap<PlayerId, usize> = BTreeMap::new();
     let mut fought: BTreeMap<PlayerId, usize> = BTreeMap::new();
     let mut in_sight: BTreeMap<u32, (usize, &str)> = BTreeMap::new();
+    let mut chasing = std::collections::BTreeSet::new();
     for tick in 0..MINUTES * 60 * TICKS_A_SECOND {
         sea.tick();
         let ships: Vec<_> = sea.ships().collect();
         for (player, kind, course) in &players {
             let Some(&(_, ship)) = ships.iter().find(|(each, _)| each == player) else { continue };
+            let at = [ship.x, ship.y];
+            let quarry = sea.pirates().into_iter().filter(|pirate| pirate.sees(at)).min_by(|one, other| {
+                let off = |pirate: &crate::pirates::Pirate| (pirate.x - at[0]).abs() + (pirate.y - at[1]).abs();
+                off(one).total_cmp(&off(other))
+            });
             if sea.fights().any(|(fighting, _)| fighting == *player) {
+                if !fought.contains_key(player) {
+                    let here = charted.water(at).map(|(water, _)| water.holder);
+                    assert_ne!(here, Some(Holder::Home), "a fight in home waters, where none comes");
+                }
                 fought.entry(*player).or_insert(tick);
-            } else if ship.pace == 0 && tick % 30 == 0 {
-                let _ = sea.course(*player, course, 60);
+            } else if tick % 30 == 0 {
+                match quarry.filter(|_| chase) {
+                    Some(pirate) => {
+                        chasing.insert(*player);
+                        let _ = sea.course(*player, &[[pirate.x, pirate.y]], 60);
+                    }
+                    None if ship.pace == 0 || chasing.remove(player) => {
+                        let _ = sea.course(*player, course, 60);
+                    }
+                    None => {}
+                }
             }
             for pirate in sea.pirates() {
                 if pirate.sees([ship.x, ship.y]) {
@@ -110,7 +136,7 @@ fn measure_the_sea_by_its_waters() {
         }
     }
     let seconds = |ticks: usize| ticks as f64 / TICKS_A_SECOND as f64;
-    eprintln!("sight at x60: {:.0} m; players by water: {counts:?}", sight_for(60.0));
+    eprintln!("chasing: {chase}; sight at x60: {:.0} m; players by water: {counts:?}", sight_for(60.0));
     for kind in ["home", "contested", "grey tithe", "pirates"] {
         let of_kind: Vec<PlayerId> = players.iter().filter(|each| each.1 == kind).map(|each| each.0).collect();
         let total = of_kind.len().max(1) as f64;
@@ -140,5 +166,7 @@ fn measure_the_sea_by_its_waters() {
             by(10) * 100.0
         );
     }
-    assert!(players.iter().filter(|each| each.1 == "home").all(|each| !fought.contains_key(&each.0)));
+    // A player is counted by the water she sets out in: from home waters her voyage reaches the waters beside them, so
+    // a fight of hers is checked to be out of home waters where it begins (above).
+    assert!(!players.is_empty());
 }

@@ -77,7 +77,9 @@ looking 17° down over the parapet onto the city, the harbour and the sea.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. A ruined
-city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins").
+city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins"),
+on the veil too: arriving at a city's social space other than Overlook's, the page waits for the rules' module to
+say which cities are ports (`mainPortsOf`); if it does not come, the city is named alone.
 
 ## On foot
 
@@ -204,6 +206,11 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   2 km mask when both ends lie in its window, else on the whole frame's. The ship sails it at the pace dial's step,
   `[` and `]` or the panel's buttons, ×60 to start. A click on the port's icon sails for it. A route that cannot be
   planned says why.
+- **The chase** (`seaChase.ts`). A click on a sighted hostile ship's mark, or Enter while her mark is chosen, sets
+  the course to intercept her: where the ship meets her at their ways (her rank's way and a ship's 12 m/s, both on
+  the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
+  the Tithe Brig." until she is met, lost from sight, or another course is set (a click, the helm's keys, Stop or
+  Resume). Evading is sailing away: she sails at a fifth of the ship's way or less.
 - **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
   - A and D turn her at the helm's 10 degrees a second. Under way she takes a course straight on along her new
     heading; at rest she turns where she lies, and the room turns her too ([[Server]], "The sea").
@@ -245,7 +252,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
   It marks each hostile ship within her sight of hers in red, other players' within 900 m in bone, a fight's struck
   captains grey ([[Interface]]). It hides while the held map is up at the helm.
-- **The waters.** Once the page has opened the waters (`Sea.waterAt`), the place's line at sea and at the helm names
+- **The waters.** The page opens the waters as the ship first puts to sea, with the port cities from the land files
+  (`portsOf`, which the server reads too), and the place's line at sea and at the helm names
   the water she is in, its band and holder ("The Fen Deeps, levels 22-26, Grey Tithe"; "The Lantern Sea, Overlook's
   home waters"; a contested one or the seam "contested"). The voyage's line says for 6 s when she enters another
   water ("Entering The Mistwrack, levels 16-19, Pirates.") and when a hostile ship is first sighted ("A Tithe Brig

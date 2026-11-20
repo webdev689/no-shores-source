@@ -40,3 +40,40 @@ fn a_lane_is_the_nearest_leg_and_the_way_it_runs() {
     assert_eq!(chart.lane([310_000.0, 50_000.0]), Some((10_000.0, [0.0, 1.0])));
     assert_eq!(chart.lane([300_000.0, 130_000.0]), Some((30_000.0, [0.0, 1.0])), "past the leg's end");
 }
+
+#[test]
+fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
+    use crate::pirates::{Pirates, Voyager};
+    let (layout, ports) = crate::measure_tests::world();
+    let charted = Charted::new(&layout, &ports);
+    assert!(!charted.lanes.is_empty(), "the lanes between the port cities");
+    let coasts = Coast::of(&layout);
+    let chart = SeaChart { coasts: &coasts, charted: &charted };
+    // A point of a lane in the Grey Tithe's waters, 20 km off it.
+    let on_lane = charted.lanes.iter().map(|leg| leg[0]).find(|&at| {
+        chart.water(at).is_some_and(|water| water.holder == Holder::GreyTithe) && chart.coast(at) > 30_000.0
+    });
+    let lane_at = on_lane.expect("a lane through the Tithe's waters");
+    let player = [lane_at[0] + 20_000.0, lane_at[1]];
+    let ship = Voyager { player: 1, at: player, heading: 0.0, pace: 0, fighting: false, clock: 1.0 };
+    let mut seen = std::collections::BTreeMap::new();
+    for seed in 1..=30 {
+        let mut pirates = Pirates::new(seed);
+        for _ in 0..3600 {
+            pirates.tick(1.0, &[ship], &chart);
+            for pirate in &pirates.sailing {
+                seen.entry((seed, pirate.id)).or_insert(*pirate);
+            }
+            pirates.sailing.retain(|pirate| !pirate.bold);
+        }
+    }
+    let tithe: Vec<_> = seen.values().filter(|pirate| pirate.commission.faction == naval::ranks::GREY_TITHE).collect();
+    assert!(!tithe.is_empty(), "the Tithe's waters send her ships");
+    let along = tithe.iter().filter(|pirate| {
+        let (off, [east, south]) = chart.lane([pirate.x, pirate.y]).unwrap();
+        let heading = libm::atan2(east, -south).rem_euclid(std::f64::consts::TAU);
+        let turned = (pirate.heading - heading).rem_euclid(std::f64::consts::PI);
+        off <= crate::sighting::LANE_REACH_M && (turned < 1e-9 || std::f64::consts::PI - turned < 1e-9)
+    });
+    assert_eq!(along.count(), tithe.len(), "each on a lane, heading along it");
+}
