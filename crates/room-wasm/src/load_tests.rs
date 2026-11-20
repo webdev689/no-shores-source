@@ -26,9 +26,9 @@ fn request() -> String {
     format!(r#"{{"layout":{layout},"ports":{}}}"#, serde_json::Value::Array(ports))
 }
 
-fn with_sea<T>(f: impl FnOnce(&mut room::sea::Sea) -> T) -> T {
+fn with_sea<T>(using: impl FnOnce(&mut room::sea::Sea) -> T) -> T {
     with_open(|opened| match opened {
-        Opened::Sea(sea) => f(sea),
+        Opened::Sea(sea) => using(sea),
         _ => panic!("not the sea"),
     })
     .unwrap()
@@ -36,6 +36,8 @@ fn with_sea<T>(f: impl FnOnce(&mut room::sea::Sea) -> T) -> T {
 
 /// Ticks `ticks` times, each tick followed by the snapshot cut for every player; answers the median, p99 and slowest
 /// milliseconds a tick, and the mean bytes a player a tick.
+// The wall clock is what this measures; the rules themselves never read it.
+#[allow(clippy::disallowed_methods)]
 fn run(players: &[PlayerId], ticks: usize) -> (f64, f64, f64, f64) {
     let mut times = Vec::new();
     let mut bytes = 0usize;
@@ -88,7 +90,7 @@ fn load_at_sea_among_hostile_ships() {
             }
         });
         let (median, p99, most, bytes) = run(&players, 600);
-        println!("AT SEA {count:>2} players: {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B a player a tick");
+        eprintln!("AT SEA {count:>2} players: {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B a player a tick");
     }
 }
 
@@ -103,14 +105,17 @@ fn load_in_one_fight() {
                 let commission = Commission { faction: PIRATES, rank: Rank::Elite };
                 let id = 20_000 + k;
                 let at = [centre[0] + 300.0 * f64::from(k), centre[1] - 600.0];
-                sea.put_to_sea(Pirate { level: 30, ..Pirate::standing(id, id, commission, at, 3.14, true) });
+                sea.put_to_sea(Pirate {
+                    level: 30,
+                    ..Pirate::standing(id, id, commission, at, core::f64::consts::PI, true)
+                });
             }
         });
         for _ in 0..5 {
             room_tick();
         }
         let (median, p99, most, bytes) = run(&players, 600);
-        println!("ONE FIGHT {count:>2} players: {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B a player a tick");
+        eprintln!("ONE FIGHT {count:>2} players: {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B a player a tick");
     }
 }
 
@@ -145,7 +150,7 @@ fn load_on_decks() {
         });
         let boarded = players.iter().filter(|&&player| input(player, &protocol::ask_bytes(2)) == TAKEN).count();
         let (median, p99, most, bytes) = run(&players, 60);
-        println!(
+        eprintln!(
             "ON DECKS {count:>2} players ({boarded} boarded): {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B"
         );
     }

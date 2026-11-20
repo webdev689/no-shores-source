@@ -56,7 +56,7 @@ export class RoomHost extends DurableObject<Env> {
    *  a player let go of is gone from it, though their socket may still be closing. */
   private readonly players = new Map<
     WebSocket,
-    { readonly player: number; count: Count | undefined; signed: boolean; token: string | null }
+    { readonly player: number; count: Count | undefined; signed: boolean; spoke: boolean; token: string | null }
   >();
   private keeper: Keeper | null = null;
   private name = '';
@@ -85,7 +85,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    this.players.set(server, { player, count: undefined, signed: false, token: null });
+    this.players.set(server, { player, count: undefined, signed: false, spoke: false, token: null });
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
@@ -167,9 +167,9 @@ export class RoomHost extends DurableObject<Env> {
       return;
     }
     held.count = count;
-    // A page that speaks before it signs in plays unkept: at sea its course sails now, and a token later is no input.
-    if (this.name === 'sea' && !held.signed) {
-      held.signed = true;
+    // At sea an input before any token sails at once; a token after it still gives her back where she was kept.
+    if (this.name === 'sea' && !held.signed && !held.spoke) {
+      held.spoke = true;
       this.guarded(() => this.room.noneKept(player), undefined);
     }
     if (!within) return this.dismiss(socket, 1008, 'too many messages');

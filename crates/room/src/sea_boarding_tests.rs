@@ -35,8 +35,10 @@ fn each_captains_rank_is_the_same_rank_among_the_foes_so_her_deck_holds_the_crew
         strike(&mut sea, player);
         sea.board(player).unwrap();
         let mut ranks: Vec<_> = sea.decks()[0].room.foes.values().map(|foe| foe.brain.rank).collect();
-        let mut crew: Vec<_> = ::foes::crews::deck_crew(PIRATES, foe_rank(rank)).into_iter().map(|(_, r)| r).collect();
-        (ranks.sort(), crew.sort());
+        let mut crew: Vec<_> =
+            ::foes::crews::deck_crew(PIRATES, foe_rank(rank)).into_iter().map(|(_, hand)| hand).collect();
+        ranks.sort();
+        crew.sort();
         assert_eq!(ranks, crew, "{rank:?}");
     }
 }

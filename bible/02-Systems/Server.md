@@ -182,7 +182,8 @@ will take it, by the room's own tick.
   repaired by a port city. The sea keeps characters (`room_keep_characters`): a player's course asked before the
   accounts answered for them waits, then sails from where the room last kept her once their character is given back
   (a fight met from the page's spot meanwhile is over for her), or as asked once the host says none is kept
-  (`room_none_kept`: the claim answered none, or the page sent an input before any token, so plays unkept). Whatever
+  (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives her
+  back where she was kept). A new account's character is the one the room holds, given back to it. Whatever
   changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character
   given back) is sent to the player as their gear (`room_gear`, written as a land room writes it), at most every 12
   ticks, which flags it for its save 2 s on. No ship is left outside the world's frame: a fight's waters run past it,
@@ -326,8 +327,8 @@ so every decision is Rust and the shell only carries bytes and time.
   unread.
 - A browser's one text message is its session's token. In a node's room and at sea the player's character is
   claimed with it from the [[Accounts]], saved as it changes and let go when they leave. At sea the room also tells
-  the accounts the player is there, again every 30 seconds, and that they left, for the Roster; a page whose first
-  message is an input plays unkept. A second text message, or any other, closes the socket.
+  the accounts the player is there, again every 30 seconds, and that they left, for the Roster. A second text
+  message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the

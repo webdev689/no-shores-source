@@ -67,8 +67,7 @@ fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
             *held = room.join().map(|player| (room, player));
         }
         let (room, player) = held.as_mut()?;
-        room.restore_character(*player, &character.to_json());
-        protocol::gear_wire::gear_bytes(room, *player)
+        room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
     })
 }
 

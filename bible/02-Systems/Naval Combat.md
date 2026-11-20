@@ -216,7 +216,7 @@ Pass]]) with Claude's numbers:
   (half each by its draw) or a chest.
 - **Striking, and boarding.** A captain who strikes lies hove to with her colours down. For 90 s any player in the
   fight may board her: their ship within 30 m of hers, both under 2 m/s, and her deck holding a crew (the pirates have
-  no deck Boss, so their Boss is never boarded, and her hold never opens to no one). With no one aboard by then she is scuttled
+  no deck Boss, so their Boss is not boarded). With no one aboard by then she is scuttled
   (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player her
   colours are down and to come alongside; E asks to board her (`seaAfter.ts` `boardable`, the fight's controls let E
   through), and the sea's line says "Boarders away" as the boarder goes from their helm to her deck.
@@ -269,8 +269,8 @@ Pass]]) with Claude's numbers:
   her voyage sails at her pace times the canvas she keeps (never under half), in the room and the page alike. Where
   the sea last kept her is kept too (`ship_at`, to the metre): back at sea she lies there, whatever the page first
   said, and the page is told (`MOORED`). The sea sails no course of hers before the accounts have answered for her
-  character: a course asked meanwhile waits, and sails once they answer with none kept (or the page plays unkept);
-  given back mid-fight, the fight met from the page's spot is over for her. A fight's waters run past the world's
+  character: a course asked meanwhile waits, and sails once they answer with none kept (or the page sends an input
+  before its token); given back later, even mid-fight, she is moored where it was kept, that fight over for her. A fight's waters run past the world's
   edge, but she is kept within it: where the fight has her, where she washes up and where her next course starts.
   What changes her character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up) is sent
   to the player as their gear, five times a second at most, and so saved within 2 s ([[Accounts]]).

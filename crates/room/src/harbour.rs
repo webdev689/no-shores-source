@@ -124,6 +124,9 @@ pub enum RepairRefused {
     Whole,
 }
 
+/// A course held for the keeper's word: its points and its pace.
+pub type HeldCourse = (Vec<[f64; 2]>, u16);
+
 /// What the sea keeps after its fights: its port cities, each repair under way, what floats, each player's character
 /// once the accounts gave it, and what each player is told this tick (`naval::wire::told_numbers`'s numbers).
 #[derive(Debug, Default)]
@@ -135,7 +138,7 @@ pub struct Harbour {
     pub told: Vec<(PlayerId, Vec<f64>)>,
     /// In a sea that keeps characters, each player the keeper has not yet answered for, with the last course they
     /// asked meanwhile; none in a sea that keeps none.
-    pub awaiting: Option<BTreeMap<PlayerId, Option<(Vec<[f64; 2]>, u16)>>>,
+    pub awaiting: Option<BTreeMap<PlayerId, Option<HeldCourse>>>,
     /// Each player whose character changed since their gear was last sent them, and the tick it was last sent.
     pub changed: BTreeSet<PlayerId>,
     pub gear_sent: BTreeMap<PlayerId, u64>,
