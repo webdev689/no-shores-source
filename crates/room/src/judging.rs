@@ -133,12 +133,13 @@ impl Room {
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
         let after = self.held_up(defender, suffer(&before, blow, &verdict));
         self.set_fighter(defender, after);
-        // The fight's heat follows what the players took and what they dealt and killed: what they dealt, a shield's
-        // share with it, as the numbers combat is tuned for, whatever the foe's level.
+        // The fight's heat follows what the players' side took and what it dealt and killed, their companions and
+        // hands with them: what they dealt, a shield's share with it, as the numbers combat is tuned for, whatever the
+        // foe's level. A companion's health is a player's, unraised by level, so what they take counts as a player's.
         let lost = before.health - after.health;
-        if self.players.contains_key(&defender) {
+        if self.on_players_side(defender) {
             self.director.taken(lost);
-        } else if self.players.contains_key(&blow.striker) {
+        } else if self.on_players_side(blow.striker) {
             let level = self.foes.get(&defender).map_or(0, |foe| foe.level);
             let took = shielded.map_or(0.0, |(took, _)| took);
             self.director.dealt((lost + took) / gear::power::foe_health_times(level));

@@ -4,7 +4,7 @@ use naval::fight::{Aim, Orders};
 use naval::ranks::Commission;
 use protocol::fleet::orders_bytes;
 use protocol::wire::overlook::wire as messages;
-use room::fleet::{Call, Input, STANDING};
+use room::fleet::{Call, Input, Levels, STANDING};
 use sailing::ship::Helm;
 
 const AT: [f64; 3] = [200_000.0, 300_000.0, 0.5];
@@ -110,7 +110,8 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
 fn a_look_lays_through_the_door_as_the_fight_lays_it() {
     open_fleet();
     let player = room_join();
-    let called = Input { put_to_sea: Some(AT), call: Call::Captain(Commission::default()), ..orders(1) };
+    let called =
+        Input { put_to_sea: Some(AT), call: Call::Captain(Commission::default(), Levels::default()), ..orders(1) };
     assert_eq!(send(player, called), TAKEN);
     for _ in 0..3 {
         room_tick();

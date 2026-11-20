@@ -247,7 +247,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   helmsman stands at the wheel and it sails on; at rest the player simply leaves it. At its wheel the offer Take the
   helm (E) takes it again, and once the room agrees the view pans back up. A fight that begins calls the player
   straight back to the helm.
-- **Boarding** ([[Naval Combat]], "The fight on her deck, on the page"). In a fight, a captain who struck alongside
+- **Boarding** ([[Naval Combat]], "The fight on a struck deck, on the page"). In a fight, a captain who struck alongside
   (within 30 m, both under 2 m/s) is boarded with E. Once the sea room has the player on the captain's deck the view is theirs
   on foot there, as on land, among the captain's crew and beside every other boarder, the deck riding the captain's ship on the swell; the
   place line names the ship, and once its crew has fallen it shows its minute's seconds left and its hold's take. E, or the

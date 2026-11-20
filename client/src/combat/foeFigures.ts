@@ -3,7 +3,7 @@ import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { foeDoing } from '../player/fightMoves.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
-import { foeDress } from '../player/foeDress.ts';
+import { foeDress, officerDress } from '../player/foeDress.ts';
 import { Glides } from '../player/glide.ts';
 import { likelyMoves, shownMove } from '../player/playerMoves.ts';
 import type { FighterView } from '../rules/fighters.ts';
@@ -41,6 +41,8 @@ let nextFoeId = -1;
 export class FoeFigures {
   private readonly roster: readonly FoeType[];
   private readonly dresses: ReadonlyMap<number, Dress | null>;
+  /** Each companion's dress by their post and type, made once. */
+  private readonly officerDresses = new Map<string, Dress | null>();
   private readonly figures = new Map<number, Placed>();
   private readonly glides = new Glides();
   /** Each dying foe's dissolve: its element, and when it begins (page seconds). */
@@ -66,9 +68,19 @@ export class FoeFigures {
     this.dissolves.set(id, { look, start });
   }
 
-  /** The dress a foe's figure is drawn in, its type's; none for a type the roster does not know. */
+  /** The dress a foe's figure is drawn in, its type's; a companion's, their post's clothes with their type's weapons;
+   *  none for a type the roster does not know. */
   dressOf(kept: KeptFoe): Dress | null {
-    return this.dresses.get(shownType(this.roster, kept)?.type ?? kept.type) ?? null;
+    const type = shownType(this.roster, kept);
+    if (kept.companion) {
+      const key = `${kept.companion.post}:${type?.type ?? kept.type}`;
+      const made = this.officerDresses.get(key);
+      if (made !== undefined) return made;
+      const dress = type ? officerDress(type, kept.companion.post) : null;
+      this.officerDresses.set(key, dress);
+      return dress;
+    }
+    return this.dresses.get(type?.type ?? kept.type) ?? null;
   }
 
   /** Every foe's card as an eye at `eye` sees it: gliding toward where the room last saw it (`frameTicks` the frame's
