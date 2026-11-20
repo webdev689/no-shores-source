@@ -20,7 +20,7 @@ import numpy
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'ships'))
-from wreck_fire import fires, light  # noqa: E402
+from wreck_fire import fires, light, standing_ground  # noqa: E402
 from wreck_frames import wreck_frames  # noqa: E402
 
 # The light the picture holds at its brightest, each of the bake's own units: the fires' and the sky's.
@@ -112,6 +112,9 @@ def combined(fire, sky, path):
     lit[:, :3] = numpy.clip(lit[:, :3] / FIRE_FULL, 0, 1)
     lit[:, 3] = numpy.clip(skies[:, :3].mean(axis=1) / SKY_FULL, 0, 1)
     picture = bpy.data.images.new('WreckLight', size, size, alpha=True)
+    # Light, not colour: written as it is, its alpha its own, as the game reads it back.
+    picture.colorspace_settings.name = 'Non-Color'
+    picture.alpha_mode = 'STRAIGHT'
     picture.pixels.foreach_set(lit.ravel())
     picture.filepath_raw = path
     picture.file_format = 'PNG'
@@ -135,7 +138,7 @@ def main():
     scene.world.use_nodes = True
     lamps = bpy.data.collections.new('Fires')
     scene.collection.children.link(lamps)
-    light(lamps, fires(wreck_frames()))
+    light(lamps, fires(wreck_frames(), standing_ground()))
     wreck = joined()
     light_uvs(wreck)
     fire = bake_into(wreck, 'FireLight', given.size, (0.0, 0.0, 0.0), True, given.samples)

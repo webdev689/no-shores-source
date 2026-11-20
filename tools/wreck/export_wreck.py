@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(TOOLS, 'ships'))
 from light_wreck import FIRE_FULL, SKY_FULL  # noqa: E402
 from wreck_course import CELL_M, SQUARE_CELLS, blocks, measure, squares  # noqa: E402
 from wreck_dress import GATES, gate_boxes  # noqa: E402
-from wreck_fire import fires  # noqa: E402
+from wreck_fire import fires, standing_ground  # noqa: E402
 from wreck_frames import wreck_frames  # noqa: E402
 from wreck_level import ARENA_ZONE, FLIGHT_BACK, MASTS, PATH, THULE, WAKE, ZONES, check, game, game_area  # noqa: E402
 from wreck_reach import CLIMB_M, Reach  # noqa: E402
@@ -171,7 +171,7 @@ def main():
     with open(os.path.abspath(given.light), 'rb') as file:
         light = file.read()
     laid = {'mesh': key_of(mesh, 'wreck', 'mesh'), 'light': key_of(light, 'wreck', 'png'),
-            'course': blocks(grid), **level(gates, fires(frames), frames)}
+            'course': blocks(grid), **level(gates, fires(frames, standing_ground()), frames)}
     if given.dry_run:
         with open('wreck.mesh', 'wb') as file:
             file.write(mesh)

@@ -191,15 +191,20 @@ test('the player wakes facing the way on, nothing standing in the look from behi
   }
 });
 
+/** How high a block no body stands on rises over the deck under it (tools/wreck/wreck_course.py, WALL_M). */
+const HEAP_WALL_M = 3.2;
+
 test('fires burn on the decks, on the sea and along the yards and rails', () => {
   assert.ok(layout.fires.length >= 20);
   assert.ok(layout.fires.filter((fire) => fire.along).length >= 4, 'some burn along a yard, a rail or canvas');
   assert.ok(layout.fires.filter((fire) => fire.at[2] < 0.2).length >= 4, 'some on the sea');
   for (const fire of layout.fires) {
     if (fire.along || fire.at[2] < 0.2) continue;
-    // On the ground, or on a heap that closes a way for good, which no body stands on.
+    // On the ground, or on a heap that closes a way for good: no body stands on one, so its block is a wall
+    // HEAP_WALL_M over the deck, and the fire burns on the heap under the wall's top.
     const top = topAt(course, fire.at[0], fire.at[1]);
-    assert.ok(Math.abs(top - fire.at[2]) < 0.6 || top - fire.at[2] > 2, `a fire at ${fire.at.join(', ')}`);
+    const onHeap = fire.at[2] <= top && fire.at[2] >= top - HEAP_WALL_M;
+    assert.ok(Math.abs(top - fire.at[2]) < 0.6 || onHeap, `a fire at ${fire.at.join(', ')}`);
   }
 });
 

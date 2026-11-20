@@ -16,7 +16,7 @@ const LOOK = { fire: 1, sky: 0.85 } as const;
 /** Lights the wreck's fires, each with its own flicker. */
 export function lightFires(flames: Flames, layout: WreckLayout): void {
   flames.clear();
-  layout.fires.forEach((fire, index) => flames.light(fire.at, fire.size, index + 1));
+  layout.fires.forEach((fire, index) => flames.light(fire.at, fire.size, index + 1, fire.along ?? undefined));
 }
 
 /** The wreck as each of its beats on deck opens on it, so a page begun at one plays as the story does: its storm,

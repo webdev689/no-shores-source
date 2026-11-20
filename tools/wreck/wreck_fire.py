@@ -3,7 +3,8 @@ written for the game, which burns the same fires over it (client/src/cinema/flam
 
 A fire is round, or burns along a line: a yard, a rail, a strip of fallen canvas. Places are in a ship's frame over her
 floor (`lift`), at a height in her frame (`z`), or in the wreck's frame; `along` is the line's far end in the same
-frame.
+frame. A fire laid on a floor burns on whatever stands there (a heap, a rail, the deck), never inside it, and never on
+a heap that clears in play.
 """
 import math
 
@@ -59,10 +60,43 @@ FIRE_COLOUR = (1.0, 0.52, 0.18)
 WATTS_PER_M2 = 420.0
 # A line fire's lights stand this far apart along it, metres.
 LIGHT_EVERY_M = 1.2
+# A fire laid on a floor is set on the highest face looking up under this height over its floor, metres: over a heap.
+SETTLE_FROM_M = 3.4
 
 
-def fires(frames):
-    """Every fire in the wreck's frame: its base, its size, and the vector along it of a line fire (else None)."""
+def standing_ground():
+    """The wreck's faces that look up and stay: all but a heap's, which clears as its wave falls (a heap is a `Gate.`
+    collection before the wreck is joined, its `piece` after)."""
+    from mathutils.bvhtree import BVHTree
+    points, triangles = [], []
+    for item in bpy.data.objects:
+        if item.type != 'MESH' or any(group.name.startswith('Gate.') for group in item.users_collection):
+            continue
+        # No object of the wreck has a parent: its own placement is where it stands, read before any scene update.
+        placement = item.matrix_basis
+        turn = placement.to_3x3()
+        mesh = item.data
+        mesh.calc_loop_triangles()
+        pieces = mesh.attributes.get('piece')
+        start = len(points)
+        points.extend(placement @ vertex.co for vertex in mesh.vertices)
+        for triangle in mesh.loop_triangles:
+            if pieces is not None and pieces.data[triangle.polygon_index].value > 0:
+                continue
+            if (turn @ triangle.normal).normalized().z > 0.5:
+                triangles.append(tuple(start + index for index in triangle.vertices))
+    return BVHTree.FromPolygons(points, triangles, all_triangles=True)
+
+
+def settled(ground, point):
+    """`point` set on the highest face looking up under SETTLE_FROM_M over it, or left where it is over none."""
+    hit = ground.ray_cast(point + Vector((0, 0, SETTLE_FROM_M)), Vector((0, 0, -1)))[0]
+    return point if hit is None else Vector((point.x, point.y, hit.z))
+
+
+def fires(frames, ground):
+    """Every fire in the wreck's frame: its base, its size, and the vector along it of a line fire (else None); a fire
+    laid on a floor set on what stands there, by `ground` (standing_ground)."""
     found = []
     for frame, x, y, lift, z, size, along in FIRES:
         if frame == 'wreck':
@@ -71,6 +105,9 @@ def fires(frames):
         else:
             base = frames.on(frame, x, y, lift or 0.0, z=z)
             end = None if along is None else frames.on(frame, along[0], along[1], lift or 0.0, z=z)
+            if lift is not None:
+                base = settled(ground, base)
+                end = None if end is None else settled(ground, end)
         found.append({'at': base, 'size': size, 'along': None if end is None else end - base})
     return found
 
