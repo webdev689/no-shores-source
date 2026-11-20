@@ -105,9 +105,10 @@ test('the arms of a forge layer pair read as the combat crate reads them', () =>
 
 test('a stroke reaches as far as the combat crate says: a sword’s thrust farthest, its sweeps least', () => {
   const rules = startCombatRules(compiled);
-  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6) - (1.8 + 0.5 + 0.35)) < 1e-12);
-  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 3) - (1.8 - 0.1 + 0.35)) < 1e-12);
-  assert.equal(rules.strokeReach(SWORD_AND_SHIELD, 0), 0, 'no stroke');
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6, false) - (1.8 + 0.5 + 0.35)) < 1e-12);
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 3, false) - (1.8 - 0.1 + 0.35)) < 1e-12);
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6, true) - (1.8 * 1.1 + 0.5 + 0.35)) < 1e-12, 'a player’s');
+  assert.equal(rules.strokeReach(SWORD_AND_SHIELD, 0, true), 0, 'no stroke');
   const degrees = (stroke: number) => Math.round((rules.strokeArc(stroke) * 180) / Math.PI);
   assert.deepEqual(
     [1, 2, 3, 4, 5, 6].map(degrees),

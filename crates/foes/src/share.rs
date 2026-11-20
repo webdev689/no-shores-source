@@ -11,9 +11,9 @@ use crate::brain::{Brain, Plan};
 use crate::leash::within;
 use crate::senses::{Here, Sight, feet, in_sight, sight};
 use crate::tuning::{SHARE_EVERY, SHARE_HOLD, SHARE_SOONER, SWING_SLACK};
-use combat::arms::weapon;
 use combat::fighter::Action;
 use combat::lock::sees;
+use combat::strike::reach_of;
 use combat::{Fighter, FighterId};
 use movement::TUNING;
 
@@ -51,7 +51,7 @@ pub fn share(brain: &mut Brain, here: &Here<'_, '_>, board: &Board, sight: Optio
     let (tick, hold) = (here.tick(), Here::ticks(SHARE_HOLD));
     // A blow draws it only while it fights on: not once it backs off or runs, nor with the one it fights in its reach,
     // nor while it holds to one that drew it.
-    let reach = weapon(here.fighter.arms.melee).reach + SWING_SLACK;
+    let reach = reach_of(&here.fighter) + SWING_SLACK;
     let holding = brain.drawn_at.is_some_and(|at| tick < at + hold);
     if matches!(brain.plan, Plan::Backoff | Plan::Flee) || (kept.seen && kept.distance <= reach) || holding {
         brain.struck_by = None;

@@ -15,6 +15,8 @@ pub const STAMINA_GUARDING: f64 = 0.4;
 /// A player's health and poise; a foe's are its kind's.
 pub const PLAYER_HEALTH: f64 = 100.0;
 pub const PLAYER_POISE: f64 = 40.0;
+/// A player's weapon reaches this much further than its class's own; a foe's reaches its class's.
+pub const PLAYER_REACH: f64 = 1.1;
 /// A blow's poise is its weapon's weight times this, times its stroke's share.
 pub const POISE_PER_WEIGHT: f64 = 10.0;
 /// From behind (past this off the fighter's aim), a blow weighs half again.
