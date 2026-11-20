@@ -178,6 +178,13 @@ impl Sea {
         Some(repair.map_or((kept, 0.0), |repair| (repair.now(), repair.left())))
     }
 
+    /// How much farther a player's ship sights ships, by her Lookout and her modules (`gear::ship::trim`); 1 for a
+    /// player whose character the sea does not hold.
+    #[must_use]
+    pub fn lookout(&self, player: PlayerId) -> f64 {
+        self.harbour.characters.get(&player).map_or(1.0, |character| character.ship_trim().sight)
+    }
+
     /// Every piece floating at sea, each for its player.
     #[must_use]
     pub fn flotsam(&self) -> &[crate::flotsam::Floating] {

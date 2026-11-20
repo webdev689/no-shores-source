@@ -96,6 +96,7 @@ pub fn ship_offset<'built>(
         officers: Some(builder.create_vector(&officers)),
         offers: Some(builder.create_vector(&offered)),
         trim: Some(builder.create_vector(&character.ship_trim().to_floats())),
+        pledge: room::crew::pledge_of(character).0,
     };
     messages::GearShip::create(builder, &args)
 }

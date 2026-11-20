@@ -355,7 +355,7 @@ test('the Test Ground’s room lays out its stall and nodes, and sends each play
   const gear = readFromRoom(room.gear(first));
   assert.equal(gear?.kind, 'gear', 'sent once on joining');
   if (gear?.kind !== 'gear') return;
-  assert.equal(gear.items.length, 5, 'the starting kit');
+  assert.equal(gear.items.length, 9, 'the starting kit and her four modules');
   assert.equal(room.gear(first).length, 0, 'and not again until it changes');
   const grant = inputBytes(1, {
     intent: walk.map(() => 0),

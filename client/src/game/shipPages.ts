@@ -204,9 +204,7 @@ export function harbourPage(context: PageContext): HTMLElement {
   const page = make('div', '', 'ship-harbour');
   const muster = make('section', '', `ship-muster ${ROLES.panel}`);
   muster.append(heading('The muster'));
-  // shortcut: the gear message does not carry the pledge yet, and the room offers no officer without one; pass it
-  // here once the message carries it.
-  const offered = musterOf(context.gear, 0);
+  const offered = musterOf(context.gear, context.gear.ship?.pledge ?? 0);
   for (const offer of offered) {
     const row = make('div', '', 'ship-offer');
     const sign = heldPress('Hold to sign on', () => context.ask(offer.ask));

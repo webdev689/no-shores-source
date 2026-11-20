@@ -193,3 +193,14 @@ fn a_kept_crew_is_made_whole() {
     assert_eq!(officer.chosen, vec![crate::item::NONE_CHOSEN; 6]);
     assert!(read.take_id_clear_of(&ids));
 }
+
+#[test]
+fn a_posted_lookout_sights_ships_farther_by_how_well_they_hold_their_post() {
+    let (mut character, ids) = with_officers(&[Post::Lookout]);
+    assert!((character.ship_trim().sight - 1.0).abs() < 1e-12, "aboard, they change nothing");
+    character.ask(Ask::Station { officer: ids[0], duty: Duty::Posted }, Here::default(), &dice(0)).expect("posted");
+    let strength = character.crew.officers[&ids[0]].strength();
+    let perks = character.crew.officers[&ids[0]].active_traits().count();
+    assert_eq!(perks, 0, "nothing bought yet");
+    assert!((character.ship_trim().sight - (1.0 + 0.4 * strength)).abs() < 1e-12);
+}
