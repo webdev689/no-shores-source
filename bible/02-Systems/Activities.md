@@ -1,6 +1,8 @@
 ---
 type: system
 status: planned
+code:
+  - crates/gear/src/clock.rs#day_of
 ---
 # Activities
 
@@ -30,8 +32,8 @@ Company]]).
 ## The clock
 
 - **A day** runs from 09:00 UTC to 09:00 UTC, and **a week** from Tuesday 09:00 UTC, as Destiny 1's resets did.
-- `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in. The rules keep no
-  clock of their own.
+- `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in, and the minutes to
+  the next of each. The rules keep no clock of their own.
 - **Everything that turns reads it**: the vendors' daily wares (midnight UTC now), Shape's week (Monday now; Shape
   still comes Friday 09:00 to Sunday 21:00 inside it), the activities, the bounties and the quests.
 

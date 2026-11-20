@@ -1,14 +1,15 @@
 //! Gear and power, the same on the server and in every browser, after Destiny 1 at launch: items of five rarities,
 //! their nodes unlocked by XP and bought with Aurem, fragments, island resources and Essence; Prestige carried by
 //! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
-//! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; and everything a player
-//! holds.
+//! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; everything a player holds;
+//! and the game's one clock, its day and week.
 
 pub mod ammo;
 pub mod arts;
 pub mod asks;
 pub mod catalogue;
 pub mod character;
+pub mod clock;
 pub mod dice;
 pub mod element;
 pub mod emblems;
@@ -38,6 +39,8 @@ mod ammo_tests;
 mod arts_tests;
 #[cfg(test)]
 mod asks_tests;
+#[cfg(test)]
+mod clock_tests;
 #[cfg(test)]
 mod emblems_tests;
 #[cfg(test)]
