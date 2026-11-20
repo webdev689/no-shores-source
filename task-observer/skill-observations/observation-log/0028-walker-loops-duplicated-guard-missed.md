@@ -1,5 +1,5 @@
 ---
-id: 0013
+id: 0028
 title: "A guard added to one test walker never reached a second, inline walker loop; its test passed for a round by climbing"
 status: open
 type: internal
