@@ -3,7 +3,8 @@
 //! search finds no one, it lets go. Either way it goes back to its first phase, and walks back to its place, healing as
 //! it goes so it is whole as it arrives, turns to face as it was posted, and stands idle. Leashed, it heeds nothing it
 //! sees or hears on the way, so the one it gave up on cannot draw it out again at once; only a blow brings it back.
-//! After a search it heeds them as ever, and turns back to the fight only once they alert it.
+//! After a search it heeds them as ever, and turns back to the fight only once they alert it. Falling back as its group
+//! gives ground, it runs to its new place, its target and its awareness kept, and fights again from there.
 
 use crate::awareness::{Awareness, look};
 use crate::board::Board;
@@ -12,7 +13,7 @@ use crate::react::Reactions;
 use crate::senses::Here;
 use crate::shoot::Bow;
 use crate::steer::{Ask, way_to};
-use crate::tuning::{ALERT_OFF, HOME_FACED, HOME_REACHED, KEEP_UP, LEASH, SQUARING_PACE};
+use crate::tuning::{ALERT_OFF, FALLEN_BACK, HOME_FACED, HOME_REACHED, KEEP_UP, LEASH, SQUARING_PACE};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use movement::{TICK_SECONDS, TUNING};
@@ -21,6 +22,9 @@ use movement::{TICK_SECONDS, TUNING};
 /// whose target stands near enough its post, or one still winding up a blow (a roar's new phase begins in its wind-up).
 pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Option<Ask> {
     let home = brain.home?;
+    if brain.returning == Some(Homeward::Falling) {
+        return fall_back(brain, here, board, home);
+    }
     if brain.returning.is_some() && brain.target.is_some() {
         // A blow on it on its way back: it fights again, unless that one too stands past its leash.
         brain.returning = None;
@@ -36,6 +40,24 @@ pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Optio
         give_up(brain, here, board);
     }
     Some(walk_home(brain, here, home))
+}
+
+/// Its run back to its group's new place, its turn given up, until it stands within FALLEN_BACK of it, or has no
+/// target left to fight from there; a wind-up of its own it finishes first.
+fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Home) -> Option<Ask> {
+    if matches!(here.fighter.action, Action::Telegraph(_)) {
+        return None;
+    }
+    let left = apart(here.at(), [home.at[0], home.at[1]]);
+    let way = (left > FALLEN_BACK && brain.target.is_some()).then(|| way_to(here, home.at)).flatten();
+    let Some(way) = way else {
+        brain.returning = None;
+        return None;
+    };
+    board.forget(here.me);
+    brain.plan = Plan::Wait;
+    (brain.ready_at, brain.slot) = (None, None);
+    Some(Ask::walking(way, 1.0, true))
 }
 
 /// Whether a foe may fight a fighter where it stands: a garrison foe only within LEASH of its place, on ground the
@@ -87,6 +109,7 @@ fn give_up(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
 fn start_home(brain: &mut Brain, why: Homeward) {
     let tells = &mut brain.tells;
     (tells.windup, tells.ended, tells.chained, tells.roar, tells.phase) = (None, None, 0, false, 1);
+    (brain.broken_until, brain.cover, brain.raging, brain.held_since) = (0, None, false, None);
     brain.calls.cleanse = true;
     brain.returning = Some(why);
 }

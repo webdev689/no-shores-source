@@ -189,3 +189,56 @@ fn a_foes_aimed_gunshot_is_heard_by_a_foe_of_another_side_across_the_room() {
     room.tick();
     assert!(alert(&room) >= 1, "the shot 25 m off, behind it, stirs it");
 }
+
+const CREW_SWORDSMAN: u8 = 19;
+
+#[test]
+fn a_crewman_and_a_grey_tithe_foe_fight_each_other_until_one_falls() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let crew = stand(&mut room, CREW_SWORDSMAN, Rank::Minor, 0.0, -4.0, PI);
+    let tithe = stand(&mut room, COLLECTOR, Rank::Minor, 0.0, 4.0, 0.0);
+    assert_eq!(room.fighter(crew).unwrap().side, combat::Side::Players, "the crew fight on the players' side");
+    let events = run(&mut room, 60 * 120);
+    let hits = |striker, defender| between(&events, striker, defender).filter(|event| event.kind == EventKind::Hit);
+    assert!(hits(crew, tithe).count() > 0 && hits(tithe, crew).count() > 0, "{events:?}");
+    let killed = |defender| events.iter().any(|event| event.kind == EventKind::Killed && event.defender == defender);
+    assert!(killed(crew) || killed(tithe), "one of them falls");
+}
+
+#[test]
+fn a_players_blow_never_lands_on_the_crew_and_the_crew_never_strike_a_player() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().unwrap();
+    let crew = stand(&mut room, CREW_SWORDSMAN, Rank::Minor, 0.0, -1.5, PI);
+    let tithe = stand(&mut room, COLLECTOR, Rank::Minor, 1.0, -3.0, PI);
+    let chop = combat::CombatInput { attack: Some(combat::arms::Stroke::Down), ..combat::CombatInput::default() };
+    for sequence in 1..=600 {
+        let combat = if sequence % 40 == 1 { chop } else { combat::CombatInput::default() };
+        let intent = combat::Intent { controls: movement::Controls::default(), combat };
+        room.input(player, Input { sequence, intent, arms: 2, seen: room.clock(), ..Input::default() }).unwrap();
+        room.tick();
+    }
+    let events = room.take_events();
+    assert_eq!(between(&events, player, crew).count(), 0, "{events:?}");
+    assert_eq!(between(&events, crew, player).count(), 0, "{events:?}");
+    assert!(between(&events, crew, tithe).next().is_some(), "the crewman fights the boarder: {events:?}");
+}
+
+#[test]
+fn a_crewmans_telegraphed_blow_lands_on_a_boarder_in_its_shape_and_never_on_a_player() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().unwrap();
+    room.put_player(player, 0.8, -1.2);
+    let crew = stand(&mut room, CREW_SWORDSMAN, Rank::Major, 0.0, 0.0, 0.0);
+    let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -1.0, PI);
+    let swordsman = *room.fighter(crew).unwrap();
+    let slam = TelegraphOrder { shape: Shape::Slam, windup: 54, iron: false, feint_at: None, bearing: 0.0, ahead: 0.0 };
+    room.telegraph_lands(crew, &swordsman, &Telegraph::begin(&slam, [0.0, 0.0, 0.0]));
+    for sequence in 1..=30 {
+        room.input(player, Input { sequence, seen: room.clock(), ..Input::default() }).unwrap();
+        room.tick();
+    }
+    let events = room.take_events();
+    let hit = |defender| between(&events, crew, defender).any(|event| event.kind == EventKind::Hit);
+    assert!(hit(tithe) && !hit(player), "{events:?}");
+}

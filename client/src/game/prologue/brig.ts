@@ -49,6 +49,8 @@ export function deckPoint(place: ShipPlace, x: number, y: number, z: number): [n
 }
 
 const dressOf = (hand: Hand): Dress => ({ ...plainDress(hand.race, hand.tone), body: hand.body });
+/** The dresses of her plain hands, who fight on aboard the wreck. */
+export const HANDS: readonly Dress[] = CREW.filter((hand) => hand.who === 'hand').map(dressOf);
 
 /** The Brig as the story sails her: she keeps her course through the storm until the story stops her. */
 export class Brig {
@@ -111,7 +113,7 @@ export class Brig {
     return deckPoint(place, hand.at[0], hand.at[1], z + 2.1);
   }
 
-  /** Every speaking hand's head, for the barks and emotes. */
+  /** Every speaking hand's head, for the barks. */
   heads(place: ShipPlace): Map<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
     for (const who of ['lookout', 'bosun', 'gunner', 'mate']) {

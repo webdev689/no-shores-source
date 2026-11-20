@@ -27,7 +27,8 @@ fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_
             let (_, health, poise, might, defence) = *scales.iter().find(|scale| scale.0 == rank).unwrap();
             let (fighter, brain) = spawn(foe, rank, 3.0, -4.0, 1.0);
             let numbers = brain.numbers();
-            assert_eq!(fighter.side, Side::Faction(foe.faction), "{}", foe.name);
+            assert_eq!(fighter.side, Side::from_number(foe.faction), "{}", foe.name);
+            assert_eq!(fighter.ally, foe.faction == 0, "{}", foe.name);
             assert_eq!((brain.foe_type.number, brain.rank, brain.phase()), (foe.number, rank, 1));
             assert!((fighter.health_max - role.health * health).abs() < CLOSE, "{} {rank:?}", foe.name);
             assert!((fighter.poise_max - role.poise * poise).abs() < CLOSE, "{} {rank:?}", foe.name);
@@ -168,7 +169,7 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     }
     assert_eq!(Rank::from_number(0), None);
     let numbers: Vec<u8> = ROSTER.iter().map(|foe| foe.number).collect();
-    assert_eq!(numbers, (1..=18).collect::<Vec<u8>>(), "numbered 1 to 18 in order");
+    assert_eq!(numbers, (1..=20).collect::<Vec<u8>>(), "numbered 1 to 20 in order");
     assert_eq!(foe_type(0), None);
     let tithe = faction(1).unwrap();
     assert_eq!((tithe.name, tithe.side()), ("The Grey Tithe", Side::Faction(1)));

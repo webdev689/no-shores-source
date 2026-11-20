@@ -1,5 +1,6 @@
 import wreck from '../../../../content/prologue/wreck.json' with { type: 'json' };
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
+import type { HullMask } from '../../water/hullMask.ts';
 
 type Point = readonly [number, number];
 export type Area = readonly [number, number, number, number];
@@ -14,14 +15,15 @@ export interface WaveFoe {
 }
 
 /** A stretch of the path: the area that, entered, reaches it, the checkpoint the player comes back to from it, the
- *  heap of wreckage that closes the way on from it until its wave has fallen (none for the arena), and the foes it
- *  holds. */
+ *  heap of wreckage that closes the way on from it until its wave has fallen (none for the quiet deck the player wakes
+ *  on, nor the arena), the foes it holds, and where three of the Brig's crew stand fighting them. */
 export interface Zone {
   readonly name: string;
   readonly area: Area;
   readonly checkpoint: Point;
   readonly gate: CourseBlock | null;
   readonly wave: readonly WaveFoe[];
+  readonly crew: readonly Point[];
 }
 
 /** Whether a deck crew's roster type fights for the Grey Tithe (7 to 12); the pirates' are 13 to 17. */
@@ -40,7 +42,8 @@ export interface Fire {
  * as blocks, measured from the wreck's model (tools/wreck/export_wreck.py); where the player wakes and the way they
  * face; the path from there to the arena, as points; the zones along it; the arena's zone, the gate that closes its
  * way in, and where Thule stands; the fires; where its masts still stand; the camera's way back to the player after
- * its flight down the wreck (points and heights over the sea); and the keys on R2 of its mesh and its baked light.
+ * its flight down the wreck (points and heights over the sea); where no sea is drawn, its ships' waterlines and its
+ * rafts, which the swell would rise through; and the keys on R2 of its mesh and its baked light.
  */
 export interface WreckLayout {
   readonly course: readonly CourseBlock[];
@@ -51,6 +54,7 @@ export interface WreckLayout {
   readonly fires: readonly Fire[];
   readonly masts: readonly Point[];
   readonly flightBack: readonly (readonly [number, number, number])[];
+  readonly dry: readonly HullMask[];
   readonly drawn: { readonly mesh: string; readonly light: string };
 }
 
@@ -78,6 +82,7 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
     checkpoint: pointOf(zone.checkpoint),
     gate: zone.gate ? blockOf(zone.gate) : null,
     wave: zone.wave.map((foe) => ({ ...foe, at: pointOf(foe.at), facing: foe.facing * RADIANS })),
+    crew: zone.crew.map(pointOf),
   }));
   const gate = zones[file.arena.zone - 1]?.gate;
   if (!gate) throw new Error("no gate closes the way into the wreck's arena");
@@ -94,6 +99,14 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
     }),
     masts: file.masts.map(pointOf),
     flightBack: file.flightBack.map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
+    dry: file.dry.map(([x = 0, y = 0, heading = 0, halfLength = 0, halfBeam = 0]) => ({
+      x,
+      y,
+      heading,
+      halfLength,
+      halfBeam,
+      way: 0,
+    })),
     drawn: { mesh: file.mesh, light: file.light },
   };
 }
@@ -120,11 +133,13 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
       checkpoint: point(zone.checkpoint),
       gate: zone.gate && block(zone.gate),
       wave: zone.wave.map((foe) => ({ ...foe, at: point(foe.at) })),
+      crew: zone.crew.map(point),
     })),
     arena: { ...layout.arena, gate: block(layout.arena.gate), thule: point(layout.arena.thule) },
     fires: layout.fires.map((fire) => ({ ...fire, at: [fire.at[0] + east, fire.at[1] + south, fire.at[2]] })),
     masts: layout.masts.map(point),
     flightBack: layout.flightBack.map(([x, y, z]) => [x + east, y + south, z] as const),
+    dry: layout.dry.map((mask) => ({ ...mask, x: mask.x + east, y: mask.y + south })),
   };
 }
 

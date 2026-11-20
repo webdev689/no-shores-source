@@ -111,10 +111,26 @@ fn able(found: &Player) -> bool {
 }
 
 impl Room {
+    /// Takes away every player's Art from now on, as the prologue's wreck does: no cast is taken, no Anima or Tenet
+    /// charges (a kill's charge included), no fragment of a Core works (`core`), a blow in an Art's element is no more
+    /// than another, and the player's gear says no Art is worn, its Anima and Tenets empty.
+    pub fn forbid_arts(&mut self) {
+        self.arts = false;
+    }
+
+    /// Whether players' Arts work in this room.
+    #[must_use]
+    pub fn arts_on(&self) -> bool {
+        self.arts
+    }
+
     /// A cast a player's input asks for, taken to release once its time comes if it is the worn Art's, charged, no
     /// other is on its way, and the player may act; else let go. The room is given none from a player on horseback.
     pub(crate) fn ask_cast(&mut self, player: PlayerId, cast: Option<Cast>) {
         let release = ticks(arts().cast.release_s);
+        if !self.arts {
+            return;
+        }
         let Some((cast, found)) = cast.zip(self.players.get_mut(&player)) else { return };
         let known = cast.spell >= 1 && cast.art() == found.character.art().id;
         let ready = found.casting.releasing.is_none() && found.casting.share(cast.ability()) >= 1.0;
@@ -126,6 +142,9 @@ impl Room {
     /// One tick of every player's Arts: each charges, a cast whose time has come is released (cut short, it costs
     /// nothing), the veil Hunt watches ending lets it go, and every spell steps.
     pub(crate) fn step_arts(&mut self) {
+        if !self.arts {
+            return;
+        }
         let mut due = Vec::new();
         for (id, found) in &mut self.players {
             let art = found.character.art();
@@ -159,6 +178,9 @@ impl Room {
     /// Spellfeed on its loadout (`perk_on`), a Volt kill 4% of the Tenets (Recharge), a Blaze kill while Linked 5%
     /// (Zeal), and a Cosmic kill on an Exposed foe 2 s more of the Duskraven (Dread).
     pub(crate) fn arts_after(&mut self, blow: &Blow, defender: &Fighter, verdict: &Verdict, killed: bool) {
+        if !self.arts {
+            return;
+        }
         let landed = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
         let spellfeed = self.perk_on(blow, "spellfeed");
         let Some(striker) = self.players.get(&blow.striker).map(|found| found.fighter) else { return };

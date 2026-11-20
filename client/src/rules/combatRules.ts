@@ -1,4 +1,4 @@
-import type { Block } from './movementRules.ts';
+import { type Block, blockFloats } from './movementRules.ts';
 
 /** A fired shot's numbers after a predicted fighter's: its weapon, where it left, its velocity. */
 const FIRED_FLOATS = 7;
@@ -32,6 +32,9 @@ export interface CombatRules {
   /** Keeps a node's window of the ground (its JSON, as the land's worker cuts it) for every later prediction to stand
    *  on, or open ground with none; false if the text is not ground. */
   setGround(windowJson: string | null): boolean;
+  /** Stands every later prediction on the rim round a course laid over the sea, as the sea room holds its bodies
+   *  (`Floor::Sea`), made from these blocks by the rules; false if they are not blocks. */
+  setRim(blocks: readonly Block[]): boolean;
   /** The player's fighter one tick on under an intent, taking up `arms` as the room does, among the fighters they
    *  see, and the shot it let go. */
   predict(
@@ -56,6 +59,7 @@ interface FightExports {
   release(address: number, length: number): void;
   fighter_course(address: number, length: number): number;
   fighter_ground(address: number, length: number): number;
+  fighter_rim(address: number, length: number): number;
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
   fighter_sizes(): number;
@@ -87,10 +91,12 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
   return {
     sizes,
     setCourse: (blocks) => {
-      const floats = new Float64Array(
-        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]),
-      );
+      const floats = new Float64Array(blockFloats(blocks));
       lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
+    },
+    setRim: (blocks) => {
+      const floats = new Float64Array(blockFloats(blocks));
+      return lend(floatBytes(floats), (address) => exports.fighter_rim(address, floats.byteLength)) === 1;
     },
     setGround: (windowJson) => {
       const text = new TextEncoder().encode(windowJson ?? '');

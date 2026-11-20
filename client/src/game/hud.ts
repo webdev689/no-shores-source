@@ -3,6 +3,8 @@ import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
+import { type Hint, hintLine } from './gearDom.ts';
+import './hud.css';
 import {
   countdownText,
   deathWords,
@@ -13,7 +15,9 @@ import {
   WARNING_SECONDS,
 } from './hudLaw.ts';
 import type { Landfall } from './seaLaw.ts';
+import { FightPanel, type ShipReadout } from './seaPanel.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { TaskTracker } from './tasks.ts';
 
 /** A button of the heads-up display, in the role it plays: let go of once pressed, so Space or Enter, which the game
  *  itself answers, never press it again. */
@@ -77,9 +81,21 @@ interface MarkNode {
   readonly arrow: HTMLElement;
 }
 
+/** The most toasts that stand at once, the newest kept. */
+const MOST_TOASTS = 3;
+
 /** Writes words only when they change: called every frame, the HUD would otherwise rebuild its text each time. */
 function say(node: HTMLElement, text: string): void {
   if (node.textContent !== text) node.textContent = text;
+}
+
+/** Shows `now` in `holder`, a toast each: those no longer said leave and the new are added after, so one kept is never
+ *  taken out and put back, which would play its rise again. */
+export function layToasts(holder: HTMLElement, now: readonly string[]): void {
+  const kept = new Map([...holder.children].map((shown) => [shown.textContent, shown]));
+  if (now.length === kept.size && now.every((text) => kept.has(text))) return;
+  for (const [text, shown] of kept) if (!now.includes(text ?? '')) shown.remove();
+  for (const text of now) if (!kept.has(text)) holder.append(make('div', text, `toast ${ROLES.chip}`));
 }
 
 /** The game's heads-up display: plain elements over the canvas, nothing drawn on the GPU. */
@@ -92,8 +108,13 @@ export class Hud {
   private readonly death = make('div', '', 'death');
   private readonly deathWhy = make('div', '', 'death-why');
   private readonly respawn: HTMLButtonElement;
-  /** The keys' hints, which the fight's display keeps its arrows clear of (`FootView`). */
+  /** The key strip, which the fight's display keeps its arrows clear of (`FootView`). */
   readonly hintList = make('div', '', 'hints');
+  /** The quest tracker, her ship's panel in a sea fight and the toasts, laid together under the menu and the veil. */
+  private readonly quests = make('div', '', 'hud-quests');
+  readonly tasks = new TaskTracker(this.quests);
+  private readonly fightPanel = new FightPanel(this.quests);
+  private readonly toasts = make('div', '', 'toasts');
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
@@ -139,6 +160,8 @@ export class Hud {
     this.respawn = hudButton('Respawn', () => this.respawnWanted(), 'primary');
     this.death.append(make('div', 'You died', 'death-words'), this.deathWhy, this.respawn);
     this.veilNode.append(this.veilText);
+    this.toasts.setAttribute('role', 'status');
+    this.quests.append(this.toasts);
     this.voyage = hudButton('', () => this.voyageWanted());
     this.landfall = hudButton('', () => this.landfallWanted(), 'primary');
     this.landfall.classList.add('landfall');
@@ -174,6 +197,7 @@ export class Hud {
       place,
       this.warning,
       this.hintList,
+      this.quests,
       this.status,
       this.sea,
       this.landfall,
@@ -219,12 +243,24 @@ export class Hud {
     this.respawnWanted = respawn;
   }
 
-  /** The keys the player can press now, one a line. */
-  hints(lines: readonly string[]): void {
-    const text = lines.join('\n');
+  /** The keys the player can press now, each on its keycap beside what it does; none hides the strip. */
+  hints(hints: readonly Hint[]): void {
+    const text = hints.join('\n');
     if (this.hintList.dataset['text'] === text) return;
     this.hintList.dataset['text'] = text;
-    this.hintList.replaceChildren(...lines.map((line) => make('div', line)));
+    this.hintList.hidden = hints.length === 0;
+    this.hintList.replaceChildren(...(hints.length > 0 ? [hintLine(hints, 'hints-line')] : []));
+  }
+
+  /** Her ship's panel in a sea fight, or none. */
+  seaFight(ship: ShipReadout | null): void {
+    this.fightPanel.show(ship);
+  }
+
+  /** The short messages over the middle of the view now, the newest few: the caller says each every frame it holds,
+   *  as long as its own clock keeps it, so a toast never outlives what it tells. */
+  toast(...texts: string[]): void {
+    layToasts(this.toasts, texts.slice(-MOST_TOASTS));
   }
 
   /** A line of what is happening (a voyage, a connection), or none. */

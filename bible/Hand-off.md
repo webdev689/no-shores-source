@@ -11,8 +11,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
   on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
-  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
-  in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives in `~/toolkit-data` and
+  outlives the container on the orphan branch `toolkit-data` (`tools/claude-toolkit/toolkit-data.sh`). Its first
+  review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
   ([[The World Editor Is on GitHub Pages]]). The owner has drawn all nine continents; continent 1 is the main social
@@ -163,7 +164,7 @@ Where the work stands now, for the next session. Each session rewrites this note
     hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
     the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
     hit the same way; and plates stay light: never larger, never through a block, none past 60 m (which plates show,
-    and their sizes, change on #95).
+    and their sizes: [[Fewer Plates Show, Sized by Rank, After Destiny]]).
   - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
     at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
   - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by
@@ -238,16 +239,42 @@ Where the work stands now, for the next session. Each session rewrites this note
   shore's, the owner's picks from the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to
   them; its store's `picks` collection holds each cue's Freesound number), published on R2 and in
   `content/audio/sounds.json`. The seven long beds play their steadiest minute, mono.
-- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes
-  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe in sight
-  nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and shows none over its
-  head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's bar three fifths long
-  and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates. Not yet seen on a real GPU
-  or with blows traded. Found in passing: the compass writes its marks' place and visibility every frame, changed or
-  not (`client/src/plus/compass.ts`).
+- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes ([[Fewer Plates Show, Sized
+  by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe whose body the crosshair is on (the
+  nearest of them), else the one nearest it, measured to its body with its breadth (whole within 4°, none past 6°; a
+  Boss there takes the cone and shows none over its head); the soft lock's foe and the foes fought in the last 6 s show
+  wherever they are; a Minor's bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure;
+  the land hides plates. Not yet seen on a real GPU or with blows traded. Found in passing: the compass writes its
+  marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
 - **#96, the kit's first review**, merged with the owner's yes: workers' worktrees made ready to test; the observation
   log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
   research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
+- **#102, foes fight in groups that lead, break and give ground, after Bungie**, merged with the owner's yes ([[Foes
+  Fight in Groups That Lead, Break and Give Ground, After Bungie]]; Claude's calls in [[Foe Groups as Claude Builds
+  Them]]): every garrison group's leader, whose fall breaks the rest (to cover, or running or huddling in the open, one
+  raging); a group's breaking point at half, defending its post, a standoff lasting a foe's patience; a mission's or a
+  dungeon's garrison falling back halfway at three quarters standing and gathering at its last stand at half; the Grey
+  Tithe's leader screened behind a shield-bearer of its lower ranks; and a mission's two waves, hunting the players. No
+  blurbs pop over foes, as the owner asked. Tested offline: the full check, 32 new tests (each rule broken once and seen
+  to fail) and a simulation of 72 scripted fights. Not yet seen: a group fight played by hand on a real GPU.
+- **#107, the audit's fixes to #95 and #96**, merged with the owner's yes ([[Plates as Claude Shows Them]]): a plate
+  fading out of the cone lifts none over it; plates are kept hidden for their next showing; a word pushed down clear of
+  a plate stays down; the log's save keeps lines both sessions appended, moves on a number both took and restores once a
+  container; the check names its own checkout's commit; the log is saved last at a session's end. Tested offline: the
+  full check, and each fix's test seen to fail without it.
+
+- **The prologue's follow-ups and the sea's sounds**, on `main` (#94), merged and deployed with the owner's yes: the
+  title's prompt no longer stays over the storm and creation once begun; the intro goes straight to Saltmere
+  ([[The Intro Goes Straight to Saltmere]]), about 25 s; the story's sea fight sails in the story's wind, not the
+  world's; and all 27 sounds of the sea are the owner's Freesound picks, the sea fight's guns, hits, splashes and
+  break-ups new. Tested live, headless: the intro rises at first light over the cloud, the title over Saltmere asks to begin,
+  and a key hides the prompt.
+- **The second playthrough**, on `main` (#98), merged with the owner's yes ("Merge and deploy"), which deploys the
+  page and the rooms: the owner's thirteen points (the wreck spread out at true size, the Brig's crew fighting on the
+  players' side, no Art in the prologue, the whole game's balance pass, sea fights half again as fast and as hard, a
+  task tracker for every quest, the placeholder lines gone), the animations' strips fetched ahead, the blurbs without
+  glyphs, the plates held still on board through a 64-bit matrix, and a last audit's fixes. Tested offline: the full
+  check. Not yet seen on a real GPU, nor played through by hand.
 
 ## In progress: Overlook's hub (branch `claude/game-experience-factions-94un6s`, not yet passing the check)
 
@@ -297,6 +324,17 @@ Left to do, in order:
   ways; whichever merges second sets `Social.board` from `hub::BOARD_LANDING_M`. It keeps `gear::clock`'s moves.
 
 ## Waiting on the owner
+
+- **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
+  without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
+  something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
+  that a player's blows land at 0.94 of their worth.
+- **#102's and #107's open points**, both merged, in their descriptions: whether defending foes should hold their ground
+  longer than a foe's patience; whether any lower rank screening any leader under a Miniboss is the screen meant by
+  "Minors screening an Elite"; whether a wave is enough without a drop; whether a wave the room's limit has no room for
+  should come later; whether "no blurbs" also rules out a break's sound and the plate's alert mark; whether ships'
+  plates come under "enemy health bars" (Claude's recommendation: they stay as they are); whether a fought foe's plate
+  should stay whole the full 6 s; and whether a plate fading out of the cone may overlap the one taking it.
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
   none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
   places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
@@ -312,14 +350,27 @@ Left to do, in order:
   by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
-- **#92 (Overlook's factions, faction gear, Art levels, keepers, Shape, appearance, Elder Maren Hale's welcome)** is
-  merged and deployed (2a1236a9). Its calls are in [[Factions and Vendors as Claude Shapes Them]]; its open questions
-  in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render.
+- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**, on
+  `main`, merged with the owner's yes ("Merge and deploy"), which deploys the page and the rooms. The owner named the
+  factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
+  "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
+  and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
+  characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
+  rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
+  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's "autonomy"
+  is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full check. Tested in
+  a local room (`npm run server`, the built page headless): Shape present with his six wares, "From level 20" and the
+  right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its colour; Maren greeting a
+  browser that had played the story before, the keys' hints giving way while she speaks. Not yet seen: anything on a
+  real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction gear, a faction set worn in
+  the page (composed offline from the published strips), and Maren's whole walk (her start and her coming by the lanes
+  are tested offline; headless frames take about a second each). The open questions are in [[Open Questions]]. The
+  Wraith Mist barding's first-person ride strips on R2 are blank: a forge re-render. Sunspire's and Rimeholt's ports are
+  #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
-  repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
-  `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
-  its published model here with `--dry-run`, whose level hash must match the log's: a build elsewhere can lay a
-  slightly different ground.
+  repository's Cloudflare token, as the ships workflow does. Each run keeps the `content/prologue/wreck.json` it
+  wrote as the artifact `wreck-level`: commit that file whole, its keys with its level, as a build elsewhere can lay a
+  slightly different ground from the published mesh.
 - fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
   session that finished the prologue, so the likeness is unchecked.
 - Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
@@ -473,6 +524,12 @@ Left to do, in order:
 
 ## Next
 
+- **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
+  `server/garrison.test.ts`): its 13 foes stand all 1500 ticks and its player falls about tick 900, run straight into
+  the wall #63 gave its node, steered round it, or with the starting sword asked for; its swings seem never to land.
+  So nothing after a foe's fall (drops, a group's break, fallback and last stand, waves) is checked natively against
+  WebAssembly: their agreement rests on `clippy.toml`'s banned maths methods and on ordered maps. Next: a scripted
+  player that turns to its nearest foe and lands its blows, and a guard that needs a foe to fall.
 - **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is on `main` (#63),
   tested offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
   kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no

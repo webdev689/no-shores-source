@@ -65,6 +65,8 @@ const STILL = { yaw: 0, pitch: 0, ahead: 0, aside: 0, up: 0 } as const;
  *  element each hand's weapon glows in (none unless said). */
 export interface Striker {
   readonly id: number;
+  /** Whether it is a player, whose blows reach a player's way; a crewman on their side fights as a foe does. */
+  readonly player?: boolean;
   readonly view: FighterView | null;
   readonly right: string | null;
   readonly left: string | null;
@@ -225,7 +227,7 @@ export class AttackFeel {
   ): Float32Array {
     const { tick } = this;
     const swung: Swing[] = [];
-    for (const { id, view, right, left, looks } of eyes ? [] : strikers) {
+    for (const { id, player, view, right, left, looks } of eyes ? [] : strikers) {
       const action = view?.action;
       const figure = drawn.get(id);
       if (!view || !figure || action?.kind !== 'attack') continue;
@@ -238,7 +240,7 @@ export class AttackFeel {
         elapsed: action.elapsed * tick,
         strike: action.strike * tick,
         end: action.end * tick,
-        reach: this.rules.strokeReach(view.arms, action.stroke, view.side === 'players'),
+        reach: this.rules.strokeReach(view.arms, action.stroke, player ?? false),
         halfArc: this.rules.strokeArc(STROKE_DIRECTIONS.indexOf(way) + 1),
         aim: view.aim,
         way,

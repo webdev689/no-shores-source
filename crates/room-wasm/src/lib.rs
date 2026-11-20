@@ -214,6 +214,15 @@ pub fn take_foe_asks() {
     });
 }
 
+/// Takes away every player's Art in the open room, as the prologue's wreck does; see `Room::forbid_arts`.
+pub fn forbid_arts() {
+    with_open(|opened| {
+        if let Opened::Land { room, .. } = opened {
+            room.forbid_arts();
+        }
+    });
+}
+
 /// A player's input bytes, read and handed to the room: an input on land; at sea a course, orders, a step on deck or
 /// the helm. One of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
@@ -493,6 +502,12 @@ pub extern "C" fn room_roster() -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_take_foe_asks() {
     take_foe_asks();
+}
+
+/// Takes away every player's Art in the open room; see `forbid_arts`.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_forbid_arts() {
+    forbid_arts();
 }
 
 /// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers her

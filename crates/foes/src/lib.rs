@@ -17,6 +17,7 @@ mod flank;
 mod leash;
 pub mod noises;
 mod pace;
+mod rally;
 pub mod ranks;
 mod react;
 pub mod roles;
@@ -31,7 +32,7 @@ pub mod tuning;
 
 pub use awareness::Alertness;
 pub use board::Board;
-pub use brain::{Brain, Calls, notice};
+pub use brain::{Brain, Calls, Mood, Orders, notice};
 pub use combat::{Fighter, FighterId, Intent};
 pub use director::{Caps, Director, Pressed};
 pub use factions::{FACTIONS, Faction, faction};

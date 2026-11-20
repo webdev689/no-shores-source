@@ -1,6 +1,6 @@
 // What the heads-up display shows at sea each frame: where the player is, the keys for what they are doing, the marks,
-// the compass and the ships on it, a captain's bar in a fight, the sea's bar, Manage's panel, the offer at her wheel,
-// and the voyage's line.
+// the compass and the ships on it; in a fight each captain's bar, her own ship's panel, the fight's task and DFO's
+// messages; the sea's bar, Manage's panel, the offer at her wheel, and the voyage's line.
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
@@ -9,6 +9,7 @@ import { seaHints } from './hints.ts';
 import type { Hud } from './hud.ts';
 import type { Sea, SeaFrame } from './sea.ts';
 import type { SeaRoom } from './seaRoom.ts';
+import { seaFightQuest } from './seaPanel.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 
 /** What the display reads off the game besides the sea: whether a landing is being chosen or the sea's controls are
@@ -54,8 +55,12 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   else if (aboard.walking) hud.place('Aboard the Sloop', 'Off the helm');
   else if (aboard.managing) hud.place('Managing the Sloop', region);
   else hud.place('At sea', shown.landfall && island ? `Off ${island}` : region);
-  const fighting = here.fight?.lines(state.clock) ?? null;
-  hud.hints(seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
+  const fighting = here.fight?.readout(state.clock) ?? null;
+  hud.hints(seaHints({ fighting: fighting !== null, landing: state.landing, atHelm, ...aboard.where }));
+  hud.seaFight(fighting?.ship ?? null);
+  // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.
+  hud.tasks.show(fighting && seaFightQuest('Sea fight', fighting.left, fighting.men));
+  hud.toast(...(fighting?.said ?? []));
   hud.marks(shown.marks);
   const { eye, yaw, pitch, fov } = shown.shot;
   hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));

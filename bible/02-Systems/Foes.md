@@ -19,6 +19,11 @@ code:
   - crates/foes/src/tactics.rs#decide
   - crates/foes/src/leash.rs#leash
   - crates/foes/src/leash.rs#unoccupied
+  - crates/foes/src/brain.rs#Orders
+  - crates/foes/src/brain.rs#breaks
+  - crates/foes/src/rally.rs#broken
+  - crates/foes/src/rally.rs#hold_ground
+  - crates/foes/src/leash.rs#fall_back
   - crates/foes/src/brain.rs#keep_to
   - crates/foes/src/flank.rs#drift
   - crates/foes/src/flank.rs#ring_of
@@ -58,9 +63,11 @@ phases) is [[Enemies]].
 - **One crate for every machine.** The `foes` crate stands on the `combat` crate's rules. Each tick the room hands a
   foe's brain what it knows (the room's tick and seed, every fighter, the course's blocks, routes and firing spots,
   which the room's [[Navmesh]] gives, and the room's director), and the brain asks its fighter for controls and
-  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. What the room saw
-  happen (a swing begun, a shot loosed, a blow landed on it or by it, its telegraphed blow's landing, a noise, an
-  ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
+  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. A brain may drive a
+  fighter on the players' side, as the Brig's crew are ([[Enemies]]): it fights the factions by a foe's rules (its
+  reach, parry window, telegraphed blows and stir), and its telegraphed blows are never judged against a player, nor
+  a player's spells against it. What the room saw happen (a swing begun, a shot loosed, a blow landed on it or by it,
+  its telegraphed blow's landing, a noise, an ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
   Chance comes from a hash of the room's seed, the tick, the foe and what is being decided, so the same seed plays the
   same fight.
 - **Roles.** Every type of foe fights as one of five roles; its rank scales the role's numbers ([[Enemies]]). Reaction
@@ -76,8 +83,9 @@ phases) is [[Enemies]].
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
-  are made with the power of [[Gear]], its rank's might and its phase's on top. A foe of level 0 has none, and fights
-  by these numbers alone. A garrison's foes stand at their island's levels ([[Enemies]]).
+  are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike twice
+  and its blows on a player half, at every level ([[Gear]], "Blows"). A foe of level 0 has no power, and fights by
+  these numbers and those two alone. A garrison's foes stand at their island's levels ([[Enemies]]).
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
 - **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it, and
@@ -153,6 +161,32 @@ phases) is [[Enemies]].
   foe keeps to its place: one a stir drew off, or an ally walking past moved, walks back to it once idle. While its
   group walks its beat it keeps up with its place, walking at the share of a walk that its distance behind is of 2 m,
   a full walk at most, and faces its way.
+- **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";
+  [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]; the numbers are Claude's,
+  [[Foe Groups as Claude Builds Them]]):
+  - **Broken**, as its group's leader falls, for 8 s it gives its turn up and falls back to cover: a shooter holds its
+    fire behind its post's cover, and any foe runs behind the nearest firing spot within 11 m that hides it from its
+    target and stands no nearer it, and holds it facing its target, its guard up if it bears a shield. In the open, a
+    skirmisher runs from its target as a coward does, a shooter steps back to its place in its group by the room's
+    routes, facing its target (with no place, it holds where it stands), and any other huddles on the farther ring a foe
+    backs off to, its guard up if it bears a shield. Broken, it neither hunts its target out of sight nor closes on one
+    past its range. On the ring it takes no opening but the riposte or the counter it earned; behind cover, or running,
+    it answers no blow at all.
+  - **Raging**, for the rest of its fight: it takes a turn at once, one over the turns' cap at most, never backs off or
+    runs, never parries, blocks or dodges a blow nor holds up its guard, runs at its target, and after a blow only hops
+    back before it waits again; it holds no ground its group defends or gives. The beat between blows holds it as it
+    holds any foe. Its rage ends as its fight does: its awareness let go, or its leash given up.
+  - **Defending**, a fighter hand to hand fights only a target within 8 m of its place in its group, or a target whose
+    blow struck it in the last 5 s, or one that has stood within its range (14 m) of its place for a foe's patience (6
+    s), until that one goes out of its range again; past that it gives its turn up, keeps to its place and faces its
+    target, its guard up if it bears a shield. A shooter hides twice as long between its looks out.
+  - **Falling back**, as its group's places move to where it gives ground, a foe fighting gives its turn up and runs
+    there by the room's routes, its target and its awareness kept, striking nothing on the way (a wind-up of its own
+    it finishes first), and fights again once within 1 m of its place.
+  - **Screened**, a leader waits a ring farther out than its place in the line, right behind the shield-bearer of its
+    screen its group names, if any, taking no turn, waiting in no line for one and never flanking, so the first of its
+    followers to have waited goes in; walked in on, it fights back where it stands. **Going in**, its screen gone, it
+    takes a turn at once, one over the cap at most.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). One of those with a turn goes in at a time, the rest keeping to the ring
   until it has struck: it walks in to its reach, squares up within 22.5 degrees, waits 0.3 to 0.9 s and swings once;
@@ -200,9 +234,9 @@ phases) is [[Enemies]].
   that is open to it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
-  the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each
-  foe they kill, falls 0.006 for each point a player loses (three
-  times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
+  the foe's level grows its health by, so a matched player heats the fight alike at any level, and by the players'
+  `PLAYER_HARM`), and 0.09 for each foe they kill, falls 0.006 for each point a player loses, counted before the foes'
+  `FOE_HARM` (three times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
   hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
   turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay, the beat and
   the ring's gap by its share. A dominating player meets more foes at once; one being beaten, fewer.

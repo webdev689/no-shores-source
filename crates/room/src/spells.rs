@@ -199,11 +199,18 @@ impl Room {
         self.spells.list.push(Spell { id: self.spells.next, ..spell });
     }
 
-    /// The living foes within `radius` of `at` across the ground and `height` above or below it.
+    /// A fragment in a player's worn Core, by its key; none in a room without Arts. Every fragment the room plays is
+    /// read through this.
+    pub(crate) fn core(&self, player: PlayerId, key: &str) -> Option<&'static FragmentDef> {
+        self.players.get(&player).filter(|_| self.arts).and_then(|found| found.character.fragment(key))
+    }
+
+    /// The living foes within `radius` of `at` across the ground and `height` above or below it: a player's spell never
+    /// touches an ally on their side.
     fn foes_near(&self, at: [f64; 3], radius: f64, height: f64) -> Vec<FighterId> {
         let near =
             |body: &Body| libm::hypot(body.x - at[0], body.y - at[1]) <= radius && (body.z - at[2]).abs() <= height;
-        let living = self.foes.iter().filter(|(_, foe)| !foe.fighter.dead());
+        let living = self.foes.iter().filter(|(_, foe)| enemy(&foe.fighter));
         living.filter(|(_, foe)| near(&foe.fighter.body)).map(|(id, _)| *id).collect()
     }
 
@@ -216,9 +223,9 @@ impl Room {
         living.filter(|(_, found)| near(&found.fighter.body)).map(|(id, _)| *id).collect()
     }
 
-    /// The living foe whose chest is nearest `at`, within `reach`.
+    /// The living foe of a faction whose chest is nearest `at`, within `reach`.
     fn nearest_foe(&self, at: [f64; 3], reach: f64) -> Option<FighterId> {
-        let living = self.foes.iter().filter(|(_, foe)| !foe.fighter.dead());
+        let living = self.foes.iter().filter(|(_, foe)| enemy(&foe.fighter));
         let measured = living.map(|(id, foe)| (*id, distance(at, foe.fighter.chest())));
         measured.filter(|(_, far)| *far <= reach).min_by(|first, second| first.1.total_cmp(&second.1)).map(|(id, _)| id)
     }
@@ -513,7 +520,7 @@ impl Room {
             orb.velocity = way.map(|part| part * def.speed);
         }
         orb.at = moved(orb.at, orb.velocity);
-        let struck = self.foes.iter().find(|(_, foe)| !foe.fighter.dead() && touches(orb.at, &foe.fighter));
+        let struck = self.foes.iter().find(|(_, foe)| enemy(&foe.fighter) && touches(orb.at, &foe.fighter));
         if let Some(foe) = struck.map(|(id, _)| *id) {
             self.spell_strikes(&orb, foe, orb.at, def.damage);
             return None;
@@ -564,4 +571,9 @@ impl Room {
         bolt.age += 1;
         (bolt.age < bolt.life).then_some(bolt)
     }
+}
+
+/// Whether a foe of the room is one a player's spell may strike: alive, and of a faction, not on the players' side.
+fn enemy(fighter: &Fighter) -> bool {
+    !fighter.dead() && !fighter.side.is_players()
 }

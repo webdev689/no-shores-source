@@ -76,7 +76,7 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     let hit =
         events.iter().find(|event| event.kind == EventKind::Hit && event.striker == player).expect("the chop lands");
     // A level 1 player's Normal sword of level 1 has 10 Attack: two thirds of a level's rise.
-    let times = gear::power::by_player(10, 1, 1);
+    let times = gear::power::by_player(10, 1, 1) * crate::power::PLAYER_HARM;
     assert!((hit.amount - 14.0 * 1.15 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 1.15 * times);
     assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::Melee));
     let level_five = stand(&mut room, ::foes::Role::Brute, 5, -40.0);
@@ -94,7 +94,8 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
     let foe_blow = combat::judge::swing_blow(level_five, room.fighter(level_five).expect("standing"), &attack, player);
     let struck = room.empower(foe_blow, player).damage;
     let times = gear::power::on_player(room.player(player).expect("in").character.defense(), 1, 5);
-    assert!((struck - foe_blow.damage * times).abs() < 1e-9 && times > 2.0, "and the foe strikes them twice as hard");
+    let eased = foe_blow.damage * times * crate::power::FOE_HARM;
+    assert!((struck - eased).abs() < 1e-9 && times > 2.0, "and the foe strikes them twice as hard as it would");
 }
 
 #[test]

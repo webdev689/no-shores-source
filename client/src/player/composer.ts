@@ -15,6 +15,9 @@ export interface Composer {
   compose(key: string, job: ComposeJob, haste: Haste): Promise<ComposedCard | null>;
   /** A frame under way that is now shown goes ahead of every frame not shown. */
   hurry(key: string): void;
+  /** Fetches the strips at `paths` ahead of any frame that needs them: a dress's every move as its figure first
+   *  shows, so a move first played is not held up by the network. */
+  prefetch(paths: readonly string[]): void;
 }
 
 /** Composes on the page's own thread, each frame as its strips come: for tests, and where no worker can start. */
@@ -35,6 +38,10 @@ export class PageComposer implements Composer {
   }
 
   hurry(): void {}
+
+  /** Nothing: on the page each strip is fetched as its first frame asks, which only tests and a page with no worker
+   *  do. */
+  prefetch(): void {}
 }
 
 interface Sent {
@@ -111,6 +118,15 @@ export class WorkerComposer implements Composer {
     if (!this.worker || id === undefined || !sent || sent.haste === 'now') return;
     sent.haste = 'now';
     const message: ComposeMessage = { kind: 'hurry', id };
+    this.worker.postMessage(message);
+  }
+
+  prefetch(paths: readonly string[]): void {
+    if (!this.worker) return;
+    const message: ComposeMessage = {
+      kind: 'fetch',
+      where: Object.fromEntries(paths.map((path) => [path, this.where(path)])),
+    };
     this.worker.postMessage(message);
   }
 
