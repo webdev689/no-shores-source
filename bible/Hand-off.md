@@ -194,20 +194,23 @@ Where the work stands now, for the next session. Each session rewrites this note
   the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
   a click starts the intro over the cloud at first light.
 
+- **The prologue's follow-ups and the sea's sounds**, on `main` (#94), merged and deployed with the owner's yes: the
+  title's prompt no longer stays over the storm and creation once begun; the intro goes straight to Saltmere
+  ([[The Intro Goes Straight to Saltmere]]), about 25 s; the story's sea fight sails in the story's wind, not the
+  world's; and all 27 sounds of the sea are the owner's Freesound picks, the sea fight's guns, hits, splashes and
+  break-ups new. Tested live, headless: the intro rises at first light over the cloud, the title over Saltmere asks to begin,
+  and a key hides the prompt.
+
 ## Waiting on the owner
 
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
-- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
-  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
-  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
-  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
-- **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): all 27, the open sea's, the
-  story's, the sea fight's (new) and the shore's, are the owner's picks from the sea sound sheet,
-  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each
-  cue's Freesound number), published on R2 and in `content/audio/sounds.json`. The seven long beds play their
-  steadiest minute, mono. Not yet: any of them heard in the game, or their level judged by ear. The main sound sheet
-  (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
+- **The sea's 27 recordings, by ear**: the owner's picks play in the game now
+  ([[The Sea's Sounds Come From Freesound]]), from the sea sound sheet,
+  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each cue's
+  Freesound number). Not yet heard in the game: their levels, and the minute each of the seven long beds plays, wait
+  on the owner's ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the
+  sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
