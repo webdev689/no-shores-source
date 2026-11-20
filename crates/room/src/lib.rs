@@ -21,6 +21,7 @@ pub mod flotsam;
 mod foes;
 mod garrison;
 pub mod harbour;
+pub mod island;
 mod judging;
 pub mod patrol;
 mod perks;
@@ -142,6 +143,7 @@ pub struct Room {
     pub(crate) ashore: companions::Ashore,
     /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
     pub day: u64,
+    pub(crate) isle: Option<island::Isle>,
 }
 
 impl Room {
@@ -204,6 +206,7 @@ impl Room {
             patrol: None,
             ashore: companions::Ashore::default(),
             day: 0,
+            isle: None,
         }
     }
 

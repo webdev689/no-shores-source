@@ -5,6 +5,7 @@ the token itself. The publishers import this; it does nothing run alone.
 import hashlib
 import os
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -37,7 +38,13 @@ def put(data, folder, extension, kind):
     key = f'{folder}/{hashlib.sha256(data).hexdigest()}.{extension}'
     if fetch('HEAD', PUBLIC + key)[0] == 200:
         return key
-    status, body = fetch('PUT', API + key, data, kind, signed=True)
+    # Cloudflare answers a passing fault of its own with a 5xx that asks to try again, as a dropped line answers none.
+    for wait in (5, 20, 60, None):
+        status, body = fetch('PUT', API + key, data, kind, signed=True)
+        if status == 200 or not (status == 0 or status >= 500) or wait is None:
+            break
+        print(f'upload of {key} answered {status}; trying again in {wait} s', flush=True)
+        time.sleep(wait)
     if status != 200:
         sys.exit(f'upload of {key} refused ({status}): {body[:300]!r}')
     print(f'uploaded {key} ({len(data) / 2 ** 20:.1f} MiB)', flush=True)

@@ -52,6 +52,8 @@ export const ASKS = {
    *  the fragment's place in its Art's list (0 to 5) in `node`. */
   wearArt: 40,
   setCore: 41,
+  /** A sea island's wreck scavenged, by its place in the island's list in `node`. */
+  scavenge: 63,
 } as const;
 
 /** An ask of a player's gear: what, and what it names: an item or Vestige by the player's number for it, a slot, a

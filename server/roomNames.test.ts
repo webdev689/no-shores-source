@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { nodeRoom, seaRoom } from './roomNames.ts';
+import { isleRoom, nodeRoom, seaRoom, seaRoomName } from './roomNames.ts';
 
 test('a node has one room at each difficulty, by one spelling each', () => {
   assert.deepEqual(nodeRoom('tidewall'), { id: 'tidewall', seas: 0 });
@@ -21,4 +21,21 @@ test('the sea has one room at each difficulty: sea, sea--elite and sea--abyss', 
   assert.equal(seaRoom('sea--normal'), null, 'Normal is the plain name');
   assert.equal(seaRoom('sea--abyss--1'), null, 'no fresh copies');
   assert.equal(seaRoom('node-sea'), null);
+  assert.deepEqual(
+    [0, 1, 2].map((seas) => seaRoom(seaRoomName(seas))),
+    [0, 1, 2],
+    'each name reads back',
+  );
+});
+
+test("an island's room is named by its number and its whole seed, one spelling each", () => {
+  assert.deepEqual(isleRoom('5-00000000000000ff'), { id: 5, seed: '255', seas: 0 });
+  assert.deepEqual(isleRoom('12-ffffffffffffffff'), { id: 12, seed: '18446744073709551615', seas: 0 });
+  assert.equal(isleRoom('5-ff'), null, 'the seed is always 16 digits');
+  assert.equal(isleRoom('05-00000000000000ff'), null, 'no leading zero');
+  assert.equal(isleRoom('0-00000000000000ff'), null);
+  assert.equal(isleRoom('5000000000-00000000000000ff'), null, 'past 32 bits');
+  assert.equal(isleRoom('5-00000000000000FF'), null);
+  assert.deepEqual(isleRoom('5-00000000000000ff--abyss'), { id: 5, seed: '255', seas: 2 }, "the abyss sea's island");
+  assert.equal(isleRoom('5-00000000000000ff--normal'), null, 'Normal is the plain name');
 });

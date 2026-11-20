@@ -142,6 +142,7 @@
       #map,
       #overlay,
       #land,
+      #isles,
       #land-overlay {
         position: absolute;
         inset: 0;
@@ -169,11 +170,13 @@
       <nav id="modes" class="row"></nav>
       <div id="continents-panel"></div>
       <div id="land-panel" hidden></div>
+      <div id="isles-panel" hidden></div>
     </aside>
     <main>
       <canvas id="map"></canvas>
       <svg id="overlay"></svg>
       <canvas id="land" hidden></canvas>
+      <canvas id="isles" hidden></canvas>
       <svg id="land-overlay" hidden></svg>
     </main>
     <script type="module" src="/src/editorPage.ts"></script>

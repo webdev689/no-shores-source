@@ -23,6 +23,8 @@ import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { type Landfall, landfallOf, pictureAt, roomWords, shownScale } from './seaLaw.ts';
+import { isleOff, isleWords, keptClear } from './isleLaw.ts';
+import type { Isles } from './isles.ts';
 import { SeaShots } from './seaShots.ts';
 
 /** The Overworld is not to scale: the Sloop is drawn this long, metres, so one reads from the raised view, and every
@@ -36,6 +38,8 @@ const SHIP_DRAWN_M = 75;
  * there is shown.
  */
 export class Sea {
+  /** The sea's islands as the page holds them: offered to land at, and kept clear of by every voyage. */
+  isles: Isles | null = null;
   private landmass: Landmass;
   /** Her waterline, and what draws a fight's marks; how many times her size every ship is drawn on the sea's view;
    *  each ship's rig by who sails her. */
@@ -97,6 +101,7 @@ export class Sea {
     ];
     this.scale = SHIP_DRAWN_M / hull.waterline.lengthM;
     this.passage = new Passage(outlines, () => this.landmass.mask, start, heading);
+    this.passage.keepClear = () => keptClear(this.isles?.all() ?? []);
     this.shots = new SeaShots(start, heading);
     this.setLandmass(landmass);
   }
@@ -148,6 +153,8 @@ export class Sea {
   /** What the ship is offered off the open landmass's coast: to dock at its port, to go ashore, or nothing. */
   get landfall(): Landfall {
     if (this.shots.view.kind !== 'sail' || this.combat || this.aboard.active) return null;
+    const isle = isleOff(this.position, this.isles?.all() ?? []);
+    if (isle) return { kind: 'isle', id: isle.seen.id, words: isleWords(isle.seen) };
     const offCoast = nearestIsland(this.position, [this.landmass.outline]) !== null;
     const { plan } = this.landmass;
     return landfallOf(this.position, offCoast, portOf(plan));
@@ -238,6 +245,11 @@ export class Sea {
   }
 
   /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
+  /** Sails a course already planned, through each of its points in turn: the way in to an island's anchorage. */
+  sailAlong(points: readonly Point2[]): void {
+    this.passage.sailAlong(points);
+  }
+
   sailTo(point: Point2): void {
     this.chase.stop();
     this.passage.sailTo(point);

@@ -40,9 +40,9 @@ jobs:
           # What the rooms are built from: the crates of `room-wasm` and of the bake, the Workers, the schema's maker,
           # the content they read, the toolchain, the locks and the scripts that deploy, and this workflow.
           ROOMS_CODE: >-
-            crates/bake crates/city crates/combat crates/foes crates/gear crates/land crates/movement crates/naval
+            crates/bake crates/city crates/combat crates/foes crates/gear crates/isle crates/land crates/movement crates/naval
             crates/navmesh crates/protocol crates/reach crates/room crates/room-wasm crates/sailing crates/world
-            server tools/schema.mjs content/world content/testground content/gear content/ships/ships.json
+            server tools/schema.mjs content/world content/islands content/testground content/gear content/ships/ships.json
             Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json .github/workflows/rooms.yml
         run: |
           repo="${{ github.repository }}"

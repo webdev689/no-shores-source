@@ -26,6 +26,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::UseCrate),
         Asked::Gear(Ask::BuyCrate),
         Asked::Gather { node: 2 },
+        Asked::Scavenge { wreck: 3 },
         Asked::Grant(Grant::Vestige { rarity: Rarity::Legendary, slot: Slot::Arms, level: 18 }),
         Asked::Grant(Grant::Named("gullwing".to_owned())),
         Asked::Grant(Grant::Item { kind: Kind::Crossbow, rarity: Rarity::Rare, level: 9 }),

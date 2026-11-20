@@ -24,6 +24,7 @@ pub use snapshot_door::snapshot;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
+mod isle_door;
 mod roster_door;
 mod sea_door;
 mod waters_door;

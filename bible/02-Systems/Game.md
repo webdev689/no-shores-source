@@ -329,6 +329,10 @@ the ship; docking keeps the city's social space among them. A click chooses one;
 Enter, lands there: the player stands at its first spawn, facing inland from the ship, or at a social space out from
 its landmark over the city, as on arriving. Escape flies back down.
 
+Off one of the sea's islands the ship is offered to go ashore on it instead: it sails round to its anchorage and the
+player walks ashore on its beach, into its room ([[Islands]], "On the page"). A player washed up on a found island
+walks ashore there.
+
 ## Rooms
 
 With `?room=` in the address the game plays online (`roomsFrom`): a whole address names a server

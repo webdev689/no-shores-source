@@ -45,6 +45,17 @@ export interface RoomDoor {
   openSea(layoutText: string, seed: number, worldStartS?: number): boolean;
   /** Opens a fleet room on the open sea. */
   openFleet(worldStartS?: number): boolean;
+  /** Opens a sea island's room on the sea's word on it (`seaIsland`); false if the word makes no island. */
+  openIsland(word: string): boolean;
+  /** The open sea's word on its island by its number, as JSON: empty if it does not stand. */
+  seaIsland(id: number): string;
+  /** Holds the open sea's island by its number while players stand ashore: whether it stands. */
+  holdAshore(id: number): boolean;
+  /** An island's plan as JSON in its own frame, and its ground's numbers as `movement::Heights` gives them with its
+   *  middle at `at` in the world, from its seed (a decimal string) and climate: both empty for a climate the islands'
+   *  contract does not dress. */
+  islePlan(seed: string, climate: string): string;
+  isleHeights(seed: string, climate: string, at: readonly [number, number]): Float64Array;
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
@@ -109,6 +120,11 @@ interface RoomExports {
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
+  room_open_island(address: number, length: number): number;
+  room_sea_island(id: number): bigint;
+  room_hold_ashore(id: number): number;
+  room_isle_plan(low: number, high: number, address: number, length: number): bigint;
+  room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
   room_join(): number;
@@ -134,6 +150,12 @@ interface RoomExports {
   room_main_ports(): bigint;
 }
 
+/** A seed's low and high 32 bits, from its decimal string. */
+function halves(seed: string): [number, number] {
+  const whole = BigInt.asUintN(64, BigInt(seed));
+  return [Number(whole & 0xffff_ffffn), Number(whole >> 32n)];
+}
+
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
 export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
   const exports = new WebAssembly.Instance(module, {}).exports as unknown as RoomExports;
@@ -153,6 +175,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     const bytes = new Uint8Array(exports.memory.buffer, address, length).slice();
     exports.release(address, length);
     return bytes;
+  };
+  const openWithAnswer = (entry: (address: number, length: number) => bigint, text: string): bigint => {
+    const bytes = new TextEncoder().encode(text);
+    return lend(bytes, (address) => entry(address, bytes.length));
   };
   const openWith = (entry: (address: number, length: number) => number, text: string): boolean => {
     const bytes = new TextEncoder().encode(text);
@@ -180,6 +206,27 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const opened = exports.room_open_fleet() === 1;
       exports.room_world_start(worldStartS);
       return opened;
+    },
+    openIsland: (word) => openWith(exports.room_open_island, word),
+    seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
+    holdAshore: (id) => exports.room_hold_ashore(id >>> 0) === 1,
+    islePlan: (seed, climate) =>
+      new TextDecoder().decode(
+        take(
+          openWithAnswer((address, length) => {
+            const [low, high] = halves(seed);
+            return exports.room_isle_plan(low, high, address, length);
+          }, climate),
+        ),
+      ),
+    isleHeights: (seed, climate, [x, y]) => {
+      const bytes = take(
+        openWithAnswer((address, length) => {
+          const [low, high] = halves(seed);
+          return exports.room_isle_heights(low, high, x, y, address, length);
+        }, climate),
+      );
+      return new Float64Array(bytes.buffer, bytes.byteOffset, bytes.length / 8);
     },
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),

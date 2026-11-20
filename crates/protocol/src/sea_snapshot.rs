@@ -1,6 +1,6 @@
 //! The sea room's snapshot: every ship at sea, every hostile ship, each player's fight, each player off the helm on her
 //! deck, and what the sea keeps after its fights (what floats, each ship's kept hurts, what each player is told, and
-//! each deck boarded).
+//! each deck boarded), and the islands each player sees or has found.
 
 use crate::{PlayerId, finish_snapshot, messages};
 use movement::Body;
@@ -107,6 +107,15 @@ pub fn sea_snapshot_bytes(
         })
         .collect();
     let decks = Some(builder.create_vector(&each));
+    let each: Vec<_> = harbour
+        .islands
+        .iter()
+        .map(|&IsleSeen { id, seed, at: [x, y], kind, continent, found }| {
+            messages::Isle::create(&mut builder, &messages::IsleArgs { id, seed, x, y, kind, continent, found })
+        })
+        .collect();
+    // None when there are none, so a sea without islands sends the bytes it always did.
+    let islands = (!each.is_empty()).then(|| builder.create_vector(&each));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -117,6 +126,7 @@ pub fn sea_snapshot_bytes(
         kept,
         told,
         decks,
+        islands,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)
@@ -125,13 +135,26 @@ pub fn sea_snapshot_bytes(
 /// What the sea's snapshot carries beside its ships and fights: each piece of what floats (its player, its number,
 /// where it floats and its kind, 0 a crate, 1 a barrel, 2 a chest), each player's ship's kept hurts with the seconds
 /// her repair has left, what each player is told this tick, and each deck boarded (each boarder's number at sea with
-/// theirs on her deck, her hull, and her deck room's snapshot).
+/// theirs on her deck, her hull, and her deck room's snapshot), and the islands the player sees or has found.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SeaHarbour {
     pub flotsam: Vec<(PlayerId, u32, [f64; 2], u8)>,
     pub kept: Vec<(PlayerId, [f64; 3], f64)>,
     pub told: Vec<(PlayerId, Vec<f64>)>,
     pub decks: Vec<SeaDeck>,
+    pub islands: Vec<IsleSeen>,
+}
+
+/// A sea island as a player is told of it: its number and seed, where its middle is, its kind's number, its water's
+/// continent's index, and whether they have found it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct IsleSeen {
+    pub id: u32,
+    pub seed: u64,
+    pub at: [f64; 2],
+    pub kind: u8,
+    pub continent: u8,
+    pub found: bool,
 }
 
 /// A deck boarded as the snapshot carries it: each boarder's number at sea with theirs on her deck, her hull, her deck

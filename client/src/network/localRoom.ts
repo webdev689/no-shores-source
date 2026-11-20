@@ -85,6 +85,24 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot, () => undefined);
   }
 
+  /** Opens a sea island's room from the compiled `room-wasm` module on the sea's word on it (`isleWord`) at the sea's
+   *  difficulty (`seas`, 0 Normal to 2 Abyss), its player joined at the first of its beach's spawns. */
+  static openIsland(
+    module: WebAssembly.Module,
+    word: string,
+    snapshot: (snapshot: Snapshot) => void,
+    seas = 0,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openIsland(word) || !door.difficulty(seas)) throw new Error('the island is not one a room can stand on');
+    return new LocalRoom(door, snapshot, () => undefined);
+  }
+
+  /** The word on its island `id` of the sea this room is, as an island's room opens on it; empty if none stands. */
+  isleWord(id: number): string {
+    return this.door.seaIsland(id);
+  }
+
   send(bytes: Uint8Array<ArrayBuffer>): void {
     this.door.input(this.player, bytes);
   }

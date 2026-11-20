@@ -15,6 +15,7 @@ code:
   - client/src/rules/worldRules.ts#startWorldRules
   - crates/world-wasm/src/lib.rs#check_layout
   - client/src/editor/landEditor.ts#startLandEditor
+  - client/src/editor/isleEditor.ts#startIsleEditor
   - client/src/editor/placeTools.ts#PlaceTools
   - client/src/editor/siteDrawing.ts#siteMarks
   - client/src/terrain/terrainView.ts#TerrainView
@@ -126,6 +127,14 @@ Each landmass's row says when it has unsaved shaping. This browser keeps each la
 redo included, until it is saved, and offers to restore it the first time Land mode opens; Cancel forgets it. If the
 browser cannot keep it, the status says so. To keep shaping done on the site, put the downloaded file in
 `content/world/land/` through a pull request, or hand it to Claude.
+
+## Islands mode
+
+The Islands mode shows one of the sea's islands at a time, from a seed and a climate, built through the page's
+`room.wasm` exactly as its room builds it and drawn with the sea round it ([[Island Drawing]]). Next seed steps the
+seed; Next isle steps to the next ruin or quarry; Close up looks from about 40 m over its middle and From 3 km from
+afar. The panel counts the triangles and draws. `?mode=islands&isleSeed=<seed>&isleClimate=<climate>&isleView=afar`
+opens on an island, and `?islePacks=<prefix>` reads the build's packs before they are published.
 
 ## How it works
 

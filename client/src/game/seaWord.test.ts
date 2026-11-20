@@ -71,3 +71,19 @@ test('washed up, the player walks into the social space of the port city she was
   assert.equal(washedUpWords('Sunspire'), 'You washed up at Sunspire; your ship lies at its roadstead.');
   assert.equal(word.ashore({ id: 'continent-3', nodes }), null, 'taken once');
 });
+
+test('washed up on a found island, the player is told so and walks ashore there, taken once', () => {
+  const lines = linesOf([[20, 100, -1, 1, 9]], [], { kinds: new Map(), ports: ['Overlook'], nameOf: () => null });
+  assert.deepEqual(lines, [
+    `Your ship went down: ${washedUpWords('an island you found', true).replace(/^You/, 'you')}`,
+  ]);
+  const word = new SeaWord([], FACTS);
+  const room = {
+    flotsam: [],
+    takeTold: () => ({ naval: [], told: [[20, 100, -1, 1, 9]] }),
+    shipNamed: () => null,
+  } as unknown as Parameters<SeaWord['step']>[0];
+  word.step(room);
+  assert.equal(word.takeWashedIsle(), 9);
+  assert.equal(word.takeWashedIsle(), null);
+});

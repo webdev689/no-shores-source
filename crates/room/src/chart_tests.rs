@@ -16,7 +16,7 @@ fn the_chart_reads_each_water_its_band_and_refuses_a_step_into_home_waters() {
     let layout = layout();
     let charted = Charted::new(&layout, &[]);
     let coasts = Coast::of(&layout);
-    let chart = SeaChart { coasts: &coasts, charted: &charted };
+    let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
     let home = chart.water([250_000.0, 150_000.0]).unwrap();
     assert_eq!((home.holder, home.levels), (Holder::Home, Some((1, 4))));
     let pirates = chart.water([350_000.0, 150_000.0]).unwrap();
@@ -36,7 +36,7 @@ fn a_lane_is_the_nearest_leg_and_the_way_it_runs() {
     let mut charted = Charted::new(&layout, &[]);
     charted.lanes = vec![[[300_000.0, 0.0], [300_000.0, 100_000.0]], [[0.0, 300_000.0], [100_000.0, 300_000.0]]];
     let coasts = Coast::of(&layout);
-    let chart = SeaChart { coasts: &coasts, charted: &charted };
+    let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
     assert_eq!(chart.lane([310_000.0, 50_000.0]), Some((10_000.0, [0.0, 1.0])));
     assert_eq!(chart.lane([300_000.0, 130_000.0]), Some((30_000.0, [0.0, 1.0])), "past the leg's end");
 }
@@ -48,7 +48,7 @@ fn the_worlds_sea_opened_with_its_ports_sends_tithe_ships_along_its_lanes() {
     let charted = Charted::new(&layout, &ports);
     assert!(!charted.lanes.is_empty(), "the lanes between the port cities");
     let coasts = Coast::of(&layout);
-    let chart = SeaChart { coasts: &coasts, charted: &charted };
+    let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
     // A point of a lane in the Grey Tithe's waters, 20 km off it.
     let on_lane = charted.lanes.iter().map(|leg| leg[0]).find(|&at| {
         chart.water(at).is_some_and(|water| water.holder == Holder::GreyTithe) && chart.coast(at) > 30_000.0
@@ -84,7 +84,7 @@ fn a_bold_ship_coming_for_a_player_in_home_waters_follows_their_edge_round_rathe
     let (layout, ports) = crate::measure_tests::world();
     let charted = Charted::new(&layout, &ports);
     let coasts = Coast::of(&layout);
-    let chart = SeaChart { coasts: &coasts, charted: &charted };
+    let chart = SeaChart { coasts: &coasts, charted: &charted, islands: &[] };
     let holder = |at: [f64; 2]| chart.water(at).map(|water| water.holder);
     // The edge of Overlook's home waters on a line due east: home water, then another holder's, 1 km on.
     let edge = (0..4_000)

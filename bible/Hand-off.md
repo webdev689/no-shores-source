@@ -204,12 +204,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The held map tinted by holder, each water's name coloured by its difficulty; the tiers renamed Normal, Elite and
     Abyss.
 
-- Ships' own power, modules and crew, on pull request #99 (branch `claude/ship-power`, into #75), tested offline and
-  not yet merged ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Ship Power]], [[Crew]]):
-  a ship's level, Attack, Defense and Prestige by the character's law; four modules with the gear's grid, ship
-  materials, salvage, the Shipwright and infusion; officers at posts that change its fight, ashore as companions,
-  recruited at a pledged faction's counter or taken from won decks; ten hands who load its guns and board with the
-  player. The sea's fights measured by ship level are in #99's description.
+- Ships' own power, modules and crew, from pull request #99, merged into #75's branch and tested offline
+  ([[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]], [[Ship Power]], [[Crew]]): a ship's level,
+  Attack, Defense and Prestige by the character's law; four modules with the gear's grid, ship materials, salvage, the
+  Shipwright and infusion; officers at posts that change its fight, ashore as companions, recruited at a pledged
+  faction's counter or taken from won decks; ten hands who load its guns and board with the player. The sea's fights
+  measured by ship level are in #99's description.
+- The sea's procedural [[Islands]], from draft PR #101, merged into #75's branch and tested offline: coves
+  and rarer guarded isles built from a seed by the `isle` crate (the same bits natively and in the page), dressed with
+  95 Blender modules ([[Island Modules]]) and drawn by the islands layer ([[Island Drawing]]), with a World Editor
+  Islands mode; rolled by each tier's sea room in hostile waters, sighted, found, marked on the held map, faded; landed
+  on through an `isle-<number>-<seed>` room; wrecks paid out through the ship's salvage; a beaten player washing up at
+  a found island.
 
 ## Waiting on the owner
 
@@ -293,6 +299,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
+  `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
+  islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
+  its own height, turn and size); pictures of the landfall offer, E's prompts and washing up in the game itself (staging at sea
+  headless outran its budget here); the packs' manifest, content/islands/modules.json, committed from the
+  island-modules run's log once it publishes.
 - **The sea after #75**: the friendly ships' port factions (deferred by the owner); ships' own upgrade materials,
   planned only ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]); the sky and light
   following the weather; the long contested hold, to explain. #82's decisions (the owner's loop) wait to be built

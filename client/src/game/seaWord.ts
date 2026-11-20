@@ -49,8 +49,9 @@ function heldWords(rarity: number, ammoBox: number, ammoCrate: number): string {
   return parts.length > 0 ? parts.join(', ') : 'nothing you had room for';
 }
 
-/** Washing up at `port`, said one way wherever it is said. */
-export function washedUpWords(port: string): string {
+/** Washing up at `port`, or at an island the player found (`isle`), said one way wherever it is said. */
+export function washedUpWords(port: string, isle = false): string {
+  if (isle) return `You washed up at ${port}; your ship lies off it, unrepaired.`;
   return `You washed up at ${port}; your ship lies at its roadstead.`;
 }
 
@@ -78,9 +79,11 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
   for (const numbers of told) {
     const [code, , first = 0, second = 0, third = 0, fourth = 0] = numbers;
     if (code === TOLD.WASHED_UP) {
-      const port = words.ports[first] ?? 'the nearest port city';
       const why = second === 1 ? 'Your ship went down' : 'Beaten aboard her';
-      lines.push(`${why}: ${washedUpWords(port).replace(/^You/, 'you')}`);
+      // An island they found is told by its number after the rest; a port city by its place among the ports.
+      const isle = (numbers[4] ?? 0) > 0;
+      const place = isle ? 'an island you found' : (words.ports[first] ?? 'the nearest port city');
+      lines.push(`${why}: ${washedUpWords(place, isle).replace(/^You/, 'you')}`);
     } else if (code === TOLD.HELD) {
       lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: ${heldWords(second, third, fourth)}.`);
     } else if (code === TOLD.JOINED) {
@@ -102,8 +105,10 @@ export class SeaWord {
   private readonly kinds = new Map<number, string>();
   private readonly ports: readonly PortCity[];
   private readonly facts: SeaFacts;
-  /** The port city the player washed up at, by the sea's number, until they walk ashore there. */
+  /** The port city the player washed up at, by the sea's number, until they walk ashore there; or the found island
+   *  they washed up on, by its number. */
   private washed: number | null = null;
+  private washedIsle: number | null = null;
   private latest: { readonly line: string; readonly at: number } | null = null;
 
   /** `ports` the port cities in the sea's order; `facts` the sea's rules as its waters' table gives them. */
@@ -116,7 +121,11 @@ export class SeaWord {
     for (const piece of room.flotsam) this.kinds.set(piece.id, piece.kind);
     const { naval, told } = room.takeTold();
     for (const event of naval) if (event.kind === 'Flotsam') this.kinds.set(event.id, event.kind_of);
-    for (const numbers of told) if (numbers[0] === TOLD.WASHED_UP) this.washed = numbers[2] ?? null;
+    for (const numbers of told) {
+      if (numbers[0] !== TOLD.WASHED_UP) continue;
+      const isle = numbers[4] ?? 0;
+      [this.washed, this.washedIsle] = isle > 0 ? [null, isle] : [numbers[2] ?? null, null];
+    }
     const ports = this.ports.map((port) => port.name);
     return linesOf(told, naval, { kinds: this.kinds, ports, nameOf: (ship) => room.shipNamed(ship) });
   }
@@ -141,6 +150,13 @@ export class SeaWord {
     if (!node) return null;
     this.washed = null;
     return { node, washUp: { kind: 'wash-up', node: node.id, words: washedUpWords(port.name) } };
+  }
+
+  /** The found island the player washed up on, by its number, taken once. */
+  takeWashedIsle(): number | null {
+    const isle = this.washedIsle;
+    this.washedIsle = null;
+    return isle;
   }
 
   /** Her repair as Manage offers it, from the room's word on her kept hurts. */

@@ -78,6 +78,11 @@ export interface FrameParts {
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
   readonly mapOf: () => HeldMap;
+  /** The sea's islands kept, shown and walked ashore on, each frame; their drawer; and the ground the camera keeps
+   *  over, the islands' with the land's. */
+  readonly isleFrame: () => void;
+  readonly isles: Drawer;
+  readonly groundAt: (x: number, y: number) => number | null;
 }
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
@@ -89,7 +94,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   /** The drawers that stand on the open landmass this frame (`standingDrawers`). */
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
     standingDrawers(
-      { ...playing.drawers, shipModels: parts.shipModels, figureView: parts.figureView, seaFight: playing.sea?.fight },
+      {
+        ...playing.drawers,
+        isles: parts.isles,
+        shipModels: parts.shipModels,
+        figureView: parts.figureView,
+        seaFight: playing.sea?.fight,
+      },
       ships,
       figures,
       fight,
@@ -114,7 +125,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
+    parts.isleFrame();
+    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
     const fleet = traffic.onFoot(shown.shot.eye, parts.waterHere(), seconds, clock);
     const more = { after: hands, hulls: fleet.hulls };
     scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, shown.figures, fight), more);
@@ -204,6 +216,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
+    parts.isleFrame();
     const ashore = flow.mode === 'sea' ? seaWord?.ashore(landmass) : null;
     if (ashore)
       parts.travel(ashore.washUp, () =>

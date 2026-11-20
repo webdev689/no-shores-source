@@ -217,6 +217,12 @@ will take it, by the room's own tick.
   once the steps the clock allows by then are taken; a bold pirate that meets them calls them to it at once.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
+- **Islands.** The sea rolls its procedural islands near players' ships in hostile waters, tells each player those
+  within 20 km of their ship and those they found, keeps every course and hostile ship off their coasts, and lets each
+  fade ten minutes after nothing holds it ([[Islands]]). An island's room is `isle-<number>-<seed>`: the host opens it
+  only on the `sea` room's word that the island stands with that seed (a call between the two Durable Objects), and
+  while players stand ashore it tells the sea each minute, so the island is held under them.
+
 ## A fleet
 
 A room named `fleet-<name>` is a place at sea at true scale, on the open sea under the world's swell ([[Sailing]]),

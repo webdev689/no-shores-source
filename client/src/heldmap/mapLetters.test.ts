@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Lettering } from './mapLayout.ts';
 import { INK } from './mapKey.ts';
-import { fontOf, LIGHT_INK, paintLettering, type Painter, PARCHMENT } from './mapLetters.ts';
+import { COVE_HALF, fontOf, ISLE_HALF, LIGHT_INK, paintLettering, type Painter, PARCHMENT } from './mapLetters.ts';
 import { levelColour } from './watersWash.ts';
 
 /** A 2D context that records what is painted, each word 6 pixels a letter wide. */
@@ -149,4 +149,30 @@ test('the held map letters in its ink pass, which is drawn before the gauntlets'
   assert.ok(ink > 0 && hands > ink, 'the hands are drawn after the ink and its words');
   const map = await readFile(new URL('./heldMap.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(map, /held-mark|held-ship/, 'no word or mark is a page element over the picture');
+});
+
+test('a found cove is inked a small ring and an isle a wider ring with a tower, under the words', () => {
+  const { painter, calls } = recorder();
+  const isles = [
+    { x: 40, y: 60, isle: false },
+    { x: 70, y: 90, isle: true },
+  ];
+  paintLettering(painter, { width: 800, height: 500 }, { x: 0, y: 0 }, 1, { ...LETTERING, key: null }, isles);
+  const moved = calls.filter((call) => call.name === 'translate').map((call) => call.args);
+  assert.deepEqual(moved.slice(0, 2), [
+    [40, 60],
+    [70, 90],
+  ]);
+  const rings = calls.filter((call) => call.name === 'arc').slice(0, 2);
+  assert.deepEqual(
+    rings.map((call) => [call.args[2], call.fillStyle]),
+    [
+      [COVE_HALF, LIGHT_INK],
+      [ISLE_HALF, LIGHT_INK],
+    ],
+  );
+  assert.ok(COVE_HALF < ISLE_HALF);
+  const firstWord = calls.findIndex((call) => call.name === 'fillText');
+  const towers = calls.filter((call, index) => call.name === 'fillRect' && index < firstWord);
+  assert.equal(towers.length, 4, 'one tower, its body and three merlons, for the one isle');
 });

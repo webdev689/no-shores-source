@@ -71,9 +71,9 @@ varied across the continent into other biomes. Which biome each continent is: [[
   charted ground and the isles they have found, and tells a client about an isle only once that player has found it
   or is close enough to see it, so a hidden isle cannot be read out of the client. For now the [[Held Map]] keeps what
   a player has discovered in their browser, and the client holds every continent's outline.
-- **Discoveries** are rolled by the server in the open sea between landmasses: a place and a seed. Every client near
-  one generates the same island from the seed, as DFO's spawned dungeons are shared. The server lets one go a while
-  after the last player leaves.
+- **Discoveries** are rolled by the server in the open sea of hostile waters: a place and a seed. Every client near
+  one generates the same island from the seed, as DFO's spawned dungeons are shared. The server lets one go ten
+  minutes after the last player leaves. How they are rolled, built, landed on and scavenged: [[Islands]].
 
 ## Seen whole, reached by nodes
 

@@ -99,19 +99,21 @@ pub(crate) struct Coast {
 }
 
 impl Coast {
+    /// A coast round a ring of points, with its bounds.
+    pub(crate) fn ring(ring: Vec<Point>) -> Coast {
+        let (xs, ys) = (ring.iter().map(|point| point.x), ring.iter().map(|point| point.y));
+        let (west, east) = (xs.clone().min().unwrap_or(0), xs.max().unwrap_or(0));
+        let (north, south) = (ys.clone().min().unwrap_or(0), ys.max().unwrap_or(0));
+        Coast { ring, west, north, east, south }
+    }
+
     /// Each continent's coast of a layout that has three corners or more.
     pub(crate) fn of(layout: &Layout) -> Vec<Coast> {
-        let coast = |ring: &Vec<Point>| {
-            let (xs, ys) = (ring.iter().map(|point| point.x), ring.iter().map(|point| point.y));
-            let (west, east) = (xs.clone().min().unwrap_or(0), xs.max().unwrap_or(0));
-            let (north, south) = (ys.clone().min().unwrap_or(0), ys.max().unwrap_or(0));
-            Coast { ring: ring.clone(), west, north, east, south }
-        };
         layout
             .continents
             .iter()
             .filter(|continent| continent.outline.len() >= 3)
-            .map(|continent| coast(&continent.outline))
+            .map(|continent| Coast::ring(continent.outline.clone()))
             .collect()
     }
 }
@@ -155,6 +157,7 @@ pub struct Sea {
     clashes: Vec<Clash>,
     harbour: crate::harbour::Harbour,
     decks: decks::Decks,
+    islands: islands::Islands,
 }
 
 /// A point to the nearest whole metre, or None for one that is not a number or lies outside the world's frame.
@@ -187,6 +190,10 @@ impl Sea {
                 ..Default::default()
             },
             decks: decks::Decks::default(),
+            islands: islands::Islands::new(
+                seed,
+                layout.continents.iter().map(|continent| continent.climate.clone().unwrap_or_default()).collect(),
+            ),
         }
     }
 
@@ -203,6 +210,7 @@ impl Sea {
         self.stop_repair(player);
         self.leave_decks(player);
         self.harbour.forget(player);
+        self.islands.forget(player);
         self.berths.remove(&player);
         self.fights.leave(player);
         self.aboard.remove(&player);
@@ -294,9 +302,7 @@ impl Sea {
         };
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
-        if path.iter().any(|&point| on_land(&self.coasts, point))
-            || path.windows(2).any(|leg| leg_meets_land(&self.coasts, leg[0], leg[1]))
-        {
+        if self.crosses_land(&path) {
             return Err(CourseRefused::CrossesLand);
         }
         self.stop_repair(player);
@@ -393,6 +399,7 @@ impl Sea {
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS * berth.kept[1].max(0.5));
         }
         self.tick_harbour();
+        self.tick_islands();
         self.fights.fit(&self.harbour.characters);
         let (outcomes, sank) = self.fights.step(&self.coasts, time);
         self.after_fights(outcomes, &sank);
@@ -412,7 +419,8 @@ impl Sea {
                 hull: self.berths.get(&player).map_or(1.0, |berth| berth.kept[0]),
             })
             .collect();
-        let chart = SeaChart { coasts: &self.coasts, charted: &self.chart };
+        let islands: Vec<&Coast> = self.islands.coasts().collect();
+        let chart = SeaChart { coasts: &self.coasts, charted: &self.chart, islands: &islands };
         let mut met = self.pirates.tick(TICK_SECONDS, &ships, &chart);
         ports::wary_meet(&mut self.pirates, &self.berths, &ships, &mut met);
         let mut heave = |player| heave_to((&mut self.berths, &mut self.aboard, &mut self.harbour), player);
@@ -492,9 +500,9 @@ fn heave_to(
 }
 
 /// Whether a point lies on a continent.
-pub(crate) fn on_land(coasts: &[Coast], point: Point) -> bool {
+pub(crate) fn on_land<'coast>(coasts: impl IntoIterator<Item = &'coast Coast>, point: Point) -> bool {
     coasts
-        .iter()
+        .into_iter()
         .filter(|coast| {
             coast.west <= point.x && coast.east >= point.x && coast.north <= point.y && coast.south >= point.y
         })
@@ -503,11 +511,11 @@ pub(crate) fn on_land(coasts: &[Coast], point: Point) -> bool {
 
 /// Whether a leg between two points meets a coast. A leg that never enters a coast's box, though its own box overlaps
 /// it (a long leg passing a continent's corner), is told so by the box's four sides, not the coast's thousands.
-pub(crate) fn leg_meets_land(coasts: &[Coast], from: Point, to: Point) -> bool {
+pub(crate) fn leg_meets_land<'coast>(coasts: impl IntoIterator<Item = &'coast Coast>, from: Point, to: Point) -> bool {
     let (west, east) = (from.x.min(to.x), from.x.max(to.x));
     let (north, south) = (from.y.min(to.y), from.y.max(to.y));
     coasts
-        .iter()
+        .into_iter()
         .filter(|coast| coast.west <= east && coast.east >= west && coast.north <= south && coast.south >= north)
         .filter(|coast| leg_enters_box(coast, from, to))
         .any(|coast| edges(&coast.ring).any(|edge| segments_meet((from, to), edge)))
@@ -575,6 +583,8 @@ fn sail(sailing: &mut Sailing, distance: f64) {
 
 #[path = "sea_decks.rs"]
 pub mod decks;
+#[path = "sea_islands.rs"]
+pub mod islands;
 #[path = "sea_ports.rs"]
 mod ports;
 

@@ -15,7 +15,8 @@ import {
 } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
-import { type SeenDeck, type SeenFlotsam, type SeenKept, TOLD } from '../network/seaHarbour.ts';
+import { LocalRoom } from '../network/localRoom.ts';
+import { type SeenDeck, type SeenFlotsam, type SeenIsle, type SeenKept, TOLD } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pace } from '../overworld/voyage.ts';
 import type { FightEvent, FightOrders, FightView } from '../rules/fightRules.ts';
@@ -59,6 +60,8 @@ export class SeaRoom {
   kept: SeenKept | null = null;
   flotsam: readonly SeenFlotsam[] = [];
   deck: SeenDeck | null = null;
+  /** The islands the room tells the player of: those in sight of their ship, and those they have found. */
+  islands: readonly SeenIsle[] = [];
   /** What each snapshot of the deck the player stands on goes to: the page's fight on her deck, once it stands. */
   hearDeck: ((snapshot: Snapshot) => void) | null = null;
   /** Where the room moored the player's ship once they washed up (crates/room/src/harbour.rs), until it is taken. */
@@ -125,6 +128,7 @@ export class SeaRoom {
     this.words += 1;
     this.kept = snapshot.kept.find((kept) => kept.player === this.own) ?? null;
     this.flotsam = snapshot.flotsam.filter((piece) => piece.player === this.own);
+    this.islands = snapshot.islands;
     this.deck = snapshot.decks.find((deck) => deck.aboard.some(([player]) => player === this.own)) ?? null;
     const onDeck = this.deck && this.hearDeck ? readFromRoom(this.deck.snapshot) : null;
     if (onDeck?.kind === 'snapshot') this.hearDeck?.(onDeck);
@@ -154,6 +158,12 @@ export class SeaRoom {
   private moor(snapshot: Snapshot): void {
     const moored = snapshot.ships.find((ship) => ship.player === this.own);
     if (moored) this.washedAt = { x: moored.x, y: moored.y, heading: moored.heading };
+  }
+
+  /** The sea's word on its island `id`, as an island's room opens on it: a sea in the page tells it; a server's sea
+   *  tells the island's own room, so the page is told nothing. */
+  isleWord(id: number): string | null {
+    return this.link instanceof LocalRoom ? this.link.isleWord(id) || null : null;
   }
 
   /** Where the room moored the player's ship once they washed up, taken once. */
