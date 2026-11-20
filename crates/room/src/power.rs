@@ -1,9 +1,10 @@
 //! What gear's power does in the room: a player's blow on a foe rises with the Attack of the weapon that struck it up
-//! to the foe's level and falls away below it, and a foe's blow on a player falls short of their Defense. A foe of
-//! level 0 fights by combat's own numbers. A player holds only what a loadout they wear puts in their hands. A foe's
-//! kill pays
-//! everyone who struck it in its last seconds, each their own XP, Aurem and what it drops for them alone (`drops.rs`),
-//! and counts toward their bounties (`bounties.rs`).
+//! to the foe's level and falls away below it, and a foe's blow on a player falls short of their Defense. Every
+//! player's blow on a foe strikes `PLAYER_HARM` times that, and every foe's on a player `FOE_HARM` times; a foe of
+//! level 0 fights by combat's own numbers and those two alone. A player holds only what a loadout they wear puts in
+//! their hands. A foe's kill pays everyone who struck it in its last seconds, each their own XP, Aurem and what it
+//! drops for them alone (`drops.rs`), and counts
+//! toward their bounties (`bounties.rs`).
 
 use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
@@ -12,6 +13,13 @@ use combat::judge::{Blow, BlowKind};
 use gear::objectives::Feat;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
+
+/// What a player's blow on a foe strikes times, at every level: twice, so a new player fells a Minor in one or two
+/// blows and a Major Brute in five, well before the Brute fells them.
+pub const PLAYER_HARM: f64 = 2.0;
+/// What a foe's blow on a player strikes times, at every level: half, so a Major Brute takes six or seven blows to
+/// fell a player who never guards, and a fight leaves time to learn the keys.
+pub const FOE_HARM: f64 = 0.5;
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
 /// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
@@ -138,12 +146,12 @@ impl Room {
     pub(crate) fn empower_as(&self, blow: Blow, defender: FighterId, held: Option<Loosed>) -> Blow {
         let times = match (held, self.players.get(&blow.striker), self.foes.get(&defender)) {
             (Some(held), Some(striker), Some(foe)) => {
-                gear::power::by_player(held.attack, striker.character.level(), foe.level)
+                gear::power::by_player(held.attack, striker.character.level(), foe.level) * PLAYER_HARM
             }
             _ => match (self.foes.get(&blow.striker), self.players.get(&defender)) {
                 (Some(foe), Some(player)) => {
                     let character = &player.character;
-                    gear::power::on_player(character.defense(), character.level(), foe.level)
+                    gear::power::on_player(character.defense(), character.level(), foe.level) * FOE_HARM
                 }
                 _ => 1.0,
             },

@@ -52,21 +52,51 @@ async function decode(bytes: ArrayBuffer, type: string): Promise<Strip> {
   return { width: canvas.width, height: canvas.height, data };
 }
 
+/** Two pictures lying side by side in one pack, as a strip and its depth do, as one range: where it lies, which of
+ *  the two comes first, and how many of its bytes are the first's. Null for two that do not touch. */
+export function joinedRange(
+  one: StripWhere,
+  other: StripWhere,
+): { readonly where: StripWhere; readonly oneFirst: boolean; readonly split: number } | null {
+  if (one.url !== other.url || one.type !== other.type) return null;
+  const [oneStart, oneEnd] = rangeOf(one.range);
+  const [otherStart, otherEnd] = rangeOf(other.range);
+  const oneFirst = oneEnd + 1 === otherStart;
+  if (!oneFirst && otherEnd + 1 !== oneStart) return null;
+  const [start, end] = oneFirst ? [oneStart, otherEnd] : [otherStart, oneEnd];
+  const split = oneFirst ? oneEnd - oneStart + 1 : otherEnd - otherStart + 1;
+  return { where: { url: one.url, range: `bytes=${start}-${end}`, type: one.type }, oneFirst, split };
+}
+
+/** A range's first and last byte (`bytes=first-last`). */
+function rangeOf(range: string): readonly [number, number] {
+  const [first = Number.NaN, last = Number.NaN] = range.replace('bytes=', '').split('-').map(Number);
+  return [first, last];
+}
+
 /** How many bytes a range asks for (`bytes=first-last`). */
 export function rangeLength(range: string): number {
   const [first = Number.NaN, last = Number.NaN] = range.replace('bytes=', '').split('-').map(Number);
   return last - first + 1;
 }
 
-/** A picture fetched from where it lies and decoded: on the page or in a worker, which has no pack index of its own. A
- *  cache can hand back a range cut short with no error, so a body shorter than its range is fetched again past it. */
-export async function stripAt(where: StripWhere): Promise<Strip> {
+/** A picture's bytes fetched from where it lies, not yet decoded. A cache can hand back a range cut short with no
+ *  error, so a body shorter than its range is fetched again past it. */
+export async function stripBytes(where: StripWhere): Promise<ArrayBuffer> {
   const wanted = rangeLength(where.range);
   let bytes = await (await fetched(where.url, { headers: { range: where.range } })).arrayBuffer();
   if (bytes.byteLength !== wanted)
     bytes = await (await fetched(where.url, { headers: { range: where.range }, cache: 'reload' })).arrayBuffer();
   if (bytes.byteLength !== wanted) throw new Error(`${where.url} sent ${bytes.byteLength} of ${wanted} bytes`);
-  return decode(bytes, where.type);
+  return bytes;
+}
+
+/** A picture's bytes, fetched as `stripBytes` fetches them, decoded to RGBA. */
+export const decodeStrip = decode;
+
+/** A picture fetched from where it lies and decoded: on the page or in a worker, which has no pack index of its own. */
+export async function stripAt(where: StripWhere): Promise<Strip> {
+  return decode(await stripBytes(where), where.type);
 }
 
 /** The decoded strips the page keeps: the first person's art and a gear screen's figure. A figure's frames in the scene

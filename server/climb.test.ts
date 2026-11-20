@@ -14,7 +14,7 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same course, script and fingerprint
  *  (crates/room-wasm/src/climb_door_tests.rs). */
-const CLIMB_HASH = 'e33e5fe6';
+const CLIMB_HASH = 'cd903ee4';
 /** Ticks east, then north into the ledge and up it, then facing south; the tick the player asks for a swordsman, how
  *  often they swing at it after, and the run's length. */
 const EAST = 40;

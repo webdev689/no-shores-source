@@ -3,8 +3,8 @@
 //! captains who leave.
 
 use super::{
-    DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, STRUCK_GRACE_S, Sailor, carry_of, floats, her_of,
-    sail_hurt, sighting_of,
+    DESPAWN_BEYOND, End, Event, FIGHT_PACE, Fight, HOSTILE_NEAR_M, Hurts, Orders, STRUCK_GRACE_S, Sailor, carry_of,
+    floats, her_of, sail_hurt, sighting_of,
 };
 use crate::arms::LARGE_BOAT;
 use crate::captain::Mode;
@@ -113,7 +113,7 @@ impl Fight {
         let helm = command.her.steer(&her, (&sightings, &traffic), TICK_SECONDS, &is_water);
         // Her rank's way pulls her sails and her oars alike.
         let way = command.her.commission.rank.scale().way;
-        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way };
+        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way * FIGHT_PACE, oars: way * FIGHT_PACE };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, &SLOOP, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, &SLOOP, waters, time);
         let (drop, pitch, roll) = founder(&vessel.damage, command.her.seed, command.under);

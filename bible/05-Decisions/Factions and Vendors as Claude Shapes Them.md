@@ -168,7 +168,7 @@ the daily reset, 09:00 UTC, as the rules count it ([[Interface]]).
 | Played before | A browser that has played the story and holds no mark of the welcome is welcomed on its next arrival; a forgone welcome stays forgone |
 | Ending it | Opening the Lamplighters' counter while she walks ends the welcome there. A player more than 40 m from her for a minute ends the walk: she goes home, and it stays due |
 | Pace | 1.5 m/s, brisker than the townsfolk's 1.25, for a plaza 260 m across; she stops 1.8 m before the player |
-| Marks | The keepers she names show an alert over their heads; the HUD says "Follow" over her name past 6 m and clears it inside 5 m |
+| Marks | No mark over a head, as the owner had every glyph taken off the speech; the HUD says "Follow" over her name past 6 m and clears it inside 5 m |
 | Lines | In the dialogue box, as the epilogue's; the factions are "houses" in her mouth, and her last line invites a pledge without naming it |
 
 ## Appearance and the Art's screen

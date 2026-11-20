@@ -410,7 +410,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     // A page that knows one captain reads the view whole, the same with others in the fight or without them.
     assert_eq!((fight.player(), numbers(fight.view())), (2, numbers(alone.view())));
     let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].1.clone(), numbers(fight.others()).unwrap());
-    assert_eq!((others[0], others.len()), (1.0, 1 + 2 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
+    assert_eq!((others[0], others.len()), (1.0, 1 + 3 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
     assert!(seen.windows(others.len()).any(|part| part == others), "her numbers as the fight's view holds them");
     assert_eq!((alone.player(), numbers(alone.others())), (5, None), "none, as a room from before others sends it");
     let walker = sea.players().unwrap().get(0);

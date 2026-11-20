@@ -63,9 +63,11 @@ phases) is [[Enemies]].
 - **One crate for every machine.** The `foes` crate stands on the `combat` crate's rules. Each tick the room hands a
   foe's brain what it knows (the room's tick and seed, every fighter, the course's blocks, routes and firing spots,
   which the room's [[Navmesh]] gives, and the room's director), and the brain asks its fighter for controls and
-  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. What the room saw
-  happen (a swing begun, a shot loosed, a blow landed on it or by it, its telegraphed blow's landing, a noise, an
-  ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
+  buttons, as a player's keys would, telegraphed blows included; the combat rules carry them out. A brain may drive a
+  fighter on the players' side, as the Brig's crew are ([[Enemies]]): it fights the factions by a foe's rules (its
+  reach, parry window, telegraphed blows and stir), and its telegraphed blows are never judged against a player, nor
+  a player's spells against it. What the room saw happen (a swing begun, a shot loosed, a blow landed on it or by it,
+  its telegraphed blow's landing, a noise, an ally's shout) it tells the brain, which notes it for its next thought. The foes of a room share a board of turns.
   Chance comes from a hash of the room's seed, the tick, the foe and what is being decided, so the same seed plays the
   same fight.
 - **Roles.** Every type of foe fights as one of five roles; its rank scales the role's numbers ([[Enemies]]). Reaction
@@ -81,8 +83,9 @@ phases) is [[Enemies]].
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
-  are made with the power of [[Gear]], its rank's might and its phase's on top. A foe of level 0 has none, and fights
-  by these numbers alone. A garrison's foes stand at their island's levels ([[Enemies]]).
+  are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike twice
+  and its blows on a player half, at every level ([[Gear]], "Blows"). A foe of level 0 has no power, and fights by
+  these numbers and those two alone. A garrison's foes stand at their island's levels ([[Enemies]]).
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
 - **Awareness.** A foe's awareness is one level from 0 to 1, raised each tick by the strongest thing that stirs it, and
@@ -232,9 +235,9 @@ phases) is [[Enemies]].
   that is open to it.
 - **The director.** The room keeps one heat from 0 to 1 for its fight, at rest 0.35. It rises 0.0022 for each point of
   health players take from foes, and of what a foe's shield takes, counted as combat is tuned for (divided by what
-  the foe's level grows its health by, so a matched player heats the fight alike at any level), and 0.09 for each
-  foe they kill, falls 0.006 for each point a player loses (three
-  times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
+  the foe's level grows its health by, so a matched player heats the fight alike at any level, and by the players'
+  `PLAYER_HARM`), and 0.09 for each foe they kill, falls 0.006 for each point a player loses, counted before the foes'
+  `FOE_HARM` (three times as fast), and eases back to rest with a time constant of 6 s. By its heat, the turns: below 0.25 one hand to
   hand and one shooting, from 0.25 two and two, from 0.6 three and two, from 0.85 three and three; a holder keeps its
   turn when they drop. Above 0.6 a bias rising to 0.3 at full heat shortens patience, the swing delay, the beat and
   the ring's gap by its share. A dominating player meets more foes at once; one being beaten, fewer.

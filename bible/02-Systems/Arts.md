@@ -136,7 +136,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   on a keycap under its icon. A spell just cast flashes its frame white for 0.5 s; while the player cannot cast
   (staggered, down or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the
   diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
-  each Tenet's recharge, as shares, and each frame writes only what changed.
+  each Tenet's recharge, as shares, and each frame writes only what changed. With no Art worn it is not shown.
 
 ## In the rules
 
@@ -154,6 +154,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   heals by the share of the Sunwell that gave it, even after its caster leaves. The cards show each number with the
   worn Core folded in, and a fragment's words name its seconds at the level worn. A Test Ground player starts every
   Art at level 5 owning every fragment.
+- **A room without Arts.** A room told to forbid them (`Room::forbid_arts`), as the prologue's wreck is, takes no
+  cast and charges nothing, a kill's share included; no fragment of a Core works; a blow in an Art's element is no
+  more than another; and the player's gear says Art 0, its Anima and Tenets empty.
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
   An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
   already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.
@@ -207,7 +210,7 @@ The numbers are an Art's at level 5.
 - **The snapshot** carries `spells`, left out when there are none: each one's number, kind (its spell's number, or 10
   for a bolt), caster, Art, where it is, where it heads (the Dawnflare's end, Arc Lash's reach ahead), the foe it
   seeks, its age and life in ticks, and its radius.
-- **The player's own gear** carries `art`, `cores` (three slots an Art in the Arts' order, 255 for none), `anima` and
+- **The player's own gear** carries `art` (0 where none works), `cores` (three slots an Art in the Arts' order, 255 for none), `anima` and
   `tenets`, each share as the tick that sent it had it. It is sent whenever a cast releases, a kill gives charge or an
   ask changes them; between, the browser runs each share on by its recharge (`abilitiesAt`).
 - **The asks** are numbered 40 (`wearArt`, the Art in `column`), 41 (`setCore`, the Art in `column`, the slot in

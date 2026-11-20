@@ -97,7 +97,7 @@ Company]]).
   is a run's (`Room::dungeon_run`): at Normal at its island's band, paying its kills and cache; at Elite or Abyss
   only while it is that tier's dungeon of the week, every foe at 26 or 30 with the week's modifiers ([[Dungeons]],
   "In the rooms").
-- **Its end** holds a Boss with its own name and nameplate in place of a Reeve: one of the roster's types 19 to 36
+- **Its end** holds a Boss with its own name and nameplate in place of a Reeve: one of the roster's types 21 to 38
   (`ISLAND_PLACES` names each dungeon's), a land Captain of its garrison's faction fighting in Corvane's three phases
   ([[Enemies]]).
 - **Its node** keeps its open-air approach and gains the entrance.

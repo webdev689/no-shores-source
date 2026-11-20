@@ -6,7 +6,7 @@ import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { fromEyeMatrix, shifted } from './camera.ts';
+import { fromEyeMatrix, shifted, shiftedExactly } from './camera.ts';
 import type { Foot, FootFrame } from './foot.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { Drawer } from './scene.ts';
@@ -96,7 +96,7 @@ export class FootView {
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
     this.swings.set(shown.swings);
-    const matrix = shifted(fromEye, [-eyeX, -eyeY, -eyeZ]);
+    const matrix = shiftedExactly(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
       {
         ...fight,

@@ -1,10 +1,10 @@
-//! The enemy types, every faction's: each a number the wire carries, its faction, the name over its bar, where it is
-//! met (on land or on a deck), the role it fights in, the forge layers in its hands (so the client dresses it alike),
-//! the ranks it comes in, what it changes of its role's numbers, and a Boss's own phases. And a new foe of a type, at
-//! a rank.
+//! The fighters the rules drive, every faction's and the Brig's crew's: each a number the wire carries, its faction,
+//! the name over its bar, where it is met (on land or on a deck), the role it fights in, the forge layers in its hands
+//! (so the client dresses it alike), the ranks it comes in, what it changes of its role's numbers, and a Boss's own
+//! phases. And a new foe of a type, at a rank.
 
 use crate::brain::Brain;
-use crate::factions::{GREY_TITHE, PIRATES, faction};
+use crate::factions::{CREW, GREY_TITHE, PIRATES, faction};
 use crate::ranks::{CORVANE, Phase, Rank, THULE, phase, phases, ranked};
 use crate::roles::{Numbers, Role, numbers};
 use Domain::{Deck, Land};
@@ -80,9 +80,10 @@ pub const REEVE: u8 = 6;
 pub const DECKHAND: u8 = 7;
 pub const HIGH_ASSESSOR: u8 = 18;
 
-/// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases. Types 19
-/// to 36 are the Elite Dungeons' Bosses, one each, in `gear::activities`' order.
-pub const ROSTER: [FoeType; 36] = [
+/// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases. The Brig's
+/// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do. Types 21 to 38 are the Elite
+/// Dungeons' Bosses, one each, in `gear::activities`' order.
+pub const ROSTER: [FoeType; 38] = [
     row(RUNNER, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(COLLECTOR, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
     row(CROSSBOWMAN, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
@@ -116,24 +117,26 @@ pub const ROSTER: [FoeType; 36] = [
             &[Rank::Boss],
         )
     },
-    warden(19, "Wreck-Reeve Oswin Tarr", "sword_steel", ""),
-    warden(20, "Pearl-Keeper Isolde Varne", "mace_iron", "shield_kite_iron"),
-    warden(21, "Forgemaster Garrick Soot", "warhammer_iron", ""),
-    warden(22, "Tithe-Warden Mabry Hollis", "mace_iron", "shield_kite_iron"),
-    warden(23, "Wrecker Dunstan Black", "axe_iron", ""),
-    warden(24, "Sister-Assessor Aldith", "flail_iron", "shield_kite_iron"),
-    warden(25, "Cistern-Steward Corwin Vey", "sword_steel", "shield_kite_steel"),
-    warden(26, "Vaultwarden Hesk Amaro", "warhammer_iron", ""),
-    warden(27, "Gaoler Renna Crake", "sword_iron", "shield_kite_iron"),
-    warden(28, "Barrow-Reeve Tobin Silt", "mace_iron", ""),
-    warden(29, "Treasurer Lucan Deeps", "sword_ebony", ""),
-    warden(30, "Factor Odile Coralle", "flail_iron", ""),
-    warden(31, "Lord-Assessor Edric Barrow", "sword_ebony", "shield_kite_steel"),
-    warden(32, "Digmaster Ulf Hargreave", "axe_iron", ""),
-    warden(33, "Bog-Reeve Hester Mire", "mace_iron", "shield_kite_iron"),
-    warden(34, "Sluice-Warden Abel Rook", "sword_steel", ""),
-    warden(35, "Abbess Ylva Frost", "flail_iron", "shield_kite_steel"),
-    warden(36, "Catacomb-Reeve Silas Brine", "warhammer_iron", ""),
+    row(19, CREW, Deck, "Crew", Swordsman, "sword_iron", "", LOW),
+    row(20, CREW, Deck, "Crew", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+    warden(21, "Wreck-Reeve Oswin Tarr", "sword_steel", ""),
+    warden(22, "Pearl-Keeper Isolde Varne", "mace_iron", "shield_kite_iron"),
+    warden(23, "Forgemaster Garrick Soot", "warhammer_iron", ""),
+    warden(24, "Tithe-Warden Mabry Hollis", "mace_iron", "shield_kite_iron"),
+    warden(25, "Wrecker Dunstan Black", "axe_iron", ""),
+    warden(26, "Sister-Assessor Aldith", "flail_iron", "shield_kite_iron"),
+    warden(27, "Cistern-Steward Corwin Vey", "sword_steel", "shield_kite_steel"),
+    warden(28, "Vaultwarden Hesk Amaro", "warhammer_iron", ""),
+    warden(29, "Gaoler Renna Crake", "sword_iron", "shield_kite_iron"),
+    warden(30, "Barrow-Reeve Tobin Silt", "mace_iron", ""),
+    warden(31, "Treasurer Lucan Deeps", "sword_ebony", ""),
+    warden(32, "Factor Odile Coralle", "flail_iron", ""),
+    warden(33, "Lord-Assessor Edric Barrow", "sword_ebony", "shield_kite_steel"),
+    warden(34, "Digmaster Ulf Hargreave", "axe_iron", ""),
+    warden(35, "Bog-Reeve Hester Mire", "mace_iron", "shield_kite_iron"),
+    warden(36, "Sluice-Warden Abel Rook", "sword_steel", ""),
+    warden(37, "Abbess Ylva Frost", "flail_iron", "shield_kite_steel"),
+    warden(38, "Catacomb-Reeve Silas Brine", "warhammer_iron", ""),
 ];
 
 /// The type a number names, or none.
@@ -155,10 +158,10 @@ impl FoeType {
         rank.filter(|rank| self.ranks.contains(rank)).or_else(|| self.ranks.first().copied()).unwrap_or(Rank::Major)
     }
 
-    /// The side its foes fight on: its faction's.
+    /// The side it fights on: its faction's, or the players' for the crew.
     #[must_use]
     pub fn side(&self) -> Side {
-        faction(self.faction).map_or(Side::Faction(self.faction), |faction| faction.side())
+        faction(self.faction).map_or(Side::from_number(self.faction), |faction| faction.side())
     }
 
     /// Its numbers as a Major: its role's, in its hands, with its own changes.
@@ -188,7 +191,8 @@ impl FoeType {
 }
 
 /// A new foe of a type at a rank (its first, if it does not come in that one) standing at (x, y) facing `facing`: its
-/// fighter (its faction's side, its type's arms, weight, health, poise and might at that rank) and its brain.
+/// fighter (its type's side, its type's arms, weight, health, poise and might at that rank, an ally on the players'
+/// side) and its brain.
 #[must_use]
 pub fn spawn(foe_type: &'static FoeType, rank: Rank, x: f64, y: f64, facing: f64) -> (Fighter, Brain) {
     let rank = foe_type.rank_or_first(Some(rank));
@@ -199,5 +203,6 @@ pub fn spawn(foe_type: &'static FoeType, rank: Rank, x: f64, y: f64, facing: f64
     let mut fighter = combat::fighter(foe_type.side(), body, arms, numbers.weight, numbers.health, numbers.poise);
     fighter.aim = facing;
     fighter.might = numbers.might;
+    fighter.ally = fighter.side.is_players();
     (fighter, Brain::new(foe_type, rank, facing))
 }

@@ -27,7 +27,8 @@ fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_
             let (_, health, poise, might, defence) = *scales.iter().find(|scale| scale.0 == rank).unwrap();
             let (fighter, brain) = spawn(foe, rank, 3.0, -4.0, 1.0);
             let numbers = brain.numbers();
-            assert_eq!(fighter.side, Side::Faction(foe.faction), "{}", foe.name);
+            assert_eq!(fighter.side, Side::from_number(foe.faction), "{}", foe.name);
+            assert_eq!(fighter.ally, foe.faction == 0, "{}", foe.name);
             assert_eq!((brain.foe_type.number, brain.rank, brain.phase()), (foe.number, rank, 1));
             assert!((fighter.health_max - role.health * health).abs() < CLOSE, "{} {rank:?}", foe.name);
             assert!((fighter.poise_max - role.poise * poise).abs() < CLOSE, "{} {rank:?}", foe.name);
@@ -168,12 +169,12 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     }
     assert_eq!(Rank::from_number(0), None);
     let numbers: Vec<u8> = ROSTER.iter().map(|foe| foe.number).collect();
-    assert_eq!(numbers, (1..=36).collect::<Vec<u8>>(), "numbered 1 to 36 in order");
+    assert_eq!(numbers, (1..=38).collect::<Vec<u8>>(), "numbered 1 to 38 in order");
     assert_eq!(foe_type(0), None);
     let tithe = faction(1).unwrap();
     assert_eq!((tithe.name, tithe.side()), ("The Grey Tithe", Side::Faction(1)));
     let land: Vec<&str> = tithe.types(Domain::Land).map(|foe| foe.name).collect();
-    let wardens = foes::ROSTER[18..].iter().map(|foe| foe.name);
+    let wardens = foes::ROSTER[20..].iter().map(|foe| foe.name);
     let tithe_land = ["Runner", "Collector", "Crossbowman", "Enforcer", "Marksman", "Reeve", "High Assessor Corvane"];
     assert_eq!(land, tithe_land.into_iter().chain(wardens).collect::<Vec<_>>(), "the Elite Dungeons' Bosses after");
     assert_eq!(tithe.types(Domain::Deck).last().unwrap().name, "Captain Brannoc Thule");
@@ -186,7 +187,7 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
 
 #[test]
 fn each_elite_dungeon_has_a_boss_of_its_own_of_its_garrisons_faction_fighting_corvanes_three_phases() {
-    let bosses: Vec<&foes::FoeType> = ROSTER.iter().filter(|foe| (19..=36).contains(&foe.number)).collect();
+    let bosses: Vec<&foes::FoeType> = ROSTER.iter().filter(|foe| (21..=38).contains(&foe.number)).collect();
     assert_eq!(bosses.len(), 18);
     let garrison = foe_type(REEVE).unwrap().faction;
     for boss in &bosses {
@@ -199,7 +200,7 @@ fn each_elite_dungeon_has_a_boss_of_its_own_of_its_garrisons_faction_fighting_co
     let names: std::collections::BTreeSet<&str> = bosses.iter().map(|boss| boss.name).collect();
     assert_eq!(names.len(), 18, "each its own name");
     assert_eq!(
-        (foe_type(19).unwrap().name, foe_type(36).unwrap().name),
+        (foe_type(21).unwrap().name, foe_type(38).unwrap().name),
         ("Wreck-Reeve Oswin Tarr", "Catacomb-Reeve Silas Brine")
     );
 }

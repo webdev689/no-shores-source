@@ -23,9 +23,10 @@ impl Room {
         if status == Status::Linked {
             self.spells.linked.remove(&fighter);
         }
-        // Overload: a foe the player Charges is Exposed too, as long as the Art that holds it lasts at its level.
-        let by = from.and_then(|from| self.players.get(&from)).map(|by| &by.character);
-        let overload = by.filter(|by| by.fragment("overload").is_some()).map(|by| by.art_shares(by.art().id).1);
+        // Overload: a foe the player Charges is Exposed too, as long as the Art that holds it lasts at its level; a
+        // room without Arts gives no fragment (`core`).
+        let by = from.filter(|from| self.core(*from, "overload").is_some()).and_then(|from| self.players.get(&from));
+        let overload = by.map(|by| by.character.art_shares(by.character.art().id).1);
         if status == Status::Charge
             && let Some(lasting) = overload
         {
@@ -73,7 +74,7 @@ impl Room {
     /// defender's Expose; and a player's crit on an Exposed foe 10% more with Cruelty.
     pub(crate) fn weighed(&self, blow: &Blow, defender: &Fighter, verdict: Verdict) -> Verdict {
         let striker = self.fighter(blow.striker);
-        let cruelty = self.players.get(&blow.striker).and_then(|found| found.character.fragment("cruelty"));
+        let cruelty = self.core(blow.striker, "cruelty");
         let cruel = cruelty.filter(|_| defender.statuses.has(Status::Expose) && crits(blow, striker, defender));
         let times = times(blow, striker, defender) * cruel.map_or(1.0, |cruelty| cruelty.crit_times);
         match verdict {

@@ -121,8 +121,9 @@ number is one of [[Gear as Claude Shapes It]].
   metal its rarity likes.
 - **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout it
   came from (a shot the Ranged one's, as it was when the shot was loosed; a swing Melee's, or Ranged's while it is
-  drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. A foe of level 0
-  fights by combat's own numbers.
+  drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. On top, at every
+  level, a player's blow on a foe strikes twice (`PLAYER_HARM`) and a foe's on a player half (`FOE_HARM`), from
+  [[The Whole Game Gets a Balance Pass]]. A foe of level 0 fights by combat's own numbers and those two alone.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
