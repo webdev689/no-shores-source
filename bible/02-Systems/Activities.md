@@ -53,8 +53,10 @@ Company]]).
 - **A day** runs from 09:00 UTC to 09:00 UTC, and **a week** from Tuesday 09:00 UTC, as Destiny 1's resets did.
 - `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in, and the minutes to
   the next of each. The rules keep no clock of their own.
-- **Everything that turns reads it**: the vendors' daily wares, Shape's week (he comes Friday 09:00 and goes
-  Sunday 21:00 inside it), the activities, the bounties and the quests.
+- **Everything that turns reads it**: the smiths' wares, the Tailor's emblems and dyes and the Tack's pieces, each
+  a day's; Shape's week, his place and his wares (he comes Friday 09:00 and goes Sunday 21:00 inside it); the
+  keepers' countdowns to the next stock and to Shape's leaving, which the page reads from the rules; and the
+  activities, the bounties and the quests.
 
 ## The tiers
 
@@ -256,10 +258,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
 
 ## How it is built
 
-One shared core in the rules, chosen over each system keeping its own resets (two clocks already disagree, Shape's
-Monday and the vendors' midnight) and over a server-only activity service (it would break
-[[Clients Predict With the Shared Rules]]). The clock, the draws, the records and the gates live in `gear`, which the
-server and the browser both run; each system reads them.
+One shared core in the rules, chosen over each system keeping its own resets (each would turn at its own moment) and
+over a server-only activity service (it would break [[Clients Predict With the Shared Rules]]). The clock, the draws,
+the records and the gates live in `gear`, which the server and the browser both run; each system reads them.
 
 1. **The core:** the clock, the tiers in code, the records, the story kept with the account, the gates.
 2. **The dungeons:** the dungeon of the day, the Elite Dungeons, the week's two, the modifiers, Abyss's rules and the
@@ -271,9 +272,9 @@ server and the browser both run; each system reads them.
 It builds on the dungeons (#72, #88), the owner's plan (#82) and the factions (#92); the board's place waits on the
 plaza's rebuild.
 
-**Who builds what:** this session builds 1 to 5's rules and screens, and places the board, which has no keeper. The
-plaza's session (#92) moves Shape and the vendors onto the clock. The sea's session (#75) takes the tiers at sea and
-the sea's counts. The prologue's session records the prologue's end with the account.
+**Who builds what:** this session builds 1 to 5's rules and screens, places the board, which has no keeper, and keeps
+Shape and the vendors on the clock. The sea's session (#75) takes the tiers at sea and the sea's counts. The prologue's
+session records the prologue's end with the account.
 
 **Left to the builder:** the modifiers' and the rewards' exact numbers, how a modifier is shown, how a private run's
 room is named and closed, and each Elite Dungeon's Boss.
