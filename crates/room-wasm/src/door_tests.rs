@@ -383,7 +383,11 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
     assert_eq!(input(player, &protocol::ask_bytes(2)), REFUSED, "no captain has struck");
     let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
     let pirate = room::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
-    with_open(|opened| if let Opened::Sea(sea) = opened { sea.put_to_sea(pirate) });
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.put_to_sea(pirate)
+        }
+    });
     room_tick();
     // Her colours come down alongside, and she lies still.
     with_open(|opened| {
