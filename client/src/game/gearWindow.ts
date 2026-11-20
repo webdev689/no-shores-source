@@ -56,6 +56,7 @@ const STATIONS: Readonly<Record<Station, string>> = {
   armorsmith: 'The Armorsmith',
   weaponsmith: 'The Weaponsmith',
   tailor: 'The Tailor',
+  shape: 'Shape',
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
 const BANNER_SCALE = 3;

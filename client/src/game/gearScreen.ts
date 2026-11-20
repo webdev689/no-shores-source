@@ -23,7 +23,7 @@ import {
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 /** The screens a social space's counters open: the vault, and each vendor's stall. */
-export type Station = 'vault' | 'armorsmith' | 'weaponsmith' | 'tailor';
+export type Station = 'vault' | 'armorsmith' | 'weaponsmith' | 'tailor' | 'shape';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */

@@ -1,11 +1,12 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, moved each
 // frame, standing on the plaza's floor; and the station a player stands at, whose counter offers what it deals in.
 
+import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import type { Others } from '../player/others.ts';
 import type { Opening } from './gearScreen.ts';
 import type { StationInfo } from './nodes.ts';
-import { Townsfolk } from './townsfolk.ts';
+import { Townsfolk, awayFromCounters, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a counter a player stands to be served, metres. */
@@ -47,26 +48,24 @@ export class PlazaLife {
   private readonly floored = new Map<number, readonly [number, number]>();
   private readonly others: Others;
   private readonly floor: (x: number, y: number) => number | null;
+  private readonly visitorSpots: readonly (readonly [number, number])[];
 
   constructor(node: NodeInfo, others: Others, floor: (x: number, y: number) => number | null) {
-    const eastings = node.ring.map((point) => point[0]);
-    const southings = node.ring.map((point) => point[1]);
-    const bounds = [
-      Math.min(...eastings),
-      Math.min(...southings),
-      Math.max(...eastings),
-      Math.max(...southings),
-    ] as const;
+    const plaza = plazaOf(node);
     // Seeded by the plaza, so its people walk the same each visit.
-    const seed = Math.round(bounds[0] * 31 + bounds[1]);
-    this.folk = new Townsfolk({ bounds, spawns: node.spawns, stations: node.stations ?? [] }, seed);
+    this.folk = new Townsfolk(plaza, Math.round(plaza.bounds[0] * 31 + plaza.bounds[1]));
+    this.visitorSpots = plaza.visitorSpots ?? [];
     this.others = others;
     this.floor = floor;
   }
 
-  /** Moves everyone on by `seconds` and places their figures. */
-  frame(seconds: number): void {
-    for (const person of this.folk.step(seconds)) {
+  /** Moves everyone on by `seconds` and places their figures: Shape among them while the room's `gear` says he is
+   *  here, and a keeper away from their counter taken from it. */
+  frame(seconds: number, gear: GearState | null = null): void {
+    const shape = shapeSpot(gear?.shape, this.visitorSpots);
+    const here = new Set<number>();
+    for (const person of this.folk.step(seconds, { away: awayFromCounters, shape })) {
+      here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);
       placed.x = person.x;
@@ -78,6 +77,12 @@ export class PlazaLife {
       }
       placed.facing = person.facing;
       placed.anim = person.walking ? 'walk' : 'idle';
+    }
+    for (const [id, placed] of this.figures) {
+      if (here.has(id)) continue;
+      this.others.remove(placed);
+      this.figures.delete(id);
+      this.floored.delete(id);
     }
   }
 

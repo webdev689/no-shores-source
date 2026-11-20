@@ -34,7 +34,7 @@ import type { HullMask } from '../water/hullMask.ts';
 import { Aboard, type AboardContext } from './aboard.ts';
 import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
-import { seaMarks } from './seaMarks.ts';
+import { landable, seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
 import { roomSource, SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
@@ -379,9 +379,9 @@ export class Sea {
     this.view = { kind: 'fly', from: this.sideRig, to: this.seaRig, t: 0, seconds: FLY_BACK_SECONDS, then: 'sail' };
   }
 
-  /** The id and name of a landing on the side in view, or null. */
+  /** The id and name of a landing on the side in view, or null; a social space still locked is none. */
   landingOf(id: string): { readonly id: string; readonly name: string } | null {
-    const mark = this.side.find((each) => each.id === id);
+    const mark = landable(this.side, id);
     return mark ? { id: mark.id, name: mark.name } : null;
   }
 

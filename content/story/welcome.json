@@ -1,0 +1,42 @@
+{
+  "scenes": {
+    "welcomeMet": [
+      { "who": "maren", "say": "There you are. Washed ashore and on your feet. That is a start." },
+      { "who": "maren", "say": "I am Maren Hale. Walk with me, and I will show you Overlook." }
+    ],
+    "welcomeMage": [
+      { "who": "maren", "say": "Whatever the sea gives up, the Mage can tell you what it is." },
+      { "who": "mage", "say": "Bring me what you find. Most of it is worth knowing." },
+      { "who": "maren", "say": "Out there, the Grey Tithe take a tenth of whatever a ship carries." }
+    ],
+    "welcomeSmiths": [
+      { "who": "maren", "say": "A ship that refuses them is taken whole. So we keep our smiths busy." },
+      { "who": "armorsmith", "say": "New pieces every morning. Come back before your next voyage." },
+      { "who": "weaponsmith", "say": "And see me before you need to." }
+    ],
+    "welcomeTailorTack": [
+      { "who": "maren", "say": "Overlook pays nothing. No port in the Pale Expanse is more welcoming." },
+      { "who": "maren", "say": "And no ship bound here is shown any mercy. Wear your colours anyway." },
+      { "who": "tailor", "say": "Dyes for your armour. Nobody should meet the Tithe looking drab." },
+      { "who": "tack", "say": "And your horse deserves better than that coat." }
+    ],
+    "welcomeVault": [
+      { "who": "maren", "say": "Three ports still stand. The rest are ruins. Nobody here agrees how they fell." },
+      { "who": "maren", "say": "Whatever you keep in the vault stays here." },
+      { "who": "vaultkeeper", "say": "Forty years I have kept it. Or thirty." },
+      { "who": "maren", "say": "Ask three people who built the beacon and you will hear four names." }
+    ],
+    "welcomeStormcallers": [
+      { "who": "maren", "say": "Three houses keep the Arts. The Stormcallers keep the Storm, and keep it loud." },
+      { "who": "stormcaller", "say": "Loud is how lightning likes it, Elder." }
+    ],
+    "welcomeVeiled": [
+      { "who": "maren", "say": "The Veiled keep the Shadow. Ask them nothing you would not want answered." },
+      { "who": "veiled", "say": "She is kinder than she sounds." }
+    ],
+    "welcomeLamplighters": [
+      { "who": "maren", "say": "And mine, the Lamplighters. We keep the Divine. We mend, and light the way." },
+      { "who": "maren", "say": "When you want a house of your own, you know where I stand." }
+    ]
+  }
+}

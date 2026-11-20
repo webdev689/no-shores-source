@@ -38,7 +38,7 @@ import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, type NodeInfo } from './worldData.ts';
 import { loadParts } from './loading.ts';
 import { standingDrawers } from './standing.ts';
-import type { Epilogue } from './prologue/epilogue.ts';
+import { afterStoryOn } from './welcome/afterStory.ts';
 import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
@@ -68,7 +68,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
   hud.veil(flow.mode === 'loading' ? flow.words : null);
   const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
-  let epilogue: Epilogue | null = null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
@@ -85,6 +84,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
   const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
+  const after = afterStoryOn(hudRoot, forge, (x, y) => scene.groundAt(x, y));
   const { continents } = world;
   const ambience = new Ambience(world);
   const cityAssets = loadCityAssets(base);
@@ -175,7 +175,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const leaveHere = () => {
     canvas.classList.remove('dead');
     wasDead = false;
-    epilogue?.leave();
+    after.leave();
   };
 
   const goFoot = async (node: NodeInfo, facing: number, seas = heldMap?.difficulty) => {
@@ -435,8 +435,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
-    // The story's last moment, on foot once the veil is gone: the stranger before the player, till she walks off.
-    const met = epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot') ?? [];
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
+    const met = after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', here.node);
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), {
       after: hands,
@@ -561,7 +561,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   ) => {
     const left = host.frame(controls, seconds, size);
     if (!left) return;
-    [epilogue, walker.you.dress] = [left.epilogue, left.dress];
+    [after.epilogue, walker.you.dress] = [left.epilogue, left.dress];
     flow = next(flow, { kind: 'story-ended', node: FIRST_NODE, name: 'Overlook' });
     arrive();
   };
