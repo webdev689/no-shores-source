@@ -142,3 +142,78 @@ fn a_ship_going_down_under_its_boarders_sends_them_home_with_what_floats_once_an
     assert!(!sea.on_deck(player));
     assert_eq!(sea.flotsam_for(player).count(), 3, "what floats once, no hold");
 }
+
+#[test]
+fn a_hand_who_falls_on_a_deck_is_lost_from_its_sea_fights_count_which_the_fight_keeps_when_it_ends() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    let room = &mut sea.decks.boarded[0].room;
+    let hand = *room.ashore.hands.keys().next().expect("its hands boarded with it");
+    room.foes.get_mut(&hand).unwrap().fighter.action = combat::Action::Dead { elapsed: 0 };
+    let hands = room.ashore.hands.clone();
+    for (id, foe) in &mut room.foes {
+        if !hands.contains_key(id) {
+            foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+        }
+    }
+    let crew_before = sea.fights.hurts_of(player).expect("in its fight").0[2];
+    sea.tick();
+    ticks(&mut sea, HOLD_TICKS as usize + 1);
+    assert!(!sea.on_deck(player), "stepped off");
+    // The fight lets its player go with its own count of their men (`kept_of`), so the loss must be in it.
+    let (kept, _) = sea.fights.hurts_of(player).expect("still in its fight");
+    let man = 1.0 / naval::arms::LARGE_BOAT.crew;
+    assert!(kept[2] <= crew_before - man + 1e-9, "the hand it lost on the deck: {crew_before} to {}", kept[2]);
+}
+
+#[test]
+fn its_hands_board_by_the_men_its_fight_has_left_not_those_it_sailed_in_with() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    let vessel = vessel_mut(&mut sea, player, ship);
+    vessel.ship.ahead = 0.0;
+    // Shot down to one man of its ten.
+    vessel.damage.crew = vessel.damage.max_crew / naval::arms::LARGE_BOAT.crew;
+    sea.board(player).unwrap();
+    assert_eq!(sea.decks.boarded[0].room.ashore.hands.len(), 1, "never more than it has left");
+}
+
+#[test]
+fn an_officer_who_joins_at_sea_while_its_player_fights_a_deck_never_shares_an_id_with_what_they_picked_up_there() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    let boarder = sea.decks.boarded[0].aboard[&player];
+    // On the deck they pick up a piece, under the deck copy's next id.
+    let deck = &mut sea.decks.boarded[0].room.players.get_mut(&boarder).unwrap().character;
+    let picked = deck.take_id();
+    let piece = gear::Item::new(picked, gear::Kind::Sword, gear::Rarity::Magic, 1, gear::Slot::Melee);
+    deck.items.insert(picked, (piece, gear::At::Carried));
+    // At sea an officer joins from a won deck, under the sea copy's next id: the same one.
+    let officer = gear::crew::Officer::new(0, gear::crew::Post::Bosun, gear::Rarity::Magic, 1);
+    let joined = sea.harbour.characters.get_mut(&player).unwrap().sign_on(officer).expect("signed on");
+    assert_eq!(joined, picked, "the two copies hand out the same id");
+    let room = &mut sea.decks.boarded[0].room;
+    let hands = room.ashore.hands.clone();
+    for (id, foe) in &mut room.foes {
+        if !hands.contains_key(id) {
+            foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+        }
+    }
+    sea.tick();
+    ticks(&mut sea, HOLD_TICKS as usize + 1);
+    assert!(!sea.on_deck(player), "stepped off");
+    let kept = &sea.harbour.characters[&player];
+    assert!(kept.items.contains_key(&picked), "the piece is kept");
+    assert_eq!(kept.crew.officers.len(), 1, "and the officer");
+    assert!(kept.crew.officers.keys().all(|id| !kept.items.contains_key(id)), "under ids of their own");
+}

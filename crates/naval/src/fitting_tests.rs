@@ -122,3 +122,17 @@ fn the_bosun_keeps_part_of_the_way_torn_canvas_costs_and_the_trim_turns_the_ship
     assert!((hurts.fitted(Some(&turned)).turn - 1.2).abs() < 1e-12);
     assert_eq!(hurts.fitted(None), hurts);
 }
+
+/// What a browser predicting its ship in a fleet room takes its hurts from (its sail and whole sail, `from_numbers`)
+/// must be what the room steps it by once a ship level fits it with no Bosun posted, to the bit, at every tear.
+#[test]
+fn a_fitted_ship_with_no_bosun_keeps_its_torn_canvas_way_to_the_bit_as_its_prediction_does() {
+    let neutral = fitted(Trim::default(), 0.7, 1.3);
+    let whole = 240.0;
+    for tenth_of_a_percent in 0..=1000 {
+        let sail = whole * f64::from(tenth_of_a_percent) / 1000.0;
+        let predicted = crate::fight::Hurts::from_numbers(false, sail, whole);
+        let stepped = predicted.fitted(Some(&neutral));
+        assert_eq!(stepped.way_share.to_bits(), predicted.way_share.to_bits(), "sail {sail} of {whole}");
+    }
+}

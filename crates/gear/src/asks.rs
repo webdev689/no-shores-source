@@ -152,6 +152,8 @@ pub enum Refusal {
     CrewFull = 132,
     /// Two officers are ashore already.
     AshoreFull = 133,
+    /// The officer offered is in the crew already.
+    OfficerKept = 134,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -304,11 +306,10 @@ impl Character {
         let stock = item.kind.stock();
         if stock == Stock::Ship {
             let price = crate::ship::materials::price_of(item.kind, cost);
-            if self.materials.aurem < cost.aurem || !self.materials.ship.affords(&price) {
+            if self.materials.aurem < cost.aurem || !self.materials.ship.pay(&price) {
                 return Err(Refusal::Short);
             }
             self.materials.aurem -= cost.aurem;
-            self.materials.ship.pay(&price);
             return self.bought(id, column, node, bit);
         }
         let resource = usize::from(item.resource.unwrap_or_default());

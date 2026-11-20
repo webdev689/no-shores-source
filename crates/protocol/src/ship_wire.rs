@@ -39,7 +39,7 @@ fn officer_offset<'built>(
         .collect();
     let columns = Some(builder.create_vector(&columns));
     let chosen = Some(builder.create_vector(&officer.chosen));
-    let (to_next, _) = gear::power::to_next(u64::from(officer.xp), 0);
+    let to_next = officer.to_next();
     let args = messages::GearOfficerArgs {
         id: officer.id,
         post: officer.post as u8,

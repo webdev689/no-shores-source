@@ -76,7 +76,9 @@ impl Sea {
         if let Some(character) = self.harbour.characters.get(&player) {
             boarded.room.restore_character(boarder, &character.to_json());
             // Its hands left of its complement, and those its First Mate and perks lead aboard beside the player.
-            let left = f64::from(character.ship[2]) / f64::from(gear::character::SHIP_WHOLE);
+            // The fight's count first: the character's is written only when a fight ends.
+            let kept = f64::from(character.ship[2]) / f64::from(gear::character::SHIP_WHOLE);
+            let left = self.fights.hurts_of(player).map_or(kept, |(hurts, _)| hurts[2]);
             let hands = (left * naval::arms::LARGE_BOAT.crew).round() as u16;
             let count = crate::boarding_hands::boarding(hands, character.ship_trim().boarders);
             boarded.room.board_hands(boarder, count, character.ship_level());
@@ -134,11 +136,25 @@ impl Sea {
         deck.room.keep_hands();
         let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
+        self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             (character.ship, character.ship_at) = (held.ship, held.ship_at);
             // What only the sea changes while they fight on foot: their ship's experience, materials and crew.
             (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
+            // An officer who joined at sea while they fought here took the sea's next id, which an item picked up on
+            // the deck may hold too: they sign on again here, under an id of this character's.
+            let joined: Vec<_> = held
+                .crew
+                .officers
+                .values()
+                .filter(|each| !character.crew.officers.contains_key(&each.id))
+                .cloned()
+                .collect();
             character.crew.clone_from(&held.crew);
+            for officer in joined {
+                character.crew.officers.remove(&officer.id);
+                character.sign_on(officer);
+            }
             for (id, entry) in held.items.iter().filter(|(_, (item, _))| item.kind.module()) {
                 character.items.insert(*id, entry.clone());
             }

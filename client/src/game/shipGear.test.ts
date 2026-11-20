@@ -109,6 +109,7 @@ test('modules are named by their kind and rarity, and the new refusals are said 
   assert.equal(gearKindName(2), 'Sword');
   assert.equal(answerSaid(132), 'Officers sign on through the faction you are pledged to.');
   assert.equal(answerSaid(134), 'Two officers are ashore already.');
+  assert.equal(answerSaid(135), 'That officer is in your crew already.');
   assert.equal(answerSaid(15), 'You do not have enough for it.');
 });
 
@@ -169,6 +170,17 @@ test('a carried module fits in its own slot, is dismantled, and takes in a highe
   assert.deepEqual(
     fitted.map((press) => press.ask),
     [{ kind: ASKS.takeOff, slot: 8 }],
+  );
+  // A fitted level-2 hull on a level-4 ship takes in a level-4 one, never the level-5 one the room would refuse.
+  const worn = item({ id: 1, kind: 25, level: 2, at: 2 + 8 });
+  const four = item({ id: 8, kind: 25, level: 4, at: 0 });
+  const onShip = modulePresses(worn, state({ items: [worn, higher, four], ship: ship({ level: 4 }) }));
+  assert.deepEqual(
+    onShip.map((press) => press.ask),
+    [
+      { kind: ASKS.takeOff, slot: 8 },
+      { kind: ASKS.infuse, item: 1, count: 8 },
+    ],
   );
 });
 

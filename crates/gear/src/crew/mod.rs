@@ -28,12 +28,6 @@ pub struct Crew {
 }
 
 impl Crew {
-    /// The officer holding a post aboard, if any.
-    #[must_use]
-    pub fn posted(&self, post: Post) -> Option<&Officer> {
-        self.officers.values().find(|officer| officer.duty == Duty::Posted && officer.post == post)
-    }
-
     /// The officers ashore with the player, in their numbers' order.
     pub fn ashore(&self) -> impl Iterator<Item = &Officer> {
         self.officers.values().filter(|officer| officer.duty == Duty::Ashore)

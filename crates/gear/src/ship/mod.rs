@@ -108,12 +108,6 @@ impl Character {
         traits
     }
 
-    /// Whether its fitted modules give a trait.
-    #[must_use]
-    pub fn has_ship_trait(&self, id: &str) -> bool {
-        self.all_fitted().any(|(_, module)| module.active_traits().any(|active| active == id))
-    }
-
     /// Adds experience to it and to every module fitted, each to its last column's.
     pub fn earn_ship_xp(&mut self, xp: u32) {
         self.ship_xp = self.ship_xp.saturating_add(u64::from(xp));

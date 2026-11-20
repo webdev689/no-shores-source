@@ -106,12 +106,18 @@ impl Fitting {
     /// trim's way is on top.
     #[must_use]
     pub fn way_share(&self, share: f64) -> f64 {
-        let kept = 1.0 - (1.0 - share) * (1.0 - BOSUN_KEEPS * self.trim.bosun);
+        // Written so that with no Bosun it is `share` to the bit, as a browser predicting the ship takes it.
+        let kept = share + (1.0 - share) * BOSUN_KEEPS * self.trim.bosun;
         kept * self.trim.way
     }
 }
 
 impl Fight {
+    /// Takes a ship's fitting off: it fights by combat's own numbers again.
+    pub fn unfit(&mut self, id: ShipId) {
+        self.fittings.remove(&id);
+    }
+
     /// Fits a player's ship for the fight; one fitted already keeps what its Carpenter has still to patch.
     pub fn fit(&mut self, id: ShipId, fitting: Fitting) {
         let patching = self.fittings.get(&id).map_or(0.0, |kept| kept.patching);

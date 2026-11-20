@@ -3,7 +3,8 @@
 // name, post and grade with their duties and nodes, and the officers of the day at the muster. The page draws these
 // in `shipPages.ts`. The gear crate's numbers are taken as they are: its `ship/materials.rs` and `crew/officer.rs`.
 
-import crew from '../../../content/gear/crew.json' with { type: 'json' };
+import { officerName } from '../combat/companions.ts';
+import { LEVEL_BY_XP, LEVEL_MOST } from '../rules/fleetRules.ts';
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import {
   ASKS,
@@ -66,6 +67,7 @@ const SHIP_REFUSALS: Readonly<Record<number, string>> = {
   132: 'Officers sign on through the faction you are pledged to.',
   133: 'You already keep eight officers.',
   134: 'Two officers are ashore already.',
+  135: 'That officer is in your crew already.',
 };
 export const answerSaid = (answer: number): string => SHIP_REFUSALS[answer] ?? answerText(answer);
 
@@ -102,9 +104,6 @@ export interface ShipPower {
   readonly defense: number;
   readonly prestige: number;
 }
-
-const LEVEL_BY_XP = 20;
-const LEVEL_MOST = 30;
 
 export function shipPowerOf(ship: GearShip): ShipPower {
   const toNextWords =
@@ -143,7 +142,7 @@ export const carriedModules = (state: GearState): readonly GearItem[] =>
   state.items.filter((item) => item.at === CARRIED && isModule(item.kind));
 
 /** What may be done with a module from its page: fit it or take it off, dismantle it, and feed it each carried module
- *  of its kind and a higher level, at its price. */
+ *  of its kind and a higher level, at its price; a fitted one no higher than the ship's level. */
 export function modulePresses(
   item: GearItem,
   state: GearState,
@@ -171,6 +170,8 @@ export function modulePresses(
     const [first] = madeOf(item.kind);
     for (const fed of carriedModules(state)) {
       if (fed.id === item.id || fed.kind !== item.kind || fed.level <= item.level) continue;
+      // A fitted module rises no higher than the ship's level (gear's infuse.rs).
+      if (item.at >= WORN && fed.level > (state.ship?.level ?? 0)) continue;
       const climbs = fed.level - item.level;
       const price = priced(INFUSE_AUREM * climbs, [[first, INFUSE_MATERIAL * climbs]]);
       presses.push({
@@ -208,9 +209,6 @@ export interface OfficerShown {
   readonly duties: readonly { readonly label: string; readonly ask: GearAsk; readonly chosen: boolean }[];
   readonly dismiss: GearAsk;
 }
-
-export const officerName = (officer: Pick<GearOfficer, 'given' | 'family'>): string =>
-  `${crew.given[officer.given] ?? ''} ${crew.family[officer.family] ?? ''}`.trim();
 
 export function officerShown(officer: GearOfficer): OfficerShown {
   return {

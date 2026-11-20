@@ -20,12 +20,6 @@ pub enum ShipMaterial {
 
 impl ShipMaterial {
     pub const ALL: [Self; 4] = [Self::Timber, Self::Canvas, Self::Iron, Self::Heartwood];
-
-    /// The material a number names, or none.
-    #[must_use]
-    pub fn from_number(number: u8) -> Option<Self> {
-        Self::ALL.into_iter().find(|material| *material as u8 == number)
-    }
 }
 
 /// The ship's materials a player holds, each up to `STOCK_MOST`.

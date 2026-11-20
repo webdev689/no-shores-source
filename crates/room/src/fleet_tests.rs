@@ -316,4 +316,8 @@ fn a_call_with_levels_raises_its_captain_and_fits_the_callers_ship_as_a_plain_on
     assert!((fitting.dealt[&captain] - power.harm_dealt(12)).abs() < 1e-12);
     assert!((fitting.taken[&captain] - power.harm_taken(12) / strength).abs() < 1e-12);
     assert!(fitting.dealt[&captain] < 1.0, "a ship three levels under its captain harms it less");
+    let unfitted = Input { call: Call::Captain(Commission::default(), Levels::default()), ..orders(7, ROWING) };
+    assert_eq!(fleet.input(player, unfitted), Ok(()));
+    fleet.tick();
+    assert!(fleet.fight().fitting(player).is_none(), "called again with no ship level, unfitted again");
 }

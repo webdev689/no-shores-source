@@ -31,12 +31,11 @@ impl Character {
         let [first, _] = made_of(keeping.kind);
         let none = (ShipMaterial::Heartwood, 0);
         let price = ShipPrice([(first, MATERIAL_A_LEVEL * u16::from(climbs)), none, none]);
-        if self.materials.aurem < aurem || !self.materials.ship.affords(&price) {
+        if self.materials.aurem < aurem || !self.materials.ship.pay(&price) {
             return Err(Refusal::Short);
         }
         let level = feeding.level;
         self.materials.aurem -= aurem;
-        self.materials.ship.pay(&price);
         self.items.remove(&fed);
         if let Some((module, _)) = self.items.get_mut(&kept) {
             module.level = level;

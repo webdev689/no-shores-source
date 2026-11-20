@@ -151,5 +151,7 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
   };
 }
 
-/** The highest level a ship or a captain reaches (crates/gear/src/power.rs LEVEL_MOST). */
+/** The highest level experience alone reaches, and the highest of all, for a character, a ship or a captain
+ *  (crates/gear/src/power.rs XP_LEVEL_MOST, LEVEL_MOST). */
+export const LEVEL_BY_XP = 20;
 export const LEVEL_MOST = 30;
