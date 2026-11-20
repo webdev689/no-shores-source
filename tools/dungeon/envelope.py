@@ -11,7 +11,12 @@ import catalog
 TOUCH_M = 0.002
 # Far enough to stand for "unbounded" on an axis, metres.
 FAR = 1000.0
-KIT_TRIANGLES = 3000
+# A dungeon lays a few hundred kit pieces, so each kind of piece has its own budget, the most repeated the least.
+KIT_TRIANGLES = {
+    'door': 1500, 'pillar.base': 500, 'pillar.shaft': 350, 'pillar.capital': 750, 'wall.base': 250,
+    'wall.shaft': 150, 'wall.cap': 350, 'feature': 1500, 'ceiling': 600, 'floor': 300, 'sconce': 150,
+    'portal': 2500, 'exit': 2500,
+}
 LANDMARK_TRIANGLES = 12000
 # The walk zone: a body stands from just over the floor to over a head, metres. A solid stops a body whatever its
 # height, so anything seen here must lie over one, grown by WALK_GROW_M.
@@ -253,12 +258,18 @@ def landmark_problems(landmark, triangles):
     return found
 
 
+def kit_budget(piece):
+    """The most triangles a kit piece may have: its own kind's budget (`door.a` a door's, `pillar.base` its own)."""
+    return KIT_TRIANGLES.get(piece, KIT_TRIANGLES.get(piece.split('.')[0], 0))
+
+
 def kit_problems(module, piece, triangles):
     """Every rule a kit piece's triangles break."""
     style = module.split('.')[0]
     found = []
-    if len(triangles) > KIT_TRIANGLES:
-        found.append(f'{module}: {len(triangles)} triangles, over the {KIT_TRIANGLES} a kit piece may have')
+    budget = kit_budget(piece)
+    if len(triangles) > budget:
+        found.append(f'{module}: {len(triangles)} triangles, over the {budget} a {piece} may have')
     height = max((corner[2] for corners in triangles for corner in corners), default=0.0)
     found += _broken(module, triangles, kit_rules(piece, catalog.least_ceiling(style), height))
     if piece == 'sconce' and not any(reaches(corners, _box(*CUP)) for corners in triangles):

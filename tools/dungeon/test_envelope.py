@@ -146,8 +146,13 @@ class KitEnvelopes(unittest.TestCase):
         self.fails('crypt.exit', posts + shapes.box(-1.05, 0, 2.6, 1.05, 0.18, 3.2), 'z > 3.1')
         self.fails('crypt.portal', shapes.box(1.0, 0, 0, 1.35, 0.18, 2.6), 'x > 1.3')
 
-    def test_a_kit_piece_over_its_triangles_fails(self):
-        self.assertTrue(any('3000' in problem for problem in broken('crypt.floor.a', [corner_at((0, 0, 0))] * 3001)))
+    def test_a_kit_piece_over_its_own_kind_of_budget_fails(self):
+        floor = [corner_at((0, 0, 0))]
+        self.assertTrue(any('300 a floor.a' in problem for problem in broken('crypt.floor.a', floor * 301)))
+        self.assertFalse(any('triangles, over' in problem for problem in broken('crypt.floor.a', floor * 300)))
+        self.assertEqual(envelope.kit_budget('door.b'), 1500)
+        self.assertEqual(envelope.kit_budget('pillar.capital'), 750)
+        self.assertEqual(envelope.kit_budget('ceiling.c'), 600)
 
     def test_an_unknown_module_fails(self):
         self.assertTrue(broken('crypt.nothing', [corner_at((0, 0, 0))]))
