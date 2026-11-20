@@ -76,11 +76,12 @@ export function moodLooks(layout: DungeonLayout): Uint32Array {
   });
 }
 
-/** A flame's own glow, as the city's braziers glow; a crystal's, a fungus cap's, a lantern's glass and an ember's. */
+/** A flame's own glow, as the city's braziers glow; a crystal's, a fungus cap's, a lantern's glass and an ember's.
+ *  A crystal and a lantern's glass are drawn by their facets, so each peaks at 1: brighter, every facet clips alike. */
 export const FLAME: Colour = [1.4, 1.0, 0.5];
-export const CRYSTAL_GLOW: Colour = [0.5, 1.2, 1.4];
+export const CRYSTAL_GLOW: Colour = [0.36, 0.86, 1];
 export const FUNGUS_GLOW: Colour = [0.75, 1.35, 0.45];
-export const LANTERN_GLOW: Colour = [1.5, 1.15, 0.65];
+export const LANTERN_GLOW: Colour = [1, 0.77, 0.43];
 export const EMBER_GLOW: Colour = [0.9, 0.3, 0.08];
 /** Candle wax, lit as a surface is. */
 export const WAX: Colour = [0.86, 0.8, 0.66];

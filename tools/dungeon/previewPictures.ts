@@ -17,7 +17,8 @@ import { PART_TILE_M, PARTS, partPicture } from '../../client/src/game/dungeonMo
 import { CLIMATES, SEASONS, type Climate, type Season } from '../../client/src/textures/climate.ts';
 import { climateArchive, paintPicture, type PictureUse } from '../../client/src/textures/picture.ts';
 
-// The colours the dungeon's shader draws its glowing parts in; still water is its WATER_DEEP, lit by the lights.
+// The colours the dungeon's shader draws its glowing parts in; still water a dark bed under Blender's own gloss, for
+// the game's shows its floor's picture through it.
 const COLOURS = new Map<number, readonly number[]>([
   [COLOUR.glow, FLAME],
   [COLOUR.ember, EMBER_GLOW],

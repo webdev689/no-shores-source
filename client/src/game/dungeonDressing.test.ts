@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
-import { DUNGEON_LAYERS, dungeonBook } from './dungeonBook.ts';
+import { dungeonBook, WATER_FLAG } from './dungeonBook.ts';
 import { dressingOf, stylePacks } from './dungeonDressing.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import { askDungeon, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
@@ -136,7 +136,11 @@ test('every picture the pieces wear is in the book, the dressing set turned to t
         `${part.archive}.${part.record}`,
       );
     }
-    assert.equal(book.layerOf(COLOUR.water, 0), DUNGEON_LAYERS.water);
+    for (const part of model.parts.filter((each) => each.archive === COLOUR.water)) {
+      const bed = book.layerOf(part.record, ROLE.floor);
+      assert.equal(book.pictures[bed]?.record, ROLE.floor, `water's bed in ${part.record}`);
+      assert.equal(book.layerOf(part.archive, part.record), WATER_FLAG | bed);
+    }
   }
 });
 

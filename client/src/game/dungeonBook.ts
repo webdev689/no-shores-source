@@ -9,12 +9,12 @@ import { COLOUR, IRON, lookOf, ROLE } from './dungeonMesh.ts';
 
 /** Set in a vertex's layer for the return portal's face, over the layer of the picture it wears: past every layer. */
 export const PORTAL_FLAG = 256;
+/** Set in a vertex's layer for still water, over the layer of its bed, the floor of the set it lies in. */
+export const WATER_FLAG = 512;
 
 /** The dungeon's own plain layers, below the city's: candle wax, lit as a surface; an ember's, a lantern's glass, a
- *  crystal's and a fungus cap's glow, each drawn as its colour; and water, drawn by the lights it catches. A
- *  dungeon's pictures never reach them. */
+ *  crystal's and a fungus cap's glow, each drawn as its colour. A dungeon's pictures never reach them. */
 export const DUNGEON_LAYERS = {
-  water: 246,
   fungus: 247,
   wax: 248,
   ember: 249,
@@ -70,7 +70,8 @@ export function smallBook(climate: CityClimate, wanted: Iterable<Wanted>): Small
       if (archive === COLOUR.lanternGlass) return DUNGEON_LAYERS.lanternGlass;
       if (archive === COLOUR.crystal) return DUNGEON_LAYERS.crystal;
       if (archive === COLOUR.fungus) return DUNGEON_LAYERS.fungus;
-      if (archive === COLOUR.water) return DUNGEON_LAYERS.water;
+      // Water's record is the set it lies in: its bed is that set's floor.
+      if (archive === COLOUR.water) return WATER_FLAG | (layers.get(`${record}.${ROLE.floor}`) ?? 0);
       return layers.get(`${archive}.${record}`) ?? 0;
     },
   };
@@ -96,7 +97,11 @@ export function dungeonBook(
     [timberArchive, timberRecord, timberUse, timberTint],
     [...IRON, 'prop'],
     [end.set, end.wall, 'wall'],
-    ...parts.map((part): Wanted => [part.archive, part.record, useOf(part.archive, part.record)]),
+    ...parts.map((part): Wanted =>
+      part.archive === COLOUR.water
+        ? [part.record, ROLE.floor, 'floor']
+        : [part.archive, part.record, useOf(part.archive, part.record)],
+    ),
   ];
   const plain = smallBook(climate, wanted);
   return {

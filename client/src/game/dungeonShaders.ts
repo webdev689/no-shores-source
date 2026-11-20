@@ -1,9 +1,9 @@
 // The dungeon's WGSL: its floor's mesh, its fixtures and its cache in the dungeon's pictures, lit by its lights and
 // the faint light of each cell's mood (`LIGHT_WGSL`), never by a sun; each flame, ember, lantern, crystal and fungus
-// cap glowing in its own colour, a crystal's and a lantern's glass by their facets, and still water dark over a floor
-// of its cell's mood, catching the lights.
+// cap glowing in its own colour, a crystal's and a lantern's glass by their facets, and still water over its bed,
+// mirroring the lit room and catching the lights.
 import { COLOUR_LAYERS } from '../city/pictures.ts';
-import { DUNGEON_LAYERS, PORTAL_FLAG } from './dungeonBook.ts';
+import { DUNGEON_LAYERS, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
 import { type Light, LIGHT_WGSL } from './dungeonLight.ts';
 
@@ -50,13 +50,16 @@ const EMBER = ${DUNGEON_LAYERS.ember}u;
 const LANTERN_GLASS = ${DUNGEON_LAYERS.lanternGlass}u;
 const CRYSTAL = ${DUNGEON_LAYERS.crystal}u;
 const FUNGUS = ${DUNGEON_LAYERS.fungus}u;
-const WATER = ${DUNGEON_LAYERS.water}u;
-// Still water's own colour, lit as a surface is: dark, so the mood and the lights' gleams tell it.
-const WATER_DEEP = vec3f(0.1, 0.14, 0.16);
-// How much of its cell's mood still water shows however dark it lies, so it reads as water and not a hole.
-const WATER_FLOOR = 0.5;
 // A layer with this bit set is the portal's face, in the picture the rest of its number names.
 const PORTAL = ${PORTAL_FLAG}u;
+// A layer with this bit set is still water, over a bed in the picture the rest of its number names.
+const WATER = ${WATER_FLAG}u;
+// Still water's bed seen through it: a wet floor is darker, and water takes the red first.
+const WATER_TINT = vec3f(0.45, 0.55, 0.6);
+// How much of the light on it the room round still water gives back, to be mirrored in it: stone's.
+const ROOM_ALBEDO = 0.3;
+// How much still water mirrors square on, Schlick's F0 for water; edge on, it mirrors all.
+const WATER_F0 = 0.02;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -95,10 +98,10 @@ fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
   return view.moods[min(look, ${MOST_LOOKS - 1}u)].rgb;
 }
 
-// Still water: a slow ripple through its normal; each light a tight, bright gleam off it toward the eye, but the
-// water's own glow, which lies on it; under them a floor of the cell's faint light, and over them a sheen of it, for
-// there is no sky to mirror, caught more the lower the eye looks across it.
-fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
+// Still water over its bed, a slow ripple through its normal: through it the bed, lit as a floor is; in it the room,
+// its walls brighter toward its lights, mirrored more the lower the eye looks across it; on it each light a tight
+// gleam toward the eye, but the water's own glow, which lies on it.
+fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> vec3f {
   let ripple = 0.04 * vec2f(
     sin(point.x * 2.3 + time * 0.7) + 0.6 * sin(point.y * 3.1 - time * 0.5),
     sin(point.y * 2.7 - time * 0.6) + 0.6 * sin(point.x * 3.7 + time * 0.4),
@@ -116,9 +119,14 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f) -> vec3f {
     let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
     gleam += lamp.colour.rgb * share * share * shine * burns * 3.0 * lamp.shape.z;
   }
-  let grazing = pow(1.0 - max(dot(rippled, to_eye), 0.0), 5.0);
-  let sheen = mood * (0.15 + 0.85 * grazing);
-  return mood * WATER_FLOOR + WATER_DEEP * lights_at(point, rippled, time, mood) + gleam + sheen;
+  let through = bed * WATER_TINT * lights_at(point, rippled, time, mood);
+  let mirrored = ROOM_ALBEDO * lights_at(point, reflect(-to_eye, rippled), time, mood);
+  return mix(through, mirrored, fresnel(max(dot(rippled, to_eye), 0.0))) + gleam;
+}
+
+// How much of the room still water mirrors, by the cosine between its normal and the eye (Schlick's).
+fn fresnel(cosine: f32) -> f32 {
+  return WATER_F0 + (1.0 - WATER_F0) * pow(1.0 - cosine, 5.0);
 }
 
 // How much of a glowing facet's glow shows: all of it square to the eye, a little over half edge on.
@@ -126,17 +134,20 @@ fn facing_share(face: vec3f, to_eye: vec3f) -> f32 {
   return 0.55 + 0.45 * abs(dot(face, to_eye));
 }
 
-// A crystal's or a lantern pane's glow by its facet, and a little lit by the lights round it, so one crystal's faces
-// differ and it reads as a solid, not a flat cut-out. \`face\` is the triangle's own normal, flat across it.
+// A crystal's or a lantern pane's glow by its facet, lifted a little toward its whole by the lights round it, so one
+// crystal's faces differ and it reads as a solid, not a flat cut-out; never past its glow, which would clip it.
+// \`face\` is the triangle's own normal, flat across it.
 fn facet(glow: vec3f, point: vec3f, face: vec3f, to_eye: vec3f, time: f32) -> vec3f {
-  return glow * (facing_share(face, to_eye) + 0.15 * lights_at(point, face, time, vec3f(0.0)));
+  let lit = lights_at(point, face, time, vec3f(0.0));
+  return glow * facing_share(face, to_eye) * (0.85 + 0.15 * min(max(lit.r, max(lit.g, lit.b)), 1.0));
 }
 
 @fragment
 fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   let last = textureNumLayers(pictures) - 1u;
   let portal = (surface.layer & PORTAL) != 0u;
-  let layer = surface.layer & ~PORTAL;
+  let water = (surface.layer & WATER) != 0u;
+  let layer = surface.layer & ~(PORTAL | WATER);
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(layer, last)).rgb;
   // The triangle's own normal, turned to the eye: a piece's smooth normals would round a crystal's facets away.
   // Derivatives are taken here, before any branch, as they must be.
@@ -173,8 +184,8 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   }
   let normal = normalize(surface.normal);
   let mood = mood_at(surface.point, normal);
-  if layer == WATER {
-    return vec4f(water_at(surface.point, normal, time, mood), 1.0);
+  if water {
+    return vec4f(water_at(surface.point, normal, time, mood, sampled), 1.0);
   }
   let light = lights_at(surface.point, normal, time, mood);
   if layer == WAX_LAYER {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
-import { LIGHT_KINDS, LIGHT_WGSL } from './dungeonLight.ts';
+import { CRYSTAL_GLOW, LANTERN_GLOW, LIGHT_KINDS, LIGHT_WGSL } from './dungeonLight.ts';
 import { DUNGEON_SHADER, LIGHT_FLOATS, lightFloats, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
 /** The body of a fragment's branch for a layer: what it draws that layer as. */
@@ -61,7 +61,24 @@ test("a crystal's and a lantern's glass faces glow by how squarely each meets th
   assert.match(DUNGEON_SHADER, /fn facet\([^)]*\) -> vec3f \{[\s\S]*?facing_share\(face, to_eye\)[\s\S]*?lights_at\(/);
 });
 
-test("still water shows no gleam of the water's own glow, and never reads darker than its cell's mood", () => {
+test('no facet of a crystal or a lantern clips, so its brightest still differs from its next', () => {
+  // A facet glows at most its glow: the lights round it lift it toward that, never past it.
+  const lift =
+    /fn facet\([^)]*\) -> vec3f \{[\s\S]*?return glow \* facing_share\(face, to_eye\) \* \(([\d.]+) \+ ([\d.]+) \* min\(/.exec(
+      DUNGEON_SHADER,
+    );
+  assert.ok(lift, 'a facet is its glow by its facing share, lifted by the lights up to 1');
+  assert.equal(Number(lift[1]) + Number(lift[2]), 1);
+  for (const [name, glow] of [
+    ['crystal', CRYSTAL_GLOW],
+    ['lantern', LANTERN_GLOW],
+  ] as const) {
+    assert.ok(Math.max(...glow) <= 1, `${name}'s glow peaks at ${Math.max(...glow)}`);
+    assert.ok(Math.max(...glow) >= 0.95, `${name}'s glow is bright`);
+  }
+});
+
+test('still water shows its bed through it and the lit room in it, by Fresnel, and no gleam of its own glow', () => {
   const floats = (burning: (typeof LIGHT_KINDS)[keyof typeof LIGHT_KINDS]) =>
     lightFloats({ at: [1, 2, 0.4], number: 3, burning });
   assert.equal(floats(LIGHT_KINDS.water).length, LIGHT_FLOATS);
@@ -72,7 +89,24 @@ test("still water shows no gleam of the water's own glow, and never reads darker
     assert.equal(floats(burning)[10], 1);
   const water = /fn water_at[\s\S]*?\n\}/.exec(DUNGEON_SHADER)?.[0] ?? '';
   assert.match(water, /gleam \+= [^;]*lamp\.shape\.z/, "each light's gleam by its share");
-  assert.match(water, /return mood \* WATER_FLOOR \+/, 'a floor of the mood under the rest');
-  const floor = Number(/const WATER_FLOOR = ([\d.]+);/.exec(DUNGEON_SHADER)?.[1]);
-  assert.ok(floor >= 0.4 && floor <= 1, `a floor of ${floor} of the mood`);
+  assert.match(water, /return mix\(through, mirrored, fresnel\([^;]*\)\) \+ gleam;/, 'its bed and the room by Fresnel');
+  assert.match(water, /let through = bed \* WATER_TINT \* lights_at\(/, 'its bed lit as a floor is, through the water');
+  assert.match(water, /let mirrored = ROOM_ALBEDO \* lights_at\(point, reflect\(/, 'the room lit toward its lights');
+  assert.match(DUNGEON_SHADER, /if water \{\s*return vec4f\(water_at\([^;]*sampled[^;]*\), 1\.0\);/, 'its bed sampled');
+  const tint = (/vec3f\(([^)]*)\)/.exec(DUNGEON_SHADER.split('const WATER_TINT =')[1] ?? '')?.[1] ?? '')
+    .split(',')
+    .map(Number);
+  assert.equal(tint.length, 3);
+  assert.ok(
+    tint.every((value) => value > 0.3 && value < 0.8),
+    `a wet bed, darker: ${tint}`,
+  );
+  assert.ok((tint[0] ?? 1) < (tint[2] ?? 0), 'water takes the red first');
+  const square = Number(/const WATER_F0 = ([\d.]+);/.exec(DUNGEON_SHADER)?.[1]);
+  const body = /fn fresnel\(cosine: f32\) -> f32 \{\s*return ([^;]+);\s*\}/.exec(DUNGEON_SHADER)?.[1];
+  assert.ok(body, 'a fresnel');
+  const fresnel = (cosine: number) => Number(runInNewContext(body, { cosine, WATER_F0: square, pow: Math.pow }));
+  assert.ok(Math.abs(fresnel(1) - 0.02) < 1e-9, 'square on, water mirrors 2%');
+  assert.ok(Math.abs(fresnel(0) - 1) < 1e-9, 'edge on, all of it');
+  assert.ok(fresnel(0.5) > fresnel(0.8) && fresnel(0.8) > fresnel(1));
 });

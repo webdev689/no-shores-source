@@ -336,7 +336,8 @@ const PICTURES: Readonly<Record<string, (look: Look, climate: Climate) => Pictur
   rope: dressing(3),
   ore: dressing(4),
   brass: dressing(5),
-  water: () => [COLOUR.water, 0],
+  // Still water lies over its bed, the floor of the look's set.
+  water: (look) => [COLOUR.water, look.set],
   glow: () => [COLOUR.glow, 0],
   ember: () => [COLOUR.ember, 0],
   crystal: () => [COLOUR.crystal, 0],

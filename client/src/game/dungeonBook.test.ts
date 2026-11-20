@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { COLOUR_LAYERS } from '../city/pictures.ts';
-import { DUNGEON_LAYERS, smallBook } from './dungeonBook.ts';
-import { COLOUR } from './dungeonMesh.ts';
+import { PORTAL_FLAG, smallBook, WATER_FLAG } from './dungeonBook.ts';
+import { COLOUR, ROLE } from './dungeonMesh.ts';
 
 test("a dungeon set's pictures turn to the island's climate, each once, and a flame keeps the city's glow", () => {
   const book = smallBook({ climate: 'temperate', season: 'summer' }, [
@@ -22,17 +22,19 @@ test("a dungeon set's pictures turn to the island's climate, each once, and a fl
 
 test("each colour the dungeon's shader draws takes a layer of its own, past the pictures a dungeon wears", () => {
   const book = smallBook({ climate: 'temperate', season: 'summer' }, [[123, 0, 'wall']]);
-  const drawn = [
-    COLOUR.glow,
-    COLOUR.wax,
-    COLOUR.ember,
-    COLOUR.lanternGlass,
-    COLOUR.crystal,
-    COLOUR.fungus,
-    COLOUR.water,
-  ];
+  const drawn = [COLOUR.glow, COLOUR.wax, COLOUR.ember, COLOUR.lanternGlass, COLOUR.crystal, COLOUR.fungus];
   const layers = drawn.map((archive) => book.layerOf(archive, 0));
   assert.equal(new Set(layers).size, drawn.length);
-  assert.equal(book.layerOf(COLOUR.water, 0), DUNGEON_LAYERS.water);
-  for (const layer of layers) assert.ok(layer > 200, `${layer} lies past any dungeon's pictures`);
+  for (const layer of layers)
+    assert.ok(layer > 200 && layer < PORTAL_FLAG, `${layer} lies past any dungeon's pictures`);
+});
+
+test("still water is drawn over its bed, the floor of the set it lies in, by a flag past the portal's", () => {
+  const book = smallBook({ climate: 'temperate', season: 'summer' }, [
+    [123, ROLE.wall, 'wall'],
+    [123, ROLE.floor, 'floor'],
+  ]);
+  assert.equal(book.layerOf(COLOUR.water, 123), WATER_FLAG | 1);
+  assert.equal(WATER_FLAG & PORTAL_FLAG, 0);
+  assert.ok(WATER_FLAG > PORTAL_FLAG);
 });

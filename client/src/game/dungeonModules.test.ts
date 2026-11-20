@@ -5,7 +5,7 @@ import { MATERIALS } from '../city/pictures.ts';
 import { meshBuilder } from '../models/model.ts';
 import { dot, minus } from '../models/vector.ts';
 import { CLIMATES, climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
-import { DUNGEON_LAYERS, smallBook } from './dungeonBook.ts';
+import { smallBook, WATER_FLAG } from './dungeonBook.ts';
 import { SIDE_STEPS } from './dungeonLayout.ts';
 import { COLOUR, IRON, ROLE } from './dungeonMesh.ts';
 import {
@@ -360,7 +360,8 @@ test('every part wears a picture: the look for its stone, the timber, the iron, 
     assert.deepEqual(pictures.get('trim'), [123, ROLE.trim]);
     assert.deepEqual(pictures.get('wood'), MATERIALS[climate].timber.slice(0, 2));
     assert.deepEqual(pictures.get('iron'), IRON);
-    assert.deepEqual(pictures.get('water'), [COLOUR.water, 0]);
+    // Still water shows the floor of its cell's look as its bed.
+    assert.deepEqual(pictures.get('water'), [COLOUR.water, 123]);
     assert.deepEqual(pictures.get('wax'), [COLOUR.wax, 0]);
     // The dressing set, which the book turns to the climate as the painter numbers it.
     const dressing = ['bone', 'relief', 'cloth', 'rope', 'ore', 'brass'].map((name) => pictures.get(name));
@@ -372,8 +373,13 @@ test('every part wears a picture: the look for its stone, the timber, the iron, 
     assert.equal(climateArchive(DRESSING_ARCHIVE, 0, climate, 'summer'), painted);
   }
   assert.throws(() => partPicture(PARTS.length, look, 'temperate'), /no picture/);
-  const book = smallBook({ climate: 'temperate', season: 'summer' }, []);
-  assert.equal(book.layerOf(...partPicture(PARTS.indexOf('water'), look, 'temperate')), DUNGEON_LAYERS.water);
+  const book = smallBook({ climate: 'temperate', season: 'summer' }, [
+    [123, ROLE.wall, 'wall'],
+    [123, ROLE.floor, 'floor'],
+  ]);
+  const water = book.layerOf(...partPicture(PARTS.indexOf('water'), look, 'temperate'));
+  assert.equal(water, WATER_FLAG | book.layerOf(123, ROLE.floor));
+  assert.equal(water & ~WATER_FLAG, 1, 'its bed: the look’s floor');
 });
 
 test('a pack that fails to come gives none with one warning, and is asked for again the next time', async (context) => {
