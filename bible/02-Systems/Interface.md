@@ -96,8 +96,8 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-Its panels, plates and words are HTML laid over the canvas; by the owner's word, what can be made without HTML
-should be ([[HTML Is Avoided Where It Can Be]]).
+Its panels, plates and words are HTML laid over the canvas; by the owner's word none is to be, the game drawing them
+all itself ([[The Interface Uses No HTML, Now or Later]]).
 
 ## How it works
 

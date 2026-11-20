@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-20
-status: in force
+status: replaced
+replaced_by: "[[The Interface Uses No HTML, Now or Later]]"
 ---
 # HTML Is Avoided Where It Can Be
+
+Replaced by [[The Interface Uses No HTML, Now or Later]].
 
 > "Avoid HTML when possible"
 

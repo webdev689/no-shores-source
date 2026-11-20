@@ -142,7 +142,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ships Sail and Hit Half Again Harder in Sea Fights]]
 - [[Quests Get a Task Tracker, and the Placeholder Panel Goes]]
 - [[Speech Blurbs Show Their Text Without Glyphs]]
-- [[HTML Is Avoided Where It Can Be]]
+- [[The Interface Uses No HTML, Now or Later]]
+- [[Work Leaves the Main Thread Where It Can]]
+- [[The Network Is Made Smaller and Readied for WebTransport]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
 - [[Weather and Day and Night Come From DFO, Much Improved]]
@@ -190,6 +192,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## Replaced
 
+- [[HTML Is Avoided Where It Can Be]]
 - [[Locked On, the Figure Faces Its Foe]], by [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
