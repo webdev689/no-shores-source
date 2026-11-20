@@ -122,7 +122,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal, and two stand on
   the portal's wall, 1.15 m either side of its middle, so the end of the way is lit and marked before it opens.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
-  to 1.8 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
+  to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.
 - **Purposes** (`name_rooms`). Every room has a purpose from its block's style's bank
   ([[Dungeons as Claude Builds Them]], "The varied dungeons"): the way in's room and the end room their style's own,

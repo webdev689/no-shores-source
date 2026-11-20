@@ -20,7 +20,7 @@ use crate::{CELL_M, Cell, SIDES, Side};
 pub const BLOCKS: (usize, usize) = (2, 5);
 const DEEPER_SHARE: f64 = 0.5;
 /// A doorway's frame: the opening's half width, the jambs' depth into the corridor, and the lintel's underside (m).
-pub const DOORWAY_HALF_M: f64 = 0.9;
+pub const DOORWAY_HALF_M: f64 = 0.8;
 pub const JAMB_DEPTH_M: f64 = 0.3;
 pub const LINTEL_M: f64 = 2.8;
 /// A pillar's half width, and the room that stands them: at least this many cells each way.
