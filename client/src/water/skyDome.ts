@@ -37,6 +37,16 @@ fn twilight_glow() -> vec3f {
   return colour * strength * (1.0 - 0.85 * sky_state.zenith.w);
 }
 
+// The fog's colour along 'direction', lit through by the sun: warm toward its bearing while it is low, as a bank glows
+// at dawn and dusk (none under a closed deck, as the glow), and a little brighter toward it by day.
+fn fog_light(direction: vec3f) -> vec3f {
+  let level = normalize(direction.xy + vec2f(1e-5, 0.0));
+  let sun_level = normalize(sky_state.sun.xy + vec2f(1e-5, 0.0));
+  let toward = 0.5 + 0.5 * dot(level, sun_level);
+  let ahead = pow(max(dot(normalize(direction), sky_state.sun.xyz), 0.0), 8.0) * max(sky_state.sun.z, 0.0);
+  return sky_state.fog.rgb + twilight_glow() * pow(toward, 4.0) * 0.45 + sky_state.key_light.rgb * ahead * 0.15;
+}
+
 // The dome's own colour along 'direction', without cloud, stars or bodies: the gradient the weather has set, the glow
 // low toward the sun's bearing, the pink band and the earth's shadow opposite it, and the fog's veil.
 fn sky_haze(direction: vec3f) -> vec3f {
@@ -62,7 +72,7 @@ fn sky_haze(direction: vec3f) -> vec3f {
   colour = mix(colour, sky_state.horizon.rgb * vec3f(0.58, 0.68, 0.78), 1.0 - smoothstep(-0.3, 0.0, up));
   // The weather's fog closes in overhead as well, wholly near the horizon.
   let veil = 1.0 - exp(-sky_state.fog.w * 150.0 / max(up, 0.05));
-  return mix(colour, sky_state.fog.rgb, veil);
+  return mix(colour, fog_light(direction), veil);
 }
 
 // The stars along a direction: turned back about the pole (as high as the place's latitude, due north) by the
@@ -94,7 +104,9 @@ fn moon_light(direction: vec3f) -> vec4f {
   if (moon.z < -0.05 || direction.z < 0.0) { return vec4f(0.0); }
   let night = 1.0 - 0.75 * sky_state.sun.w;
   let apart = acos(clamp(dot(direction, moon), -1.0, 1.0));
-  let halo = (exp(-apart / 0.04) * 0.07 + exp(-apart / 0.3) * 0.025) * sky_state.moon.w * night;
+  // The air round the moon glows with it, wider and brighter through haze or a thin veil of cloud.
+  let veiled = 1.0 + 1.5 * max(sky_state.zenith.w, sky_state.fog.w * 250.0);
+  let halo = (exp(-apart / 0.05) * 0.12 + exp(-apart / 0.35) * 0.04) * sky_state.moon.w * night * min(veiled, 2.5);
   var out = vec4f(vec3f(0.62, 0.7, 0.9) * halo, 0.0);
   if (apart > MOON_RADIUS * 1.2) { return out; }
   let right = normalize(cross(moon, vec3f(0.0, 0.0, 1.0)) + vec3f(1e-5, 0.0, 0.0));
@@ -150,9 +162,14 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
   let ambient = mix(sky_state.horizon.rgb, sky_state.zenith.rgb, 0.5);
   let grey = mix(ambient, vec3f(luma(ambient)), 0.55);
   let key = sky_state.key.xyz;
-  let key_light = sky_state.key_light.rgb + twilight_glow() * 0.9 * step(0.999, dot(key, sky_state.sun.xyz));
+  let key_light = sky_state.key_light.rgb;
   let toward_key = max(dot(direction, key), 0.0);
   let silver = pow(toward_key, 12.0) * 1.4 + pow(toward_key, 3.0) * 0.25;
+  // The low sun's glow lights the clouds from its side, whichever body is the key, until it is 12 degrees under.
+  let toward_sun = max(dot(direction, sky_state.sun.xyz), 0.0);
+  let sun_silver = pow(toward_sun, 12.0) * 1.4 + pow(toward_sun, 3.0) * 0.25;
+  let sun_side = 0.5 + 0.5 * dot(normalize(direction.xy + vec2f(1e-5, 0.0)), normalize(sky_state.sun.xy + vec2f(1e-5, 0.0)));
+  let glow = twilight_glow() * 0.9 * (0.3 + 0.7 * sun_side * sun_side);
 
   // Cirrus, far up: streaks long along the drift (east), drifting twice as fast as the deck.
   let high = direction.xy / (up + 0.02) * 0.3;
@@ -162,7 +179,7 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
     wisps = sky_spell_mix(wisps, wisps_at(high, sky_state.drift_next.xy, wisp_keep), 0.325);
   }
   let wisp = smoothstep(0.5, 0.85, wisps) * (0.18 + 0.3 * cover) * smoothstep(0.02, 0.2, up);
-  let wisp_colour = grey * 0.9 + key_light * (0.45 + silver) + twilight_glow() * 0.35;
+  let wisp_colour = grey * 0.9 + key_light * (0.45 + silver) + glow * (0.85 + sun_silver);
 
   // The deck: lower in a storm, so its cells loom larger.
   let reach_scale = 0.9 / (1.0 - 0.4 * storm);
@@ -173,15 +190,20 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
   // The detail averaged away softens the edge, so however blurred the deck keeps its mean cover.
   let lost = length((vec4f(1.0) - keep) * DECK_WEIGHTS) * 0.5;
   let threshold = 0.74 - 0.66 * cover;
-  let density = smoothstep(threshold - lost, threshold + 0.2 + lost, puff);
+  // Fair-weather cumulus has crisp edges; a closing deck's soften into one sheet.
+  let edge = mix(0.12, 0.24, cover);
+  let density = smoothstep(threshold - lost, threshold + edge + lost, puff);
   let alpha = density * smoothstep(0.0, 0.12, up) * (0.85 + 0.15 * cover);
   var out = vec4f(wisp_colour, wisp);
   if (alpha > 0.0) {
     let toward_plane = normalize(key.xy + vec2f(1e-5, 0.0)) * 0.3;
     let lit = clamp(0.55 + (puff - deck_drifted(plane + toward_plane, keep * vec4f(1.0, 1.0, 1.0, 0.0))) * 4.0, 0.0, 1.0);
     let thick = smoothstep(threshold, threshold + 0.45, puff);
-    let shade = (1.2 - 0.75 * thick) * (1.0 - 0.6 * storm);
+    // A closed deck keeps its relief: thicker billows darker underneath, thinner ones paler, the more so in a storm.
+    let relief = 1.0 + (0.5 - puff) * (0.5 + 0.9 * storm) * smoothstep(0.6, 1.0, cover);
+    let shade = (1.2 - 0.75 * thick) * (1.0 - 0.6 * storm) * relief;
     var colour = grey * shade + key_light * (0.2 + 0.55 * lit + silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
+    colour += glow * (0.2 + 0.55 * lit + sun_silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
     colour += vec3f(0.75, 0.8, 1.0) * flash * (0.5 + 1.5 * thick) * (0.6 + 0.8 * value_noise((plane - sky_state.drift.xy) * 0.5));
     out = vec4f(mix(out.rgb * out.a, colour, alpha) / max(mix(out.a, 1.0, alpha), 1e-4), mix(out.a, 1.0, alpha));
   }
@@ -202,7 +224,10 @@ fn sky(direction: vec3f, blur: f32) -> vec3f {
   let disc = smoothstep(cos(SUN_RADIUS * 1.15), cos(SUN_RADIUS), toward) * (1.0 - smoothstep(0.0, 0.02, blur));
   let halo = pow(toward, 400.0) * 0.4 + pow(toward, 24.0) * (0.1 + 0.1 * low) + pow(toward, 5.0) * 0.05 * low;
   // The disc keeps its own hue at full brightness, so a low orange sun still stands out of its glow.
-  let disc_colour = sun_colour / max(max(sun_colour.r, sun_colour.g), max(sun_colour.b, 1e-3)) * 1.8;
+  // Its limb darker than its middle, as a real sun's is: the disc reads as a sphere, not a flat coin.
+  let off_middle = clamp((1.0 - toward) / (1.0 - cos(SUN_RADIUS)), 0.0, 1.0);
+  let limb = 0.62 + 0.38 * sqrt(1.0 - off_middle);
+  let disc_colour = sun_colour / max(max(sun_colour.r, sun_colour.g), max(sun_colour.b, 1e-3)) * 1.8 * limb;
   let clouds = cloud_light(direction, blur);
   colour = mix(mix(colour, disc_colour, disc * clear * step(1e-4, luma(sun_colour))), clouds.rgb, clouds.a * clear);
   colour += sun_colour * halo * (1.0 - 0.6 * clouds.a) * (0.3 + 0.7 * clear);

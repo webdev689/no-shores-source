@@ -7,7 +7,8 @@ status: in force
 
 The owner judged the weather's first sounds on the weather sound sheet: Keep for the rain's hiss, its near patter and
 its drumming on the Sloop's deck; Redo for the gutters and for both near cracks and both far rolls of thunder. Then:
-"Pass done. Dont be afraid to use freesound"
+
+> "Pass done. Dont be afraid to use freesound"
 
 ## What it settles
 

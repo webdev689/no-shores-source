@@ -43,6 +43,7 @@ const reading = (more: Partial<SkyReading>): SkyReading => ({
   gust: 0.5,
   temperatureC: 15,
   wetness: 0,
+  snowCover: 0,
   steeringMS: 0,
   ...more,
 });

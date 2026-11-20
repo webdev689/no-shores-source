@@ -50,12 +50,19 @@ pub fn heavens_at(y_m: f64, world_s: f64) -> Heavens {
     Heavens {
         latitude_deg,
         sun: toward(latitude, declination, hour_angle),
-        // The moon trails the sun by its phase, and stands as far south of the sun's path at full as the sun is north.
+        // The moon trails the sun by its phase, and at full stands as far south of the equator as the sun is north.
         moon: toward(latitude, declination * phase_cosine, hour_angle - TAU * moon_phase),
         moon_phase,
         moon_lit: (1.0 - phase_cosine) / 2.0,
         star_turn: hour_angle,
     }
+}
+
+/// The sine of the sun's height at a place on the map at `world_s`: the sun alone, for what follows it through the day.
+#[must_use]
+pub fn sun_up_at(y_m: f64, world_s: f64) -> f64 {
+    let hour_angle = TAU * (day_fraction(world_s) - 0.5);
+    toward(latitude_deg(y_m).to_radians(), DECLINATION_DEG.to_radians(), hour_angle)[2]
 }
 
 /// The direction of a body at a declination and hour angle seen from a latitude: east, south and up.

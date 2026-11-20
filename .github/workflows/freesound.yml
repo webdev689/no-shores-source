@@ -28,12 +28,14 @@ jobs:
         run: node --test tools/freesound/pages.test.mjs
       - name: Find the candidates
         run: node tools/freesound/candidates.mjs freesound-candidates
-      # The publish cuts a long pick with ffmpeg; installed in a step of its own, away from the token.
+      # A long pick is cut with ffmpeg, which decodes a stranger's audio: in steps that hold no key.
       - name: Install ffmpeg
         run: sudo apt-get install -y -q ffmpeg > /dev/null
+      - name: Cut the long picks
+        run: python3 -I tools/freesound/publish.py --cut freesound-candidates
       # The owner's picks go to R2 with the repository's Cloudflare token, each named by its hash, so a run changes
-      # nothing already there. The game's list of them is kept with the download (sounds.json) for a commit to take
-      # in. Without the token the run says so and publishes nothing.
+      # nothing already there; this step runs no ffmpeg. The game's list of them is kept with the download
+      # (sounds.json) for a commit to take in. Without the token the run says so and publishes nothing.
       - name: Publish the picks to R2
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}

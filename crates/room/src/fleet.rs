@@ -84,15 +84,6 @@ struct Taken {
     calls: Vec<(PlayerId, Call)>,
 }
 
-/// Where a fleet room's sea lies, for its weather: the map's middle, for a room that is nowhere on the map.
-pub const FLEET_AT: [f64; 2] = [FRAME_WIDTH_M as f64 / 2.0, FRAME_HEIGHT_M as f64 / 2.0];
-
-/// The wind a fleet room's ships sail in at its time `time`: the weather's over its sea at world time.
-#[must_use]
-pub fn fleet_wind(epoch_s: f64, time: f64) -> [f64; 2] {
-    sea_wind_at(FLEET_AT, epoch_s + time)
-}
-
 /// A fleet room: its clock in ticks, world time at its first tick, its swell, its fight, its players, the next number
 /// for a ship, and what happened since it was last asked.
 #[derive(Debug)]
@@ -137,10 +128,10 @@ impl Fleet {
         self.clock
     }
 
-    /// The swell and the wind the room's ships sail in now.
+    /// The swell the room's ships ride; each sails in the weather's wind where she is.
     #[must_use]
-    pub fn weather(&self) -> (&Swell, [f64; 2]) {
-        (&self.swell, fleet_wind(self.epoch_s, self.time()))
+    pub fn swell(&self) -> &Swell {
+        &self.swell
     }
 
     /// The fight: every ship in the room, the balls aloft.
@@ -211,7 +202,7 @@ impl Fleet {
         }
         let swell = self.swell.clone();
         let waters = OpenSea { swell: &swell };
-        let events = self.fight.step(&orders, &waters, fleet_wind(self.epoch_s, time), time);
+        let events = self.fight.step(&orders, &waters, &|at| sea_wind_at(at, self.epoch_s + time), time);
         let gone: Vec<ShipId> = events
             .iter()
             .filter_map(|event| if let Event::Gone { ship, .. } = event { Some(*ship) } else { None })

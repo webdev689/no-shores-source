@@ -54,6 +54,40 @@ export interface Emitter {
 /** A standing bed's share of the room. */
 const BED_ROOM = 0.35;
 
+/** Where a standing bed is heard from: a panner heard whole within `near` metres, falling off past it. */
+function bedPanner(audio: BaseAudioContext, near: number): PannerNode {
+  const panner = audio.createPanner();
+  Object.assign(panner, {
+    panningModel: 'equalpower',
+    distanceModel: 'inverse',
+    refDistance: near,
+    maxDistance: 10000,
+  });
+  return panner;
+}
+
+/** A recorded bed's way out, as its synthesiser's emitter goes: its level, then wide into `out`, or standing through
+ *  a panner with a little in the room. */
+export function recordedBedChain(
+  audio: BaseAudioContext,
+  how: { readonly standing: boolean; readonly near: number },
+  out: AudioNode,
+  send: AudioNode,
+): { readonly level: GainNode; readonly panner: PannerNode | null } {
+  const level = audio.createGain();
+  level.gain.value = 0;
+  if (!how.standing) {
+    level.connect(out);
+    return { level, panner: null };
+  }
+  const panner = bedPanner(audio, how.near);
+  level.connect(panner).connect(out);
+  const share = audio.createGain();
+  share.gain.value = BED_ROOM;
+  panner.connect(share).connect(send);
+  return { level, panner };
+}
+
 /** A bed's emitter: wide, two plays of its loop half a loop apart, one to each ear; or one play standing at a point
  *  through a panner, heard whole within `near` metres, a little of it in the room. A gusty bed's top is opened and closed by `tone`. */
 export function emitterOf(
@@ -78,13 +112,7 @@ export function emitterOf(
   const into = tone ?? gain;
   if (tone) tone.connect(gain);
   if (how.standing) {
-    const panner = audio.createPanner();
-    Object.assign(panner, {
-      panningModel: 'equalpower',
-      distanceModel: 'inverse',
-      refDistance: how.near,
-      maxDistance: 10000,
-    });
+    const panner = bedPanner(audio, how.near);
     const played = source(random());
     played.connect(into);
     gain.connect(panner).connect(out);

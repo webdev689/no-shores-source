@@ -46,8 +46,9 @@ work: Dynamic Skies, Snowfall, Windfall, Heat Haze and Better Ambience ([[Own Wo
   agreeing to the bit; DFO's was each browser's own JavaScript, its clock rate a client constant.
 - **One field, cheap.** Drifting fields of noise read in microseconds, where DFO's lattice of storm systems cost up
   to a fifth of a second to draw a node and needed a memory of 40,000 births.
-- **One wind.** The weather's wind drives the ships' sails and fights, the chop and whitecaps, the clouds' drift, the
-  rain's slant, the trees' sway and the wind's sound; DFO had four winds that disagreed.
+- **One wind.** The weather's wind drives the ships' sails and fights, the chop and whitecaps, the rain's slant, the
+  trees' sway and the wind's sound, and the clouds drift with the flow that carries the weather; DFO had four winds
+  that disagreed.
 - **The same for everyone.** Clouds drift by world time, strikes fall on a shared lattice, bolts take their shape from
   their strike; in DFO each browser's clouds and overhead lightning were its own.
 - **A real sun.** The sun and moon follow a real sky at each place's latitude, so the north's evenings are long and

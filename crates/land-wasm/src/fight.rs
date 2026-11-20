@@ -266,9 +266,8 @@ fn step(request: &[u8]) -> Result<Value, String> {
                 } else {
                     Orders { helm: sailing::ship::Helm { climb: 0, ..orders.helm }, fire: false, load: None, ..orders }
                 };
-                let at = fight.vessel(PLAYER).map_or([0.0, 0.0], |vessel| [vessel.ship.x, vessel.ship.y]);
-                let wind = sea_wind_at(at, world + f64::from(tick) * TICK_SECONDS);
-                events.extend(fight.step(&[(PLAYER, now)], &waters, wind, time + f64::from(tick) * TICK_SECONDS));
+                let wind_at = |at| sea_wind_at(at, world + f64::from(tick) * TICK_SECONDS);
+                events.extend(fight.step(&[(PLAYER, now)], &waters, &wind_at, time + f64::from(tick) * TICK_SECONDS));
             }
             Ok(view(fight, &events, orders.aim.as_ref(), &waters, time + f64::from(ticks) * TICK_SECONDS))
         })

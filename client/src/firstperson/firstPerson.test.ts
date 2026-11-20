@@ -38,7 +38,7 @@ function firstPerson(drawn: (path: string) => boolean) {
   const frame = async (seconds: number, state: FirstPersonState, input = still) => {
     const events = person.update(seconds, input, state);
     await new Promise((resolve) => setImmediate(resolve));
-    person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 640, 400);
+    person.draw({} as GPUCommandEncoder, {} as GPUTextureView, { width: 640, height: 400, light: [1, 1, 1] });
     const glows = quads.map((quad) => quad.glow?.look ?? 0);
     return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })), glows };
   };

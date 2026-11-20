@@ -495,6 +495,17 @@ pub unsafe extern "C" fn land_strikes(address: *const u8, length: usize) -> u64 
     hand_over(floats_bytes(&sky_door::strikes_numbers(&floats_of(request))))
 }
 
+/// The wind a ship's sails feel at a point of the sea, as `sky_door::sea_wind_numbers` reads the request.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_sea_wind(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(floats_bytes(&sky_door::sea_wind_numbers(&floats_of(request))))
+}
+
 /// The climates' keys in their numbers' order, as JSON text.
 #[unsafe(no_mangle)]
 pub extern "C" fn land_climates() -> u64 {

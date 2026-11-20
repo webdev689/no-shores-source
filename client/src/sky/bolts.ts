@@ -6,6 +6,9 @@ import type { Strike } from './skyLaw.ts';
 export const MOST_SEGMENTS = 512;
 const CHANNEL_SEGMENTS = 28;
 const BRANCH_SHARE = 0.35;
+/** The least a cloud's base stands over the ground it strikes, metres: a hill that rises into the deck still takes a
+ *  bolt from above it. */
+export const LOWEST_BASE_OVER_GROUND_M = 200;
 
 /** A point east, south and up, metres. */
 type Point = readonly [number, number, number];
@@ -23,12 +26,14 @@ const seedOf = (strike: Strike): number =>
   (Math.round(strike.x) * 73856093) ^ (Math.round(strike.y) * 19349663) ^ Math.round(strike.atS * 1000);
 
 /**
- * A strike's path as segments, world metres: to the ground, a jagged channel from the cloud base `baseM` up to the
- * ground at `groundM`, with two branches off it; in the cloud, a channel running across under the base. Each segment
- * holds its two ends and how bright it is against the main channel (1).
+ * A strike's path as segments, world metres: to the ground, a jagged channel from the cloud base `baseM` down to the
+ * ground under the strike at `groundM`, with two branches off it; in the cloud, a channel running 60 to 120 m under
+ * the base, as a crawler is seen from below (inside the cloud it would only light it). The base stands at least
+ * LOWEST_BASE_OVER_GROUND_M over the ground. Each segment holds its ends and how bright it is against the main channel.
  */
 export function boltPath(strike: Strike, baseM: number, groundM: number): (readonly [Point, Point, number])[] {
   const seed = seedOf(strike);
+  const base = Math.max(baseM, groundM + LOWEST_BASE_OVER_GROUND_M);
   const segments: (readonly [Point, Point, number])[] = [];
   const walk = (from: Point, to: Point, steps: number, brightness: number, salt: number): Point[] => {
     const points: Point[] = [from];
@@ -48,11 +53,11 @@ export function boltPath(strike: Strike, baseM: number, groundM: number): (reado
     return points;
   };
   if (strike.toGround) {
-    const top: Point = [strike.x + (draw(seed, 1) - 0.5) * 800, strike.y + (draw(seed, 2) - 0.5) * 800, baseM];
+    const top: Point = [strike.x + (draw(seed, 1) - 0.5) * 800, strike.y + (draw(seed, 2) - 0.5) * 800, base];
     const channel = walk(top, [strike.x, strike.y, groundM], CHANNEL_SEGMENTS, 1, 10);
     for (const branch of [0, 1]) {
       const start = channel[Math.floor(CHANNEL_SEGMENTS * (0.2 + 0.3 * draw(seed, 20 + branch)))] ?? top;
-      const reach = (baseM - groundM) * BRANCH_SHARE;
+      const reach = (base - groundM) * BRANCH_SHARE;
       const end: Point = [
         start[0] + (draw(seed, 30 + branch) - 0.5) * reach,
         start[1] + (draw(seed, 40 + branch) - 0.5) * reach,
@@ -64,7 +69,7 @@ export function boltPath(strike: Strike, baseM: number, groundM: number): (reado
     const heading = draw(seed, 3) * Math.PI * 2;
     const span = 2500 + 3500 * draw(seed, 4);
     const half: Point = [(Math.sin(heading) * span) / 2, (-Math.cos(heading) * span) / 2, 0];
-    const height = baseM + 150 + 250 * draw(seed, 5);
+    const height = base - 60 - 60 * draw(seed, 5);
     walk(
       [strike.x - half[0], strike.y - half[1], height],
       [strike.x + half[0], strike.y + half[1], height],
@@ -114,21 +119,58 @@ struct Drawn { @builtin(position) position: vec4f, @location(0) light: f32, @loc
 }
 `;
 
+/** The strikes a frame draws: every one followed, the world's time, the cloud's base (metres over the sea) and the
+ *  ground's height at a point (null where no land is known). */
+export interface StrikesNow {
+  readonly list: readonly Strike[];
+  readonly worldS: number;
+  readonly baseM: number;
+  readonly groundAt: (x: number, y: number) => number | null;
+}
+
+/**
+ * Writes the strikes flashing now into `into`, each segment two points from the eye `eye`: xyz with its light, then
+ * xyz with its width in pixels. Each bolt runs to the ground under its own strike, or to the sea where that lies
+ * under it or no land is known. Gives how many floats it wrote.
+ */
+export function boltsInto(into: Float32Array, eye: readonly [number, number, number], strikes: StrikesNow): number {
+  let floats = 0;
+  for (const strike of strikes.list) {
+    const distance = Math.hypot(strike.x - eye[0], strike.y - eye[1]);
+    const light = flashOf(strike, strikes.worldS - strike.atS, distance * 0.5) * 3;
+    if (light <= 0.01) continue;
+    const groundM = Math.max(0, strikes.groundAt(strike.x, strike.y) ?? 0);
+    for (const [from, to, brightness] of boltPath(strike, strikes.baseM, groundM)) {
+      if (floats + 8 > into.length) return floats;
+      const width = Math.max(1.5, (strike.toGround ? 4 : 3) * brightness * Math.min(1, 3000 / Math.max(distance, 1)));
+      into.set([from[0] - eye[0], from[1] - eye[1], from[2] - eye[2], light * brightness], floats);
+      into.set([to[0] - eye[0], to[1] - eye[1], to[2] - eye[2], width], floats + 4);
+      floats += 8;
+    }
+  }
+  return floats;
+}
+
 /**
  * Lightning's bolts over the finished picture, added as light: each strike near the eye while its strokes flash, its
- * channel from the cloud to the ground or across in the cloud, hidden where the land or the city stands nearer.
+ * channel from the cloud to the ground or across under the cloud, hidden where the land or the city stands nearer.
  */
 export class BoltView {
   private readonly gpu: Gpu;
+  private readonly layout: GPUBindGroupLayout;
   private readonly pipeline: GPURenderPipeline;
   private readonly uniform: GPUBuffer;
   private readonly segments: GPUBuffer;
+  private readonly uniformValues = new Float32Array(20);
+  private readonly segmentValues = new Float32Array(MOST_SEGMENTS * 8);
+  /** The bind group for the scene's depth it was made for. */
+  private bound: { depth: GPUTexture; group: GPUBindGroup } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     const { device } = gpu;
     const seen = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
-    const layout = device.createBindGroupLayout({
+    this.layout = device.createBindGroupLayout({
       entries: [
         { binding: 0, visibility: seen, buffer: {} },
         { binding: 1, visibility: SHADER_STAGE.vertex, buffer: { type: 'read-only-storage' } },
@@ -138,7 +180,7 @@ export class BoltView {
     const module = device.createShaderModule({ code: BOLT_WGSL });
     const add = { srcFactor: 'one', dstFactor: 'one', operation: 'add' } as const;
     this.pipeline = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout] }),
       vertex: { module, entryPoint: 'bolt_vertex' },
       fragment: {
         module,
@@ -153,53 +195,41 @@ export class BoltView {
   }
 
   /** Draws the strikes flashing now over `target`, tested against the scene's `depth`, for an eye at `eye` (world
-   *  metres) whose points `fromEye` takes to the picture; the cloud's base `baseM` and the ground's `groundM`. */
+   *  metres) whose points `fromEye` takes to the picture; from the cloud's base `baseM` to the ground `groundAt`. */
   encode(
     encoder: GPUCommandEncoder,
     view: { target: GPUTextureView; depth: GPUTexture; size: readonly [number, number] },
     camera: { fromEye: Float32Array; eye: readonly [number, number, number] },
-    strikes: {
-      readonly list: readonly Strike[];
-      readonly worldS: number;
-      readonly baseM: number;
-      readonly groundM: number;
-    },
+    strikes: StrikesNow,
   ): void {
-    const numbers: number[] = [];
-    for (const strike of strikes.list) {
-      const distance = Math.hypot(strike.x - camera.eye[0], strike.y - camera.eye[1]);
-      const light = flashOf(strike, strikes.worldS - strike.atS, distance * 0.5) * 3;
-      if (light <= 0.01) continue;
-      for (const [from, to, brightness] of boltPath(strike, strikes.baseM, strikes.groundM)) {
-        if (numbers.length >= MOST_SEGMENTS * 8) break;
-        const width = Math.max(1.5, (strike.toGround ? 4 : 3) * brightness * Math.min(1, 3000 / Math.max(distance, 1)));
-        numbers.push(from[0] - camera.eye[0], from[1] - camera.eye[1], from[2] - camera.eye[2], light * brightness);
-        numbers.push(to[0] - camera.eye[0], to[1] - camera.eye[1], to[2] - camera.eye[2], width);
-      }
-    }
-    if (numbers.length === 0) return;
+    const floats = boltsInto(this.segmentValues, camera.eye, strikes);
+    if (floats === 0) return;
     const { device } = this.gpu;
-    const values = new Float32Array(20);
-    values.set(camera.fromEye, 0);
-    values.set([view.size[0], view.size[1], 0, 0], 16);
-    device.queue.writeBuffer(this.uniform, 0, values);
-    device.queue.writeBuffer(this.segments, 0, new Float32Array(numbers));
+    this.uniformValues.set(camera.fromEye, 0);
+    this.uniformValues.set([view.size[0], view.size[1], 0, 0], 16);
+    device.queue.writeBuffer(this.uniform, 0, this.uniformValues);
+    device.queue.writeBuffer(this.segments, 0, this.segmentValues, 0, floats);
     const pass = encoder.beginRenderPass({
       colorAttachments: [{ view: view.target, loadOp: 'load', storeOp: 'store' }],
     });
     pass.setPipeline(this.pipeline);
-    pass.setBindGroup(
-      0,
-      device.createBindGroup({
-        layout: this.pipeline.getBindGroupLayout(0),
-        entries: [
-          { binding: 0, resource: { buffer: this.uniform } },
-          { binding: 1, resource: { buffer: this.segments } },
-          { binding: 2, resource: view.depth.createView() },
-        ],
-      }),
-    );
-    pass.draw(6, numbers.length / 8);
+    pass.setBindGroup(0, this.groupFor(view.depth));
+    pass.draw(6, floats / 8);
     pass.end();
+  }
+
+  /** The bind group for the scene's depth `depth`, made again only when the scene makes a new one. */
+  private groupFor(depth: GPUTexture): GPUBindGroup {
+    if (this.bound?.depth === depth) return this.bound.group;
+    const group = this.gpu.device.createBindGroup({
+      layout: this.layout,
+      entries: [
+        { binding: 0, resource: { buffer: this.uniform } },
+        { binding: 1, resource: { buffer: this.segments } },
+        { binding: 2, resource: depth.createView() },
+      ],
+    });
+    this.bound = { depth, group };
+    return group;
   }
 }

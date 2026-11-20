@@ -77,3 +77,10 @@ test("a place's jobs are its beds first, then every take of every sound its voic
       for (const sound of voice.sounds) assert.ok(names.includes(`sound:${sound}:0`));
   }
 });
+
+test('a recorded-only bird shelters from the rain as the synthesised birds do; a lion does not', () => {
+  const recordedOnly = Object.values(SCAPES).flatMap((scape) => scape.voices.filter((voice) => !voice.sounds.length));
+  const shelters = (cue: string) => recordedOnly.find((voice) => voice.recorded === cue)?.shelters ?? false;
+  assert.ok(shelters('amb.rainforest.parrot') && shelters('amb.swamp.heron'));
+  assert.equal(shelters('amb.savanna.lion'), false);
+});

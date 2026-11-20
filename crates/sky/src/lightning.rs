@@ -53,7 +53,8 @@ pub fn strikes_near(air: &Air, x: f64, y: f64, radius_m: f64, from_s: f64, to_s:
                     to_ground: draw(4) < TO_GROUND,
                     power: 0.5 + 0.5 * draw(5),
                 };
-                if (from_s..to_s).contains(&strike.at_s) {
+                let (east, south) = (strike.x - x, strike.y - y);
+                if (from_s..to_s).contains(&strike.at_s) && (east * east + south * south).sqrt() <= radius_m {
                     strikes.push(strike);
                 }
             }

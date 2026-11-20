@@ -5,7 +5,9 @@ status: in force
 ---
 # A Day Lasts One Real Hour
 
-The owner, asked how long a day of the game lasts in real time: "1 real hour"
+Asked how long a day of the game lasts in real time:
+
+> "1 real hour"
 
 ## What it settles
 

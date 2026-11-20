@@ -233,9 +233,10 @@ fn plant_fragment(shaded: Shaded, @builtin(front_facing) front: bool) -> Drawn {
   let ambient = sky_ambient(normal) * mix(BOUNCE, SKYLIGHT, normal.z * 0.5 + 0.5);
   // Leaves pass on the sky and the ground's bounce, and the sun behind them: a crown's underside is green, never black.
   let behind = 0.3 * max(-dot(normal, sky_state.key.xyz), 0.0) * sun;
-  let through = shaded.leaf * (0.2 * sky_level() + behind * sky_state.key.w);
+  // The key light carries its own brightness: the sky's share is untinted by it, the sun's taken once.
+  let through = shaded.leaf * (vec3f(0.2 * sky_level()) + sky_state.key_light.rgb * behind);
   let lamps = sky_lamps(shaded.from_eye, normal);
-  var colour = shaded.colour * (ambient + direct + lamps) + shaded.colour * sky_state.key_light.rgb * through;
+  var colour = shaded.colour * (ambient + direct + lamps) + shaded.colour * through;
   let settled = shaded.snow * smoothstep(0.35, 0.75, normal.z);
   colour = mix(colour, SNOW * (sky_ambient(normal) + direct + lamps), settled);
   // Wet leaves glisten; bark only darkens.

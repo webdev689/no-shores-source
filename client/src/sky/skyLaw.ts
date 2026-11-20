@@ -22,8 +22,9 @@ export interface SkyReading {
   readonly wind: readonly [number, number];
   readonly gust: number;
   readonly temperatureC: number;
-  /** The ground's wetness from the last twenty minutes' rain, 0 to 1. */
+  /** The ground's wetness from the last twenty minutes' rain, and its fresh snow from their snow, each 0 to 1. */
   readonly wetness: number;
+  readonly snowCover: number;
   /** The flow that carries the weather, m/s east. */
   readonly steeringMS: number;
 }
@@ -45,7 +46,12 @@ export interface SkyLaw {
   at(x: number, y: number, altitudeM: number, worldS: number, climate: string): SkyReading;
   /** The strikes within `reachM` of (x, y) from `fromS` up to `toS`, earliest first. */
   strikes(x: number, y: number, reachM: number, fromS: number, toS: number, climate: string): Strike[];
+  /** The wind a ship's sails feel at (x, y) at `worldS`, m/s east and south: the rules' own, held a world minute. */
+  seaWind(x: number, y: number, worldS: number): readonly [number, number];
 }
+
+/** The way a wind (m/s east and south) blows toward, radians clockwise from north, as a swell's bearing runs. */
+export const windBearing = (wind: readonly [number, number]): number => Math.atan2(wind[0], -wind[1]);
 
 interface SkyExports {
   readonly memory: WebAssembly.Memory;
@@ -53,10 +59,11 @@ interface SkyExports {
   release(address: number, length: number): void;
   land_sky(address: number, length: number): bigint;
   land_strikes(address: number, length: number): bigint;
+  land_sea_wind(address: number, length: number): bigint;
   land_climates(): bigint;
 }
 
-const SKY_ANSWER_FLOATS = 23;
+const SKY_ANSWER_FLOATS = 24;
 const STRIKE_FLOATS = 5;
 
 function take(exports: SkyExports, packed: bigint): Uint8Array {
@@ -112,6 +119,7 @@ export async function startSkyLaw(moduleBytes: BufferSource): Promise<SkyLaw> {
         temperatureC: number(20),
         wetness: number(21),
         steeringMS: number(22),
+        snowCover: number(23),
       };
     },
     strikes: (x, y, reachM, fromS, toS, climate) => {
@@ -120,6 +128,10 @@ export async function startSkyLaw(moduleBytes: BufferSource): Promise<SkyLaw> {
         const number = (offset: number): number => read[index * STRIKE_FLOATS + offset] ?? 0;
         return { x: number(0), y: number(1), atS: number(2), toGround: number(3) !== 0, power: number(4) };
       });
+    },
+    seaWind: (x, y, worldS) => {
+      const read = ask(exports.land_sea_wind, [x, y, worldS]);
+      return [read[0] ?? 0, read[1] ?? 0];
     },
   };
 }

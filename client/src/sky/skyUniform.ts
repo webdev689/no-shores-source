@@ -14,7 +14,7 @@ export const SKY_GROUP = 3;
 /**
  * What every sunlit shader reads of the sky, at SKY_GROUP: the key light (the sun by day, the moon by night), the sky's
  * colours, the ambient light from above and below, the fog, the wind and the fall, and the lamps round the eye.
- * `sky_ambient` and `sky_direct` are the light on a surface: what a clear noon's AMBIENT 0.35 and its sun gave.
+ * `sky_ambient` and `sky_direct` are the light on a surface, scaled so a clear noon's ambient light is 0.35.
  */
 export const SKY_WGSL = /* wgsl */ `
 struct Sky {
@@ -31,6 +31,7 @@ struct Sky {
   weather: vec4f,
   drift: vec4f,
   drift_next: vec4f,
+  puddle_place: vec4f,
   lamp_count: vec4f,
   lamps: array<vec4f, ${LAMPS_MOST * 2}>,
 }
@@ -93,7 +94,7 @@ fn sky_noise(at: vec2f) -> f32 {
 }
 
 // The clouds' shadows on the ground, a share of the key light to multiply 'shade' by: patches under cloud as wide as
-// the cover, carried by the wind. Clear skies have none; under a whole deck the key light is already dimmed.
+// the cover, drifting as the clouds overhead do. Clear skies have none; under a whole deck the key light is already dimmed.
 fn sky_dapple(from_eye: vec3f) -> f32 {
   let cover = sky_state.zenith.w;
   let strength = 0.7 * smoothstep(0.05, 0.3, cover) * (1.0 - smoothstep(0.75, 0.97, cover)) * sky_state.lamp_count.w;
@@ -148,7 +149,8 @@ fn sky_puddle(from_eye: vec3f, slope: f32) -> f32 {
   if (soaked <= 0.0) {
     return 0.0;
   }
-  let hollow = sky_noise(sky_place(from_eye) / ${PUDDLE_CELL_M.toFixed(1)});
+  // The eye's place wrapped where the puddles' noise repeats, small enough that a float keeps their edges still.
+  let hollow = sky_noise((sky_state.puddle_place.xy + from_eye.xy) / ${PUDDLE_CELL_M.toFixed(1)});
   return soaked * (1.0 - smoothstep(0.02, 0.06, slope)) * smoothstep(0.62 - 0.1 * soaked, 0.68 - 0.1 * soaked, hollow);
 }
 `;
@@ -170,7 +172,9 @@ export interface SkyLook {
   readonly ambientSky: readonly [number, number, number];
   readonly ambientGround: readonly [number, number, number];
   readonly wetness: number;
+  /** The share of what falls that is snow, and the fresh snow lying on the ground. */
   readonly snowShare: number;
+  readonly snowCover: number;
   readonly fogColour: readonly [number, number, number];
   /** The fog's own density, per metre, over the scene's haze. */
   readonly fogDensity: number;
@@ -199,7 +203,7 @@ export interface Lamp {
   readonly light: readonly [number, number, number];
 }
 
-/** The sky before anything sets it: the clear afternoon the game was drawn in, with no wind, fall or lamps. */
+/** The sky before anything sets it: a clear afternoon, with no wind, fall or lamps. */
 export const AFTERNOON: SkyLook = {
   key: [-0.5417, 0.5417, 0.6428],
   keyBright: 1,
@@ -216,6 +220,7 @@ export const AFTERNOON: SkyLook = {
   ambientGround: [0.35, 0.35, 0.35],
   wetness: 0,
   snowShare: 0,
+  snowCover: 0,
   fogColour: [0.7, 0.81, 0.92],
   fogDensity: 0,
   wind: [0, 0],
@@ -232,10 +237,12 @@ export const AFTERNOON: SkyLook = {
   moonPhase: 0.5,
 };
 
-const VEC4S = 14 + LAMPS_MOST * 2;
+const VEC4S = 15 + LAMPS_MOST * 2;
 
-/** A world metre wrapped into [0, WRAP_M). */
-const wrapped = (metres: number): number => ((metres % WRAP_M) + WRAP_M) % WRAP_M;
+/** A world metre wrapped into [0, period), WRAP_M where none is named. */
+const wrapped = (metres: number, period = WRAP_M): number => ((metres % period) + period) % period;
+/** Where the puddles' noise repeats, metres. */
+export const PUDDLE_WRAP_M = NOISE_CELLS * PUDDLE_CELL_M;
 
 /** The sky's numbers in the order SKY_WGSL lays them out, with the eye's place (world metres east and south) where
  *  known, which the ground's patterns lie by. */
@@ -250,12 +257,13 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], eye?: readonly
     [...look.zenith, look.cloud],
     [...look.horizon, look.storm],
     [...look.ambientSky, look.wetness],
-    [...look.ambientGround, look.snowShare],
+    [...look.ambientGround, look.snowCover],
     [...look.fogColour, look.fogDensity],
     [...look.wind, look.gust, look.falling],
     [look.sand, look.flash, look.stars, look.starTurn],
     [...look.drift, look.latitude, look.moonPhase],
     [...look.driftNext, look.driftFade, 0],
+    eye ? [wrapped(eye[0], PUDDLE_WRAP_M), wrapped(eye[1], PUDDLE_WRAP_M), 0, 0] : [0, 0, 0, 0],
     eye ? [shown.length, wrapped(eye[0]), wrapped(eye[1]), 1] : [shown.length, 0, 0, 0],
     ...shown.flatMap((lamp) => [
       [...lamp.fromEye, lamp.reachM],
@@ -267,13 +275,13 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], eye?: readonly
 }
 
 /**
- * The sky's uniform for one GPU device, which every sunlit view binds at group 1: one buffer, written once a frame by
+ * The sky's uniform for one GPU device, which every sunlit view binds at SKY_GROUP: one buffer, written once a frame by
  * whoever draws the sky (`write`), and a bind group for each pipeline that reads it. Nobody writing it leaves the
  * clear afternoon.
  */
 export class SkyUniform {
   readonly buffer: GPUBuffer;
-  /** For a pipeline laid out by hand: its group 1. */
+  /** For a pipeline laid out by hand: its group at SKY_GROUP. */
   readonly layout: GPUBindGroupLayout;
   private readonly device: GPUDevice;
   private readonly groups = new WeakMap<GPUPipelineBase, GPUBindGroup>();

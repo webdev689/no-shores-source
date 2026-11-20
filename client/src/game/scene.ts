@@ -7,6 +7,7 @@ import { CITY_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
+import { cloudBaseOf } from '../overworld/overworldCamera.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
@@ -58,6 +59,13 @@ export const DEPTH_COPY = /* wgsl */ `
  * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
  * as the terrain and the water read it; everything else is handed world metres.
  */
+/** What an overlay drawn over the finished picture is drawn in: the picture's size and the light at the eye. */
+export interface Overlay {
+  readonly width: number;
+  readonly height: number;
+  readonly light: readonly [number, number, number];
+}
+
 export class GameScene {
   readonly gpu: Gpu;
   private readonly water: WaterView;
@@ -184,7 +192,7 @@ export class GameScene {
     seconds: number,
     drawers: readonly Drawer[],
     more: {
-      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
+      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
       readonly atSea?: boolean;
@@ -223,7 +231,7 @@ export class GameScene {
       SKY_NOW.current.look.daylight,
       time,
     );
-    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps);
+    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
     this.shadow.update(shot.eye, shot.yaw, above, look.key);
     this.shadow.cast(encoder, (cast) => {
@@ -290,14 +298,16 @@ export class GameScene {
     // The weather over all of it: what falls round the eye, and lightning's bolts while they flash.
     const over = { target, depth: targets.depth, size: [size.width, size.height] as const };
     this.fall.encode(encoder, over, { fromEye, eye: shot.eye, aboveM: above }, look, time);
-    const { strikes, worldS } = SKY_NOW.current;
-    const baseM = 900 - 400 * look.storm;
-    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundM: ground });
+    const { strikes, worldS, reading } = SKY_NOW.current;
+    const groundAt = (x: number, y: number) => this.groundAt(x, y);
+    // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
+    const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
+    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt });
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
       });
-    more.after?.(encoder, target);
+    more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

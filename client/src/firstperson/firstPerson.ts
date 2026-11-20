@@ -472,9 +472,13 @@ export class FirstPerson {
     return texture;
   }
 
-  /** Draws the first person over what `colourView` holds, `width` by `height` pixels. Until every picture wanted is
-   *  composed, the last whole set stays on the screen. */
-  draw(encoder: GPUCommandEncoder, colourView: GPUTextureView, width: number, height: number): void {
+  /** Draws the first person over what `colourView` holds, `width` by `height` pixels, in `light` (a clear afternoon's
+   *  is 1). Until every picture wanted is composed, the last whole set stays on the screen. */
+  draw(
+    encoder: GPUCommandEncoder,
+    colourView: GPUTextureView,
+    { width, height, light }: { width: number; height: number; light: readonly [number, number, number] },
+  ): void {
     const quads: ScreenQuad[] = [];
     let ready = true;
     let muzzle: readonly [number, number] | null = null;
@@ -502,6 +506,6 @@ export class FirstPerson {
       const [x, y] = zoomedOnScreen(quad.x, quad.y + jolt, zoom);
       return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
     });
-    this.view.draw(encoder, colourView, width, height, zoomed);
+    this.view.draw(encoder, colourView, width, height, zoomed, light);
   }
 }

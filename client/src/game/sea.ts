@@ -419,7 +419,7 @@ export class Sea {
   /** One frame at sea. */
   frame(input: SeaInput): SeaFrame {
     const { seconds: dt, time, viewport } = input;
-    const windBearing = input.swell?.bearing ?? 0;
+    const windBearing = SKY_NOW.current.sails ?? input.swell?.bearing ?? 0;
     this.viewport = viewport;
     // A room whose link was lost says no more: the player is called to the helm and sails on alone.
     if (this.room?.lost) {

@@ -84,8 +84,7 @@ pub fn step_clashes(
     };
     clashes.retain(near);
     for clash in clashes.iter_mut() {
-        let at = clash.ships().next().map_or([0.0, 0.0], |ship| [ship.x, ship.y]);
-        clash.fight.step(&[], waters, wind_at(at), time);
+        clash.fight.step(&[], waters, &wind_at, time);
     }
     for clash in clashes.iter().filter(|clash| clash.settled()) {
         pirates.back_from_clash(clash.sail_on());

@@ -37,7 +37,7 @@ test('the weather agrees to the bit with the native build (weather_tests.rs hold
       return [cloud, falling, snowShare, storm, fog, sand, ...wind, gust, temperatureC];
     }).flat(),
   );
-  assert.equal(fingerprint(numbers), '5af61f0292b3fc5f');
+  assert.equal(fingerprint(numbers), '9ad102e7d7c276ec');
 });
 
 test('noon stands half an hour after each midnight, and the sun is up then and down at midnight', async () => {

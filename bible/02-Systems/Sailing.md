@@ -56,11 +56,11 @@ rebuilt in Rust ([[Pick - Sailing and Naval Combat]]). The owner sails the Sloop
   She moves in her own frame, then swings, as the mod's boat did. Her heading stays in [0, 2π).
 - **The wind.** The [[Weather]]'s wind where she is, held for a minute of world time at a time and read at the
   minute's start. Her sails feel it scaled so the weather's usual breeze (6.5 m/s) is her rated wind (1.5 m/s), and the
-  helm holds it between 0.3 and 2 times that: a gale drives her at most twice as hard, a near calm still gives way. A
-  fight at sea sails in the wind at its player's ship; a fight among captains alone in the wind at its first ship; a
-  fleet room in the wind over the map's middle. A room's world time is its host's wall at its first tick, which its
-  welcome carries, so a browser predicting its ship reads the room's wind exactly. The long swell stays the world's one
-  swell ([[Water]]).
+  helm holds it between 0.3 and 2 times that: a gale drives her at most twice as hard, a near calm still gives way.
+  Every ship sails in the wind where she is, in a fight, among captains alone and in a fleet room alike. A room's
+  world time is its host's wall at its first tick, which its welcome carries, so a browser predicting its ship reads
+  the same wind by the same rules; an order the room takes just after a world minute turns can bring a small
+  correction. The long swell stays the world's one swell ([[Water]]).
 - **Her pose.** She takes the mean of the water under her bow, stern, sides and middle as her height, and its slope
   along and across her as her pitch and roll. The swell replaces the mod's sine bob over a flat sea. She heels into a
   turn as the mod's boat did, once she makes a wake (0.5 m/s). On a lake or river she floats at its level.
@@ -126,8 +126,8 @@ canvas is a grid of 8 points along its foot by 7 up, in DFO's poses at its Large
   with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
 - **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, the gaff home.
 
-In the editor her sails are set on the helm's top rung; at sea, while she is under way. The wind is the steady one
-along the swell's bearing.
+In the editor her sails are set on the helm's top rung; at sea, while she is under way. They are drawn in the wind
+the rules sail her in, where she is, which the page reads from the sky's law.
 
 Sail (`B`) puts her to sea at the camera's target, heading where the camera looks; the rules refuse her where the
 water is shallower than her draught, and the camera stands back off. Each frame owes her its time in whole ticks, one
