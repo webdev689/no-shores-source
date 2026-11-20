@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: built
 code:
   - tools/islands/build.py#build_kit
   - tools/islands/catalog.py#required
@@ -45,12 +45,17 @@ tolerance), its mesh spanning at least 70% of its size across x and along y and 
 the contract's, mesh under each solid, and its role's triangle budget (a tree 1800, a landmark 9000). It writes
 `DIR/<kit>.modules` in the dungeon's pack format (format 1, the header's `style` naming the kit), `DIR/modules.blend`,
 and with `--preview` a contact sheet of each kit in flat part colours on a light ground (`DIR/previews/<kit>.png`);
-the island's own pictures are the game's. A second build writes the same bytes.
+the island's own pictures are the game's. A second build on the same machine writes the same bytes (CI builds twice and
+compares); that another machine's Blender writes them too is not checked.
 
 ## Checks and publishing
 
 `test_envelope.py` checks the contract and the envelopes without Blender, and with `ISLAND_MODULES=DIR` every pack a
-build wrote. `publish.py DIR` puts each pack and the `.blend` on R2 under `islands/` through `tools/r2.py`, and writes
-`content/islands/modules.json` (`base`, `parts`, `kits`, `source`); `--dry-run` shows the manifest without sending.
-The `island-modules` workflow runs all of it whenever `tools/islands/` or the contract changes, keeps the sheets and
-packs as artifacts, and publishes with the repository's `CLOUDFLARE_TOKEN` when it is set.
+build wrote. A build stamps its folder (`built.json`) with the hash of each pack and the `.blend` it wrote, and
+`publish.py DIR` takes only a folder one build wrote every kit of: it puts each pack and the `.blend` on R2 under
+`islands/` through `tools/r2.py`, checks each comes back, writes `content/islands/modules.json` (`base`, `parts`,
+`kits`, `source`) and ends its log with it on one line; `--dry-run` shows the manifest without sending. The
+`island-modules` workflow runs all of it whenever `tools/islands/` or the contract changes, keeps the sheets (even
+when a module is refused) and the packs as artifacts, and publishes with the repository's `CLOUDFLARE_TOKEN` when it
+is set. Its machine is thrown away with the manifest it wrote, so a commit takes the manifest from its log, and the
+run warns while the committed one is behind; until then the page draws the packs the committed manifest names.

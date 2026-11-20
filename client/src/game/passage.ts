@@ -81,6 +81,11 @@ export class Passage {
     return this.voyage !== null;
   }
 
+  /** Where the voyage under way, or the one stopped short, is bound; none at rest. */
+  get bound(): Point2 | null {
+    return this.destination;
+  }
+
   /** Whether a voyage stopped short of its destination waits to be resumed. */
   get stoppedShort(): boolean {
     return !this.voyage && this.destination !== null;
@@ -135,6 +140,18 @@ export class Passage {
     this.said = '';
     this.voyage = voyageOf([this.position, ...points.filter((point) => point !== this.position)]);
     [this.destination, this.travelled, this.straight] = [end, 0, false];
+    this.room?.course(courseAhead(this.voyage, 0), this.sailed);
+  }
+
+  /** Bends the voyage still ahead round an island come into sight since it was planned (the room judges a course by
+   *  the islands the player is told of, so one far off held no voyage then), and tells the room the course. */
+  bendRound(): void {
+    if (!this.voyage || this.straight) return;
+    const ahead = [this.position, ...courseAhead(this.voyage, this.travelled)];
+    const bent = detour(ahead, this.keepClear());
+    if (bent.length === ahead.length) return;
+    this.voyage = voyageOf(bent);
+    this.travelled = 0;
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 

@@ -26,6 +26,17 @@ test("the page's WebAssembly builds an island's ground to the room's own bits", 
   assert.equal(fingerprint(door.isleHeights('41', 'desert', [0, 0])), GROUND_41_DESERT);
 });
 
+/** crates/room-wasm/src/isle_door_tests.rs pins the same of the room's own plans (PLANS): a cove and a quarry. */
+const PLANS = '5c5af7813ea5353d';
+
+test("the page's WebAssembly lays every module, block and post of an island where the room does", () => {
+  const door = startRoomDoor(compiled);
+  const text = door.islePlan('41', 'desert') + door.islePlan('2', 'rainforest');
+  let hash = 0xcbf29ce484222325n;
+  for (const byte of new TextEncoder().encode(text)) hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 0x100000001b3n);
+  assert.equal(hash.toString(16).padStart(16, '0'), PLANS);
+});
+
 test("an island's plan comes to the page whole, and none for home waters' climate", () => {
   const door = startRoomDoor(compiled);
   const plan = JSON.parse(door.islePlan('41', 'desert')) as { kind: string; spawns: unknown[]; placements: unknown[] };

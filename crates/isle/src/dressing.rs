@@ -40,10 +40,10 @@ impl Laying<'_> {
         across.max(along) * 0.5 * scale
     }
 
-    /// Whether a module of that reach may stand at a point: on the ground's grid, out of every place kept clear, and
-    /// `spacing` of its reach and each neighbour's from them.
+    /// Whether a module of that reach may stand at a point: wholly out of every place kept clear, and `spacing` of its
+    /// reach and each neighbour's from them.
     fn open(&self, at: [f64; 2], reach: f64, spacing: f64) -> bool {
-        let kept = self.clear.iter().all(|&(point, radius)| apart(at, point) >= radius + reach * 0.5);
+        let kept = self.clear.iter().all(|&(point, radius)| apart(at, point) >= radius + reach);
         if !kept {
             return false;
         }
@@ -131,6 +131,10 @@ fn cliffs(laying: &mut Laying, kit: &str, dressing: &Dressing, draws: &mut Draws
         let scale = draws.between(0.95, 1.12);
         let lift = ((top + 1.5) / (laying.catalog.module(face).size[2] * scale)).max(0.4);
         let turn = (bearing + draws.between(-0.08, 0.08)).rem_euclid(TAU);
+        // A wreck, the door or the camp at the cliff's foot breaks it there: no face stands on them.
+        if !laying.open(at, laying.reach(face, scale), 0.5) {
+            continue;
+        }
         laying.put(Placement { module: face, at: [at[0], at[1], -1.5], turn, scale, lift });
         if draws.unit() < 0.06
             && let Some(&stack) = draws.pick(&stacks)

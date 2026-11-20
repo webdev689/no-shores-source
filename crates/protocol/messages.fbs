@@ -458,9 +458,10 @@ table GearDrop {
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem, then
 // their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in the
-// catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent; whether
-// they stand where a Vestige opens (the Reader's counter, or the stall); and the answer to their last ask (0 done, then
-// the gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
+// catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent (on a
+// sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Reader's counter, or the
+// stall); and the answer to their last ask (0 done, then the gear crate's refusals by number) with the item a Vestige
+// last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
 // island's resource; and in a social space, the vendors' wares of the day, the Quartermaster's then the Armsmith's,
 // each numbered by its place among its vendor's and priced in Aurem.

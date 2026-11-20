@@ -156,6 +156,11 @@ impl Islands {
         self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M)
     }
 
+    /// The islands a player at `at` is told of: those in sight, and those they have found, wherever they lie.
+    pub fn told(&self, player: PlayerId, at: [f64; 2]) -> impl Iterator<Item = &SeaIsland> {
+        self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M || self.found(player, island.id))
+    }
+
     /// Whether a player has found an island.
     #[must_use]
     pub fn found(&self, player: PlayerId, id: u32) -> bool {
@@ -174,8 +179,10 @@ impl Islands {
     }
 
     /// Holds an island while players stand ashore on it: its room's word, each minute.
-    pub fn hold_ashore(&mut self, id: u32, clock: u64) -> bool {
-        let Some(island) = self.standing.iter_mut().find(|island| island.id == id) else { return false };
+    pub fn hold_ashore(&mut self, id: u32, seed: u64, clock: u64) -> bool {
+        let Some(island) = self.standing.iter_mut().find(|island| island.id == id && island.seed == seed) else {
+            return false;
+        };
         island.held_at = island.held_at.max(clock + ASHORE_TICKS);
         true
     }
@@ -198,9 +205,12 @@ impl Islands {
                 }
             }
         }
+        let standing = self.standing.len();
         self.standing.retain(|island| clock <= island.held_at + FADE_TICKS);
-        for found in self.found.values_mut() {
-            found.retain(|id| self.standing.iter().any(|island| island.id == *id));
+        if self.standing.len() < standing {
+            for found in self.found.values_mut() {
+                found.retain(|id| self.standing.iter().any(|island| island.id == *id));
+            }
         }
         if !clock.is_multiple_of(ROLL_EVERY_TICKS) {
             return;
@@ -264,13 +274,17 @@ impl Sea {
     }
 
     /// Holds an island while players stand ashore on it, its room's word: whether it stands.
-    pub fn hold_ashore(&mut self, id: u32) -> bool {
-        self.islands.hold_ashore(id, self.clock)
+    pub fn hold_ashore(&mut self, id: u32, seed: u64) -> bool {
+        self.islands.hold_ashore(id, seed, self.clock)
     }
 
-    /// Whether a course's path stands on, or crosses, a continent's coast or a standing island's.
-    pub(super) fn crosses_land(&self, path: &[Point]) -> bool {
-        let islands: Vec<&Coast> = self.islands.coasts().collect();
+    /// Whether a course's path stands on, or crosses, a continent's coast or the coast of an island the player is
+    /// told of, as the page bends its voyages round those alone. An island's coast the ship already lies within (a
+    /// fight or a roll left it there) does not hold it: it may sail out.
+    pub(super) fn crosses_land(&self, player: PlayerId, path: &[Point]) -> bool {
+        let Some(&start) = path.first() else { return false };
+        let told = self.islands.told(player, [start.x as f64, start.y as f64]).map(|island| &island.coast);
+        let islands = outside(told, Some(start));
         let land = |point| super::on_land(&self.coasts, point) || super::on_land(islands.iter().copied(), point);
         let crosses = |leg: &[Point]| {
             super::leg_meets_land(&self.coasts, leg[0], leg[1])
@@ -281,15 +295,18 @@ impl Sea {
 
     /// The islands' tick, after the ships have sailed.
     pub(super) fn tick_islands(&mut self) {
+        // Only a roll keeps clear of the ships' courses and the hostile ships: on other ticks neither is gathered.
+        let rolls = self.clock.is_multiple_of(ROLL_EVERY_TICKS);
         let ships: Vec<ShipAndCourse> = self
             .berths
             .iter()
             .filter_map(|(player, berth)| {
                 let Sailing { ship, course } = berth.sailing.as_ref()?;
-                Some((*player, [ship.x, ship.y], course.iter().copied().collect()))
+                Some((*player, [ship.x, ship.y], if rolls { course.iter().copied().collect() } else { Vec::new() }))
             })
             .collect();
-        let others: Vec<[f64; 2]> = self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
+        let others: Vec<[f64; 2]> =
+            if rolls { self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect() } else { Vec::new() };
         self.islands.tick(self.clock, &ships, &others, (&self.chart, &self.coasts));
     }
 
@@ -303,3 +320,8 @@ impl Sea {
 #[cfg(test)]
 #[path = "sea_islands_tests.rs"]
 mod sea_islands_tests;
+
+/// The coasts a ship at `from` is held off by: every one but those it already lies within.
+pub(crate) fn outside<'coast>(coasts: impl Iterator<Item = &'coast Coast>, from: Option<Point>) -> Vec<&'coast Coast> {
+    coasts.filter(|coast| from.is_none_or(|from| !super::on_land(std::iter::once(*coast), from))).collect()
+}

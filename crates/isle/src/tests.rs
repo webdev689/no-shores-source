@@ -62,7 +62,7 @@ fn the_grounds_bits_are_the_ones_the_page_pins() {
 
 const GROUND_41_DESERT: &str = "5372bca559dd7c59";
 
-const GOLDEN: [u64; 3] = [8_616_181_142_366_350_806, 17_147_699_156_600_943_984, 6_440_265_580_338_448_352];
+const GOLDEN: [u64; 3] = [13_206_015_137_118_056_141, 4_763_375_895_929_818_477, 4_816_516_164_977_178_038];
 
 #[test]
 fn seeds_and_climates_make_different_islands() {
@@ -110,7 +110,8 @@ fn a_player_lands_on_the_beach_from_an_anchorage_in_open_water() {
             let anchorage = plan.sites.anchorage;
             let off = (anchorage[0] * anchorage[0] + anchorage[1] * anchorage[1]).sqrt();
             assert!((off - shape.edge(shape.landing) - ANCHORAGE_OFF_M).abs() < 1e-6);
-            assert!(shape.height(anchorage, 1.0) < -2.0, "{seed} {climate}: the anchorage is shallow");
+            let cliffs = catalog().climates[climate].cliffs;
+            assert!(shape.height(anchorage, cliffs) < -2.0, "{seed} {climate}: the anchorage is shallow");
             assert_eq!(crate::shape_of(seed).anchorage(), anchorage, "the sea anchors where the island says");
             for spawn in &plan.sites.spawns {
                 let ground = plan.ground.height_at(spawn[0], spawn[1]);
@@ -145,7 +146,7 @@ fn isles_have_a_landmark_and_guards_and_coves_have_neither() {
             plan.placements.iter().filter(|placement| catalog().module(placement.module).role == Role::Landmark);
         if plan.kind.is_isle() {
             assert_eq!(landmarks.count(), 1);
-            assert!(plan.sites.guards.len() >= 3, "{seed}: {} guards' posts", plan.sites.guards.len());
+            assert_eq!(plan.sites.guards.len(), 3, "{seed}: a post for each group");
             assert!(plan.sites.camp.is_some());
         } else {
             assert_eq!(landmarks.count(), 0);
@@ -175,24 +176,48 @@ fn wrecks_lie_on_the_strand_each_with_its_hull() {
     }
 }
 
+/// How far round its middle a placed module reaches, as the dressing measures it.
+fn reach_of_placed(placement: &crate::Placement) -> f64 {
+    let [across, along, _] = catalog().module(placement.module).size;
+    across.max(along) * 0.5 * placement.scale
+}
+
 #[test]
-fn trees_and_rocks_keep_off_the_places_kept_clear() {
-    for seed in 0..10 {
-        let plan = plan(seed, "rainforest");
-        let clear = plan.sites.clear(&plan.shape);
-        for placement in &plan.placements {
-            let role = catalog().module(placement.module).role;
-            if !matches!(role, Role::Tree | Role::Shrub | Role::Grass | Role::Boulder | Role::Outcrop) {
-                continue;
-            }
-            for &(point, radius) in &clear {
-                let (along_x, along_y) = (placement.at[0] - point[0], placement.at[1] - point[1]);
-                assert!(
-                    (along_x * along_x + along_y * along_y).sqrt() >= radius,
-                    "{seed}: a {role:?} on a clear place"
-                );
+fn no_module_stands_on_a_place_kept_clear_or_on_the_door_landmark_wrecks_and_camp() {
+    let set = |role: Role| matches!(role, Role::Door | Role::Landmark | Role::Wreck | Role::WreckBit | Role::Camp);
+    for climate in CLIMATES {
+        for seed in [0, 1, 2, seed_of(Kind::Ruin, 3), seed_of(Kind::Quarry, 4), seed_of(Kind::Quarry, 400)] {
+            let plan = plan(seed, climate);
+            let clear = plan.sites.clear(&plan.shape);
+            let (fixed, laid): (Vec<&crate::Placement>, Vec<&crate::Placement>) =
+                plan.placements.iter().partition(|placement| set(catalog().module(placement.module).role));
+            for placement in laid {
+                let (role, reach) = (catalog().module(placement.module).role, reach_of_placed(placement));
+                let apart = |point: [f64; 2]| libm::hypot(placement.at[0] - point[0], placement.at[1] - point[1]);
+                for &(point, radius) in &clear {
+                    assert!(apart(point) >= radius + reach - 1e-9, "{seed} {climate}: a {role:?} on a clear place");
+                }
+                for other in &fixed {
+                    let between = apart([other.at[0], other.at[1]]);
+                    assert!(
+                        between >= (reach + reach_of_placed(other)) * 0.5 - 1e-9,
+                        "{seed} {climate}: a {role:?} on a {:?}",
+                        catalog().module(other.module).role
+                    );
+                }
             }
         }
+    }
+}
+
+#[test]
+fn an_isles_camp_stands_clear_of_its_quarry_and_each_group_has_its_post() {
+    for seed in (0..4000).filter(|&seed| Kind::of(seed) == Kind::Quarry).take(40) {
+        let plan = plan(seed, "steppe");
+        let (quarry, camp) = (plan.shape.quarry.as_ref().expect("a quarry"), plan.sites.camp.expect("a camp"));
+        let off = libm::hypot(camp[0] - quarry.at[0], camp[1] - quarry.at[1]);
+        assert!(off >= quarry.radius + 13.0 - 1e-9, "{seed}: the camp {off} m from a {} m pit", quarry.radius);
+        assert_eq!(plan.sites.guards, vec![plan.sites.guards[0], plan.sites.door.at, camp], "{seed}");
     }
 }
 

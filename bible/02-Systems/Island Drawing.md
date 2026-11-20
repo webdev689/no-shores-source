@@ -34,8 +34,8 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
   metres from its middle, x east, y south, z up.
 - **The modules.** Each kit's pack (the dungeon modules' pack format, format 1, its header's `style` the kit) is read
   by `readKitPack`, which refuses a pack it cannot trust whole, and kept once fetched; a failure is warned once and
-  tried again on the next `show`. A pack comes from `content/islands/modules.json` once CI publishes it (`isleManifest.ts`
-  globs for it, so the page builds without it and draws the islands bare); a page's `?islePacks=<prefix>` reads `<prefix><kit>.modules`
+  asked for again 30 s later. A pack comes from the R2 key `content/islands/modules.json` names, committed from the
+  island-modules run's log (`isleManifest.ts` globs for it, so the page builds without it and draws the islands bare); a page's `?islePacks=<prefix>` reads `<prefix><kit>.modules`
   instead, for pictures before publishing (copy the build's packs into
   `client/public/isle-packs/`, which git ignores). A placement's module number is its name's place in the contract's
   names sorted by byte order, the isle crate's catalog order.
@@ -64,4 +64,5 @@ calls; the draws are one for the ground and one a module the island wears, some 
 ## Limits
 
 - The parts wear colours, not the textures layer's pictures.
-- The game does not show islands yet: the controller wires `IslesView` into the sea's scene.
+- No island is culled by the view's frustum, only by its distance: one behind the eye within 20 km still draws its
+  coarse ground.

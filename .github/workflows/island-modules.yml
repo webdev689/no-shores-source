@@ -4,7 +4,8 @@ name: island-modules
 # model to R2 with the repository's Cloudflare token, whenever the modules' tools or contract change. R2's objects
 # are named by their hashes, so a pack already published is not sent again, and the model is kept while every pack
 # is the one the manifest names. The log ends with the manifest on one line, which a commit then takes into
-# content/islands/modules.json. The contact sheets are kept as the run's artifact.
+# content/islands/modules.json; the run warns while the committed one is behind. The contact sheets are kept as the
+# run's artifact.
 on:
   push:
     paths:
@@ -44,7 +45,9 @@ jobs:
         run: |
           python -I tools/islands/build.py --out "$RUNNER_TEMP/again"
           for pack in "$RUNNER_TEMP"/modules/*.modules; do cmp "$pack" "$RUNNER_TEMP/again/$(basename "$pack")"; done
+      # Kept when the build fails too: the sheets show what a refused module looks like.
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: island-module-previews
           path: ${{ runner.temp }}/modules/previews/*.png
@@ -54,6 +57,7 @@ jobs:
           path: |
             ${{ runner.temp }}/modules/*.modules
             ${{ runner.temp }}/modules/modules.blend
+            ${{ runner.temp }}/modules/built.json
 
   # A fresh machine with nothing installed: the publisher needs Python's own library and the repository alone.
   publish:
@@ -82,3 +86,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
         run: python -I tools/islands/publish.py "$RUNNER_TEMP/modules"
+      # The manifest publish.py writes goes with the run's machine: until a commit takes it, the page draws old packs.
+      - name: Say whether the committed manifest is behind
+        if: steps.token.outputs.set == 'true'
+        run: |
+          if ! git diff --quiet -- content/islands/modules.json; then
+            echo "::warning::content/islands/modules.json is behind these packs: commit the publish step's last line"
+          fi

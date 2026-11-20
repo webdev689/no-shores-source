@@ -112,6 +112,9 @@ export function instancesOf(placements: readonly IslePlacement[]): { floats: Flo
   return { floats, runs: runs.filter((run) => run.name !== '') };
 }
 
+/** How long a pack that failed to come waits before it is asked for again, milliseconds. */
+const PACK_RETRY_MS = 30_000;
+
 export class IslesView {
   readonly frame: IslesFrame = { triangles: 0, draws: 0, near: 0, middle: 0, far: 0 };
   private readonly gpu: Gpu;
@@ -121,7 +124,9 @@ export class IslesView {
   private readonly prefix: string | null;
   private readonly onLoaded: () => void;
   private readonly packs = new Map<string, Pack>();
-  private readonly asked = new Set<string>();
+  /** Each kit's pack asked for, and when one that failed may be asked for again (`performance.now()`). */
+  private readonly asked = new Map<string, number>();
+  private readonly offset = new Float32Array(4);
   private drawn: Drawn[] = [];
 
   /** `manifest` says where the kits' packs are published, `prefix` overrides it (a page's `?islePacks=`), and
@@ -151,7 +156,7 @@ export class IslesView {
     }
     for (const gone of kept.values()) this.destroy(gone);
     this.drawn = next;
-    // A pack that failed is asked for again by the next show.
+    // A pack that failed is asked for again by a show once PACK_RETRY_MS have passed.
     for (const kit of new Set(next.flatMap((drawn) => drawn.kits))) this.ask(kit);
   }
 
@@ -240,7 +245,8 @@ export class IslesView {
   private prepare(shot: IsleShot): void {
     for (const drawn of this.drawn) {
       const { offset } = this.placeOf(drawn, shot);
-      this.gpu.device.queue.writeBuffer(drawn.uniform, 0, new Float32Array([...offset, 0]));
+      this.offset.set([...offset, 0]);
+      this.gpu.device.queue.writeBuffer(drawn.uniform, 0, this.offset);
     }
   }
 
@@ -276,13 +282,15 @@ export class IslesView {
   }
 
   private ask(kit: string): void {
-    if (this.packs.has(kit) || this.asked.has(kit)) return;
+    if (this.packs.has(kit) || performance.now() < (this.asked.get(kit) ?? 0)) return;
     const url = packUrl(kit, this.manifest, this.prefix);
     if (!url) return;
-    this.asked.add(kit);
+    this.asked.set(kit, Infinity);
     void loadKitPack(kit, url).then((pack) => {
-      this.asked.delete(kit);
-      if (!pack) return;
+      if (!pack) {
+        this.asked.set(kit, performance.now() + PACK_RETRY_MS);
+        return;
+      }
       const upload = (data: Uint8Array | Uint32Array, usage: number) => {
         const buffer = this.gpu.device.createBuffer({
           size: Math.max(4, Math.ceil(data.byteLength / 4) * 4),

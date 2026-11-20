@@ -304,8 +304,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
   islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
   its own height, turn and size); pictures of the landfall offer, E's prompts and washing up in the game itself (staging at sea
-  headless outran its budget here); the packs' manifest, content/islands/modules.json, committed from the
-  island-modules run's log once it publishes.
+  headless outran its budget here).
 - **The sea after #75**: the friendly ships' port factions (deferred by the owner); ships' own upgrade materials,
   planned only ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]); the sky and light
   following the weather; the long contested hold, to explain. #82's decisions (the owner's loop) wait to be built

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ASKS, type GearAsk } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { SeenIsle } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import {
@@ -9,6 +9,7 @@ import {
   type IsleAt,
   approach,
   detour,
+  dungeonRoomName,
   isleNode,
   isleOff,
   isleRoomName,
@@ -31,6 +32,9 @@ const built = (id: number, middle: Point2): IsleAt => ({
   seen: seen(id, middle),
   built: { reach: 80, anchorage: [middle[0], middle[1] - 125], landing: 0 },
 });
+
+/** How far past an island's reach the room's land reaches (sea_islands.rs: its shallows, 14 m, and 20 m more). */
+const LAND_PAST_REACH_M = 14 + 20;
 
 /** Whether each leg of a course keeps `clear` metres off a point. */
 const keepsOff = (course: readonly Point2[], point: Point2, clear: number) =>
@@ -61,7 +65,8 @@ test('a voyage is bent round every island its legs pass through, and left alone 
     ],
     keptClear(isles),
   );
-  for (const isle of isles) assert.ok(keepsOff(course, isle.seen.at, 80 + 30), `clear of ${isle.seen.id}`);
+  for (const isle of isles)
+    assert.ok(keepsOff(course, isle.seen.at, 80 + LAND_PAST_REACH_M), `clear of ${isle.seen.id}`);
   assert.deepEqual(course.at(-1), [0, 5000]);
   const clear: Point2[] = [
     [500, -3000],
@@ -74,9 +79,36 @@ test('the way to an island goes round it to its offing and in to its anchorage',
   const isle = built(1, [0, 0]);
   const course = approach([0, 3000], isle);
   assert.deepEqual(course.at(-1), [0, -125]);
-  assert.ok(keepsOff(course.slice(0, -1), [0, 0], 80 + 30), 'round the island, not over it');
+  assert.ok(keepsOff(course, [0, 0], 80 + LAND_PAST_REACH_M), 'round the island, not over it');
   const last = course.at(-2) ?? [0, 0];
   assert.ok(last[1] < -125 - ANCHORED_M, 'in from the open sea on its landing bearing');
+});
+
+test('a voyage for an anchorage from the far side comes in through its gate, not over the island', () => {
+  const isle = built(1, [0, 0]);
+  const course = detour(
+    [
+      [0, 3000],
+      [0, -125],
+    ],
+    keptClear([isle]),
+  );
+  assert.deepEqual(course.at(-1), [0, -125]);
+  assert.ok(keepsOff(course, [0, 0], 80 + LAND_PAST_REACH_M), 'over the island');
+  const gate = course.at(-2) ?? [0, 0];
+  assert.ok(Math.abs(gate[0]) < 1e-6 && gate[1] < -125, 'in on the line out through the anchorage');
+  // Already on that line, a voyage in is left as it is.
+  const straightIn: Point2[] = [
+    [0, -3000],
+    [0, -125],
+  ];
+  assert.deepEqual(detour(straightIn, keptClear([isle])), straightIn);
+});
+
+test("a door's dungeon room is named by its continent, style and the island's seed folded to 32 bits", () => {
+  assert.equal(dungeonRoomName('255', 'crypt', 'continent-2'), 'sea-dungeon-continent-2-crypt-000000ff');
+  const seed = BigInt('0x123456789abcdef0').toString();
+  assert.equal(dungeonRoomName(seed, 'mines', 'continent-7', 'abyss'), 'sea-dungeon-continent-7-mines-88888888--abyss');
 });
 
 test("an island's room is named by its number and its seed in 16 hex digits, and it stands in world metres", () => {
@@ -87,7 +119,7 @@ test("an island's room is named by its number and its seed in 16 hex digits, and
   assert.deepEqual([node.ring, node.spawns, node.name], [[[5001, 6002]], [[5003, 6004]], 'A ruined isle']);
 });
 
-test('E scavenges a wreck within reach once a visit, else opens the door, else does nothing', () => {
+test('E scavenges a wreck within reach until the room says it is spent, else opens the door, else nothing', () => {
   const held = {
     seen: seen(4, [1000, 2000]),
     plan: {
@@ -95,22 +127,29 @@ test('E scavenges a wreck within reach once a visit, else opens the door, else d
         [10, 0, 0],
         [40, 0, 0],
       ],
-      door: { at: [0, 30], facing: 0, style: 'caverns' },
+      door: { at: [0, 30], facing: 2.5, style: 'caverns' },
     },
   } as unknown as IsleHeld;
   const asked: GearAsk[] = [];
   const doors: DungeonDoor[] = [];
-  const uses = isleUses(held, (door) => doors.push(door));
+  const gear = { gear: { spent: [] as number[], answered: 5 } as unknown as GearState };
+  const where = { continent: 'continent-4', seas: 'elite' } as const;
+  const uses = isleUses(held, (door) => doors.push(door), gear, where);
   const ask = (each: GearAsk) => asked.push(each);
   const atWreck = uses(1011, 2000, ask);
   assert.equal(atWreck?.words, 'Scavenge the wreck');
   atWreck?.run();
   assert.deepEqual(asked, [{ kind: ASKS.scavenge, node: 0 }]);
-  assert.equal(uses(1011, 2000, ask), null, 'scavenged: nothing more there');
+  assert.equal(uses(1011, 2000, ask), null, 'asked: nothing more there until the room answers');
+  gear.gear = { spent: [], answered: 6 } as unknown as GearState;
+  assert.equal(uses(1011, 2000, ask)?.words, 'Scavenge the wreck', 'refused, it is offered again');
+  gear.gear = { spent: [0], answered: 7 } as unknown as GearState;
+  assert.equal(uses(1011, 2000, ask), null, 'spent for their account');
+  assert.equal(isleUses(held, () => undefined, gear, where)(1011, 2000, ask), null, 'spent on a later visit too');
   assert.deepEqual([uses(1040, 2001, ask)?.words], ['Scavenge the wreck']);
   const atDoor = uses(1000, 2031, ask);
   assert.equal(atDoor?.words, 'Enter the caverns');
   atDoor?.run();
-  assert.deepEqual(doors, [{ style: 'caverns', seed: '255', isle: 4 }]);
+  assert.deepEqual(doors, [{ room: 'sea-dungeon-continent-4-caverns-000000ff--elite', at: [1000, 2030], facing: 2.5 }]);
   assert.equal(uses(1000, 2100, ask), null);
 });

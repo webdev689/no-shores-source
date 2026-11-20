@@ -49,8 +49,8 @@ export interface RoomDoor {
   openIsland(word: string): boolean;
   /** The open sea's word on its island by its number, as JSON: empty if it does not stand. */
   seaIsland(id: number): string;
-  /** Holds the open sea's island by its number while players stand ashore: whether it stands. */
-  holdAshore(id: number): boolean;
+  /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
+  holdAshore(id: number, seed: string): boolean;
   /** An island's plan as JSON in its own frame, and its ground's numbers as `movement::Heights` gives them with its
    *  middle at `at` in the world, from its seed (a decimal string) and climate: both empty for a climate the islands'
    *  contract does not dress. */
@@ -122,7 +122,7 @@ interface RoomExports {
   room_open_fleet(): number;
   room_open_island(address: number, length: number): number;
   room_sea_island(id: number): bigint;
-  room_hold_ashore(id: number): number;
+  room_hold_ashore(id: number, low: number, high: number): number;
   room_isle_plan(low: number, high: number, address: number, length: number): bigint;
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
@@ -209,7 +209,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
-    holdAshore: (id) => exports.room_hold_ashore(id >>> 0) === 1,
+    holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
     islePlan: (seed, climate) =>
       new TextDecoder().decode(
         take(

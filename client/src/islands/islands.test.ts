@@ -6,6 +6,10 @@ import { FAR_STRIDE, GROUND_FLOATS, groundHeight, groundMesh } from './isleGroun
 import { MODULE_NAMES, packUrl, PARTS, readKitPack, roleOf, VERTEX_BYTES } from './isleModules.ts';
 import { gridOf, type IslePlacement, readIslePlan } from './islePlan.ts';
 import { instancesOf, placedPoint } from './isleView.ts';
+import kits from '../../../content/islands/kits.json' with { type: 'json' };
+
+/** The room's module as `npm run wasm` copies it for the page. */
+const ROOM = 'client/public/room.wasm';
 
 const PLAN = {
   kind: 'ruin',
@@ -146,24 +150,17 @@ test('a pack is read from the dev prefix, else the manifest, else nowhere', () =
   assert.equal(packUrl('arid', null, null), null);
 });
 
-test("the island build's packs read, when they are here", { skip: !existsPacks() }, () => {
+/** A build's folder of packs (tools/islands/build.py's --out), as tools/islands/test_envelope.py reads it. */
+const BUILT = process.env.ISLAND_MODULES;
+
+test("a build's packs read, every kit's", { skip: !BUILT && "set ISLAND_MODULES to a build's --out folder" }, () => {
   for (const kit of ['temperate', 'arid', 'tropical', 'frozen', 'common']) {
-    const file = `${process.env.HOME}/wt/reports/island-build/${kit}.modules`;
-    const bytes = readFileSync(file);
+    const bytes = readFileSync(`${BUILT}/${kit}.modules`);
     const read = readKitPack(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length));
     assert.equal(read.kit, kit);
     assert.ok(read.modules.size > 0);
   }
 });
-
-function existsPacks(): boolean {
-  try {
-    readFileSync(`${process.env.HOME}/wt/reports/island-build/common.modules`);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** A 3 × 3 grid 2 m apart, one corner with no height. */
 const FLOATS = new Float64Array([-3, -3, 2, 3, 3, 1, 2, 3, 4, 5, 6, 7, 8, NaN]);
@@ -208,31 +205,33 @@ test('the far mesh takes every fourth height', () => {
   assert.equal(edged.vertices[3 * GROUND_FLOATS], 19);
 });
 
-test("a placement's turned corner lands where the isle crate's blocks turns a solid", () => {
-  // isle::dressing::blocks: a solid at (x, y) of radius r on a placement turned t, scaled s, lifted l stands as the
-  // square round (at.x + (x cos t - y sin t) s, at.y + (x sin t + y cos t) s), r s each way, its top at.z + h s l.
-  const placement: IslePlacement = [0, 10, -4, 2, 0.9, 1.3, 1.5];
-  const [solidX, solidY, radius, height] = [-3.2, 0.5, 1.8, 12];
-  const [, atX, atY, atZ, turn, scale, lift] = placement;
-  const middle = [
-    atX + (solidX * Math.cos(turn) - solidY * Math.sin(turn)) * scale,
-    atY + (solidX * Math.sin(turn) + solidY * Math.cos(turn)) * scale,
-  ];
-  const block = [
-    middle[0] - radius * scale,
-    middle[1] - radius * scale,
-    middle[0] + radius * scale,
-    middle[1] + radius * scale,
-    atZ + height * scale * lift,
-  ];
-  const [x, y, z] = placedPoint([solidX, solidY, height], placement);
-  assert.ok(Math.abs(x - ((block[0] ?? 0) + (block[2] ?? 0)) / 2) < 1e-9);
-  assert.ok(Math.abs(y - ((block[1] ?? 0) + (block[3] ?? 0)) / 2) < 1e-9);
-  assert.ok(Math.abs(z - (block[4] ?? 0)) < 1e-9);
-  // A quarter turn takes the module's front, north, to the east.
-  const [east, south] = placedPoint([0, -1, 0], [0, 0, 0, 0, Math.PI / 2, 1, 1]);
-  assert.ok(Math.abs(east - 1) < 1e-12 && Math.abs(south) < 1e-12);
-});
+test(
+  "a placement's turned point lands where the room stands each of its solids as a block",
+  { skip: !existsSync(ROOM) },
+  () => {
+    // The room module's own blocks (isle::dressing::blocks), one a solid, in its placements' order.
+    const door = startRoomDoor(new WebAssembly.Module(readFileSync(ROOM)));
+    const plan = readIslePlan(door.islePlan('2', 'rainforest'));
+    const contract = kits.modules as Readonly<Record<string, { readonly size: number[]; readonly solids: number[][] }>>;
+    const blocks = [...plan.blocks];
+    let checked = 0;
+    for (const placement of plan.placements) {
+      const module = contract[MODULE_NAMES[placement[0]] ?? ''];
+      for (const [solidX = 0, solidY = 0] of module?.solids ?? []) {
+        const [west = 0, north = 0, east = 0, south = 0, top = 0] = blocks.shift() ?? [];
+        const [x, y, z] = placedPoint([solidX, solidY, module?.size[2] ?? 0], placement);
+        assert.ok(Math.abs(x - (west + east) / 2) < 1e-6 && Math.abs(y - (north + south) / 2) < 1e-6, 'its middle');
+        assert.ok(Math.abs(z - top) < 1e-6, 'its top');
+        checked++;
+      }
+    }
+    assert.equal(blocks.length, 0);
+    assert.ok(checked > 50, `${checked} solids`);
+    // A quarter turn takes the module's front, north, to the east.
+    const [east, south] = placedPoint([0, -1, 0], [0, 0, 0, 0, Math.PI / 2, 1, 1]);
+    assert.ok(Math.abs(east - 1) < 1e-12 && Math.abs(south) < 1e-12);
+  },
+);
 
 test('instances sort by module, a run each, the trees and cliffs marked for the middle distance', () => {
   const tree = MODULE_NAMES.indexOf('temperate.tree.a');
@@ -253,8 +252,6 @@ test('instances sort by module, a run each, the trees and cliffs marked for the 
   assert.equal(floats.length, 3 * 8);
   assert.ok(Math.abs((floats[5] ?? 0) + 1) < 1e-6);
 });
-
-const ROOM = 'client/public/room.wasm';
 
 test("the room module's own plans and ground read, every module named", { skip: !existsSync(ROOM) }, () => {
   const door = startRoomDoor(new WebAssembly.Module(readFileSync(ROOM)));

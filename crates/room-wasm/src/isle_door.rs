@@ -112,7 +112,7 @@ pub fn sea_island(id: u32) -> String {
     let word = with_open(|opened| {
         let Opened::Sea(sea) = opened else { return None };
         let island = sea.islands().by_id(id)?;
-        let levels = gear::world::island_levels(&format!("continent-{}", island.continent + 1));
+        let levels = island.levels;
         Some(
             serde_json::json!({
                 "id": island.id,
@@ -130,10 +130,10 @@ pub fn sea_island(id: u32) -> String {
     word.flatten().unwrap_or_default()
 }
 
-/// Holds the open sea's island `id` while players stand ashore on it: whether it stands.
+/// Holds the open sea's island `id` of `seed` while players stand ashore on it: whether it stands.
 #[must_use]
-pub fn hold_ashore(id: u32) -> bool {
-    with_open(|opened| if let Opened::Sea(sea) = opened { sea.hold_ashore(id) } else { false }).unwrap_or(false)
+pub fn hold_ashore(id: u32, seed: u64) -> bool {
+    with_open(|opened| if let Opened::Sea(sea) = opened { sea.hold_ashore(id, seed) } else { false }).unwrap_or(false)
 }
 
 /// An island's plan's JSON (`plan_json`), from its seed's halves and its climate's name written at `address`.
@@ -182,10 +182,11 @@ pub extern "C" fn room_sea_island(id: u32) -> u64 {
     hand_over(sea_island(id).into_bytes())
 }
 
-/// Holds the open sea's island `id` while players stand ashore (`hold_ashore`); 1 if it stands, 0 if not.
+/// Holds the open sea's island `id` of the seed whose halves are given while players stand ashore (`hold_ashore`); 1
+/// if it stands, 0 if not.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_hold_ashore(id: u32) -> u32 {
-    u32::from(hold_ashore(id))
+pub extern "C" fn room_hold_ashore(id: u32, low: u32, high: u32) -> u32 {
+    u32::from(hold_ashore(id, seed_of(low, high)))
 }
 
 #[cfg(test)]

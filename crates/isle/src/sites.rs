@@ -11,6 +11,9 @@ use core::f64::consts::{FRAC_PI_2, PI, TAU};
 pub const ANCHORAGE_OFF_M: f64 = 45.0;
 /// How far past the coast the section reaches into the shallows, metres.
 pub const SHALLOWS_M: f64 = 14.0;
+/// An isle's camp's levelled pad, and the ground eased round it, metres.
+const CAMP_PAD_M: f64 = 7.0;
+const CAMP_EASE_M: f64 = 6.0;
 
 /// The dungeon's door: where it stands, the bearing its front faces, and the dungeon's style.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -37,6 +40,7 @@ pub struct Sites {
     pub door: Door,
     /// An isle's landmark: where it stands and the bearing its front faces.
     pub landmark: Option<([f64; 2], f64)>,
+    /// An isle's guards' posts, one for each group: by the landmark, at the door and at the camp.
     pub guards: Vec<[f64; 2]>,
     pub camp: Option<[f64; 2]>,
     pub wrecks: Vec<Wreck>,
@@ -171,18 +175,28 @@ impl Sites {
             let toward = bearing_of([-point[0], -point[1]])
                 + draws.between(1.0, 2.2) * if draws.unit() < 0.5 { -1.0 } else { 1.0 };
             let [x, y] = way(toward);
-            let point = [point[0] + x * 28.0, point[1] + y * 28.0];
+            let mut point = [point[0] + x * 28.0, point[1] + y * 28.0];
+            // A quarry's camp stands on its rim, its pad and the ground eased round it clear of the pit.
+            if let Some(quarry) = &shape.quarry {
+                let off = distance(point, quarry.at);
+                let wanted = quarry.radius + CAMP_PAD_M + CAMP_EASE_M;
+                if off < wanted {
+                    let [x, y] = if off > 1e-6 {
+                        [(point[0] - quarry.at[0]) / off, (point[1] - quarry.at[1]) / off]
+                    } else {
+                        way(toward)
+                    };
+                    point = [quarry.at[0] + x * wanted, quarry.at[1] + y * wanted];
+                }
+            }
             let level = shape.height(point, cliffs);
-            shape.pads.push(Pad { at: point, radius: 7.0, level, ease: 6.0 });
+            shape.pads.push(Pad { at: point, radius: CAMP_PAD_M, level, ease: CAMP_EASE_M });
             point
         });
         let mut guards = Vec::new();
         if let Some((point, _)) = landmark {
-            guards.extend(
-                [at(draws.between(0.0, TAU), 12.0), at(draws.between(0.0, TAU), 18.0)]
-                    .map(|[x, y]| [point[0] + x, point[1] + y]),
-            );
-            guards.push(door.at);
+            let [x, y] = at(draws.between(0.0, TAU), 15.0);
+            guards.extend([[point[0] + x, point[1] + y], door.at]);
         }
         guards.extend(camp);
         let mut kept: Vec<[f64; 2]> = spawns.clone();

@@ -43,5 +43,21 @@ fn an_islands_room_opens_on_the_seas_word_with_its_guards() {
 fn with_no_sea_open_there_is_no_word_on_an_island() {
     assert!(open_island(br#"{"seed":"5","climate":"desert","at":[0,0],"guards":0,"levels":null}"#));
     assert!(sea_island(1).is_empty());
-    assert!(!hold_ashore(1));
+    assert!(!hold_ashore(1, 5));
+}
+
+/// The plans of a cove and a quarry, pinned: server/isle.test.ts pins the same of the page's WebAssembly, so every
+/// module, block and post stands where the room has it on every machine, not only the ground.
+const PLANS_PINNED: [(u64, &str); 2] = [(41, "desert"), (QUARRY_SEED, "rainforest")];
+const QUARRY_SEED: u64 = 2;
+const PLANS: &str = "5c5af7813ea5353d";
+
+#[test]
+fn the_plans_bits_are_the_ones_the_page_pins() {
+    assert_eq!(QUARRY_SEED, seed_of(Kind::Quarry), "the first quarry's seed");
+    let text: String = PLANS_PINNED.iter().map(|&(seed, climate)| plan_json(seed, climate)).collect();
+    let hash = text
+        .bytes()
+        .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
+    assert_eq!(format!("{hash:016x}"), PLANS);
 }

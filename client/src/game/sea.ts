@@ -170,6 +170,16 @@ export class Sea {
     return this.passage.course;
   }
 
+  /** Where the voyage under way, or the one stopped short, is bound; none at rest. */
+  get bound(): Point2 | null {
+    return this.passage.bound;
+  }
+
+  /** Bends the voyage ahead round the islands in sight now. */
+  bendRound(): void {
+    this.passage.bendRound();
+  }
+
   /** A course from the ship to a point, as the held map inks it before setting sail, or why there is none. */
   planTo(point: Point2): ReturnType<Passage['planTo']> {
     return this.passage.planTo(point);

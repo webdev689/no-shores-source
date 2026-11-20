@@ -69,7 +69,7 @@ export class RoomHost extends DurableObject<Env> {
   private ticks = 0;
   /** An island's room: the island's number at sea, its sea room's name, and when it last told that sea players stand
    *  ashore. */
-  private island: { readonly id: number; readonly sea: string; told: number } | null = null;
+  private island: { readonly id: number; readonly seed: string; readonly sea: string; told: number } | null = null;
 
   /** The sea's word on its island `id`, for that island's room: empty unless this is the open sea and it stands. */
   async islandWord(id: number): Promise<string> {
@@ -77,10 +77,10 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaIsland(id), '');
   }
 
-  /** Holds the sea's island `id` while players stand ashore on it: whether it stands. */
-  async holdAshore(id: number): Promise<boolean> {
+  /** Holds the sea's island `id` of `seed` while players stand ashore on it: whether it stands. */
+  async holdAshore(id: number, seed: string): Promise<boolean> {
     if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
-    return this.guarded(() => this.room.holdAshore(id), false);
+    return this.guarded(() => this.room.holdAshore(id, seed), false);
   }
 
   override async fetch(request: Request): Promise<Response> {
@@ -174,7 +174,7 @@ export class RoomHost extends DurableObject<Env> {
     const sea = seaRoomName(named.seas);
     const word = await this.env.ROOMS.getByName(sea).islandWord(named.id);
     if (!word || (JSON.parse(word) as { seed?: string }).seed !== named.seed) return false;
-    this.island = { id: named.id, sea, told: Date.now() };
+    this.island = { id: named.id, seed: named.seed, sea, told: Date.now() };
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
     const opened = this.room.openIsland(word) && this.room.difficulty(named.seas);
     return opened && this.room.reseed([lootLow, lootHigh, worldLow, worldHigh]);
@@ -298,8 +298,13 @@ export class RoomHost extends DurableObject<Env> {
       }
       if (this.island && now - this.island.told >= ASHORE_EVERY_MS) {
         this.island.told = now;
-        void this.env.ROOMS.getByName(this.island.sea)
-          .holdAshore(this.island.id)
+        const island = this.island;
+        // An island the sea no longer holds (it faded, or the sea restarted) is not held again, whatever has its number.
+        void this.env.ROOMS.getByName(island.sea)
+          .holdAshore(island.id, island.seed)
+          .then((stands) => {
+            if (!stands && this.island === island) this.island = null;
+          })
           .catch(() => false);
       }
       if (now - this.lastKept >= 1000) {

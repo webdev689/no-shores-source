@@ -48,7 +48,7 @@ export async function ashoreOn(
     hear = received;
     return link;
   };
-  const place = { boxes, facing: held.plan.facing, uses: isleUses(held, enter), gear };
+  const place = { boxes, facing: held.plan.facing, uses: isleUses(held, enter, gear, { continent, seas }), gear };
   return Foot.onDeck(context, node, Array.from(held.heights), open, place);
 }
 
@@ -59,17 +59,20 @@ const DIFFICULTIES: readonly Difficulty[] = ['normal', 'elite', 'abyss'];
 export class IsleLanding {
   private pending: number | null = null;
 
-  /** Sets the ship's course round the island to its anchorage: whether there is one to sail. */
+  /** Sets the ship's course round the island to its anchorage, unless it lies there already: whether there is one. */
   begin(sea: Sea, isles: Isles, id: number): boolean {
     const isle = isles.all().find((each) => each.seen.id === id);
     if (!isle?.built) return false;
     this.pending = id;
-    sea.sailAlong(approach(sea.position, isle).slice(1));
+    const [x, y] = sea.position;
+    const [anchorX, anchorY] = isle.built.anchorage;
+    if (Math.hypot(anchorX - x, anchorY - y) > ANCHORED_M || sea.course.length > 0)
+      sea.sailAlong(approach(sea.position, isle).slice(1));
     return true;
   }
 
   /** The island the ship has come to anchor off, once it lies at its anchorage, taken once; the landing given up if the
-   *  island no longer stands. */
+   *  island no longer stands, or the ship was turned elsewhere (steered, sent off on another voyage or a chase). */
   arrived(sea: Sea, isles: Isles): IsleHeld | null {
     if (this.pending === null) return null;
     const held = isles.byId(this.pending);
@@ -78,14 +81,19 @@ export class IsleLanding {
       this.pending = null;
       return null;
     }
-    const [x, y] = sea.position;
     const [anchorX, anchorY] = isle.built.anchorage;
-    if (sea.course.length > 0 || Math.hypot(anchorX - x, anchorY - y) > ANCHORED_M) return null;
-    this.pending = null;
-    return held;
+    const near = ([x, y]: readonly [number, number]) => Math.hypot(anchorX - x, anchorY - y) <= ANCHORED_M;
+    if (sea.course.length === 0 && near(sea.position)) {
+      this.pending = null;
+      return held;
+    }
+    // Under way to it, or stopped short of it to be resumed, the landing stands.
+    const bound = sea.bound;
+    if (!bound || !near(bound)) this.pending = null;
+    return null;
   }
 
-  /** The landing given up: the ship was turned elsewhere. */
+  /** The landing given up: the player was washed up, or went elsewhere. */
   cancel(): void {
     this.pending = null;
   }

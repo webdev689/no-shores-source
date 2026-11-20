@@ -56,6 +56,22 @@ fn a_cove_holds_no_foes_and_an_isle_holds_its_holders_guards() {
 }
 
 #[test]
+fn an_isles_guards_stand_by_its_landmark_at_its_door_and_at_its_camp() {
+    for kind in [Kind::Ruin, Kind::Quarry] {
+        let plan = plan(kind);
+        let room = Room::island(&plan, AT, Some(PIRATES), Some((5, 9)));
+        let near = |point: [f64; 2]| {
+            let [x, y] = isle::placed(point, AT);
+            room.foes.values().filter(|foe| libm::hypot(foe.fighter.body.x - x, foe.fighter.body.y - y) <= 12.0).count()
+        };
+        let [landmark, door, camp] = [plan.sites.guards[0], plan.sites.door.at, plan.sites.camp.expect("a camp")];
+        assert!(near(landmark) >= 3, "{kind:?}: {} by the landmark", near(landmark));
+        assert!(near(door) >= 2, "{kind:?}: {} at the door", near(door));
+        assert!(near(camp) >= 2, "{kind:?}: {} at the camp", near(camp));
+    }
+}
+
+#[test]
 fn every_machine_stands_an_isles_guards_alike() {
     let plan = plan(Kind::Ruin);
     let places = |room: &Room| room.foes.values().map(|foe| foe.fighter.body).collect::<Vec<_>>();
@@ -82,12 +98,15 @@ fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
     room.leave(player);
     let back = room.join().expect("a room with space");
     room.own(back, "account-a");
+    assert_eq!(room.player(back).expect("in").spent, vec![0], "the page is told it is spent, rejoined");
     stand_at(&mut room, back, [wreck[0] + 1.0, wreck[1]]);
     assert_eq!(scavenged(&mut room, back, 0), asks::OUT_OF_REACH, "spent for the account, not the socket");
     let other = room.join().expect("a room with space");
     room.own(other, "account-b");
     stand_at(&mut room, other, [wreck[0] + 1.0, wreck[1]]);
+    assert!(room.player(other).expect("in").spent.is_empty());
     assert_eq!(scavenged(&mut room, other, 0), 0, "another account has its own lot");
+    assert_eq!(room.player(other).expect("in").spent, vec![0], "the page is told it is spent");
     assert_eq!(scavenged(&mut room, other, 99), asks::OUT_OF_REACH, "no such wreck");
 }
 

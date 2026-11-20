@@ -34,7 +34,7 @@ pub struct Isle {
     pub levels: Option<(u8, u8)>,
     pub wrecks: Vec<[f64; 2]>,
     pub door: [f64; 2],
-    scavenged: BTreeMap<String, BTreeSet<u8>>,
+    pub(crate) scavenged: BTreeMap<String, BTreeSet<u8>>,
     pub hauls: Vec<(PlayerId, u8, Taken)>,
 }
 
@@ -110,7 +110,7 @@ impl Room {
         self.nav = navmesh::NavMesh::bake_on(&blocks, &self.floor, bounds, &navmesh::AGENT);
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
-        for (group, post) in guards(faction, &mut draws).iter().zip(posts.iter().chain(posts.iter().rev())) {
+        for (group, post) in guards(faction, &mut draws).iter().zip(posts) {
             if let Some(found) = self.post_at(group, (post[0], post[1]), &section, &mut draws) {
                 self.garrison.push(found);
             }
@@ -151,6 +151,8 @@ impl Room {
             &dice,
         );
         let Some(scavenger) = self.players.get_mut(&player) else { return crate::asks::OUT_OF_REACH };
+        // Spent for them, as a gathered node is: their page offers it no more.
+        scavenger.spent.push(wreck);
         let taken = scavenger.character.take_salvage(found);
         scavenger.gear_changed = true;
         if let Some(isle) = self.isle.as_mut() {
