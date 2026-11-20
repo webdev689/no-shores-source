@@ -11,8 +11,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
 - The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
   on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
-  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
-  in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives in `~/toolkit-data` and
+  outlives the container on the orphan branch `toolkit-data` (`tools/claude-toolkit/toolkit-data.sh`). Its first
+  review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
   ([[The World Editor Is on GitHub Pages]]). The owner has drawn all nine continents; continent 1 is the main social
@@ -163,7 +164,7 @@ Where the work stands now, for the next session. Each session rewrites this note
     hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
     the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
     hit the same way; and plates stay light: never larger, never through a block, none past 60 m (which plates show,
-    and their sizes, change on #95).
+    and their sizes: [[Fewer Plates Show, Sized by Rank, After Destiny]]).
   - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
     at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
   - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by
@@ -238,18 +239,38 @@ Where the work stands now, for the next session. Each session rewrites this note
   shore's, the owner's picks from the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to
   them; its store's `picks` collection holds each cue's Freesound number), published on R2 and in
   `content/audio/sounds.json`. The seven long beds play their steadiest minute, mono.
-- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes
-  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe in sight
-  nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and shows none over its
-  head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's bar three fifths long
-  and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates. Not yet seen on a real GPU
-  or with blows traded. Found in passing: the compass writes its marks' place and visibility every frame, changed or
-  not (`client/src/plus/compass.ts`).
+- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes ([[Fewer Plates Show, Sized
+  by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe whose body the crosshair is on (the
+  nearest of them), else the one nearest it, measured to its body with its breadth (whole within 4°, none past 6°; a
+  Boss there takes the cone and shows none over its head); the soft lock's foe and the foes fought in the last 6 s show
+  wherever they are; a Minor's bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure;
+  the land hides plates. Not yet seen on a real GPU or with blows traded. Found in passing: the compass writes its
+  marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
 - **#96, the kit's first review**, merged with the owner's yes: workers' worktrees made ready to test; the observation
   log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
   research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
+- **#102, foes fight in groups that lead, break and give ground, after Bungie**, merged with the owner's yes ([[Foes
+  Fight in Groups That Lead, Break and Give Ground, After Bungie]]; Claude's calls in [[Foe Groups as Claude Builds
+  Them]]): every garrison group's leader, whose fall breaks the rest (to cover, or running or huddling in the open, one
+  raging); a group's breaking point at half, defending its post, a standoff lasting a foe's patience; a mission's or a
+  dungeon's garrison falling back halfway at three quarters standing and gathering at its last stand at half; the Grey
+  Tithe's leader screened behind a shield-bearer of its lower ranks; and a mission's two waves, hunting the players. No
+  blurbs pop over foes, as the owner asked. Tested offline: the full check, 32 new tests (each rule broken once and seen
+  to fail) and a simulation of 72 scripted fights. Not yet seen: a group fight played by hand on a real GPU.
+- **#107, the audit's fixes to #95 and #96**, merged with the owner's yes ([[Plates as Claude Shows Them]]): a plate
+  fading out of the cone lifts none over it; plates are kept hidden for their next showing; a word pushed down clear of
+  a plate stays down; the log's save keeps lines both sessions appended, moves on a number both took and restores once a
+  container; the check names its own checkout's commit; the log is saved last at a session's end. Tested offline: the
+  full check, and each fix's test seen to fail without it.
 
 ## Waiting on the owner
+
+- **#102's and #107's open points**, both merged, in their descriptions: whether defending foes should hold their ground
+  longer than a foe's patience; whether any lower rank screening any leader under a Miniboss is the screen meant by
+  "Minors screening an Elite"; whether a wave is enough without a drop; whether a wave the room's limit has no room for
+  should come later; whether "no blurbs" also rules out a break's sound and the plate's alert mark; whether ships'
+  plates come under "enemy health bars" (Claude's recommendation: they stay as they are); whether a fought foe's plate
+  should stay whole the full 6 s; and whether a plate fading out of the cone may overlap the one taking it.
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
   none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
   places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
@@ -463,6 +484,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
   merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
   publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
+- **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
+  `server/garrison.test.ts`): its 13 foes stand all 1500 ticks and its player falls about tick 900, run straight into
+  the wall #63 gave its node, steered round it, or with the starting sword asked for; its swings seem never to land.
+  So nothing after a foe's fall (drops, a group's break, fallback and last stand, waves) is checked natively against
+  WebAssembly: their agreement rests on `clippy.toml`'s banned maths methods and on ordered maps. Next: a scripted
+  player that turns to its nearest foe and lands its blows, and a guard that needs a foe to fall.
 - **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is on `main` (#63),
   tested offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
   kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no

@@ -111,6 +111,20 @@ test('blows on one foe in quick succession add into one number, popped again; a 
     assert.equal(findAll(root, 'word').length, 2, 'too late to add');
   }));
 
+test('a word pushed down clear of a plate stays down as the plate goes, rather than jumping back up', () =>
+  onFakePage((root) => {
+    const words = new Words(root);
+    words.say({ text: '23', tone: 'dealt' as const, tags: [] }, [0, 0, 0], 0, 0.5);
+    const project = () => ({ x: 100, y: 50 });
+    const plate = { left: 60, right: 140, top: -Infinity, bottom: 60 };
+    words.update(project, 800, 600, FRAME, [plate]);
+    const [word] = findAll(root, 'word');
+    const placedAt = () => /translate\([^)]*\)/.exec(word?.style['transform'] ?? '')?.[0];
+    const under = placedAt();
+    words.update(project, 800, 600, FRAME, []);
+    assert.equal(placedAt(), under, 'the plate gone, the word where it stood');
+  }));
+
 test('words said together never cover one another: a later one stands below one it would cover, and stays there', () =>
   onFakePage((root) => {
     const words = new Words(root);
