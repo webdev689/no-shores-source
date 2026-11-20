@@ -8,9 +8,13 @@ status: in force
 > "Also want to add that the story itself will be 9 distinct story missions, along with tie in side quests in between
 > missions"
 
+Asked whether the prologue is the first of the nine:
+
+> "No prolouge isnt one"
+
 ## What it settles
 
-- **The story is nine distinct story missions.**
+- **The story is nine distinct story missions**, after the prologue, which is not one of them.
 - **Side quests between the missions** tie in with the story.
 
 What the story opens: [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]]. How the
