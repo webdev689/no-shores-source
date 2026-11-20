@@ -60,7 +60,7 @@ export function fallingOf(look: SkyLook): Falling {
   return { rain: look.falling - snow, snow, sand: look.sand };
 }
 
-const FALL_WGSL = /* wgsl */ `
+export const FALL_WGSL = /* wgsl */ `
 struct Fall {
   from_eye: mat4x4f,
   // Where the lattice stands from the eye, metres east, south and up within the box: the kind's running offset less

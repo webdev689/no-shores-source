@@ -147,7 +147,7 @@ export function sphere(): { readonly corners: Float32Array<ArrayBuffer>; readonl
   return { corners: new Float32Array(corners), faces: new Uint16Array(faces) };
 }
 
-const MARK_SHADER = /* wgsl */ `
+export const MARK_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 const AMBIENT = 0.45;

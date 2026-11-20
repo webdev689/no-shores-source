@@ -81,7 +81,7 @@ export function boltPath(strike: Strike, baseM: number, groundM: number): (reado
   return segments;
 }
 
-const BOLT_WGSL = /* wgsl */ `
+export const BOLT_WGSL = /* wgsl */ `
 struct Bolts { from_eye: mat4x4f, screen: vec4f }
 @group(0) @binding(0) var<uniform> bolts: Bolts;
 @group(0) @binding(1) var<storage, read> segments: array<vec4f>;

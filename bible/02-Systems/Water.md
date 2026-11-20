@@ -134,8 +134,9 @@ long and wide, so it matches the ship one sees; close in, everything is true siz
 
 The swell's longest waves hold from the raised view, and its whitecaps say the sea state: as the swell rises past a
 moderate sea's, more of its crests standing high in the sea round them break white, in patches, read from far off as
-the share of the sea they cover; a rough sea is flecked and a storm's is white-streaked. The wind's chop and the
-water's roughness rise with the swell's height there, so a calm sea or a roadstead lies glassy.
+the share of the sea they cover; a rough sea is flecked and a storm's is white-streaked. The wind's chop is calmed
+where the sea is sheltered, so a roadstead lies glassy, and its slope holds at 1.4 times a moderate breeze's: steeper,
+a storm's glints alias into blocks.
 
 ## Underwater
 

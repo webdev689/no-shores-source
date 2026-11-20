@@ -3,6 +3,7 @@ type: reference
 code:
   - crates/xtask/src/toolchain.rs#STEPS
   - crates/xtask/src/checks/mod.rs#run_all
+  - crates/xtask/src/shaders.rs#problem_in
 ---
 # Checks
 
@@ -16,11 +17,16 @@ order a failure is cheapest to read:
 3. **lints**: clippy on every crate and target, then ESLint; warnings are errors. Clippy also refuses clocks and
    every float method the platform may round its own way, such as `sin`, `exp` and `powf` ([[Agree to the Bit]]).
 4. **types**: TypeScript, strict, for the client, the server's shell and the tests.
-5. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
+5. **shaders**: every shader the client compiles, written out by `npm run shaders` into `target/shaders/` and
+   validated as WGSL with naga, the front end wgpu builds on ([[Every Shader Is Checked Offline]]). WebGPU reports a
+   shader that fails to compile only as a warning, so this is where a broken one is caught. A shader's code is the
+   constant `createShaderModule({ code: … })` names, exported where it is made: a string, or a record of strings
+   picked by a key; a call naming anything else fails. `cargo xtask shaders` runs this step alone.
+6. **tests**: `cargo test`, then the world rules, the land and movement built as WebAssembly (`npm run wasm`), then
    `node --test`, whose bridge tests load them.
-6. **build**: the client, with Vite; then the bake cuts every node's window of the land (`npm run bake`), and the
+7. **build**: the client, with Vite; then the bake cuts every node's window of the land (`npm run bake`), and the
    server's Cloudflare Worker is bundled with them as a deploy would, without deploying.
-7. **repo checks**, each a pure function with tests beside it:
+8. **repo checks**, each a pure function with tests beside it:
 
 | Check | Holds | Rule |
 |---|---|---|

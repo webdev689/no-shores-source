@@ -224,7 +224,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     let height_here = frame.sea.x * shelter_at(surface.offset);
     let rise = clamp((height_here - 0.35) / 2.65, 0.0, 1.0);
     let chop = wind_chop() * shelter_at(surface.offset);
-    let slope = chop_slope(local, vec2f(0.0), chop, footprint) + breaker.slope;
+    // Held at 1.4: steeper, a storm's glints alias into blocks (each wave's footprint fade alone does not stop it).
+    let slope = chop_slope(local, vec2f(0.0), min(chop, 1.4), footprint) + breaker.slope;
     rough = 0.2 * clamp(sqrt(chop), 0.3, 1.4);
     let rolled = swell_normal(swell);
     normal = normalize(rolled / max(rolled.z, 0.05) + vec3f(-slope, 0.0));

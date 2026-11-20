@@ -84,7 +84,7 @@ fn placed(point: vec3f, at: vec4f, turn: vec4f) -> vec3f {
 }
 `;
 
-const DRAW_SHADER = /* wgsl */ `
+export const DRAW_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 ${COMMON}
@@ -177,7 +177,7 @@ fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
 }
 `;
 
-const CAST_SHADER = /* wgsl */ `
+export const CAST_SHADER = /* wgsl */ `
 ${SHADOW_CAST_WGSL}
 ${COMMON}
 @vertex
