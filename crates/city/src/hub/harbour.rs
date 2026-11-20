@@ -25,6 +25,10 @@ const BESIDE_FLIGHT_M: [f64; 2] = [14.0, 4.0];
 const QUAY_REACH_M: f64 = 6.0;
 /// How far in from the pier's end its head is, metres.
 const PIER_HEAD_IN_M: f64 = 6.0;
+/// Ships moored either side of the pier: how far their middles lie from its middle line, and how far out along it
+/// from its root, as shares of its length, metres.
+const MOORED_OFF_M: f64 = 10.5;
+const MOORED_ALONG: [f64; 2] = [0.45, 0.72];
 
 /// What the harbour way is laid from: the city's grid, cells and their uses, the harbour avenue's cells, every ramp,
 /// the works (the pier among them), and the piers' roots on the quay.
@@ -83,6 +87,7 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
                 let head = pier_head(pier, root);
                 laid.spots.push(head);
                 pier_line = Some((root, head));
+                social.moorings = moorings(root, head);
             }
         }
         offices([top[0], top[1], top[2]], [foot[0] - top[0], foot[1] - top[1]], &mut laid);
@@ -198,6 +203,22 @@ fn walked(
         posts.push(Post { task: Task::Hold, at, facing: station.facing, keep: Keep::Visited, reached_from: point });
     }
     social.posts.extend(posts);
+}
+
+/// A ship either side of the pier, her bow toward the sea along it, the two staggered so both read from the quay.
+fn moorings(root: [f64; 2], head: [f64; 2]) -> Vec<[f64; 3]> {
+    let out = [head[0] - root[0], head[1] - root[1]];
+    let length = out[0].hypot(out[1]).max(1e-9);
+    let (along, across) = ([out[0] / length, out[1] / length], [-out[1] / length, out[0] / length]);
+    let bearing = libm::atan2(along[0], -along[1]);
+    [(-1.0, MOORED_ALONG[0]), (1.0, MOORED_ALONG[1])]
+        .into_iter()
+        .map(|(side, share)| {
+            let x = root[0] + along[0] * length * share + across[0] * side * MOORED_OFF_M;
+            let y = root[1] + along[1] * length * share + across[1] * side * MOORED_OFF_M;
+            [x, y, bearing]
+        })
+        .collect()
 }
 
 fn distance(one: [f64; 2], two: [f64; 2]) -> f64 {

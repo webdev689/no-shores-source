@@ -28,6 +28,8 @@ export interface CityPlan {
     readonly visitor_spots?: readonly Point[];
     readonly ways?: Ways;
     readonly posts?: readonly Post[];
+    /** Ships moored beside its pier: each one's middle (east, south) and her bow's bearing. */
+    readonly moorings?: readonly (readonly [number, number, number])[];
   };
   readonly pads: readonly Pad[];
 }
@@ -106,7 +108,10 @@ export function windowRect(ring: readonly Point[]): Rect {
 /** The middle of a node's spawns, or its centre where it has none. */
 function spawnsMiddle(node: NodeInfo): Point {
   if (node.spawns.length === 0) return node.centre;
-  const sum = node.spawns.reduce<[number, number]>((total, [east, south]) => [total[0] + east, total[1] + south], [0, 0]);
+  const sum = node.spawns.reduce<[number, number]>(
+    (total, [east, south]) => [total[0] + east, total[1] + south],
+    [0, 0],
+  );
   return [sum[0] / node.spawns.length, sum[1] / node.spawns.length];
 }
 

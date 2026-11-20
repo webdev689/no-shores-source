@@ -124,6 +124,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
         visitor_spots: laid.spots,
         ways,
         posts,
+        moorings: Vec::new(),
     }
 }
 

@@ -36,6 +36,9 @@ pub struct Social {
     /// The ways its townsfolk walk, and the posts where they work, play or stay a while (`life`).
     pub ways: Ways,
     pub posts: Vec<Post>,
+    /// Where ships lie moored beside its pier, if it reaches one: each one's middle (east, south) and the bearing her
+    /// bow points along (radians clockwise from north), drawn while a player walks it (`hub::harbour`).
+    pub moorings: Vec<[f64; 3]>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -116,5 +119,5 @@ pub fn plaza(
     solids.extend(stalls);
     let visitor_spots = visitor_spots(&frame);
     let (ways, posts) = townsfolk_life(&frame, &stations);
-    Social { bounds, level, ring, spawns, solids, stations, visitor_spots, ways, posts }
+    Social { bounds, level, ring, spawns, solids, stations, visitor_spots, ways, posts, moorings: Vec::new() }
 }

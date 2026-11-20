@@ -26,6 +26,8 @@ import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { askedArrival, type GateWay, gateWay } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
+import { mooredPlaces } from './moorings.ts';
+import { SailRig } from '../ships/sails.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { HelmMap } from './helmMap.ts';
@@ -404,6 +406,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
   hud.onPassage(goThrough);
 
+  /** The sails of the ships moored at a social space's pier: never set, so furled. */
+  const mooredRig = new SailRig(sloop.sails);
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
@@ -422,7 +426,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
     const met = after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', here.node, paused);
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
-    scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), {
+    const moored = here.node.kind === 'social' ? (landmass.plan?.social.moorings ?? []) : [];
+    const ships = mooredPlaces(moored, clock).map((place): SeaShip => ({ place, rig: mooredRig, shade: 1 }));
+    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), {
       after: hands,
       carried,
     });
