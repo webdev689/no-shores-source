@@ -215,8 +215,9 @@ Pass]]) with Claude's numbers:
   (half each by its draw) or a chest.
 - **Striking, and boarding.** A captain who strikes lies hove to with her colours down. For 90 s any player in the
   fight may board her: their ship within 30 m of hers, both under 2 m/s. With no one aboard by then she is scuttled
-  (`Sinking`) and lays what floats. A struck captain never sails off from the fight. Until the page can fight on her
-  deck the sea room takes no boarding ask, so every struck captain is scuttled after her 90 s (see "Limits").
+  (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player her
+  colours are down and to come alongside; E asks to board her (`seaAfter.ts` `boardable`, the fight's controls let E
+  through), and the sea's line says "Boarders away" as the boarder goes from their helm to her deck.
 - **Her deck** (`deck_fight.rs`, `sea_decks.rs`). The sea room holds the deck fight, so the one authority over the fight
   knows when her deck is won and when the last boarder leaves, and no second room is trusted with it: a room on land
   built as a node's room is, its floor her deck's grid of heights from her hull's manifest (in her own frame, a wall off
@@ -231,7 +232,21 @@ Pass]]) with Claude's numbers:
   minute after it fell every boarder still aboard is sent back; she is scuttled when the last one has left her. A
   boarder's own ship takes no orders or course while they stand on her deck. Her deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
-- **Losing.** A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
+  The sea's snapshot carries each deck to its boarders alone: their numbers there, her hull, her deck room's own
+  snapshot, and the ticks her won deck holds them yet; their gear while aboard is her deck room's, sent through the
+  sea's link, and every boarder's dress is sent again as each one comes over her side, who had no welcome to bring it.
+- **The fight on her deck, on the page** (`deckBoarding.ts`, `deckFight.ts`). Once the sea says the player stands on
+  her deck, the page plays on foot there exactly as on land: the same `Foot`, controls, first and third person,
+  display, bars and marks, her crew drawn as the land's foes and the other boarders as players. Its link is the sea's:
+  land inputs sent through it, which the room hands to her deck room, and each of her deck room's snapshots handed on
+  from the sea's (`SeaRoom.hearDeck`). The page predicts on her grid of heights by the movement crate and the fight's
+  rules (`fighter_heights`), as the room steps it. Everything on her deck is in her own frame, laid into the world as
+  her ship lies in the fight (the captain nearest where she lay, her heading, heave, pitch and roll): figures by
+  `deckToWorld`, the camera's eye riding her and level, and the marks, arcs, blood and display through her deck's turn
+  (`deckTurn`) after the world camera's matrix. While she holds the player the fight's keys and pointer are the foot's.
+  Won, the display says "Her deck is yours", the seconds of her minute left, her hold's take as the room laid it ("Her
+  hold: 2 crates, a chest, afloat alongside"), and E to go back aboard; E or the minute's end, the room has the boarder
+  back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up as above. A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
   up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, on the traffic's sea mask: one
   search from every port when the room opens gives each cell of open water its nearest, so asking is a lookup): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
   of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
@@ -446,9 +461,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   and no Fluyt yet, no other classes, and no ambient traffic.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where
   the fight has them, without their pose or hurts.
-- The page cannot yet fight on a captain's deck: on foot on her deck among her crew, as on land, the deck standing where
-  her ship lies on the swell. Until it can, the sea room takes no boarding, so her deck room and her hold are the
-  room's law alone, tested in the room.
+- On her deck the camera stays level while she rolls, as on the player's own deck, so the crosshair aims a hair off
+  where her heeled deck's frame would put it; the view cuts to her deck, with no pan down.
 - A player washed up walks into the port city's social space once the page has opened the landmass it stands on, as
   it does for any coast she nears.
 - A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her

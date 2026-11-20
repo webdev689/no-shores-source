@@ -1,11 +1,10 @@
-import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
 import { HeldMap } from '../heldmap/heldMap.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
-import { type CardAt, openCards } from '../player/cards.ts';
+import type { CardAt } from '../player/cards.ts';
 import { plainDress } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
@@ -25,6 +24,7 @@ import { FigureView } from './figureView.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
+import { openForge } from './forge.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
 import { FootView } from './footView.ts';
@@ -38,7 +38,7 @@ import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { type Drawer, GameScene } from './scene.ts';
 import { Sea } from './sea.ts';
-import { SeaAfter, portCities } from './seaAfter.ts';
+import { SeaAfter, fightAsk, portCities } from './seaAfter.ts';
 import { waterNamer } from './seaHostiles.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
@@ -59,12 +59,6 @@ const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 const REGION = 'The Pale Expanse';
 /** The veil stays down until the exact ground round the player has come, or this long. */
 const GROUND_WAIT_S = 20;
-
-/** The forge's figures and the first person's hands, read from the forge's published renders. */
-async function openForge(gpu: Gpu, figures: FigureView) {
-  const { forge, store } = await openCards(figures);
-  return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
-}
 
 /** The words under a place's name: its kind, and its island's name where it has one. */
 function placeWords(node: NodeInfo): string {
@@ -251,7 +245,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         },
         anchorage,
         heading,
-        { movement, walker, forge },
+        footContext,
       );
       const waters = startWatersRules(await roomModule);
       sea.waterAt = waterNamer(waters, waters.open(world.layoutText, portsOf(world.cities)));
@@ -441,6 +435,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'b') manage();
     else if (key === 'h') leaveHelm();
     else if (key === 'r' && flow.mode === 'sea' && sea?.aboard.active) sea.sighted?.ask('repair');
+    else if (key === 'e' && flow.mode === 'sea' && sea?.fight && fightAsk(sea) === 'board') input.lock();
     else if (key === 'e' && sea?.aboard.walking) takeHelm();
     else if (key === 'e' && flow.mode === 'foot') foot?.use();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
@@ -449,7 +444,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   });
   canvas.addEventListener('click', () => {
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
-    if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();
+    if (flow.mode === 'sea' && !flow.menu && !input.locked && (sea?.aboard.walking || sea?.boarding.onDeck))
+      input.lock();
   });
   seaPointer(canvas, input, {
     atSea: () => flow.mode === 'sea' && !flow.menu,
@@ -498,7 +494,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = seaWeather()?.follow(here.position, seaView.reachM, seconds) ?? scene.land?.swell;
-    footView.hide();
     // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
     if (!paused && !heldMap?.shown)
       here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
@@ -513,10 +508,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       paused,
     });
     shipScale = shown.shipScale;
+    const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     // Back at the helm, or called to it, the pointer is the player's again.
-    if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
-    wasWalking = here.aboard.walking;
+    const afoot = here.aboard.walking || here.boarding.onDeck;
+    if (wasWalking && !afoot && input.locked) document.exitPointerLock();
+    wasWalking = afoot;
     // What a lookout sees is discovered as the ship sails.
     if (flow.mode === 'sea') discovered.lookout(here.position);
     if (mapWanted && here.atHelm && flow.mode === 'sea' && !flow.menu) {
@@ -543,8 +540,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     seaView.reachM = Math.max(0, shown.shot.eye[2]) * 6;
     const fleet = traffic.atSea(shown, waterHere(), seconds, clock);
     const more = { hulls: fleet.hulls, after, focus: shown.focus, ...(swell ? { swell } : {}) };
-    scene.draw(shown.shot, size, clock, seconds, standing([...shown.ships, ...fleet.ships], shown.figures), more);
-    showStanding({ kind: 'inside' });
+    const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
+    scene.draw(shown.shot, size, clock, seconds, drawers, more);
+    showStanding(here.boarding.standing ?? { kind: 'inside' });
     showSeaHud(
       hud,
       here,

@@ -8,11 +8,12 @@ import {
   faceBytes,
   helmBytes,
   ordersBytes,
+  readFromRoom,
   type SeenPirate,
   type SeenShip,
   walkBytes,
 } from '../network/messages.ts';
-import { type RoomLink, type Snapshot, readFromRoom } from '../network/roomConnection.ts';
+import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
 import type { SeenDeck, SeenFlotsam, SeenKept } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';

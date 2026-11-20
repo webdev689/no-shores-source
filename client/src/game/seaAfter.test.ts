@@ -16,7 +16,7 @@ test('the sea’s word becomes the player’s lines: washing up, a piece gathere
     ['Overlook', 'Sunspire', 'Rimeholt'],
   );
   assert.deepEqual(lines, [
-    'Her colours are down.',
+    'Her colours are down: come alongside and press E to board her.',
     'Your ship went down: you washed up at Sunspire, your ship moored at its roadstead.',
     'Gathered a chest: a Rare Vestige, an Ammo box.',
     'The Pirate Schooner joined the fight.',
