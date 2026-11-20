@@ -17,6 +17,7 @@ code:
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/sea.ts#Sea
+  - client/src/game/seaView.ts#SeaView
   - client/src/game/landmass.ts#openLandmass
   - client/src/game/landDrawers.ts#landDrawers
   - client/src/game/scene.ts#GameScene
