@@ -220,16 +220,20 @@ export class RoomHost extends DurableObject<Env> {
         this.guarded(() => this.room.tick(), undefined);
         this.ticks++;
       }
-      const snapshot = this.guarded(() => this.room.snapshot(), new Uint8Array());
+      // Taken once, then cut for each player: what the sea tells one goes to them alone.
+      this.guarded(() => this.room.snapshotPrepare(), undefined);
       for (const socket of this.open()) {
         const held = this.players.get(socket);
+        const snapshot = held
+          ? this.guarded(() => this.room.snapshotFor(held.player), new Uint8Array())
+          : new Uint8Array();
         // Each player's own gear goes to them alone, when it changed.
         const gear = held ? this.guarded(() => this.room.gear(held.player), new Uint8Array()) : new Uint8Array();
         if (held && gear.length > 0) this.keeper?.changed(held.player);
         try {
           // Gear first, so the browser predicts a change of trim or arms from this snapshot on.
           if (gear.length > 0) socket.send(gear);
-          socket.send(snapshot);
+          if (snapshot.length > 0) socket.send(snapshot);
         } catch {
           // A socket that closed between the check and the send misses this snapshot; the rest still get theirs.
         }

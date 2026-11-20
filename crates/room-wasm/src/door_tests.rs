@@ -352,3 +352,24 @@ fn a_browser_predicts_a_fighter_on_a_nodes_ground_as_its_room_steps_it() {
     let land = movement::Terrain::height_at(&floor, expected.body.x, expected.body.y);
     assert!(land > 1.0 && (expected.body.z - land).abs() < 1e-6, "walking on the land, well above 0 m");
 }
+
+#[test]
+fn what_the_sea_tells_a_player_goes_to_them_alone() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+    let (first, second) = (room_join(), room_join());
+    for player in [first, second] {
+        assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    }
+    room_tick();
+    let mut character = gear::Character::starting();
+    character.ship_at = Some([60_000, 50_000]);
+    assert!(gear_door::restore_character(first, character.to_json().as_bytes()));
+    snapshot_door::prepare();
+    let told = |player| {
+        let bytes = snapshot_door::snapshot_for(player);
+        let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        snapshot.told().map_or(0, |told| told.len())
+    };
+    assert_eq!((told(first), told(second)), (1, 0), "her ship moored where it was kept is her word alone");
+}

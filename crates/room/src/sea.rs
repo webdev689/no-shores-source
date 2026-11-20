@@ -395,6 +395,7 @@ impl Sea {
                 pace: ship.pace,
                 fighting: self.fights.fighting(player),
                 clock: f64::from(ship.rate.max(1)),
+                hull: self.berths.get(&player).map_or(1.0, |berth| berth.kept[0]),
             })
             .collect();
         let chart = SeaChart { coasts: &self.coasts, charted: &self.chart };

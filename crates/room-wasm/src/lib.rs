@@ -14,11 +14,13 @@ use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
-use room::{Floor, FoeSeen, NodeKind, PlayerId, Refused, Room, Section, Seen};
+use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
 use serde::Deserialize;
 use std::cell::RefCell;
 
 mod deck_door;
+mod snapshot_door;
+pub use snapshot_door::snapshot;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
@@ -253,77 +255,6 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     answer.unwrap_or(NO_SUCH_PLAYER)
 }
 
-/// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
-/// snapshot, and the shots in flight with the balls just fired, as a snapshot's bytes; at sea, every ship. Empty with no room open.
-#[must_use]
-pub fn snapshot() -> Vec<u8> {
-    with_open(|opened| match opened {
-        Opened::Land { room, .. } => land_snapshot(room),
-        Opened::Sea(sea) => {
-            let fights = sea.fight_views();
-            let aboard: Vec<(u32, u32, movement::Body)> =
-                sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
-            let kind = |piece: naval::fight::Piece| piece as u8;
-            let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
-            let kept = sea.ships().filter_map(|(player, _)| sea.kept(player).map(|(kept, left)| (player, kept, left)));
-            let (flotsam, kept, told) = (flotsam.collect(), kept.collect(), sea.take_told());
-            let decks = sea
-                .decks_mut()
-                .iter_mut()
-                .map(|deck| {
-                    let aboard = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
-                    (aboard, deck.pirate.commission.hull().number(), land_snapshot(&mut deck.room))
-                })
-                .collect();
-            let harbour = protocol::SeaHarbour { flotsam, kept, told, decks };
-            protocol::sea_snapshot_bytes(
-                sea.clock(),
-                &sea.ships().collect::<Vec<_>>(),
-                &sea.pirates(),
-                &fights,
-                &aboard,
-                &harbour,
-            )
-        }
-        Opened::Fleet(fleet) => {
-            let happened = fleet.take_events();
-            let acknowledged = |ship| fleet.acknowledged(ship);
-            protocol::fleet::fleet_snapshot_bytes(
-                (fleet.clock(), fleet.world_start()),
-                fleet.fight(),
-                &acknowledged,
-                &happened,
-            )
-        }
-    })
-    .unwrap_or_default()
-}
-
-/// A room on land's snapshot after its last tick, taking the dresses changed, what happened and its lines since the
-/// last: a deck boarded at sea sends its own the same way.
-fn land_snapshot(room: &mut Room) -> Vec<u8> {
-    let changed = room.take_dress_changes();
-    let events = room.take_events();
-    let dressed: Vec<(PlayerId, &str)> = changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-    let players: Vec<Seen> = room.seen().collect();
-    let foes: Vec<FoeSeen> = room.foes_seen().collect();
-    let tick = room.clock();
-    let lines = room.take_lines();
-    let shots: Vec<combat::Shot> = room.shots().copied().collect();
-    let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
-    let snapshot = protocol::Snapshot {
-        tick,
-        players: &players,
-        dressed: &dressed,
-        foes: &foes,
-        events: &events,
-        shots: &shots,
-        lines: &lines,
-        spells: &spells,
-    };
-    protocol::snapshot_bytes(&snapshot)
-}
-
 /// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.
 #[must_use]
 pub fn joined(player: PlayerId) -> Vec<u8> {
@@ -464,10 +395,22 @@ pub extern "C" fn room_tick() {
     });
 }
 
-/// The snapshot's bytes after the last tick.
+/// The snapshot's bytes after the last tick, every player's part in it.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot() -> u64 {
-    hand_over(snapshot())
+    hand_over(snapshot_door::snapshot())
+}
+
+/// Takes the snapshot after the last tick, for `room_snapshot_for` to hand each player their part of it.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_snapshot_prepare() {
+    snapshot_door::prepare();
+}
+
+/// The prepared snapshot's bytes as one player is sent them: at sea only what is theirs of the sea's own part.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_snapshot_for(player: PlayerId) -> u64 {
+    hand_over(snapshot_door::snapshot_for(player))
 }
 
 /// The Sloop's build as the naval rules hold it, as JSON (`deck_door::sloop_build_json`).

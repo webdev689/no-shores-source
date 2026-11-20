@@ -33,7 +33,7 @@ impl Chart for OneWater {
 
 /// A player's ship at `at`, heading north at `pace`, fighting or not; her waters run at her pace.
 fn voyager(player: PlayerId, at: [f64; 2], pace: u16, fighting: bool) -> Voyager {
-    Voyager { player, at, heading: 0.0, pace, fighting, clock: f64::from(pace.max(1)) }
+    Voyager { player, at, heading: 0.0, pace, fighting, clock: f64::from(pace.max(1)), hull: 1.0 }
 }
 
 fn standing(id: u32, at: [f64; 2], heading: f64, bold: bool) -> Pirate {
@@ -326,4 +326,16 @@ fn a_bold_ship_leads_a_player_under_way_and_lets_one_fighting_be() {
     let mut pirates = Pirates { sailing: vec![standing(1, [0.0, 0.0], 0.0, true)], ..Pirates::default() };
     pirates.tick(1.0, &[voyager(1, [4_000.0, 0.0], 0, true)], &PIRATE_WATER);
     assert_eq!((pirates.sailing[0].heading, pirates.sailing[0].quarry), (0.0, None));
+}
+
+#[test]
+fn a_wary_ship_comes_for_a_sloop_she_would_take_and_lets_a_sound_one_be() {
+    let sound = voyager(1, [4_000.0, 0.0], 0, false);
+    let holed = Voyager { hull: 0.3, ..sound };
+    let mut pirates = Pirates { sailing: vec![standing(2, [0.0, 0.0], 0.0, false)], ..Pirates::default() };
+    pirates.tick(1.0, &[sound], &PIRATE_WATER);
+    assert_eq!(pirates.sailing[0].quarry, None, "a sound Sloop she does not outgun");
+    pirates.tick(1.0, &[holed], &PIRATE_WATER);
+    assert_eq!(pirates.sailing[0].quarry, Some(1), "one holed under GRAPPLE_HULL she comes for");
+    assert!((pirates.sailing[0].heading - HELM_TURN_RAD_S).abs() < 1e-9);
 }
