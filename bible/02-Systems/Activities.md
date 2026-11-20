@@ -29,8 +29,9 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 [[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
-([[The Activities Are Built in Full, Before the Story's Missions]]). Steps 1 to 4 are built: the core, the
-dungeons, the screens, and companies of four with Find a Company; the quests and bounties are not.
+([[The Activities Are Built in Full, Before the Story's Missions]]). All five steps are built: the core, the
+dungeons, the screens, companies of four with Find a Company, and the quests and bounties; the sea's count of ships
+down waits on the sea telling them.
 
 ## What it is for
 
@@ -198,6 +199,10 @@ One engine counts both, since the owner's side quests and the board's bounties a
   The refusals read "The bounty board opens after the prologue.", "That bounty is no longer on the board.", "You
   already hold that bounty.", "That bounty is not done yet." and "That bounty is turned in already."; they are
   numbered 80 to 84, apart from the rest.
+- **At sea** no one holds a character, so the sea's room keeps each ship sunk or taken in its tick, with her water,
+  her rank and the accounts of the players who fought her (`room-wasm` `sea_counts`). The sea's host claims each
+  fighter's kept character only while no other room holds it, counts the ship by the rules and lets it go at once
+  (`countAtSea`). Until the sea keeps its ships down (`sea_counts::tick`), none is counted.
 - **Side quests** use the same objectives, kept until done, and are written with the story's missions as data
   (`content/gear/quests.json`, read by `gear::quests`, none written yet). A character keeps each held quest's count
   in `Character.story.quests` and each finished one in `story.finished`; finishing one pays its XP and Aurem once.

@@ -23,8 +23,8 @@ const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resol
 export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters {
   private readonly kept = characters(this.env.DB, Date.now, wait);
 
-  claim(token: string, holder: string): Promise<Claimed | null> {
-    return this.kept.claim(token, holder);
+  claim(token: string, holder: string, anyway = true): Promise<Claimed | null> {
+    return this.kept.claim(token, holder, anyway);
   }
 
   save(account: string, holder: string, body: string): Promise<boolean> {
@@ -35,7 +35,7 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
     return this.kept.release(account, holder, body);
   }
 
-  present(token: string, room: string | null): Promise<boolean> {
+  present(token: string, room: string | null): Promise<string | null> {
     return this.kept.present(token, room);
   }
 

@@ -446,3 +446,17 @@ test('the gates read as the rules judge them for a level and a story', () => {
   assert.deepEqual(gates.day, [null, 'Elite seas open at level 10.', 'Abyss seas open at level 20.']);
   assert.equal(gates.weekElite, 'This dungeon opens at level 24.');
 });
+
+test('the sea keeps no ship down until it counts them, and a kept character is counted by the rules', () => {
+  const room = startRoomDoor(compiled);
+  const square = [
+    [100_000, 100_000],
+    [200_000, 100_000],
+    [200_000, 200_000],
+    [100_000, 200_000],
+  ];
+  assert.equal(room.openSea(JSON.stringify({ continents: [{ id: 'square', outline: square }], isles: [] }), 1), true);
+  room.tick();
+  assert.equal(room.shipDowns(), '[]');
+  assert.equal(room.countKept(JSON.stringify({ kept: null, water: null, rank: 1, minute: 29_919_420 })), '');
+});

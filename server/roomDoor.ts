@@ -97,6 +97,12 @@ export interface RoomDoor {
   shut(player: number, kept: string | null): string;
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;
+  /** At sea, the ships gone down since last asked, sunk or taken, as JSON: `[{ water, rank, players }]`, the players
+   *  by account; '[]' when none. */
+  shipDowns(): string;
+  /** A kept character with a ship down counted toward its bounties and quests, from its ask (JSON: `kept`, the
+   *  character's JSON or null, and the ship's `water`, `rank` and the Unix `minute`); '' when nothing moved. */
+  countKept(ask: string): string;
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
@@ -157,6 +163,8 @@ interface RoomExports {
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
+  room_ship_downs(): bigint;
+  room_count_kept(address: number, length: number): bigint;
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
@@ -245,6 +253,11 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
+    shipDowns: () => new TextDecoder().decode(take(exports.room_ship_downs())),
+    countKept: (ask) => {
+      const bytes = new TextEncoder().encode(ask);
+      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_count_kept(address, bytes.length))));
+    },
     shut: (player, kept) => {
       const bytes = new TextEncoder().encode(kept ?? '');
       return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_shut(player, address, bytes.length))));

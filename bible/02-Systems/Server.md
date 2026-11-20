@@ -210,6 +210,10 @@ will take it, by the room's own tick.
   on, set again as she nears its end, so she sails on. They take the helm again within 0.8 m of the spot behind her
   wheel, standing, judged where their steps leave them once the steps the clock allows by then are taken; a bold
   pirate that meets them calls them to it at once.
+- **Ships down.** Each tick the room keeps each hostile ship sunk or taken, by her water (a layout index read as its
+  continent's id), her rank and the accounts of the players who fought her, 64 at most, for its host to take
+  (`room_ship_downs`); a kept character with one counted by the rules comes back from `room_count_kept`. Until the sea
+  tells its ships down (`Sea::take_ship_downs`), it keeps none.
 - Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
 
 ## A fleet
@@ -350,7 +354,9 @@ so every decision is Rust and the shell only carries bytes and time.
   with it from the [[Accounts]], saved as it changes and let go when they leave. A character the node's gate shuts
   ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. At sea, where no
   character is kept, the room tells the accounts the player is there, again every 30 seconds, and that they left, for
-  the Roster. A second text message, or any other, closes the socket.
+  the Roster, and keeps the account it answers; after each tick it counts each ship gone down toward the bounties of
+  each player there who fought her (`countAtSea`, [[Activities]]). A second text message, or any other, closes the
+  socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, a join is turned away (503). Should the

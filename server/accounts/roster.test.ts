@@ -127,7 +127,7 @@ test('the Roster lists those in the same room beside the company, each with wher
   });
   assert.deepEqual(names(roster.nearby), ['Ben'], 'Cal is elsewhere');
   assert.equal(roster.guests, 1, 'a guest is counted, not named');
-  assert.equal(await kept.present(tokens['Cal'] ?? '', 'sea'), true);
+  assert.notEqual(await kept.present(tokens['Cal'] ?? '', 'sea'), null);
   const cal = await kept.claim(tokens['Cal'] ?? '', 'node-saltgrass--elite:Cal');
   await kept.release(cal?.account ?? '', 'node-saltgrass--elite:Cal', null);
   await player('Ada').ask('friend/ask', { name: 'Cal' });

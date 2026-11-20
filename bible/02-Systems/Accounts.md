@@ -97,7 +97,10 @@ they play in holds it while they are there.
   hold left to lapse.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
-  another learns it from its next save and lets the player go, saying their character joined another room.
+  another learns it from its next save and lets the player go, saying their character joined another room. The sea's
+  count of a ship down claims a character only while no other room holds it: after the wait it gives up, never
+  taking it anyway, and lets it go at once ([[Activities]], "Quests and bounties"). `present` answers the account a
+  session is for, or null.
 - **Gated.** Before giving a character, the room asks its gate ([[Activities]]). It judges the character with the
   story the player already holds in the room carried forward, since the page may tell the room the prologue is done
   before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is

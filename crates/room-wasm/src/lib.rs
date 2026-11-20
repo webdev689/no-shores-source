@@ -27,11 +27,13 @@ mod fleet_door;
 mod gear_door;
 mod roster_door;
 mod run_door;
+mod sea_counts;
 
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
 pub use run_door::{activities_json, gates_json, open_run};
+pub use sea_counts::{count_kept, ship_down, ship_downs_json};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
 #[derive(Debug)]
@@ -454,7 +456,7 @@ pub unsafe extern "C" fn room_input(player: PlayerId, address: *const u8, length
 pub extern "C" fn room_tick() {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => room.tick(),
-        Opened::Sea(sea) => sea.tick(),
+        Opened::Sea(sea) => sea_counts::tick(sea),
         Opened::Fleet(fleet) => fleet.tick(),
     });
 }
