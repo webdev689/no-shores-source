@@ -23,6 +23,7 @@ code:
   - client/src/combat/abilityBar.ts#abilityBarOf
   - crates/gear/src/arts.rs#WornArts
   - crates/gear/src/arts.rs#ArtRefusal
+  - client/src/game/artLevels.ts#levelOf
   - crates/room/src/arts.rs#Casting
   - crates/room/src/arts.rs#spell_power
   - crates/room/src/spells.rs#SpellSeen
@@ -61,8 +62,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 ## How it works
 
 - **The Art's diamond** is the first row under the Character page's Weapons heading, as tall as a slot's row, so the
-  weapons' rows stand level with the armour's: the worn Art's emblem, "Art" and its name in its element's colour. Its
-  card names the Art, its spells and its words. Pressed, it opens the Art's screen in the Character page's place, the
+  weapons' rows stand level with the armour's: the worn Art's emblem, "Art" and its name in its element's colour, its
+  level as five small pips under the name. Its card names the Art, its spells and its words. Pressed, it opens the Art's screen in the Character page's place, the
   focus on its Anima, the footer's Back closing it as Escape does.
 - **The Art's screen**, after Destiny's subclass screen: the Art's scene behind it (below), its drama in the room right
   of the rows, over a dark ground lit in the Art's colour, strongest at the right and darkened at the top and foot. At
@@ -71,8 +72,19 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   others stand subdued; the worn one is ringed in brass, a focused one in white, each 2 px over a dark pixel. Pressing
   another asks the room to wear it. To the right, in rows under engraved headings tinted in the element and ticked at
   their right ends: ANIMA (one large tile, key R), TENETS (two tiles, keys Q and G), and CORE (three slots), the Core's
-  heading counting what is set ("Core · 1 of 3") and its rule as long as the line above. Under the Core, each fragment
-  set is written out: its name in the element's light, what it does after it.
+  heading counting what is set and owned ("Core · 1 of 3 · 2 owned") and its rule as long as the line above. Under the
+  Core, each fragment set is written out: its name in the element's light, what it does after it.
+- **The level** ([[Factions]]): the worn Art's name carries five pips lit to its level, read aloud as "Level n". Under
+  the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its kills
+  earn: "3,200 of 8,000", then, full, "Ready to rise at the Stormcallers' counter", or "Highest level", in brass when
+  full or at level 5, with the faction's emblem small at its end, its card naming the faction and what its counter
+  does. The element's line says the share the spells hold ("Spells at 70%"). Spell and fragment cards give their
+  numbers at the level worn, the harm and healing by its power and how long a spell and its buffs last by its lasting
+  (the Sunwell's healing a second too), with what differs at level 5 muted under them; the rest as written. A fragment
+  not owned stands dim under a padlock, its card saying how it is had ("Raise the Art at the Stormcallers' counter, or
+  buy it there from their first rank."), and choosing it in a slot's flyout is refused before it is asked, with the
+  refusal's sound and words. Until the room has said where the player stands, every Art shows level 1 with every
+  fragment owned, so the screen locks nothing the room would allow.
 - **Tiles** are the menu's gear tiles ([[Interface]]), their bevel and glow in the Art's element where an item's are in
   its rarity. A spell's tile is no press: it takes the focus for its card, and its key stands on a keycap centred
   under it, half over its frame, as on the bar. An empty Core slot keeps its frame whole and its mark faint.
@@ -128,12 +140,23 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 
 ## In the rules
 
-- **Worn and kept.** A character wears one Art, Storm from the start, and keeps a Core for each Art: three slots,
-  each holding a fragment's place in its Art's list or nothing. Both are saved with the character; a save without
-  them wears Storm with every Core empty, and a broken one is made whole on reading ([[Gear]]).
+- **Worn and kept.** A character wears one Art, Storm from the start, and keeps for each Art a Core (three slots,
+  each holding a fragment's place in its Art's list or nothing), a level from 1 to 5, XP toward the next and the
+  fragments it owns. All are saved with the character; a save without them wears Storm at level 1 with every Core
+  empty, one from before levels owns what its Cores held, and a broken one is made whole on reading ([[Gear]]).
+- **Levels.** Kills fill the worn Art's bar, and its faction raises it a level for a price, a fragment of the
+  player's choice owned at each rise; the faction also sells fragments ([[Factions]]). The level weighs every spell:
+  its harm and healing, and how long it and everything it gives lasts (the Sunwell, the Duskraven and Dusk Daggers;
+  Haste, the Crits and the veil; Arc Lash's Charge, the Expose that Dusk Daggers, Searing and the Duskraven's bolts
+  give, the Sunwell's Linked linger, Overload's Expose with a Charge, and the seconds each fragment adds), at 0.6 of
+  the numbers below at level 1 up to the numbers below at level 5. A spell keeps its Art's
+  shares and Core from its cast: a spell still out after a swap keeps the Core of the Art that cast it, and Linked
+  heals by the share of the Sunwell that gave it, even after its caster leaves. The cards show each number with the
+  worn Core folded in, and a fragment's words name its seconds at the level worn. A Test Ground player starts every
+  Art at level 5 owning every fragment.
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
-  An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), and one set
-  already in another slot of that Art (113). Only the worn Art's Core changes its spells.
+  An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
+  already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.
 - **Charge.** The room keeps each player's Anima and Tenets while they are in it, as shares from 0 to 1, and an
   account's for ten minutes after it leaves, as it left them: they are its again as it rejoins, or empty if it now
   wears another Art. It keeps as many as it holds players, the oldest let go first. A first join starts the Anima
@@ -158,6 +181,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   with Hunt, gives back half of Vanish's cooldown, once a Vanish. A Cosmic kill on an Exposed foe, with Dread, keeps
   the player's Duskraven 2 s longer. With Cruelty, the player's crits on Exposed foes deal 1.1 times. With Overload,
   every foe the player Charges, by any means, is Exposed too.
+
+The numbers are an Art's at level 5.
 
 | Spell | What the room does | Numbers | Core |
 |---|---|---|---|
@@ -212,7 +237,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **The spells' view.** Every spell in the snapshot is kept and drawn gliding between the snapshots as the figures
   do (below). The fight keeps the last spell the player cast, with the room tick it was asked at, so an Anima's sigil
   starts as it is asked.
-- **The Test Ground** has an Arts panel: the Art worn, each Core slot, and a button that fills the Anima and readies
+- **The Test Ground** has an Arts panel: the Art worn, each Art's level (a grant, 42, setting it with no XP and every
+  fragment owned, the Test Ground alone), each Core slot, and a button that fills the Anima and readies
   the Tenets, so every spell can be tried at once ([[Test Ground]]). After each ask, the room's next word sets every
   list back to what it holds, so a refused choice does not stay shown.
 

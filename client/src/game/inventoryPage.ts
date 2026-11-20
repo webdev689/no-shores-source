@@ -1,17 +1,18 @@
-// The inventory page, after Destiny's: Aurem, the one currency, along its head, named under its count; then the
-// Vestiges carried, ten places in two rows of five as Destiny 2's engrams stand, an empty place a dark Vestige; then
-// shelves to switch between the consumables and the materials, each counting what it holds and dimmed while it holds
-// nothing. The gear itself is on the Character page. Each shelf is a grid as Destiny's is: what is held first (the
-// materials' fragments and Essence, then the islands' resources), a stack of none not shown, then empty places to
-// the end of its row of ten. A cell is its glyph in a well of its rarity, its count at its foot and its pips beside
-// it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
-// Vestige opened at the Reader); a right-click its other use.
+// The inventory page, after Destiny's: Aurem and Shapes, the currencies, along its head, each named under its count;
+// then the Vestiges carried, ten places in two rows of five as Destiny 2's engrams stand, an empty place a dark
+// Vestige; then shelves to switch between the consumables and the materials, each counting what it holds and dimmed
+// while it holds nothing. The gear itself is on the Character page. Each shelf is a grid as Destiny's is: what is held
+// first (the materials' fragments and Essence, then the islands' resources), a stack of none not shown, then empty
+// places to the end of its row of ten. A cell is its glyph in a well of its rarity, its count at its foot and its pips
+// beside it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
+// Vestige opened at the Mage); a right-click its other use.
 
 import { make } from '../editor/dom.ts';
 import { ASKS } from '../network/gearMessages.ts';
 import { CARRIED, RARITIES } from '../player/gear.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { PageContext } from './characterPage.ts';
+import { shapesSvg, svgUrl } from './npc/npcMarks.ts';
 import { type Cell, cardOf, inventoryPageOf } from './gearCards.ts';
 import {
   DISMANTLE_KEY,
@@ -59,7 +60,7 @@ function cellCard(cell: Cell): HTMLElement {
 /** A cell's tile: its picture in a well of its rarity, its count and pips, its card, and its presses. */
 export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const vacant = cell.glyph === 'empty';
-  // A cell a press does nothing to (a stack, a Vestige away from the Reader) is no button: it takes the focus for its
+  // A cell a press does nothing to (a stack, a Vestige away from the Mage) is no button: it takes the focus for its
   // card and reads as a picture with its count, and a click on it makes no press's sound.
   const pressed = cell.press !== null || cell.other !== null || cell.item !== null;
   const node = make(pressed && !vacant ? 'button' : 'div', '', `gear-cell ${ROLES.tile}`);
@@ -151,6 +152,14 @@ export function inventoryPage(context: PageContext, tab: string, choose: (tab: s
     shown.append(glyphImage(currency.glyph === 'item' ? 'empty' : currency.glyph), words);
     head.append(shown);
   }
+  // Shapes, Shape's own currency, gathered all week and spent only while he is here.
+  const shapes = make('div', '', `gear-currency ${ROLES.chip}`);
+  const mark = make('img', '', 'gear-glyph');
+  [mark.src, mark.alt] = [svgUrl(shapesSvg()), ''];
+  const words = make('div', '', 'gear-currency-words');
+  words.append(make('b', (context.gear.shapes ?? 0).toLocaleString()), make('span', 'Shapes', 'gear-currency-name'));
+  shapes.append(mark, words);
+  head.append(shapes);
   const shelves = inventory.tabs.map((each) => ({
     id: each.id,
     name: each.name,

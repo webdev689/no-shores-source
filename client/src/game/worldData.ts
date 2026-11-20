@@ -1,4 +1,4 @@
-import type { StationInfo } from './nodes.ts';
+import { type StationInfo, socialLocked } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
 export type NodeKind = 'social' | 'patrol' | 'mission' | 'dungeon' | 'boss';
@@ -14,8 +14,9 @@ export interface NodeInfo {
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
   readonly centre: Point;
-  /** A social space's stations (`nodes.ts`). */
+  /** A social space's stations (`nodes.ts`), and where Shape may stand in it, one a week. */
   readonly stations?: readonly StationInfo[];
+  readonly visitorSpots?: readonly Point[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
 }
@@ -120,6 +121,7 @@ export async function loadWorld(base: string): Promise<WorldData> {
 /** Where a player arriving at the node `id` lands: its continent, and its id and name; a city's social space is
  *  `<city id>-social`, named for its city. Null for an id the world does not hold. */
 export function arrivalAt(world: WorldData, id: string): { continent: string; node: string; name: string } | null {
+  if (socialLocked(id)) return null;
   const node = world.nodes.find((each) => each.id === id);
   if (node) return { continent: node.continent, node: node.id, name: node.name };
   const city = world.cities.find((each) => `${each.id}-social` === id);

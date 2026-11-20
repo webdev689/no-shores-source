@@ -63,11 +63,11 @@ pub struct Shown {
 }
 
 /// One input from a player: its number; one tick's intent (movement and the fight's buttons); what their figure
-/// shows; their dress when it changed (as the browser writes it; the room only carries it); what their hands hold
-/// (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand before them,
-/// or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it fights by
-/// combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear; and a spell
-/// they cast.
+/// shows; their dress when it changed (as the browser writes it; the room puts in the cosmetics worn); what their
+/// hands hold (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand
+/// before them, or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it
+/// fights by combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear;
+/// and a spell they cast.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -124,8 +124,13 @@ pub struct Player {
     /// Where the player stands with the room's section: always inside a room with none.
     pub standing: Standing,
     pub shown: Shown,
+    /// The dress as others are shown it (`dressed`), and whether it changed since it was last passed on.
     pub dress: String,
     pub dress_changed: bool,
+    /// The dress as their browser last wrote it, and whether what the room makes of it may have changed since it was
+    /// last made: their browser's dress or their gear.
+    pub dress_sent: String,
+    pub(crate) dress_stale: bool,
     /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
     pub joined: u64,
     pub stepped: u64,
@@ -145,7 +150,7 @@ pub struct Player {
     /// Their gear, and whether it changed since it was last sent to them.
     pub character: Character,
     pub gear_changed: bool,
-    /// Where they stood as their gear was last sent: at the Reader, and in a social space. Both ride the gear
+    /// Where they stood as their gear was last sent: at the Mage, and in a social space. Both ride the gear
     /// message and change as they walk, so a change sends it again.
     pub placed_sent: (bool, bool),
     /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
@@ -175,15 +180,21 @@ pub struct Player {
 }
 
 impl Player {
+    /// A player joining at `joined`, on the Test Ground if `test_ground`, where every spell is tried as written.
     #[must_use]
-    pub fn new(fighter: Fighter, joined: u64) -> Self {
-        let character = Character::starting();
+    pub fn new(fighter: Fighter, joined: u64, test_ground: bool) -> Self {
+        let mut character = Character::starting();
+        if test_ground {
+            character.arts = gear::arts::WornArts::mastered();
+        }
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,
             shown: Shown::default(),
             dress: String::new(),
             dress_changed: false,
+            dress_sent: String::new(),
+            dress_stale: false,
             joined,
             stepped: 0,
             received: 0,
@@ -242,9 +253,47 @@ impl Player {
     pub fn as_it_saw(&self, tick: u64) -> Option<&Fighter> {
         self.history.iter().find(|(seen, _)| *seen >= tick).map(|(_, fighter)| fighter)
     }
+
+    /// The dress shown to others changes at once the first time, then once DRESS_EVERY ticks have passed since the
+    /// last change: to a dress waiting its turn, or to the cosmetics and faction pieces worn (`dress_again`). Their
+    /// gear sent marks the dress to be made again; otherwise it is left as it is.
+    pub(crate) fn dress_in_turn(&mut self, clock: u64) {
+        if self.dress_sent.is_empty() && self.dress_next.is_none()
+            || !self.dress_stale && self.dress_next.is_none()
+            || self.dressed_at.is_some_and(|at| clock < at + DRESS_EVERY)
+        {
+            return;
+        }
+        if let Some(dress) = self.dress_next.take() {
+            self.dress_sent = dress;
+        }
+        if self.dress_again() {
+            self.dressed_at = Some(clock);
+        }
+    }
+
+    /// Makes the dress others are shown again (`gear::cosmetics::dressed`) from the browser's dress and the gear worn,
+    /// so no page shows a piece its player does not keep; whether it changed.
+    pub(crate) fn dress_again(&mut self) -> bool {
+        self.dress_stale = false;
+        let shown = gear::cosmetics::colours_shown(&self.character);
+        let dress = gear::cosmetics::dressed(&self.dress_sent, &self.character.cosmetics, &shown);
+        let changed = dress != self.dress;
+        if changed {
+            self.dress = dress;
+            self.dress_changed = true;
+        }
+        changed
+    }
 }
 
 impl Room {
+    /// Whether this is the Test Ground: a course's room on open ground with no section. A wreck laid over the sea has
+    /// no section either, but it is a story level, played at the player's own levels.
+    pub(crate) fn is_test_ground(&self) -> bool {
+        self.section.is_none() && self.floor == crate::Floor::Flat
+    }
+
     /// Every player's dress, for one who joins; players who have sent none are left out.
     pub fn dresses(&self) -> impl Iterator<Item = (PlayerId, &str)> + '_ {
         self.players
@@ -269,7 +318,7 @@ impl Room {
     /// changes how they fight.
     pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
         let clock = self.clock;
-        let placed = (self.at_reader(player), self.in_social_space(player));
+        let placed = (self.at_mage(player), self.in_social_space(player));
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.gear_changed |= placed != found.placed_sent;
         let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
@@ -278,6 +327,7 @@ impl Room {
         }
         found.placed_sent = placed;
         found.gear_changed = false;
+        found.dress_stale = true;
         found.gear_urgent = false;
         found.gear_sent = Some(clock);
         true
@@ -303,15 +353,21 @@ impl Room {
         true
     }
 
-    /// Sets the day, counted from the epoch, whose wares the room's vendors show; when it turns, every player is sent
-    /// the new day's wares, so none buys what they were not shown.
-    pub fn set_day(&mut self, day: u64) {
-        if self.day == day {
-            return;
-        }
-        self.day = day;
-        for found in self.players.values_mut() {
-            found.gear_changed = true;
+    /// The day, counted from the epoch, whose wares the room's vendors show.
+    #[must_use]
+    pub fn day(&self) -> u64 {
+        self.minute / gear::shape::DAY_MINUTES
+    }
+
+    /// Sets the minute, counted from the epoch. When its day turns, or Shape comes, goes or moves, every player is
+    /// sent their gear again with what is sold now, so none buys what they were not shown.
+    pub fn set_minute(&mut self, minute: u64) {
+        let before = (self.day(), self.shape_at());
+        self.minute = minute;
+        if (self.day(), self.shape_at()) != before {
+            for found in self.players.values_mut() {
+                found.gear_changed = true;
+            }
         }
     }
 

@@ -47,6 +47,22 @@ export function mapSvg(rows: readonly string[] | undefined, element: number): st
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${rows.length}" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 
+/** A padlock, 10 × 12, in the menu's brass on an Art's outline: a fragment not owned. */
+export const LOCK_MAP: readonly string[] = [
+  '...aaaa...',
+  '..affffa..',
+  '.afaaaafa.',
+  '.afa..afa.',
+  '.afa..afa.',
+  'aaaaaaaaaa',
+  'affffffffa',
+  'afffaafffa',
+  'afffaafffa',
+  'affffffffa',
+  'affffffffa',
+  'aaaaaaaaaa',
+];
+
 /** Each Art's emblem in its diamond, 24 × 24, by the Art's key. */
 export const EMBLEM_MAPS: Readonly<Record<string, readonly string[]>> = {
   storm: [

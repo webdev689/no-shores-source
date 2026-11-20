@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Body } from '../rules/movementRules.ts';
 import { plainDress } from './dressing.ts';
-import { climbOf, shownDress, strokesAfter } from './walker.ts';
+import { climbOf, ownColours, shownDress, strokesAfter } from './walker.ts';
 
 test('a stroke is counted when a swing begins, and again when the next begins within a frame', () => {
   assert.equal(strokesAfter(0, null, null), 0, 'no swing');
@@ -47,4 +47,17 @@ test('the climb the hands follow is read off the body: its move, feet and facing
   });
   assert.equal(climbOf({ ...body, mode: 'ground' }), null);
   assert.equal(climbOf({ ...body, mode: 'air' }), null);
+});
+
+test('the first person is told the faction whose colour each part wears, by the layer the outfit names it for', () => {
+  const outfit = {
+    armour: { gauntlets: 'fighters', boots: 'iron' },
+    garments: [],
+    dyes: { gauntlets_fighters: 'stormcallers', bow_long_elven: 'stormcallers', shirt_long_v: 'White' },
+    right: 'bow_long_elven',
+    left: null,
+    drawn: true,
+    hair: null,
+  } as const;
+  assert.deepEqual(ownColours(outfit), { hands: 'stormcallers', right: 'stormcallers' });
 });

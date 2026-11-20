@@ -13,7 +13,7 @@ use combat::judge::Blow;
 use combat::sight::{bearing, off};
 use combat::tuning::{BODY_HEIGHT, BODY_RADIUS, DODGE_LIFT};
 use combat::{BlowKind, Fighter, Status, Trim, Verdict, ticks};
-use gear::arts::{FragmentDef, SpellDef, arts};
+use gear::arts::{CORE_SLOTS, FragmentDef, SpellDef, arts, held_fragment};
 use movement::{Body, Mode, TICK_SECONDS, TUNING};
 
 /// A Duskraven's bolt, beside the nine spells' own numbers (1 Tempest to 9 Vanish).
@@ -39,8 +39,9 @@ const STILL: f64 = 0.1;
 
 /// A spell in the room: its number, its kind (its spell's number, or `BOLT`), its caster, its Art and spell, where it
 /// is and its velocity (m/s, for what flies), where it heads and the foe it seeks, the ticks it has lasted of its life,
-/// how far it reaches, where it set off, the ticks before it leaves its caster (an orb waiting its turn), and the foes
-/// it struck on this pass.
+/// how far it reaches, where it set off, the ticks before it leaves its caster (an orb waiting its turn), the foes it
+/// struck on this pass, and its caster's Art's shares as it was cast (`Character::art_shares`): of its healing, and of
+/// how long it and what it gives last.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Spell {
     pub id: u32,
@@ -58,6 +59,9 @@ pub(crate) struct Spell {
     pub from: [f64; 3],
     pub wait: u32,
     pub struck: Vec<FighterId>,
+    pub shares: (f64, f64),
+    /// The casting Art's Core as it was cast: what it set after changes nothing already out.
+    pub core: [Option<u8>; CORE_SLOTS],
 }
 
 impl Spell {
@@ -79,17 +83,31 @@ impl Spell {
             from: at,
             wait: 0,
             struck,
+            shares: (1.0, 1.0),
+            core: [None; CORE_SLOTS],
         }
+    }
+
+    /// A fragment of its Art, by its key, if the Core it was cast with holds it.
+    fn fragment(&self, key: &str) -> Option<&'static FragmentDef> {
+        held_fragment(self.art, self.core, key)
+    }
+
+    /// `ticks` weighed by the lasting share its Art held as it was cast.
+    fn last(&self, ticks: u32) -> u32 {
+        combat::ticks(f64::from(ticks) / 60.0 * self.shares.1)
     }
 }
 
-/// The room's spells, the number the next takes, the ticks each player's Duskravens are to be kept longer, and each
-/// account's Arts as it left, with the Art it wore and the tick it left (`arts::keep_casting`).
+/// The room's spells, the number the next takes, the players whose Duskravens a kill keeps longer this tick (Dread),
+/// each Linked fighter's healing share from the Sunwell that Linked it, and each account's Arts as it left, with the
+/// Art it wore and the tick it left (`arts::keep_casting`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Spells {
     pub list: Vec<Spell>,
     next: u32,
-    kept_longer: Vec<(PlayerId, u32)>,
+    kept_longer: Vec<PlayerId>,
+    pub linked: std::collections::BTreeMap<FighterId, f64>,
     pub kept: std::collections::BTreeMap<String, (crate::Casting, u8, u64)>,
 }
 
@@ -181,11 +199,6 @@ impl Room {
         self.spells.list.push(Spell { id: self.spells.next, ..spell });
     }
 
-    /// A fragment in a player's worn Core, by its key.
-    fn core(&self, player: PlayerId, key: &str) -> Option<&'static FragmentDef> {
-        self.players.get(&player).and_then(|found| found.character.fragment(key))
-    }
-
     /// The living foes within `radius` of `at` across the ground and `height` above or below it.
     fn foes_near(&self, at: [f64; 3], radius: f64, height: f64) -> Vec<FighterId> {
         let near =
@@ -217,12 +230,14 @@ impl Room {
         }
     }
 
-    /// A spell's blow on a living foe from `from`, `damage` before power: in its Art's element, by the caster's best
-    /// weapon's Attack, judged against the foe as it stands and settled as a weapon's blow is. Answers the health it
-    /// took.
+    /// A spell's blow on a living foe from `from`, `damage` before power: its share by its Art's level at the cast, in
+    /// its Art's element, by the caster's best weapon's Attack, judged against the foe as it stands and settled as a
+    /// weapon's blow is. Answers the health it took.
     fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> Option<f64> {
         let found = self.players.get(&spell.caster)?;
         let (attack, hand) = spell_power(&found.character);
+        // The level of the Art that cast it, as it was cast, whatever is worn or risen since.
+        let damage = damage * spell.shares.0;
         let then = self.foes.get(&foe).map(|foe| foe.fighter).filter(|then| !then.dead())?;
         let element = arts().art(spell.art).and_then(|art| gear::Element::from_number(art.element));
         let blow = Blow {
@@ -260,17 +275,24 @@ impl Room {
             found.fighter.statuses.unveil();
         }
         let (feet, chest, ahead) = (feet_of(&fighter), fighter.chest(), ahead_of(&fighter));
-        let made = |at, life, radius| Spell::new(cast.spell, caster, art.id, def, at, life, radius);
+        // The Art's level: its share of the healing given, and of how long the spell and the buffs it gives last.
+        let shares = self.players.get(&caster).map_or((1.0, 1.0), |found| found.character.art_shares(art.id));
+        let core = self.players.get(&caster).map_or([None; CORE_SLOTS], |found| found.character.core_of(art.id));
+        let held = |key: &str| held_fragment(art.id, core, key);
+        let (power, lasting) = shares;
+        let made =
+            |at, life, radius| Spell { shares, core, ..Spell::new(cast.spell, caster, art.id, def, at, life, radius) };
+        let last = |ticks: u32| combat::ticks(f64::from(ticks) / 60.0 * lasting);
         match def.key.as_str() {
             "tempest" => self.tempest(made(chest, ticks(def.life_s), def.reach), fighter.aim),
             "quicken" => {
-                let gale = self.core(caster, "gale");
+                let gale = held("gale");
                 let radius = gale.map_or(def.radius, |gale| gale.radius);
-                let lasts = Status::Haste.ticks() + gale.map_or(0, |gale| ticks(gale.more_s));
+                let lasts = last(Status::Haste.ticks() + gale.map_or(0, |gale| ticks(gale.more_s)));
                 for player in self.players_near(feet, radius) {
                     self.give(player, Status::Haste, Some(lasts), Some(caster));
                 }
-                if self.core(caster, "momentum").is_some() {
+                if held("momentum").is_some() {
                     self.give(caster, Status::Crit, Some(lasts), Some(caster));
                 }
                 self.add_spell(made(feet, FLASH_TICKS, radius));
@@ -282,20 +304,21 @@ impl Room {
                 self.add_spell(Spell { heads: Some(heads), ..lash });
             }
             "sunwell" => {
-                let radiance = self.core(caster, "radiance");
+                let radiance = held("radiance");
                 let radius = def.radius + radiance.map_or(0.0, |more| more.more_radius);
-                self.add_spell(made(feet, ticks(def.life_s + radiance.map_or(0.0, |more| more.more_s)), radius));
+                let life = last(ticks(def.life_s + radiance.map_or(0.0, |more| more.more_s)));
+                self.add_spell(made(feet, life, radius));
             }
             "mend" => {
-                self.heal(caster, def.heal);
-                let mercy = self.core(caster, "mercy");
+                self.heal(caster, def.heal * power);
+                let mercy = held("mercy");
                 for player in mercy.map_or_else(Vec::new, |mercy| self.players_near(feet, mercy.radius)) {
                     if player != caster {
-                        self.heal(player, def.heal * mercy.map_or(0.0, |mercy| mercy.heal_share));
+                        self.heal(player, def.heal * power * mercy.map_or(0.0, |mercy| mercy.heal_share));
                     }
                 }
-                if self.core(caster, "resolve").is_some() {
-                    self.give(caster, Status::Crit, None, Some(caster));
+                if held("resolve").is_some() {
+                    self.give(caster, Status::Crit, Some(last(Status::Crit.ticks())), Some(caster));
                 }
                 self.add_spell(made(feet, FLASH_TICKS, mercy.map_or(0.0, |mercy| mercy.radius)));
             }
@@ -303,21 +326,23 @@ impl Room {
                 let speed = if def.flight_s > 0.0 { def.length / def.flight_s } else { 0.0 };
                 let start = [chest[0] - ahead[0] * FLARE_BEHIND, chest[1] - ahead[1] * FLARE_BEHIND, chest[2]];
                 let heads = [start[0] + ahead[0] * def.length, start[1] + ahead[1] * def.length, chest[2]];
-                let passes = 1 + u32::from(self.core(caster, "wings").is_some());
+                let passes = 1 + u32::from(held("wings").is_some());
                 let flare = made(start, ticks(def.flight_s) * passes, def.width);
                 let velocity = [ahead[0] * speed, ahead[1] * speed, 0.0];
                 self.add_spell(Spell { velocity, heads: Some(heads), ..flare });
             }
-            "duskraven" => self.add_spell(made(shoulder_of(&fighter), ticks(def.life_s), def.reach)),
+            "duskraven" => self.add_spell(made(shoulder_of(&fighter), last(ticks(def.life_s)), def.reach)),
             "duskDaggers" => {
-                let blades = self.core(caster, "blades");
+                let blades = held("blades");
                 let at = self.daggers_at(feet, cast.aim, def.reach);
                 let radius = def.radius + blades.map_or(0.0, |blades| blades.more_radius);
-                self.add_spell(made(at, ticks(def.life_s + blades.map_or(0.0, |blades| blades.more_s)), radius));
+                let life = last(ticks(def.life_s + blades.map_or(0.0, |blades| blades.more_s)));
+                self.add_spell(made(at, life, radius));
             }
             "vanish" => {
                 self.vanish(caster, def.roll);
-                let veil = self.core(caster, "night").map(|night| Status::Veiled.ticks() + ticks(night.more_s));
+                let night = held("night").map_or(0, |night| ticks(night.more_s));
+                let veil = Some(last(Status::Veiled.ticks() + night));
                 self.give(caster, Status::Veiled, veil, Some(caster));
                 self.add_spell(made(feet, FLASH_TICKS, def.roll));
             }
@@ -328,7 +353,7 @@ impl Room {
     /// Tempest's orbs, each leaving its caster in turn over its release, fanned out ahead.
     fn tempest(&mut self, orb: Spell, aim: f64) {
         let def = orb.def;
-        let count = def.orbs + self.core(orb.caster, "pursuit").map_or(0, |pursuit| pursuit.orbs);
+        let count = def.orbs + orb.fragment("pursuit").map_or(0, |pursuit| pursuit.orbs);
         let over = ticks(def.release_over_s);
         for nth in 0..count {
             let bearing = aim + ORB_FAN * ((f64::from(nth) + 0.5) / f64::from(count) - 0.5);
@@ -338,11 +363,12 @@ impl Room {
         }
     }
 
-    /// Arc Lash: each foe in the cone ahead struck, then Charged (half as long again with Conduction).
+    /// Arc Lash: each foe in the cone ahead struck, then Charged (half as long again with Conduction), for its rank's
+    /// time weighed by the lasting.
     fn arc_lash(&mut self, lash: &Spell, caster: &Fighter) {
         let (def, feet) = (lash.def, feet_of(caster));
         let half = def.cone_degrees.to_radians() / 2.0;
-        let longer = self.core(lash.caster, "conduction").map_or(1.0, |conduction| conduction.charge_times);
+        let longer = lash.fragment("conduction").map_or(1.0, |conduction| conduction.charge_times);
         for foe in self.foes_near(feet, def.reach, SPELL_HEIGHT) {
             let Some(body) = self.foes.get(&foe).map(|found| found.fighter.body) else { continue };
             if off(caster.aim, bearing([feet[0], feet[1]], [body.x, body.y])) > half {
@@ -351,7 +377,7 @@ impl Room {
             if self.spell_strikes(lash, foe, feet, def.damage).is_none() {
                 continue;
             }
-            let lasts = ticks(f64::from(self.lasts(foe, Status::Charge)) * longer * TICK_SECONDS);
+            let lasts = ticks(f64::from(self.lasts(foe, Status::Charge)) * longer * lash.shares.1 * TICK_SECONDS);
             self.give(foe, Status::Charge, Some(lasts), Some(lash.caster));
         }
     }
@@ -397,12 +423,10 @@ impl Room {
         fighter.action = Action::Dodge { elapsed: 0, toward: way };
     }
 
-    /// Lengthens a player's Duskravens by `more` ticks (Dread), once this tick's spells have stepped: a kill may come
+    /// Lengthens a player's Duskravens for a kill (Dread), once this tick's spells have stepped: a kill may come
     /// while they do.
-    pub(crate) fn keep_ravens(&mut self, player: PlayerId, more: u32) {
-        if more > 0 {
-            self.spells.kept_longer.push((player, more));
-        }
+    pub(crate) fn keep_ravens(&mut self, player: PlayerId) {
+        self.spells.kept_longer.push(player);
     }
 
     /// A tick of every spell; one whose caster has left goes with them. Bolts a raven looses this tick fly from the
@@ -416,10 +440,11 @@ impl Room {
             }
         }
         kept.append(&mut self.spells.list);
-        for (player, more) in std::mem::take(&mut self.spells.kept_longer) {
+        for player in std::mem::take(&mut self.spells.kept_longer) {
             let ravens = kept.iter_mut().filter(|spell| spell.caster == player && spell.kind != BOLT);
+            // Dread's seconds by the Core and the lasting each raven was cast with.
             for raven in ravens.filter(|spell| spell.def.key == "duskraven") {
-                raven.life += more;
+                raven.life += raven.fragment("dread").map_or(0, |dread| raven.last(ticks(dread.more_s)));
             }
         }
         self.spells.list = kept;
@@ -433,8 +458,12 @@ impl Room {
         match def.key.as_str() {
             "tempest" => return self.step_orb(spell, caster),
             "sunwell" => {
+                // Linked heals by the share kept from the cast, so it heals alike whether its caster stays or goes.
+                let lingers = Some(spell.last(Status::Linked.ticks()));
                 for player in self.players_near(spell.at, spell.radius) {
-                    self.give(player, Status::Linked, None, Some(spell.caster));
+                    if self.give(player, Status::Linked, lingers, Some(spell.caster)) {
+                        self.spells.linked.insert(player, spell.shares.0);
+                    }
                 }
             }
             "dawnflare" => self.step_flare(&mut spell),
@@ -455,7 +484,7 @@ impl Room {
             "duskDaggers" if spell.age.is_multiple_of(ticks(def.every_s).max(1)) => {
                 for foe in self.foes_near(spell.at, spell.radius, SPELL_HEIGHT) {
                     if self.spell_strikes(&spell, foe, spell.at, def.damage).is_some() {
-                        self.give(foe, Status::Expose, None, Some(spell.caster));
+                        self.give(foe, Status::Expose, Some(spell.last(Status::Expose.ticks())), Some(spell.caster));
                     }
                 }
             }
@@ -504,8 +533,8 @@ impl Room {
             }
             flare.struck.push(foe);
             let landed = self.spell_strikes(flare, foe, flare.at, def.damage).is_some();
-            if landed && self.core(flare.caster, "searing").is_some() {
-                self.give(foe, Status::Expose, None, Some(flare.caster));
+            if landed && flare.fragment("searing").is_some() {
+                self.give(foe, Status::Expose, Some(flare.last(Status::Expose.ticks())), Some(flare.caster));
             }
         }
         let pass = ticks(def.flight_s);
@@ -525,8 +554,8 @@ impl Room {
         let step = def.speed * TICK_SECONDS;
         if distance(bolt.at, chest) <= step + BODY_RADIUS + STRIKE_REACH {
             let took = self.spell_strikes(&bolt, foe, bolt.at, def.damage)?;
-            self.give(foe, Status::Expose, None, Some(bolt.caster));
-            let share = self.core(bolt.caster, "hunger").map_or(def.heal_share, |hunger| hunger.heal_share);
+            self.give(foe, Status::Expose, Some(bolt.last(Status::Expose.ticks())), Some(bolt.caster));
+            let share = bolt.fragment("hunger").map_or(def.heal_share, |hunger| hunger.heal_share);
             self.heal(bolt.caster, took * share);
             return None;
         }
