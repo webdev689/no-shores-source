@@ -147,6 +147,8 @@ pub struct Network<'layout> {
     pub joined: &'layout [[usize; 2]],
 }
 
+/// How far apart two areas' reaches stand at most for the way between them to open out into one floor, metres.
+const MERGE_GAP_M: f64 = 120.0;
 /// A gate's cleft's reach where the brief asks for heights, metres: its arch and palisade's, with a little to spare.
 const GATE_CLEFT_M: f64 = 14.0;
 /// A pocket's half-width, metres: room round a resource and a way into it from the path.
@@ -239,8 +241,15 @@ pub fn carve(
     };
     for (number, path) in paths.iter().enumerate() {
         let points = simplified(&path.points, 3.0);
+        // With heights, a way between two areas near each other opens out into one wide floor, so they read as one
+        // large place rather than two bowls and a lane.
+        let open = joined.get(number).filter(|_| heights).and_then(|&[from, to]| {
+            let (first, second) = (&areas[from], &areas[to]);
+            let near = distance(first.at, second.at) < first.radius + second.radius + MERGE_GAP_M;
+            near.then(|| first.radius.min(second.radius) * 0.7)
+        });
         for (index, pair) in points.windows(2).enumerate() {
-            let half = canyon_half(path, index, &points, areas);
+            let half = canyon_half(path, index, &points, areas).max(open.unwrap_or(0.0));
             let (from, to) = (graded(number, pair[0]), graded(number, pair[1]));
             if from > 0.0 || to > 0.0 {
                 raised.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half, from, to]);

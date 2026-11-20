@@ -352,3 +352,32 @@ fn the_vales_hamlet_steps_up_its_hillside_in_tiers() {
     assert!(raised.len() >= 4, "the hamlet has its buildings: {}", raised.len());
     assert!(high - low >= 2.5, "its buildings stand {:.1} m apart in height: {raised:?}", high - low);
 }
+
+#[test]
+fn the_vales_near_places_open_into_one_floor() {
+    let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+    let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
+    let mut opened = 0;
+    for way in laid.map.connections.iter().filter(|joined| joined.joined == Joined::Way) {
+        let (first, second) = (&laid.areas[way.from], &laid.areas[way.to]);
+        if distance(first.at, second.at) >= first.radius + second.radius + 120.0 {
+            continue;
+        }
+        opened += 1;
+        // Halfway along the way, its floor reaches half the smaller area's reach to either side.
+        let middle = way.points[way.points.len() / 2];
+        let next = way.points[(way.points.len() / 2 + 1).min(way.points.len() - 1)];
+        let length = distance(middle, next).max(1e-9);
+        let across = [-(next[1] - middle[1]) / length, (next[0] - middle[0]) / length];
+        let out = first.radius.min(second.radius) * 0.5;
+        for side in [-1.0, 1.0] {
+            let at = [middle[0] + across[0] * out * side, middle[1] + across[1] * out * side];
+            let between = format!("{} and {}", first.name, second.name);
+            assert!(
+                carved.floor_distance(at[0], at[1]) <= 0.0,
+                "{between}: the floor reaches {out:.0} m aside at {at:?}"
+            );
+        }
+    }
+    assert!(opened > 0, "the Vale has places near enough to open into one floor");
+}
