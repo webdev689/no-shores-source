@@ -5,10 +5,11 @@ import { test } from 'node:test';
 import { type ForgedModel, meshBuilder } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import { propTable } from '../models/fixtures.test.ts';
+import { caveBulge } from './dungeonCaveWall.ts';
 import { isCave } from './dungeonCeilings.ts';
 import { cellAt, type Rect } from './dungeonCells.ts';
-import { HEAD_M, type KitPlacement, kitPlacements } from './dungeonKits.ts';
-import { askDungeon, type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
+import { HEAD_M, type KitPlacement, kitsOf } from './dungeonKits.ts';
+import { askDungeon, type DungeonLayout, openAt, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dungeonMesh, lookAt } from './dungeonMesh.ts';
 import {
   layModule,
@@ -79,9 +80,17 @@ function drawnPlans(layout: DungeonLayout): Rect[] {
   });
 }
 const PROPS = new Map(LAYOUTS.map((layout) => [layout, drawnPlans(layout)] as const));
-const PLACED = new Map(
-  LAYOUTS.map((layout) => [layout, kitPlacements(layout, PACKS, PROPS.get(layout) ?? [])] as const),
-);
+const KITS = new Map(LAYOUTS.map((layout) => [layout, kitsOf(layout, PACKS, PROPS.get(layout) ?? [])] as const));
+const PLACED = new Map(LAYOUTS.map((layout) => [layout, KITS.get(layout)?.placed ?? []] as const));
+/** A dungeon's mesh as its kits leave it: the rock flat behind the pieces on its caves' walls. */
+const meshOf = (layout: DungeonLayout) =>
+  dungeonMesh(layout, [56, 2], undefined, {
+    pillars: new Set(),
+    torches: new Set(),
+    portal: false,
+    floorless: new Set(),
+    flats: KITS.get(layout)?.fitted.flats ?? new Map(),
+  });
 
 /** A placement's plan seen from above. */
 function planOf({ module: name, place }: KitPlacement): Rect {
@@ -131,29 +140,52 @@ function edgeOf(layout: DungeonLayout, cell: number, side: number) {
   };
 }
 
-/** The rock drawn on a cell's side: each triangle in its wall's picture along the edge and facing into the cell, its
- *  corners as how far along the edge, how far up and how far into the rock. */
-function rockOf(model: ForgedModel, layout: DungeonLayout, cell: number, side: number): number[][][] {
-  const { along, into, east, south } = edgeOf(layout, cell, side);
-  const look = lookAt(layout, cell);
-  const triangles: number[][][] = [];
-  for (const part of model.parts) {
-    if (part.archive !== look.set || part.record !== look.wall) continue;
+/** The rock drawn on every cell's side, by `cell * 4 + side`: each triangle in its cell's wall picture along the
+ *  edge and facing into the cell, its corners as how far along the edge, how far up and how far into the rock. */
+function rocksOf(model: ForgedModel, layout: DungeonLayout): Map<number, number[][][]> {
+  const rocks = new Map<number, number[][][]>();
+  for (const part of model.parts)
     for (let index = part.start; index < part.start + part.count; index += 3) {
       const vertices = [0, 1, 2].map((offset) => model.indices[index + offset] ?? 0);
-      const corners = vertices.map((vertex) => {
-        const [x = 0, y = 0, z = 0] = [0, 1, 2].map((axis) => model.positions[vertex * 3 + axis]);
-        return [along(x, y), z, into(x, y)];
-      });
+      const points = vertices.map((vertex) => [0, 1, 2].map((axis) => model.positions[vertex * 3 + axis] ?? 0));
       const first = (vertices[0] ?? 0) * 3;
-      const facing = -((model.normals[first] ?? 0) * east + (model.normals[first + 1] ?? 0) * south);
+      const [normalX = 0, normalY = 0] = [model.normals[first], model.normals[first + 1]];
+      const side = SIDE_STEPS.findIndex(([east, south]) => -(normalX * east + normalY * south) > 0.9);
+      if (side < 0) continue;
+      // A little in from the triangle along its normal is inside its cell.
+      const [middleX, middleY] = [0, 1].map((axis) => points.reduce((sum, point) => sum + (point[axis] ?? 0), 0) / 3);
+      const cell = cellAt(layout, (middleX ?? 0) + normalX * 0.4, (middleY ?? 0) + normalY * 0.4);
+      const look = lookAt(layout, cell);
+      if (part.archive !== look.set || part.record !== look.wall) continue;
+      const { along, into } = edgeOf(layout, cell, side);
+      const corners = points.map(([x = 0, y = 0, z = 0]) => [along(x, y), z, into(x, y)]);
       const near = corners.every(
         ([place = 0, , depth = 0]) => place > -FLOAT_M && place < layout.cell + FLOAT_M && Math.abs(depth) < 0.3,
       );
-      if (facing > 0.5 && near) triangles.push(corners);
+      if (near) rocks.set(cell * 4 + side, [...(rocks.get(cell * 4 + side) ?? []), corners]);
     }
-  }
-  return triangles;
+  return rocks;
+}
+
+/** How far into the rock a cave cell's side stands at a spot as its lattice lays it, with nothing flat on it:
+ *  `caveBulge` at its 5 × 5 points, flat across each quad's two triangles, cut from its first corner to its opposite. */
+function latticeRock(layout: DungeonLayout, cell: number, side: number, along: number, up: number): number {
+  const [east = 0, south = 0] = SIDE_STEPS[side] ?? [];
+  const half = layout.cell / 2;
+  const [column, row] = [cell % layout.columns, Math.floor(cell / layout.columns)];
+  const [leftX, leftY] = [
+    (column + 0.5) * layout.cell + (east - south) * half,
+    (row + 0.5) * layout.cell + (south + east) * half,
+  ];
+  const [wide, tall] = [layout.cell / 4, (layout.ceilings[cell] ?? 0) / 4];
+  const lattice = (step: number, lift: number) =>
+    caveBulge(leftX + south * step * wide, leftY - east * step * wide, step / 4, lift / 4);
+  const [quadAlong, quadUp] = [Math.min(3, Math.floor(along / wide)), Math.min(3, Math.floor(up / tall))];
+  const [across, rise] = [along / wide - quadAlong, up / tall - quadUp];
+  const corner = (step: number, lift: number) => lattice(quadAlong + step, quadUp + lift);
+  return across >= rise
+    ? corner(0, 0) + across * (corner(1, 0) - corner(0, 0)) + rise * (corner(1, 1) - corner(1, 0))
+    : corner(0, 0) + rise * (corner(0, 1) - corner(0, 0)) + across * (corner(1, 1) - corner(0, 1));
 }
 
 /** How far into the rock the drawn rock stands at a point of the wall, `along` it and `up` it; null where none is. */
@@ -184,58 +216,92 @@ const wallSide = ({ place }: KitPlacement) => {
   return SIDE_STEPS.findIndex(([east, south]) => east === -Math.round(x) && south === -Math.round(y));
 };
 
-test('on a cave wall no piece stands more than 0.1 m deep in the rock anywhere over it', () => {
-  let pieces = 0;
+/** The cell and the side the portal and the exit door each stand on. */
+function openingsOf(layout: DungeonLayout): (readonly [number, number])[] {
+  const [east = 0, south = 0] = SIDE_STEPS[layout.portal.side] ?? [];
+  const portal = cellAt(layout, layout.portal.x - east * 0.5, layout.portal.y - south * 0.5);
+  return [
+    [portal, layout.portal.side],
+    [layout.wayIn.cell, layout.wayIn.side],
+  ];
+}
+
+test('on a cave wall the rock is drawn flat behind every piece, buries none, and bulges as it did away from them', () => {
+  let [pieces, kept] = [0, 0];
   const looks = new Set<string>();
   for (const layout of LAYOUTS) {
-    let model: ForgedModel | null = null;
-    for (const piece of PLACED.get(layout) ?? []) {
-      if (!/\.(wall\.|feature\.)/.test(piece.module) || !isCave(layout, piece.cell)) continue;
-      model ??= dungeonMesh(layout, [56, 2]);
+    const placed = (PLACED.get(layout) ?? []).filter(
+      ({ module: name, cell }) => /\.(wall\.|feature\.)/.test(name) && isCave(layout, cell),
+    );
+    if (placed.length === 0) continue;
+    const rocks = rocksOf(meshOf(layout), layout);
+    // What stands against each cave wall: each piece's span along it and its top, and the arches.
+    const spans = new Map<number, { from: number; to: number; top: number }[]>();
+    for (const [cell, side] of openingsOf(layout))
+      spans.set(cell * 4 + side, [{ from: layout.cell / 2 - 1.3, to: layout.cell / 2 + 1.3, top: 3.1 }]);
+    for (const piece of placed) {
       const side = wallSide(piece);
-      const rock = rockOf(model, layout, piece.cell, side);
+      const key = piece.cell * 4 + side;
+      const rock = rocks.get(key) ?? [];
       const { along, into } = edgeOf(layout, piece.cell, side);
       const [minX, minY, maxX, maxY] = planOf(piece);
-      const spans = [along(minX, minY), along(maxX, maxY)];
-      const [first, last] = [Math.max(0, Math.min(...spans)), Math.min(layout.cell, Math.max(...spans))];
+      const ends = [along(minX, minY), along(maxX, maxY)];
+      const [first, last] = [Math.max(0, Math.min(...ends)), Math.min(layout.cell, Math.max(...ends))];
       const bounds = PACKS.get(piece.module.split('.')[0] as StyleKey)?.modules.get(piece.module)?.bounds ?? [];
       const laid = (z: number) => {
         const stretch = piece.place.stretch;
         if (!stretch) return piece.place.origin[2] + z;
         return z <= 0 ? stretch.from + z : z >= 1 ? stretch.to + z - 1 : stretch.from + z * (stretch.to - stretch.from);
       };
-      const [low, high] = [laid(bounds[2] ?? 0), laid(bounds[5] ?? 0)];
+      const [low, top] = [laid(bounds[2] ?? 0), laid(bounds[5] ?? 0)];
       const back = into(piece.place.origin[0], piece.place.origin[1]);
+      assert.ok(Math.abs(back) < FLOAT_M, `${piece.module}'s back on the wall's line`);
+      const head = Math.min(top, layout.ceilings[piece.cell] ?? 0);
       for (let step = 0; step <= 12; step++)
         for (let rise = 0; rise <= 12; rise++) {
-          const depth = depthAt(rock, first + ((last - first) * step) / 12, low + ((high - low) * rise) / 12);
-          if (depth !== null)
-            assert.ok(
-              back - depth <= 0.1 + FLOAT_M,
-              `${piece.module} ${(back - depth).toFixed(2)} m in ${layout.name}`,
-            );
+          const spot = first + ((last - first) * step) / 12;
+          const flat = depthAt(rock, spot, (head * rise) / 12);
+          assert.ok(flat !== null && Math.abs(flat) < FLOAT_M, `${flat} m behind ${piece.module} in ${layout.name}`);
+          const over = depthAt(rock, spot, low + ((top - low) * rise) / 12);
+          if (over !== null) assert.ok(back - over < FLOAT_M, `${piece.module} in the rock in ${layout.name}`);
         }
+      spans.set(key, [...(spans.get(key) ?? []), { from: first, to: last, top }]);
       looks.add(piece.module.split('.')[0] ?? '');
       pieces++;
     }
+    // Past every span by its 0.15 m and the 0.3 m it eases over, the rock is as its lattice lays it.
+    for (const [key, rock] of rocks) {
+      const [cell, side] = [Math.floor(key / 4), key % 4];
+      // A cave cell's side on rock: an open side holds only a doorway's jambs in the wall's picture.
+      const [east = 0, south = 0] = SIDE_STEPS[side] ?? [];
+      const [column, row] = [(cell % layout.columns) + east, Math.floor(cell / layout.columns) + south];
+      if (!isCave(layout, cell) || openAt(layout, column, row)) continue;
+      const near = (spot: number, up: number) =>
+        (spans.get(key) ?? []).some(({ from, to, top }) => spot > from - 0.45 && spot < to + 0.45 && up < top + 0.3);
+      const high = layout.ceilings[cell] ?? 0;
+      for (let step = 0; step <= 16; step++)
+        for (let rise = 0; rise <= 16; rise++) {
+          const [spot, up] = [(layout.cell * step) / 16, (high * rise) / 16];
+          const depth = depthAt(rock, spot, up);
+          if (near(spot, up) || depth === null) continue;
+          const lattice = latticeRock(layout, cell, side, spot, up);
+          assert.ok(Math.abs(depth - lattice) < FLOAT_M, `${depth} m, not ${lattice} m, in ${layout.name}`);
+          kept++;
+        }
+    }
   }
-  assert.ok(pieces > 40, `${pieces} pieces on cave walls`);
+  assert.ok(pieces > 300 && kept > 10000, `${pieces} pieces on cave walls, ${kept} spots of rock as it was`);
   assert.deepEqual([...looks].sort(), ['caverns', 'mines']);
 });
 
 test('the portal and the exit door stand on flat rock in a cave: no bulge over their arches', () => {
   let walls = 0;
   for (const layout of LAYOUTS) {
-    const [east = 0, south = 0] = SIDE_STEPS[layout.portal.side] ?? [];
-    const portal = cellAt(layout, layout.portal.x - east * 0.5, layout.portal.y - south * 0.5);
-    const openings = [
-      [portal, layout.portal.side],
-      [layout.wayIn.cell, layout.wayIn.side],
-    ].filter(([cell = 0]) => isCave(layout, cell));
+    const openings = openingsOf(layout).filter(([cell]) => isCave(layout, cell));
     if (openings.length === 0) continue;
-    const model = dungeonMesh(layout, [56, 2]);
-    for (const [cell = 0, side = 0] of openings) {
-      const rock = rockOf(model, layout, cell, side);
+    const rocks = rocksOf(meshOf(layout), layout);
+    for (const [cell, side] of openings) {
+      const rock = rocks.get(cell * 4 + side) ?? [];
       for (let step = -13; step <= 13; step++)
         for (let rise = 0; rise <= 31; rise++) {
           const depth = depthAt(rock, layout.cell / 2 + step / 10, rise / 10);

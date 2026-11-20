@@ -4,7 +4,8 @@
 // them as content/dungeon/kits.json says. Only a doorway's, a torch's, the exit's and the portal's own pieces stand
 // on their cells' walls, and nothing stands in an alcove or on a landmark.
 import kits from '../../../content/dungeon/kits.json' with { type: 'json' };
-import { caveWallRange, ceilingHeights, isCave } from './dungeonCeilings.ts';
+import type { FlatSpan } from './dungeonCaveWall.ts';
+import { ceilingHeights, isCave } from './dungeonCeilings.ts';
 import {
   alcove,
   besideCell,
@@ -32,11 +33,13 @@ import { type ModuleMesh, type ModulePack, type Place, type Turns, wallTurns } f
 export type KitPlacement = { readonly module: string; readonly place: Place; readonly cell: number };
 
 /** The mesh's own pieces the kits stand in place of: the pillars and the torches, by their number in the layout,
- *  whose kit pillar or sconce was laid, and whether the portal's arch was. */
+ *  whose kit pillar or sconce was laid, and whether the portal's arch was; and the stretches of a cave's walls, by
+ *  `cell * 4 + side`, that pieces stand against, which the mesh draws flat. */
 export type Fitted = {
   readonly pillars: ReadonlySet<number>;
   readonly torches: ReadonlySet<number>;
   readonly portal: boolean;
+  readonly flats: ReadonlyMap<number, readonly FlatSpan[]>;
 };
 
 type Rule = (typeof kits.styles)[StyleKey];
@@ -48,8 +51,6 @@ const RULES: Readonly<Record<StyleKey, Rule>> = kits.styles;
 export const HEAD_M = 2.4;
 /** How far round a wall piece no prop may stand (m). */
 const CLEAR_M = 0.05;
-/** The most a cave's rock may come out past a wall piece's back over it (m): any more and the rock swallows it. */
-const BURIED_M = 0.1;
 /** The style whose wall pieces stand in timber sets: on both walls of a way, a beam across it over them. */
 const SETS_STYLE: StyleKey = 'mines';
 /** How many strips the page cuts a curved ceiling into each way (`dungeonCeilings.ts`): a cave's rock comes lowest
@@ -83,7 +84,12 @@ type Site = {
   readonly placed: KitPlacement[];
   /** Each wall a set stands on, as `cell * 4 + side`. */
   readonly walled: Set<number>;
-  readonly fitted: { readonly pillars: Set<number>; readonly torches: Set<number>; portal: boolean };
+  readonly fitted: {
+    readonly pillars: Set<number>;
+    readonly torches: Set<number>;
+    portal: boolean;
+    readonly flats: Map<number, FlatSpan[]>;
+  };
 };
 
 /** A cell's ceiling at a 3 × 3 grid of points over a plan, kept to the cell. */
@@ -131,35 +137,44 @@ function put(site: Site, cell: number, pieces: readonly Piece[]): boolean {
   return true;
 }
 
-/** How far a piece reaches either side of its origin along its wall. */
-const halfOf = ({ bounds }: ModuleMesh) => Math.max(-bounds[0], bounds[3]);
-
 /** Whether a cell may hold a piece that is not a doorway's, a torch's, the exit's or the portal's own. */
 const free = (site: Site, cell: number) =>
   isOpen(site.layout, cell) && !site.busy.has(cell) && !site.covered.has(cell) && !alcove(site.layout, cell);
 
+/** Marks a cave's wall flat behind pieces laid on it, each over its plan along the wall from the floor to its top, so
+ *  the mesh draws no rock over them; nothing on a hewn wall. */
+function flatten(site: Site, cell: number, side: number, pieces: readonly Piece[]): void {
+  const { layout } = site;
+  if (!isCave(layout, cell)) return;
+  const [x, y] = wallPoint(layout, cell, side);
+  const [east, south] = stepOf(side);
+  // Along the wall from its left end seen from the cell, as `caveWall` measures it.
+  const along = (pointX: number, pointY: number) => layout.cell / 2 + (pointX - x) * south - (pointY - y) * east;
+  const key = cell * 4 + side;
+  for (const [piece, place] of pieces) {
+    const module = pieceOf(site, cell, piece);
+    if (!module) continue;
+    const [minX, minY, maxX, maxY] = planOf(module, place);
+    const ends = [along(minX, minY), along(maxX, maxY)];
+    const top = place.stretch ? place.stretch.to : place.origin[2] + module.bounds[5];
+    const span = { from: Math.min(...ends), to: Math.max(...ends), top };
+    site.fitted.flats.set(key, [...(site.fitted.flats.get(key) ?? []), span]);
+  }
+}
+
 /** A base, a shaft and a cap on a cell's wall: the base on the floor, the shaft stretched up to the cap. Under a
  *  vault or a dome the cap's top is where the ceiling comes lowest over it, so none shows through. On a cave's rock
- *  the set stands back as `setBack` says, and the cap's top is where the rock comes highest over it, so it meets the
- *  rock all over, what stands above hidden in it. None within `CLEAR_M` of a prop as it is drawn, a picture hung on
- *  the wall among them, or where the wall is too low. */
+ *  the cap's top is where the rock comes highest over it, so it meets the rock all over, what stands above hidden in
+ *  it. None within `CLEAR_M` of a prop as it is drawn, a picture hung on the wall among them, or where the wall is
+ *  too low. */
 function wallSet(site: Site, [cell, side]: Wall): Piece[] | null {
   const pieces = ['wall.base', 'wall.shaft', 'wall.cap'];
   const [base, shaft, cap] = pieces.map((piece) => pieceOf(site, cell, piece));
   if (!base || !shaft || !cap || !free(site, cell) || site.walled.has(cell * 4 + side)) return null;
   const { layout } = site;
   const cave = isCave(layout, cell);
-  const high = layout.ceilings[cell] ?? 0;
-  // The cap's top rises over the wall's head, so its foot stands no lower on the wall than its height under it.
-  const back = setBack(layout, cell, side, [
-    [Math.max(halfOf(base), halfOf(shaft)), 0, high],
-    [halfOf(cap), high - (cap.bounds[5] - cap.bounds[2]), high],
-  ]);
-  if (back === null) return null;
-  const [x, y] = wallPoint(layout, cell, side);
-  const [east, south] = stepOf(side);
   const turns = wallTurns(side);
-  const flat: Place = { origin: [x + east * back, y + south * back, 0], turns };
+  const flat: Place = { origin: [...wallPoint(layout, cell, side), 0], turns };
   if ([base, shaft, cap].some((piece) => crowded(layout, site.props, planOf(piece, flat), CLEAR_M))) return null;
   const over = planOf(cap, flat);
   const top = cave ? highestOver(site, cell, over) : Math.min(...heightsOver(site, cell, over));
@@ -178,7 +193,10 @@ function setsOn(site: Site, walls: readonly Wall[]): boolean {
   const sets = walls.map((wall) => wallSet(site, wall));
   if (!sets.every((set) => set !== null)) return false;
   walls.forEach(([cell, side], index) => {
-    if (put(site, cell, sets[index] ?? [])) site.walled.add(cell * 4 + side);
+    const set = sets[index] ?? [];
+    if (!put(site, cell, set)) return;
+    site.walled.add(cell * 4 + side);
+    flatten(site, cell, side, set);
   });
   return true;
 }
@@ -293,33 +311,8 @@ function timberSets(site: Site): void {
   });
 }
 
-/** How far a piece on the middle of a cell's wall stands back into the rock: none on a hewn wall. On a cave's rock its
- *  back meets the rock where the wall stands back most over its spans (each half its width, and the heights it stands
- *  from and to), never out of the wall's line; null where the rock there comes out more than `BURIED_M` past that,
- *  which would swallow the piece. */
-function setBack(
-  layout: DungeonLayout,
-  cell: number,
-  side: number,
-  spans: readonly (readonly [half: number, from: number, to: number])[],
-): number | null {
-  if (!isCave(layout, cell)) return 0;
-  const [column, row] = columnRow(layout, cell);
-  const middle = layout.cell / 2;
-  const ranges = spans.map(([half, from, to]) =>
-    caveWallRange(
-      { column, row, side, cell: layout.cell },
-      layout.ceilings[cell] ?? 0,
-      [middle - half, middle + half],
-      [from, to],
-    ),
-  );
-  const back = Math.max(0, ...ranges.map(([, most]) => most));
-  return back - Math.min(...ranges.map(([least]) => least)) <= BURIED_M + EPS ? back : null;
-}
-
 /** Up to `features` a room, each on a wall of a quiet cell that holds nothing else, drawn by kitHash; on a cave's
- *  wall it stands back into the rock, and where the rock would swallow it the next wall is tried. */
+ *  wall the rock is drawn flat behind it. */
 function features(site: Site): void {
   const { layout } = site;
   const walls = new Map<number, { cell: number; side: number; order: number }[]>();
@@ -340,14 +333,12 @@ function features(site: Site): void {
       const piece = `feature.${variant(site, cell, 'feature', 2)}`;
       const module = pieceOf(site, cell, piece);
       if (!module) continue;
-      const [x, y] = wallPoint(layout, cell, side);
-      const [east, south] = stepOf(side);
-      const back = setBack(layout, cell, side, [[halfOf(module), module.bounds[2], module.bounds[5]]]);
-      if (back === null) continue;
-      const place: Place = { origin: [x + east * back, y + south * back, 0], turns: wallTurns(side) };
+      const place: Place = { origin: [...wallPoint(layout, cell, side), 0], turns: wallTurns(side) };
       const fits = module.bounds[5] <= (layout.ceilings[cell] ?? 0);
       const clear = fits && !crowded(layout, site.props, planOf(module, place), CLEAR_M);
-      if (clear && put(site, cell, [[piece, place]])) used.add(cell);
+      if (!clear || !put(site, cell, [[piece, place]])) continue;
+      used.add(cell);
+      flatten(site, cell, side, [[piece, place]]);
     }
   }
 }
@@ -548,7 +539,7 @@ export function kitsOf(
     height: ceilingHeights(layout),
     placed: [],
     walled: new Set(),
-    fitted: { pillars: new Set(), torches: new Set(), portal: false },
+    fitted: { pillars: new Set(), torches: new Set(), portal: false, flats: new Map() },
   };
   timberSets(site);
   wallRuns(site);

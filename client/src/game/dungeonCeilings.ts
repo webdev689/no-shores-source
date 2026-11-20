@@ -1,8 +1,8 @@
 // What rises over a dungeon's walls: a room's ceiling flat, a barrel vault across its narrower side, a dome over its
-// middle, or rough rock over a cave; and the rock walls of a cave, bulging in and out. Each cell's ceiling is a height
-// over every point of it, never below the cell's own ceiling, where its walls end; where two cells' ceilings differ
-// along their edge, the higher one's side is closed up to it. Every shape is drawn from where it stands, so every
-// machine draws the same.
+// middle, or rough rock over a cave, whose walls bulge as `dungeonCaveWall.ts` draws them. Each cell's ceiling is a
+// height over every point of it, never below the cell's own ceiling, where its walls end; where two cells' ceilings
+// differ along their edge, the higher one's side is closed up to it. Every shape is drawn from where it stands, so
+// every machine draws the same.
 import type { MeshBuilder } from '../models/model.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { TILE_M, uvOf } from './dungeonUv.ts';
@@ -11,7 +11,7 @@ type Point = readonly [number, number, number];
 type Picture = readonly [number, number];
 type Height = (x: number, y: number) => number;
 
-/** How many strips a curved cell's ceiling is cut into each way, and an edge's closing and a cave's wall. */
+/** How many strips a curved cell's ceiling is cut into each way, and an edge's closing. */
 const CUTS = 4;
 /** The highest a vault or a dome rises over its walls, and how much of its half span it rises at most. */
 const RISE_M = { vault: 1.6, dome: 2.2 };
@@ -167,118 +167,6 @@ export function closeEdge(
     ];
     mesh.quad(picture, corners, edge.facing, corners.map(uvOf(edge.facing, edge.top)));
   }
-}
-
-/** How far a cave's rock wall stands back into the rock (less than nothing: out into the cell) at a point (x, y) of
- *  its cell's edge, `along` the edge and `up` the wall, each from 0 to 1: none at the edge's ends, its foot or its
- *  head. */
-export function caveBulge(x: number, y: number, along: number, up: number): number {
-  return (roughness(x, y + up * 7, 11) * 2 - 1) * CAVE_BULGE_M * Math.sin(Math.PI * along) * Math.sin(Math.PI * up);
-}
-
-/** The most an arch round the portal or the exit door spans along its wall either side of its middle, and its top
- *  (m), as the kits' envelopes allow (tools/dungeon/envelope.py). */
-export const ARCH_M = { half: 1.3, top: 3.1 } as const;
-
-/** A cell's side, by its column, its row, the side's number and the cell's size. */
-type WallAt = { readonly column: number; readonly row: number; readonly side: number; readonly cell: number };
-
-/** A cave wall's lattice, as `caveWall` draws it: the heights of its rows (m), each point's place on the wall line
- *  (`column` along the edge from its left end seen from the cell, `row` up), and how far the rock stands back there.
- *  Up to `flat` m the wall is one flat row, so an arch stands on flat rock, and over it the bulges ease back in. */
-function latticeOf(where: WallAt, high: number, flat: number) {
-  const [east, south] = SIDE_STEPS[where.side] ?? [0, 0];
-  const half = where.cell / 2;
-  const [leftX, leftY] = [
-    (where.column + 0.5) * where.cell + east * half - south * half,
-    (where.row + 0.5) * where.cell + south * half + east * half,
-  ];
-  const low = Math.min(Math.max(0, flat), high);
-  const rows =
-    low >= high
-      ? [0, high]
-      : [
-          ...(low > 0 ? [0] : []),
-          ...Array.from({ length: CUTS + 1 }, (_unused, row) => low + ((high - low) * row) / CUTS),
-        ];
-  const onLine = (column: number, row: number): Point => [
-    leftX + (south * where.cell * column) / CUTS,
-    leftY - (east * where.cell * column) / CUTS,
-    rows[row] ?? 0,
-  ];
-  const back = (column: number, row: number): number => {
-    const [x, y, z] = onLine(column, row);
-    if (!(z > low)) return 0;
-    const rise = low > 0 ? (z - low) / (high - low) : 1;
-    return caveBulge(x, y, column / CUTS, z / high) * rise * rise * (3 - 2 * rise);
-  };
-  return { east, south, rows, onLine, back };
-}
-
-/** A cave cell's rock wall on its side from the floor to its ceiling, facing into the cell, bulging in and out by the
- *  lattice and never at its edges, so it meets the floor, the ceiling and the next wall without a gap; flat up to
- *  `flat` m, where an arch stands on it. */
-export function caveWall(mesh: MeshBuilder, picture: Picture, where: WallAt, high: number, flat = 0): void {
-  const { east, south, rows, onLine, back } = latticeOf(where, high, flat);
-  const point = (column: number, row: number): Point => {
-    const [x, y, z] = onLine(column, row);
-    const bulge = back(column, row);
-    return [x + east * bulge, y + south * bulge, z];
-  };
-  const facing: Point = [-east, -south, 0];
-  for (let row = 0; row + 1 < rows.length; row++)
-    for (let column = 0; column < CUTS; column++) {
-      const corners = [point(column, row), point(column + 1, row), point(column + 1, row + 1), point(column, row + 1)];
-      mesh.quad(picture, corners, facing, corners.map(uvOf(facing, high)));
-    }
-}
-
-/** The least and the most a cave cell's wall, as `caveWall` draws it with no flat foot, stands back into the rock over
- *  a span of it: `along` its edge from the left end seen from the cell, and `up` it (m). Each of its lattice's
- *  triangles is flat, so the rock comes least and most at a corner of the span within a quad, or where the span's
- *  edges cross a quad's diagonal. Over the wall's head the rock closes up its edge, standing back none. */
-export function caveWallRange(
-  where: WallAt,
-  high: number,
-  [alongFrom, alongTo]: readonly [number, number],
-  [upFrom, upTo]: readonly [number, number],
-): readonly [number, number] {
-  const { rows, back } = latticeOf(where, high, 0);
-  const values = upTo > high ? [0] : [];
-  // A span's share of a quad from `low` to `top`, kept to it.
-  const share = (value: number, low: number, top: number) => Math.min(1, Math.max(0, (value - low) / (top - low)));
-  for (let row = 0; row + 1 < rows.length; row++) {
-    const [bottom = 0, top = 0] = [rows[row], rows[row + 1]];
-    if (upTo < bottom || upFrom > top) continue;
-    const [upLow, upHigh] = [share(upFrom, bottom, top), share(upTo, bottom, top)];
-    for (let column = 0; column < CUTS; column++) {
-      const [left, right] = [(column * where.cell) / CUTS, ((column + 1) * where.cell) / CUTS];
-      if (alongTo < left || alongFrom > right) continue;
-      const [alongLow, alongHigh] = [share(alongFrom, left, right), share(alongTo, left, right)];
-      const [corner, across, above, both] = [
-        back(column, row),
-        back(column + 1, row),
-        back(column, row + 1),
-        back(column + 1, row + 1),
-      ];
-      // A quad is cut along its diagonal from its first corner: one triangle below it, one above.
-      const value = (along: number, up: number) =>
-        along >= up
-          ? corner + along * (across - corner) + up * (both - across)
-          : corner + up * (above - corner) + along * (both - above);
-      const diagonal = [alongLow, alongHigh, upLow, upHigh].filter(
-        (cut) => cut >= alongLow && cut <= alongHigh && cut >= upLow && cut <= upHigh,
-      );
-      values.push(
-        value(alongLow, upLow),
-        value(alongHigh, upLow),
-        value(alongLow, upHigh),
-        value(alongHigh, upHigh),
-        ...diagonal.map((cut) => value(cut, cut)),
-      );
-    }
-  }
-  return values.length > 0 ? [Math.min(...values), Math.max(...values)] : [0, 0];
 }
 
 /** Whether a cell's neighbour on `side` is open, and its index. */

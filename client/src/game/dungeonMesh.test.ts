@@ -216,7 +216,13 @@ test("the return portal is a face on the end room's wall inside an arch of its t
 
 test("where its kit pieces stand, the mesh leaves out the pillars, the brackets and the portal's arch", () => {
   const pillared: DungeonLayout = { ...layout, pillars: [[1.6, 1.6, 4]] };
-  const kitted = { pillars: new Set([0]), torches: new Set([0]), portal: true, floorless: new Set([0]) };
+  const kitted = {
+    pillars: new Set([0]),
+    torches: new Set([0]),
+    portal: true,
+    floorless: new Set([0]),
+    flats: new Map(),
+  };
   const plain = trianglesOf(dungeonMesh(pillared, [56, 2]));
   const dressed = trianglesOf(dungeonMesh(pillared, [56, 2], undefined, kitted));
   const pillar = ({ corners }: Triangle) =>

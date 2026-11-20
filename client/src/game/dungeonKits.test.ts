@@ -213,13 +213,11 @@ test('wall sets stand on straight walls every `wallEvery` cells, where each styl
   });
   const all = [...paired.values()].reduce((sum, count) => sum + count, 0);
   assert.ok(all > 100, `${all} sets beside another along a wall`);
-  // A cave's set stands only where its rock is near flat, so two in a run are rare there.
-  for (const style of ['crypt', 'halls', 'cells', 'sanctum'] as const)
-    assert.ok((paired.get(style) ?? 0) > 0, `a pair in the ${style}`);
+  assert.ok((paired.get('caverns') ?? 0) > 0, 'a pair in the caverns, whose caves’ straight walls are short');
 });
 
-test('in the caverns a set stands on a cave room’s rock, set back into it, its cap meeting the rock, none in head height past its room', () => {
-  let [sets, back] = [0, 0];
+test('in the caverns a set stands on a cave room’s rock, its back on the wall’s line, its cap meeting the rock, none in head height past its room', () => {
+  let sets = 0;
   each((layout, placed) => {
     const busy = busyCells(layout);
     const height = ceilingHeights(layout);
@@ -244,8 +242,7 @@ test('in the caverns a set stands on a cave room’s rock, set back into it, its
         }
       if (/base$/.test(piece.module)) {
         const [x, y] = piece.place.origin;
-        assert.ok(into(x, y) <= EPS, 'its back on the wall or behind it, in the rock');
-        back += into(x, y) < -EPS ? 1 : 0;
+        assert.ok(Math.abs(into(x, y)) <= EPS, 'its back on the wall’s line, the rock drawn flat behind it');
         sets++;
       }
       if (!/cap$/.test(piece.module)) continue;
@@ -259,7 +256,7 @@ test('in the caverns a set stands on a cave room’s rock, set back into it, its
         }
     }
   });
-  assert.ok(sets > 50 && back > 0, `${sets} sets, ${back} set back`);
+  assert.ok(sets > 500, `${sets} sets`);
 });
 
 test('the mines stand timber sets: a set on both walls across the way and a beam over every cell between', () => {

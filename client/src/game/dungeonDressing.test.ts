@@ -174,7 +174,11 @@ test('the mesh leaves out only the pillars, brackets and portal arch whose kit p
     const model = dungeonMesh(layout, DOOR, undefined, missing);
     for (const pillar of layout.pillars) assert.ok(pillarAt(model, pillar, layout.pillarHalf), 'the code pillar');
     const plain = { pillars: new Set<number>(), torches: new Set<number>(), portal: false };
-    const unkitted = dungeonMesh(layout, DOOR, undefined, { ...plain, floorless: missing.floorless });
+    const unkitted = dungeonMesh(layout, DOOR, undefined, {
+      ...plain,
+      floorless: missing.floorless,
+      flats: missing.flats,
+    });
     assert.deepEqual(counted(model), counted(unkitted), 'and every bracket and the portal’s arch');
   }
 });

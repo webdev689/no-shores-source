@@ -5,7 +5,8 @@
 // face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
-import { ARCH_M, besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
+import { ARCH_M, caveWall, type FlatSpan } from './dungeonCaveWall.ts';
+import { besideOf, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { uvOf } from './dungeonUv.ts';
 
@@ -351,15 +352,22 @@ function portal(mesh: MeshBuilder, layout: DungeonLayout, arch: boolean): void {
 }
 
 /** What a dungeon's kits draw in the mesh's place: the pillars and the torches (by their number in the layout) whose
- *  pillar and bracket a kit piece stands instead, whether one stands for the portal's arch, and the cells whose floor
- *  a landmark lays itself. */
+ *  pillar and bracket a kit piece stands instead, whether one stands for the portal's arch, the cells whose floor a
+ *  landmark lays itself, and the stretches of a cave's walls, by `cell * 4 + side`, that pieces stand against. */
 export type Kitted = {
   readonly pillars: ReadonlySet<number>;
   readonly torches: ReadonlySet<number>;
   readonly portal: boolean;
   readonly floorless: ReadonlySet<number>;
+  readonly flats: ReadonlyMap<number, readonly FlatSpan[]>;
 };
-const UNKITTED: Kitted = { pillars: new Set(), torches: new Set(), portal: false, floorless: new Set() };
+const UNKITTED: Kitted = {
+  pillars: new Set(),
+  torches: new Set(),
+  portal: false,
+  floorless: new Set(),
+  flats: new Map(),
+};
 
 /** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it,
  *  and `kitted` says what it draws instead of the mesh. */
@@ -378,12 +386,15 @@ export function dungeonMesh(
     const form = room >= 0 ? layout.rooms[room]?.ceiling : undefined;
     return form === 'vault' || form === 'dome' || isCave(layout, index);
   };
-  // The portal's and the exit door's walls, as `cell * 4 + side`: in a cave they stand flat under their arches.
+  // The portal's and the exit door's walls, as `cell * 4 + side`: in a cave they stand flat under their arches, each
+  // in the middle of its wall.
   const [portalEast, portalSouth] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
   const portalCell =
     Math.floor((layout.portal.y - portalSouth * 0.5) / cell) * columns +
     Math.floor((layout.portal.x - portalEast * 0.5) / cell);
   const arched = new Set([portalCell * 4 + layout.portal.side, layout.wayIn.cell * 4 + layout.wayIn.side]);
+  const arch: FlatSpan = { from: cell / 2 - ARCH_M.half, to: cell / 2 + ARCH_M.half, top: ARCH_M.top };
+  const flatsOf = (key: number) => [...(kitted.flats.get(key) ?? []), ...(arched.has(key) ? [arch] : [])];
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
@@ -413,8 +424,7 @@ export function dungeonMesh(
         };
         const next = besideOf(layout, column, row, side);
         if (next === null) {
-          const flat = arched.has(index * 4 + side) ? ARCH_M.top : 0;
-          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling, flat);
+          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling, flatsOf(index * 4 + side));
           else wall(mesh, look, where, [0, ceiling], trims);
           // Over the wall's head, up to a vault, a dome or a cave's rock.
           return closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, () => ceiling, height);
