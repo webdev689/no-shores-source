@@ -7,7 +7,7 @@ import manifest from '../../../content/dungeon/modules.json' with { type: 'json'
 import { MATERIALS } from '../city/pictures.ts';
 import type { MeshBuilder, Point } from '../models/model.ts';
 import { cross, dot, minus } from '../models/vector.ts';
-import { CLIMATE_BASE, type Climate } from '../textures/climate.ts';
+import { type Climate, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import type { StyleKey } from './dungeonLayout.ts';
 import { COLOUR, IRON, ROLE } from './dungeonMesh.ts';
 import { TILE_M } from './dungeonUv.ts';
@@ -15,11 +15,14 @@ import { TILE_M } from './dungeonUv.ts';
 /** The parts a piece wears, by their number in its pack. */
 export const PARTS: readonly string[] = kits.parts;
 
+/** Metres one picture spans on a part: the dungeon's 3.2 m but where the thing is small, so a rope's strands, a
+ *  cloth's weave, a skull, a rune and hammered brass come out their own size. */
+const FINER_M: Readonly<Record<string, number>> = { bone: 1.6, relief: 1.6, cloth: 1.6, rope: 0.4, brass: 1.6 };
+const PART_TILE_M: readonly number[] = PARTS.map((name) => FINER_M[name] ?? TILE_M);
+
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), UV (2 × float32, metres) and part (4 ×
  *  uint8, the first its number in `PARTS`). */
 const VERTEX_BYTES = 28;
-/** The dressing set's number among a climate's sets: bone, relief, cloth, rope, ore and brass, records 0 to 5. */
-const DRESSING_SET = 21;
 
 export type Turns = 0 | 1 | 2 | 3;
 export type Bounds = readonly [number, number, number, number, number, number];
@@ -222,7 +225,8 @@ export function layModule(
   };
   const mapping = (vertex: number): readonly [number, number] => {
     const rise = stretched(positions[vertex * 3 + 2], place.stretch) - positions[vertex * 3 + 2];
-    return [uvs[vertex * 2] / TILE_M, -(uvs[vertex * 2 + 1] + rise) / TILE_M];
+    const tile = PART_TILE_M[module.parts[vertex]] ?? TILE_M;
+    return [uvs[vertex * 2] / tile, -(uvs[vertex * 2 + 1] + rise) / tile];
   };
   for (let first = 0; first + 2 < module.indices.length; first += 3) {
     const vertices = [module.indices[first], module.indices[first + 1], module.indices[first + 2]];
@@ -244,9 +248,8 @@ export function layModule(
   }
 }
 
-const dressing =
-  (record: number) =>
-  (_look: Look, climate: Climate): Picture => [CLIMATE_BASE[climate] + DRESSING_SET, record];
+// The book turns the dressing set to the island's climate, as it turns the dungeon's own sets.
+const dressing = (record: number) => (): Picture => [DRESSING_ARCHIVE, record];
 
 /** Each part's picture, by its name in `PARTS`. */
 const PICTURES: Readonly<Record<string, (look: Look, climate: Climate) => Picture>> = {

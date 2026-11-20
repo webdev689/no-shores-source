@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MATERIALS } from '../city/pictures.ts';
 import { meshBuilder } from '../models/model.ts';
-import { CLIMATES, climateArchive } from '../textures/climate.ts';
+import { CLIMATES, climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import { DUNGEON_LAYERS, smallBook } from './dungeonBook.ts';
 import { SIDE_STEPS } from './dungeonLayout.ts';
 import { COLOUR, IRON, ROLE } from './dungeonMesh.ts';
@@ -236,6 +236,18 @@ test("each corner keeps its piece's UV in pictures, v down, and its own normal, 
   near(curved.normals[2], [-0.6, 0.8, 0]);
 });
 
+test('a rope, a cloth, bones, carving and brass take finer pictures, so they come out their own size', () => {
+  const rope = triangle([
+    [0, 0, 0],
+    [0.4, 0, 0],
+    [0, 0, 0.4],
+  ]);
+  rope.parts.fill(PARTS.indexOf('rope'));
+  const { uvs } = laid(rope, { origin: [0, 0, 0], turns: 0 });
+  near(uvs[1], [1, 0]);
+  near(uvs[2], [0, -1]);
+});
+
 test("a stretched corner's v moves with its height, so its picture keeps its scale", () => {
   const shaft = triangle([
     [0, 0, 0],
@@ -260,14 +272,14 @@ test('every part wears a picture: the look for its stone, the timber, the iron, 
     assert.deepEqual(pictures.get('iron'), IRON);
     assert.deepEqual(pictures.get('water'), [COLOUR.water, 0]);
     assert.deepEqual(pictures.get('wax'), [COLOUR.wax, 0]);
-    // The dressing set in the climate, as the rock sets 19 and 20 are found for it.
-    const base = climateArchive(119, 0, climate, 'summer') - 19;
-    assert.equal(climateArchive(120, 0, climate, 'summer') - 20, base);
+    // The dressing set, which the book turns to the climate as the painter numbers it.
     const dressing = ['bone', 'relief', 'cloth', 'rope', 'ore', 'brass'].map((name) => pictures.get(name));
     assert.deepEqual(
       dressing,
-      dressing.map((_unused, record) => [base + 21, record]),
+      dressing.map((_unused, record) => [DRESSING_ARCHIVE, record]),
     );
+    const painted = { desert: 1021, mountain: 1121, temperate: 1321, swamp: 1421 }[climate];
+    assert.equal(climateArchive(DRESSING_ARCHIVE, 0, climate, 'summer'), painted);
   }
   assert.throws(() => partPicture(PARTS.length, look, 'temperate'), /no picture/);
   const book = smallBook({ climate: 'temperate', season: 'summer' }, []);
