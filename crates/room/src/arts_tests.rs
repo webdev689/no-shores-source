@@ -274,6 +274,10 @@ fn a_test_ground_player_joins_with_every_art_at_its_highest_owning_every_fragmen
     let found = room.player(player).expect("in");
     assert_eq!(found.answer, 0, "a Core pick is taken");
     assert!((1..=3).all(|art| found.character.art_shares(art) == (1.0, 1.0)), "every spell as written");
+    let mut wreck = Room::over_sea(Vec::new(), (0.0, 0.0));
+    let player = wreck.join().expect("a room with space");
+    let found = wreck.player(player).expect("in");
+    assert_eq!((found.character.art_level(1), found.character.owns_fragment(1, 0)), (1, false), "a story level");
 }
 
 #[test]

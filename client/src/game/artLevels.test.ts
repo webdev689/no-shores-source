@@ -215,6 +215,7 @@ test('at its first level the screen shows what the room does: the same shares, l
     const fragment = fragments.find((each) => each.key === key);
     assert.equal(scaled(key, 'moreS', fragment?.moreS ?? 0, 1), tenth(seconds), `${key}'s seconds more`);
   }
+  assert.deepEqual(Object.keys(GIVES).sort(), Object.keys(room.gives).sort(), 'what spells and fragments give');
   for (const [key, seconds] of Object.entries(room.gives)) {
     assert.equal(tenth((GIVES[key]?.[1] ?? 0) * lastingAt(1)), tenth(seconds), `what ${key} gives`);
   }

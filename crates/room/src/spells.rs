@@ -227,14 +227,14 @@ impl Room {
         }
     }
 
-    /// A spell's blow on a living foe from `from`, `damage` before power: its share by the caster's Art's level, in
+    /// A spell's blow on a living foe from `from`, `damage` before power: its share by its Art's level at the cast, in
     /// its Art's element, by the caster's best weapon's Attack, judged against the foe as it stands and settled as a
     /// weapon's blow is. Answers the health it took.
     fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> Option<f64> {
         let found = self.players.get(&spell.caster)?;
         let (attack, hand) = spell_power(&found.character);
-        // The level of the Art that cast it, which may no longer be the one worn as it strikes.
-        let damage = damage * found.character.art_shares(spell.art).0;
+        // The level of the Art that cast it, as it was cast, whatever is worn or risen since.
+        let damage = damage * spell.shares.0;
         let then = self.foes.get(&foe).map(|foe| foe.fighter).filter(|then| !then.dead())?;
         let element = arts().art(spell.art).and_then(|art| gear::Element::from_number(art.element));
         let blow = Blow {

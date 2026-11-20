@@ -249,6 +249,12 @@ impl Player {
 }
 
 impl Room {
+    /// Whether this is the Test Ground: a course's room on open ground with no section. A wreck laid over the sea has
+    /// no section either, but it is a story level, played at the player's own levels.
+    pub(crate) fn is_test_ground(&self) -> bool {
+        self.section.is_none() && self.floor == crate::Floor::Flat
+    }
+
     /// Every player's dress, for one who joins; players who have sent none are left out.
     pub fn dresses(&self) -> impl Iterator<Item = (PlayerId, &str)> + '_ {
         self.players

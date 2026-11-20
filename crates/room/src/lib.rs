@@ -236,7 +236,7 @@ impl Room {
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
         let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock, self.section.is_none()));
+        self.players.insert(id, Player::new(fighter, self.clock, self.is_test_ground()));
         Some(id)
     }
 

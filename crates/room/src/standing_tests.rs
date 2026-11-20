@@ -199,8 +199,8 @@ fn linked_lingers_and_heals_by_its_sunwell_s_level_after_its_caster_leaves() {
     }
     let gained = room.fighter(other).expect("in").health - before;
     assert!(!room.fighter(other).expect("in").statuses.has(Status::Linked), "Linked has run out");
-    let heals = gained / 3.0;
-    assert!(gained > 0.0 && (heals - heals.round()).abs() < 1e-9, "3 a heal at level 1, not 5: {gained}");
+    // 1.8 s of linger holds one or two heals of the room's clock, each 3 at level 1, not 5.
+    assert!([3.0, 6.0].iter().any(|heals| (gained - heals).abs() < 1e-9), "3 a heal at level 1, not 5: {gained}");
 }
 
 /// The health a Shadow caster's Duskraven with Hunger gives back over its first bolts, the caster wearing Storm once
