@@ -2,8 +2,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   Effects,
-  EVICT_RANK,
-  fadeOf,
   FLASH_S,
   GUN_SMOKE_LIFE,
   GUN_SMOKE_SWELL,
@@ -13,6 +11,7 @@ import {
   ROUND_SHOT_M,
   SPLINTERS,
 } from './effects.ts';
+import { EVICT_RANK, fadeOf } from './puffLaw.ts';
 
 const highest = (marks: readonly { z: number }[]) => Math.max(...marks.map((mark) => mark.z));
 const blended = (marks: readonly Mark[], blend: Mark['blend']) => marks.filter((mark) => mark.blend === blend);

@@ -7,6 +7,7 @@
 // size about the point it came from, so a fight seen from the raised view, where ships are drawn larger, draws them as
 // large about it. Past the budget, what a fight's picture misses least goes first.
 import type { MarkShape } from './markView.ts';
+import { along, BLEND_OF, EVICT_RANK, fadeOf, type PuffKind } from './puffLaw.ts';
 
 type Point = readonly [number, number, number];
 type Colour = readonly [number, number, number];
@@ -39,10 +40,6 @@ export interface Splash {
   readonly strength: number;
 }
 
-/** DFO's kinds of puff, each with its own law of size and fading. */
-export type PuffKind =
-  'smoke' | 'flash' | 'spray' | 'foam' | 'debris' | 'shred' | 'ember' | 'glint' | 'timber' | 'light';
-
 /** A puff: its kind, the point it came from (`anchor`, window metres) and its own start off it (true metres), its
  *  velocity, how fast that dies away (a second: smoke's toward the wind, the rest toward rest), its gravity and lift,
  *  how low it may go, its colour and cover, its width from birth to end (metres), when it began and how long it
@@ -68,19 +65,6 @@ type PuffMaking = Partial<Omit<Puff, 'anchor' | 'born' | 'kind'>> & Pick<Puff, '
 
 /** The most puffs alive at once (DFO's PARTICLE_BUDGET). */
 export const PUFF_BUDGET = 900;
-/** What goes first past the budget, the least of a fight's picture first; within a kind, the nearest its end. */
-export const EVICT_RANK: Readonly<Record<PuffKind, number>> = {
-  spray: 0,
-  foam: 0,
-  glint: 0,
-  debris: 1,
-  shred: 1,
-  ember: 1,
-  flash: 2,
-  timber: 2,
-  light: 2,
-  smoke: 3,
-};
 /** The air's speed, metres a second, on a fair day (DFO's WIND_MPS a unit of wind, at one unit). */
 export const WIND_MS = 4;
 /** A broadside's own smoke: its life (seconds, from and to) and its width at its end (metres a unit of gun). */
@@ -129,36 +113,6 @@ const PLANK: Colour = [0.3, 0.2, 0.12];
 const FLAME: Colour = [1, 0.45, 0.12];
 const EMBER: Colour = [1, 0.55, 0.18];
 const BLAST: Colour = [1, 0.62, 0.2];
-
-/** Where a puff is along one axis `age` seconds on: launched at `speed`, slowed at `drag` toward `toward` (its
- *  speed at rest) and pushed at `push` (metres a second a second). */
-function along(speed: number, toward: number, drag: number, push: number, age: number): number {
-  if (drag <= 0) return speed * age + (push * age * age) / 2;
-  const rest = toward + push / drag;
-  return rest * age + ((speed - rest) * (1 - Math.exp(-drag * age))) / drag;
-}
-
-/** How much of its cover a puff of `kind` keeps at `share` of its life (DFO's drawList). */
-export function fadeOf(kind: PuffKind, share: number): number {
-  if (kind === 'flash' || kind === 'glint' || kind === 'light') return 1 - share;
-  if (kind === 'smoke') return Math.min(1, share * 6) * (1 - share);
-  if (kind === 'debris' || kind === 'shred') return 1 - Math.max(0, share - 0.7) / 0.3;
-  if (kind === 'timber') return 1 - Math.max(0, share - 0.8) / 0.2;
-  return 1 - share * share;
-}
-
-const BLEND_OF: Readonly<Record<PuffKind, Blend | undefined>> = {
-  smoke: 'smoke',
-  spray: 'smoke',
-  foam: 'smoke',
-  flash: 'glow',
-  ember: 'glow',
-  glint: 'glow',
-  light: 'light',
-  debris: undefined,
-  shred: undefined,
-  timber: undefined,
-};
 
 export class Effects {
   private puffs: Puff[] = [];
