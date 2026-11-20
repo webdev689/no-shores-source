@@ -114,13 +114,19 @@ function managePart(context: PageContext, panel: ShipPanel | null): HTMLElement 
   return part;
 }
 
-/** An officer's name in their grade's colour, and what they are: post, grade and level. */
+/** An officer's post's emblem framed in their grade, beside their name in its colour and what they are: post,
+ *  grade and level. */
 function officerHead(shown: OfficerShown, duty = ''): HTMLElement {
   const head = make('div', '', 'ship-officer-head');
+  const emblem = make('div', '', `gear-cell ship-emblem ${ROLES.tile}`);
+  rarityOf(emblem, shown.rarity);
+  emblem.append(glyphImage(shown.glyph));
+  const words = make('div', '', 'ship-officer-words');
   const name = make('b', shown.name, 'ship-officer-name');
   name.style.color = shown.colour;
   const what = [shown.post, shown.grade, `level ${shown.level}`, duty.toLowerCase()].filter(Boolean).join(' · ');
-  head.append(name, make('span', what, 'gear-hint'));
+  words.append(name, make('span', what, 'gear-hint'));
+  head.append(emblem, words);
   return head;
 }
 

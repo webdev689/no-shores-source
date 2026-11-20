@@ -308,17 +308,29 @@ export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): s
   return pictureSvg(MAPS[glyph], colours);
 }
 
-/** Rows of letters as an SVG picture: each pixel a square in its letter's colour, crisp at any size. */
+/** The letters a map draws with, each a colour of its palette in turn; a dot is none. */
+export const GLYPH_LETTERS = 'abcdefghijkl';
+
+/** Rows of letters as an SVG picture as large as its map (12 cells, or a ship glyph's 24): each run of one letter
+ *  along a row a strip in its colour, crisp at any size. */
 function pictureSvg(rows: readonly string[], colours: readonly string[]): string {
-  const squares: string[] = [];
-  rows.forEach((row, line) =>
-    [...row].forEach((letter, column) => {
-      const fill = colours['abcdef'.indexOf(letter)];
-      if (fill) squares.push(`<rect x="${column}" y="${line}" width="1" height="1" fill="${fill}"/>`);
-    }),
-  );
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" shape-rendering="crispEdges">${squares.join('')}</svg>`;
+  const strips: string[] = [];
+  rows.forEach((row, line) => {
+    for (let column = 0; column < row.length;) {
+      const letter = row.charAt(column);
+      let end = column + 1;
+      while (row.charAt(end) === letter) end++;
+      const fill = colours[GLYPH_LETTERS.indexOf(letter)];
+      if (fill) strips.push(`<rect x="${column}" y="${line}" width="${end - column}" height="1" fill="${fill}"/>`);
+      column = end;
+    }
+  });
+  const size = rows.length;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${strips.join('')}</svg>`;
 }
+
+/** Whether a glyph is drawn at the ship's 24 cells rather than the gear's 12. */
+export const fineGlyph = (glyph: Exclude<Glyph, 'item'>): boolean => MAPS[glyph as keyof typeof MAPS]?.length === 24;
 
 /** A node's kind, as its column's kind numbers it: an upgrade, handling, a finish, a perk, an Atheric's own. */
 const NODE_MAPS: readonly (readonly string[])[] = [

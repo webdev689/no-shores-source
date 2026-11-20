@@ -217,3 +217,38 @@ fn a_fitted_module_is_infused_no_higher_than_it_could_fit_it() {
     character.ask(infuse, Here::default(), &dice(0)).expect("infused");
     assert_eq!(character.item(kept).map(|module| module.level), Some(8));
 }
+
+#[test]
+fn a_modules_bought_node_that_no_longer_fits_is_given_back_in_its_own_materials_on_load() {
+    let mut character = Character::starting();
+    let id = carry(&mut character, Kind::Hull, Rarity::Legendary, 20);
+    let mut hull = character.items[&id].0.clone();
+    // A perk column that costs its two materials in different counts, so a swap of them would show.
+    let column = (0..hull.columns().len())
+        .filter(|column| hull.columns()[*column].traits())
+        .find(|column| {
+            let cost = hull.cost_of(*column);
+            cost.fragments > 0 && cost.resource > 0 && cost.fragments != cost.resource
+        })
+        .expect("a perk column that costs both its materials");
+    // A weapon's perk in the hull's perk column, as content changed under a node already bought.
+    let mut layout = vec![Vec::new(); hull.columns().len()];
+    layout[column] = vec!["keen_edge".to_owned()];
+    hull.layout = layout;
+    hull.bought |= hull.node_bit(column, 0).expect("its first node");
+    hull.chosen[column] = 0;
+    let aurem = character.materials.aurem;
+    assert_eq!(character.materials.ship, ShipStock::default(), "nothing held before");
+    let cost = hull.cost_of(column);
+    let kept = crate::old_hands::unfit(&mut character, hull);
+    assert_eq!(character.materials.aurem, aurem + cost.aurem, "its Aurem back");
+    let [first, second] = made_of(Kind::Hull);
+    let back = character.materials.ship;
+    assert_eq!(
+        (back.of(first), back.of(second), back.of(ShipMaterial::Heartwood)),
+        (cost.fragments, cost.resource, cost.essence),
+        "its first material for fragments, its second for the resource, Heartwood for any Essence",
+    );
+    assert_eq!(kept.bought & kept.node_bit(column, 0).unwrap_or(0), 0, "the node unbought");
+    assert_eq!(kept.chosen[column], crate::item::NONE_CHOSEN, "and unchosen");
+}

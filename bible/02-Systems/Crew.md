@@ -88,6 +88,9 @@ Each post changes how it plays in a fight, its officer's strength times (`ship::
 - The gear message's ship part (`GearShip`) carries each officer and the officers offered at the muster, each with
   their grid's columns as an item's are. The crew's asks are 58 to 62: sign on (`column` the faction, `node` the
   offer), station (`item` the officer, `slot` 0 aboard, 1 at their post, 2 ashore), pay off, buy and choose a node.
+- Each officer is shown by their post's emblem framed in their grade: the First Mate's tricorne, the Gunner's powder
+  horn, the Bosun's call, the Carpenter's mallet and chisel, the Lookout's spyglass (`shipGlyphs.ts`). Their card on
+  the crew roster and their row at the muster show it at twice its cells, their own page at four times.
 
 ## Limits
 

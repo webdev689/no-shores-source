@@ -4,6 +4,7 @@
 // in `shipPages.ts`. The gear crate's numbers are taken as they are: its `ship/materials.rs` and `crew/officer.rs`.
 
 import { officerName } from '../combat/companions.ts';
+import type { ShipGlyph } from './shipGlyphs.ts';
 import { LEVEL_BY_XP, LEVEL_MOST } from '../rules/fleetRules.ts';
 import rolled from '../../../content/gear/rolled.json' with { type: 'json' };
 import {
@@ -191,6 +192,8 @@ export function modulePresses(
 
 /** The posts aboard and the grades, by the gear message's numbers; a grade is shown in its rarity's colour. */
 export const POSTS = ['First Mate', 'Gunner', 'Bosun', 'Carpenter', 'Lookout'] as const;
+/** Each post's emblem, by the post's number (`shipGlyphs.ts`). */
+const POST_GLYPHS: readonly ShipGlyph[] = ['first_mate', 'gunner', 'bosun', 'carpenter', 'lookout'];
 const GRADES: Readonly<Record<number, string>> = { 1: 'Able', 2: 'Seasoned', 3: 'Veteran' };
 /** The duties an officer is sent to, in the order the roster offers them, each by its number on the wire. */
 export const DUTIES = [
@@ -204,7 +207,11 @@ export interface OfficerShown {
   readonly id: number;
   readonly name: string;
   readonly post: string;
+  /** Their post's emblem. */
+  readonly glyph: ShipGlyph;
   readonly grade: string;
+  /** Their grade as a rarity's number, which frames them. */
+  readonly rarity: number;
   readonly colour: string;
   readonly level: number;
   readonly toNext: number;
@@ -218,7 +225,9 @@ export function officerShown(officer: GearOfficer): OfficerShown {
     id: officer.id,
     name: officerName(officer),
     post: POSTS[officer.post] ?? '',
+    glyph: POST_GLYPHS[officer.post] ?? 'first_mate',
     grade: GRADES[officer.grade] ?? '',
+    rarity: officer.grade,
     colour: RARITIES[officer.grade]?.colour ?? '',
     level: officer.level,
     toNext: Math.min(1, Math.max(0, officer.toNext)),

@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { SHIP_GLYPHS, SHIP_MAPS, SHIP_PALETTES } from './shipGlyphs.ts';
+import { GLYPH_LETTERS, glyphSvg } from './gearGlyphs.ts';
+import { SHIP_GLYPHS, SHIP_GLYPH_CELLS, SHIP_MAPS, SHIP_PALETTES } from './shipGlyphs.ts';
 
-const LETTERS = 'abcdefgh';
-
-test('each ship glyph is twelve pixels square, drawn only in its palette, and no two alike', () => {
+test('each ship glyph is 24 cells square, drawn only in its palette, and no two alike', () => {
   for (const glyph of SHIP_GLYPHS) {
     const map = SHIP_MAPS[glyph];
-    assert.equal(map.length, 12, glyph);
-    const allowed = new Set(['.', ...LETTERS.slice(0, SHIP_PALETTES[glyph].length)]);
+    assert.equal(map.length, SHIP_GLYPH_CELLS, glyph);
+    const palette = SHIP_PALETTES[glyph];
+    assert.ok(palette.length <= GLYPH_LETTERS.length, `${glyph}: a letter for each colour`);
+    const allowed = new Set(['.', ...GLYPH_LETTERS.slice(0, palette.length)]);
     for (const row of map) {
-      assert.equal(row.length, 12, glyph);
+      assert.equal(row.length, SHIP_GLYPH_CELLS, glyph);
       assert.ok(
         [...row].every((pixel) => allowed.has(pixel)),
         `${glyph}: ${row}`,
@@ -20,11 +21,30 @@ test('each ship glyph is twelve pixels square, drawn only in its palette, and no
   assert.equal(new Set(SHIP_GLYPHS.map((glyph) => SHIP_MAPS[glyph].join(''))).size, SHIP_GLYPHS.length);
 });
 
-test('the rigging is a block on its hook with two falls of line, not a ring: wood, iron and line all drawn', () => {
-  const pixels = SHIP_MAPS.rigging.join('');
-  for (const part of ['b', 'd', 'e']) assert.ok(pixels.includes(part), `part ${part} drawn`);
-  const falls = SHIP_MAPS.rigging
-    .slice(9)
-    .map((row) => [...row].filter((pixel) => pixel === 'b' || pixel === 'c').length);
-  assert.deepEqual(falls, [2, 2, 2], 'two falls of line run down from the block');
+test('a ship glyph is a picture, not a sign: most of its tones are drawn, and its outline goes round it', () => {
+  for (const glyph of SHIP_GLYPHS) {
+    const drawn = SHIP_MAPS[glyph].join('');
+    const tones = new Set(drawn.replaceAll('.', ''));
+    assert.ok(tones.size >= 5, `${glyph} is shaded in ${tones.size} tones`);
+    assert.ok(tones.size >= SHIP_PALETTES[glyph].length - 1, `${glyph} draws its palette`);
+    assert.ok(drawn.replaceAll('.', '').length >= 120, `${glyph} fills its cells`);
+    assert.ok(drawn.includes('a'), `${glyph} is outlined`);
+  }
+});
+
+test('a ship glyph draws as an SVG as large as its map, every run of a tone in its colour', () => {
+  const svg = glyphSvg('hull');
+  assert.match(svg, /viewBox="0 0 24 24"/);
+  const runs = [...svg.matchAll(/x="(\d+)" y="(\d+)" width="(\d+)" height="1" fill="(#\w+)"/g)];
+  const cells = runs.reduce((sum, [, , , width]) => sum + Number(width), 0);
+  assert.equal(cells, SHIP_MAPS.hull.join('').replaceAll('.', '').length, 'every drawn cell, once');
+  for (const [, , , , fill] of runs) assert.ok(SHIP_PALETTES.hull.includes(fill ?? ''), fill);
+});
+
+test('the rigging is shrouds with ratlines across them over their deadeyes, not a ring', () => {
+  const rows = SHIP_MAPS.rigging;
+  const rungs = rows.filter((row) => /b{5,}|c{5,}/.test(row)).length;
+  assert.ok(rungs >= 3, `ratlines rigged across: ${rungs}`);
+  const deadeyes = rows.slice(17).join('');
+  for (const tone of ['f', 'g', 'k']) assert.ok(deadeyes.includes(tone), `deadeyes drawn in ${tone}`);
 });

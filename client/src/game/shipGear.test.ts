@@ -190,6 +190,12 @@ test('an officer shows by name, post and grade, with their duties as station ask
     [shown.name, shown.post, shown.grade, shown.level, shown.duty],
     ['Ada Brine', 'Gunner', 'Seasoned', 3, 'Ashore'],
   );
+  assert.equal(shown.rarity, 2, 'framed in their grade');
+  assert.deepEqual(
+    [0, 1, 2, 3, 4].map((post) => officerShown(officer({ post })).glyph),
+    ['first_mate', 'gunner', 'bosun', 'carpenter', 'lookout'],
+    "each post's own emblem",
+  );
   assert.deepEqual(
     shown.duties.map((duty) => [duty.label, duty.ask.slot, duty.chosen]),
     [
