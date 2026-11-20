@@ -212,12 +212,14 @@ test('a ship at anchor at her roadstead lies with her sails furled; one under wa
   fleet.near([0, 0], 15_000, 100, 0);
   const near = fleet.near([0, 0], 15_000, 100.2, 0.2);
   const drawn = fleet.drawn(near, 1, still, 0, 0.1, 3);
-  const furled = (ship: DrawnShip | undefined) =>
-    ship?.rig
-      .canvas()
+  const furled = (ship: DrawnShip | undefined) => {
+    const rig = ship?.rig;
+    return rig
+      ?.canvas()
       .every((points, index) =>
-        points.every((point, place) => Math.abs(point - (ship.rig.sails[index]?.stowed[place] ?? 0)) < 1e-3),
+        points.every((point, place) => Math.abs(point - (rig.sails[index]?.stowed[place] ?? 0)) < 1e-3),
       );
+  };
   const [lying, under] = [1, -1].map((side) => drawn.find((ship) => Math.sign(ship.place.x) === side));
   assert.ok(lying && under, 'both drawn');
   assert.equal(furled(lying), true, 'at anchor: furled');
