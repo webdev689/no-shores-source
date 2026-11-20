@@ -209,6 +209,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
   to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
   writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
+- **#96, the kit's first review**, a draft from branch `ccr-800481d9-kbbd62-kit`, waits on the owner's yes: a fidelity
+  review (`workers/fidelity-review.sh`, a fixed brief) with a CI check that fails a pull request changing a decision
+  without its verdict, as the owner chose for a rule broken three times in one task; workers' worktrees made ready to
+  test; the observation log kept on the branch `toolkit-data`, saved by a git merge so a parallel session's save is
+  kept, with a test check-tools runs; `cargo xtask check` naming the commit it checked; and Toolkit rows for web research
+  and for measuring text before sizing a box. Tested offline: the full check, check-tools with a headless worker, the
+  save's test, and a fidelity review of #95, whose eight findings are fixed or answered there. Open for the owner, in
+  its description: where the claude-mem store lives (an archive, kept out of git), whether CI should require the verdict
+  to name the pull request's head (a new review after each push), and making the check required on GitHub.
 - **#74, the prologue**, is merged into `main` (`bd54d43`). Every call inside the beats is in
   [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
   sound.
@@ -343,14 +352,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
   fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
-- **The kit's observation log** is in `~/toolkit-data/task-observer`, which a container loses at its end, so its open
-  observations are kept here too. The first review's four changes to the instructions, and one observation to close
-  as already fixed, are in that session's report only, waiting on the owner's yes. Open in the log, none reviewed yet:
-  WebFetch reads JavaScript pages such as Bungie's as empty shells, which headless Chromium reads whole; a box meant to
-  fit a text was sized from a guessed glyph width before it was measured in the game's face; building an approved
-  design drifted past it (thirds put on the target plate, and its rule paraphrased into another), caught by review; a
-  worktree's tests need the ignored `generated/`, `target/` and `client/public/` linked in; and a claim of "tested"
-  must rest on runs made after the last change it covers.
+- **The kit's observation log** has had its first review: all five observations are actioned, their fixes on #96,
+  waiting on the owner's merge. The log is on the orphan branch `toolkit-data` (#96's `toolkit-data.sh`; until #96
+  merges, its restore and save are on that branch only). The earlier review's four changes to the instructions, and one
+  closing, were lost with their container; only that session's report has them.
 
 ## Next
 
