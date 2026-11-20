@@ -223,9 +223,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   if (flow.mode === 'loading') arrive();
   if (story) {
-    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land, world };
-    const more = { rmbText, movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, music };
-    const lands = { drawersOn, terrainFor, home: { landmass, drawers }, closeSource, ambience };
+    const game = { gpu, canvas, hudRoot, hud, scene, figures: figureView, footView, forge, firstPerson, land };
+    const more = { movement, walker, input, roomModule, marks: new MarkView(gpu), link, sloop, music };
+    const lands = { home: { landmass, drawers }, closeSource, ambience };
     story.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
   }
 

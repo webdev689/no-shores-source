@@ -173,8 +173,9 @@ ships within 1,000 m, the fight, whether she lies off a coast to land on, and th
   40 bars, 100 s round.
 - **The story's songs**, one theme told through six songs ([[Prologue]]) for strings, harp, flute, fiddle, horns, low
   brass, a choir, bells and a celesta. The theme is D, A, B flat, A: a rise of a fifth and a sigh from the minor sixth.
-  - The title, 79 in 4/4, 91 s round: first light, the theme on the horn over the harp, its answer on the flute over
-    the cello, then the horn and the fiddle with the choir, the brass and the drums, and the title's quiet bars.
+  - The title, 79 in 4/4, 67 s round: first light for the intro's 6 s over the cloud, then the theme on the horn and
+    the fiddle with the choir, the brass and the drums as the camera goes down to Saltmere and the title rises; then,
+    as the game waits, its answer on the flute over the cello, and the title's quiet bars.
   - The storm, 112: the low strings drive in eighths with the theme's sigh in them, the theme slowed on the horns.
   - The calm, 66: the theme on one flute, its answer on the fiddle.
   - The ram, 96, played once: the Boarding's E against F, swelling bar by bar, cut by the crash.

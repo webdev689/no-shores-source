@@ -1,6 +1,5 @@
 // The story made from the game's own parts once they have loaded: the stage's drawers, voices, sounds and screen, the
-// Brig's and Thule's Frigate's models beside the Sloop's, the islands the intro flies over, the storm's place off
-// Saltmere, the player's look as kept, and the director that runs it all from the beat asked for. Thule's Frigate is
+// Brig's and Thule's Frigate's models beside the Sloop's, the storm's place off Saltmere, the player's look as kept, and the director that runs it all from the beat asked for. Thule's Frigate is
 // drawn only from the sea fight on, so its view is made the first time a beat draws it: a player who has played the
 // story through and sees only the intro never makes it.
 import cast from '../../../../content/story/cast.json' with { type: 'json' };
@@ -26,21 +25,18 @@ import { castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
 import { Overheads } from '../../speech/overheads.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
-import type { TerrainData } from '../../terrain/terrainView.ts';
 import type { FigureView } from '../figureView.ts';
 import type { FootView } from '../footView.ts';
 import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
-import { type Landmass, openLandmass } from '../landmass.ts';
+import type { Landmass } from '../landmass.ts';
 import type { GameScene } from '../scene.ts';
 import type { Ambience as WorldAmbience } from '../audio/ambience/ambience.ts';
 import type { MusicDirector } from '../audio/music/director.ts';
 import { worldOutput } from '../uiSounds.ts';
-import type { WorldData } from '../worldData.ts';
 import type { BeatName } from './beat.ts';
 import { Brig } from './brig.ts';
 import { Epilogue } from './epilogue.ts';
-import { Islands } from './islands.ts';
 import { FIRST_LOOK, armouredDress, keptLook, type Look } from './look.ts';
 import { Nameplate } from './nameplate.ts';
 import { Objective } from './objective.ts';
@@ -65,8 +61,6 @@ export interface StoryGame {
   readonly forge: Cards;
   readonly firstPerson: FirstPerson;
   readonly land: LandWorker;
-  readonly world: WorldData;
-  readonly rmbText: string | null;
   readonly movement: MovementRules;
   readonly walker: Walker;
   readonly input: Input;
@@ -76,8 +70,6 @@ export interface StoryGame {
   readonly link: AccountLink | null;
   readonly sloop: ShipView;
   readonly home: { readonly landmass: Landmass; readonly drawers: LandDrawers };
-  readonly drawersOn: (landmass: Landmass) => LandDrawers;
-  readonly terrainFor: (landmass: Landmass) => TerrainData;
   readonly closeSource: (left: number, top: number, step: number, size: number) => ReturnType<LandWorker['ground']>;
   readonly music: MusicDirector;
   /** The game's own soundscape. */
@@ -121,13 +113,6 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
         return frigateView;
       },
     };
-    const islands = new Islands({
-      open: (id) => openLandmass(game.land, game.world, game.rmbText, id),
-      scene,
-      drawersOn: game.drawersOn,
-      terrainFor: game.terrainFor,
-      home: game.home,
-    });
     const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
     took(() => birds.destroy());
     took(() => flames.destroy());
@@ -165,8 +150,8 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       cast: readCast,
       scenes: readScenes,
       roster: game.roster,
-      landDrawers: () => islands.drawers,
-      landmass: () => islands.landmass,
+      landDrawers: () => game.home.drawers,
+      landmass: () => game.home.landmass,
       keepClose: (point) => scene.keepClose(point, game.closeSource, () => undefined),
     });
     const sailing = new Sailing({
@@ -211,7 +196,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       gpu,
       drawn: wreckDrawn,
     };
-    const prologue = new Prologue(story, islands, nameplate, wreckContext, from);
+    const prologue = new Prologue(story, nameplate, wreckContext, from);
     const leave = () => {
       stage.leave();
       prologue.leave();

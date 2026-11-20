@@ -15,6 +15,7 @@ import type { Lying } from '../ships/deck.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import type { HullMask } from '../water/hullMask.ts';
+import type { FightHeard } from './audio/ambience/seaFight.ts';
 import type { Shot } from './camera.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import { gearScreenOpen } from './gearScreen.ts';
@@ -104,6 +105,11 @@ export class SeaCombat {
   /** Whether the view has come back up after the fight: the sea takes over. */
   get done(): boolean {
     return this.going === -1 && this.down === 0;
+  }
+
+  /** The fight's events this frame and its ships as they lie, for the sea's sounds. */
+  get heard(): FightHeard {
+    return { events: this.naval.heard, view: this.last };
   }
 
   /** Where the fight left the player's Sloop, and her heading. */

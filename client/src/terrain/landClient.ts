@@ -42,7 +42,13 @@ export type LandRequest =
       readonly time: number;
       readonly captains?: readonly CaptainAt[];
     }
-  | { readonly kind: 'fight-step'; readonly orders: FightOrders; readonly time: number; readonly ticks: number }
+  | {
+      readonly kind: 'fight-step';
+      readonly orders: FightOrders;
+      readonly time: number;
+      readonly ticks: number;
+      readonly wind?: readonly [number, number];
+    }
   | { readonly kind: 'fight-end' };
 
 /** A ship after her ticks, and how she lies. */
@@ -99,7 +105,8 @@ export interface LandWorker {
   /** A fight begun round the ship over the open landmass (with `captains`, those set upon her), stepped by the
    *  player's orders, and ended. */
   fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): Promise<FightView>;
-  fightStep(orders: FightOrders, time: number, ticks: number): Promise<FightView>;
+  /** A step of the fight in the world's wind, or in the weather's `wind` (m/s east and south) a story tells it. */
+  fightStep(orders: FightOrders, time: number, ticks: number, wind?: readonly [number, number]): Promise<FightView>;
   fightEnd(): Promise<void>;
 }
 
@@ -163,7 +170,8 @@ export function startLandWorker(): LandWorker {
     },
     fightBegin: async (ship, seed, time, captains) =>
       fought(await ask({ kind: 'fight-begin', ship, seed, time, ...(captains ? { captains } : {}) })),
-    fightStep: async (orders, time, ticks) => fought(await ask({ kind: 'fight-step', orders, time, ticks })),
+    fightStep: async (orders, time, ticks, wind) =>
+      fought(await ask({ kind: 'fight-step', orders, time, ticks, wind })),
     fightEnd: async () => {
       await ask({ kind: 'fight-end' });
     },
