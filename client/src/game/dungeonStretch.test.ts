@@ -141,3 +141,38 @@ for (const [form, size, rise] of [
     assert.ok(boss && Math.abs(boss.place.origin[2] - (size[2] + rise)) < 1e-9, 'from the top of the curve');
     assert.ok(boss.place.origin[2] + boundsOf(layout, boss.module)[2] >= HEAD_M);
   });
+
+for (const [form, size] of [
+  ['vault', [4, 3, 4]],
+  ['dome', [4, 4, 4.4]],
+] as const)
+  test(`under a ${form} a pillar's capital meets the curve where it comes lowest over it, its shaft stretched to it`, () => {
+    // A pillar on the room's inner corner nearest its north-west, off the curve's top.
+    const layout = hall(form === 'vault' ? 'halls' : 'sanctum', form, size, [[6.4, 6.4, size[2]]]);
+    const height = ceilingHeights(layout);
+    const placed = kitPlacements(layout, FULL_PACKS, []);
+    const [base, shaft, capital] = ['pillar.base', 'pillar.shaft', 'pillar.capital'].map((piece) => {
+      const [laid] = named(placed, piece);
+      assert.ok(laid, piece);
+      return laid;
+    });
+    assert.ok(base && shaft && capital);
+    const bounds = boundsOf(layout, capital.module);
+    const top = capital.place.origin[2] + bounds[5];
+    // Over the four cells round the corner, so the lowest of the curve over the capital's whole plan.
+    let lowest = Infinity;
+    for (let step = 0; step <= 20; step++)
+      for (let across = 0; across <= 20; across++) {
+        const x = 6.4 + bounds[0] + ((bounds[3] - bounds[0]) * step) / 20;
+        const y = 6.4 + bounds[1] + ((bounds[4] - bounds[1]) * across) / 20;
+        const cell = Math.floor(y / 3.2) * layout.columns + Math.floor(x / 3.2);
+        lowest = Math.min(lowest, height(cell)(x, y));
+      }
+    assert.ok(top <= lowest + EPS, 'never through the ceiling');
+    assert.ok(top >= lowest - 0.02, `at the curve: ${top.toFixed(3)} m under ${lowest.toFixed(3)} m`);
+    assert.ok(top > size[2] + 0.5, 'risen with the curve over the wall’s head');
+    assert.deepEqual(shaft.place.stretch, {
+      from: boundsOf(layout, base.module)[5],
+      to: capital.place.origin[2] + bounds[2],
+    });
+  });

@@ -442,8 +442,8 @@ test('a sconce at every torch holds its flame, and the arches stand on the porta
   });
 });
 
-test('a pillar’s base stands on the floor, its capital’s top at the pillar’s top, its shaft stretched between', () => {
-  let pillars = 0;
+test('a pillar’s base stands on the floor, its capital’s top at the pillar’s top or a curve over it, its shaft stretched between', () => {
+  let [pillars, risen] = [0, 0];
   each((layout, placed) => {
     layout.pillars.forEach(([x, y, height]) => {
       const here = placed.filter(({ place }) => place.origin[0] === x && place.origin[1] === y);
@@ -452,8 +452,12 @@ test('a pillar’s base stands on the floor, its capital’s top at the pillar�
       );
       if (!base || !shaft || !capital) return;
       const capitalBounds = boundsOf(FULL_PACKS, capital.module);
+      const top = capital.place.origin[2] + capitalBounds[5];
+      const form = layout.rooms[layout.cells[capital.cell] ?? -1]?.ceiling;
       assert.equal(base.place.origin[2], 0);
-      assert.ok(Math.abs(capital.place.origin[2] + capitalBounds[5] - height) < EPS);
+      if (form === 'flat') assert.ok(Math.abs(top - height) < EPS, 'under a flat ceiling at the pillar’s top');
+      else assert.ok(top >= height - EPS, `under a ${form ?? 'corridor'} at the curve over it`);
+      risen += top > height + 0.1 ? 1 : 0;
       assert.deepEqual(shaft.place.stretch, {
         from: boundsOf(FULL_PACKS, base.module)[5],
         to: capital.place.origin[2] + capitalBounds[2],
@@ -461,7 +465,7 @@ test('a pillar’s base stands on the floor, its capital’s top at the pillar�
       pillars++;
     });
   });
-  assert.ok(pillars > 20);
+  assert.ok(pillars > 20 && risen > 0, `${pillars} pillars, ${risen} risen under a curve`);
 });
 
 test('a landmark’s cells and solids, turned as the rules turn them, are the layout’s own', () => {

@@ -483,11 +483,14 @@ function fittings(site: Site): void {
     const door = `door.${variant(site, cell, `door.${side}`, 2)}`;
     put(site, cell, [[door, { origin: [...wallPoint(layout, cell, side), 0], turns: ((side + 3) % 4) as Turns }]]);
   }
-  layout.pillars.forEach(([x, y, height], index) => {
+  layout.pillars.forEach(([x, y], index) => {
     const cell = cellAt(layout, x, y);
     const [base, cap] = [pieceOf(site, cell, 'pillar.base'), pieceOf(site, cell, 'pillar.capital')];
     if (!base || !cap) return;
-    const capAt = height - cap.bounds[5];
+    // A pillar stands on a corner: its capital's top where the ceiling of any cell round it comes lowest over it.
+    const over = planOf(cap, { origin: [x, y, 0], turns: 0 });
+    const capAt =
+      Math.min(...cellsUnder(layout, over).flatMap((under) => heightsOver(site, under, over))) - cap.bounds[5];
     const [from, to] = [base.bounds[5], capAt + cap.bounds[2]];
     const laid =
       to > from &&
