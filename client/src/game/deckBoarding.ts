@@ -108,7 +108,7 @@ export class Boarding {
       },
       (error: unknown) => {
         [this.starting, this.refused] = [null, boarder];
-        console.error('the fight on her deck did not stand', error);
+        console.error('the fight on its deck did not stand', error);
       },
     );
   }
@@ -138,11 +138,10 @@ export class Boarding {
     const { fight, captain, frame } = shown;
     const left = fight.holdLeft;
     const take = fight.take;
-    if (left === null)
-      return { place: captain.name, line: 'Aboard her: her crew stands to meet you', hints: frame.hints };
+    if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints: frame.hints };
     // The take on one line under her name, as the place's line holds it; the minute left with the key that ends it.
-    const line = take ? `Her hold: ${holdWords(take)}` : 'Her hold is open';
-    return { place: 'Her deck is yours', line, hints: [`E back aboard your ship · ${left} s left`, ...frame.hints] };
+    const line = take ? `Its hold: ${holdWords(take)}` : 'Its hold is open';
+    return { place: 'Its deck is yours', line, hints: [`E back aboard your ship · ${left} s left`, ...frame.hints] };
   }
 
   /** The fight on foot on her deck while the player plays there, for the display's respawn. */

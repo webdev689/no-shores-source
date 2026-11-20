@@ -98,7 +98,7 @@ test('while her guns are laid the card is on the captain where they fall, as DFO
   assert.equal(model.card?.name, 'Pirate Brig', 'the far one laid on, not the nearer Sloop');
 });
 
-test("the broadside warning over the sight names the nearest captain running out her guns, as DFO's warning does", () => {
+test("the broadside warning over the sight names the nearest captain running out its guns, as DFO's warning does", () => {
   const quiet = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(quiet.warn, null, 'none while no battery is run out');
   const running = {

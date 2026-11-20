@@ -289,13 +289,13 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   room tells it), a captain's colours struck ("The Tithe Brig's colours are down: …"), the boarding ("Boarders away:
   the Tithe Brig's crew stands to meet them."), each piece of what floats gathered and what it held ("Gathered a chest:
   a Rare Vestige, an Ammo box.", "an Atheric Vestige"; what found no room, "nothing you had room for"), and washing up
-  ("Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.", or "Beaten aboard her: …").
+  ("Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.", or "Beaten aboard the ship: …").
   Washed up, the fight's view goes back up, the ship lies where the room moored her, and once the landmass of that
   port city is open the player walks into its social space behind the veil, in the same words ("You washed up at
   Sunspire; your ship lies at its roadstead."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel
   shows her hull, canvas and men (men only once her build has a crew) as the sea keeps them, her voyage's state under
-  "Now", and a Repair part: R asks for her repair, which the panel shows with its seconds left ("Repairing her: 13 s
-  left"), "She is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the rules' own
+  "Now", and a Repair part: R asks for its repair, which the panel shows with its seconds left ("Repairing it: 13 s
+  left"), "The ship is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the rules' own
   reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's meeting reach
   and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well, which the
   page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that

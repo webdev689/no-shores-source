@@ -3,7 +3,7 @@
 // stern, port and starboard either side, each side filling as it reloads, glowing gold where the look lays it, brass-edged
 // once loaded, flashing as it comes ready, and the side a blow came from flashed); the TARGET CARD under the compass
 // (her name, class and distance, her hull and sail bars, her state and the key that boards her); and the TALLY of her
-// last volley; and the WARNING over the sight while a battery is run out at her. A readout, never a window: made once,
+// last volley; and the WARNING over the sight while a battery is run out at the player's ship. A readout, never a window: made once,
 // updated each frame, pressed never.
 import { UNDER_COMPASS } from './compass.ts';
 import { HALO, TONES } from './tones.ts';
@@ -47,7 +47,7 @@ export interface SeaFightModel {
     readonly holed: number;
     readonly rig: number;
   } | null;
-  /** DFO's warning over the sight while a captain's battery is run out at her, its words; none else. */
+  /** DFO's warning over the sight while a captain's battery is run out at the player's ship, its words; none else. */
   readonly warn: string | null;
 }
 

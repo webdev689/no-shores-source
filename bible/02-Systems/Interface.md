@@ -116,9 +116,9 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
   the status line is a chip; the menu is a window under a header. At sea, every surface wears its role:
   - sailing: the sea bar (window, rails), the status line (chip), the place line and the hints (the on-foot words,
-    outlined), the dock or landing offer and Take the helm (primary); a sighting's hostile marks wear her rank's colour
+    outlined), the dock or landing offer and Take the helm (primary); a sighting's hostile marks wear its rank's colour
     and emblem, and the sighting's words stand in the status line;
-  - the fight: her plate and the card (panel), the rose's sides (chip), the bars (track and meter), the tally and the
+  - the fight: the player's plate and the card (panel), the rose's sides (chip), the bars (track and meter), the tally and the
     broadside warning over the sight (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
     over her masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line,
     its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;

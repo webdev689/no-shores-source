@@ -24,7 +24,7 @@ test('out of a fight the compass marks every other player’s ship in bone and e
   assert.deepEqual(seaShipMarks(null, null), [], 'out of a room, none');
 });
 
-test('in a fight it marks its captains: red while she would take the player, grey once her colours are down, none going down', () => {
+test('in a fight it marks its captains: red while it would take the player, grey once its colours are down, none going down', () => {
   const captains = [
     captain(100, 0, 'afloat', true),
     captain(0, 100, 'afloat', false),

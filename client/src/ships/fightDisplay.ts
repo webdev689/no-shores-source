@@ -80,7 +80,7 @@ export function fightDisplay(
 }
 
 /** The panel's lines (the fight's `lines`) that DFO shows as notices (enhancedNotice.js's toasts): its messages. Each
- *  captain's hurts are her plate and the card, the lay is the sight's aim line and the broadside the warning over the
+ *  captain's hurts are its plate and the card, the lay is the sight's aim line and the broadside the warning over the
  *  sight, so none of them repeats as text. */
 export function fightNotices(lines: readonly string[], view: Pick<FightView, 'captain' | 'others'>): string[] {
   // shortcut: the fight's lines are told apart by the words editor/fighting.ts writes them in (pinned by its tests);

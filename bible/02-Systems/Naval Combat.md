@@ -238,8 +238,8 @@ Pass]]) with Claude's numbers:
 - **Striking, and boarding.** A captain who strikes lies hove to with her colours down. For 90 s any player in the
   fight may board her: their ship within 30 m of hers, both under 2 m/s, and her deck holding a crew (the pirates have
   no deck Boss, so their Boss is not boarded). With no one aboard by then she is scuttled
-  (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player her
-  colours are down and to come alongside, naming her ("The Tithe Brig's colours are down: …"); E asks to board her
+  (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player its
+  colours are down and to come alongside, naming it ("The Tithe Brig's colours are down: …"); E asks to board it
   when the sea's snapshot says the player may (`may_board`, from `Fights::alongside`, the rule a boarding is taken by;
   the fight's controls let E through), and the sea's line says "Boarders away: the Tithe Brig's crew stands to meet
   them." as the boarder goes from their helm to her deck.
@@ -277,7 +277,7 @@ Pass]]) with Claude's numbers:
   does off walls. In first person no other figure's card stands nearer the eye than a metre, so a foe in a melee never
   fills the view (`cardStand`'s `nearest`, on land too). While she holds the player the fight's keys and
   pointer are the foot's.
-  Won, the display says "Her deck is yours" over her hold's take as the room laid it ("Her hold: 2 crates, a chest"),
+  Won, the display says "Its deck is yours" over its hold's take as the room laid it ("Its hold: 2 crates, a chest"),
   and the keys begin "E back aboard your ship · 45 s left"; E or the minute's end, the room has the boarder
   back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up (below). On her deck
   every key but E, Enter (respawn), the menu's and Escape is the fight's on foot.
@@ -358,7 +358,7 @@ left click holds fire, the wheel changes shot, and `C` braces.
 
 Her ship is drawn in her hull and her faction's colours ([[Sailing]], "Her look"), and the water cuts her footprint
 as it does the player's. The balls are small lit spheres, the lay is drawn over the water as the game's fight draws
-it, and the fight looks as "How it looks" says. Her own hull, canvas, crew and guns are the readout's plate and rose,
+it, and the fight looks as "How it looks" says. The player's own hull, canvas, crew and guns are the readout's plate and rose,
 beside the card and the tally, as at sea ("How it looks", "The readout"). The panel shows a line for each captain
 within 400 m (nearest first, her mode in plain words: closing, cruising, running, struck, going down), DFO's messages naming each ship by
 her own name, and "Broadside from the Pirate Brig: C to brace." for the nearest captain whose guns stand run out. A
@@ -443,7 +443,7 @@ captain's number comes with her in the view, so one leaving the fight never move
   the compass on the ship the look is on (the captain nearest where her laid guns fall, else the nearest), and her volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves her own hurts and guns to it. While a captain afloat
   stands with her guns run out, DFO's warning stands over the sight: "Broadside from the Pirate Brig - C: brace". At
-  sea the panel's lines are not written over the world: each captain's hurts are her plate and the card, the lay the
+  sea the panel's lines are not written over the world: each captain's hurts are its plate and the card, the lay the
   sight's aim line and the broadside the warning, and DFO's messages ("The Tithe Sloop surrenders!") stand as notices
   at the top right; the hints are the fight's keys alone. On a struck ship's deck it gives way to the fight on foot's
   display.

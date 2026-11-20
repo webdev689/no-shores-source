@@ -65,21 +65,21 @@ export interface WordsOf {
 /** The lines the sea's word since it was last taken says to the player. */
 export function linesOf(told: readonly (readonly number[])[], naval: readonly NavalEvent[], words: WordsOf): string[] {
   const lines: string[] = [];
-  const her = (ship: number) => {
+  const whose = (ship: number) => {
     const name = words.nameOf(ship);
-    return name ? `the ${name}’s` : 'her';
+    return name ? `the ${name}’s` : 'its';
   };
   const capital = (line: string) => line.charAt(0).toUpperCase() + line.slice(1);
   for (const event of naval) {
     if (event.kind === 'Struck')
-      lines.push(capital(`${her(event.ship)} colours are down: come alongside and press E to board her.`));
-    if (event.kind === 'Boarding') lines.push(`Boarders away: ${her(event.ship)} crew stands to meet them.`);
+      lines.push(capital(`${whose(event.ship)} colours are down: come alongside and press E to board it.`));
+    if (event.kind === 'Boarding') lines.push(`Boarders away: ${whose(event.ship)} crew stands to meet them.`);
   }
   for (const numbers of told) {
     const [code, , first = 0, second = 0, third = 0, fourth = 0] = numbers;
     if (code === TOLD.WASHED_UP) {
       const port = words.ports[first] ?? 'the nearest port city';
-      const why = second === 1 ? 'Your ship went down' : 'Beaten aboard her';
+      const why = second === 1 ? 'Your ship went down' : 'Beaten aboard the ship';
       lines.push(`${why}: ${washedUpWords(port).replace(/^You/, 'you')}`);
     } else if (code === TOLD.HELD) {
       lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: ${heldWords(second, third, fourth)}.`);
@@ -90,7 +90,7 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
   return lines;
 }
 
-/** Their ship's repair as Manage offers it: whether she is whole, and the seconds a repair under way has left. */
+/** Their ship's repair as Manage offers it: whether it is whole, and the seconds a repair under way has left. */
 export interface RepairShown {
   readonly whole: boolean;
   readonly left: number;
@@ -160,8 +160,8 @@ export class SeaWord {
   /** The repair's line for Manage's panel. */
   repairWords(repair: RepairShown | null): string {
     if (!repair) return 'Repairs are made at sea, by a port city';
-    if (repair.left > 0) return `Repairing her: ${Math.ceil(repair.left)} s left`;
+    if (repair.left > 0) return `Repairing it: ${Math.ceil(repair.left)} s left`;
     const reach = `${Number((this.facts.repairReachM / 1000).toFixed(1))} km`;
-    return repair.whole ? 'She is whole' : `Repair: free, lying at rest within ${reach} of a port city`;
+    return repair.whole ? 'The ship is whole' : `Repair: free, lying at rest within ${reach} of a port city`;
   }
 }
