@@ -219,7 +219,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   it stood. A wave has its own leader and break, but no breaking point: it comes on whatever it loses. It never stands
   again once fallen. It comes once each time the garrison holds its territory, but not while a wave of before stands,
   not with no player standing and seen to hunt, and only while the room's living foes leave room for all of it; a
-  garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's.
+  garrison sent away calls none. No two places a garrison gives ground to stand within 1 m of each other or of a wave's
+  where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
+  for them all the last go on their ring regardless.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
   its beat begun again from there, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.

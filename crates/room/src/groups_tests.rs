@@ -3,7 +3,7 @@
 //! and a mission's or a dungeon's garrison giving ground as one encounter, falling back halfway to its last stand, then
 //! gathering there, a mission's reserve coming in waves.
 
-use super::garrison_tests::{node, run, stand_player};
+use super::garrison_tests::{node, run, section, sloped, stand_player};
 use super::groups::Stage;
 use super::leash_tests::whole;
 use super::*;
@@ -549,4 +549,41 @@ fn a_wave_comes_on_whatever_it_loses_and_a_shooter_leader_stands_behind_no_scree
     let leader = dungeon.garrison[2].leader.unwrap();
     assert_eq!(dungeon.foes[&leader].brain.role(), Role::Archer);
     assert!(!dungeon.foes[&leader].brain.orders().screened, "a shooter leads from where it shoots");
+}
+
+#[test]
+fn a_last_stand_walled_into_a_corridor_still_gives_every_foe_a_place_of_its_own() {
+    for id in NODES {
+        let open = node(NodeKind::Dungeon, id);
+        let stand = open.encounter.as_ref().unwrap().last_stand;
+        // Two walls 2.5 m apart along the last stand's east-west line, so the rings round it fall on a narrow floor.
+        let wall = |south: f64, north: f64| movement::Block {
+            min_x: stand[0] - 30.0,
+            min_y: south,
+            max_x: stand[0] + 30.0,
+            max_y: north,
+            top: stand[2] + 40.0,
+            bottom: stand[2] - 60.0,
+        };
+        let blocks = vec![wall(stand[1] - 9.0, stand[1] - 1.25), wall(stand[1] + 1.25, stand[1] + 9.0)];
+        let mut room = Room::garrisoned(sloped(), blocks, section(), NodeKind::Dungeon, (id, None));
+        let player = room.join().unwrap();
+        stand_player(&mut room, player, [0.0, 160.0]);
+        let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+        let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+        let mut fallen = 0;
+        while (stood - fallen) * 2 > stood {
+            kill(&mut room, order[fallen]);
+            fallen += 1;
+        }
+        run(&mut room, 1);
+        let placed: Vec<[f64; 3]> =
+            room.foes.values().filter(|foe| !foe.fighter.dead()).map(|foe| foe.brain.home().unwrap().at).collect();
+        for (nth, first) in placed.iter().enumerate() {
+            for second in &placed[nth + 1..] {
+                let apart = apart([first[0], first[1]], [second[0], second[1]]);
+                assert!(apart >= 0.99, "{id}: two of {} places {apart:.2} m apart", placed.len());
+            }
+        }
+    }
 }

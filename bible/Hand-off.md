@@ -239,21 +239,21 @@ Where the work stands now, for the next session. Each session rewrites this note
   `ccr-800481d9-kbbd62`, waits on the owner's yes ([[Foes Fight in Groups That Lead, Break and Give Ground, After
   Bungie]]; Claude's calls in [[Foe Groups as Claude Builds Them]]): every garrison group's leader, whose fall breaks
   the rest (to cover, or running or huddling in the open, one raging); a group's breaking point at half, defending its
-  post, a standoff lasting a foe's patience; a mission's or a dungeon's garrison falling back halfway at three
-  quarters standing and gathering at its last stand at half; the Grey Tithe's leader screened behind a shield-bearer
-  of its lower ranks; and a mission's two waves, hunting the players. No blurbs pop over foes, as the owner asked.
-  Tested offline: the full check, 31 new tests (each rule broken once and seen to fail), fidelity reviews, the
-  comprehensive audit's fixes and a simulation of 72 scripted fights. Left for the owner, in its description: a
-  screened leader, Corvane among them, holding back while its lower ranks fight before it; a wave the room's limit has
-  no room for not coming later; whether "no blurbs" covers the plate's alert mark too (nothing is added to it). Not yet
-  seen: a group fight played by hand on a real GPU.
-- **#107, the audit's fixes to #95 and #96**, a draft from branch `ccr-800481d9-kbbd62-audit`, waits on the
-  owner's yes: the cone's plate goes to the foe whose body the crosshair is on, the nearest of them, measured with its
-  breadth; a plate fading lifts none over it; plates are kept hidden for their next showing; a word pushed down clear
-  of a plate stays down ([[Plates as Claude Shows Them]]). The log's save keeps lines both sessions appended and moves
-  on a number both took, and restores once a container; the fidelity review refuses an empty range; CI finds a
-  verdict anywhere in its section; the check names its own checkout's commit; the log is saved last at a session's
-  end. Tested offline: the full check, and each fix's test seen to fail without it.
+  post, a standoff lasting a foe's patience; a mission's or a dungeon's garrison falling back halfway at three quarters
+  standing and gathering at its last stand at half; the Grey Tithe's leader screened behind a shield-bearer of its lower
+  ranks; and a mission's two waves, hunting the players. No blurbs pop over foes, as the owner asked. Tested offline:
+  the full check, 32 new tests (each rule broken once and seen to fail), fidelity reviews, the comprehensive audit's
+  fixes and a simulation of 72 scripted fights. Left for the owner, in its description: a screened leader holding back
+  while its lower ranks fight before it; a wave the room's limit has no room for not coming later; whether "no blurbs"
+  covers the plate's alert mark too (nothing is added to it). Not yet seen: a group fight played by hand on a real GPU.
+- **#107, the audit's fixes to #95 and #96**, a draft from branch `ccr-800481d9-kbbd62-audit`, waits on the owner's yes:
+  the cone's plate goes to the foe whose body the crosshair is on, the nearest of them, measured with its breadth; a
+  plate fading lifts none over it; plates are kept hidden for their next showing; a word pushed down clear of a plate
+  stays down (its calls are recorded as Claude's in a note this pull request adds, "Plates as Claude Shows Them"). The
+  log's save keeps lines both sessions appended and moves on a number both took, and restores once a container; the
+  fidelity review refuses an empty range; CI finds a verdict anywhere in its section; the check names its own checkout's
+  commit; the log is saved last at a session's end. Tested offline: the full check, and each fix's test seen to fail
+  without it.
 - **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
   none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
   places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
