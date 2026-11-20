@@ -71,3 +71,12 @@ pub fn stand_at(name: &str, socket: &str, at: [f64; 2], level: f64, facing: [f64
         .collect();
     Some(Stood { name: name.to_owned(), solids: solids(number, foot, turn), sockets })
 }
+
+/// Stands module `name` so that its `socket` lands on `point` (east, south, height) facing `facing`: a banner by the
+/// bracket it hangs from, a sign by its fixing.
+#[must_use]
+pub fn stand_by_socket(name: &str, socket: &str, point: [f64; 3], facing: [f64; 2]) -> Option<Stood> {
+    let probe = stand_at(name, socket, [0.0, 0.0], 0.0, facing)?;
+    let (at, _) = probe.socket(socket)?;
+    stand_at(name, socket, [point[0] - at[0], point[1] - at[1]], point[2] - at[2], facing)
+}

@@ -7,6 +7,7 @@
 //!
 //! Places are given in the hub's frame: metres seaward of the plaza's middle and metres across it (`Frame::at`).
 
+mod adorn;
 mod courts;
 mod hall;
 mod harbour;
@@ -109,6 +110,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
     courts::ranges(frame, &mut laid);
     walks::beacon_walk(ground, frame, &mut laid);
     hall::hall(frame, &mut laid);
+    adorn::adorn(frame, &mut laid);
     let spawns = SPAWNS_ACROSS_M.iter().map(|&across| frame.at(SPAWN_TOWARD_M, across)).collect();
     Social {
         bounds,
