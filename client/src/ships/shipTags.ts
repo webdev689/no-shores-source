@@ -313,17 +313,20 @@ function tagMasts(
   // What hangs off a mast's spars, a gaff's peak block or a boom's end, goes with them: found by a grid of cells
   // `HUNG_M` wide, each holding the mast of a spar point in it.
   const cellOf = (point: Point) => point.map((value) => Math.floor(value / HUNG_M));
-  const sparCells = new Map<string, number>();
+  // A cell's key as one number: a ship is well under 1000 cells (300 m) every way, so 1024 apart never collide.
+  const keyOf = (x: number, y: number, z: number) => ((x + 512) * 1024 + (y + 512)) * 1024 + (z + 512);
+  const sparCells = new Map<number, number>();
   for (const piece of rigging) {
     const mast = view.getUint8((piece[0] ?? 0) * VERTEX_BYTES + MAST_BYTE) - 1;
-    if (mast >= 0) for (const vertex of piece) sparCells.set(cellOf(pointOf(vertex)).join(), mast);
+    if (mast >= 0)
+      for (const vertex of piece) sparCells.set(keyOf(...(cellOf(pointOf(vertex)) as [number, number, number])), mast);
   }
   const hungFrom = (point: Point) => {
     const [x = 0, y = 0, z = 0] = cellOf(point);
     for (const along of [-1, 0, 1])
       for (const across of [-1, 0, 1])
         for (const up of [-1, 0, 1]) {
-          const mast = sparCells.get([x + along, y + across, z + up].join());
+          const mast = sparCells.get(keyOf(x + along, y + across, z + up));
           if (mast !== undefined) return mast;
         }
     return -1;
