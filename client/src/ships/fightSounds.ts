@@ -36,7 +36,12 @@ export function playCues(
   for (const { cue, at } of cues) {
     if (Math.hypot(at[0] - eye[0], at[1] - eye[1], at[2] - eye[2]) > MOST_M) continue;
     const panner = audio.createPanner();
-    Object.assign(panner, { panningModel: 'equalpower', distanceModel: 'inverse', refDistance: NEAR_M, maxDistance: MOST_M });
+    Object.assign(panner, {
+      panningModel: 'equalpower',
+      distanceModel: 'inverse',
+      refDistance: NEAR_M,
+      maxDistance: MOST_M,
+    });
     [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = [at[0], at[2], at[1]];
     panner.connect(out);
     const source = play(audio, panner, cue);

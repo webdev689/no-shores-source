@@ -103,8 +103,8 @@ export class ShipHarm {
   }
 
   /** A ball through her hull at `at` (her frame): a ragged hole stays there. */
-  scar(at: Point): void {
-    this.scars.push({ at, size: 0.25 + this.draw() * 0.2 });
+  scar(spot: Point): void {
+    this.scars.push({ at: spot, size: 0.25 + this.draw() * 0.2 });
   }
 
   /** A ball through a sail's cell: the canvas there is gone. */
@@ -139,7 +139,8 @@ export class ShipHarm {
 
   /** A sail torn from her at `now`: it falls to leeward of her (`side`). */
   loseSail(sail: number, now: number, side: 1 | -1): void {
-    if (!this.lost.has(sail) && sail >= 0 && sail < this.holes.length) this.lost.set(sail, { at: now, side, astern: 0 });
+    if (!this.lost.has(sail) && sail >= 0 && sail < this.holes.length)
+      this.lost.set(sail, { at: now, side, astern: 0 });
   }
 
   /** A mast gone over her `side` at `now`, every sail on it with it. */
@@ -225,15 +226,15 @@ export class ShipHarm {
 
 /** Where a falling part's point goes as it lies (`Fallen`), in her frame: turned over her side about the line along
  *  her at `footZ` (a mast's foot; a torn sail drops instead, by `dropM`), drifted astern and sunk. */
-export function fallenPoint(point: Point, lies: Fallen, turn: { readonly footZ: number; readonly most: number }): Point {
+export function fallenPoint(
+  point: Point,
+  lies: Fallen,
+  turn: { readonly footZ: number; readonly most: number },
+): Point {
   const angle = lies.down * turn.most * lies.side;
   const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
   const [across, up] = [point[1], point[2] - turn.footZ];
-  return [
-    point[0] - lies.astern,
-    across * cos + up * sin,
-    turn.footZ - across * sin + up * cos - lies.sunk,
-  ];
+  return [point[0] - lies.astern, across * cos + up * sin, turn.footZ - across * sin + up * cos - lies.sunk];
 }
 
 /** How far over a mast `heightM` tall from its foot `footZ` over the water goes before its head is in the water,

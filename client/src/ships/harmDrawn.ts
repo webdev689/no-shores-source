@@ -44,10 +44,10 @@ export function harmedCanvas(
     for (let index = 0; index < points.length; index += 3) {
       const point: Point = [points[index] ?? 0, points[index + 1] ?? 0, points[index + 2] ?? 0];
       const row = Math.floor(index / 3 / SAIL_COLUMNS);
-      const at = fell
+      const spot = fell
         ? fallenPoint(point, fell, turn)
         : tornPoint(point, row, torn as Fallen, (torn as Fallen).down ** 0.5 * FALL_S, halfBeamM);
-      moved.set(at, index);
+      moved.set(spot, index);
     }
     return moved;
   });
@@ -85,11 +85,12 @@ export function flagAt(
   now: number,
 ): { readonly at: Point; readonly shows: boolean } {
   const mast = harm.layout.masts.reduce(
-    (best, x, index) => (Math.abs(x - masthead[0]) < Math.abs((harm.layout.masts[best] ?? 0) - masthead[0]) ? index : best),
+    (best, x, index) =>
+      Math.abs(x - masthead[0]) < Math.abs((harm.layout.masts[best] ?? 0) - masthead[0]) ? index : best,
     0,
   );
   const share = harm.struck(now);
   const bottom = (masts[mast]?.footZ ?? 0) + 1;
-  const at: Point = [masthead[0], masthead[1], masthead[2] - share * Math.max(0, masthead[2] - bottom)];
-  return { at, shows: share < 1 && !harm.isFallen(mast) };
+  const spot: Point = [masthead[0], masthead[1], masthead[2] - share * Math.max(0, masthead[2] - bottom)];
+  return { at: spot, shows: share < 1 && !harm.isFallen(mast) };
 }

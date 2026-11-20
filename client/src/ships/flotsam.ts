@@ -25,9 +25,9 @@ interface Floating {
 export class Flotsam {
   private readonly floating = new Map<number, Floating>();
 
-  /** A piece laid at `at` (window metres). */
-  lay(id: number, at: readonly [number, number], item: FlotsamItem): void {
-    this.floating.set(id, { id, at, item: item in LOOKS ? item : 'crate' });
+  /** A piece laid at `spot` (window metres). */
+  lay(id: number, spot: readonly [number, number], item: FlotsamItem): void {
+    this.floating.set(id, { id, at: spot, item: item in LOOKS ? item : 'crate' });
   }
 
   gather(id: number): void {

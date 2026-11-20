@@ -56,8 +56,8 @@ export function drum(length: number): ShapeMesh {
     corners.push(-length, y, z, 0, y, z, length, y, z, 0, y, z);
   }
   for (let side = 0; side < SIDES; side++) {
-    const at = side * 2;
-    faces.push(at, at + 1, at + 3, at, at + 3, at + 2);
+    const spot = side * 2;
+    faces.push(spot, spot + 1, spot + 3, spot, spot + 3, spot + 2);
   }
   for (const end of [-1, 1]) {
     const middle = corners.length / 6;

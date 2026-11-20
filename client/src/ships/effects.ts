@@ -152,10 +152,10 @@ export class Effects {
 
   /** A ball fell in the water at `at` (window metres, the water's height): a column of spray about 4 m high, back
    *  down in 1.5 s, and a ring of foam spreading on the water. Answers its push on the water's ripples. */
-  splash(at: Point, now: number): Splash {
+  splash(spot: Point, now: number): Splash {
     // Up 4 m and down again in 1.5 s: launched at 4h/T and pulled down at 8h/T².
     const [rise, pull] = [(4 * SPLASH_M) / SPLASH_S, (8 * SPLASH_M) / SPLASH_S ** 2];
-    this.add(14, at, now, () => {
+    this.add(14, spot, now, () => {
       const share = 0.6 + this.draw() * 0.4;
       return {
         velocity: [this.spread(0.5), this.spread(0.5), rise * Math.sqrt(share)],
@@ -167,7 +167,7 @@ export class Effects {
         life: SPLASH_S * Math.sqrt(share),
       };
     });
-    this.add(16, at, now, (index) => {
+    this.add(16, spot, now, (index) => {
       const turn = (index / 16) * 2 * Math.PI;
       return {
         from: [Math.cos(turn) * 0.4, Math.sin(turn) * 0.4, 0],
@@ -179,12 +179,12 @@ export class Effects {
         life: FOAM_S,
       };
     });
-    return { x: at[0], y: at[1], radiusM: 1.2, strength: -0.05 };
+    return { x: spot[0], y: spot[1], radiusM: 1.2, strength: -0.05 };
   }
 
   /** A ball in the ground: a puff of dust. */
-  dust(at: Point, now: number): void {
-    this.add(4, at, now, () => ({
+  dust(spot: Point, now: number): void {
+    this.add(4, spot, now, () => ({
       velocity: [this.spread(0.6), this.spread(0.6), 0.5 + this.draw()],
       radius: 0.3,
       grow: 0.6,
@@ -193,13 +193,17 @@ export class Effects {
     }));
   }
 
-  /** A ball through her hull at `at` (true metres off `anchor`, her middle), facing out `out` (east, south): a few
+  /** A ball through her hull at `spot` (true metres off `anchor`, her middle), facing out `out` (east, south): a few
    *  dozen chips of her paint burst out from it and fall to the water, and a little smoke hangs there. */
-  splinter(anchor: Point, at: Point, out: readonly [number, number], paint: Colour | null, now: number): void {
+  splinter(anchor: Point, spot: Point, out: readonly [number, number], paint: Colour | null, now: number): void {
     const colour = paint ?? TIMBER;
     this.add(SPLINTERS, anchor, now, () => ({
-      from: at,
-      velocity: [out[0] * (2 + this.draw() * 4) + this.spread(2), out[1] * (2 + this.draw() * 4) + this.spread(2), 1 + this.draw() * 4],
+      from: spot,
+      velocity: [
+        out[0] * (2 + this.draw() * 4) + this.spread(2),
+        out[1] * (2 + this.draw() * 4) + this.spread(2),
+        1 + this.draw() * 4,
+      ],
       radius: 0.04 + this.draw() * 0.04,
       gravity: GRAVITY,
       floor: -anchor[2],
@@ -207,13 +211,20 @@ export class Effects {
       life: 1.6,
       holds: 1,
     }));
-    this.add(2, anchor, now, () => ({ from: at, velocity: [0, 0, 0.6], radius: 0.25, grow: 0.5, colour: POWDER, life: 2 }));
+    this.add(2, anchor, now, () => ({
+      from: spot,
+      velocity: [0, 0, 0.6],
+      radius: 0.25,
+      grow: 0.5,
+      colour: POWDER,
+      life: 2,
+    }));
   }
 
   /** A ball through her rig at `at`: a puff of splinters at the spar. */
-  spar(anchor: Point, at: Point, now: number): void {
+  spar(anchor: Point, spot: Point, now: number): void {
     this.add(12, anchor, now, () => ({
-      from: at,
+      from: spot,
       velocity: [this.spread(2.5), this.spread(2.5), this.spread(1.5)],
       radius: 0.04,
       gravity: GRAVITY,
@@ -225,9 +236,9 @@ export class Effects {
   }
 
   /** A ball through a sail at `at`: shreds of canvas drift down from the hole. */
-  shred(anchor: Point, at: Point, now: number): void {
+  shred(anchor: Point, spot: Point, now: number): void {
     this.add(6, anchor, now, () => ({
-      from: at,
+      from: spot,
       velocity: [this.spread(1.5), this.spread(1.5), this.draw()],
       radius: 0.07,
       gravity: GRAVITY / 4,
@@ -245,7 +256,14 @@ export class Effects {
     while (this.owedFlames >= 1) {
       this.owedFlames -= 1;
       const from = [deck[0] + this.spread(spreadM), deck[1] + this.spread(spreadM), deck[2]] as const;
-      this.add(1, anchor, now, () => ({ from, velocity: [0, 0, 1.2], radius: 0.18, grow: 0.3, colour: FLAME, life: 0.6 }));
+      this.add(1, anchor, now, () => ({
+        from,
+        velocity: [0, 0, 1.2],
+        radius: 0.18,
+        grow: 0.3,
+        colour: FLAME,
+        life: 0.6,
+      }));
       this.add(1, anchor, now, () => ({
         from,
         velocity: [this.spread(0.2), this.spread(0.2), 1.6],
@@ -259,15 +277,15 @@ export class Effects {
   }
 
   /** Where a ship goes down, over `seconds`: foam on the water over `radiusM` round `at`, and bubbles rising to it. */
-  foam(at: Point, radiusM: number, now: number, seconds: number): void {
+  foam(spot: Point, radiusM: number, now: number, seconds: number): void {
     this.owedFoam += 40 * seconds;
     while (this.owedFoam >= 1) {
       this.owedFoam -= 1;
       const turn = this.draw() * 2 * Math.PI;
       const away = Math.sqrt(this.draw()) * radiusM;
       const from = [Math.cos(turn) * away, Math.sin(turn) * away, 0] as const;
-      this.add(1, at, now, () => ({ from, radius: 0.3 + this.draw() * 0.3, grow: 0.1, colour: FOAM, life: 2.5 }));
-      this.add(1, at, now, () => ({
+      this.add(1, spot, now, () => ({ from, radius: 0.3 + this.draw() * 0.3, grow: 0.1, colour: FOAM, life: 2.5 }));
+      this.add(1, spot, now, () => ({
         from: [from[0], from[1], -1.5],
         velocity: [0, 0, 1.2],
         radius: 0.12,

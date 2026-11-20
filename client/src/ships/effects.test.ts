@@ -29,7 +29,10 @@ test('powder smoke drifts downwind', () => {
   effects.fire([0, 0, 0], [0, 0, 1], [0, 1, 0], 0);
   const smoke = effects.marks(5);
   assert.ok(smoke.length > 0);
-  assert.ok(smoke.every((mark) => mark.x > 4), 'the wind blowing east has taken it east');
+  assert.ok(
+    smoke.every((mark) => mark.x > 4),
+    'the wind blowing east has taken it east',
+  );
 });
 
 test('a splash stands about four metres high and is back in the water in a second and a half', () => {
@@ -43,20 +46,22 @@ test('a splash stands about four metres high and is back in the water in a secon
   assert.equal(spray.length, 0, 'the column has fallen back');
   const foam = effects.marks(SPLASH_S + 0.2);
   assert.ok(foam.length >= 12 && foam.every((mark) => Math.abs(mark.z) < 0.01), 'its ring of foam lies on the water');
-  const spreadOf = (now: number) =>
-    Math.max(...effects.marks(now).map((mark) => Math.hypot(mark.x - 5, mark.y - 6)));
+  const spreadOf = (now: number) => Math.max(...effects.marks(now).map((mark) => Math.hypot(mark.x - 5, mark.y - 6)));
   assert.ok(spreadOf(1.5) > spreadOf(0.1), 'the ring spreads');
   assert.equal(effects.marks(5).length, 0);
 });
 
-test("a hull hit bursts a few dozen chips of her paint that fall to the water", () => {
+test('a hull hit bursts a few dozen chips of her paint that fall to the water', () => {
   const effects = new Effects(4);
   const paint = [0.1, 0.2, 0.3] as const;
   effects.splinter([0, 0, 0], [0, 3, 1.5], [0, 1], paint, 0);
   const chips = effects.marks(0.1).filter((mark) => mark.radius < 0.1);
   assert.equal(chips.length, SPLINTERS);
   assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 2, "most are her paint's");
-  assert.ok(effects.marks(1.5).every((mark) => mark.z >= 0), 'none falls through the water');
+  assert.ok(
+    effects.marks(1.5).every((mark) => mark.z >= 0),
+    'none falls through the water',
+  );
   assert.ok(highest(effects.marks(1.5).filter((mark) => mark.radius < 0.1)) < 0.5, 'they lie on the water');
 });
 

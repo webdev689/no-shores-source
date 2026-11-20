@@ -75,9 +75,9 @@ function lying(vessel: FeelVessel) {
 }
 
 /** A point of her frame as true metres off her middle in the world. */
-function offOf(axes: ReturnType<typeof shipAxes>, at: Point): Point {
+function offOf(axes: ReturnType<typeof shipAxes>, spot: Point): Point {
   return [0, 1, 2].map(
-    (axis) => at[0] * (axes[0][axis] ?? 0) + at[1] * (axes[1][axis] ?? 0) + at[2] * (axes[2][axis] ?? 0),
+    (axis) => spot[0] * (axes[0][axis] ?? 0) + spot[1] * (axes[1][axis] ?? 0) + spot[2] * (axes[2][axis] ?? 0),
   ) as unknown as Point;
 }
 
@@ -85,7 +85,9 @@ function offOf(axes: ReturnType<typeof shipAxes>, at: Point): Point {
 export function frameOf(vessel: FeelVessel, point: Point): Point {
   const { middle, axes } = lying(vessel);
   const off = [point[0] - middle[0], point[1] - middle[1], point[2] - middle[2]];
-  return axes.map((axis) => (axis[0] ?? 0) * (off[0] ?? 0) + (axis[1] ?? 0) * (off[1] ?? 0) + (axis[2] ?? 0) * (off[2] ?? 0)) as unknown as Point;
+  return axes.map(
+    (axis) => (axis[0] ?? 0) * (off[0] ?? 0) + (axis[1] ?? 0) * (off[1] ?? 0) + (axis[2] ?? 0) * (off[2] ?? 0),
+  ) as unknown as Point;
 }
 
 export class FightFeel {
@@ -93,7 +95,10 @@ export class FightFeel {
   readonly flotsam = new Flotsam();
   private cues: Cue[] = [];
   /** Where each ship went down and until when its water foams, by her number. */
-  private readonly wentDown = new Map<number, { readonly at: Point; readonly until: number; readonly radiusM: number }>();
+  private readonly wentDown = new Map<
+    number,
+    { readonly at: Point; readonly until: number; readonly radiusM: number }
+  >();
 
   constructor(seed: number) {
     this.effects = new Effects(seed);
@@ -158,10 +163,10 @@ export class FightFeel {
       }
       case 'splash': {
         const [x = 0, y = 0] = event.at ?? event.point ?? [];
-        const at = toWindow([x, y, event.point?.[2] ?? 0]);
+        const spot = toWindow([x, y, event.point?.[2] ?? 0]);
         // A page that never takes them (the World Editor's, which has no sound) keeps only the latest.
-        this.cues = [...this.cues.slice(-31), { cue: 'shot.splash', at }];
-        return [this.effects.splash(at, now)];
+        this.cues = [...this.cues.slice(-31), { cue: 'shot.splash', at: spot }];
+        return [this.effects.splash(spot, now)];
       }
       case 'land':
         this.effects.dust(toWindow(event.point), now);
@@ -192,8 +197,8 @@ export class FightFeel {
         return [];
       case 'flotsam': {
         const [x = 0, y = 0] = event.at;
-        const at = toWindow([x, y, 0]);
-        this.flotsam.lay(event.id, [at[0], at[1]], event.item);
+        const spot = toWindow([x, y, 0]);
+        this.flotsam.lay(event.id, [spot[0], spot[1]], event.item);
         return [];
       }
       case 'gathered':
@@ -211,30 +216,30 @@ export class FightFeel {
       if (event.point) this.effects.spar(toWindow(event.point), [0, 0, 0], now);
       return;
     }
-    const at = event.at ?? (event.point ? frameOf(ship.vessel, event.point) : null);
-    if (!at) return;
+    const spot = event.at ?? (event.point ? frameOf(ship.vessel, event.point) : null);
+    if (!spot) return;
     const { middle, axes } = lying(ship.vessel);
     const anchor = toWindow(middle);
     const part = event.part ?? (event.zone === 'rig' ? 'rig' : 'hull');
     if (part === 'hull') {
-      this.hullHit(ship, at, now, toWindow, true);
+      this.hullHit(ship, spot, now, toWindow, true);
       return;
     }
-    const near = ship.rig?.cellNear(at);
+    const near = ship.rig?.cellNear(spot);
     if (near && (part === 'sail' || near.distanceM < SAIL_REACH_M)) {
       ship.rig?.harm.hole(near.sail, near.cell);
-      this.effects.shred(anchor, offOf(axes, at), now);
-    } else this.effects.spar(anchor, offOf(axes, at), now);
+      this.effects.shred(anchor, offOf(axes, spot), now);
+    } else this.effects.spar(anchor, offOf(axes, spot), now);
   }
 
-  /** A blow through her hull at `at` (her frame): her paint's splinters, and a hole that stays unless `scars` is
+  /** A blow through her hull at `spot` (her frame): her paint's splinters, and a hole that stays unless `scars` is
    *  false (a ram's stem). */
-  private hullHit(ship: FeelShip, at: Point, now: number, toWindow: Window, scars: boolean): void {
+  private hullHit(ship: FeelShip, spot: Point, now: number, toWindow: Window, scars: boolean): void {
     const { middle, axes } = lying(ship.vessel);
-    const outboard = at[1] >= 0 ? 1 : -1;
+    const outboard = spot[1] >= 0 ? 1 : -1;
     const out: [number, number] = [(axes[1][0] ?? 0) * outboard, (axes[1][1] ?? 0) * outboard];
-    this.effects.splinter(toWindow(middle), offOf(axes, at), out, DRESSES[ship.side].hull, now);
-    if (scars) ship.rig?.harm.scar(at);
+    this.effects.splinter(toWindow(middle), offOf(axes, spot), out, DRESSES[ship.side].hull, now);
+    if (scars) ship.rig?.harm.scar(spot);
   }
 
   /** Her place as she goes down (`ShipHarm.settle`), her masthead's height for how deep. */
@@ -269,12 +274,12 @@ export class FightFeel {
         // A ragged hole: a few dark blots of its own sizes about the point, standing just proud of her side.
         for (let blot = 0; blot < 4; blot++) {
           const turn = index * 2.1 + blot * 1.9;
-          const at: Point = [
+          const spot: Point = [
             scar.at[0] + Math.cos(turn) * scar.size * 0.6 * (blot > 0 ? 1 : 0),
             scar.at[1] + (scar.at[1] >= 0 ? 1 : -1) * scar.size * 0.15,
             scar.at[2] + Math.sin(turn) * scar.size * 0.4 * (blot > 0 ? 1 : 0),
           ];
-          const off = offOf(axes, at);
+          const off = offOf(axes, spot);
           marks.push({
             x: place.x + off[0] * size,
             y: place.y + off[1] * size,

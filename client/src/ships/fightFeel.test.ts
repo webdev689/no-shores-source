@@ -53,11 +53,13 @@ test('a hull hit, by its point in the world or in her frame, splinters her paint
   const ship = ships.get(1) as FeelShip;
   const blots = feel.scars([{ ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0 } }]);
   assert.equal(blots.length, 8, 'each hole a ragged few dark blots');
-  const drawnLarger = feel.scars([{ ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0, scale: 4 } }]);
+  const drawnLarger = feel.scars([
+    { ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0, scale: 4 } },
+  ]);
   assert.ok(Math.abs((drawnLarger[0]?.radius ?? 0) - (blots[0]?.radius ?? 0) * 4) < 1e-9, 'as large as she is drawn');
 });
 
-test("a ball through her rig holes the sail it passed, or splinters the spar where there is none", () => {
+test('a ball through her rig holes the sail it passed, or splinters the spar where there is none', () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(3);
   const rig = ships.get(1)?.rig as SailRig;

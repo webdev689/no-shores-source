@@ -272,8 +272,7 @@ export class SailRig {
             (middle[1] ?? 0) - point[1],
             (middle[2] ?? 0) - point[2],
           );
-          if (!best || distanceM < best.distanceM)
-            best = { sail, cell: row * (SAIL_COLUMNS - 1) + column, distanceM };
+          if (!best || distanceM < best.distanceM) best = { sail, cell: row * (SAIL_COLUMNS - 1) + column, distanceM };
         }
     });
     return best;

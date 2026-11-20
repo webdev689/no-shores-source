@@ -286,7 +286,8 @@ function tagMasts(
     const span = spans[mast];
     if (!span) continue;
     for (const vertex of piece) view.setUint8(vertex * VERTEX_BYTES + MAST_BYTE, mast + 1);
-    for (const point of points) [span.footZ, span.topZ] = [Math.min(span.footZ, point[2]), Math.max(span.topZ, point[2])];
+    for (const point of points)
+      [span.footZ, span.topZ] = [Math.min(span.footZ, point[2]), Math.max(span.topZ, point[2])];
   }
   return spans.map((span) => (span.footZ === Infinity ? { footZ: 0, topZ: 0 } : span));
 }

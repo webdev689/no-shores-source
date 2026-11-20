@@ -32,7 +32,10 @@ test("her canvas's holes grow with her sail harm, new holes beside old", () => {
   harm.wear(1);
   assert.ok(harm.holes.every((holes) => holes.size === Math.round(SAIL_CELLS / 3)));
   harm.wear(0.2);
-  assert.ok(harm.holes.every((holes) => holes.size === Math.round(SAIL_CELLS / 3)), 'a hole never closes');
+  assert.ok(
+    harm.holes.every((holes) => holes.size === Math.round(SAIL_CELLS / 3)),
+    'a hole never closes',
+  );
 });
 
 test('a ball through a sail opens a hole there that stays', () => {
@@ -55,8 +58,14 @@ test('a torn sail falls to the sea over her side, floats astern a while, then is
   const before = rig.canvas();
   const lying = (now: number) => harmedCanvas(rig.canvas(), rig.harm, [{ footZ: 1.4, topZ: 9 }], 2, now)[1];
   const landed = lying(FALL_S);
-  assert.ok(landed && Math.max(...[...landed].filter((unused, index) => index % 3 === 2)) < 0.1, 'it lies on the water');
-  assert.ok(landed && Math.min(...[...landed].filter((unused, index) => index % 3 === 1)) > 2, 'over her side to leeward');
+  assert.ok(
+    landed && Math.max(...[...landed].filter((unused, index) => index % 3 === 2)) < 0.1,
+    'it lies on the water',
+  );
+  assert.ok(
+    landed && Math.min(...[...landed].filter((unused, index) => index % 3 === 1)) > 2,
+    'over her side to leeward',
+  );
   for (let second = 0; second < 10; second++) rig.harm.step(1, 3, FALL_S + second);
   const astern = lying(FALL_S + 10);
   assert.ok(astern && (astern[0] ?? 0) < (before[1]?.[0] ?? 0) - 20, 'she has sailed on from it');
