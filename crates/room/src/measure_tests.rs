@@ -187,7 +187,8 @@ fn measure(way: Way) {
         let mut longest: Vec<f64> =
             of_kind.iter().map(|player| seconds(held.get(player).map_or(0, |each| each.1))).collect();
         longest.sort_by(f64::total_cmp);
-        let (held_median, held_most) = (longest[longest.len() / 2], longest.last().copied().unwrap_or(0.0));
+        let held_median = longest.get(longest.len() / 2).copied().unwrap_or(0.0);
+        let held_most = longest.last().copied().unwrap_or(0.0);
         eprintln!(
             "{kind}: {} players; first sighting for {}/{} (median {median:?} s); {} ships sighted, in sight {mean:.0} s on \
              average, {:.0}% 30 s and over; a fight by 5 min {:.0}%, by 10 min {:.0}%; come for {}, of them {} never \

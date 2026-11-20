@@ -171,8 +171,8 @@ will take it, by the room's own tick.
   35% in the pirates' and the Grey Tithe's waters (10% contested) and by 10 for 40 to 65% (30% contested); the first
   ship is sighted at a median of 132 to 160 s; a ship stays in sight 37 to 59 s on average, 68 to 92% of them 30 s and
   over. Chasing, by 10 minutes 70 to 85% (by 5: 55 to 60%). Turning away, 35 of 36 a ship came for in hostile waters
-  never fought. A voyage is held under ×60 for 3 s at most as a ship comes near along its way; one stretch of 80 to 89
-  s was by a fight among captains near a contested voyage.
+  never fought. A voyage is held under ×60 for 3 s at most as a ship comes near along its way, but for one contested
+  voyage, held up to 89 s.
 - **Off the helm.** A player at sea and out of a fight may leave the helm: their body stands behind her wheel on her
   deck, facing her bow, and walks it by the movement crate on the deck's grid, in her own frame ([[Sailing]], "Her
   deck"). Their steps are taken as a land room takes inputs: numbered 1, 2, 3 and so on from the helm left, refused

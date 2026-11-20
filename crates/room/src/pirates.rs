@@ -272,7 +272,8 @@ impl Pirates {
         let seed = self.draws.seed();
         let sight_m = sight_for(f64::from(ship.pace));
         let bold = matches!(temper_for(commission, seed), Temper::Bold);
-        // A bold ship comes where she can meet a voyage that holds its course; at the helm's slow paces anywhere ahead.
+        // A bold ship comes where she can meet a voyage that holds its course; at the helm's slow paces, near and slow
+        // under 5 km of sight, she comes anywhere ahead as a wary one does.
         let arc = if bold && ship.pace > SLOW_PACE { meeting_arc(commission.rank) } else { AHEAD_ARC_RAD };
         let mut fits = Vec::new();
         for _ in 0..SPAWN_TRIES {

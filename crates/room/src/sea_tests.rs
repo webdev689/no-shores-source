@@ -584,8 +584,8 @@ fn fight_within_ten_minutes(sea: &mut Sea) -> Option<usize> {
 
 #[test]
 fn a_bold_ship_sighted_within_her_meeting_cone_meets_a_voyage_that_holds_its_course() {
-    // A Major 9 degrees off his course, 0.95 of his sight ahead, heading across it: he sails on north at x60.
-    let off = 9.0_f64.to_radians();
+    // A Major 6 degrees off his course, 0.95 of his sight ahead, heading across it: he sails on north at x60.
+    let off = 6.0_f64.to_radians();
     let out = 0.95 * crate::sighting::sight_for(60.0);
     let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
     let (mut sea, player) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
@@ -600,12 +600,22 @@ fn a_bold_ship_sighted_within_her_meeting_cone_meets_a_voyage_that_holds_its_cou
 }
 
 #[test]
+fn a_bold_ship_off_her_meeting_cone_cannot_meet_a_voyage_that_holds_its_course() {
+    // A Major 30 degrees off his course, outside her cone: her way cannot meet his.
+    let off = 30.0_f64.to_radians();
+    let out = 0.95 * crate::sighting::sight_for(60.0);
+    let at = [50_000.0 + libm::sin(off) * out, 400_000.0 - libm::cos(off) * out];
+    let (mut sea, _) = come_for_on(&[[50_000.0, 400_000.0], [50_000.0, 10_000.0]], at, PI * 1.5, true);
+    assert!(fight_within_ten_minutes(&mut sea).is_none(), "she cannot reach him");
+}
+
+#[test]
 fn a_player_who_turns_away_from_a_bold_ship_outruns_her() {
     // She is 10 km north of him; he sails south, away from her.
     let course = [[50_000.0, 400_000.0], [50_000.0, 900_000.0]];
     let (mut sea, player) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, true);
     assert!(fight_within_ten_minutes(&mut sea).is_none(), "evaded");
-    assert!(ship(&sea, player).rate == 60, "astern of her beam, the hold let go: x{}", ship(&sea, player).rate);
+    assert!(ship(&sea, player).rate == 60, "away from her, never held: x{}", ship(&sea, player).rate);
 }
 
 #[test]

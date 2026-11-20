@@ -254,9 +254,9 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   clock (lead pursuit; straight at them where she cannot reach them, as when they sail away faster), turning at most
   at a Sloop's helm rate, 10 degrees a second of her clock. She keeps after the one she came for while they stay in
   her sight and out of a fight, until she meets them (750 m) or loses them. A wary ship keeps her own course: the
-  player may chase her, evade her or let her pass. On the voyage's clock she sails at a fifth of the ship's way or
-  less, so she can meet a ship holding her course only from within the cone sin(angle) <= her way / 12 m/s off it
-  (11.5 degrees for a Major); lead pursuit cannot widen it. So a bold ship comes there (below, "Where"), and a player
+  player may chase her, evade her or let her pass. On the voyage's clock she sails at a fifth of the ship's way (a
+  Major; 0.18 to 0.24 by rank), so she can meet a ship holding her course only from within the cone sin(angle) <= her way / 12 m/s off it
+  (11.5 degrees for a Major); lead pursuit cannot widen it. So a bold ship comes there (above, "Where"), and a player
   who holds their course meets her, one who turns away evades her, until she loses them. The voyage's hold keeps its
   own law as she comes near along the way.
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of
@@ -326,8 +326,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
   come over. A fight's land is the coasts' outlines, and a fight leaves no hurts on the Sloop after it.
 - Only a bold pirate takes a player on; DFO's wary captains also fall on a ship they outgun.
-- A bold ship sighted off a voyage's course does not come at all where her way cannot meet it: she is sighted only
-  ahead, within her cone, kilometres out. Following a coast round, she does not plan her way round an island.
+- Above ×10 a bold ship is sighted only ahead, within her cone, kilometres out; at ×10 and below, and at rest, she
+  comes anywhere a wary one does, where she cannot meet a ship holding her course. Following a coast round, she does not plan her way round an island.
 - A pirate sails on the clock of the player nearest her, while another player's voyage is held as if she closed on
   them at their own: for the few ticks one player is nearest while she bears down on another, she may close faster
   than that one's hold allows.
