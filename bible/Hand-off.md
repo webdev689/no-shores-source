@@ -293,12 +293,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
   Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
 
-- **Three follow-ups wait on the owner's yes to merge**, each a draft with its own test notes. #87 splits the sea's
-  view and the held map out of `sea.ts` and `game.ts` (both a line under the 600-line limit) and lights the Sloop's
-  deck with a carried torch. #89 cuts the sky's and the water's haze's work per pixel, with the same colours. #90,
-  stacked on #89, fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
+- **#86, #87, #89 and #90 are on `main`**, merged and deployed with the owner's yes. #86 forges the Arts' birds in
+  Blender in eight directions ([[The Arts' Birds Are Forged in Blender]]); its `forge` workflow renders them on main
+  and adds them to the forge's renders on R2. #87 splits the sea's view and the held map out of `sea.ts` and `game.ts`
+  and lights the Sloop's deck with a carried torch. #89 cuts the sky's and the water's haze's work per pixel, with the
+  same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
-  fogged sea, a sandstorm's grey ground and a thin snowfall.
+  fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
 - **The first review of the kit's observations waits on the owner's yes**: four changes to the instructions, and one
   observation to close as already fixed, each in the session's report and in
   `~/toolkit-data/task-observer/skill-observations/review-2026-11-20.md`, which a container loses at its end.
