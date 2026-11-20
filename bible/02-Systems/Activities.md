@@ -6,9 +6,10 @@ status: planned
 
 The days and the weeks of play, after Destiny 1's first year: what is on today and this week, how hard it is, what
 it pays once, and what opens it. The owner's decisions are [[Dailies and Weeklies Follow Destiny 1, With One Abyss
-Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]] and
-[[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end, and the owner can
-change any of it. Nothing of it is built yet.
+Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]],
+[[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
+Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
+and the owner can change any of it. Nothing of it is built yet.
 
 ## What it is for
 
@@ -17,40 +18,46 @@ change any of it. Nothing of it is built yet.
 - **Abyss at the top.** The hardest thing outside Breaches, once a week, with the best weekly drop.
 - **Gates kept by the rooms.** No client can skip a gate or take a reward twice.
 
-**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), curated missions ("Missions
-come much later"), and dungeons on the sea's islands, which wait on the islands themselves.
+**Not now:** Breaches themselves and sea Breaches ("I dont want to build this yet"), the story's missions and side
+quests past the prologue (the quest engine below is built for them), and dungeons on the sea's islands, which wait on
+the islands themselves.
 
 **Must not happen:** a second clock; a reward taken twice in its period by leaving and coming back; an activity a
-player cannot tell is on, or cannot tell why it is shut.
+player cannot tell is on, or cannot tell why it is shut; Destiny's own words on screen ([[A Group of Players Is a
+Company]]).
 
 ## The clock
 
 - **A day** runs from 09:00 UTC to 09:00 UTC, and **a week** from Tuesday 09:00 UTC, as Destiny 1's resets did.
 - `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in. The rules keep no
-  clock of their own, as `gear::shape::week_of` already takes its minutes.
+  clock of their own.
 - **Everything that turns reads it**: the vendors' daily wares (midnight UTC now), Shape's week (Monday now; Shape
-  still comes Friday 09:00 to Sunday 21:00 inside it), the activities and the bounties.
+  still comes Friday 09:00 to Sunday 21:00 inside it), the activities, the bounties and the quests.
 
-## The tiers in code
+## The tiers
 
 - **Normal, Elite and Abyss** replace Calm, Rough and Storm in code and on every screen, the voyage's card included.
-- Each adds 0, 2 or 3 levels over the area's band, capped at 32, and pays 1, 1.5 or 2 times, as
-  `gear::world::Difficulty` does now. A room's name carries its tier, `--elite` or `--abyss`.
+- **The seas chosen set the tier**, as the owner decided: a voyage set out at Abyss makes the patrols it reaches, and
+  the dungeons in them, Abyss. Each tier adds 0, 2 or 3 levels over the area's band, never past 32, and pays 1, 1.5
+  or 2 times, as `gear::world::Difficulty` does now.
+- **The week's two dungeons have their own tier and level** (below), whatever the seas.
 
 ## What is on
 
-| Activity | What | Tier | Opens |
+| Activity | What | Tier and level | Opens |
 |---|---|---|---|
-| Dungeon of the day | One patrol dungeon on each island, drawn each day | Normal, Elite, Abyss | Normal at any level, Elite from 10, Abyss from 20 |
+| Dungeon of the day | One patrol dungeon on each island, drawn each day | The seas', at its island's band | Normal at any level; Elite seas from 10, Abyss seas from 20 |
 | Bounties | Six from the board, drawn each day | | After the prologue |
-| Elite Dungeons | The 18 named dungeons, at their island's band | Normal | After the prologue |
-| Elite Dungeon of the week | One of the 18, at the last island's band | Elite, one modifier | Campaign's end, level 24 |
-| Abyss Dungeon of the week | Another of the 18, at the last island's band | Abyss, three modifiers | Campaign's end, level 28 |
+| Elite Dungeons | The 18 named dungeons | Normal, at their island's band | After the prologue |
+| Elite Dungeon of the week | One of the 18, with one modifier | Elite, foes at 26 | Campaign's end, level 24 |
+| Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
 | Breaches | Later | | Campaign's end |
 
-- **Draws** are seeded by the day or the week, so every player and room sees the same (`gear::activities`).
-- **The dungeon of the day** carries one modifier of the day in every tier. The week's two never fall on the same
-  dungeon.
+- **Draws** are seeded by the day or the week, so every player and room sees the same (`gear::activities`). The
+  week's two never fall on the same dungeon.
+- **The dungeon of the day** carries one modifier of the day at Elite and Abyss.
+- **The week's levels** stand two over the level that opens each, as Destiny 1's weekly strikes stood at fixed
+  levels, so a player who may enter can harm every foe (`gear::power::gap`).
 
 ## The Elite Dungeons
 
@@ -58,24 +65,26 @@ player cannot tell is on, or cannot tell why it is shut.
   seed and style fixed by its place. It is longer than a patrol's, four or five blocks.
 - **Its end** holds a Boss with its own name and nameplate in place of a Reeve.
 - **Its node** keeps its open-air approach and gains the entrance.
-- **For four players**, matched together, as Destiny's strikes ([[Dungeons Live in Patrols, on the Sea's Islands and
-  as Elite Dungeons]]).
+- **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
-## Runs and fireteams
+## Runs and companies
 
-- **A fireteam** is a company of up to four. Companies hold three now.
-- **A run** of an Elite Dungeon, of the dungeon of the day at Elite or Abyss, or of a week's dungeon is a private room
-  for its fireteam. The shared patrol rooms stay for a dungeon of the day at Normal and every other dungeon.
-- **Find a fireteam** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band. A run
+- **A company** holds up to four. Companies hold three now.
+- **A run** is a private room for the company that enters: every dungeon at Elite or Abyss, every Elite Dungeon and
+  both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as now.
+- **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band. A run
   starts with four, or with fewer after a minute's wait.
-- **The Abyss Dungeon of the week is never matched**, as Destiny 1's Nightfall was not: a fireteam forms it.
+- **The Abyss Dungeon of the week is never matched**, as Destiny 1's hardest weekly strike was not: a company forms
+  it.
 
 ## Abyss's rules
 
-- **Revives:** the fireteam shares five a run. A fallen player stands again at the run's start while one is left;
+They hold in every Abyss run, which the owner gave "Nightfall's rules: limited revives, and a wipe ends the run".
+
+- **Revives:** the company shares five a run. A fallen player stands again at the run's start while one is left;
   when none are, the fallen stay down.
-- **A wipe ends the run:** when every player is down at once, all are sent to the entrance, and the dungeon starts
-  over.
+- **A wipe ends the run:** when every player is down at once, all are sent to the entrance, the dungeon starts over
+  and its five revives with it.
 - **Modifiers** are drawn from a set, each one hook in the rules: Burn (one Art's spells deal and take twice),
   Brawler (melee deals more), Marksman (ranged deals more), Lightswitch (foes' melee deals far more), Ironclad (more
   foes carry shields), Trickle (Arts recharge slower), Juggler (no ammunition drops) and Exposure (health returns
@@ -83,38 +92,44 @@ player cannot tell is on, or cannot tell why it is shut.
 
 ## What it pays, once
 
-- **Each character keeps its day and its week** with the account (`Character.activity`): which tiers of each
-  island's dungeon of the day it cleared, its bounties, and which of the week's dungeons it cleared. Each turns over
-  with the clock.
-- **The dungeon of the day**, the first clear of each tier: its cache, raised by the tier, and a Vestige at the tier's
-  rarity (Rare, Legendary, Legendary).
+- **Each character keeps its day and its week** with the account (`Character.activity`): which tiers of the dungeon
+  of the day it has cleared, its bounties, and which of the week's dungeons it cleared. Each turns over with the
+  clock.
+- **The dungeon of the day**, the first clear at each tier each day, on any island's: its cache, raised by the tier,
+  and a Vestige at the run's level. Three a day at most, under the rules every Vestige keeps now (no Legendary from
+  foes under level 18).
 - **The Elite Dungeon of the week**, once: a Legendary Vestige and Legendary materials.
-- **The Abyss Dungeon of the week**, once: a Legendary Vestige at the highest Prestige its character can wear, a
-  chance of Atheric, Legendary materials, and the Abyss boon: a quarter more XP and reputation until the week turns.
+- **The Abyss Dungeon of the week**, once: a Legendary Vestige with a chance of Atheric, Legendary materials, and the
+  Abyss boon: a quarter more XP, and reputation once factions are in, until the week turns.
 - **A clear again** in the same period pays its kills and its cache as any run, no more.
 
-## The bounty board
+## Quests and bounties
 
-- **A board in Overlook's plaza** opens after the prologue, built on the counters' pattern of the plaza's keepers.
-- **Six bounties a day**, the same for everyone: on land (foes of a faction or rank on an island, materials
-  gathered), at sea (ships sunk in a water) and in dungeons (a dungeon of the day or an Elite Dungeon cleared).
-- **A character takes any of them**, the room counts each as it happens (kills, clears, sinkings, gathering), and
-  the account keeps the count. Turned in at the board, each pays XP and Aurem once. All end at the daily reset.
+One engine counts both, since the owner's side quests and the board's bounties ask the same things.
+
+- **An objective** is a count of something the room sees happen: foes of a faction or rank felled on an island,
+  materials gathered, ships sunk in a water, a dungeon cleared. The room counts it as it happens; the account keeps
+  the count.
+- **The bounty board** stands in Overlook's plaza and opens after the prologue, on the counters' pattern of the
+  plaza's keepers. It offers six bounties a day, the same for everyone, on land, at sea and in dungeons. A character
+  takes any of them; each pays XP and Aurem once when turned in, and all end at the daily reset.
+- **Side quests** use the same objectives, kept until done, and are written with the story's missions.
 
 ## What opens when
 
-- **The prologue's end is kept with the account** (`Character.story`), not only in the browser. The room records it
-  when the prologue's last beat is reached.
+- **The story's progress is kept with the account** (`Character.story`), not only in the browser: the prologue's
+  end first, and each mission and side quest as they come. The room records each.
 - **After the prologue:** the board, the patrols, the dungeon of the day and the Elite Dungeons. Until more of the
-  campaign exists, the prologue stands in for its end, so the week's dungeons open too, each by its level.
+  campaign exists, the prologue stands in for its end, so the week's dungeons open too, each by its level. Characters
+  saved before the story was kept count as past the prologue.
 - **The rooms refuse a join a gate shuts**, and say why. The screen shows what is shut and what opens it.
 
 ## The screen
 
 - **This Week**, in the character's window: the day's and the week's activities, their tiers and modifiers, what
   each pays and whether it is taken, and the time to each reset.
-- **Set Challenge** at a dungeon's entrance offers its open tiers with their levels and modifiers, as Destiny 1's
-  mission picker did, and Find a Fireteam where it matches.
+- **At a dungeon's entrance**, a card shows the run's tier, level and modifiers, what it pays and whether it is
+  taken, with Enter, and Find a Company where it matches.
 
 ## How it is built
 
@@ -127,12 +142,15 @@ server and the browser both run; each system reads them.
 2. **The dungeons:** the dungeon of the day, the Elite Dungeons, the week's two, the modifiers, Abyss's rules and the
    rewards.
 3. **The screen.**
-4. **Fireteams of four**, private runs and Find a Fireteam.
-5. **The bounty board.**
+4. **Companies of four**, private runs and Find a Company.
+5. **Quests and bounties**: the engine and the board.
 
-**Who builds what:** this session builds 1 to 4 and the board's rules. The plaza's session (#92) places the board
-and its keeper, and moves Shape and the vendors onto the clock. The sea's session (#75) takes the tiers at sea and
-the bounties' sea counts. The prologue's session records the prologue's end with the account.
+It builds on the dungeons (#72, #88) and the owner's plan (#82); the board's place and the boon's reputation wait on
+the factions (#92).
+
+**Who builds what:** this session builds 1 to 5's rules and screens. The plaza's session (#92) places the board and
+its keeper, and moves Shape and the vendors onto the clock. The sea's session (#75) takes the tiers at sea and the
+sea's counts. The prologue's session records the prologue's end with the account.
 
 **Left to the builder:** the modifiers' and the rewards' exact numbers, how a modifier is shown, how a private run's
 room is named and closed, and each Elite Dungeon's Boss.
@@ -140,7 +158,8 @@ room is named and closed, and each Elite Dungeon's Boss.
 ## Claude's calls
 
 Each is Claude's, open to the owner's change: the resets at 09:00 UTC and Tuesday; a dungeon of the day on each
-island rather than one; its tiers opening at levels 10 and 20; the week's two at the last island's band, opening at
-24 and 28; Elite Dungeons at their own band the rest of the week; private runs; a run starting short after a minute;
-five shared revives; the modifier set; the rewards above and the quarter-more boon; six bounties a day paying XP and
-Aurem; and the screen's two names, This Week and Set Challenge.
+island rather than one, with three rewards a day across them; Elite and Abyss seas opening at levels 10 and 20; the
+week's two with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a
+minute; five shared revives, restored by a wipe; the modifier set; the rewards above and the quarter-more boon; six
+bounties a day paying XP and Aurem; one engine for quests and bounties; and the screen's names, This Week and Find a
+Company.
