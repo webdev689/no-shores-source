@@ -13,6 +13,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, normalize } from 'node:path';
 import { test } from 'node:test';
+import numberedContent from '../tools/numbered.json' with { type: 'json' };
 
 const workflow = readFileSync(new URL('../.github/workflows/rooms.yml', import.meta.url), 'utf8');
 
@@ -71,14 +72,8 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
       normalize(join(dirname(path), file ?? '')),
     ),
   );
-  // What the protocol's version hashes: the schema's maker's numbered content, each named whole or by its folder's
-  // names.
-  const maker = readFileSync(new URL('tools/schema.mjs', repo), 'utf8');
-  const named = [...maker.matchAll(/'(content\/[^']+\.json)'/g)].map(([, path]) => path ?? '');
-  const listed = [...maker.matchAll(/\[([^\]]*)\]\.map\(\s*\(name\) => `(content\/[^`]*)\$\{name\}([^`]*)`/g)].flatMap(
-    ([, names, before, after]) =>
-      [...(names ?? '').matchAll(/'([^']+)'/g)].map(([, name]) => `${before}${name}${after}`),
-  );
+  // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
+  const numbered = [...numberedContent.paths, 'tools/numbered.json'];
   // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates.
   const imported = filesUnder('server')
     .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts'))
@@ -88,7 +83,7 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
       ),
     )
     .filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
-  for (const [what, paths] of Object.entries({ included, named, listed, imported })) {
+  for (const [what, paths] of Object.entries({ included, numbered, imported })) {
     assert.ok(paths.length > 0, `some ${what} found`);
     for (const path of paths) assert.ok(existsSync(new URL(path, repo)) && deployed(path), `${what}: ${path}`);
   }

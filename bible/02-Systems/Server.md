@@ -260,14 +260,16 @@ field holds (an input's or orders' number, the arms, a foe's type, a load, a cal
 held within it.
 
 Looks and dresses are each player's own word, passed on and decided nothing about, but for the cosmetics: the room
-puts the dye, coat and barding the character wears into each dress it relays, none for a start piece, so no page can
-show another a piece it does not keep ([[Gear]], "Cosmetics"). A look goes out with the tick that
+puts the dye, coat and barding the character wears into each dress it relays, none for a start piece, and keeps a
+faction's colour or a dye only on the layers its pieces worn and dyes kept allow, so no page can show another a piece
+it does not keep ([[Gear]], "Cosmetics"). It makes a dress again when the browser sends one or after the player's gear
+is sent. A look goes out with the tick that
 takes its input, a dress once each time it changes, and every dress to whoever joins. The room refuses a move name
 that is not lowercase letters, digits and underscores or is over 40 bytes, and a dress over 4 KB. A browser takes
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; and in a social space every faction's wares ([[Factions]]) |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); and the day the wares are of, which a smith's ware is asked by |
 
 ## The host
 
@@ -291,7 +293,7 @@ so every decision is Rust and the shell only carries bytes and time.
   unread.
 - A browser's one text message is its session's token. In a node's room the player's character is claimed with it
   from the [[Accounts]], saved as it changes and let go when they leave. A save keeps the keys a room does not know,
-  at its top, in its materials, Arts, allegiance and cosmetics and in each item (not in its Vestiges), so a room that
+  at its top, in its materials, Arts, allegiance and cosmetics and in each item and Vestige, so a room that
   knows fewer fields carries the newer ones through; a room built before this keeping drops them, so a rollback to one
   loses them. A new value of a kind the room knows (a slot, a rarity) reads as a broken save, which is left untouched,
   and a list longer than the room's Arts or factions is cut to them. At sea, where no character is kept, the room
@@ -335,16 +337,15 @@ every other figure drawn on from where the new room has it, though its clock sta
 - **Deployed** as the Worker `overlook-rooms`: a room is `wss://overlook-rooms.mackcothran.workers.dev/room/<name>`. CI
   deploys it after a merge into `main`, once the same commit has passed the check, and publishes the page only once the
   rooms have deployed or had nothing to ([[The Rooms Deploy When Their Code Changes]],
-  [[The Page Publishes Only After the Rooms Deploy]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN` secret,
-  only while that commit is still `main`'s head, and only when what the rooms are built from differs from the commit
-  they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker, the content
-  they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in `rooms.yml`). A merge
-  of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms` environment, which the next run
-  compares with; with none found, it deploys. Without the secret it warns and deploys nothing. Run by hand from `main`,
-  it deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token
-  itself.
-  The same workflow deploys the [[Accounts]] first, since the rooms' service binding names their Worker; should that
-  fail, the rooms still deploy, beside the accounts last deployed.
+  [[The Page Publishes Only After the Rooms Deploy]]): the `rooms` workflow, with the repository's `CLOUDFLARE_TOKEN`
+  secret, only while that commit is still `main`'s head, and only when what the rooms are built from differs from the
+  commit they were last deployed from: the crates of `room-wasm` and of the bake, `server/`, the schema's maker and its
+  list, the content they read, the toolchain, the locks and the deploy's scripts, and the workflow (`ROOMS_CODE` in
+  `rooms.yml`). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
+  environment, which the next run compares with; with none found, it deploys. Without the secret it warns and deploys
+  nothing. Run by hand from `main`, it deploys whatever changed or not, and `npm run server:deploy` does the same from a
+  machine that holds the token itself. The same workflow deploys the [[Accounts]] first, since the rooms' service
+  binding names their Worker; should that fail, the rooms still deploy, beside the accounts last deployed.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
 - **In the page**, the Test Ground and the [[Game]] played alone run the same room in its own WebAssembly, ticked by
   the page: the Test Ground's course, a node's room on the window and boxes the page cut, and the sea.

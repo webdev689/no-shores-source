@@ -181,17 +181,17 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought #71's
   ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story Mission at Sea]]),
-  with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then asked ([[The Prologue
-  Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on it: the intro at first
-  light, down through the cloud to Saltmere's title; the storm at evening and the Brig; creation at her helm; the
-  sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck at night and
-  fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger walks the player
-  into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in; its fires are drawn in
-  the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky), heard in the game's own
-  soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one theme ([[Music]]). The
-  player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]). Tested offline: the full
-  check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and the intro, each started on
-  its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and a click starts the intro
+  with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then asked
+  ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on it:
+  the intro at first light, down through the cloud to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck at
+  night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger walks
+  the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in; its fires
+  are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky), heard in the
+  game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one theme ([[Music]]).
+  The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]). Tested offline: the
+  full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and the intro, each started
+  on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and a click starts the intro
   over the cloud at first light.
 - The prologue's follow-ups on `main` (#94), merged with the owner's yes after they played it live: the title's prompt
   goes once the story begins; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about 25 s;

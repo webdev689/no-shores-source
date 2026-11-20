@@ -247,15 +247,18 @@ the factions' counters are in [[Factions]].
   ("Cosmetics").
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
-  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes. **Shapes** come
+  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold from level
+  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
   only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day sets the wares and whose week sets Shape. It
   sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
-  day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware, 16 an Ammo
-  crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its place in `node`).
+  day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
+  `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
+  "It is not sold here today"), 16 an Ammo crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its
+  place in `node`).
 
 ## Emblems
 
@@ -352,7 +355,11 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   in every mounted move, drawn over the hide unless it lies more than 0.15 m behind it, so its far side and inside stay
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
-  player's dress naming one that is not of its kind is refused as any broken dress is.
+  player's dress naming one that is not of its kind is refused as any broken dress is. Of the colours a dress lays by
+  layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
+  pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
+  worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to
+  the page's (`dressLayers.test.ts`).
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.
 
 ## Limits

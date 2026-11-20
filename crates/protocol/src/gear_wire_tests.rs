@@ -188,6 +188,29 @@ fn the_gear_for_the_clients_test_is_written() {
     std::fs::write(format!("{folder}/gear_shape.bin"), gear_bytes(&room, player).expect("written")).expect("written");
 }
 
+/// Each faction piece, as the page is sent it, and the layers the room lets its colour stand on in a dress others see,
+/// for the page's test that every layer it dresses one in is among them (`client/src/player/dressLayers.test.ts`).
+#[test]
+fn the_layers_a_faction_piece_s_colour_may_stand_on_are_written() {
+    let pieces: Vec<String> = gear::catalogue::catalogue()
+        .items
+        .iter()
+        .filter(|named| named.faction.is_some())
+        .map(|named| {
+            let slot = named.kind.slot();
+            let on: Vec<String> =
+                gear::cosmetics::layers_of(slot, named.kind).iter().map(|on| format!("{on:?}")).collect();
+            let (id, kind, at) = (&named.id, named.kind as u8, at_number(gear::At::Worn(slot)));
+            let ranged = slot == gear::Slot::Ranged;
+            format!(r#"{{"named":{id:?},"kind":{kind},"at":{at},"ranged":{ranged},"on":[{}]}}"#, on.join(","))
+        })
+        .collect();
+    assert_eq!(pieces.len(), 21, "seven pieces a faction");
+    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
+    std::fs::create_dir_all(folder).expect("the folder");
+    std::fs::write(format!("{folder}/dress_layers.json"), format!("[{}]", pieces.join(","))).expect("written");
+}
+
 /// The furnished player pledged to the Lamplighters at rank 3, with Arts at levels 3, 1 and 5, the Ember Plate
 /// barding worn and 9 Shapes, at the stall on a Friday noon, UTC, while Shape is here; and that minute.
 fn standing() -> (Room, PlayerId, u64) {

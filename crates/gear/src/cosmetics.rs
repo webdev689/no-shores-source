@@ -140,8 +140,10 @@ pub struct ShownColour {
 
 /// The layers the forge draws a piece worn in `slot` with, by the start of their names, as the page dresses it: an
 /// armour slot's pieces in any set and the padding under a cuirass or greaves, a weapon's own files, and the formal
-/// cloak a faction's cape is drawn as. Names the page's (`gearLooks.ts` `PIECES`, `gear.ts` `HELD`).
-fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static [&'static str] {
+/// cloak a faction's cape is drawn as: the page's names (`gearLooks.ts` `PIECES`, `gear.ts` `HELD`), which a page test
+/// holds them to (`dressLayers.test.ts`).
+#[must_use]
+pub fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static [&'static str] {
     use crate::kinds::{Kind, Slot};
     match (slot, kind) {
         (Slot::Head, _) => &["helm_"],

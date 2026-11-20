@@ -71,10 +71,11 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   Cores held, and every Art starts at level 1.
 - **Power by level.** The room weighs every spell by its caster's level in the Art that cast it (`art_shares`), even
   once another is worn: its harm and healing (the Sunwell's healing each second by its caster's Divine level) by
-  `levels.power`, and how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs the spells give
-  (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil) by `levels.lasting`; 0.6 at level 1 up to 1.0 at
-  level 5, the spells as written ([[Arts]]). The Sunwell's Linked damage share is a buff: its time is weighed, its
-  1.2 is not.
+  `levels.power`, and by `levels.lasting` how long the Sunwell, the Duskraven and Dusk Daggers last, the buffs the
+  spells give (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil), Arc Lash's Charge, the Expose of Dusk
+  Daggers, Searing, the Duskraven's bolts and Overload, the Sunwell's Linked linger and Dread's seconds; 0.6 at level 1
+  up to 1.0 at level 5, the spells as written ([[Arts]]). The Sunwell's Linked damage share is a buff: its time is
+  weighed, its 1.2 is not. A spell keeps its Art's level and Core from its cast.
 - **At the counters.** The room serves a faction's asks (pledge, wares, package) and its Art's (rise, fragment) only
   within reach of that faction's counter, as it serves a vendor's ([[Gear]], "In the rooms"); the Test Ground's stall
   serves them all.
