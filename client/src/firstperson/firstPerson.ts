@@ -2,7 +2,8 @@ import { type GlowElement, type GlowLook, glowField } from '../elementGlow.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
-import { gripFrame, gripPicture, gripPlace } from './climbing.ts';
+import { type Climb, ClimbHands, type ClimbShown, GRIP, REACH_HEIGHT } from './climbHands.ts';
+import { climbFrame, climbPicture, climbPlace } from './climbing.ts';
 import { FirstPersonView, type ScreenQuad } from './firstPersonView.ts';
 import {
   type FrameSource,
@@ -64,6 +65,12 @@ export interface FirstPersonState {
   readonly stride: number;
   readonly casting: boolean;
   readonly climbing: number;
+  /** The climb the hands are on, which they follow; none off the wall. */
+  readonly climb?: Climb | null;
+  /** How far the view looks down, radians, negative up: the fists on a wall stay on it as the view tilts. */
+  readonly pitch?: number;
+  /** The view's vertical field, radians: the lens the fists on a wall are pinned to it through. */
+  readonly fov?: number;
   readonly element?: string;
   /** The element a cast's light is recoloured to: its Art's. */
   readonly castGlow?: GlowElement | null;
@@ -191,6 +198,10 @@ export class FirstPerson {
   private readonly ride: RideMotion;
   private plan: HandsPlan | null = null;
   private lower = 0;
+  private readonly climbHands = new ClimbHands();
+  private climbShown: ClimbShown = { grips: [], reach: null };
+  /** The screen's width over its height when last drawn, the lens the hands on a wall are pinned through. */
+  private aspect = DESIGN_WIDTH / DESIGN_HEIGHT;
   /** How far a shield or a torch has ducked out of a strike's way, 0 held to 1 gone below the screen. */
   private duck = 0;
   private castClock: number | null = null;
@@ -279,6 +290,8 @@ export class FirstPerson {
       if (this.castClock >= CAST_SEQUENCE.length * CAST_STEP) this.castClock = null;
     }
     this.lower = lowerStep(this.lower, state.climbing, seconds);
+    const look = { yaw: state.yaw ?? 0, pitch: state.pitch ?? 0, fov: state.fov ?? 0, aspect: this.aspect };
+    this.climbShown = this.climbHands.step(seconds, state.climb ?? null, look, this.lower);
     const free = this.castClock === null && this.lower < 0.5;
     const motion = { running: state.running && state.moving && !state.mounted, stride: state.stride };
     const events = this.hands.update(seconds, free ? input : STILL, this.plan, motion, state.pace ?? null);
@@ -338,8 +351,7 @@ export class FirstPerson {
         wanted.push(...views.map((view) => this.viewWanted(view, worn, drop, sway)));
       }
     }
-    if (this.lower > 0.001 && !shot)
-      wanted.push(...(['left', 'right'] as const).map((hand) => this.gripWanted(hand, worn)));
+    if (this.lower > 0.001 && !shot) wanted.push(...this.climbWanted(worn));
     return wanted;
   }
 
@@ -396,10 +408,26 @@ export class FirstPerson {
     };
   }
 
-  private gripWanted(hand: Hand, worn: Worn): Wanted {
-    const frame = gripFrame(1 - this.lower);
-    const key = `grip|${frame}|${worn.hands}`;
-    return { key, ask: () => gripPicture(this.source, frame, worn.hands), place: gripPlace(hand, this.lower) };
+  /** The hands on a wall as the climb places them: each fist, opening as it reaches or lets go, and the arm reaching
+   *  out while the look is away from the wall. */
+  private climbWanted(worn: Worn): Wanted[] {
+    const wanted: Wanted[] = this.climbShown.grips.map((grip) => {
+      const frame = climbFrame(grip.open);
+      return {
+        key: `grip|${frame}|${worn.hands}`,
+        ask: () => climbPicture(this.source, frame, worn.hands),
+        place: climbPlace('grip', grip.hand, grip.x, grip.y, GRIP.height),
+      };
+    });
+    const { reach } = this.climbShown;
+    if (!reach) return wanted;
+    const frame = climbFrame(reach.open, 'reach');
+    wanted.push({
+      key: `reach|${frame}|${worn.hands}`,
+      ask: () => climbPicture(this.source, frame, worn.hands, 'reach'),
+      place: climbPlace('reach', reach.hand, reach.x, reach.y, REACH_HEIGHT),
+    });
+    return wanted;
   }
 
   /** The horse from the saddle, and each hand not holding something on its rein: a weapon takes the right hand, and a
@@ -494,6 +522,7 @@ export class FirstPerson {
   /** Draws the first person over what `colourView` holds, `width` by `height` pixels. Until every picture wanted is
    *  composed, the last whole set stays on the screen. */
   draw(encoder: GPUCommandEncoder, colourView: GPUTextureView, width: number, height: number): void {
+    this.aspect = width / Math.max(1, height);
     const quads: ScreenQuad[] = [];
     let ready = true;
     let muzzle: readonly [number, number] | null = null;
