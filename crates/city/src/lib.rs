@@ -172,16 +172,16 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         for column in 0..SIDE_CELLS {
             let footing = cell_footings[index(column, row)];
             if let Footing::Level { level } = footing {
-                pads.push(Pad { bounds: grid.bounds(column, row), level });
+                pads.push(Pad::flat(grid.bounds(column, row), level));
             }
             if footing != Footing::Outside {
                 cells.push(Cell { column, row, footing, used: uses[index(column, row)].clone() });
             }
         }
     }
-    pads.push(Pad { bounds: social.bounds, level });
+    pads.push(Pad::flat(social.bounds, level));
     let reach = built.reach;
-    pads.push(Pad { bounds: [centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach], level });
+    pads.push(Pad::flat([centre[0] - reach, centre[1] - reach, centre[0] + reach, centre[1] + reach], level));
     Ok(Plan {
         id: city.id.clone(),
         name: city.name.clone(),

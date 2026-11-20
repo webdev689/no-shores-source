@@ -80,7 +80,7 @@ pub fn pads(solid: &Solid) -> Vec<land::pads::Pad> {
         .map(|&[x0, y0, x1, y1, level]| {
             let [west, north, east, south, ..] = solid.bounds_of([x0, y0, 0.0, x1, y1, 0.0]);
             let stretch = solid.size[2] / found.size[2].max(1e-9);
-            land::pads::Pad { bounds: [west, north, east, south], level: solid.at[2] + level * stretch }
+            land::pads::Pad::flat([west, north, east, south], solid.at[2] + level * stretch)
         })
         .collect()
 }

@@ -263,7 +263,7 @@ fn what_stands_on_a_terrace_is_lifted_with_it() {
     let far = Solid::upright(Shape::Block, [AT[0] + 60.0, AT[1], 10.0], [0.2, 0.2, 2.0], Material::Timber);
     let mut seating = Seating {
         buildings: vec![house.clone()],
-        pads: vec![Pad { bounds: house.footprint, level: 10.0 }],
+        pads: vec![Pad::flat(house.footprint, 10.0)],
         solids: vec![plinth, lantern, far],
         rooms: vec![room],
         // A wall inside the house, and a door's step just outside it on the platform.
