@@ -23,6 +23,10 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.equal(gear.prologueDone, false, 'a new character');
   const nothing = { day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false };
   assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
+  assert.equal(gear.bounties?.length, 6, 'the day’s board');
+  assert.equal(gear.bounties?.some((bounty) => bounty.held), false, 'a new character holds none');
+  assert.equal(gear.bountyXp, 2_500, 'at level 20');
+  assert.equal(typeof gear.day, 'number');
   assert.deepEqual([gear.level, gear.answered, gear.answer, gear.atReader, gear.spent], [20, 7, 0, true, [0]]);
   assert.deepEqual([gear.ammo, gear.ammoMost, gear.ammoShare, gear.crates, gear.cratePrice], [0, 0, 0.5, 2, 250]);
   assert.deepEqual(

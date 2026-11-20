@@ -191,6 +191,21 @@ export interface GearState {
   readonly prologueDone?: boolean;
   /** Their day's and week's record, as kept with their character. */
   readonly activity?: ActivityRecord;
+  /** The clock's day the room's word is of, which a bounty's ask sends back. */
+  readonly day?: number;
+  /** The day's six bounties on the board, in its order, and what each pays them when turned in. */
+  readonly bounties?: readonly GearBounty[];
+  readonly bountyXp?: number;
+  readonly bountyAurem?: number;
+}
+
+/** A bounty of the day's board as it stands for the player (protocol's `GearBounty`). */
+export interface GearBounty {
+  readonly words: string;
+  readonly target: number;
+  readonly count: number;
+  readonly held: boolean;
+  readonly paid: boolean;
 }
 
 /** Their day's and week's record, as kept with their character (`Gear`'s comment says each field): the day it is for
@@ -327,6 +342,15 @@ export function gearOf(gear: Gear): GearState {
       abyss: gear.weekAbyss(),
       boon: gear.boon(),
     },
+    day: gear.day(),
+    bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, place) => {
+      const bounty = gear.bounties(place);
+      const words = bounty?.words() ?? '';
+      const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
+      return { words, target, count, held: bounty?.held() ?? false, paid: bounty?.paid() ?? false };
+    }),
+    bountyXp: gear.bountyXp(),
+    bountyAurem: gear.bountyAurem(),
   };
 }
 

@@ -351,6 +351,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .filter_map(|(number, _)| u8::try_from(number).ok())
         .collect();
     let cleared = Some(builder.create_vector(&cleared));
+    let bounties = bounties_offset(&mut builder, character, room.day());
+    let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level());
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -394,12 +396,41 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         week_elite: this_week.elite,
         week_abyss: this_week.abyss,
         boon: this_week.boon,
+        day: u32::try_from(room.day()).unwrap_or(u32::MAX),
+        bounties: Some(bounties),
+        bounty_xp,
+        bounty_aurem,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =
         messages::FromRoom::create(&mut builder, &messages::FromRoomArgs { gear: Some(gear), ..Default::default() });
     builder.finish(message, None);
     Some(builder.finished_data().to_vec())
+}
+
+/// The day's board as it stands for a character: a record of another day holds none of today's bounties.
+fn bounties_offset<'built>(
+    builder: &mut FlatBufferBuilder<'built>,
+    character: &gear::Character,
+    day: u64,
+) -> WIPOffset<flatbuffers::Vector<'built, flatbuffers::ForwardsUOffset<messages::GearBounty<'built>>>> {
+    let today = &character.activity.today;
+    let current = today.day == day;
+    let rows: Vec<_> = (0u8..)
+        .zip(gear::bounties::board(day))
+        .map(|(place, bounty)| {
+            let count = today.bounties.get(&place).filter(|_| current).copied();
+            let args = messages::GearBountyArgs {
+                words: Some(builder.create_string(bounty.words)),
+                target: bounty.target,
+                count: count.unwrap_or(0),
+                held: count.is_some(),
+                paid: current && today.turned_in.contains(&place),
+            };
+            messages::GearBounty::create(builder, &args)
+        })
+        .collect();
+    builder.create_vector(&rows)
 }
 
 #[cfg(test)]

@@ -233,3 +233,40 @@ fn a_players_gear_carries_their_days_and_weeks_record_as_kept() {
     assert_eq!(gear.cleared().map(|tiers| tiers.iter().collect::<Vec<u8>>()), Some(vec![1, 2]));
     assert_eq!((gear.week_elite(), gear.week_abyss(), gear.boon()), (true, false, true));
 }
+
+#[test]
+fn a_players_gear_carries_its_day_and_board_and_no_bounty_held_from_another_day() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.furnish(Some([0.0, 0.0]), Vec::new());
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    for (sequence, ask) in [(1, Ask::FinishPrologue), (2, Ask::TakeBounty { place: 2, day: 20_778 })] {
+        room.input(player, Input { sequence, ask: Some(Asked::Gear(ask)), ..Input::default() }).expect("taken");
+        for _ in 0..room::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
+    }
+    let read = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("written");
+        let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+        let rows: Vec<(String, u32, u32, bool, bool)> = gear
+            .bounties()
+            .expect("the board")
+            .iter()
+            .map(|bounty| {
+                let words = bounty.words().unwrap_or_default().to_owned();
+                (words, bounty.target(), bounty.count(), bounty.held(), bounty.paid())
+            })
+            .collect();
+        (gear.day(), rows, gear.bounty_xp(), gear.bounty_aurem())
+    };
+    let (day, rows, xp, aurem) = read(&room);
+    assert_eq!((day, rows.len()), (20_778, 6));
+    assert_eq!(rows[2], ("Sink or take 3 ships.".to_owned(), 3, 0, true, false));
+    assert_eq!(rows.iter().filter(|row| row.3).count(), 1);
+    assert_eq!((xp, aurem), (600, 36));
+    room.set_minute(29_919_420 + 1_440);
+    let (day, next, ..) = read(&room);
+    assert_eq!(day, 20_779);
+    assert!(next.iter().all(|row| !row.3 && row.2 == 0), "yesterday's bounty is held no more");
+}

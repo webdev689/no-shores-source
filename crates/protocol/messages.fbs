@@ -377,6 +377,16 @@ table GearDrop {
   flying: ubyte;
 }
 
+// A bounty of the day's board as it stands for a player: its words, how many it asks, how many they have counted,
+// whether they hold it and whether they turned it in.
+table GearBounty {
+  words: string;
+  target: uint;
+  count: uint;
+  held: bool;
+  paid: bool;
+}
+
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
 // then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
 // the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent;
@@ -449,6 +459,13 @@ table Gear {
   week_elite: bool;
   week_abyss: bool;
   boon: bool;
+  // The clock's day the room's word is of (`gear::clock`), which an ask about the bounty board sends back; the day's
+  // six bounties on the board, in its order, as they stand for them (none held from another day); and what each pays
+  // them when turned in, at their level.
+  day: uint;
+  bounties: [GearBounty];
+  bounty_xp: uint;
+  bounty_aurem: uint;
 }
 
 // What a room sends: exactly one of these is present.
