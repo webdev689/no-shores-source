@@ -27,10 +27,19 @@ const clothes = (
   hair: Outfit['hair'] = null,
 ): Clothes => ({ body, tone, outfit: { armour, garments: Object.keys(dyed), dyes: dyed, hair } });
 
+/** The High Assessor's clothes, which each Elite Dungeon's Boss wears too, in a body of its own. */
+const assessor = (body: string): Clothes =>
+  clothes(body, 0.4, every('iron'), { breeches: 'Grey', dwynnen_surcoat: 'Grey', formal_cloak: 'Grey' });
+/** The Elite Dungeons' Bosses' bodies, types 19 to 36 in order, each as its name reads. */
+const WARDEN_BODIES: readonly string[] = [
+  ...['male', 'female', 'male', 'female', 'male', 'female', 'male', 'male', 'female'],
+  ...['male', 'male', 'female', 'male', 'male', 'female', 'male', 'female', 'male'],
+];
+
 /** Each type's clothes by its number. The Grey Tithe wear grey cloth, over leather when they skirmish or shoot and
  *  over iron when they stand and fight; their captain is in steel from head to foot under a long grey cloak, and their
- *  High Assessor in iron from head to foot under a grey surcoat and a long grey cloak. The pirates wear the Test
- *  Ground's five foes' clothes. */
+ *  High Assessor and the Elite Dungeons' Bosses in iron from head to foot under a grey surcoat and a long grey cloak.
+ *  The pirates wear the Test Ground's five foes' clothes. */
 const CLOTHES: Readonly<Record<number, Clothes>> = {
   1: clothes(
     'male',
@@ -129,7 +138,8 @@ const CLOTHES: Readonly<Record<number, Clothes>> = {
     { style: 'braid', colour: 'red' },
   ),
   17: clothes('male', 0.55, every('ebony'), { shirt_long_v: 'Purple', breeches: 'Grey' }),
-  18: clothes('male', 0.4, every('iron'), { breeches: 'Grey', dwynnen_surcoat: 'Grey', formal_cloak: 'Grey' }),
+  18: assessor('male'),
+  ...Object.fromEntries(WARDEN_BODIES.map((body, index) => [19 + index, assessor(body)])),
 };
 
 /** A type's dress: its own clothes, with the weapons the rules' roster puts in its hands drawn. Null for a type with

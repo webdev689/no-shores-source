@@ -35,7 +35,7 @@ mod tests {
     fn the_roster_reads_as_every_type_with_its_faction_ranks_and_hands() {
         let roster: Value = serde_json::from_str(&roster_json()).unwrap();
         let types = roster.as_array().unwrap();
-        assert_eq!(types.len(), 18);
+        assert_eq!(types.len(), 36);
         let corvane = &types[17];
         assert_eq!(
             (corvane["type"].as_u64(), corvane["name"].as_str(), corvane["domain"].as_str(), corvane["left"].as_str()),

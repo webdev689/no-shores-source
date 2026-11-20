@@ -50,7 +50,7 @@ factions fight each other as they fight players, and never their own side.
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
-| 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
+| 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane, the Elite Dungeons' 18 Bosses | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
 | 2 | Pirates | at sea | | Skirmisher, Swordsman, Brute, Archer, Captain | Pirate Sloop |
 
 The Grey Tithe holds the land: a garrison of its foes stands in every node but the social spaces, on every continent
@@ -83,6 +83,28 @@ out among them ([[Foes]]).
 | 16 | Archer (pirate) | Archer | `bow_short_iron` | | Minor, Major |
 | 17 | Captain (pirate) | Captain | `sword_ebony` | | Elite, Miniboss |
 | 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
+| 19 | Wreck-Reeve Oswin Tarr (krakens-grotto's Boss) | Captain | `sword_steel` |  | Boss |
+| 20 | Pearl-Keeper Isolde Varne (pearl-tomb's Boss) | Captain | `mace_iron` | `shield_kite_iron` | Boss |
+| 21 | Forgemaster Garrick Soot (cinder-deep's Boss) | Captain | `warhammer_iron` |  | Boss |
+| 22 | Tithe-Warden Mabry Hollis (hollow-crypt's Boss) | Captain | `mace_iron` | `shield_kite_iron` | Boss |
+| 23 | Wrecker Dunstan Black (black-tide-caverns's Boss) | Captain | `axe_iron` |  | Boss |
+| 24 | Sister-Assessor Aldith (pale-undercroft's Boss) | Captain | `flail_iron` | `shield_kite_iron` | Boss |
+| 25 | Cistern-Steward Corwin Vey (forsaken-cistern's Boss) | Captain | `sword_steel` | `shield_kite_steel` | Boss |
+| 26 | Vaultwarden Hesk Amaro (sandworn-vault's Boss) | Captain | `warhammer_iron` |  | Boss |
+| 27 | Gaoler Renna Crake (smugglers-labyrinth's Boss) | Captain | `sword_iron` | `shield_kite_iron` | Boss |
+| 28 | Barrow-Reeve Tobin Silt (silt-barrows's Boss) | Captain | `mace_iron` |  | Boss |
+| 29 | Treasurer Lucan Deeps (deepwater-vault's Boss) | Captain | `sword_ebony` |  | Boss |
+| 30 | Factor Odile Coralle (coral-halls's Boss) | Captain | `flail_iron` |  | Boss |
+| 31 | Lord-Assessor Edric Barrow (barrow-halls's Boss) | Captain | `sword_ebony` | `shield_kite_steel` | Boss |
+| 32 | Digmaster Ulf Hargreave (saltworm-warrens's Boss) | Captain | `axe_iron` |  | Boss |
+| 33 | Bog-Reeve Hester Mire (mire-hollows's Boss) | Captain | `mace_iron` | `shield_kite_iron` | Boss |
+| 34 | Sluice-Warden Abel Rook (rotwater-sewers's Boss) | Captain | `sword_steel` |  | Boss |
+| 35 | Abbess Ylva Frost (frozen-sepulchre's Boss) | Captain | `flail_iron` | `shield_kite_steel` | Boss |
+| 36 | Catacomb-Reeve Silas Brine (brine-catacombs's Boss) | Captain | `warhammer_iron` |  | Boss |
+
+Types 19 to 36 are the Elite Dungeons' Bosses, one each ([[Activities]]): each a Grey Tithe land Captain, the faction
+of the dungeon garrison it ends, at Boss rank, fighting in Corvane's three phases under a name of its own over its
+bar, dressed as Corvane is.
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).

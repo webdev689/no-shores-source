@@ -87,7 +87,7 @@ test('the roster reads from the rules: every enemy type with its name, faction, 
     ranks: number[];
     right: string;
   }[];
-  assert.equal(roster.length, 18);
+  assert.equal(roster.length, 36);
   const thule = roster.find((entry) => entry.type === 12);
   assert.deepEqual(
     [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],

@@ -77,7 +77,9 @@ Company]]).
 
 - **Each named dungeon place** (two an island, the `kind: "dungeon"` nodes) becomes a dungeon the Forge lays, its
   seed and style fixed by its place. It is longer than a patrol's, four or five blocks.
-- **Its end** holds a Boss with its own name and nameplate in place of a Reeve.
+- **Its end** holds a Boss with its own name and nameplate in place of a Reeve: one of the roster's types 19 to 36
+  (`ISLAND_PLACES` names each dungeon's), a land Captain of its garrison's faction fighting in Corvane's three phases
+  ([[Enemies]]).
 - **Its node** keeps its open-air approach and gains the entrance.
 - **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
