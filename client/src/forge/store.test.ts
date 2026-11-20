@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { mock, test } from 'node:test';
-import { ForgeStore, RETRY_AFTER_MS, pictureRange, rangeLength, stripAt } from './store.ts';
+import { ForgeStore, RETRY_AFTER_MS, joinedRange, pictureRange, rangeLength, stripAt } from './store.ts';
 
 const manifest = { base: 'https://renders.example/', index: 'index/a.json', tables: {} };
 const index = {
@@ -57,4 +57,25 @@ test('a range cut short is fetched again past the cache, and still short it fail
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+test('a strip and its depth side by side in one pack are one range, split where the first ends', () => {
+  const place = (range: string, url = 'pack.webp', type = 'image/webp') => ({ url, range, type });
+  assert.deepEqual(joinedRange(place('bytes=100-199'), place('bytes=200-349')), {
+    where: place('bytes=100-349'),
+    oneFirst: true,
+    split: 100,
+  });
+  assert.deepEqual(joinedRange(place('bytes=200-349'), place('bytes=100-199')), {
+    where: place('bytes=100-349'),
+    oneFirst: false,
+    split: 100,
+  });
+  assert.equal(joinedRange(place('bytes=100-199'), place('bytes=201-349')), null, 'a gap between them');
+  assert.equal(joinedRange(place('bytes=100-199'), place('bytes=200-349', 'other.webp')), null, 'another pack');
+  assert.equal(
+    joinedRange(place('bytes=100-199'), place('bytes=200-349', 'pack.webp', 'image/png')),
+    null,
+    'another kind',
+  );
 });

@@ -140,6 +140,7 @@ test('a frame shown now is composed ahead of every frame warmed, and asks for th
       return new Promise(() => undefined);
     },
     hurry: (key: string) => hurried.push(key),
+    prefetch: () => undefined,
   };
   const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
   const dyes = { palette: [], clothing: {}, armour: {} };
@@ -170,6 +171,7 @@ test('a frame that failed is asked for again only after a while, not each tick w
       return Promise.reject(new Error('no strip'));
     },
     hurry: () => undefined,
+    prefetch: () => undefined,
   };
   const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
   const dyes = { palette: [], clothing: {}, armour: {} };
@@ -197,6 +199,7 @@ test("warming goes at the page's pace whenever the frames are composed on it", (
       return new Promise(() => undefined);
     },
     hurry: () => undefined,
+    prefetch: () => undefined,
   };
   const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
   const dyes = { palette: [], clothing: {}, armour: {} };
@@ -210,4 +213,23 @@ test("warming goes at the page's pace whenever the frames are composed on it", (
   started = 0;
   forge.pump();
   assert.equal(started, 2, 'two a tick once the worker is gone');
+});
+
+test('warming a new dress fetches every strip its moves draw, as drawn and as mirrored, once', () => {
+  const fetchedNow: string[][] = [];
+  const composer: Composer = {
+    offPage: true,
+    compose: () => new Promise(() => undefined),
+    hurry: () => undefined,
+    prefetch: (paths) => fetchedNow.push([...paths]),
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const forge = new Cards(maker, store, looks, colours, { palette: [], clothing: {}, armour: {} }, undefined, composer);
+  forge.warm(armed, () => ['guard'], 0, 1);
+  forge.warm(armed, () => ['guard'], 0, 1);
+  assert.equal(fetchedNow.length, 1, 'once for the dress');
+  const layers = (fetchedNow[0] ?? []).map((path) => path.replace('forge/layers/male/', '')).sort();
+  assert.ok(layers.includes('body_guard.png') && layers.includes('body_guard_z.png'), layers.join());
+  assert.ok(layers.includes('sword_iron_guard.png'), 'the sword in its own fist');
+  assert.ok(layers.includes('sword_iron_l_guard.png'), 'and in the other, as a mirrored view draws it');
 });

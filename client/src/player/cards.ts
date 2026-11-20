@@ -5,6 +5,7 @@ import { type ForgeLooks, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { RETRY_AFTER_MS } from '../forge/stripCache.ts';
+import { stripsOf } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import { type Composer, PageComposer, WorkerComposer } from './composer.ts';
 import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
@@ -294,13 +295,21 @@ export class Cards {
     const others = this.queued.filter((queued) => queued.owner !== owner);
     this.queued.splice(0, this.queued.length, ...others);
     const kept = structuredClone(dress);
+    const strips = new Set<string>();
     for (const anim of anims()) {
       if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
+      for (const flip of [false, true]) {
+        const { figure } = this.framed(kept, anim, 0, 0, flip, glow);
+        for (const path of stripsOf({ figure, anim, view: 0, frame: 0, ramps: {}, glow }, this.looks)) strips.add(path);
+      }
       for (let view = 0; view < VIEWS; view++)
         for (let frame = 0; frame < this.frames(dress.body, anim); frame++)
           for (const flip of MIRRORED.has(view) ? [false, true] : [false])
             this.queued.push({ dress: kept, anim, view, frame, flip, glow, owner, key });
     }
+    // Fetching a move's strips takes far longer than composing its frames (a second against milliseconds), and a blow
+    // is over sooner: so every strip the dress plays is fetched now, and its first blow is not shown as a still.
+    this.composer.prefetch([...strips]);
   }
 
   /** Lets go of a figure that has left: the last card it showed is no longer kept for it. */

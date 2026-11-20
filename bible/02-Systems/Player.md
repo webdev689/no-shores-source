@@ -38,14 +38,19 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
 - **The camera** sits in the head, or behind it and up in third person, short of any block between
   (`cameraOrbit`). The page draws from it.
-- **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the
-  scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
-  Each figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working
-  out the moves only for a new dress), and again once one of them is let go before it was asked for ([[Test Ground]],
-  "Limits"). The figure holds the weapon the fight's rules hold: one changed while they are
-  busy shows once they take it up at rest. The walker gives the player's own card for an eye; other players' figures
-  stand where their room last saw them, in their own dress when it reads as one (`OtherPlayers`, `showOther`), as in
-  the game's nodes so on the Test Ground.
+- **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the scene
+  makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass. Each
+  figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working out the
+  moves only for a new dress), and again once one of them is let go before it was asked for ([[Test Ground]], "Limits").
+  The figure holds the weapon the fight's rules hold: one changed while they are busy shows once they take it up at
+  rest. The walker gives the player's own card for an eye; other players' figures stand where their room last saw them,
+  in their own dress when it reads as one (`OtherPlayers`, `showOther`), as in the game's nodes so on the Test Ground.
+- **Its strips are fetched ahead.** A new dress has every strip of its likeliest moves fetched at once, as drawn and as
+  mirrored, in the order the moves are likeliest shown: a move's strips take a second or more to fetch and a few
+  milliseconds to compose, so a blow first played would otherwise show as a still. The worker composing the frames
+  fetches six at a time, each dress's next in turn, and each strip with its depth in one range, as the packs lay them
+  side by side. It keeps the fetched bytes (96 MB) apart from the decoded strips (128 MB, a few moves of a few dresses),
+  so a strip let go is decoded again rather than fetched.
 - **A room** (`Fighting`): it is joined with the player's session, if they have one, to keep their character
   ([[Accounts]]). Each tick's intent goes to it, with what the figure shows, the dress when it changed, a gear ask and
   a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,
