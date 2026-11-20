@@ -16,6 +16,14 @@ const MAST_BYTE = 27;
 /** A spar stands on a mast when its forward end lies within this of the mast along her, metres: the mast itself, its
  *  yards and tops, and a gaff's or boom's jaws; a bowsprit is far forward of any. */
 const ON_MAST_M = 1.2;
+/** Any other piece of her rig (a shroud, a stay, ratlines, crosstrees) is the mast's whose top lies within this of it
+ *  along her and this far over its foot, metres: a rope is made fast to the mast it holds up. */
+const ROPE_ON_MAST_M = 2.5;
+const ROPE_OVER_FOOT_M = 3;
+/** A piece within this of a mast's spar hangs from it, metres. */
+const HUNG_M = 0.3;
+/** What is never a mast's: her hull, her deck and her canvas. */
+const NOT_RIG = new Set(['hull', 'deck', 'sail']);
 /** Her breadth is measured in slices this long along her and this deep, metres; a vertex within `SHELL_M` of her
  *  breadth in its slice, facing outboard, is her shell. */
 const SLICE = { alongM: 0.25, acrossM: 0.25, upM: 0.1 } as const;
@@ -268,26 +276,70 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
     });
     if (bare.length > 0) mark(bare, mast.lowest);
   }
-  return { vertices, yards, pivots, masts: tagMasts(view, sparPieces, pointOf, mastsOf(sails).masts) };
+  return { vertices, yards, pivots, masts: tagMasts(view, pieces, pointOf, partOf, mastsOf(sails).masts) };
 }
 
-/** Tags each spar standing on a mast with the mast's number plus one, and answers each mast's span. */
+/** Tags each spar standing on a mast with the mast's number plus one, and answers each mast's span; then every other
+ *  piece of her rig (its shrouds, stays, ratlines and crosstrees) whose top is on that mast, so nothing of a mast
+ *  stands where it fell. */
 function tagMasts(
   view: DataView,
-  sparPieces: readonly (readonly number[])[],
+  pieces: readonly (readonly number[])[],
   pointOf: (vertex: number) => Point,
+  partOf: (vertex: number) => number,
   masts: readonly number[],
 ): MastSpan[] {
   const spans = masts.map(() => ({ footZ: Infinity, topZ: -Infinity }));
-  for (const piece of sparPieces) {
+  const tag = (piece: readonly number[], mast: number) => {
+    for (const vertex of piece) view.setUint8(vertex * VERTEX_BYTES + MAST_BYTE, mast + 1);
+  };
+  const spar = SHIP_PARTS.indexOf('spar');
+  const rigging = pieces.filter((piece) => !NOT_RIG.has(SHIP_PARTS[partOf(piece[0] ?? 0)] ?? 'hull'));
+  const rest: (readonly number[])[] = [];
+  for (const piece of rigging) {
     const points = piece.map(pointOf);
     const forward = Math.max(...points.map((point) => point[0]));
-    const mast = masts.findIndex((x) => Math.abs(forward - x) < ON_MAST_M);
+    const mast = partOf(piece[0] ?? 0) === spar ? masts.findIndex((x) => Math.abs(forward - x) < ON_MAST_M) : -1;
     const span = spans[mast];
-    if (!span) continue;
-    for (const vertex of piece) view.setUint8(vertex * VERTEX_BYTES + MAST_BYTE, mast + 1);
+    if (!span) {
+      rest.push(piece);
+      continue;
+    }
+    tag(piece, mast);
     for (const point of points)
       [span.footZ, span.topZ] = [Math.min(span.footZ, point[2]), Math.max(span.topZ, point[2])];
+  }
+  // What hangs off a mast's spars, a gaff's peak block or a boom's end, goes with them: found by a grid of cells
+  // `HUNG_M` wide, each holding the mast of a spar point in it.
+  const cellOf = (point: Point) => point.map((value) => Math.floor(value / HUNG_M));
+  const sparCells = new Map<string, number>();
+  for (const piece of rigging) {
+    const mast = view.getUint8((piece[0] ?? 0) * VERTEX_BYTES + MAST_BYTE) - 1;
+    if (mast >= 0) for (const vertex of piece) sparCells.set(cellOf(pointOf(vertex)).join(), mast);
+  }
+  const hungFrom = (point: Point) => {
+    const [x = 0, y = 0, z = 0] = cellOf(point);
+    for (const along of [-1, 0, 1])
+      for (const across of [-1, 0, 1])
+        for (const up of [-1, 0, 1]) {
+          const mast = sparCells.get([x + along, y + across, z + up].join());
+          if (mast !== undefined) return mast;
+        }
+    return -1;
+  };
+  for (const piece of rest) {
+    const points = piece.map(pointOf);
+    const top = points.reduce((best, point) => (point[2] > best[2] ? point : best));
+    const hung = points.reduce((found, point) => (found >= 0 ? found : hungFrom(point)), -1);
+    if (hung >= 0) {
+      tag(piece, hung);
+      continue;
+    }
+    const mast = masts.findIndex(
+      (x, index) =>
+        Math.abs(top[0] - x) < ROPE_ON_MAST_M && top[2] > (spans[index]?.footZ ?? Infinity) + ROPE_OVER_FOOT_M,
+    );
+    if (mast >= 0) tag(piece, mast);
   }
   return spans.map((span) => (span.footZ === Infinity ? { footZ: 0, topZ: 0 } : span));
 }

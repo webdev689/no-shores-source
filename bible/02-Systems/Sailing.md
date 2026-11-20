@@ -213,7 +213,9 @@ Boat's sizes; a spanker is a gaff sail:
   each new one beside an old, a third of every sail's cells shot through with none left; a hole never closes for the
   fight. Her masts stand where her sails' heads and gaffs' luffs stand along her (`mastsOf`), each staysail on the mast
   its head is set to; when her model loads, every spar whose forward end lies within 1.2 m of a mast is tagged with
-  it, so a fallen mast goes over her side with its yards, tops and gaff, its sails with it. A sail torn away falls
+  it, then every piece of her rig whose top lies within 2.5 m of a mast along her and 3 m over its foot (its shrouds,
+  stays, ratlines and crosstrees), and whatever hangs within 0.3 m of a mast's spar (a gaff's peak block, a boom's
+  end), so a fallen mast goes over her side with all its rig and its sails; only her bowsprit stays. A sail torn away falls
   from its yard, head first, and floats astern; her flag comes down her mast when she strikes. The harm goes with the
   fight.
 

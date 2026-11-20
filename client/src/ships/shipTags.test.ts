@@ -8,6 +8,7 @@ import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { HULL_NAMES, hullSails, hullWaterline } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, SailRig } from './sails.ts';
 import { readShipMesh, type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
+import { mastsOf } from './shipHarm.ts';
 import { braced, tagShip } from './shipTags.ts';
 
 /** A published hull's mesh, fetched from R2 once and kept by its content's name in the machine's temporary folder. */
@@ -144,5 +145,26 @@ test("braced 45 degrees, a square sail's head stays on its turned yard", async (
     });
     // The Frigate's crossjack, bare, turns with her mizzen's lowest sail.
     if (hull === 3) assert.equal(tags.yards.length, 9, 'eight yards with sails and one bare');
+  }
+});
+
+test("every hull's rig high over her deck is tagged to a mast, so nothing of one stands where it fell", async () => {
+  for (const hull of [0, 1, 2, 3]) {
+    const mesh = await published(hull);
+    const view = new DataView(tagShip(mesh, hullSails(hull)).vertices);
+    const above = new Map<number, number>();
+    const untagged = new Set<number>();
+    // A face's corners are one piece; any corner of hers over 10 m that is rig and not a mast's is one left standing.
+    for (let corner = 0; corner < mesh.indices.length; corner++) {
+      const vertex = mesh.indices[corner] ?? 0;
+      const byte = vertex * VERTEX_BYTES;
+      const part = SHIP_PARTS[view.getUint8(byte + 24)];
+      if (part === 'hull' || part === 'deck' || part === 'sail') continue;
+      const z = view.getFloat32(byte + 8, true);
+      if (z > 10 && view.getUint8(byte + 27) === 0) untagged.add(vertex);
+      above.set(view.getUint8(byte + 27), (above.get(view.getUint8(byte + 27)) ?? 0) + 1);
+    }
+    assert.equal(untagged.size, 0, `${HULL_NAMES[hull]}: ${untagged.size} corners of her rig stand untagged`);
+    assert.equal([...above.keys()].filter((mast) => mast > 0).length, mastsOf(hullSails(hull)).masts.length);
   }
 });
