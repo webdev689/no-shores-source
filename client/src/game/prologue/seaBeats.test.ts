@@ -140,8 +140,18 @@ test('as the lookout speaks of the wrecks the camera looks out over him to the n
   assert.ok(headOnView(onScreen(out.shot, VIEW, [near.x, near.y, near.z + 2]), VIEW), 'the nearest wreck in view');
   const head = out.heads?.get('lookout');
   assert.ok(head && headOnView(onScreen(out.shot, VIEW, head), VIEW), 'the lookout in view as he speaks');
+  const pushed = run(calm, 2.4, 5.6).at(-1)?.frame.shot;
+  assert.ok(pushed);
+  const [foot, top] = [
+    onScreen(pushed, VIEW, [near.x, near.y, near.z]),
+    onScreen(pushed, VIEW, [near.x, near.y, near.z + 15]),
+  ];
+  assert.ok(
+    foot && top && foot[1] - top[1] >= VIEW.height * 0.15,
+    `the wreck read at ${near.x}: ${foot?.[1]} ${top?.[1]}`,
+  );
   saying.get('calm')?.(mate);
-  const back = run(calm, 1.6, 5.6).at(-1)?.frame.shot;
+  const back = run(calm, 1.6, 8).at(-1)?.frame.shot;
   const own = story.sailing.frame([story.brig.sailed()], 0, 0, 0, undefined)[0]?.place;
   const deck = own && onBrig(own, [{ at: 0, eye: [...DECK_VIEW.eye], look: [...DECK_VIEW.look] }], 0);
   assert.ok(back && deck && Math.hypot(back.eye[0] - deck.eye[0], back.eye[1] - deck.eye[1]) < 0.5, 'back on deck');
@@ -250,4 +260,22 @@ test('a story begun at the fight takes its ships without playing the sighting', 
   assert.equal(storyCueNow(), 'battle');
   assert.deepEqual(said, []);
   assert.ok(!done.includes('weather 1.5'), 'no sighting eased the fog in');
+});
+
+test('a wreck the fight left far off still reads as the lookout speaks of her', () => {
+  const { story, saying, run } = storied();
+  // As far as the pirates were sighted: about 700 m astern.
+  const calm = new Calm(story, FROM, [{ ship: lying('far', 9_550, 20_530, 1), going: null }]);
+  run(calm, 4);
+  const lookout = (scenes.scenes.calm as readonly Line[]).find((line) => line.who === 'lookout');
+  assert.ok(lookout);
+  saying.get('calm')?.(lookout);
+  const frame = run(calm, 4, 4).at(-1)?.frame;
+  const far = frame?.ships?.[1]?.place;
+  assert.ok(frame && far);
+  const [foot, top] = [
+    onScreen(frame.shot, VIEW, [far.x, far.y, far.z]),
+    onScreen(frame.shot, VIEW, [far.x, far.y, far.z + 15]),
+  ];
+  assert.ok(foot && top && foot[1] - top[1] >= VIEW.height * 0.15, `${foot?.[1]} ${top?.[1]}`);
 });

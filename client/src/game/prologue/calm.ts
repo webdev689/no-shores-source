@@ -33,6 +33,12 @@ const OUT_LENS = 0.55;
 const BEHIND_M = 3;
 const ASIDE_M = 1.1;
 const OVER_HEAD_M = 0.35;
+/** Once the lookout has begun, the camera pushes in on the wreck until the picture is this many metres high at her,
+ *  so a ship beaten far off reads as clearly as one near; never narrower than the least lens. */
+const PUSH_AFTER_S = 1.8;
+const PUSH_S = 2;
+const FRAMED_M = 45;
+const LEAST_LENS = 0.04;
 
 /** A camera kept with the Brig's deck (her frame), steadied so the picture does not heel with her. */
 export function onBrig(own: ShipPlace, keys: readonly RailKey[], time: number): Shot {
@@ -128,7 +134,8 @@ export class Calm implements Beat {
     if (!own) throw new Error('the Brig is not sailing');
     const deck = onBrig(own, [{ at: 0, eye: [...DECK_VIEW.eye], look: [...DECK_VIEW.look] }], 0);
     const down = eased(this.from, deck, this.since / DOWN_S);
-    const out = this.lookingOut >= 0 ? this.outToWrecks(own, ships.slice(1)) : null;
+    const pushed = (this.since - this.lookingOut - PUSH_AFTER_S) / PUSH_S;
+    const out = this.lookingOut >= 0 ? this.outToWrecks(own, ships.slice(1), pushed) : null;
     const shot = out
       ? eased(
           eased(down, out, (this.since - this.lookingOut) / LOOK_OUT_S),
@@ -154,8 +161,9 @@ export class Calm implements Beat {
     return wrecksOn(this.laid, this.since);
   }
 
-  /** Over the lookout's shoulder to the nearest wreck, on a longer lens, so a ship beaten far off still reads. */
-  private outToWrecks(own: ShipPlace, wrecks: readonly { readonly place: ShipPlace }[]): Shot | null {
+  /** Over the lookout's shoulder to the nearest wreck, his head on the view as he begins, then pushed in on her by
+   *  `pushed` of the way, so a ship beaten far off reads as clearly as one near. */
+  private outToWrecks(own: ShipPlace, wrecks: readonly { readonly place: ShipPlace }[], pushed: number): Shot | null {
     const head = this.story.brig.head(own, 'lookout');
     const nearest = wrecks
       .map((wreck) => wreck.place)
@@ -169,6 +177,9 @@ export class Calm implements Beat {
       head[1] - alongY * BEHIND_M + alongX * ASIDE_M,
       head[2] + OVER_HEAD_M,
     ];
-    return { ...LENS, fov: OUT_LENS, eye, ...lookAt(eye, [nearest.x, nearest.y, nearest.z + 2]) };
+    const fitted = Math.max(LEAST_LENS, Math.min(OUT_LENS, 2 * Math.atan(FRAMED_M / 2 / far)));
+    const share = Math.min(1, Math.max(0, pushed));
+    const fov = OUT_LENS + (fitted - OUT_LENS) * share * share * (3 - 2 * share);
+    return { ...LENS, fov, eye, ...lookAt(eye, [nearest.x, nearest.y, nearest.z + 6]) };
   }
 }
