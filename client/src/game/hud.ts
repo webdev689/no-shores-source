@@ -5,7 +5,7 @@ import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { HostileLook } from './seaHostiles.ts';
-import type { Landfall } from './seaLaw.ts';
+import { type Landfall, landfallWords } from './seaLaw.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
 /** A button of the heads-up display, in the role it plays: let go of once pressed, so Space or Enter, which the game
@@ -360,7 +360,7 @@ export class Hud {
     this.voyage.hidden = !state.sailing && !state.resumable;
     const voyage = state.sailing ? 'Stop  Space' : 'Resume voyage  Space';
     if (this.voyage.textContent !== voyage) this.voyage.textContent = voyage;
-    const offer = state.landfall?.kind === 'dock' ? `Dock at ${state.landfall.port}  Enter` : 'Go ashore  Enter';
+    const offer = state.landfall ? `${landfallWords(state.landfall)}  Enter` : '';
     if (state.landfall && this.landfall.textContent !== offer) this.landfall.textContent = offer;
   }
 

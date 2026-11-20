@@ -88,8 +88,15 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
     const isle = snapshot.islands(index);
     const kind = isle && ISLE_KINDS[isle.kind()];
     if (!isle || !kind) throw new Error(`snapshot island ${index} does not read`);
-    const at = [isle.x(), isle.y()] as const;
-    return { id: isle.id(), seed: isle.seed().toString(), at, kind, continent: isle.continent(), found: isle.found() };
+    const middle = [isle.x(), isle.y()] as const;
+    return {
+      id: isle.id(),
+      seed: isle.seed().toString(),
+      at: middle,
+      kind,
+      continent: isle.continent(),
+      found: isle.found(),
+    };
   });
   return { flotsam, kept, told, decks, islands };
 }

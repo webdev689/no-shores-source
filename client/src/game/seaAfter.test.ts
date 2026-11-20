@@ -58,3 +58,15 @@ test('washed up, the player walks into the social space of the port city she was
   });
   assert.equal(after.ashore({ id: 'continent-3', nodes }), null, 'taken once');
 });
+
+test('washed up on a found island, the player is told so and walks ashore there, taken once', () => {
+  const lines = linesOf([[20, 100, -1, 1, 9]], [], new Map(), ['Overlook']);
+  assert.deepEqual(lines, [
+    'Your ship went down: you washed up on an island you found, your ship lying off it, unrepaired.',
+  ]);
+  const after = new SeaAfter([]);
+  const room = { flotsam: [], takeTold: () => ({ naval: [], told: [[20, 100, -1, 1, 9]] }) };
+  after.step(room as unknown as Parameters<SeaAfter['step']>[0]);
+  assert.equal(after.takeWashedIsle(), 9);
+  assert.equal(after.takeWashedIsle(), null);
+});

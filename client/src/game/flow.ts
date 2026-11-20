@@ -19,6 +19,7 @@ export type Happening =
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
   | { readonly kind: 'wash-up'; readonly node: string; readonly words: string }
+  | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
@@ -56,7 +57,9 @@ export function next(flow: Flow, happening: Happening): Flow {
         then: { mode: 'foot', node: happening.node, menu: false },
       };
     case 'wash-up':
-      // Washed up from the sea, the player stands in the port city's social space, the veil saying why.
+    case 'isle':
+      // Washed up from the sea, the player stands in the port city's social space or on an island's beach, the veil
+      // saying why; anchored off an island, they walk ashore on its beach.
       if (flow.mode !== 'sea') return flow;
       return { mode: 'loading', words: happening.words, then: { mode: 'foot', node: happening.node, menu: false } };
     case 'back':

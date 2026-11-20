@@ -12,7 +12,7 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
@@ -63,6 +63,9 @@ export interface FootContext {
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
+
+/** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
+export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
@@ -161,6 +164,8 @@ export class Foot {
   private readonly folk: Placed[];
   private readonly prompt: UsePrompt | null;
   private using: Use | null = null;
+  /** What E does on a sea island where the player stands: a wreck scavenged, the dungeon's door. */
+  private uses: Uses | null = null;
 
   private constructor(
     context: FootContext,
@@ -238,35 +243,45 @@ export class Foot {
     return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
   }
 
-  /** The player boarding a struck ship: on `node`, her deck, standing on its grid of heights (`deckFloats`) in her
-   *  own frame at the spot her deck room stands a boarder, with no box or ground of the land; her deck room reached
-   *  through the link `open` makes, which hands on each of its snapshots. */
+  /** The player on a grid of heights with no ground of the land: boarding a struck ship, on `node` her deck in her own
+   *  frame (`deckFloats`) at the spot her deck room stands a boarder, facing her bow; or landed on a sea island, its
+   *  ground and its modules' boxes in the world's metres, facing inland, E using what lies near (`place`). The room
+   *  is reached through the link `open` makes, which hands on each of its snapshots. */
   static async onDeck(
     context: FootContext,
     node: NodeInfo,
     grid: readonly number[],
     open: (received: (snapshot: Snapshot) => void) => RoomLink,
+    place: {
+      readonly boxes?: readonly Block[];
+      readonly facing?: number;
+      readonly uses?: Uses;
+      readonly gear?: { gear: GearState | null };
+    } = {},
   ): Promise<Foot> {
     const { movement, walker } = context;
     const rules = await rulesOf(context);
-    movement.setCourse([]);
-    rules.combat.setCourse([]);
-    if (!movement.setHeights(grid) || !rules.combat.setHeights(grid)) throw new Error('her deck did not load');
+    const boxes = place.boxes ?? [];
+    movement.setCourse(boxes);
+    rules.combat.setCourse(boxes);
+    if (!movement.setHeights(grid) || !rules.combat.setHeights(grid)) throw new Error('the ground did not load');
     const [x, y] = node.spawns[0] ?? node.centre;
-    // Facing her bow, toward her crew.
-    walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: 0, facing: 0 };
+    const facing = place.facing ?? 0;
+    walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
     const { players, heard, received } = hearing(context.forge);
     const link = open(received);
     const fight = new Fighting(rules.combat, link);
     heard.fight = fight;
     players.takeDresses(link.dressed);
-    return new Foot(
+    const foot = new Foot(
       context,
       node,
-      [],
+      boxes,
       { link, fight, ...rules },
-      { otherPlayers: players, gear: { gear: null }, folk: [] },
+      { otherPlayers: players, gear: place.gear ?? { gear: null }, folk: [] },
     );
+    foot.uses = place.uses ?? null;
+    return foot;
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
@@ -455,7 +470,10 @@ export class Foot {
     const able = !paused && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
-    this.using = able ? useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)) : null;
+    const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
+    this.using = able
+      ? (placeUse ?? useAt(x, y, this.node.stations ?? [], gear?.gear ?? null, (asked) => gear?.ask(asked)))
+      : null;
     this.prompt?.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {

@@ -78,6 +78,8 @@ export interface FrameParts {
   readonly travel: (happening: Happening, work: () => Promise<void>) => void;
   readonly goFoot: (node: NodeInfo, facing: number) => Promise<void>;
   readonly mapOf: () => HeldMap;
+  /** The sea's islands kept, and walked ashore on, each frame at sea. */
+  readonly isleFrame: () => void;
 }
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
@@ -203,6 +205,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
+    parts.isleFrame();
     const ashore = flow.mode === 'sea' ? afterFights?.ashore(landmass) : null;
     if (ashore)
       parts.travel(ashore.washUp, () =>

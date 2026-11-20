@@ -7,6 +7,7 @@ import { maskFromOutlines, planSeaRoute, type RouteRefusal, type SeaMask } from 
 import { PACE_DEFAULT, type Pace, secondsLeft, shipAt, stepPace, type Voyage, voyageOf } from '../overworld/voyage.ts';
 import type { Lies } from '../ships/swellPose.ts';
 import { distanceText } from './hudLaw.ts';
+import { type KeptClear, detour } from './isleLaw.ts';
 import { AHEAD, clearAhead, HELM_TURN, turned } from './seaHelm.ts';
 import {
   courseAhead,
@@ -54,6 +55,9 @@ export class Passage {
   private said = '';
   /** The sea room she sails in, once joined. */
   room: SeaRoom | null = null;
+
+  /** The sea's islands in sight, which every voyage is bent round: the route's grid is far coarser than an island. */
+  keepClear: () => readonly KeptClear[] = () => [];
 
   constructor(outlines: readonly (readonly Point2[])[], landmassMask: () => SeaMask, start: Point2, heading: number) {
     this.outlines = outlines;
@@ -105,7 +109,8 @@ export class Passage {
     point: Point2,
   ): { readonly ok: true; readonly points: Point2[] } | { readonly ok: false; readonly why: string } {
     const route = planSeaRoute(this.maskFor(this.position, point), this.position, point);
-    return route.ok ? { ok: true, points: route.points } : { ok: false, why: REFUSED[route.reason] };
+    if (!route.ok) return { ok: false, why: REFUSED[route.reason] };
+    return { ok: true, points: detour(route.points, this.keepClear()) };
   }
 
   /** Plans a voyage from the ship to a point and sets sail; a voyage that cannot be planned says why. */
@@ -116,8 +121,18 @@ export class Passage {
       return;
     }
     this.said = '';
-    this.voyage = voyageOf(route.points);
+    this.voyage = voyageOf(detour(route.points, this.keepClear()));
     [this.destination, this.travelled, this.straight] = [point, 0, false];
+    this.room?.course(courseAhead(this.voyage, 0), this.sailed);
+  }
+
+  /** Sets sail through a course's points in turn, from where she lies, as planned: to anchor off an island. */
+  sailAlong(points: readonly Point2[]): void {
+    const end = points.at(-1);
+    if (!end) return;
+    this.said = '';
+    this.voyage = voyageOf([this.position, ...points.filter((point) => point !== this.position)]);
+    [this.destination, this.travelled, this.straight] = [end, 0, false];
     this.room?.course(courseAhead(this.voyage, 0), this.sailed);
   }
 

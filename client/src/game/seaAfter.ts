@@ -97,9 +97,13 @@ export function linesOf(
   for (const numbers of told) {
     const [code, , first = 0, second = 0, third = 0, fourth = 0] = numbers;
     if (code === WASHED_UP) {
-      const port = ports[first] ?? 'the nearest port city';
       const why = second === 1 ? 'Your ship went down' : 'Beaten aboard her';
-      lines.push(`${why}: you washed up at ${port}, your ship moored at its roadstead.`);
+      const isle = numbers[4] ?? 0;
+      if (isle > 0) lines.push(`${why}: you washed up on an island you found, your ship lying off it, unrepaired.`);
+      else
+        lines.push(
+          `${why}: you washed up at ${ports[first] ?? 'the nearest port city'}, your ship moored at its roadstead.`,
+        );
     } else if (code === HELD) {
       lines.push(`Gathered a ${kinds.get(first) ?? 'crate'}: ${heldWords(second, third, fourth)}.`);
     } else if (code === JOINED) {
@@ -121,8 +125,10 @@ export class SeaAfter {
   /** Each piece of what floats laid for the player, by its number: what it looks like. */
   private readonly kinds = new Map<number, string>();
   private readonly ports: readonly PortCity[];
-  /** The port city the player washed up at, by the sea's number, until they walk ashore there. */
+  /** The port city the player washed up at, by the sea's number, until they walk ashore there; or the found island
+   *  they washed up on, by its number. */
   private washed: number | null = null;
+  private washedIsle: number | null = null;
   constructor(ports: readonly PortCity[]) {
     this.ports = ports;
   }
@@ -132,7 +138,11 @@ export class SeaAfter {
     for (const piece of room.flotsam) this.kinds.set(piece.id, piece.kind);
     const { naval, told } = room.takeTold();
     for (const event of naval) if (event.kind === 'Flotsam') this.kinds.set(event.id, event.kind_of);
-    for (const numbers of told) if (numbers[0] === WASHED_UP) this.washed = numbers[2] ?? null;
+    for (const numbers of told) {
+      if (numbers[0] !== WASHED_UP) continue;
+      const isle = numbers[4] ?? 0;
+      [this.washed, this.washedIsle] = isle > 0 ? [null, isle] : [numbers[2] ?? null, null];
+    }
     return linesOf(
       told,
       naval,
@@ -164,6 +174,13 @@ export class SeaAfter {
     this.washed = null;
     const words = `Washed up at ${port.name}. Your ship lies at its moorings.`;
     return { node, washUp: { kind: 'wash-up', node: node.id, words } };
+  }
+
+  /** The found island the player washed up on, by its number, taken once. */
+  takeWashedIsle(): number | null {
+    const isle = this.washedIsle;
+    this.washedIsle = null;
+    return isle;
   }
 
   /** Her repair as Manage offers it, from the room's word on her kept hurts. */

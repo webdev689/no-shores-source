@@ -16,6 +16,10 @@ import { type Happening, next } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
+import { Isles } from './isles.ts';
+import type { DungeonDoor } from './isleLaw.ts';
+import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
+import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
 import { bootGame, SEA_SHIPS } from './gameBoot.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
@@ -28,7 +32,7 @@ import { Sea } from './sea.ts';
 import { SeaAfter, deckKey, fightAsk } from './seaAfter.ts';
 import { seaPointer } from './seaPointer.ts';
 import { shipPanelOnceBuilt } from './shipPanel.ts';
-import { offshore } from './seaLaw.ts';
+import { landfallWords, offshore } from './seaLaw.ts';
 import { type NodeInfo, portsOf } from './worldData.ts';
 
 /**
@@ -98,6 +102,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     (error: unknown) => console.error('the waters could not be opened:', error),
   );
   const traffic = new FriendlyTraffic(waters, SEA_SHIPS);
+  /** The sea's islands the room tells of, and a landing at one under way. */
+  const isles = new Isles(
+    roomModule,
+    continents.map((each) => each.climate),
+  );
+  const isleLanding = new IsleLanding();
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
   const charting = new Charting(
     continents,
@@ -178,6 +188,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       );
       const { waterAt, ports } = seaWatersOf(await waters, world);
       playing.sea.waterAt = waterAt;
+      playing.sea.isles = isles;
       playing.afterFights = new SeaAfter(ports);
     }
     playing.sea.cameAboard();
@@ -237,8 +248,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       hud.menu({ title: playing.foot.node.name, choices: [resume, home] });
     } else if (playing.flow.mode === 'sea' && playing.flow.menu) {
       const landfall = playing.sea?.landfall;
-      const label = landfall?.kind === 'dock' ? `Dock at ${landfall.port}` : 'Go ashore';
-      hud.menu({ title: 'At sea', choices: landfall ? [resume, { label, run: () => goAshore() }] : [resume] });
+      const choices = landfall ? [resume, { label: landfallWords(landfall), run: () => goAshore() }] : [resume];
+      hud.menu({ title: 'At sea', choices });
     } else hud.menu(null);
   };
 
@@ -254,9 +265,43 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // While another landmass opens, the worker's landmass is not the one the landings would be on.
     if (playing.flow.mode !== 'sea' || !playing.sea || charting.busy) return;
     if (playing.flow.menu) change({ kind: 'back' });
+    const landfall = playing.sea.landfall;
+    if (landfall?.kind === 'isle') {
+      isleLanding.begin(playing.sea, isles, landfall.id);
+      return;
+    }
     if (!playing.sea.goAshore()) return;
     change({ kind: 'view-landings' });
     discovered.nodes(playing.sea.landings);
+  };
+
+  /** The dungeon behind an island's door: the dungeons' rooms take it from here. */
+  const enterDungeon = (door: DungeonDoor) => hud.note(`The ${door.style} below are not open yet.`);
+
+  /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. */
+  const goIsle = (held: IsleHeld, words: string) => {
+    const word = playing.sea?.sighted?.isleWord(held.seen.id) ?? null;
+    const continent = continents[held.seen.continent]?.id ?? '';
+    travel({ kind: 'isle', node: held.seen.id.toString(), words }, async () => {
+      leaveHere();
+      playing.foot?.leave();
+      playing.foot = null;
+      playing.sea?.leaveRoom();
+      playing.foot = await ashoreOn(footContext, held, { word, continent }, enterDungeon);
+    });
+  };
+
+  /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once she anchors or
+   *  a beaten player washed up on a found island's beach. */
+  const isleFrame = () => {
+    const sea = playing.sea;
+    if (!sea || playing.flow.mode !== 'sea') return;
+    isles.update(sea.sighted?.islands ?? []);
+    const anchored = isleLanding.arrived(sea, isles);
+    if (anchored) return goIsle(anchored, ashoreWords(anchored));
+    const washed = playing.afterFights?.takeWashedIsle();
+    const held = washed === null || washed === undefined ? null : isles.byId(washed);
+    if (held) goIsle(held, ashoreWords(held, true));
   };
 
   /** The map is wanted: it is raised once the view stands at the helm. */
@@ -402,7 +447,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
-      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, mapOf },
+      ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, mapOf, isleFrame },
     },
     playing,
   );

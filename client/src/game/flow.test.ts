@@ -80,3 +80,14 @@ test('washed up from the sea, the veil says why and the player stands in the por
     menu: false,
   });
 });
+
+test('anchored off an island, the player walks ashore on its beach behind the veil, from the sea alone', () => {
+  const ashore = { kind: 'isle', node: '7', words: 'Going ashore on a cove' } as const;
+  assert.deepEqual(next({ mode: 'sea', menu: false }, ashore), {
+    mode: 'loading',
+    words: 'Going ashore on a cove',
+    then: { mode: 'foot', node: '7', menu: false },
+  });
+  const landing: Flow = { mode: 'landing', chosen: null };
+  assert.equal(next(landing, ashore), landing);
+});
