@@ -112,11 +112,20 @@ export class WreckFight implements Beat {
             ),
         ],
         [PUSH_S + 0.2, () => void stage.play('warCry', true, { thule: 'thule' })],
-        [PUSH_S + 0.3, () => stage.parts.ambience.thunder(0.4)],
+        [PUSH_S + 0.3, () => this.strikeBehindThule()],
         [BACK_S - 1.2, () => this.nameplate.hide()],
         [BACK_S, () => this.fight()],
       ]),
     };
+  }
+
+  /** Lightning down 400 m beyond Thule as he cries out, seen from the player: its light on him, then its thunder. */
+  private strikeBehindThule(): void {
+    const [x, y] = this.layout.arena.thule;
+    const [wakeX, wakeY] = this.layout.wake.at;
+    const away = Math.hypot(x - wakeX, y - wakeY) || 1;
+    const [east, south] = [(x - wakeX) / away, (y - wakeY) / away];
+    this.story.lightning.strike(x + east * 400, y + south * 400, [wakeX, wakeY]);
   }
 
   private fight(): void {
@@ -174,7 +183,10 @@ export class WreckFight implements Beat {
     const { story } = this;
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;
-    stage.stepWeather(tick.seconds);
+    // No storm's strikes on the wreck; its one is the strike behind Thule as he cries out.
+    const [wakeX, wakeY] = this.layout.wake.at;
+    const strike = story.lightning.step(tick.seconds, [wakeX, wakeY]);
+    stage.stepWeather(tick.seconds, strike.flash, strike.bolt);
     if (this.coming) {
       this.coming.since += tick.seconds;
       this.coming.cues.step(this.coming.since);
@@ -224,6 +236,7 @@ export class WreckFight implements Beat {
       after: hands,
       heads,
       focus: [shown.shot.eye[0], shown.shot.eye[1]],
+      heard: { at: 'sea', deck: true, sailing: false },
     };
   }
 

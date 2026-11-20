@@ -17,6 +17,7 @@ struct Frame {
   glow: vec4f,     // colour, strength
   cloud: vec4f,    // base, top, cover
   bolt: vec4f,     // east and south of the eye, seed, 1 when there is one
+  cloud_light: vec4f, // the light on the cloud flown through
 }
 @group(0) @binding(0) var<uniform> frame: Frame;
 @group(0) @binding(1) var depths: texture_2d<f32>;
@@ -160,7 +161,10 @@ fn on_screen(offset: vec3f) -> vec3f {
         let thick = smoothstep(1.0 - cover, 1.0 - cover + 0.2, billows(point * vec3f(0.006, 0.006, 0.012)));
         through *= exp(-thick * step * 0.012);
       }
-      let lit = mix(vec3f(0.93, 0.94, 0.96), ceiling_colour * 1.6, overcast);
+      // Mottled broadly where it is entered, so a sea of cloud seen from over it is never one flat colour.
+      let entry = eye + ray * start - drift;
+      let mottle = 0.82 + 0.25 * billows(entry * vec3f(0.0025, 0.0025, 0.005));
+      let lit = mix(vec3f(0.93, 0.94, 0.96) * frame.cloud_light.rgb * mottle, ceiling_colour * 1.6, overcast);
       laid = over(laid, lit * (1.0 - through), through);
     }
   }

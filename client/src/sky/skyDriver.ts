@@ -78,6 +78,29 @@ export const SKY_NOW: { current: SkyNow } = {
   },
 };
 
+/** The sky a story tells in place of the world's: the moment its sun, moon and stars stand at (`hourS`), the clock
+ *  its clouds drift and its strikes fall on (`worldS`), its weather over that moment's, and its own strikes. */
+export interface ToldSky {
+  readonly hourS: number;
+  readonly worldS: number;
+  readonly weather: Pick<
+    SkyReading,
+    'cloud' | 'falling' | 'snowShare' | 'storm' | 'fog' | 'wind' | 'gust' | 'wetness' | 'snowCover'
+  >;
+  readonly strikes: readonly Strike[];
+}
+
+/** The light of every strike in `strikes` at an eye at `eye` at world time `worldS`, together, at most 1. */
+function flashOfAll(strikes: readonly Strike[], worldS: number, eye: readonly [number, number, number]): number {
+  return Math.min(
+    1,
+    strikes.reduce(
+      (sum, strike) => sum + flashOf(strike, worldS - strike.atS, Math.hypot(strike.x - eye[0], strike.y - eye[1])),
+      0,
+    ),
+  );
+}
+
 /** A strike's light at an eye `distanceM` away, `ageS` after it: a bright stroke and two return strokes, gone in a
  *  third of a second, the nearest brightest; a strike in the cloud lights less than one to the ground. */
 export function flashOf(strike: Strike, ageS: number, distanceM: number): number {
@@ -100,6 +123,9 @@ export class SkyDriver {
   /** The air the weather was last read in, the reading last shown, and an easing from one air into the next. */
   private air: { climate: string; shown: SkyReading } | null = null;
   private easing: { from: SkyReading; since: number } | null = null;
+  /** The sky a story tells, in place of the world's, while it does; and whether it did last frame. */
+  told: ToldSky | null = null;
+  private wasTold = false;
 
   private readonly clock: Pick<WorldClock, 'seconds'>;
 
@@ -125,6 +151,10 @@ export class SkyDriver {
   ): SkyNow {
     const law = this.law;
     if (!law) return SKY_NOW.current;
+    if (this.told) return this.toldFrame(law, this.told, eye, climate, lamps, groundM);
+    // The world's sky comes back afresh: its lightning and its air read anew, never eased from the story's.
+    if (this.wasTold)
+      [this.strikes, this.asked, this.air, this.easing, this.wasTold] = [[], -Infinity, null, null, false];
     const worldS = this.clock.seconds();
     const reading = this.eased(law.at(eye[0], eye[1], Math.max(0, groundM), worldS, climate), climate, worldS);
     // A window of world time is asked once: a long frame asks a little more, a jump in the clock starts afresh.
@@ -132,18 +162,31 @@ export class SkyDriver {
     if (worldS > from) this.strikes.push(...law.strikes(eye[0], eye[1], STRIKE_REACH_M, from, worldS, climate));
     this.asked = worldS;
     this.strikes = this.strikes.filter((strike) => worldS - strike.atS <= STRIKE_KEPT_S);
-    const flash = Math.min(
-      1,
-      this.strikes.reduce(
-        (sum, strike) => sum + flashOf(strike, worldS - strike.atS, Math.hypot(strike.x - eye[0], strike.y - eye[1])),
-        0,
-      ),
-    );
+    const flash = flashOfAll(this.strikes, worldS, eye);
     const look = lookOf(reading, worldS, flash);
-    this.uniform.write(look, lamps, [eye[0], eye[1]]);
+    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
     const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
     const held = heldLight(look, lamps);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held };
+    return SKY_NOW.current;
+  }
+
+  /** The story's sky: the law's reading at its hour under its weather, its strikes' light, its clouds on its clock. */
+  private toldFrame(
+    law: SkyLaw,
+    told: ToldSky,
+    eye: readonly [number, number, number],
+    climate: string,
+    lamps: readonly Lamp[],
+    groundM: number,
+  ): SkyNow {
+    this.wasTold = true;
+    const { worldS, strikes } = told;
+    const reading = { ...law.at(eye[0], eye[1], Math.max(0, groundM), told.hourS, climate), ...told.weather };
+    const look = lookOf(reading, worldS, flashOfAll(strikes, worldS, eye));
+    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
+    const sails = windBearing(told.weather.wind);
+    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes, sails, held: heldLight(look, lamps) };
     return SKY_NOW.current;
   }
 

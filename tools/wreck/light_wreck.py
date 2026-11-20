@@ -23,8 +23,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'ships'))
 from wreck_fire import fires, light, standing_ground  # noqa: E402
 from wreck_frames import wreck_frames  # noqa: E402
 
-# The light the picture holds at its brightest, each of the bake's own units: the fires' and the sky's.
-FIRE_FULL = 3.0
+# The light the picture holds at its brightest, each of the bake's own units: the fires' and the sky's. The picture
+# holds the square root of each light's share of it, so the dim falloff far from a fire keeps its steps and the
+# light close by one is never cut flat.
+FIRE_FULL = 9.0
 SKY_FULL = 1.0
 # The storm sky's colour as it lights the wreck, before it is darkened by what hides it.
 SKY = (1.0, 1.0, 1.0)
@@ -96,7 +98,8 @@ def bake_into(wreck, name, size, world, lamps_on, samples):
 
 
 def combined(fire, sky, path):
-    """The two lights in one picture: the fires' in red, green and blue, the sky's in alpha, each to its full."""
+    """The two lights in one picture: the fires' in red, green and blue, the sky's in alpha, each the square root of
+    its share of its full."""
     size = fire.size[0]
     lit = numpy.empty(size * size * 4, dtype=numpy.float32)
     fire.pixels.foreach_get(lit)
@@ -109,8 +112,8 @@ def combined(fire, sky, path):
         held = values[values > 0]
         print(name, 'of full at 50/90/99%:', [round(float(numpy.percentile(held, share)) / full, 3)
                                               for share in (50, 90, 99)])
-    lit[:, :3] = numpy.clip(lit[:, :3] / FIRE_FULL, 0, 1)
-    lit[:, 3] = numpy.clip(skies[:, :3].mean(axis=1) / SKY_FULL, 0, 1)
+    lit[:, :3] = numpy.sqrt(numpy.clip(lit[:, :3] / FIRE_FULL, 0, 1))
+    lit[:, 3] = numpy.sqrt(numpy.clip(skies[:, :3].mean(axis=1) / SKY_FULL, 0, 1))
     picture = bpy.data.images.new('WreckLight', size, size, alpha=True)
     # Light, not colour: written as it is, its alpha its own, as the game reads it back.
     picture.colorspace_settings.name = 'Non-Color'

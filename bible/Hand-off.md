@@ -179,16 +179,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on pull request #74 (stacked on #71, whose ships it uses), as the owner
-  set it ([[The Game Opens With a Story Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]].
-  The default page opens on it: a tap to start; the intro over four islands to Saltmere's title; the storm and the
-  Brig; creation at her helm; the sighting, the sea fight won by beating all three pirates, the calm, and Thule's
-  Frigate ramming her; waking in the wreck and fighting through it, a heap of debris opening as each wave falls, to
-  Thule and the fight that cannot be won; overboard, the deep, and the shore, where a stranger helps the player up and
-  walks them into Overlook. Its layers are the [[Cinema]] (camera rails, weather, lightning, birds, fire, sound made in
-  the browser) and [[Speech]] (voices, the dialogue box, barks and marks over heads), and the [[Dialogue]] rule with
-  its check. Tested offline: the full check; headless pictures of every beat at 960x540, each started on its own with
-  `?prologue=<beat>`, since a frame there takes seconds.
+- The first story mission, the [[Prologue]], on pull request #74, as the owner set it ([[The Game Opens With a Story
+  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
+  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
+  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
+  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
+  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
+  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
+  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
+  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
+  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
+  the intro, each started on its own with `?prologue=<beat>`.
 
 ## Waiting on the owner
 
@@ -204,12 +206,15 @@ Where the work stands now, for the next session. Each session rewrites this note
   factions' keepers' names, faction gear, reputation's sources, Shape's hours, more horse looks). The Wraith Mist
   barding's first-person ride strips on R2 are blank: a forge re-render. The rest of the world's ports (Sunspire,
   Rimeholt) are #75's; this round only locks their social spaces ([[Only Overlook's Social Space Opens for Now]]).
-- **#74, the prologue**, waits on #71 and then the owner's yes to merge, which deploys the page and the rooms. Every
-  call inside the beats is in [[The Prologue as Claude Shapes It]], the owner's to change: among them Thule's ship as
-  the Frigate (the Tithe Ram is not built), the sea fight won once all three are beaten, a heap per wave in the wreck,
-  and the crew's and the stranger's words.
-- Music in the story: `storyCue` plays nothing yet. #73's music director would take a story beat as a new cue; the
-  pull request that reaches `main` second wires it.
+- **#74, the prologue**, now merges into `main` (it was stacked on #71, still open, so it carries #71's ships too),
+  and waits on the owner's yes, which deploys the page and the rooms. Every call inside the beats is in
+  [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
+  sound.
+- **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
+  repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
+  `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
+  its published model here with `--dry-run`, whose level hash must match the log's: a build elsewhere can lay a
+  slightly different ground.
 - fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
   session that finished the prologue, so the likeness is unchecked.
 - Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
@@ -303,15 +308,16 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[Exposed, Charged and Haste Make No Sound]]). Claude's calls in the layer, the
   owner's to change: a gun's ball on a body plays `hit.blunt`, a step sounds every 2.5 m, `step.wood` only on the
   [[Test Ground]]'s crate, and up to 16 sounds at once within 40 m.
-- **#73, the music and the ambience, waits on the owner's yes to merge**, which deploys the page and the rooms
+- **#73, the music and the ambience, is on `main`**, merged and deployed with the owner's yes
   ([[Music and Ambience Come From DFO's Synthesiser]], [[Music]], [[Ambience]]). The owner kept every piece on the
   sound sheet, Landfall as made again after their "Less jolly" ([[Landfall Is Kept as Made Again]]), and picked the
   seven recordings. Claude's calls, the owner's to confirm: Thule plays the Boarding, Corvane the Reckoning, any other Boss
   the Wrath; the climates' families and each family's key, metre and tempo; Saltmere's theme as written; the sounds
   nearest "no glass" (wet's kalimba drips, cold's high tremolo, Landfall's soft bell, the fights' reverse-cymbal
   risers).
-- **#76, the weather and day and night, waits on the owner's yes to merge**, stacked on #73
-  ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]], [[Sky]], [[Weather]]).
+- **#76, the weather and day and night, and #79, every shader checked offline, are on `main`**, merged and deployed
+  with the owner's yes ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]],
+  [[Sky]], [[Weather]], [[Every Shader Is Checked Offline]]).
   Claude made the calls the owner left open ([[Weather and Day as Claude Shapes It]]), the owner's to change. The
   owner judged the weather's first sounds and picked the gutters and both thunders from Freesound
   ([[The Weather's Gutters and Thunder Come From Freesound]]); those picks are on R2.
@@ -328,55 +334,42 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The sea's open choices ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): being the pirate, the opening voyage
   (to be talked through first), and which of DFO's companion systems the crew comes from ([[Open Questions]]).
 
+- **#86, #87, #89 and #90 are on `main`**, merged and deployed with the owner's yes. #86 forges the Arts' birds in
+  Blender in eight directions ([[The Arts' Birds Are Forged in Blender]]); its `forge` workflow renders them on main
+  and adds them to the forge's renders on R2. #87 splits the sea's view and the held map out of `sea.ts` and `game.ts`
+  and lights the Sloop's deck with a carried torch. #89 cuts the sky's and the water's haze's work per pixel, with the
+  same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
+  fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
+  fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
+- **The first review of the kit's observations waits on the owner's yes**: four changes to the instructions, and one
+  observation to close as already fixed, each in the session's report and in
+  `~/toolkit-data/task-observer/skill-observations/review-2026-11-20.md`, which a container loses at its end.
+
 ## Next
 
 - **After #92**: reputation from bounties and activities when they exist; Shape at Sunspire and Rimeholt when their
   social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the Elite and
   Abyss tiers' names on the voyage's card (#82), where Shapes are found.
-- **The prologue, not yet seen**: on a real GPU, and heard (its ambience, voices and their levels have never been
-  listened to); played through in one run in a browser (headless, each beat was started on its own); the wreck's frame
-  time, now that its decks are 760 blocks.
-- **The waters, next** ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): the owner asked to hear more and was
-  shown Claude's proposal, not yet decided: a water is a named stretch of sea with an owner and a level band; its band
-  follows the islands' (`crates/gear/src/world.rs` ISLANDS), a ship's level from her water and her hull by rank
-  (Minor and Major the Sloop, Elite the Schooner, Miniboss the Brig, Boss the Frigate); Overlook's home waters hold no
-  hostile ship, the Grey Tithe's hold its patrols and its flagship's sea strike, the pirates' wait by wrecks and coves,
-  contested waters hold both fighting each other; each water keeps its own ships on their own courses, sighted
-  kilometres out, in place of today's rolls near the player; the held map tints each water with its name and level.
-  Waiting on the owner: whether they draw the waters in the World Editor (Claude's pick) or they are generated from
-  the islands. The prologue session (`claude/loving-darwin-sw4eae`) works in the sea room and draws ships: coordinate.
-- **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
-  the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call it
-  there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her
-  cabin in the game yet, and the game sets no square sail ([[Hulls]], "What the code needs"). Splitting each ship into
-  parts for upgrades (hull, cannons, sails and wheel), and the cabin's decoration from DFO's `decor/`, were raised and
-  set aside by the owner for now. A change to the shared builder is checked by rebuilding each published ship and
-  comparing its dry-run mesh hash with the manifest's. The manifest is 388 KB with the two new decks (77 KB on `main`
-  before), and the client imports it and the room embeds it whole: loading each ship's deck on its own may be wanted
-  before more ships join. Then the sea as the owner approved it: waters with owners and levels, ships sighted on the
-  horizon, sea fights paying into the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear,
-  then merchantmen, bounties, public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]). Measured on
-  the sea room as it is, at a voyage's pace a fight began for 17% of players by 5 minutes and 28% by 10, and most
-  hostile ships stayed in sight under 3 seconds: the reason the sea felt empty.
-- **The weather and day and night (#76)**, tested offline: the full check, the weather's statistics per climate and
-  its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under cloud, at sunset
-  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Four
-  audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old wind, a fleet
-  sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun for moon in
-  daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording held under
-  its synthesised sound's peak. Not yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in
-  60 world days, and the page always arrives there), ships and marks under the lamps, snow, a carried light on the
-  Sloop's deck, a real GPU's frame time (the sky reads some ten noise lookups a pixel, twice while one cloud pattern
-  fades into the next), and a person playing through an hour's day.
-- **Every shader checked offline (#79)**, stacked on #76, waits on the owner's yes with it
-  ([[Every Shader Is Checked Offline]]): `cargo xtask check` writes out every shader the client compiles and naga
-  validates each.
-- **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
-  in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
-  as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
-  open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as a new cue kind,
-  by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four sea songs while
-  sailing, and sets each recording at the loudness of the synthesised sound it replaces.
+- **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
+  through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
+  with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
+  whether its foes can be seen well enough away from the fires.
+- **The weather and day and night (#76, on `main`)**, tested offline: the full check, the weather's statistics per
+  climate and its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under
+  cloud, at sunset and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to
+  compile. Four audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old
+  wind, a fleet sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun
+  for moon in daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording
+  held under its synthesised sound's peak. Pictures across the islands (#90) have since shown bolts at Mistfall by day
+  and night, snow on the tundra and at Rimeholt, a sandstorm, dawn fog and clear nights; `?at=<node id>` lands the
+  page at any node, and the pictures' steps are made by freezing the page's clock at a moment. Not yet: ships and
+  marks under the lamps, a real GPU's frame time, and a person playing through an hour's day.
+- **The music and the ambience (#73, on `main`)**, tested offline: every piece rendered and measured, and the built
+  game headless in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the
+  green score in as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both
+  running. Left open, now done on #74: the story's songs and its hearing in the director. #76 gives the night
+  ambiences their time of day, plays the four sea songs while sailing, and sets each recording at the loudness of the
+  synthesised sound it replaces.
 - **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
   its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound

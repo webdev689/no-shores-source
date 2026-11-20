@@ -4,6 +4,7 @@
 // wreckage that close the way are runs of the same mesh, each drawn while it stands.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
 import { FRONT_FACE, holdPictures, releasePictures } from '../../ships/shipView.ts';
+import { SKY_WGSL, skyUniformFor } from '../../sky/skyUniform.ts';
 import { SHIP_PICTURE_TEXELS } from '../../textures/shipPictures.ts';
 import { SAMPLES } from '../../water/waterView.ts';
 
@@ -69,12 +70,10 @@ export async function loadWreck(
   };
 }
 
-/** How the wreck is lit in a frame: its fires' light and the sky's, each a share of the bake's, the lightning's flash
- *  over the sky's, and the story's clock its fires flicker by. */
+/** How the wreck is lit in a frame beyond the sky's own light: its fires' share of the bake's, and the story's clock
+ *  its fires flicker by. */
 export interface WreckLook {
   readonly fire: number;
-  readonly sky: number;
-  readonly flash: number;
   readonly time: number;
 }
 
@@ -83,9 +82,9 @@ struct Place {
   from_eye: mat4x4f,
   // The wreck's origin from the eye, metres.
   offset: vec4f,
-  // The fires' share, the sky's, the flash, the clock.
+  // The fires' share, then the clock last.
   look: vec4f,
-  // What the picture's full holds of each light.
+  // What the picture's full holds of each light; the picture holds each light's square root of it.
   full: vec4f,
 };
 
@@ -95,9 +94,12 @@ struct Place {
 @group(0) @binding(3) var light: texture_2d<f32>;
 @group(0) @binding(4) var lit: sampler;
 
+${SKY_WGSL}
+
+// The fire's light rolls off toward this, its most: light of this much is drawn at half of it.
+const FIRE_KNEE = 2.5;
+
 const PICTURE_PER_M = vec2f(${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS}, -${TEXELS_PER_METRE / SHIP_PICTURE_TEXELS});
-// The storm sky's light, cold, as the lit timber's least.
-const SKY = vec3f(0.62, 0.68, 0.8);
 
 struct Drawn {
   @builtin(position) clip: vec4f,
@@ -105,6 +107,8 @@ struct Drawn {
   @location(1) @interpolate(flat) part: u32,
   @location(2) light_uv: vec2f,
   @location(3) world: vec3f,
+  @location(4) normal: vec3f,
+  @location(5) from_eye: vec3f,
 };
 
 @vertex
@@ -123,6 +127,8 @@ fn vertex_main(
   // Blender's UVs rise from the picture's foot; the picture's rows run from its head.
   drawn.light_uv = vec2f(light_uv.x, 1.0 - light_uv.y);
   drawn.world = position;
+  drawn.normal = normal.xyz;
+  drawn.from_eye = from_eye;
   return drawn;
 }
 
@@ -145,12 +151,17 @@ fn flicker(at: vec3f, time: f32) -> f32 {
   return 0.78 + 0.3 * sum + 0.06 * sin(time * 13.0 + at.x * 1.7 + at.y * 1.1);
 }
 
+// The sky lights the wreck as it lights a ship (its hour, its cloud, its lightning), shut out where the bake found
+// the sky hidden: under a deck, in a hollow, behind a heap. Its fires light it from the bake, not as lamps.
 @fragment
-fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
+fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
+  let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   let colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
   let held = textureSample(light, lit, drawn.light_uv);
-  let fire = held.rgb * place.full.x * place.look.x * flicker(drawn.world, place.look.w);
-  let sky = SKY * held.a * place.full.y * (place.look.y + place.look.z);
+  let baked = held.rgb * held.rgb * place.full.x * place.look.x * flicker(drawn.world, place.look.w);
+  let fire = baked / (1.0 + max(baked.r, max(baked.g, baked.b)) / FIRE_KNEE);
+  let open = held.a * held.a * place.full.y;
+  let sky = open * (sky_ambient(normal) + sky_direct(normal, sky_dapple(drawn.from_eye)));
   return vec4f(colour * (fire + sky), 1.0);
 }
 `;
@@ -255,11 +266,12 @@ export class WreckView {
     const values = new Float32Array(PLACE_FLOATS);
     values.set(camera.fromEye);
     values.set([origin[0] - camera.eye[0], origin[1] - camera.eye[1], -camera.eye[2], 0], 16);
-    values.set([look.fire, look.sky, look.flash, look.time], 20);
+    values.set([look.fire, 0, 0, look.time], 20);
     values.set([this.mesh.full.fire, this.mesh.full.sky, 0, 0], 24);
     this.device.queue.writeBuffer(this.uniforms, 0, values);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
+    skyUniformFor(this.device).bindAuto(pass, this.pipeline, [1, 2]);
     pass.setVertexBuffer(0, this.vertices);
     pass.setIndexBuffer(this.indices, 'uint32');
     for (const [piece, run] of this.mesh.pieces)

@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import { mock, test } from 'node:test';
 import type { Line } from '../../speech/cast.ts';
 import { CLEAR } from '../../cinema/weather.ts';
+import type { ToldSky } from '../../sky/skyDriver.ts';
+import { WRECK } from './skies.ts';
 import { HUD_VEIL_S, headOnView, Stage, type StageParts } from './stage.ts';
+import { STORY_DAY_S } from './storySky.ts';
 
 test('a scene plays in order: barks over heads, runs of lines together in the box, each line its emote', async () => {
   const said: string[] = [];
@@ -87,10 +90,10 @@ test('a hushed scene stops at once: no line after the hush is said, and the box 
   assert.deepEqual(said, ['Sails!', 'box closed', 'heads cleared']);
 });
 
-test('leaving gives the game back its clear weather, quiet, an HUD with no death or fight, and an open view', () => {
+test('leaving gives the game back its clear weather and its own sky, quiet, an HUD with no death or fight, and an open view', () => {
   const done: string[] = [];
   const note = (what: string) => () => void done.push(what);
-  const scene = { weather: { ...CLEAR, rain: 1, overcast: 1 } };
+  const scene = { weather: { ...CLEAR, rain: 1, overcast: 1 }, sky: { told: {} as unknown } };
   const parts = {
     scene,
     ambience: { stop: note('quiet') },
@@ -109,6 +112,7 @@ test('leaving gives the game back its clear weather, quiet, an HUD with no death
   stage.leave();
   assert.deepEqual(scene.weather, CLEAR);
   assert.deepEqual(stage.weather, CLEAR);
+  assert.equal(scene.sky.told, null, "the world's own sky");
   for (const what of ['quiet', 'no birds', 'no fires', 'no prompt', 'reach inside', 'no hints', 'no fight panel'])
     assert.ok(done.includes(what), what);
   assert.ok(done.includes('box closed') && done.includes('heads cleared'));
@@ -151,4 +155,62 @@ test("a bark's gap is counted in the story's time, so a slow frame never lets th
   // The scene ends once the last bark's own gap has passed too.
   stage.tick(1.1);
   await playing;
+});
+
+test("the stage tells the game's sky the story's weather at its hour, each bolt one strike, and keeps the rest", () => {
+  const scene = { weather: CLEAR, sky: { told: null as ToldSky | null } };
+  const stage = new Stage({ scene } as unknown as StageParts);
+  stage.weatherTowards(WRECK, 0);
+  const bolt = { x: 400, y: -900, seed: 7 };
+  stage.stepWeather(0.5, 0.8, bolt);
+  stage.stepWeather(0.1, 0.6, bolt);
+  stage.stepWeather(0.1, 0, null);
+  const told = scene.sky.told;
+  assert.ok(told);
+  assert.deepEqual([told.weather.falling, (told.worldS - STORY_DAY_S).toFixed(3)], [WRECK.rain, '0.700']);
+  assert.deepEqual(told.strikes, [{ x: 400, y: -900, atS: STORY_DAY_S + 0.5, toGround: true, power: 1 }], 'one strike');
+  assert.deepEqual([scene.weather.rain, scene.weather.flash, scene.weather.glow], [0, 0, WRECK.glow]);
+  stage.weatherTowards({ ...CLEAR, rain: 1 }, 0);
+  stage.stepWeather(0.1);
+  assert.equal(scene.sky.told, null, 'a weather with no hour leaves the world its sky, and lays its own');
+  assert.equal(scene.weather.rain, 1);
+});
+
+test("a frame heard at sea or ashore plays the world's own soundscape there, the story's beds handing it the sea", () => {
+  const heard: string[] = [];
+  const landmass = { nodes: [{ kind: 'social' }, { kind: 'patrol', id: 'cove' }] };
+  const parts = {
+    scene: { draw: () => undefined },
+    figures: {},
+    forge: {},
+    hulls: {},
+    birds: {},
+    flames: {},
+    overheads: { frame: () => undefined },
+    dialogue: { frame: () => undefined },
+    canvas: { clientWidth: 960, clientHeight: 540 },
+    landDrawers: () => null,
+    landmass: () => landmass,
+    ambience: { handOver: (world: boolean) => heard.push(`story beds ${world ? 'handed over' : 'their own'}`) },
+    worldSound: {
+      atSea: (land: unknown, ship: readonly number[], ear: unknown, voyage: { deck: boolean }) =>
+        heard.push(`sea at ${ship.join(',')} ${voyage.deck ? 'on deck' : 'over her'}`),
+      onFoot: (node: { id: string }) => heard.push(`ashore by ${node.id}`),
+    },
+  } as unknown as StageParts;
+  const stage = new Stage(parts);
+  const shot = { eye: [0, 0, 5], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 100 } as const;
+  const size = { width: 960, height: 540 };
+  stage.draw({ shot, focus: [10, 20], heard: { at: 'sea', deck: true, sailing: false } }, size, 0, 0.1);
+  assert.ok(stage.hearsTheWorld);
+  stage.draw({ shot, heard: { at: 'ashore' } }, size, 0, 0.1);
+  stage.draw({ shot }, size, 0, 0.1);
+  assert.ok(!stage.hearsTheWorld, "the deep and the intro are the story's own");
+  assert.deepEqual(heard, [
+    'story beds handed over',
+    'sea at 10,20 on deck',
+    'story beds handed over',
+    'ashore by cove',
+    'story beds their own',
+  ]);
 });

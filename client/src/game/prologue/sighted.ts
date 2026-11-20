@@ -143,7 +143,6 @@ export class Sighted implements Beat {
       ],
       [3.2, () => stage.weatherTowards(STORM, 5)],
       [4.2, heard(() => this.strikeAmong(1))],
-      [6.5, heard(() => ambience.thunder(1.1))],
     ]);
   }
 
@@ -188,9 +187,10 @@ export class Sighted implements Beat {
     return {
       shot,
       ships,
-      actors: [...brig.crew(own, tick.clock, moves), youAtHelm(story, own, 'guard')],
+      actors: [...brig.crew(own, tick.clock, moves), youAtHelm(story, own, 'idle')],
       heads: brig.heads(own),
       land: false,
+      heard: { at: 'sea', deck: false, sailing: true },
       focus: [brig.x, brig.y],
     };
   }

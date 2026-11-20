@@ -78,3 +78,35 @@ test('the hands are lit as the world round them: whole by day, dark at night, wa
   const lit = heldLight(night, [torch]);
   assert.ok((lit[0] ?? 0) > 0.8 && (lit[0] ?? 0) > (lit[2] ?? 0) * 1.5, `a torch at the hand lights them warm: ${lit}`);
 });
+
+test("a told sky is drawn at the story's moment under its weather and lightning, and the world's comes back after", async () => {
+  const clock = { now: 1000 };
+  const asked: number[] = [];
+  const strike = { x: 300, y: 0, atS: 50, toGround: true, power: 1 };
+  const driver = new SkyDriver(
+    Promise.resolve({ ...law, at: (...args) => (asked.push(args[3]), law.at(...args)), strikes: () => [strike] }),
+    { write: () => undefined },
+    { seconds: () => clock.now },
+  );
+  await Promise.resolve();
+  const weather = {
+    cloud: 1,
+    falling: 1,
+    snowShare: 0,
+    storm: 1,
+    fog: 0.9,
+    wind: [14, 6],
+    gust: 0.9,
+    wetness: 1,
+    snowCover: 0,
+  } as const;
+  driver.told = { hourS: 10_800 + 18 * 150, worldS: 50.05, weather, strikes: [{ ...strike, atS: 50 }] };
+  const told = driver.frame([0, 0, 2], 'sea');
+  assert.equal(asked.at(-1), 10_800 + 18 * 150, "the story's moment, not the wall's");
+  assert.deepEqual([told.reading?.storm, told.reading?.fog, told.worldS, told.strikes.length], [1, 0.9, 50.05, 1]);
+  assert.ok(told.look.flash > 0.5, 'its strike lights the sky');
+  driver.told = null;
+  const world = driver.frame([0, 0, 2], 'sea');
+  assert.deepEqual([asked.at(-1), world.reading?.storm, world.worldS], [1000, 0, 1000]);
+  assert.equal(world.strikes.length, 0, "the world's lightning read afresh: the story's strike is gone");
+});

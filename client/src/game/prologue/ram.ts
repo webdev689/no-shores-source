@@ -15,7 +15,7 @@ import { youAtHelm } from './helm.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
 import { hushed, sung } from './music.ts';
 import type { Sailed } from './sailing.ts';
-import { STILL } from './skies.ts';
+import { DUSK } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
@@ -83,7 +83,7 @@ export class Ram implements Beat {
     this.wrecks = wrecks;
     this.from = story.brig.heading + Math.PI / 2;
     const { stage, brig } = story;
-    stage.weatherTowards(STILL, 1);
+    stage.weatherTowards(DUSK, 1);
     stage.parts.ambience.set(CALM_SOUND, 1);
     story.lightning.striking = false;
     brig.way = 0;
@@ -188,6 +188,7 @@ export class Ram implements Beat {
       actors: [...brig.crew(own, tick.clock, moves), youAtHelm(story, own, braced ? 'block' : 'idle')],
       heads: brig.heads(own),
       land: false,
+      heard: { at: 'sea', deck: true, sailing: false },
       focus: [brig.x, brig.y],
     };
   }

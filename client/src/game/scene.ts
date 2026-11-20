@@ -6,10 +6,10 @@ import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
 import { FallView } from '../sky/fall.ts';
-import { CITY_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { CITY_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
-import { skyUniformFor } from '../sky/skyUniform.ts';
+import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
 import { cloudBaseOf } from '../overworld/overworldCamera.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
@@ -70,6 +70,17 @@ export interface Overlay {
   readonly light: readonly [number, number, number];
 }
 
+/** The light on a cloud flown through, as the sky lights its own: its top stands high in the sun's full light while
+ *  the sun is up, white with a cast of the key's colour (a peach one at first light), fading as the sun sinks under
+ *  the horizon, its shade the horizon's colour. A clear afternoon's is about the day's white. */
+function cloudLight(look: SkyLook): readonly [number, number, number] {
+  const brightest = Math.max(...look.keyLight, 1e-6);
+  const lit = Math.min(1, Math.max(0, (look.sun[2] + 0.1) / 0.15));
+  return [0, 1, 2].map(
+    (part) => lit * (0.55 + (0.4 * (look.keyLight[part] ?? 0)) / brightest) + 0.15 * (look.horizon[part] ?? 0),
+  ) as unknown as readonly [number, number, number];
+}
+
 export class GameScene {
   readonly gpu: Gpu;
   private readonly water: WaterView;
@@ -82,6 +93,8 @@ export class GameScene {
   weather: Weather = CLEAR;
   /** The sky over the eye, read from the sky's law each frame. */
   readonly sky: SkyDriver;
+  /** Lamps a story lays besides the city's while it shows them: the wreck's fires. */
+  lamps: readonly LampPlace[] = [];
   private readonly fall: FallView;
   private readonly bolts: BoltView;
   private terrain: { view: LandView; drawn: TerrainView } | null = null;
@@ -236,7 +249,7 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      CITY_LAMPS.current,
+      this.lamps.length > 0 ? [...CITY_LAMPS.current, ...this.lamps] : CITY_LAMPS.current,
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,
@@ -285,14 +298,15 @@ export class GameScene {
     const camera = frameOf(local);
     const target = this.gpu.context.getCurrentTexture().createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
+    // The weather's fog thickens the haze: their densities add.
+    const air = { clearM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity), fogDensity: look.fogDensity };
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(shot.fov / 2) },
       size: [size.width, size.height],
       time,
       seconds,
       exaggeration: 1,
-      // The weather's fog thickens the haze: their densities add.
-      fogM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity),
+      fogM: air.clearM,
       world: [...origin],
       swell: this.drawnSwell(view),
       coarse: drawn.cells,
@@ -312,7 +326,7 @@ export class GameScene {
     const groundAt = (x: number, y: number) => this.groundAt(x, y);
     // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
     const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
-    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt });
+    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt, air });
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
@@ -326,6 +340,7 @@ export class GameScene {
         size: [size.width, size.height],
         time,
         motionReduced: motionReduced(),
+        light: cloudLight(look),
       });
     more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
     this.gpu.device.queue.submit([encoder.finish()]);

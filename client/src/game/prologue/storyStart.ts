@@ -33,6 +33,7 @@ import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import { type Landmass, openLandmass } from '../landmass.ts';
 import type { GameScene } from '../scene.ts';
+import type { Ambience as WorldAmbience } from '../audio/ambience/ambience.ts';
 import type { MusicDirector } from '../audio/music/director.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { WorldData } from '../worldData.ts';
@@ -79,6 +80,8 @@ export interface StoryGame {
   readonly terrainFor: (landmass: Landmass) => TerrainData;
   readonly closeSource: (left: number, top: number, step: number, size: number) => ReturnType<LandWorker['ground']>;
   readonly music: MusicDirector;
+  /** The game's own soundscape. */
+  readonly ambience: WorldAmbience;
 }
 
 /** The story and the epilogue it leaves for the game to play on foot. */
@@ -157,6 +160,7 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       overheads,
       ambience: new Ambience(worldOutput),
       music: game.music,
+      worldSound: game.ambience,
       objective,
       cast: readCast,
       scenes: readScenes,
@@ -177,7 +181,11 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
       stage,
       sailing,
       brig: new Brig(places.storm, places.heading),
-      lightning: new Lightning(17, (distanceKm: number) => stage.parts.ambience.thunder(distanceKm)),
+      // Where the world's soundscape is heard, a strike's thunder is its own, as late as its distance makes it.
+      lightning: new Lightning(
+        17,
+        (distanceKm: number) => stage.hearsTheWorld || stage.parts.ambience.thunder(distanceKm),
+      ),
       places,
       land: game.land,
       movement: game.movement,

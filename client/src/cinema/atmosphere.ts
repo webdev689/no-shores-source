@@ -6,8 +6,8 @@ import type { Weather } from './weather.ts';
 
 type Vector = readonly [number, number, number];
 
-/** The numbers the pass reads a frame, as `atmosphereValues` packs them: ten rows of four. */
-export const ATMOSPHERE_FLOATS = 40;
+/** The numbers the pass reads a frame, as `atmosphereValues` packs them: eleven rows of four. */
+export const ATMOSPHERE_FLOATS = 44;
 /** The brightest flash shown to a player who asks for reduced motion. */
 const STILL_FLASH = 1 / 3;
 
@@ -29,6 +29,8 @@ export interface AtmosphereFrame {
   readonly time: number;
   /** The player asked for reduced motion: no flash brighter than a third. */
   readonly motionReduced: boolean;
+  /** The light on the cloud flown through, as the sky lights its own at the hour: the day's white when not given. */
+  readonly light?: Vector;
 }
 
 /** True when the weather adds nothing to the picture, so the pass is skipped and the picture is exactly as drawn. */
@@ -69,6 +71,8 @@ export function atmosphereValues(frame: AtmosphereFrame): Float32Array {
     ...(glow ? [...glow.colour, glow.strength] : [0, 0, 0, 0]),
     ...(clouds ? [clouds.base, clouds.top, clouds.cover, 0] : [0, 0, 0, 0]),
     ...(bolt ? [bolt.x - camera.eye[0], bolt.y - camera.eye[1], bolt.seed, 1] : [0, 0, 0, 0]),
+    ...(frame.light ?? [1, 1, 1]),
+    0,
   ]);
 }
 

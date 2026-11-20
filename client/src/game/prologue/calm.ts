@@ -157,6 +157,7 @@ export class Calm implements Beat {
       ],
       heads: brig.heads(own),
       land: false,
+      heard: { at: 'sea', deck: true, sailing: false },
       focus: [brig.x, brig.y],
     };
   }

@@ -96,8 +96,9 @@ export class Making implements Beat {
     return {
       shot,
       ships,
-      actors: [...brig.crew(own, tick.clock), youAtHelm(story, own, 'guard')],
+      actors: [...brig.crew(own, tick.clock), youAtHelm(story, own, 'idle')],
       land: false,
+      heard: { at: 'sea', deck: true, sailing: true },
       focus: [shot.eye[0], shot.eye[1]],
     };
   }

@@ -214,7 +214,8 @@ export class Shore implements Beat {
     const head = STRANGER_HEAD[this.kneeling() ? 'kneeling' : 'standing'].crown + OVER_HEAD_M;
     const heads = new Map([['stranger', [stranger.x, stranger.y, stranger.z + head] as const]]);
     const actors: Actor[] = this.phase === 'walking' || this.phase === 'gone' ? [you, stranger] : [stranger];
-    return { shot: this.shot(beach, you, stranger), actors, heads, focus: [beach.at[0], beach.at[1]] };
+    const shot = this.shot(beach, you, stranger);
+    return { shot, actors, heads, focus: [beach.at[0], beach.at[1]], heard: { at: 'ashore' } };
   }
 
   /** Whether she is down on one knee: from reaching the player until the middle of the rise. */

@@ -69,6 +69,11 @@ const SPOTS: readonly { readonly bed: Bed; readonly meanGapS: number; readonly v
   { bed: 'deep', meanGapS: 5, voice: groanVoice },
 ];
 
+/** The beds the world's own soundscape plays once it is heard round the listener, and how long the hand over takes,
+ *  seconds. */
+const WORLD_BEDS: ReadonlySet<Bed> = new Set(['rain', 'wind', 'waves', 'creak', 'gulls']);
+const HAND_OVER_S = 1.5;
+
 /** A gain written to the audio clock eases to it over this time constant, so no level change clicks. */
 const EASE_S = 0.04;
 /** The one-shots' level against the beds: the crash is the loudest thing in the mission. */
@@ -148,6 +153,9 @@ export class Ambience {
   private engine: Engine | null = null;
   private heart = false;
   private nextBeatAt = 0;
+  /** How far the world's own soundscape has taken over the sea and the weather, 0 to 1, and where it is going. */
+  private world = 0;
+  private worldTo = 0;
 
   constructor(output: SoundOut) {
     this.output = output;
@@ -164,10 +172,23 @@ export class Ambience {
     }
   }
 
-  /** Each bed's level as it stands this moment. */
+  /** Whether the world's own soundscape plays round the listener: its rain, wind, sea, timbers and gulls are then
+   *  its, and these beds fall silent over HAND_OVER_S; the fire, the deep and every moment stay the story's. */
+  handOver(heard: boolean): void {
+    this.worldTo = heard ? 1 : 0;
+  }
+
+  /** A bed's level as it is heard: the world's own beds under the world's soundscape once it has them. */
+  private heard(bed: Bed): number {
+    const level = this.glides.get(bed)?.value ?? 0;
+    return WORLD_BEDS.has(bed) ? level * (1 - this.world) : level;
+  }
+
+  /** Each bed's level as it is heard this moment: the world's own beds under the world's soundscape once it has
+   *  them. */
   levels(): AmbienceLevels {
     const levels = { rain: 0, wind: 0, waves: 0, fire: 0, deep: 0, gulls: 0, creak: 0 };
-    for (const [bed, glide] of this.glides) levels[bed] = glide.value;
+    for (const bed of BEDS) levels[bed] = this.heard(bed);
     return levels;
   }
 
@@ -212,11 +233,13 @@ export class Ambience {
       glide.elapsedS += step;
       glide.value = glided(glide.from, glide.to, glide.elapsedS, glide.glideS);
     }
+    const toward = Math.sign(this.worldTo - this.world);
+    this.world = Math.min(1, Math.max(0, this.world + (toward * step) / HAND_OVER_S));
     const engine = this.live();
     if (!engine) return;
     const now = engine.kit.audio.currentTime;
     for (const bed of BEDS) {
-      const value = this.glides.get(bed)?.value ?? 0;
+      const value = this.heard(bed);
       const built = engine.beds.get(bed) ?? (value > 0 ? this.buildBed(engine, bed) : null);
       // Written only when it moves: each write is another event on the parameter's timeline.
       if (built && built.written !== value) {
@@ -225,7 +248,7 @@ export class Ambience {
       }
     }
     for (const { bed, meanGapS, voice } of SPOTS) {
-      const level = this.glides.get(bed)?.value ?? 0;
+      const level = this.heard(bed);
       if (level <= 0) continue;
       let countdown = (this.spotCountdownS.get(bed) ?? nextGapS(meanGapS, this.random())) - step * level;
       const bedGain = engine.beds.get(bed)?.gain;

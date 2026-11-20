@@ -123,7 +123,15 @@ export class Overboard implements Beat {
         facing: -Math.PI / 2,
       });
     const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
-    return { shot: this.shot([x, y, z], aspect), actors, drawers: [this.scenery.drawer], heads, focus: [x, y] };
+    const shot = this.shot([x, y, z], aspect);
+    return {
+      shot,
+      actors,
+      drawers: [this.scenery.drawer],
+      heads,
+      focus: [x, y],
+      heard: { at: 'sea', deck: true, sailing: false },
+    };
   }
 
   /** From off the rammer's other side and a little astern, watching the deck and the rail the body goes over; on a

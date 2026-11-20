@@ -19,10 +19,10 @@ const FRAME: AtmosphereFrame = {
   motionReduced: false,
 };
 
-test('the frame packs into the shader’s ten rows of four', () => {
+test('the frame packs into the shader’s eleven rows of four, the cloud lit the day’s white unless told', () => {
   const values = atmosphereValues(FRAME);
   assert.equal(values.length, ATMOSPHERE_FLOATS);
-  assert.equal(ATMOSPHERE_FLOATS, 40);
+  assert.equal(ATMOSPHERE_FLOATS, 44);
   assert.deepEqual([...values.subarray(0, 4)], [1000, 2000, 12, 3.5]);
   assert.deepEqual([...values.subarray(4, 8)], [0, -1, 0, Math.fround(0.01)]);
   assert.deepEqual([...values.subarray(8, 12)], [1, 0, 0, 0.5]);
@@ -30,6 +30,9 @@ test('the frame packs into the shader’s ten rows of four', () => {
   assert.deepEqual([...values.subarray(16, 20)], [1280, 720, 0.8999999761581421, 0]);
   assert.deepEqual([...values.subarray(20, 24)], [0.9200000166893005, 1, 0, 0.30000001192092896]);
   assert.deepEqual([...values.subarray(24, 28)], [11, 5, 0, 0]);
+  assert.deepEqual([...values.subarray(40, 44)], [1, 1, 1, 0]);
+  const dawn = atmosphereValues({ ...FRAME, light: [0.5, 0.25, 0.125] });
+  assert.deepEqual([...dawn.subarray(40, 44)], [0.5, 0.25, 0.125, 0], "the sky's light at first light");
 });
 
 test('a bolt is carried from the eye, so its place keeps its metres however far out the world reaches', () => {

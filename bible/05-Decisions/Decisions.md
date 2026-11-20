@@ -29,7 +29,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Naval, Living World, Professions and Synth Come Over Leaner]]
 - [[Ship Guns Keep Square Broadsides]]
 - [[Foes Show a Closing Parry Ring]]
-- [[Locked On, the Figure Faces Its Foe]]
 - [[Struck Figures Flash, and DFO's Blood Comes Over]]
 - [[Ranged Weapons Aim and Fire]]
 - [[Aiming Sits Behind the Shoulder and Zooms the View]]
@@ -123,6 +122,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Game Opens With a Story Mission at Sea]]
 - [[The Prologue as Claude Shapes It]]
 - [[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]
+- [[The Player's Sword and Shield Are Holstered]]
 - [[Music and Ambience Come From DFO's Synthesiser]]
 - [[Landfall Is Kept as Made Again]]
 - [[Weather and Day and Night Come From DFO, Much Improved]]
@@ -142,6 +142,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Display as Claude Lays It Out]]
 - [[The Swing's Arc Never Covers Its Striker]]
 - [[A Player's Melee Weapon Reaches a Tenth Further]]
+- [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
+- [[First-Person Hands Climb, Shimmy and Reach When Looking Away]]
+- [[The Arts' Birds Are Forged in Blender]]
 - [[Every Shader Is Checked Offline]]
 - [[Three Factions Keep the Arts, After Destiny 1]]
 - [[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]
@@ -159,6 +162,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## Replaced
 
+- [[Locked On, the Figure Faces Its Foe]], by [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
 - [[PostgreSQL]], by [[Accounts Start as Guests, on Cloudflare D1]]

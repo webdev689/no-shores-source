@@ -17,7 +17,7 @@ const NOT_GARMENT =
   /^(body|face|under_|hair_|horse(_|$)|quiver$|spark$|torch|prop_|lute$|flute$|recorder$|tambourine$|sheath_|scabbard_|slung_|shield_)/;
 const HANG = /_(drape|plated_skirted|plated|skirted)$/;
 /** The lights a left hand carries. The lantern is drawn in first person only: the forge's bodies have no layer for it. */
-const LIGHTS = ['torch_l', 'lantern'];
+export const LIGHTS = ['torch_l', 'lantern'];
 
 /** What a body can wear: the sets of each armour piece, its garments, and what each hand can hold. */
 export interface Wardrobe {

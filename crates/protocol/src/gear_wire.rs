@@ -40,12 +40,14 @@ pub const GRANT_ARTS: u8 = 36;
 /// The Ranged loadout's ammunition set to `count` parts of `gear::ammo::AMMO_FULL`, and `count` Ammo crates more.
 pub const GRANT_AMMO: u8 = 37;
 pub const GRANT_CRATES: u8 = 38;
-/// An Art, its number in `column`, set at `level` owning all its fragments.
-pub const GRANT_ART_LEVEL: u8 = 39;
+/// A loadout of `item_kind` worn: one carried, or a Normal one handed out.
+pub const GRANT_WORN: u8 = 39;
 /// An Art worn, by its number in `column`; a fragment set in its Core, the Art in `column`, the slot (0 to 2) in
 /// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
 pub const WEAR_ART: u8 = 40;
 pub const SET_CORE: u8 = 41;
+/// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
+pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
 pub const NO_FRAGMENT: u8 = 255;
 /// A faction's asks, the faction's number in `column`: to pledge to it, to buy its cape, to collect a package.
@@ -111,6 +113,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SET_CORE => Asked::Art(ArtAsk::SetCore { art: column, slot: ask.slot(), fragment: node }),
         GRANT_AMMO => Asked::Grant(Grant::Ammo(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
         GRANT_CRATES => Asked::Grant(Grant::Crates(u16::try_from(ask.count()).unwrap_or(u16::MAX))),
+        GRANT_WORN => Asked::Grant(Grant::Worn(Kind::from_number(ask.item_kind())?)),
         GRANT_ART_LEVEL => Asked::Grant(Grant::ArtLevel { art: column, level: ask.level() }),
         PLEDGE => Asked::Gear(Ask::Pledge { faction: column }),
         BUY_CAPE => Asked::Gear(Ask::BuyCape { faction: column }),
@@ -187,6 +190,9 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Grant(Grant::Item { kind, rarity, level }) => {
             let (item_kind, rarity) = (*kind as u8, *rarity as u8);
             args = messages::AskArgs { kind: GRANT_ITEM, item_kind, rarity, level: *level, ..args };
+        }
+        Asked::Grant(Grant::Worn(kind)) => {
+            args = messages::AskArgs { kind: GRANT_WORN, item_kind: *kind as u8, ..args };
         }
         Asked::Grant(Grant::Materials(count)) => {
             args = messages::AskArgs { kind: GRANT_MATERIALS, count: u32::from(*count), ..args };

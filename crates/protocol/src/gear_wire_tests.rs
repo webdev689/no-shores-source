@@ -47,6 +47,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::BuyCosmetic { cosmetic: 26 }),
         Asked::Gear(Ask::BuyFromShape { ware: 5 }),
         Asked::Grant(Grant::ArtLevel { art: 3, level: 4 }),
+        Asked::Grant(Grant::Worn(Kind::Thunderlock)),
     ]
 }
 

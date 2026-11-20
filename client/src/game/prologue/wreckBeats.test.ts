@@ -32,6 +32,8 @@ function recorded(
   dress: unknown = { body: 'female' },
 ): { story: Story; calls: string[] } {
   const calls: string[] = [];
+  // The storm's lightning is still unless a test says otherwise.
+  const answered: Readonly<Record<string, unknown>> = { 'lightning.step': { flash: 0, bolt: null }, ...answers };
   const part = (path: string): unknown =>
     path in values
       ? values[path]
@@ -40,7 +42,7 @@ function recorded(
           set: () => true,
           apply: (target, self, args: unknown[]) => {
             calls.push(`${path}(${args.filter((arg) => typeof arg !== 'object').join(', ')})`);
-            return answers[path];
+            return answered[path];
           },
         });
   const story = new Proxy({ dress } as object, {
@@ -346,4 +348,17 @@ test('every figure the wake, the throw overboard and the deep stand is drawn clo
     for (const layer of worn)
       assert.ok(layers[layer]?.includes(actor.anim), `figure ${actor.id}'s ${layer} is not drawn in "${actor.anim}"`);
   }
+});
+
+test("Thule's cry brings one strike down 400 m beyond him, seen from where the player woke", async () => {
+  const { story, calls } = recorded(FOOT_VIEW);
+  const nameplate = { show: () => undefined, hide: () => undefined } as unknown as Nameplate;
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(stillRun({ dead: false }, true)), nameplate);
+  await Promise.resolve();
+  for (let frame = 0; frame < 30; frame++) fight.frame(tick(0.05));
+  const struck = calls.filter((call) => call.startsWith('lightning.strike('));
+  assert.equal(struck.length, 1, calls.filter((call) => call.startsWith('lightning')).join(' '));
+  const [x = 0, y = 0] = (/\(([^)]*)\)/.exec(struck[0] ?? '')?.[1] ?? '').split(', ').map(Number);
+  const [thuleX, thuleY] = layout.arena.thule;
+  assert.ok(Math.abs(Math.hypot(x - thuleX, y - thuleY) - 400) < 1e-6, `${x}, ${y}`);
 });

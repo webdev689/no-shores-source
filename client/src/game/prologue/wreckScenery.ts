@@ -1,3 +1,4 @@
+import { FIRELIGHT, type LampPlace } from '../../sky/lamps.ts';
 import type { Flames } from '../../cinema/flames.ts';
 import type { Gpu } from '../../gpu.ts';
 import type { Drawer } from '../scene.ts';
@@ -9,9 +10,8 @@ import { type WreckMesh, WreckView } from './wreckView.ts';
 /** The wreck's sounds: its fires, the rain and wind, the sea against the hulls and their timbers working. */
 const WRECK_SOUNDS = { fire: 0.8, rain: 0.65, wind: 0.5, waves: 0.8, creak: 0.9, deep: 0, gulls: 0 } as const;
 
-/** The wreck's light as drawn: all of the fires' baked light, and the sky's at the share that matches what a ship's
- *  own deck takes in the storm (its ambient and the sun on its planks). */
-const LOOK = { fire: 1, sky: 0.85 } as const;
+/** The share of the fires' baked light the wreck is drawn with; the sky's is the game's sky, as a ship's is. */
+const FIRE_SHARE = 1;
 
 /** Lights the wreck's fires, each with its own flicker. */
 export function lightFires(flames: Flames, layout: WreckLayout): void {
@@ -26,7 +26,27 @@ export function setAblaze(story: Story, layout: WreckLayout): void {
   story.lightning.striking = false;
   stage.weatherTowards(WRECK, 0);
   lightFires(stage.parts.flames, layout);
+  stage.parts.scene.lamps = fireLamps(layout);
   stage.parts.ambience.set(WRECK_SOUNDS, 2);
+}
+
+/** How far a fire's light reaches round it as a lamp, metres (this, and this much more a metre of its size), and how
+ *  strong it is against a city's lantern: a soft fill under the flames' own light, which lights what stands nearest. */
+const LAMP_REACH_M = 4;
+const LAMP_REACH_A_METRE = 3;
+const LAMP_STRENGTH = 0.4;
+
+/** Each fire as a lamp of the game's night, at the middle of its flames (a line fire's, halfway along it). */
+export function fireLamps(layout: WreckLayout): LampPlace[] {
+  return layout.fires.map((fire, index) => {
+    const [east, south, up] = fire.along ?? [0, 0, 0];
+    return {
+      at: [fire.at[0] + east / 2, fire.at[1] + south / 2, fire.at[2] + up / 2 + fire.size * 0.5],
+      reachM: LAMP_REACH_M + LAMP_REACH_A_METRE * fire.size,
+      light: [FIRELIGHT[0] * LAMP_STRENGTH, FIRELIGHT[1] * LAMP_STRENGTH, FIRELIGHT[2] * LAMP_STRENGTH],
+      seed: index + 1,
+    };
+  });
 }
 
 /** The wreck's mesh and its baked light, once they have come. */
@@ -76,7 +96,7 @@ export class WreckScenery {
     return {
       drawInto: (pass, fromEye, shot, time) => {
         // A heap is its zone's run of the mesh: piece z + 1 for the heap closing zone z.
-        this.view?.drawInto(pass, this.origin, { fromEye, eye: shot.eye }, { ...LOOK, flash: 0, time }, (piece) =>
+        this.view?.drawInto(pass, this.origin, { fromEye, eye: shot.eye }, { fire: FIRE_SHARE, time }, (piece) =>
           this.standing.has(piece - 1),
         );
       },

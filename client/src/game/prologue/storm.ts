@@ -129,6 +129,7 @@ export class StormDive implements Beat {
       ships,
       actors,
       land: !this.leapt,
+      heard: { at: 'sea', deck: false, sailing: true },
       heads: this.leapt ? brig.heads(own) : undefined,
       focus: [shot.eye[0], shot.eye[1]],
     };

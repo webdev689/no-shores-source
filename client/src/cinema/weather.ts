@@ -31,6 +31,9 @@ export interface Weather {
   readonly glow: { readonly colour: Colour; readonly strength: number } | null;
   /** The swell drawn this many times its height: 1 calm, about 2.5 a storm. Drawing only. */
   readonly seaGain: number;
+  /** The hour of the story's day it is told at, hours from the day's start (past 24, the next day): the game's sky
+   *  draws it at that hour, with its own light, cloud, rain and lightning. None leaves the world's sky as it is. */
+  readonly hour?: number;
 }
 
 export const CLEAR: Weather = {
@@ -103,6 +106,7 @@ export function mixWeather(from: Weather, to: Weather, share: number): Weather {
       strength: mix(start.strength, end.strength, along),
     })),
     seaGain: eased('seaGain'),
+    ...(to.hour === undefined ? {} : { hour: from.hour === undefined ? to.hour : mix(from.hour, to.hour, part) }),
   };
 }
 

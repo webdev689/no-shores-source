@@ -107,6 +107,11 @@ Duskraven a raven of purple light at the shoulder, its bolts trailing stars; Dus
 ring; Vanish a puff of dusk, the player drawn as an outline with a shimmer crossing it. An Exposed figure is edged in
 Cosmic two pixels thick, a Charged one crackles inside its own outline.
 
+The two birds, forged in Blender as the owner asked, are Claude's designs ([[The Arts' Birds Are Forged in Blender]]):
+the Dawnflare a phoenix with a crest of flame, a white-hot body, wings swept back and a long tail of plumes curling
+up; the Duskraven a raven pale with its own light, a heavy beak, a shaggy throat, fingered wings and a wedge tail.
+Side on, each is as long as the spell's own bird was, the phoenix with three times the detail.
+
 ### Where they are seen
 
 - **The Character page**: the Art's diamond is the first row under "Weapons", the heading kept, so the two columns'
