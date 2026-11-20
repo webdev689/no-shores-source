@@ -148,7 +148,12 @@ export class SeaShots {
     heightAt: (x: number, y: number) => number,
   ): { readonly overworld: Shot; readonly seaShot: Shot; readonly pose: CameraPose } {
     const feet: [number, number, number] = [ship.x, ship.y, 0];
-    const stepped = stepCamera(this.camera, { feet, dt: seconds, ceiling: ceilingFor(SKY_NOW.current.reading), heightAt });
+    const stepped = stepCamera(this.camera, {
+      feet,
+      dt: seconds,
+      ceiling: ceilingFor(SKY_NOW.current.reading),
+      heightAt,
+    });
     this.camera = stepped.camera;
     let shot = stepped.shot;
     if (this.view.kind === 'sail') this.seaRig = { ...this.camera, height: shot.height, tilt: shot.tilt };
