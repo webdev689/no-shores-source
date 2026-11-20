@@ -67,7 +67,6 @@ export interface StoryFightFrame {
   readonly bars: readonly ShipBar[];
   readonly readout: FightReadout;
   readonly happened: readonly Happening[];
-  readonly left: number;
   readonly over: boolean;
 }
 
@@ -246,7 +245,6 @@ export class StoryFight {
       ...captains.map((captain, index) => drawn(captain, 'captain', this.captainRigs[index] ?? this.ownRig)),
     ];
     const happened = happenedOf(this.heard.splice(0));
-    const left = captains.filter((captain) => captain.state === 'afloat').length;
     return {
       shot,
       ships,
@@ -254,7 +252,6 @@ export class StoryFight {
       bars: this.combat.bars(scale),
       readout: this.combat.readout(input.time),
       happened,
-      left,
       over: view.over !== null,
     };
   }

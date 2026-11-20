@@ -237,7 +237,7 @@ export class Battle implements Beat {
     const { hud } = stage.parts;
     hud.hints(HINTS.fight);
     hud.seaFight(shown.readout.ship);
-    hud.tasks.show(seaFightQuest(QUEST, shown.left, shown.readout.men));
+    hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
     hud.toast(...shown.readout.said);
     const { eye, yaw, pitch, fov } = shown.shot;
     hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));

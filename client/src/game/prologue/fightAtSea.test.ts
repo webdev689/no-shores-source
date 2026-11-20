@@ -127,7 +127,7 @@ test('the story fight begins on the land door with its captains, draws them, hea
       ['captain', 0.55],
     ],
   );
-  assert.equal(first.left, 3);
+  assert.equal(first.readout.left, 3);
   assert.equal(first.over, false);
   assert.ok(first.ships[0]?.place && first.ships[0].place.x === 5000);
   // Each frame steps the fight once a step's answer is in.
@@ -142,11 +142,11 @@ test('the story fight begins on the land door with its captains, draws them, hea
     if (frame.happened.includes('sinking')) {
       const going = frame.ships[2]?.place;
       assert.ok(going && going.z === -3 && going.roll === 0.4, JSON.stringify(going));
-      assert.equal(frame.left, 2);
+      assert.equal(frame.readout.left, 2);
     }
   }
   assert.deepEqual(heard, ['sinking', 'sunk']);
-  assert.equal(frame.left, 0);
+  assert.equal(frame.readout.left, 0);
   assert.equal(frame.over, true);
   assert.ok(frame.ships.slice(1).every((ship) => ship.sunk));
   assert.deepEqual(winds[0], [14, 6], 'the first step sails in the storm drawn round her');
@@ -186,7 +186,7 @@ test('a struck captain is beaten: one fewer is left to beat, and the fight is ov
   for (let step = 1; step < 10 && !frame.over; step++) {
     await new Promise((settle) => setTimeout(settle, 0));
     frame = fight.frame({ ...input, time: step * 0.1 });
-    lefts.push(frame.left);
+    lefts.push(frame.readout.left);
   }
   assert.ok(lefts.includes(2) && lefts.at(-1) === 0, lefts.join());
   assert.equal(frame.over, true);
