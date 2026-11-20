@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   COSMETICS,
+  FIGURE_HIDE,
   RIDE_HIDE,
   bardingLayer,
   bardingLook,
@@ -25,10 +26,10 @@ test('a look of four colours, darkest first, is laid out as a 16-step ramp throu
 });
 
 test('the catalogue: a start piece of each kind keeps its own colours, the rest have looks', () => {
-  assert.equal(cosmeticRamp('own_colours'), null);
-  assert.equal(cosmeticRamp('bay'), null);
-  assert.equal(cosmeticRamp('nonsense'), null);
-  assert.equal(cosmeticRamp('harbour_blue')?.length, 16);
+  assert.equal(cosmeticRamp('own_colours', []), null);
+  assert.equal(cosmeticRamp('bay', []), null);
+  assert.equal(cosmeticRamp('nonsense', []), null);
+  assert.equal(cosmeticRamp('harbour_blue', [])?.length, 16);
   assert.equal(bardingLayer('bare'), null);
   assert.equal(bardingLayer('ember_plate'), 'horse_warhorse');
   assert.equal(bardingLayer('harbour_blue'), null, 'a dye is no barding');
@@ -88,5 +89,23 @@ test("from the saddle a coat takes the ride's lit hide and leaves its bridle, by
     const kept = [...strap];
     hideShade(kept, ramp, RIDE_HIDE);
     assert.deepEqual(kept, strap, `the strap ${strap.join(',')} keeps its leather`);
+  }
+});
+
+test("a coat takes the same steps from the saddle as on the figure, though the ride's strips are lit brighter", () => {
+  const ramp = Array.from({ length: 16 }, (_unused, step) => [step, 0, 0] as const);
+  const stepAt = (light: number, hide: typeof FIGURE_HIDE) => {
+    // A hide colour of hue 30 whose light is `light`.
+    const red = light / (0.299 + 0.587 * 0.75 + 0.114 * 0.5);
+    const rgb = [red, red * 0.75, red * 0.5].map(Math.round);
+    hideShade(rgb, ramp, hide);
+    return rgb[0] ?? 0;
+  };
+  // The hide's median and 90th-percentile light on the published horse_horseidle and RIDE_stand-0 strips.
+  for (const [figure, ride] of [
+    [63, 96],
+    [89, 131],
+  ] as const) {
+    assert.ok(Math.abs(stepAt(figure, FIGURE_HIDE) - stepAt(ride, RIDE_HIDE)) <= 1, `light ${figure} and ${ride}`);
   }
 });

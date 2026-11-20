@@ -2,6 +2,8 @@
 // headings, as Destiny 1's vendors lay out ARMOR, EMBLEMS and MATERIAL EXCHANGE, and the currencies the keeper deals
 // in. The page (npcScreen.ts) only draws these; a faction's rows are factionRows.ts's.
 import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'json' };
+import { cosmeticRamp } from '../../forge/cosmetics.ts';
+import { GAME_PALETTE } from '../appearance/gamePalette.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../../network/gearMessages.ts';
 import { RARITIES, SLOTS, itemName, kindName } from '../../player/gear.ts';
 import type { KeeperKind } from '../keepers.ts';
@@ -19,7 +21,7 @@ export type WarePicture =
   | { readonly kind: 'crate' }
   | { readonly kind: 'swatch'; readonly colours: readonly string[] }
   | { readonly kind: 'emblem'; readonly emblem: number | string }
-  | { readonly kind: 'barding' }
+  | { readonly kind: 'barding'; readonly barding: string }
   | { readonly kind: 'art'; readonly art: number }
   | { readonly kind: 'fragment'; readonly art: number; readonly fragment: number }
   | { readonly kind: 'package' }
@@ -75,6 +77,7 @@ export interface Coin {
 }
 
 interface Cosmetic {
+  readonly id: string;
   readonly kind: string;
   readonly name: string;
   readonly rarity: string;
@@ -142,7 +145,15 @@ function cosmeticWares(gear: GearState, kinds: readonly string[]): Ware[] {
         key: `cosmetic-${number}`,
         name: cosmetic.name,
         rarity: rarityNamed(cosmetic.rarity),
-        picture: swatch ? { kind: 'swatch', colours: cosmetic.look } : { kind: 'barding' },
+        // A swatch in the ramp's own four colours, on the palette as the figure draws them.
+        picture: swatch
+          ? {
+              kind: 'swatch',
+              colours: (cosmeticRamp(cosmetic.id, GAME_PALETTE) ?? [])
+                .filter((_rgb, step) => step % 5 === 0)
+                .map((rgb) => `rgb(${rgb.join(' ')})`),
+            }
+          : { kind: 'barding', barding: cosmetic.id },
         about: `${RARITIES[rarityNamed(cosmetic.rarity)]?.name ?? ''} ${cosmetic.kind === 'dye' ? 'Dye' : cosmetic.kind === 'coat' ? 'Coat' : 'Barding'}`,
         words: cosmetic.words,
         ...sold,

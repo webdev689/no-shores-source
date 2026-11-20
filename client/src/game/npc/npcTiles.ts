@@ -5,6 +5,7 @@ import { make } from '../../editor/dom.ts';
 import type { GearItem } from '../../network/gearMessages.ts';
 import { WORN } from '../../player/gear.ts';
 import { ROLES } from '../../plus/kit.ts';
+import { bardingTile } from '../appearance/bardingTile.ts';
 import { ARTS, emblemSvg, fragmentSvg } from '../artsCards.ts';
 import type { PageContext } from '../characterPage.ts';
 import { emblemImage, emblemOf } from '../emblemArt.ts';
@@ -20,7 +21,7 @@ import {
   rarityOf,
   tileLabel,
 } from '../gearDom.ts';
-import { bardingSvg, shapesSvg, svgUrl } from './npcMarks.ts';
+import { shapesSvg, svgUrl } from './npcMarks.ts';
 import { type Price, type Row, type Ware, type WarePicture, priceWord } from './npcWares.ts';
 
 /** A tile's picture box, in pixels: the menu's cell's. */
@@ -72,7 +73,8 @@ function pictureOf(context: PageContext, picture: WarePicture, name: string): HT
       return art && fragment ? image(svgUrl(fragmentSvg(art, fragment))) : itemIcon(null, name, TILE_PX);
     }
     case 'barding':
-      return image(svgUrl(bardingSvg()), 'npc-barding');
+      // The barding on the player's horse, as the Appearance screen draws it.
+      return bardingTile(context.forge ?? null, context.dress ?? null, picture.barding, 'npc-barding');
     default:
       // A cape not yet held stands as its initials, as Enhanced Plus shows a piece without art.
       return itemIcon(null, name, TILE_PX);

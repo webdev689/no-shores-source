@@ -28,10 +28,10 @@
         "armour": "fighters",
         "metal": "elven",
         "look": [
-          "#0a0f1f",
-          "#283a73",
-          "#7a8fd6",
-          "#f1f4ff"
+          "#2d4848",
+          "#3e7c7c",
+          "#d4cb00",
+          "#fff667"
         ]
       }
     },
@@ -49,10 +49,10 @@
         "armour": "mages",
         "metal": "silver",
         "look": [
-          "#3d2a10",
-          "#b8862e",
-          "#f4e6c4",
-          "#ffffff"
+          "#5d4e0e",
+          "#c5b900",
+          "#f1ee2d",
+          "#feffc7"
         ]
       }
     },
@@ -70,10 +70,10 @@
         "armour": "brotherhood",
         "metal": "ebony",
         "look": [
-          "#050304",
-          "#1f0d12",
-          "#4e1f2b",
-          "#a86a78"
+          "#0f0f0f",
+          "#2c2c2d",
+          "#6f2200",
+          "#a2240c"
         ]
       }
     }

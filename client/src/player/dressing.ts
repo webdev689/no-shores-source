@@ -165,7 +165,7 @@ export function rampsOf(
 ): Record<string, readonly Rgb[]> {
   const metal = new Set(looks.metal ?? []);
   const dyed = new Set(looks.dye ?? []);
-  const worn = cosmeticRamp(outfit.dye);
+  const worn = cosmeticRamp(outfit.dye, table.palette);
   const armour = new Set(ARMOUR_PIECES.map((piece) => `${piece}_${outfit.armour[piece] ?? ''}`));
   // The dye worn takes every armour piece, the padding under it and every garment; never a weapon, a shield, the cloak
   // or the hair.
@@ -175,17 +175,17 @@ export function rampsOf(
   for (const layer of gear) {
     const garment = outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE;
     const ramp =
-      factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')]) ??
+      factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')], table.palette) ??
       (worn && takesDye(layer)
         ? worn
         : metal.has(layer)
           ? table.armour[metalOfLayer(layer) ?? '']
           : dyed.has(layer)
-            ? (table.clothing[garment] ?? cosmeticRamp(garment) ?? undefined)
+            ? (table.clothing[garment] ?? cosmeticRamp(garment, table.palette) ?? undefined)
             : undefined);
     if (ramp) ramps[layer] = ramp;
   }
-  const coat = cosmeticRamp(outfit.coat);
+  const coat = cosmeticRamp(outfit.coat, table.palette);
   if (coat) ramps[HORSE_LAYER] = coat;
   return ramps;
 }

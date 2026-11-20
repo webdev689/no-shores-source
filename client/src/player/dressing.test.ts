@@ -151,8 +151,12 @@ test("a coat is the ridden horse's ramp, and a cape's cosmetic dye is its cloak'
     table,
   );
   assert.equal(coated['horse']?.length, 16);
-  assert.deepEqual(coated['horse']?.[0], [0x13, 0x14, 0x16], 'the coat ramp starts at its darkest colour');
-  assert.deepEqual(coated['formal_cloak_drape']?.[15], [0xc8, 0xf0, 0xff], "the Stormcallers' blue");
+  assert.deepEqual(coated['horse'], cosmeticRamp('grey', table.palette), 'the coat ramp');
+  assert.deepEqual(
+    coated['formal_cloak_drape'],
+    cosmeticRamp('stormcaller_blue', table.palette),
+    "the Stormcallers' blue",
+  );
   assert.equal(rampsOf([], { ...outfit, coat: null }, looks, table)['horse'], undefined, 'Bay keeps its own');
 });
 
@@ -200,14 +204,19 @@ test('a dress is read back with its dye, coat and barding; a cosmetic of the wro
 test("a faction's piece wears its faction's own colour over any dye worn, and put away still wears it", () => {
   const ramp = (light: number) => [[light, light, light] as const];
   const table = { palette: [], clothing: {}, armour: { Iron: ramp(3), Mages: ramp(5), Elven: ramp(6) } };
-  const layers = ['cuirass_mages', 'helm_iron', 'sheath_bow_long_elven'];
+  const layers = ['cuirass_mages', 'under_mages', 'helm_iron', 'sheath_bow_long_elven'];
   const looks = { bodies: {}, dye: layers, metal: layers };
-  const dyes = { cuirass_mages: 'lamplighters', bow_long_elven: 'stormcallers' };
+  const dyes = { cuirass_mages: 'lamplighters', under_mages: 'lamplighters', bow_long_elven: 'stormcallers' };
   const armour = { cuirass: 'mages', helm: 'iron' } as const;
   const dyed = rampsOf(layers, { ...outfit, armour, dyes, dye: 'coral' }, looks, table);
-  assert.deepEqual(dyed['cuirass_mages'], factionRamp('lamplighters'));
-  assert.deepEqual(dyed['sheath_bow_long_elven'], factionRamp('stormcallers'), 'on the back, as in hand');
-  assert.deepEqual(dyed['helm_iron'], cosmeticRamp('coral'), 'the rest take the dye worn');
+  assert.deepEqual(dyed['cuirass_mages'], factionRamp('lamplighters', table.palette));
+  assert.deepEqual(dyed['under_mages'], factionRamp('lamplighters', table.palette), 'the padding under it too');
+  assert.deepEqual(
+    dyed['sheath_bow_long_elven'],
+    factionRamp('stormcallers', table.palette),
+    'on the back, as in hand',
+  );
+  assert.deepEqual(dyed['helm_iron'], cosmeticRamp('coral', table.palette), 'the rest take the dye worn');
 });
 
 test("each faction's own colour is one no dye sells, and no other faction's", () => {

@@ -4,7 +4,7 @@
 
 import catalogue from '../../../content/gear/cosmetics.json' with { type: 'json' };
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
-import type { Rgb } from './dyes.ts';
+import { PaletteSnap, type Rgb } from './dyes.ts';
 
 /** The three kinds of cosmetic. */
 export type CosmeticKind = 'dye' | 'coat' | 'barding';
@@ -58,20 +58,55 @@ export function rampOf(look: readonly string[]): readonly Rgb[] {
   });
 }
 
-/** A dye's or a coat's ramp by its id, or null for one that keeps the figure's or the horse's own colours. */
-export function cosmeticRamp(id: string | null | undefined): readonly Rgb[] | null {
-  const found = cosmeticOf(id);
-  return found && found.kind !== 'barding' && found.look.length === 4 ? rampOf(found.look) : null;
+/** A look's ramp snapped to the palette, as every composed frame is, so that the figure, the first person, the
+ *  Appearance screen and a keeper's swatch draw the same sixteen colours. The snap reads a colour to six bits a
+ *  channel, so a few palette colours snap to a neighbour: snapping again until nothing moves leaves a ramp the
+ *  composer's own snap keeps as it is. */
+function snappedRampOf(look: readonly string[], snap: PaletteSnap): readonly Rgb[] {
+  const pixels = Uint8Array.from(rampOf(look).flatMap((colour) => [...colour, 255]));
+  for (let round = 0, before = ''; round < 8 && before !== pixels.join(); round++) {
+    before = pixels.join();
+    snap.snap(pixels);
+  }
+  return Array.from({ length: 16 }, (_unused, step) => [...pixels.slice(step * 4, step * 4 + 3)] as unknown as Rgb);
 }
 
-/** Each faction's own colour, by its key: a look no dye sells, which only its armour and weapons wear. */
-const FACTION_RAMPS: ReadonlyMap<string, readonly Rgb[]> = new Map(
-  factions.factions.map((faction) => [faction.key, rampOf(faction.gear.look)]),
-);
+/** The dyes' and coats' ramps by their ids, and the factions' colours by their keys, on one palette. */
+interface Ramps {
+  readonly cosmetics: ReadonlyMap<string, readonly Rgb[]>;
+  readonly factions: ReadonlyMap<string, readonly Rgb[]>;
+}
+/** Each palette's ramps, made the first time it is asked for, so each ramp is one array however often asked. */
+const RAMPS = new WeakMap<readonly Rgb[], Ramps>();
 
-/** A faction's own colour as a ramp, by its key, or null for anything else. */
-export const factionRamp = (key: string | null | undefined): readonly Rgb[] | null =>
-  FACTION_RAMPS.get(key ?? '') ?? null;
+function rampsOn(palette: readonly Rgb[]): Ramps {
+  const found = RAMPS.get(palette);
+  if (found) return found;
+  // A table with no palette (a test's) snaps nothing.
+  const snap = palette.length > 0 ? new PaletteSnap(palette) : null;
+  const ramp = (look: readonly string[]) => (snap ? snappedRampOf(look, snap) : rampOf(look));
+  const made: Ramps = {
+    cosmetics: new Map(
+      COSMETICS.filter((each) => each.kind !== 'barding' && each.look.length === 4).map((each) => [
+        each.id,
+        ramp(each.look),
+      ]),
+    ),
+    factions: new Map(factions.factions.map((faction) => [faction.key, ramp(faction.gear.look)])),
+  };
+  RAMPS.set(palette, made);
+  return made;
+}
+
+/** A dye's or a coat's ramp by its id, on `palette` (the forge's, Daggerfall's), or null for one that keeps the
+ *  figure's or the horse's own colours. */
+export const cosmeticRamp = (id: string | null | undefined, palette: readonly Rgb[]): readonly Rgb[] | null =>
+  rampsOn(palette).cosmetics.get(id ?? '') ?? null;
+
+/** A faction's own colour as a ramp on `palette`, by its key, or null for anything else: a look no dye sells, which
+ *  only its armour and weapons wear. */
+export const factionRamp = (key: string | null | undefined, palette: readonly Rgb[]): readonly Rgb[] | null =>
+  rampsOn(palette).factions.get(key ?? '') ?? null;
 
 /** A barding's forge layer by its id (`horse_warhorse`), or null for the bare horse or no barding. */
 export function bardingLayer(id: string | null | undefined): string | null {
@@ -89,29 +124,37 @@ export function wornCosmetic(number: number | undefined, kind: CosmeticKind): st
   return found?.kind === kind && found.source.kind !== 'start' ? found.id : null;
 }
 
-/** Whether a texel of a horse picture, by its hue in degrees and its light, is the hide a coat takes. */
-export type HideTest = (hue: number, light: number) => boolean;
+/** Which texels of a horse picture are the hide a coat takes, by their hue in degrees and their light, and the hide's
+ *  light that takes a coat's lightest step. */
+export interface HideTest {
+  readonly takes: (hue: number, light: number) => boolean;
+  readonly top: number;
+}
 
-/** The third person's horse: its hide's hues; its tack is redder and its blanket red, its mane grey. */
-export const FIGURE_HIDE: HideTest = (hue) => hue >= 25 && hue < 65;
+/** The third person's horse: its hide's hues; its tack is redder and its blanket red, its mane grey. The bay's own
+ *  catches the light no brighter than its top. */
+export const FIGURE_HIDE: HideTest = { takes: (hue) => hue >= 25 && hue < 65, top: 128 };
 /** The ride's horse from the saddle, measured on the forge's ride strips against their hide mask: its lit hide sits at
  *  hues 20 to 25 among its bridle's, which is darker, so there only a light that bright is hide; the redder and the
- *  grey are its tack, its mane and its ears' insides, and the shadows under 40 as much tack as hide. */
-export const RIDE_HIDE: HideTest = (hue, light) => hue >= 20 && hue < 65 && light >= (hue < 25 ? 65 : 40);
-/** The hide's light that takes a coat's lightest step: the bay's own catches the light no brighter. */
-const HIDE_TOP = 128;
+ *  grey are its tack, its mane and its ears' insides, and the shadows under 40 as much tack as hide. Those strips are
+ *  lit brighter than the figure's horse (a median light of 96 to its 63, a 90th percentile of 131 to its 89), so
+ *  their top is higher by as much and a coat takes the same steps from the saddle as on the figure. */
+export const RIDE_HIDE: HideTest = {
+  takes: (hue, light) => hue >= 20 && hue < 65 && light >= (hue < 25 ? 65 : 40),
+  top: 188,
+};
 
 /**
  * Lays a coat's ramp on a texel of the horse's hide, in place, by the horse's own light, as a dyed garment's greys take
- * their dye; a texel `isHide` takes for its tack, blanket or mane is left as it is.
+ * their dye; a texel `hide` takes for its tack, blanket or mane is left as it is.
  */
-export function hideShade(rgb: number[], ramp: readonly Rgb[], isHide: HideTest = FIGURE_HIDE): void {
+export function hideShade(rgb: number[], ramp: readonly Rgb[], hide: HideTest = FIGURE_HIDE): void {
   const [red = 0, green = 0, blue = 0] = rgb;
   const [most, least] = [Math.max(red, green, blue), Math.min(red, green, blue)];
   if (most === least || most !== red) return;
   const hue = ((green - blue) / (most - least)) * 60;
   const light = 0.299 * red + 0.587 * green + 0.114 * blue;
-  if (!isHide(hue, light)) return;
-  const shade = ramp[Math.max(0, Math.min(15, Math.floor((light / HIDE_TOP) * 16)))];
+  if (!hide.takes(hue, light)) return;
+  const shade = ramp[Math.max(0, Math.min(15, Math.floor((light / hide.top) * 16)))];
   if (shade) [rgb[0], rgb[1], rgb[2]] = shade;
 }

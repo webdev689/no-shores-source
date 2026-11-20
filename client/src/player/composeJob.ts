@@ -4,7 +4,8 @@ import type { Rgb } from '../forge/dyes.ts';
 import { type Figure, type ForgeLooks, layerPath, layersOf } from '../forge/looks.ts';
 
 /** A frame to compose: the figure as drawn (a mirrored view's layers already swapped), its move, view and frame, the
- *  ramps its dyed layers take, and the glow its weapon or a cast's spark takes (0 for none). */
+ *  ramps its dyed layers take, the glow its weapon or a cast's spark takes (0 for none), and, for a page's picture,
+ *  the layers drawn by themselves (a weapon whole, or a horse without its rider). */
 export interface ComposeJob {
   readonly figure: Figure;
   readonly anim: string;
@@ -12,6 +13,15 @@ export interface ComposeJob {
   readonly frame: number;
   readonly ramps: Readonly<Record<string, readonly Rgb[]>>;
   readonly glow: GlowLook;
+  readonly alone?: readonly string[] | undefined;
+}
+
+/** The forge's looks a job is drawn by: given layers alone, its body read as one that stacks only those. */
+function looksOf(job: ComposeJob, looks: ForgeLooks): ForgeLooks {
+  const own = looks.bodies[job.figure.body];
+  if (!job.alone || !own) return looks;
+  const layers = Object.fromEntries(job.alone.map((layer) => [layer, own.layers[layer] ?? []]));
+  return { ...looks, bodies: { [job.figure.body]: { ...own, layers } } };
 }
 
 /** A frame composed, as a card is made from it: its pixels, size and feet, and the field round its weapon if it
@@ -31,7 +41,7 @@ const SPARK: ReadonlySet<string> = new Set(['spark']);
 
 /** The strips a job's frame is composed from: each of its layers' colour and depth. */
 export function stripsOf(job: ComposeJob, looks: ForgeLooks): string[] {
-  return layersOf(job.figure, job.anim, looks).flatMap((layer) => [
+  return layersOf(job.figure, job.anim, looksOf(job, looks)).flatMap((layer) => [
     layerPath(job.figure.body, layer, job.anim),
     layerPath(job.figure.body, layer, job.anim, true),
   ]);
@@ -52,7 +62,7 @@ export async function composeCard(
     anim,
     view,
     frame,
-    looks,
+    looksOf(job, looks),
     colours,
     ramps,
     strip,

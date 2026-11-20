@@ -6,6 +6,8 @@
 
 import { make } from '../editor/dom.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
+import type { Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
 import { RANGED_SLOT, RARITIES, SLOTS, itemName } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import { ROLES } from '../plus/kit.ts';
@@ -48,6 +50,9 @@ export interface PageContext {
   readonly art?: HTMLElement;
   /** Opens the Appearance screen, where the menu has one. */
   readonly appearance?: () => void;
+  /** The forge and the player's dress, for a keeper's tile that draws the player's horse (the Tack's bardings). */
+  readonly forge?: Cards | null;
+  readonly dress?: Dress | null;
 }
 
 /** The slots each side of the figure, by the gear's slot numbers. */

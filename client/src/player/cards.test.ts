@@ -225,3 +225,28 @@ test("warming goes at the page's pace whenever the frames are composed on it", (
   forge.pump();
   assert.equal(started, 2, 'two a tick once the worker is gone');
 });
+
+test('a dye counts only on a figure with a layer that takes it, and a page picture goes through the composer', () => {
+  const jobs: ComposeJob[] = [];
+  const recording: Composer = {
+    offPage: true,
+    compose: (_key: string, job: ComposeJob) => {
+      jobs.push(job);
+      return new Promise(() => undefined);
+    },
+    hurry: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const coral = { ...armed, outfit: { ...armed.outfit, dye: 'coral' } };
+  const undyed = new Cards(maker, store, looks, colours, dyes, undefined, recording);
+  undyed.card(1, armed, 'guard', 0, 0);
+  undyed.card(2, coral, 'guard', 0, 0);
+  assert.equal(jobs.length, 1, 'nothing worn takes the dye, so the frame is the same one');
+  const dyeable = new Cards(maker, store, { ...looks, dye: ['sword_iron'] }, colours, dyes, undefined, recording);
+  dyeable.card(1, armed, 'guard', 0, 0);
+  dyeable.card(2, coral, 'guard', 0, 0);
+  assert.equal(jobs.length, 3, 'a dyed layer is drawn in it');
+  void undyed.picture(armed, 'guard', 0, 0, 'sword_iron');
+  assert.deepEqual(jobs.at(-1)?.alone, ['sword_iron'], 'the layer drawn by itself rides the job');
+});

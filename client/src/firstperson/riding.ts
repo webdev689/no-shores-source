@@ -142,7 +142,7 @@ export async function horsePicture(
     rideSink(source, shot),
   ]);
   if (!strip) return null;
-  const ramp = cosmeticRamp(coat);
+  const ramp = cosmeticRamp(coat, source.dyes.palette);
   const pixels = source.painter.paint(ramp ? coated(strip, ramp) : strip, null);
   if (over && over.width === strip.width && over.height === strip.height)
     layOver(pixels, source.painter.paint(over, null));
