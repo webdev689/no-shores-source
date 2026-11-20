@@ -34,7 +34,8 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
   every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
 - **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a square reaching 0.35 m each way
-  from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet, slides along a
+  from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet (a footprint holds
+  its own edges, so blocks laid side by side hold every point of their seam), slides along a
   block's sides, and is stopped by one taller than a step. A move is judged where the feet end it: stepping down
   beside a taller block, the body is held where the drop would leave it overlapping that block, and slides on.
 - **Never inside a block.** Falling past the top of a block beside it, too slowly to clear it, the body is pushed out

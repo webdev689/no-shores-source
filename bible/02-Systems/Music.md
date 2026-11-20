@@ -24,6 +24,9 @@ code:
   - client/src/game/audio/music/wetScore.ts#wetScore
   - client/src/game/audio/music/coldScore.ts#coldScore
   - client/src/game/audio/music/saltmereScore.ts#saltmereScore
+  - client/src/game/audio/music/storyScore.ts#storyScores
+  - client/src/game/audio/music/storyStorm.ts#stormSong
+  - client/src/game/audio/music/storyBand.ts#THEME
 ---
 # Music
 
@@ -119,6 +122,13 @@ ships within 1,000 m, the fight, whether she lies off a coast to land on, and th
   as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or over, else the
   sea fight.
 - **The social space.** Saltmere's theme plays whole there while nothing threatens, the ambience at 0.8.
+- **The story.** While the [[Prologue]] plays, each beat tells the director what plays: a song of the story's own in
+  the layers of the mood it asks; a silence, let ring out or cut at once (the crash, and the black after it); or the
+  fight it plays, heard as any fight. At sea that is the sea's own fight song. On the wreck it is the Boarding's first
+  phase in the fight's layers, tense at least, until Thule wakes his own score; the player beaten plays its end. The
+  story's songs leave the ambience at 0.8.
+- **A wake holds what follows it.** A boss's wake is never heard over the song it leads into, even when that song was
+  playing before it: the song begins again once the wake has played.
 - **A hidden page** falls silent at once; the music starts again from the song's top when the page is seen, but a
   sea song cut short by it is not begun again.
 
@@ -161,6 +171,15 @@ ships within 1,000 m, the fight, whether she lies off a coast to land on, and th
   gusts of wind, the strings' wood ticking and the taiko's slow heart; its peak doubles the horn with the brass and
   sets the choir high. The cadence closes on the low B, the victory rises into B major, the defeat falls through C.
   40 bars, 100 s round.
+- **The story's songs**, one theme told through six songs ([[Prologue]]) for strings, harp, flute, fiddle, horns, low
+  brass, a choir, bells and a celesta. The theme is D, A, B flat, A: a rise of a fifth and a sigh from the minor sixth.
+  - The title, 79 in 4/4, 91 s round: first light, the theme on the horn over the harp, its answer on the flute over
+    the cello, then the horn and the fiddle with the choir, the brass and the drums, and the title's quiet bars.
+  - The storm, 112: the low strings drive in eighths with the theme's sigh in them, the theme slowed on the horns.
+  - The calm, 66: the theme on one flute, its answer on the fiddle.
+  - The ram, 96, played once: the Boarding's E against F, swelling bar by bar, cut by the crash.
+  - The deep, 54: the theme slowed on voices, a celesta glinting its first notes high.
+  - The shore, 76: the theme raised to D major, its sixth a B natural, ending on D, which leads into Saltmere's G.
 - **Saltmere's theme**: G major in 3/4 at 126, a folk waltz with the lilt on its second beat, 183 s round. Its tune
   climbs G, A, B, D in a dotted step and leans on the sixth. It passes from the flute to the fiddle with the cello
   under it, to the accordion's second tune under the fiddle's descant, to the cello in E minor over the harp for a
@@ -171,7 +190,8 @@ ships within 1,000 m, the fight, whether she lies off a coast to land on, and th
 Loudness at the full Music volume, measured: the boss scores' first phases -18 to -18.5 dBFS, their later phases
 rising to -16, peaks -4 to -8 dBFS under a soft ceiling at -3; the families' fights -17.5 to -18 dBFS, peaks about
 -5 dBFS under a soft ceiling at -3, their peak layers half a decibel over the fight; the sea's fights -20 to -22
-dBFS, peaks -2 to -6; a tension 4 to 6 dB under its fight; Saltmere's theme -21.7 dBFS, 3.7 dB under a fight.
+dBFS, peaks -2 to -6; a tension 4 to 6 dB under its fight; Saltmere's theme -21.7 dBFS, 3.7 dB under a fight; the
+story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as it swells.
 
 ## Limits
 

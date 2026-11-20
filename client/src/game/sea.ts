@@ -29,7 +29,7 @@ import { Aboard, type AboardContext } from './aboard.ts';
 import { Passage } from './passage.ts';
 import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
-import { SeaCombat } from './seaCombat.ts';
+import { roomSource, SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
 import { SeaView } from './seaView.ts';
@@ -465,7 +465,7 @@ export class Sea {
     this.aboard.drop();
     this.passage.stop();
     if (this.view.helmView) this.view.sail();
-    this.combat = new SeaCombat(this.room, first, this.hull.marks, this.hull.sails, time);
+    this.combat = new SeaCombat(roomSource(this.room, first), first, this.hull.marks, this.hull.sails, time);
   }
 
   private note(): string {

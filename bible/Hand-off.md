@@ -179,8 +179,36 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
+- The first story mission, the [[Prologue]], on pull request #74, as the owner set it ([[The Game Opens With a Story
+  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
+  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
+  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
+  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
+  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
+  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
+  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
+  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
+  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
+  the intro, each started on its own with `?prologue=<beat>`.
+
 ## Waiting on the owner
 
+- **#74, the prologue**, now merges into `main` (it was stacked on #71, still open, so it carries #71's ships too),
+  and waits on the owner's yes, which deploys the page and the rooms. Every call inside the beats is in
+  [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
+  sound.
+- **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
+  repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
+  `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
+  its published model here with `--dry-run`, whose level hash must match the log's: a build elsewhere can lay a
+  slightly different ground.
+- fight-life's voice blurb system, which the owner named for [[Speech]]: its repository could not be read from the
+  session that finished the prologue, so the likeness is unchecked.
+- Touch: the sea fight and the wreck need a keyboard and mouse, as the rest of the game does ([[Interface]], "No touch
+  layer yet"). A touch player can start the story but not play its fights.
+- Without `?room=` the page has no accounts, so creation's account step only says accounts are kept online. The online
+  default is the owner's.
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
   then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
   the owner's yes to merge: foes show their level, patrol
@@ -288,10 +316,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 - A check for [[Plain Text]], like DFO's word limits, would need the owner's agreement; it is held in review for now.
 - Moving `daggerfalljs.dev`'s DNS to Cloudflare, when the renders should leave `r2.dev`
   ([[The Forge's Renders Will Use daggerfalljs.dev]]).
-- The cleanup audit (#70): dead code out of the overworld, naval and player, and the Overworld note, its pick and the
-  [[Code Map]] brought in line with the code, in files no open pull request changes. Its description lists what it
-  found in #63's, #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted. Whether the
-  Overworld's rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
+- The cleanup audit (#70, merged and deployed with the owner's yes): its description lists what it found in #63's,
+  #68's and #69's files, to clear once they merge, and 37 old branches that can be deleted; whether the Overworld's
+  rise and fall, ported but never wired, stay out is the owner's to say ([[Pick - Overworld]]).
+- The sea's open choices ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]): being the pirate, the opening voyage
+  (to be talked through first), and which of DFO's companion systems the crew comes from ([[Open Questions]]).
 
 - **#86, #87, #89 and #90 are on `main`**, merged and deployed with the owner's yes. #86 forges the Arts' birds in
   Blender in eight directions ([[The Arts' Birds Are Forged in Blender]]); its `forge` workflow renders them on main
@@ -306,6 +335,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
+  through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
+  with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
+  whether its foes can be seen well enough away from the fires.
 - **The weather and day and night (#76, on `main`)**, tested offline: the full check, the weather's statistics per
   climate and its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under
   cloud, at sunset and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to
@@ -319,9 +352,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **The music and the ambience (#73, on `main`)**, tested offline: every piece rendered and measured, and the built
   game headless in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the
   green score in as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both
-  running. Left open: the prologue's `storyCue(name)` (branch `claude/loving-darwin-sw4eae`) routed to the director as
-  a new cue kind, by whichever reaches `main` second. #76 gives the night ambiences their time of day, plays the four
-  sea songs while sailing, and sets each recording at the loudness of the synthesised sound it replaces.
+  running. Left open, now done on #74: the story's songs and its hearing in the director. #76 gives the night
+  ambiences their time of day, plays the four sea songs while sailing, and sets each recording at the loudness of the
+  synthesised sound it replaces.
 - **Its third round (#69, on `main`)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]),
   its renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound

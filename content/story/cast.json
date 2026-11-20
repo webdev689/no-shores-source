@@ -1,0 +1,24 @@
+{
+  "speakers": {
+    "mate": { "name": "First Mate", "voice": "mate" },
+    "lookout": { "name": "Lookout", "voice": "lookout" },
+    "bosun": { "name": "Bosun", "voice": "bosun" },
+    "gunner": { "name": "Gunner", "voice": "gunner" },
+    "thule": { "name": "Captain Brannoc Thule", "voice": "thule" },
+    "tithe": { "name": "Tithe Deckhand", "voice": "tithe" },
+    "pirate": { "name": "Pirate", "voice": "pirate" },
+    "voice": { "name": "", "voice": "deep" },
+    "stranger": { "name": "Stranger", "voice": "stranger" }
+  },
+  "voices": {
+    "mate": { "pitchHz": 176, "spreadHz": 22, "muffleHz": 1700, "volume": 0.34, "syllableS": 0.1 },
+    "lookout": { "pitchHz": 150, "spreadHz": 30, "muffleHz": 1600, "volume": 0.36, "syllableS": 0.085 },
+    "bosun": { "pitchHz": 92, "spreadHz": 14, "muffleHz": 1300, "volume": 0.38, "syllableS": 0.12 },
+    "gunner": { "pitchHz": 118, "spreadHz": 20, "muffleHz": 1500, "volume": 0.34, "syllableS": 0.1 },
+    "thule": { "pitchHz": 78, "spreadHz": 10, "muffleHz": 1200, "volume": 0.44, "syllableS": 0.14 },
+    "tithe": { "pitchHz": 104, "spreadHz": 18, "muffleHz": 1300, "volume": 0.3, "syllableS": 0.1 },
+    "pirate": { "pitchHz": 132, "spreadHz": 26, "muffleHz": 1400, "volume": 0.3, "syllableS": 0.09 },
+    "deep": { "pitchHz": 64, "spreadHz": 6, "muffleHz": 900, "volume": 0.42, "syllableS": 0.22 },
+    "stranger": { "pitchHz": 158, "spreadHz": 18, "muffleHz": 1800, "volume": 0.34, "syllableS": 0.1 }
+  }
+}

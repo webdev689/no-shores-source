@@ -8,10 +8,18 @@ import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, shifted } from './camera.ts';
 import type { Foot, FootFrame } from './foot.ts';
+import type { NodeInfo } from './worldData.ts';
 import type { Drawer } from './scene.ts';
 import { SwingView } from './swingView.ts';
 
 type Point = readonly [number, number, number];
+
+/** What the view reads of a place played on foot: its blood's origin (its node's first spawn, else its centre), the
+ *  boxes its blood lies on, its fight, and whether its room is being joined again. A node's `Foot` is one; so is the
+ *  prologue's wreck. */
+export type FootShown = Pick<Foot, 'boxes' | 'fight' | 'rejoining'> & {
+  readonly node: Pick<NodeInfo, 'spawns' | 'centre'>;
+};
 
 /** The land is drawn a little off the ground bodies stand on, so what lies on it (the marks of telegraphed blows, the
  *  blood) is drawn this much higher, in metres, or the drawn land would hide it. */
@@ -27,7 +35,7 @@ export class FootView {
   private readonly swings: SwingView;
   private readonly root: HTMLElement;
   private readonly hud: Hud;
-  private blood: { readonly foot: Foot; readonly drawn: FightBlood; readonly origin: Point } | null = null;
+  private blood: { readonly foot: FootShown; readonly drawn: FightBlood; readonly origin: Point } | null = null;
 
   /** `beside`: the game's own pieces over the view (its hints), which the fight's display keeps clear of. */
   constructor(gpu: Gpu, hudRoot: HTMLElement, forge: Cards, beside: readonly HTMLElement[] = []) {
@@ -42,7 +50,7 @@ export class FootView {
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */
-  private bloodOf(foot: Foot, groundAt: (x: number, y: number) => number | null) {
+  private bloodOf(foot: FootShown, groundAt: (x: number, y: number) => number | null) {
     if (this.blood?.foot === foot) return this.blood;
     this.blood?.drawn.destroy();
     const [x, y] = foot.node.spawns[0] ?? foot.node.centre;
@@ -59,7 +67,7 @@ export class FootView {
    * the attack feel's light is on and there are any).
    */
   frame(
-    foot: Foot,
+    foot: FootShown,
     shown: FootFrame,
     seconds: number,
     {

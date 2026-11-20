@@ -4,17 +4,19 @@ use land::ground::Ground;
 use movement::blocks::ground_at;
 use movement::{Block, Body, Terrain, standing};
 
-/// The ground a room's fighters stand on: open ground at 0 m, or a node's window of the land.
+/// The ground a room's fighters stand on: open ground at 0 m, the open sea at 0 m under a course laid over it (a body
+/// stands there, but no foe walks it), or a node's window of the land.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Floor {
     Flat,
+    Sea,
     Land(Box<Ground>),
 }
 
 impl Terrain for Floor {
     fn height_at(&self, x: f64, y: f64) -> f64 {
         match self {
-            Floor::Flat => 0.0,
+            Floor::Flat | Floor::Sea => 0.0,
             Floor::Land(ground) => ground.height_at(x, y),
         }
     }

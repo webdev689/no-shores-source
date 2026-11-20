@@ -1,0 +1,61 @@
+name: wreck
+
+# Builds the prologue's wreck in Blender from the Brig, the Frigate and the Sloop, bakes its fires' and the sky's light
+# at full size, and publishes its mesh, its light and its model to R2 with the repository's Cloudflare token, whenever
+# the wreck's tools change. R2's objects are named by their hashes, so a run changes nothing already published. The
+# log's last line names the three keys, which a commit takes into content/prologue/wreck.json, and the level's hash,
+# which matches the committed level's when this build laid the same ground, fires and way (export_wreck.py).
+on:
+  push:
+    paths: [tools/wreck/**, .github/workflows/wreck.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # The token reaches only the two steps that check it and publish: npm ci and pip run others' install scripts.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+      - name: Install Blender's module and the TypeScript tools
+        if: steps.token.outputs.set == 'true'
+        run: pip install bpy==5.3.0 numpy && npm ci
+      # The Sloop's published source, shaped to three times its size as the ships workflow shapes her, and the game's
+      # pictures the wreck is painted with.
+      - name: Fetch the Sloop and make the pictures
+        if: steps.token.outputs.set == 'true'
+        run: |
+          source=$(node -p "const m = require('./content/ships/ships.json'); m.base + m.ships.sloop.source")
+          curl -sSfo "$RUNNER_TEMP/sloop.blend" "$source"
+          node tools/ships/ship_pictures.ts "$RUNNER_TEMP/pictures.bin"
+          python -I tools/ships/shape_ship.py -- "$RUNNER_TEMP/sloop.blend" "$RUNNER_TEMP/shaped.blend" --scale 3
+      - name: Build and light the wreck
+        if: steps.token.outputs.set == 'true'
+        run: |
+          python -I tools/wreck/build_wreck.py "$RUNNER_TEMP/Wreck.blend" --sloop "$RUNNER_TEMP/sloop.blend" \
+            --shaped "$RUNNER_TEMP/shaped.blend" --pictures "$RUNNER_TEMP/pictures.bin"
+          python -I tools/wreck/light_wreck.py -- "$RUNNER_TEMP/Wreck.blend" "$RUNNER_TEMP/WreckLit.blend" \
+            "$RUNNER_TEMP/light.png" --size 2048 --samples 96
+      - name: Export and publish the wreck
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: python -I tools/wreck/export_wreck.py -- "$RUNNER_TEMP/WreckLit.blend" "$RUNNER_TEMP/light.png"

@@ -10,6 +10,7 @@ import { reckoningScore } from './reckoningScore.ts';
 import { saltmereScore } from './saltmereScore.ts';
 import { ROLES, type Song, TICKS_PER_BEAT, lay, makeSong, midiNote, songSeconds, tune } from './score.ts';
 import { seaSongs } from './seaScore.ts';
+import { storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
@@ -21,6 +22,7 @@ const families = { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: 
 const familySongs = Object.values(families).map((score) => score.song);
 const stings = Object.values(families).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
 const saltmere = saltmereScore();
+const { ram, ...storyLooped } = storyScores();
 const looped: readonly Song[] = [
   ...Object.values(sea),
   ...wrath.phases,
@@ -30,8 +32,17 @@ const looped: readonly Song[] = [
   boarding.last,
   ...familySongs,
   saltmere,
+  ...Object.values(storyLooped),
 ];
-const once: readonly Song[] = [wrath.fallen, reckoning.fallen, boarding.wake, boarding.fallen, boarding.end, ...stings];
+const once: readonly Song[] = [
+  wrath.fallen,
+  reckoning.fallen,
+  boarding.wake,
+  boarding.fallen,
+  boarding.end,
+  ...stings,
+  ram,
+];
 /** The songs the director plays as danger nears and in a fight: each must grow from its tension to its peak. */
 const fights: readonly Song[] = [
   sea.storm,
@@ -128,6 +139,7 @@ test('every layer a score names plays somewhere in it, and each fight song grows
     [...boarding.phases, boarding.last, boarding.wake, boarding.fallen, boarding.end],
     ...Object.values(families).map(({ song, cadence, victory, defeat }) => [song, cadence, victory, defeat]),
     [saltmere],
+    ...[...Object.values(storyLooped), ram].map((song) => [song]),
   ]) {
     const named = new Set(score.flatMap((song) => song.tracks.map((track) => track.role)));
     for (const role of named)
@@ -164,7 +176,9 @@ test('the scores keep their tempos and lengths: phases drive harder, the sea in 
 
 /** Where each program the family scores and Saltmere's theme play is at home, its lowest and highest key. */
 const RANGES: Readonly<Record<number, readonly [number, number]>> = {
+  8: [60, 96], // celesta
   12: [41, 96], // marimba
+  14: [60, 77], // tubular bells
   21: [41, 93], // accordion
   24: [40, 83], // nylon guitar: the lute and the oud
   32: [28, 60], // acoustic bass
@@ -180,6 +194,7 @@ const RANGES: Readonly<Record<number, readonly [number, number]>> = {
   49: [28, 96], // slow strings
   52: [40, 84], // choir
   53: [40, 84], // voices
+  55: [28, 84], // orchestra hit
   57: [34, 77], // trombone, the bass trombone's low notes with it
   60: [35, 77], // horn
   61: [40, 84], // brass
@@ -194,8 +209,8 @@ const RANGES: Readonly<Record<number, readonly [number, number]>> = {
   119: [24, 96], // reverse cymbal
 };
 
-test("every note of the family scores and Saltmere's theme lies where its instrument plays", () => {
-  for (const song of [...familySongs, ...stings, saltmere]) {
+test("every note of the family scores, Saltmere's theme and the story's songs lies where its instrument plays", () => {
+  for (const song of [...familySongs, ...stings, saltmere, ...Object.values(storyLooped), ram]) {
     const programs = new Map(song.tracks.map((track) => [track.channel, track.program]));
     for (const note of song.notes) {
       if (note.channel === PERCUSSION_CHANNEL) continue;

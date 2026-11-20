@@ -535,6 +535,7 @@ name = "xtask"
 version = "0.0.0"
 dependencies = [
  "naga",
+ "serde_json",
 ]
 
 [[package]]

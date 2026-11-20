@@ -35,6 +35,8 @@ pub const LAYERS: &[Layer] = &[
             "ships",
             "plus",
             "combat",
+            "cinema",
+            "speech",
             "sky",
         ],
     },
@@ -55,6 +57,8 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "city", may_import: &["models", "textures", "rules", "water", "sky"] },
     Layer { name: "heldmap", may_import: &["editor", "overworld", "forge", "firstperson", "plus"] },
     Layer { name: "plus", may_import: &[] },
+    Layer { name: "speech", may_import: &["plus"] },
+    Layer { name: "cinema", may_import: &["water", "combat"] },
 ];
 
 /// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork
