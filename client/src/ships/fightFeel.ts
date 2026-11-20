@@ -1,7 +1,7 @@
 // How a sea fight looks and sounds round its ships, from the fight's events and what its view already says of them
 // (their hurts, fires and states): each event becomes its puffs (`Effects`), its harm on the ship it struck
 // (`ShipHarm`, on her rig), its flotsam and its sound. The World Editor's fights and the sea's draw through it.
-import type { NavalEvent } from '../network/seaFight.ts';
+import type { RoomEvent } from '../rules/feelEvents.ts';
 import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
 import { DRESSES, type ShipSide } from './dress.ts';
 import { Effects, type Mark, type Splash } from './effects.ts';
@@ -9,9 +9,6 @@ import { Flotsam } from './flotsam.ts';
 import { hullPaint, hullWaterline, plateOverM, SLOOP_HULL } from './hulls.ts';
 import { type SailRig, windOff } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
-
-/** The room's own events the feel reads, by the room's names: a ball's splash and hit come with its shot's events. */
-export type RoomEvent = Exclude<NavalEvent, { kind: 'Splash' | 'Hit' }>;
 
 /** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on her it struck in her
  *  own frame and what it struck (from the room's `Hit` told with it), and the room's own. */
@@ -29,14 +26,7 @@ export type FeelEvent =
   | { readonly kind: 'splash'; readonly point?: Point; readonly at?: readonly number[] }
   | RoomEvent;
 
-/** One of the room's events as the feel reads it among the fight's: the sea room's and the fleet room's hand theirs
- *  through here, and the World Editor's fight names its own the same. None for a ball's splash and hit, which its
- *  shot's own events carry. */
-export function feelOf(event: NavalEvent): FightEvent | null {
-  if (event.kind === 'Splash' || event.kind === 'Hit') return null;
-  // The fight's view carries its events as the World Editor's; the feel tells these from them by their kinds.
-  return event as unknown as FightEvent;
-}
+export { feelOf, type RoomEvent } from '../rules/feelEvents.ts';
 
 /** What the feel reads of a ship's numbers in the fight's view. */
 export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> & {

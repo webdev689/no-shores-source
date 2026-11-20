@@ -15,7 +15,7 @@ import {
   type ShotName,
   type SideName,
 } from '../rules/fightRules.ts';
-import { feelOf } from '../ships/fightFeel.ts';
+import { feelOf, type NavalEvent, PARTS, PIECES } from '../rules/feelEvents.ts';
 
 const STATES: readonly ShipState[] = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'];
 const MODES: readonly CaptainMode[] = ['cruise', 'engage', 'flee', 'struck', 'sinking'];
@@ -60,24 +60,7 @@ export function withOthers(view: ArrayLike<number>, others: ArrayLike<number> | 
   return new Float64Array([...numbers.slice(0, OTHERS_AT), ...between, ...numbers.slice(OTHERS_AT)]);
 }
 
-/** The part of her a ball struck, and what floats looks like (crates/naval/src/fight_events.rs). */
-export const PARTS = ['hull', 'sail', 'rig'] as const;
-export const PIECES = ['crate', 'barrel', 'chest'] as const;
-
-/** What the sea's fights tell beside the World Editor's events, each on the fight's tick it happened on: a ball's
- *  splash (x, y), a ball that struck a ship (where, in her own frame), a sail torn away (her sail index, as her
- *  manifest lists them), a mast fallen (0 fore to aft), her colours struck, her going down, a piece of what floats laid
- *  (by its number) or gathered (by a player's number), and players gone aboard her. Ships go by the view's numbers. */
-export type NavalEvent =
-  | { kind: 'Splash'; tick: number; at: [number, number] }
-  | { kind: 'Hit'; tick: number; ship: number; at: Point; part: (typeof PARTS)[number] }
-  | { kind: 'SailLost'; tick: number; ship: number; sail: number }
-  | { kind: 'MastFell'; tick: number; ship: number; mast: number }
-  | { kind: 'Struck'; tick: number; ship: number }
-  | { kind: 'Sinking'; tick: number; ship: number }
-  | { kind: 'Flotsam'; tick: number; id: number; at: [number, number]; kind_of: (typeof PIECES)[number] }
-  | { kind: 'Gathered'; tick: number; id: number; by: number }
-  | { kind: 'Boarding'; tick: number; ship: number };
+export { type NavalEvent, PARTS, PIECES } from '../rules/feelEvents.ts';
 
 /** A sea fight's view: the World Editor's fight view, and what the sea's fights tell beside it. */
 export type SeaFightView = FightView & { naval: NavalEvent[] };

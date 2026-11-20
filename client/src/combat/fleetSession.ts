@@ -1,9 +1,8 @@
 import { type FleetOrders, type NavalEvent, type SeenVessel, ordersBytes } from '../network/fleetMessages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
-import type { NavalEvent as SeaEvent } from '../network/seaFight.ts';
 import type { FightEvent, ShipState, ShotName } from '../rules/fightRules.ts';
-import { feelOf } from '../ships/fightFeel.ts';
+import { feelOf, type NavalEvent as SeaEvent } from '../rules/feelEvents.ts';
 import type { FleetLay, FleetLook, FleetRules, LaySighted } from '../rules/fleetRules.ts';
 import type { Helm, Pose, ShipFloats } from '../rules/landRules.ts';
 

@@ -30,6 +30,7 @@ code:
   - client/src/editor/aim.ts#lookReach
   - client/src/ships/effects.ts#Effects
   - client/src/ships/fightFeel.ts#FightFeel
+  - client/src/rules/feelEvents.ts#feelOf
   - client/src/ships/shipHarm.ts#ShipHarm
   - client/src/ships/harmDrawn.ts#harmedCanvas
   - client/src/ships/flotsam.ts#Flotsam
@@ -310,7 +311,7 @@ The view's own numbers stand in where no event says more: her canvas's share lef
 lowers her colours and one `sinking` goes down.
 
 The room's own events (`SailLost`, `MastFell`, `Struck`, `Sinking`, `Flotsam`, `Gathered`, `Boarding`) reach the feel
-by their own names through one mapping (`feelOf`), on every fight path: the sea room's view, the fleet room's
+by their own names through one mapping (`feelOf`, `rules/feelEvents.ts`, which every layer may read), on every fight path: the sea room's view, the fleet room's
 snapshot (whose events carry the sea's kinds after its own, 12 to 19) and the World Editor's fight. A ball's `Splash`
 and `Hit` come with its shot's own events, the hit carrying where on her it struck in her frame and the part. Each
 ship's harm is kept by the number the events name her by: at sea the player is 0, the first captain 1, and each other
