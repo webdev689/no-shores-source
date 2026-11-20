@@ -47,7 +47,9 @@ pub(crate) struct Laid {
 impl Laid {
     /// Takes a stood module's solids, and if it is a keeper's stall, its station: the keeper at its `keeper` socket
     /// facing out of its `counter`, which is where a player comes to it.
+    #[track_caller]
     pub fn stall(&mut self, kind: StationKind, stood: Option<Stood>) {
+        debug_assert!(stood.is_some(), "a stall the manifest lacks, or a socket its module does not have");
         let Some(stood) = stood else { return };
         self.keep_sockets(&stood);
         if let (Some((keeper, _)), Some((counter, facing))) = (stood.socket("keeper"), stood.socket("counter")) {
@@ -63,7 +65,9 @@ impl Laid {
     }
 
     /// Takes a stood module's solids.
+    #[track_caller]
     pub fn piece(&mut self, stood: Option<Stood>) {
+        debug_assert!(stood.is_some(), "a piece the manifest lacks, or a socket its module does not have");
         if let Some(stood) = stood {
             self.keep_sockets(&stood);
             self.solids.extend(stood.solids);

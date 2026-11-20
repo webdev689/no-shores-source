@@ -89,7 +89,8 @@ fn every_keeper_stands_behind_a_counter_facing_the_customer() {
     assert_eq!(selling.len(), 14, "eight stalls, three chapels, three market stalls");
     for module in selling {
         let (counter, keeper) = (socket(module, "counter"), socket(module, "keeper"));
-        let behind = (keeper.at[0] - counter.at[0]) * counter.facing[0] + (keeper.at[1] - counter.at[1]) * counter.facing[1];
+        let behind =
+            (keeper.at[0] - counter.at[0]) * counter.facing[0] + (keeper.at[1] - counter.at[1]) * counter.facing[1];
         assert!(behind < -0.8, "{}: the keeper is {behind} m out from the counter", module.name);
         assert_eq!(keeper.facing, counter.facing, "{}: the keeper faces the customer", module.name);
         assert!(counter.at[2].abs() < 1e-9, "{}: the customer stands at the foot", module.name);
@@ -124,7 +125,11 @@ fn a_customer_walking_at_a_counter_is_stopped_by_it() {
             let inside_x = body.x > counter_box.min_x && body.x < counter_box.max_x;
             let inside_y = body.y > counter_box.min_y && body.y < counter_box.max_y;
             assert!(!(inside_x && inside_y && body.z < counter_box.top - 0.01), "{}: walked into it", module.name);
-            assert!(body.y > counter_box.min_y - 0.01 || body.z >= counter_box.top - 0.01, "{}: through it", module.name);
+            assert!(
+                body.y > counter_box.min_y - 0.01 || body.z >= counter_box.top - 0.01,
+                "{}: through it",
+                module.name
+            );
         }
     }
 }
@@ -136,10 +141,19 @@ fn every_place_a_body_is_set_is_clear_of_the_parts() {
         for socket in module.sockets.iter().filter(|socket| placed.iter().any(|kind| socket.name.starts_with(kind))) {
             let [x, y, z] = socket.at;
             for &[x0, y0, z0, x1, y1, z1] in &module.parts {
-                let near = x > x0 - TUNING.radius && x < x1 + TUNING.radius && y > y0 - TUNING.radius && y < y1 + TUNING.radius;
+                let near = x > x0 - TUNING.radius
+                    && x < x1 + TUNING.radius
+                    && y > y0 - TUNING.radius
+                    && y < y1 + TUNING.radius;
                 // A part no higher than a step over the feet is stood on, not run into.
                 let body_high = z0 < z + TUNING.height && z1 > z + TUNING.step;
-                assert!(!(near && body_high), "{} {}: inside a part {:?}", module.name, socket.name, [x0, y0, z0, x1, y1, z1]);
+                assert!(
+                    !(near && body_high),
+                    "{} {}: inside a part {:?}",
+                    module.name,
+                    socket.name,
+                    [x0, y0, z0, x1, y1, z1]
+                );
             }
         }
     }

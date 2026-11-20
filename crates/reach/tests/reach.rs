@@ -189,6 +189,19 @@ fn a_fall_kills_outside_the_ring_too_before_the_warning_runs_out() {
 }
 
 #[test]
+fn going_over_the_edge_of_a_social_space_warns_only_once_the_feet_are_down() {
+    let section = social();
+    let out = |dropped: f64| Place { x: 120.0, ..falling(dropped) };
+    assert_eq!(Standing::Inside.tick(&section, out(3.0), 87.0), Standing::Inside, "no warning in the air");
+    let landed = Place { aloft: false, ..out(3.0) };
+    assert_eq!(Standing::Inside.tick(&section, landed, 87.0), Standing::Warned { ticks_left: WARNING_TICKS - 1 });
+    let warned = Standing::Warned { ticks_left: 300 };
+    assert_eq!(warned.tick(&section, out(1.0), 87.0), Standing::Warned { ticks_left: 299 }, "a jump keeps the count");
+    let away = Place { x: 120.0, ..falling(3.0) };
+    assert_eq!(Standing::Inside.tick(&square(), away, 87.0), Standing::Warned { ticks_left: WARNING_TICKS - 1 });
+}
+
+#[test]
 fn a_fall_is_measured_from_where_the_feet_last_stood() {
     assert_eq!(reach::stood(87.0, falling(10.0)), 87.0, "in the air, the height it left");
     assert_eq!(reach::stood(87.0, Place { aloft: false, ..falling(10.0) }), 77.0, "landed, where it stands");

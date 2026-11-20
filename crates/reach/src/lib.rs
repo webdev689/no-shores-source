@@ -45,8 +45,8 @@ pub enum Standing {
 
 impl Standing {
     /// The standing one tick on, for a body now at `at` that last stood at the height `stood`. Where falls kill, a body
-    /// in the air FALL_M or more below `stood` dies at once, inside the ring or out. Outside the ring the count runs
-    /// down from WARNING_TICKS; back inside ends it; at 0, or LIMIT_M or more past the edge, the body dies, measured
+    /// in the air FALL_M or more below `stood` dies at once, inside the ring or out, and one leaving the ring in the air
+    /// is warned only once its feet are down. Outside the ring the count runs down from WARNING_TICKS; back inside ends it; at 0, or LIMIT_M or more past the edge, the body dies, measured
     /// flat.
     #[must_use]
     pub fn tick(self, section: &Section, at: Place, stood: f64) -> Self {
@@ -60,6 +60,10 @@ impl Standing {
         }
         let Place { x, y, .. } = at;
         if inside(&section.ring, x, y) {
+            return Standing::Inside;
+        }
+        // Where falls kill, going over the edge starts no warning until the feet are down: the fall is judged first.
+        if section.falls_kill && at.aloft && self == Standing::Inside {
             return Standing::Inside;
         }
         let ticks_left = left.saturating_sub(1);

@@ -2,7 +2,7 @@
 
 `crates-barrels`, 3 x 2: crates stacked, barrels standing and lying, sacks against them. `lamp-post`, 4 m: a
 cast-iron post on a stone foot, a scrolled arm each side carrying a lantern. `bench`, 2.4 m: a stone bench with a
-timber seat and back, its sitter facing -y (socket `front`). `anvil-yard`, 6 x 4: an anvil on its stump, a quench
+timber seat and back, its sitter facing -y (socket `front`; every piece here has one, the way it is stood). `anvil-yard`, 6 x 4: an anvil on its stump, a quench
 trough, a grindstone, a heap of coal and a rack of bar iron, where two smiths stand at work (sockets `smith-1` and
 `smith-2`). `hay-cart`, 4 x 2: a two-wheeled cart heaped with hay, its shafts resting on the ground. `bollards`: three
 iron mooring bollards along a quay's edge, a rope made fast round one.
@@ -28,6 +28,7 @@ def crates_barrels(module):
     for at in ((-1.15, -0.55), (-1.25, -0.1)):
         fittings.sack(module, (*at, 0.0), size=0.5)
     fittings.rope_coil(module, (0.3, 0.45, 0.62), radius=0.25, turns=3)
+    module.socket('front', (0.0, -0.9, 0.0), (0, -1))
 
 
 def lamp_post(module):
@@ -43,6 +44,7 @@ def lamp_post(module):
                     sides=3)
         fittings.lantern(module, (side * 0.58, 0.0, 3.0), size=0.34, hung_from=3.52)
     shapes.lathe(module, (0.0, 0.0, 3.5), [(0.06, 0.0), (0.1, 0.12), (0.0, 0.42)], 'iron', sides=6)
+    module.socket('front', (0.0, -0.36, 0.0), (0, -1))
 
 
 def bench(module):
@@ -67,6 +69,7 @@ def anvil_yard(module):
     stall_weaponsmith.anvil(module, (0.0, 0.0, 0.08), turn=0.0)
     module.socket('smith-1', (-0.85, -0.55, 0.08), (math.cos(0.55), math.sin(0.55)))
     module.socket('smith-2', (0.85, -0.55, 0.08), (-math.cos(0.55), math.sin(0.55)))
+    module.socket('front', (0.0, -1.9, 0.0), (0, -1))
     stall_weaponsmith.trough(module, -1.9, 1.0)
     stall_weaponsmith.grindstone(module, 2.0, 0.9)
     for lump in range(16):

@@ -274,6 +274,20 @@ def battlements(module, start, end, z, thick, material='stone', every=2.0, wide=
         block(module, at, (wide, thick, high), material, turn=turn, bevel=0.03, wear=0.03, part=False)
 
 
+def _in_order(group):
+    """Puts a group's vertices and triangles in one order, whatever order Blender made them in: an exact boolean's
+    threads hand its faces back in a different order each run, and a mesh's key is the hash of its bytes."""
+    order = sorted(range(len(group['vertices'])), key=lambda at: group['vertices'][at])
+    new = {old: at for at, old in enumerate(order)}
+    group['vertices'] = [group['vertices'][old] for old in order]
+    triangles = []
+    for triangle in group['triangles']:
+        a, b, c = (new[old] for old in triangle)
+        # Turned to start at its least vertex, so it keeps its winding.
+        triangles.append(min((a, b, c), (b, c, a), (c, a, b)))
+    group['triangles'] = sorted(triangles)
+
+
 def exported(module):
     """The module's surfaces by material, each a list of vertices (position, normal) and triangles, its parts and its
     sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
@@ -319,5 +333,7 @@ def exported(module):
     unknown = set(groups) - set(MATERIALS)
     if unknown:
         raise ValueError(f'{module.name}: materials the game does not know: {sorted(unknown)}')
+    for group in groups.values():
+        _in_order(group)
     return dict(groups={name: groups[name] for name in MATERIALS if name in groups}, parts=parts, sockets=sockets,
                 pads=pads, size=[round(side, 3) for side in size])

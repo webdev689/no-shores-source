@@ -15,6 +15,7 @@ code:
   - crates/layout/src/ledges.rs#cut
   - tools/modules/stairs.py#builder
   - tools/modules/bridge.py#builder
+  - tools/modules/adorn.py#ADORNMENTS
   - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
 ---
@@ -69,6 +70,14 @@ are written with paving last, since the first group carries the parts and paving
   or past the foot where a flat arch springs under it. Its parts are the deck, the parapets, the piers, the
   cutwaters and the abutments, each as wide as the stone drawn round it, so the water and a swimmer pass under the
   arches and meet the stone where it is seen.
+- **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a stall for each keeper (`stall-<keeper>`, sockets
+  `counter`, `keeper` behind it, and `sign` at 3.6 m on one end of its front), the factions' chapels, the ranges and
+  their gate, the sealed gate, the war table, the bandstand (`player-1` to `player-4`), the fountain, three market
+  stalls and the court's small pieces (`front`, and `smith-1`, `smith-2` at the anvil). Its adornments
+  (`tools/modules/adorn.py`): banners, a lantern, a sconce, a wall brazier, ivy, a board of shields and a rack of
+  weapons hung by `wall` at their fixing; a sign for each stall, its device through the board; a planter, a potted
+  tree, two statues, a well, a long rug, a cart, sacks and amphorae stood by `front`; and bunting hung from `end-1`.
+  Each stands on its own foot, its lowest point, so a hung one's `wall` stands as high over its foot as it hangs.
 
 ## Baking and publishing
 
@@ -82,7 +91,8 @@ bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as f
 
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats) and normal (3 signed
 bytes), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake makes the same
-bytes from the same scripts. The `modules` workflow bakes on every change to the module tools, fails if the bake
+bytes from the same scripts: each group's vertices and triangles are written sorted, since an exact boolean's threads
+hand its faces back in a different order each run. The `modules` workflow bakes on every change to the module tools, fails if the bake
 does not make the committed manifest, and publishes with the repository's Cloudflare token.
 
 ## In the game

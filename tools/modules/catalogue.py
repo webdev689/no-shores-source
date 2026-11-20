@@ -1,4 +1,5 @@
 """Every module the bake builds, by name: its builder and its seed."""
+import adorn
 import bridge
 import cavern
 import chapels
@@ -56,6 +57,8 @@ HUB = (
     ('hay-cart', props.hay_cart),
     ('bollards', props.bollards),
 )
+# The hub's adornments, after its pieces.
+HUB += adorn.ADORNMENTS
 for number, (name, builder) in enumerate(HUB):
     BUILDERS[name] = builder
     SEEDS[name] = 100 + number

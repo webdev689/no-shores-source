@@ -44,9 +44,21 @@ flat terraces with walls between; the ramps are laid by the city's plan, so ever
 
 | Call | Choice |
 |---|---|
-| What kills | In a social space, a fall of 6 m or more kills at once, inside the area or out; straying out on the flat keeps its warning |
+| What kills | In a social space, a fall of 6 m or more kills at once, inside the area or out; straying out on the flat keeps its warning, and going over the edge in the air warns only once the feet are down, so a fall shows no warning |
 | The body | Every dead body keeps falling under its own weight, tumbling, and lies where it lands; others see it fall |
 | The camera | Holds where it was when the player died, turning to follow the body down; the grey and "You fell." come once the fall has played |
+
+## The adornments
+
+| Call | Choice |
+|---|---|
+| Overlook's banner | Crimson with a gilt border and fringe, a gilt beacon tower with its flame lit; a long one, with a gilt star, down the Beacon's face; two to a range face, inside and out |
+| The factions' banners | In the Hall beside each chapel: the Stormcallers' storm blue with a silver bolt, the Lamplighters' white and gold with a lit lamp, the Veiled's black with a silver crescent and star |
+| Light | A lantern on a scrolled arm either side of every passage, torch sconces down the Hall, braziers on stepped corbels by the Hall's door and the sealed gates |
+| Signs | One at each stall's end, its device through the board: a star for the Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler |
+| Green | Planters by the passages and along the walks, potted trees, ivy up the ranges' backs and the Beacon's face |
+| Statues | The keeper of the Beacon raising her lit lamp, before the Beacon; sentinels with spear and plain shield at the walks and the Harbour Stair |
+| The rest | Bunting slung between the market lane's lamp posts, a well in the West Court, a long rug from the Hall's door toward the war table, a board of shields and a rack of weapons at the forge, a cart, sacks and amphorae by the market |
 
 ## The townsfolk
 

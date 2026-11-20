@@ -158,7 +158,9 @@ fn signs(laid: &mut Laid) {
     ];
     for (stall, sign) in stalls {
         for (at, facing) in laid.sockets_of(stall, "sign") {
-            if let Some(stood) = stand_by_socket(sign, "wall", at, facing) {
+            let stood = stand_by_socket(sign, "wall", at, facing);
+            debug_assert!(stood.is_some(), "{sign} is not in the manifest, or has no wall socket");
+            if let Some(stood) = stood {
                 laid.solids.extend(stood.solids);
             }
         }

@@ -381,15 +381,8 @@ export class Foot {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      const facesEye = walker.fall !== null;
-      figures.push({
-        ...own,
-        veiled: veiledIn(fight, fight.player),
-        charged,
-        exposed,
-        smear: smear(fight.player),
-        facesEye,
-      });
+      const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) };
+      figures.push({ ...own, ...looks, facesEye: walker.fall !== null });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
