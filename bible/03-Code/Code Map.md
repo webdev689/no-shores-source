@@ -37,6 +37,7 @@ decision, made in the same change as its entry here.
 | `client/src/ships/` | The ships layer: each hull's mesh read from R2 by her wire number and drawn at her pose on the water in her side's colours, flying her flag, under her gaff, stay and square sails ([[Sailing]], [[Hulls]]), her line at her waterline read from her mesh for the water (`hullLines.ts`, [[Water]]), and a fight's look: its balls drawn as small spheres and its flotsam as crates, chests and barrels (`markView.ts`), its see-through puffs blended after the water and their light (`puffView.ts`), each event made puffs, harm, sounds and jars of the eye (`fightFeel.ts` with DFO's moments' laws in `fightMoments.ts`, `effects.ts` with its puffs' laws in `puffLaw.ts`, `flotsam.ts`, `fightSounds.ts`, `shake.ts`), the fight's readout from its view (`fightDisplay.ts`), and the harm kept on each ship and drawn on her: holes in her hull and canvas, sails torn away, masts fallen, colours struck and her going down (`shipHarm.ts`, `harmDrawn.ts`) ([[Naval Combat]], "How it looks") |
 | `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
+| `client/src/game/isleLaw.ts`, `client/src/game/isles.ts`, `client/src/game/isleVisit.ts`, `client/src/network/islePlans.ts` | The sea's [[Islands]] on the page: each the sea room tells of built through the room module, every voyage bent round them, the offer to go ashore, the way in to an anchorage, and the player ashore on an island's room, E scavenging its wrecks and trying its door |
 | `client/src/game/seaAfter.ts`, `client/src/network/seaHarbour.ts` | What the sea's fights leave the player as the page tells it: the joins, the board offer and E's asks in a fight, what floats gathered, washing up and Manage's repair, from the sea snapshot's own part ([[Game]], "At sea") |
 | `client/src/game/deckBoarding.ts`, `client/src/game/deckFight.ts`, `client/src/ships/spars.ts` | The fight on a boarded ship's deck: `Foot` on her grid of heights, her deck room reached through the sea's link, every figure, mark and the display laid on her ship as the fight lies her, her minute and her hold's take; her masts and spars as boxes the deck camera keeps a clear line past ([[Naval Combat]], "The fight on her deck, on the page") |
 | `client/src/game/seaHostiles.ts` | The hostile ships the sea's view marks, the voyage's line on each first sighted and on other waters entered, and the water named for the status line ([[Game]], "At sea") |
@@ -66,6 +67,7 @@ decision, made in the same change as its entry here.
 | `crates/movement` | [[Movement]]: how a body walks, runs, jumps, climbs, hangs, mantles and vaults, one tick at a time |
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
+| `crates/isle` | [[Islands]]: a sea island from its seed and climate, the same on the server and in every browser: its shape, its fine ground, its places and its dressing of the Blender modules content/islands/kits.json names |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the paths across it, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
 | `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, a deck's crews (`crews.rs`), and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
@@ -140,14 +142,16 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
   `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
   `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
-  and `libm`; `reach`, which uses no other crate; `gear`, which may use `serde`, `serde_json` and `libm`; and `city`,
+  and `libm`; `reach`, which uses no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; `gear`,
+  which may use `serde`, `serde_json` and `libm`; and `city`,
   which may use `land`, `world`, `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `land`,
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `isle`, `land`,
   `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
   `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
   the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file and the layout with `foes`, `gear`, `land`, `naval`, `sailing`, `world`, `serde` and `serde_json`.
+  node's baked file, an island's word and the layout with `foes`, `gear`, `isle`, `land`, `naval`, `sailing`, `world`,
+  `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
   `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are
