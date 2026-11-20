@@ -1,12 +1,10 @@
-// Where the intro's camera flies over each island, worked out from the island's own city: in from the sea out of the
-// cloud, over its harbour toward the town, round it, and back up into the cloud; for the island where a fight is shown,
-// down low over its plaza instead; and for Saltmere, the long glide in to the view the title stands over.
+// Where the intro's camera flies over Saltmere, worked out from the island's own city: the long glide down out of the
+// cloud and in to the view the title stands over, and the ships riding off its harbour.
 import { around, type Point3, type RailKey } from '../../cinema/rail.ts';
 import type { Landmass } from '../landmass.ts';
 import { offshore } from '../seaLaw.ts';
 
-/** Seconds a passing island's shot runs, and Saltmere's glide before the title. */
-export const ISLAND_S = 13;
+/** Seconds Saltmere's glide runs before the title. */
 export const HOME_S = 15;
 /** Heights of the shot over the sea, metres: in the cloud, under it, low over a town. */
 const IN_CLOUD_M = 1050;
@@ -51,41 +49,6 @@ const fromTown = (frame: IslandFrame, yaw: number, distance: number, height: num
   const point = around(frame.town, yaw, distance, 0);
   return [point[0], point[1], height];
 };
-
-/** A passing island's shot: out of the cloud over the sea, over the harbour toward the town, round it, back up. */
-export function passingRail(frame: IslandFrame, side: 1 | -1): RailKey[] {
-  const { town, out } = frame;
-  const look: Point3 = [town[0], town[1], town[2] + 30];
-  return [
-    { at: 0, eye: fromTown(frame, out + side * 0.25, 3400, IN_CLOUD_M), look },
-    { at: 3.2, eye: fromTown(frame, out + side * 0.18, 2300, UNDER_CLOUD_M), look },
-    { at: 7.5, eye: fromTown(frame, out + side * 0.08, 950, town[2] + 230), look },
-    { at: 10.5, eye: fromTown(frame, out - side * 0.75, 800, town[2] + 300), look },
-    {
-      at: ISLAND_S,
-      eye: fromTown(frame, out - side * 1.3, 1700, IN_CLOUD_M),
-      look: fromTown(frame, out - side * 1.7, 3200, IN_CLOUD_M + 80),
-    },
-  ];
-}
-
-/** The fight's island: down out of the cloud and low over the plaza, where the fight is, then up again. */
-export function fightRail(frame: IslandFrame, side: 1 | -1): RailKey[] {
-  const { plaza, out } = frame;
-  const look: Point3 = [plaza[0], plaza[1], plaza[2] + 1.2];
-  const near = (yaw: number, distance: number, height: number): Point3 => around(plaza, yaw, distance, height);
-  return [
-    { at: 0, eye: fromTown(frame, out + side * 0.3, 2600, IN_CLOUD_M), look },
-    { at: 3.4, eye: near(out + side * 0.25, 600, 260), look },
-    { at: 7, eye: near(out + side * 0.1, 26, 9), look, fov: 0.75 },
-    { at: 10, eye: near(out - side * 0.9, 22, 6), look, fov: 0.75 },
-    {
-      at: ISLAND_S,
-      eye: near(out - side * 1.4, 900, IN_CLOUD_M - plaza[2]),
-      look: near(out - side * 1.6, 2400, IN_CLOUD_M),
-    },
-  ];
-}
 
 /** Saltmere: down out of the cloud over the open sea and in toward Overlook, to the view the title stands over. */
 export function homeRail(frame: IslandFrame): RailKey[] {

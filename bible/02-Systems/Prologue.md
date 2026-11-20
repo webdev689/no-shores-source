@@ -11,7 +11,6 @@ code:
   - client/src/game/prologue/tap.ts#tapToStart
   - client/src/game/prologue/intro.ts#Intro
   - client/src/game/prologue/introShots.ts#islandFrame
-  - client/src/game/prologue/islands.ts#Islands
   - client/src/game/prologue/storm.ts#StormDive
   - client/src/game/prologue/making.ts#Making
   - client/src/game/prologue/creation.ts#accountStep
@@ -67,10 +66,10 @@ last left: the camera's shot, the ships sighted, where the two ships met. A cuts
 Space for a second, or a touch held as long anywhere on the view (the dialogue box too: while the story plays no drag
 pans or reloads the page), its remaining moments run at once; "Hold Space to skip" ("Hold to skip" on a touch screen)
 shows faintly whenever there is something to skip, and brightens as the hold fills. A beat the director moves on
-from, at its end or on a failure, lets go of what it holds (the intro its islands, the helm its windows and keys). A
+from, at its end or on a failure, lets go of what it holds (the helm its windows and keys). A
 beat that fails is left for the next with what it said stopped and the view cleared before the next begins; a last
 beat that fails ends the story with its screen kept, so the black lifts only once the game's veil is up under it.
-The intro offers no skip once its flight has reached Saltmere. Each beat sets its own weather, sound and lightning at
+The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
 its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
 has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title, and Begin
 takes them straight to Overlook's social space. While the story plays the menu (I, O) does not open. At its end the
@@ -85,11 +84,11 @@ player wears the look the game gave them. The player then arrives at Overlook.
 
 | Beat | What happens | Played or shown |
 |---|---|---|
-| `intro` | First light over the cloud; then through the cloud to a highland island in mist, a green one in rain, a desert town where Grey Tithe and pirates fight on the plaza, a tundra town in snow, each with ships under sail off its harbour; last Saltmere, gulls over the harbour, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
+| `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm, where it ends in the helm's own shot, riding her deck as the helm's camera does (all her rise and fall, a quarter of her pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down her deck; the lookout and the bosun cry out with marks over their heads and the mate and the gunner speak; the camera pulls out over her stern as three pirate Sloops come out of the dark, and comes down behind her through the fight's own lens | shown |
-| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage", "Sink them, or make them strike.", and how many ships are left until every one is beaten, sunk or struck | played |
+| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as hers, the crew crying out at hits and sinkings; "Engage", "Sink them, or make them strike.", and how many ships are left until every one is beaten, sunk or struck | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where and as the fight left them, each in her own settle, trim and list, and her sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on her until she reads however far off she lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round her; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side at 6 m/s (about 12 knots), lightning striking past her at 2.3 s and 4.8 s so her masts and sails stand against it: Captain Brannoc Thule's Frigate at her own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of her stem first touches the Brig's side where her hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
@@ -164,23 +163,17 @@ scene of its own (`calmCutOff`): the calm ends 1.3 s into it and the ram's first
 nearest gentle strand to the plaza, low by the water, clear of the city's pads and 260 m from its harbour
 (`findBeach`), found on the exact ground behind the deep's black.
 
-**The intro's islands** open one at a time in the land's worker while the camera is in the cloud between them, the
-cloud whitened over the change (`Islands`); each shot is laid on its island's own town, harbour and plaza
-(`islandFrame`). The worker takes one opening at a time, in the order asked, so it always ends holding the last one
-asked for; an island asked for before Saltmere is never drawn over it. Saltmere comes back as the game opened it, its
-drawers kept, and open in the worker again. An island that will not open is passed over for the next, behind the
-same white; if the first will not open, the dawn rises over Saltmere instead. A skip is final: the flight stops where
-it is, the view goes black, no island opens after it, and Saltmere's glide ends under the title. A Saltmere that will
-not open is the intro's failure: the director goes on to the storm, or, for a player who has played the story, ends
-it there and sends them to Overlook. However the intro is left, no passage still under way shows its island or sets
-its weather and sound, and Saltmere is drawn again and asked of the worker once more (drawn even if the worker cannot
-open it).
+**The intro** ([[The Intro Goes Straight to Saltmere]]) rises at first light over the cloud above Saltmere, goes
+down into the cloud with a rush of air, the white whole for a second, and lifts on Saltmere's glide in from the sea to
+the title, each shot laid on the island's own town and harbour (`islandFrame`). Saltmere is the land the game opened,
+so nothing loads on the way. A skip brings the black down over the view, and the title shows under it as it lifts.
+The title asks to begin once; begun by a key or a tap between frames, the title drawn after does not ask again.
 
-**The intro's length.** First light 6 s, each of the four islands 13 s, Saltmere's glide 15 s and the prompt 2.4 s
-after the title: about 75 s, with a second or more in the cloud for each island to open.
+**The intro's length.** First light 6 s, the cloud 1.1 s, Saltmere's glide 15 s and the prompt 2.4 s after the
+title: about 25 s.
 
 **The story's day.** The story is told in one day and night, the game's sky drawing each beat's weather at its hour
-(`skies.ts`, `storySky.ts`): first light over the cloud at 5:15 and the islands' morning to Saltmere at 9:24; the
+(`skies.ts`, `storySky.ts`): first light over the cloud at 5:15 and Saltmere's early morning at 6:24; the
 storm at evening (18:00), the stillness after the fight at sunset (18:36), the Frigate out of the dusk (19:06); the
 wreck and the deep at night (21:00), under a full moon the storm hides; the shore at the next dawn (5:36). Saltmere's
 sun rises about 5:05 and sets about 18:55. The day is world day 3, the same for every player, and the clouds drift

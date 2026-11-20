@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Ambience, type SoundOut } from './ambience.ts';
+import listed from '../../../content/audio/freesound.json' with { type: 'json' };
+import { Ambience, RECORDED_BEDS, RECORDED_SHOTS, type SoundOut } from './ambience.ts';
 
 /** A stand-in audio context that counts what it is asked to make and lets a test end every source by hand. */
 function fakeAudio() {
@@ -220,4 +221,12 @@ test("the world's own soundscape takes the sea, the weather, the timbers and the
   ambience.handOver(false);
   ambience.frame(1.5);
   assert.deepEqual(ambience.levels(), { rain: 1, wind: 1, waves: 1, fire: 1, deep: 1, gulls: 1, creak: 0.5 });
+});
+
+test("every story cue the Freesound list searches for is one of the story's beds or one-shots", () => {
+  const played = [...Object.values(RECORDED_BEDS), ...Object.values(RECORDED_SHOTS)].map((recorded) => recorded.cue);
+  const searched = listed.cues.map((cue) => cue.id).filter((id) => id.startsWith('story.'));
+  assert.deepEqual([...searched].sort(), [...played].sort());
+  for (const recorded of [...Object.values(RECORDED_BEDS), ...Object.values(RECORDED_SHOTS)])
+    assert.ok(recorded.synth.loud > 0 && recorded.synth.peak >= recorded.synth.loud, `${recorded.cue} is measured`);
 });
