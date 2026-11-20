@@ -6,9 +6,10 @@ import type { ShelteredSwell } from './swell.ts';
 
 type Point = readonly [number, number];
 
-/** The grid round the view: cells a side; how often it is asked again, seconds; and how far the view may move, as a
- *  share of its reach, or grow, as a ratio, before it is asked at once. */
-export const SEA_GRID = { cells: 32, refreshS: 2, moveShare: 0.125, growRatio: 2 } as const;
+/** The grid round the view: cells a side (16: each cell marches five rays upwind on the page's own thread, so a
+ *  bigger grid stalls a frame); how often it is asked again, seconds; and how far the view may move, as a share of
+ *  its reach, or grow, as a ratio, before it is asked at once. */
+export const SEA_GRID = { cells: 16, refreshS: 2, moveShare: 0.125, growRatio: 2 } as const;
 /** The nearest and farthest the grid reaches from the view's middle, metres: a harbour's 3 km close in, the lee of an
  *  island from the raised view. */
 export const SEA_REACH_M = { least: 2_000, most: 80_000 } as const;
