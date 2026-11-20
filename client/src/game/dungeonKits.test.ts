@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import kits from '../../../content/dungeon/kits.json' with { type: 'json' };
 import { ceilingHeights, isCave } from './dungeonCeilings.ts';
+import { centreOf } from './dungeonCells.ts';
 import { HEAD_M, kitHash, type KitPlacement, kitPlacements } from './dungeonKits.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import {
@@ -328,14 +329,11 @@ test('floor pieces lie off every solid, the arrival’s cell, the end room and e
         assert.ok(rockOn(layout, piece.cell, Math.round(alongX) === 0 ? 0 : 1), 'along the way');
       }
       if (floor === 'slabs') assert.ok(room >= 0);
-      if (floor === 'drain') drains.set(room, (drains.get(room) ?? 0) + 1);
+      if (floor === 'drain' || floor === 'circle') drains.set(room, (drains.get(room) ?? 0) + 1);
       if (floor === 'circle') {
         const each = layout.rooms[room];
-        assert.ok(each && each.width >= 4 && each.depth >= 4);
-        assert.deepEqual(piece.place.origin.slice(0, 2), [
-          (each.x + each.width / 2) * layout.cell,
-          (each.y + each.depth / 2) * layout.cell,
-        ]);
+        assert.ok(each && each.width >= 3 && each.depth >= 3);
+        assert.deepEqual(piece.place.origin.slice(0, 2), [...centreOf(layout, piece.cell)]);
       }
     }
     for (const count of drains.values()) assert.equal(count, 1);

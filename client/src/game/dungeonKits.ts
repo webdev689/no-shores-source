@@ -381,8 +381,9 @@ function floorPiece(site: Site, cell: number, piece: string, [x, y]: readonly [n
   return fits && !crowded(site.layout, plan, 0) && put(site, cell, [[piece, place]]);
 }
 
-/** The floor pieces: slabs on one quiet room cell in four, a runner along the corridors, a drain a room, a circle in
- *  a great room's middle, scree on one cell in five, and rails along the straight corridors. */
+/** The floor pieces: slabs on one quiet room cell in four, a runner along the corridors, a drain a room and a circle
+ *  in a room of 3 by 3 or more, each on the clear cell nearest its middle, scree on one cell in five, and rails along
+ *  the straight corridors. */
 function floors(site: Site): void {
   const { layout } = site;
   const size = layout.cell;
@@ -404,11 +405,8 @@ function floors(site: Site): void {
     if (!style) return;
     const middle = [(room.x + room.width / 2) * size, (room.y + room.depth / 2) * size] as const;
     const kind = RULES[style].floor;
-    if (kind === 'circle' && room.width >= 4 && room.depth >= 4) {
-      const cell = cellAt(layout, ...middle);
-      floorPiece(site, cell, piece(cell), middle, 0);
-    }
-    if (kind !== 'drain') return;
+    // A room's middle mostly holds a prop or a pillar, so its circle lies on the clear cell nearest it.
+    if (kind !== 'drain' && !(kind === 'circle' && room.width >= 3 && room.depth >= 3)) return;
     const off = (cell: number) =>
       Math.hypot(...centreOf(layout, cell).map((value, axis) => value - (middle[axis] ?? 0)));
     const cells = layout.cells.flatMap((kept, cell) => (kept === number ? [cell] : []));
