@@ -1,5 +1,6 @@
 /* The activities' screens (client/src/game/activityScreens.ts): This Week in the menu's Journal, as the Ship page is
-   laid; the gear screen's sheet gives the words, chips and headings they share. */
+   laid, and the card at a dungeon's entrance, the menu's window narrowed to the run it opens; the gear screen's sheet
+   gives the words, chips, headings, header and footer they share. */
 
 .gear-week {
   max-width: 640px;
@@ -74,4 +75,28 @@
 .gear-week-boon {
   margin: 10px 0 0;
   color: var(--gain);
+}
+
+/* The card at a dungeon's entrance, in the middle of the view, as tall as what it says. */
+#hud .gear-screen.entrance-card {
+  inset: 0;
+  margin: auto;
+  width: min(460px, calc(100% - 64px));
+  height: fit-content;
+  max-height: calc(100% - 48px);
+}
+.entrance-card .gear-head {
+  padding: 4px 18px;
+}
+.entrance-card-body p {
+  margin: 4px 0;
+}
+.entrance-card-body .entrance-card-tier {
+  margin-bottom: 10px;
+  font-size: var(--type-m);
+  color: var(--brass-lit);
+}
+.entrance-card-body .entrance-card-shut {
+  margin-top: 10px;
+  color: var(--loss);
 }

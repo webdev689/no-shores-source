@@ -15,6 +15,7 @@ code:
   - client/src/game/activities.ts#eliteRun
   - client/src/game/dungeonTrips.ts#dungeonTrips
   - client/src/game/activityWords.ts#thisWeekOf
+  - client/src/game/activityWords.ts#entranceCardOf
 ---
 # Activities
 
@@ -202,8 +203,10 @@ One engine counts both, since the owner's side quests and the board's bounties a
   under the time to its reset. A shut line says why in its gate's words. "Taken" is the character's record as their
   gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken today.
   Bounties and Quests stand under it marked Later.
-- **At a dungeon's entrance**, a card shows the run's tier, level and modifiers, what it pays and whether it is
-  taken, with Enter, and Find a Company where it matches.
+- **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
+  its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's
+  dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite
+  Dungeon's card is its week's run where `eliteRun` picks it, else its run at Normal.
 
 ## How it is built
 

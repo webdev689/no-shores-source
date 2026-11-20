@@ -166,8 +166,9 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   block's yaw turns a model, in the island's climate's pictures through the city's own pipelines, so the sun lights
   it and it casts its shadow. Its door is its door quad's middle, turned and lifted.
 - **Going in.** Within 2.5 m of a door E offers "Enter" and the dungeon's name, the room module's own `room_dungeon`
-  asked with the patrol's id, its name and the entrance's number, or an Elite Dungeon's node's own name. Taken, the
-  veil says "Entering" the dungeon; the page leaves the node's room and joins the dungeon's. A patrol's dungeon at
+  asked with the patrol's id, its name and the entrance's number, or an Elite Dungeon's node's own name. Taken, it
+  opens the entrance's card ([[Interface]], "At a dungeon's entrance"), whose Enter, or E again, goes in; before the
+  room module is read it goes straight in. The veil says "Entering" the dungeon; the page leaves the node's room and joins the dungeon's. A patrol's dungeon at
   Normal is its one shared room, `node-<patrol id>--dungeon-<number>`. At Elite or Abyss it is a run: the run of a
   company member already in that dungeon at that tier, found in a fresh Roster, or a new one
   (`node-<patrol id>--abyss--dungeon-<number>--run-<instance>`). An Elite Dungeon's entrance opens the week's Elite or

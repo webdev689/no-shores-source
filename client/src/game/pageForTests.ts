@@ -26,6 +26,7 @@ export class FakeEvent {
     this.defaultPrevented = true;
   }
   stopPropagation(): void {}
+  stopImmediatePropagation(): void {}
 }
 
 class Listeners {

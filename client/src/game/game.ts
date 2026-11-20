@@ -128,7 +128,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     session,
     trips: {
       props: () => dungeons.props,
-      enter: (number, name) => trips.enter(number, name),
+      enter: (number, name) => screens.card(number, name),
       leave: () => trips.leave(),
     },
   };
@@ -209,7 +209,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     companyPlaces: () => companyPlaces(link),
     drawers: dungeons,
   });
-  const screens = startActivityScreens(hudRoot, roomModule, world.nodes, () => foot);
+  const screens = startActivityScreens(hudRoot, roomModule, world.nodes, () => foot, trips);
 
   const goSea = async () => {
     leaveHere();

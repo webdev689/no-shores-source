@@ -420,6 +420,18 @@ already doing. In the game they play through the interface's engine at the World
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
 
+## At a dungeon's entrance
+
+E at a dungeon's entrance ([[Game]], "A dungeon") opens a card in the menu's window, in the middle of the view: the
+dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite Dungeon ·
+Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss Dungeon of
+the week's "Never matched. Bring your company."), its modifiers with what each does, and what it pays, "Taken today"
+or "Taken this week" once this character's record holds it; why it is shut, in its gate's words, if it is; and Enter
+(E) and Close (Esc) on its footer, Enter resting while it is shut. It reads as This Week does ([[Activities]]),
+built again as the minute or the character's word changes. While it stands the world is dimmed, the pointer is free
+and no key of the game's or the menu's acts behind it. It goes if the player falls, goes into a dungeon or leaves
+the place.
+
 ## The social space's counters
 
 The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at
