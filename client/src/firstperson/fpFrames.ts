@@ -1,6 +1,6 @@
 import { type GlowElement, recolourToGlow } from '../elementGlow.ts';
 import type { Strip } from '../forge/compose.ts';
-import { type CoverLevels, coverColour, coverLevels, coversOf, lightOf } from '../forge/coverLight.ts';
+import { type CoverSteps, coverSteps, coversOf, lightOf } from '../forge/coverLight.ts';
 import type { DyeTable, PaletteSnap, Rgb } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { WeaponKind } from './weaponMachine.ts';
@@ -124,13 +124,13 @@ export function metalRamp(dyes: DyeTable, metal: string | null): readonly Rgb[] 
   return dyes.armour[metal ?? 'Steel'] ?? dyes.armour.Steel ?? null;
 }
 
-/** Where each light lies on a ramp covering the forge layer `layer`, read from its set on the player's body, as the
- *  figure's are; laid evenly by light where the forge's looks or the body are not known. */
-export function pieceCover(source: FrameSource, layer: string): Promise<CoverLevels> {
+/** The steps a ramp covering the forge layer `layer` takes by light, read from its set on the player's body, as the
+ *  figure's are; each light at its own share of the ramp where the forge's looks or the body are not known. */
+export function pieceCover(source: FrameSource, layer: string): Promise<CoverSteps> {
   const { looks, body } = source;
-  if (!looks || !body) return Promise.resolve(coverLevels([]));
+  if (!looks || !body) return Promise.resolve(coverSteps([]));
   return coversOf(body, [layer], looks, (path) => source.strip(path)).then(
-    (covers) => covers.get(layer) ?? coverLevels([]),
+    (covers) => covers.get(layer) ?? coverSteps([]),
   );
 }
 
@@ -189,7 +189,7 @@ export class FramePainter {
   /** The strip's texels painted, clear below half alpha; `ramp` the metal's, or null to snap the greys as any colour.
    *  A ramp that covers the strip (a dye worn or a faction's colour) lies on every texel by its light, where
    *  `covers` lays it: its set's, as the figure's piece takes it. */
-  paint(strip: Strip, ramp: readonly Rgb[] | null, covers: CoverLevels | null = null): Uint8Array {
+  paint(strip: Strip, ramp: readonly Rgb[] | null, covers: CoverSteps | null = null): Uint8Array {
     const pixels = Uint8Array.from(strip.data);
     const dyed: [number, Rgb | undefined][] = [];
     for (let texel = 0; texel < pixels.length; texel += 4) {
@@ -198,7 +198,7 @@ export class FramePainter {
       const grey = pixels[texel] === pixels[texel + 1] && pixels[texel + 1] === pixels[texel + 2];
       if (drawn && ramp && (grey || covers)) {
         const colour = covers
-          ? coverColour(ramp, covers[lightOf(pixels.subarray(texel, texel + 3))] ?? 0)
+          ? ramp[covers[lightOf(pixels.subarray(texel, texel + 3))] ?? 0]
           : ramp[this.steps[pixels[texel] ?? 0] ?? 0];
         dyed.push([texel, colour]);
         pixels[texel + 3] = 0;

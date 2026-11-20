@@ -14,7 +14,7 @@ export interface ComposeJob {
   readonly frame: number;
   readonly ramps: Readonly<Record<string, readonly Rgb[]>>;
   /** The layers whose ramp covers them whole: a dye worn's or a faction's colour on its armour, and a faction's on
-   *  its cape, shield, bow and staff (`layerRamps`). */
+   *  its shield, bow and staff (`layerRamps`). */
   readonly whole?: readonly string[] | undefined;
   readonly glow: GlowLook;
   readonly alone?: readonly string[] | undefined;

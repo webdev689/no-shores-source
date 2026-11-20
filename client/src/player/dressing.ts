@@ -1,12 +1,5 @@
 import { CLOTHING_DYES, type DyeTable, type Rgb, metalOfLayer } from '../forge/dyes.ts';
-import {
-  type CosmeticKind,
-  bardingLayer,
-  capeFaction,
-  cosmeticOf,
-  cosmeticRamp,
-  factionRamp,
-} from '../forge/cosmetics.ts';
+import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type ArmourPiece, type Outfit, outfitLayers } from '../forge/outfit.ts';
 
@@ -83,8 +76,8 @@ const isWorn = (value: unknown, kind: CosmeticKind) =>
   value === undefined || value === null || (typeof value === 'string' && cosmeticOf(value)?.kind === kind);
 /** A cloak's layers, which keep their own dye under a dye worn. */
 const CLOAK = /(^|_)cloak(_|$)/;
-/** What a faction's colour covers whole beside its armour: its cape, a shield, a bow and a staff, in hand or put away. */
-const COVERED = /(^|_)cloak(_|$)|^(shield|bow|staff)_/;
+/** What a faction's colour covers whole beside its armour: a shield, a bow and a staff, in hand or put away. */
+const COVERED = /^(shield|bow|staff)_/;
 
 /** The dress another player's browser sent, as text, if it is one: each field of a dress's shape, its names short, so
  *  a broken or hostile one never reaches the forge. */
@@ -168,7 +161,7 @@ export const PLAIN_DYE = 'LightBrown';
  *  (HORSE_LAYER) its coat's. Layers that keep their own colours have none. `whole` names the layers a ramp covers, on
  *  every texel by its light, as a shader covers a whole piece, since many of the forge's sets are drawn in colours of
  *  their own that a ramp on greys alone would leave: the armour and padding a worn dye or a faction's colour takes,
- *  and a faction's cape, shield, bow and staff. A blade keeps its metal. */
+ *  and a faction's shield, bow and staff. A blade keeps its metal; a faction's cape wears its faction's dye. */
 export function layerRamps(
   gear: readonly string[],
   outfit: Outfit,
@@ -188,9 +181,7 @@ export function layerRamps(
   const whole: string[] = [];
   for (const layer of gear) {
     const garment = outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE;
-    const named = outfit.dyes[layer.replace(PUT_AWAY, '').replace(HANG, '')];
-    // A faction's cape, named by its faction's dye, wears the faction's own colour, as its armour does.
-    const own = factionRamp(CLOAK.test(layer) ? (capeFaction(named) ?? named) : named, table.palette);
+    const own = factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')], table.palette);
     const cosmetic = own ?? (worn && takesDye(layer) ? worn : null);
     const ramp =
       cosmetic ??

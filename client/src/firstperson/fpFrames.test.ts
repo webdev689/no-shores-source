@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import type { Strip } from '../forge/compose.ts';
-import { coverLevels } from '../forge/coverLight.ts';
+import { coverSteps } from '../forge/coverLight.ts';
 import { type DyeTable, PaletteSnap, type Rgb } from '../forge/dyes.ts';
 import {
   type FrameSource,
@@ -210,9 +210,9 @@ test("a covering colour lies on the fists by their set's light on the player's b
   const figure = { 'forge/layers/male/gauntlets_brotherhood_idle.png': band, [punch]: strip([[30, 30, 30]]) };
   const looks = { bodies: { male: { anims: {}, layers: { gauntlets_brotherhood: ['idle'] } } } };
   const source = { ...sourceOf(figure, [punch]), looks, body: 'male', own: { hands: dyes.armour.Ebony ?? null } };
-  const levels = coverLevels([band]);
+  const steps = coverSteps([band]);
   const punched = await weaponPicture(source, wield(null), { hands: 'Brotherhood', feet: null }, 2, 0, false);
-  const step = (levels[30] ?? 0) >> 4;
+  const step = steps[30] ?? 0;
   assert.ok(step >= 6 && step <= 9, `a mid light of the set takes a mid step: ${step}`);
   assert.deepEqual(pixelAt(punched?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Ebony?.[step] ?? []), 255]);
 });

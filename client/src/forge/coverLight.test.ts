@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import type { Strip } from './compose.ts';
-import { coverColour, coverGroup, coverLevels, coverPaths, coversOf } from './coverLight.ts';
+import { coverGroup, coverPaths, coverSteps, coversOf } from './coverLight.ts';
 import type { ForgeLooks } from './looks.ts';
 
 /** A strip of one grey texel a light, `count` texels each. */
@@ -41,35 +41,31 @@ test('each piece is read in the move it stands in, whatever move is composed', (
   assert.ok(coverPaths('male', 'shield_kite_elven', looks).includes('forge/layers/male/shield_kite_elven_guard.png'));
 });
 
-test("a covering ramp's steps each hold as many of the set's texels, so a narrow band of light keeps its detail", () => {
-  // A set drawn dark in a narrow band, light 10 to 53, every light as common.
-  const band = greys(Array.from({ length: 44 }, (_unused, index) => [10 + index, 10] as const));
-  const levels = coverLevels([band]);
-  const steps = levels.map((level) => level >> 4);
+test("a covering ramp is laid across its set's span of light, darkest to its first step and brightest to its last", () => {
+  // A set drawn dark, light 10 to 53, most of it at its darkest.
+  const band = greys([[10, 100], ...Array.from({ length: 43 }, (_unused, index) => [11 + index, 1] as const)]);
+  const steps = coverSteps([band]);
   assert.equal(steps[10], 0, 'its darkest the first step');
   assert.equal(steps[53], 15, 'its brightest the last');
-  const held = new Array<number>(16).fill(0);
-  for (let light = 10; light <= 53; light++) held[steps[light] ?? 0] += 1;
-  assert.ok(Math.max(...held) - Math.min(...held) <= 1, `each step holds as many lights: ${held.join()}`);
+  assert.equal(steps[32], 8, 'the middle of its light, the middle of the ramp, however its texels lie');
   for (let light = 1; light < 256; light++)
     assert.ok((steps[light] ?? 0) >= (steps[light - 1] ?? 0), 'it never darkens');
 });
 
 test("a stray glint or shadow, under a fiftieth of the set's texels, stretches nothing", () => {
-  const levels = coverLevels([
+  const steps = coverSteps([
     greys([
       [0, 1],
-      [100, 50],
-      [101, 49],
+      [60, 50],
+      [180, 49],
       [255, 1],
     ]),
   ]);
-  assert.equal(levels[0], 0);
-  assert.equal(levels[255], 255);
-  assert.ok(
-    (levels[101] ?? 0) - (levels[100] ?? 0) >= 96,
-    'the two lights the set is drawn in lie far apart on the ramp',
-  );
+  assert.deepEqual([steps[0], steps[60], steps[120], steps[180], steps[255]], [0, 0, 8, 15, 15]);
+});
+
+test('a span too narrow to stretch keeps the light as it is', () => {
+  assert.equal(coverSteps([greys([[91, 10]])])[91], 5);
 });
 
 test("a piece's laying is its set's, whatever else of it is worn or drawn", async () => {
@@ -86,18 +82,26 @@ test("a piece's laying is its set's, whatever else of it is worn or drawn", asyn
   const alone = await coversOf('male', ['helm_mages'], looks, read);
   const dressed = await coversOf('male', ['boots_mages', 'helm_mages', 'cuirass_mages'], looks, read);
   assert.deepEqual([...(alone.get('helm_mages') ?? [])], [...(dressed.get('helm_mages') ?? [])]);
-  assert.equal(dressed.get('helm_mages'), dressed.get('boots_mages'), 'one set, one laying, made once');
+  assert.deepEqual(dressed.get('helm_mages'), dressed.get('boots_mages'), 'one set, one laying');
+  const helm = alone.get('helm_mages');
+  assert.deepEqual([helm?.[30], helm?.[200]], [0, 15], "from the padding's darkest to the boots' brightest");
 });
 
-test('each colour a covering ramp draws holds as much of the way, however many steps the palette draws it in', () => {
-  const ramp = [
-    [1, 1, 1],
-    [2, 2, 2],
-    [2, 2, 2],
-    [2, 2, 2],
-    [3, 3, 3],
-  ] as const;
-  assert.deepEqual(coverColour(ramp, 0), [1, 1, 1]);
-  assert.deepEqual(coverColour(ramp, 100), [2, 2, 2]);
-  assert.deepEqual(coverColour(ramp, 180), [3, 3, 3], 'the last third is the brightest, though one step of five');
+test("a strip with nothing drawn takes no part in its set's span", () => {
+  const empty = { width: 1, height: 1, data: new Uint8Array(4) };
+  assert.deepEqual(
+    coverSteps([
+      greys([
+        [60, 10],
+        [180, 10],
+      ]),
+      empty,
+    ]),
+    coverSteps([
+      greys([
+        [60, 10],
+        [180, 10],
+      ]),
+    ]),
+  );
 });

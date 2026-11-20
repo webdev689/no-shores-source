@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { type Strip, PART, composeFrame, ordersMeet } from './compose.ts';
-import { coverLevels } from './coverLight.ts';
+import { coverSteps } from './coverLight.ts';
 import { PaletteSnap } from './dyes.ts';
 import { type ForgeLooks, layersOf, lookCell } from './looks.ts';
 
@@ -88,11 +88,11 @@ test('a ramp that covers its layer lies on every texel by its light, not on its 
     { cuirass: blue },
     read,
     undefined,
-    new Map([['cuirass', coverLevels([strips['forge/layers/male/cuirass_idle.png'] ?? strip([])])]]),
+    new Map([['cuirass', coverSteps([strips['forge/layers/male/cuirass_idle.png'] ?? strip([])])]]),
   );
-  // The cuirass's light, 91, is all its strip holds: the middle of its texels, the middle of the ramp.
-  assert.deepEqual([...(covered?.pixels.subarray(0, 4) ?? [])], [0, 0, 128, 255]);
-  assert.deepEqual([...(covered?.pixels.subarray(4, 8) ?? [])], [0, 0, 128, 255]);
+  // The cuirass's light, 91, is all its strip holds: a span too narrow to stretch, it takes step 5 of 15 by its light.
+  assert.deepEqual([...(covered?.pixels.subarray(0, 4) ?? [])], [0, 0, 80, 255]);
+  assert.deepEqual([...(covered?.pixels.subarray(4, 8) ?? [])], [0, 0, 80, 255]);
 });
 
 test('a frame says which pixels are the weapon', async () => {

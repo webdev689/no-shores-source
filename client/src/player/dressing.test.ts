@@ -143,7 +143,7 @@ test('a dye worn takes every armour piece and garment, never a weapon, a shield,
   assert.deepEqual(rampsOf(gear, { ...outfit, armour, dye: null }, looks, table)['cuirass_iron'], ramp(3));
 });
 
-test("a coat is the ridden horse's ramp, and a faction's cape, named by its dye, wears its faction's colour", () => {
+test("a coat is the ridden horse's ramp, and a cape's cosmetic dye is its cloak's", () => {
   const table = { palette: [], clothing: {}, armour: {} };
   const looks = { bodies: {}, dye: ['formal_cloak_drape'], metal: [] };
   const coated = rampsOf(
@@ -156,8 +156,8 @@ test("a coat is the ridden horse's ramp, and a faction's cape, named by its dye,
   assert.deepEqual(coated['horse'], cosmeticRamp('grey', table.palette), 'the coat ramp');
   assert.deepEqual(
     coated['formal_cloak_drape'],
-    factionRamp('stormcallers', table.palette),
-    "the Stormcallers' Squall",
+    cosmeticRamp('stormcaller_blue', table.palette),
+    "the Stormcallers' blue",
   );
   assert.equal(rampsOf([], { ...outfit, coat: null }, looks, table)['horse'], undefined, 'Bay keeps its own');
 });
@@ -240,7 +240,7 @@ test('a dye worn and a faction colour cover their armour whole, and padding; gar
   assert.deepEqual(own.whole, ['helm_mages'], 'with no dye worn, only the faction piece');
 });
 
-test("a faction's cape, shield, bow and staff are covered whole by its colour, in hand or put away; a blade is not", () => {
+test("a faction's shield, bow and staff are covered whole by its colour, in hand or put away; a blade is not", () => {
   const table = { palette: [], clothing: {}, armour: { Elven: [[3, 3, 3] as const] } };
   const layers = [
     'formal_cloak_plated',
@@ -261,10 +261,6 @@ test("a faction's cape, shield, bow and staff are covered whole by its colour, i
     sword_elven: faction,
   };
   const { ramps, whole } = layerRamps(layers, { ...outfit, dyes, dye: 'coral' }, looks, table);
-  assert.deepEqual(whole, layers.slice(0, 5));
-  assert.deepEqual(
-    ramps['formal_cloak_plated'],
-    factionRamp(faction, table.palette),
-    "the cape wears the gear's colour",
-  );
+  assert.deepEqual(whole, layers.slice(1, 5));
+  assert.deepEqual(ramps['formal_cloak_plated'], cosmeticRamp('stormcaller_blue', table.palette), 'the cape its dye');
 });

@@ -121,11 +121,6 @@ export const cosmeticRamp = (id: string | null | undefined, palette: readonly Rg
 export const factionRamp = (key: string | null | undefined, palette: readonly Rgb[]): readonly Rgb[] | null =>
   rampsOn(palette).factions.get(key ?? '') ?? null;
 
-/** The faction whose cape a cloak is, by the dye the outfit names for it (its faction's rank-2 dye, as the room relays
- *  it), or null for any other dye. */
-export const capeFaction = (dye: string | null | undefined): string | null =>
-  factions.factions.find((faction) => faction.dye === dye)?.key ?? null;
-
 /** A barding's forge layer by its id (`horse_warhorse`), or null for the bare horse or no barding. */
 export function bardingLayer(id: string | null | undefined): string | null {
   const found = cosmeticOf(id);

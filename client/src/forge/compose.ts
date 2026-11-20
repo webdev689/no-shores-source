@@ -1,5 +1,5 @@
 import { hideShade } from './cosmetics.ts';
-import { type CoverLevels, coverColour, lightOf } from './coverLight.ts';
+import { type CoverSteps, lightOf } from './coverLight.ts';
 import { type Figure, type ForgeLooks, HORSE_LAYER, layerCellOf, layerPath, layersOf, lookCell } from './looks.ts';
 import type { PaletteSnap, Rgb } from './dyes.ts';
 import { type HairColours, type RaceSkins, hairRamp, raceSkinOf, toneSkinOf } from './skins.ts';
@@ -71,7 +71,7 @@ export function ordersMeet(first: number, second: number): boolean {
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
  * meets another on one part, armour over the clothes under it by its cover, a worn weapon and a drape by `under`.
  * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp (every
- * texel of a layer in `covers`, by where its light lies on the ramp), the horse's hide its coat's (its ramp under
+ * texel of a layer in `covers`, by its set's steps), the horse's hide its coat's (its ramp under
  * HORSE_LAYER, `hideShade`); the frame is then snapped to the palette. The layers in `held` count as the weapon in
  * its mask, whatever part they name.
  */
@@ -85,7 +85,7 @@ export async function composeFrame(
   ramps: Readonly<Record<string, readonly Rgb[]>>,
   strip: (path: string) => Promise<Strip | null>,
   held: ReadonlySet<string> = new Set(),
-  covers: ReadonlyMap<string, CoverLevels> = new Map(),
+  covers: ReadonlyMap<string, CoverSteps> = new Map(),
 ): Promise<Frame | null> {
   const box = lookCell(figure, anim, looks);
   if (!box) return null;
@@ -129,7 +129,7 @@ export async function composeFrame(
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
     const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
     const coat = layer === HORSE_LAYER ? (ramps[layer] ?? null) : null;
-    const levels = ramp ? (covers.get(layer) ?? null) : null;
+    const steps = ramp ? (covers.get(layer) ?? null) : null;
     const skin =
       figure.tone === null
         ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)
@@ -191,11 +191,11 @@ export async function composeFrame(
         if (coat) hideShade(rgb, coat);
         const grey = rgb[0] === rgb[1] && rgb[1] === rgb[2];
         // A ramp lies on a layer's greys, as the forge draws them for it; one that covers the layer lies on every texel
-        // by its light, laid by its set's (`coverLevels`).
+        // by its light, laid by its set's (`coverSteps`).
         const dyed = !ramp
           ? null
-          : levels
-            ? coverColour(ramp, levels[lightOf(rgb)] ?? 0)
+          : steps
+            ? ramp[steps[lightOf(rgb)] ?? 0]
             : grey
               ? ramp[Math.max(0, Math.min(15, ((rgb[0] ?? 0) * 16) >> 8))]
               : null;
