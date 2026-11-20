@@ -8,7 +8,9 @@
 
 import './arts.css';
 import { make } from '../editor/dom.ts';
-import { ELEMENTS } from '../player/gear.ts';
+import { ELEMENTS, answerText } from '../player/gear.ts';
+import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
+import type { Standing } from '../network/gearMessages.ts';
 import { ROLES } from '../plus/kit.ts';
 import {
   ARTS,
@@ -18,6 +20,7 @@ import {
   type Cores,
   type Spell,
   artCard,
+  spellNumbers,
   artOf,
   coreChoices,
   coreOf,
@@ -30,7 +33,20 @@ import {
   slotCard,
   spellSvg,
 } from './artsCards.ts';
+import {
+  type ArtLevel,
+  LEVEL_MOST,
+  barWords,
+  factionOf,
+  howHad,
+  levelOf,
+  owns,
+  ownedCount,
+  ready,
+  shareWords,
+} from './artLevels.ts';
 import { artStage } from './artStage.ts';
+import { emblemImage, emblemOf } from './emblemArt.ts';
 import type { Card } from './gearCards.ts';
 import { type Hint, type HoverCard, cardNode, elementGlyph, glyphImage } from './gearDom.ts';
 import { STEP_BACK } from './gearScreen.ts';
@@ -39,12 +55,13 @@ import { play } from './uiSounds.ts';
 /** How the screen comes in when built: opened, another Art just worn, or neither. */
 export type ArtsEntrance = 'open' | 'wear' | null;
 
-/** What the Art's screen draws from: the Art worn and each Art's Core as the room last sent them, the way to ask the
- *  room for a change, the menu's hover card, the way back to the Character page, how the screen comes in, the Core
- *  slot the room has just set and the one whose ask is waiting. */
+/** What the Art's screen draws from: the Art worn, each Art's Core and where the player stands with each as the room
+ *  last sent them, the way to ask the room for a change, the menu's hover card, the way back to the Character page,
+ *  how the screen comes in, the Core slot the room has just set and the one whose ask is waiting. */
 export interface ArtsPageContext {
   readonly worn: number;
   readonly cores: Cores;
+  readonly standing?: Standing | undefined;
   readonly ask: (ask: ArtsAsk) => void;
   readonly tip: HoverCard;
   readonly close: () => void;
@@ -97,6 +114,69 @@ function tone(node: HTMLElement, element: number): void {
   node.style.setProperty('--rar-hi', lit);
   node.style.setProperty('--rar-lo', dark);
   node.style.setProperty('--rar-rgb', channels);
+}
+
+/** An Art's level as five pips, lit up to it in the element around them, read aloud as "Level n". */
+export function levelPips(level: number, className = ''): HTMLElement {
+  const pips = make('span', '', `arts-pips ${className}`.trim());
+  pips.setAttribute('role', 'img');
+  pips.setAttribute('aria-label', `Level ${level}`);
+  for (let pip = 1; pip <= LEVEL_MOST; pip++)
+    pips.append(make('span', '', pip <= level ? 'arts-pip arts-pip-lit' : 'arts-pip'));
+  return pips;
+}
+
+/** The worn Art's bar to its next level, its words under it, and the emblem of the faction that raises it, its card
+ *  naming the faction. */
+export function levelBlock(context: ArtsPageContext, art: Art, standing: ArtLevel): HTMLElement {
+  const block = make('div', '', 'arts-level');
+  const words = barWords(standing, art.id);
+  const full = standing.level >= LEVEL_MOST || ready(standing);
+  const bar = make('div', '', 'arts-bar');
+  bar.classList.toggle('arts-ready', ready(standing));
+  bar.classList.toggle('arts-most', standing.level >= LEVEL_MOST);
+  bar.setAttribute('role', 'progressbar');
+  bar.setAttribute('aria-label', `${art.name} XP`);
+  bar.setAttribute('aria-valuemin', '0');
+  bar.setAttribute('aria-valuemax', String(Math.max(1, standing.bar)));
+  bar.setAttribute('aria-valuenow', String(full ? Math.max(1, standing.bar) : standing.xp));
+  bar.setAttribute('aria-valuetext', words);
+  const fill = make('span', '', 'arts-bar-fill');
+  fill.style.width = `${full ? 100 : (100 * standing.xp) / Math.max(1, standing.bar)}%`;
+  bar.append(fill);
+  const line = make('div', '', 'arts-level-line');
+  line.append(make('span', words, 'arts-bar-words'));
+  const faction = factionOf(art.id);
+  if (faction) {
+    const sign = make('span', '', 'arts-faction');
+    sign.tabIndex = 0;
+    sign.role = 'img';
+    sign.setAttribute('aria-label', faction.name);
+    sign.style.backgroundImage = `url(${emblemImage(emblemOf(faction.emblem), 'sign')})`;
+    const card = (): HTMLElement => {
+      const node = cardNode(
+        {
+          name: faction.name,
+          rarity: 0,
+          kind: 'Faction',
+          big: null,
+          rows: [],
+          element: art.element,
+          traits: [],
+          words: `${faction.words} At their counter the ${art.name} Art rises a level, and its fragments are sold.`,
+          compare: null,
+        },
+        null,
+        [],
+      );
+      tone(node, art.element);
+      return node;
+    };
+    context.tip.over(sign, card, block);
+    line.append(sign);
+  }
+  block.append(bar, line);
+  return block;
 }
 
 /** A card in the gear's style, its band in `element`, its picture over its numbers. */
@@ -165,7 +245,18 @@ function spellTile(context: ArtsPageContext, art: Art, spell: Spell, row: HTMLEl
   const label = `${spell.name}, ${anima ? 'Anima' : 'Tenet'}, key ${key}`;
   const tile = tileOf(anima ? 'gear-slot' : 'gear-cell', spellKey(spell), label, true);
   tile.append(picture(spellSvg(art, spell), 'arts-glyph'), make('kbd', key, 'gear-key arts-key'));
-  const card = () => cardWith(spellCard(art, spell), spellSvg(art, spell), art.element, [[key, 'Cast in play']]);
+  const level = levelOf(context.standing, art.id).level;
+  const card = () => {
+    const node = cardWith(spellCard(art, spell, level), spellSvg(art, spell), art.element, [[key, 'Cast in play']]);
+    // Below the highest level, what the spell holds there, muted under its numbers.
+    const now = spellNumbers(spell, level);
+    const most = spellNumbers(spell).filter(([, value], place) => value !== now[place]?.[1]);
+    if (most.length > 0) {
+      const said = most.map(([label, value]) => `${label} ${value}`).join(' · ');
+      node.querySelector('.gear-card-body')?.append(make('p', `At level ${LEVEL_MOST}: ${said}`, 'arts-card-most'));
+    }
+    return node;
+  };
   context.tip.over(tile, card, row);
   return tile;
 }
@@ -187,6 +278,7 @@ function buildList(art: Art, core: readonly (number | null)[]): HTMLElement {
 /** The Core's three slots, the open one's flyout of the Art's six fragments, and what is set written out under them. */
 function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose: (slot: number | null) => void) {
   const core = coreOf(context.cores, art.id);
+  const standing = levelOf(context.standing, art.id);
   const slots = core.map((chosen, slot) => {
     const fragment = chosen === null ? undefined : art.core[chosen];
     const label = `Core slot ${slot + 1}: ${fragment?.name ?? 'empty'}`;
@@ -204,21 +296,25 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
       choose(open === slot ? null : slot);
       if (open === slot) return;
       // Into the flyout, at the fragment set here, else the first that may be.
-      const first = chosen ?? coreChoices(art, core, slot).find((each) => each.ask)?.index ?? 0;
+      const choices = coreChoices(art, core, slot, (fragment) => owns(standing, fragment));
+      const first = chosen ?? choices.find((each) => each.ask)?.index ?? 0;
       focusSoon(`fragment-${first}`);
     });
     return { tile, fragment, slot };
   });
   const filled = core.filter((chosen) => chosen !== null).length;
   const shown = group(
-    `Core · ${filled} of ${CORE_SLOTS}`,
+    `Core · ${filled} of ${CORE_SLOTS} · ${ownedCount(standing)} owned`,
     slots.map(({ tile }) => tile),
     'arts-core',
   );
   const row = shown.querySelector<HTMLElement>('.arts-tiles') ?? shown;
   for (const { tile, fragment, slot } of slots) {
     const card = () => {
-      if (fragment) return cardWith(fragmentCard(art, fragment), fragmentSvg(art, fragment), art.element, CHANGE);
+      if (fragment) {
+        const shown = fragmentCard(art, fragment, null, standing.level);
+        return cardWith(shown, fragmentSvg(art, fragment), art.element, CHANGE);
+      }
       const node = cardNode(slotCard(art, slot), null, CHOOSE);
       tone(node, art.element);
       return node;
@@ -230,32 +326,44 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
   const flyout = make('div', '', `gear-flyout arts-flyout ${ROLES.panel}`);
   flyout.append(make('div', `Core slot ${open + 1}`, 'gear-flyout-head'));
   const grid = make('div', '', 'gear-flyout-grid');
-  for (const choice of coreChoices(art, core, open)) {
-    const { fragment, setIn, ask } = choice;
-    const said = setIn === null ? '' : setIn === open ? ', set here' : `, set in slot ${setIn + 1}`;
+  // What a refused choice says, as the room's answer would.
+  const refusal = make('p', '', 'arts-refusal');
+  refusal.setAttribute('role', 'status');
+  for (const choice of coreChoices(art, core, open, (fragment) => owns(standing, fragment))) {
+    const { fragment, setIn, ask, owned } = choice;
+    const said =
+      setIn === null ? (owned ? '' : ', not owned') : setIn === open ? ', set here' : `, set in slot ${setIn + 1}`;
     const cell = tileOf('gear-cell', `fragment-${choice.index}`, `${fragment.name}${said}`);
     cell.append(picture(fragmentSvg(art, fragment), 'arts-glyph'));
     cell.classList.toggle('gear-open', setIn === open);
     const taken = setIn !== null && setIn !== open;
     cell.classList.toggle('arts-taken', taken);
-    if (taken) {
-      cell.setAttribute('aria-disabled', 'true');
-      cell.append(make('span', String(setIn + 1), 'gear-count'));
-    }
+    cell.classList.toggle('arts-locked', !owned);
+    if (taken || !owned) cell.setAttribute('aria-disabled', 'true');
+    if (taken) cell.append(make('span', String(setIn + 1), 'gear-count'));
+    if (!owned) cell.append(picture(mapSvg(LOCK_MAP, art.element), 'arts-lock'));
     cell.addEventListener('click', () => {
-      // A fragment set in another slot is refused here, before any ask; the one set here is already chosen.
-      if (taken) return play('refused');
+      // A fragment set in another slot, or not owned, is refused here, before any ask; the one set here is chosen.
+      if (taken) {
+        refusal.textContent = '';
+        return play('refused');
+      }
+      if (!owned) {
+        refusal.textContent = answerText(114);
+        return play('refused');
+      }
       context.tip.hide();
       if (ask) context.ask(ask);
       choose(null);
       focusSoon(`core-${open}`);
     });
-    const hints = setIn === null ? SET : [];
-    const card = () => cardWith(fragmentCard(art, fragment, setIn), fragmentSvg(art, fragment), art.element, hints);
+    const hints = ask ? SET : [];
+    const shown = fragmentCard(art, fragment, setIn, standing.level, owned ? null : howHad(art.id));
+    const card = () => cardWith(shown, fragmentSvg(art, fragment), art.element, hints);
     context.tip.over(cell, card, flyout);
     grid.append(cell);
   }
-  flyout.append(grid);
+  flyout.append(grid, refusal);
   // Beside the slots, as a slot's flyout opens beside it on the Character page.
   row.append(flyout);
   return shown;
@@ -264,12 +372,18 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
 /** The worn Art's name, element, framed diamond, the three Arts' diamonds to wear another, and its words. */
 function sideOf(context: ArtsPageContext, art: Art): HTMLElement {
   const side = make('div', '', 'arts-side');
+  const standing = levelOf(context.standing, art.id);
   const name = make('h2', art.name, 'arts-name');
   name.id = 'arts-name';
+  const title = make('div', '', 'arts-title');
+  title.append(name, levelPips(standing.level));
   const kind = make('p', '', 'arts-kind');
   const glyph = elementGlyph(art.element, 'gear-element-inline');
   if (glyph) kind.append(glyph);
-  kind.append(make('span', `${ELEMENTS[art.element]?.name ?? ''} Art`));
+  kind.append(
+    make('span', `${ELEMENTS[art.element]?.name ?? ''} Art`),
+    make('span', shareWords(standing.level), 'arts-share'),
+  );
   const emblem = make('div', '', 'arts-emblem');
   emblem.append(picture(frameSvg(art), 'arts-frame-img'), picture(emblemSvg(art), 'arts-emblem-img'));
   const picks = make('div', '', 'arts-picks');
@@ -277,25 +391,27 @@ function sideOf(context: ArtsPageContext, art: Art): HTMLElement {
   picks.setAttribute('aria-label', 'Arts');
   for (const each of ARTS) {
     const worn = each.id === art.id;
+    const level = levelOf(context.standing, each.id).level;
     const pick = make('button', '', 'arts-pick');
     pick.type = 'button';
     pick.dataset['key'] = `art-${each.id}`;
     pick.dataset['nav'] = '';
     pick.classList.toggle('arts-worn', worn);
     pick.setAttribute('aria-pressed', String(worn));
-    pick.setAttribute('aria-label', `${each.name}${worn ? ', worn' : ''}`);
+    pick.setAttribute('aria-label', `${each.name}, level ${level}${worn ? ', worn' : ''}`);
     tone(pick, each.element);
-    pick.append(picture(emblemSvg(each), 'arts-pick-img'));
+    pick.append(picture(emblemSvg(each), 'arts-pick-img'), levelPips(level, 'arts-pips-small'));
     pick.addEventListener('click', () => {
       if (worn) return;
       context.tip.hide();
       context.ask({ kind: 'wearArt', art: each.id });
     });
-    context.tip.over(pick, () => cardWith(artCard(each, worn), emblemSvg(each), each.element, worn ? [] : WEAR), picks);
+    const card = () => cardWith(artCard(each, worn, level), emblemSvg(each), each.element, worn ? [] : WEAR);
+    context.tip.over(pick, card, picks);
     picks.append(pick);
   }
   // The diamonds stand above the words, so a longer or shorter blurb never moves them under the pointer.
-  side.append(name, kind, emblem, picks, make('p', art.blurb, 'arts-blurb'));
+  side.append(title, kind, emblem, picks, levelBlock(context, art, standing), make('p', art.blurb, 'arts-blurb'));
   return side;
 }
 
@@ -352,9 +468,14 @@ export function artsPage(
   return page;
 }
 
-/** The worn Art's diamond for the Character page, the first of the weapons' rows, its name beside it: pressed, it opens
- *  the Art's screen through `open`, the focus on its Anima. */
-export function artDiamond(worn: number, open: () => void, tip: HoverCard | null = null): HTMLElement {
+/** The worn Art's diamond for the Character page, the first of the weapons' rows, its name and level beside it:
+ *  pressed, it opens the Art's screen through `open`, the focus on its Anima. */
+export function artDiamond(
+  worn: number,
+  open: () => void,
+  tip: HoverCard | null = null,
+  standing?: Standing,
+): HTMLElement {
   const art = artOf(worn) ?? ARTS[0];
   const holder = make('div', '', 'gear-slot-holder arts-holder');
   if (!art) return holder;
@@ -362,18 +483,21 @@ export function artDiamond(worn: number, open: () => void, tip: HoverCard | null
   const press = make('button', '', 'arts-diamond');
   press.type = 'button';
   press.dataset['key'] = ART_DIAMOND_KEY;
-  press.setAttribute('aria-label', `Art: ${art.name}`);
+  const level = levelOf(standing, art.id).level;
+  press.setAttribute('aria-label', `Art: ${art.name}, level ${level}`);
   press.append(picture(emblemSvg(art), 'arts-diamond-img'));
   press.addEventListener('click', () => {
     tip?.hide();
     open();
     focusSoon(spellKey(art.anima));
   });
-  tip?.over(press, () => cardWith(artCard(art), emblemSvg(art), art.element, [['Click', 'Open its screen']]));
+  tip?.over(press, () =>
+    cardWith(artCard(art, false, level), emblemSvg(art), art.element, [['Click', 'Open its screen']]),
+  );
   const words = make('div', '', 'gear-slot-words');
   const named = make('span', art.name, 'gear-slot-item');
   named.style.color = ELEMENTS[art.element]?.colour ?? '';
-  words.append(make('span', 'Art', 'gear-slot-name'), named);
+  words.append(make('span', 'Art', 'gear-slot-name'), named, levelPips(level, 'arts-pips-small'));
   holder.append(press, words);
   return holder;
 }

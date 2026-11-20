@@ -8,6 +8,7 @@ import { FRAGMENT_MAPS } from './artFragments.ts';
 import { EMBLEM_FRAME, EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { ArtState } from '../network/artMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
+import { GIVES, HEALS_A_SECOND, LEVEL_MOST, lastingAt, powerAt, scaled } from './artLevels.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -18,11 +19,12 @@ export interface Spell {
   readonly rechargeS: number;
   readonly [field: string]: string | number | undefined;
 }
-/** A fragment of an Art's Core: its key, name and words. */
+/** A fragment of an Art's Core: its key, name and words, and its numbers by name. */
 export interface Fragment {
   readonly key: string;
   readonly name: string;
   readonly text: string;
+  readonly [field: string]: string | number | undefined;
 }
 /** An Art, as the Arts' file holds it: its id, key, name, element (the gear crate's number) and words, its Anima, its
  *  two Tenets and the six fragments of its Core. */
@@ -89,12 +91,32 @@ const NUMBERS: readonly (readonly [field: string, label: string, written: (value
   ['healShare', 'Heals you', (value) => `${Math.round(value * 100)}% of its damage`],
 ];
 
-/** A spell's numbers, as its card's rows. */
-export function spellNumbers(spell: Spell): [string, string][] {
-  return NUMBERS.flatMap(([field, label, written]) => {
+/** What a spell or fragment gives and how long it lasts at `level`, as a card's row; none if it gives nothing. */
+function givesRow(key: string, level: number): [string, string][] {
+  const gives = GIVES[key];
+  return gives ? [[gives[0], `${Math.round(gives[1] * lastingAt(level) * 10) / 10} s`]] : [];
+}
+
+/** A spell's numbers at an Art's `level`, as its card's rows: its harm, healing and life as the room scales them. */
+export function spellNumbers(spell: Spell, level = LEVEL_MOST): [string, string][] {
+  const rows = NUMBERS.flatMap(([field, label, written]) => {
     const value = spell[field];
-    return typeof value === 'number' ? [[label, written(value)] as [string, string]] : [];
+    return typeof value === 'number'
+      ? [[label, written(scaled(spell.key, field, value, level))] as [string, string]]
+      : [];
   });
+  const linked = HEALS_A_SECOND[spell.key];
+  const heals: [string, string][] =
+    linked === undefined ? [] : [['Heals a second', String(Math.round(linked * powerAt(level) * 10) / 10)]];
+  return [...rows, ...heals, ...givesRow(spell.key, level)];
+}
+
+/** A fragment's numbers the room scales by an Art's `level`, as its card's rows: the seconds it adds and what it
+ *  gives. Its other numbers stay in its words. */
+export function fragmentNumbers(fragment: Fragment, level = LEVEL_MOST): [string, string][] {
+  const more = typeof fragment['moreS'] === 'number' ? scaled(fragment.key, 'moreS', fragment['moreS'], level) : null;
+  const rows: [string, string][] = more === null || more === fragment['moreS'] ? [] : [['Longer by', `${more} s`]];
+  return [...rows, ...givesRow(fragment.key, level)];
 }
 
 /** A recharge as a player reads one: under a minute in seconds ("38 s"), else minutes and seconds ("8:20"). */
@@ -103,15 +125,15 @@ export function rechargeWords(seconds: number): string {
   return whole < 60 ? `${whole} s` : `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 }
 
-/** A spell's card: its name, whether it is the Anima or a Tenet and its element, its recharge large, its numbers and
- *  what it does. */
-export function spellCard(art: Art, spell: Spell): Card {
+/** A spell's card: its name, whether it is the Anima or a Tenet and its element, its recharge large, its numbers at
+ *  the Art's `level` and what it does. */
+export function spellCard(art: Art, spell: Spell, level = LEVEL_MOST): Card {
   return {
     name: spell.name,
     rarity: 0,
     kind: spell === art.anima ? 'Anima' : 'Tenet',
     big: { label: 'Recharge', value: rechargeWords(spell.rechargeS) },
-    rows: spellNumbers(spell),
+    rows: spellNumbers(spell, level),
     element: art.element,
     traits: [],
     words: spell.text,
@@ -119,18 +141,25 @@ export function spellCard(art: Art, spell: Spell): Card {
   };
 }
 
-/** A fragment's card: its name, its Art and element, what it does, and, set in a slot, which. */
-export function fragmentCard(art: Art, fragment: Fragment, setIn: number | null = null): Card {
+/** A fragment's card: its name, its Art and element, its numbers at the Art's `level`, what it does, and, set in a
+ *  slot, which; not owned, how it is had (`howHad`). */
+export function fragmentCard(
+  art: Art,
+  fragment: Fragment,
+  setIn: number | null = null,
+  level = LEVEL_MOST,
+  howHad: string | null = null,
+): Card {
   const where = setIn === null ? '' : ` Set in Core slot ${setIn + 1}.`;
   return {
     name: fragment.name,
     rarity: 0,
-    kind: `${art.name} fragment`,
+    kind: `${art.name} fragment${howHad ? ', not owned' : ''}`,
     big: null,
-    rows: [],
+    rows: fragmentNumbers(fragment, level),
     element: art.element,
     traits: [],
-    words: `${fragment.text}${where}`,
+    words: `${fragment.text}${where}${howHad ? ` ${howHad}` : ''}`,
     compare: null,
   };
 }
@@ -150,13 +179,13 @@ export function slotCard(art: Art, slot: number): Card {
   };
 }
 
-/** An Art's card, on its diamond: its name and element, whether it is worn, its spells, and its words. */
-export function artCard(art: Art, worn = false): Card {
+/** An Art's card, on its diamond: its name and element, whether it is worn, its level, its spells, and its words. */
+export function artCard(art: Art, worn = false, level = LEVEL_MOST): Card {
   return {
     name: art.name,
     rarity: 0,
     kind: worn ? 'Art, worn' : 'Art',
-    big: null,
+    big: { label: 'Level', value: level },
     rows: [
       ['Anima', art.anima.name],
       ['Tenets', art.tenets.map((tenet) => tenet.name).join(', ')],
@@ -168,22 +197,32 @@ export function artCard(art: Art, worn = false): Card {
   };
 }
 
-/** One fragment in a Core slot's flyout: its place in the Art's list, the slot it is set in (null for none), and what
- *  choosing it asks: nothing while it is set here already or in another slot, as a fragment is never set twice. */
+/** One fragment in a Core slot's flyout: its place in the Art's list, the slot it is set in (null for none), whether
+ *  it is owned, and what choosing it asks: nothing while it is set here already or in another slot, as a fragment is
+ *  never set twice, nor while it is not owned, as the room would refuse it (114). */
 export interface FragmentChoice {
   readonly index: number;
   readonly fragment: Fragment;
   readonly setIn: number | null;
+  readonly owned: boolean;
   readonly ask: ArtsAsk | null;
 }
 
-/** The flyout of `slot` in `art`'s Core: its six fragments, each with what choosing it asks. */
-export function coreChoices(art: Art, core: readonly (number | null)[], slot: number): FragmentChoice[] {
+/** The flyout of `slot` in `art`'s Core: its six fragments, each with what choosing it asks; `owned` says which the
+ *  player owns, by place. */
+export function coreChoices(
+  art: Art,
+  core: readonly (number | null)[],
+  slot: number,
+  owned: (fragment: number) => boolean = () => true,
+): FragmentChoice[] {
   return art.core.map((fragment, index) => {
     const found = core.indexOf(index);
     const setIn = found < 0 ? null : found;
-    const ask: ArtsAsk | null = setIn === null ? { kind: 'setCore', art: art.id, slot, fragment: index } : null;
-    return { index, fragment, setIn, ask };
+    const mine = owned(index);
+    const free = setIn === null && mine;
+    const ask: ArtsAsk | null = free ? { kind: 'setCore', art: art.id, slot, fragment: index } : null;
+    return { index, fragment, setIn, owned: mine, ask };
   });
 }
 

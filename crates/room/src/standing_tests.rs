@@ -144,11 +144,11 @@ fn a_sunwell_heals_by_the_level_of_its_caster_s_art() {
     assert!((first - whole * 0.6).abs() < 1e-9, "level 1 heals 0.6 of level 5's: {first} against {whole}");
 }
 
-/// The harm Dusk Daggers do to a foe held in their ring, cast at Shadow's first level, the caster wearing Storm (at
-/// its highest) once the ring is out if `switch`.
-fn daggers_harm(switch: bool) -> f64 {
+/// The harm Dusk Daggers do to a foe held in their ring, cast at a Shadow level, the caster wearing Storm (at its
+/// highest) once the ring is out if `switch`.
+fn daggers_harm(level: u8, switch: bool) -> f64 {
     let (mut room, player) = room_with_player();
-    room.players.get_mut(&player).expect("in").character.arts.levels[2] = 1;
+    room.players.get_mut(&player).expect("in").character.arts.levels[2] = level;
     wearing(&mut room, player, 3, &[]);
     let foe = stand_foe(&mut room, 0.0, -10.0, 1000.0);
     room.give(foe, combat::Status::Charge, Some(400), None);
@@ -164,7 +164,7 @@ fn daggers_harm(switch: bool) -> f64 {
 
 #[test]
 fn a_spell_already_out_strikes_at_the_level_of_the_art_that_cast_it() {
-    let (kept, switched) = (daggers_harm(false), daggers_harm(true));
+    let (kept, switched) = (daggers_harm(1, false), daggers_harm(1, true));
     assert!(kept > 0.0);
     assert!((kept - switched).abs() < 1e-9, "wearing Storm after the cast changes nothing: {kept} against {switched}");
 }
@@ -187,4 +187,68 @@ fn shape_sells_nowhere_outside_his_days_and_his_going_is_sent() {
     room.set_minute(THURSDAY + 3 * 1_440 + 21 * 60);
     assert_eq!(room.shape_at(), None);
     assert!(room.players.get(&player).expect("in").gear_changed, "his going is sent");
+}
+
+/// A fragment's place in its Art's Core, by its key.
+fn place_of(art: u8, key: &str) -> u8 {
+    let found = gear::arts::arts().art(art).and_then(|art| art.core.iter().position(|fragment| fragment.key == key));
+    u8::try_from(found.expect("a fragment of the Art")).expect("a place")
+}
+
+/// Seconds a spell of `kind` cast now by a level 1 caster wearing `art` with `fragments` lives, or the ticks left of
+/// `status` on its caster, as the room keeps them.
+fn measured(art: u8, fragments: &[&str], spell: u8, status: Option<combat::Status>) -> f64 {
+    let (mut room, player) = room_with_player();
+    room.players.get_mut(&player).expect("in").character.arts.levels.fill(1);
+    let places: Vec<u8> = fragments.iter().map(|key| place_of(art, key)).collect();
+    wearing(&mut room, player, art, &places);
+    cast(&mut room, player, spell, Some([0.0, -5.0, 0.0]), 0);
+    let ticks = match status {
+        Some(status) => room.fighter(player).expect("in").statuses.left(status),
+        None => room.spells_seen().find(|seen| seen.kind == spell).map_or(0, |seen| seen.life),
+    };
+    f64::from(ticks) / 60.0
+}
+
+/// The harm a Dawnflare does to a foe on its path, cast at a Divine level: its burn, which nothing but power weighs.
+fn dawnflare_harm(level: u8) -> f64 {
+    let (mut room, player) = room_with_player();
+    room.players.get_mut(&player).expect("in").character.arts.levels[1] = level;
+    wearing(&mut room, player, 2, &[]);
+    let foe = stand_foe(&mut room, 2.0, -10.0, 1000.0);
+    cast(&mut room, player, DAWNFLARE, None, 120);
+    1000.0 - health(&room, foe)
+}
+
+/// What the room does at an Art's first level, measured, for the client's test of the Art's screen
+/// (client/src/game/artLevels.test.ts), which must show the same.
+#[test]
+fn what_an_art_does_at_its_first_level_is_written_for_the_clients_test() {
+    use combat::Status;
+    let more = |art, key, spell, status| measured(art, &[key], spell, status) - measured(art, &[], spell, status);
+    let numbers = serde_json::json!({
+        "level": 1,
+        "life": {
+            "sunwell": measured(2, &[], SUNWELL, None),
+            "duskraven": measured(3, &[], 7, None),
+            "duskDaggers": measured(3, &[], 8, None),
+        },
+        "more": {
+            "radiance": more(2, "radiance", SUNWELL, None),
+            "blades": more(3, "blades", 8, None),
+            "gale": more(1, "gale", 2, Some(Status::Haste)),
+            "night": more(3, "night", 9, Some(Status::Veiled)),
+        },
+        "gives": {
+            "quicken": measured(1, &[], 2, Some(Status::Haste)),
+            "vanish": measured(3, &[], 9, Some(Status::Veiled)),
+            "momentum": measured(1, &["momentum"], 2, Some(Status::Crit)),
+            "resolve": measured(2, &["resolve"], MEND, Some(Status::Crit)),
+        },
+        "healsASecond": { "sunwell": sunwell_gain(1) / 3.0 },
+        "power": dawnflare_harm(1) / dawnflare_harm(5),
+    });
+    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
+    std::fs::create_dir_all(folder).expect("the folder");
+    std::fs::write(format!("{folder}/art_levels.json"), numbers.to_string()).expect("written");
 }

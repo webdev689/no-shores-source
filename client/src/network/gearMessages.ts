@@ -36,6 +36,8 @@ export const ASKS = {
   /** The Ranged loadout's ammunition set to `count` parts of `AMMO_FULL`; `count` Ammo crates more. */
   grantAmmo: 37,
   grantCrates: 38,
+  /** An Art, its number in `column`, set at `level` (1 to 5) owning all its fragments. */
+  grantArtLevel: 39,
   /** An Art worn, by its number in `column`; a fragment set, the Art in `column`, the slot (0 to 2) in `slot` and
    *  the fragment's place in its Art's list (0 to 5) in `node`. */
   wearArt: 40,
