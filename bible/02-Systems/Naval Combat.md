@@ -252,8 +252,8 @@ Pass]]) with Claude's numbers:
   land it does off walls. No figure's card stands nearer the eye than a metre, so a foe in a melee seen through the
   player's own eyes never fills the view (`cardStand`, on land too). While she holds the player the fight's keys and
   pointer are the foot's.
-  Won, the display says "Her deck is yours", the seconds of her minute left, her hold's take as the room laid it ("Her
-  hold: 2 crates, a chest, afloat alongside"), and E to go back aboard; E or the minute's end, the room has the boarder
+  Won, the display says "Her deck is yours" over her hold's take as the room laid it ("Her hold: 2 crates, a chest"),
+  and the keys begin "E: back aboard your ship · 45 s left"; E or the minute's end, the room has the boarder
   back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up (below). On her deck
   every key but E, Enter (respawn), the menu's and Escape is the fight's on foot.
 - **Losing.** A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes

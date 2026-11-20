@@ -207,7 +207,7 @@ test('the page predicts its boarder on her deck exactly as her deck room steps t
   ] as const)
     for (let tick = 0; tick < count; tick += 1) {
       steps.step({} as Body, controls);
-      const predicted = JSON.stringify(fighting.own);
+      const predicted: string = JSON.stringify(fighting.own);
       link.pump(1 / 60);
       assert.equal(JSON.stringify(fighting.own), predicted, `the room's word is the page's, tick ${tick}`);
     }
