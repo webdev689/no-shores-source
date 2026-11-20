@@ -42,3 +42,5 @@ status: in force
   assemble out of nothing. Every one of them shatters when killed.
 - **No Swordsman**: the crystal does not guard or parry as a trained fighter does.
 - **Each is prototyped and developed in the same Blender pipeline** as the forge's figures ([[Sprite Forge]]).
+
+The Husk's look, walk, blows and clothes: [[The Husk Shambles, Strikes Its Own Way and Wears the Townsfolk's Clothes]].
