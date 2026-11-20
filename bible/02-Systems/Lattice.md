@@ -68,4 +68,5 @@ Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge
   to the fling.
 - The wardrobe asks DFO's game code what may be worn under each garment, and that code is not in this repository:
   `render.py` answers it from the foe's fixed outfit.
-- A render takes from minutes (the Husk) to most of an hour (the Heart), and does not survive the session going idle.
+- On four cores at 32 samples, every move of a foe takes from a quarter of an hour (the Husk) to an hour and a half
+  (the Heart) to render, and a render does not survive the session going idle.
