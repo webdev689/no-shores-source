@@ -310,7 +310,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
     if next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
         return Some(dodge(next, intent.controls, around));
     }
-    if let Some(order) = input.telegraph.filter(|_| !next.side.is_players()) {
+    if let Some(order) = input.telegraph.filter(|_| !next.is_player()) {
         let body = next.body;
         next.action = Action::Telegraph(Telegraph::begin(&order, [body.x, body.y, body.z]));
         next.aim = order.bearing;
@@ -343,7 +343,7 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
 
 /// The guard raised: a press opens its side's parry window, unless it comes hard on the heels of one left unused.
 fn raise_guard(next: &mut Fighter) -> Happening {
-    let window = if next.kept.guard > 0 && next.missed_parry == 0 { parry_window(next.side) } else { 0 };
+    let window = if next.kept.guard > 0 && next.missed_parry == 0 { parry_window(next.is_player()) } else { 0 };
     next.kept.guard = 0;
     next.action = Action::Guard { elapsed: 0, window };
     Happening::Guarded { window: window > 0 }
@@ -465,7 +465,7 @@ fn draw(next: &mut Fighter, elapsed: u32, intent: &Intent, pulled: bool) -> Opti
         let pitch = input.mark.map_or(input.pitch, |mark| toward(ranged, chest, mark).1);
         // A foe's drawn shot strikes as a quick one: the aimed shot's power is a player's alone. A quicker draw reaches
         // its power sooner.
-        let player = next.side.is_players();
+        let player = next.is_player();
         let drawn = (f64::from(elapsed) / next.trim.draw).round().min(f64::from(DRAW_FULL)) as u32;
         let power = if player { aimed_power(ranged, drawn) * next.trim.aimed } else { 1.0 };
         let shot = loose(0, ranged, chest, heading, pitch, power * next.might);

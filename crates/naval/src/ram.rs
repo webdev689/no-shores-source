@@ -1,17 +1,19 @@
 //! The ram's law, as DFO's: a stem meets a hull at a face (her side, or her bow or stern), and strikes it at the
-//! closing way toward that face. A ram at a fighting way takes a share of the lesser of the two whole hulls, less
-//! into her bow or stern, and never takes a hull under the line where she strikes: a ram brings a ship to strike, and
-//! no further. The rammer pays a share back, as hard as her own room over her line lets her. Hulls that touch without
-//! a ram are pushed apart: each out of the other by half the overlap, her way cut by how squarely she drove into it.
+//! closing way toward that face. A ram at a fighting way takes a share of the lesser of the two whole hulls (half again
+//! DFO's, `FIGHT_HARM`), less into her bow or stern, and never takes a hull under the line where she strikes: a ram
+//! brings a ship to strike, and no further. The rammer pays a share back, as hard as her own room over her line lets
+//! her. Hulls that touch without a ram are pushed apart: each out of the other by half the overlap, her way cut by how
+//! squarely she drove into it.
 
 use crate::ballistics::Block;
-use crate::damage::{Damage, men, rounded};
+use crate::damage::{Damage, FIGHT_HARM, men, rounded};
 
 /// The least closing way (m/s) toward the face a stem meets that rams; under it two hulls bump.
 pub const RAM_SPEED: f64 = 1.6;
 /// The closing way (m/s) that drives a ram home whole; past it, no more.
 pub const RAM_FULL_SPEED: f64 = 8.0;
-/// The most of the lesser hull one ram takes, and what a ram into her bow or stern deals of one into her side.
+/// The most of the lesser hull one ram takes by DFO's numbers, and what a ram into her bow or stern deals of one into
+/// her side.
 pub const RAM_SHARE: f64 = 0.15;
 pub const RAM_GLANCE: f64 = 0.4;
 /// The share of a blow a stem not built to ram takes back: the recoil, twice over.
@@ -66,7 +68,7 @@ pub fn ram_blow(closing: f64, side: bool, mine: f64, hers: f64) -> f64 {
     }
     let pace = (closing / RAM_FULL_SPEED).min(1.0);
     let lesser = mine.min(hers).max(0.0);
-    rounded(RAM_SHARE * lesser * pace * if side { 1.0 } else { RAM_GLANCE })
+    rounded(RAM_SHARE * FIGHT_HARM * lesser * pace * if side { 1.0 } else { RAM_GLANCE })
 }
 
 /// A hull's line: where she strikes. A ram lands with it as its floor.

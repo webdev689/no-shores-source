@@ -10,7 +10,6 @@ import scenes from '../../../../content/story/welcome.json' with { type: 'json' 
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
-import { Overheads } from '../../speech/overheads.ts';
 import type { Shot } from '../camera.ts';
 import { OPEN_AT, type Opening } from '../gearScreen.ts';
 import { prologuePlayed } from '../prologue/beat.ts';
@@ -94,7 +93,7 @@ export class AfterStory {
       const said = asked ? [] : welcomeSaid(kept);
       if (asked || due) this.welcome = Welcome.begin(node, this.parts, this.voice, you, said, shot, viewport);
     }
-    const cards = this.welcome?.frame(shot, viewport, seconds, clock, you, held) ?? [];
+    const cards = this.welcome?.frame(shot, seconds, clock, you, held) ?? [];
     if (this.welcome?.done) this.welcome = null;
     return cards;
   }
@@ -128,7 +127,6 @@ export function afterStoryOn(
   const read = castOf(cast);
   const voice = () => ({
     dialogue: new DialogueBox(hudRoot, worldOutput),
-    overheads: new Overheads(hudRoot, worldOutput),
     objective: new Objective(hudRoot),
   });
   // A built page served on this machine honours it too, for the headless pictures taken of a built page.

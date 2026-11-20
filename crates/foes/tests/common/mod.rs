@@ -204,7 +204,7 @@ impl Room {
             self.intents.push((tick, id, intent));
         }
         let players: Vec<FighterId> =
-            self.fighters.iter().filter(|(_, fighter)| fighter.side.is_players()).map(|(id, _)| *id).collect();
+            self.fighters.iter().filter(|(_, fighter)| fighter.is_player()).map(|(id, _)| *id).collect();
         for id in players {
             intents.push((id, script(self, id)));
         }
@@ -242,7 +242,7 @@ impl Room {
         self.fly();
         if self.immortal {
             for (_, fighter) in &mut self.fighters {
-                if fighter.side.is_players() {
+                if fighter.is_player() {
                     fighter.health = fighter.health_max;
                 }
             }

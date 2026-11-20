@@ -51,7 +51,7 @@ export function actorCards(
   return shown;
 }
 
-/** A point over an actor's head, for a bark or an emote: 2.1 m over their feet, times their size. */
+/** A point over an actor's head, for a bark: 2.1 m over their feet, times their size. */
 export function overHead(actor: Pick<Actor, 'x' | 'y' | 'z' | 'scale'>): [number, number, number] {
   return [actor.x, actor.y, actor.z + 2.1 * (actor.scale ?? 1)];
 }

@@ -45,6 +45,7 @@ function started() {
       return Promise.resolve(null);
     },
     hurry: () => undefined,
+    prefetch: () => undefined,
   };
   const global = globalThis as { Worker?: unknown };
   const before = global.Worker;
@@ -95,7 +96,12 @@ test('a worker that fails hands what it had to the page, and every frame after',
 });
 
 test('where no worker can start, the page composes', async () => {
-  const fallback: Composer = { offPage: false, compose: () => Promise.resolve(null), hurry: () => undefined };
+  const fallback: Composer = {
+    offPage: false,
+    compose: () => Promise.resolve(null),
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
   const global = globalThis as { Worker?: unknown };
   const before = global.Worker;
   global.Worker = class {

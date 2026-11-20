@@ -176,7 +176,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
     };
     match floor {
         Floor::Flat => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
-        Floor::Sea => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
+        Floor::Sea(_) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
         Floor::Land(_) => NavMesh::bake_on(&walked, floor, bounds, &navmesh::AGENT),
     }
 }

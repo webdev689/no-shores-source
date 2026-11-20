@@ -2,8 +2,8 @@
 written for the game, which burns the same fires over it (client/src/cinema/flames.ts).
 
 A fire is round, or burns along a line: a yard, a rail, a strip of fallen canvas. Places are in a ship's frame over her
-floor (`lift`), at a height in her frame (`z`), or in the wreck's frame; `along` is the line's far end in the same
-frame. A fire laid on a floor burns on whatever stands there (a heap, a rail, the deck), never inside it, and never on
+floor (`lift`), at a height in her frame (`z`), or in the wreck's frame, at a height (`z`) or on what stands there
+(`lift`); `along` is the line's far end in the same frame. A fire laid on a floor burns on whatever stands there (a heap, a rail, the deck), never inside it, and never on
 a heap that clears in play.
 """
 import math
@@ -15,20 +15,27 @@ from wreck_ships import SEA_Z
 
 # Each fire: (frame, x, y, lift or None, z or None, size in metres, along or None).
 FIRES = (
-    # The Brig's quarterdeck and the rim of her fallen waist; her flooded hold burning on the water in it.
+    # The Brig's quarterdeck and the rims of her fallen waist and her broken end.
     ('brig', -14.4, -1.8, 0.0, None, 1.2, None),
     ('brig', -11.4, -3.0, 0.0, None, 1.5, None),
-    ('wreck', -9.0, -1.8, None, SEA_Z + 0.08, 2.0, None),
-    ('wreck', -5.2, -1.2, None, SEA_Z + 0.08, 1.5, None),
+    ('brig', -7.0, 0.9, 0.0, None, 1.6, None),
+    # The wreckage of her waist and her torn deck between her halves, burning along their edges.
+    ('wreck', -10.5, 11.6, 0.0, None, 1.3, None),
+    ('wreck', -8.0, 3.4, 0.0, None, 1.0, (-11.0, 4.4)),
+    ('wreck', 4.0, 12.8, 0.0, None, 1.3, None),
+    ('wreck', 13.0, 5.2, 0.0, None, 1.0, (15.4, 6.4)),
     # Her bow half: the foremast's course yard and the rags under it, her deck and her forecastle.
     ('brig', 6.85, -5.2, None, 13.9, 1.0, (6.85, 5.2)),
     ('brig', 9.4, 1.6, 0.0, None, 1.4, None),
     ('brig', 13.6, 0.6, 0.0, None, 1.1, None),
     ('brig', 2.8, -2.8, 0.0, None, 1.0, None),
     ('brig', 4.4, 2.8, 0.05, None, 0.8, (7.2, 2.5)),
-    # Burning wreckage afloat round the Sloop.
-    ('wreck', 15.2, -16.0, None, SEA_Z + 0.05, 1.6, None),
-    ('wreck', 9.4, -21.5, None, SEA_Z + 0.05, 1.2, None),
+    # The raft off her fore deck; the wreckage the Sloop drifted into, and burning wreckage afloat round her.
+    ('wreck', 33.0, -2.6, 0.0, None, 1.2, None),
+    ('wreck', 11.3, -22.6, 0.0, None, 1.4, None),
+    ('wreck', 17.4, -9.6, 0.0, None, 1.0, None),
+    ('wreck', 21.0, -28.0, None, SEA_Z + 0.05, 1.6, None),
+    ('wreck', 7.5, -27.5, None, SEA_Z + 0.05, 1.2, None),
     # The Frigate: her forecastle, her course yards and the rags on them, her waist.
     ('frigate', 14.8, 0.6, 0.0, None, 1.8, None),
     ('frigate', 12.2, -1.6, 0.0, None, 1.2, None),
@@ -46,13 +53,19 @@ FIRES = (
     ('frigate', -18.4, -1.8, 0.0, None, 1.4, None),
     ('frigate', -13.2, 4.6, 0.6, None, 0.7, (-17.6, 4.3)),
     ('frigate', -13.2, -4.6, 0.6, None, 0.7, (-17.6, -4.3)),
+    # The wreckage off her port bow and her port quarter.
+    ('wreck', -21.6, -12.0, 0.0, None, 1.6, None),
+    ('wreck', -13.4, -0.8, 0.0, None, 1.1, None),
+    ('wreck', -17.6, -30.0, 0.0, None, 1.4, None),
+    ('wreck', -9.4, -33.6, 0.0, None, 1.0, None),
     # Patches of burning oil and wreckage on the sea round it all.
-    ('wreck', -9.0, -9.0, None, SEA_Z + 0.04, 2.4, None),
-    ('wreck', 19.0, -9.0, None, SEA_Z + 0.04, 1.8, None),
-    ('wreck', -15.0, -15.0, None, SEA_Z + 0.04, 2.0, None),
-    ('wreck', 8.0, 12.0, None, SEA_Z + 0.04, 1.6, None),
-    ('wreck', -21.0, 8.0, None, SEA_Z + 0.04, 1.4, None),
+    ('wreck', -8.5, -17.6, None, SEA_Z + 0.04, 2.4, None),
+    ('wreck', 20.5, -10.0, None, SEA_Z + 0.04, 1.8, None),
+    ('wreck', -30.0, -20.0, None, SEA_Z + 0.04, 2.0, None),
+    ('wreck', 8.0, 18.0, None, SEA_Z + 0.04, 1.6, None),
+    ('wreck', -24.0, 16.0, None, SEA_Z + 0.04, 1.4, None),
     ('wreck', 7.0, -37.0, None, SEA_Z + 0.04, 1.8, None),
+    ('wreck', 36.0, -14.0, None, SEA_Z + 0.04, 1.6, None),
 )
 
 # A fire's light: its colour, and its power by its size, watts a square metre of its size (Cycles' point lights).
@@ -100,8 +113,13 @@ def fires(frames, ground):
     found = []
     for frame, x, y, lift, z, size, along in FIRES:
         if frame == 'wreck':
-            base = Vector((x, y, z))
-            end = None if along is None else Vector((along[0], along[1], z))
+            # One on what stands there is looked for from over every raft and deck.
+            height = z if lift is None else 6.0
+            base = Vector((x, y, height))
+            end = None if along is None else Vector((along[0], along[1], height))
+            if lift is not None:
+                base = settled(ground, base)
+                end = None if end is None else settled(ground, end)
         else:
             base = frames.on(frame, x, y, lift or 0.0, z=z)
             end = None if along is None else frames.on(frame, along[0], along[1], lift or 0.0, z=z)

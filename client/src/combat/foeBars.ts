@@ -194,7 +194,8 @@ export class FoeBars {
       const plate = this.overheads.get(foe.id) ?? new FoePlate(this.over, 'overhead');
       this.overheads.set(foe.id, plate);
       showNode(plate.root, true);
-      plate.show(foe, seconds, alertMark(foe.alert, since));
+      // An ally's alertness is the boarders' business, not the player's to read.
+      plate.show(foe, seconds, foe.view.side === 'players' ? '' : alertMark(foe.alert, since));
       const place = laid.get(foe.id) ?? this.places.get(foe.id) ?? { lift: 0, front: 0 };
       this.places.set(foe.id, place);
       const moved = `translate(${x.toFixed(1)}px, ${(y - place.lift).toFixed(1)}px)`;

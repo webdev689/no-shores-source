@@ -6,6 +6,7 @@ import { EVENT } from './cues.ts';
 import type { KeptFoe } from './fighting.ts';
 import { SpellEffects } from './spellEffects.ts';
 import { type HeardFight, type WorldFrame, WorldSounds, voiceToDrop } from './worldSounds.ts';
+import { listen } from '../listener.ts';
 
 const SWORD = 2;
 const PLAYER = 1;
@@ -123,6 +124,21 @@ test("the player's sword cuts a foe where the foe stands, the listener at the ey
   assert.deepEqual([listener.forwardX.value, listener.forwardZ.value], [0, -1], 'yaw 0 looks north');
 });
 
+test("at sea the ambience counts the listener's frame from her ship: a blow is placed in that frame, by the ear", () => {
+  const { output, play, played, listener } = fakeSound();
+  const ship = [-500, 700] as const;
+  // The ambience hears the sea round her ship each frame, the eye as its ear, before and after the fight's sounds.
+  listen(output.audio, [0, 3, 2], 0, ship);
+  const sounds = new WorldSounds(() => output, play);
+  sounds.frame(frameOf({ events: [hit()] }));
+  listen(output.audio, [0, 3, 2], 0, ship);
+  assert.deepEqual(
+    played.map((sound) => sound.at),
+    [[505, 0, -700]],
+  );
+  assert.deepEqual([listener.positionX.value, listener.positionY.value, listener.positionZ.value], [500, 2, -697]);
+});
+
 test("a swing's whoosh as its rush meets the blow, once; nothing for what a figure first seen was already doing", () => {
   const { output, play, played } = fakeSound();
   // The whoosh's rush comes 2 ticks into it: a blow landing on tick 8 is heard from tick 6.
@@ -159,6 +175,15 @@ test('a menu holds the world quiet, and what happened meanwhile is not heard aft
     played.map(({ id }) => id),
     ['foe.alert'],
   );
+});
+
+test("one fighting on the players' side turning alert is no foe noticing them", () => {
+  const { output, play, played } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  const ally = (alert: number) => foeAt(5, { alert, view: view({ x: 5, side: 'players' }) });
+  sounds.frame(frameOf({ foe: ally(0) }));
+  sounds.frame(frameOf({ foe: ally(2) }));
+  assert.deepEqual(played, []);
 });
 
 test('nothing sounds before the page has sound, nor farther off than 40 m', () => {

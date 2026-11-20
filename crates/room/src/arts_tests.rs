@@ -46,6 +46,18 @@ pub(crate) fn wearing(room: &mut Room, player: PlayerId, art: u8, fragments: &[u
     room.ready_arts(player);
 }
 
+/// A plain downward chop, as a blow struck now.
+pub(crate) fn chop() -> combat::fighter::Attack {
+    combat::fighter::Attack {
+        stroke: combat::Stroke::Down,
+        elapsed: 0,
+        strike: 24,
+        end: 60,
+        swing: combat::fighter::Swing::Plain,
+        left_hand: false,
+    }
+}
+
 /// Asks for a cast between ticks and runs the room to its release, and `more` ticks after.
 pub(crate) fn cast(room: &mut Room, player: PlayerId, spell: u8, aim: Option<[f64; 3]>, more: u32) {
     room.ask_cast(player, Some(Cast { spell, aim }));
@@ -120,6 +132,39 @@ fn a_cast_is_refused_unless_charged_of_the_worn_art_and_its_caster_able() {
     }
     assert_eq!(casting(&room, player).tenets[0], 1.0, "Charged before it released: it cost nothing");
     assert!(!room.fighter(player).expect("in").statuses.has(Status::Haste));
+}
+
+#[test]
+fn a_room_without_arts_takes_no_cast_and_charges_nothing() {
+    let (mut room, player) = room_with_player();
+    room.forbid_arts();
+    room.ask_cast(player, Some(Cast { spell: QUICKEN, aim: None }));
+    assert_eq!(casting(&room, player).releasing, None, "Quicken is ready, but no Art works here");
+    for _ in 0..600 {
+        room.tick();
+    }
+    assert_eq!(casting(&room, player).anima, 0.0, "the Anima charges no more");
+}
+
+#[test]
+fn in_a_room_without_arts_no_fragment_works_and_a_kill_charges_nothing() {
+    let (mut room, player) = room_with_player();
+    // Storm with Overload (fragment 4), its Anima empty and its Tenets half spent.
+    wearing(&mut room, player, 1, &[1, 4]);
+    room.players.get_mut(&player).expect("in").casting =
+        crate::Casting { anima: 0.0, tenets: [0.5, 0.5], ..casting(&room, player) };
+    room.forbid_arts();
+    let foe = stand_foe(&mut room, 0.0, -3.0, 1000.0);
+    room.give(foe, Status::Charge, None, Some(player));
+    assert_eq!(room.fighter(foe).expect("in").statuses.left(Status::Expose), 0, "no Overload");
+    let defender = *room.fighter(foe).expect("in");
+    let blow = combat::judge::Blow {
+        striker: player,
+        ..combat::judge::swing_blow(player, room.fighter(player).expect("in"), &crate::arts::arts_tests::chop(), foe)
+    };
+    room.arts_after(&blow, &defender, &combat::judge::Verdict::Hit { damage: 5_000.0, poise: 0.0 }, true);
+    let after = casting(&room, player);
+    assert_eq!((after.anima, after.tenets), (0.0, [0.5, 0.5]), "a kill charges nothing");
 }
 
 #[test]

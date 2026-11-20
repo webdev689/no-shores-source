@@ -61,6 +61,9 @@ export function withOthers(view: ArrayLike<number>, others: ArrayLike<number> | 
 
 /** Who a fight's captain is: her name, her faction and her rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
+
+/** The first captain's number in a fight (crates/naval CAPTAIN); every other carries her own on the wire. */
+const CAPTAIN_SHIP = 1;
 /** A captain the room has not named: a Major of the pirates. */
 const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
 
@@ -102,19 +105,19 @@ export function fightViewOf(
     },
   });
   // A captain's Sloop, then her mode, whether she is hostile to the player, and her sides run out.
-  const commanded = (commission: Commissioned): FightCaptain => {
+  const commanded = (id: number, commission: Commissioned): FightCaptain => {
     const her = vessel();
     const mode = named(MODES);
     const hostile = next() === 1;
-    return { ...her, ...commission, mode, hostile, run_out: SIDES.filter(() => next() === 1) };
+    return { ...her, id, ...commission, mode, hostile, run_out: SIDES.filter(() => next() === 1) };
   };
   const clock = next();
   const over = named(OVER);
   const player = vessel();
-  const captain = commanded(who);
+  const captain = commanded(CAPTAIN_SHIP, who);
   const others = Array.from({ length: next() }, () => {
-    const [faction, rank] = [next(), next()];
-    return commanded({ name: nameOf(faction), faction, rank });
+    const [id, faction, rank] = [next(), next(), next()];
+    return commanded(id, { name: nameOf(faction), faction, rank });
   });
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
   // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.
