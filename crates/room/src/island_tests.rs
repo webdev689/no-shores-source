@@ -95,8 +95,11 @@ fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
     let hauls = room.take_hauls();
     assert_eq!(hauls.iter().map(|haul| (haul.0, haul.1)).collect::<Vec<_>>(), vec![(player, 0)]);
     assert_eq!(scavenged(&mut room, player, 0), asks::OUT_OF_REACH, "spent for them");
+    // The keeper saves the leaver's character and gives it back on their return, as it does across rooms.
+    let kept = room.kept_character(player).expect("in");
     room.leave(player);
     let back = room.join().expect("a room with space");
+    assert!(room.restore_character(back, &kept));
     room.own(back, "account-a");
     assert_eq!(room.player(back).expect("in").spent, vec![0], "the page is told it is spent, rejoined");
     stand_at(&mut room, back, [wreck[0] + 1.0, wreck[1]]);
@@ -108,6 +111,52 @@ fn a_wreck_is_scavenged_once_by_each_account_from_beside_its_heap() {
     assert_eq!(scavenged(&mut room, other, 0), 0, "another account has its own lot");
     assert_eq!(room.player(other).expect("in").spent, vec![0], "the page is told it is spent");
     assert_eq!(scavenged(&mut room, other, 99), asks::OUT_OF_REACH, "no such wreck");
+}
+
+#[test]
+fn an_islands_room_opened_again_pays_a_character_nothing_again() {
+    let plan = plan(Kind::Cove);
+    let wreck = isle::placed(plan.sites.wrecks[0].at, AT);
+    let mut first = Room::island(&plan, AT, None, None);
+    let player = first.join().expect("a room with space");
+    stand_at(&mut first, player, [wreck[0] + 1.0, wreck[1]]);
+    assert_eq!(scavenged(&mut first, player, 0), 0);
+    let kept = first.kept_character(player).expect("in");
+    // The room closes; the island still stands, and its room opens again.
+    let mut again = Room::island(&plan, AT, None, None);
+    let back = again.join().expect("a room with space");
+    assert!(again.restore_character(back, &kept));
+    again.own(back, "account-a");
+    assert_eq!(again.player(back).expect("in").spent, vec![0], "told it is spent");
+    stand_at(&mut again, back, [wreck[0] + 1.0, wreck[1]]);
+    assert_eq!(scavenged(&mut again, back, 0), asks::OUT_OF_REACH, "paid again");
+    // Another island's wreck of the same number is its own.
+    let other = Plan::new(plan.seed + 1, "woodland").expect("an island");
+    let mut elsewhere = Room::island(&other, AT, None, None);
+    let there = elsewhere.join().expect("a room with space");
+    assert!(elsewhere.restore_character(there, &kept));
+    let heap = isle::placed(other.sites.wrecks[0].at, AT);
+    stand_at(&mut elsewhere, there, [heap[0] + 1.0, heap[1]]);
+    assert_eq!(scavenged(&mut elsewhere, there, 0), 0);
+}
+
+#[test]
+fn where_landings_are_checked_only_an_account_the_sea_says_landed_scavenges() {
+    let plan = plan(Kind::Cove);
+    let wreck = isle::placed(plan.sites.wrecks[0].at, AT);
+    let mut room = Room::island(&plan, AT, None, None);
+    assert!(room.check_landings());
+    let (far, guest, landed) = (room.join(), room.join(), room.join());
+    let [far, guest, landed] = [far, guest, landed].map(|player| player.expect("a room with space"));
+    room.own(far, "far-off");
+    room.own(landed, "anchored");
+    assert!(room.land("anchored"));
+    for player in [far, guest, landed] {
+        stand_at(&mut room, player, [wreck[0] + 1.0, wreck[1]]);
+    }
+    assert_eq!(scavenged(&mut room, far, 0), asks::OUT_OF_REACH, "an account whose ship is not at the anchorage");
+    assert_eq!(scavenged(&mut room, guest, 0), asks::OUT_OF_REACH, "a player of no account");
+    assert_eq!(scavenged(&mut room, landed, 0), 0);
 }
 
 #[test]

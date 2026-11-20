@@ -8,10 +8,10 @@ import { Isles } from './isles.ts';
 /** The room's module as `npm run wasm` copies it for the page. */
 const ROOM = 'client/public/room.wasm';
 
-const seen = (id: number, seed: string, at: [number, number] = [5000, 6000]): SeenIsle => ({
+const seen = (id: number, seed: string, middle: [number, number] = [5000, 6000]): SeenIsle => ({
   id,
   seed,
-  at,
+  at: middle,
   kind: 'cove',
   continent: 0,
   found: false,
@@ -24,8 +24,10 @@ test(
     const build = islePlanner(new WebAssembly.Module(readFileSync(ROOM)));
     // Each build waits until the test lets it come, as a worker's answer does.
     const asked: { seed: string; come: () => void }[] = [];
-    const planner = (seed: string, climate: string, at: readonly [number, number]) =>
-      new Promise<IsleBuilt | null>((resolve) => asked.push({ seed, come: () => resolve(build(seed, climate, at)) }));
+    const planner = (seed: string, climate: string, middle: readonly [number, number]) =>
+      new Promise<IsleBuilt | null>((resolve) =>
+        asked.push({ seed, come: () => resolve(build(seed, climate, middle)) }),
+      );
     const isles = new Isles(planner, ['desert']);
     const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
     assert.equal(isles.update([seen(1, '41'), seen(2, '43', [9000, 9000])]), true, 'new islands are news');

@@ -51,6 +51,13 @@ export interface RoomDoor {
   seaIsland(id: number): string;
   /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
   holdAshore(id: number, seed: string): boolean;
+  /** Whether the open sea has an account landed on its island of that number and seed: its ship at rest at the
+   *  island's anchorage when last at sea. */
+  seaLanded(id: number, seed: string, account: string): boolean;
+  /** Turns on the open island room's check of landings: only the accounts `land` names scavenge. Whether it is one. */
+  checkLandings(): boolean;
+  /** Lands an account on the open island room, on its sea's word: whether it is an island's room. */
+  land(account: string): boolean;
   /** An island's plan as JSON in its own frame, and its ground's numbers as `movement::Heights` gives them with its
    *  middle at `at` in the world, from its seed (a decimal string) and climate: both empty for a climate the islands'
    *  contract does not dress. */
@@ -123,6 +130,9 @@ interface RoomExports {
   room_open_island(address: number, length: number): number;
   room_sea_island(id: number): bigint;
   room_hold_ashore(id: number, low: number, high: number): number;
+  room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
+  room_isle_check_landings(): number;
+  room_isle_land(address: number, length: number): number;
   room_isle_plan(low: number, high: number, address: number, length: number): bigint;
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
@@ -210,6 +220,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
     holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
+    seaLanded: (id, seed, account) =>
+      openWith((address, length) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, length), account),
+    checkLandings: () => exports.room_isle_check_landings() === 1,
+    land: (account) => openWith(exports.room_isle_land, account),
     islePlan: (seed, climate) =>
       new TextDecoder().decode(
         take(

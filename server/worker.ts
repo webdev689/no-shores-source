@@ -77,6 +77,13 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaIsland(id), '');
   }
 
+  /** Whether the sea has `account` landed on its island `id` of `seed`, for that island's room: its ship at rest at
+   *  the island's anchorage when last at sea. */
+  async landed(id: number, seed: string, account: string): Promise<boolean> {
+    if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
+    return this.guarded(() => this.room.seaLanded(id, seed, account), false);
+  }
+
   /** Holds the sea's island `id` of `seed` while players stand ashore on it: whether it stands. */
   async holdAshore(id: number, seed: string): Promise<boolean> {
     if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
@@ -120,7 +127,11 @@ export class RoomHost extends DurableObject<Env> {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
-      own: (player: number, account: string) => this.guarded(() => this.room.own(player, account), false),
+      own: (player: number, account: string) => {
+        const owned = this.guarded(() => this.room.own(player, account), false);
+        if (owned && this.island) void this.landOn(this.island, player, account);
+        return owned;
+      },
     };
     const characters = {
       claim: (token: string, holder: string) => accounts.claim(token, holder),
@@ -176,8 +187,26 @@ export class RoomHost extends DurableObject<Env> {
     if (!word || (JSON.parse(word) as { seed?: string }).seed !== named.seed) return false;
     this.island = { id: named.id, seed: named.seed, sea, told: Date.now() };
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
-    const opened = this.room.openIsland(word) && this.room.difficulty(named.seas);
+    // Only an account the sea says is landed here scavenges: nobody sails ashore from afar by naming the room.
+    const opened = this.room.openIsland(word) && this.room.checkLandings() && this.room.difficulty(named.seas);
     return opened && this.room.reseed([lootLow, lootHigh, worldLow, worldHigh]);
+  }
+
+  /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge; not, they
+   *  are let go. A sea that does not answer lets nobody go, and lands nobody. */
+  private async landOn(
+    island: { readonly id: number; readonly seed: string; readonly sea: string },
+    player: number,
+    account: string,
+  ): Promise<void> {
+    const landed = await this.env.ROOMS.getByName(island.sea)
+      .landed(island.id, island.seed, account)
+      .catch(() => null);
+    if (landed === true) this.guarded(() => this.room.land(account), false);
+    else if (landed === false) {
+      const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
+      if (socket) this.dismiss(socket, 1008, 'your ship does not lie at this island');
+    }
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {

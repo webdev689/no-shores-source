@@ -95,13 +95,19 @@ The sea room holds its islands (`sea_islands.rs`):
 - **Guards.** An isle stands three groups of its holder's foes at its water's levels: one led by a Reeve or a pirate
   Captain at its Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
   their posts. A cove holds none.
-- **Wreckage.** A player within 4 m of a wreck's heap scavenges it once (once for their account, however often they
-  rejoin; every account has its own lot). Its salvage is the ship's own law ([[Ship Power]],
+- **Landing.** The sea lands an account on an island while its ship lies at rest within 40 m of the island's
+  anchorage (the page anchors within 30 m), and keeps it landed while the player stands ashore, until its ship is at
+  sea and under way or elsewhere, or the island fades. The server's island room checks it: as an account joins, the
+  room asks its sea, and lets go of one the sea says is not landed there; only a landed account scavenges. A player of
+  no account scavenges nothing there.
+- **Wreckage.** A landed player within 4 m of a wreck's heap scavenges it once. Their character keeps the wrecks they
+  scavenged by each island's seed (the latest 16 islands), so neither a rejoin nor the island's room opened again pays
+  them twice, and every character has its own lot. Its salvage is the ship's own law ([[Ship Power]],
   `gear::ship::found`): a cove's wreck two common ship materials (Timber, Canvas or Iron) of two to five each, Heartwood
   8 times in a hundred and a module one time in ten; an isle's three of three to six, Heartwood one time in seven and a
   module one time in five. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
-  straight into the player's ship materials, a module carried as any item. The wrecks spent for their account are
-  told them as a gathered node is (their gear's `spent`), so the page offers them no more, however often they come.
+  straight into the player's ship materials, a module carried as any item. The wrecks spent for them are told them as
+  a gathered node is (their gear's `spent`), so the page offers them no more.
 - **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
   `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
   (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,
@@ -109,8 +115,9 @@ The sea room holds its islands (`sea_islands.rs`):
 
 ## On the page
 
-- The sea snapshot carries the islands the player is told of; the page builds each once through the room module, at
-  most one a frame (`isles.ts`, by its number and seed, let go of once the room tells of it no more), and every
+- The sea snapshot carries the islands the player is told of; the page builds each once through the room module, one
+  at a time in a worker of its own (`islePlanWorker.ts`), so a build never holds up a frame (`isles.ts`, by its
+  number and seed, let go of once the room tells of it no more), and every
   voyage's legs are bent round each island in sight, since the route planner's grid is far coarser than an island
   (`isleLaw.ts`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
   from its middle through that point. An island come into sight bends the voyage still ahead round it.
@@ -130,7 +137,3 @@ The sea room holds its islands (`sea_islands.rs`):
 - What a player has found is kept by the sea room while they are in it; a player who leaves the sea and joins it
   again finds its islands again as they sail near.
 - Playing alone, the sea in the page is a new one each time it opens, so its islands are too.
-- An island's room opens to any player who names it while the sea holds it: nothing checks their ship lies at its
-  anchorage, or that they found it.
-- The wrecks an account has scavenged are kept by the island's room while it is open: a room opened again while its
-  island still stands has them all to give again.
