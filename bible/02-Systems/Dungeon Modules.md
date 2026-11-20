@@ -104,9 +104,10 @@ on one line, which a commit takes into `content/dungeon/modules.json`.
 The page reads a pack (`readModulePack`) and lays its pieces into the dungeon's one mesh (`layModule`), turned by
 quarter turns and stretched where it says. Each corner keeps its own normal and its UV, in pictures of 3.2 m.
 Bone, carving, cloth and brass take a picture every 1.6 m and rope every 0.4 m, so a skull or a strand is its own
-size. A stretched corner's UV moves along its triangle's own gradient (`uvPerZ`), so a post's grain or a shaft's
-stones keep their scale. Each part wears the cell's look's pictures, the climate's timber, the iron, the dressing set
-or a glow (`partPicture`, [[Procedural Textures]]). Where and when they are laid is in [[Dungeons]] ("In the Game").
+size. A stretched corner's UV moves along the mean gradient (`uvPerZ`) of the triangles that share it, so a post's
+grain or a shaft's stones keep their scale and a corner keeps one UV. Its normal turns as the stretch turns the
+surface. Each part wears the cell's look's pictures, the climate's timber, the iron, the dressing set or a glow
+(`partPicture`, [[Procedural Textures]]). Where and when they are laid is in [[Dungeons]] ("In the Game").
 
 ## Contact sheets
 

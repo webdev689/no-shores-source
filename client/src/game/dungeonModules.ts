@@ -203,8 +203,6 @@ function stretched(z: number, stretch: Place['stretch']): number {
   return stretch.from + z * (stretch.to - stretch.from);
 }
 
-const NO_RISE: readonly [number, number] = [0, 0];
-
 /** How far a triangle's UV (metres) runs for each metre up it, in its own plane: a stretch that lifts a corner moves
  *  its UV that far along the picture, so a stretched piece keeps its picture's scale whichever way it was unwrapped
  *  (grain up a post along u, stones up a shaft along v). A flat face gains nothing. */
@@ -226,9 +224,33 @@ export function uvPerZ(positions: Float32Array, uvs: Float32Array, corners: read
   return [along(0), along(1)];
 }
 
+const vertexPerZ = new WeakMap<ModuleMesh, Float64Array>();
+
+/** Each vertex's `uvPerZ` (u and v, two a vertex): the mean over the triangles that share it. A corner taking each
+ *  triangle's own would part from itself, a tear between triangles unwrapped at different slopes. */
+function perZOf(module: ModuleMesh): Float64Array {
+  const known = vertexPerZ.get(module);
+  if (known) return known;
+  const sums = new Float64Array(module.uvs.length);
+  const counts = new Uint32Array(module.parts.length);
+  for (let first = 0; first + 2 < module.indices.length; first += 3) {
+    const corners = [module.indices[first], module.indices[first + 1], module.indices[first + 2]];
+    const [alongU, alongV] = uvPerZ(module.positions, module.uvs, corners);
+    for (const vertex of corners) {
+      sums[vertex * 2] += alongU;
+      sums[vertex * 2 + 1] += alongV;
+      counts[vertex]++;
+    }
+  }
+  sums.forEach((sum, index) => (sums[index] = sum / Math.max(1, counts[index >> 1])));
+  vertexPerZ.set(module, sums);
+  return sums;
+}
+
 /** Lays a piece into `mesh` where `place` says, each triangle in the picture `pictureOf` gives its part, facing the
  *  way the piece's own normals face it, each corner keeping its own normal and its UV in pictures (v runs down a
- *  picture). A stretched corner's UV moves with its height along its triangle's own `uvPerZ`. */
+ *  picture). A stretched corner's UV moves with its height along its triangles' mean `uvPerZ`, and its normal is
+ *  turned as the stretch turns its surface. */
 export function layModule(
   mesh: MeshBuilder,
   module: ModuleMesh,
@@ -237,6 +259,8 @@ export function layModule(
 ): void {
   const [shiftX, shiftY] = place.footprint ? footprintShift(place.footprint, place.turns) : [0, 0];
   const { positions, normals, uvs } = module;
+  const perZ = place.stretch ? perZOf(module) : null;
+  const scale = place.stretch ? place.stretch.to - place.stretch.from : 1;
   const corner = (vertex: number): Point => {
     const local: Point = [
       positions[vertex * 3],
@@ -246,10 +270,17 @@ export function layModule(
     const [x, y, z] = turnAbout(local, place.turns);
     return [x + shiftX + place.origin[0], y + shiftY + place.origin[1], z + place.origin[2]];
   };
-  const mapping = (vertex: number, perZ: readonly [number, number]): readonly [number, number] => {
+  const mapping = (vertex: number): readonly [number, number] => {
     const rise = stretched(positions[vertex * 3 + 2], place.stretch) - positions[vertex * 3 + 2];
     const tile = PART_TILE_M[module.parts[vertex]] ?? TILE_M;
-    return [(uvs[vertex * 2] + rise * perZ[0]) / tile, -(uvs[vertex * 2 + 1] + rise * perZ[1]) / tile];
+    const [alongU, alongV] = perZ ? [perZ[vertex * 2], perZ[vertex * 2 + 1]] : [0, 0];
+    return [(uvs[vertex * 2] + rise * alongU) / tile, -(uvs[vertex * 2 + 1] + rise * alongV) / tile];
+  };
+  // A height scaled by `scale` scales a normal by its inverse transpose: its z over `scale`. Past either end of the
+  // unit the piece is only moved.
+  const squashOf = (vertex: number) => {
+    const z = positions[vertex * 3 + 2];
+    return place.stretch && scale > 0 && z >= 0 && z <= 1 ? 1 / scale : 1;
   };
   for (let first = 0; first + 2 < module.indices.length; first += 3) {
     const vertices = [module.indices[first], module.indices[first + 1], module.indices[first + 2]];
@@ -263,13 +294,12 @@ export function layModule(
     const sign = dot(across, outward) < 0 ? -1 : 1;
     const normal: Point = [(sign * across[0]) / area, (sign * across[1]) / area, (sign * across[2]) / area];
     const kept = vertices.map((vertex): Point => {
-      const [x, y, z] = turnAbout([normals[vertex * 3], normals[vertex * 3 + 1], normals[vertex * 3 + 2]], place.turns);
+      const up = normals[vertex * 3 + 2] * squashOf(vertex);
+      const [x, y, z] = turnAbout([normals[vertex * 3], normals[vertex * 3 + 1], up], place.turns);
       const length = Math.hypot(x, y, z);
       return length > 1e-6 ? [x / length, y / length, z / length] : normal;
     });
-    const perZ = place.stretch ? uvPerZ(positions, uvs, vertices) : NO_RISE;
-    const mapped = vertices.map((vertex) => mapping(vertex, perZ));
-    mesh.tri(pictureOf(module.parts[vertices[0]]), corners, normal, mapped, kept);
+    mesh.tri(pictureOf(module.parts[vertices[0]]), corners, normal, vertices.map(mapping), kept);
   }
 }
 

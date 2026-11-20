@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { MATERIALS } from '../city/pictures.ts';
 import { meshBuilder } from '../models/model.ts';
+import { dot, minus } from '../models/vector.ts';
 import { CLIMATES, climateArchive, DRESSING_ARCHIVE } from '../textures/climate.ts';
 import { DUNGEON_LAYERS, smallBook } from './dungeonBook.ts';
 import { SIDE_STEPS } from './dungeonLayout.ts';
@@ -197,7 +199,7 @@ test("each corner keeps its piece's UV in pictures, v down, and its own normal, 
   near(curved.normals[2], [-0.6, 0.8, 0]);
 });
 
-test("a stretched corner's UV moves along its triangle's own gradient: grain up a post along u keeps its scale", () => {
+test("a stretched corner's UV moves along its triangles' gradient: grain up a post along u keeps its scale", () => {
   const post = triangle([
     [0, 0, 0],
     [0.2, 0, 0],
@@ -217,6 +219,77 @@ test("a stretched corner's UV moves along its triangle's own gradient: grain up 
     [0, 1, 1],
   ]);
   assert.deepEqual(uvPerZ(top.positions, top.uvs, [0, 1, 2]), [0, 0]);
+});
+
+/** Each laid corner's UV, by the module vertex it was laid from, when every triangle is laid in one picture. */
+function uvsByVertex(module: ModuleMesh, place: Place): Map<number, number[][]> {
+  const { model, uvs } = laid(module, place);
+  assert.equal(model.positions.length / 3, module.indices.length, 'every triangle is laid');
+  const byVertex = new Map<number, number[][]>();
+  module.indices.forEach((vertex, corner) => byVertex.set(vertex, [...(byVertex.get(vertex) ?? []), uvs[corner]]));
+  return byVertex;
+}
+
+test('a corner shared by triangles of different UV gradients keeps one UV when stretched', () => {
+  // A quad up a wall whose top-left corner's v is unwrapped low, so its two triangles' v rises 1 and 0.5 a metre.
+  const quad: ModuleMesh = {
+    ...triangle([
+      [0, 0, 0],
+      [1, 0, 0],
+      [1, 0, 1],
+      [0, 0, 1],
+    ]),
+    indices: Uint32Array.from([0, 1, 2, 0, 2, 3]),
+  };
+  quad.uvs.set([0, 0, 1, 0, 1, 1, 0, 0.5]);
+  assert.notDeepEqual(uvPerZ(quad.positions, quad.uvs, [0, 1, 2]), uvPerZ(quad.positions, quad.uvs, [0, 2, 3]));
+  for (const [vertex, each] of uvsByVertex(quad, { origin: [0, 0, 0], turns: 0, stretch: { from: 0.5, to: 4 } }))
+    for (const mapped of each) near(mapped, each[0], `vertex ${vertex}`);
+});
+
+test("the caverns' pillar shaft, stretched from 0.45 m to 4.95 m, keeps one UV at every shared corner", (context) => {
+  const folder = process.env.DUNGEON_MODULES;
+  if (!folder) return context.skip("set DUNGEON_MODULES to a build's --out folder");
+  const bytes = readFileSync(`${folder}/caverns.modules`);
+  const pack = readModulePack(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+  const shaft = pack.modules.get('caverns.pillar.shaft');
+  assert.ok(shaft);
+  let shared = 0;
+  for (const [vertex, each] of uvsByVertex(shaft, { origin: [0, 0, 0], turns: 0, stretch: { from: 0.45, to: 4.95 } }))
+    for (const mapped of each.slice(1)) {
+      near(mapped, each[0], `vertex ${vertex}`);
+      shared++;
+    }
+  assert.ok(shared > 100);
+});
+
+test("a stretched corner's normal is corrected for the stretch, and one past either end is only turned", () => {
+  // A slope rising one metre for each metre east, facing up and west; laid twice as tall it rises two.
+  const slope = triangle(
+    [
+      [0, 0, 0],
+      [0, 1, 0],
+      [1, 0, 1],
+    ],
+    [-Math.SQRT1_2, 0, Math.SQRT1_2],
+  );
+  const { points, normals } = laid(slope, { origin: [0, 0, 0], turns: 1, stretch: { from: 0, to: 2 } });
+  const [first, second, third] = points;
+  for (const normal of normals) {
+    near(normal, [0, -2 / Math.sqrt(5), 1 / Math.sqrt(5)]);
+    near([dot(normal, minus(second, first)), dot(normal, minus(third, first))], [0, 0], 'square to the laid slope');
+  }
+  // Wholly above the shaft's unit, a cap's slope is moved up and keeps its normal.
+  const above = triangle(
+    [
+      [0, 0, 1.2],
+      [0, 1, 1.2],
+      [1, 0, 2.2],
+    ],
+    [-Math.SQRT1_2, 0, Math.SQRT1_2],
+  );
+  for (const normal of laid(above, { origin: [0, 0, 0], turns: 0, stretch: { from: 0, to: 2 } }).normals)
+    near(normal, [-Math.SQRT1_2, 0, Math.SQRT1_2]);
 });
 
 test('a rope, a cloth, bones, carving and brass take finer pictures, so they come out their own size', () => {
