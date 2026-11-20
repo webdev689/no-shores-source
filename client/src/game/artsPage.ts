@@ -332,7 +332,9 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
       focusSoon(`core-${open}`);
     });
     const hints = ask ? SET : [];
-    const shown = fragmentCard(art, fragment, setIn, standing.level, owned ? null : howHad(art.id), core);
+    // Its numbers with the Core as choosing it would leave it.
+    const chosenCore = core.map((each, slot) => (slot === open ? choice.index : each));
+    const shown = fragmentCard(art, fragment, setIn, standing.level, owned ? null : howHad(art.id), chosenCore);
     const card = () => cardWith(shown, fragmentSvg(art, fragment), art.element, hints);
     context.tip.over(cell, card, flyout);
     grid.append(cell);

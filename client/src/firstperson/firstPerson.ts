@@ -216,6 +216,8 @@ export class FirstPerson {
   private zoom = 1;
   private readonly kept = new Map<string, Kept | null>();
   private readonly loading = new Set<string>();
+  /** How many times every picture was let go: one composing from before then is out of date when it lands. */
+  private lettings = 0;
   /** Picks each swing's direction as a share of DFO's six, as each swing begins; a fight's rules may choose it, and
    *  may be set to once the first person is open. */
   strokes: () => number;
@@ -306,6 +308,7 @@ export class FirstPerson {
       this.dye = state.dye ?? null;
       this.source = { ...this.source, dye: cosmeticRamp(this.dye) };
       this.letGo();
+      [this.look, this.spareLook] = ['', ''];
     }
     const lookKey = `${state.right}|${state.left}|${state.drawn}|${worn.hands}|${worn.feet}|${!!state.mounted}|${this.horse.coat}|${this.horse.barding}`;
     this.wanted = this.wantedNow(state, worn, drop, sway, shot);
@@ -458,15 +461,16 @@ export class FirstPerson {
     if (this.kept.has(wanted.key) || this.loading.has(wanted.key)) return;
     if (this.kept.size >= KEPT_PICTURES) this.letGo();
     this.loading.add(wanted.key);
+    const lettings = this.lettings;
     wanted
       .ask()
       .then((picture) => {
-        if (!this.loading.delete(wanted.key)) return;
+        if (lettings !== this.lettings || !this.loading.delete(wanted.key)) return;
         const texture = picture && this.view.texture(picture.pixels, picture.width, picture.height);
         this.kept.set(wanted.key, picture && texture ? { texture, picture, glows: {} } : null);
       })
       // A picture that would not load is asked again the next time it is wanted.
-      .catch(() => this.loading.delete(wanted.key));
+      .catch(() => lettings === this.lettings && this.loading.delete(wanted.key));
   }
 
   /** Lets every composed picture go, and any still composing, to be composed again as needed. */
@@ -480,6 +484,7 @@ export class FirstPerson {
     }
     this.kept.clear();
     this.loading.clear();
+    this.lettings += 1;
     this.shown = [];
   }
 
