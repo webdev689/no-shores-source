@@ -80,8 +80,8 @@ weapon rack, lanterns, and stores by the stairs. `Cabin.Inside` marks
 where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, where they go back up.
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
-   entry in `content/ships/ships.json`. The `ships` workflow does this for every ship built. A
-   square sail is measured by its four corners, each named by its side.
+   entry in `content/ships/ships.json`. The `ships` workflow does this for every ship built, from any branch
+   ([[Model Packs Upload From Any Branch]]). A square sail is measured by its four corners, each named by its side.
 
 ## What the code needs
 

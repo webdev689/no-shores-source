@@ -164,5 +164,9 @@ Its rank, by the lowest level of its water's band:
 - **The readout**: its plate and battery rose at the bottom right, the laid side glowing gold. The card stands under
   the compass on the ship its laid guns fall on, else the nearest. The volley's tally stands under the sight for 4 s,
   the fight's status line at the top right. DFO's lights on nearby hulls are not drawn yet.
+- **The sea's words are notices**, as DFO's toasts are: a ship sighted, other waters entered, who joins a fight,
+  colours struck, boarders away, what floats gathered and washing up, each standing 6 s at the top right; the status
+  line keeps the state alone.
+- **A captain is "it"**, as its ship is, since a captain is the ship's mind in the rules.
 - **Ship down**: one word to the room for each ship sunk or taken in a fight with players, naming its water, holder,
   rank, level and players. Fights among captains alone give none.

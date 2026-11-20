@@ -130,6 +130,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea Fight Looks and Aims as DFO's Does]]
 - [[A Ship's Level Raises Its Strength, and the Tiers Reach the Sea]]
 - [[Ships Are It, Not Her]]
+- [[The Sea's Screens Wear Enhanced Plus]]
+- [[Model Packs Upload From Any Branch]]
 - [[Ships Have Their Own Power, Modules and Crew Who Fight Beside You]]
 - [[Procedural Islands Are Coves, With Rarer Guarded Isles]]
 - [[The Ship's Power, Crew and Islands as Claude Shapes Them]]
