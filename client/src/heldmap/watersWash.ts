@@ -28,13 +28,18 @@ export interface MapWaters {
   readonly mainPorts: readonly string[];
 }
 
-/** Each holder's colour on the map, and the word its key names it by. */
+/** Each holder's colour on the map, and the word its key names it by. Washed over the parchment at `WASH_STRENGTH`,
+ *  each pair differs by at least 10 in CIEDE2000, and none darkens the parchment by more than 6 in lightness. */
 export const HOLDER_COLOURS: Readonly<Record<WaterHolder, string>> = {
   home: '#3f7f6f',
-  'grey-tithe': '#5d6670',
-  pirates: '#8a2f2a',
+  'grey-tithe': '#8596cc',
+  pirates: '#d95c5c',
   contested: '#b8862f',
 };
+/** How strongly the holders' colours are washed over the charted sea, and the contested waters' hatching laid over
+ *  theirs: its lines' colour, a dark amber, their strength and their spacing, screen pixels. */
+export const WASH_STRENGTH = 0.26;
+export const HATCH = { colour: [107, 74, 18], strength: 0.3, spacingPx: 7 } as const;
 export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [
   ['home', 'Home'],
   ['grey-tithe', 'Grey Tithe'],

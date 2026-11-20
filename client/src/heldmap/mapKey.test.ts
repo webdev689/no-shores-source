@@ -35,7 +35,7 @@ test('the key never covers land: it takes a clear corner, or the margin under th
   );
 });
 
-test('the key is one panel: the holders in two columns under their title, then the levels, at most a third as wide as one row', () => {
+test('the key is one panel: the holders in two columns under their title, then the levels, under two fifths as wide as one row', () => {
   const measured = keySize({ font: '', measureText: (text: string) => ({ width: text.length * 7 }) });
   // Four lines of 16 with three gaps of 2 and a padding of 7 above and below.
   assert.equal(measured.height, 84);

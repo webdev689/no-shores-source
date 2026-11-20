@@ -5,6 +5,7 @@ import {
   chartedWaters,
   difficultyColour,
   HOLDER_COLOURS,
+  WASH_STRENGTH,
   labelPoints,
   levelColour,
   type MapWaters,
@@ -140,4 +141,37 @@ test('a water takes the colour of the middle of her level band; one with no band
   assert.equal(difficultyColour([1, 4]), levelColour(2.5));
   assert.equal(difficultyColour([26, 30]), levelColour(28));
   assert.equal(difficultyColour(null), null);
+});
+
+/** A colour, 0-255 a channel, in CIE L*a*b* (D65). */
+function labOf(rgb: readonly number[]): [number, number, number] {
+  const [red, green, blue] = rgb.map((value) => {
+    const channel = value / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const bend = (share: number) => (share > 0.008856 ? Math.cbrt(share) : 7.787 * share + 16 / 116);
+  const x = bend((0.4124 * red + 0.3576 * green + 0.1805 * blue) / 0.95047);
+  const y = bend(0.2126 * red + 0.7152 * green + 0.0722 * blue);
+  const z = bend((0.0193 * red + 0.1192 * green + 0.9505 * blue) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+test('the holders’ washes are told apart at a glance on the parchment, and none darkens it much', () => {
+  // The map's parchment (the forge's sheet's middle colour) under the charted sea's faint ink.
+  const parchment = [208, 171, 118].map((channel, index) => channel * 0.92 + [58, 40, 22][index]! * 0.08);
+  const washed = Object.values(HOLDER_COLOURS).map((hex) =>
+    labOf(
+      rgba(hex, 0)
+        .slice(0, 3)
+        .map((channel, index) => parchment[index]! * (1 - WASH_STRENGTH) + channel * WASH_STRENGTH),
+    ),
+  );
+  const bare = labOf(parchment);
+  for (const [index, one] of washed.entries()) {
+    assert.ok(bare[0] - one[0] < 6, `the wash darkens the parchment by ${bare[0] - one[0]}`);
+    for (const other of washed.slice(index + 1)) {
+      const apart = Math.hypot(one[0] - other[0], one[1] - other[1], one[2] - other[2]);
+      assert.ok(apart >= 10, `two holders' washes ${apart.toFixed(1)} apart`);
+    }
+  }
 });

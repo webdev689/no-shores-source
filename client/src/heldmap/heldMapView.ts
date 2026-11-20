@@ -6,7 +6,7 @@ import { FirstPersonView } from '../firstperson/firstPersonView.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
-import type { WatersWash } from './watersWash.ts';
+import { HATCH, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
 
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
@@ -43,10 +43,11 @@ struct Ink {
 const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
-// How strong the waters' wash and their hatching are, and the hatching's lines' spacing, screen pixels.
-const WASH_ALPHA = 0.2;
-const HATCH_ALPHA = 0.45;
-const HATCH_PX = 7.0;
+// How strong the waters' wash and their hatching are, the hatching's colour and its lines' spacing, screen pixels.
+const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
+const HATCH_ALPHA = ${HATCH.strength.toFixed(3)};
+const HATCH_RGB = vec3f(${HATCH.colour.map((channel) => channel.toFixed(1)).join(', ')}) / 255.0;
+const HATCH_PX = ${HATCH.spacingPx.toFixed(1)};
 
 @vertex fn ink_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let corners = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
@@ -115,22 +116,23 @@ fn route_at(world: vec2f) -> f32 {
       alpha = max(alpha, 0.28 * fade * (1.0 - smoothstep(0.3, 1.0, ring)) * step(4.0, pixels));
     }
   }
-  // The waters under the ink: their wash, and fine diagonal lines over the contested.
+  // The waters under the ink: their wash, and over the contested fine diagonal lines in a dark amber.
   let sea = select(0.0, 1.0, metres > 0.0 && inside);
   let tint = textureSampleLevel(wash, soft, world / size, 0.0);
   let contested = textureSampleLevel(hatch, soft, world / size, 0.0).r;
-  let under = WASH_ALPHA * tint.a * sea;
   let stripe = 1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / HATCH_PX) - 0.5) * HATCH_PX);
-  alpha = max(alpha, HATCH_ALPHA * contested * tint.a * sea * stripe);
+  let hatched = HATCH_ALPHA * contested * tint.a * sea * stripe;
+  let tinted = WASH_ALPHA * tint.a * sea;
+  let under = hatched + tinted * (1.0 - hatched);
+  let underRgb = HATCH_RGB * hatched + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
   let course = select(0.0, route_at(world), onMap);
   let over = max(alpha, 0.9 * course);
   let colour = mix(INK_RGB, ROUTE_RGB, step(alpha, course));
   let shown = over + under * (1.0 - over);
-  let washed = tint.rgb / max(tint.a, 1e-4);
   // The words over the ink, as the pen wrote them last.
   let last = vec2i(textureDimensions(lettering)) - 1;
   let letter = textureLoad(lettering, clamp(vec2i(at.xy - ink.sheet.xy), vec2i(0), last), 0);
-  let below = colour * over + washed * under * (1.0 - over);
+  let below = colour * over + underRgb * (1.0 - over);
   let total = letter.a + shown * (1.0 - letter.a);
   return vec4f((letter.rgb + below * (1.0 - letter.a)) / max(total, 1e-4), total);
 }
