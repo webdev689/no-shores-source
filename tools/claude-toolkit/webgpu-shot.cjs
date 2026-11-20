@@ -21,7 +21,8 @@
 // binding) and a broken shader only as warnings, and a refused frame repeats every frame. Each answer of 400 or more
 // is printed with its URL.
 const { chromium } = require('playwright');
-const { readFileSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
+const { resolve } = require('node:path');
 
 const SHADER_ERRORS = () => {
   const create = GPUDevice.prototype.createShaderModule;
@@ -116,6 +117,9 @@ const OWN_TEXTURE = () => {
 
 async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+  // A route's file is read only as the page asks for it, where a missing one fails unseen: so each is found first.
+  for (const file of Object.values(plan.routes ?? {}))
+    if (!existsSync(file)) throw new Error(`route file ${resolve(file)} is missing (relative to ${process.cwd()})`);
   const browser = await chromium.launch({
     channel: 'chromium',
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
