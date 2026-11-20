@@ -1,6 +1,7 @@
 import { RANKS, SHIP_FACTIONS } from '../ships/shipBars.ts';
 import { button, make } from './dom.ts';
 import { chooseCaptain, chosenCaptain } from './fleetLink.ts';
+import { LEVEL_MOST } from '../rules/fleetRules.ts';
 import { buildSitePanel, type SitePanelHandlers, type SitePanelView } from './sitePanel.ts';
 
 /** How far along a landmass's land is. */
@@ -180,13 +181,18 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       ' a captain and X sends them all off.',
     'hint',
   );
-  // The captain F calls in a fleet: her faction and rank.
+  // The captain F calls in a fleet: its faction, rank and level, and the level the ship is fitted at.
   const calling = make('label', 'In a fleet, F calls ', 'brush');
   const pick = (options: readonly (readonly [number, string])[], value: number) => {
     const select = make('select');
     for (const [key, text] of options) select.append(new Option(text, String(key), false, key === value));
     select.addEventListener('change', () =>
-      chooseCaptain({ faction: Number(faction.value), rank: Number(rank.value) }),
+      chooseCaptain({
+        faction: Number(faction.value),
+        rank: Number(rank.value),
+        level: Number(level.value),
+        shipLevel: Number(shipLevel.value),
+      }),
     );
     return select;
   };
@@ -198,7 +204,13 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
     RANKS.map((name, index) => [index + 1, name] as const),
     chosenCaptain().rank,
   );
-  calling.append(faction, ' ', rank);
+  const levels = (none: string) => [
+    [0, none] as const,
+    ...Array.from({ length: LEVEL_MOST }, (unused, index) => [index + 1, `level ${index + 1}`] as const),
+  ];
+  const level = pick(levels('of no level'), chosenCaptain().level);
+  const shipLevel = pick(levels('unfitted'), chosenCaptain().shipLevel);
+  calling.append(faction, ' ', rank, ' ', level, ', the ship ', shipLevel);
   root.append(views, walkHint, sailHint, fightHint, calling);
 
   const exaggerationLabel = make('label', '', 'brush');

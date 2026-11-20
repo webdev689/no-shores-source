@@ -27,14 +27,23 @@ pub const MOST_RANGE_M: f64 = 1e5;
 /// Where a fleet room's open sea lies in the weather: the world frame's middle, metres east and south.
 pub const FLEET_AT: [f64; 2] = [FRAME_WIDTH_M as f64 / 2.0, FRAME_HEIGHT_M as f64 / 2.0];
 
-/// A captain asked for with a player's orders: one of a faction and rank called onto the ring round her ship, or
-/// every one sent off.
+/// A captain asked for with a player's orders: one of a faction and rank called onto the ring round their ship at a
+/// level, their own ship fitted at its level from then on, or every one sent off.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Call {
     #[default]
     None,
-    Captain(Commission),
+    Captain(Commission, Levels),
     SendOff,
+}
+
+/// The levels a call sets, 0 for none: the captain's, which raises its ship as a captain's level does at sea, and the
+/// caller's ship's, which fits it as a plain ship of that level (`gear::ship::ShipPower::plain`). With no ship level
+/// the ship is unfitted, combat's own numbers.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Levels {
+    pub captain: u8,
+    pub ship: u8,
 }
 
 /// One tick's orders from a player: their number, her orders at the helm and the guns, where she puts to sea (x, y
@@ -77,6 +86,7 @@ struct Helmsman {
     acknowledged: u32,
     waiting: VecDeque<Input>,
     at_sea: bool,
+    ship_level: u8,
 }
 
 /// A tick's orders taken from the players, for the fight, and the captains they asked for.
@@ -97,6 +107,8 @@ pub struct Fleet {
     next_ship: ShipId,
     events: Vec<(u64, Event)>,
     world_start_s: f64,
+    /// Each captain's level, by ship.
+    captain_levels: BTreeMap<ShipId, u8>,
 }
 
 impl Default for Fleet {
@@ -113,7 +125,8 @@ impl Fleet {
         let (swell, wind) = open_sea_at(FLEET_AT, 0.0);
         let fight = Fight::new(SEED);
         let players = BTreeMap::new();
-        Self { clock: 0, swell, wind, fight, players, next_ship: 1, events: Vec::new(), world_start_s: 0.0 }
+        let (events, captain_levels) = (Vec::new(), BTreeMap::new());
+        Self { clock: 0, swell, wind, fight, players, next_ship: 1, events, world_start_s: 0.0, captain_levels }
     }
 
     /// Sets the world time the room's clock started at, seconds since the Unix epoch: its sea takes the weather then,
@@ -167,6 +180,7 @@ impl Fleet {
             acknowledged: 0,
             waiting: VecDeque::new(),
             at_sea: false,
+            ship_level: 0,
         };
         self.players.insert(id, helmsman);
         Some(id)
@@ -213,6 +227,7 @@ impl Fleet {
         for (player, call) in calls {
             self.answer_call(player, call, time);
         }
+        self.fit();
         let swell = self.swell.clone();
         let waters = OpenSea { swell: &swell };
         let events = self.fight.step(&orders, &waters, self.wind, time);
@@ -223,6 +238,22 @@ impl Fleet {
         self.events.extend(events.into_iter().map(|event| (self.clock, event)));
         for ship in gone {
             self.fight.leave(ship);
+            self.captain_levels.remove(&ship);
+        }
+    }
+
+    /// Fits each player's ship that has a level against every captain in the room by theirs, for the tick to come.
+    fn fit(&mut self) {
+        for (&id, found) in &self.players {
+            if found.ship_level == 0 || !found.at_sea {
+                continue;
+            }
+            let captains = self.fight.ships.iter().filter(|(_, vessel)| vessel.command().is_some());
+            let levels =
+                captains.map(|(captain, _)| (*captain, self.captain_levels.get(captain).copied().unwrap_or(0)));
+            let power = gear::ship::ShipPower::plain(found.ship_level);
+            let fitting = crate::ship_power::fitted(power, naval::fight::fitting::Trim::default(), levels);
+            self.fight.fit(id, fitting);
         }
     }
 
@@ -280,10 +311,14 @@ impl Fleet {
             Call::SendOff => {
                 for captain in captains {
                     self.fight.leave(captain);
+                    self.captain_levels.remove(&captain);
                     self.events.push((self.clock, Event::Gone { ship: captain, end: End::Gone }));
                 }
             }
-            Call::Captain(commission) => {
+            Call::Captain(commission, levels) => {
+                if let Some(found) = self.players.get_mut(&player) {
+                    found.ship_level = levels.ship;
+                }
                 let Some(near) = self.fight.vessel(player).map(|vessel| vessel.ship) else { return };
                 if captains.len() >= CAPTAINS_MOST {
                     return;
@@ -292,6 +327,10 @@ impl Fleet {
                 let waters = OpenSea { swell: &self.swell };
                 if self.fight.call_captain(id, &near, commission, &waters, time).is_ok() {
                     self.next_ship += 1;
+                    if levels.captain > 0 {
+                        self.fight.raise(id, gear::power::foe_health_times(levels.captain));
+                        self.captain_levels.insert(id, levels.captain);
+                    }
                 }
             }
         }

@@ -28,6 +28,15 @@ pub struct ShipPower {
 }
 
 impl ShipPower {
+    /// A plain ship's at `level`: its four Normal modules of that level, as a test bench fits one with no character.
+    #[must_use]
+    pub fn plain(level: u8) -> Self {
+        let modules = || Kind::MODULES.iter().map(|kind| Item::new(0, *kind, Rarity::Normal, level, kind.slot()));
+        let attack = modules().filter_map(|module| module.attack()).sum();
+        let defense = modules().filter_map(|module| module.defense()).sum();
+        ShipPower { level, attack, defense }
+    }
+
     /// What its balls' harm on a ship of this level is times: the player's own law for a blow on a foe.
     #[must_use]
     pub fn harm_dealt(self, foe_level: u8) -> f64 {
