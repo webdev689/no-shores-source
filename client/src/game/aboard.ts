@@ -116,13 +116,6 @@ export class Aboard {
     return this.walking && (this.view?.at ?? 0) >= 1 && this.context.walker.inFirstPerson;
   }
 
-  /** Where the player's feet are on her deck as she `lying` lies, world metres, while they walk it; else none. */
-  feetOn(lying: Lying): readonly [number, number, number] | null {
-    if (this.view?.kind !== 'deck') return null;
-    const { body } = this.context.walker.player;
-    return deckToWorld(lying, body.x, body.y, body.z);
-  }
-
   /** Opens Manage from the sea's view, or closes it. */
   manage(): void {
     if (!this.view) this.view = { kind: 'manage', at: 0, going: 'down' };

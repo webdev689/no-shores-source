@@ -9,8 +9,9 @@ use crate::{CELL_M, Cell, Dungeon, SIDES, Side};
 pub const TORCH_M: f64 = 2.1;
 const TORCH_INSET_M: f64 = 0.35;
 pub const TORCH_REACH_M: f64 = 8.0;
-/// How far along its wall each of the portal's two torches stands from its middle: past its edge, inside its cell.
-const PORTAL_TORCH_M: f64 = 1.15;
+/// How far along its wall each of the portal's two torches stands from its middle: past its arch, which a style's
+/// kit draws out to 1.3 m, so its bracket stands clear of it, inside its cell.
+const PORTAL_TORCH_M: f64 = 1.5;
 
 /// A torch on a wall: where its flame is (x east, y south, z up), and the side of its cell its wall is on.
 #[derive(Clone, Copy, Debug, PartialEq)]

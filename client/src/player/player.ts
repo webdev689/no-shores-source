@@ -2,7 +2,6 @@ import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import { MELEE, RANGED_SLOT } from './gear.ts';
 import type { InputFrame } from './input.ts';
-import { RUNNING } from './others.ts';
 import {
   AIM,
   type AimPlace,
@@ -128,12 +127,9 @@ export function updatePlayer(
     queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
-  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back; a sprint faces where
-  // it runs, and once it ends the figure faces its foe again. A sprint is a run's pace, as the run's frames are: the
-  // run held while crouched, or slowed against a wall, goes no faster than a walk.
+  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back.
   const acting = swinging || cast !== null;
-  const sprinting = Math.hypot(body.vx, body.vy) > RUNNING;
-  const locked = toward !== null && !mounted && body.mode === 'ground' && !sprinting;
+  const locked = toward !== null && !mounted && body.mode === 'ground';
   const walked = body.moving ? body.facing : player.facing;
   const facing = acting ? yaw : locked ? toward : body.mode !== 'ground' ? body.facing : walked;
   const blend = carry / movement.tickSeconds;
@@ -141,19 +137,16 @@ export function updatePlayer(
   return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, loadout, cast, act, facing, aim };
 }
 
-/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate, a move over
- *  a lip too while the same move goes on. */
+/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate. */
 export function shownBody(player: Player): Body {
   const { body, previous, blend } = player;
   const between = (from: number, to: number) => from + (to - from) * blend;
-  const going = body.over && previous.over && previous.over.progress <= body.over.progress ? previous.over : null;
   return {
     ...body,
     x: between(previous.x, body.x),
     y: between(previous.y, body.y),
     z: between(previous.z, body.z),
     crouch: between(previous.crouch, body.crouch),
-    over: body.over && going ? { ...body.over, progress: between(going.progress, body.over.progress) } : body.over,
   };
 }
 

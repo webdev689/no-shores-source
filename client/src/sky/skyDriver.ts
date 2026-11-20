@@ -140,7 +140,7 @@ export class SkyDriver {
       ),
     );
     const look = lookOf(reading, worldS, flash);
-    this.uniform.write(look, lamps, [eye[0], eye[1], Math.max(0, groundM)]);
+    this.uniform.write(look, lamps, [eye[0], eye[1]]);
     const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
     const held = heldLight(look, lamps);
     SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails, held };

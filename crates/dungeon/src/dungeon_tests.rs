@@ -469,6 +469,8 @@ fn the_return_portal_stands_on_a_rock_wall_of_the_end_room_between_two_torches()
             .collect();
         assert_eq!(flanking.len(), 2, "two torches on the portal's wall");
         assert!(flanking.iter().all(|along| along.abs() > EXIT_WIDTH_M / 2.0), "beside the portal, not over it");
+        // A style's portal arch reaches 1.3 m from its middle and a bracket 0.2 m from its torch.
+        assert!(flanking.iter().all(|along| along.abs() >= 1.5 - 1e-9), "clear of the arch: {flanking:?}");
         assert!(flanking[0] * flanking[1] < 0.0, "one either side");
         let [x, y] = dungeon.portal_door();
         let [middle_x, middle_y] = dungeon.centre(portal.cell);

@@ -317,11 +317,11 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   dry = mix(mix(mix(dry, ROAD, road), TOWN, 0.6 * town), PORT, port);
 
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
-  // Fresh snow whitens the flat ground where the weather laid it; rain darkens the dry ground and pools in its
-  // hollows, above the swash and under no snow.
-  let snow = sky_fresh_snow(bed, slope);
-  dry = sky_snowed(dry, snow);
-  let open_ground = (1.0 - under) * smoothstep(0.5, 1.5, bed) * (1.0 - snow);
+  // Fresh snow on the ground whitens the flat tops near the snow line; rain darkens the dry ground and pools in its
+  // hollows, above the swash and below the snow.
+  let snow_band = smoothstep(view.ground.w - 250.0, view.ground.w - 50.0, bed) * (1.0 - smoothstep(0.15, 0.35, slope));
+  dry = mix(dry, SNOW, 0.6 * sky_state.ambient_ground.w * snow_band);
+  let open_ground = (1.0 - under) * smoothstep(0.5, 1.5, bed) * (1.0 - snow_band);
   let puddle = sky_puddle(on_ground, slope) * open_ground;
   let soaked = max(sky_state.ambient_sky.w * open_ground * 0.8, puddle);
   dry = sky_soaked(dry, soaked);

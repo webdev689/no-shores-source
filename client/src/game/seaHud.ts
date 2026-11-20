@@ -47,7 +47,7 @@ export function seaShipMarks(
 /** Shows one frame at sea, `shown`, on the display. */
 export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudState): void {
   const { island, region, onSea } = state;
-  const atHelm = here.view.helmView;
+  const atHelm = here.helmView;
   const { aboard } = here;
   if (state.landing) hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
   else if (atHelm) hud.place('At the helm', region);

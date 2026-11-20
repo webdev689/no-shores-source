@@ -1,12 +1,10 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { Contact, FirstPerson } from '../firstperson/firstPerson.ts';
-import { FIELD_OF_VIEW } from '../editor/orbit.ts';
-import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Pace } from '../firstperson/weaponMachine.ts';
 import type { Look } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import type { Body, MovementRules } from '../rules/movementRules.ts';
+import type { MovementRules } from '../rules/movementRules.ts';
 import type { CardAt, Cards } from './cards.ts';
 import type { Dress } from './dressing.ts';
 import type { Outfit } from '../forge/outfit.ts';
@@ -67,19 +65,6 @@ const NO_GLOW = [0, 0] as const;
 /** The dress the figure shows: on a wall or a ledge the hands hold on, so the weapon is worn, not held. */
 export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
-}
-
-/** The climb a body is on, as the first person's hands follow it; null off a wall. */
-export function climbOf(body: Body): Climb | null {
-  if (body.mode !== 'hang' && body.mode !== 'climb' && body.mode !== 'mantle' && body.mode !== 'vault') return null;
-  const { over } = body;
-  return {
-    mode: body.mode,
-    feet: [body.x, body.y, body.z],
-    wall: body.facing,
-    over: over?.progress ?? 0,
-    rise: over ? over.to[2] - over.from[2] : 0,
-  };
 }
 
 /**
@@ -254,11 +239,8 @@ export class Walker {
       casting: player.cast !== null,
       ...(this.castGlow ? { element: ART_LIGHTS[this.castGlow], castGlow: this.castGlow } : {}),
       climbing: holding ? 0 : 1,
-      climb: climbOf(body),
       mounted: player.mounted,
       yaw: player.yaw,
-      pitch: player.pitch,
-      fov: FIELD_OF_VIEW,
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
       zoom,

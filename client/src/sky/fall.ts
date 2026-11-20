@@ -4,7 +4,7 @@ import type { SkyLook } from './skyUniform.ts';
 /** The box round the eye the fall is drawn in, metres, and how much of each falls at its hardest. */
 export const FALL_BOX_M = 24;
 export const MOST_DROPS = 14000;
-export const MOST_FLAKES = 15000;
+export const MOST_FLAKES = 5000;
 export const MOST_GRAINS = 6000;
 /** Above this height over the ground the eye sees the weather from above, not in it: no fall is drawn. */
 export const FALL_HIGHEST_M = 300;
@@ -13,29 +13,10 @@ export const FALL_HIGHEST_M = 300;
 export const LONGEST_FALL_STEP_S = 0.1;
 
 /** Each kind (rain, snow, sand): the most drawn, how fast it falls (m/s), the share of the wind that carries it, its
- *  colour, how clear one is at the hardest fall, its box's height (metres), its width on the screen (pixels), and for
- *  a flake the distance it is drawn that wide at (metres): nearer it is larger, as a flake by the face is. */
+ *  colour, how clear one is at the hardest fall, its box's height (metres) and its width on the screen (pixels). */
 const KINDS = [
-  {
-    most: MOST_DROPS,
-    falls: 9,
-    carried: 0.55,
-    colour: [0.86, 0.9, 1],
-    clear: 0.5,
-    high: FALL_BOX_M,
-    wide: 1.6,
-    seenM: 0,
-  },
-  {
-    most: MOST_FLAKES,
-    falls: 1.1,
-    carried: 0.9,
-    colour: [1, 1, 1],
-    clear: 0.75,
-    high: FALL_BOX_M,
-    wide: 2.2,
-    seenM: 4,
-  },
+  { most: MOST_DROPS, falls: 9, carried: 0.55, colour: [0.86, 0.9, 1], clear: 0.5, high: FALL_BOX_M, wide: 1.6 },
+  { most: MOST_FLAKES, falls: 1.1, carried: 0.9, colour: [1, 1, 1], clear: 0.75, high: FALL_BOX_M, wide: 2.2 },
   {
     most: MOST_GRAINS,
     falls: 0.3,
@@ -44,7 +25,6 @@ const KINDS = [
     clear: 0.45,
     high: FALL_BOX_M / 4,
     wide: 2.2,
-    seenM: 0,
   },
 ] as const;
 
@@ -92,7 +72,7 @@ struct Fall {
   shape: vec4f,
   // The light on it, and how clear one is at the hardest fall.
   light: vec4f,
-  // The picture's size in pixels, a streak's width in pixels, and the distance a flake is drawn that wide at (0 none).
+  // The picture's size in pixels, a streak's width in pixels.
   screen: vec4f,
   // The flakes' eddies' phases east and south, radians.
   eddy: vec4f,
@@ -138,11 +118,9 @@ struct Drawn { @builtin(position) position: vec4f, @location(0) clear: f32, @loc
   let behind = tail_clip.xy / tail_clip.w;
   let pixel = 2.0 / fall.screen.xy;
   var along = (behind - head) / pixel;
-  // A flake or a grain is a dot, a flake larger nearer than screen.w; a drop a streak at least as long as it is wide.
-  var wide = fall.screen.z;
-  if (fall.screen.w > 0.0) { wide = clamp(wide * fall.screen.w / distance, wide, wide * 3.0); }
-  if (kind != 0u || length(along) < wide) { along = vec2f(0.0, wide); }
-  let across = normalize(vec2f(-along.y, along.x)) * wide * 0.5;
+  // A flake or a grain is a dot; a drop a streak at least as long as it is wide.
+  if (kind != 0u || length(along) < fall.screen.z) { along = vec2f(0.0, fall.screen.z); }
+  let across = normalize(vec2f(-along.y, along.x)) * fall.screen.z * 0.5;
   let corner = array(vec2f(0.0, -1.0), vec2f(1.0, -1.0), vec2f(0.0, 1.0), vec2f(0.0, 1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0))[index];
   let at = head + (along * corner.x + across * corner.y) * pixel;
   out.position = vec4f(at * head_clip.w, head_clip.z, head_clip.w);
@@ -250,7 +228,7 @@ export class FallView {
       values.set([look.wind[0] * kind.carried, look.wind[1] * kind.carried, kind.falls, 0.07], 20);
       values.set([which, count, FALL_BOX_M, -up], 24);
       values.set([kind.colour[0] * level, kind.colour[1] * level, kind.colour[2] * level, kind.clear], 28);
-      values.set([view.size[0], view.size[1], kind.wide, kind.seenM], 32);
+      values.set([view.size[0], view.size[1], kind.wide, 0], 32);
       values.set([(time * 1.3) % (Math.PI * 2), (time * 1.1) % (Math.PI * 2), 0, 0], 36);
       device.queue.writeBuffer(uniform, 0, values);
       pass.setBindGroup(0, group);

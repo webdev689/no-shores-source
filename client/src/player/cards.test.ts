@@ -4,9 +4,6 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
-import type { ComposeJob } from './composeJob.ts';
-import type { Haste } from './composeQueue.ts';
-import type { Composer } from './composer.ts';
 import { type Dress, plainDress } from './dressing.ts';
 
 // A figure one pixel wide and two tall in each of the forge's five views, holding a sword in either fist.
@@ -126,88 +123,4 @@ test('a dress warmed again asks for its moves only the first time, as a figure w
   for (let frame = 0; frame < 3; frame++) forge.warm(armed, moves, 0, 1);
   forge.warm(bare, moves, 0, 1);
   assert.equal(asked, 2, 'once for each dress');
-});
-
-test('a frame shown now is composed ahead of every frame warmed, and asks for the rest of its move with it', async () => {
-  const walk = { cell: [1, 2], frames: 3, root: [0, 1] } as const;
-  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
-  const asked: { readonly frame: number; readonly haste: Haste }[] = [];
-  const hurried: string[] = [];
-  const recording: Composer = {
-    offPage: true,
-    compose: (_key: string, job: ComposeJob, haste: Haste) => {
-      asked.push({ frame: job.frame, haste });
-      return new Promise(() => undefined);
-    },
-    hurry: (key: string) => hurried.push(key),
-  };
-  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
-  const dyes = { palette: [], clothing: {}, armour: {} };
-  const forge = new Cards(maker, store, moving, colours, dyes, undefined, recording);
-  forge.card(1, bare, 'walk', 0, 1);
-  assert.deepEqual(asked, [
-    { frame: 1, haste: 'now' },
-    { frame: 2, haste: 'ahead' },
-    { frame: 0, haste: 'ahead' },
-  ]);
-  forge.card(1, bare, 'walk', 0, 2);
-  assert.equal(asked.length, 3, 'a frame under way is not asked for again, nor its move');
-  assert.equal(hurried.length, 1, 'the next frame, shown, is hurried');
-  asked.length = 0;
-  forge.warm(bare, () => ['walk'], 0, 2);
-  forge.pump();
-  assert.ok(asked.length > 0 && asked.every((each) => each.haste === 'later'), 'warming waits for every frame shown');
-});
-
-test('a frame that failed is asked for again only after a while, not each tick with its whole move', async () => {
-  const walk = { cell: [1, 2], frames: 4, root: [0, 1] } as const;
-  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
-  let asked = 0;
-  const failing: Composer = {
-    offPage: false,
-    compose: () => {
-      asked += 1;
-      return Promise.reject(new Error('no strip'));
-    },
-    hurry: () => undefined,
-  };
-  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
-  const dyes = { palette: [], clothing: {}, armour: {} };
-  const forge = new Cards(maker, store, moving, colours, dyes, undefined, failing);
-  forge.card(1, bare, 'walk', 0, 0);
-  assert.equal(asked, 4, 'the frame shown and the rest of its move');
-  await settled();
-  assert.equal(forge.failure, 'no strip');
-  for (let tick = 0; tick < 10; tick++) {
-    forge.card(1, bare, 'walk', 0, tick % 4);
-    forge.pump();
-  }
-  assert.equal(asked, 4, 'none asked for again within the wait');
-});
-
-test("warming goes at the page's pace whenever the frames are composed on it", () => {
-  let offPage = true;
-  let started = 0;
-  const composer: Composer = {
-    get offPage() {
-      return offPage;
-    },
-    compose: () => {
-      started += 1;
-      return new Promise(() => undefined);
-    },
-    hurry: () => undefined,
-  };
-  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
-  const dyes = { palette: [], clothing: {}, armour: {} };
-  const walk = { cell: [1, 2], frames: 8, root: [0, 1] } as const;
-  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
-  const forge = new Cards(maker, store, moving, colours, dyes, undefined, composer);
-  forge.warm(bare, () => ['walk'], 0, 1);
-  forge.pump();
-  assert.equal(started, 4, 'four a tick off the page');
-  offPage = false;
-  started = 0;
-  forge.pump();
-  assert.equal(started, 2, 'two a tick once the worker is gone');
 });

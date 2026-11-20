@@ -1,8 +1,5 @@
 import renders from '../../../content/forge/renders.json' with { type: 'json' };
 import type { Strip } from './compose.ts';
-import { StripCache } from './stripCache.ts';
-
-export { RETRY_AFTER_MS } from './stripCache.ts';
 
 /** Where the forge's renders are published: the public base, the pack index and the tables, each named by its hash. */
 export interface Manifest {
@@ -17,21 +14,21 @@ export interface PackIndex {
   readonly pictures: Readonly<Record<string, readonly [number, number, number, string]>>;
 }
 
-/** Where a picture lies: its pack's URL, its byte range in it and its type. */
-export interface StripWhere {
-  readonly url: string;
-  readonly range: string;
-  readonly type: string;
-}
-
 /** The URL and byte range a picture lies at, or null where the index has no such picture. */
-export function pictureRange(manifest: Manifest, index: PackIndex, path: string): StripWhere | null {
+export function pictureRange(
+  manifest: Manifest,
+  index: PackIndex,
+  path: string,
+): { url: string; range: string; type: string } | null {
   const entry = index.pictures[path];
   const pack = entry ? index.packs[entry[0]] : undefined;
   if (!entry || pack === undefined) return null;
   const [, offset, length, type] = entry;
   return { url: manifest.base + pack, range: `bytes=${offset}-${offset + length - 1}`, type };
 }
+
+/** A strip that failed to arrive is asked for again only this long after, not on every frame that wants it. */
+export const RETRY_AFTER_MS = 5000;
 
 async function fetched(url: string, init?: RequestInit): Promise<Response> {
   const answer = await fetch(url, init);
@@ -52,32 +49,11 @@ async function decode(bytes: ArrayBuffer, type: string): Promise<Strip> {
   return { width: canvas.width, height: canvas.height, data };
 }
 
-/** How many bytes a range asks for (`bytes=first-last`). */
-export function rangeLength(range: string): number {
-  const [first = Number.NaN, last = Number.NaN] = range.replace('bytes=', '').split('-').map(Number);
-  return last - first + 1;
-}
-
-/** A picture fetched from where it lies and decoded: on the page or in a worker, which has no pack index of its own. A
- *  cache can hand back a range cut short with no error, so a body shorter than its range is fetched again past it. */
-export async function stripAt(where: StripWhere): Promise<Strip> {
-  const wanted = rangeLength(where.range);
-  let bytes = await (await fetched(where.url, { headers: { range: where.range } })).arrayBuffer();
-  if (bytes.byteLength !== wanted)
-    bytes = await (await fetched(where.url, { headers: { range: where.range }, cache: 'reload' })).arrayBuffer();
-  if (bytes.byteLength !== wanted) throw new Error(`${where.url} sent ${bytes.byteLength} of ${wanted} bytes`);
-  return decode(bytes, where.type);
-}
-
-/** The decoded strips the page keeps: the first person's art and a gear screen's figure. A figure's frames in the scene
- *  are composed in a worker, which keeps its own. */
-export const PAGE_STRIP_BYTES = 96 * 1024 * 1024;
-
-/** The forge's published renders: its tables, and each strip fetched from its pack and kept while there is room. */
+/** The forge's published renders: its tables, and each strip fetched from its pack once and kept. */
 export class ForgeStore {
   readonly manifest: Manifest;
   private readonly index: PackIndex;
-  private readonly strips = new StripCache(PAGE_STRIP_BYTES);
+  private readonly strips = new Map<string, Promise<Strip | null>>();
 
   private constructor(manifest: Manifest, index: PackIndex) {
     this.manifest = manifest;
@@ -96,16 +72,19 @@ export class ForgeStore {
     return (await (await fetched(this.manifest.base + key)).json()) as T;
   }
 
-  /** Where a strip by the forge's path lies; null where nothing was rendered there. */
-  where(path: string): StripWhere | null {
-    return pictureRange(this.manifest, this.index, path);
-  }
-
   /** A strip by the forge's path, decoded; null where nothing was rendered there. */
   strip(path: string): Promise<Strip | null> {
-    return this.strips.get(path, () => {
-      const where = this.where(path);
-      return where ? stripAt(where) : Promise.resolve(null);
-    });
+    const kept = this.strips.get(path);
+    if (kept) return kept;
+    const where = pictureRange(this.manifest, this.index, path);
+    const loading = where
+      ? fetched(where.url, { headers: { range: where.range } })
+          .then((answer) => answer.arrayBuffer())
+          .then((bytes) => decode(bytes, where.type))
+      : Promise.resolve(null);
+    // A failed fetch is forgotten after a while, so an ask then tries again, and none meanwhile fetches it anew.
+    loading.catch(() => setTimeout(() => this.strips.delete(path), RETRY_AFTER_MS));
+    this.strips.set(path, loading);
+    return loading;
   }
 }

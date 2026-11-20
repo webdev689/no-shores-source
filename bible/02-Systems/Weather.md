@@ -59,11 +59,10 @@ the tundra's fall is snow by night and sleet by day.
   page's world clock, in the island's air on foot and the sea's at sea. The page's clock is its wall, set right by
   each room's snapshots: a room's welcome carries its world time at its first tick, and each snapshot's tick counts on
   from it.
-- **Rain, snow and sand** fall round the eye, drawn over the finished picture: up to 14,000 drops, 15,000 flakes and
+- **Rain, snow and sand** fall round the eye, drawn over the finished picture: up to 14,000 drops, 5,000 flakes and
   6,000 grains in a 24 m box that wraps round the eye, each standing in the world, so walking through the rain leaves
   it where it is. Drops fall at 9 m/s and lean with a little over half the wind, drawn as streaks; flakes fall at 1.1
-  m/s, each swaying up to 0.4 m round its path, drawn larger within 4 m; sand runs low, a little faster than
-  the wind.
+  m/s, each swaying up to 0.4 m round its path; sand runs low, a little faster than the wind.
 - **How it moves.** Each frame carries each kind on by its wind and its fall over that frame, at most a tenth of a
   second, so a change of wind changes how fast it moves, never where it stands. Each takes the sky's light, brighter
   in a flash. What stands nearer in the scene hides them, and none falls under the sea. Above 300 m over the ground
@@ -75,9 +74,7 @@ the tundra's fall is snow by night and sleet by day.
   cover's base would stand. To the ground it is a jagged channel with two branches, down to the land under the strike
   or to the sea, from a base at least 200 m over that ground. In the cloud it runs 2.5 to 6 km across, 60 to 120 m
   under the base, as a crawler is seen from below; inside the cloud it would only light it. Its shape comes from the
-  strike itself, so every browser draws the same bolt. It is seen through the same haze and fog as the land, but it
-  is far brighter than anything else in the sky: only where the haze lets through less than a fifth, low down in
-  rain, does it fade, so a far bolt's foot fades into the grey as the sea under it does.
+  strike itself, so every browser draws the same bolt.
 
 ## Limits
 

@@ -3,9 +3,8 @@ import { CLOTHING_DYES } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type Outfit } from '../forge/outfit.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { type Dress, LIGHTS, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from '../player/dressing.ts';
+import { type Dress, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
-import { KINDS, kindName, slotOf } from '../player/gear.ts';
 
 const pairs = (keys: readonly string[]) => keys.map((key) => [key, key] as const);
 
@@ -35,65 +34,9 @@ function checkbox(checked: boolean, onChange: (checked: boolean) => void): HTMLI
   return box;
 }
 
-/** The player's own hands: the kinds their gear wears in its Melee and Ranged loadouts (0 for none), and the ask that
- *  wears another kind; the light their left carries (a forge layer, or null), and the pick of another. */
-export interface OwnHands {
-  readonly worn: { readonly melee: number; readonly ranged: number };
-  wear(kind: number): void;
-  readonly light: string | null;
-  carry(light: string | null): void;
-}
-
-/** The gear's `outfit` with `light` in its left hand where the room lets the hands hold it (`allowed`, the arms codes
- *  it sent, which `armsCode` gives for a pair of hands); else as the gear has it, so a light never costs the fight its
- *  arms. */
-export function withLight(
-  outfit: Outfit,
-  light: string | null,
-  allowed: readonly number[] | undefined,
-  armsCode: (right: string | null, left: string) => number,
-): Outfit {
-  return light && allowed?.includes(armsCode(outfit.right, light)) ? { ...outfit, left: light } : outfit;
-}
-
-/** The kinds worn in a loadout's slot (0 Melee, 1 Ranged), as `[number, name]` options. */
-export const loadoutKinds = (slot: number) =>
-  KINDS.flatMap((name, kind) => (name && slotOf(kind) === slot ? [[String(kind), kindName(kind)] as const] : []));
-
-/** What the player's hands hold: a loadout of each kind their gear can wear, worn through it when picked, since the
- *  room fights only with what a worn loadout puts in their hands; and one of the `lights` the body carries. */
-function ownHands(hands: OwnHands, lights: readonly string[]): HTMLElement[] {
-  const pick = (slot: number, worn: number) => {
-    const shown = worn ? String(worn) : '';
-    const select = choice([...(worn ? [] : [['', 'none worn'] as const]), ...loadoutKinds(slot)], shown, (value) => {
-      // It keeps showing what is worn until the room's answer wears another, so a refused kind is never shown.
-      select.value = shown;
-      if (value) hands.wear(Number(value));
-    });
-    return select;
-  };
-  return [
-    labelled('Melee', pick(0, hands.worn.melee)),
-    labelled('Ranged', pick(1, hands.worn.ranged)),
-    labelled(
-      'Left',
-      choice([['', 'what the loadout holds'], ...pairs(lights)], hands.light ?? '', (value) =>
-        hands.carry(value || null),
-      ),
-    ),
-    make(
-      'p',
-      'Your hands hold what your gear wears. Picking a weapon wears it; 1 and 2 draw them. A light goes in the left ' +
-        'only beside a weapon that leaves it free.',
-      'hint',
-    ),
-  ];
-}
-
 /**
  * The chosen figure's dress: its body, race and skin tone, hair, armour by piece, garments, what each hand holds and
  * whether it is drawn, each garment's dye, and one of the forge's dressed looks to start from. `changed` follows each edit.
- * The player's own hands (`own`) hold what their gear wears, so theirs pick a loadout to wear and a light instead.
  */
 export function dressControls(
   looks: ForgeLooks,
@@ -101,7 +44,6 @@ export function dressControls(
   placed: Placed,
   garmentFilter: { text: string },
   changed: () => void,
-  own: OwnHands | null = null,
 ): HTMLElement[] {
   const drawn = looks.bodies[placed.dress.body]?.layers ?? {};
   const wardrobe = wardrobeOf(placed.dress.body, drawn);
@@ -229,25 +171,16 @@ export function dressControls(
     labelled('Set', wholeSet),
     ...armour,
     make('h2', 'In hand'),
-    ...(own
-      ? ownHands(
-          own,
-          wardrobe.left.filter((layer) => LIGHTS.includes(layer)),
-        )
-      : [
-          labelled(
-            'Right',
-            choice([['', 'nothing'], ...pairs(wardrobe.right)], outfit.right ?? '', (value) =>
-              wear({ right: value || null }),
-            ),
-          ),
-          labelled(
-            'Left',
-            choice([['', 'nothing'], ...pairs(wardrobe.left)], outfit.left ?? '', (value) =>
-              wear({ left: value || null }),
-            ),
-          ),
-        ]),
+    labelled(
+      'Right',
+      choice([['', 'nothing'], ...pairs(wardrobe.right)], outfit.right ?? '', (value) =>
+        wear({ right: value || null }),
+      ),
+    ),
+    labelled(
+      'Left',
+      choice([['', 'nothing'], ...pairs(wardrobe.left)], outfit.left ?? '', (value) => wear({ left: value || null })),
+    ),
     labelled(
       'Drawn',
       checkbox(outfit.drawn, (drawnOut) => wear({ drawn: drawnOut })),

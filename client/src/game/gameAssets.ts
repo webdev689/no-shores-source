@@ -1,6 +1,5 @@
 // What the game loads before the player can arrive, all at once so no load waits on another: the world, the RMB
 // index, the movement rules, the forge's figures and first person, and the Sloop.
-import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { openCards } from '../player/cards.ts';
@@ -16,7 +15,6 @@ const SEA_SHIPS = 16;
 /** The forge's figures and the first person's hands, read from the forge's published renders. */
 async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
-  loadForgedBirds((path) => store.strip(path));
   return { forge, firstPerson: await FirstPerson.open(gpu, store), store };
 }
 

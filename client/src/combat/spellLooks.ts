@@ -224,11 +224,7 @@ export class SpellLooks {
       let shown = this.shown.get(spell.id);
       const first = !shown;
       if (!shown) {
-        shown = {
-          spell,
-          place,
-          kept: { aim: caster?.aim ?? 0, heading: caster?.aim ?? 0, mark: null, markAt: 0, marked: 0 },
-        };
+        shown = { spell, place, kept: { aim: caster?.aim ?? 0, mark: null, markAt: 0, marked: 0 } };
         this.shown.set(spell.id, shown);
         if (animaOf(spell.kind) && spell.age <= RELEASE_FRESH_TICKS) {
           const feet = caster?.feet ?? ([spell.at[0], spell.at[1], spell.at[2] - CHEST_M] as const);

@@ -260,11 +260,7 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
 - **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
   pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
-- **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress
-  panel pick a Melee and a Ranged kind, and picking one wears it: the first carried that they may wear, or a Normal
-  one of their level handed out. Each picker shows what is worn, so a refused pick shows the kind still worn. Their
-  Left picks a torch or a lantern, held wherever the room's arms allow it beside the loadout drawn ([[Gear]], "In
-  the rooms"); beside a shield, a second weapon or a greatsword's grip, the loadout's own left is held.
+- **The hands** hold what the gear wears: the room takes no other arms, so the dress panel's hands give way to it.
 - **Hand out**, to try the loop without playing it through: a Vestige of any colour for any slot and level, a lesser
   item of any kind, rarity and level, any named item, 50 of every material, and XP; and ammunition full or none, five
   Ammo crates, and one used. The panel shows the shots left and the crates carried; with no Ranged weapon worn, the
@@ -331,9 +327,8 @@ to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. E
 the frame it shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s,
 so a tick the rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge
 the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
-the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
-it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
-Sprints]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
+the soft lock holds a foe, a figure on foot faces it however it walks, so walking away backs off from it
+([[Locked On, the Figure Faces Its Foe]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
 figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
 though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
 
@@ -347,7 +342,7 @@ in a loop. For the chosen figure it sets:
 - **Armour:** a set for each piece, or one set for all.
 - **Clothes:** worn in the order they are ticked, each in one of Daggerfall's dyes.
 - **Hands:** what is in each hand, and whether it is drawn. The left can carry a torch, or a lantern, which only the
-  first person draws. The player's own pick a loadout to wear, and a light ("The hands", above).
+  first person draws.
 - **Dress as:** one of the forge's dressed looks.
 
 The player's entry plays any move once. Each other figure's entry sets its move, facing and turning.
@@ -363,16 +358,9 @@ The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over 
 ## How it draws
 
 The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
-its pack by its byte range; a body shorter than its range is fetched once more past the cache, never decoded. One that
-fails to arrive is asked for again 5 s later, not every frame. Decoded strips are kept while there is room: 128 MB in
-the worker that composes the figures, 96 MB on the page, the least lately asked for let go and fetched again if asked.
+its pack by its byte range and decoded once; one that fails to arrive is asked for again 5 s later, not every frame.
 
-A frame is composed in the browser as DFO's game composes it (`composeFrame`), in a worker off the page's thread (on
-the page where no worker starts), so the page only uploads it. A move shown before it is composed asks for the rest of
-its frames in that view with it. The worker composes the frames whose strips have come in the order they are wanted:
-those shown now, then the rest of a move just shown, then those composed ahead (`ComposeQueue`). A frame still
-waiting for its strips holds up none of the others, and one under way that is now shown goes ahead. A frame that
-fails is asked for again 5 s later, not every tick. Each frame is composed so:
+A frame is composed in the browser as DFO's game composes it (`composeFrame`):
 
 - Each layer's cell is laid on the figure's cell by its root.
 - At each pixel the nearest texel shows. Where two layers meet on one part of the body, the one with the higher order
@@ -400,14 +388,13 @@ picture.
   figure asks for go past it, and then the least lately asked for are let go down to 3,000 and composed again as
   needed. A frame composed ahead and let go before it was asked for has its dress composed ahead again, into the room
   let go.
-- Each figure's likeliest moves are composed ahead, four frames a tick in all (two when composing on the page), from
-  one queue in which a figure's new dress replaces only its own frames still queued, passing over frames kept already:
-  every view as drawn and as mirrored, its rest, walk and attack, its strokes, each blow, shot and reload on the move,
-  its guard or a shield's block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's
-  too, so a swap shows it at once. A move not composed yet shows the last frame until it is: its strips take most of a
-  second to come the first time, then its frames follow in the order they play. A crowd of many dresses (the player,
-  the other loadout and five or six foes' dresses) holds more than 4,000 frames, so the last dresses are composed
-  ahead only as room comes.
+- Each figure's likeliest moves are composed ahead, two frames a tick in all, from one queue in which a figure's new
+  dress replaces only its own frames still queued, passing over frames kept already: every view as drawn and as
+  mirrored, its rest, walk and attack, its strokes, each blow, shot and reload on the move, its guard or a shield's
+  block, its hurt, the roll, the run, the jump and the crouch; the player's other loadout's too, so a swap shows it at
+  once. A move not composed yet shows the last frame until it is: its strips take most of a second to come the first
+  time. A crowd of many dresses (the player, the other loadout and five or six foes' dresses) holds more than 4,000
+  frames, so the last dresses are composed ahead only as room comes.
 
 ## First person
 

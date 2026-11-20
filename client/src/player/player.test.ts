@@ -49,31 +49,6 @@ test('locked on, a figure on foot faces its foe as it walks away from it; mounte
   assert.notEqual(riding.facing, toward);
 });
 
-test('locked on, a sprint faces where it runs, and once it ends the figure faces its foe again', () => {
-  const toward = 0.5;
-  const sprinting = updatePlayer(start(), frame(['back', 'run']), movement, TICK, false, toward);
-  assert.ok(sprinting.body.moving);
-  assert.equal(sprinting.facing, sprinting.body.facing, 'where it runs');
-  assert.notEqual(sprinting.facing, toward);
-  const walking = updatePlayer(sprinting, frame(['back']), movement, TICK, false, toward);
-  assert.equal(walking.facing, toward, 'walking away, it backs off facing its foe');
-  const stopped = updatePlayer(sprinting, frame(), movement, TICK, false, toward);
-  assert.equal(stopped.facing, toward, 'stopped, it faces its foe');
-  const held = updatePlayer(stopped, frame(['run']), movement, TICK, false, toward);
-  assert.equal(held.facing, toward, 'the run held standing still is no sprint');
-  const ahead = updatePlayer(start(), frame(['forward', 'left', 'run']), movement, TICK, false, toward);
-  assert.equal(ahead.facing, ahead.body.facing, 'a sprint any way faces where it runs');
-});
-
-test('locked on, a crouched figure with the run held goes at a crouch and keeps facing its foe', () => {
-  const toward = 0.5;
-  const crouched = updatePlayer(start(), frame([], ['crouch']), movement, TICK, false, toward);
-  assert.ok(crouched.body.crouched);
-  const creeping = updatePlayer(crouched, frame(['back', 'run']), movement, TICK, false, toward);
-  assert.ok(creeping.body.moving && creeping.body.crouched);
-  assert.equal(creeping.facing, toward);
-});
-
 test('1 draws the Melee loadout and 2 the Ranged, each readying it; Melee is drawn first', () => {
   const player = start();
   assert.equal(player.loadout, 0);
@@ -134,20 +109,6 @@ test('between ticks the body is drawn eased from the tick before toward the last
   assert.equal(halfway.body, walked.body);
   const shown = shownBody(halfway);
   assert.ok(Math.abs(shown.y - (halfway.previous.y + halfway.body.y) / 2) < 1e-12);
-});
-
-test('between ticks a move over a lip is drawn eased too, and a new one starts from its own start', () => {
-  const player = start();
-  const move = (progress: number) => ({ from: [0, 0, 0] as const, to: [0, 1, 2] as const, progress, seconds: 0.5 });
-  const going = {
-    ...player,
-    previous: { ...player.body, over: move(0.2) },
-    body: { ...player.body, over: move(0.4) },
-    blend: 0.5,
-  };
-  assert.ok(Math.abs((shownBody(going).over?.progress ?? 0) - 0.3) < 1e-12);
-  const anew = { ...going, previous: { ...player.body, over: move(1) }, body: { ...player.body, over: move(0.1) } };
-  assert.equal(shownBody(anew).over?.progress, 0.1);
 });
 
 test('going over a lip, the body’s centre passes behind the wall’s face, but its card stays in front', () => {

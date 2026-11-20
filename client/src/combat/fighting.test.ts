@@ -13,8 +13,7 @@ import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type CombatRules, type Fired, startCombatRules } from '../rules/combatRules.ts';
 import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
-import { ASKS, type GearState } from '../network/gearMessages.ts';
-import { KINDS, WORN } from '../player/gear.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
 import { KIND, wear } from './wornForTests.ts';
 
@@ -119,7 +118,7 @@ function fightIn(right: string) {
   // A weapon the starting kit lacks is handed out and worn first: the room takes arms from gear alone.
   const kind = right.startsWith('bow') ? KIND.bow : right.startsWith('pistolet') ? KIND.pistolet : null;
   if (kind !== null) wear(fighting, () => gear, tick, [kind]);
-  return { fighting, tick, gear: () => gear as GearState | null };
+  return { fighting, tick };
 }
 
 test('a guard or a swing tapped between two ticks still reaches the rules', () => {
@@ -140,18 +139,6 @@ test('the other guard binding pressed while one is held opens a fresh parry wind
   tick({ guard: true, guardPressed: true });
   tick({ guard: true });
   assert.deepEqual(fighting.own?.action, { kind: 'guard', elapsed: 0, window: 12 });
-});
-
-test('the Test Ground’s hands take up a crossbow through the gear, so the room fights with it and spends its bolts', () => {
-  const { fighting, tick, gear } = fightIn('crossbow');
-  const crossbow = KINDS.indexOf('crossbow');
-  fighting.askGear({ kind: ASKS.grantWorn, itemKind: crossbow });
-  for (let count = 0; count < 13; count += 1) tick();
-  assert.equal(gear()?.items.find((item) => item.at === WORN + 1)?.kind, crossbow, 'worn in the Ranged slot');
-  for (let count = 0; count < 30; count += 1) tick({ shoot: true, shootPressed: count === 0 });
-  assert.equal(fighting.fired.length, 1, 'the room let it fire');
-  for (let count = 0; count < 13; count += 1) tick();
-  assert.ok((gear()?.ammoShare ?? 1) < 1, 'a bolt spent from the ammunition, so a box is taken again');
 });
 
 test('a bow aimed and lowered unfired tells the page; an aimed pull hands over the arrow it fired', () => {

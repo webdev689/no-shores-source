@@ -120,7 +120,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m: on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
   on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal, and two stand on
-  the portal's wall, 1.15 m either side of its middle, so the end of the way is lit and marked before it opens.
+  the portal's wall, 1.5 m either side of its middle (past its arch), so the end of the way is lit and marked before it opens.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
   to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.

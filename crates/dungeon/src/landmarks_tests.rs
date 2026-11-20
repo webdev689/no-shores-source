@@ -186,6 +186,17 @@ fn every_footprint_lies_on_its_rooms_cells_clear_of_its_rim_or_backed_on_rock_it
                     }
                 }
             }
+            if back.is_none() {
+                let on_rock = |side: Side| {
+                    placed.cells.iter().any(|&cell| {
+                        let next = dungeon.beside(cell, side);
+                        next.is_none_or(|next| !placed.cells.contains(&next) && dungeon.cells[next] == Cell::Rock)
+                    })
+                };
+                let pinched =
+                    (on_rock(Side::North) && on_rock(Side::South)) || (on_rock(Side::East) && on_rock(Side::West));
+                assert!(!pinched, "a free piece never fills a passage, rock on two opposite sides");
+            }
             let inside =
                 |x: f64, y: f64| x >= west - 1e-9 && x <= east + 1e-9 && y >= north - 1e-9 && y <= south + 1e-9;
             assert_eq!(placed.solids.len(), placed.landmark.solids.len());

@@ -24,14 +24,13 @@ import { abilityPictures } from '../player/artGlyphs.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
 import { type GearMessage, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
-import { ASKS, type GearState } from '../network/gearMessages.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { type WorldOutput, WorldSounds } from '../combat/worldSounds.ts';
 import { loadSamples } from '../soundSamples.ts';
 import { type CardAt, type Cards, openCards } from '../player/cards.ts';
-import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { COURSE, RESOURCE_NODES, STALL, START, WOODEN } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
@@ -47,7 +46,6 @@ import { AIM, type AimPlace } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { startAimPanel } from './aimPanel.ts';
-import { withLight } from './dressPanel.ts';
 import { startPanel } from './panel.ts';
 import { startStatusPanel } from './statusPanel.ts';
 import { startArtsPanel } from './artsPanel.ts';
@@ -132,9 +130,6 @@ async function start(): Promise<void> {
   let cards: Cards | null = null;
   // Declared before the panel: a foe asked for while the forge loads is not asked for.
   let fight: Fighting | null = null;
-  const asks = new PanelAsks();
-  // The light the player's left carries, where the loadout drawn lets it: the dress panel's pick.
-  let light: string | null = null;
   const showPanel = startPanel(element<HTMLElement>('#panel'), roster, {
     add: () => {
       const ahead = 3;
@@ -161,13 +156,10 @@ async function start(): Promise<void> {
       walker.player = { ...walker.player, act: { anim, elapsed: 0, seconds } };
     },
     fight: (foe, level) => fight?.ask(foe, level),
-    wear: (kind) => asks.ask(fight, { kind: ASKS.grantWorn, itemKind: kind }),
-    carry: (layer) => {
-      light = layer;
-    },
   });
   // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
   let gear: GearState | null = null;
+  const asks = new PanelAsks();
   const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => asks.ask(fight, ask));
   // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
   let aimPlace: AimPlace = AIM;
@@ -193,14 +185,11 @@ async function start(): Promise<void> {
     chosen,
     fps,
     playerId: PLAYER_ID,
-    worn: gear && { melee: worn(gear, 0)?.kind ?? 0, ranged: worn(gear, 1)?.kind ?? 0 },
-    light,
     playing: input.locked,
     status: line,
   });
   showPanel(panelState({ bodies: {} }, { bodies: {} }, status));
   const { forge, store, looks, hair } = await openCards(scene);
-  loadForgedBirds((path) => store.strip(path));
   cards = forge;
   // The first person swings in the direction the fight's rules began the swing with.
   const strokeShare = () => {
@@ -270,24 +259,17 @@ async function start(): Promise<void> {
     last = now;
     clock += seconds;
     const controls = input.frame();
-    // The figure wears what the gear wears, and the hands hold it: the room takes no other arms. The left carries the
-    // panel's light only where the room's arms allow it.
+    // The figure wears what the gear wears, and the hands hold it: the room takes no other arms.
     const ownGear = gear;
     const gearWorn =
       ownGear &&
-      JSON.stringify([
-        you.dress.body,
-        player.player.loadout,
-        light,
-        ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0),
-      ]);
+      JSON.stringify([you.dress.body, player.player.loadout, ...SLOTS.map((unused, slot) => worn(ownGear, slot) ?? 0)]);
     const bodyLayers = looks.bodies[you.dress.body]?.layers;
     if (ownGear && gearWorn && gearWorn !== gearWornKey && bodyLayers) {
       gearWornKey = gearWorn;
       const wardrobe = wardrobeOf(you.dress.body, bodyLayers);
       const outfit = gearOutfit(ownGear, wardrobe, you.dress.outfit, player.player.loadout);
-      const lit = withLight(outfit, light, ownGear.arms, (right, left) => combatRules.armsCode(right, left, true));
-      you.dress = { ...you.dress, outfit: lit };
+      you.dress = { ...you.dress, outfit };
       player.spare = spareOutfit(ownGear, wardrobe, outfit, player.player.loadout);
     }
     player.glow = feel.glow(heldElements(ownGear, player.player.loadout));

@@ -283,10 +283,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
 
   let foam_light = FOAM * (0.62 * sky_level() + 0.38 * max(dot(normal, key_toward()), 0.0) * sky_state.key.w) + sky_state.zenith.rgb * 0.06;
   colour = mix(colour, foam_light, foam);
-  // Past its edge the water gives way to what the backdrop drew there; open water hides it wholly.
-  let water = aerial(colour, -to_eye, distance_to);
-  if (cover >= 1.0) { return vec4f(water, 1.0); }
+  // Past its edge the water gives way to what the backdrop drew there.
   let land = aerial(textureLoad(scene_colour, vec2i(pixel), 0).rgb, normalize(ray_through(pixel)), scene_distance(pixel));
-  return vec4f(mix(land, water, cover), 1.0);
+  return vec4f(mix(land, aerial(colour, -to_eye, distance_to), cover), 1.0);
 }
 `;

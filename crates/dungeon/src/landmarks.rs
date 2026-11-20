@@ -177,7 +177,8 @@ impl Dungeon {
     }
 
     /// Whether a landmark may stand on a spot in a room: on its cells; its back on rock and its other edges inside
-    /// the room, or, `backed`, a free piece's edges inside the room or on rock; on no torch's cell; on and beside no
+    /// the room, or, `backed`, a free piece's edges inside the room or on rock, never on two opposite sides; on no
+    /// torch's cell; on and beside no
     /// doorway, the way in or the portal; and the room's other cells one walk and enough.
     fn stands(&self, room: usize, spot: &Spot, backed: bool) -> bool {
         let cells = self.covered(spot);
@@ -197,6 +198,13 @@ impl Dungeon {
                 }
             })
         });
+        // Backed on rock on two opposite sides it would fill a passage, not stand in a room.
+        let on_rock = |side: Side| {
+            cells.iter().any(|&cell| {
+                self.beside(cell, side).is_none_or(|next| !cells.contains(&next)) && self.rock_beside(cell, side)
+            })
+        };
+        let pinched = (on_rock(Side::North) && on_rock(Side::South)) || (on_rock(Side::East) && on_rock(Side::West));
         let touches = |at: usize| {
             cells.iter().any(|&cell| cell == at || SIDES.into_iter().any(|side| self.beside(cell, side) == Some(at)))
         };
@@ -208,7 +216,7 @@ impl Dungeon {
             && !self.torches.iter().any(|torch| cells.contains(&self.cell_at([torch.at[0], torch.at[1]])))
             && !touches(self.way_in.cell)
             && !touches(self.portal.cell);
-        rim && clear && self.walk_round(room, &cells)
+        rim && !(backed && spot.back.is_none() && pinched) && clear && self.walk_round(room, &cells)
     }
 
     /// Whether a room's cells off a footprint are one walk and as many as its band.

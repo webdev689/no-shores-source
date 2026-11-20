@@ -71,11 +71,10 @@ test('a great fire farther off is lit before a nearer lantern whose light falls 
 });
 
 test("the eye's place goes to the uniform wrapped, marked known; without it, unknown", () => {
-  const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3, 420]);
+  const known = skyNumbers(AFTERNOON, [], [WRAP_M + 5, -3]);
   const row = 14 * 4;
   assert.deepEqual([...known.slice(row, row + 4)], [0, 5, WRAP_M - 3, 1]);
   assert.deepEqual([...known.slice(row - 4, row - 2)], [5, PUDDLE_WRAP_M - 3], 'and wrapped finely for the puddles');
-  assert.equal(known[row - 2], 420, "the ground's height under the eye, where the snow was laid");
   const unknown = skyNumbers(AFTERNOON, []);
   assert.deepEqual([...unknown.slice(row, row + 4)], [0, 0, 0, 0]);
 });
