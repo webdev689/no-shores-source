@@ -52,7 +52,10 @@ struct Group {
 
 /// One of a garrison's groups at its post: where the post is, each foe's type, rank, place and facing there, and its
 /// level before the seas (0 for none) and its shield's element, if it stands with one; its beat, unless it holds its
-/// post; the fighters of it standing now, and the tick the last of them fell.
+/// post; the fighters of it standing now, and the tick the last of them fell. Since it last stood: its leader, whether
+/// the leader's fall broke it, and whether it defends its ground. Where it falls back to as its encounter gives ground,
+/// and where its places are gathered now, if anywhere but its post and its beat; and whether it came in a wave, when
+/// it never stands again.
 #[derive(Debug)]
 pub(crate) struct Post {
     pub at: [f64; 3],
@@ -61,6 +64,12 @@ pub(crate) struct Post {
     pub beat: Option<Beat>,
     pub standing: Vec<FighterId>,
     pub cleared_at: Option<u64>,
+    pub leader: Option<FighterId>,
+    pub broken: bool,
+    pub defending: bool,
+    pub fallback: [f64; 3],
+    pub anchor: Option<[f64; 3]>,
+    pub arrival: bool,
 }
 
 /// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
@@ -276,6 +285,9 @@ impl Room {
         for post in 0..self.garrison.len() {
             self.stand_post(post);
         }
+        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
+            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
+        }
     }
 
     /// A group's post at a point, each foe placed on the navmesh: a group that holds its post with a leader in the
@@ -323,6 +335,12 @@ impl Room {
             beat,
             standing: Vec::new(),
             cleared_at: None,
+            leader: None,
+            broken: false,
+            defending: false,
+            fallback: at,
+            anchor: None,
+            arrival: false,
         })
     }
 
@@ -330,7 +348,7 @@ impl Room {
     /// raised by the seas and with its shield whole, if it has one.
     fn stand_post(&mut self, post: usize) {
         let (members, girds) = (self.garrison[post].members.clone(), self.garrison[post].girds.clone());
-        let standing = members
+        let standing: Vec<FighterId> = members
             .iter()
             .zip(girds)
             .filter_map(|(&(number, rank, place, facing), (level, shield))| {
@@ -340,8 +358,11 @@ impl Room {
                 Some(id)
             })
             .collect();
+        self.garrison[post].leader = leader_of(self, &standing);
         self.garrison[post].standing = standing;
         self.garrison[post].cleared_at = None;
+        (self.garrison[post].broken, self.garrison[post].defending) = (false, false);
+        self.renew_last_stand();
         let clock = self.clock;
         if let Some(beat) = self.garrison[post].beat.as_mut() {
             beat.restart(clock);
@@ -378,7 +399,12 @@ impl Room {
     /// again once STAND_AGAIN has passed, no player stands within CLEAR_AROUND of its post, and the living foes leave
     /// room for it.
     pub(crate) fn keep_garrison(&mut self) {
+        self.lead_groups();
         self.walk_beats();
+        // A wave that has fallen is gone: it never stands again.
+        let foes = &self.foes;
+        let fallen = |id: &FighterId| foes.get(id).is_none_or(|foe| foe.fighter.dead());
+        self.garrison.retain(|post| !post.arrival || !post.standing.iter().all(fallen));
         for post in 0..self.garrison.len() {
             let found = &self.garrison[post];
             let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
@@ -404,6 +430,10 @@ impl Room {
     /// and each of them is given its place: its leader the beat's, the rest round it in turn.
     fn walk_beats(&mut self) {
         for post in 0..self.garrison.len() {
+            // A group gathered elsewhere, as its encounter gives ground or it defends, keeps to the places it has there.
+            if self.garrison[post].anchor.is_some() {
+                continue;
+            }
             let Some(mut beat) = self.garrison[post].beat.take() else { continue };
             let living: Vec<FighterId> = self.garrison[post]
                 .standing
@@ -446,6 +476,14 @@ fn farthest(open: &[(f64, f64)], section: &Section) -> usize {
 
 #[path = "beat.rs"]
 mod beat;
+
+#[path = "groups.rs"]
+mod groups;
+pub(crate) use groups::{Encounter, leader_of};
+
+#[cfg(test)]
+#[path = "groups_tests.rs"]
+mod groups_tests;
 
 #[cfg(test)]
 #[path = "garrison_tests.rs"]
