@@ -345,8 +345,8 @@ fn quay_flight(site: &Avenues, start: (usize, usize), harbour: &Harbour, laid: &
 
 /// The switchback up the platform's wall from an avenue's head cell: an odd number of legs (so its foot lies at the
 /// far end from its top) each rising at most `LEG_RISE_M`, side by side along the wall, the top leg against it; flat
-/// landings at each turn, a leg's width deep, spanning the two legs they join; the top landing at the wall's end nearest the plaza, where
-/// the platform's parapet opens onto it; and the foot's landing reaching across to the road.
+/// landings at each turn, a leg's width deep, spanning the two legs they join; the top landing at the wall's end
+/// nearest the plaza, where the platform's parapet opens onto it; and the foot's landing reaching across to the road.
 fn switchback(site: &Avenues, head: (usize, usize), landmark: (usize, usize), laid: &mut Laid) {
     let Some(ground) = level_of(site.footings, head) else { return };
     let rise = site.platform - ground;
@@ -362,7 +362,7 @@ fn switchback(site: &Avenues, head: (usize, usize), landmark: (usize, usize), la
     let band = width * legs as f64;
     let bounds = site.grid.bounds(head.0, head.1);
     let edge = edge_frame(bounds, step_between(head, landmark), 0);
-    let Some((frame, length, out)) = placed(site, bounds, step_between(head, landmark), band) else { return };
+    let Some((frame, length)) = placed(site, bounds, step_between(head, landmark), band) else { return };
     let run = length - 2.0 * width;
     if run < 2.0 * step {
         return;
@@ -389,7 +389,7 @@ fn switchback(site: &Avenues, head: (usize, usize), landmark: (usize, usize), la
         let low_end = if toward_near { far } else { near };
         if foot {
             // The foot's landing, on the ground, reaching across to the road's flank.
-            let reach = ((CELL_M - ROAD_M) / 2.0 - out).max(band);
+            let reach = ((CELL_M - ROAD_M) / 2.0).max(band);
             let centre = (low_end[0] + low_end[1]) / 2.0;
             pieces.push(Ramp {
                 piece: Piece::Landing,
@@ -416,24 +416,22 @@ fn switchback(site: &Avenues, head: (usize, usize), landmark: (usize, usize), la
     profiles.reverse();
     laid.works.extend(switchback_walls(&frame, width, length, ground, site.platform, &profiles));
     laid.ramps.extend(pieces);
-    if out == 0.0 {
-        // The platform's parapet opens over the top landing.
-        let along = |point: [f64; 2]| if edge.along[0] == 0.0 { point[1] } else { point[0] };
-        let span = [along(frame.at(0.0, 0.0)), along(frame.at(0.0, width))];
-        laid.cuts.push(Cut {
-            middle: edge.at(0.0, CELL_M / 2.0),
-            north_south: edge.along[0] == 0.0,
-            span: [span[0].min(span[1]), span[0].max(span[1])],
-            top: Some(site.platform),
-        });
-    }
+    // The platform's parapet opens over the top landing.
+    let along = |point: [f64; 2]| if edge.along[0] == 0.0 { point[1] } else { point[0] };
+    let span = [along(frame.at(0.0, 0.0)), along(frame.at(0.0, width))];
+    laid.cuts.push(Cut {
+        middle: edge.at(0.0, CELL_M / 2.0),
+        north_south: edge.along[0] == 0.0,
+        span: [span[0].min(span[1]), span[0].max(span[1])],
+        top: Some(site.platform),
+    });
 }
 
 /// Where a switchback stands in its head cell: on the platform's wall from the end nearest the plaza, its legs
-/// reaching `band` across; moved along the wall past the plaza where the plaza stands over that end, or out from the
-/// wall to the plaza's own edge where it stands over the whole wall. Its frame, how far along it may run, and how far
-/// out from the wall it stands; None where it would reach under the plaza or the landmark's base, or out of the cell.
-fn placed(site: &Avenues, bounds: [f64; 4], step: (isize, isize), band: f64) -> Option<(Frame, f64, f64)> {
+/// reaching `band` across; moved along the wall past the plaza where the plaza stands over that end. Its frame and how
+/// far along it may run; None where it would reach under the plaza or the landmark's base, or out of the cell (where
+/// the plaza stands over the whole wall, the avenue meets the plaza's own wall, which is the plaza's to open).
+fn placed(site: &Avenues, bounds: [f64; 4], step: (isize, isize), band: f64) -> Option<(Frame, f64)> {
     let middle = [(site.plaza[0] + site.plaza[2]) / 2.0, (site.plaza[1] + site.plaza[3]) / 2.0];
     let frames = [0, 1].map(|start| edge_frame(bounds, step, start));
     let distance = |frame: &Frame| {
@@ -446,12 +444,9 @@ fn placed(site: &Avenues, bounds: [f64; 4], step: (isize, isize), band: f64) -> 
         [corners[0][0].min(corners[1][0]), corners[0][0].max(corners[1][0])],
         [corners[0][1].min(corners[1][1]), corners[0][1].max(corners[1][1])],
     );
-    let (mut room, mut out) = (CELL_M, 0.0);
+    let mut room = CELL_M;
     if across[1] > 0.0 && across[0] < band && along[1] > 0.0 && along[0] < CELL_M {
-        if along[0] <= 0.0 && along[1] >= CELL_M {
-            out = across[1];
-            frame.origin = frame.at(out, 0.0);
-        } else if along[0] <= 0.0 {
+        if along[0] <= 0.0 {
             room = CELL_M - along[1];
             frame.origin = frame.at(0.0, along[1]);
         } else {
@@ -465,7 +460,7 @@ fn placed(site: &Avenues, bounds: [f64; 4], step: (isize, isize), band: f64) -> 
         && full[2] <= bounds[2] + 1e-6
         && full[3] <= bounds[3] + 1e-6;
     let clear = !site.over.iter().chain([&site.plaza]).any(|&over| overlaps(full, over));
-    (inside && clear).then_some((frame, length, out))
+    (inside && clear && room > 0.0).then_some((frame, length))
 }
 
 fn switchback_walls(

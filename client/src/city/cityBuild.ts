@@ -30,7 +30,7 @@ export const CHUNK_CELLS = 4;
 const TALLEST_M = 60;
 const OVERHANG_M = 20;
 /** A retaining wall's thickness, as the planner lays it. */
-const RETAINING_THICK_M = 1.5;
+const RETAINING_THICK_M = 1.2;
 /** How far a decal stands over the ground it is laid on, so the land's own triangles never show through it. */
 const DECAL_LIFT_M = 0.04;
 const TERRACE_WALL_M = 16;
@@ -320,7 +320,7 @@ export function retaining(solid: Solid): boolean {
     solid.turn === 0 &&
     solid.lean === 0 &&
     long < CELL_M + 0.01 &&
-    thick <= RETAINING_THICK_M &&
+    Math.abs(thick - RETAINING_THICK_M) < 0.01 &&
     solid.size[2] <= TERRACE_WALL_M
   );
 }
