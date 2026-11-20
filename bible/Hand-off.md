@@ -204,8 +204,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
 - **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): 27 cues, the open sea's,
   the story's, the sea fight's (new) and the shore's, wired so each pick plays with no further change. They wait on
-  the owner's picks on the sea sound sheet, made from the `freesound` workflow's candidates; then publish them as
-  "Publishing the world's picks" says. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the
+  the owner's picks on the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its
+  store's `picks` collection holds a Freesound number, or `none` with a note, by cue), made from the `freesound`
+  workflow's candidates; then publish them as "Publishing the world's picks" says. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the
   session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.

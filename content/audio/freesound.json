@@ -1154,7 +1154,7 @@
     {
       "id": "amb.sea.wash",
       "use": "Water rushing along a ship's hull as she makes way, looped",
-      "query": "boat hull water rushing",
+      "query": "boat wake",
       "seconds": [
         10.0,
         180.0
@@ -1172,7 +1172,7 @@
     {
       "id": "amb.sea.rigging",
       "use": "Wind through a ship's rigging and ropes, looped",
-      "query": "wind rigging ropes ship",
+      "query": "ship rigging",
       "seconds": [
         10.0,
         180.0
@@ -1190,7 +1190,7 @@
     {
       "id": "amb.sea.rain",
       "use": "Rain falling on the open sea, looped",
-      "query": "rain on sea water",
+      "query": "rain ocean",
       "seconds": [
         20.0,
         300.0
@@ -1199,7 +1199,7 @@
     {
       "id": "amb.sea.rain.deck",
       "use": "Rain drumming on a ship's wooden deck, looped",
-      "query": "rain on wooden deck",
+      "query": "rain boat",
       "seconds": [
         10.0,
         180.0
@@ -1208,7 +1208,7 @@
     {
       "id": "amb.sea.hull.creak",
       "use": "One creak of a ship's hull",
-      "query": "ship hull creak",
+      "query": "ship creak",
       "seconds": [
         0.5,
         6.0
@@ -1226,7 +1226,7 @@
     {
       "id": "amb.sea.hull.slap",
       "use": "A wave slapping a ship's side",
-      "query": "wave slap hull",
+      "query": "water slap",
       "seconds": [
         0.3,
         4.0
@@ -1235,7 +1235,7 @@
     {
       "id": "amb.sea.bow.thump",
       "use": "A ship's bow thumping into a sea",
-      "query": "boat bow wave impact",
+      "query": "boat wave",
       "seconds": [
         0.5,
         5.0
@@ -1244,7 +1244,7 @@
     {
       "id": "amb.sea.canvas.flap",
       "use": "Sailcloth flapping in the wind",
-      "query": "sail flapping",
+      "query": "flag flapping",
       "seconds": [
         0.5,
         6.0
@@ -1253,7 +1253,7 @@
     {
       "id": "amb.sea.block.knock",
       "use": "A wooden pulley block knocking",
-      "query": "wooden pulley knock",
+      "query": "pulley",
       "seconds": [
         0.1,
         2.0
@@ -1289,7 +1289,7 @@
     {
       "id": "story.crash",
       "use": "The ram: a big ship's bow smashing into another's side",
-      "query": "wood crash impact ship",
+      "query": "wood crash",
       "seconds": [
         1.0,
         8.0
@@ -1298,7 +1298,7 @@
     {
       "id": "story.splash",
       "use": "A body falling into the sea",
-      "query": "body falling into water splash",
+      "query": "dive splash",
       "seconds": [
         0.5,
         5.0
@@ -1343,7 +1343,7 @@
     {
       "id": "sea.ball.hull",
       "use": "A cannonball striking a ship's timbers, splinters flying",
-      "query": "cannonball hit wood",
+      "query": "wood impact",
       "seconds": [
         0.3,
         4.0
@@ -1352,7 +1352,7 @@
     {
       "id": "sea.ball.splash",
       "use": "A cannonball falling in the sea, a tall splash",
-      "query": "cannonball splash water",
+      "query": "big splash",
       "seconds": [
         0.5,
         5.0
@@ -1361,7 +1361,7 @@
     {
       "id": "sea.ship.break",
       "use": "A ship breaking up as she sinks: timbers cracking and groaning",
-      "query": "ship breaking wood sinking",
+      "query": "wood breaking",
       "seconds": [
         2.0,
         15.0
