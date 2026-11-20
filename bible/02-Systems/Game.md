@@ -64,6 +64,7 @@ it answers. `game.ts` wires the rest and keeps the flow; each mode is its own mo
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
 | On foot | M, then Return to ship | The veil, "Returning to your ship", then at sea |
+| On foot, or behind the veil to land | The room's gate shuts to the character | The veil, the gate's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
@@ -332,7 +333,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
   browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
   joined again, they are a new player there, standing where the room puts them, their dress and session sent again.
-  A room that sends the player away is lost: the display says so and they play on alone.
+  A room that sends the player away is lost: the display says so and they play on alone. A room whose gate shuts
+  to the player's character ([[Activities]]) sends them back to their ship, the veil saying why, as "Abyss seas open
+  at level 20. Returning to your ship".
   With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
   makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
   the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played

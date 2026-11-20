@@ -15,7 +15,8 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 [[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
-([[The Activities Are Built in Full, Before the Story's Missions]]). Nothing of it is built yet.
+([[The Activities Are Built in Full, Before the Story's Missions]]). Its core is built (step 1): the clock, the tiers,
+the records, the story kept with the account and the gates; the rest is not.
 
 ## What it is for
 

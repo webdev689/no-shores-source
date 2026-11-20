@@ -348,6 +348,11 @@ export class Foot {
     return this.link.rejoining;
   }
 
+  /** Why the room's gate shut to the player, in its words; null while it is open, and always alone. */
+  get shut(): string | null {
+    return this.link.shut ?? null;
+  }
+
   /** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
   get roomNote(): string {
     if (!(this.link instanceof RoomConnection)) return '';

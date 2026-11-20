@@ -412,6 +412,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
+    if (here.shut) {
+      // A room whose gate shuts sends the player back to their ship, and nothing more of it is drawn.
+      travel({ kind: 'shut', why: here.shut }, goSea);
+      return true;
+    }
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });

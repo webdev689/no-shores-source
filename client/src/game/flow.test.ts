@@ -90,3 +90,12 @@ test('the story opens the game and, ended, brings the player through the veil to
   const foot: Flow = { mode: 'foot', node: 'overlook-social', menu: false };
   assert.equal(next(foot, { kind: 'story-ended', node: 'x', name: 'X' }), foot, 'only the story ends the story');
 });
+
+test('a room whose gate shuts sends the player back to their ship, the veil saying why', () => {
+  const landing = next({ mode: 'landing', chosen: 'tidewall' }, { kind: 'land', node: 'tidewall', name: 'Tidewall' });
+  const why = 'Abyss seas open at level 20.';
+  const back = { mode: 'loading', words: `${why} Returning to your ship`, then: { mode: 'sea', menu: false } };
+  assert.deepEqual(next(landing, { kind: 'shut', why }), back, 'while the veil is up');
+  assert.deepEqual(next({ mode: 'foot', node: 'tidewall', menu: false }, { kind: 'shut', why }), back);
+  assert.deepEqual(next({ mode: 'sea', menu: false }, { kind: 'shut', why }), { mode: 'sea', menu: false });
+});
