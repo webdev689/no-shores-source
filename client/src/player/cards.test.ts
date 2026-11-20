@@ -4,6 +4,8 @@ import { PART, type Strip } from '../forge/compose.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type Card, type CardMaker, Cards } from './cards.ts';
+import type { ComposeJob } from './composeJob.ts';
+import type { Composer } from './composer.ts';
 import { type Dress, plainDress } from './dressing.ts';
 
 // A figure one pixel wide and two tall in each of the forge's five views, holding a sword in either fist.
@@ -123,4 +125,29 @@ test('a dress warmed again asks for its moves only the first time, as a figure w
   for (let frame = 0; frame < 3; frame++) forge.warm(armed, moves, 0, 1);
   forge.warm(bare, moves, 0, 1);
   assert.equal(asked, 2, 'once for each dress');
+});
+
+test('a frame shown now is composed ahead of every frame warmed, and asks for the rest of its move with it', async () => {
+  const walk = { cell: [1, 2], frames: 3, root: [0, 1] } as const;
+  const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
+  const asked: { readonly frame: number; readonly urgent: boolean }[] = [];
+  const recording: Composer = {
+    compose: (job: ComposeJob, urgent: boolean) => {
+      asked.push({ frame: job.frame, urgent });
+      return new Promise(() => undefined);
+    },
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(maker, store, moving, colours, dyes, undefined, recording);
+  forge.card(1, bare, 'walk', 0, 1);
+  assert.deepEqual(asked, [
+    { frame: 1, urgent: true },
+    { frame: 2, urgent: true },
+    { frame: 0, urgent: true },
+  ]);
+  asked.length = 0;
+  forge.warm(bare, () => ['walk'], 0, 2);
+  forge.pump();
+  assert.ok(asked.length > 0 && asked.every((each) => !each.urgent), 'warming is never urgent');
 });

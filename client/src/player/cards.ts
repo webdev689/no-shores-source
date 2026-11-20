@@ -1,9 +1,10 @@
-import { type GlowElement, type GlowField, type GlowLook, glowField, recolourToGlow } from '../elementGlow.ts';
+import type { GlowElement, GlowField, GlowLook } from '../elementGlow.ts';
 import { type Colours, composeFrame } from '../forge/compose.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
 import { type ForgeLooks, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
+import { type Composer, PageComposer, WorkerComposer } from './composer.ts';
 import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
 import { onTheMove } from './playerMoves.ts';
 import type { Picture } from './picture.ts';
@@ -65,7 +66,13 @@ export async function openCards(
     store.table<DyeTable>('dyes'),
   ]);
   const colours: Colours = { skins, hair, snap: new PaletteSnap(dyes.palette) };
-  return { forge: new Cards(maker, store, looks, colours, dyes), store, looks, hair };
+  // Frames are composed in a worker where one can start, so the page's thread only uploads them.
+  const onPage = new PageComposer(looks, colours, (path) => store.strip(path));
+  const composer =
+    typeof Worker === 'undefined'
+      ? onPage
+      : new WorkerComposer({ looks, skins, hair, palette: dyes.palette }, (path) => store.where(path), onPage);
+  return { forge: new Cards(maker, store, looks, colours, dyes, KEPT, composer), store, looks, hair };
 }
 
 /** Composed frames kept on the GPU before the least lately asked for are let go (`most`), to be composed again as
@@ -77,10 +84,6 @@ export interface KeptCards {
 const KEPT: KeptCards = { most: 4000, after: 3000 };
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
-/** The move a cast plays, whose spark glows in its Art's element; the forge draws the spark as what hangs free, so it
- *  is named to count as the weapon. */
-const CAST = 'cast';
-const SPARK: ReadonlySet<string> = new Set(['spark']);
 /** The forge's views of a figure, and those also drawn mirrored for the other side (`viewOf`). */
 const VIEWS = 5;
 const MIRRORED: ReadonlySet<number> = new Set([1, 2, 3]);
@@ -88,6 +91,8 @@ const MIRRORED: ReadonlySet<number> = new Set([1, 2, 3]);
  *  many queued frames a tick, passing over those kept already, so a dress queued again costs no frame its whole. */
 const WARM_A_TICK = 2;
 const WARM_UNDER_WAY = 6;
+/** Off the page's thread, warming goes as fast as a worker keeps up; frames shown now still go ahead of it. */
+const WARM_OFF_PAGE = { aTick: 4, underWay: 12 } as const;
 const WARM_LOOKS = 32;
 
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
@@ -115,9 +120,12 @@ export class Cards {
   private readonly colours: Colours;
   private readonly dyes: DyeTable;
   private readonly limits: KeptCards;
+  private readonly composer: Composer;
+  private readonly warming: { readonly aTick: number; readonly underWay: number };
   /** The last strip that failed to load, for the status line. */
   failure = '';
 
+  /** `composer` composes the frames; on the page's own thread when none is given, warming then at its gentler pace. */
   constructor(
     scene: CardMaker,
     store: ForgeStore,
@@ -125,6 +133,7 @@ export class Cards {
     colours: Colours,
     dyes: DyeTable,
     limits: KeptCards = KEPT,
+    composer: Composer | null = null,
   ) {
     this.scene = scene;
     this.store = store;
@@ -132,6 +141,9 @@ export class Cards {
     this.colours = colours;
     this.dyes = dyes;
     this.limits = limits;
+    this.composer = composer ?? new PageComposer(looks, colours, (path) => store.strip(path));
+    this.warming =
+      composer instanceof WorkerComposer ? WARM_OFF_PAGE : { aTick: WARM_A_TICK, underWay: WARM_UNDER_WAY };
   }
 
   /** How many frames are being composed. */
@@ -204,7 +216,15 @@ export class Cards {
   /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A
    *  move carries the props, instrument or spark the forge draws in it; a weapon glowing in `glow` its outline, and a
    *  cast's spark recoloured to it. */
-  private ask(dress: Dress, anim: string, view: number, frame: number, flip = false, glow: GlowLook = 0): Card | null {
+  private ask(
+    dress: Dress,
+    anim: string,
+    view: number,
+    frame: number,
+    flip = false,
+    glow: GlowLook = 0,
+    urgent = true,
+  ): Card | null {
     const { figure, key } = this.framed(dress, anim, view, frame, flip, glow);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
@@ -215,18 +235,15 @@ export class Cards {
     if (kept !== undefined || this.composing.has(key)) return kept ?? null;
     this.composing.add(key);
     const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
-    const strip = (path: string) => this.store.strip(path);
-    composeFrame(figure, anim, view, frame, this.looks, this.colours, ramps, strip, anim === CAST ? SPARK : undefined)
+    this.composer
+      .compose({ figure, anim, view, frame, ramps, glow }, urgent)
       .then((composed) => {
-        // A cast's spark takes its Art's colour, as the weapon's glow takes the weapon's.
-        if (composed && glow && anim === CAST) recolourToGlow(composed.pixels, glow, composed.held);
         const card = composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root);
-        if (!card || !composed || !glow || !composed.weapon.includes(1)) {
-          this.kept.set(key, card);
-          return;
-        }
-        const field = glowField(composed.weapon, composed.width, composed.height, glow);
-        this.kept.set(key, { ...card, glow: { texture: this.scene.glow(field), look: glow } });
+        const field = composed?.field;
+        this.kept.set(
+          key,
+          card && field && glow ? { ...card, glow: { texture: this.scene.glow(field), look: glow } } : card,
+        );
       })
       .catch((error: unknown) => {
         this.failure = error instanceof Error ? error.message : String(error);
@@ -236,7 +253,8 @@ export class Cards {
   }
 
   /** A figure's card in a move, a view and a frame, its weapon glowing in `glow`, or the last card it showed while
-   *  this one is composed. */
+   *  this one is composed. A move shown before it is composed has the rest of its frames in that view asked for with
+   *  it, in the order they play, so its loop plays through once the first comes. */
   card(
     id: number,
     dress: Dress,
@@ -248,6 +266,10 @@ export class Cards {
   ): Card | null {
     const card = this.ask(dress, anim, view, frame, flip, glow);
     if (card) this.last.set(id, card);
+    else {
+      const frames = this.frames(dress.body, anim);
+      for (let ahead = 1; ahead < frames; ahead++) this.ask(dress, anim, view, (frame + ahead) % frames, flip, glow);
+    }
     return card ?? this.last.get(id) ?? null;
   }
 
@@ -303,14 +325,15 @@ export class Cards {
       }
     }
     let started = 0;
-    for (let looked = 0; looked < WARM_LOOKS && started < WARM_A_TICK; looked++) {
-      if (this.composing.size >= WARM_UNDER_WAY || this.kept.size + this.composing.size >= this.limits.most) return;
+    for (let looked = 0; looked < WARM_LOOKS && started < this.warming.aTick; looked++) {
+      if (this.composing.size >= this.warming.underWay || this.kept.size + this.composing.size >= this.limits.most)
+        return;
       const next = this.queued.shift();
       if (!next) return;
       const { key } = this.framed(next.dress, next.anim, next.view, next.frame, next.flip, next.glow);
       if (this.kept.has(key) || this.composing.has(key)) continue;
       this.warmedBy.set(key, next.key);
-      this.ask(next.dress, next.anim, next.view, next.frame, next.flip, next.glow);
+      this.ask(next.dress, next.anim, next.view, next.frame, next.flip, next.glow, false);
       started += 1;
     }
   }
