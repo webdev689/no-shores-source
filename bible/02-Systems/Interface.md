@@ -439,7 +439,8 @@ signed in to the accounts, Find a Company (F) stands on the footer beside Enter.
 is Stop finding (F). A run found closes the card and goes into it. Enter goes in alone and Close or Escape leaves,
 each stopping the search. A search that ended unasked says why on the card ("You are finding a company in another
 tab.", or "The search stopped. Try again."). A search for a run the card no longer opens ends, as when the week
-turns while it finds.
+turns while it finds; a run found just as the week turned, for a run the card built again no longer opens, is not
+gone into, and the card says "The week turned. Try again.".
 
 ## The social space's counters
 

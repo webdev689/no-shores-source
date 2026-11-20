@@ -19,6 +19,7 @@ import { setGearScreenOpen } from './gearScreen.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import { sharedRun } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What the screens read of the player on foot: the place and seas they stand in, the dungeon they are in, whether
@@ -52,6 +53,8 @@ export interface ActivityScreens {
 
 /** How often the screens look again, in milliseconds. */
 const LOOK_MS = 250;
+/** What the card says of a run found for a base it no longer opens, the week having turned. */
+const WEEK_TURNED = 'The week turned. Try again.';
 const PAGE_CLOCK: ScreensClock = { now: () => Date.now(), every: (run) => void setInterval(run, LOOK_MS) };
 
 export function startActivityScreens(
@@ -103,6 +106,13 @@ export function startActivityScreens(
     const heard = {
       found: (run: string) => {
         search = null;
+        // Matched as the week turned, the run may be one the card no longer opens: it says so, as it stands now.
+        if (compiled && opened) showCard(compiled, opened.entrance);
+        const finds = opened?.card.finds ?? null;
+        if (finds === null || sharedRun(finds, [run]) === null) {
+          said = WEEK_TURNED;
+          return render();
+        }
         close();
         trips.enter(number, name, run);
       },

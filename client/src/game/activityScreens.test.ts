@@ -241,3 +241,15 @@ test('a search for the Elite Dungeon of the week ends as the week turns, and the
   assert.ok(root.find('Elite Dungeon · Levels 10 to 13'));
   assert.ok(keyed(root, 'card-find'));
 });
+
+test('a run found just after the week turned is not gone into, and the card says to try again', async () => {
+  const cistern = dungeonAt('forsaken-cistern', 'Forsaken Cistern', 'continent-4');
+  const { root, sockets, entered, time } = await finding(cistern, 'elite', 26, 29_925_179);
+  keyed(root, 'card-find')?.click();
+  time.now += 60_000;
+  sockets[0]?.fire('message', { data: '{"run":"node-forsaken-cistern--elite--run-m9n8b7v6"}' });
+  assert.deepEqual(entered, [], 'last week’s run');
+  assert.ok(root.find('The week turned. Try again.'));
+  assert.ok(root.find('Elite Dungeon · Levels 10 to 13'), 'the card as it stands now');
+  assert.ok(keyed(root, 'card-find'));
+});
