@@ -26,6 +26,14 @@ export interface Voyaging {
   readonly voyageNote: string;
 }
 
+/** Her hurts as the sea keeps them, shares of whole, and the words for her repair. */
+export interface Kept {
+  readonly hull: number;
+  readonly sail: number;
+  readonly crew: number;
+  readonly repair: string;
+}
+
 /** One part of the panel: its heading and its rows, label and value; or a part still to come. */
 export interface PanelPart {
   readonly heading: string;
@@ -75,13 +83,20 @@ export function shipPanelOnceBuilt(
   build: SloopBuild | null,
   measure: Measure,
   voyage: Voyaging | null,
+  kept: Kept | null = null,
 ): ShipPanel | null {
-  return build ? shipPanelOf(build, measure, voyage) : null;
+  return build ? shipPanelOf(build, measure, voyage, kept) : null;
 }
 
-/** The panel for her build, her measure and her voyage, if she is under one. Her hurts are not kept between fights,
- *  so she is whole. */
-export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyaging | null): ShipPanel {
+/** The panel for her build, her measure, her voyage if she is under one, and the hurts the sea keeps with her (whole
+ *  when it has said none) with her repair. */
+export function shipPanelOf(
+  build: SloopBuild,
+  measure: Measure,
+  voyage: Voyaging | null,
+  kept: Kept | null = null,
+): ShipPanel {
+  const have = (whole: number, share = 1) => `${Math.round(whole * share)} / ${whole}`;
   const guns =
     build.guns.port === build.guns.starboard
       ? `${build.guns.port} a side`
@@ -92,8 +107,9 @@ export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyagin
       {
         heading: 'Vessel',
         rows: [
-          ['Hull', `${build.hull} / ${build.hull}`],
-          ['Canvas', `${build.sail} / ${build.sail}`],
+          ['Hull', have(build.hull, kept?.hull)],
+          ['Canvas', have(build.sail, kept?.sail)],
+          ['Men', have(build.crew, kept?.crew)],
           ['Guns', guns],
           ['Loads', build.loads.map(capital).join(', ')],
           ['Length', metres(measure.lengthM)],
@@ -115,6 +131,7 @@ export function shipPanelOf(build: SloopBuild, measure: Measure, voyage: Voyagin
             },
           ]
         : []),
+      ...(kept ? [{ heading: 'Repair', rows: [['Repair her  R', kept.repair]] as const, later: false }] : []),
       { heading: 'Cargo', rows: [], later: true },
       { heading: 'Crew', rows: [], later: true },
     ],

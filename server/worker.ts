@@ -109,8 +109,10 @@ export class RoomHost extends DurableObject<Env> {
       save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
     };
-    // Only the game's nodes keep characters: the Test Ground grants gear to try it, and at sea no one holds any.
-    this.keeper = new Keeper(name.startsWith('node-') ? characters : null, room, name, (player) => {
+    // The game's nodes and the sea keep characters (at sea, with their ship's hurts): the Test Ground grants gear to try
+    // it, and a fleet room is the World Editor's.
+    const keeps = name.startsWith('node-') || name === 'sea';
+    this.keeper = new Keeper(keeps ? characters : null, room, name, (player) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
@@ -147,7 +149,7 @@ export class RoomHost extends DurableObject<Env> {
       held.signed = true;
       held.count = count;
       void this.keeper?.signIn(player, message, Date.now, () => this.players.get(socket) === held);
-      // At sea no character is kept, so the room says only who is there, for the Roster.
+      // At sea the room also says who is there, for the Roster.
       if (this.name === 'sea') {
         held.token = message;
         void this.env.ACCOUNTS.present(message, this.name).catch(() => false);

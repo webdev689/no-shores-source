@@ -163,11 +163,18 @@ impl Sea {
         self.harbour.flotsam.for_player(player)
     }
 
-    /// A player's character as it is kept between sessions, their ship's hurts in it; none until the accounts gave
-    /// it.
+    /// A player's character as it is kept between sessions, their ship's hurts in it: a new one, with her hurts, until
+    /// the accounts gave theirs; none for no player at sea.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
-        self.harbour.characters.get(&player).map(gear::Character::to_json)
+        if let Some(character) = self.harbour.characters.get(&player) {
+            return Some(character.to_json());
+        }
+        let berth = self.berths.get(&player)?;
+        let mut fresh = gear::Character::starting();
+        let whole = f64::from(gear::character::SHIP_WHOLE);
+        fresh.ship = berth.kept.map(|share| (share.clamp(0.0, 1.0) * whole).round() as u16);
+        Some(fresh.to_json())
     }
 
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea

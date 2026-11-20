@@ -100,6 +100,11 @@ export class SeaCombat {
     this.orbit = { yaw: heading, pitch: ORBIT.pitch };
   }
 
+  /** The fight as the room last showed it. */
+  get view(): FightView {
+    return this.last;
+  }
+
   /** Whether the view has come back up after the fight: the sea takes over. */
   get done(): boolean {
     return this.going === -1 && this.down === 0;
@@ -114,7 +119,8 @@ export class SeaCombat {
   /** A key down or up; answers whether the fight takes it: the helm's (A, D, Shift), a rung (W, S), the brace (C),
    *  and every other key but the menu's, so the sea's own (the map, a voyage, the pace) wait for the fight's end. */
   key(key: string, down: boolean): boolean {
-    if (key === 'm') return false;
+    // The menu's key, and E for the sea's own asks (to board a captain who struck).
+    if (key === 'm' || key === 'e') return false;
     if (!['a', 'd', 'w', 's', 'c', 'shift', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key))
       return true;
     if (down) {

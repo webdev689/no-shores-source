@@ -183,7 +183,7 @@ export class Sea {
   }
 
   /** The other ships the sea room shows round her, every other player's and every hostile one; none out of a room. */
-  get sighted(): Pick<SeaRoom, 'others' | 'pirates'> | null {
+  get sighted(): SeaRoom | null {
     return this.room;
   }
 
