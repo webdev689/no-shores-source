@@ -13,6 +13,8 @@ code:
   - crates/city/src/landmarks_inland.rs#sun_dome
   - crates/city/src/social.rs#plaza
   - crates/city/src/stations.rs#stations
+  - crates/city/src/courtyard.rs#visitor_spots
+  - crates/city/src/lib.rs#OPEN_SOCIAL_SPACES
   - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
@@ -90,15 +92,24 @@ city stands on it:
    stone in the paving, a processional way, a border and a ring round the plinth. Its stations stand in the
    arcades' alcoves, as the Tower's merchants stand in its booths (`stations`): in each alcove a counter under its
    hung lamp, the keeper's place behind it facing the plaza, and shelves of their goods against the back wall. By the
-   portico, the Reader of Vestiges on one side and the Harbourmaster on the other; then a vault on each side, the
-   Quartermaster's armour stands, the Armsmith's racks, and the traders' stalls (a chandler, a fishmonger, a
-   cartographer, a tailor, a herbalist and a smith). Its node is
+   portico, the Mage on one side and the Harbourmaster on the other; then a vault on each side; on the Mage's side the
+   Armorsmith's armour stands, the Weaponsmith's racks, the Tailor's bolts of cloth and the Tack's saddles; on the
+   other the three factions' counters, each between two banner stands with its light on the counter (the
+   Stormcallers', the Lamplighters' and the Veiled's), and a chandler's stall
+   ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]], [[Factions]]). Eight quiet
+   places stand clear of every solid for a visitor who keeps no counter (`visitor_spots`): by each brazier, landward
+   of the two outer benches and before the portico's two ends, where Shape stands one week each. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep
    their own levels and are built on as any other, the plaza's pad standing over its own footprint with its parapet
    for a wall, so what is built beneath it is hidden and the city runs right up to its foot. No terrace wall crosses
    it.
+
+**Open and locked.** Only Overlook's social space opens for now (`OPEN_SOCIAL_SPACES`,
+[[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
+room opens none on it. Shape visits Overlook alone (`SHAPE_VISITS`), the only social node whose file carries his
+places.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the

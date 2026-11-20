@@ -32,8 +32,6 @@ pub struct FactionDef {
 pub struct FactionsDef {
     pub pledge_switch_aurem: u32,
     pub reputation_per_rank: u64,
-    pub emblem_rank: u32,
-    pub dye_rank: u32,
     pub packages_from_rank: u32,
     pub package_aurem: u32,
     pub package_legendary_from_level: u8,

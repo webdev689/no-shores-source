@@ -1,9 +1,7 @@
 {
-  "about": "The factions a player pledges to, one for each Art (bible/05-Decisions/Factions Keep the Arts.md), with Claude's numbers (Factions and Vendors as Claude Shapes Them.md). Read by the rules (the gear crate) and the client alike. Prices in Aurem; reputation as kill XP counts it.",
+  "about": "The factions a player pledges to, one for each Art (bible/05-Decisions/Three Factions Keep the Arts, After Destiny 1.md), with Claude's numbers (Factions and Vendors as Claude Shapes Them.md). Read by the rules (the gear crate) and the client alike. Prices in Aurem; reputation as kill XP counts it.",
   "pledgeSwitchAurem": 2500,
   "reputationPerRank": 10000,
-  "emblemRank": 1,
-  "dyeRank": 2,
   "packagesFromRank": 3,
   "packageAurem": 1000,
   "packageLegendaryFromLevel": 18,

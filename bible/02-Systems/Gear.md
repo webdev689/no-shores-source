@@ -4,6 +4,12 @@ status: live
 code:
   - crates/gear/src/emblems.rs#emblems
   - crates/gear/src/emblems.rs#sold_on
+  - crates/gear/src/cosmetics.rs#cosmetics
+  - crates/gear/src/cosmetics.rs#sold_on
+  - crates/gear/src/shape.rs#present
+  - crates/gear/src/shape.rs#wares
+  - crates/gear/src/shape.rs#found
+  - content/gear/cosmetics.json
   - crates/gear/src/shown.rs#Shown
   - crates/room/src/asks.rs#counter_for
   - crates/gear/src/item.rs#Item
@@ -127,7 +133,7 @@ number is one of [[Gear as Claude Shapes It]].
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
-  Vestige opened at the Reader's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
+  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
   serves them all within reach of its stall. The Test Ground alone hands out gear.
 
 ## Loadouts
@@ -221,21 +227,34 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Back.** An Ammo box gives back a quarter of the capacity, at least one shot of any kind. An Ammo crate, used
   anywhere by a held press on its cell (an ask, refused with none, at full, or with no Ranged weapon worn: answer
   120, "Wear a Ranged weapon first."), fills it. Five crates are carried at
-  most; the Quartermaster sells one for 250 Aurem every day, besides the armour.
+  most; the Weaponsmith sells one for 250 Aurem every day, besides the weapons.
 - **Sent.** The gear message carries the shots left in the Ranged loadout worn, its capacity, the share and the
   crates; the fighter carries the shots left, which the browser predicts it by.
 
 ## Vendors
 
-- **The Quartermaster** sells armour (head, torso, arms, legs) and an Ammo crate, and **the Armsmith** loadouts, two Melee to each
-  Ranged, in a social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three Magic, made at the
-  buyer's
-  level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The slots turn with the day,
-  so over four days the Quartermaster sells each armour piece at each rarity.
-- A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only in a social space, and carried with its
-  slot's nine. Legendary and Atheric gear is never sold: it is earned.
-- The room sends the day's wares with a player's gear while they stand in a social space, with the Tailor's emblems,
-  sends them again as the day turns, and a purchase is an ask like any other.
+The keepers of Overlook's counters ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]);
+the factions' counters are in [[Factions]].
+
+- **The Armorsmith** sells armour (head, torso, arms, legs), and **the Weaponsmith** loadouts, two Melee to each
+  Ranged, and an Ammo crate, in a social space's arcades ([[Cities]]). Each shows six wares a day, three Rare and three
+  Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
+  slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
+- A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
+  its slot's nine. Legendary and Atheric gear is never sold for Aurem: it is earned, or had from Shape.
+- **The Mage** identifies Vestiges, free.
+- **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
+  ("Cosmetics").
+- **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
+  the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
+  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes. **Shapes** come
+  only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
+  2 or 4 from a Boss or Miniboss; a player holds 200 at most.
+- The room keeps the minute, set by its host each second, whose day sets the wares and whose week sets Shape. It
+  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place, his
+  wares and the minutes until he goes with a player's gear while they stand in a social space, sends them again as the
+  day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware, 16 an Ammo
+  crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its place in `node`).
 
 ## Emblems
 
@@ -249,11 +268,26 @@ and its art (`gear::emblems`).
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
   (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Storm
-  seas, a resource gathered); and the Tailor, who sells six a day of twelve, the same for everyone that day, at 500
-  Aurem for Magic and 2,500 for Rare, some from a level. Levels and a piece fully upgraded are earned as they happen.
+  seas, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of twelve,
+  the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks and a
+  piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
   others see of it beside it (`shown`): level, Defense, the Melee loadout's Attack (the Ranged one's without one),
   the emblem worn, and each piece worn.
+
+## Cosmetics
+
+Dyes, coats and bardings, after Destiny's shaders and Sparrows: `content/gear/cosmetics.json`, numbered by its order
+on the wire, each with a kind, a name, a rarity, words, where it comes from and its look (`gear::cosmetics`).
+
+- **Kept and worn** as emblems are: a character keeps every one they have had and wears one dye, one coat and one
+  barding. A new one keeps and wears the starts: Own Colours, Bay and Bare. One worn that is not kept, or of another
+  kind, is the start again as the character is read.
+- **Where each comes from**: the start; a faction's second rank (its dye, [[Factions]]); and the Tailor (dyes) and the
+  Tack (coats and bardings), each showing four a day of those they sell, the same for everyone that day, for Aurem,
+  some from a level.
+- **Asks**: wearing one kept, anywhere (55, its number in `item`); buying one of the day's at its seller's counter
+  (56). The gear message carries those kept, the three worn, and in a social space those sold today.
 
 ## Elements and shields
 
@@ -310,5 +344,5 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
 - A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,
   and a Normal head or arms piece shows nothing over the figure.
-- No Breach items exist yet; cloaks belong to no faction.
+- No Breach items exist yet. Of the cloaks, only the three factions' capes belong to a faction ([[Factions]]).
 - The traits' and items' words are English only.

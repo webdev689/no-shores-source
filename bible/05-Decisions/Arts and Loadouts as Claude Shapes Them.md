@@ -88,6 +88,9 @@ caster's soft lock.
 Each Art has three Core slots and six fragments; any three may be set, none twice. All are open from the start, and
 each Art keeps its own Core.
 
+Replaced in part by [[Three Factions Keep the Arts, After Destiny 1]]: a fragment is set only once owned, had by
+rising the Art at its faction or bought there ([[Factions and Vendors as Claude Shapes Them]]).
+
 | Art | Fragments |
 |---|---|
 | Storm | **Pursuit**: Tempest sends two more orbs. **Conduction**: Arc Lash's Charge lasts 50% longer. **Momentum**: Quicken also gives the player Crit while it lasts. **Recharge**: each Volt kill takes 4% off the Tenets' cooldowns. **Overload**: foes Charged by the player are Exposed too. **Gale**: Quicken lasts 3 s longer and reaches 18 m |
@@ -269,5 +272,5 @@ A loadout's perks, these and the rest, work while it is drawn, beside the armour
 
 ## Not now
 
-A Relic slot (the owner dropped it); Arts beyond the three; unlocking fragments by play; a separate greatsword
-picture; spells against other players.
+A Relic slot (the owner dropped it); Arts beyond the three; a separate greatsword picture; spells against other
+players.

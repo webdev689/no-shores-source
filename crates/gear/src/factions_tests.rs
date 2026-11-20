@@ -43,7 +43,7 @@ fn the_factions_file_reads_whole() {
         assert_eq!((cape.kind.slot(), cape.rarity), (Slot::Cloak, Rarity::Legendary));
         assert_eq!(cape.faction.as_deref(), Some(faction.key.as_str()), "the cape names its faction");
         let emblem = emblems().iter().find(|found| found.id == faction.emblem).expect("its emblem");
-        assert_eq!(emblem.source, Source::Faction { faction: faction.id, rank: file.emblem_rank });
+        assert_eq!(emblem.source, Source::Faction { faction: faction.id, rank: 1 });
         let dye = cosmetics().iter().find(|found| found.id == faction.dye).expect("its dye");
         assert_eq!((dye.kind, dye.source), (CosmeticKind::Dye, Source::Faction { faction: faction.id, rank: 2 }));
     }

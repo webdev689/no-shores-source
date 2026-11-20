@@ -1,0 +1,101 @@
+---
+type: decision
+date: 2026-11-20
+status: in force
+---
+# Factions and Vendors as Claude Shapes Them
+
+The owner handed this round over: "Please take this on with autonomy, be as detailed as possible, and come back when
+this is 100% finished". What the owner decided is in [[Three Factions Keep the Arts, After Destiny 1]],
+[[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]],
+[[Elder Maren Hale Welcomes the Player to Overlook]], [[Only Overlook's Social Space Opens for Now]] and
+[[The Character Page Opens Appearance From an Icon Button]]. Everything below is Claude's, made under that word, and
+the owner may change any of it. The numbers live in `content/gear/factions.json`, `content/arts/arts.json` (`levels`)
+and `content/gear/cosmetics.json`, which the rules and the page both read.
+
+## Destiny 1's factions, and what came over
+
+Destiny 1 had three factions in the Tower (Dead Orbit, Future War Cult, New Monarchy), each with a vendor. A Guardian
+pledged to one at a time for 2,500 Glimmer, at most once a week; while pledged and wearing the faction's class item
+(a cloak, mark or bond), the reputation they earned in activities went to the faction. Each rank of reputation unlocked
+more of the vendor's wares (class items first, then legendary armour at rank 2 and weapons at rank 3), and from rank 3
+each rank reached left a package of legendary gear and materials; rank 25 opened a quest for an exotic class item. In
+The Taken King every rank took the same reputation and ranks went on without end, each leaving a package collected
+from the vendor. Sources: Destinypedia's Faction, Reputation and Dead Orbit pages; Fextralife's faction pages.
+
+| Destiny 1 | Overlook |
+|---|---|
+| Three factions, one vendor each in the Tower | Three factions, one for each Art, each a counter in Overlook's plaza |
+| Pledge for 2,500 Glimmer, once a week | The first pledge free; a switch 2,500 Aurem, at any time (the owner's "at any time") |
+| The class item worn sends reputation to the faction | The cape worn, while pledged to its faction, earns it reputation from every kill: as much as the kill's XP |
+| Ranks of even reputation, without end (The Taken King) | A rank every 10,000 reputation, without end (the owner's "isnt capped") |
+| Ranks unlock wares; packages from rank 3 | Rank 1 keeps the faction's emblem, rank 2 its dye, and from rank 3 each rank leaves a package at the counter |
+| Packages hold legendary gear and materials | A package: a Vestige at the player's level for a random slot, Rare or one in four Legendary from level 18, and 1,000 Aurem; refused while ten Vestiges are carried |
+| Faction gear for Marks | The faction's cape for 2,500 Aurem, pledged only, one kept at a time; Legendary, level 1, so any level wears it |
+
+Reputation is kept for every faction across a switch, as Destiny's was. A cape of a faction not pledged earns nothing.
+
+## The Arts' levels
+
+| Call | Choice |
+|---|---|
+| XP | Every kill's XP goes to the worn Art too (before Scholar's share, which is the gear's), until its bar is full |
+| Bars | Level 1 to 2: 8,000; 2 to 3: 16,000; 3 to 4: 32,000; 4 to 5: 64,000 (120,000 in all, as much as a player's own XP to level 16) |
+| Rising | At the Art's faction's counter, its bar full; no pledge needed. Level 2: 1,000 Aurem; 3: 2,500; 4: 5,000 and 10 Weapon and 10 Armor Fragments; 5: 10,000 and 2 Weapon and 2 Armor Essence |
+| A core each level | Each rise owns one of the Art's six fragments of the player's choice; four by level 5 |
+| Fragments owned | A Core slot holds only a fragment owned. The faction sells the others for 7,500 Aurem each, from its first rank (Destiny's rank-gated faction wares) |
+| Power and duration | Level 1 to 5: 0.6, 0.7, 0.8, 0.9 and 1.0 of every spell's harm and healing, and of how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs they give (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil). Recharges, reaches and counts are as written. Level 5 is the Arts as they were |
+| Old characters | Every Art at level 1; they own the fragments their Cores held, so nothing set is taken away |
+
+## The keepers and their wares
+
+| Keeper | Where | What |
+|---|---|---|
+| The Mage | The alcove by the portico, where the Reader stood | Identifies Vestiges, free, as Destiny's Cryptarch decrypted engrams |
+| The Armorsmith | Next but one | Six pieces of armour a day, three Rare and three Magic, at the buyer's level (the Quartermaster's, renamed) |
+| The Weaponsmith | Next | Six weapons a day, two Melee to each Ranged, and the Ammo crate (the Armsmith's, renamed) |
+| The Tailor | Next | Six emblems a day as before, and four dyes a day of the twelve sold |
+| The Tack | The last alcove on that side | Four horse pieces a day of the ten coats and bardings sold |
+| The three factions | The other side, past the vault: the Stormcallers, the Lamplighters (Elder Maren Hale) between, the Veiled | Pledge, cape, packages, the Art's rise and fragments |
+| Shape | One of eight places on the plaza, by the week | Four Legendary and two Atheric pieces a week, named items at level 20, 7 Shapes for a Legendary and 15 for an Atheric |
+
+The Harbourmaster keeps her alcove, and a chandler's stall the last on the factions' side, for life; the fishmonger's,
+cartographer's, herbalist's and smith's stalls gave their alcoves to the new keepers.
+
+## Shape and Shapes
+
+| Call | Choice |
+|---|---|
+| When | Friday 09:00 UTC (Xûr's Friday arrival) to Sunday 21:00 UTC (Sunday evening), the same for every player |
+| Where | Eight places on Overlook's plaza (`city::courtyard::visitor_spots`): by each of the four braziers, landward of the two outer benches, and before the portico's two ends. One a week, by the week's dice |
+| Weeks | Counted from Monday 00:00 UTC |
+| Shapes | At most 200 held. A kill at Elite (Rough) seas gives one 3 times in 100, at Abyss (Storm) 6 in 100; a Boss or Miniboss 2 and 4. None at Normal (Calm) |
+
+## Cosmetics
+
+| Call | Choice |
+|---|---|
+| One catalogue | Dyes, coats and bardings in `content/gear/cosmetics.json`, kept and worn as emblems are, one of each kind worn |
+| Starts | Dye "Own Colours" (each piece in its own metal and cloth), coat "Bay" (the horse as the forge draws it), barding "Bare" |
+| Dyes | Twelve sold (five Magic at 1,000, five Rare at 2,500 from level 5 or 10, two Legendary at 5,000 from level 20) and three faction dyes at rank 2. A dye is four colours laid as a 16-step ramp, as the forge's metals and cloth are |
+| Coats | Six sold: Chestnut, Dun and Grey at 1,500; Black and White at 3,000 from level 5; Palomino at 3,000 from level 10 |
+| Bardings | The four the forge already draws over its horse (DFO's shop looks): Ember Plate, Wraith Mist, Dawnfire and Clockwork, 9,000 each from level 15 or 20 |
+
+## The plaza's people
+
+| Keeper | Dress |
+|---|---|
+| The Mage | An anole woman in a hooded purple robe |
+| The Armorsmith | A human woman in chain and iron |
+| The Weaponsmith | A felid man in leather |
+| The Tailor | A human man in a red formal tunic |
+| The Tack | A felid woman in a vest and riding boots, leather gauntlets |
+| Stormcaller | An anole man in a blue tunic and cloak, steel gauntlets |
+| Elder Maren Hale | An old human woman, white-haired, in yellow robes and a white formal cloak |
+| The Veiled | A grey-haired felid woman in a hooded grey robe |
+| Shape | An anole in a hooded grey robe |
+
+## Locked social spaces
+
+Only Overlook's social space opens: the bake marks every other city's social node closed and the room opens none on
+it (`city::OPEN_SOCIAL_SPACES`). Shape visits Overlook alone (`city::SHAPE_VISITS`).

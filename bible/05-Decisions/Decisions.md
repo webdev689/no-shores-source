@@ -143,6 +143,12 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Swing's Arc Never Covers Its Striker]]
 - [[A Player's Melee Weapon Reaches a Tenth Further]]
 - [[Every Shader Is Checked Offline]]
+- [[Three Factions Keep the Arts, After Destiny 1]]
+- [[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]
+- [[Elder Maren Hale Welcomes the Player to Overlook]]
+- [[Only Overlook's Social Space Opens for Now]]
+- [[The Character Page Opens Appearance From an Icon Button]]
+- [[Factions and Vendors as Claude Shapes Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -128,12 +128,17 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 
 ## In the rules
 
-- **Worn and kept.** A character wears one Art, Storm from the start, and keeps a Core for each Art: three slots,
-  each holding a fragment's place in its Art's list or nothing. Both are saved with the character; a save without
-  them wears Storm with every Core empty, and a broken one is made whole on reading ([[Gear]]).
+- **Worn and kept.** A character wears one Art, Storm from the start, and keeps for each Art a Core (three slots,
+  each holding a fragment's place in its Art's list or nothing), a level from 1 to 5, XP toward the next and the
+  fragments it owns. All are saved with the character; a save without them wears Storm at level 1 with every Core
+  empty, one from before levels owns what its Cores held, and a broken one is made whole on reading ([[Gear]]).
+- **Levels.** Kills fill the worn Art's bar, and its faction raises it a level for a price, a fragment of the
+  player's choice owned at each rise; the faction also sells fragments ([[Factions]]). The level weighs every spell:
+  its harm and healing, and how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs they give, at 0.6
+  of the numbers below at level 1 up to the numbers below at level 5.
 - **Asks.** The room answers `wearArt` and `setCore` as it does the gear's asks, in turn with the player's inputs.
-  An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), and one set
-  already in another slot of that Art (113). Only the worn Art's Core changes its spells.
+  An unknown Art is refused (answer 110), a slot outside 0 to 2 (111), a fragment outside 0 to 5 (112), one set
+  already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.
 - **Charge.** The room keeps each player's Anima and Tenets while they are in it, as shares from 0 to 1, and an
   account's for ten minutes after it leaves, as it left them: they are its again as it rejoins, or empty if it now
   wears another Art. It keeps as many as it holds players, the oldest let go first. A first join starts the Anima
@@ -158,6 +163,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   with Hunt, gives back half of Vanish's cooldown, once a Vanish. A Cosmic kill on an Exposed foe, with Dread, keeps
   the player's Duskraven 2 s longer. With Cruelty, the player's crits on Exposed foes deal 1.1 times. With Overload,
   every foe the player Charges, by any means, is Exposed too.
+
+The numbers are an Art's at level 5.
 
 | Spell | What the room does | Numbers | Core |
 |---|---|---|---|
