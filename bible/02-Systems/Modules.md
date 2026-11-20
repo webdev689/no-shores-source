@@ -96,7 +96,9 @@ does not make the committed manifest, and publishes with the repository's Cloudf
   square to the world, its first socket toward the zone's middle. Every cavern stands the chamber under its roof,
   its entry turned to the tunnel. The area's basin takes no platform of its own, since the module brings its
   platforms, and its ways arrive 2 m past its first socket: the citadel's ramp, the Old Stones' north flight.
-  Every ledge ([[Layouts]], "Ledges") stands the cliff stair of the baked rise nearest its climb, stretched to it.
+  Every ledge ([[Layouts]], "Ledges") stands the cliff stair of the lowest baked rise at or over its climb, pressed
+  down to it, so no riser stands over the 0.25 m it was built with: a body reaches two treads ahead, and a stair
+  stretched taller lifts the second over its step.
   Every river crossing, a way's or a gate's gorge's, stands the shortest stone bridge as long as its deck would run
   (timber where none is), its deck where the timber's would be, turned along the way, and moving with the land as
   a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off

@@ -1,12 +1,14 @@
 //! The Gullwing Vale's handcrafted modules (tools/modules) as the bake lays them, walked by the movement rules: up the
 //! Old Stones' flights onto their upper tier, in from the cavern's tunnel and up the chamber's steps onto its shelf,
-//! through the citadel's gate to its ward and its wall-walk, and up every ledge's cliff stair to the high place.
+//! through the citadel's gate to its ward and its wall-walk, and over every stone bridge; and up every ledge's cliff
+//! stair of Saltmere's three zones to the high place.
 
 use city::solids::{Shape, Solid};
 use movement::terrain::Terrain;
 use movement::{Block, Blocks, Controls, TICK_SECONDS, step_body};
 use room::{Floor, standing_on};
 use std::path::Path;
+use std::sync::OnceLock;
 
 /// How near a waypoint a body counts as there, metres.
 const THERE_M: f64 = 1.2;
@@ -18,27 +20,42 @@ struct Vale {
     map: layout::spaces::Map,
 }
 
-fn vale() -> Vale {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
-    let id = "continent-1";
-    let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
-    let continent = layout.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
-    let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
-    let builders = bake::builders(&root).expect("the builders read");
-    let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
-    let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
-    city::settle(&mut landmass, &city).expect("its city settles");
-    let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
-    let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("the continent bakes");
-    let laid = layouts.into_iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
+/// Continent 1's layouts and node files as the bake makes them, once for every test.
+fn laid_one() -> &'static (Vec<layout::Layout>, Vec<bake::NodeFile>) {
+    static LAID: OnceLock<(Vec<layout::Layout>, Vec<bake::NodeFile>)> = OnceLock::new();
+    LAID.get_or_init(|| {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let read =
+            |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
+        let id = "continent-1";
+        let layout = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
+        let continent = layout.continents.into_iter().find(|continent| continent.id == id).expect("the continent");
+        let edits = land::edits::parse(&read(&format!("content/world/land/{id}.json"))).expect("the edits parse");
+        let builders = bake::builders(&root).expect("the builders read");
+        let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
+        let mut landmass = land::landmass::generate(&continent, edits.clone()).expect("the continent generates");
+        city::settle(&mut landmass, &city).expect("its city settles");
+        let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
+        let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("the continent bakes");
+        (layouts, nodes)
+    })
+}
+
+/// A zone of Saltmere as laid and baked: its ground, its boxes, its solids and its map.
+fn zone(id: &str) -> Vale {
+    let (layouts, nodes) = laid_one();
+    let laid = layouts.iter().find(|laid| laid.id == id).expect("the zone lays out");
     let node = nodes.iter().find(|node| node.id == laid.id).expect("the node bakes");
     Vale {
         floor: Floor::Land(Box::new(node.ground.clone())),
         blocks: Blocks::new(node.boxes.iter().map(Block::from_floats).collect()),
-        solids: laid.seating.solids,
-        map: laid.map,
+        solids: laid.seating.solids.clone(),
+        map: laid.map.clone(),
     }
+}
+
+fn vale() -> Vale {
+    zone("gullwing-vale")
 }
 
 /// The first group's solid of the module of a name: the one standing its parts.
@@ -148,22 +165,29 @@ fn a_body_walks_up_the_citadels_ramp_through_its_gate_and_up_to_its_ward_and_its
 }
 
 #[test]
-fn a_body_climbs_every_ledges_stair_from_the_low_place_onto_the_high_one() {
-    let vale = vale();
-    let stairs: Vec<&layout::spaces::Connection> =
-        vale.map.connections.iter().filter(|joined| joined.joined == layout::spaces::Joined::Stair).collect();
-    assert!(!stairs.is_empty(), "the Vale cuts a ledge");
+fn a_body_climbs_every_ledges_stair_of_saltmere_from_the_low_place_onto_the_high_one() {
+    for id in ["saltgrass-downs", "gullwing-vale", "driftwood-moors"] {
+        let vale = zone(id);
+        let stairs: Vec<&layout::spaces::Connection> =
+            vale.map.connections.iter().filter(|joined| joined.joined == layout::spaces::Joined::Stair).collect();
+        assert!(!stairs.is_empty(), "{id} cuts a ledge");
+        climbs_each(&vale, id, &stairs);
+    }
+}
+
+/// Walks up each of a zone's ledges' stairs from 3 m short of its slot onto the high floor past its top.
+fn climbs_each(vale: &Vale, id: &str, stairs: &[&layout::spaces::Connection]) {
     for stair in stairs {
         let [start, edge] = [stair.points[0], stair.points[1]];
         let long = layout::field::distance(start, edge);
         let way = [(edge[0] - start[0]) / long, (edge[1] - start[1]) / long];
         let ahead = |from: [f64; 2], out: f64| [from[0] + way[0] * out, from[1] + way[1] * out];
         let (from, onto) = (ahead(start, -3.0), ahead(edge, layout::ledges::OVER_M + 3.0));
-        let (body, passed) = walked(&vale, from, &[ahead(start, 1.0), onto], 60.0);
+        let (body, passed) = walked(vale, from, &[ahead(start, 1.0), onto], 60.0);
         let high = vale.floor.height_at(onto[0], onto[1]);
         assert!(
             passed == 2 && (body.z - high).abs() < 0.5,
-            "up the stair from {} to {} the body stops {:.1} m short at {:.2} m under the high floor",
+            "{id}: up the stair from {} to {} the body stops {:.1} m short at {:.2} m under the high floor",
             stair.from,
             stair.to,
             layout::field::distance([body.x, body.y], onto),

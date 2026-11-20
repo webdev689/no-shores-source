@@ -1,9 +1,9 @@
 //! Ledges: cliff stairs cut into the rock between two places at different heights, where the brief asks for heights,
 //! so a body climbs straight from a low place to a high one rather than round by the ways. Each runs square to the
 //! world, so its stair's parts stay square: a slot cut at the low place's level from its floor's edge through the rock
-//! to the high place's, and a cliff stair (a module, tools/modules/stairs.py) standing in it. The stair is the baked
-//! rise nearest the climb, stretched to fit it to the centimetre, its top landing reaching out onto the high floor
-//! past where the slot and the floor blend.
+//! to the high place's, and a cliff stair (a module, tools/modules/stairs.py) standing in it. The stair is the lowest
+//! baked at or over the climb, pressed down to fit it to the centimetre, its top landing reaching out onto the high
+//! floor past where the slot and the floor blend.
 
 use crate::areas::Area;
 use crate::field::{Field, Water, distance};
@@ -41,10 +41,12 @@ const APART_M: f64 = 60.0;
 const INSIDE_M: f64 = 30.0;
 const END_CLEAR_M: f64 = 10.0;
 
-/// The cliff stair for a climb of `rise` metres (the baked rise nearest it) and its run, foot to top, metres.
+/// The cliff stair for a climb of `rise` metres and its run, foot to top, metres: the lowest baked at or over the
+/// climb, so pressed down to fit it no riser stands higher than it was built. A stair stretched taller would lift the
+/// step two treads ahead, under a body's reach, over a body's step.
 #[must_use]
 pub fn stair_for(rise: f64) -> Option<(u32, f64)> {
-    let baked = ((rise / 2.0).round() * 2.0).clamp(LEAST_RISE_M, MOST_RISE_M);
+    let baked = ((rise / 2.0).ceil() * 2.0).clamp(LEAST_RISE_M, MOST_RISE_M);
     let number = city::modules::number_of(&format!("cliff-stair-{baked:.0}"))?;
     let sockets = &city::modules::all()[number as usize].sockets;
     let end = |name: &str| sockets.iter().find(|socket| socket.name == name).map(|socket| socket.at[1]);
@@ -81,8 +83,8 @@ fn apart(chosen: &[Ledge], ledge: &Ledge) -> bool {
 }
 
 /// A ledge's stair on the land as carved (its slot cut): its module, its run, and the heights of its foot on the
-/// slot's floor and its top `OVER_M` onto the high floor, metres; none where it would not climb 3 to 25 m. The stair is
-/// the baked rise nearest the climb measured at its foot, which a longer stair stands further down: so twice. None
+/// slot's floor and its top `OVER_M` onto the high floor, metres; none where it would not climb 3 to 24 m. The stair is
+/// the lowest baked rise at or over the climb measured at its foot, which a longer stair stands further down: so twice. None
 /// where the slot's floor steps before the stair's foot, or the land stands over its steps.
 #[must_use]
 pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32, f64, f64, f64)> {
@@ -113,7 +115,7 @@ pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32
         let at = [foot[0] + ledge.way[0] * along, foot[1] + ledge.way[1] * along];
         land(at) <= foot_m + (top_m - foot_m) * along / run + STEP_M
     });
-    let rises = (LEAST_RISE_M - 1.0..=MOST_RISE_M + 1.0).contains(&(top_m - foot_m));
+    let rises = (LEAST_RISE_M - 1.0..=MOST_RISE_M).contains(&(top_m - foot_m));
     (rises && walked && under_steps).then_some((number, run, foot_m, top_m))
 }
 
@@ -227,7 +229,7 @@ pub fn cut(field: &Field, (areas, ground): (&[Area], &Ground), sculpt: &mut Scul
 }
 
 /// Stands a ledge's stair on the land as carved (`measured`): its top `OVER_M` onto the high floor, its foot on the
-/// slot's floor, the baked rise nearest the climb stretched to the climb itself.
+/// slot's floor, the lowest baked rise at or over the climb pressed down to the climb itself.
 pub fn build(kit: &mut Kit, ledge: &Ledge, carved: &Sculpts) {
     let Some((number, run, foot_m, top_m)) = measured(ledge, kit.ground, carved) else { return };
     let top = [ledge.edge[0] + ledge.way[0] * OVER_M, ledge.edge[1] + ledge.way[1] * OVER_M];

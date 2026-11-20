@@ -370,7 +370,7 @@ floor's edge more closely than its slot's half and 2 m, 10 m from its ends.
 Its slot, a raised floor 6.8 m wide at the low floor's level, runs from there to the high floor's edge. Where the
 rock runs on past the stair, the slot is a cleft leading to its foot. The cliff stair ([[Modules]]) stands in it, its
 top landing 3 m onto the high floor, past where the slot and the floor blend. The shortest are tried first, twelve at
-most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 25 m there, its slot's
+most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 24 m there, its slot's
 floor runs from its start to the stair's foot without a step, and no land stands over the steps as they climb. Up to
 three are cut, 60 m apart. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
 ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
