@@ -7,7 +7,8 @@ import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
-import { cellHeight, type Deck, deckFloats, deckSpawn, deckToWorld, HULL_DECKS, type Lying } from '../ships/deck.ts';
+import { cellHeight, type Deck, deckFloats, deckToWorld, HULL_DECKS, type Lying, railSpot } from '../ships/deck.ts';
+import { sparBoxes } from '../ships/spars.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import type { Shot } from './camera.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
@@ -60,11 +61,12 @@ export function deckLink(sea: DeckSea, boarder: number): RoomLink {
   };
 }
 
-/** Her deck as a place on foot: its ring her deck's bounds and its one spawn where her deck room stands a boarder. */
-export function deckNode(deck: Deck, name: string): NodeInfo {
+/** Her deck as a place on foot: its ring her deck's bounds and its one spawn where her deck room stands a boarder
+ *  come over her rail on `side`. */
+export function deckNode(deck: Deck, name: string, side: number): NodeInfo {
   const [west, north] = [deck.west, deck.north];
   const [east, south] = [west + deck.cell * deck.columns, north + deck.cell * deck.rows];
-  const spawn = deckSpawn(deck);
+  const spawn = railSpot(deck, side);
   return {
     id: 'deck',
     kind: 'patrol',
@@ -94,6 +96,15 @@ export function herLying(
   const [x = 0, y = 0, heading = 0] = captain.ship;
   const [heave = 0, pitch = 0, roll = 0] = captain.pose;
   return { captain, lying: { x, y, heading, scale, heave, pitch, roll } };
+}
+
+/** The side of the captain nearest the player's ship in the fight `view` (the one they board) that their ship lies
+ *  on, as her deck room reckons it (crates/room/src/sea_decks.rs `side_of`): 1 her starboard, -1 her port. */
+export function boardingSide(view: FightView): number {
+  const [x = 0, y = 0] = view.player.ship;
+  const { lying } = herLying(view, [x, y], 1);
+  const across = (x - lying.x) * Math.cos(lying.heading) + (y - lying.y) * Math.sin(lying.heading);
+  return across < 0 ? -1 : 1;
 }
 
 /** The map from her deck's frame to the world's as she lies, column-major: a step along her deck (x to starboard, y
@@ -165,15 +176,17 @@ export class DeckFight {
     sea: DeckSea,
     deck: SeenDeck,
     near: readonly [number, number],
+    side: number,
   ): Promise<DeckFight> {
     const boarder = deck.aboard.find(([player]) => player === sea.own)?.[1] ?? 0;
     const her = HULL_DECKS[deck.hull] ?? HULL_DECKS[0];
     if (!her) throw new Error('no hull has a deck');
-    const onHer = { ...context, groundAt: (x: number, y: number) => cellHeight(her, x, y) };
+    const groundAt = (x: number, y: number) => cellHeight(her, x, y);
+    const onHer = { ...context, groundAt, cameraBlocks: sparBoxes(deck.hull) };
     // What floats for the player as they board, so a hold won while the fight stands up is told apart from it.
     const before = new Set(sea.flotsam.map((piece) => piece.id));
     let heard: DeckSea['hearDeck'] = null;
-    const foot = await stand(onHer, deckNode(her, 'Her deck'), deckFloats(her), (received) => {
+    const foot = await stand(onHer, deckNode(her, 'Her deck', side), deckFloats(her), (received) => {
       [sea.hearDeck, heard] = [received, received];
       return deckLink(sea, boarder);
     });

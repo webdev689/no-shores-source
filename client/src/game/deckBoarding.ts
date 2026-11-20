@@ -7,7 +7,15 @@ import type { InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { cellHeight, type Lying } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
-import { DeckFight, type DeckSea, deckTurn, holdWords, laidOnHer, type StandOnDeck } from './deckFight.ts';
+import {
+  boardingSide,
+  DeckFight,
+  type DeckSea,
+  deckTurn,
+  holdWords,
+  laidOnHer,
+  type StandOnDeck,
+} from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
@@ -93,7 +101,7 @@ export class Boarding {
     if (!sea?.deck || !view) return;
     this.starting = boarder;
     const [x = 0, y = 0] = view.player.ship;
-    DeckFight.board(this.context, this.stand, sea, sea.deck, [x, y]).then(
+    DeckFight.board(this.context, this.stand, sea, sea.deck, [x, y], boardingSide(view)).then(
       (fight) => {
         // One deck stands up at a time: a deck left meanwhile is let go at the next frame's look at the sea's word.
         [this.starting, this.fight] = [null, fight];

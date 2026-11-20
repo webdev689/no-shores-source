@@ -5,6 +5,9 @@ export interface Block {
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
+  /** Where a block held up off the ground begins (a ship's boom or yard), for the camera alone: the movement and
+   *  fight crates' blocks stand from the ground. */
+  readonly bottom?: number;
 }
 
 /** What the player asks of the body for a tick: movement relative to where it looks (-1..1), the look's bearing in

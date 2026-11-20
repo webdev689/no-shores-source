@@ -53,10 +53,25 @@ export const HULL_DECKS: readonly Deck[] = (['sloop', 'schooner', 'brig', 'friga
   deckOf(ships.ships[name].deck),
 );
 
-/** Where a boarder comes over her side, as her deck room stands them (crates/room/src/deck_fight.rs): amidships, or
- *  at her helm where no plank lies there. */
-export function deckSpawn(deck: Deck): readonly [number, number] {
-  return cellHeight(deck, 0, 0) === null ? deck.helm : [0, 0];
+/** A boarder stands this far in from her outermost plank at the rail they come over, metres, the rail sought in
+ *  steps of this (crates/room/src/deck_fight.rs `RAIL_IN_M`, `RAIL_STEP_M`). */
+const RAIL_IN_M = 0.5;
+const RAIL_STEP_M = 0.05;
+
+/** Where a boarder comes over her rail on `side` (1 her starboard, -1 her port), as her deck room stands them
+ *  (`rail_spot`): amidships, `RAIL_IN_M` in from her outermost plank there; at her helm where no plank lies across
+ *  her middle. */
+export function railSpot(deck: Deck, side: number): readonly [number, number] {
+  const [west, east] = [deck.west, deck.west + deck.cell * deck.columns];
+  const [edge, inward] = side < 0 ? [west, 1] : [east, -1];
+  const steps = Math.floor((east - west) / RAIL_STEP_M);
+  for (let step = 0; step <= steps; step += 1) {
+    const plank = edge + inward * RAIL_STEP_M * step;
+    if (cellHeight(deck, plank, 0) === null) continue;
+    const spot = plank + inward * RAIL_IN_M;
+    return cellHeight(deck, spot, 0) === null ? deck.helm : [spot, 0];
+  }
+  return deck.helm;
 }
 
 /** The deck as the movement crate's grid numbers it (`Heights::from_floats`): its shape, then each height, NaN for

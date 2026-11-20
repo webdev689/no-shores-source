@@ -59,6 +59,8 @@ export interface FootContext {
   readonly groundAt: (x: number, y: number) => number | null;
   readonly foesAsked: readonly FoeAsk[];
   readonly session: Promise<string | null>;
+  /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
+  readonly cameraBlocks?: readonly Block[];
 }
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
@@ -373,7 +375,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, this.boxes);
+    const aimed = () => playerCamera(walker.player, movement, [...this.boxes, ...(this.context.cameraBlocks ?? [])]);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,

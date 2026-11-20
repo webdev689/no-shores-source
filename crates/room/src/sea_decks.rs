@@ -56,11 +56,13 @@ impl Sea {
             return Err(crate::battle::BoardRefused::NotFighting);
         }
         let (ship, pirate) = self.fights.board(player)?;
+        let side = self.side_of(player, ship);
         let (at, wind) = self.fights.position_of(pirate.id).unwrap_or(([pirate.x, pirate.y], [0.0; 2]));
+        let hull = usize::from(pirate.commission.hull().number());
+        let spot = crate::deck_fight::rail_spot(self.decks.hulls.get(hull).unwrap_or(&self.deck), side);
         let index = match self.decks.boarded.iter().position(|deck| deck.pirate.id == pirate.id) {
             Some(index) => index,
             None => {
-                let hull = usize::from(pirate.commission.hull().number());
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
                 let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
                 let room = Room::deck(deck, faction, rank, pirate.level.max(1));
@@ -70,7 +72,7 @@ impl Sea {
         };
         let boarded = &mut self.decks.boarded[index];
         // A deck room just made always has room; only one already full refuses, and it keeps its boarders.
-        let Some(boarder) = boarded.room.join() else { return Err(crate::battle::BoardRefused::NoneAlongside) };
+        let Some(boarder) = boarded.room.board_at(spot) else { return Err(crate::battle::BoardRefused::NoneAlongside) };
         if let Some(text) = self.harbour.characters.get(&player).map(gear::Character::to_json) {
             boarded.room.restore_character(boarder, &text);
         }
@@ -80,6 +82,15 @@ impl Sea {
         let told = naval::wire::told_numbers(&naval::fight::Event::Boarding { ship }, self.clock as f64);
         self.harbour.told.push((player, told.unwrap_or_default()));
         Ok(())
+    }
+
+    /// The side of her (`ship` in the player's fight) their own ship lies on: 1 her starboard, -1 her port.
+    fn side_of(&mut self, player: PlayerId, ship: naval::shots::ShipId) -> f64 {
+        let Some((fought, crew)) = self.fights.of_mut(player) else { return 1.0 };
+        let (Some(own), Some(her)) = (fought.fight.vessel(crew.ship), fought.fight.vessel(ship)) else { return 1.0 };
+        let (own, her) = (own.ship, her.ship);
+        let across = (own.x - her.x) * libm::cos(her.heading) + (own.y - her.y) * libm::sin(her.heading);
+        if across < 0.0 { -1.0 } else { 1.0 }
     }
 
     /// Whether a player stands on a deck they boarded.
