@@ -344,7 +344,7 @@
         position: absolute;
         inset: 0;
       }
-      /* The held map's names, the ship and the card, laid over the parchment the GPU draws: written in its ink. */
+      /* The held map's card, laid over the parchment the GPU draws; its words and marks are painted with its ink. */
       .held-map {
         position: absolute;
         inset: 0;
@@ -356,48 +356,6 @@
         position: absolute;
         left: 0;
         top: 0;
-      }
-      .held-mark {
-        padding: 0 0 0 9px;
-        margin-top: -8px;
-        font-size: 11px;
-        color: var(--map-ink);
-        white-space: nowrap;
-        text-shadow:
-          -1px 0 0 #eedebe,
-          1px 0 0 #eedebe,
-          0 -1px 0 #eedebe,
-          0 1px 0 #eedebe;
-      }
-      .held-mark::before {
-        content: '';
-        position: absolute;
-        left: -4px;
-        top: 4px;
-        width: 6px;
-        height: 6px;
-        border: 1.5px solid var(--map-ink);
-        border-radius: 50%;
-      }
-      .held-mark.port {
-        font-style: normal;
-        font-weight: 500;
-        letter-spacing: round(up, calc(1em / 22), 1px);
-      }
-      .held-mark.port::before {
-        background: var(--map-ink);
-      }
-      .held-mark.chosen {
-        color: var(--map-route);
-      }
-      .held-ship {
-        width: 0;
-        height: 0;
-        margin: -9px 0 0 -6px;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-bottom: 16px solid var(--map-route);
-        transform-origin: 6px 9px;
       }
       .held-card {
         display: flex;
