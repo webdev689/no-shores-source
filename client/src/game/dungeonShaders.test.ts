@@ -139,3 +139,51 @@ test('a flame mirrored in still water is as wide as it looks from there, brighte
   }
   assert.ok(image(Math.cos(0.05), 8) < image(Math.cos(0.05), 2));
 });
+
+/** A scalar WGSL function as JavaScript: its types dropped, its lets constant, its vars and ifs as JavaScript's. */
+function wgslToJs(wgsl: string): string {
+  return wgsl
+    .replace(
+      /fn (\w+)\(([^)]*)\) -> \w+ \{/,
+      (_whole, name: string, params: string) => `function ${name}(${params.replace(/: \w+/g, '')}) {`,
+    )
+    .replace(/\blet /g, 'const ')
+    .replace(/\bvar /g, 'let ')
+    .replace(/(\d)u\b/g, '$1')
+    .replace(/\bif (.+) \{/g, 'if ($1) {');
+}
+
+test('a flame behind rock shows no image in still water: its line is walked cell by cell', () => {
+  const wgsl = /fn rock_between\([\s\S]*?\n\}/.exec(DUNGEON_SHADER)?.[0];
+  assert.ok(wgsl, 'a walk of the line');
+  assert.match(
+    DUNGEON_SHADER,
+    /if image > [\d.]+ && !rock_between\(point\.x, point\.y, lamp\.place\.x, lamp\.place\.y\)/,
+  );
+  const most = Number(/const MOST_CELLS = (\d+)u;/.exec(DUNGEON_SHADER)?.[1]);
+  // Five columns by three rows of 3.2 m cells, rock in the middle column's top two rows.
+  const rock = [
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0],
+  ];
+  const context = {
+    view: { grid: { x: 3.2 } },
+    MOST_CELLS: most,
+    floor: Math.floor,
+    abs: Math.abs,
+    sign: Math.sign,
+    max: Math.max,
+    select: (otherwise: number, chosen: number, choose: boolean) => (choose ? chosen : otherwise),
+    rock_at: (column: number, row: number) => (rock[row]?.[column] ?? 1) === 1,
+  };
+  const between = (from: [number, number], to: [number, number]) =>
+    Boolean(runInNewContext(`${wgslToJs(wgsl)}\nrock_between(${from.join()}, ${to.join()})`, context));
+  assert.equal(between([1.6, 1.6], [14.4, 1.6]), true, 'straight through the rock');
+  assert.equal(between([1.6, 8.0], [14.4, 8.0]), false, 'along the open row below it');
+  assert.equal(between([1.6, 1.6], [4.8, 4.8]), false, 'within the open cells');
+  assert.equal(between([1.6, 1.6], [14.4, 8.0]), true, 'slanting through its foot');
+  assert.equal(between([1.6, 7.0], [14.4, 7.0]), false, 'back along the open row');
+  assert.equal(between([0.5, 0.5], [0.5, 0.5]), false, 'its own cell');
+  assert.ok(most >= 32, 'far enough for a dungeon');
+});

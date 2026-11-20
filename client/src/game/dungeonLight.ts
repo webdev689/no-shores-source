@@ -65,14 +65,20 @@ export const MOODS: Readonly<Record<StyleKey, Colour>> = {
   mines: [0.25, 0.2, 0.15],
 };
 
-/** Each cell's look for its mood: an open cell's own, and rock the look of the first open cell beside it (east, south,
- *  west, north), so a face that lies a little into the rock, as a cave's wall bulges, takes the mood of its room. */
-export function moodLooks(layout: DungeonLayout): Uint32Array {
+/** Set in a cell's word for rock, over its look. */
+export const CELL_ROCK = 1 << 16;
+
+/** Each cell's word for the shader: its look for its mood, an open cell's own and rock the look of the first open cell
+ *  beside it (east, south, west, north), so a face that lies a little into the rock, as a cave's wall bulges, takes the
+ *  mood of its room; and on rock `CELL_ROCK`, so still water mirrors no flame that rock hides. */
+export function cellWords(layout: DungeonLayout): Uint32Array {
   return Uint32Array.from(layout.cellLooks, (look, cell) => {
     if (look >= 0) return look;
     const [column, row] = [cell % layout.columns, Math.floor(cell / layout.columns)];
     const open = SIDE_STEPS.find(([east, south]) => openAt(layout, column + east, row + south));
-    return open ? Math.max(0, layout.cellLooks[(row + open[1]) * layout.columns + column + open[0]] ?? 0) : 0;
+    return (
+      CELL_ROCK | (open ? Math.max(0, layout.cellLooks[(row + open[1]) * layout.columns + column + open[0]] ?? 0) : 0)
+    );
   });
 }
 

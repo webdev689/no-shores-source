@@ -311,7 +311,8 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   floor picture (`WATER_FLAG`): through it the bed, darker and bluer, lit as a floor is; in it the room, brighter
   toward its lights, and each light's flame but the water's own glow, which lies on it, all by Fresnel (2% square
   on, all of it edge on). A flame mirrored is as bright however far it burns and as small as it looks from there
-  (`flame_image`), so a dark lake still shows the far torches; a slow ripple moves it all.
+  (`flame_image`), so a dark lake still shows the far torches, unless rock stands between: the line to each is
+  walked cell by cell (`rock_between`). A slow ripple moves it all.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.

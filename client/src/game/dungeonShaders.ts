@@ -5,7 +5,7 @@
 import { COLOUR_LAYERS } from '../city/pictures.ts';
 import { DUNGEON_LAYERS, PORTAL_FLAG, WATER_FLAG } from './dungeonBook.ts';
 import { CAVE_BULGE_M } from './dungeonCeilings.ts';
-import { type Light, LIGHT_WGSL } from './dungeonLight.ts';
+import { CELL_ROCK, type Light, LIGHT_WGSL } from './dungeonLight.ts';
 
 /** The most lights lighting one frame: the nearest to the eye. */
 export const MOST_LIGHTS = 32;
@@ -39,8 +39,11 @@ struct View {
 @group(0) @binding(1) var<storage, read> lights: array<Light, ${MOST_LIGHTS}>;
 @group(0) @binding(2) var pictures: texture_2d_array<f32>;
 @group(0) @binding(3) var picture_sampler: sampler;
-// Each cell's look, by its number among the looks.
+// Each cell's look, by its number among the looks, and CELL_ROCK on rock.
 @group(0) @binding(4) var<storage, read> cell_looks: array<u32>;
+const CELL_ROCK = ${CELL_ROCK}u;
+// The most cells a line from still water to a flame is walked across before the flame is taken as hidden.
+const MOST_CELLS = 64u;
 
 ${LIGHT_WGSL}
 
@@ -98,8 +101,43 @@ fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
   if column < 0.0 || row < 0.0 || column >= view.grid.y || row >= view.grid.z {
     return view.moods[0].rgb;
   }
-  let look = cell_looks[u32(row) * u32(view.grid.y) + u32(column)];
+  let look = cell_looks[u32(row) * u32(view.grid.y) + u32(column)] & ~CELL_ROCK;
   return view.moods[min(look, ${MOST_LOOKS - 1}u)].rgb;
+}
+
+// Whether the cell at (column, row) is rock, or past the grid.
+fn rock_at(column: f32, row: f32) -> bool {
+  if column < 0.0 || row < 0.0 || column >= view.grid.y || row >= view.grid.z { return true; }
+  return (cell_looks[u32(row) * u32(view.grid.y) + u32(column)] & CELL_ROCK) != 0u;
+}
+
+// Whether rock stands on the line from (from_x, from_y) to (to_x, to_y), walked cell by cell across the grid: from
+// one cell to the next across whichever of its sides the line crosses first. A longer line is taken as blocked.
+fn rock_between(from_x: f32, from_y: f32, to_x: f32, to_y: f32) -> bool {
+  let size = view.grid.x;
+  var column = floor(from_x / size);
+  var row = floor(from_y / size);
+  let last_column = floor(to_x / size);
+  let last_row = floor(to_y / size);
+  let step_x = sign(to_x - from_x);
+  let step_y = sign(to_y - from_y);
+  // How far along the line, 0 to 1, a cell's span is, and where it next crosses a side each way.
+  let span_x = select(1e9, size / abs(to_x - from_x), step_x != 0.0);
+  let span_y = select(1e9, size / abs(to_y - from_y), step_y != 0.0);
+  var next_x = select(1e9, abs((column + max(step_x, 0.0)) * size - from_x) / abs(to_x - from_x), step_x != 0.0);
+  var next_y = select(1e9, abs((row + max(step_y, 0.0)) * size - from_y) / abs(to_y - from_y), step_y != 0.0);
+  for (var count = 0u; count < MOST_CELLS; count++) {
+    if column == last_column && row == last_row { return false; }
+    if next_x < next_y {
+      column += step_x;
+      next_x += span_x;
+    } else {
+      row += step_y;
+      next_y += span_y;
+    }
+    if rock_at(column, row) { return true; }
+  }
+  return true;
 }
 
 // Still water over its bed, a slow ripple through its normal: through it the bed, lit as a floor is; in it the room,
@@ -119,8 +157,11 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> 
     let towards = lamp.place.xyz - point;
     let distance = length(towards);
     let image = flame_image(dot(mirror, towards / max(distance, 1e-3)), distance);
-    let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
-    gleam += lamp.colour.rgb * FLAME_IN_WATER * image * burns * lamp.shape.z;
+    // The line to a flame is walked only where its image would show.
+    if image > 0.001 && !rock_between(point.x, point.y, lamp.place.x, lamp.place.y) {
+      let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
+      gleam += lamp.colour.rgb * FLAME_IN_WATER * image * burns * lamp.shape.z;
+    }
   }
   let mirrors = fresnel(max(dot(rippled, to_eye), 0.0));
   let through = bed * WATER_TINT * lights_at(point, rippled, time, mood);

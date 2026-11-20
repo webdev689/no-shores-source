@@ -11,7 +11,8 @@ import {
   GLOW_KINDS,
   LIGHT_KINDS,
   lightAt,
-  moodLooks,
+  cellWords,
+  CELL_ROCK,
   MOODS,
   pulse,
   shoulder,
@@ -60,7 +61,7 @@ test('each fixture kind burns its own way, and each style its own mood', () => {
   }
 });
 
-test("rock takes the look of the open cell beside it, so a wall bulged into it keeps its room's mood", () => {
+test("rock takes the look of the open cell beside it, so a wall bulged into it keeps its room's mood, and is marked rock", () => {
   // Three columns by two rows: a look 0 cell, rock, a look 1 cell; and below, rock with no open cell beside it but one.
   const layout = {
     columns: 3,
@@ -68,7 +69,8 @@ test("rock takes the look of the open cell beside it, so a wall bulged into it k
     cells: [0, -2, 1, -2, -2, -2],
     cellLooks: [0, -1, 1, -1, -1, -1],
   } as unknown as DungeonLayout;
-  assert.deepEqual(Array.from(moodLooks(layout)), [0, 1, 1, 0, 0, 1]);
+  const rock = CELL_ROCK;
+  assert.deepEqual(Array.from(cellWords(layout)), [0, rock | 1, 1, rock, rock, rock | 1]);
 });
 
 test("a landmark's glows burn by their kind's number: the fixtures' kinds, then a spirit, daylight, water and a rune", () => {

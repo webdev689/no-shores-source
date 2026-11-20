@@ -15,7 +15,7 @@ import { propPlans } from './dungeonCells.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
 import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
 import { dressingOf } from './dungeonDressing.ts';
-import { burningOf, LIGHT_KINDS, type Light, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
+import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
 import type { ModulePack } from './dungeonModules.ts';
 import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
@@ -162,7 +162,7 @@ export class DungeonView {
       size: MOST_LIGHTS * LIGHT_FLOATS * 4,
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
     });
-    const looks = moodLooks(layout);
+    const looks = cellWords(layout);
     const cellLooks = device.createBuffer({
       size: Math.max(16, looks.byteLength),
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
