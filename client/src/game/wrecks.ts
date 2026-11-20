@@ -3,6 +3,7 @@
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { CityPlan, Wreck } from '../city/plan.ts';
 import type { Gpu } from '../gpu.ts';
+import type { ShadowMap } from '../shadow.ts';
 import { loadShip, type ShipMesh, VERTEX_BYTES } from '../ships/shipMesh.ts';
 import type { ShipLook } from '../ships/dress.ts';
 import { HULL_NAMES, hullPaint } from '../ships/hulls.ts';
@@ -73,21 +74,28 @@ export class Wrecks {
         });
   }
 
-  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world. */
-  drawInto(pass: GPURenderPassEncoder, camera: ShipCamera): void {
-    for (const { wreck, view } of this.drawn) {
-      if (!view) continue;
-      const place = {
-        x: wreck.at[0],
-        y: wreck.at[1],
-        z: -settledDepth(wreck.ship),
-        heading: wreck.heading,
-        pitch: 0,
-        roll: wreck.heel,
-      };
-      view.drawInto(pass, place, camera, 0, WRECK_LOOK);
-    }
+  /** Draws every wreck whose ship has come into the pass, seen as `camera` sees the world, in the sun's shadows. */
+  drawInto(pass: GPURenderPassEncoder, camera: ShipCamera, shadow: ShadowMap): void {
+    for (const { wreck, view } of this.drawn)
+      if (view) view.drawInto(pass, placeOf(wreck), camera, 0, WRECK_LOOK, null, shadow);
   }
+
+  /** Draws every wreck's shadow into the cascade of the sun's map being drawn. */
+  castInto(pass: GPURenderPassEncoder, camera: ShipCamera, shadow: ShadowMap): void {
+    for (const { wreck, view } of this.drawn) if (view) view.castInto(pass, placeOf(wreck), camera, 0, null, shadow);
+  }
+}
+
+/** Where a wreck lies: settled to her deck, heeled over. */
+function placeOf(wreck: Wreck) {
+  return {
+    x: wreck.at[0],
+    y: wreck.at[1],
+    z: -settledDepth(wreck.ship),
+    heading: wreck.heading,
+    pitch: 0,
+    roll: wreck.heel,
+  };
 }
 
 /** A city's drawer with its wrecks drawn after it, in the same pass: the city itself where it has none. */
@@ -95,10 +103,13 @@ export function withWrecks(gpu: Gpu, city: Drawer, plan: CityPlan): Drawer {
   if (!plan.wrecks?.length) return city;
   const wrecks = new Wrecks(gpu, plan.wrecks);
   return {
-    castInto: city.castInto?.bind(city),
+    castInto: (pass, fromEye, shot, time, shadow) => {
+      city.castInto?.(pass, fromEye, shot, time, shadow);
+      wrecks.castInto(pass, { fromEye, eye: shot.eye }, shadow);
+    },
     drawInto: (pass, fromEye, shot, time, shadow) => {
       city.drawInto(pass, fromEye, shot, time, shadow);
-      wrecks.drawInto(pass, { fromEye, eye: shot.eye });
+      wrecks.drawInto(pass, { fromEye, eye: shot.eye }, shadow);
     },
   };
 }

@@ -422,9 +422,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       drawers.nature,
       fight?.under,
       {
-        drawInto: (pass, fromEye, shot, time) => {
+        castInto: (pass, fromEye, shot, _time, shadow) =>
+          shipModels.castInto(pass, ships, { fromEye, eye: shot.eye }, shadow),
+        drawInto: (pass, fromEye, shot, time, shadow) => {
           const camera = { fromEye, eye: shot.eye };
-          shipModels.draw(pass, ships, camera);
+          shipModels.draw(pass, ships, camera, shadow);
           sea?.fight?.draw(pass, camera, time);
         },
       },

@@ -1,6 +1,7 @@
 // What every hull's view draws with, made once a device and shared: the ship shader, its pipeline (built off the
 // frame, so a hull first seen at sea does not stall one), and her parts' and the sides' flags' pictures and sampler.
-import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
+import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
 import { levelsOf } from '../textures/levels.ts';
 import type { Picture } from '../textures/picture.ts';
 import { SHIP_PARTS, SHIP_PICTURE_TEXELS, shipPictures } from '../textures/shipPictures.ts';
@@ -27,8 +28,9 @@ export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
 
 const [HULL_PART, SAIL_PART] = [SHIP_PARTS.indexOf('hull'), SHIP_PARTS.indexOf('sail')];
 
-/** The shader, its parts' pictures' mean lightness given: a side's paint keeps a picture's grain about its colour. */
-const shipShader = (hullLight: number, sailLight: number) => /* wgsl */ `
+/** What both her shaders share: her uniforms and pictures, and where each vertex of hers is drawn; her parts' pictures'
+ *  mean lightness given, as a side's paint keeps a picture's grain about its colour. */
+const placeShader = (hullLight: number, sailLight: number) => /* wgsl */ `
 ${SHARED_WGSL}
 const AMBIENT = 0.35;
 const HULL_LIGHT = ${hullLight.toFixed(4)};
@@ -73,6 +75,7 @@ struct Drawn {
   @location(3) shell: f32,
   // How high on her it is, and how far along her, in her own frame.
   @location(4) model: vec2f,
+  @location(5) from_eye: vec3f,
 };
 
 /** A vector of her frame turned by a yard's brace about a vertical axis. */
@@ -80,16 +83,16 @@ fn braced(vector: vec2f, brace: vec4f) -> vec2f {
   return vec2f(vector.x * brace.z - vector.y * brace.w, vector.x * brace.w + vector.y * brace.z);
 }
 
-@vertex
-fn vertex_main(
-  @location(0) position: vec3f,
-  @location(1) normal: vec4f,
-  @location(2) uv: vec2f,
-  @location(3) part: vec4u,
-) -> Drawn {
-  var drawn: Drawn;
+/** Where a vertex of her frame is drawn from the eye, as her yards are braced and her masts stand or lie, and the way
+ *  its face turns there. */
+struct Placed {
+  from_eye: vec3f,
+  facing: vec3f,
+};
+
+fn placed(position: vec3f, normal: vec3f, part: vec4u) -> Placed {
   var at = position;
-  var facing = normal.xyz;
+  var facing = normal;
   // A yard turns round its mast with its sail's brace.
   if (part.z > 0u) {
     let yard = place.yards[part.z - 1u];
@@ -108,9 +111,28 @@ fn vertex_main(
       at = vec3f(0.0, 0.0, -50.0);
     }
   }
-  let world = (place.turn * vec4f(at, 0.0)).xyz + place.offset.xyz;
-  drawn.clip = place.from_eye * vec4f(world, 1.0);
-  drawn.normal = (place.turn * vec4f(facing, 0.0)).xyz;
+  return Placed((place.turn * vec4f(at, 0.0)).xyz + place.offset.xyz, (place.turn * vec4f(facing, 0.0)).xyz);
+}
+`;
+
+/** The ship shader proper, lit as the land is and in the sun's shadows (`SHADOW_WGSL`). */
+const drawShader = (hullLight: number, sailLight: number) => /* wgsl */ `
+${placeShader(hullLight, sailLight)}
+${SHADOW_WGSL}
+const BOUNCE = 0.15;
+
+@vertex
+fn vertex_main(
+  @location(0) position: vec3f,
+  @location(1) normal: vec4f,
+  @location(2) uv: vec2f,
+  @location(3) part: vec4u,
+) -> Drawn {
+  var drawn: Drawn;
+  let at = placed(position, normal.xyz, part);
+  drawn.clip = place.from_eye * vec4f(at.from_eye, 1.0);
+  drawn.normal = at.facing;
+  drawn.from_eye = at.from_eye;
   drawn.uv = uv * PICTURE_PER_M;
   drawn.part = part.x;
   drawn.shell = f32(part.y);
@@ -135,7 +157,26 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   } else if (drawn.part == SAIL_PART && place.canvas.w > 0.0) {
     colour = place.canvas.rgb * clamp(light / SAIL_LIGHT, 0.75, 1.15);
   }
-  return vec4f(colour * place.shade.x * (AMBIENT + (1.0 - AMBIENT) * max(dot(normal, SUN), 0.0)), 1.0);
+  // The land's light: the sky's, what the water throws back onto her sides, and the sun where the shadows let it.
+  let ambient = AMBIENT + BOUNCE * (1.0 - abs(normal.z));
+  let direct = max(dot(normal, SUN), 0.0);
+  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0);
+  return vec4f(colour * place.shade.x * (ambient + (1.0 - ambient) * direct * sun), 1.0);
+}
+`;
+
+/** Her shadow's shader: her faces drawn along the sun into its map (`SHADOW_CAST_WGSL`). */
+const castShader = (hullLight: number, sailLight: number) => /* wgsl */ `
+${placeShader(hullLight, sailLight)}
+${SHADOW_CAST_WGSL}
+
+@vertex
+fn cast_vertex(
+  @location(0) position: vec3f,
+  @location(1) normal: vec4f,
+  @location(3) part: vec4u,
+) -> @builtin(position) vec4f {
+  return shadow.from_eye * vec4f(placed(position, normal.xyz, part).from_eye, 1.0);
 }
 `;
 
@@ -182,9 +223,10 @@ function picturesTexture(device: GPUDevice): GPUTexture {
   return texture;
 }
 
-/** What every hull's view on a device shares: its pipeline, its pictures and their sampler. */
+/** What every hull's view on a device shares: its pipeline and her shadow's, its pictures and their sampler. */
 export interface ShipKit {
   readonly pipeline: GPURenderPipeline;
+  readonly cast: GPURenderPipeline;
   readonly pictures: GPUTextureView;
   readonly sampler: GPUSampler;
 }
@@ -196,41 +238,57 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
   let kit = kits.get(gpu.device);
   if (!kit) {
     const lightness = (part: (typeof SHIP_PARTS)[number]) => lightnessOf(pictures()[SHIP_PARTS.indexOf(part)]);
-    const module = gpu.device.createShaderModule({ code: shipShader(lightness('hull'), lightness('sail')) });
-    kit = gpu.device
-      .createRenderPipelineAsync({
-        layout: 'auto',
-        vertex: {
-          module,
-          entryPoint: 'vertex_main',
-          buffers: [
-            {
-              arrayStride: VERTEX_BYTES,
-              attributes: [
-                { shaderLocation: 0, offset: 0, format: 'float32x3' },
-                { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
-                { shaderLocation: 2, offset: 16, format: 'float32x2' },
-                { shaderLocation: 3, offset: 24, format: 'uint8x4' },
-              ],
-            },
-          ],
-        },
-        fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
-        primitive: { topology: 'triangle-list', frontFace: FRONT_FACE },
-        depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
-        multisample: { count: SAMPLES },
-      })
-      .then((pipeline) => ({
-        pipeline,
-        pictures: picturesTexture(gpu.device).createView({ dimension: '2d-array' }),
-        sampler: gpu.device.createSampler({
-          addressModeU: 'repeat',
-          addressModeV: 'repeat',
-          magFilter: 'nearest',
-          minFilter: 'linear',
-          mipmapFilter: 'linear',
-        }),
-      }));
+    const [hullLight, sailLight] = [lightness('hull'), lightness('sail')];
+    const { device } = gpu;
+    const module = device.createShaderModule({ code: drawShader(hullLight, sailLight) });
+    const castModule = device.createShaderModule({ code: castShader(hullLight, sailLight) });
+    const both = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
+    const placeLayout = device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: both, buffer: { type: 'uniform' } },
+        { binding: 1, visibility: SHADER_STAGE.fragment, texture: { viewDimension: '2d-array' } },
+        { binding: 2, visibility: SHADER_STAGE.fragment, sampler: {} },
+      ],
+    });
+    const shadows = shadowLayouts(device);
+    const buffers: GPUVertexBufferLayout[] = [
+      {
+        arrayStride: VERTEX_BYTES,
+        attributes: [
+          { shaderLocation: 0, offset: 0, format: 'float32x3' },
+          { shaderLocation: 1, offset: 12, format: 'snorm8x4' },
+          { shaderLocation: 2, offset: 16, format: 'float32x2' },
+          { shaderLocation: 3, offset: 24, format: 'uint8x4' },
+        ],
+      },
+    ];
+    const drawing = device.createRenderPipelineAsync({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [placeLayout, shadows.receiver] }),
+      vertex: { module, entryPoint: 'vertex_main', buffers },
+      fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
+      primitive: { topology: 'triangle-list', frontFace: FRONT_FACE },
+      depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
+      multisample: { count: SAMPLES },
+    });
+    // Her sails and planks are single faces, so both sides cast.
+    const casting = device.createRenderPipelineAsync({
+      layout: device.createPipelineLayout({ bindGroupLayouts: [placeLayout, shadows.caster] }),
+      vertex: { module: castModule, entryPoint: 'cast_vertex', buffers },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+      depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
+    });
+    kit = Promise.all([drawing, casting]).then(([pipeline, cast]) => ({
+      pipeline,
+      cast,
+      pictures: picturesTexture(gpu.device).createView({ dimension: '2d-array' }),
+      sampler: gpu.device.createSampler({
+        addressModeU: 'repeat',
+        addressModeV: 'repeat',
+        magFilter: 'nearest',
+        minFilter: 'linear',
+        mipmapFilter: 'linear',
+      }),
+    }));
     // A kit that failed is made afresh the next time a hull is opened.
     kit.catch(() => kits.delete(gpu.device));
     kits.set(gpu.device, kit);
