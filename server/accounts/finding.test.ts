@@ -5,7 +5,18 @@ import { runAsk, runInstance } from '../roomNames.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
 import { companionsOf } from './companies.ts';
-import { Finder, type FinderSocket, Queue, type Seeker, bandOf, findingAt, foundRun, seekerOf } from './finding.ts';
+import {
+  FINDING_MOST,
+  Finder,
+  type FinderSocket,
+  Queue,
+  type Seeker,
+  bandOf,
+  findingAt,
+  foundRun,
+  seekerOf,
+} from './finding.ts';
+import { TOKEN_WAIT_MS } from '../keeping.ts';
 
 const seeker = (socket: number, account: string, since: number, band = 0, apart: string[] = []): Seeker => ({
   socket,
@@ -226,4 +237,24 @@ test('a seeker gone before their run is found is told nothing, and the rest stil
     opened.map((socket) => socket.sent),
     [told, told, told, []],
   );
+});
+
+test('a socket that sends no token in time is let go, and only those with a token fill a finder', async () => {
+  const { made, tokens, finderOf } = await world(['Ada']);
+  const finder = finderOf('node-krakens-grotto');
+  const silent = Array.from({ length: FINDING_MOST }, () => new FakeSocket());
+  for (const socket of silent) finder.opened(socket);
+  assert.equal(finder.full, false, 'no token yet: none counts');
+  made.clock.now += TOKEN_WAIT_MS - 1;
+  await finder.tick();
+  assert.equal(finder.open, FINDING_MOST, 'within the wait');
+  made.clock.now += 1;
+  await finder.tick();
+  assert.ok(
+    silent.every((socket) => socket.closed[0] === 4003),
+    'all let go after the wait',
+  );
+  assert.equal(finder.open, 0);
+  await seeking(finder, tokens['Ada'] ?? '');
+  assert.equal(finder.waiting, 1, 'a seeker with a token gets in');
 });

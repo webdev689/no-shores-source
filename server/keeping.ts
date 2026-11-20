@@ -39,8 +39,8 @@ export const SAVE_UNCHANGED_MS = 20_000;
  *  and a joiner plays on unkept. */
 const LEAVE_WAITS_MS = [1_000, 4_000, 15_000, 40_000];
 const CLAIM_WAITS_MS = [1_000, 4_000];
-/** How long a run's room waits for a joined player's token: as long as a claim's own waits. */
-const TOKEN_WAIT_MS = CLAIM_WAITS_MS.reduce((total, millis) => total + millis, 0);
+/** How long a run's room, and Find a Company, wait for a joined socket's token: as long as a claim's own waits. */
+export const TOKEN_WAIT_MS = CLAIM_WAITS_MS.reduce((total, millis) => total + millis, 0);
 const sleep = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
 
 /** A session's token, as a browser sends it. */

@@ -9,12 +9,15 @@
 import { RUN_MOST } from '../roomNames.ts';
 import { liveAccount } from './characters.ts';
 import type { Db } from './database.ts';
-import { TOKEN } from '../keeping.ts';
+import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
 
 /** How long the first seeker of a band waits before a run starts with fewer than four: the design's minute. */
 export const FIND_WAIT_MS = 60_000;
 /** The levels a band spans: those within one ten are matched together. */
 export const BAND_LEVELS = 10;
+/** The most sockets with a token one finder holds: a guard, as the rooms' is. A socket with none is let go once
+ *  TOKEN_WAIT_MS has passed, so silent ones never fill it. */
+export const FINDING_MOST = 64;
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
 /** An Elite Dungeon's base at Normal, or the week's at Elite, as Find a Company is asked for it by WebSocket. */
@@ -133,8 +136,11 @@ export class Finder {
   private readonly base: string;
   private readonly deps: FinderDeps;
   private readonly queue = new Queue();
-  /** Each socket held, by its number, and whether its token has come. */
-  private readonly sockets = new Map<number, { readonly socket: FinderSocket; heard: boolean }>();
+  /** Each socket held, by its number, when it opened, and whether its token has come. */
+  private readonly sockets = new Map<
+    number,
+    { readonly socket: FinderSocket; readonly since: number; heard: boolean }
+  >();
   private next = 1;
 
   constructor(base: string, deps: FinderDeps) {
@@ -144,7 +150,7 @@ export class Finder {
 
   opened(socket: FinderSocket): number {
     const number = this.next++;
-    this.sockets.set(number, { socket, heard: false });
+    this.sockets.set(number, { socket, since: this.deps.now(), heard: false });
     return number;
   }
 
@@ -169,8 +175,12 @@ export class Finder {
     this.queue.leave(socket);
   }
 
-  /** Starts each run due: kept for its seekers, then told to each still here, whose socket closes. */
+  /** Lets go each socket that sent no token in time, then starts each run due: kept for its seekers, then told to
+   *  each still here, whose socket closes. */
   async tick(): Promise<void> {
+    const late = this.deps.now() - TOKEN_WAIT_MS;
+    for (const [number, held] of this.sockets)
+      if (!held.heard && held.since <= late) this.letGo(number, 4003, 'Sign in to find a company.');
     for (const group of this.queue.due(this.deps.now())) {
       const run = `${this.base}--run-${this.deps.instance()}`;
       const kept = await this.deps
@@ -198,6 +208,11 @@ export class Finder {
 
   get open(): number {
     return this.sockets.size;
+  }
+
+  /** Whether it holds as many sockets with a token as it takes. */
+  get full(): boolean {
+    return [...this.sockets.values()].filter((held) => held.heard).length >= FINDING_MOST;
   }
 
   /** Closes a socket, taking it out of the queue first. */

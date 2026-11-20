@@ -165,13 +165,16 @@ never the Abyss Dungeon of the week, whose company forms it.
 
 - **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
   reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
-  week's. A socket's first message is its session's token; one that is no session is closed with 4003 and "Sign in to
-  find a company.". At most 64 sockets wait in one.
+  week's. A socket's first message is its session's token; one that is no session, or that sends none within five
+  seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
+  sockets with a token wait in one, and its clock stops once it holds none. It checks a base's shape alone, not
+  that a rule lays it: the accounts' Worker does not load the rules, and the room judges the run.
 - **Bands.** A seeker is matched by the level their room last kept (`shown.level`, 1 for none yet), in bands of ten:
   1 to 10, 11 to 20 and 21 to 30 (`bandOf`).
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
   none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
-  many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while anyone waits.
+  many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a
+  socket.
 - **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
   "You are finding a company in another tab.". Closing the socket leaves the queue.
 - **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`, kept a day), so its room
