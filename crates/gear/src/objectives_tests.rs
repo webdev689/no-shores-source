@@ -185,10 +185,7 @@ fn the_quests_held_are_read_as_written_each_at_its_step_and_none_the_content_no_
     ]);
     assert_eq!(
         character.quests_held(&written),
-        [
-            HeldQuest { id: "sample-story", step: 0, done: true },
-            HeldQuest { id: "sample-side", step: 1, done: false },
-        ]
+        [HeldQuest { id: "sample-story", step: 0, done: true }, HeldQuest { id: "sample-side", step: 1, done: false },]
     );
 }
 

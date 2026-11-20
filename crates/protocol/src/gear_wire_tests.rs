@@ -445,4 +445,3 @@ fn a_players_gear_carries_each_bountys_pool_and_name_and_only_the_quests_still_w
     assert_eq!(bounties.iter().map(|bounty| bounty.name().unwrap_or_default()).collect::<Vec<_>>(), names);
     assert_eq!(gear.quests().map(|quests| quests.len()), Some(0), "a quest the content no longer has is not sent");
 }
-
