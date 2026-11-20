@@ -85,7 +85,8 @@ second, its bolt somewhere round a point. `WEATHERS` holds one of each kind to s
 
 A weather may carry an hour of a story's day. A weather with one is told to the game's sky ([[Sky]]): the sky draws
 its light at that hour, its cloud, rain, snow, fog and lightning, and the atmosphere pass keeps only what the sky
-cannot draw (the cloud flown through, the deep, fire's glow from below). The hour eases with the rest of it.
+cannot draw (the cloud flown through, the deep, fire's glow from below). The cloud flown through takes the sky's
+light at the hour, gold at first light, as the sky's own clouds do. The hour eases with the rest of it.
 
 The game's scene reads `scene.weather` every frame. The water is drawn on the swell with every wave's height and
 sideways carry times the weather's `seaGain` (`swellGained`); the waves' speeds and lengths stay the rules', so a ship

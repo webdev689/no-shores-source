@@ -30,9 +30,11 @@ export function setAblaze(story: Story, layout: WreckLayout): void {
   stage.parts.ambience.set(WRECK_SOUNDS, 2);
 }
 
-/** How far a fire's light reaches round it as a lamp, metres: this, and this much more a metre of its size. */
-const LAMP_REACH_M = 6;
-const LAMP_REACH_A_METRE = 5;
+/** How far a fire's light reaches round it as a lamp, metres (this, and this much more a metre of its size), and how
+ *  strong it is against a city's lantern: a soft fill under the flames' own light, which lights what stands nearest. */
+const LAMP_REACH_M = 4;
+const LAMP_REACH_A_METRE = 3;
+const LAMP_STRENGTH = 0.4;
 
 /** Each fire as a lamp of the game's night, at the middle of its flames (a line fire's, halfway along it). */
 export function fireLamps(layout: WreckLayout): LampPlace[] {
@@ -41,7 +43,7 @@ export function fireLamps(layout: WreckLayout): LampPlace[] {
     return {
       at: [fire.at[0] + east / 2, fire.at[1] + south / 2, fire.at[2] + up / 2 + fire.size * 0.5],
       reachM: LAMP_REACH_M + LAMP_REACH_A_METRE * fire.size,
-      light: FIRELIGHT,
+      light: [FIRELIGHT[0] * LAMP_STRENGTH, FIRELIGHT[1] * LAMP_STRENGTH, FIRELIGHT[2] * LAMP_STRENGTH],
       seed: index + 1,
     };
   });

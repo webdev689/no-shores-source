@@ -18,7 +18,7 @@ test('the story tells the sky its own day and hour: first light, the storm at ev
 test("the storm is told as a storm: full cloud, rain falling, the story's mist as thick as its own, the wind, its strikes", () => {
   const sky = toldSky(STORM, 42, [STRIKE]);
   assert.ok(sky);
-  assert.deepEqual([sky.weather.cloud, sky.weather.storm, sky.weather.falling], [1, 1, 1]);
+  assert.deepEqual([sky.weather.cloud, sky.weather.storm, sky.weather.falling], [1, 1, STORM.rain]);
   // The atmosphere thickened its air by 0.0063 a metre for its mist and 0.0005 for its overcast; the sky's fog bank
   // is 0.004 a metre: a mist of 0.55 under a full overcast is all but the whole bank.
   assert.equal(sky.weather.fog.toFixed(3), '0.991');

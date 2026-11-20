@@ -4,6 +4,8 @@
 // and the next dawn on the shore. Saltmere's sun rises about 5:05 and sets about 18:55.
 import { CLEAR, type Weather } from '../../cinema/weather.ts';
 
+/** The cloud the intro flies through. Only the intro lays one: under it the sky's own cover is the ceiling, and a
+ *  layer seen from below would be drawn in the day's white at any hour. */
 const CLOUD_LAYER = { base: 650, top: 1150, cover: 0.62 } as const;
 
 /** High over the cloud, the intro's first light. */
@@ -35,21 +37,23 @@ export const SNOW: Weather = {
 };
 /** Saltmere on a fair day, the title over it. */
 export const SALTMERE: Weather = { ...CLEAR, clouds: { ...CLOUD_LAYER, cover: 0.42 }, wind: [3, 1], hour: 9.4 };
-/** The stormfront at sea: dark, wild, rain driven slant, the swell gained. */
+/** The stormfront at sea: dark, wild, rain driven slant, the swell gained. Its rain is three quarters of the sky's
+ *  heaviest, so the Brig still shows through it. */
 export const STORM: Weather = {
   ...CLEAR,
   overcast: 1,
-  rain: 1,
+  rain: 0.75,
   mist: 0.55,
-  clouds: { base: 420, top: 1400, cover: 0.95 },
+  clouds: null,
   wind: [14, 6],
   seaGain: 2.5,
   hour: 18,
 };
 /** The storm thickened while ships come out of it: the mist that hides them. */
 export const STORM_FOG: Weather = { ...STORM, mist: 0.8 };
-/** The air gone still after the fight while the storm rages on: the wind drops, the rain eases a little. */
-export const STILL: Weather = { ...STORM, rain: 0.7, wind: [3, 1], mist: 0.5, hour: 18.6 };
+/** The air gone still after the fight: the wind drops, the rain eases, and the cloud thins enough for the low sun to
+ *  show through it at sunset. */
+export const STILL: Weather = { ...STORM, overcast: 0.82, rain: 0.45, wind: [3, 1], mist: 0.45, hour: 18.6 };
 /** The light failing as the Frigate comes out of the storm: the sun just gone. */
 export const DUSK: Weather = { ...STILL, hour: 19.1 };
 /** The wreck burning in the storm. */
@@ -71,10 +75,10 @@ export const DEEP: Weather = {
 /** Saltmere's shore the morning after: grey, calm, a fine drizzle passing. */
 export const MORNING: Weather = {
   ...CLEAR,
-  overcast: 0.35,
+  overcast: 0.6,
   rain: 0.1,
   mist: 0.2,
-  clouds: CLOUD_LAYER,
+  clouds: null,
   wind: [2, 1],
   hour: 29.6,
 };

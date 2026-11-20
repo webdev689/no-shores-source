@@ -9,7 +9,7 @@ import { FallView } from '../sky/fall.ts';
 import { CITY_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
-import { skyUniformFor } from '../sky/skyUniform.ts';
+import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
 import { cloudBaseOf } from '../overworld/overworldCamera.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
@@ -68,6 +68,17 @@ export interface Overlay {
   readonly width: number;
   readonly height: number;
   readonly light: readonly [number, number, number];
+}
+
+/** The light on a cloud flown through, as the sky lights its own: its top stands high in the sun's full light while
+ *  the sun is up, white with a cast of the key's colour (a peach one at first light), fading as the sun sinks under
+ *  the horizon, its shade the horizon's colour. A clear afternoon's is about the day's white. */
+function cloudLight(look: SkyLook): readonly [number, number, number] {
+  const brightest = Math.max(...look.keyLight, 1e-6);
+  const lit = Math.min(1, Math.max(0, (look.sun[2] + 0.1) / 0.15));
+  return [0, 1, 2].map(
+    (part) => lit * (0.55 + (0.4 * (look.keyLight[part] ?? 0)) / brightest) + 0.15 * (look.horizon[part] ?? 0),
+  ) as unknown as readonly [number, number, number];
 }
 
 export class GameScene {
@@ -328,6 +339,7 @@ export class GameScene {
         size: [size.width, size.height],
         time,
         motionReduced: motionReduced(),
+        light: cloudLight(look),
       });
     more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
     this.gpu.device.queue.submit([encoder.finish()]);
