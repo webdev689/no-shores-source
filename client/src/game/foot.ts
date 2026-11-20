@@ -36,6 +36,7 @@ import type { Block, MovementRules } from '../rules/movementRules.ts';
 import { type FoeType, rosterOf } from '../rules/roster.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
+import { FallWatch } from './fallWatch.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import { HINTS, footHints } from './hints.ts';
@@ -156,6 +157,8 @@ export class Foot {
   private readonly feel: AttackFeel;
   private readonly drops = new DropsShown();
   private readonly sounds = new WorldSounds(worldOutput);
+  /** The player's fall in a social space, once the room says they fell: the held shot, the tumble, its sounds. */
+  private readonly falling = new FallWatch();
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
@@ -333,6 +336,7 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
+    walker.fall = this.falling.figure(fight.standing, walker.player.body, walker.player.facing);
     const aimed = () => playerCamera(walker.player, movement, this.boxes, AIM, groundAt);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
@@ -353,7 +357,12 @@ export class Foot {
     // draw rings it); while it shows, the kick moves the view but never turns it, so it stays where shots land.
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
-    const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
+    const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
+    const shot = this.falling.shot(
+      shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M),
+      [fallX, fallY, fallZ],
+      seconds,
+    );
     const [eyeX, eyeY] = shot.eye;
     const frameTicks = seconds / movement.tickSeconds;
     // Each figure drawn off where it stands by the attack feel, and kept as drawn, which its blow's arc follows.
@@ -421,6 +430,8 @@ export class Foot {
       landed: dropped.landed,
       crates: this.gearHeld.gear?.crates ?? null,
     });
+    const fell = { id: fight.player, feet: [body.x, body.y, body.z] as const, tumbling: !!walker.fall?.tumbling };
+    this.falling.hear(fell, fight.others, this.otherPlayers.placed, { seconds, eye: shot.eye, quiet: paused });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({
       right: dress?.outfit.right ?? null,
@@ -550,7 +561,8 @@ export class Foot {
   get standing(): Standing {
     const standing = this.fight.standing;
     if (standing.kind === 'inside') return standingOf('inside', 0);
-    return standingOf(standing.kind, standing.ticks);
+    const fell = standing.kind === 'dead' && standing.fell;
+    return standingOf(standing.kind, standing.ticks, fell, this.falling.told(fell));
   }
 
   /** Asks the room to stand the player again at the section's spawn nearest where they died, once it offers it. */
@@ -564,6 +576,7 @@ export class Foot {
     this.otherPlayers.clear();
     this.plaza?.close();
     this.prompt?.remove();
+    this.falling.close();
     // An Anima's edge frame cast just before leaving must not stay over the next place.
     showAnimaEdge(QUIET);
   }

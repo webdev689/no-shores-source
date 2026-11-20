@@ -115,6 +115,9 @@ export class Walker {
   castGlow: GlowLook = 0;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
+  /** A fall the player died of, as the figure shows it: tumbling down or lying where it landed, facing `facing`; null
+   *  for none. */
+  fall: { readonly tumbling: boolean; readonly facing: number } | null = null;
   lookDress: string;
   private readonly firstPerson: FirstPerson;
   private readonly forge: Cards;
@@ -157,9 +160,10 @@ export class Walker {
     return this.stride;
   }
 
-  /** Whether the camera is in the head, so the hands are drawn and the figure is not. */
+  /** Whether the camera is in the head, so the hands are drawn and the figure is not: never while a fall is watched
+   *  from where the camera was held, the body seen dropping away from it. */
   get inFirstPerson(): boolean {
-    return this.player.view.shown <= HIDE_FIGURE_M;
+    return this.player.view.shown <= HIDE_FIGURE_M && this.fall === null;
   }
 
   /** What glows this frame: each hand's element while its weapon is drawn, else nothing. */
@@ -229,7 +233,7 @@ export class Walker {
     const body = shownBody(player);
     const own = fight?.own ?? null;
     const fighting = own !== null && own.action.kind !== 'idle' && own.action.kind !== 'dead';
-    const facing = fighting ? (dodgeFacing(own.action) ?? own.aim) : player.facing;
+    const facing = this.fall?.facing ?? (fighting ? (dodgeFacing(own.action) ?? own.aim) : player.facing);
     Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const worn = shownDress(you.dress, holding);
@@ -319,7 +323,11 @@ export class Walker {
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
         // A bow's draw plays with the first person's, and a shot's frames over a gun's aim pose.
-        fight: held?.kind === 'draw' && (outfit.right?.startsWith('bow') || swing) ? null : held,
+        fight: this.fall
+          ? { kind: this.fall.tumbling ? 'tumble' : 'down', progress: 1 }
+          : held?.kind === 'draw' && (outfit.right?.startsWith('bow') || swing)
+            ? null
+            : held,
       },
       (anim) => forge.frames(dress.body, anim),
       (anim, drawn) => forge.draws(dress.body, anim, drawn),
