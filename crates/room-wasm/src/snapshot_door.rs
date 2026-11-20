@@ -28,6 +28,8 @@ struct SeaParts {
     crews: Vec<Vec<PlayerId>>,
     aboard: Vec<(PlayerId, u32, movement::Body)>,
     harbour: protocol::SeaHarbour,
+    /// Every standing island, each with the players who have found it.
+    islands: Vec<(protocol::IsleSeen, Vec<PlayerId>)>,
 }
 
 impl SeaParts {
@@ -55,6 +57,19 @@ impl SeaParts {
         let ships = self.ships.iter().filter(seen).copied().collect();
         let pirates = self.pirates.iter().filter(|pirate| own.is_some_and(|at| pirate.kept_by(at))).copied().collect();
         (ships, pirates)
+    }
+
+    /// The islands `player` is told of: those in sight of their ship, and those they have found, wherever they lie.
+    fn islands(&self, player: PlayerId) -> Vec<protocol::IsleSeen> {
+        let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
+        let in_sight = |at: [f64; 2]| {
+            own.is_some_and(|[x, y]| {
+                let (east, south) = (at[0] - x, at[1] - y);
+                east * east + south * south <= room::sea::islands::SIGHT_M * room::sea::islands::SIGHT_M
+            })
+        };
+        let told = self.islands.iter().filter(|(island, finders)| finders.contains(&player) || in_sight(island.at));
+        told.map(|(island, finders)| protocol::IsleSeen { found: finders.contains(&player), ..*island }).collect()
     }
 }
 
@@ -86,6 +101,23 @@ pub fn prepare() {
                 })
                 .collect();
             let crews = sea.fights().map(|(_, fought)| fought.crews.keys().copied().collect()).collect();
+            let players: Vec<PlayerId> = sea.ships().map(|(player, _)| player).collect();
+            let islands = sea
+                .islands()
+                .standing()
+                .map(|island| {
+                    let seen = protocol::IsleSeen {
+                        id: island.id,
+                        seed: island.seed,
+                        at: island.at,
+                        kind: island.kind.number(),
+                        continent: u8::try_from(island.continent).unwrap_or(u8::MAX),
+                        found: false,
+                    };
+                    let finders = players.iter().copied().filter(|&player| sea.islands().found(player, island.id));
+                    (seen, finders.collect())
+                })
+                .collect();
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
@@ -93,7 +125,8 @@ pub fn prepare() {
                 fights,
                 crews,
                 aboard,
-                harbour: protocol::SeaHarbour { flotsam, kept, told, decks },
+                harbour: protocol::SeaHarbour { flotsam, kept, told, decks, islands: Vec::new() },
+                islands,
             }))
         }
         Opened::Fleet(fleet) => {
@@ -124,6 +157,7 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                     .filter(|deck| deck.0.iter().any(|(at_sea, _)| *at_sea == player))
                     .cloned()
                     .collect(),
+                islands: parts.islands(player),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.0 == player).cloned().collect();

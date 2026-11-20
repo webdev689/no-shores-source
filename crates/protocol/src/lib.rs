@@ -39,7 +39,7 @@ pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../g
 pub mod fleet;
 pub mod gear_wire;
 mod sea_snapshot;
-pub use sea_snapshot::{SeaHarbour, sea_snapshot_bytes};
+pub use sea_snapshot::{IsleSeen, SeaHarbour, sea_snapshot_bytes};
 
 /// The fight's numbers an input carries after its controls: the stroke held, guard, dodge, shoot, pitch, aim, and the
 /// aim's mark (x, y, z, none as NaN).

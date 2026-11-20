@@ -81,6 +81,19 @@ table Flotsam {
   kind: ubyte;
 }
 
+// A sea island a player sees from their ship or has found: its number, its seed, where its middle is (x, y in metres),
+// its kind (0 a cove, 1 a ruin, 2 a quarry), the index in the layout of the continent whose water it lies in, and
+// whether that player has found it.
+table Isle {
+  id: uint;
+  seed: ulong;
+  x: double;
+  y: double;
+  kind: ubyte;
+  continent: ubyte;
+  found: bool;
+}
+
 // A player's ship's hurts as the sea keeps them: the shares of her hull, canvas and men she has, and the seconds her
 // repair has left (0 with none under way).
 table Kept {
@@ -343,7 +356,7 @@ table Spell {
 // aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on land;
 // and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick, and
 // each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which sets
-// its weather.
+// its weather. Last, at sea, the islands the player sees or has found.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -364,6 +377,7 @@ table Snapshot {
   told: [Told];
   decks: [Deck];
   world_start: double;
+  islands: [Isle];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the

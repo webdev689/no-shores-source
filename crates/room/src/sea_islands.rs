@@ -51,6 +51,8 @@ pub struct SeaIsland {
     pub continent: usize,
     pub climate: String,
     pub guards: Option<u8>,
+    /// Its water's band of levels, its guards' and its dungeon's.
+    pub levels: Option<(u8, u8)>,
     pub anchorage: [f64; 2],
     pub(crate) coast: Coast,
     held_at: u64,
@@ -112,7 +114,8 @@ impl Islands {
 
     /// The island built from `seed` with its middle at `at`, in the water `continent`'s, if the islands' contract
     /// dresses that continent's climate.
-    fn island(&mut self, seed: u64, at: [f64; 2], (continent, holder): (usize, Holder)) -> Option<SeaIsland> {
+    fn island(&mut self, seed: u64, at: [f64; 2], water: (usize, Holder, Option<(u8, u8)>)) -> Option<SeaIsland> {
+        let (continent, holder, levels) = water;
         let climate = self.climates.get(continent)?.clone();
         isle::catalog::catalog().climates.get(&climate)?;
         let shape = isle::shape_of(seed);
@@ -131,10 +134,16 @@ impl Islands {
             continent,
             climate,
             guards,
+            levels,
             anchorage: [at[0] + x, at[1] + y],
             coast,
             held_at: 0,
         })
+    }
+
+    /// Every standing island, in the order they were rolled.
+    pub fn standing(&self) -> impl Iterator<Item = &SeaIsland> {
+        self.standing.iter()
     }
 
     /// Each standing island's coast, as land.
@@ -222,7 +231,7 @@ impl Islands {
             let off = self.draws.between(ROLL_FROM_M, ROLL_TO_M);
             let place = [at[0] + libm::sin(bearing) * off, at[1] - libm::cos(bearing) * off];
             let seed = self.draws.next_whole();
-            let Some((water, _)) = charted.water(place) else { continue };
+            let Some((water, levels)) = charted.water(place) else { continue };
             let Some(point) = super::whole(&place) else { continue };
             let reach = isle::reach_of(seed);
             let open = water.holder != Holder::Home
@@ -239,7 +248,7 @@ impl Islands {
                         .zip(course)
                         .all(|(&from, &to)| off_leg(place, from, to) >= reach + CLEAR_OF_COURSES_M)
                 });
-            if open && let Some(island) = self.island(seed, place, (water.continent, water.holder)) {
+            if open && let Some(island) = self.island(seed, place, (water.continent, water.holder, levels)) {
                 return Some(island);
             }
         }

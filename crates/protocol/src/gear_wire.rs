@@ -44,6 +44,8 @@ pub const GRANT_CRATES: u8 = 38;
 /// `slot` and the fragment's place in its Art's list (0 to 5) in `node`.
 pub const WEAR_ART: u8 = 40;
 pub const SET_CORE: u8 = 41;
+/// A sea island's wreck scavenged, by its place in the island's list in `node`.
+pub const SCAVENGE: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
 pub const NO_FRAGMENT: u8 = 255;
 
@@ -71,6 +73,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
         GATHER => Asked::Gather { node },
+        SCAVENGE => Asked::Scavenge { wreck: node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
             slot: slot()?,
@@ -127,6 +130,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
+        Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

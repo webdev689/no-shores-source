@@ -48,6 +48,20 @@ fn an_island_is_the_same_bits_on_every_machine() {
     assert_eq!(found, GOLDEN, "the islands' bits moved: {found:?}");
 }
 
+/// The ground's own fingerprint for the first pinned island, which server/isle.test.ts pins too: the page's
+/// WebAssembly must build the same ground as the room.
+#[test]
+fn the_grounds_bits_are_the_ones_the_page_pins() {
+    let ground = plan(41, "desert").ground.to_floats();
+    let hash = ground
+        .iter()
+        .flat_map(|number| number.to_bits().to_le_bytes())
+        .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
+    assert_eq!(format!("{hash:016x}"), GROUND_41_DESERT);
+}
+
+const GROUND_41_DESERT: &str = "5372bca559dd7c59";
+
 const GOLDEN: [u64; 3] = [8_616_181_142_366_350_806, 17_147_699_156_600_943_984, 6_440_265_580_338_448_352];
 
 #[test]
