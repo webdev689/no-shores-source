@@ -157,7 +157,7 @@ fn fights_by_ship_level() {
                 let won = runs.iter().filter(|run| run.0 && !run.1).count();
                 let sunk = runs.iter().filter(|run| run.1).count();
                 let lost = runs.iter().map(|run| run.2).sum::<f64>() / FIGHTS as f64;
-                println!(
+                eprintln!(
                     "| {rank:?} | {level} | {} | {won}/{FIGHTS} | {sunk}/{FIGHTS} | {:.0}% |",
                     character.ship_level(),
                     lost * 100.0
