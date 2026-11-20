@@ -9,7 +9,8 @@ it pays once, and what opens it. The owner's decisions are [[Dailies and Weeklie
 Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]],
 [[The Story Is Nine Missions, With Side Quests Between Them]], [[Where You Go and the Seas You Choose Set the
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
-and the owner can change any of it. Nothing of it is built yet.
+and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
+([[The Activities Are Built in Full, Before the Story's Missions]]). Nothing of it is built yet.
 
 ## What it is for
 

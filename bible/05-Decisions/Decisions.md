@@ -155,6 +155,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]
 - [[The Story Opens Places, Levels Open Tiers, and the Campaign's End Opens the Week]]
 - [[The Story Is Nine Missions, With Side Quests Between Them]]
+- [[The Activities Are Built in Full, Before the Story's Missions]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
