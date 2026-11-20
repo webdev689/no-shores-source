@@ -55,8 +55,9 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     let events = room.take_events();
     let hit = events.iter().find(|event| event.kind == EventKind::Hit).expect("the chop lands");
     assert_eq!((hit.striker, hit.defender, hit.how, hit.stroke), (player, foe, Some(How::Swing), Some(Stroke::Down)));
-    assert!((hit.amount - 14.0 * 1.15).abs() < 1e-9);
-    assert!((room.fighter(foe).unwrap().health - (130.0 - 14.0 * 1.15)).abs() < 1e-9);
+    let chop = 14.0 * 1.15 * crate::power::PLAYER_HARM;
+    assert!((hit.amount - chop).abs() < 1e-9);
+    assert!((room.fighter(foe).unwrap().health - (130.0 - chop)).abs() < 1e-9);
     assert_eq!(room.fighter(player).unwrap().target, Some(foe), "the lock takes the foe it struck");
 }
 

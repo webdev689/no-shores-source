@@ -26,6 +26,7 @@ ${scope} .plate { display: flex; gap: 5px; align-items: stretch; }
 ${scope} .plate[data-band='red'] { --fill: ${FILLS.red}; }
 ${scope} .plate[data-band='orange'] { --fill: ${FILLS.orange}; }
 ${scope} .plate[data-band='yellow'] { --fill: ${FILLS.yellow}; }
+${scope} .plate[data-band='green'] { --fill: ${FILLS.green}; }
 ${scope} .plate[data-band='ally'] { --fill: ${FILLS.ally}; }
 ${scope} .plate[data-band='ally'] .name { color: ${TONES.ally}; }
 ${scope} .plate[data-band='ally'] .emblem { display: none; }

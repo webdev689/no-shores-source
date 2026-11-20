@@ -147,6 +147,7 @@ export class Deep implements Beat {
       shot: this.shot(body, eyes),
       actors,
       drawers: [this.scenery.drawer],
+      hulls: this.scenery.hulls,
       land: false,
       focus: [body[0], body[1]],
     };

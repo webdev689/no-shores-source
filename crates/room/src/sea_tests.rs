@@ -641,7 +641,8 @@ fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_it_is_out_of_re
     let (mut sea, player) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
     sea.chase(player, Some(1));
     fight_within_ten_minutes(&mut sea).expect("the chase brings the fight");
-    let bound = (naval::captain::CHASE_GIVE_UP_S + 30.0) as usize * 60;
+    // At a fight's pace (`FIGHT_PACE`) it is a while longer out of the chaser's reach before its give-up time runs.
+    let bound = (naval::captain::CHASE_GIVE_UP_S + 240.0) as usize * 60;
     let lasted = (0..bound).find(|_| {
         sea.tick();
         !sea.fights.fighting(player)

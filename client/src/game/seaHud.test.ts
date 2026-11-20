@@ -6,6 +6,7 @@ import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import { hideSeaHud, seaPlace, type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
+import { seaFightQuest } from './seaPanel.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
   ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
@@ -46,7 +47,14 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   const bars: unknown[] = [];
   const hud = new Proxy(
     {},
-    { get: (_target, key) => (key === 'seaBar' ? (bar: unknown) => bars.push(bar) : () => undefined) },
+    {
+      get: (_target, key) =>
+        key === 'tasks'
+          ? { show: () => undefined }
+          : key === 'seaBar'
+            ? (bar: unknown) => bars.push(bar)
+            : () => undefined,
+    },
   );
   const sea = (fight: unknown) =>
     ({
@@ -65,6 +73,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   show(null);
   const fight = {
     messages: () => [],
+    readout: () => ({ left: 1, men: 0 }),
     captains: [],
     aimingNow: false,
     view: { lay: null, captain: { name: 'Pirate Brig' } },
@@ -95,11 +104,19 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
   const readouts: unknown[] = [];
   const hud = new Proxy(
     {},
-    { get: (_target, key) => (key === 'seaFight' ? (model: unknown) => readouts.push(model) : () => undefined) },
+    {
+      get: (_target, key) =>
+        key === 'tasks'
+          ? { show: () => undefined }
+          : key === 'seaFight'
+            ? (model: unknown) => readouts.push(model)
+            : () => undefined,
+    },
   );
   const model = { ship: null, card: null, tally: null, warn: null };
   const fight = {
     messages: () => [],
+    readout: () => ({ left: 1, men: 0 }),
     captains: [],
     aimingNow: false,
     view: { lay: null, captain: { name: 'Pirate Brig' } },
@@ -126,13 +143,20 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
 
 test("in a fight the hints are the fight's keys alone, as on foot, and the sea's word and the fight's messages are notices", () => {
   const said: Record<string, unknown[]> = { hints: [], notices: [] };
+  const tasks: unknown[] = [];
   const hud = new Proxy(
     {},
-    { get: (_target, key: string) => (key in said ? (value: unknown) => said[key]?.push(value) : () => undefined) },
+    {
+      get: (_target, key: string) => {
+        if (key === 'tasks') return { show: (quest: unknown) => tasks.push(quest) };
+        return key in said ? (value: unknown) => said[key]?.push(value) : () => undefined;
+      },
+    },
   );
   const view = { lay: null, captain: { name: 'Pirate Brig' }, others: [] };
   const messages = () => ['The Pirate Brig surrenders!'];
-  const fight = { messages, captains: [], aimingNow: false, view, display: () => null };
+  const readout = () => ({ left: 2, men: 9 });
+  const fight = { messages, readout, captains: [], aimingNow: false, view, display: () => null };
   const sea = {
     view: { helmView: false },
     aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
@@ -148,20 +172,23 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   showSeaHud(hud as unknown as Hud, sea, shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(said['hints'], [HINTS.fight]);
   assert.deepEqual(said['notices'], [['The Pirate Schooner joined the fight.', 'The Pirate Brig surrenders!']]);
+  // The tracker holds the fight's task: the ships left and their men.
+  assert.deepEqual(tasks, [seaFightQuest('Sea fight', 2, 9)]);
 });
 
-test("on land the sea's own pieces go: the ships' plates, the readout, the sea bar, Manage's panel and the wheel", () => {
+test("on land the sea's own pieces go: the ships' plates, the readout and its task, the sea bar, Manage's panel and the wheel", () => {
   const said: Record<string, unknown[]> = {};
   const hud = new Proxy(
     {},
     {
-      get:
-        (_target, key) =>
-        (...args: unknown[]) =>
-          void (said[String(key)] = args),
+      get: (_target, key) =>
+        key === 'tasks'
+          ? { show: (...args: unknown[]) => void (said['tasks'] = args) }
+          : (...args: unknown[]) => void (said[String(key)] = args),
     },
   );
   hideSeaHud(hud as unknown as Hud);
+  assert.equal(said['tasks']?.[0], null, "no fight's task stands on land");
   assert.deepEqual(said['shipBars']?.[0], [], "no ship's plate stands over the land");
   assert.equal(said['seaFight']?.[0], null);
   assert.equal(said['seaBar']?.[0], null);

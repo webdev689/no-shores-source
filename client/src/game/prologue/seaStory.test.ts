@@ -53,11 +53,16 @@ export function storied(options: { land?: LandWorker; refused?: boolean } = {}) 
       },
       dialogue: { skip: note('cut') },
       screen: { fade: note('fade'), flash: note('flash') },
-      objective: { show: note('objective'), clear: () => undefined },
       hud: {
-        hints: (lines: string[]) => done.push(`hints ${lines[0] ?? ''}`),
+        hints: (hints: (readonly [string, string])[]) => done.push(`hints ${hints[0]?.join(' ') ?? ''}`),
         shipBars: () => undefined,
         seaFight: () => undefined,
+        tasks: {
+          show: (quest: { steps: { text: string; count?: number }[] } | null) =>
+            quest &&
+            done.push(`task ${quest.steps.map((step) => `${step.text} ${step.count ?? ''}`.trim()).join(', ')}`),
+        },
+        toast: note('toast'),
       },
     },
   };
@@ -148,6 +153,7 @@ export const viewOf = (
   } as const;
   const [first, ...rest] = states.map((state, index) => ({
     ...vessel,
+    id: index + 1,
     ship: [10_300 + index * 50, 19_300, 3, 0, 0, 0, 0, 2],
     state,
     name: 'Pirate Sloop',

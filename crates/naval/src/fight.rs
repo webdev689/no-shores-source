@@ -37,6 +37,8 @@ pub const STRUCK_GRACE_S: f64 = 2.0;
 /// A captain who struck lies hove to this long (seconds) for a player to board it; with no one aboard by then it is
 /// scuttled.
 pub const STRUCK_HOLD_S: f64 = 90.0;
+/// How much faster every ship sails and rows in a sea fight than at sea: half again, at the owner's word.
+pub const FIGHT_PACE: f64 = 1.5;
 
 /// A ship in the fight: its hull, its helm's numbers, how it lies, its hurts and its guns, and who sails it.
 #[derive(Debug, Clone, PartialEq)]
@@ -189,8 +191,8 @@ pub fn sail_hurt(
         helm.climb = if ship.rung >= SAILS_SET { -1 } else { 0 };
     }
     let pull = Pull {
-        sail: if hurts.wrecked { 0.0 } else { hurts.way_share },
-        oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 },
+        sail: if hurts.wrecked { 0.0 } else { hurts.way_share * FIGHT_PACE },
+        oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 } * FIGHT_PACE,
         turn: hurts.turn,
     };
     (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)

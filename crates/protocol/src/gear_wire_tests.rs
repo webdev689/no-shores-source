@@ -160,6 +160,18 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
 }
 
 #[test]
+fn a_room_without_arts_says_no_art_is_worn() {
+    let (mut room, player) = furnished();
+    room.forbid_arts();
+    room.tick();
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!((gear.art(), gear.anima()), (0, 0.0), "no Art, and no Anima charging");
+    let tenets = gear.tenets().map(|tenets| tenets.iter().collect::<Vec<_>>());
+    assert_eq!(tenets, Some(vec![0.0, 0.0]), "nor any Tenet");
+}
+
+#[test]
 fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");

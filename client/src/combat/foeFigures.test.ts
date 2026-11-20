@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { FLASH } from '../player/cardLooks.ts';
+import { plainDress } from '../player/dressing.ts';
 import type { Card, Cards } from '../player/cards.ts';
 import { GLANCE_FLOATS, glanceView } from '../rules/fighters.ts';
 import { rosterOf } from '../rules/roster.ts';
@@ -212,4 +213,19 @@ test('a foe dodging is drawn facing the way its hop goes, not the fighter it fac
   foes.set(7, { ...kept, view: { ...kept.view, facing: 0, action: dodging } });
   figures.cards(fight, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
   assert.equal(figures.placed.get(7)?.facing, Math.PI / 2);
+});
+
+test('a foe dressed in its own clothes is drawn in them, with its type’s weapons drawn', () => {
+  const figures = new FoeFigures(roster);
+  const [kept] = fightWith(0, 0, 1).foes.values();
+  assert.ok(kept);
+  const typeDress = figures.dressOf(kept);
+  const look = { ...plainDress('felid', 0.5), body: 'female' as const };
+  const crew = roster.find((type) => type.name === 'Crew');
+  assert.ok(crew);
+  figures.dressFoe(kept.id, crew.type, look);
+  const own = figures.dressOf(kept);
+  assert.notDeepEqual(own, typeDress);
+  assert.deepEqual([own?.race, own?.body, own?.outfit.garments], ['felid', 'female', look.outfit.garments]);
+  assert.deepEqual([own?.outfit.right, own?.outfit.left, own?.outfit.drawn], [crew.right, crew.left, true]);
 });

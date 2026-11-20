@@ -51,7 +51,8 @@ numbers and how the groups do it are Claude's ([[The Enemies as Claude Builds Th
 ## Factions
 
 A fighter's side is the players' or a faction's, by its number. Fighters of different sides are enemies: foes of two
-factions fight each other as they fight players, and never their own side.
+factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
+fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player.
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
@@ -88,6 +89,8 @@ out among them ([[Foes]]).
 | 16 | Archer (pirate) | Archer | `bow_short_iron` | | Minor, Major |
 | 17 | Captain (pirate) | Captain | `sword_ebony` | | Elite, Miniboss |
 | 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
+| 19 | Crew (the Brig's) | Swordsman | `sword_iron` | | Minor, Major |
+| 20 | Crew (the Brig's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).
@@ -235,7 +238,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
-  the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
+  the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]). An ally on the
+  players' side (the Brig's crew) has its bar in green and no "?" or "!".
 - **Over a figure, a plate's size goes with its rank**, as Destiny's bars do
   ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a Minor's bar short and thin, a Major's as a ship's, an
   Elite's and a Miniboss's longer and cut in thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
@@ -247,6 +251,9 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **Plates never overlap**, but for one fading out of the cone, which holds its place for its quarter second. The
   nearest foe's stays over it, in front; a farther one that would cover it is lifted just clear, and the plates hold
   still from frame to frame ([[Interface]]).
+- **Plates stand still however far out.** Each is placed through the camera's matrix kept in 64-bit numbers
+  (`shiftedExactly`): out at sea, some 2,800 km from the world's origin, a 32-bit matrix rounds its offset to a quarter
+  metre, enough to shake a plate some 30 px as the camera moves.
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
   screen: its level, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
   track under it. A Boss has no plate over its head.
@@ -267,7 +274,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with
   a grey sash; the Reeve in iron with a grey surcoat and cloak; Thule in full steel plate, a grey surcoat and a long
   grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the pirates as the Test Ground's foes
-  were dressed.
+  were dressed. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
+  crew as the Brig's hands ([[Prologue]]).
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 

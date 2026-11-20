@@ -3,8 +3,8 @@
 //! captains who leave.
 
 use super::{
-    DESPAWN_BEYOND, End, Event, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S, Sailor,
-    carry_of, floats, own_of, sail_hurt, sighting_of, sink_depth,
+    DESPAWN_BEYOND, End, Event, FIGHT_PACE, Fight, HOSTILE_NEAR_M, Hurts, Orders, Part, STRUCK_GRACE_S, STRUCK_HOLD_S,
+    Sailor, carry_of, floats, own_of, sail_hurt, sighting_of, sink_depth,
 };
 use crate::arms::{LARGE_BOAT, Side, arms_of, unposed};
 use crate::captain::course::distance;
@@ -155,9 +155,13 @@ impl Fight {
         let hull = vessel.hull.hull();
         let is_water = |x, y| floats(waters, hull, x, y, time);
         let helm = command.mind.steer(&own, (&sightings, &traffic), TICK_SECONDS, &is_water);
-        // Its rank's way pulls its sails and its oars alike.
+        // Its rank's way pulls its sails and its oars alike, half again in a fight.
         let way = command.mind.commission.rank.scale().way;
-        let pull = sailing::ship::Pull { sail: vessel.damage.way_share() * way, oars: way, turn: 1.0 };
+        let pull = sailing::ship::Pull {
+            sail: vessel.damage.way_share() * way * FIGHT_PACE,
+            oars: way * FIGHT_PACE,
+            turn: 1.0,
+        };
         vessel.ship = sailing::ship::step_pulled(&vessel.ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull);
         let afloat = pose_of(&vessel.ship, hull, waters, time);
         let (drop, pitch, roll) = founder(&vessel.damage, command.mind.seed, command.under);

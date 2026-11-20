@@ -87,8 +87,9 @@ const song = makeSong(
 ## The director
 
 Each frame it hears where the player is (the social space, an island and its climate, or the sea), the
-player's health, the blows they gave and took, and every foe's rank, alert, distance and health; at sea, the hostile
-ships within 1,000 m, the fight, whether it lies off a coast to land on, and the sky over it.
+player's health, the blows they gave and took, and every foe's rank, alert, distance and health (an ally fighting on
+the players' side is no foe); at sea, the hostile ships within 1,000 m, the fight, whether it lies off a coast to land
+on, and the sky over it.
 
 | Mood | When | Layers | Level | Ambience |
 |---|---|---|---|---|

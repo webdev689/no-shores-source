@@ -84,9 +84,17 @@ export function fromEyeMatrix(shot: Shot, aspect: number): Float32Array {
 }
 
 /** A camera's matrix from the eye (column-major), taking points `offset` metres off from the eye: a point p maps as
- *  p + offset would. Worked in double precision, so a world far from its origin keeps its centimetres. */
+ *  p + offset would. For the GPU, whose offsets are measured from near the eye: kept in 32-bit floats, an offset
+ *  millions of metres long (a world point's, out at sea) rounds to a quarter metre, so a sum on the page with world
+ *  points takes `shiftedExactly`. */
 export function shifted(fromEye: Float32Array, offset: readonly [number, number, number]): Float32Array {
-  const out = Float32Array.from(fromEye);
+  return Float32Array.from(shiftedExactly(fromEye, offset));
+}
+
+/** `shifted` kept in 64-bit numbers, for the page's own sums with world points (the plates over heads): each term's
+ *  own rounding cancels as a point is taken through it, so a point millions of metres out keeps its centimetres. */
+export function shiftedExactly(fromEye: Float32Array, offset: readonly [number, number, number]): Float64Array {
+  const out = Float64Array.from(fromEye);
   for (let row = 0; row < 4; row += 1) {
     const term = (column: number) => fromEye[column * 4 + row] ?? 0;
     out[12 + row] = term(0) * offset[0] + term(1) * offset[1] + term(2) * offset[2] + term(3);

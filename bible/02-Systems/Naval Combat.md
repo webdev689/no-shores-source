@@ -119,8 +119,9 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **What stops a ball** is the first hull of another flag, water or ground it meets: a player's ball passes through
   another player's ship, and a captain's through any ship of the captain's own faction. A ball tears through any canvas it crosses
   (once a ship) and flies on. The water is the swell's surface under it, and the ground the land's, sampled every 4 m.
-- **The harm** of a ball is DFO's: by where it struck (holed within 1.1 m of the water under it, 40% more; the hull
-  above; the canvas), 85 to 115% by its own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
+- **The harm** of a ball is half again DFO's (`FIGHT_HARM`, [[Ships Sail and Hit Half Again Harder in Sea Fights]]): by
+  where it struck (holed within 1.1 m of the water under it, 40% more; the hull above; the canvas), 85 to 115% by its
+  own roll. A captain's men stand 1.6 blows each, a player's crew 3.2.
 - **A ship** has hull, canvas and men. A captain strikes at their rank's share of their hull (a Major's quarter) or with no
   men left. Any ship, the player's Sloop too, goes down over 20 s at none (`Sinking`, then gone), listing and trimming
   by its seed (a player's by none) and settling slowly, then fast; going down, its guns are silent and its helm takes
@@ -140,6 +141,8 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   or its rig where that sail is gone; a sail torn away; a mast fallen; colours struck; a ship going down; a piece of what
   floats laid, and gathered; and players gone aboard a ship.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
+- **The pace** of every ship in a fight is half again its pace at sea, under sail and under oars alike (`FIGHT_PACE`,
+  [[Ships Sail and Hit Half Again Harder in Sea Fights]]).
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -343,9 +346,9 @@ DFO's law of the ram. A player's stem, 1 m above its ship's waterline at its bow
 it comes within 1.2 m of, at the face it stands farthest outside of: that ship's side, or its bow or stern. It rams when the
 rammer's way along its keel, at the most over the last 0.6 s, closes on that face at 1.6 m/s or more.
 
-- **The blow** is 0.15 of the lesser of the two whole hulls, times the closing way over 8 m/s (never more than whole),
-  and 0.4 of that into the bow or stern. It never takes the struck hull under a quarter, where that ship strikes: a ram brings a
-  ship to strike and no further. It takes a man for every 40 points it deals, over its men's toughness, by a roll
+- **The blow** is half again DFO's 0.15 of the lesser of the two whole hulls (`FIGHT_HARM`), times the closing way
+  over 8 m/s (never more than whole), and 0.4 of that into the bow or stern. It never takes the struck hull under a
+  quarter, where that ship strikes: a ram brings a ship to strike and no further. It takes a man for every 40 points it deals, over its men's toughness, by a roll
   drawn from the fight's stream.
 - **The recoil**: the rammer takes 0.6 of the blow back (half that braced), and a ram is only as hard as the rammer can pay
   for within its own room over its line, one point short of it, so its own ram never makes it strike and a hull at its
@@ -559,7 +562,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and
   let go to fire, a left click to hold fire, the wheel for the load while aiming and the camera's zoom otherwise, and
-  C to brace; the sea's own wait for its end, and the sea bar is hidden.
+  C to brace; the sea's own wait for its end, and the sea bar is hidden. Where the editor's panel lists its lines,
+  the game's HUD shows the fight's readout, its task in the tracker and DFO's messages as notices ([[Interface]]).
   Every captain in it is drawn with their name over a bar of their hull, their plate as far over their highest sail as the
   Sloop's stands over its own (`plateOverM`). Then the view pans back up. Hostile ships at sea
   are drawn as the Overworld's ships are, each in its hull and its faction's colours with its footprint on the water, those fighting each other where
@@ -607,15 +611,17 @@ on, her temper drawn from her own seed. Every one comes to fight her at once: bo
 straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
 land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
 `way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
-first in `others`, as the sea room's wire does. A captain going down carries, besides her `founder`, how she will lie
+first in `others`, as the sea room's wire does, each with her number in the fight (`id`, the first 1), as its events
+name her: a captain gone from the fight is left out, and every plate, message and count follows her by it. A captain
+going down carries, besides her `founder`, how she will lie
 once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
 on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
 nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
 on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
-aim, lay, effects, panel and bars, the panel naming her ship (the Brig). The story places each captain by her
+aim, lay, effects, HUD and bars, her ship's panel naming her (the Brig). The story places each captain by her
 bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
 sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
-her, hers striking a captain, a captain going down and one sunk; and tells the player how many are left to beat.
+her, hers striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
 player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over
 (`beaten`) once every captain has sunk, is going down, or has struck, her crew having given up the fight. It draws

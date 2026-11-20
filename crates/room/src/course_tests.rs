@@ -1,5 +1,5 @@
 use super::*;
-use movement::Block;
+use movement::{Block, Controls, Heights, Terrain};
 
 /// A deck 2.3 m up, from x -5 to 5, and the open floor beside it.
 fn deck() -> Block {
@@ -145,4 +145,103 @@ fn a_block_taken_from_the_course_lets_a_player_through_and_only_a_block_it_holds
     }
     let body = room.players[&player].fighter.body;
     assert!(body.y < -2.0, "the way is open: {body:?}");
+}
+
+#[test]
+fn a_foe_found_off_the_course_over_the_sea_stands_again_at_its_post() {
+    let mut room = Room::over_sea(vec![deck()], (0.0, 0.0));
+    let foe = room.stand_foe_at(7, 1, (4.0, 1.0), 0.5, 1).expect("a Deckhand");
+    room.foes.get_mut(&foe).unwrap().fighter.body = Body { z: 0.0, ..movement::standing(9.0, 1.0) };
+    room.tick();
+    let body = room.foes[&foe].fighter.body;
+    assert_eq!((body.x, body.y, body.z, body.facing), (4.0, 1.0, 2.3, 0.5), "back at its post on the deck");
+}
+
+/// The wreck's ground as its export laid it.
+fn wreck_course() -> Vec<Block> {
+    let file: serde_json::Value =
+        serde_json::from_str(include_str!("../../../content/prologue/wreck.json")).expect("the wreck's file");
+    let number = |block: &serde_json::Value, key: &str| block[key].as_f64().expect("a block's number");
+    let blocks = file["course"].as_array().expect("its blocks");
+    blocks
+        .iter()
+        .map(|block| Block {
+            min_x: number(block, "minX"),
+            min_y: number(block, "minY"),
+            max_x: number(block, "maxX"),
+            max_y: number(block, "maxY"),
+            top: number(block, "top"),
+            // The page stands the wreck's blocks from the sea up (`wreckLayout.ts`).
+            bottom: 0.0,
+        })
+        .collect()
+}
+
+#[test]
+fn every_outer_edge_of_the_wreck_holds_a_body_running_and_jumping_off_it() {
+    // Each run is 0.8 s, under 7 m: the blocks within this of where it starts are all it meets. No ground of the
+    // wreck lies lower than LOWEST_M over the sea (tools/wreck/wreck_course.py): a body under it is in the sea.
+    const REACH_M: f64 = 8.0;
+    const LOWEST_M: f64 = 0.5;
+    let course = wreck_course();
+    let room = Room::over_sea(course.clone(), (0.0, 0.0));
+    let Floor::Sea(rim) = &room.floor else { panic!("a room over the sea") };
+    let half = course::RIM_CELL_M / 2.0;
+    let mut edges = 0;
+    for block in &course {
+        let mut x = block.min_x + half;
+        while x < block.max_x {
+            let mut y = block.min_y + half;
+            while y < block.max_y {
+                for (bearing, (east, south)) in
+                    [(0.0, (0.0, -1.0)), (1.0, (1.0, 0.0)), (2.0, (0.0, 1.0)), (3.0, (-1.0, 0.0))]
+                {
+                    let beyond = (x + east * course::RIM_CELL_M, y + south * course::RIM_CELL_M);
+                    if rim.stands_at(beyond.0, beyond.1) {
+                        continue;
+                    }
+                    edges += 1;
+                    let near: Vec<Block> = course
+                        .iter()
+                        .filter(|other| other.max_x > x - REACH_M && other.min_x < x + REACH_M)
+                        .filter(|other| other.max_y > y - REACH_M && other.min_y < y + REACH_M)
+                        .copied()
+                        .collect();
+                    let yaw = bearing * std::f64::consts::FRAC_PI_2;
+                    let run = Controls { forward: 1.0, yaw, run: true, ..Controls::default() };
+                    let mut body = room.on_top(x, y);
+                    for tick in 0..48 {
+                        let controls = Controls { jump: tick % 24 == 12, ..run };
+                        body = movement::step_body(&body, &controls, &near, &room.floor, movement::TICK_SECONDS);
+                    }
+                    assert!(
+                        rim.stands_at(body.x, body.y) && body.z > LOWEST_M - 1e-9,
+                        "held at the edge running from ({x:.2}, {y:.2}) at {yaw:.2}: {body:?}"
+                    );
+                }
+                y += course::RIM_CELL_M;
+            }
+            x += course::RIM_CELL_M;
+        }
+    }
+    assert!(edges > 1000, "the wreck's outer edges were walked: {edges}");
+}
+
+#[test]
+fn the_sea_round_a_course_is_at_0_m_for_what_falls_or_flies_over_it() {
+    let room = Room::over_sea(vec![deck()], (0.0, 0.0));
+    assert_eq!(room.floor.height_at(9.0, 0.0), 0.0, "the sea, not the rim's wall");
+    assert!(room.floor.walled((4.0, 0.0), (9.0, 0.0)), "yet no body walks out to it");
+}
+
+#[test]
+fn the_rim_round_the_wreck_holds_its_blocks_cell_for_cell_as_the_page_s_does() {
+    // The page's rimOf is checked against the same measure (wreckLayout.test.ts): both hold the blocks' area.
+    let course = wreck_course();
+    let rim = Heights::rim(&course, course::RIM_CELL_M);
+    let floats = rim.to_floats();
+    let open = floats[movement::heights::SHAPE_FLOATS..].iter().filter(|height| **height == 0.0).count();
+    let area: f64 = course.iter().map(|block| (block.max_x - block.min_x) * (block.max_y - block.min_y)).sum();
+    let held = open as f64 * course::RIM_CELL_M * course::RIM_CELL_M;
+    assert!((held - area).abs() < 1.0, "the rim holds {held:.0} m2 of the blocks' {area:.0}");
 }

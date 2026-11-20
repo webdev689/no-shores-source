@@ -63,7 +63,7 @@ export class Overboard implements Beat {
     setAblaze(story, layout);
     ambience.heartbeat(false);
     stage.parts.hud.hints([]);
-    stage.parts.objective.clear();
+    stage.parts.hud.tasks.show(null);
     // The fight has faded out already; begun here, the beat starts as black as the fight left it.
     screen.fade(1, 0);
     this.cues = new Cues([
@@ -128,6 +128,7 @@ export class Overboard implements Beat {
       shot,
       actors,
       drawers: [this.scenery.drawer],
+      hulls: this.scenery.hulls,
       heads,
       focus: [x, y],
       heard: { at: 'sea', deck: true, sailing: false },

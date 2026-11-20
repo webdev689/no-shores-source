@@ -9,14 +9,16 @@ import bpy  # noqa: I001 - Blender's own modules load once bpy has
 from mathutils import Vector
 
 from ship_mesh import Piece
+from wreck_fields import FIELDS, at as on_field
 from wreck_level import PATH, ZONES
 from wreck_pieces import build, crate, deck_section, heap, scatter, seeded, spar
+from wreck_scene import SLOOP
 from wreck_ships import SEA_Z
 
 # How high a heap is piled over the deck it stands on: past what a body climbs or jumps.
 HEAP_M = 2.9
-# The middle of the strip of the Sloop's side a body walks along, x in the wreck's frame (wreck_scene.SLOOP).
-SLOOP_STRIP_X = 12.3
+# The middle of the strip of the Sloop's side a body walks along, x in the wreck's frame: this far east of her middle.
+SLOOP_STRIP_X = SLOOP['at'][0] + 0.7
 
 
 def collection(name):
@@ -33,15 +35,15 @@ def lay_heap(piece, frames, ship, box, rng, height=HEAP_M):
 
 
 # The heaps that close the way on from each zone, by the zone they close: the ship's frame they stand in and their box
-# there. The last is the gate into the arena.
+# there, or none for the quiet deck the player wakes on, whose way on is open. The last is the gate into the arena.
 GATES = (
-    ('brig', (-10.0, 0.5, -8.9, 4.9)),
-    ('wreck', (-5.0, 0.2, -3.6, 6.6)),
-    ('wreck', (3.2, -2.6, 4.8, 7.0)),
-    ('brig', (3.8, -4.6, 8.0, -3.0)),
+    None,
+    ('wreck', (-0.6, 2.4, 1.1, 13.6)),
+    ('wreck', (16.2, 5.6, 18.8, 11.8)),
+    ('wreck', (23.0, -9.6, 29.0, -5.6)),
     ('frigate', (4.4, -5.6, 8.2, -4.2)),
     ('frigate', (-2.8, -3.6, -1.7, 3.6)),
-    ('frigate', (-13.0, -5.4, -10.8, 5.4)),
+    ('frigate', (-11.0, -4.2, -9.2, 4.2)),
 )
 
 # Wreckage that closes for good the ways round a zone: the Frigate's gangways either side of her burnt-out gun deck,
@@ -57,23 +59,33 @@ BLOCKERS = (
 def gate_boxes(frames):
     """Each gate's box in the wreck's frame (west, south, east, north), by the zone it closes: the ground its heap
     is piled over, which the game holds closed until the zone's wave falls."""
-    return [box if ship == 'wreck' else frames.area(ship, *box) for ship, box in GATES]
+    def box(gate):
+        if gate is None:
+            return None
+        ship, area = gate
+        return area if ship == 'wreck' else frames.area(ship, *area)
+
+    return [box(gate) for gate in GATES]
 
 
 def gates(frames, seed):
-    """Each gate's heap in a collection of its own, `Gate.<zone>`: gives the collections in zone order."""
-    made = []
-    for zone, (ship, box) in enumerate(GATES):
+    """Each gate's heap in a collection of its own, `Gate.<zone>`: gives the collections by the zone each closes."""
+    made = {}
+    for zone, gate in enumerate(GATES):
+        if gate is None:
+            continue
+        ship, box = gate
         rng = seeded(seed + zone)
         piece = Piece()
         if ship == 'wreck':
             base = frames.ground.z((box[0] + box[2]) / 2, (box[1] + box[3]) / 2) or 3.0
             heap(piece, box, base, HEAP_M, rng)
         else:
-            lay_heap(piece, frames, ship, box, rng)
+            # The arena's heap stands below her quarterdeck's front: it is piled higher, past a jump from her deck.
+            lay_heap(piece, frames, ship, box, rng, HEAP_M + (0.8 if zone == len(GATES) - 1 else 0.0))
         group = collection(f'Gate.{zone}')
         build(piece, f'Gate.{zone}.Heap', group)
-        made.append(group)
+        made[zone] = group
     return made
 
 
@@ -109,9 +121,11 @@ def blockers(frames, seed):
 
 
 def ramps(frames, seed):
-    """The ways of fallen timber between the pieces: down from the Brig's bow half onto the Sloop's side; up from the
-    Sloop's side into the Frigate's stove-in waist; and down into her gun deck and up out of it to her quarterdeck.
-    Each is ground a body walks on."""
+    """The ways of fallen timber between the pieces: off the Brig's stern half onto the wreckage of her waist, from her
+    torn deck up onto her bow half, from her fore deck onto the raft beside her and down from it onto the Sloop's side,
+    off the Sloop onto the wreckage she drifted into and up from it into the Frigate's stove-in waist; out over her
+    port bow; down into her gun deck, up out of it to her quarterdeck, and out of it onto the wreckage off her port
+    quarter. Each is ground a body walks on."""
     rng = seeded(seed)
     group = collection('Ramps')
     ground = frames.ground
@@ -122,22 +136,32 @@ def ramps(frames, seed):
         x = SLOOP_STRIP_X
         return Vector((x, y, ground.z(x, y, below=4.5) + lift))
 
+    def field(name, along, across):
+        """A point on a raft's planking, a ramp's end resting on it."""
+        return on_field(name, along, across) - Vector((0, 0, 0.05))
+
     ways = (
-        (frames.on('brig', 5.9, -2.3, 0.05), sloop_top(-8.6)),
-        (sloop_top(-13.0), frames.on('frigate', 6.3, -3.4, 0.05)),
+        (frames.on('brig', -1.4, 0.0, 0.05), field('Waist', -6.6, 0.0)),
+        (field('TornDeck', 7.2, 0.2), frames.on('brig', 1.4, 0.0, 0.05)),
+        (frames.on('brig', 5.9, -2.3, 0.05), field('Fore', -4.0, 2.4)),
+        (field('Fore', -0.6, -2.4), sloop_top(-11.0)),
+        (sloop_top(-17.0), field('Sloop', -1.5, -4.2)),
+        (field('Sloop', 2.4, 4.4), frames.on('frigate', 6.3, -3.4, 0.05)),
+        (frames.on('frigate', 9.0, 3.6, 0.05), field('PortBow', 12.0, -1.4)),
         (frames.on('frigate', -1.7, 0.0, 0.03), frames.on('frigate', -5.2, 0.0, z=frames.lower + 0.04)),
         (frames.on('frigate', -6.8, 0.0, z=frames.lower + 0.04), frames.on('frigate', -12.3, 0.0, 0.05)),
+        (frames.on('frigate', -7.0, 2.4, z=frames.lower + 0.04), field('PortQuarter', 3.0, -4.4)),
     )
     for index, (start, end) in enumerate(ways):
         piece = Piece()
         deck_section(piece, start, end, 2.2, rng)
         item = build(piece, f'Ramp.{index}', group, walk=True)
         item['ends'] = [list(start), list(end)]
-    # A broken yard lies along the Sloop's ramp, as if it fell there and the planks after it: on its south side, away
-    # from the way along her that comes onto it.
+    # A broken yard lies along the ramp up into the Frigate, as if it fell there and the planks after it: on its north
+    # side, away from the way on aft.
     yard = Piece()
-    first, last = ways[1]
-    side = -(last - first).cross(Vector((0, 0, 1))).normalized()
+    first, last = ways[5]
+    side = (last - first).cross(Vector((0, 0, 1))).normalized()
     spar(yard, first + side * 1.35 - Vector((0, 0, 0.1)), last + side * 1.35 + Vector((0, 0, 0.2)), 0.2, rng)
     build(yard, 'Ramp.Yard', group)
     return group
@@ -184,13 +208,21 @@ def wreckage(frames, seed):
             at = frames.on(ship, x, y)
             if not in_the_way(at.x, at.y):
                 scatter(piece, (at.x - 0.1, at.y - 0.1, at.x + 0.1, at.y + 0.1), at.z, 1, seeded(int(own * 1e9)))
+    # The rafts, strewn near their edges, their middles kept open to fight in.
+    for index, (name, _, half_length, half_breadth, _, _) in enumerate(FIELDS):
+        rng = seeded(seed + 20 + index)
+        for _ in range(int(half_length * half_breadth / 6)):
+            angle, reach, own = rng.uniform(0, math.tau), rng.uniform(0.6, 0.85), rng.random()
+            spot = on_field(name, math.cos(angle) * reach * half_length, math.sin(angle) * reach * half_breadth)
+            if not in_the_way(spot.x, spot.y):
+                scatter(piece, (spot.x - 0.1, spot.y - 0.1, spot.x + 0.1, spot.y + 0.1), spot.z, 1, seeded(int(own * 1e9)))
     build(piece, 'Wreckage.Decks', group)
     afloat = Piece()
     rng = seeded(seed + 50)
-    for _ in range(160):
+    for _ in range(260):
         angle = rng.uniform(0, math.tau)
-        reach = rng.uniform(8, 46)
-        x, y = 2 + math.cos(angle) * reach * 1.1, -14 + math.sin(angle) * reach
+        reach = rng.uniform(10, 60)
+        x, y = math.cos(angle) * reach * 1.2, -12 + math.sin(angle) * reach
         if frames.ground.z(x, y) is None:
             scatter(afloat, (x - 0.1, y - 0.1, x + 0.1, y + 0.1), SEA_Z + 0.02, 1, rng, floating=True)
     build(afloat, 'Wreckage.Flotsam', group)

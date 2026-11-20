@@ -238,9 +238,10 @@ fn a_blow_on_a_garrison_foe_walking_back_brings_it_back_to_the_fight() {
 fn a_boss_or_a_miniboss_that_leashes_goes_back_to_its_first_phase_its_called_foes_fall_and_its_next_fight_is_fresh() {
     for (kind, calls) in [(NodeKind::Boss, 4), (NodeKind::Dungeon, 0)] {
         let mut room = node(kind, "glade");
-        let player = room.join().unwrap();
         let (leader, place, _) = group(&room)[0];
         into_its_last_phase(&mut room, leader);
+        // Joined only now, so no foe of the node has fought them while the leader was brought to its last phase.
+        let player = room.join().unwrap();
         let last = room.foes[&leader].brain.phase();
         let called = called_by(&room, leader);
         assert!(last > 1 && called.len() == calls, "{kind:?}: in phase {last}, {} called", called.len());

@@ -24,6 +24,7 @@ const vessel: FightVessel = {
 };
 const captain: FightCaptain = {
   ...vessel,
+  id: 1,
   ship: [600, 800, 0, 0, 0, 0, 0, 2],
   name: 'Pirate Sloop',
   faction: 2,
@@ -141,6 +142,7 @@ test('a fight that is over hands it the last answer, ends, and keeps its lines a
   await letGo();
   naval.step(0.1, IDLE, 1.1, sailing, WINDOW, failed);
   assert.deepEqual([naval.fighting, asked.ends], [false, 1]);
+  assert.equal(naval.view?.over, 'sunk', 'the answer it ended on is kept');
   assert.deepEqual([...sailing.floats()], [9, 9, 0, 0, 0, 0, 0, 1]);
   assert.ok(naval.lines(2).length > 0 && naval.lines(10).length === 0);
 });

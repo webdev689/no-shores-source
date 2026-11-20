@@ -245,11 +245,9 @@ function captainsOf(view: FightView): readonly FightCaptain[] {
   return [view.captain, ...(view.others ?? [])];
 }
 
-/** The name of the ship the fight's events number `ship`: the first captain 1, each other its own number. */
+/** The name of the ship the fight's events number `ship`, by the number each captain carries. */
 function nameOf(view: FightView, ship: number): string {
-  if (ship === 1) return view.captain.name;
-  const others = view.others ?? [];
-  return (others.find((other) => other.number === ship) ?? others[ship - 2])?.name ?? view.captain.name;
+  return captainsOf(view).find((captain) => captain.id === ship)?.name ?? view.captain.name;
 }
 
 /** How far a captain lies from the player's ship, metres. */

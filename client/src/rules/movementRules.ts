@@ -75,6 +75,10 @@ export interface MovementRules {
    *  numbers it (`Heights::to_floats`), the same heights to the bit as the sea room's; null, or numbers that are not a
    *  grid, is open ground at 0 m. Answers whether a deck was set. */
   setHeights(grid: readonly number[] | null): boolean;
+  /** Stands every later step on the rim round a course laid over the sea, as the sea room holds its bodies: the
+   *  movement crate makes it from the blocks (`Heights::rim`), so it agrees with the room's to the bit. Answers whether
+   *  the blocks were taken. */
+  setRim(blocks: readonly Block[]): boolean;
   /** Judges every later `reachTick` against a node's section (its ring and spawns, world metres), by the room's own
    *  reach rules, the body standing as `standing` says (a room's last word) or inside; null clears it. */
   setSection(
@@ -120,6 +124,7 @@ interface MovementExports {
   movement_set_course(address: number, length: number): number;
   movement_set_ground(address: number, length: number): number;
   movement_set_heights(address: number, length: number): number;
+  movement_set_rim(address: number, length: number): number;
   movement_standing(address: number, length: number): void;
   movement_step(address: number, length: number): void;
   movement_set_section(address: number, length: number): number;
@@ -143,6 +148,11 @@ export const CONTROLS_FLOATS = 7;
 
 /** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
  *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */
+/** Blocks as the movement crate reads them (`Block::from_floats`): every list of blocks the rules take. */
+export function blockFloats(blocks: readonly Block[]): number[] {
+  return blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
+}
+
 export function floatsOf(body: Body): number[] {
   const over = body.over ?? { from: [0, 0, 0], to: [0, 0, 0], progress: 0, seconds: 0 };
   return [
@@ -241,14 +251,7 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       return readBody();
     },
     setCourse: (blocks) => {
-      const floats = blocks.flatMap((block) => [
-        block.minX,
-        block.minY,
-        block.maxX,
-        block.maxY,
-        block.top,
-        block.bottom,
-      ]);
+      const floats = blockFloats(blocks);
       const address = exports.reserve(floats.length * 8);
       const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
       floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));
@@ -263,6 +266,17 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
         return exports.movement_set_ground(address, bytes.length) === 1;
       } finally {
         exports.release(address, bytes.length);
+      }
+    },
+    setRim: (blocks) => {
+      const floats = blockFloats(blocks);
+      const address = exports.reserve(Math.max(1, floats.length) * 8);
+      const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
+      floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));
+      try {
+        return exports.movement_set_rim(address, floats.length * 8) === 1;
+      } finally {
+        exports.release(address, Math.max(1, floats.length) * 8);
       }
     },
     setHeights: (grid) => {

@@ -19,6 +19,7 @@ import type { Founder } from './sailing.ts';
 import type { FightHeard } from '../audio/ambience/seaFight.ts';
 import type { Shot } from '../camera.ts';
 import { SeaCombat } from '../seaCombat.ts';
+import type { FightReadout } from '../seaPanel.ts';
 
 /** A captain the story sets upon the player: its bearing off the player's bow (radians, to starboard), how far off
  *  (metres), its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss), and its heading (radians
@@ -50,9 +51,9 @@ export interface Going {
 export type Happening = 'hit-taken' | 'hit-given' | 'sinking' | 'sunk';
 
 /** One frame of the ambush: the camera's shot, every ship as drawn (the player's first, the Brig; then each captain's
- *  Sloop, darker) with its state, their footprints, the captains' bars, the panel's lines, what happened since the
- *  last frame, how many captains are still to beat (afloat and fighting), and whether the fight is over: every captain
- *  beaten, sunk or struck. */
+ *  Sloop, darker) with its state, their footprints, the captains' bars, the fight's readout and what the tracker
+ *  counts of it, what happened since the last frame, how many captains are still to beat (afloat and fighting), and
+ *  whether the fight is over: every captain beaten, sunk or struck. */
 export interface StoryFightFrame {
   readonly shot: Shot;
   readonly ships: readonly {
@@ -69,8 +70,9 @@ export interface StoryFightFrame {
   readonly bars: readonly ShipBar[];
   /** The fight's readout, as the sea's display shows it. */
   readonly display: SeaFightModel | null;
+  /** What the tracker counts and the toasts say of the fight. */
+  readonly readout: FightReadout;
   readonly happened: readonly Happening[];
-  readonly left: number;
   readonly over: boolean;
 }
 
@@ -249,15 +251,14 @@ export class StoryFight {
       ...captains.map((captain, index) => drawn(captain, 'captain', this.captainRigs[index] ?? this.ownRig)),
     ];
     const happened = happenedOf(this.heard.splice(0));
-    const left = captains.filter((captain) => captain.state === 'afloat').length;
     return {
       shot,
       ships,
       hulls: this.hulls(view.player, captains, scale),
       bars: this.combat.bars(scale),
       display: this.combat.display(input.time),
+      readout: this.combat.readout(input.time),
       happened,
-      left,
       over: view.over !== null,
     };
   }

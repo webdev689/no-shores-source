@@ -6,10 +6,10 @@
 // height gives the hour's phases, the weather the wind, rain, snow and sand, and every strike near its thunder.
 
 import { stepsBetween } from '../../../combat/worldCues.ts';
-import { listen } from '../../../combat/worldSounds.ts';
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import { WORLD_CLOCK, hourOf } from '../../../sky/worldClock.ts';
 import type { Landmass } from '../../landmass.ts';
+import { listen } from '../../../listener.ts';
 import { ambienceOutput } from '../../uiSounds.ts';
 import type { NodeInfo } from '../../worldData.ts';
 import { type Place, placeOf } from '../place.ts';
@@ -185,7 +185,7 @@ export class Ambience {
       this.players.push(new ScapePlayer(audio, master, heard.key, this.bank, this.random, this.calls));
     if (heard) {
       const [east, south, up] = heard.ear;
-      listen(audio.listener, [east - heard.origin[0], south - heard.origin[1], up], heard.yaw);
+      listen(audio, [east, south, up], heard.yaw, heard.origin);
       this.lastHeard = heard;
     }
     const now = audio.currentTime;

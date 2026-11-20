@@ -1,8 +1,9 @@
-import { inArea, type WaveFoe, type WreckLayout } from './wreckLayout.ts';
+import { inArea, topAt, type WaveFoe, type WreckLayout } from './wreckLayout.ts';
 
 /** The most of the wreck's foes alive at once; a wave's others wait their turn. */
 export const ALIVE_MOST = 6;
-/** A body this far over the sea, metres, is below every deck: it fell in. */
+/** A body this far over the sea, metres, with no block of the wreck under it, fell in. The wreck's own ground, some of
+ *  it lower than this (its gun deck, the Sloop's side), is never the sea. */
 export const IN_THE_SEA_M = 1.5;
 /** How long a body lies in the sea before it is brought back to its checkpoint, seconds. */
 export const BROUGHT_BACK_S = 1.2;
@@ -42,10 +43,10 @@ export interface Seen {
 
 /**
  * The wreck's progress along its path, with no room or drawing: the zones the player has reached, each one's
- * checkpoint kept and the next zone's wave stood ahead of them (so its foes are already fighting each other when the
- * player comes), no more than `ALIVE_MOST` alive at once; the way on from each zone closed until its wave has fallen;
- * a fall into the sea, or a climb over a closed way (once the boss fight begins, back over the arena's heap), brought
- * back to the last checkpoint; and the boss fight's end.
+ * checkpoint kept and its wave stood as the player enters it, far across it, no more than `ALIVE_MOST` alive at once
+ * (so no foe of a zone fights before the player comes into it, and the first zone, with no wave, is quiet); the way on
+ * from each zone closed until its wave has fallen; a fall into the sea, or a climb over a closed way (once the boss
+ * fight begins, back over the arena's heap), brought back to the last checkpoint; and the boss fight's end.
  */
 export class WreckProgress {
   private readonly layout: WreckLayout;
@@ -87,7 +88,7 @@ export class WreckProgress {
     return this.fighting ? zone === this.layout.arena.zone : zone <= this.furthest;
   }
 
-  /** The waves stood up to and including `zone` (one ahead of the furthest reached). */
+  /** The waves stood up to and including `zone`, the furthest reached. */
   private standUpTo(zone: number): void {
     const { zones } = this.layout;
     for (; this.stood <= Math.min(zone, zones.length - 1); this.stood++)
@@ -112,14 +113,14 @@ export class WreckProgress {
     const open = this.opening(seen.alive);
     let checkpoint: readonly [number, number] | null = null;
     // A body in the sea reaches no zone: its feet are not on the deck.
-    const inSea = seen.z < IN_THE_SEA_M;
+    const inSea = seen.z < IN_THE_SEA_M && topAt(this.layout.course, seen.x, seen.y) === 0;
     zones.forEach((zone, index) => {
       if (index <= this.zone || inSea || !this.allowed(index) || !inArea(zone.area, seen.x, seen.y)) return;
       this.zone = index;
       checkpoint = zone.checkpoint;
     });
     if (this.zone >= arena.zone) this.arena = true;
-    this.standUpTo(this.zone + 1);
+    this.standUpTo(this.zone);
     // The boss fight is one on one: a wave still waiting never comes.
     if (this.fighting) this.waiting.length = 0;
     const alive = seen.alive.reduce((sum, count) => sum + count, 0);

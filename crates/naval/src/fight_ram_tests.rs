@@ -63,9 +63,9 @@ fn rams(events: &[Event]) -> Vec<(ShipId, ShipId, f64)> {
 fn a_sloop_driven_into_its_side_rams_it_and_pays_its_recoil() {
     let mut fight = bow_to_side(0.5, 6.0);
     let events = fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 0.0);
-    // 0.15 of the lesser hull (240) at 6 of 8 m/s, into its side: 27; the recoil is 0.6 of it, 16.
-    assert_eq!(rams(&events), [(CAPTAIN, PLAYER, 27.0)]);
-    assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0 - 27.0, 240.0 - 16.0));
+    // Half again 0.15 of the lesser hull (240) at 6 of 8 m/s, into its side: 40; the recoil is 0.6 of it, 24.
+    assert_eq!(rams(&events), [(CAPTAIN, PLAYER, 40.0)]);
+    assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0 - 40.0, 240.0 - 24.0));
     for tick in 1..30 {
         fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, f64::from(tick) / 60.0);
     }

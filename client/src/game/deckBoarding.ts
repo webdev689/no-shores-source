@@ -17,6 +17,7 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
+import type { Hint } from './gearDom.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 
@@ -132,7 +133,7 @@ export class Boarding {
   }
 
   /** What the display says on its deck: where the player is, the line under it, and the keys listed. */
-  get words(): { readonly place: string; readonly line: string; readonly hints: readonly string[] } | null {
+  get words(): { readonly place: string; readonly line: string; readonly hints: readonly Hint[] } | null {
     const shown = this.shown;
     if (!shown) return null;
     const { fight, captain, frame } = shown;
@@ -141,7 +142,11 @@ export class Boarding {
     if (left === null) return { place: captain.name, line: 'Aboard: its crew stands to meet you', hints: frame.hints };
     // The take on one line under its name, as the place's line holds it; the minute left with the key that ends it.
     const line = take ? `Its hold: ${holdWords(take)}` : 'Its hold is open';
-    return { place: 'Its deck is yours', line, hints: [`E back aboard your ship · ${left} s left`, ...frame.hints] };
+    return {
+      place: 'Its deck is yours',
+      line,
+      hints: [['E', `Back aboard your ship · ${left} s left`], ...frame.hints],
+    };
   }
 
   /** The fight on foot on its deck while the player plays there, for the display's respawn. */
