@@ -116,34 +116,32 @@ the scene's pass with depth, and never smaller than a speck however far off.
 ### Fire
 
 `Flames.light` lights a fire from half a metre to four metres tall and gives its id; `put` puts it out. Given `along`,
-the run in metres of an edge burning from its base (a rail, a fallen spar, a sail's foot), the fire burns all along
-that edge, its flames, smoke and embers spread over its length; without it a fire is round.
+the run in metres of an edge burning from its base (a rail, a fallen spar, a sail's foot), the fire burns all along that
+edge, its flames, smoke and embers spread over its length; without it a fire is round.
 
-A fire is drawn in the game's pixel look. Every part is laid out on a grid of 48 texels a metre, between the ships'
-40 and the figures' 62, and coloured from a stepped palette: deep red at the rim, red, orange, yellow and a pale
-heart. Nothing in it is a smooth gradient; smoke's cover comes in three steps. Its flicker is held in frames, ten a
-second as a sprite's are, and each fire turns its frames at a moment of its own, so a deck of fires never flickers
-in step.
+A fire is drawn in the game's pixel look. Every part is laid out on a grid of 48 texels a metre, between the ships' 40
+and the figures' 62, and coloured from a stepped palette: deep red at the rim, red, orange, yellow and a pale heart.
+Nothing in it is a smooth gradient; smoke's cover comes in three steps. Its flicker is held in frames, ten a second as a
+sprite's are, and each fire turns its frames at a moment of its own, so a deck of fires never flickers in step.
 
-Each frame of a fire comes from its seed and the clock. Its tongues of flame wander in height within a band, sway
-and lean a little downwind; their edges lick and they tear near the tip, and each throws wisps from its tip that rise,
-shrink and cool through the palette. A tongue is drawn as a solid of revolution round its leaning axis, the outline
-of that solid as the eye sees it, so from beside it is a teardrop and from above or below a round blaze; it never
-turns to a sliver. Smoke rolls up in a column of puffs that rise, widen, thin and lean with `Flames.wind`; while low
-over the flames a puff is lit orange from below, and it darkens from grey to black as it climbs. Embers are sparks one
-or two texels square, two dozen to a small fire and more to a larger one, that swirl up in the heat, drift with
-the wind and burn out from a pale heart to red. A fire's parts are worked out on the CPU once a frame of its flicker and
-kept; forty fires, a quarter of them along edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than
-16,384 parts.
+Each frame of a fire comes from its seed and the clock. Its tongues of flame wander in height within a band, sway and
+lean a little downwind; their edges lick and they tear near the tip, and each throws wisps from its tip that rise,
+shrink and cool through the palette. A tongue is drawn as a solid of revolution round its leaning axis, the outline of
+that solid as the eye sees it, so from beside it is a teardrop and from above or below a round blaze; it never turns to
+a sliver. Seen end on it is drawn at its nearer end, so a fire sunk into a deck still shows from above. Smoke rolls up
+in a column of puffs that rise, widen, thin and lean with `Flames.wind`; while low over the flames a puff is lit orange
+from below, and it darkens from grey to black as it climbs. Embers are sparks one or two texels square, two dozen to a
+small fire and more to a larger one, that swirl up in the heat, drift with the wind and burn out from a pale heart to
+red. A fire's parts are worked out on the CPU once a frame of its flicker and kept; forty fires, a quarter of them along
+edges, cost about 0.8 ms a frame on the test machine, and no frame draws more than 16,384 parts.
 
-Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the water never
-covers a fire burning above it. Each fire also throws its light into the light layer ([[Weapon Glow]]): the glow
-reads the scene's depth back into the point drawn at each pixel and lights it by how near it stands to the fire's
-middle, out to three times the fire's height, so the deck round a fire and whoever stands there are lit and the sea
-and sky seen past it are not. A fire along an edge throws the same light from points spaced no further apart than
-that reach, so the edge is lit end to end. The glow is light itself, so it is added as it is, not only where it
-passes white-hot; its green is half its red and its blue never steps, so it runs from a red rim through orange to a
-gold heart.
+Smoke and flame are laid over the picture after the water, tested against the scene's depth, so the water never covers a
+fire burning above it. Each fire also throws its light into the light layer ([[Weapon Glow]]): the glow reads the
+scene's depth back into the point drawn at each pixel and lights it by how near it stands to the fire's middle, out to
+three times the fire's height, so the deck round a fire and whoever stands there are lit and the sea and sky seen past
+it are not. A fire along an edge throws the same light from up to seven points spaced no further apart than that reach,
+so the edge is lit end to end. The glow is light itself, so it is added as it is, not only where it passes white-hot;
+its green is half its red and its blue never steps, so it runs from a red rim through orange to a gold heart.
 
 ### Trying it
 

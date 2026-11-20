@@ -104,6 +104,16 @@ fn light_rect(centre: vec3f, reach: f32) -> vec4f {
     let end_on = abs(dot(axis, toward)) / length(axis);
     out.form = vec4f(part.shape.x, part.shape.y, length_seen, end_on);
     half = vec2f(part.shape.x * 1.5, length_seen * 0.5 + part.shape.x * 1.3);
+    // Seen end on, the quad stands at the flame's nearer end, not its middle, so a fire sunk into a deck still
+    // shows over it from above; it shrinks as it comes nearer so the eye sees it the same size.
+    let distance = length(middle);
+    let nearer = min(abs(dot(axis, toward)) * 0.5, distance * 0.5);
+    let corner_seen = corner * half;
+    let shrink = (distance - nearer) / distance;
+    let world = middle + toward * nearer + (across * corner_seen.x + upward * corner_seen.y) * shrink;
+    out.position = matrix * vec4f(world, 1.0);
+    out.local = corner_seen;
+    return out;
   } else if (kind == ${PART.ember}u) {
     // A spark never shrinks below about a pixel and a half, so one far off still shows.
     half = vec2f(max(part.shape.x, length(middle) * 0.0007));
