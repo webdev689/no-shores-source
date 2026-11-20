@@ -145,7 +145,7 @@ pub struct Player {
     /// Their gear, and whether it changed since it was last sent to them.
     pub character: Character,
     pub gear_changed: bool,
-    /// Where they stood as their gear was last sent: at the Reader, and in a social space. Both ride the gear
+    /// Where they stood as their gear was last sent: at the Mage, and in a social space. Both ride the gear
     /// message and change as they walk, so a change sends it again.
     pub placed_sent: (bool, bool),
     /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
@@ -269,7 +269,7 @@ impl Room {
     /// changes how they fight.
     pub fn take_gear_change(&mut self, player: PlayerId) -> bool {
         let clock = self.clock;
-        let placed = (self.at_reader(player), self.in_social_space(player));
+        let placed = (self.at_mage(player), self.in_social_space(player));
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.gear_changed |= placed != found.placed_sent;
         let waiting = found.gear_sent.is_some_and(|sent| clock < sent + GEAR_EVERY_TICKS);
@@ -303,15 +303,21 @@ impl Room {
         true
     }
 
-    /// Sets the day, counted from the epoch, whose wares the room's vendors show; when it turns, every player is sent
-    /// the new day's wares, so none buys what they were not shown.
-    pub fn set_day(&mut self, day: u64) {
-        if self.day == day {
-            return;
-        }
-        self.day = day;
-        for found in self.players.values_mut() {
-            found.gear_changed = true;
+    /// The day, counted from the epoch, whose wares the room's vendors show.
+    #[must_use]
+    pub fn day(&self) -> u64 {
+        self.minute / gear::shape::DAY_MINUTES
+    }
+
+    /// Sets the minute, counted from the epoch. When its day turns, or Shape comes, goes or moves, every player is
+    /// sent their gear again with what is sold now, so none buys what they were not shown.
+    pub fn set_minute(&mut self, minute: u64) {
+        let before = (self.day(), self.shape_at());
+        self.minute = minute;
+        if (self.day(), self.shape_at()) != before {
+            for found in self.players.values_mut() {
+                found.gear_changed = true;
+            }
         }
     }
 

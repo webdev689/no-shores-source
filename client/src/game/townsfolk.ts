@@ -67,13 +67,13 @@ const outfit = (garments: string[], dyes: Record<string, string>, armour: Outfit
 /** Each station's keeper's dress: what they deal in shows in what they wear. A garment a body is not drawn in is
  *  passed over, so each lists one for either body. */
 const KEEPERS: Readonly<Record<string, Outfit>> = {
-  reader: outfit(['plain_robes_hooded', 'shoes'], { plain_robes_hooded: 'Purple', shoes: 'DarkBrown' }),
+  mage: outfit(['plain_robes_hooded', 'shoes'], { plain_robes_hooded: 'Purple', shoes: 'DarkBrown' }),
   vault: outfit(['shirt_long_round', 'formal_tunic', 'formal_eodoric', 'breeches', 'tall_boots'], {
     formal_tunic: 'Grey',
     formal_eodoric: 'Grey',
     breeches: 'DarkBrown',
   }),
-  quartermaster: outfit(
+  armorsmith: outfit(
     ['shirt_long_round', 'breeches', 'tights'],
     { breeches: 'Grey' },
     {
@@ -82,7 +82,7 @@ const KEEPERS: Readonly<Record<string, Outfit>> = {
       boots: 'iron',
     },
   ),
-  armsmith: outfit(
+  weaponsmith: outfit(
     ['shirt_short_round', 'breeches', 'tights'],
     { breeches: 'DarkBrown' },
     {

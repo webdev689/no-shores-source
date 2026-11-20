@@ -1,0 +1,86 @@
+//! What the gear message carries of where a player stands beyond their gear: the factions (pledge, reputation,
+//! packages), each Art's level, XP and owned fragments, their cosmetics and those sold today, and Shape while he is in
+//! their social space.
+
+use crate::messages;
+use flatbuffers::{FlatBufferBuilder, Vector, WIPOffset};
+use gear::{At, Character};
+use room::{PlayerId, Room};
+
+/// The vectors and numbers `gear_bytes` adds to the gear message.
+pub(crate) struct Standing<'built> {
+    pub reputation: WIPOffset<Vector<'built, u64>>,
+    pub packages: WIPOffset<Vector<'built, u32>>,
+    pub art_levels: WIPOffset<Vector<'built, u8>>,
+    pub art_xp: WIPOffset<Vector<'built, u32>>,
+    pub art_owned: WIPOffset<Vector<'built, u8>>,
+    pub cosmetics: WIPOffset<Vector<'built, u16>>,
+    pub cosmetics_sold: WIPOffset<Vector<'built, u16>>,
+    pub shape_place: u8,
+    pub shape_minutes: u32,
+    pub shape_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
+}
+
+/// A worn cosmetic's number, or the first's (each kind's start) for one the catalogue does not hold.
+pub(crate) fn number_of_worn(id: &str) -> u16 {
+    gear::cosmetics::number_of(id).unwrap_or_default()
+}
+
+/// Builds what the gear message carries beyond the gear, for a player of `room`.
+pub(crate) fn standing_of<'built>(
+    builder: &mut FlatBufferBuilder<'built>,
+    room: &Room,
+    player: PlayerId,
+    character: &Character,
+) -> Standing<'built> {
+    use gear::cosmetics::{Seller, sold_on};
+    let factions = &gear::factions::factions().factions;
+    let reputation: Vec<u64> = factions.iter().map(|faction| character.reputation(faction.id)).collect();
+    let packages: Vec<u32> = factions.iter().map(|faction| character.packages(faction.id)).collect();
+    let arts = &gear::arts::arts().arts;
+    let art_levels: Vec<u8> = arts.iter().map(|art| character.art_level(art.id)).collect();
+    let art_xp: Vec<u32> = arts.iter().map(|art| character.art_xp(art.id)).collect();
+    let owned = |art: u8| {
+        (0..6).filter(|fragment| character.owns_fragment(art, *fragment)).fold(0, |bits, fragment| bits | 1 << fragment)
+    };
+    let art_owned: Vec<u8> = arts.iter().map(|art| owned(art.id)).collect();
+    let kept = character.cosmetics.kept.iter().filter_map(|id| gear::cosmetics::number_of(id));
+    let cosmetics: Vec<u16> = kept.collect();
+    let social = room.in_social_space(player);
+    let sold: Vec<u16> = if social {
+        [Seller::Tailor, Seller::Tack].into_iter().flat_map(|seller| sold_on(seller, room.day())).collect()
+    } else {
+        Vec::new()
+    };
+    let shape = room.shape_at().filter(|_| social);
+    let week = gear::shape::week_of(room.minute);
+    let shape_place = shape.map_or(crate::gear_wire::SHAPE_AWAY, |_| {
+        u8::try_from(gear::shape::place(week)).unwrap_or(crate::gear_wire::SHAPE_AWAY)
+    });
+    let shape_minutes = shape.map_or(0, |_| u32::try_from(gear::shape::minutes_left(room.minute)).unwrap_or(0));
+    let wares: Vec<_> = if shape.is_some() {
+        gear::shape::wares(week)
+            .into_iter()
+            .enumerate()
+            .map(|(place, mut ware)| {
+                ware.id = u32::try_from(place).unwrap_or_default();
+                let price = u32::from(gear::shape::price(ware.rarity));
+                crate::gear_wire::item_offset(builder, &ware, At::Carried, price)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    Standing {
+        reputation: builder.create_vector(&reputation),
+        packages: builder.create_vector(&packages),
+        art_levels: builder.create_vector(&art_levels),
+        art_xp: builder.create_vector(&art_xp),
+        art_owned: builder.create_vector(&art_owned),
+        cosmetics: builder.create_vector(&cosmetics),
+        cosmetics_sold: builder.create_vector(&sold),
+        shape_place,
+        shape_minutes,
+        shape_wares: builder.create_vector(&wares),
+    }
+}

@@ -12,7 +12,7 @@ const PLAZA: Plaza = {
     [1060, 2056],
   ],
   stations: [
-    { kind: 'reader', keeper: [960.8, 1946.6], counter: [960.8, 1948.4] },
+    { kind: 'mage', keeper: [960.8, 1946.6], counter: [960.8, 1948.4] },
     { kind: 'vault', keeper: [946.5, 1946.6], counter: [946.5, 1948.4] },
     { kind: 'harbourmaster', keeper: [1039.2, 1946.6], counter: [1039.2, 1948.4] },
   ],

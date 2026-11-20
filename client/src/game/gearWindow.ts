@@ -53,8 +53,8 @@ const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: 
 /** Each station's screen's name. */
 const STATIONS: Readonly<Record<Station, string>> = {
   vault: 'The Vault',
-  quartermaster: 'The Quartermaster',
-  armsmith: 'The Armsmith',
+  armorsmith: 'The Armorsmith',
+  weaponsmith: 'The Weaponsmith',
   tailor: 'The Tailor',
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
@@ -77,8 +77,8 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Right-click / X', 'Details'],
     [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
-  quartermaster: [['Hold', 'Buy']],
-  armsmith: [['Hold', 'Buy']],
+  armorsmith: [['Hold', 'Buy']],
+  weaponsmith: [['Hold', 'Buy']],
   tailor: [['Hold', 'Buy']],
   item: [
     ['Hold', 'Buy a node'],
@@ -501,7 +501,7 @@ export function startGearWindow(
             ? vaultPage(context)
             : view === 'tailor'
               ? tailorPage(context)
-              : vendorPage(context, view === 'quartermaster' ? 0 : 1);
+              : vendorPage(context, view === 'armorsmith' ? 0 : 1);
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
@@ -510,9 +510,9 @@ export function startGearWindow(
     body.replaceChildren(page, ...(shown ? [shown.page] : []));
     // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
     // page, else a step back while a flyout is open, else closing the menu.
-    // A Vestige opens with a click only at the Reader's counter, so the footer offers it only there.
+    // A Vestige opens with a click only at the Mage's counter, so the footer offers it only there.
     const opens: readonly Hint[] =
-      gear.atReader && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
+      gear.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
     const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
     const hints = shown ? HINTS.item : worn ? ARTS_HINTS : view === 'inventory' ? shelfHints : HINTS[view];
     hinted(hints ?? []);

@@ -248,7 +248,7 @@ impl Room {
 
 #[cfg(test)]
 #[path = "arts_tests.rs"]
-mod arts_tests;
+pub(crate) mod arts_tests;
 #[cfg(test)]
 #[path = "spells_tests.rs"]
 mod spells_tests;

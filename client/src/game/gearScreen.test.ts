@@ -39,7 +39,7 @@ const state = (fields: Partial<GearState>): GearState => ({
   vestiges: [],
   drops: [],
   spent: [],
-  atReader: false,
+  atMage: false,
   answer: 0,
   answered: 0,
   nodes: [],
@@ -98,16 +98,16 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
       ['Hold to feed a Fruit of Dagon', 'button'],
     ],
   );
-  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atReader: true }));
+  const carried = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }));
   assert.deepEqual(
     carried.presses.map((press) => press.label),
     ['Equip', 'Hold to dismantle'],
   );
   assert.equal(carried.presses.at(-1)?.role, 'warn');
   // At the vault's counter, it may be put in; a vaulted one, taken out.
-  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ atReader: true }), true);
+  const atVault = itemDetailOf({ ...legendary, at: 0 }, state({ atMage: true }), true);
   assert.ok(atVault.presses.some((press) => press.label === 'Put in the vault'));
-  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ atReader: true }), true);
+  const vaulted = itemDetailOf({ ...legendary, at: 1 }, state({ atMage: true }), true);
   assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 
@@ -118,15 +118,15 @@ test('each vendor’s stall shows its wares of the day, bought for their price i
     item({ id: 0, kind: 2, rarity: 2, level: 9, price: 2_000, attack: 120 }),
     item({ id: 1, kind: 12, rarity: 1, level: 9, price: 600 }),
   ];
-  const [quartermaster, armsmith] = vendorsOf(state({ wares, aurem: 1_000 }));
-  assert.equal(quartermaster?.name, 'The Quartermaster');
+  const [armorsmith, weaponsmith] = vendorsOf(state({ wares, aurem: 1_000 }));
+  assert.equal(armorsmith?.name, 'The Armorsmith');
   assert.deepEqual(
-    quartermaster?.wares.map((ware) => [ware.kind, ware.affordable]),
+    armorsmith?.wares.map((ware) => [ware.kind, ware.affordable]),
     [
       ['Rare Head', false],
       ['Magic Torso', true],
     ],
   );
-  assert.deepEqual(armsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
-  assert.equal(armsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
+  assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
+  assert.equal(weaponsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
 });

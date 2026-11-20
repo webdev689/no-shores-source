@@ -37,6 +37,9 @@
     {"id": "driftwalkers", "name": "Driftwalkers", "kind": "legs", "rarity": "atheric", "resource": "goldgrass_seed", "words": "Light as driftwood, and as hard to catch.", "layout": [["sure_footing", "second_wind"], ["slipstream"], ["unshaken", "forager"]]},
     {"id": "harbour_cloak", "name": "Harbour Cloak", "kind": "cloak", "rarity": "normal", "words": "Plain wool, proof against Overlook's harbour wind.", "layout": []},
     {"id": "stormcloak", "name": "Stormcloak", "kind": "cloak", "rarity": "rare", "words": "Waxed canvas the colour of a squall.", "layout": []},
-    {"id": "pale_mantle", "name": "Pale Mantle", "kind": "cloak", "rarity": "legendary", "words": "The grey of the Pale Expanse at dawn.", "layout": []}
+    {"id": "pale_mantle", "name": "Pale Mantle", "kind": "cloak", "rarity": "legendary", "words": "The grey of the Pale Expanse at dawn.", "layout": []},
+    {"id": "stormcallers_cape", "name": "Stormcallers' Cape", "kind": "cloak", "rarity": "legendary", "faction": "stormcallers", "words": "Worn by those pledged to the Stormcallers. It hangs as if a wind were always rising.", "layout": []},
+    {"id": "lamplighters_cape", "name": "Lamplighters' Cape", "kind": "cloak", "rarity": "legendary", "faction": "lamplighters", "words": "Worn by those pledged to the Lamplighters. Its hem is singed, and none of them mend it.", "layout": []},
+    {"id": "veiled_cape", "name": "Cape of the Veiled", "kind": "cloak", "rarity": "legendary", "faction": "veiled", "words": "Worn by those pledged to the Veiled. It is hard to say where its edge is.", "layout": []}
   ]
 }

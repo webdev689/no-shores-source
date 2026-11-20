@@ -56,6 +56,17 @@ impl Frame {
     }
 }
 
+/// Where a visitor who keeps no counter may stand, each a quiet place by something of the courtyard's: beside each
+/// brazier on its seaward side, landward of the two outer benches, and before the portico's two ends. Clear of every
+/// solid, the processional way and the spawns.
+#[must_use]
+pub fn visitor_spots(frame: &Frame) -> Vec<[f64; 2]> {
+    let braziers = [-95.0, -45.0, 45.0, 95.0].map(|across| frame.at(2.5, across));
+    let benches = [-120.0, 120.0].map(|across| frame.at(frame.depth / 2.0 - 20.0, across));
+    let portico = [-30.0, 30.0].map(|across| frame.at(-frame.depth / 2.0 + PORTICO_M[1] + 6.0, across));
+    braziers.into_iter().chain(benches).chain(portico).collect()
+}
+
 /// Everything the courtyard stands on the plaza.
 #[must_use]
 pub fn courtyard(frame: &Frame) -> Vec<Solid> {
@@ -194,6 +205,27 @@ mod tests {
 
     const FRAME: Frame =
         Frame { middle: [1000.0, 2000.0], seaward: [0.0, -1.0], depth: 120.0, length: 260.0, level: 80.0 };
+
+    #[test]
+    fn every_visitor_spot_stands_clear_on_the_plaza() {
+        let spots = visitor_spots(&FRAME);
+        assert_eq!(spots.len(), 8);
+        let spawns: Vec<[f64; 2]> =
+            SPAWN_OFFSETS_M.iter().map(|&across| FRAME.at(FRAME.depth / 2.0 - 4.0, across)).collect();
+        let standing = courtyard(&FRAME).into_iter().filter(|solid| solid.bounds()[5] - solid.bounds()[4] > 0.1);
+        let standing: Vec<[f64; 6]> = standing.map(|solid| solid.bounds()).collect();
+        for spot in &spots {
+            let [x, y] = *spot;
+            assert!((x - FRAME.middle[0]).abs() < FRAME.length / 2.0 - 2.0, "on the plaza: {spot:?}");
+            assert!((y - FRAME.middle[1]).abs() < FRAME.depth / 2.0 - 2.0, "on the plaza: {spot:?}");
+            assert!((x - FRAME.middle[0]).abs() > 6.0, "off the processional way: {spot:?}");
+            for [west, north, east, south, ..] in &standing {
+                let gap = libm::hypot((west - x).max(x - east).max(0.0), (north - y).max(y - south).max(0.0));
+                assert!(gap > 1.0, "{spot:?} stands within a metre of a solid");
+            }
+            assert!(spawns.iter().all(|spawn| libm::hypot(spawn[0] - x, spawn[1] - y) > 10.0));
+        }
+    }
 
     #[test]
     fn every_piece_stands_on_the_plaza_and_none_on_a_spawn() {

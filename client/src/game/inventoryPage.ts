@@ -5,7 +5,7 @@
 // materials' fragments and Essence, then the islands' resources), a stack of none not shown, then empty places to
 // the end of its row of ten. A cell is its glyph in a well of its rarity, its count at its foot and its pips beside
 // it, as Enhanced Plus's cells are. Hovering or focusing a cell shows its card; a click does what it is for (a
-// Vestige opened at the Reader); a right-click its other use.
+// Vestige opened at the Mage); a right-click its other use.
 
 import { make } from '../editor/dom.ts';
 import { ASKS } from '../network/gearMessages.ts';
@@ -59,7 +59,7 @@ function cellCard(cell: Cell): HTMLElement {
 /** A cell's tile: its picture in a well of its rarity, its count and pips, its card, and its presses. */
 export function cellTile(context: PageContext, cell: Cell): HTMLElement {
   const vacant = cell.glyph === 'empty';
-  // A cell a press does nothing to (a stack, a Vestige away from the Reader) is no button: it takes the focus for its
+  // A cell a press does nothing to (a stack, a Vestige away from the Mage) is no button: it takes the focus for its
   // card and reads as a picture with its count, and a click on it makes no press's sound.
   const pressed = cell.press !== null || cell.other !== null || cell.item !== null;
   const node = make(pressed && !vacant ? 'button' : 'div', '', `gear-cell ${ROLES.tile}`);

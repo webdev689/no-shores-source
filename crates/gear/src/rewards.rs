@@ -60,8 +60,9 @@ pub struct Reward {
 
 impl Character {
     /// Rewards a kill this player had a hand in: the XP, to them and to the weapon whose blow last landed (`weapon`)
-    /// and their armour; the Aurem; and maybe a Vestige, numbered here and returned to be laid on the ground. A harder
-    /// voyage pays more of each.
+    /// and their armour, to their worn Art, and as reputation to the faction pledged while its cape is worn; the
+    /// Aurem; and maybe a Vestige, numbered here and returned to be laid on the ground. A harder voyage pays more of
+    /// each.
     pub fn reward_kill(
         &mut self,
         foe: Foe,
@@ -76,6 +77,9 @@ impl Character {
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
         };
         let (xp, aurem) = (times(worth.xp), times(worth.aurem));
+        // The worn Art and the faction pledged grow by the kill's XP before Scholar's share, which is the gear's.
+        self.earn_art_xp(xp);
+        self.earn_reputation(xp);
         self.earn_xp(xp, weapon);
         if difficulty == Difficulty::Storm {
             self.earn(crate::emblems::Deed::StormFoe);

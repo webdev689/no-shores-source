@@ -217,12 +217,13 @@ impl Room {
         }
     }
 
-    /// A spell's blow on a living foe from `from`, `damage` before power: in its Art's element, by the caster's best
-    /// weapon's Attack, judged against the foe as it stands and settled as a weapon's blow is. Answers the health it
-    /// took.
+    /// A spell's blow on a living foe from `from`, `damage` before power: its share by the caster's Art's level, in
+    /// its Art's element, by the caster's best weapon's Attack, judged against the foe as it stands and settled as a
+    /// weapon's blow is. Answers the health it took.
     fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> Option<f64> {
         let found = self.players.get(&spell.caster)?;
         let (attack, hand) = spell_power(&found.character);
+        let damage = damage * found.character.spell_shares().0;
         let then = self.foes.get(&foe).map(|foe| foe.fighter).filter(|then| !then.dead())?;
         let element = arts().art(spell.art).and_then(|art| gear::Element::from_number(art.element));
         let blow = Blow {
@@ -261,12 +262,15 @@ impl Room {
         }
         let (feet, chest, ahead) = (feet_of(&fighter), fighter.chest(), ahead_of(&fighter));
         let made = |at, life, radius| Spell::new(cast.spell, caster, art.id, def, at, life, radius);
+        // The Art's level: its share of the healing given, and of how long the spell and the buffs it gives last.
+        let (power, lasting) = self.players.get(&caster).map_or((1.0, 1.0), |found| found.character.spell_shares());
+        let last = |ticks: u32| combat::ticks(f64::from(ticks) / 60.0 * lasting);
         match def.key.as_str() {
             "tempest" => self.tempest(made(chest, ticks(def.life_s), def.reach), fighter.aim),
             "quicken" => {
                 let gale = self.core(caster, "gale");
                 let radius = gale.map_or(def.radius, |gale| gale.radius);
-                let lasts = Status::Haste.ticks() + gale.map_or(0, |gale| ticks(gale.more_s));
+                let lasts = last(Status::Haste.ticks() + gale.map_or(0, |gale| ticks(gale.more_s)));
                 for player in self.players_near(feet, radius) {
                     self.give(player, Status::Haste, Some(lasts), Some(caster));
                 }
@@ -284,18 +288,19 @@ impl Room {
             "sunwell" => {
                 let radiance = self.core(caster, "radiance");
                 let radius = def.radius + radiance.map_or(0.0, |more| more.more_radius);
-                self.add_spell(made(feet, ticks(def.life_s + radiance.map_or(0.0, |more| more.more_s)), radius));
+                let life = last(ticks(def.life_s + radiance.map_or(0.0, |more| more.more_s)));
+                self.add_spell(made(feet, life, radius));
             }
             "mend" => {
-                self.heal(caster, def.heal);
+                self.heal(caster, def.heal * power);
                 let mercy = self.core(caster, "mercy");
                 for player in mercy.map_or_else(Vec::new, |mercy| self.players_near(feet, mercy.radius)) {
                     if player != caster {
-                        self.heal(player, def.heal * mercy.map_or(0.0, |mercy| mercy.heal_share));
+                        self.heal(player, def.heal * power * mercy.map_or(0.0, |mercy| mercy.heal_share));
                     }
                 }
                 if self.core(caster, "resolve").is_some() {
-                    self.give(caster, Status::Crit, None, Some(caster));
+                    self.give(caster, Status::Crit, Some(last(Status::Crit.ticks())), Some(caster));
                 }
                 self.add_spell(made(feet, FLASH_TICKS, mercy.map_or(0.0, |mercy| mercy.radius)));
             }
@@ -308,16 +313,18 @@ impl Room {
                 let velocity = [ahead[0] * speed, ahead[1] * speed, 0.0];
                 self.add_spell(Spell { velocity, heads: Some(heads), ..flare });
             }
-            "duskraven" => self.add_spell(made(shoulder_of(&fighter), ticks(def.life_s), def.reach)),
+            "duskraven" => self.add_spell(made(shoulder_of(&fighter), last(ticks(def.life_s)), def.reach)),
             "duskDaggers" => {
                 let blades = self.core(caster, "blades");
                 let at = self.daggers_at(feet, cast.aim, def.reach);
                 let radius = def.radius + blades.map_or(0.0, |blades| blades.more_radius);
-                self.add_spell(made(at, ticks(def.life_s + blades.map_or(0.0, |blades| blades.more_s)), radius));
+                let life = last(ticks(def.life_s + blades.map_or(0.0, |blades| blades.more_s)));
+                self.add_spell(made(at, life, radius));
             }
             "vanish" => {
                 self.vanish(caster, def.roll);
-                let veil = self.core(caster, "night").map(|night| Status::Veiled.ticks() + ticks(night.more_s));
+                let night = self.core(caster, "night").map_or(0, |night| ticks(night.more_s));
+                let veil = Some(last(Status::Veiled.ticks() + night));
                 self.give(caster, Status::Veiled, veil, Some(caster));
                 self.add_spell(made(feet, FLASH_TICKS, def.roll));
             }

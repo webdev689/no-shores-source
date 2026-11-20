@@ -55,6 +55,9 @@ pub struct Materials {
     /// Ammo crates carried (`ammo.rs`).
     #[serde(default)]
     pub crates: u16,
+    /// Shapes, which only Shape takes (`shape.rs`).
+    #[serde(default)]
+    pub shapes: u16,
 }
 
 impl Materials {
@@ -137,6 +140,12 @@ pub struct Character {
     /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
     #[serde(default = "crate::ammo::full")]
     pub ammo: u16,
+    /// The faction pledged to, and the reputation earned with each (`factions.rs`).
+    #[serde(default)]
+    pub allegiance: crate::factions::Allegiance,
+    /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
+    #[serde(default)]
+    pub cosmetics: crate::cosmetics::Cosmetics,
 }
 
 impl Character {
@@ -154,6 +163,8 @@ impl Character {
             emblem: crate::emblems::starting(),
             arts: crate::arts::WornArts::default(),
             ammo: crate::ammo::AMMO_FULL,
+            allegiance: crate::factions::Allegiance::default().kept(),
+            cosmetics: crate::cosmetics::Cosmetics::default(),
         };
         for (kind, slot) in [
             (Kind::Sword, Slot::Melee),
@@ -226,6 +237,8 @@ impl Character {
         let highest = character.items.keys().chain(character.vestiges.keys()).max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
+        character.allegiance = std::mem::take(&mut character.allegiance).kept();
+        character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         character.earn_due();
         Some(character)
     }

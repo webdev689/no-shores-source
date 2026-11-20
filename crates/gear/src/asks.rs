@@ -1,6 +1,7 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
-//! nodes, dismantling, feeding an item a Fruit of Dagon and using an Ammo crate anywhere; identifying a Vestige, the
-//! vault and the vendors only in a social space. An ask refused changes nothing.
+//! nodes, dismantling, feeding an item a Fruit of Dagon, using an Ammo crate and wearing a cosmetic anywhere;
+//! identifying a Vestige, the vault, the vendors, the factions and Shape only at their counters in a social space. An
+//! ask refused changes nothing.
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
 use crate::dice::{Dice, Purpose};
@@ -70,8 +71,42 @@ pub enum Ask {
     },
     /// Uses an Ammo crate, filling the Ranged loadout's ammunition: anywhere.
     UseCrate,
-    /// Buys an Ammo crate: at the Quartermaster's counter only.
+    /// Buys an Ammo crate: at the Weaponsmith's counter only.
     BuyCrate,
+    /// Pledges to a faction, by its number: at its counter.
+    Pledge {
+        faction: u8,
+    },
+    /// Buys a faction's cape, pledged to it: at its counter.
+    BuyCape {
+        faction: u8,
+    },
+    /// Collects one of a faction's packages: at its counter.
+    CollectPackage {
+        faction: u8,
+    },
+    /// Raises an Art a level, owning one of its fragments by its place: at its faction's counter.
+    RiseArt {
+        art: u8,
+        fragment: u8,
+    },
+    /// Buys one of an Art's fragments by its place: at its faction's counter.
+    BuyFragment {
+        art: u8,
+        fragment: u8,
+    },
+    /// Wears a dye, coat or barding the player keeps, by its number in the catalogue.
+    WearCosmetic {
+        cosmetic: u16,
+    },
+    /// Buys one of the day's cosmetics: at the Tailor's counter for a dye, the Tack's for the rest.
+    BuyCosmetic {
+        cosmetic: u16,
+    },
+    /// Buys one of Shape's pieces of the week, by its place among them: at his place, while he is here.
+    BuyFromShape {
+        ware: u8,
+    },
 }
 
 /// Why an ask was refused.
@@ -114,6 +149,22 @@ pub enum Refusal {
     AmmoFull,
     /// Five Ammo crates are carried already.
     CratesFull,
+    NoSuchFaction,
+    /// The player is not pledged to the faction.
+    NotPledged,
+    /// The player is pledged to the faction already.
+    Pledged,
+    /// The player's rank with the faction is too low.
+    RankTooLow,
+    /// The faction holds no package for the player.
+    NoPackage,
+    /// The Art's bar is not full.
+    NotReady,
+    /// The Art is at its highest level.
+    LevelMost,
+    /// The player owns the fragment already.
+    Owned,
+    NoSuchCosmetic,
     /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
     NoRanged = 119,
 }
@@ -126,11 +177,13 @@ pub enum Done {
     Identified(u32),
 }
 
-/// Where the player is when they ask, and the day, whose wares the vendors show.
+/// Where the player is when they ask: whether at the counter that serves the ask; and the day, whose wares the
+/// vendors show, and the week, whose Shape shows.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Here {
     pub social: bool,
     pub day: u64,
+    pub week: u64,
 }
 
 impl Character {
@@ -157,6 +210,14 @@ impl Character {
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
+            Ask::Pledge { faction } => self.pledge(faction, here),
+            Ask::BuyCape { faction } => self.buy_cape(faction, here),
+            Ask::CollectPackage { faction } => self.collect_package(faction, here, dice),
+            Ask::RiseArt { art, fragment } => self.rise_art(art, fragment, here),
+            Ask::BuyFragment { art, fragment } => self.buy_fragment(art, fragment, here),
+            Ask::WearCosmetic { cosmetic } => self.wear_cosmetic(cosmetic),
+            Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
+            Ask::BuyFromShape { ware } => self.buy_from_shape(ware, here),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens.

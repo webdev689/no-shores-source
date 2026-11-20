@@ -64,8 +64,9 @@ export interface RoomDoor {
   gear(player: number): Uint8Array;
   /** Sets a node's room's seas, as its voyage set out: 0 calm, 1 rough, 2 storm; false if it is no room on land. */
   difficulty(seas: number): boolean;
-  /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
-  day(day: number): boolean;
+  /** Sets the minute, counted from the epoch, whose day sets its vendors' wares and whose week sets Shape; false if it
+   *  is no room on land. */
+  minute(minute: number): boolean;
   /** Sets the wall's time at the room's first tick, milliseconds since 1970: its world time, and its welcome's. */
   epoch(unixMs: number): void;
   /** Draws a room on land's loot, and apart from it its foes and camps, from seeds the host keeps secret, each as two
@@ -120,7 +121,7 @@ interface RoomExports {
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
   room_difficulty(seas: number): number;
-  room_day(day: number): number;
+  room_minute(minute: number): number;
   room_epoch(unixMs: number): void;
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
@@ -195,7 +196,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     gear: (player) => take(exports.room_gear(player)),
     difficulty: (seas) => exports.room_difficulty(seas) === 1,
-    day: (day) => exports.room_day(day) === 1,
+    minute: (minute) => exports.room_minute(minute) === 1,
     epoch: (unixMs) => exports.room_epoch(unixMs),
     reseed: ([lootLow, lootHigh, worldLow, worldHigh]) =>
       exports.room_reseed(lootLow, lootHigh, worldLow, worldHigh) === 1,

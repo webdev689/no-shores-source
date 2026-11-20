@@ -212,3 +212,15 @@ pub fn settle(landmass: &mut land::landmass::Landmass, blocks: &Blocks) -> Resul
 pub fn social_id(city_id: &str) -> String {
     format!("{city_id}{}", land::sites::SOCIAL_SUFFIX)
 }
+
+/// The cities whose social spaces are open, by id: Overlook's alone for now. The other port cities' wait, locked,
+/// for later.
+pub const OPEN_SOCIAL_SPACES: [&str; 1] = ["overlook"];
+/// The cities Shape visits on his weekends, by id: Overlook alone for now.
+pub const SHAPE_VISITS: [&str; 1] = ["overlook"];
+
+/// Whether a city's social space is open.
+#[must_use]
+pub fn social_open(city_id: &str) -> bool {
+    OPEN_SOCIAL_SPACES.contains(&city_id)
+}

@@ -90,7 +90,7 @@ fn a_node_opens_on_its_ground_and_welcomes_with_its_id_and_rect() {
 }
 
 #[test]
-fn every_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
+fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
     let square = r#"{ "continents": [{ "id": "square", "outline": [[200000, 300000], [320000, 300000], [320000, 420000], [200000, 420000]] }], "isles": [] }"#;
     let edits = r#"{ "strokes": [],
         "city": { "id": "harbour", "name": "Harbour", "centre": [319000, 360000], "motif": "beacon" },
@@ -100,7 +100,12 @@ fn every_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
     let edits = land::edits::parse(edits).unwrap();
     let nodes = bake::nodes_of(&layout.continents[0], edits, &city::rmb::Blocks::default()).unwrap();
     assert_eq!(nodes.iter().map(|node| node.id.as_str()).collect::<Vec<_>>(), ["glade", "harbour-social"]);
-    for node in nodes {
+    for mut node in nodes {
+        // A social space still locked opens no room; opened, it stands as any other.
+        let locked = node.id == "harbour-social";
+        assert_eq!(node.open, !locked, "{} is locked: only Overlook's social space is open", node.id);
+        assert_eq!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), !locked, "{}", node.id);
+        node.open = true;
         assert!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), "{} opens", node.id);
         let player = room_join();
         let welcome = joined(player);
@@ -282,19 +287,19 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let mut social = node_file();
     social["id"] = json!("harbour-social");
     social["kind"] = json!("social");
-    // The Armsmith's counter where the player stands, as the bake writes a social space's counters.
-    social["counters"] = json!([{ "kind": "armsmith", "at": social["spawns"][0].clone() }]);
+    // The Weaponsmith's counter where the player stands, as the bake writes a social space's counters.
+    social["counters"] = json!([{ "kind": "weaponsmith", "at": social["spawns"][0].clone() }]);
     assert!(open_node(social.to_string().as_bytes()));
-    assert!(set_day(20_400));
+    assert!(set_minute(20_400 * 1_440));
     let player = room_join();
     room_tick();
     let sent = gear(player);
     let message = messages::root_as_from_room(&sent).unwrap();
     let wares = message.gear().unwrap().wares().unwrap();
-    assert_eq!(wares.len(), 2 * gear::vendor::WARES, "the Quartermaster's and the Armsmith's");
+    assert_eq!(wares.len(), 2 * gear::vendor::WARES, "the Armorsmith's and the Weaponsmith's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
     // Too poor to buy: refused, and the wares stay.
-    let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 4 });
+    let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 4 });
     let bytes = protocol::input_bytes(&room::Input { sequence: 1, ask: Some(ask), ..room::Input::default() });
     assert_eq!(input(player, &bytes), 0);
     // The answer goes out once the room may send this player's gear again.

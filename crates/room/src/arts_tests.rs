@@ -15,7 +15,8 @@ const QUICKEN: u8 = 2;
 const MEND: u8 = 5;
 const VANISH: u8 = 9;
 
-/// A room with a player at the origin, looking north (toward -y).
+/// A room with a player at the origin, looking north (toward -y), every Art at its highest level with every fragment
+/// owned, so its spells are as `content/arts/arts.json` writes them.
 pub(crate) fn room_with_player() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
@@ -23,7 +24,15 @@ pub(crate) fn room_with_player() -> (Room, PlayerId) {
     fighter.aim = 0.0;
     fighter.body.facing = 0.0;
     room.set_fighter(player, fighter);
+    master(&mut room, player);
     (room, player)
+}
+
+/// Every Art of a player's at its highest level, owning every fragment.
+pub(crate) fn master(room: &mut Room, player: PlayerId) {
+    let arts = &mut room.players.get_mut(&player).expect("in").character.arts;
+    arts.levels.fill(gear::arts::LEVEL_MOST);
+    arts.owned = Some(vec![0b11_1111; arts.levels.len()]);
 }
 
 /// A pirate swordsman of `health` standing at (x, y), facing north.
@@ -236,6 +245,9 @@ fn the_room_answers_the_arts_asks_and_the_test_ground_readies_every_spell() {
     room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 0, fragment: 1 }));
     room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 2, fragment: 1 }));
     assert_eq!(code(&room), 113);
+    room.players.get_mut(&player).expect("in").character.arts.owned = Some(vec![0; 3]);
+    room.answer(player, Asked::Art(ArtAsk::SetCore { art: 1, slot: 2, fragment: 3 }));
+    assert_eq!(code(&room), 114, "a fragment not owned");
     room.answer(player, Asked::Art(ArtAsk::Wear { art: 3 }));
     assert_eq!((code(&room), room.player(player).expect("in").character.art().key.as_str()), (0, "shadow"));
     room.answer(player, Asked::Grant(Grant::ArtsReady));

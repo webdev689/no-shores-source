@@ -1,5 +1,5 @@
 // The screens a social space's counters open, as Destiny's vendors and vault open in the Tower: a vendor's stall of
-// the day's wares, each held to buy, the Quartermaster's with an Ammo crate every day; the Tailor's emblems of the day,
+// the day's wares, each held to buy, the Armorsmith's armour and the Weaponsmith's weapons with an Ammo crate every day; the Tailor's emblems of the day,
 // as Destiny's Outfitter sold them; and the vault, its weapons, armour and Vestiges beside what the player carries,
 // each a click to move across.
 
@@ -64,12 +64,12 @@ export function vendorPage(context: PageContext, vendor: number): HTMLElement {
     }
     wares.append(block);
   });
-  if (vendor === 0 && (context.gear.cratePrice ?? 0) > 0) wares.append(crateWare(context));
+  if (vendor === 1 && (context.gear.cratePrice ?? 0) > 0) wares.append(crateWare(context));
   page.append(wares);
   return page;
 }
 
-/** The Quartermaster's Ammo crate, sold every day beside the armour, held to buy while there is room for one. */
+/** The Weaponsmith's Ammo crate, sold every day beside the weapons, held to buy while there is room for one. */
 function crateWare(context: PageContext): HTMLElement {
   const { gear } = context;
   const [price, carried] = [gear.cratePrice ?? 0, gear.crates ?? 0];

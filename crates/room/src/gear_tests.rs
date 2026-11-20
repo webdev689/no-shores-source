@@ -196,7 +196,7 @@ fn asks_are_answered_where_the_player_stands() {
 fn a_social_space_serves_each_ask_at_its_own_counter() {
     use crate::asks::{Counter, CounterKind};
     let mut room = room();
-    let counters = [(CounterKind::Reader, [10.0, 0.0]), (CounterKind::Vault, [-10.0, 0.0])];
+    let counters = [(CounterKind::Mage, [10.0, 0.0]), (CounterKind::Vault, [-10.0, 0.0])];
     room.counters = Some(counters.map(|(kind, at)| Counter { kind, at }).to_vec());
     let player = room.join().expect("a room with space");
     let character = &mut room.players.get_mut(&player).expect("in").character;
@@ -205,29 +205,29 @@ fn a_social_space_serves_each_ask_at_its_own_counter() {
     let identify = Asked::Gear(Ask::Identify { vestige: picked });
     let store = Asked::Gear(Ask::StoreVestige { vestige: picked });
     assert_eq!(ask(&mut room, player, 1, identify.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
-    assert!(room.in_social_space(player) && !room.at_reader(player));
+    assert!(room.in_social_space(player) && !room.at_mage(player));
     move_to(&mut room, player, 8.0, 1.0);
-    assert!(room.at_reader(player));
+    assert!(room.at_mage(player));
     assert_eq!(ask(&mut room, player, 2, store.clone()), answer_code(Err(Refusal::NotHere)), "not the vault's");
     move_to(&mut room, player, -9.0, 0.0);
     assert_eq!(ask(&mut room, player, 3, store), 0, "at the vault");
-    let vend = Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 0 });
-    assert_eq!(ask(&mut room, player, 4, vend), answer_code(Err(Refusal::NotHere)), "no Armsmith here");
+    let vend = Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 0 });
+    assert_eq!(ask(&mut room, player, 4, vend), answer_code(Err(Refusal::NotHere)), "no Weaponsmith here");
     let emblem = Asked::Gear(Ask::BuyEmblem { emblem: 0 });
     assert_eq!(ask(&mut room, player, 5, emblem), answer_code(Err(Refusal::NotHere)), "no Tailor here");
     assert_eq!(crate::asks::counter_for(&Ask::BuyEmblem { emblem: 0 }), Some(CounterKind::Tailor));
 }
 
 #[test]
-fn walking_to_or_from_the_reader_sends_the_gear_again() {
+fn walking_to_or_from_the_mage_sends_the_gear_again() {
     use crate::asks::{Counter, CounterKind};
     let mut room = room();
-    room.counters = Some(vec![Counter { kind: CounterKind::Reader, at: [10.0, 0.0] }]);
+    room.counters = Some(vec![Counter { kind: CounterKind::Mage, at: [10.0, 0.0] }]);
     let player = room.join().expect("a room with space");
     assert!(sent(&mut room, player), "on joining");
     assert!(!sent(&mut room, player), "nothing changed");
     move_to(&mut room, player, 9.0, 0.0);
-    assert!(sent(&mut room, player), "at the Reader, whose Open the page now shows");
+    assert!(sent(&mut room, player), "at the Mage, whose Open the page now shows");
     assert!(!sent(&mut room, player));
     move_to(&mut room, player, -9.0, 0.0);
     assert!(sent(&mut room, player), "away again");

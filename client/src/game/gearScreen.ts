@@ -23,7 +23,7 @@ import {
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 /** The screens a social space's counters open: the vault, and each vendor's stall. */
-export type Station = 'vault' | 'quartermaster' | 'armsmith' | 'tailor';
+export type Station = 'vault' | 'armorsmith' | 'weaponsmith' | 'tailor';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */
@@ -206,9 +206,9 @@ export interface Ware {
   readonly press: Press;
 }
 
-/** The vendors' stalls: the Quartermaster's and the Armsmith's wares of the day, each bought for its price in Aurem. */
+/** The smiths' stalls: the Armorsmith's and the Weaponsmith's wares of the day, each bought for its price in Aurem. */
 export function vendorsOf(state: GearState): readonly { readonly name: string; readonly wares: readonly Ware[] }[] {
-  const names = ['The Quartermaster', 'The Armsmith'];
+  const names = ['The Armorsmith', 'The Weaponsmith'];
   const half = state.wares.length / 2;
   return names.map((name, vendor) => ({
     name,

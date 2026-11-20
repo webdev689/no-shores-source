@@ -20,7 +20,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Withdraw { item: 9 }),
         Asked::Gear(Ask::StoreVestige { vestige: 10 }),
         Asked::Gear(Ask::WithdrawVestige { vestige: 11 }),
-        Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Armsmith, ware: 3 }),
+        Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 3 }),
         Asked::Gear(Ask::WearEmblem { emblem: 12 }),
         Asked::Gear(Ask::BuyEmblem { emblem: 13 }),
         Asked::Gear(Ask::UseCrate),
@@ -122,7 +122,7 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
     let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
     let gear = message.gear().expect("the gear");
     assert!(message.snapshot().is_none() && message.joined().is_none());
-    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_reader()), (20, 7, 0, true));
+    assert_eq!((gear.level(), gear.answered(), gear.answer(), gear.at_mage()), (20, 7, 0, true));
     assert_eq!((gear.ammo(), gear.ammo_most(), gear.ammo_share()), (0, 0, 0.5), "no Ranged worn, half kept");
     assert_eq!((gear.crates(), gear.crate_price()), (2, gear::ammo::CRATE_PRICE), "sold at the stall");
     assert_eq!(gear.spent().map(|spent| spent.iter().collect::<Vec<_>>()), Some(vec![0]));

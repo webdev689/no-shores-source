@@ -133,8 +133,9 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
-    /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
-    pub day: u64,
+    /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
+    pub minute: u64,
+    pub shape_spots: Vec<[f64; 2]>,
 }
 
 impl Room {
@@ -196,7 +197,8 @@ impl Room {
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
-            day: 0,
+            minute: 0,
+            shape_spots: Vec::new(),
         }
     }
 

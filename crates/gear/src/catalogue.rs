@@ -45,6 +45,9 @@ pub struct NamedDef {
     pub layout: Vec<Vec<String>>,
     #[serde(default)]
     pub breach: bool,
+    /// The faction whose cape it is, by the faction's key.
+    #[serde(default)]
+    pub faction: Option<String>,
 }
 
 /// An island's resource, gathered in its patrol areas.

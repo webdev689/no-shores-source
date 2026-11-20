@@ -1,0 +1,46 @@
+{
+  "about": "The factions a player pledges to, one for each Art (bible/05-Decisions/Factions Keep the Arts.md), with Claude's numbers (Factions and Vendors as Claude Shapes Them.md). Read by the rules (the gear crate) and the client alike. Prices in Aurem; reputation as kill XP counts it.",
+  "pledgeSwitchAurem": 2500,
+  "reputationPerRank": 10000,
+  "emblemRank": 1,
+  "dyeRank": 2,
+  "packagesFromRank": 3,
+  "packageAurem": 1000,
+  "packageLegendaryFromLevel": 18,
+  "packageLegendaryShare": 0.25,
+  "capeAurem": 2500,
+  "fragmentAurem": 7500,
+  "fragmentRank": 1,
+  "factions": [
+    {
+      "id": 1,
+      "key": "stormcallers",
+      "name": "Stormcallers",
+      "art": 1,
+      "cape": "stormcallers_cape",
+      "emblem": "stormcallers",
+      "dye": "stormcaller_blue",
+      "words": "Keepers of the Storm Art. Quick feet, and lightning in the hand."
+    },
+    {
+      "id": 2,
+      "key": "lamplighters",
+      "name": "Lamplighters",
+      "art": 2,
+      "cape": "lamplighters_cape",
+      "emblem": "lamplighters",
+      "dye": "lamplighter_gold",
+      "words": "Keepers of the Divine Art. They mend, and they light the way for others."
+    },
+    {
+      "id": 3,
+      "key": "veiled",
+      "name": "The Veiled",
+      "art": 3,
+      "cape": "veiled_cape",
+      "emblem": "veiled",
+      "dye": "veiled_dusk",
+      "words": "Keepers of the Shadow Art. Few in Overlook could name one."
+    }
+  ]
+}
