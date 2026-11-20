@@ -1,8 +1,8 @@
-// The one screen every keeper of a social space opens, after Destiny 1's vendors (the owner's three references): the
-// keeper large at the left over a ground lit in their colour, their mark and title above them; at the right their
-// words, the currencies they deal in (and a faction's rank and its meter), the band they speak in, their wares in
-// rows under engraved headings, and at the foot the time to the next stock, or to Shape's leaving. The menu
-// (gearWindow.ts) frames it with its header and footer; the vault keeps its own page.
+// The one screen every keeper of a social space opens, after Destiny 1's vendors: the keeper large at the left over a
+// ground lit in their colour, their mark and title above them; at the right their words, the currencies they deal in
+// (and a faction's rank and its meter), the band they speak in, their wares in rows under engraved headings (the
+// vault keeper's two sides of the vault in their place), and at the foot the time to the next stock, or to Shape's
+// leaving. The menu (gearWindow.ts) frames it with its header and footer.
 import './npcScreen.css';
 import { make } from '../../editor/dom.ts';
 import type { GearState } from '../../network/gearMessages.ts';
@@ -23,6 +23,7 @@ import { hush, keeperSays, speechBand } from './npcSpeech.ts';
 import { coinGlyph, meter, rowNode } from './npcTiles.ts';
 import { type Ware, purseOf, rowsOf } from './npcWares.ts';
 import { ARROWS, nearest } from '../arrowFocus.ts';
+import { vaultPage } from '../stationPages.ts';
 
 /** The keepers whose wares change each day at midnight. */
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
@@ -38,9 +39,8 @@ export const npcHints = (view: View): readonly Hint[] => [
 const FIGURE_AROUND = 120;
 const FIGURE_LEAST = 200;
 
-/** Whether a view of the menu is a keeper's screen: every keeper's but the vault's. */
-export const isKeeperView = (view: View): view is Exclude<KeeperKind, 'vault'> =>
-  view !== 'vault' && (KEEPER_KINDS as readonly string[]).includes(view);
+/** Whether a view of the menu is a keeper's screen: every counter's, the vault's among them. */
+export const isKeeperView = (view: View): view is KeeperKind => (KEEPER_KINDS as readonly string[]).includes(view);
 
 /** Whether the Art's rise waits on its fragment. */
 let choosing = false;
@@ -48,12 +48,13 @@ let choosing = false;
 let focusNext: string | null = null;
 const FIRST_FRAGMENT = '[data-key^="npc-rise-"]';
 const RISE_PRESS = '[data-key="npc-rise"]';
+const ART_TILE = '[data-key="npc-art"]';
 /** The asks that wait on the room's answers: how many it had answered at the first, and how many were made. */
 let pending: Asked | null = null;
 
 /** The screen opens at `view`: a keeper's greets the player; any other view hushes the last. */
 export function npcOpened(view: View): void {
-  [choosing, pending] = [false, null];
+  [choosing, pending, focusNext] = [false, null, null];
   if (isKeeperView(view)) keeperSays(view, 'Hello');
   else hush();
 }
@@ -82,11 +83,12 @@ function purseNode(context: PageContext, kind: KeeperKind): HTMLElement {
   for (const coin of purseOf(kind, context.gear)) {
     const shown = make('span', '', 'npc-coin-line');
     shown.title = coin.name;
+    // The glyph says nothing to a screen reader, so the currency's name is read beside its number.
     shown.append(
       coin.glyph === 'shapes' ? coinGlyph('shapes') : glyphImage(coin.glyph),
       make('b', coin.amount.toLocaleString('en')),
+      make('span', ` ${coin.name}`, 'npc-unseen'),
     );
-    shown.setAttribute('aria-label', `${coin.amount.toLocaleString('en')} ${coin.name}`);
     purse.append(shown);
   }
   const faction = KEEPERS[kind].faction;
@@ -128,15 +130,24 @@ function footNode(kind: KeeperKind, gear: GearState): HTMLElement | null {
 }
 
 const ownKey = (node: Element | null | undefined) => (node as HTMLElement | null | undefined)?.dataset?.['key'];
-const innerKey = (node: Element | null | undefined) => node?.querySelector<HTMLElement>('[data-key]')?.dataset['key'];
+const keysIn = (node: Element | null | undefined) =>
+  [...(node?.querySelectorAll<HTMLElement>('[data-key]') ?? [])].map((each) => each.dataset['key']);
 
-/** The key of the press to take the focus should `held` go as the page is built anew: the one beside it, or for a
- *  keeper's tile, which stands in a holder with its price, the tile beside its holder, else the next row's first. */
-export function keyBeside(held: Element | null | undefined): string | undefined {
+/** The keys of the presses to take the focus should `held` go as the page is built anew, nearest first: the ones
+ *  beside it, or for a keeper's tile, which stands in a holder with its price, the tiles beside its holder, then the
+ *  next row's first and the row before's last. The menu takes the first its new page still holds. */
+export function keyBeside(held: Element | null | undefined): string[] {
   const holder = held?.closest('.npc-ware');
-  if (!holder) return [held?.nextElementSibling, held?.previousElementSibling].map(ownKey).find(Boolean);
-  const row = holder.closest('.npc-row')?.nextElementSibling;
-  return [holder.nextElementSibling, holder.previousElementSibling, row].map(innerKey).find(Boolean);
+  const row = holder?.closest('.npc-row');
+  const keys = holder
+    ? [
+        keysIn(holder.nextElementSibling)[0],
+        keysIn(holder.previousElementSibling).at(-1),
+        keysIn(row?.nextElementSibling)[0],
+        keysIn(row?.previousElementSibling).at(-1),
+      ]
+    : [held?.nextElementSibling, held?.previousElementSibling].map(ownKey);
+  return keys.filter((key): key is string => Boolean(key));
 }
 
 /** The arrows move to the nearest tile that way (arrowFocus.ts). */
@@ -158,7 +169,8 @@ export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | n
   const answer = pending ? answeredWith(pending, gear.answered, gear.answer) : undefined;
   if (answer !== undefined) {
     pending = null;
-    if (answer === 'Thanks') choosing = false;
+    // A rise bought from the choice of fragments takes its whole row away: the focus goes to the Art it raised.
+    if (answer === 'Thanks' && choosing) [choosing, focusNext] = [false, ART_TILE];
     if (answer) keeperSays(kind, answer);
   }
   const keeper = KEEPERS[kind];
@@ -171,9 +183,11 @@ export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | n
   stage.append(title, figure, make('div', '', 'npc-floor'));
   const side = make('div', '', 'npc-side');
   side.append(make('p', keeper.words, 'npc-words'), purseNode(context, kind), speechBand(kind));
+  const waitFor = () =>
+    (pending = pending ? { ...pending, asked: pending.asked + 1 } : { from: gear.answered, asked: 1 });
   const act = (ware: Ware) => {
     if (!ware.ask) return;
-    pending = pending ? { ...pending, asked: pending.asked + 1 } : { from: gear.answered, asked: 1 };
+    waitFor();
     context.ask(ware.ask);
   };
   const open = () => {
@@ -181,9 +195,10 @@ export function npcPage(context: PageContext, kind: KeeperKind, forge: Cards | n
     focusNext = choosing ? FIRST_FRAGMENT : RISE_PRESS;
     redraw();
   };
-  const rows = rowsOf(kind, gear, choosing);
   const wares = make('div', '', 'npc-rows');
-  wares.append(...rows.map((row) => rowNode(context, row, act, open)));
+  // The vault keeper thanks the player for each thing put in or taken out, as a keeper does for a ware.
+  if (kind === 'vault') wares.append(vaultPage({ ...context, ask: (asked) => (waitFor(), context.ask(asked)) }));
+  else wares.append(...rowsOf(kind, gear, choosing).map((row) => rowNode(context, row, act, open)));
   side.append(wares);
   const foot = footNode(kind, gear);
   if (foot) side.append(foot);

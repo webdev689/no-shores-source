@@ -20,11 +20,11 @@ const PAUSE_S = { lane: [1, 5], station: [6, 14], view: [8, 16] } as const;
 export const LANDWARD_LANE = -38;
 /** The lanes, in the plaza's own frame: metres toward the sea from its middle, and metres across it. Clear of the
  *  portico's steps, the obelisk's plinth and braziers, and the benches. */
-const TOWARD = [LANDWARD_LANE, -14, 14, 34] as const;
-const ACROSS = [-110, -70, -20, 20, 70, 110] as const;
+export const TOWARD = [LANDWARD_LANE, -14, 14, 34] as const;
+export const ACROSS = [-110, -70, -20, 20, 70, 110] as const;
 /** Where a customer stands before a counter, and a looker at the parapet, metres toward the sea. */
 export const AT_COUNTER = -48.5;
-const AT_PARAPET = 52;
+export const AT_PARAPET = 52;
 /** How often a walker on the landward lane goes to a station, and on the seaward lane to the parapet. */
 const TO_STATION = 0.3;
 const TO_VIEW = 0.25;

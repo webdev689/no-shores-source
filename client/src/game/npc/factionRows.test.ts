@@ -160,7 +160,12 @@ test("a faction's armour waits for the second rank and its weapons for the third
   const atRank = (rank: number, aurem = 100_000) =>
     factionRows(
       STORM,
-      state({ standing: standing({ pledge: 3, reputation: [rank * RANK, 0, 0] }), aurem, factionWares: SOLD }),
+      state({
+        standing: standing({ pledge: 3, reputation: [rank * RANK, 0, 0] }),
+        aurem,
+        level: 20,
+        factionWares: SOLD,
+      }),
       false,
     );
   const names = (rows: ReturnType<typeof factionRows>, heading: string) =>
@@ -196,6 +201,7 @@ test('a faction piece is not asked for while its slot carries nine', () => {
   const full = state({
     standing: standing({ reputation: [2 * RANK, 0, 0] }),
     aurem: 100_000,
+    level: 20,
     items: helms,
     factionWares: SOLD,
   });
@@ -210,4 +216,41 @@ test("away from a social space the room sends no faction's pieces, and no gear r
     false,
   );
   assert.deepEqual(headings(rows), ['Reputation', 'Pledge', 'Art', 'Fragments']);
+});
+
+test('a faction whose name begins "The" is named once in a sentence: pledge, package and its words alike', () => {
+  const VEILED = 3;
+  const words = (pledge: number) => {
+    const rows = factionRows(
+      VEILED,
+      state({ standing: standing({ pledge, reputation: [0, 0, 30_000], packages: [0, 0, 1] }) }),
+      false,
+    );
+    return rows.flatMap((each) => each.wares).flatMap((ware) => [ware.name, ware.about, ware.words]);
+  };
+  const said = [...words(0), ...words(VEILED)];
+  assert.ok(said.includes('Pledge to the Veiled'));
+  assert.ok(said.includes('Pledged to the Veiled'));
+  assert.ok(said.includes('From the Veiled'));
+  assert.deepEqual(
+    said.filter((each) => /the The|The The/.test(each)),
+    [],
+  );
+});
+
+test('a faction piece waits for the level it is made at: the rank says first, then the level', () => {
+  const atLevel = (level: number, rank: number) =>
+    factionRows(
+      STORM,
+      state({ standing: standing({ reputation: [rank * RANK, 0, 0] }), aurem: 100_000, level, factionWares: SOLD }),
+      false,
+    );
+  const helm = (level: number, rank: number) => row(atLevel(level, rank), 'Armour')?.wares[0];
+  assert.deepEqual(
+    [helm(5, 3)?.note, helm(5, 3)?.ask, helm(5, 3)?.dim, helm(5, 3)?.short],
+    ['From level 20', null, true, false],
+  );
+  assert.equal(helm(5, 1)?.note, 'From rank 2', 'the rank first');
+  assert.equal(helm(19, 3)?.note, 'From level 20');
+  assert.deepEqual(helm(20, 3)?.ask, { kind: ASKS.buyFactionWare, column: STORM, node: 1 });
 });

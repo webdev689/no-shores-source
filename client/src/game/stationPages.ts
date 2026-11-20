@@ -1,5 +1,6 @@
-// The vault's screen, as Destiny's vault opens in the Tower: its weapons, armour and Vestiges beside what the player
-// carries, each a click to move across. Every other counter opens its keeper's screen (npc/npcScreen.ts).
+// The vault's two sides, as Destiny's vault opens in the Tower: its weapons, armour and Vestiges beside what the player
+// carries, each a click to move across. They stand in the vault keeper's screen, where a keeper's wares stand
+// (npc/npcScreen.ts).
 
 import { make } from '../editor/dom.ts';
 import { ROLES } from '../plus/kit.ts';

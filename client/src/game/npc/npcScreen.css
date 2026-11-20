@@ -149,8 +149,9 @@
 .npc-speech .speech-unseen {
   visibility: hidden;
 }
-/* The line's copy for a screen reader takes no room on the screen. */
-.npc-speech-heard {
+/* The line's copy and the currencies' names, for a screen reader, take no room on the screen. */
+.npc-speech-heard,
+.npc-unseen {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -316,4 +317,9 @@
   .npc-meter {
     flex-basis: 132px;
   }
+}
+/* The vault keeper's two sides of the vault stand where a keeper's rows stand, across the column. */
+.npc-rows > .gear-vault {
+  flex: 1 1 100%;
+  padding: 0;
 }

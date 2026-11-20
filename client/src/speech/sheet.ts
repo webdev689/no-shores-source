@@ -28,6 +28,7 @@ export function speechCss(): string {
   margin: 0; padding: 11px 22px 15px; min-height: 66px;
   font-size: 22px; line-height: 33px; text-shadow: 1px 1px 0 ${TONES.outline}; }
 .speech-unseen { visibility: hidden; }
+.speech-heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .speech-nowhere {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin: 0;
   width: ${BOX_WIDTH_PX}px; max-width: calc(100vw - 44px); text-align: center; pointer-events: none;

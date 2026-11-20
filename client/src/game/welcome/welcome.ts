@@ -1,9 +1,10 @@
-// Elder Maren Hale's welcome, played on foot in Overlook's social space once the stranger has gone: she comes from
-// her counter to the player and walks them round the plaza (`walk.ts`), saying each stop's lines in the dialogue box,
-// the keepers she names marked over their heads, and the HUD saying to follow her while the player lags. It is no
-// cutscene: the player walks where they like the whole time. While she walks, her counter stands empty; once she is
-// back behind it the plaza's own figure of her takes over. Due once the story ends, and played once begun, in the
-// browser.
+// Elder Maren Hale's welcome, played on foot in Overlook's social space once the stranger has gone: she comes to the
+// player and walks them round the plaza (`walk.ts`), saying each stop's lines in the dialogue box, the keepers she
+// names marked over their heads, and the HUD saying to follow her while the player lags. It is no cutscene: the player
+// walks where they like the whole time. While she walks, her counter stands empty; opening it ends the walk, and she
+// is back behind it, the plaza's own figure of her. Due once the story ends, kept in the browser with the stops said,
+// so a walk ended early (the place left, the page reloaded, the player gone far from her) takes up from them on the
+// next arrival; played once every stop is said, or once her counter is opened.
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { Cast, EmoteKind, Line } from '../../speech/cast.ts';
@@ -16,8 +17,10 @@ import { awayFromCounters, plazaFrameOf, plazaOf } from '../townsfolk.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { HER_COUNTER, WelcomeWalk } from './walk.ts';
 
-/** Where the browser keeps that the welcome has been played, beside the story's own mark (`overlook.prologue`). */
+/** Where the browser keeps that the welcome has been played, beside the story's own mark (`overlook.prologue`), and
+ *  the scenes said in a walk ended early, by name. */
 export const WELCOME_KEY = 'overlook.welcome';
+export const WELCOME_SAID_KEY = 'overlook.welcome.said';
 /** Her figure's number among the story's placed figures, clear of the stranger's. */
 const MAREN_ID = ACTOR_IDS + 90;
 /** The mark over a keeper she names. */
@@ -25,23 +28,28 @@ const NAMED_EMOTE: EmoteKind = 'alert';
 /** Her head's name for the speech over it, and her speaker's. */
 const HER_HEAD = 'maren';
 
-/** The welcome's mark in the browser: due once the story ends, played once begun, forgone once left before it. */
+/** The welcome's mark in the browser: due once the story ends, played once given, forgone once left before it. */
 type WelcomeMark = 'due' | 'played' | 'forgone';
 
-function welcomeMark(kept: Pick<Storage, 'getItem'>): string | null {
+function welcomeMark(kept: Pick<Storage, 'getItem'>, key = WELCOME_KEY): string | null {
   try {
-    return kept.getItem(WELCOME_KEY);
+    return kept.getItem(key);
   } catch {
     return null;
   }
 }
 
+/** The scenes said in a walk ended early. */
+export const welcomeSaid = (kept: Pick<Storage, 'getItem'>): string[] =>
+  (welcomeMark(kept, WELCOME_SAID_KEY) ?? '').split(',').filter(Boolean);
+
 export const welcomePlayed = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === 'played';
 export const welcomeDue = (kept: Pick<Storage, 'getItem'>): boolean => welcomeMark(kept) === 'due';
 
-export function keepWelcome(kept: Pick<Storage, 'setItem'>, mark: WelcomeMark): void {
+export function keepWelcome(kept: Pick<Storage, 'setItem'>, mark: WelcomeMark, said: Iterable<string> = []): void {
   try {
     kept.setItem(WELCOME_KEY, mark);
+    kept.setItem(WELCOME_SAID_KEY, [...said].join(','));
   } catch {
     // A browser that keeps nothing may play the welcome again after the story, or lose it to a reload.
   }
@@ -63,7 +71,7 @@ export interface WelcomeVoice {
   readonly objective: { show(word: string, line: string, seconds?: number): void; clear(): void; remove(): void };
 }
 
-/** What the welcome stands on: the figures' forge, the ground's height, its lines and where it is kept as played. */
+/** What the welcome stands on: the figures' forge, the ground's height, its lines and where it is kept. */
 export interface WelcomeParts {
   readonly forge: Cards;
   readonly groundAt: (x: number, y: number) => number | null;
@@ -83,12 +91,17 @@ export class Welcome {
   private prompting = false;
   done = false;
 
-  /** The welcome in a social space, begun and kept as played; null where its plaza has none of her counters. */
-  static begin(node: NodeInfo, parts: WelcomeParts, voice: () => WelcomeVoice): Welcome | null {
-    const walk = WelcomeWalk.round(node.stations ?? [], plazaFrameOf(plazaOf(node)));
-    if (!walk) return null;
-    keepWelcome(parts.kept, 'played');
-    return new Welcome(walk, parts, voice());
+  /** The welcome in a social space with the player at `you`, taken up after the scenes `said`; null where its plaza
+   *  has none of her counters. */
+  static begin(
+    node: NodeInfo,
+    parts: WelcomeParts,
+    voice: () => WelcomeVoice,
+    you: { readonly x: number; readonly y: number },
+    said: readonly string[] = [],
+  ): Welcome | null {
+    const walk = WelcomeWalk.round(node.stations ?? [], plazaFrameOf(plazaOf(node)), [you.x, you.y], said);
+    return walk ? new Welcome(walk, parts, voice()) : null;
   }
 
   private constructor(walk: WelcomeWalk, parts: WelcomeParts, voice: WelcomeVoice) {
@@ -129,7 +142,7 @@ export class Welcome {
     for (const station of this.namedOthers()) heads.set(station.kind, seen(keeperHead(station, this.parts.groundAt)));
     this.voice.overheads.frame(passed, heads);
     this.voice.dialogue.frame(passed);
-    const anim = maren.walking ? 'walk' : 'idle';
+    const anim = maren.walking && !held ? 'walk' : 'idle';
     return actorCards(
       [{ id: MAREN_ID, dress: this.dress, anim, ...maren, z: this.z }],
       this.parts.forge,
@@ -138,9 +151,17 @@ export class Welcome {
     );
   }
 
-  /** The player has left the social space: the welcome ends where she is, her words with it. */
+  /** The player has left the social space: the welcome ends where she is, her words with it, still due. */
   leave(): void {
     if (this.done) return;
+    this.walk.end();
+    this.finish();
+  }
+
+  /** The menu opens at `view`: her own counter's screen ends the walk there, the welcome played. */
+  counterOpened(view: string): void {
+    if (this.done || view !== HER_COUNTER) return;
+    keepWelcome(this.parts.kept, 'played');
     this.walk.end();
     this.finish();
   }
@@ -149,7 +170,12 @@ export class Welcome {
   private say(scene: string): void {
     for (const station of this.namedOthers()) this.voice.overheads.emote(station.kind, NAMED_EMOTE);
     const lines = this.parts.scenes[scene] ?? [];
-    const said = () => this.walk.said();
+    const said = () => {
+      if (this.done) return;
+      this.walk.said();
+      // Kept scene by scene, so a walk ended early takes up where it was.
+      keepWelcome(this.parts.kept, this.walk.given ? 'played' : 'due', this.walk.given ? [] : this.walk.heard);
+    };
     this.voice.dialogue.play(lines, this.parts.cast, { auto: true }).then(said, (error: unknown) => {
       console.error(`the welcome's ${scene} could not be played:`, error);
       said();

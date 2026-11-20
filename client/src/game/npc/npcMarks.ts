@@ -10,6 +10,19 @@ const SHAPES = ['#15121c', '#4a4258', '#9a8fb0', '#e9e2f7'];
 
 /** Each keeper's sign, 11 × 11, laid in the middle of the diamond. */
 const SIGNS: Readonly<Record<string, readonly string[]>> = {
+  vault: [
+    '...........',
+    '..ddddddd..',
+    '.d.......d.',
+    '.ddddddddd.',
+    '.d.......d.',
+    '.d..ccc..d.',
+    '.d..c.c..d.',
+    '.d..ccc..d.',
+    '.d.......d.',
+    '.ddddddddd.',
+    '...........',
+  ],
   mage: [
     '...........',
     '...........',

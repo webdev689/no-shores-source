@@ -91,7 +91,7 @@ export function priceWord(ware: Ware): { readonly words: string; readonly short:
   return { words: short ? 'Not enough' : ware.note, short };
 }
 
-const SHAPE_AWAY = 'Shape is away. He comes on Fridays.';
+const SHAPE_AWAY_WORDS = 'Shape is away. He comes on Fridays.';
 
 export const rarityNamed = (name: string): number =>
   Math.max(
@@ -229,7 +229,7 @@ function mageRows(gear: GearState): Row[] {
 
 /** Shape's week's wares while he is here; while away, the words for when he comes, whatever the day. */
 function shapeRows(gear: GearState): Row[] {
-  if (!gear.shape) return [{ heading: 'Wares', wares: [], empty: SHAPE_AWAY }];
+  if (!gear.shape) return [{ heading: 'Wares', wares: [], empty: SHAPE_AWAY_WORDS }];
   const shapes = gear.shapes ?? 0;
   const wares = gear.shape.wares.map((item, place) =>
     itemWare(`shape-${place}`, item, { amount: item.price, currency: 'shapes' }, shapes < item.price, {
@@ -248,7 +248,7 @@ export function rowsOf(kind: KeeperKind, gear: GearState, choosing = false): Row
     case 'mage':
       return mageRows(gear);
     case 'armorsmith':
-      return [smithRow(gear, 0, 'Armor')];
+      return [smithRow(gear, 0, 'Armour')];
     case 'weaponsmith':
       return [
         smithRow(gear, 1, 'Weapons'),

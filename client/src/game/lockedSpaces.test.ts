@@ -43,3 +43,22 @@ test('a page asked to start in a locked social space starts in Overlook instead'
     name: 'Overlook',
   });
 });
+
+test('of the locked social spaces only the two other ports’ say "Opens later"; a desolate city’s shows no mark', () => {
+  const side: Mark[] = [
+    { id: 'rimeholt-social', kind: 'social', name: 'Rimeholt', at: [0, -100, 5], edge: true },
+    { id: 'cairnwatch-social', kind: 'social', name: 'Cairnwatch', at: [20, -100, 5], edge: true },
+  ];
+  const forward = [0, -100 / Math.hypot(100, 50), -50 / Math.hypot(100, 50)] as const;
+  const pose = poseOf({ eye: [0, 0, 50], forward });
+  const { shown, placed } = seaMarks('landing', [], side, [0, 0], pose, { width: 800, height: 600 }, null);
+  assert.deepEqual(
+    shown.map((mark) => [mark.id, mark.note]),
+    [['rimeholt-social', LOCKED_WORDS]],
+  );
+  assert.deepEqual(
+    placed.map((mark) => mark.id),
+    ['rimeholt-social'],
+  );
+  assert.equal(landable(side, 'cairnwatch-social'), null);
+});

@@ -34,7 +34,6 @@ export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
-import { vaultPage } from './stationPages.ts';
 import { KEEPERS } from './keepers.ts';
 import { isKeeperView, keyBeside, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
@@ -354,7 +353,7 @@ export function startGearWindow(
 
   function render(): void {
     if (view === null) return;
-    const station = isTab(view) ? null : view === 'vault' ? 'The Vault' : KEEPERS[view].title;
+    const station = isTab(view) ? null : KEEPERS[view].title;
     // The tabs, title and labels change only with the view, so the menu writes nothing while it stands open.
     if (view !== tabbed) {
       tabbed = view;
@@ -495,11 +494,9 @@ export function startGearWindow(
         )
       : view === 'character'
         ? (looks ?? characterPage(context, slot, (chosen) => ((slot = chosen), render())))
-        : view === 'inventory'
-          ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
-          : isKeeperView(view)
-            ? npcPage(context, view, now.forge, redraw)
-            : vaultPage(context);
+        : isKeeperView(view)
+          ? npcPage(context, view, now.forge, redraw)
+          : inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()));
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
@@ -525,7 +522,7 @@ export function startGearWindow(
       // The page is read from its name, so no card opens over it unasked.
       shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
     else {
-      const next = again ?? found(returnTo) ?? found(beside) ?? found(slotted);
+      const next = again ?? found(returnTo) ?? beside.map(found).find(Boolean) ?? found(slotted);
       // Given back once, the tile to return to is forgotten, so it never takes the focus from a later choice.
       returnTo = null;
       if (next) next.focus();
@@ -561,7 +558,9 @@ export function startGearWindow(
       if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
-        // The page shown takes the step first when it has one of its own (a panel, a player's details).
+        // The page shown takes the step first when it has one of its own (a panel, a player's details); either way
+        // the hold under way is let go, so a step back never buys what was being held.
+        letGo();
         const step = new Event(STEP_BACK, { cancelable: true });
         if (body.firstElementChild?.dispatchEvent(step) !== false) back();
         render();

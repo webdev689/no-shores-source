@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { keyBeside } from './npcScreen.ts';
+import { KEEPER_KINDS } from '../keepers.ts';
+import { isKeeperView, keyBeside } from './npcScreen.ts';
 
 /** A node of a stand-in page: its class, its key, its children; enough for finding a neighbour. */
 interface Node {
@@ -15,8 +16,8 @@ const node = (className: string, key: string | null, ...children: Node[]): Node 
   return made;
 };
 const sibling = (from: Node, step: number) => from.parent?.children[from.parent.children.indexOf(from) + step] ?? null;
-const inner = (from: Node): Node | null =>
-  from.children.map((child) => (child.dataset['key'] ? child : inner(child))).find(Boolean) ?? null;
+const keyed = (from: Node): Node[] =>
+  from.children.flatMap((child) => [...(child.dataset['key'] ? [child] : []), ...keyed(child)]);
 /** The stand-in as the DOM's Element, with only what `keyBeside` reads. */
 function asElement(from: Node | null): Element | null {
   if (!from) return null;
@@ -33,25 +34,31 @@ function asElement(from: Node | null): Element | null {
       for (let up: Node | null = from; up; up = up.parent) if (up.className === wanted) return asElement(up);
       return null;
     },
-    querySelector: () => asElement(inner(from)),
+    querySelectorAll: () => keyed(from).map(asElement),
   } as unknown as Element;
 }
 
 const ware = (key: string) => node('npc-ware', null, node('npc-tile', key), node('npc-price', null));
 
-test('the focus left by a keeper’s tile goes to the tile beside its holder, else to the next row’s first', () => {
+test('the focus left by a keeper’s tile goes to the tiles beside its holder, then the next row’s first and the row before’s last', () => {
+  const art = node('npc-row', null, node('gear-heading', null), node('npc-tiles', null, ware('art'), ware('rise')));
   const vestiges = node('npc-row', null, node('gear-heading', null), node('npc-tiles', null, ware('a'), ware('b')));
   const opened = node('npc-row', null, node('gear-heading', null), node('npc-tiles', null, ware('opened')));
-  node('npc-rows', null, vestiges, opened);
+  node('npc-rows', null, art, vestiges, opened);
   const [first, second] = vestiges.children[1]?.children ?? [];
-  assert.equal(keyBeside(asElement(first?.children[0] ?? null)), 'b');
-  assert.equal(keyBeside(asElement(second?.children[0] ?? null)), 'a');
+  assert.deepEqual(keyBeside(asElement(first?.children[0] ?? null)), ['b', 'opened', 'rise']);
+  assert.deepEqual(keyBeside(asElement(second?.children[0] ?? null)), ['a', 'opened', 'rise']);
   const alone = node('npc-row', null, node('npc-tiles', null, ware('last')));
   node('npc-rows', null, alone, opened);
-  assert.equal(keyBeside(asElement(alone.children[0]?.children[0]?.children[0] ?? null)), 'opened');
+  assert.deepEqual(keyBeside(asElement(alone.children[0]?.children[0]?.children[0] ?? null)), ['opened']);
 });
 
 test('elsewhere in the menu the focus goes to the press beside it, as before', () => {
   const cells = node('grid', null, node('gear-cell', 'x'), node('gear-cell', 'y'));
-  assert.equal(keyBeside(asElement(cells.children[0] ?? null)), 'y');
+  assert.deepEqual(keyBeside(asElement(cells.children[0] ?? null)), ['y']);
+});
+
+test('every counter opens a keeper’s screen, the vault’s among them; the menu’s tabs do not', () => {
+  for (const kind of KEEPER_KINDS) assert.equal(isKeeperView(kind), true, kind);
+  assert.equal(isKeeperView('inventory'), false);
 });
