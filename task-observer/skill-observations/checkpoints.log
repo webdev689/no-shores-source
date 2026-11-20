@@ -1,0 +1,4 @@
+2026-11-20 11:27 [overlook-source] session-start scan: files=0 parsed=0 principles=0
+2026-11-20 checkpoint after 5 tasks: 0002 written; no other observations
+2026-11-20 12:32 [overlook-source] session-start scan: files=3 parsed=3 principles=0
+2026-11-20 checkpoint after the audit's 3 tasks: 0004 and 0005 written

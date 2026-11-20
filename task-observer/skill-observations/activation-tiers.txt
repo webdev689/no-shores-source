@@ -1,0 +1,4 @@
+2026-11-20 (first review)
+- project instruction file: /home/user/overlook-source/CLAUDE.md, "Every session" step 3 runs task-observer's session-start scan; step 4 asks for claude-mem-save and headroom learn at the end. Names the scan only, not the skill load in the same batch.
+- session-start hook: kit SessionStart hook injects "task-observer: invoke the task-observer skill before planning, then run its Session Start scan: bash /root/.claude/skills/task-observer/scripts/session-start-scan.sh /root/toolkit-data/task-observer" (present on resume).
+- scheduled-task tier: none registered; restates: n/a (no stored prompt).
