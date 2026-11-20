@@ -176,9 +176,15 @@ fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &m
         .filter(|vestige| character.pick_up(*vestige));
     let ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();
     let ammo_crate = gear::ammo::drops_crate(rank) && character.take_crate();
-    let source = Source::Flotsam { rank, chest: piece.kind == Piece::Chest };
-    let salvage = character.take_salvage(salvage(source, piece.level, &dice));
+    let salvage = ship_salvage(piece, &dice, character);
     Held { vestige, ammo_box, ammo_crate, salvage }
+}
+
+/// A piece's ship salvage, its own roll: ship materials and now and then a module, as the ship's rules hold them for
+/// a piece of a ship of its rank (`gear::ship::found`), taken where there is room.
+fn ship_salvage(piece: &Floating, dice: &Dice, character: &mut Character) -> gear::ship::found::Taken {
+    let source = Source::Flotsam { rank: piece.rank.number(), chest: piece.kind == Piece::Chest };
+    character.take_salvage(salvage(source, piece.level, dice))
 }
 
 #[cfg(test)]

@@ -21,7 +21,7 @@ impl Room {
     /// on; none elsewhere, or with no pledge.
     #[must_use]
     pub fn recruiting_at(&self, player: PlayerId) -> Option<(u8, u32, u64)> {
-        let here = self.here(player, &Ask::Recruit { offer: 0 });
+        let here = self.here(player, &Ask::Recruit { faction: 0, offer: 0 });
         (here.social && here.pledge != 0).then_some((here.pledge, here.rank, here.day))
     }
 }
@@ -33,6 +33,6 @@ mod tests {
 
     #[test]
     fn officers_are_signed_on_at_the_muster() {
-        assert_eq!(counter_for(&Ask::Recruit { offer: 0 }), Some(MUSTER));
+        assert_eq!(counter_for(&Ask::Recruit { faction: 0, offer: 0 }), Some(MUSTER));
     }
 }

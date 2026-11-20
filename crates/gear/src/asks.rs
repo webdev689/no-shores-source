@@ -77,8 +77,9 @@ pub enum Ask {
         item: u32,
         fed: u32,
     },
-    /// Signs on one of the officers of the day at the pledged faction's counter (`crew::recruit`).
+    /// Signs on one of the officers of the day at the counter of the faction pledged to (`crew::recruit`).
     Recruit {
+        faction: u8,
         offer: u8,
     },
     /// Puts an officer at their post, ashore or aboard.
@@ -196,7 +197,7 @@ impl Character {
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
             Ask::Infuse { item, fed } => self.infuse(item, fed),
-            Ask::Recruit { offer } => self.recruit(offer, here),
+            Ask::Recruit { faction, offer } => self.recruit(faction, offer, here),
             Ask::Station { officer, duty } => self.station(officer, duty),
             Ask::Dismiss { officer } => self.dismiss(officer),
             Ask::Train { officer, column, node } => self.train(officer, usize::from(column), node),
