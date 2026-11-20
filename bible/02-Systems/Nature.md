@@ -69,7 +69,10 @@ Each plant stands on the ground's height, sunk a little on a slope.
 
 What the caller plants (a layout's orchards, hedgerows and thickets, [[Layouts]]) stands where it was planted, in its
 kind's own layer, on dry ground whatever its growth or clearings say; its form, turn, size, tint and rank are drawn
-from its point as a slot's are from its place.
+from its point as a slot's are from its place. A planting may carry its own foot's height, turn and scale: it then
+stands on that foot, whatever the land under it, turned so and its drawn size scaled so; a sea island's trees,
+shrubs and grass are planted so, each where the island grew it ([[Islands]]). A ground that does not grow
+(`grows: false`) stands only what is planted.
 
 ## The ground
 
