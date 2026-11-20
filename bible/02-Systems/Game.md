@@ -294,8 +294,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   as the sea keeps them and a Repair part: R asks for her repair, which the panel shows with its seconds left
   ("Repairing her: 13 s left"), "She is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port
   city", the reach the rules' own from the waters' table; out of the sea, "Repairs are made at sea, by a port city").
-  The chase's meeting reach and the voyage's hold reach come from that table too (`SeaFacts`), as does every ship's
-  name. A voyage set at Elite or Abyss sails in that difficulty's sea room (`sea--elite`, `sea--abyss`), the page
+  The chase's meeting reach and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's
+  name as well, which the page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that difficulty's sea room (`sea--elite`, `sea--abyss`), the page
   leaving one for the other as the voyage sets out. Her voyage sails at the way her kept canvas
   leaves her, as the room sails her (`seaLaw.ts` `followed`). Back at sea after a session, she lies where the room
   last kept her.

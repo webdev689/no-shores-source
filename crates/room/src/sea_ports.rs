@@ -78,8 +78,15 @@ impl Sea {
                 piece.player = player;
             }
         }
-        // An earlier player of the account is forgotten once their pieces are its new one's.
-        self.harbour.accounts.retain(|each, held| held != account || self.berths.contains_key(each));
+        // A player gone is forgotten once nothing they fought or left floating needs their account, so the map holds
+        // only those still at sea or still owed.
+        let (berths, fights, pieces) = (&self.berths, &self.fights, &self.harbour.flotsam.pieces);
+        self.harbour.accounts.retain(|each, _| {
+            berths.contains_key(each)
+                || fights.list.iter().any(|fought| fought.fought.contains(each))
+                || fights.lost.iter().any(|sank| sank.players.contains(each))
+                || pieces.iter().any(|piece| piece.player == *each)
+        });
         self.harbour.accounts.insert(player, account.to_owned());
         true
     }
@@ -241,9 +248,9 @@ impl Sea {
         // In a fight, she is kept as the fight has her, and lies at the port city she would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.
         let (kept, at) = match self.fights.hurts_of(player) {
-            // Leaving a fight under a third of her hull counts as sunk.
+            // Leaving a fight under a third of her hull counts as sunk: never more than she had.
             Some((kept, at)) => (
-                if kept[0] < LEFT_AS_SUNK { SUNK_KEPT } else { kept },
+                if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
                 in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
             ),
             None => {

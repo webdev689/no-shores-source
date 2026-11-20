@@ -74,6 +74,9 @@ fn a_player_who_leaves_a_fight_below_a_third_of_her_hull_is_kept_as_sunk() {
     let damage = &mut vessel_mut(&mut sea, player, PLAYER).damage;
     damage.hull = damage.max_hull * 0.32;
     assert_eq!(kept(&sea, player).ship, [1_000, 2_500, 5_000], "under a third: kept as a sunk ship comes back");
+    let damage = &mut vessel_mut(&mut sea, player, PLAYER).damage;
+    damage.sail = damage.max_sail * 0.1;
+    assert_eq!(kept(&sea, player).ship[1], 1_000, "never more canvas than she had");
 }
 
 #[test]
@@ -143,6 +146,19 @@ fn each_way_a_ship_goes_down_gives_one_word_of_it_naming_her_water_rank_level_an
     sea.board(player).unwrap();
     vessel_mut(&mut sea, player, CAPTAIN).damage.scuttle();
     assert_eq!(downs_over(&mut sea, 60 * 60).len(), 1, "sunk under her boarders");
+
+    // Her last player goes down before she does.
+    let (mut sea, player) = met(60.0, Rank::Minor);
+    vessel_mut(&mut sea, player, CAPTAIN).damage.scuttle();
+    vessel_mut(&mut sea, player, PLAYER).damage.scuttle();
+    vessel_mut(&mut sea, player, PLAYER).damage.sink_t = naval::damage::SINK_SECONDS - 0.5;
+    assert_eq!(downs_over(&mut sea, 60 * 60).len(), 1, "her last player sunk first");
+
+    // Every player leaves her struck: she is scuttled with no one aboard.
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    strike(&mut sea, player);
+    sea.leave(player);
+    assert_eq!(downs_over(&mut sea, 2).len(), 1, "left struck");
 }
 
 #[test]

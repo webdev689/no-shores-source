@@ -190,6 +190,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
    *  room in the page. */
   let seaSeas: Difficulty = 'normal';
+  let switching = Promise.resolve();
   const enterSea = async (seas: Difficulty) => {
     seaSeas = seas;
     const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
@@ -290,10 +291,19 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.sea?.fromHelm();
       if (!sail) return;
       const sea = playing.sea;
-      if (!sea || made.difficulty === seaSeas) sea?.sailTo(sail);
+      // Mid-fight she stays in the room she fights in; one switch at a time, each waiting for the last.
+      if (!sea || sea.fight || made.difficulty === seaSeas) sea?.sailTo(sail);
       else {
-        sea.leaveRoom();
-        void enterSea(made.difficulty).then(() => sea.sailTo(sail));
+        const seas = made.difficulty;
+        seaSeas = seas;
+        switching = switching
+          .then(() => {
+            sea.leaveRoom();
+            return enterSea(seas);
+          })
+          .then(() => sea.sailTo(sail))
+          // A room that will not open leaves her sailing alone, as a link lost does.
+          .catch(() => sea.sailTo(sail));
       }
     });
     if (opened) made.setWaters(opened.map);

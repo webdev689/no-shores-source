@@ -187,7 +187,7 @@ will take it, by the room's own tick.
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives her
   back where she was kept). A new account's character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
-  they join once more, and the ships they fought are told as theirs (`ShipDown`'s accounts). Whatever
+  they join once more, and the ships they fought are kept as theirs (`ShipDown`'s accounts; no host takes those yet). Whatever
   changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character
   given back) is sent to the player as their gear (`room_gear`, written as a land room writes it), at most every 12
   ticks, which flags it for its save 2 s on. No ship is left outside the world's frame: a fight's waters run past it,

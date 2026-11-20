@@ -176,7 +176,7 @@ impl SeaFight {
 pub struct Fights {
     pub list: Vec<SeaFight>,
     /// Each captain going down in a fight its last player left, sunk all the same, told with the next tick's.
-    lost: Vec<Sank>,
+    pub(crate) lost: Vec<Sank>,
 }
 
 impl Fights {
@@ -284,10 +284,16 @@ impl Fights {
             fought.fight.leave(crew.ship);
             fought.crews.remove(&player);
         }
+        self.drop_empty();
+    }
+
+    /// Ends each fight with no player left in it. A captain of one going down, or struck (scuttled with no boarder),
+    /// goes down all the same, told with the next tick's.
+    fn drop_empty(&mut self) {
         for fought in self.list.iter().filter(|fought| fought.crews.is_empty()) {
             for (id, vessel) in &fought.fight.ships {
-                let going =
-                    vessel.damage.state == State::Sinking && vessel.command().is_some_and(|it| it.gone.is_none());
+                let down = matches!(vessel.damage.state, State::Struck | State::Sinking);
+                let going = down && vessel.command().is_some_and(|it| it.gone.is_none());
                 let Some(pirate) = fought.hostiles.get(id).filter(|_| going) else { continue };
                 let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
                 self.lost.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
@@ -469,7 +475,7 @@ impl Fights {
                 fought.crews.remove(&player);
             }
         }
-        self.list.retain(|fought| !fought.crews.is_empty());
+        self.drop_empty();
         (outcomes, sank)
     }
 

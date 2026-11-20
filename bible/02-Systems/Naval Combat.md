@@ -287,12 +287,13 @@ Pass]]) with Claude's numbers:
   of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
   player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at; one who
   leaves under a third of her hull is kept as sunk (`LEFT_AS_SUNK`). Every boarder of a deck lost is let go of the
-  fight, and she is scuttled with no one aboard; a captain going down in a fight its last player left goes down all
-  the same, laying what floats for those who fought her. The page says washing up one way, on the status line and the
+  fight, and she is scuttled with no one aboard; a captain going down or struck in a fight its last player left (gone,
+  or gone down) goes down all the same, laying what floats for those who fought her. The page says washing up one way, on the status line and the
   veil alike: "Your ship went down: you washed up at Sunspire; your ship lies at its roadstead."
-- **A ship gone down.** Each captain's ship sunk or taken (a won ship is scuttled, so she counts once) is told to the
-  sea's hosts once, for the bounties: `ShipDown` (`battle.rs`), the water she went down in and its holder, her rank and
-  level, and the accounts the room keeps of the players who fought her (`Sea::take_ship_downs`, each tick's).
+- **A ship gone down.** Each captain's ship sunk or taken (a won ship is scuttled, so she counts once) is kept once for
+  the sea's hosts, for the bounties: `ShipDown` (`battle.rs`), the water she went down in and its holder, her rank and
+  level, and the accounts the room keeps of the players who fought her (`Sea::take_ship_downs`, the last tick's). No
+  host takes them yet: the bounties are still to come.
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; she starts every fight with them, and
   her voyage sails at her pace times the canvas she keeps (never under half), in the room and the page alike. Where

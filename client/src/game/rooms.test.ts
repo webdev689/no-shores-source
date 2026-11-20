@@ -53,8 +53,5 @@ test('a node’s room name reads back as its node and difficulty, the old names 
 });
 
 test('a voyage sails in its difficulty’s sea room', () => {
-  assert.deepEqual(
-    (['normal', 'elite', 'abyss'] as const).map(seaRoomName),
-    ['sea', 'sea--elite', 'sea--abyss'],
-  );
+  assert.deepEqual((['normal', 'elite', 'abyss'] as const).map(seaRoomName), ['sea', 'sea--elite', 'sea--abyss']);
 });
