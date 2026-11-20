@@ -5,7 +5,7 @@ import { HINTS } from './hints.ts';
 import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
-import { seaPlace, type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
+import { hideSeaHud, seaPlace, type SeaHudState, seaShipMarks, showSeaHud } from './seaHud.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
   ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
@@ -144,4 +144,23 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   showSeaHud(hud as unknown as Hud, sea, shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(said['hints'], [HINTS.fight]);
   assert.deepEqual(said['notices'], [['The Pirate Schooner joined the fight.', 'The Pirate Brig surrenders!']]);
+});
+
+test("on land the sea's own pieces go: the ships' plates, the readout, the sea bar, Manage's panel and the wheel", () => {
+  const said: Record<string, unknown[]> = {};
+  const hud = new Proxy(
+    {},
+    {
+      get:
+        (_target, key) =>
+        (...args: unknown[]) =>
+          void (said[String(key)] = args),
+    },
+  );
+  hideSeaHud(hud as unknown as Hud);
+  assert.deepEqual(said['shipBars']?.[0], [], "no ship's plate stands over the land");
+  assert.equal(said['seaFight']?.[0], null);
+  assert.equal(said['seaBar']?.[0], null);
+  assert.equal(said['shipPanel']?.[0], null);
+  assert.equal(said['wheelOffer']?.[0], false);
 });

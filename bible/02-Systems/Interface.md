@@ -121,13 +121,14 @@ Its words call a ship "it" ([[Ships Are It, Not Her]]).
     and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
     sighted, other waters entered, who joins, colours struck, boarders away, what floats gathered, washing up) stands
     as notices, DFO's toasts;
-  - the fight: the player's plate and the card (panel), the rose's sides (chip), the bars (track and meter), the tally and the
+  - the fight: the player's plate (the vitals' window) and the card (the target plate), the rose's sides (chip), the bars (track and meter), the tally and the
     broadside warning directly under the card at the top's middle (under the compass while no card shows), never over
     the sight or the ship aimed at (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
     over its masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in
     as the chip's, its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
   - the ship's deck: the place line (the ship's hold's take on its second line) and the hints, as on foot;
-  - washing up: its notice, then the veil's own words;
+  - washing up: its notice, then the veil's own words; on land the sea's own pieces go (`seaHud.ts` `hideSeaHud`):
+    the ships' plates and the sight, the readout, the sea bar, Manage's panel and the wheel's offer;
   - Manage's panel: a window under a header, each part's heading ruled, Back to the sea a button on its footer;
   - what floats: the Acquired feed's rows and the gold marks over the water;
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.

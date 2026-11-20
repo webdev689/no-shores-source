@@ -25,7 +25,7 @@ import { arrivalFacing } from './nodes.ts';
 import type { Drawer, GameScene } from './scene.ts';
 import type { Sea } from './sea.ts';
 import type { SeaWord } from './seaWord.ts';
-import { showSeaHud } from './seaHud.ts';
+import { hideSeaHud, showSeaHud } from './seaHud.ts';
 import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
@@ -134,8 +134,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
     hud.marks([]);
-    hud.seaBar(null);
-    hud.seaFight(null);
+    hideSeaHud(hud);
     hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
   };

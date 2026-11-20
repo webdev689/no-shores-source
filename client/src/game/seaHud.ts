@@ -123,3 +123,15 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.wheelOffer(onSea && aboard.atWheel);
   hud.note(state.charting ? 'Charting the coast ahead…' : shown.note);
 }
+
+/** Takes down what the sea alone shows, once the player is on land: the ships' plates and the sight, the fight's
+ *  readout, the sea bar, Manage's panel and the wheel's offer. */
+export function hideSeaHud(hud: Hud): void {
+  // With no plate to place, the pose is never read.
+  hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: forwardOf(0, 0) }, 1));
+  hud.seaFight(null);
+  hud.seaBar(null);
+  hud.shipPanel(null);
+  hud.wheelOffer(false);
+  sight?.show(false, null);
+}
