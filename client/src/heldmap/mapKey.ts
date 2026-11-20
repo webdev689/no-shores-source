@@ -13,7 +13,7 @@ export const INK = '#3a2816';
 const PANEL = 'rgba(238, 222, 190, 0.92)';
 /** The panel's padding, a line and the gap between rows, its swatches' size and the gap after them, the gap between
  *  its two columns of holders, and its inset from the map's corner. */
-const KEY = { padding: 7, line: 16, rowGap: 2, swatch: [14, 9], gap: 5, columnGap: 12, inset: 10 } as const;
+const KEY = { padding: 7, line: 16, rowGap: 2, swatch: [20, 12], gap: 5, columnGap: 12, inset: 10 } as const;
 /** The groups' titles, and the difficulty ramp: its words either side and its steps across the levels. */
 const TITLES = { holders: 'Held by', levels: 'Levels' } as const;
 const RAMP = { from: '1', to: '30', steps: 9, step: 6 } as const;

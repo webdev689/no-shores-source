@@ -37,7 +37,7 @@ const WORLD = { width: 4_915_200, height: 3_072_000 } as const;
 /** A word's width in the map's face, units: Pixelify's letters are a little over half their size wide, taken wide. */
 const widthOf = (text: string, kind: string) => text.length * 0.62 * (kind === 'port' ? PORT_PX : WORD_PX);
 /** The key's panel as the map's face measures it, units. */
-const KEY = { width: 201, height: 84 } as const;
+const KEY = { width: 213, height: 84 } as const;
 
 const overlaps = (one: Rect, other: Rect) =>
   one.x < other.x + other.width &&

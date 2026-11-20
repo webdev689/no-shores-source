@@ -34,7 +34,7 @@ test('the key is one panel: four lines, the holders in two columns under their t
   // Four lines of 16 with three gaps of 2 and a padding of 7 above and below.
   assert.equal(measured.height, 84);
   // Two columns of a swatch, a gap and the widest word: "Pirates" under "Home", "Grey Tithe" over "Contested".
-  assert.equal(measured.width, 7 * 2 + (14 + 5 + 7 * 7) + 12 + (14 + 5 + 10 * 7));
+  assert.equal(measured.width, 7 * 2 + (20 + 5 + 7 * 7) + 12 + (20 + 5 + 10 * 7));
 });
 
 test('land under a box is a discovered island’s, asked across the whole box', () => {
@@ -78,7 +78,7 @@ test('each holder’s swatch is painted as the map shows her: her wash over its 
     return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
   };
   const swatches = calls
-    .filter((call) => call.name === 'fillRect' && call.args[2] === 14)
+    .filter((call) => call.name === 'fillRect' && call.args[2] === 20)
     .map((call) => call.fillStyle);
   assert.deepEqual(swatches, (['home', 'grey-tithe', 'pirates', 'contested'] as const).map(blend));
   assert.equal(calls.filter((call) => call.name === 'clip').length, 2, 'the Tithe’s and the contested’s hatching');
