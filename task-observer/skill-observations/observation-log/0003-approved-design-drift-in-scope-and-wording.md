@@ -1,7 +1,7 @@
 ---
 id: 3
 title: "Building an approved design drifted past it three times: extended to a neighbour, paraphrased, and a line added to the decision"
-status: open
+status: actioned
 type: internal
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Musts: 'The owner sets the vision. Never invent game design.'"
 date: 2026-11-20
 session_context: "Building the owner-approved foe plate changes after Destiny's"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-20
+resolution: "Applied on PR #96, waiting on the owner's merge, as a barrier (three breaks): tools/claude-toolkit/workers/fidelity-review.sh with a fixed brief, and .github/workflows/fidelity.yml failing a PR that changes bible/05-Decisions/ without its verdict; Recording a Decision, CLAUDE.md and the Toolkit say so. First run, on #95, found 8 findings incl. a real bug (first review, 2026-11-20)."
 reference:
 commands_verified: none
 ---

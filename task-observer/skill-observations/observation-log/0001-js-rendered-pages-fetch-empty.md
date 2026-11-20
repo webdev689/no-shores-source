@@ -1,7 +1,7 @@
 ---
 id: 1
 title: "Web research: JS-rendered pages fetch as empty shells; headless Chromium reads them"
-status: open
+status: actioned
 type: open-source
 skill: []
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Toolkit, web research row (no row exists yet; Browser QA covers only the 
 date: 2026-11-20
 session_context: "Researching how Destiny shows enemy health bars, for Overlook's foe plates"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-20
+resolution: "Applied on PR #96 (branch ccr-800481d9-kbbd62-kit), waiting on the owner's merge: a 'Web research' row in bible/03-Code/Toolkit.md's Tools table (first review, 2026-11-20)."
 reference:
 commands_verified: "run: NODE_PATH=$(npm root -g) node render.cjs <out> <url> — bungie.net TWID pages gave 43,803 and 26,655 chars of text where web-fetch gave 10"
 ---

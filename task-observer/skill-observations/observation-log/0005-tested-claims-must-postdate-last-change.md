@@ -1,9 +1,9 @@
 ---
 id: 5
 title: "'Tested' claims rested on pictures and a check older than the last commit they described"
-status: open
+status: actioned
 type: open-source
-skill: [superpowers:verification-before-completion]
+skill: ["superpowers:verification-before-completion"]
 proposes_skill: []
 target_file: ["CLAUDE.md"]
 siblings_checked: "none — no skill-families.md in this workspace; CLAUDE.md's 'Verify before claiming' is the project's rule"
@@ -11,8 +11,8 @@ area: "Verify before claiming: the evidence's age against the change it covers"
 date: 2026-11-20
 session_context: "Auditing #95: the PR text and Hand-off said tested offline for the head, after a later fix commit"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-20
+resolution: "Applied on PR #96, waiting on the owner's merge: cargo xtask check ends with 'checked <commit>, nothing uncommitted'; CLAUDE.md asks a run not of the head to name its commit (first review, 2026-11-20)."
 reference:
 commands_verified: "read (by the auditor): file times of build-after.log (11:58) and the shots (to 12:17) against commit 87729cf (12:24) and head 5394a26 (12:25)"
 ---

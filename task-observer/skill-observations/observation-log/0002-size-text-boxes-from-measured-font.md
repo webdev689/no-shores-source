@@ -1,7 +1,7 @@
 ---
 id: 2
 title: "A size meant to fit a text was set and documented from a guessed glyph width before measuring"
-status: open
+status: actioned
 type: open-source
 skill: [impeccable]
 proposes_skill: []
@@ -11,8 +11,8 @@ area: "Browser QA / UI sizing: measuring text in the shipped face before fixing 
 date: 2026-11-20
 session_context: "Sizing foe plates by rank in Overlook's fight HUD"
 parked_until:
-resolved:
-resolution:
+resolved: 2026-11-20
+resolution: "Applied on PR #96, waiting on the owner's merge: the Browser QA row of bible/03-Code/Toolkit.md measures a text in the built page before a box is sized to fit it (first review, 2026-11-20)."
 reference:
 commands_verified: "run: node measure.cjs <built page> — '? Crossbowman' needs 93 px of name room; a 120 px plate gave 74 px (cut), 140 px gave 93 (fits)"
 ---
