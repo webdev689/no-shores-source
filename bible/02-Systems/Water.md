@@ -91,8 +91,9 @@ diver drifts back up. Each stride or stroke pushes the water once; stepping in, 
 The pushes are ripples: a damped wave field 32 m square round the walker, stepped 60 times a second on the GPU at a
 ripple's own pace. The field follows the walker; its ripples fade at its edge.
 
-A ball falling in the water in a fight pushes the ripples 1.2 m wide where it fell (as wide as the ships are drawn,
-seen from the raised view), under the column of spray and ring of foam the fight throws up there ([[Naval Combat]],
+A ball falling in the water in a fight pushes the ripples 1.2 m wide where it fell for a round shot (wider for a
+heavier ball, and as wide as the ships are drawn, seen from the raised view), under the column of water and patch
+of foam the fight throws up there ([[Naval Combat]],
 "How it looks"); the water itself draws no foam of its own for it.
 
 ## A ship on it

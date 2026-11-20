@@ -317,12 +317,15 @@ and `Hit` come with its shot's own events, the hit carrying where on her it stru
 ship's harm is kept by the number the events name her by: at sea the player is 0, the first captain 1, and each other
 captain's number comes with her in the view, so one leaving the fight never moves another's holes onto her.
 
-- **A gun fired** (`muzzle`): a flash at its mouth for 0.1 s, and ten puffs of white powder smoke that roll out the
-  way the ball went, slowing, then drift downwind at 1.5 m/s and thin away over 7 s. A broadside's guns each smoke
-  from their own mouths, so the smoke hangs along her side.
+- **A gun fired** (`muzzle`): a flash at its mouth for 0.1 s, and ten puffs of white powder smoke that roll a few
+  metres out the way the ball went, slowing, lift off the water and drift downwind at 1.5 m/s, thinning most of the
+  way within a few seconds and gone by 7 s, so what it hid (her holes, the foam, what floats) shows again. A
+  broadside's guns each smoke from their own mouths, so the smoke hangs along her side a while.
 - **A ball in flight** keeps its sphere and leaves a faint grey trail, a puff every 0.04 s that lasts half a second.
-- **A ball in the water** (`Splash`): a column of spray that stands about 4 m and is back in 1.5 s, a ring of foam
-  spreading on the water for 2.5 s, and a push on the water's ripples ([[Water]], "In the water").
+- **A ball in the water** (`Splash`): a column of water thrown up, white at its head and the sea's own colour lower
+  down, that rises about 4 m for a round shot, spreads as it rises and falls back in a second, its size by its ball
+  beside a round shot's (the ball last seen aloft nearest where it fell; 0.6 to 2 times); a ragged patch of foam
+  over where it fell for about 2.5 s; and a push on the water's ripples ([[Water]], "In the water").
 - **A hit** (`Hit`, its point in her frame and the part struck; until the rules send them, the world point turned into
   her frame and the zone): on her hull, 32 chips, most of her side's paint, burst out of her side and fall to the
   water, and a dark ragged hole, a few blots about the point, stays there for the fight; on a sail (a rig hit within
@@ -337,8 +340,11 @@ captain's number comes with her in the view, so one leaving the fight never move
 - **Sinking** (`Sinking`): over 20 s she settles, slowly then fast, by her worse-hit end (her bow if her holes lie
   forward of her middle, trimmed 10 degrees), lists up to 20 degrees to the side most holed, and goes under; from
   halfway down until 8 s after, foam and rising bubbles fill the water over her length. Her flotsam (`Flotsam`:
-  crates, barrels and a chest, which the rules lay) bobs on the water there, 0.12 m up and down every 4 s, until
-  gathered (`Gathered`) or the fight is over.
+  crates, barrels and a chest, which the rules lay) rides the swell the water draws where it lies (bobbing 0.12 m every
+  4 s where the page draws none), drawn at the size the view draws ships and lit and shadowed as the land is, each
+  under a gold mark 2.5 m over it that stands as large on the screen at any distance (some ten pixels across at the
+  fight's camera), until gathered (`Gathered`: a ring of gold glints rises from it and a little water is thrown up)
+  or the fight is over.
 - **Sounds**: each plays the game's own recording where it has one: a ball in the water plays its splash
   (`shot.splash`). The sound sheet has none yet for a gun fired, a ball through a hull or a sail, a sail torn away, a
   mast falling, colours struck, a ship sinking, what floats laid or gathered, or a boarding: each stays silent until
