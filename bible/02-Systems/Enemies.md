@@ -187,9 +187,10 @@ WebAssembly, so names, factions and weapons are read in one place.
   back to its place round that spot, and the group walks its beat on once all its foes are idle in their places. It
   is still its group's: a walk home never clears a group or stands it again.
 - **Its leader** is its highest rank, a Captain first among equals, else the first of them. When it falls, every other
-  foe of its group that is stirred breaks, once each time the group stands: one rages (a brute first, then a
-  skirmisher, then a swordsman, the one nearest its target; never a shooter or a captain, and none if one of them
-  rages already), and the rest break by their role for 8 s ([[Foes]], "Its group").
+  foe of its group that is stirred and not walking home breaks, once each time the group stands: one of them that fights
+  a target rages (a brute first, then a skirmisher, then a swordsman, the one nearest its target; never a shooter or a
+  captain, and none if one of them rages already), and the rest fall back to cover for 8 s, breaking by their role where
+  there is none ([[Foes]], "Its group").
 - **Its breaking point**: once half the foes it stood have fallen, it defends its ground until it stands again: its
   places gather back at its post, its foes fighting elsewhere fall back to them, each fighter hand to hand fights only
   near its place, and its shooters hide longer between their looks out ([[Foes]], "Its group").

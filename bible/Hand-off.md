@@ -202,7 +202,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   the rest (to cover, or running or huddling in the open, one raging); a group's breaking point at half, defending its
   post; a mission's or a dungeon's garrison falling back halfway at three quarters standing and gathering at its last
   stand at half; the Grey Tithe's leader screened behind a shield-bearer of its lower ranks; and a mission's two waves,
-  hunting the players. No blurbs pop over foes, as the owner asked. Tested offline: the full check, 23 new tests (34
+  hunting the players. No blurbs pop over foes, as the owner asked. Tested offline: the full check, 24 new tests (35
   rules each broken once and seen to fail), three fidelity reviews and two audits fixed on it, and a simulation of 72
   scripted fights. Left for the owner, in its description: defending foes that never come for a player just past 8 m
   unless struck; a screened leader, Corvane among them, holding back while its lower ranks fight before it; a wave the

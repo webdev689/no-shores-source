@@ -392,3 +392,46 @@ fn a_mission_falling_straight_to_its_last_stand_calls_both_its_waves() {
     assert_eq!(room.encounter.as_ref().unwrap().stage, Stage::LastStand);
     assert_eq!(room.garrison.iter().filter(|post| post.arrival).count(), 2, "both its waves");
 }
+
+#[test]
+fn a_mission_holding_its_territory_again_calls_waves_again_once_the_last_wave_has_fallen() {
+    let mut room = node(NodeKind::Mission, "keep");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [0.0, 160.0]);
+    run(&mut room, 200);
+    // Whole groups fall, from the last, until the garrison falls back; the groups cleared.
+    let fall_back = |room: &mut Room| {
+        let own: Vec<usize> = (0..room.garrison.len()).filter(|post| !room.garrison[*post].arrival).collect();
+        let stood: usize = own.iter().map(|post| room.garrison[*post].standing.len()).sum();
+        let (mut fallen, mut cleared) = (0, Vec::new());
+        for &post in own.iter().rev() {
+            if (stood - fallen) * 4 <= stood * 3 {
+                break;
+            }
+            fallen += room.garrison[post].standing.len();
+            super::garrison_tests::clear(room, post);
+            cleared.push(post);
+        }
+        run(room, 1);
+        cleared
+    };
+    let waves = |room: &Room| room.garrison.iter().filter(|post| post.arrival).count();
+    let cleared = fall_back(&mut room);
+    assert_eq!(waves(&room), 1);
+    // Its cleared groups stand again while the wave still stands: it holds its territory, and calls no wave yet.
+    for post in cleared {
+        room.stand_post(post);
+    }
+    run(&mut room, 1);
+    assert_eq!(room.encounter.as_ref().unwrap().stage, Stage::Territory);
+    // The wave falls; the garrison gives ground again, and a new wave comes.
+    let wave: Vec<FighterId> =
+        room.garrison.iter().filter(|post| post.arrival).flat_map(|post| post.standing.clone()).collect();
+    for id in wave {
+        kill(&mut room, id);
+    }
+    run(&mut room, 1);
+    assert_eq!(waves(&room), 0);
+    fall_back(&mut room);
+    assert_eq!(waves(&room), 1, "a new wave for the new fall back");
+}

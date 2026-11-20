@@ -179,21 +179,22 @@ impl Room {
             Stage::LastStand
         };
         let leaderless = encounter.leader.is_none() && !encounter.broken;
+        let waves_stand =
+            (0..self.garrison.len()).any(|post| self.garrison[post].arrival && !self.living(post).is_empty());
+        if stage == Stage::Territory && !waves_stand {
+            // Holding its territory with no wave of before standing, its waves may come again.
+            let encounter = self.encounter.as_mut()?;
+            encounter.waves = encounter.waves.map(|_| 0);
+        }
         if stage == was && !(stage == Stage::LastStand && leaderless) {
             return Some(stage);
         }
         let everyone = self.gathered();
         let leader = (stage == Stage::LastStand).then(|| leader_of(self, &everyone)).flatten();
-        let waves_stand = self.garrison.iter().any(|post| post.arrival);
         let encounter = self.encounter.as_mut()?;
         encounter.stage = stage;
         match stage {
-            Stage::Territory => {
-                (encounter.leader, encounter.broken) = (None, false);
-                if !waves_stand {
-                    encounter.waves = encounter.waves.map(|_| 0);
-                }
-            }
+            Stage::Territory => (encounter.leader, encounter.broken) = (None, false),
             Stage::LastStand => (encounter.leader, encounter.broken) = (leader, false),
             Stage::Fallback => {}
         }
