@@ -46,6 +46,7 @@ fn laid(town: &Town) -> Laid {
         platform: 87.0,
         plaza: PLAZA,
         over: &[BASE],
+        harbour: None,
     })
 }
 
@@ -205,4 +206,64 @@ fn every_wall_stands_on_its_ramps_and_every_sloped_top_follows_the_way_it_guards
         parapets += usize::from(over[0] > 0.5);
     }
     assert!(parapets >= sloped.len(), "{parapets} parapets for {} sloped ways", sloped.len());
+}
+
+/// A harbour avenue's first cell at 5 m, with a pier's root 3.7 m off its north edge, and the quay past it.
+fn harbour_flights(roots: Vec<[f64; 2]>, quay: Vec<[f64; 2]>) -> (Grid, Laid) {
+    let start = (36, 30);
+    let mut footings = vec![Footing::Outside; SIDE_CELLS * SIDE_CELLS];
+    let mut uses = vec![Use::Open; SIDE_CELLS * SIDE_CELLS];
+    for cell in [start, (36, 31)] {
+        footings[index(cell.0, cell.1)] = Footing::Level { level: 5.0 };
+        uses[index(cell.0, cell.1)] = Use::Avenue;
+    }
+    let grid = Grid::round([0.0, 0.0]);
+    let avenues = vec![vec![start, (36, 31)]];
+    let laid = lay(&Avenues {
+        grid: &grid,
+        footings: &footings,
+        uses: &uses,
+        avenues: &avenues,
+        platform: 87.0,
+        plaza: PLAZA,
+        over: &[BASE],
+        harbour: Some(Harbour { avenue: 0, roots, quay }),
+    });
+    (grid, laid)
+}
+
+#[test]
+fn the_harbour_avenue_runs_down_a_flight_from_its_first_cells_middle_onto_the_quay_at_the_nearest_pier() {
+    let grid = Grid::round([0.0, 0.0]);
+    let [west, north, _, _] = grid.bounds(36, 30);
+    let root = [west + 20.0, north - 3.7];
+    let (_, laid) = harbour_flights(vec![root, [west + 60.0, north - 40.0]], vec![]);
+    let flight = laid.ramps.first().expect("the flight");
+    let [left, top, right, bottom] = flight.pad.bounds;
+    assert!(close(right - left, PIER_M + 2.0 * WALL_M) && close((left + right) / 2.0, root[0]));
+    assert!(close(top, root[1]) && close(bottom, north + (CELL_M - ROAD_M) / 2.0), "{:?}", flight.pad);
+    assert_eq!((flight.pad.level, flight.pad.fall), (QUAY_TOP_M, Some(Fall::South(5.0))));
+    assert!(
+        flight.slope <= 1.0 / RUN_PER_RISE && close(flight.line[1][2], QUAY_TOP_M) && close(flight.line[1][1], root[1])
+    );
+    let cut = laid.cuts.iter().find(|cut| close(cut.middle[1], north)).expect("the cell's edge cut");
+    assert!(!cut.north_south && cut.top.is_none() && close(cut.span[0], left) && close(cut.span[1], right));
+    // The walls stand on the flight, parapeted where it runs out over the shore.
+    assert!(laid.walls.iter().all(|wall| {
+        let [w, n, e, s, _, _] = wall.bounds();
+        holds(flight.pad.bounds, (w + e) / 2.0, (n + s) / 2.0)
+    }));
+}
+
+#[test]
+fn with_no_pier_in_reach_the_flight_lands_on_the_quays_nearest_point_and_with_the_quay_inside_none() {
+    let grid = Grid::round([0.0, 0.0]);
+    let [west, north, _, _] = grid.bounds(36, 30);
+    let quay: Vec<[f64; 2]> =
+        (0..100).map(|step| [west + f64::from(step), north - 8.0 - f64::from(step) * 0.1]).collect();
+    let (_, laid) = harbour_flights(vec![[west + 50.0, north - 90.0]], quay);
+    let flight = laid.ramps.first().expect("the flight");
+    assert!(close(flight.pad.bounds[1], north - 8.0 - 0.1 * (PIER_M / 2.0 + WALL_M).ceil()), "{:?}", flight.pad);
+    let (_, none) = harbour_flights(vec![[west + 50.0, north + 10.0]], vec![]);
+    assert!(none.ramps.iter().all(|ramp| ramp.line[1][2] != QUAY_TOP_M));
 }

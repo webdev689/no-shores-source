@@ -3,7 +3,7 @@
 //! walked, so only what stands round it is ever asked for.
 
 use crate::Plan;
-use crate::solids::{Material, Solid};
+use crate::solids::{Material, Shape, Solid};
 
 /// A box a body runs into: west, north, east and south edges, its top and its underside, metres.
 pub type Box2 = [f64; 6];
@@ -19,6 +19,11 @@ fn into_boxes(solid: &Solid) -> Vec<Box2> {
     let rock = crate::rock::boxes(solid);
     if !rock.is_empty() {
         return rock;
+    }
+    // A block turned off the world's axes (a length of quay, a pier) in slices, so its boxes keep to it.
+    if solid.shape == Shape::Block && solid.lean == 0.0 && solid.roll == 0.0 {
+        let [width, depth, height] = solid.size;
+        return crate::rock::sliced(solid, vec![[-width / 2.0, -depth / 2.0, 0.0, width / 2.0, depth / 2.0, height]]);
     }
     let [west, north, east, south, bottom, top] = solid.bounds();
     vec![[west, north, east, south, top, bottom]]
@@ -42,7 +47,6 @@ pub fn boxes_within(plan: &Plan, bounds: [f64; 4]) -> Vec<Box2> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::solids::Shape;
 
     #[test]
     fn paving_and_low_kerbs_are_stepped_over() {
@@ -60,6 +64,22 @@ mod tests {
         let column = Solid::upright(Shape::Block, [0.0, 0.0, 10.0], [1.0, 1.0, 6.0], Material::Stone);
         assert_eq!(into_boxes(&roof), vec![[-5.0, -40.0, 5.0, 40.0, 19.0, 16.0]]);
         assert_eq!(into_boxes(&column), vec![[-0.5, -0.5, 0.5, 0.5, 16.0, 10.0]]);
+    }
+
+    #[test]
+    fn a_turned_length_of_quay_is_boxed_in_slices_that_keep_to_it() {
+        let quay = Solid::upright(Shape::Block, [0.0, 0.0, -4.0], [8.0, 90.0, 7.0], Material::Stone).turned(-1.16);
+        let boxes = into_boxes(&quay);
+        assert!(boxes.len() > 10, "{}", boxes.len());
+        // Every box's middle lies within the quay's half width (and a slice's lean) of its middle line.
+        let way = [libm::sin(1.16), libm::cos(-1.16)];
+        for [west, north, east, south, top, bottom] in boxes {
+            let (x, y) = ((west + east) / 2.0, (north + south) / 2.0);
+            let off = (x * way[1] - y * way[0]).abs();
+            assert!(off < 4.0 + 1.0 && top == 3.0 && bottom == -4.0, "{off} {top} {bottom}");
+        }
+        let square = Solid::upright(Shape::Block, [0.0, 0.0, 0.0], [8.0, 90.0, 7.0], Material::Stone);
+        assert_eq!(into_boxes(&square), vec![[-4.0, -45.0, 4.0, 45.0, 7.0, 0.0]]);
     }
 
     #[test]

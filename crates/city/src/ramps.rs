@@ -7,7 +7,7 @@ use crate::grid::{CELL_M, Grid, index};
 use crate::landmarks::turn_toward;
 use crate::solids::{Material, Shape, Solid};
 use crate::terraces::Footing;
-use crate::walls::Cut;
+use crate::walls::{Cut, QUAY_TOP_M};
 use crate::{Pad, Use};
 use land::pads::Fall;
 use serde::Serialize;
@@ -30,6 +30,8 @@ const SINK_M: f64 = 2.0;
 /// A switchback's legs: the most one rises, the widest it is, metres.
 pub const LEG_RISE_M: f64 = 12.0;
 pub const LEG_M: f64 = 10.0;
+/// The flight down to the quay: a pier's width, metres.
+pub const PIER_M: f64 = 10.0;
 /// How far from the platform's wall a switchback's legs reach across its head cell, metres: short of the road's
 /// flank (32 m), so a walk from the foot's landing meets the road.
 pub const STAIR_BAND_M: f64 = 30.0;
@@ -70,8 +72,9 @@ pub struct Laid {
 }
 
 /// What the ramps are laid from: the grid, each cell's footing and use, the avenues' cells from their starts to the
-/// landmark (`ways::avenue`), the platform's level, and the rectangles laid over the cells later (the plaza, the
-/// landmark's base), where no ramp is laid.
+/// landmark (`ways::avenue`), the platform's level, the rectangles laid over the cells later (the plaza, the
+/// landmark's base), where no ramp is laid, and which avenue starts at the harbour with the root of the pier nearest
+/// it, on the quay.
 #[derive(Debug)]
 pub struct Avenues<'a> {
     pub grid: &'a Grid,
@@ -81,6 +84,15 @@ pub struct Avenues<'a> {
     pub platform: f64,
     pub plaza: [f64; 4],
     pub over: &'a [[f64; 4]],
+    pub harbour: Option<Harbour>,
+}
+
+/// The harbour's avenue by its number among the avenues, the piers' roots and points along the quay's middle.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Harbour {
+    pub avenue: usize,
+    pub roots: Vec<[f64; 2]>,
+    pub quay: Vec<[f64; 2]>,
 }
 
 /// A frame on one edge of a cell: `across` metres in from the edge toward the cell's middle, `along` metres along it
@@ -250,6 +262,61 @@ fn straight(site: &Avenues, upper: (usize, usize), lower: (usize, usize), laid: 
         middle: edge.at(0.0, CELL_M / 2.0),
         north_south: edge.along[0] == 0.0,
         span: ends,
+        top: None,
+    });
+}
+
+/// The flight from the harbour avenue's first cell down to the quay, a pier's width, straight out from the cell's edge
+/// to the nearest pier's root (or, with none in reach, the nearest of the quay), from the edge of the cell's middle:
+/// a cutting in the cell, an embankment parapeted over the shore past it, the cell's retaining wall cut where it
+/// passes. None where the quay lies inside the cell, more than half a longest ramp out, or past the cell's sides, or
+/// where a flight that far would be steeper than a ramp.
+fn quay_flight(site: &Avenues, start: (usize, usize), harbour: &Harbour, laid: &mut Laid) {
+    let Some(level) = level_of(site.footings, start) else { return };
+    let rise = level - QUAY_TOP_M;
+    let bounds = site.grid.bounds(start.0, start.1);
+    let half_width = PIER_M / 2.0 + WALL_M;
+    let inside = (CELL_M - ROAD_M) / 2.0;
+    // For a point on the quay: the cell's edge it lies furthest out past, how far out, and where along that edge.
+    let reached = |point: &[f64; 2]| {
+        let edges = [(0, -1), (0, 1), (-1, 0), (1, 0)].map(|step| edge_frame(bounds, step, 0));
+        let edge = edges.into_iter().min_by(|a, b| a.local(*point)[0].total_cmp(&b.local(*point)[0]))?;
+        let [out, along] = edge.local(*point);
+        let fits = out < 0.0
+            && -out <= LONGEST_M / 2.0
+            && inside - out >= RUN_PER_RISE * rise
+            && (half_width..=CELL_M - half_width).contains(&along);
+        fits.then_some((edge, -out, along))
+    };
+    let nearest = |points: &[[f64; 2]]| points.iter().filter_map(reached).min_by(|a, b| a.1.total_cmp(&b.1));
+    if rise < LEAST_RISE_M {
+        return;
+    }
+    let Some((edge, gap, middle)) = nearest(&harbour.roots).or_else(|| nearest(&harbour.quay)) else { return };
+    let run = inside + gap;
+    // Across the flight from its west or north side; along it from the quay into the cell.
+    let flight = Frame { origin: edge.at(0.0, middle - half_width), inward: edge.along, along: edge.inward };
+    let pad = flight.pad([0.0, 2.0 * half_width], [-gap, inside], QUAY_TOP_M, level);
+    let centre = |along: f64, level: f64| {
+        let [east, south] = flight.at(half_width, along);
+        [east, south, level]
+    };
+    laid.ramps.push(Ramp {
+        piece: Piece::Ramp,
+        pad,
+        slope: rise / run,
+        line: [centre(inside, level), centre(-gap, QUAY_TOP_M)],
+    });
+    let at_edge = QUAY_TOP_M + rise * gap / run;
+    for side in [WALL_M / 2.0, 2.0 * half_width - WALL_M / 2.0] {
+        laid.walls.push(upright(&flight, side, [0.0, inside], at_edge - SINK_M, level));
+        laid.walls.extend(sloped_wall(&flight, side, [0.0, -gap], [at_edge, QUAY_TOP_M], 0.0));
+    }
+    let span = |across: f64| if edge.along[0] == 0.0 { edge.at(0.0, across)[1] } else { edge.at(0.0, across)[0] };
+    laid.cuts.push(Cut {
+        middle: edge.at(0.0, CELL_M / 2.0),
+        north_south: edge.along[0] == 0.0,
+        span: [span(middle - half_width), span(middle + half_width)],
         top: None,
     });
 }
@@ -424,7 +491,12 @@ pub fn lay(site: &Avenues) -> Laid {
     let mut edges = BTreeSet::new();
     let mut heads = BTreeSet::new();
     let avenue = |cell: (usize, usize)| site.uses[index(cell.0, cell.1)] == Use::Avenue;
-    for cells in site.avenues {
+    for (avenue_number, cells) in site.avenues.iter().enumerate() {
+        if let (Some(harbour), Some(&start)) = (&site.harbour, cells.first())
+            && harbour.avenue == avenue_number
+        {
+            quay_flight(site, start, harbour, &mut laid);
+        }
         for pair in cells.windows(2) {
             let (here, next) = (pair[0], pair[1]);
             if avenue(here) && site.uses[index(next.0, next.1)] == Use::Landmark {

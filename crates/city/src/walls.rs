@@ -20,6 +20,10 @@ const SINK_M: f64 = 2.0;
 const LEAST_RETAIN_M: f64 = 0.3;
 /// A raised terrace's parapet over its edge, metres.
 const PARAPET_M: f64 = 1.0;
+/// The quay's top and the piers' over the sea, one level so a pier's root runs onto the quay, and their feet, metres.
+pub const QUAY_TOP_M: f64 = 3.0;
+const QUAY_FOOT_M: f64 = -4.0;
+const PIER_FOOT_M: f64 = -5.0;
 
 fn ray_end(footprint: &Footprint, ray: usize) -> [f64; 2] {
     let at = footprint.rays[ray % RAYS];
@@ -127,19 +131,49 @@ pub fn harbour_works(footprint: &Footprint) -> Vec<Solid> {
             continue;
         }
         let middle = [(from[0] + to[0]) / 2.0, (from[1] + to[1]) / 2.0];
-        let quay =
-            Solid::upright(Shape::Block, [middle[0], middle[1], -4.0], [8.0, length + 4.0, 7.0], Material::Stone);
+        let size = [8.0, length + 4.0, QUAY_TOP_M - QUAY_FOOT_M];
+        let quay = Solid::upright(Shape::Block, [middle[0], middle[1], QUAY_FOOT_M], size, Material::Stone);
         solids.push(quay.turned(turn_toward([east / length, south / length])));
     }
-    for (place, &ray) in shore.iter().enumerate().filter(|(place, _)| place % 3 == 1) {
+    for (place, ray) in pier_rays(footprint) {
         let direction = footprint.rays[ray].direction;
         let middle_share = 1.0 - (place as f64 / shore.len().max(1) as f64 - 0.5).abs() * 2.0;
         let length = 120.0 + 140.0 * middle_share;
         let middle = ahead(ray_end(footprint, ray), direction, length / 2.0);
-        let pier = Solid::upright(Shape::Block, [middle[0], middle[1], -5.0], [10.0, length, 7.0], Material::Timber);
+        let size = [10.0, length, QUAY_TOP_M - PIER_FOOT_M];
+        let pier = Solid::upright(Shape::Block, [middle[0], middle[1], PIER_FOOT_M], size, Material::Timber);
         solids.push(pier.turned(turn_toward(direction)));
     }
     solids
+}
+
+/// The shore's rays a pier runs out from (every third), each with its place among the shore's rays.
+fn pier_rays(footprint: &Footprint) -> Vec<(usize, usize)> {
+    let shore = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore);
+    shore.enumerate().filter(|(place, _)| place % 3 == 1).collect()
+}
+
+/// Points every metre along the quay's middle, between each pair of shore rays it joins.
+#[must_use]
+pub fn quay_points(footprint: &Footprint) -> Vec<[f64; 2]> {
+    let shore: Vec<usize> = (0..RAYS).filter(|&ray| footprint.rays[ray].stop == Stop::Shore).collect();
+    let mut points = Vec::new();
+    for pair in shore.windows(2).filter(|pair| pair[1] == pair[0] + 1) {
+        let (from, to) = (ray_end(footprint, pair[0]), ray_end(footprint, pair[1]));
+        let length = ((to[0] - from[0]) * (to[0] - from[0]) + (to[1] - from[1]) * (to[1] - from[1])).sqrt();
+        let count = length.ceil() as usize;
+        points.extend((0..=count).map(|step| {
+            let share = step as f64 / count.max(1) as f64;
+            [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share]
+        }));
+    }
+    points
+}
+
+/// Where each pier meets the quay: on the quay's line along the shore.
+#[must_use]
+pub fn pier_roots(footprint: &Footprint) -> Vec<[f64; 2]> {
+    pier_rays(footprint).into_iter().map(|(_, ray)| ray_end(footprint, ray)).collect()
 }
 
 /// A retaining wall on every built cell's edge whose level stands apart from the ground or terrace beyond it, from

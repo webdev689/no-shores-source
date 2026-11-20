@@ -155,8 +155,16 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         }
     }
     let mut avenues = Vec::new();
-    for start in gates.iter().chain(harbour.iter()) {
+    let mut harbour_avenue = None;
+    for (number, start) in gates.iter().chain(harbour.iter()).enumerate() {
         let Some(cell) = ways::built_cell_near(&grid, &cell_footings, *start) else { continue };
+        if number == gates.len() {
+            harbour_avenue = Some(ramps::Harbour {
+                avenue: avenues.len(),
+                roots: walls::pier_roots(&footprint),
+                quay: walls::quay_points(&footprint),
+            });
+        }
         let cells = ways::avenue(&cell_footings, cell).unwrap_or_default();
         for &(column, row) in &cells {
             if uses[index(column, row)] == Use::Open {
@@ -173,6 +181,7 @@ pub fn plan(city: &City, ground: &Ground, blocks: &Blocks) -> Result<Plan, Strin
         platform: level,
         plaza: social.bounds,
         over: &[base],
+        harbour: harbour_avenue,
     });
     fill(&grid, &cell_footings, &mut uses, &footprint, blocks, seed);
     let mut works = walls::city_wall(ground, &footprint, &gate_rays);
