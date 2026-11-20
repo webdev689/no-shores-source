@@ -254,8 +254,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         { movement, walker, forge },
       );
       const waters = startWatersRules(await roomModule);
-      sea.waterAt = waterNamer(waters, waters.open(world.layoutText, portsOf(world.cities)));
-      afterFights = new SeaAfter(portCities(portsOf(world.cities)));
+      const table = waters.open(world.layoutText, portsOf(world.cities));
+      sea.waterAt = waterNamer(waters, table);
+      afterFights = new SeaAfter(portCities(portsOf(world.cities), table.mainPorts));
     }
     sea.cameAboard();
     // The held map's coasts are worked out behind the veil, not on its first raising.

@@ -14,8 +14,6 @@ const RARITIES = ['Normal', 'Magic', 'Rare', 'Legendary', 'Atheric'] as const;
 /** A captain's rank sails this hull (crates/naval/src/ranks.rs): a Minor and a Major the Sloop, an Elite the Schooner,
  *  a Miniboss the Brig and a Boss the Frigate. */
 const HULL_OF_RANK = [0, 0, 0, 1, 2, 3] as const;
-/** The port cities ships wash up at, as the sea keeps them (crates/world/src/ports.rs `MAIN_PORTS`). */
-const MAIN_PORTS: readonly string[] = ['overlook', 'sunspire', 'rimeholt'];
 /** How long the latest of these lines stands in the sea's status line, seconds. */
 const LINE_S = 6;
 
@@ -26,9 +24,10 @@ export interface PortCity {
   readonly continent: string;
 }
 
-/** The port cities among `ports`, in their order, as the sea numbers them. */
-export function portCities(ports: readonly PortCity[]): PortCity[] {
-  return ports.filter((port) => MAIN_PORTS.includes(port.id));
+/** The port cities among `ports`, in their order, as the sea numbers them: those whose ids are among the rules'
+ *  `mainPorts`. */
+export function portCities(ports: readonly PortCity[], mainPorts: readonly string[]): PortCity[] {
+  return ports.filter((port) => mainPorts.includes(port.id));
 }
 
 /** What a gathered piece held, in words. */

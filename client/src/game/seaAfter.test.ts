@@ -31,11 +31,14 @@ test('her repair reads its time left, whole, or how to have it', () => {
 });
 
 test('washed up, the player walks into the social space of the port city she washed up at once its landmass is open', () => {
-  const ports = portCities([
-    { id: 'overlook', name: 'Overlook', continent: 'continent-1' },
-    { id: 'saltmarsh', name: 'Saltmarsh', continent: 'continent-2' },
-    { id: 'sunspire', name: 'Sunspire', continent: 'continent-3' },
-  ]);
+  const ports = portCities(
+    [
+      { id: 'overlook', name: 'Overlook', continent: 'continent-1' },
+      { id: 'saltmarsh', name: 'Saltmarsh', continent: 'continent-2' },
+      { id: 'sunspire', name: 'Sunspire', continent: 'continent-3' },
+    ],
+    ['overlook', 'sunspire', 'rimeholt'],
+  );
   const after = new SeaAfter(ports);
   const room = {
     flotsam: [],

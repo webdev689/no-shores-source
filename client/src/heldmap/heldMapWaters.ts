@@ -1,6 +1,7 @@
 // The waters on the held map: each charted water's name and level band, lettered at its label point and held inside
 // the map, and the places it names, a city that is no port named as the ruins it is. What is lettered is laid out
 // (mapLayout.ts) and painted with the parchment's ink (mapLetters.ts).
+import { ruinedName } from '../ruinedName.ts';
 import type { CoastField } from './coastField.ts';
 import type { MapPlace } from './heldMap.ts';
 import type { Rect } from './heldMapLaw.ts';
@@ -22,7 +23,7 @@ export function ruinedPlaces(places: readonly MapPlace[], mainPorts: readonly st
   return places.map((place) => {
     const city = place.kind === 'port' && place.id.endsWith('-port') ? place.id.slice(0, -'-port'.length) : null;
     return city !== null && !mainPorts.includes(city)
-      ? { ...place, kind: 'ruin', name: `Ruins of ${place.name}` }
+      ? { ...place, kind: 'ruin', name: ruinedName(place.name) }
       : place;
   });
 }
