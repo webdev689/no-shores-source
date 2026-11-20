@@ -53,6 +53,25 @@ test('what does not fit the mode changes nothing', () => {
   assert.equal(next(loading, { kind: 'menu' }), loading, 'no menu while the veil is down');
 });
 
+test('on foot the player goes through a gate into an instance and back out, never from a menu', () => {
+  const foot: Flow = { mode: 'foot', node: 'saltgrass-downs', menu: false };
+  const into = next(foot, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true });
+  assert.equal(into.mode === 'loading' && into.words, 'Entering The Burned Mill');
+  assert.deepEqual(next(into, { kind: 'loaded' }), { mode: 'foot', node: 'burned-mill', menu: false });
+  const back = next(
+    { mode: 'foot', node: 'burned-mill', menu: false },
+    {
+      kind: 'pass',
+      node: 'saltgrass-downs',
+      name: 'The Saltgrass Downs',
+      into: false,
+    },
+  );
+  assert.equal(back.mode === 'loading' && back.words, 'Returning to The Saltgrass Downs');
+  const menu: Flow = { ...foot, menu: true };
+  assert.equal(next(menu, { kind: 'pass', node: 'burned-mill', name: 'The Burned Mill', into: true }), menu);
+});
+
 test('a company member is joined from on foot or at sea, never while landing or loading', () => {
   const join = { kind: 'join', node: 'saltgrass-downs', name: 'The Saltgrass Downs' } as const;
   const joined = next({ mode: 'sea', menu: true }, join);
@@ -90,4 +109,14 @@ test('anchored off an island, the player walks ashore on its beach behind the ve
   });
   const landing: Flow = { mode: 'landing', chosen: null };
   assert.equal(next(landing, ashore), landing);
+});
+
+test('the story opens the game and, ended, brings the player through the veil to the social space', () => {
+  const story: Flow = { mode: 'story' };
+  assert.equal(next(story, { kind: 'menu' }), story, 'no menu over the story');
+  assert.equal(next(story, { kind: 'return-to-ship' }), story);
+  const ended = next(story, { kind: 'story-ended', node: 'overlook-social', name: 'Overlook' });
+  assert.deepEqual(ended, arriving('overlook-social', 'Overlook'));
+  const foot: Flow = { mode: 'foot', node: 'overlook-social', menu: false };
+  assert.equal(next(foot, { kind: 'story-ended', node: 'x', name: 'X' }), foot, 'only the story ends the story');
 });

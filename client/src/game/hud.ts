@@ -45,6 +45,8 @@ export interface ScreenMark {
   readonly arrowDegrees: number | null;
   /** A hostile ship's emblem, rank colour and rank mark. */
   readonly hostile?: HostileLook;
+  /** Its node is locked: greyed, with a lock for its glyph. */
+  readonly locked: boolean;
 }
 
 /** One choice of a menu. */
@@ -62,6 +64,8 @@ const GLYPHS: Record<MarkKind, string> = {
   port: '⚓\uFE0E',
   hostile: '',
 };
+/** A locked node's glyph, in the place of its kind's. */
+const LOCK_GLYPH = '🔒\uFE0E';
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
 interface MarkNode {
@@ -75,10 +79,10 @@ interface MarkNode {
   readonly dress: { worn: string };
 }
 
-/** Dresses a mark as a hostile ship, or undresses it: her rank's colour on its ring and arrow, her faction's emblem in
+/** Dresses a mark as a hostile ship, or undresses it: its rank's colour on its ring and arrow, its faction's emblem in
  *  it, and over it a Miniboss's mark, the plates' own. */
 function dressHostile(shown: MarkNode, look: HostileLook | undefined): void {
-  // A mark keeps its dress from frame to frame: it is laid again only when her look changes.
+  // A mark keeps its dress from frame to frame: it is laid again only when the ship's look changes.
   const dress = look ? `${look.colour} ${look.emblem ?? ''} ${look.badge ?? ''}` : '';
   shown.badge.hidden = !look?.badge;
   if (shown.dress.worn === dress) return;
@@ -105,14 +109,15 @@ export class Hud {
   private readonly shade = make('div', '', 'vignette');
   private readonly death = make('div', '', 'death');
   private readonly respawn: HTMLButtonElement;
-  private readonly hintList = make('div', '', 'hints');
+  /** The keys' hints, which the fight's display keeps its arrows clear of (`FootView`). */
+  readonly hintList = make('div', '', 'hints');
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');
   /** The compass at sea, heading its column at the top; on foot the fight's display stands its own there. */
   private readonly compassColumn = make('div', '', 'compass-column');
   private readonly seaCompass = new Compass(this.compassColumn);
-  /** Each captain's bar over her ship in a fight, drawn afresh each frame. */
+  /** Each captain's bar over its ship in a fight, drawn afresh each frame. */
   private readonly shipLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   private readonly shipPlates = new ShipPlates();
   private readonly marksShown = new Map<string, MarkNode>();
@@ -125,8 +130,9 @@ export class Hud {
   private readonly leave: HTMLButtonElement;
   private readonly manageButton = hudButton('Manage  B', () => this.manageWanted());
   private readonly wheel: HTMLButtonElement;
+  private readonly passage: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
-  /** The sea fight's readout: her plate and rose, the card and the tally, made in the root. */
+  /** The sea fight's readout: the ship's plate and rose, the card and the tally, made in the root. */
   private readonly fight: SeaFightReadout;
   /** What happened, as DFO's toasts say it, at the top right. */
   private readonly noticeStack: NoticeStack;
@@ -142,6 +148,7 @@ export class Hud {
   private manageWanted: () => void = () => undefined;
   private leaveWanted: () => void = () => undefined;
   private wheelWanted: () => void = () => undefined;
+  private passageWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
@@ -164,6 +171,9 @@ export class Hud {
     this.leave = hudButton('Leave the helm  H', () => this.leaveWanted());
     this.wheel = hudButton('Take the helm  E', () => this.wheelWanted(), 'primary');
     this.wheel.classList.add('landfall');
+    this.passage = hudButton('', () => this.passageWanted(), 'primary');
+    this.passage.classList.add('landfall');
+    this.passage.hidden = true;
     const groups = [
       seaGroup(
         'Navigation',
@@ -194,6 +204,7 @@ export class Hud {
       this.sea,
       this.landfall,
       this.wheel,
+      this.passage,
       this.panel,
       this.menuNode,
       this.death,
@@ -284,7 +295,7 @@ export class Hud {
     if (text !== null) this.veilText.textContent = text;
   }
 
-  /** Each captain's bar over her ship (world metres) as `pose` sees the picture; none out of a fight. */
+  /** Each captain's bar over its ship (world metres) as `pose` sees the picture; none out of a fight. */
   shipBars(bars: readonly ShipBar[], pose: CameraPose): void {
     this.shipLayer.replaceChildren();
     if (bars.length === 0) return;
@@ -302,11 +313,11 @@ export class Hud {
     marks.forEach((mark, order) => {
       kept.add(mark.id);
       const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
-      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
+      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}${mark.locked ? ' locked' : ''}`;
       shown.root.style.transform = `translate(${Math.round(mark.x)}px, ${Math.round(mark.y)}px)`;
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
-      shown.glyph.textContent = GLYPHS[mark.kind];
+      shown.glyph.textContent = mark.locked ? LOCK_GLYPH : GLYPHS[mark.kind];
       dressHostile(shown, mark.hostile);
       shown.name.textContent = mark.name;
       const note = `${KIND_WORDS[mark.kind]} · ${mark.note}`;
@@ -370,7 +381,7 @@ export class Hud {
       readonly sailing: boolean;
       readonly resumable: boolean;
       readonly landfall: Landfall;
-      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and she may be managed (out of
+      /** Whether the helm may be left (the ship is in the sea room, out of a fight) and it may be managed (out of
        *  a fight). */
       readonly canLeave: boolean;
       readonly canManage: boolean;
@@ -437,7 +448,18 @@ export class Hud {
       });
   }
 
-  /** Offers the helm at her wheel, or takes the offer away. */
+  /** Offers the way through the gate the player stands in (its words), or takes the offer away (null). */
+  passageOffer(words: string | null): void {
+    this.passage.hidden = words === null;
+    if (words !== null && this.passage.textContent !== words) this.passage.textContent = words;
+  }
+
+  /** What the offer of a way through a gate does. */
+  onPassage(take: () => void): void {
+    this.passageWanted = take;
+  }
+
+  /** Offers the helm at its wheel, or takes the offer away. */
   wheelOffer(shown: boolean): void {
     this.wheel.hidden = !shown;
   }
@@ -452,7 +474,7 @@ export class Hud {
     this.leaveWanted = leave;
   }
 
-  /** What the offer of the helm at her wheel does. */
+  /** What the offer of the helm at its wheel does. */
   onTakeHelm(take: () => void): void {
     this.wheelWanted = take;
   }

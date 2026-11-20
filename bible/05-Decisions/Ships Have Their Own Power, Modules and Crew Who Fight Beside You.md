@@ -19,7 +19,7 @@ status: in force
 
 ## What it settles
 
-- A ship has her own Prestige, Attack and Defense, apart from her captain's ([[Gear]], [[Naval Combat]]).
+- A ship has its own Prestige, Attack and Defense, apart from its captain's ([[Gear]], [[Naval Combat]]).
 - Ship modules are found, attached and levelled, with nodes and perks, as the character's gear is.
 - Every ship has crew to manage. Named crew fight beside the player as companions, with their own nodes, perks and
   experience. They are recruited in port cities through the player's faction, or taken rarely from vessels.

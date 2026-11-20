@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountsFrom, nodeOfRoom, nodeRoom, roomsFrom, seaRoomName } from './rooms.ts';
+import { accountOf, accountsFrom, nodeOfRoom, nodeRoom, roomsFrom, seaRoomName } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -54,4 +54,30 @@ test('a node’s room name reads back as its node and difficulty, the old names 
 
 test('a voyage sails in its difficulty’s sea room', () => {
   assert.deepEqual((['normal', 'elite', 'abyss'] as const).map(seaRoomName), ['sea', 'sea--elite', 'sea--abyss']);
+});
+
+test('the rooms take the session as it stands when they connect, so a sign-in after startup is the one they use', async () => {
+  const kept = new Map<string, string>();
+  const store = {
+    getItem: (key: string) => kept.get(key) ?? null,
+    setItem: (key: string, value: string) => void kept.set(key, value),
+    removeItem: (key: string) => void kept.delete(key),
+  };
+  const guestToken = 'a'.repeat(64);
+  const signedIn = 'b'.repeat(64);
+  const fetched = globalThis.fetch;
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ token: guestToken, account: { id: 'g', username: null, guest: true } }), {
+      status: 200,
+    })) as typeof fetch;
+  try {
+    const page = { search: '?room=live', hash: '', pathname: '/' } as Location;
+    const { session } = accountOf(page, store, store);
+    assert.equal(await session(), guestToken, 'the startup guest');
+    // Signing in keeps the new token where the account link keeps its session.
+    for (const key of kept.keys()) kept.set(key, signedIn);
+    assert.equal(await session(), signedIn, 'the account signed in to mid-story');
+  } finally {
+    globalThis.fetch = fetched;
+  }
 });

@@ -1,6 +1,6 @@
 // The puffs a sea fight throws round its ships, after DFO's (navalEffects.js): a gun's flash and its powder smoke, a
 // ball's faint trail, a splash's spray, spout and ring of foam, a hit's splinters, a sail's shreds, a burning ship's
-// flames, embers and smoke, a battery's glints at her ports as she runs out, a holed hull's planks, a battered hull's
+// flames, embers and smoke, a battery's glints at its ports as it runs out, a holed hull's planks, a battered hull's
 // smoke, water thrown over a rail, a magazine's blast, and the foam and boil where a ship went down. Each lives a
 // while on its own law: smoke is blended, carried by the wind and swells as it thins; flash, flame, embers and glints
 // are light added unlit; spray and foam are blended; splinters, shreds and planks are solid. Each is kept at its true
@@ -73,11 +73,11 @@ export const GUN_SMOKE_SWELL = [6, 10] as const;
 /** A gun's flash lasts this long, seconds, and its light reaches this far for this long (DFO's muzzle light). */
 export const FLASH_S = 0.11;
 export const MUZZLE_LIGHT = { reachM: 26, seconds: 0.12, colour: [1.35, 1, 0.6] as Colour } as const;
-/** A burning ship's light on what stands round her, and how many burning ships light the fight at once. */
+/** A burning ship's light on what stands round it, and how many burning ships light the fight at once. */
 export const BURN_LIGHT = { reachM: 16, colour: [1.25, 0.72, 0.36] as Colour, most: 3 } as const;
 /** A round shot's radius, metres (crates/naval/src/guns.rs): a heavier ball's splash is a big one. */
 export const ROUND_SHOT_M = 0.07;
-/** A ball through her hull throws this many splinters, a heavy ball this many. */
+/** A ball through its hull throws this many splinters, a heavy ball this many. */
 export const SPLINTERS = 10;
 export const HEAVY_SPLINTERS = 16;
 /** A splash's spout goes up this fast, metres a second (a heavy ball's, a light one's). */
@@ -224,9 +224,9 @@ export class Effects {
     this.add('light', 1, anchor, now, () => ({ from, colour, size: [reachM * 2, reachM * 2], life }));
   }
 
-  /** A gun of `scale` fired from `mouth` (true metres off `anchor`, her middle) along `launch` (m/s): its flash and
+  /** A gun of `scale` fired from `mouth` (true metres off `anchor`, its middle) along `launch` (m/s): its flash and
    *  tongue of fire at the mouth, its light on what stands round it, and its smoke rolling out down the shot to hang
-   *  as a bank down her side and go off on the wind. */
+   *  as a bank down its side and go off on the wind. */
   fire(anchor: Point, mouth: Point, launch: Point, now: number, scale = 1): void {
     const length = Math.hypot(...launch) || 1;
     const way: Point = [launch[0] / length, launch[1] / length, launch[2] / length];
@@ -308,8 +308,8 @@ export class Effects {
     }));
   }
 
-  /** A ball's fall at `spot` (window metres) beside a ship, thrown over her rail toward `toward` (window metres, her
-   *  deck): a sheet of spray reaching her and falling on her, more of it the nearer (`near`, 0 to 1 alongside). */
+  /** A ball's fall at `spot` (window metres) beside a ship, thrown over its rail toward `toward` (window metres, its
+   *  deck): a sheet of spray reaching it and falling on it, more of it the nearer (`near`, 0 to 1 alongside). */
   drench(spot: Point, toward: Point, near: number, now: number): void {
     const [east, south] = [toward[0] - spot[0], toward[1] - spot[1]];
     const length = Math.hypot(east, south) || 1;
@@ -370,8 +370,8 @@ export class Effects {
     }));
   }
 
-  /** A ball through her hull at `spot` (true metres off `anchor`, her middle), facing out `out` (east, south):
-   *  splinters of her paint and raw timber thrown out and falling to the water, a puff of smoke and a small flash; a
+  /** A ball through its hull at `spot` (true metres off `anchor`, its middle), facing out `out` (east, south):
+   *  splinters of its paint and raw timber thrown out and falling to the water, a puff of smoke and a small flash; a
    *  heavy ball's more. */
   splinter(
     anchor: Point,
@@ -416,7 +416,7 @@ export class Effects {
     });
   }
 
-  /** A ball through her rig at `spot`: a burst of dark splinters at the spar. */
+  /** A ball through its rig at `spot`: a burst of dark splinters at the spar. */
   spar(anchor: Point, spot: Point, now: number): void {
     this.add('debris', 12, anchor, now, () => ({
       from: spot,
@@ -446,8 +446,8 @@ export class Effects {
     });
   }
 
-  /** A ship's fires over `seconds`: flames, embers rising and gouts of dark smoke up from her deck at `deck` (true
-   *  metres off `anchor`, her middle), over `spreadM` of her. */
+  /** A ship's fires over `seconds`: flames, embers rising and gouts of dark smoke up from its deck at `deck` (true
+   *  metres off `anchor`, its middle), over `spreadM` of it. */
   burn(anchor: Point, deck: Point, fires: number, spreadM: number, now: number, seconds: number): void {
     if (fires <= 0) return;
     this.owedFlames += FLAMES_PER_S * fires * seconds;
@@ -486,7 +486,7 @@ export class Effects {
     }
   }
 
-  /** A battery running out: a warm flicker at each of her `ports` (true metres off `anchor`), brightening as the
+  /** A battery running out: a warm flicker at each of its `ports` (true metres off `anchor`), brightening as the
    *  guns come out (`out`, 0 to 1), about thirty a second at a port. */
   glint(anchor: Point, ports: readonly Point[], out: number, now: number, seconds: number): void {
     const share = Math.min(1, Math.max(0, out));
@@ -502,8 +502,8 @@ export class Effects {
     }
   }
 
-  /** A battered hull's grey smoke along her deck from `aft` to `bow` (true metres off `anchor`) over `seconds`, more
-   *  as she is hurt (`hurt`, 0 to 1). */
+  /** A battered hull's grey smoke along its deck from `aft` to `bow` (true metres off `anchor`) over `seconds`, more
+   *  as it is hurt (`hurt`, 0 to 1). */
   smolder(anchor: Point, aft: Point, bow: Point, hurt: number, now: number, seconds: number): void {
     this.owedSmolder += SMOLDER_RATE * Math.min(1, Math.max(0, hurt)) * seconds;
     while (this.owedSmolder >= 1) {
@@ -540,7 +540,7 @@ export class Effects {
     this.splash(spot, now, ROUND_SHOT_M * 2);
   }
 
-  /** Where a ship goes down, over `seconds`: rings of foam over `radiusM` round `spot`, and the air leaving her boiling
+  /** Where a ship goes down, over `seconds`: rings of foam over `radiusM` round `spot`, and the air leaving its boiling
    *  up in drops, each with its own little ring. */
   foam(spot: Point, radiusM: number, now: number, seconds: number): void {
     this.owedFoam += BOIL_RATE * seconds;

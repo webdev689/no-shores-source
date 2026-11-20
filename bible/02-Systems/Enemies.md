@@ -19,6 +19,8 @@ code:
   - crates/room/src/garrison.rs#keep_garrison
   - crates/room/src/garrison.rs#gird_of
   - crates/room/src/garrison.rs#raise_garrison
+  - crates/room/src/garrison.rs#walk_beats
+  - crates/room/src/beat.rs#Beat
   - crates/room-wasm/src/roster_door.rs#roster_json
   - client/src/rules/roster.ts#rankBand
   - client/src/rules/roster.ts#rankMark
@@ -36,7 +38,8 @@ Who a player fights: enemy factions, each with its own types of foe on land and 
 how much it takes, how it defends and which telegraphed blows it throws. The owner decided the ranks and the factions
 ([[Enemies Come in Five Ranks, After Destiny]], [[Enemy Factions Start With the Grey Tithe]]), and that a Miniboss
 throws more often than an Elite, a Boss's called foes fall with it and a garrison leashes to its posts
-([[Foes Leash to Their Posts and Fall With Their Boss]]); the roster and the numbers are Claude's
+([[Foes Leash to Their Posts and Fall With Their Boss]]), and that fewer plates show and their size goes with rank
+([[Fewer Plates Show, Sized by Rank, After Destiny]]); the roster and the numbers are Claude's
 ([[The Enemies as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
 
 ## Factions
@@ -55,7 +58,9 @@ The Grey Tithe holds the land: a garrison of its foes stands in every node but t
 ## The roster
 
 Each type fights as one of five roles (the behaviour and numbers of [[Foes]]) with its own weapons, and comes in the
-ranks listed. Its numbers are its role's as a Major; its rank scales them.
+ranks listed. Its numbers are its role's as a Major; its rank scales them. In a group a skirmisher is the one that
+works round to its target's flank, and a shield-bearer holds the line; a group that sees several players shares itself
+out among them ([[Foes]]).
 
 | No. | Type | Role | Right hand | Left hand | Ranks |
 |---|---|---|---|---|---|
@@ -157,13 +162,26 @@ WebAssembly, so names, factions and weapons are read in one place.
   any foe's does ([[Gear]], "In the rooms").
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
-  farthest from the nearest spawn. A group stands 2.5 m round its post, each foe facing outward, a leader in the
-  middle facing the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+  farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
+  fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
+  post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
+  drawn from the room's seed apart from the posts, so every machine walks the same beats and drawing them moves no
+  post. The way between points is the navmesh's, and each metre of it stays inside the section, 2.5 m inside its
+  edge, and 27.5 m from every spawn; a point with no such way is given up, and a group with no second point holds
+  its post. The group walks its beat at a stroll, 0.35 of a walk, its first foe leading on the way and the rest on a
+  half ring 2.5 m behind it, each finding its way to its place by the room's routes. It pauses 4 s at each point,
+  its foes facing out from their leader and the leader the way on, then walks to the next, and from the last back to
+  its post and round again. It halts while any of its foes is stirred, fights or walks back to its place, and waits
+  for one more than 4 m from its place. A group that holds its post stands 2.5 m round it, each foe facing outward,
+  a leader in the middle facing the nearest spawn.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
-  place at its post or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
-  whose search finds no one walks back the same way ([[Foes]]). It is still its group's: a walk home never clears a
-  group or stands it again.
-- **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places, 120 s later, once
+  place in its group or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
+  whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight began, so it walks
+  back to its place round that spot, and the group walks its beat on once all its foes are idle in their places. It
+  is still its group's: a walk home never clears a group or stands it again.
+- **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
+  its beat begun again from there, 120 s later, once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
@@ -172,18 +190,21 @@ WebAssembly, so names, factions and weapons are read in one place.
 ## On screen
 
 - **Over each foe**, just over its head (1.9 m over its feet, under where the parry ring closes), its plate in the
-  [[Interface]]'s kit: its faction's emblem in a square at the left (the Grey Tithe's balance, the pirates' skull), and
-  to its right its type's name above a long thin bar of its health, red for a Minor, orange for a Major, yellow for an
-  Elite and a Miniboss, over a dark trough with a hairline edge. An Elite has one brass chevron beside its name, a
-  Miniboss two. A "?" stands before the name while it is suspicious or searching, and a "!" for a second when it turns
-  alert ([[Foes]]).
-- **Plates are never overbearing.** A foe's plate shows near the crosshair, fading in and out at the cone's edge, and
-  always for the foes fought in the last minute; never through a block, nor past 60 m; it shrinks with distance as
-  its figure does ([[Interface]]).
+  [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
+  above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
+  dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
+  the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
+- **Over a figure, a plate's size goes with its rank**, as Destiny's bars do
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): a Minor's bar short and thin, a Major's as a ship's, an
+  Elite's and a Miniboss's longer and cut in thirds ([[Interface]]). A Miniboss's second phase, at 35%, comes just over its lower third.
+- **Plates are never overbearing.** The cone round the crosshair shows one plate, the foe in sight nearest it, within
+  6 degrees of its body (a Boss there takes the cone and shows none over its head); the foe the soft lock holds shows its
+  plate wherever it is, and so do the foes fought in the last 6 s, theirs fading as the target plate does. None is seen
+  through a block or the land, nor past 60 m; each shrinks with distance as its figure does ([[Interface]]).
 - **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
   just clear, and the plates hold still from frame to frame ([[Interface]]).
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
-  screen: its emblem, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
+  screen: its level, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
   track under it. A Boss has no plate over its head.
 - **The target plate**: the foe the player is fighting (struck, locked or winding up at them), the same plate at the
   top with its poise track under its health, beneath the boss bar while one shows; it fades 6 s after the last

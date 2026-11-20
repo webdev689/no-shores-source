@@ -1,13 +1,19 @@
-// Which plates over foes show, and how big, after DFO's law for the names over other players: a plate shows near the
-// crosshair and fades in and out at the cone's edge, while the foes the player fought in the last minute always show;
-// it shrinks with distance as the figure under it does, and never grows; and it is never seen through a block, nor
-// past the reach names had. So a crowd off to the side, or behind a wall, puts nothing over the world.
+// Which plates over foes show, and how big, after Destiny's bars and DFO's law for the names over other players: the
+// cone round the crosshair shows one plate, the foe in sight nearest it, fading in and out at the cone's edge; the foe
+// the soft lock holds and the foes fought lately show wherever they are. A plate shrinks with distance as the figure
+// under it does, and never grows; it is never seen through a block or the land, nor past the reach names had. So a
+// crowd puts one plate over the world until the fight begins, and the fight's own plates go a few seconds after it.
 
 type Point = readonly [number, number, number];
 
 /** The cone round the crosshair: whole within `degrees - band / 2`, none past `degrees + band / 2`; and how long a
  *  plate takes to fade all the way in or out, in seconds. */
-export const CONE = { degrees: 20, band: 6, fadeSeconds: 0.25 } as const;
+export const CONE = { degrees: 5, band: 2, fadeSeconds: 0.25 } as const;
+/** Another foe takes the cone's plate only once it stands this much nearer the crosshair, in degrees, or the cone would
+ *  show this much more of it, so two foes side by side, or a view wobbling between them, do not trade it back and forth;
+ *  and a fading one never keeps it from a clearer one. */
+export const AIM_SWAP_DEGREES = 1;
+export const AIM_SWAP_SHARE = 0.25;
 /** Plates farther than this from the eye, across the ground, are not drawn, in metres. */
 export const PLATE_RANGE_M = 60;
 /** How long the line to a foe's head must stay blocked before its plate goes, in seconds (it comes back at once), and
@@ -19,11 +25,72 @@ export const SIGHT_SKIN_M = 0.2;
  *  never drawn under `fewestLetters` pixels. */
 export const PLATE_SIZE = { reference: 18, least: 0.55, most: 1.5, lens: Math.PI / 3, letters: 12, fewestLetters: 9 };
 
-/** How much of a plate the cone shows at `off` degrees from the crosshair: all of it for a foe the player fought. */
-export function coneWant(off: number, fought: boolean): number {
-  if (fought || !Number.isFinite(off)) return 1;
+/** How much of a plate the cone shows at `off` degrees from the crosshair: whole within `degrees - band / 2`, none past
+ *  `degrees + band / 2`, and none at an angle not known. */
+export function coneShare(off: number): number {
   const inner = CONE.degrees - CONE.band / 2;
-  return Math.max(0, Math.min(1, 1 - (off - inner) / CONE.band));
+  return Number.isNaN(off) ? 0 : Math.max(0, Math.min(1, 1 - (off - inner) / CONE.band));
+}
+
+/** How much of a plate shows: as much as the cone shows at `off` degrees from the crosshair (null for a foe that is
+ *  not the one aimed at, which the cone shows none of), or as much as the fight `held` it (0 to 1), whichever is more. */
+export function coneWant(off: number | null, held: number): number {
+  return Math.max(off === null ? 0 : coneShare(off), Math.max(0, Math.min(1, held)));
+}
+
+/** The one foe the cone shows, of `offs` (each foe's degrees from the crosshair): the nearest inside the cone's edge,
+ *  or last frame's (`was`) while it stays inside and none takes it by `AIM_SWAP_DEGREES` or `AIM_SWAP_SHARE`; null for
+ *  none. */
+export function aimedFoe(offs: ReadonlyMap<number, number>, was: number | null): number | null {
+  const edge = CONE.degrees + CONE.band / 2;
+  let nearest: number | null = null;
+  let least = edge;
+  for (const [id, off] of offs) {
+    if (!(off < least)) continue;
+    [nearest, least] = [id, off];
+  }
+  const kept = was === null ? undefined : offs.get(was);
+  const holds =
+    kept !== undefined &&
+    kept < edge &&
+    kept - least < AIM_SWAP_DEGREES &&
+    coneShare(least) - coneShare(kept) < AIM_SWAP_SHARE;
+  return holds ? was : nearest;
+}
+
+/** Degrees between the way a camera looks and the nearest point of an upright body, its feet at `feet` and `height`
+ *  metres tall, seen from its eye: a foe is at the crosshair wherever on its body the crosshair rests. */
+export function bodyDegrees(
+  camera: { readonly eye: Point; readonly forward: Point },
+  feet: Point,
+  height: number,
+): number {
+  const [east, south] = [feet[0] - camera.eye[0], feet[1] - camera.eye[1]];
+  const ahead = east * camera.forward[0] + south * camera.forward[1];
+  // How high over the eye the view's ray passes the body's upright line nearest, as an angle; its middle off to the side.
+  const over =
+    ahead > 0 ? ((east * east + south * south) * camera.forward[2]) / ahead : feet[2] + height / 2 - camera.eye[2];
+  const crossed = Math.min(feet[2] + height, Math.max(feet[2], camera.eye[2] + over));
+  return offDegrees(camera, [feet[0], feet[1], crossed]);
+}
+
+/** How far apart, in metres, the line to a foe's head is tried against the land: the ground round the eye is a smooth
+ *  curve through heights 4 m apart, and the land past it coarser, so no rise is narrower than twice this. */
+export const LAND_STEP_M = 2;
+
+/** Whether the land (`groundAt`, its height under a point, null where none is known) rises over the line from `from`
+ *  to `to` short of its last `SIGHT_SKIN_M`, as a block would. */
+export function landBlocks(groundAt: (x: number, y: number) => number | null, from: Point, to: Point): boolean {
+  const length = Math.hypot(to[0] - from[0], to[1] - from[1], to[2] - from[2]);
+  if (length <= SIGHT_SKIN_M) return false;
+  const last = 1 - SIGHT_SKIN_M / length;
+  const steps = Math.ceil(length / LAND_STEP_M);
+  for (let step = 1; step / steps <= last; step++) {
+    const share = step / steps;
+    const ground = groundAt(from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share);
+    if (ground !== null && from[2] + (to[2] - from[2]) * share < ground) return true;
+  }
+  return false;
 }
 
 /** One frame's step from `was` toward `want`, `seconds` on, never more than the fade allows; a plate with nothing

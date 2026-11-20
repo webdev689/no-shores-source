@@ -1,13 +1,14 @@
-/** A block standing on the ground: its footprint (x east, y south, metres) and its top. */
+/** A block: its footprint (x east, y south, metres), its top, and its underside: at or below the ground for a block
+ *  from the ground up, over it for a floor, a bridge or a roof a body walks under. */
 export interface Block {
   readonly minX: number;
   readonly minY: number;
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
-  /** Where a block held up off the ground begins (a ship's boom or yard), for the camera alone: the movement and
-   *  fight crates' blocks stand from the ground. */
-  readonly bottom?: number;
+  /** Its underside: the ground's height where it stands, or below it, for a block from the ground up; over the ground
+   *  for a floor, a bridge, a roof a body walks under, or a ship's boom or yard. */
+  readonly bottom: number;
 }
 
 /** What the player asks of the body for a tick: movement relative to where it looks (-1..1), the look's bearing in
@@ -240,7 +241,14 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       return readBody();
     },
     setCourse: (blocks) => {
-      const floats = blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
+      const floats = blocks.flatMap((block) => [
+        block.minX,
+        block.minY,
+        block.maxX,
+        block.maxY,
+        block.top,
+        block.bottom,
+      ]);
       const address = exports.reserve(floats.length * 8);
       const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
       floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));

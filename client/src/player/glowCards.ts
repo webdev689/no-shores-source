@@ -33,7 +33,7 @@ const CLOCK_WRAP_S = 240;
 
 /** The outline round a card's weapon: the card's quad grown by the pad, upright and turned along the view's right as
  *  the cards are, each texel of its field lit by `glow_colour` at the picture's own pixel. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${GLOW_WGSL}
 
 struct View { view_projection: mat4x4f, right: vec4f }

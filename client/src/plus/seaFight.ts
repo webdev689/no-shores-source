@@ -4,7 +4,7 @@
 // the TARGET CARD under the compass is the target's plate (the faction's emblem, its name, one hull bar in its rank's
 // colour, its class, distance and state as small words); the TALLY of the last volley; and the WARNING under the
 // card while a battery is run out at the player's ship. A readout, never a window: made once, updated each frame.
-import { barSheetCss } from './barSheet.ts';
+import { barSheetCss, windowVitalsCss } from './barSheet.ts';
 import { PIECE_LEAST } from './barLoss.ts';
 import { UNDER_COMPASS } from './compass.ts';
 import { ROLES } from './kit.ts';
@@ -222,7 +222,7 @@ export class SeaFightReadout {
 /** The readout's sheet: the plate at the bottom right, the card centred under the compass, the tally under the
  *  middle; the bars banded, the rose's sides filling from their foot, gold where laid, flashing when fresh. */
 export function seaFightCss(): string {
-  return `${barSheetCss('.seafight')}
+  return `${barSheetCss('.seafight')}${windowVitalsCss('.seafight')}
 .seafight { position: absolute; inset: 0; pointer-events: none; color: ${TONES.word}; text-shadow: ${HALO}; }
 .seafight [hidden] { display: none !important; }
 .seafight .vitals { left: auto; right: 24px; }

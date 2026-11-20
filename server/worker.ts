@@ -29,6 +29,9 @@ const ASHORE_EVERY_MS = 60_000;
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
 
+/** The close code for a player turned away from a locked node's room. */
+const LOCKED = 4003;
+
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
 
@@ -77,6 +80,13 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaIsland(id), '');
   }
 
+  /** Whether the sea has `account` landed on its island `id` of `seed`, for that island's room: its ship at rest at
+   *  the island's anchorage when last at sea. */
+  async landed(id: number, seed: string, account: string): Promise<boolean> {
+    if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
+    return this.guarded(() => this.room.seaLanded(id, seed, account), false);
+  }
+
   /** Holds the sea's island `id` of `seed` while players stand ashore on it: whether it stands. */
   async holdAshore(id: number, seed: string): Promise<boolean> {
     if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
@@ -96,9 +106,10 @@ export class RoomHost extends DurableObject<Env> {
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     const player = this.guarded(() => this.room.join(), 0);
     if (player === 0) {
-      // A full room still takes the socket, to say why it closes.
+      // A full room, or a locked node's, still takes the socket, to say why it closes.
+      const locked = this.guarded(() => this.room.refusal(), null);
       server.accept();
-      server.close(1013, 'the room is full');
+      server.close(locked === null ? 1013 : LOCKED, locked ?? 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
     server.binaryType = 'arraybuffer';
@@ -107,8 +118,9 @@ export class RoomHost extends DurableObject<Env> {
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
-    server.send(this.room.joined(player));
+    // Ticking first: a room waking from rest sets its first tick's time anew, which the welcome carries.
     this.startTicking();
+    server.send(this.room.joined(player));
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -120,7 +132,11 @@ export class RoomHost extends DurableObject<Env> {
       character: (player: number) => this.guarded(() => this.room.character(player), null),
       restoreCharacter: (player: number, kept: string) =>
         this.guarded(() => this.room.restoreCharacter(player, kept), false),
-      own: (player: number, account: string) => this.guarded(() => this.room.own(player, account), false),
+      own: (player: number, account: string) => {
+        const owned = this.guarded(() => this.room.own(player, account), false);
+        if (owned && this.island) void this.landOn(this.island, player, account);
+        return owned;
+      },
     };
     const characters = {
       claim: (token: string, holder: string) => accounts.claim(token, holder),
@@ -176,8 +192,26 @@ export class RoomHost extends DurableObject<Env> {
     if (!word || (JSON.parse(word) as { seed?: string }).seed !== named.seed) return false;
     this.island = { id: named.id, seed: named.seed, sea, told: Date.now() };
     const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
-    const opened = this.room.openIsland(word) && this.room.difficulty(named.seas);
+    // Only an account the sea says is landed here scavenges: nobody sails ashore from afar by naming the room.
+    const opened = this.room.openIsland(word) && this.room.checkLandings() && this.room.difficulty(named.seas);
     return opened && this.room.reseed([lootLow, lootHigh, worldLow, worldHigh]);
+  }
+
+  /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge; not, they
+   *  are let go. A sea that does not answer lets nobody go, and lands nobody. */
+  private async landOn(
+    island: { readonly id: number; readonly seed: string; readonly sea: string },
+    player: number,
+    account: string,
+  ): Promise<void> {
+    const landed = await this.env.ROOMS.getByName(island.sea)
+      .landed(island.id, island.seed, account)
+      .catch(() => null);
+    if (landed === true) this.guarded(() => this.room.land(account), false);
+    else if (landed === false) {
+      const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
+      if (socket) this.dismiss(socket, 1008, 'your ship does not lie at this island');
+    }
   }
 
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
@@ -264,6 +298,7 @@ export class RoomHost extends DurableObject<Env> {
     if (this.ticking) return;
     const tickMs = this.room.tickSeconds * 1000;
     this.started = Date.now() - this.ticks * tickMs;
+    this.guarded(() => this.room.epoch(this.started), undefined);
     this.ticking = setInterval(() => {
       const due = Math.floor((Date.now() - this.started) / tickMs);
       if (this.ticks >= due) return;

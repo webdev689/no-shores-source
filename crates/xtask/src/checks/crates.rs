@@ -18,11 +18,17 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule { name: "land", workspace: &["world"], outside: &["serde", "serde_json"], door: false },
     CrateRule {
         name: "land-wasm",
-        workspace: &["city", "land", "naval", "sailing", "world"],
+        workspace: &["city", "land", "layout", "naval", "sailing", "sky", "world"],
         outside: &["serde_json"],
         door: true,
     },
     CrateRule { name: "city", workspace: &["land", "world"], outside: &["serde", "serde_json", "libm"], door: false },
+    CrateRule {
+        name: "layout",
+        workspace: &["city", "land", "world"],
+        outside: &["serde", "serde_json", "libm"],
+        door: false,
+    },
     CrateRule { name: "movement", workspace: &[], outside: &["libm"], door: false },
     CrateRule {
         name: "movement-wasm",
@@ -30,7 +36,8 @@ pub const CRATES: &[CrateRule] = &[
         outside: &["serde_json"],
         door: true,
     },
-    CrateRule { name: "sailing", workspace: &["land"], outside: &["libm"], door: false },
+    CrateRule { name: "sky", workspace: &["land", "world"], outside: &[], door: false },
+    CrateRule { name: "sailing", workspace: &["land", "sky"], outside: &["libm"], door: false },
     CrateRule { name: "naval", workspace: &["sailing"], outside: &["libm"], door: false },
     CrateRule { name: "combat", workspace: &["movement"], outside: &["libm"], door: false },
     CrateRule { name: "navmesh", workspace: &["movement"], outside: &["libm"], door: false },
@@ -41,7 +48,8 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule {
         name: "room",
         workspace: &[
-            "combat", "foes", "gear", "isle", "land", "movement", "naval", "navmesh", "reach", "sailing", "world",
+            "combat", "foes", "gear", "isle", "land", "movement", "naval", "navmesh", "reach", "sailing", "sky",
+            "world",
         ],
         outside: &["libm"],
         door: false,
@@ -55,13 +63,19 @@ pub const CRATES: &[CrateRule] = &[
     CrateRule {
         name: "room-wasm",
         workspace: &[
-            "combat", "foes", "gear", "isle", "land", "movement", "naval", "protocol", "room", "sailing", "world",
+            "combat", "foes", "gear", "isle", "land", "movement", "naval", "protocol", "room", "sailing", "sky",
+            "world",
         ],
         outside: &["serde", "serde_json"],
         door: true,
     },
     // A tool run at build time: it bakes what the rooms read, so it may use the rules that make the land.
-    CrateRule { name: "bake", workspace: &["city", "land", "world"], outside: &["serde", "serde_json"], door: false },
+    CrateRule {
+        name: "bake",
+        workspace: &["city", "land", "layout", "world"],
+        outside: &["serde", "serde_json"],
+        door: false,
+    },
     CrateRule { name: "xtask", workspace: &["*"], outside: &["*"], door: false },
 ];
 

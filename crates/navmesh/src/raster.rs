@@ -121,8 +121,15 @@ fn gentle(heights: &[f64], grid: &Grid, ix: usize, iy: usize, max_slope: f64) ->
 }
 
 /// Voxelises the ground under every cell of `bounds` and the colliders standing on it. Each column's ground is solid
-/// from one voxel under the lowest ground up to the ground's height at its centre, and is floor where it is gentle.
-pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Heightfield {
+/// from one voxel under the lowest ground up to the ground's height at its centre, and is floor where it is gentle and
+/// `ground_walks` (never on the open sea).
+pub(crate) fn voxelise(
+    colliders: &[Collider],
+    ground: &dyn Terrain,
+    bounds: Bounds,
+    agent: &Agent,
+    ground_walks: bool,
+) -> Heightfield {
     let (cell, voxel) = (agent.cell_size, agent.cell_height);
     let (cells_x, cells_y) = cells(bounds, cell);
     let mut grid =
@@ -143,7 +150,7 @@ pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bou
     grid.voxels = ((max_z - min_z) / voxel).ceil().max(1.0) as i64;
     let mut field = Heightfield { grid, columns: vec![Vec::new(); cells_x * cells_y] };
     for column in 0..cells_x * cells_y {
-        let walkable = gentle(&heights, &grid, column % cells_x, column / cells_x, agent.max_slope);
+        let walkable = ground_walks && gentle(&heights, &grid, column % cells_x, column / cells_x, agent.max_slope);
         field.add_span(column, min_z, heights[column], walkable);
     }
     for collider in colliders {
@@ -158,9 +165,21 @@ pub(crate) fn voxelise(colliders: &[Collider], ground: &dyn Terrain, bounds: Bou
                 let sample_x = centre_x.clamp(min_x, max_x);
                 let sample_y = centre_y.clamp(min_y, max_y);
                 let column = ix + iy * cells_x;
-                // A block or ramp stands solid from the ground beneath it; a top below the ground is buried in it.
-                let top = collider.surface(sample_x, sample_y);
-                let base = if top < heights[column] { min_z } else { heights[column] };
+                // A block or ramp is solid from its underside, or the ground where that is lower, so the space under
+                // a roof or a deck stays open; a top below the ground is buried in it. An underside over the ground
+                // rounds up to its voxel, so a body walks under one at its own height, as it moves under it, unless
+                // that leaves a thin slab no voxel; mid-voxel, so the floor taken again lands on the same one.
+                let (top, underside) = (collider.surface(sample_x, sample_y), collider.underside());
+                let (rounded, top_voxel) = (((underside - min_z) / voxel).ceil(), ((top - min_z) / voxel).ceil());
+                let base = if top < heights[column] {
+                    min_z
+                } else if underside <= heights[column] {
+                    heights[column]
+                } else if rounded < top_voxel {
+                    min_z + (rounded + 0.5) * voxel
+                } else {
+                    underside
+                };
                 field.add_span(column, base, top, walkable);
             }
         }

@@ -59,8 +59,9 @@ The compass and the bars' places come over at the owner's word
 the target's plate under it (`enhancedHud.js` and its sheets), on the [[Test Ground]] and in the [[Game]] on foot and at
 sea. Of the compass's marks, the sea's ships come over (`navalHost.js`, `compassShips`). The rest have no like here yet:
 the player's own boats on land, a party, a quest, the way out, a profession's nodes, Detect spells, and the world's
-events (a gate, a breach's arch, the sea serpent, a Hollow, a fallen star). The vitals keep the kit's window at the
-bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]).
+events (a gate, a breach's arch, the sea serpent, a Hollow, a fallen star). The vitals stand at the top left and the
+Arts and weapons at the bottom left, after the owner's own pictures
+([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]).
 
 The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s heads-up display wears them
 ([[The Ship Is Managed and Walked From the Sea's Panel]]). The health bars are ported: the vitals, the target plate

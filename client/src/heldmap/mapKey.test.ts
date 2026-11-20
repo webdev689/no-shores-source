@@ -52,7 +52,7 @@ test('land under a box is a discovered island’s, asked across the whole box', 
   assert.equal(landUnder(field, 0, view, { x: 0, y: 0, width: 200, height: 200 }), false, 'an undiscovered island');
 });
 
-test('each holder’s swatch is painted as the map shows her: her wash over its parchment, the contested and Tithe hatched', () => {
+test('each holder’s swatch is painted as the map shows it: its wash over its parchment, the contested and Tithe hatched', () => {
   const calls: { name: string; args: unknown[]; fillStyle: unknown }[] = [];
   const state = { font: '', fillStyle: '' as unknown, strokeStyle: '' as unknown, lineWidth: 1, textAlign: 'left' };
   const painter = new Proxy(state, {

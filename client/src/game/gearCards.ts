@@ -11,6 +11,7 @@ import {
   STOCK_NAMES,
   VAULTED,
   WORN,
+  isModule,
   isWeapon,
   itemWords,
   resourceName,
@@ -19,7 +20,7 @@ import {
   wearAsks,
 } from '../player/gear.ts';
 import type { Press } from './gearScreen.ts';
-import { gearKindName, gearName, isModule } from './shipGear.ts';
+import { gearKindName, gearName } from './shipGear.ts';
 import type { ShipGlyph } from './shipGlyphs.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
@@ -158,6 +159,15 @@ export interface InventoryPage {
 }
 
 const STOCK_GLYPHS: readonly Glyph[] = ['weapon-fragments', 'armor-fragments', 'weapon-essence', 'armor-essence'];
+/** What each stock is for, from the gear crate's costs and dismantling. */
+const STOCK_WORDS = [
+  "A weapon's nodes are bought with them. Dismantling a weapon gives some back.",
+  "An armour piece's nodes are bought with them. Dismantling armour gives some back.",
+  "A Legendary or Atheric weapon's last upgrades are bought with it. Dismantling one gives some back.",
+  "A Legendary or Atheric armour piece's upgrades are bought with it. Dismantling one gives some back.",
+];
+
+const held = (each: Cell): boolean => (each.count ?? 0) > 0;
 
 const cell = (key: string, glyph: Glyph, name: string, fields: Partial<Cell> = {}): Cell => ({
   key,
@@ -173,11 +183,15 @@ const cell = (key: string, glyph: Glyph, name: string, fields: Partial<Cell> = {
   ...fields,
 });
 
+/** The inventory: Aurem its one currency, at the owner's word; every other thing a stack, shown only while held. */
 export function inventoryPageOf(state: GearState): InventoryPage {
-  const currencies = [
-    { glyph: 'aurem' as const, name: 'Aurem', count: state.aurem },
-    ...STOCK_GLYPHS.map((glyph, index) => ({ glyph, name: STOCK_NAMES[index] ?? '', count: state.stocks[index] ?? 0 })),
-  ];
+  const currencies = [{ glyph: 'aurem' as const, name: 'Aurem', count: state.aurem }];
+  const stocks = STOCK_GLYPHS.map((glyph, index) =>
+    cell(`stock-${index}`, glyph, STOCK_NAMES[index] ?? '', {
+      count: state.stocks[index] ?? 0,
+      words: STOCK_WORDS[index] ?? '',
+    }),
+  );
   const fruit = cell('fruit', 'fruit', 'Fruit of Dagon', {
     count: state.stocks[4] ?? 0,
     words: "Hold it on an item's page to feed it to that item: it grows the item.",
@@ -214,8 +228,8 @@ export function inventoryPageOf(state: GearState): InventoryPage {
     currencies,
     vestiges: { held: carried.length, most: VESTIGES_MOST, cells: [...carried, ...empties] },
     tabs: [
-      { id: 'consumables', name: 'Consumables', cells: [fruit, crate] },
-      { id: 'materials', name: 'Materials', cells: materials },
+      { id: 'consumables', name: 'Consumables', cells: [fruit, crate].filter(held) },
+      { id: 'materials', name: 'Materials', cells: [...stocks, ...materials].filter(held) },
     ],
   };
 }

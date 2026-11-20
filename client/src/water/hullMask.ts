@@ -2,13 +2,13 @@ import { headingFrame } from '../rules/landRules.ts';
 import { smoothstep } from './shore.ts';
 
 /**
- * A ship's footprint on the water: no water inside her own hull line at her waterline, and foam along it, most at her
+ * A ship's footprint on the water: no water inside its own hull line at its waterline, and foam along it, most at its
  * bow. The TypeScript mirrors the WGSL the water's surface runs (HULL_WGSL), so tests can hold the shapes.
  */
-/** A ship's footprint on the water (window metres): her middle, her heading (radians clockwise from north), half
- *  her waterline's length and beam as drawn, her way (m/s), her own hull line (her half beam at each of `STATIONS`,
- *  stern to bow, as a share of her widest: the fair line without one), how many times her size she is drawn (her wake
- *  and foam widen with her), and her bow's spray now, 0 to 1. */
+/** A ship's footprint on the water (window metres): its middle, its heading (radians clockwise from north), half
+ *  its waterline's length and beam as drawn, its way (m/s), its own hull line (its half beam at each of `STATIONS`,
+ *  stern to bow, as a share of its widest: the fair line without one), how many times its size it is drawn (its wake
+ *  and foam widen with it), and its bow's spray now, 0 to 1. */
 export interface HullMask {
   readonly x: number;
   readonly y: number;
@@ -21,9 +21,9 @@ export interface HullMask {
   readonly spray?: number;
 }
 
-/** The share of her waterline the footprint fills: a hair inside it, so no water is cut away round her hull. */
+/** The share of its waterline the footprint fills: a hair inside it, so no water is cut away round its hull. */
 export const HULL_FIT = 0.97;
-/** How far the foam along her sides reaches past her hull line at her true size, metres, and the way it is whole at
+/** How far the foam along its sides reaches past its hull line at its true size, metres, and the way it is whole at
  *  (m/s). */
 export const HULL_FOAM_M = 0.8;
 export const HULL_FOAM_WAY = 2;
@@ -32,15 +32,15 @@ export const HULL_FOAM_WAY = 2;
 export const HULLS = 48;
 /** The stations along a hull line, stern first, bow last. */
 export const STATIONS = 16;
-/** A hull's line before her own has come: full amidships, fining to a point at her bow and a narrow transom aft. */
+/** A hull's line before its own has come: full amidships, fining to a point at its bow and a narrow transom aft. */
 export const FAIR_LINE = Float32Array.from({ length: STATIONS }, (_value, station) => {
   const along = (station / (STATIONS - 1)) * 2 - 1;
   return along > 0 ? Math.sqrt(Math.max(0, 1 - along * along)) : 0.45 + 0.55 * Math.sqrt(1 - along * along * 0.8);
 });
-/** The water's frame holds four numbers a ship this many times: her place, her size, her drawing, then her line. */
+/** The water's frame holds four numbers a ship this many times: its place, its size, its drawing, then its line. */
 export const HULL_VECTORS = 3 + STATIONS / 4;
 
-/** Her half beam at `share` of her half length toward her bow (-1 her stern, 1 her bow), as a share of her widest,
+/** Its half beam at `share` of its half length toward its bow (-1 its stern, 1 its bow), as a share of its widest,
  *  between the stations. Mirrors WGSL hull_half_beam. */
 export function lineAt(line: Float32Array, share: number): number {
   const place = ((Math.min(1, Math.max(-1, share)) + 1) / 2) * (STATIONS - 1);
@@ -48,8 +48,8 @@ export function lineAt(line: Float32Array, share: number): number {
   return (line[low] ?? 0) + ((line[low + 1] ?? 0) - (line[low] ?? 0)) * (place - low);
 }
 
-/** A point against her hull line: metres along her (bow positive), across her (starboard positive) and how far
- *  outside her line it lies (negative inside). Mirrors WGSL hull_edge. */
+/** A point against its hull line: metres along it (bow positive), across it (starboard positive) and how far
+ *  outside its line it lies (negative inside). Mirrors WGSL hull_edge. */
 export function hullEdge(
   mask: HullMask,
   point: readonly [number, number],
@@ -63,14 +63,14 @@ export function hullEdge(
   return { along, across, outside: Math.max(beside, Math.abs(along) - length) };
 }
 
-/** How much of a point is inside her hull line (1 within, 0 past it, eased over a pixel's footprint). Mirrors WGSL
+/** How much of a point is inside its hull line (1 within, 0 past it, eased over a pixel's footprint). Mirrors WGSL
  *  hull_inside. */
 export function hullInside(mask: HullMask, point: readonly [number, number], footprint: number): number {
   return 1 - smoothstep(-footprint, 0, hullEdge(mask, point).outside);
 }
 
-/** The foam along her sides at a point: a band outside her hull line, widening with her drawn size, whole at her full
- *  way and most at her bow. Mirrors WGSL hull_foam. */
+/** The foam along its sides at a point: a band outside its hull line, widening with its drawn size, whole at its full
+ *  way and most at its bow. Mirrors WGSL hull_foam. */
 export function hullFoam(mask: HullMask, point: readonly [number, number]): number {
   const { along, outside } = hullEdge(mask, point);
   const width = HULL_FOAM_M * (mask.scale ?? 1);
@@ -80,7 +80,7 @@ export function hullFoam(mask: HullMask, point: readonly [number, number]): numb
 }
 
 /** The water's numbers for the ships it draws, measured from the eye: each ship's place and heading's sine and
- *  cosine; her half length, half beam, way and 1 (0 is no ship); her drawn size and spray; then her line. */
+ *  cosine; its half length, half beam, way and 1 (0 is no ship); its drawn size and spray; then its line. */
 export function hullValues(hulls: readonly HullMask[], eye: readonly [number, number]): Float32Array {
   const out = new Float32Array(HULLS * HULL_VECTORS * 4);
   for (const [index, hull] of hulls.slice(0, HULLS).entries()) {
@@ -99,7 +99,7 @@ const HULLS = ${HULLS}u;
 const HULL_VECTORS = ${HULL_VECTORS}u;
 const STATIONS = ${STATIONS}u;
 
-// A ship's half beam at a share of her half length toward her bow, between her line's stations (lineAt).
+// A ship's half beam at a share of its half length toward its bow, between its line's stations (lineAt).
 fn hull_half_beam(index: u32, share: f32) -> f32 {
   let place = (clamp(share, -1.0, 1.0) + 1.0) * 0.5 * f32(STATIONS - 1u);
   let low = min(u32(place), STATIONS - 2u);
@@ -109,7 +109,7 @@ fn hull_half_beam(index: u32, share: f32) -> f32 {
   return mix(first, next, place - f32(low));
 }
 
-// A point (from the eye) against a ship's hull line: metres along her, across her, and outside it (hullEdge).
+// A point (from the eye) against a ship's hull line: metres along it, across it, and outside it (hullEdge).
 fn hull_edge(index: u32, offset: vec2f) -> vec3f {
   let place = frame.hulls[index * HULL_VECTORS];
   let size = frame.hulls[index * HULL_VECTORS + 1u];
@@ -120,7 +120,7 @@ fn hull_edge(index: u32, offset: vec2f) -> vec3f {
   return vec3f(along, across, max(beside, abs(along) - size.x));
 }
 
-// How much of a point is inside a ship's hull line: her waterline holds no water (hullInside).
+// How much of a point is inside a ship's hull line: its waterline holds no water (hullInside).
 fn hull_inside(offset: vec2f, footprint: f32) -> f32 {
   var inside = 0.0;
   for (var index = 0u; index < HULLS; index++) {
@@ -132,7 +132,7 @@ fn hull_inside(offset: vec2f, footprint: f32) -> f32 {
   return inside;
 }
 
-// The foam along her sides, most at her bow (hullFoam).
+// The foam along its sides, most at its bow (hullFoam).
 fn hull_foam(offset: vec2f) -> f32 {
   var foam = 0.0;
   for (var index = 0u; index < HULLS; index++) {

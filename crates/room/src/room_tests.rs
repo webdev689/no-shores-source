@@ -11,7 +11,7 @@ fn input(sequence: u32, controls: Controls) -> Input {
 }
 
 fn room() -> Room {
-    Room::new(vec![Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3 }], (0.0, 2.0))
+    Room::new(vec![Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3, bottom: 0.0 }], (0.0, 2.0))
 }
 
 fn seen(room: &Room, player: PlayerId) -> Seen {

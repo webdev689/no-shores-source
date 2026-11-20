@@ -13,12 +13,14 @@ export const READY_FLASH_S = 0.7;
 const word = (name: string) => `${name[0]?.toUpperCase() ?? ''}${name.slice(1)}`;
 const share = (have: number, most: number) => (most > 0 ? have / most : 0);
 
-/** The readout at `now`: whether the card's captain can be boarded now, and the key that boards it. */
+/** The readout at `now`: whether the card's captain can be boarded now, and the key that boards it; the player's
+ *  ship's kind (`own`) its plate names. */
 export function fightDisplay(
   view: FightView,
   feel: Pick<FightFeel, 'blow' | 'readyAt' | 'tally'>,
   now: number,
   board: { readonly boardable: boolean; readonly boardKey: string },
+  own = 'Sloop',
 ): SeaFightModel {
   const { player, lay } = view;
   const { guns } = player;
@@ -54,7 +56,7 @@ export function fightDisplay(
   const state = near?.state === 'struck' ? 'struck' : near?.state === 'sinking' ? 'sinking' : 'afloat';
   return {
     ship: {
-      name: 'Your Sloop',
+      name: `Your ${own}`,
       hull: share(player.hull, player.max_hull),
       sail: share(player.sail, player.max_sail),
       crew: share(player.crew, player.max_crew),

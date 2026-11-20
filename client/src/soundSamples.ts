@@ -22,25 +22,54 @@ export interface SoundCredit {
 const PEAK = 0.3;
 const LOUD = 0.063;
 const WINDOW_S = 0.02;
-const loaded = new Map<string, { readonly buffer: AudioBuffer; readonly level: number }[]>();
+const loaded = new Map<string, { readonly buffer: AudioBuffer; readonly level: number; readonly rush: number }[]>();
 const lastPlayed = new Map<string, number>();
 let asked = false;
 
-/** How much a recording is turned up or down: its peak to PEAK, unless its loudest 20 ms would then pass LOUD. */
-export function levelOf(channels: readonly Float32Array[], sampleRate: number): number {
-  const window = Math.max(1, Math.round(sampleRate * WINDOW_S));
-  let [peak, loudest] = [0, 0];
+/** A sound's peak, the root mean square of its loudest `windowS` seconds (of all of it, where it is shorter), and the
+ *  seconds into it that loudest stretch is centred on. */
+export interface Measure {
+  readonly peak: number;
+  readonly loud: number;
+  readonly centre: number;
+}
+
+/** What matching a recording's level asks of a measure. */
+export type Loudness = Pick<Measure, 'peak' | 'loud'>;
+
+export function measureOf(channels: readonly Float32Array[], sampleRate: number, windowS: number): Measure {
+  let [peak, loudest, centre] = [0, 0, 0];
   for (const samples of channels) {
+    const window = Math.min(samples.length, Math.max(1, Math.round(sampleRate * windowS)));
     let sum = 0;
     for (let index = 0; index < samples.length; index++) {
       const sample = samples[index] ?? 0;
       peak = Math.max(peak, Math.abs(sample));
       sum += sample * sample - (index >= window ? (samples[index - window] ?? 0) ** 2 : 0);
-      loudest = Math.max(loudest, sum / window);
+      if (index >= window - 1 && sum / window > loudest)
+        [loudest, centre] = [sum / window, Math.max(0, index - window / 2) / sampleRate];
     }
   }
-  return Math.min(PEAK / Math.max(0.01, peak), LOUD / Math.max(1e-4, Math.sqrt(loudest)));
+  return { peak, loud: Math.sqrt(loudest), centre };
 }
+
+/** How much a recording is turned up or down: its peak to PEAK, unless its loudest 20 ms would then pass LOUD. */
+export function levelOf(channels: readonly Float32Array[], sampleRate: number): number {
+  const { peak, loud } = measureOf(channels, sampleRate, WINDOW_S);
+  return Math.min(PEAK / Math.max(0.01, peak), LOUD / Math.max(1e-4, loud));
+}
+
+/** The seconds into a recording its loudest 20 ms come: a whoosh's rush. */
+export const rushOf = (channels: readonly Float32Array[], sampleRate: number): number =>
+  measureOf(channels, sampleRate, WINDOW_S).centre;
+
+/** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
+export const rushOfCue = (id: string): number => Math.max(0, ...(loaded.get(id) ?? []).map((sound) => sound.rush));
+
+/** The gain that sets a recording (`mine`) as loud as the sound it stands in for (`theirs`), its peak never past
+ *  `most` (in the same units; that sound's own peak where not given). */
+export const matchedLevel = (mine: Loudness, theirs: Loudness, most = theirs.peak): number =>
+  Math.min(theirs.loud / Math.max(1e-6, mine.loud), most / Math.max(1e-6, mine.peak));
 
 /** A sound's files: a Freesound pick's one, or each variant of one of DFO's own. */
 export const keysOf = (sound: { readonly key: string } | { readonly keys: readonly string[] }): readonly string[] =>
@@ -55,6 +84,19 @@ export function variantOf(count: number, last: number | undefined, roll = Math.r
 const channelsOf = (buffer: AudioBuffer) =>
   Array.from({ length: buffer.numberOfChannels }, (unused, channel) => buffer.getChannelData(channel));
 
+const measured = new WeakMap<AudioBuffer, Map<number, Measure>>();
+
+/** A buffer's measure over `windowS`, taken once. */
+function measureOfBuffer(buffer: AudioBuffer, windowS: number): Measure {
+  const byWindow = measured.get(buffer) ?? new Map<number, Measure>();
+  measured.set(buffer, byWindow);
+  const known = byWindow.get(windowS);
+  if (known) return known;
+  const made = measureOf(channelsOf(buffer), buffer.sampleRate, windowS);
+  byWindow.set(windowS, made);
+  return made;
+}
+
 /** Fetches and decodes every recorded sound, once. */
 export function loadSamples(audio: AudioContext): void {
   if (asked) return;
@@ -66,15 +108,34 @@ export function loadSamples(audio: AudioContext): void {
         .then((bytes) => audio.decodeAudioData(bytes))
         .then((buffer) => {
           const variants = loaded.get(id) ?? [];
-          loaded.set(id, [...variants, { buffer, level: levelOf(channelsOf(buffer), buffer.sampleRate) }]);
+          const channels = channelsOf(buffer);
+          const level = levelOf(channels, buffer.sampleRate);
+          loaded.set(id, [...variants, { buffer, level, rush: rushOf(channels, buffer.sampleRate) }]);
         })
         // A sound that cannot be fetched leaves its cue as it was before it was picked.
         .catch(() => undefined);
 }
 
+/** When a recording starts (the context's time; at once where not given), and the synthesiser's sound it stands in for
+ *  (its buffer, or its loudness measured ahead where it is made live), whose loudness over `windowS` it takes in place
+ *  of its own levelling, its peak never past `most` (that sound's own where not given): what the mix's ceiling leaves
+ *  it. */
+export interface SamplePlay {
+  readonly when?: number;
+  readonly like?: (
+    { readonly sound: AudioBuffer; readonly measured?: never } | { readonly measured: Loudness; readonly sound?: never }
+  ) & { readonly windowS: number; readonly most?: number };
+}
+
 /** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come, so the
  *  caller plays its own or nothing. */
-export function playSample(audio: AudioContext, out: AudioNode, id: string, rate = 1): AudioBufferSourceNode | null {
+export function playSample(
+  audio: AudioContext,
+  out: AudioNode,
+  id: string,
+  rate = 1,
+  play: SamplePlay = {},
+): AudioBufferSourceNode | null {
   const variants = loaded.get(id);
   if (!variants || variants.length === 0) return null;
   const index = variantOf(variants.length, lastPlayed.get(id));
@@ -85,9 +146,12 @@ export function playSample(audio: AudioContext, out: AudioNode, id: string, rate
   source.buffer = sound.buffer;
   source.playbackRate.value = rate;
   const gain = audio.createGain();
-  gain.gain.value = sound.level;
+  const { like } = play;
+  const theirs = like && (like.measured ?? measureOfBuffer(like.sound, like.windowS));
+  gain.gain.value =
+    like && theirs ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), theirs, like.most) : sound.level;
   source.connect(gain).connect(out);
-  source.start();
+  source.start(play.when ?? 0);
   return source;
 }
 

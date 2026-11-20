@@ -34,7 +34,7 @@ fn alongside() -> Fight {
 }
 
 fn run(fight: &mut Fight, ticks: u32) -> Vec<Event> {
-    (0..ticks).flat_map(|_| fight.step(&[(PLAYER, IDLE)], &Open, WIND, 0.0)).collect()
+    (0..ticks).flat_map(|_| fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, 0.0)).collect()
 }
 
 fn hit(target: ShipId, zone: Zone, point: [f64; 3], sail: Option<usize>, harm: f64) -> ShotEvent {

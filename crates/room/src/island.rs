@@ -11,7 +11,7 @@ use ::foes::factions::PIRATES;
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, REEVE, RUNNER};
 use gear::ship::found::{Source, Taken, salvage};
 use isle::{Kind, Plan};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 /// How near a wreck's heap a player must stand to scavenge it, metres: a little past where the browser offers it.
 pub const WRECK_REACH: f64 = 4.0;
@@ -25,16 +25,18 @@ const BRUTE: u8 = 15;
 const ARCHER: u8 = 16;
 const CAPTAIN: u8 = 17;
 
-/// The island's own: its kind, its water's levels, its wrecks' heaps and its door, which wrecks each player has
-/// scavenged (by their account where they have one, so leaving and coming back finds them as left), and what each
-/// scavenge paid in, not yet told.
+/// The island's own: its seed (which each character's scavenged wrecks are kept by), its kind, its water's levels,
+/// its wrecks' heaps and its door, the accounts the sea says have landed on it where the server checks (`land`), and
+/// what each scavenge paid in, not yet told.
 #[derive(Debug, Default)]
 pub struct Isle {
+    pub seed: u64,
     pub kind: Option<Kind>,
     pub levels: Option<(u8, u8)>,
     pub wrecks: Vec<[f64; 2]>,
     pub door: [f64; 2],
-    pub(crate) scavenged: BTreeMap<String, BTreeSet<u8>>,
+    /// None where nobody checks (the page's own room); else the accounts whose ships the sea holds at its anchorage.
+    pub(crate) landed: Option<BTreeSet<String>>,
     pub hauls: Vec<(PlayerId, u8, Taken)>,
 }
 
@@ -65,6 +67,27 @@ fn guards(faction: u8, draws: &mut naval::random::Mulberry32) -> [Group; 3] {
     ]
 }
 
+/// The navmesh an isle's guards walk: over their posts and `POSTS_AROUND` round them, on the island's ground among the
+/// blocks there.
+fn posts_navmesh(blocks: &[movement::Block], floor: &Floor, posts: &[[f64; 2]]) -> navmesh::NavMesh {
+    let fold =
+        |pick: fn(f64, f64) -> f64, axis: usize, start: f64| posts.iter().map(|post| post[axis]).fold(start, pick);
+    let bounds = navmesh::Bounds {
+        min_x: fold(f64::min, 0, f64::INFINITY) - POSTS_AROUND,
+        min_y: fold(f64::min, 1, f64::INFINITY) - POSTS_AROUND,
+        max_x: fold(f64::max, 0, f64::NEG_INFINITY) + POSTS_AROUND,
+        max_y: fold(f64::max, 1, f64::NEG_INFINITY) + POSTS_AROUND,
+    };
+    let within = |block: &&movement::Block| {
+        block.max_x >= bounds.min_x
+            && block.min_x <= bounds.max_x
+            && block.max_y >= bounds.min_y
+            && block.min_y <= bounds.max_y
+    };
+    let near: Vec<movement::Block> = blocks.iter().filter(within).copied().collect();
+    navmesh::NavMesh::bake_on(&near, floor, bounds, &navmesh::AGENT)
+}
+
 impl Room {
     /// A sea island's room from its plan, its middle at `at` in the world, where every body, block and post of it
     /// stands, as a node's do. An isle's guards are of `guards`' faction (the Grey Tithe's or the pirates') at its
@@ -74,44 +97,40 @@ impl Room {
         let place = |points: &[[f64; 2]]| points.iter().map(|&point| isle::placed(point, at)).collect::<Vec<_>>();
         let section = Section { ring: place(&plan.ring), spawns: place(&plan.sites.spawns) };
         let floor = Floor::Island(Box::new(plan.ground_at(at)));
-        let mut room = Room::node(floor, plan.blocks_at(at), section);
+        let blocks = plan.blocks_at(at);
+        let spawns: Vec<(f64, f64)> = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
+        let (guarded, posts) = (guards.filter(|_| plan.kind.is_isle()), place(&plan.sites.guards));
+        // Baked once: an isle's over its guards' posts, a cove's as a node's by its beach.
+        let nav = if guarded.is_some() {
+            posts_navmesh(&blocks, &floor, &posts)
+        } else {
+            crate::garrison::baked(&floor, &blocks, spawns.first().copied().unwrap_or_default(), Some(&section))
+        };
+        let mut room = Room::on(floor, blocks, spawns, Some(section), nav);
         room.world_seed = SEED ^ isle::draws::mix(plan.seed, 7);
         room.foes_most = crate::NODE_FOES_MOST;
         room.isle = Some(Isle {
+            seed: plan.seed,
             kind: Some(plan.kind),
             levels,
             wrecks: plan.sites.wrecks.iter().map(|wreck| isle::placed(wreck.at, at)).collect(),
             door: isle::placed(plan.sites.door.at, at),
             ..Isle::default()
         });
-        if let Some(faction) = guards.filter(|_| plan.kind.is_isle()) {
-            room.stand_guards(&place(&plan.sites.guards), faction, levels);
+        if let Some(faction) = guarded {
+            room.stand_guards(&posts, faction, levels);
         }
         room
     }
 
-    /// Bakes the navmesh over the guards' posts, then stands each group at its post in turn.
+    /// Stands each group of an isle's guards at its post in turn, on the navmesh baked over them.
     fn stand_guards(&mut self, posts: &[[f64; 2]], faction: u8, levels: Option<(u8, u8)>) {
-        let fold =
-            |pick: fn(f64, f64) -> f64, axis: usize, start: f64| posts.iter().map(|post| post[axis]).fold(start, pick);
-        let bounds = navmesh::Bounds {
-            min_x: fold(f64::min, 0, f64::INFINITY) - POSTS_AROUND,
-            min_y: fold(f64::min, 1, f64::INFINITY) - POSTS_AROUND,
-            max_x: fold(f64::max, 0, f64::NEG_INFINITY) + POSTS_AROUND,
-            max_y: fold(f64::max, 1, f64::NEG_INFINITY) + POSTS_AROUND,
-        };
-        let within = |block: &&movement::Block| {
-            block.max_x >= bounds.min_x
-                && block.min_x <= bounds.max_x
-                && block.max_y >= bounds.min_y
-                && block.min_y <= bounds.max_y
-        };
-        let blocks: Vec<movement::Block> = self.blocks.iter().filter(within).copied().collect();
-        self.nav = navmesh::NavMesh::bake_on(&blocks, &self.floor, bounds, &navmesh::AGENT);
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
+        // An isle's guards hold their posts: with no lattice to draw a beat from, none walks one.
+        let mut beats = draws_of(self.world_seed);
         for (group, post) in guards(faction, &mut draws).iter().zip(posts) {
-            if let Some(found) = self.post_at(group, (post[0], post[1]), &section, &mut draws) {
+            if let Some(found) = self.post_at(group, (post[0], post[1]), (&section, &[]), (&mut draws, &mut beats)) {
                 self.garrison.push(found);
             }
         }
@@ -127,23 +146,43 @@ impl Room {
         }
     }
 
-    /// A player scavenges a wreck by its place in the island's list: once each, alive and within reach of its heap.
-    /// Its salvage, at the island's water's middle level raised by the room's seas, is paid into their character.
-    /// Answers 0 and keeps what was taken to tell them, or why not.
+    /// Lets the sea's word on landings be checked: from now only the accounts `land` names may scavenge. Whether this
+    /// is an island's room.
+    pub fn check_landings(&mut self) -> bool {
+        let Some(isle) = self.isle.as_mut() else { return false };
+        isle.landed.get_or_insert_with(BTreeSet::new);
+        true
+    }
+
+    /// The sea's word that an account's ship lies at this island's anchorage: its players may scavenge. Whether this
+    /// is an island's room.
+    pub fn land(&mut self, account: &str) -> bool {
+        let Some(isle) = self.isle.as_mut() else { return false };
+        if let Some(landed) = isle.landed.as_mut() {
+            landed.insert(account.to_owned());
+        }
+        true
+    }
+
+    /// A player scavenges a wreck by its place in the island's list: once each for their character, however often
+    /// the island's room opens, alive, within reach of its heap and, where landings are checked, landed. Its salvage,
+    /// at the island's water's middle level raised by the room's seas, is paid into their character. Answers 0 and
+    /// keeps what was taken to tell them, or why not.
     pub(crate) fn scavenge(&mut self, player: PlayerId, wreck: u8) -> u8 {
         let Some(fighter) = self.fighter(player).copied() else { return crate::asks::OUT_OF_REACH };
         let dice = self.dice(player);
         let Some(found) = self.players.get(&player) else { return crate::asks::OUT_OF_REACH };
-        let holder = found.owner.clone().unwrap_or_else(|| format!("player {player}"));
         let dead = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
-        let Some(isle) = self.isle.as_mut() else { return crate::asks::OUT_OF_REACH };
+        let Some(isle) = self.isle.as_ref() else { return crate::asks::OUT_OF_REACH };
+        let landed =
+            isle.landed.as_ref().is_none_or(|landed| found.owner.as_ref().is_some_and(|it| landed.contains(it)));
         let Some(&[x, y]) = isle.wrecks.get(usize::from(wreck)) else { return crate::asks::OUT_OF_REACH };
         let far = libm::hypot(fighter.body.x - x, fighter.body.y - y) > WRECK_REACH;
-        let spent = isle.scavenged.get(&holder).is_some_and(|wrecks| wrecks.contains(&wreck));
-        if far || dead || spent {
+        let spent = found.character.scavenged_on(isle.seed).contains(&wreck);
+        if far || dead || spent || !landed {
             return crate::asks::OUT_OF_REACH;
         }
-        isle.scavenged.entry(holder).or_default().insert(wreck);
+        let seed = isle.seed;
         let level = isle.levels.map_or(1, |(low, high)| low + (high.saturating_sub(low)) / 2);
         let found = salvage(
             Source::Wreckage { isle: isle.kind.is_some_and(Kind::is_isle) },
@@ -151,8 +190,9 @@ impl Room {
             &dice,
         );
         let Some(scavenger) = self.players.get_mut(&player) else { return crate::asks::OUT_OF_REACH };
-        // Spent for them, as a gathered node is: their page offers it no more.
+        // Spent for them, as a gathered node is: their page offers it no more, nor any room of this island again.
         scavenger.spent.push(wreck);
+        scavenger.character.scavenge(seed, wreck);
         let taken = scavenger.character.take_salvage(found);
         scavenger.gear_changed = true;
         if let Some(isle) = self.isle.as_mut() {
@@ -164,12 +204,8 @@ impl Room {
     /// The wrecks a player has scavenged here, by their places in the island's list.
     #[must_use]
     pub fn scavenged(&self, player: PlayerId) -> Vec<u8> {
-        let Some(found) = self.players.get(&player) else { return Vec::new() };
-        let holder = found.owner.clone().unwrap_or_else(|| format!("player {player}"));
-        let isle = self.isle.as_ref();
-        isle.and_then(|isle| isle.scavenged.get(&holder))
-            .map(|wrecks| wrecks.iter().copied().collect())
-            .unwrap_or_default()
+        let (Some(found), Some(isle)) = (self.players.get(&player), self.isle.as_ref()) else { return Vec::new() };
+        found.character.scavenged_on(isle.seed).to_vec()
     }
 
     /// What each scavenge paid in since last asked, each with its player and wreck.

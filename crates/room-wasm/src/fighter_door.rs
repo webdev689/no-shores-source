@@ -13,11 +13,11 @@ use room::Floor;
 use std::cell::RefCell;
 
 thread_local! {
-    pub(crate) static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    pub(crate) static COURSE: RefCell<movement::Blocks> = RefCell::new(movement::Blocks::default());
     static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
 }
 
-/// Keeps a course for predicting a fighter without a room: the blocks, five numbers each. Answers whether they made
+/// Keeps a course for predicting a fighter without a room: the blocks, six numbers each (`BLOCK_FLOATS`). Answers whether they made
 /// one.
 pub fn set_course(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
@@ -26,7 +26,7 @@ pub fn set_course(bytes: &[u8]) -> bool {
     }
     let blocks =
         floats.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
-    COURSE.with(|course| *course.borrow_mut() = blocks.collect());
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(blocks.collect()));
     true
 }
 
@@ -81,7 +81,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let (next, shot) = COURSE.with(|course| {
         FLOOR.with(|floor| {
             let (blocks, floor) = (course.borrow(), floor.borrow());
-            let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &*floor);
+            let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &*blocks, &*floor);
             let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
             if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
                 return (next, Some(shot));
@@ -173,15 +173,15 @@ pub unsafe extern "C" fn fighter_arms(address: *const u8, length: usize) -> u32 
     arms_code(unsafe { std::slice::from_raw_parts(address, length) })
 }
 
-/// The farthest stroke `stroke` (1 to 6) of the melee weapon in arms code `arms` reaches, feet to a body's middle;
-/// 0 for no stroke.
+/// The farthest stroke `stroke` (1 to 6) of the melee weapon in arms code `arms` reaches, feet to a body's middle,
+/// in a player's hands when `player` is 1; 0 for no stroke.
 #[unsafe(no_mangle)]
-pub extern "C" fn fighter_reach(arms: u32, stroke: u32) -> f64 {
+pub extern "C" fn fighter_reach(arms: u32, stroke: u32, player: u32) -> f64 {
     let melee = combat::arms::Arms::from_code(arms).melee;
     u8::try_from(stroke)
         .ok()
         .and_then(combat::Stroke::from_number)
-        .map_or(0.0, |stroke| combat::strike::stroke_reach(melee, stroke))
+        .map_or(0.0, |stroke| combat::strike::stroke_reach(melee, stroke, player == 1))
 }
 
 /// The half-width in radians of the arc stroke `stroke` (1 to 6) sweeps either side of its aim; 0 for no stroke.

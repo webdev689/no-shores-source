@@ -19,8 +19,8 @@ export const HINTS = {
     'Drag to look · Wheel zoom · N map · [ ] pace · Space stop or resume',
     'B manage · H leave the helm · M menu',
   ],
-  manage: ['Drag to turn round her · Wheel zoom', 'B back to the sea · M menu'],
-  deck: ['Click to look round · W A S D move · Shift run · Space jump', 'At her wheel, E take the helm · M menu'],
+  manage: ['Drag to turn round the ship · Wheel zoom', 'B back to the sea · M menu'],
+  deck: ['Click to look round · W A S D move · Shift run · Space jump', 'At the wheel, E take the helm · M menu'],
   fight: [
     'A D steer · W S sails · Drag to look',
     'Hold right button aim · Let go fire · Click hold fire · C brace · Wheel shot',
@@ -38,7 +38,7 @@ export function footHints(worn: number): readonly string[] {
 }
 
 /** What the player is doing at sea, for the keys listed: fighting (with the fight's own lines), choosing a landing, at
- *  the helm with the map, walking her deck, managing her, or sailing. */
+ *  the helm with the map, walking its deck, managing it, or sailing. */
 export interface AtSea {
   readonly fighting: readonly string[] | null;
   readonly landing: boolean;

@@ -50,7 +50,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   );
   const sea = (fight: unknown) =>
     ({
-      helmView: false,
+      view: { helmView: false },
       aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
       boarding: { words: null },
       waterWords: null,
@@ -78,12 +78,16 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
 test('the place line names the water the ship is in as the helm does, managing it too', () => {
   const waterWords = 'The Lantern Sea, Overlook’s home waters';
   const here = (helmView: boolean, managing: boolean) =>
-    ({ boarding: { words: null }, helmView, aboard: { walking: false, managing }, waterWords }) as never;
+    ({ boarding: { words: null }, view: { helmView }, aboard: { walking: false, managing }, waterWords }) as never;
   const state = { landing: false, island: 'Saltmere', region: 'The Pale Expanse' };
   const shown = { landfall: null } as never;
   assert.deepEqual(seaPlace(here(true, false), shown, state), ['At the helm', waterWords]);
   assert.deepEqual(seaPlace(here(false, true), shown, state), ['Managing the Sloop', waterWords]);
-  const nowhere = { boarding: { words: null }, helmView: false, aboard: { walking: false, managing: true } } as never;
+  const nowhere = {
+    boarding: { words: null },
+    view: { helmView: false },
+    aboard: { walking: false, managing: true },
+  } as never;
   assert.deepEqual(seaPlace(nowhere, shown, state), ['Managing the Sloop', 'The Pale Expanse']);
 });
 
@@ -103,7 +107,7 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
   };
   const sea = (deck: unknown) =>
     ({
-      helmView: false,
+      view: { helmView: false },
       aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
       boarding: { words: deck },
       waterWords: null,
@@ -130,7 +134,7 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   const messages = () => ['The Pirate Brig surrenders!'];
   const fight = { messages, captains: [], aimingNow: false, view, display: () => null };
   const sea = {
-    helmView: false,
+    view: { helmView: false },
     aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
     boarding: { words: null },
     waterWords: null,

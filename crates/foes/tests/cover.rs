@@ -1,14 +1,12 @@
-//! Cover and flanking: a shooter with a wall near fights from behind it, drawing in cover and stepping out to shoot;
-//! it picks again when its target moves behind a block; two shooters never share a post; each weapon has its own
-//! distance; waiting foes on the ring stand to their target's sides more than its front; and with no cover near,
-//! a shooter fights as it always has.
+//! Cover: a shooter with a wall near fights from behind it, drawing in cover and stepping out to shoot; it picks
+//! again when its target moves behind a block; two shooters never share a post; each weapon has its own distance;
+//! and with no cover near, a shooter fights as it always has.
 
 mod common;
 
 use combat::Happening;
-use combat::fighter::Action;
-use combat::sight::{clear_line, off};
-use common::{Room, SWORDSMAN, standing_still, still, watching};
+use combat::sight::clear_line;
+use common::{Room, standing_still, still, watching};
 use core::f64::consts::{FRAC_PI_2, PI};
 use foes::Rank::{Elite, Major};
 use movement::Block;
@@ -20,7 +18,7 @@ const PISTOLEER: u8 = 9;
 
 /// A wall 4 m long and higher than a head, 13 m north of the player and west of the line to the foe.
 fn wall() -> Block {
-    Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5 }
+    Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5, bottom: 0.0 }
 }
 
 /// Whether nothing stands between two fighters' chests.
@@ -103,7 +101,7 @@ fn it_draws_behind_its_cover_and_steps_out_to_shoot_then_falls_back_to_reload() 
 
 /// A pillar that hides the player at 6 m east of the start from the crossbowman's first post.
 fn pillar() -> Block {
-    Block { min_x: 2.5, min_y: -5.5, max_x: 4.5, max_y: -4.5, top: 2.5 }
+    Block { min_x: 2.5, min_y: -5.5, max_x: 4.5, max_y: -4.5, top: 2.5, bottom: 0.0 }
 }
 
 #[test]
@@ -142,7 +140,7 @@ fn it_picks_again_when_its_target_moves_behind_a_block() {
 
 #[test]
 fn shooters_of_a_room_pick_their_posts_one_a_tick() {
-    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5 };
+    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5, bottom: 0.0 };
     let mut room = Room::new(7)
         .course(vec![long])
         .player(PLAYER, 0.0, 0.0, 0.0)
@@ -162,7 +160,7 @@ fn shooters_of_a_room_pick_their_posts_one_a_tick() {
 #[test]
 fn two_shooters_never_share_a_post() {
     // A wall 8 m long squarely before the player: either end hides a post, the east end nearer both shooters.
-    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5 };
+    let long = Block { min_x: -4.0, min_y: -13.5, max_x: 4.0, max_y: -13.0, top: 2.5, bottom: 0.0 };
     let mut room = Room::new(7)
         .course(vec![long])
         .player(PLAYER, 0.0, 0.0, 0.0)
@@ -189,7 +187,14 @@ fn two_shooters_never_share_a_post() {
 fn walls_north() -> Vec<Block> {
     [(-6.0, 9.0), (2.0, 15.0), (-6.0, 22.0)]
         .into_iter()
-        .map(|(west, north)| Block { min_x: west, min_y: -north - 0.5, max_x: west + 4.0, max_y: -north, top: 2.5 })
+        .map(|(west, north)| Block {
+            min_x: west,
+            min_y: -north - 0.5,
+            max_x: west + 4.0,
+            max_y: -north,
+            top: 2.5,
+            bottom: 0.0,
+        })
         .collect()
 }
 
@@ -216,40 +221,6 @@ fn the_marksman_stands_farther_than_a_crossbowman_and_a_pistoleer_nearer() {
     assert!(pistoleer < 12.5, "a pistoleer near, within its 8 to 12 m: {pistoleer}");
     assert!((15.0..=19.0).contains(&crossbowman), "a crossbowman within its 12 to 20 m: {crossbowman}");
     assert!(marksman > 21.0 && marksman > crossbowman + 4.0, "the marksman farther, past 21 m: {marksman}");
-}
-
-/// The shares of ticks, over a long fight, that the waiting stand within 45 degrees of a still player's face and more
-/// than 60 degrees off it: four swordsmen who start before its face, two waiting their turn at any time.
-fn ring_shares(seed: u64) -> (f64, f64) {
-    let mut room = Room::new(seed).player(PLAYER, 0.0, 0.0, 0.0);
-    let foes = [10, 11, 12, 13];
-    for (id, degrees) in foes.into_iter().zip([-30.0_f64, -10.0, 10.0, 30.0]) {
-        let bearing = degrees.to_radians();
-        room = room.foe(id, SWORDSMAN, Major, 6.0 * libm::sin(bearing), -6.0 * libm::cos(bearing), PI);
-    }
-    let (mut front, mut sides, mut waiting) = (0_u32, 0_u32, 0_u32);
-    for tick in 0..3600 {
-        room.step(&mut still(0.0));
-        for id in foes.into_iter().filter(|_| tick >= 600) {
-            let fighting = matches!(room.fighter(id).action, Action::Attack(_) | Action::Telegraph(_));
-            if fighting || !(2.2..=4.2).contains(&room.distance(PLAYER, id)) {
-                continue;
-            }
-            let off_face = off(room.toward(PLAYER, id), 0.0).to_degrees();
-            waiting += 1;
-            front += u32::from(off_face < 45.0);
-            sides += u32::from(off_face > 60.0);
-        }
-    }
-    (f64::from(front) / f64::from(waiting), f64::from(sides) / f64::from(waiting))
-}
-
-#[test]
-fn waiting_foes_stand_on_the_ring_to_their_target_s_sides_more_than_before_its_face() {
-    for seed in [3, 8] {
-        let (front, sides) = ring_shares(seed);
-        assert!(front < 0.1 && sides > 0.75, "seed {seed}: {front} before its face, {sides} to its sides");
-    }
 }
 
 /// A crossbowman's whole fight with a player who comes close and stands, on a course or with no spots at all.

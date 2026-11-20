@@ -1,4 +1,4 @@
-import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
+import type { FightEvent, FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { type AimDrawn, AimView } from '../ships/aimView.ts';
@@ -20,7 +20,7 @@ import { type FightInput, type FightSource, Fighting, sideReady } from './fighti
 import { cameraOf, type Orbit } from './orbit.ts';
 import { SAILS_RUNG, type Sailing } from './sailing.ts';
 
-/** Where a ship's numbers hold her rung (crates/sailing/src/floats.rs). */
+/** Where a ship's numbers hold its rung (crates/sailing/src/floats.rs). */
 export const SHIP_RUNG = 7;
 /** A ball is drawn this many times its size, to be seen. */
 const BALL_DRAWN = 2;
@@ -33,16 +33,16 @@ const LEAST_RING_M = 1.6;
 /** The panel keeps a fight's last lines this long after it ends (seconds). */
 const FAREWELL_S = 4;
 
-/** A captain's fight round the Sloop in the World Editor: calling her and sending her off (F), stepping the fight in
- *  her helm's place, the aim's look and camera, her captain's ship in her hull and colours, and drawing the balls,
+/** A captain's fight round the Sloop in the World Editor: calling it and sending it off (F), stepping the fight in
+ *  its helm's place, the aim's look and camera, its captain's ship in its hull and colours, and drawing the balls,
  *  the lay and the effects. */
 /** What draws the marks: the ship layer's mark view, whose device draws the aim too, or a test's. */
 export type MarkDrawer = Pick<MarkView, 'drawInto'> & Partial<Pick<MarkView, 'gpu'>>;
-/** The player's ship as a fight steers her: she takes each answer, and says where she is drawn. */
+/** The player's ship as a fight steers it: it takes each answer, and says where it is drawn. */
 export type FightingShip = Pick<Sailing, 'adopt' | 'place'>;
 /** Where a fight is drawn from: the window's corner, or the world's own (0, 0) in the game. */
 export type Window = Pick<LandView, 'leftM' | 'topM'>;
-/** A Sloop as the aim sees her: where she is drawn. */
+/** A Sloop as the aim sees it: where it is drawn. */
 export type Aboard = Pick<Afloat, 'place'>;
 
 export class Naval {
@@ -52,19 +52,21 @@ export class Naval {
   private call = 0;
   private adopted: FightView | null = null;
   private feel = new FightFeel(1);
-  /** Her own Sloop's rig, whose harm the fight draws on her: the scene's, once her model has come. */
+  /** The player's own Sloop's rig, whose harm the fight draws on it: the scene's, once its model has come. */
   ownRig: SailRig | null = null;
-  /** Where her own Sloop was drawn at the last step, and the wind's bearing the sails were last stepped in. */
+  /** Where the player's own Sloop was drawn at the last step, and the wind's bearing the sails were last stepped in. */
   private own: FightingShip | null = null;
   private windBearing = 0;
+  /** The fight's events the last step took, for whatever else hears them (the sea's sounds). */
+  heard: readonly FightEvent[] = [];
   private readonly marks: MarkDrawer;
   /** What draws the aim over the water (`drawAimOver`), where the marks' device can; and the eye it is laid from. */
   private readonly aimView: AimView | null;
   private readonly aimEye = new AimCamera();
-  /** The hull a ship is drawn as: her own once her model has come. */
+  /** The hull a ship is drawn as: its own once its model has come. */
   private readonly shown: (hull: number) => number;
   private farewell: { readonly lines: string[]; readonly until: number } | null = null;
-  /** Her captain's rig, for the hull she sails. */
+  /** Its captain's rig, for the hull they sail. */
   private rig: { readonly hull: number; readonly rig: SailRig } | null = null;
 
   constructor(marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
@@ -73,7 +75,7 @@ export class Naval {
     this.shown = shown;
   }
 
-  /** Whether a fight is on: the fight steps her, not her own helm. */
+  /** Whether a fight is on: the fight steps it, not its own helm. */
   get fighting(): boolean {
     return this.fight !== null;
   }
@@ -83,12 +85,12 @@ export class Naval {
     return this.fight?.view ?? null;
   }
 
-  /** Whether a fight is on or being called: either way her own helm stands. */
+  /** Whether a fight is on or being called: either way its own helm stands. */
   get busy(): boolean {
     return this.fight !== null || this.calling;
   }
 
-  /** F: calls a pirate captain round her, or sends the one called off. */
+  /** F: calls a pirate captain round it, or sends the one called off. */
   toggle(source: FightSource | null, id: string, sailing: Sailing, time: number, fail: (error: unknown) => void): void {
     if (this.fight) {
       this.end();
@@ -98,7 +100,7 @@ export class Naval {
     this.calling = true;
     const call = ++this.call;
     const seed = crypto.getRandomValues(new Uint32Array(1))[0] ?? 1;
-    // Her own helm stands while she is called: the fight begins from her numbers once her last step has answered.
+    // Its own helm stands while it is called: the fight begins from its numbers once its last step has answered.
     sailing
       .whenStill()
       .then(() => (call === this.call ? Fighting.begin(source, id, sailing.floats(), seed, time) : 'sent off'))
@@ -127,14 +129,14 @@ export class Naval {
     const fighting = this.fight;
     [this.fight, this.calling, this.adopted] = [null, false, null];
     this.feel = new FightFeel(1);
-    // The fight's harm on her goes with it.
+    // The fight's harm on it goes with it.
     this.ownRig?.mend();
     this.rig = null;
     this.call++;
     fighting?.end().catch(() => undefined);
   }
 
-  /** Steps the fight for a frame: she takes its answer, its events become effects. Answers the water's pushes. */
+  /** Steps the fight for a frame: it takes its answer, its events become effects. Answers the water's pushes. */
   step(
     seconds: number,
     input: FightInput,
@@ -154,8 +156,9 @@ export class Naval {
     this.own = sailing;
     const toWindow = (point: readonly [number, number, number]) =>
       [point[0] - view.leftM, point[1] - view.topM, point[2]] as const;
+    this.heard = fighting.takeEvents();
     const splashes = this.feel.frame({
-      events: fighting.takeEvents(),
+      events: this.heard,
       ships: this.feelShips(answer),
       balls: answer.balls,
       now: time,
@@ -177,8 +180,8 @@ export class Naval {
     return this.feel.takeCues();
   }
 
-  /** The fight's ships as its feel sees them, by number: by default her own Sloop and her captain's in the hull she
-   *  sails; the sea's fight gives its own, every captain in it with her rig. */
+  /** The fight's ships as its feel sees them, by number: by default the player's Sloop and their captain's in the hull
+   *  they sail; the sea's fight gives its own, every captain in it with its rig. */
   shipsOf: ((answer: FightView) => Map<number, FeelShip>) | null = null;
 
   private feelShips(answer: FightView): Map<number, FeelShip> {
@@ -196,8 +199,8 @@ export class Naval {
     return lookOf(orbit, sailing, view, from);
   }
 
-  /** The camera `seconds` on (`easedAimOf`): eased out to her battery while `aiming` and her guns can speak, short
-   *  of her captain's hull, and home again. */
+  /** The camera `seconds` on (`easedAimOf`): eased out to its battery while `aiming` and its guns can speak, short
+   *  of its captain's hull, and home again. */
   aimCamera(orbit: Orbit, sailing: Aboard, view: Window, shown: number, aiming: boolean, seconds: number): Orbit {
     const answer = this.fight?.view;
     const captain = answer?.captain;
@@ -209,7 +212,7 @@ export class Naval {
     return easedAimOf(this.aimEye, orbit, sailing, view, shown, speaks, alongside, seconds);
   }
 
-  /** Her footprint on the water while she floats, at her hull's waterline. */
+  /** Its footprint on the water while it floats, at its hull's waterline. */
   hull(view: Window): HullMask | null {
     const captain = this.fight?.view.captain;
     if (!captain || captain.state === 'sinking' || captain.state === 'sunk') return null;
@@ -225,7 +228,7 @@ export class Naval {
     };
   }
 
-  /** Her captain's bar over her hull's masthead, heights as drawn, while one is on. */
+  /** Its captain's bar over its hull's masthead, heights as drawn, while one is on. */
   bars(view: Window, shown: number): ShipBar[] {
     const captain = this.fight?.view.captain;
     const over = captain && plateOverM(this.shown(hullOfCaptain(captain)));
@@ -245,14 +248,14 @@ export class Naval {
     return this.fight?.messages(now) ?? [];
   }
 
-  /** The fight's readout at `now` (`fightDisplay`): her plate and rose, the card on the nearest captain with `board`'s
-   *  key while she can be boarded, and her last volley's tally; none out of a fight. */
+  /** The fight's readout at `now` (`fightDisplay`): its plate and rose, the card on the nearest captain with `board`'s
+   *  key while it can be boarded, and its last volley's tally; none out of a fight. */
   display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {
-    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board) : null;
+    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board, this.fight.own) : null;
   }
 
-  /** Her captain's ship while she floats, heights as drawn: in her hull and her faction's colours, her sails stepped
-   *  `seconds` on in the wind blowing toward `bearing`, set as her rung says. */
+  /** Its captain's ship while it floats, heights as drawn: in its hull and its faction's colours, its sails stepped
+   *  `seconds` on in the wind blowing toward `bearing`, set as its rung says. */
   ships(
     view: Window,
     shown: number,
@@ -272,8 +275,8 @@ export class Naval {
 
   /** Draws the balls aloft and the effects (the lay is `drawAimOver`'s), heights as drawn: each effect and ball
    *  `scale` times its size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is
-   *  drawn (by default her own Sloop and her captain's); what floats on the drawn swell (`sea.water`, its height at a
-   *  window point) where the page has one, all in the sun's shadows when a map is given. */
+   *  drawn (by default the player's Sloop and their captain's); what floats on the drawn swell (`sea.water`, its height
+   *  at a window point) where the page has one, all in the sun's shadows when a map is given. */
   draw(
     pass: GPURenderPassEncoder,
     view: Window,
@@ -331,7 +334,7 @@ export class Naval {
   }
 }
 
-/** Where her captain's ship is drawn in the window, heights as drawn. */
+/** Where its captain's ship is drawn in the window, heights as drawn. */
 function captainPlace(ship: FeelShip, view: Window, shown: number) {
   const [x = 0, y = 0, heading = 0] = ship.vessel.ship;
   const [heave = 0, pitch = 0, roll = 0] = ship.vessel.pose;
@@ -344,7 +347,7 @@ function lyingOf(ship: Aboard, view: Window): Lying {
   return { x: place.x + view.leftM, y: place.y + view.topM, heading: place.heading, heave: place.z };
 }
 
-/** The look the camera lays while aiming from a Sloop: its bearing off her bow, its range out along her fire, and its
+/** The look the camera lays while aiming from a Sloop: its bearing off its bow, its range out along its fire, and its
  *  ray from the aim eye, or from `from` (world metres), the eye the view is drawn from, where one is given. */
 export function lookOf(orbit: Orbit, ship: Aboard, view: Window, from?: readonly [number, number, number]): FightLook {
   const lying = lyingOf(ship, view);
@@ -386,8 +389,8 @@ export function easedAimOf(
 }
 
 /** What the aim shows of a lay (DFO's drawn aim): each gun's unscattered flight to where the rules stop it, where the
- *  volley falls on the sea and where it meets her, the landing ring (never under DFO's least), and its tone: grey while
- *  the side laid cannot fire (loading, braced, her guns silent), red while it can and would strike her, else brass. */
+ *  volley falls on the sea and where it meets it, the landing ring (never under DFO's least), and its tone: grey while
+ *  the side laid cannot fire (loading, braced, its guns silent), red while it can and would strike it, else brass. */
 export function aimOf(
   lay: FightLay | null,
   player: Parameters<typeof sideReady>[0],

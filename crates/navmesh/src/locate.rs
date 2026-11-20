@@ -1,6 +1,7 @@
 //! The baked mesh and the query every other one starts from: which poly a point stands on. Polys are bucketed by
 //! their bounds on a coarse grid, so a query reads only the few near the point.
 
+use crate::links::Link;
 use crate::poly::{Corner, Poly};
 
 /// Grid cells to a bucket's side.
@@ -25,9 +26,21 @@ impl Index {
     }
 }
 
+/// A link laid on the mesh: the poly it leaves and the one it reaches, and its ends and cost in grid units.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Laid {
+    pub link: Link,
+    pub start: usize,
+    pub end: usize,
+    pub from: (f64, f64),
+    pub to: (f64, f64),
+    pub cost: f64,
+}
+
 /// The mesh in grid units: corners, convex polys, each poly's level (the mean height of its corners) and centre, how
-/// far its centre is from each neighbour's (in the order of its edges, 0 where an edge has none), and its island:
-/// polys a walk joins share one, numbered in the order their first poly comes.
+/// far its centre is from each neighbour's (in the order of its edges, 0 where an edge has none), its island (polys
+/// a walk or a link joins share one, numbered in the order their first poly comes), the links laid on it and those
+/// leaving each poly. A search's nodes are the polys, then the links: node `polys.len() + n` is link `n`.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Mesh {
     pub corners: Vec<Corner>,
@@ -36,6 +49,8 @@ pub(crate) struct Mesh {
     pub centres: Vec<(f64, f64)>,
     pub steps: Vec<Vec<f64>>,
     pub islands: Vec<usize>,
+    pub links: Vec<Laid>,
+    pub exits: Vec<Vec<usize>>,
     index: Option<Index>,
 }
 
@@ -48,7 +63,8 @@ impl Mesh {
         let centres: Vec<(f64, f64)> =
             polys.iter().map(|poly| (mean(poly, |corner| corner.x), mean(poly, |corner| corner.y))).collect();
         let index = build_index(&corners, &polys);
-        let islands = islands(&polys);
+        let islands = islands(&polys, &[]);
+        let exits = vec![Vec::new(); polys.len()];
         let steps = polys
             .iter()
             .enumerate()
@@ -57,7 +73,21 @@ impl Mesh {
                 neighbours.map(|next| next.map_or(0.0, |next| apart(&centres, poly, next))).collect()
             })
             .collect();
-        Self { corners, polys, levels, centres, steps, islands, index }
+        Self { corners, polys, levels, centres, steps, islands, links: Vec::new(), exits, index }
+    }
+
+    /// Lays links on the mesh, in their order, and numbers its islands again with them.
+    pub fn lay(&mut self, links: Vec<Laid>) {
+        for (at, laid) in links.iter().enumerate() {
+            self.exits[laid.start].push(at);
+        }
+        self.islands = islands(&self.polys, &links);
+        self.links = links;
+    }
+
+    /// The link a search's node stands for, if it is one.
+    pub fn link_of(&self, node: usize) -> Option<&Laid> {
+        node.checked_sub(self.polys.len()).and_then(|at| self.links.get(at))
     }
 
     /// A poly's corner as a grid point (x, y).
@@ -146,8 +176,13 @@ pub(crate) fn apart(centres: &[(f64, f64)], one: usize, two: usize) -> f64 {
     libm::hypot(centres[one].0 - centres[two].0, centres[one].1 - centres[two].1)
 }
 
-/// Each poly's island, flooded across shared edges from the first poly not yet reached.
-fn islands(polys: &[Poly]) -> Vec<usize> {
+/// Each poly's island, flooded across shared edges and links, either way, from the first poly not yet reached.
+fn islands(polys: &[Poly], links: &[Laid]) -> Vec<usize> {
+    let mut linked = vec![Vec::new(); polys.len()];
+    for laid in links {
+        linked[laid.start].push(laid.end);
+        linked[laid.end].push(laid.start);
+    }
     let mut islands = vec![usize::MAX; polys.len()];
     let mut count = 0;
     for first in 0..polys.len() {
@@ -157,7 +192,7 @@ fn islands(polys: &[Poly]) -> Vec<usize> {
         islands[first] = count;
         let mut stack = vec![first];
         while let Some(poly) = stack.pop() {
-            for &next in polys[poly].neighbours.iter().flatten() {
+            for &next in polys[poly].neighbours.iter().flatten().chain(&linked[poly]) {
                 if islands[next] == usize::MAX {
                     islands[next] = count;
                     stack.push(next);

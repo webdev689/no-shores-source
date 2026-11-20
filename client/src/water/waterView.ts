@@ -1,6 +1,7 @@
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap, shadowLayouts } from '../shadow.ts';
 import type { Swell } from '../rules/landRules.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { RippleField } from './ripples.ts';
 import { GRAVITY, SHORE, type ShoreField, SLOW_CLOCK_S } from './shore.ts';
 import { type HullMask, hullValues } from './hullMask.ts';
@@ -53,7 +54,7 @@ export interface WaterScene {
   readonly eyeAboveM: number;
   /** Where the ripples follow, window metres. */
   readonly focus: readonly [number, number];
-  /** A ship on the water: no water inside her, foam round her bow. */
+  /** A ship on the water: no water inside it, foam round its bow. */
   readonly hulls: readonly HullMask[];
   /** The sun's shadows this frame, which shade the surface; none drawn without. */
   readonly shadow?: ShadowMap | undefined;
@@ -70,7 +71,7 @@ export interface WaterScene {
 
 /** Where the waves begin in the frame's floats, after the camera's, the eye's and the sea by weather's. */
 const WAVES_AT = 72;
-const HULLS_AT = WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 4;
+const HULLS_AT = WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 8;
 const FRAME_FLOATS = HULLS_AT + hullValues([], [0, 0]).length;
 /** Samples taken of each pixel by the land and the water, so every edge between them is smooth. */
 export const SAMPLES = 4;
@@ -78,10 +79,23 @@ export const SAMPLES = 4;
 const RINGS = 220;
 const SEGMENTS = 192;
 
-/** The wind's chop: twelve short waves about the wind, each a whole number of waves along ANCHOR_M so the pattern never
- *  jumps as the anchor moves. Each is (wavenumber east, south, frequency, phase). */
-function chopWaves(swell: Swell | undefined): Float32Array {
-  const [windX, windY] = swell?.waves[0]?.direction ?? [0, -1];
+/** The bearings the chop is laid along: the local wind's, to the nearest of sixteen, so a slowly turning wind sets the
+ *  pattern afresh only now and then; it fades from the last bearing's over this long, seconds, so it never jumps. */
+const CHOP_BEARINGS = 16;
+export const CHOP_FADE_S = 8;
+
+/** The bearing step (of CHOP_BEARINGS) nearest a wind blowing `wind` (m/s east and south). */
+export function chopBearing(wind: readonly [number, number]): number {
+  if (!Number.isFinite(wind[0]) || !Number.isFinite(wind[1])) return 0;
+  const step = Math.round((Math.atan2(wind[1], wind[0]) / (2 * Math.PI)) * CHOP_BEARINGS);
+  return ((step % CHOP_BEARINGS) + CHOP_BEARINGS) % CHOP_BEARINGS;
+}
+
+/** The wind's chop: twelve short waves about a bearing step, each a whole number of waves along ANCHOR_M so the
+ *  pattern never jumps as the anchor moves. Each is (wavenumber east, south, frequency, phase). */
+export function chopWaves(bearing: number): Float32Array {
+  const angle = (bearing / CHOP_BEARINGS) * 2 * Math.PI;
+  const [windX, windY] = [Math.cos(angle), Math.sin(angle)];
   const out = new Float32Array(CHOP_WAVES * 4);
   for (let index = 0; index < CHOP_WAVES; index++) {
     // Lengths and courses are nudged off any even step (golden-ratio turns), so the waves never lock into a grid.
@@ -100,6 +114,29 @@ function chopWaves(swell: Swell | undefined): Float32Array {
   return out;
 }
 
+const CHOPS = Array.from({ length: CHOP_BEARINGS }, (unused, bearing) => chopWaves(bearing));
+
+/** The chop's fade as the wind veers: the bearing now, the one it fades from, and when the fade began. */
+export interface ChopFade {
+  readonly bearing: number;
+  readonly before: number;
+  readonly since: number;
+}
+
+/** How far a fade has come at `time`, 0 to 1. */
+export const chopShare = (fade: ChopFade, time: number): number =>
+  Math.min(1, Math.max(0, (time - fade.since) / CHOP_FADE_S));
+
+/** The fade once the wind lies on `bearing` at `time`. Back to the bearing it was leaving, the fade turns round where
+ *  it stands, so a wind on a step's edge never jumps; a third bearing fades from whichever of the two showed most. */
+export function chopFade(fade: ChopFade | null, bearing: number, time: number): ChopFade {
+  if (!fade) return { bearing, before: bearing, since: -Infinity };
+  if (bearing === fade.bearing) return fade;
+  const share = chopShare(fade, time);
+  if (bearing === fade.before) return { bearing, before: fade.bearing, since: time - (1 - share) * CHOP_FADE_S };
+  return { bearing, before: share >= 0.5 ? fade.bearing : fade.before, since: time };
+}
+
 /** Draws the water over a scene already drawn: the sky and haze or the view under water, then the surface. */
 export class WaterView {
   private readonly gpu: Gpu;
@@ -110,7 +147,7 @@ export class WaterView {
   private readonly sampler: GPUSampler;
   private readonly ripples: RippleField;
   private readonly empty: { readonly flat: GPUTexture; readonly shore: GPUTexture };
-  private chop: { readonly swell: Swell | undefined; readonly waves: Float32Array } | null = null;
+  private chop: ChopFade | null = null;
   /** The shelter grid last sent to the GPU, and its texture. */
   private shelter: { readonly grid: SeaGrid; readonly texture: GPUTexture } | null = null;
 
@@ -129,9 +166,12 @@ export class WaterView {
       ],
     });
     const module = device.createShaderModule({ code: WATER_SHADER });
+    const sky = skyUniformFor(device);
     const pipeline = (entry: 'backdrop' | 'surface', depthCompare: GPUCompareFunction) =>
       device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [this.layout, shadowLayouts(device).receiver] }),
+        layout: device.createPipelineLayout({
+          bindGroupLayouts: [this.layout, shadowLayouts(device).receiver, sky.empty, sky.layout],
+        }),
         vertex: { module, entryPoint: `${entry}_vertex` },
         fragment: { module, entryPoint: `${entry}_fragment`, targets: [{ format: gpu.format }] },
         primitive: { topology: 'triangle-list', cullMode: 'none' },
@@ -215,6 +255,7 @@ export class WaterView {
     });
     pass.setBindGroup(0, bindGroup);
     pass.setBindGroup(1, (scene.shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.surface));
+    skyUniformFor(this.gpu.device).bindShared(pass, [2]);
     pass.setPipeline(this.backdrop);
     pass.draw(3);
     pass.setPipeline(this.surface);
@@ -263,10 +304,11 @@ export class WaterView {
       values.set([wave.direction[0], wave.direction[1], wave.number, phase], WAVES_AT + index * 8);
       values.set([wave.amplitude, wave.shift, 0, 0], WAVES_AT + 4 + index * 8);
     }
-    const chop =
-      this.chop && this.chop.swell === scene.swell ? this.chop : { swell: scene.swell, waves: chopWaves(scene.swell) };
+    const chop = chopFade(this.chop, chopBearing(skyUniformFor(this.gpu.device).look.wind), scene.time);
     this.chop = chop;
-    values.set(chop.waves, WAVES_AT + MOST_WAVES * 8);
+    values[46] = chopShare(chop, scene.time);
+    values.set(CHOPS[chop.bearing] ?? [], WAVES_AT + MOST_WAVES * 8);
+    values.set(CHOPS[chop.before] ?? [], WAVES_AT + MOST_WAVES * 8 + CHOP_WAVES * 4);
     values.set(hullValues(scene.hulls, [eyeX, eyeY]), HULLS_AT);
     return values;
   }

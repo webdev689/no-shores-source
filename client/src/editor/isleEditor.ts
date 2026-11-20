@@ -10,6 +10,7 @@ import { IslesView } from '../islands/isleView.ts';
 import { ShadowMap } from '../shadow.ts';
 import { SAMPLES, WaterView } from '../water/waterView.ts';
 import { button, make } from './dom.ts';
+import { DEPTH_COPY } from './landScene.ts';
 import {
   cameraOf,
   FIELD_OF_VIEW,
@@ -31,20 +32,6 @@ const CLOSE: Omit<Orbit, 'targetZ'> = { targetX: 0, targetY: 0, yaw: 0.6, pitch:
 const AFAR: Omit<Orbit, 'targetZ'> = { targetX: 0, targetY: 0, yaw: 0.6, pitch: 0.08, distance: 3000 };
 /** How many seeds on the "next isle" button tries before it gives up: one in eight is an isle. */
 const MOST_TRIES = 400;
-
-/** Copies the multisampled depth into one float a pixel for the water, as the Land mode's view does. */
-const DEPTH_COPY = /* wgsl */ `
-@group(0) @binding(0) var depths: texture_depth_multisampled_2d;
-@vertex fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let corner = vec2f(f32((index << 1u) & 2u), f32(index & 2u));
-  return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
-}
-@fragment fn copy_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
-  var sum = 0.0;
-  for (var sample = 0; sample < ${SAMPLES}; sample++) { sum += textureLoad(depths, vec2i(position.xy), sample); }
-  return vec4f(sum / ${SAMPLES}.0, 0.0, 0.0, 1.0);
-}
-`;
 
 interface Targets {
   readonly colour: GPUTexture;

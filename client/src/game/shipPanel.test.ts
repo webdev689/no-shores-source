@@ -47,7 +47,7 @@ test('Manage shows its vessel and its voyage, and nothing marked Later', () => {
   ]);
 });
 
-test('Manage lists her men only once her build carries a crew', () => {
+test('Manage lists its men only once its build carries a crew', () => {
   const measure = { lengthM: 6, beamM: 2, draughtM: 0.6 };
   const rowsOf = (crew: number) => {
     const build = sloopBuildOf(BUILD.replace('"crew":0', `"crew":${crew}`));

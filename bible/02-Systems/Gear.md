@@ -201,7 +201,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
   (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
   Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of her rank and level, kept for its player, gathered by their ship within 25 m, what
+  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
   they have no room for lost with it (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
@@ -209,7 +209,13 @@ DFO's spoils ([[Pick - Loot Drops]]).
   section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once its
   rests.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
-  the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes.
+  the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
+  the room sends the player's gear again without it, so their page stops showing it.
+- **Ammo full.** A box walked onto at full ammunition stays where it lies. The share kept is the character's own, worn
+  Ranged weapon or not: one with only Melee worn and a full share leaves the box, and one whose share is short takes it.
+  The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
+  says "Ammo full" on the player, once each time they step within reach of such a box at rest, never again while they
+  stand there ([[Interface]], "A blow's words"; `DropsShown`).
 - **Seen.** Each piece arcs out of the body and bounces twice to rest, then stands upright as its own picture, the
   Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
   Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs

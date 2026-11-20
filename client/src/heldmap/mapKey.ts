@@ -171,7 +171,7 @@ type KeyPainter = Measure & {
   stroke(): void;
 };
 
-/** A holder's swatch with its top-left at `x`, `y`: her wash as the map shows it over its parchment, and over the
+/** A holder's swatch with its top-left at `x`, `y`: its wash as the map shows it over its parchment, and over the
  *  contested's and the Grey Tithe's their hatching, diagonal and level, its lines as far apart as on the map. */
 function paintSwatch(painter: KeyPainter, holder: WaterHolder, x: number, y: number): void {
   const [width, height] = KEY.swatch;

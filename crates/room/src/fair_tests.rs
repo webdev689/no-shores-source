@@ -124,7 +124,7 @@ fn a_ball_is_judged_against_the_foe_where_the_shooters_screen_showed_it() {
 fn a_foes_guard_counts_as_it_stands_now_and_its_body_where_the_striker_saw_it() {
     let mut room = room();
     let foe = stand(&mut room, 14, 5.0, -5.0);
-    room.foes.get_mut(&foe).expect("stood").fighter.action = Action::Guard { elapsed: 2, window: 12 };
+    room.foes.get_mut(&foe).expect("stood").fighter.action = Action::Guard { elapsed: 2, window: 9 };
     let mut then = *room.fighter(foe).expect("stood");
     then.body = standing(0.0, -1.5);
     then.action = Action::Idle;

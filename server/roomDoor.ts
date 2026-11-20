@@ -1,10 +1,11 @@
-/** A block of a room's course: its footprint (x east, y south, metres) and its top. */
+/** A block of a room's course: its footprint (x east, y south, metres), its top and its underside. */
 export interface CourseBlock {
   readonly minX: number;
   readonly minY: number;
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
+  readonly bottom: number;
 }
 
 /** A resource node on a course: where it stands, and its island's resource by its place in the gear's list. */
@@ -32,8 +33,9 @@ const ANSWERS: readonly InputAnswer[] = [
 export interface RoomDoor {
   /** How long one tick is, in seconds: the room is ticked that often. */
   readonly tickSeconds: number;
-  /** Opens the room on a course, its players standing at the spawn when they join; false if the course is not one. */
-  open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
+  /** Opens the room on a course, its players standing at the spawn when they join; false if the course is not one.
+   *  A course laid `overSea` has no ground to walk under it: its foes walk its blocks alone. */
+  open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[], overSea?: boolean): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
   /** Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's number, its faction, its rank
@@ -51,6 +53,13 @@ export interface RoomDoor {
   seaIsland(id: number): string;
   /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
   holdAshore(id: number, seed: string): boolean;
+  /** Whether the open sea has an account landed on its island of that number and seed: its ship at rest at the
+   *  island's anchorage when last at sea. */
+  seaLanded(id: number, seed: string, account: string): boolean;
+  /** Turns on the open island room's check of landings: only the accounts `land` names scavenge. Whether it is one. */
+  checkLandings(): boolean;
+  /** Lands an account on the open island room, on its sea's word: whether it is an island's room. */
+  land(account: string): boolean;
   /** An island's plan as JSON in its own frame, and its ground's numbers as `movement::Heights` gives them with its
    *  middle at `at` in the world, from its seed (a decimal string) and climate: both empty for a climate the islands'
    *  contract does not dress. */
@@ -59,8 +68,10 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** A new player's number, or 0 when the room is full. */
+  /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
+  /** Why the room takes no player, a locked node's words; null for a room that takes them. */
+  refusal(): string | null;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
@@ -84,6 +95,8 @@ export interface RoomDoor {
   difficulty(seas: number): boolean;
   /** Sets the day, counted from the epoch, whose wares its vendors show; false if it is no room on land. */
   day(day: number): boolean;
+  /** Sets the wall's time at the room's first tick, milliseconds since 1970: its world time, and its welcome's. */
+  epoch(unixMs: number): void;
   /** Draws a room on land's loot, and apart from it its foes and camps, from seeds the host keeps secret, each as two
    *  halves; false if it is none. */
   reseed(seeds: readonly [number, number, number, number]): boolean;
@@ -108,6 +121,20 @@ export interface RoomDoor {
   roster(): string;
   /** The port cities' ids, as JSON: every other city is a ruin. */
   mainPorts(): string;
+  /** A page playing a course alone, never a server: stands a foe of the roster (its `type`, `rank` and `level` as the
+   *  roster numbers them) on the top of the block under (x, y), facing `facing` (radians clockwise from north), its
+   *  post there; a Boss stood so calls no one. Its number, or 0 when none stood. */
+  standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+  /** A page alone: sends every foe away at once; false with no room on land. */
+  clearFoes(): boolean;
+  /** A page alone: sets where the next respawn stands the player, a checkpoint; false with no room on land. */
+  setSpawn(x: number, y: number): boolean;
+  /** A page alone: stands a player at once on the top under (x, y), keeping their health; false for no such player. */
+  putPlayer(player: number, x: number, y: number): boolean;
+  /** A page alone: stands a block on the course at once, as a way closing; false with no room on land. */
+  standBlock(block: CourseBlock): boolean;
+  /** A page alone: takes a block from the course at once, as a way opening; false when the room holds no such block. */
+  takeBlock(block: CourseBlock): boolean;
 }
 
 interface RoomExports {
@@ -116,6 +143,7 @@ interface RoomExports {
   release(address: number, length: number): void;
   room_tick_seconds(): number;
   room_open(address: number, length: number): number;
+  room_open_over_sea(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
@@ -123,11 +151,15 @@ interface RoomExports {
   room_open_island(address: number, length: number): number;
   room_sea_island(id: number): bigint;
   room_hold_ashore(id: number, low: number, high: number): number;
+  room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
+  room_isle_check_landings(): number;
+  room_isle_land(address: number, length: number): number;
   room_isle_plan(low: number, high: number, address: number, length: number): bigint;
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
   room_join(): number;
+  room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
@@ -139,6 +171,7 @@ interface RoomExports {
   room_character(player: number): bigint;
   room_difficulty(seas: number): number;
   room_day(day: number): number;
+  room_epoch(unixMs: number): void;
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
@@ -148,6 +181,12 @@ interface RoomExports {
   room_sloop(): bigint;
   room_roster(): bigint;
   room_main_ports(): bigint;
+  room_stand_foe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+  room_clear_foes(): number;
+  room_set_spawn(x: number, y: number): number;
+  room_put_player(player: number, x: number, y: number): number;
+  room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
+  room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
 }
 
 /** A seed's low and high 32 bits, from its decimal string. */
@@ -186,14 +225,15 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
   };
   return {
     tickSeconds: exports.room_tick_seconds(),
-    open: (spawn, blocks) => {
+    open: (spawn, blocks, overSea = false) => {
       const numbers = [
         spawn.x,
         spawn.y,
-        ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
+        ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]),
       ];
       const bytes = new Uint8Array(new Float64Array(numbers).buffer);
-      return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
+      const entry = overSea ? exports.room_open_over_sea : exports.room_open;
+      return lend(bytes, (address) => entry(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
     openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,
@@ -210,6 +250,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
     holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
+    seaLanded: (id, seed, account) =>
+      openWith((address, length) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, length), account),
+    checkLandings: () => exports.room_isle_check_landings() === 1,
+    land: (account) => openWith(exports.room_isle_land, account),
     islePlan: (seed, climate) =>
       new TextDecoder().decode(
         take(
@@ -230,6 +274,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     },
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
+    refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
     input: (player, bytes) =>
@@ -250,6 +295,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     gear: (player) => take(exports.room_gear(player)),
     difficulty: (seas) => exports.room_difficulty(seas) === 1,
     day: (day) => exports.room_day(day) === 1,
+    epoch: (unixMs) => exports.room_epoch(unixMs),
     reseed: ([lootLow, lootHigh, worldLow, worldHigh]) =>
       exports.room_reseed(lootLow, lootHigh, worldLow, worldHigh) === 1,
     character: (player) => {
@@ -264,5 +310,13 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
     mainPorts: () => new TextDecoder().decode(take(exports.room_main_ports())),
+    standFoe: (type, rank, x, y, facing, level) => exports.room_stand_foe(type, rank, x, y, facing, level),
+    clearFoes: () => exports.room_clear_foes() === 1,
+    setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
+    putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
+    standBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
+      exports.room_stand_block(minX, minY, maxX, maxY, top, bottom) === 1,
+    takeBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
+      exports.room_take_block(minX, minY, maxX, maxY, top, bottom) === 1,
   };
 }

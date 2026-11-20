@@ -10,7 +10,7 @@ import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
 import { fineGlyph, glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 import { elementSvg } from './elementGlyphs.ts';
-import { diagonalFit, drawnBounds, fitIcon } from './iconFit.ts';
+import { diagonalFit, drawnBounds, fitIcon } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
 
 /** How long a held press is held before it acts, in milliseconds: what cannot be undone is held, not tapped. */
@@ -192,6 +192,14 @@ let aimed: HTMLElement | null = null;
 /** The tile whose hold F began, which only F's release lets go. */
 let keyHeld: HTMLElement | null = null;
 let listening = false;
+
+/** Closes an open slot's grid once the mouse is off the slot and the grid, at the owner's word; a touch has no hover
+ *  to leave, so a touch, a click and Escape close it as they close any grid. */
+export function closeOffHover(holder: HTMLElement, close: () => void): void {
+  holder.addEventListener('pointerleave', (event) => {
+    if (event.pointerType === 'mouse') close();
+  });
+}
 
 /** Lets `tile`, a carried piece's, be dismantled by holding F while the pointer is over it or it has the focus, as
  *  long as its rarity asks, its picture charging and breaking apart once it acts. */

@@ -1,7 +1,9 @@
-// The bars' sheet the on-foot HUD and the sea fight's readout both wear, so a bar, the vitals' window and the target's
-// plate read the same wherever they stand: the bar's trough, fill, lost strip and falling pieces; the plates' emblem
-// square, bands, title and the target's size; the vitals' carved window of three labelled bars. Each rule is laid under
-// `scope`, the root of the display that wears it.
+// The bars' sheet the on-foot HUD and the sea fight's readout both wear, so a bar and the target's plate read the same
+// wherever they stand: the bar's trough, fill, lost strip and falling pieces; the plates' emblem square, bands, title
+// and the target's size. The vitals' carved window of three labelled bars is the sea fight's ship plate alone, since
+// the vitals on foot stand at the top left as long thin bars. Each rule is laid under `scope`, the root of the display
+// that wears it.
+import { PLATES } from './barLayout.ts';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemUrl } from './emblems.ts';
 import { BEVELS, FILLS, HALO, TONES } from './tones.ts';
 
@@ -54,12 +56,19 @@ ${scope} .meter .piece .right { left: 55%; right: 0; }
 
 /* The boss bar and the target's plate stand in the compass's column, under it, the target under the boss bar while both
    show. */
-${scope} .target { width: 340px; font-size: 14px; }
+${scope} .target { width: min(340px, ${PLATES.boss.share * 100}%); font-size: 11px; }
 ${scope} .target .body { flex: 1; gap: 3px; }
 ${scope} .target .meter.health { height: 12px; }
 @media (prefers-reduced-motion: reduce) {
   ${scope} .meter .piece { display: none !important; }
 }
+`;
+}
+
+/** The vitals' carved window of three bars, each naming itself and saying its percentage inside it, under `scope`. */
+// Its keyframes are its own: the vitals on foot name theirs fight-low and fight-blink, and both sheets may share a page.
+export function windowVitalsCss(scope: string): string {
+  return `
 ${scope} .vitals { position: absolute; left: 24px; bottom: 24px; width: 260px; box-sizing: border-box;
   display: grid; gap: 6px; padding: 9px 10px; border-width: 2px; border-style: solid; }
 ${scope} .vital { display: flex; align-items: center; justify-content: space-between; height: 20px;
@@ -76,10 +85,10 @@ ${scope} .vital .label, ${scope} .vital .number { position: relative; padding: 0
   text-shadow: ${HALO}; }
 ${scope} .vital .label { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
 ${scope} .vital .number { font-size: 11px; font-variant-numeric: tabular-nums; }
-${scope} .vital.low { animation: fight-low 0.9s steps(1, end) infinite; }
-@keyframes fight-low { 0% { border-color: ${BEVELS.blood}; } 50% { border-color: ${BEVELS.sunk}; } }
-${scope} .vital.stamina.flash { box-shadow: 0 0 0 1px #fff, 0 0 8px #fff; animation: fight-blink 0.15s steps(2) infinite; }
-@keyframes fight-blink { 50% { background-color: rgba(255,255,255,0.27); } }
+${scope} .vital.low { animation: window-low 0.9s steps(1, end) infinite; }
+@keyframes window-low { 0% { border-color: ${BEVELS.blood}; } 50% { border-color: ${BEVELS.sunk}; } }
+${scope} .vital.stamina.flash { box-shadow: 0 0 0 1px #fff, 0 0 8px #fff; animation: window-blink 0.15s steps(2) infinite; }
+@keyframes window-blink { 50% { background-color: rgba(255,255,255,0.27); } }
 @media (prefers-reduced-motion: reduce) {
   ${scope} .vital.low { animation: none; border-color: ${BEVELS.blood}; }
   ${scope} .vital.stamina.flash { animation: none; }

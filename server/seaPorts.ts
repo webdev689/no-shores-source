@@ -15,5 +15,5 @@ const LANDS = [one, two, three, four, five, six, seven, eight, nine];
 
 /** Every continent's city as a port, in the layout's order of continents. */
 export const SEA_PORTS = portsOf(
-  LANDS.flatMap((land, index) => sitesOf(`continent-${index + 1}`, JSON.stringify(land)).city ?? []),
+  LANDS.flatMap((land, index) => sitesOf(`continent-${index + 1}`, JSON.stringify(land), []).city ?? []),
 );

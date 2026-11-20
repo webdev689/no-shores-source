@@ -83,13 +83,13 @@ test('a heavier ball throws a bigger splash', () => {
   assert.ok(tallest(heavy) > tallest(round));
 });
 
-test('a hull hit throws splinters of her paint that fall to the water, a puff of smoke and a small flash', () => {
+test('a hull hit throws splinters of its paint that fall to the water, a puff of smoke and a small flash', () => {
   const effects = new Effects(6);
   const paint = [0.1, 0.2, 0.3] as const;
   effects.splinter([0, 0, 0], [0, 3, 1.5], [0, 1], paint, 0);
   const chips = effects.marks(0.05).filter((mark) => mark.blend === undefined);
   assert.equal(chips.length, SPLINTERS);
-  assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 3, "many are her paint's");
+  assert.ok(chips.filter((mark) => mark.colour === paint).length > SPLINTERS / 3, "many are its paint's");
   assert.ok(blended(effects.marks(0.05), 'smoke').length >= 3);
   assert.equal(blended(effects.marks(0.05), 'glow').length, 1);
   assert.ok(
@@ -130,12 +130,12 @@ test("each kind fades by DFO's law: smoke in and out, a flash at once, splinters
   assert.ok(fadeOf('debris', 0.9) < 0.5);
 });
 
-test('water thrown over a rail by a fall alongside goes toward her deck and more of it the nearer', () => {
+test('water thrown over a rail by a fall alongside goes toward its deck and more of it the nearer', () => {
   const [near, far] = [new Effects(10), new Effects(10)];
   near.drench([0, 0, 0], [10, 0, 2], 1, 0);
   far.drench([0, 0, 0], [10, 0, 2], 0, 0);
   assert.ok(near.count > far.count);
-  assert.ok(mean(near.marks(0.6).map((mark) => mark.x)) > 1, 'toward her');
+  assert.ok(mean(near.marks(0.6).map((mark) => mark.x)) > 1, 'toward it');
 });
 
 test('a magazine blows in a fireball, a column of smoke, splinters and a big splash', () => {
@@ -151,7 +151,7 @@ test('a magazine blows in a fireball, a column of smoke, splinters and a big spl
   assert.ok(blended(marks, 'light').length === 1);
 });
 
-test('a battered hull smokes along her deck, more the more she is hurt', () => {
+test('a battered hull smokes along its deck, more the more it is hurt', () => {
   const [hurt, whole] = [new Effects(12), new Effects(12)];
   for (let frame = 0; frame < 90; frame++) {
     hurt.smolder([0, 0, 0], [-6, 0, 2], [6, 0, 2], 1, frame / 30, 1 / 30);
@@ -162,7 +162,7 @@ test('a battered hull smokes along her deck, more the more she is hurt', () => {
   assert.ok(hurt.marks(3).every((mark) => Math.abs(mark.x) < 9));
 });
 
-test('a battery running out glints at her ports, brighter as the guns come out', () => {
+test('a battery running out glints at its ports, brighter as the guns come out', () => {
   const effects = new Effects(13);
   const ports = [
     [-3, 2.5, 1.5],

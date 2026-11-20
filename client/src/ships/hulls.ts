@@ -1,5 +1,5 @@
 // The hulls the browser draws, by the number the wire carries for each ship, and what each one's manifest entry
-// says of her: her waterline, her sails, the height of her masthead and the line of her upper gunports. Which hull a
+// says of it: its waterline, its sails, the height of its masthead and the line of its upper gunports. Which hull a
 // rank of ship sails is the naval crate's to say; the browser only draws the hull it is told.
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import type { SailCorners } from './sails.ts';
@@ -20,13 +20,13 @@ interface Entry {
 // The manifest is the export's own, in the repository: its entries are as `Entry` says.
 const ENTRIES = ships.ships as unknown as Readonly<Record<HullName, Entry>>;
 
-/** A hull's name by her wire number; a number the browser has no model for is drawn as the Sloop. */
+/** A hull's name by its wire number; a number the browser has no model for is drawn as the Sloop. */
 export function hullName(hull: number): HullName {
   return HULL_NAMES[hull] ?? 'sloop';
 }
 
-/** The hull a captain's ship sails, by the room's word on her: at sea her `Pirate`'s `hull` and in a fleet her
- *  vessel's; in a fight's view her `hull_kind`, since `hull` there is her hull points (a fight's vessel is told by its
+/** The hull a captain's ship sails, by the room's word on it: at sea its `Pirate`'s `hull` and in a fleet its
+ *  vessel's; in a fight's view its `hull_kind`, since `hull` there is its hull points (a fight's vessel is told by its
  *  `max_hull`). The Sloop where the room names none. */
 export function hullOfCaptain(ship: {
   readonly hull?: number;
@@ -36,18 +36,18 @@ export function hullOfCaptain(ship: {
   return (ship.max_hull === undefined ? ship.hull : ship.hull_kind) ?? SLOOP_HULL;
 }
 
-/** Her waterline as her export measured it. */
+/** Its waterline as its export measured it. */
 export function hullWaterline(hull: number): Waterline {
   const { length_m, beam_m, draught_m } = ENTRIES[hullName(hull)].waterline;
   return { lengthM: length_m, beamM: beam_m, draughtM: draught_m };
 }
 
-/** Her sails' corners as her export measured them. */
+/** Its sails' corners as its export measured them. */
 export function hullSails(hull: number): SailCorners[] {
   return [...ENTRIES[hullName(hull)].sails];
 }
 
-/** The top of her highest sail over her waterline, metres. */
+/** The top of its highest sail over its waterline, metres. */
 function sailTop(hull: number): number {
   const points = hullSails(hull).flatMap((sail): Point[] =>
     sail.kind === 'gaff'
@@ -59,20 +59,20 @@ function sailTop(hull: number): number {
   return Math.max(...points.map((point) => point[2]));
 }
 
-/** How far over her waterline a hull's plate stands, metres: as far over her highest sail as the
- *  Sloop's is over hers. */
+/** How far over its waterline a hull's plate stands, metres: as far over its highest sail as the
+ *  Sloop's is over its own. */
 export function plateOverM(hull: number): number {
   return BAR_OVER_M + sailTop(hull) - sailTop(SLOOP_HULL);
 }
 
-/** Her stripe's line in her frame: its height over her waterline at her middle and its rise a metre toward her bow,
+/** Its stripe's line in its frame: its height over its waterline at its middle and its rise a metre toward its bow,
  *  metres. */
 export interface HullPaint {
   readonly atM: number;
   readonly rise: number;
 }
 
-/** Her stripe, fitted through the mouths of her highest tier of guns, so it follows her sheer. */
+/** Its stripe, fitted through the mouths of its highest tier of guns, so it follows its sheer. */
 export function hullPaint(hull: number): HullPaint {
   const mouths = ENTRIES[hullName(hull)].guns.map((gun) => gun.mouth_m);
   const highest = Math.max(...mouths.map((mouth) => mouth[2]));

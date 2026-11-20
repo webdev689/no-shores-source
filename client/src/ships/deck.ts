@@ -1,12 +1,12 @@
-// The Sloop's deck as the ships manifest holds it (tools/ships/deck.py measures it from her mesh): the grid of heights a
-// walker stands on, in her own frame (x to her starboard, y to her stern, the origin amidships, metres over her
-// waterline), and the spot behind her wheel where her helm is kept. The sea room stands its walkers on the same grid.
+// The Sloop's deck as the ships manifest holds it (tools/ships/deck.py measures it from its mesh): the grid of heights a
+// walker stands on, in its own frame (x to its starboard, y to its stern, the origin amidships, metres over its
+// waterline), and the spot behind its wheel where its helm is kept. The sea room stands its walkers on the same grid.
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import { shipAxes } from './shipAxes.ts';
 import { HULL_NAMES } from './hulls.ts';
 
 /** A ship's deck: its grid's west and north edges and square cell, its columns and rows, each cell's height row by
- *  row from the north (null where no body stands), and the spot behind her wheel. */
+ *  row from the north (null where no body stands), and the spot behind its wheel. */
 export interface Deck {
   readonly west: number;
   readonly north: number;
@@ -48,18 +48,18 @@ export function deckOf(entry: DeckEntry): Deck {
 /** The Sloop's deck. */
 export const SLOOP_DECK: Deck = deckOf(ships.ships.sloop.deck);
 
-/** Every hull's deck by her hull's number, as the sea room boards them (crates/room-wasm/src/deck_door.rs
+/** Every hull's deck by its hull's number, as the sea room boards them (crates/room-wasm/src/deck_door.rs
  *  `hull_decks`): the Sloop's, the Schooner's, the Brig's and the Frigate's. */
 export const HULL_DECKS: readonly Deck[] = HULL_NAMES.map((name) => deckOf(ships.ships[name].deck));
 
-/** A boarder stands this far in from her outermost plank at the rail they come over, metres, the rail sought in
+/** A boarder stands this far in from its outermost plank at the rail they come over, metres, the rail sought in
  *  steps of this (crates/room/src/deck_fight.rs `RAIL_IN_M`, `RAIL_STEP_M`). */
 const RAIL_IN_M = 0.5;
 const RAIL_STEP_M = 0.05;
 
-/** Where a boarder comes over her rail on `side` (1 her starboard, -1 her port), as her deck room stands them
- *  (`rail_spot`): amidships, `RAIL_IN_M` in from her outermost plank there; at her helm where no plank lies across
- *  her middle. */
+/** Where a boarder comes over its rail on `side` (1 its starboard, -1 its port), as its deck room stands them
+ *  (`rail_spot`): amidships, `RAIL_IN_M` in from its outermost plank there; at its helm where no plank lies across
+ *  its middle. */
 export function railSpot(deck: Deck, side: number): readonly [number, number] {
   const [west, east] = [deck.west, deck.west + deck.cell * deck.columns];
   const [edge, inward] = side < 0 ? [west, 1] : [east, -1];
@@ -79,7 +79,7 @@ export function deckFloats(deck: Deck): number[] {
   return [deck.west, deck.north, deck.cell, deck.columns, deck.rows, ...deck.heights.map((height) => height ?? NaN)];
 }
 
-/** The height of the cell under (x, y) on her deck, or null where no body stands. */
+/** The height of the cell under (x, y) on its deck, or null where no body stands. */
 export function cellHeight(deck: Deck, x: number, y: number): number | null {
   const column = Math.floor((x - deck.west) / deck.cell);
   const row = Math.floor((y - deck.north) / deck.cell);
@@ -87,8 +87,8 @@ export function cellHeight(deck: Deck, x: number, y: number): number | null {
   return deck.heights[row * deck.columns + column] ?? null;
 }
 
-/** Each cell a body walks to from (x, y), from cell to cell across their edges, as its centre on her deck and its
- *  height: her walls and the rail tops beyond them left out. */
+/** Each cell a body walks to from (x, y), from cell to cell across their edges, as its centre on its deck and its
+ *  height: its walls and the rail tops beyond them left out. */
 export function cellsReached(
   deck: Deck,
   x: number,
@@ -116,8 +116,8 @@ export function cellsReached(
   }));
 }
 
-/** Where a ship lies as she is drawn: her middle on the water, her heading (radians clockwise from north), how many
- *  times her size she is drawn, how far the swell lifts her, and her bow's rise and heel to starboard (radians). */
+/** Where a ship lies as it is drawn: its middle on the water, its heading (radians clockwise from north), how many
+ *  times its size it is drawn, how far the swell lifts it, and its bow's rise and heel to starboard (radians). */
 export interface Lying {
   readonly x: number;
   readonly y: number;
@@ -128,7 +128,7 @@ export interface Lying {
   readonly roll: number;
 }
 
-/** A point on her deck (x to her starboard, y to her stern, z over her waterline) in the world as she lies. */
+/** A point on its deck (x to its starboard, y to its stern, z over its waterline) in the world as it lies. */
 export function deckToWorld(lying: Lying, x: number, y: number, z: number): readonly [number, number, number] {
   const [bow, starboard, up] = shipAxes(lying.heading, lying.pitch, lying.roll);
   const along = (axis: number) =>
@@ -136,7 +136,7 @@ export function deckToWorld(lying: Lying, x: number, y: number, z: number): read
   return [lying.x + along(0), lying.y + along(1), lying.heave + along(2)];
 }
 
-/** A point in the world on her deck as she lies: `deckToWorld` undone. */
+/** A point in the world on its deck as it lies: `deckToWorld` undone. */
 export function worldToDeck(lying: Lying, x: number, y: number, z: number): readonly [number, number, number] {
   const [bow, starboard, up] = shipAxes(lying.heading, lying.pitch, lying.roll);
   const offset = [(x - lying.x) / lying.scale, (y - lying.y) / lying.scale, (z - lying.heave) / lying.scale];

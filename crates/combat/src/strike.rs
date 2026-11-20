@@ -1,17 +1,31 @@
 //! Who a swing's blow reaches: a fighter on another side, alive, within the weapon's reach and the stroke's arc
 //! (close in, almost any way it faces), near the striker's own height, with nothing between them. The nearest first,
-//! the soft lock's target before all, up to the stroke's count.
+//! the soft lock's target before all; every one reached is struck.
 
 use crate::arms::{Stroke, WeaponClass, stroke_shape, weapon};
 use crate::fighter::{Attack, Fighter, FighterId};
 use crate::sight::{apart, bearing, clear_line, off};
-use crate::tuning::{BODY_RADIUS, CHEST, CLOSE_ARC, CLOSE_IN, STRIKE_HEIGHT};
+use crate::tuning::{BODY_RADIUS, CHEST, CLOSE_ARC, CLOSE_IN, PLAYER_REACH, STRIKE_HEIGHT};
 use movement::Block;
+
+/// How far a melee weapon reaches: its class's reach, and further by `PLAYER_REACH` when a player holds it. Bare
+/// fists reach as far for everyone.
+#[must_use]
+pub fn weapon_reach(melee: WeaponClass, player: bool) -> f64 {
+    let reach = weapon(melee).reach;
+    if player && melee != WeaponClass::Fists { reach * PLAYER_REACH } else { reach }
+}
+
+/// How far this fighter's melee weapon reaches.
+#[must_use]
+pub fn reach_of(fighter: &Fighter) -> f64 {
+    weapon_reach(fighter.arms.melee, fighter.side.is_players())
+}
 
 /// The farthest a stroke of this weapon reaches, from the striker's feet to the middle of a body it strikes.
 #[must_use]
-pub fn stroke_reach(melee: WeaponClass, stroke: Stroke) -> f64 {
-    weapon(melee).reach + stroke_shape(stroke).reach + BODY_RADIUS
+pub fn stroke_reach(melee: WeaponClass, stroke: Stroke, player: bool) -> f64 {
+    weapon_reach(melee, player) + stroke_shape(stroke).reach + BODY_RADIUS
 }
 
 /// Whether a swing's blow, struck along `aim`, reaches a body standing at `feet`.
@@ -20,7 +34,7 @@ pub fn reaches(striker: &Fighter, attack: &Attack, feet: [f64; 3], blocks: &[Blo
     let body = striker.body;
     let shape = stroke_shape(attack.stroke);
     let distance = apart([body.x, body.y], [feet[0], feet[1]]);
-    let reach = stroke_reach(striker.arms.melee, attack.stroke);
+    let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.side.is_players());
     if distance > reach || (feet[2] - body.z).abs() > STRIKE_HEIGHT {
         return false;
     }
@@ -31,7 +45,7 @@ pub fn reaches(striker: &Fighter, attack: &Attack, feet: [f64; 3], blocks: &[Blo
 }
 
 /// The fighters a swing's blow lands on, from `fighters` (`(id, fighter)`): those it reaches on another side, alive,
-/// the striker's soft-lock target first and then the nearest, up to its stroke's count.
+/// the striker's soft-lock target first and then the nearest.
 #[must_use]
 pub fn struck(
     striker_id: FighterId,
@@ -52,5 +66,5 @@ pub fn struck(
     reached.sort_by(|first, second| {
         first.0.cmp(&second.0).then(first.1.total_cmp(&second.1)).then(first.2.cmp(&second.2))
     });
-    reached.into_iter().take(stroke_shape(attack.stroke).targets).map(|(_, _, id)| id).collect()
+    reached.into_iter().map(|(_, _, id)| id).collect()
 }

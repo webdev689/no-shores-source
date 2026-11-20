@@ -104,7 +104,7 @@ fn its_gunner_fires_the_broadside_its_look_does_not_lay_when_a_ship_bears_on_it(
     assert_eq!(laid.side, crate::arms::Side::Starboard);
     assert!(fight.gunners_lay(PLAYER, Some(crate::arms::Side::Starboard)).is_none(), "it lays that side itself");
     let balls = fight.balls.len();
-    let events = fight.step(&[(PLAYER, IDLE)], &Open, [1.5, 0.0], 0.0);
+    let events = fight.step(&[(PLAYER, IDLE)], &Open, &|_| [1.5, 0.0], 0.0);
     assert!(fight.balls.len() > balls || events.iter().any(|event| matches!(event, crate::fight::Event::Shot(_))));
     assert!(fight.gunners_lay(PLAYER, None).is_none(), "the side is reloading");
     let mut far = abeam(5_000.0);

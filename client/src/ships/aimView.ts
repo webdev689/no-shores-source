@@ -139,7 +139,7 @@ export function aimCorners(
   }
   for (const point of aim.strikes) {
     if (quads() >= MOST_QUADS) break;
-    // Stood a half mark out of her side toward the eye, so the hull it lies on never hides half of it.
+    // Stood a half mark out of its side toward the eye, so the hull it lies on never hides half of it.
     const toEye = minus(camera.eye, point);
     const out = STRIKE_HALF_M / (Math.hypot(...toEye) || 1);
     const middle: Point = [point[0] + toEye[0] * out, point[1] + toEye[1] * out, point[2] + toEye[2] * out];
@@ -180,7 +180,7 @@ export function aimCorners(
   return { corners: new Float32Array(corners), blended, added: total - blended };
 }
 
-const AIM_SHADER = /* wgsl */ `
+export const AIM_SHADER = /* wgsl */ `
 struct Camera {
   from_eye: mat4x4f,
   eye: vec4f,

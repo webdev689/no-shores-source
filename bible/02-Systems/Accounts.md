@@ -75,7 +75,11 @@ they play in holds it while they are there.
   under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
-  kept apart from any other's.
+  kept apart from any other's. A room reads the session's token as it connects, so a sign-in made after the page
+  opened (at the story's helm) is the one the rooms use; the helm's account step tells the page the account changed
+  as it ends, so the menu's mark and banner and the company HUD ask again and show that account.
+- **An ask is given up.** An ask the accounts leave unanswered for 10 s is given up, and answered as the accounts out
+  of reach, so nothing waiting on them (the helm's account step) is held.
 
 ## The character, kept
 
@@ -90,10 +94,10 @@ they play in holds it while they are there.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room.
-- **At sea.** The sea room claims and keeps the character too, for its ship's hurts (`ship`: her hull, canvas and men
-  in ten-thousandths of whole), where the sea last kept her (`ship_at`, a player who leaves mid-fight kept at the
-  port city she would wash up at, as the fight has her), and what floats gathered into it; a deck boarded fights with it, and gives it back
-  as the boarder leaves her ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
+- **At sea.** The sea room claims and keeps the character too, for its ship's hurts (`ship`: its hull, canvas and men
+  in ten-thousandths of whole), where the sea last kept it (`ship_at`, a player who leaves mid-fight kept at the
+  port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it, and gives it back
+  as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
   character whose ship has the hurts it keeps.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
   that is not kept. The Test Ground's room grants gear to try it, so it keeps no characters, nor does a fleet room;

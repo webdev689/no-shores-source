@@ -17,7 +17,7 @@ async function world() {
   const cities = await Promise.all(
     layout.continents.map(async (continent) => {
       const text = await readFile(new URL(`land/${continent.id}.json`, WORLD), 'utf8');
-      return sitesOf(continent.id, text).city;
+      return sitesOf(continent.id, text, []).city;
     }),
   );
   return { module, layoutText, layout, ports: portsOf(cities.filter((city) => city !== null)) };

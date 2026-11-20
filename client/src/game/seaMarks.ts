@@ -1,6 +1,7 @@
 // The marks the sea's view shows: a port's icon over its harbour once the ship is near, and a mark for each hostile
-// ship within her sight; or the landings over the island's side the view stands over. Laid on the picture, a crowd of
-// ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named where its name fits.
+// ship within its sight; or the landings over the island's side the view stands over. Laid on the picture, a crowd of
+// ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named where its name fits. A
+// locked node's mark still shows, so the player sees what lies ahead, but a click on it never lands.
 import type { SeenPirate } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
@@ -11,6 +12,7 @@ import { HOSTILE_PREFIX, hostileLook, hostileMarks, hostileNote } from './seaHos
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
+import { lockedWords } from './worldData.ts';
 
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
  *  bar. */
@@ -20,14 +22,27 @@ const MARK_GAP_PX = 30;
 /** A mark stands this far over the ground it marks, metres. */
 const MARK_RISE_M = 2;
 
+/** What a click on a mark over an island's side does, `chosen` the landing chosen before: chooses its landing, or lands
+ *  there once chosen; a locked node is never chosen, and only says it is locked. Null for a mark not on the side. */
+export function landingChoice(
+  side: readonly Mark[],
+  chosen: string | null,
+  id: string,
+): { readonly kind: 'choose' | 'land' } | { readonly kind: 'locked'; readonly words: string } | null {
+  const mark = side.find((each) => each.id === id);
+  if (!mark) return null;
+  if (mark.locked) return { kind: 'locked', words: lockedWords(mark.name) };
+  return { kind: chosen === id ? 'land' : 'choose' };
+}
+
 /** A landmass's marks: each node over its ground (its social space on the city's level), and its port over its
  *  harbour. */
-export function islandMarksOf(landmass: Landmass): Mark[] {
+export function islandMarksOf(landmass: Pick<Landmass, 'nodes' | 'plan' | 'heightAt'>): Mark[] {
   const marks: Mark[] = landmass.nodes.map((node) => {
     const ground =
       node.kind === 'social' && landmass.plan ? landmass.plan.social.level : landmass.heightAt(...node.centre);
     const place: Vec3 = [node.centre[0], node.centre[1], Math.max(0, ground) + MARK_RISE_M];
-    return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true };
+    return { id: node.id, kind: node.kind, name: node.name, at: place, edge: true, locked: node.locked === true };
   });
   const harbour = portOf(landmass.plan)?.harbour;
   if (landmass.plan && harbour) {
@@ -68,10 +83,14 @@ export function seaMarks(
     const pirate = hostiles.find((one) => `${HOSTILE_PREFIX}${one.id}` === each.id);
     if (pirate) {
       const note = hostileNote(pirate, away([pirate.x, pirate.y]));
-      return { ...marked, kind: 'hostile', note, hostile: hostileLook(pirate) };
+      return { ...marked, kind: 'hostile', note, hostile: hostileLook(pirate), locked: false };
     }
     const mark = marks.find((one) => one.id === each.id);
-    return { ...marked, note: distanceText(mark ? away(mark.at) : each.distance) };
+    return {
+      ...marked,
+      note: mark?.locked ? 'Locked' : distanceText(mark ? away(mark.at) : each.distance),
+      locked: mark?.locked === true,
+    };
   });
   return { placed, shown };
 }

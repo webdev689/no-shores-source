@@ -31,3 +31,20 @@ fn each_land_file_keeps_its_rules() {
         assert_eq!(land::edits::write(&edits).unwrap(), text, "{name} is in its written form");
     }
 }
+
+#[test]
+fn the_open_list_names_only_patrol_areas_and_missions_of_the_edits_files_each_once() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/world");
+    let open: Vec<String> = serde_json::from_str(&std::fs::read_to_string(root.join("open.json")).unwrap()).unwrap();
+    let mut nodes = Vec::new();
+    for entry in std::fs::read_dir(root.join("land")).unwrap() {
+        let text = std::fs::read_to_string(entry.unwrap().path()).unwrap();
+        nodes.extend(land::edits::parse(&text).unwrap().nodes);
+    }
+    for id in &open {
+        let kind = nodes.iter().find(|node| &node.id == id).map(|node| node.kind);
+        assert!(kind.is_some_and(|kind| land::sites::LOCKABLE.contains(&kind)), "{id} is no patrol area or mission");
+    }
+    let once: std::collections::BTreeSet<&String> = open.iter().collect();
+    assert_eq!(once.len(), open.len(), "each id once");
+}

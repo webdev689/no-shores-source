@@ -1,5 +1,6 @@
 {
-  // Code that runs in Node: the client's tests and the build config. Same strictness, with Node's types.
+  // Code that runs in Node: the client's tests and the build config. Same strictness, with Node's types, and Vite's
+  // too: a test's type-only import can reach client code that imports a stylesheet.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["node", "vite/client"]

@@ -19,9 +19,9 @@ const ZONES = ['hull', 'holed', 'rig'] as const;
 export const MOST_FELT = 512;
 const SIDES = ['port', 'starboard'] as const;
 const STATES = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'] as const;
-/** A ship whose hurts are not known yet: sound, her canvas whole. */
+/** A ship whose hurts are not known yet: sound, its canvas whole. */
 const SOUND = { wrecked: false, sail: 1, maxSail: 0 } as const;
-/** The ship numbers the editor's fight words know: hers 0, a captain's 1, another player's 2. */
+/** The ship numbers the editor's fight words know: the player's 0, a captain's 1, another player's 2. */
 const OWN = 0;
 const CAPTAIN = 1;
 const OTHER = 2;
@@ -40,15 +40,15 @@ export interface SessionInput {
 }
 
 /**
- * A player's Sloop in a fleet room: put to sea where she lies, her orders sent a tick at a time as the page's clock
- * owes them, and her ship predicted by the room's own rules and corrected by each snapshot. It keeps what the room
+ * A player's Sloop in a fleet room: put to sea where it lies, its orders sent a tick at a time as the page's clock
+ * owes them, and the ship predicted by the room's own rules and corrected by each snapshot. It keeps what the room
  * last showed: every other ship, the balls aloft, and what happened.
  */
 export class FleetSession {
   private readonly link: RoomLink;
   private readonly rules: FleetRules;
   private prediction = new Prediction<FleetOrders>();
-  /** The link's welcomes followed: one more means she joined the fleet again. */
+  /** The link's welcomes followed: one more means they joined the fleet again. */
   private joined: number;
   private start: readonly [number, number, number] | null;
   private ship: ShipFloats;
@@ -59,7 +59,7 @@ export class FleetSession {
   private climbs: number[] = [];
   private calls: Pick<SessionInput, 'call' | 'captain'>[] = [];
   private lastLook: FleetLook | null = null;
-  /** The load she last asked for and the orders that asked, until the room has taken them. */
+  /** The load they last asked for and the orders that asked, until the room has taken them. */
   private loadAsked: { readonly load: number; readonly sequence: number } | null = null;
   private latest: Snapshot | null = null;
   private receivedAt = 0;
@@ -77,7 +77,7 @@ export class FleetSession {
     this.ship = new Float64Array([start[0], start[1], start[2], 0, 0, 0, 0, 0]);
   }
 
-  /** Follows the link into the fleet it joined again: a new player there, her ship put to sea where she lies, with
+  /** Follows the link into the fleet it joined again: a new player there, their ship put to sea where it lies, with
    *  nothing of the old room kept. */
   private follow(): void {
     if (this.link.joins === this.joined) return;
@@ -92,7 +92,7 @@ export class FleetSession {
     return this.link.rejoining;
   }
 
-  /** Her number in the room: her ship's. */
+  /** Their number in the room: their ship's. */
   get id(): number {
     return this.link.player;
   }
@@ -102,7 +102,7 @@ export class FleetSession {
     return this.link.lost;
   }
 
-  /** Her ship as predicted, and her pose. */
+  /** Their ship as predicted, and its pose. */
   shipFloats(): ShipFloats {
     return this.ship;
   }
@@ -120,7 +120,7 @@ export class FleetSession {
     return this.shownTime;
   }
 
-  /** The room's word on her own ship, once it has her at sea. */
+  /** The room's word on their own ship, once it has it at sea. */
   own(): SeenVessel | null {
     return this.latest?.vessels.find((vessel) => vessel.id === this.id) ?? null;
   }
@@ -131,22 +131,23 @@ export class FleetSession {
     return { wrecked: own.state === 'wrecked', sail: own.hurts.sail, maxSail: own.hurts.maxSail };
   }
 
-  /** Every other ship in the room as it last showed her. */
+  /** Every other ship in the room as it last showed them. */
   others(): readonly SeenVessel[] {
     return this.latest?.vessels.filter((vessel) => vessel.id !== this.id) ?? [];
   }
 
-  /** Her ship stepped by one set of orders, by the room's rules. */
+  /** Their ship stepped by one set of orders, by the room's rules. */
   private stepped(ship: ArrayLike<number>, orders: FleetOrders, time: number): ShipFloats {
     const helm: Helm = { steer: orders.steer, crab: orders.crab, climb: orders.climb as Helm['climb'] };
-    return new Float64Array(this.rules.predict(ship, this.hurts(), time, [helm])?.ship ?? Array.from(ship));
+    const epoch = this.link.epoch ?? 0;
+    return new Float64Array(this.rules.predict(ship, this.hurts(), time, epoch, [helm])?.ship ?? Array.from(ship));
   }
 
   private poseAt(ship: ArrayLike<number>, time: number): Pose {
-    return this.rules.predict(ship, this.hurts(), time, [])?.pose ?? this.pose;
+    return this.rules.predict(ship, this.hurts(), time, this.link.epoch ?? 0, [])?.pose ?? this.pose;
   }
 
-  /** A snapshot from the room: her ship set to its word with her orders it has not taken stepped on top, and what
+  /** A snapshot from the room: their ship set to its word with their orders it has not taken stepped on top, and what
    *  happened kept for the effects and the panel. */
   receive(snapshot: Snapshot, now: number): void {
     this.follow();
@@ -175,7 +176,7 @@ export class FleetSession {
     this.felt = [...this.felt, ...fleetFeel(snapshot.naval)].slice(-MOST_FELT);
   }
 
-  /** Owes the room `seconds` more and sends a tick's orders for each whole tick owed: her rudder as held, her look
+  /** Owes the room `seconds` more and sends a tick's orders for each whole tick owed: their rudder as held, their look
    *  while aiming, and the presses (a rung, a release, a load, a call) on the first tick that takes them. */
   advance(seconds: number, input: SessionInput, now: number): void {
     this.follow();
@@ -231,7 +232,7 @@ export class FleetSession {
       });
   }
 
-  /** Her look's lay among the ships she sees, as the room would lay it now. */
+  /** Their look's lay among the ships they see, as the room would lay it now. */
   lay(look: FleetLook, now: number): FleetLay | null {
     const load = this.own()?.load ?? 1;
     const sighted = (vessel: SeenVessel): LaySighted => ({
@@ -259,8 +260,8 @@ export class FleetSession {
     return this.captains.has(id) ? CAPTAIN : OTHER;
   }
 
-  /** An event of the room's fight as the editor's fight shows one; what was another player's own (her guns' refusals,
-   *  her sails, her loads) is hers to see. */
+  /** An event of the room's fight as the editor's fight shows one; what was another player's own (their guns' refusals,
+   *  their sails, their loads) is theirs to see. */
   private fightEvent(event: NavalEvent): FightEvent | null {
     const ship = this.known(event.ship);
     const mine = ship === OWN;
@@ -293,7 +294,7 @@ export class FleetSession {
     }
   }
 
-  /** The fight's events since last taken for its feel, each ship by her own number. */
+  /** The fight's events since last taken for its feel, each ship by its own number. */
   takeFeel(): FightEvent[] {
     const taken = this.felt;
     this.felt = [];
@@ -308,7 +309,7 @@ export class FleetSession {
   }
 }
 
-/** A fleet room's events for the fight's feel, each ship by her own number: a ball's muzzle, hit (with where on her it
+/** A fleet room's events for the fight's feel, each ship by its own number: a ball's muzzle, hit (where on the ship it
  *  struck and on which part, told just before it), splash, landing and a stem's ram; then the sea's own, through the
  *  feel's one mapping (`feelOf`). */
 export function fleetFeel(events: readonly NavalEvent[]): FightEvent[] {

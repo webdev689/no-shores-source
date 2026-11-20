@@ -71,7 +71,7 @@ test('a fleet snapshot the server wrote reads back as its ships and what happene
   assert.deepEqual([fleet.tick, fleet.players, fleet.ships, fleet.fightClock], [77n, [], [], 0]);
 });
 
-test('orders are her helm, her look and its ray, the fire, the brace, a load, where she puts to sea and a call', () => {
+test('orders are its helm, its look and its ray, the fire, the brace, a load, where it puts to sea and a call', () => {
   const ray = [200_001.5, 300_002, 6.5, 0.5, -0.25, -0.125];
   const bytes = ordersBytes(41, {
     steer: -0.75,
@@ -114,7 +114,7 @@ test('orders are her helm, her look and its ray, the fire, the brace, a load, wh
   assert.deepEqual([plain.callLevel(), plain.shipLevel()], [0, 0], 'and no levels');
 });
 
-test('orders never wrap a number past its field: her number, load and call are refused, and her rudder, rung and look are held within what the room takes', () => {
+test('orders never wrap a number past its field: its number, load and call are refused, and its rudder, rung and look are held within what the room takes', () => {
   const orders = {
     steer: 3,
     crab: false,

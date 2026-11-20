@@ -11,6 +11,7 @@ pub mod boarding_hands;
 pub mod chart;
 pub mod clash;
 mod companions;
+mod course;
 pub mod crew;
 pub mod deck;
 mod deck_fight;
@@ -35,6 +36,7 @@ pub mod sighting;
 mod spells;
 mod statuses;
 pub mod threat;
+pub mod winds;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
@@ -52,21 +54,25 @@ pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
-use combat::fighter::{Action, FighterId, player};
+use combat::fighter::{FighterId, player};
 use combat::judge::swing_blow;
 use combat::shots::Line;
 use combat::strike::struck;
-use combat::tuning::{FOE_GONE, RESPAWN};
+// The tests reach these through `super::*`, as before the dead were raised in players.rs.
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
+#[cfg(test)]
+use combat::{fighter::Action, tuning::RESPAWN};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
-use movement::{Block, Body, standing};
+#[cfg(test)]
+use movement::standing;
+use movement::{Block, Body};
 use players::Player;
 use reach::respawn_point;
 pub use reach::{Section, Standing};
 use std::borrow::Cow;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 /// A player as the room last stepped them: their fighter, where it stands with the room's section, what their figure
 /// showed with it, and the number of their last input it took.
@@ -84,7 +90,8 @@ pub struct Seen {
 /// what happened since it was last asked.
 #[derive(Debug)]
 pub struct Room {
-    pub(crate) blocks: Vec<Block>,
+    /// The course, with the grid the movement rules find a body's near blocks by.
+    pub(crate) blocks: movement::Blocks,
     pub(crate) floor: Floor,
     spawn_points: Vec<(f64, f64)>,
     section: Option<Section>,
@@ -96,6 +103,8 @@ pub struct Room {
     joins: usize,
     pub(crate) players: BTreeMap<PlayerId, Player>,
     pub(crate) foes: BTreeMap<FighterId, Foe>,
+    /// The foes a page stood itself, whose phases call no one (`course.rs`).
+    pub(crate) quiet: BTreeSet<FighterId>,
     /// Each with what its player loosed it with; a foe's with nothing.
     pub(crate) shots: Vec<(Shot, Option<power::Loosed>)>,
     pub(crate) pending: Vec<Pending>,
@@ -147,26 +156,16 @@ pub struct Room {
 }
 
 impl Room {
-    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
-    /// navmesh is baked over the course and open ground around it.
-    #[must_use]
-    pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Flat, blocks, vec![spawn], None)
-    }
-
-    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
-    /// turn and come back to.
-    #[must_use]
-    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
-        let spawns = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
-        Self::on(floor, blocks, spawns, Some(section))
-    }
-
-    fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
-        let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        let nav = garrison::baked(&floor, &blocks, first, section.as_ref());
+    /// An empty room on its floor and navmesh (`garrison.rs` bakes it), its blocks, its spawns and its section.
+    pub(crate) fn on(
+        floor: Floor,
+        blocks: Vec<Block>,
+        spawn_points: Vec<(f64, f64)>,
+        section: Option<Section>,
+        nav: navmesh::NavMesh,
+    ) -> Self {
         Room {
-            blocks,
+            blocks: blocks.into(),
             floor,
             spawn_points,
             takes_foe_asks: section.is_none(),
@@ -176,6 +175,7 @@ impl Room {
             joins: 0,
             players: BTreeMap::new(),
             foes: BTreeMap::new(),
+            quiet: BTreeSet::new(),
             shots: Vec::new(),
             pending: Vec::new(),
             groups: BTreeMap::new(),
@@ -216,13 +216,13 @@ impl Room {
         id
     }
 
-    /// A body standing at a spawn or a foe's place: on the ground in a node's room, at 0 m on a course.
+    /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { standing(x, y) }
+        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) }
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
-    fn stand_again(&self, x: f64, y: f64) -> Body {
+    pub(crate) fn stand_again(&self, x: f64, y: f64) -> Body {
         let near = self.section.as_ref().and_then(|section| respawn_point(section, x, y));
         let first = self.spawn_points.first().copied().unwrap_or((0.0, 0.0));
         self.stand(near.map_or(first, |[near_x, near_y]| (near_x, near_y)))
@@ -480,40 +480,6 @@ impl Room {
         }
     }
 
-    /// A player dead long enough stands again at the spawn nearest where they fell, whole; a foe dead long enough is
-    /// gone.
-    fn raise_the_dead(&mut self) {
-        let mut raised = Vec::new();
-        let fallen: Vec<(PlayerId, Fighter)> = self
-            .players
-            .iter()
-            .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
-            .map(|(id, found)| (*id, found.fighter))
-            .collect();
-        for (id, fighter) in fallen {
-            let body = self.stand_again(fighter.body.x, fighter.body.y);
-            let graced = self.clock + GRACE;
-            if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = found.armed(player(body, fighter.arms));
-                found.graced = graced;
-                raised.push(id);
-            }
-        }
-        for id in raised {
-            self.tell(EventKind::Respawned, None, id, id, 0.0);
-        }
-        let gone: Vec<FighterId> = self
-            .foes
-            .iter()
-            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
-            .map(|(id, _)| *id)
-            .collect();
-        for id in gone {
-            self.foes.remove(&id);
-            self.board.forget(id);
-        }
-    }
-
     /// Every fighter now, players then foes, each in the order of their numbers.
     #[must_use]
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
@@ -577,6 +543,10 @@ impl Room {
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
+mod climb_tests;
+#[cfg(test)]
+mod course_tests;
+#[cfg(test)]
 mod faction_tests;
 #[cfg(test)]
 mod fair_tests;
@@ -593,8 +563,14 @@ mod measure_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]
+mod pace_tests;
+#[cfg(test)]
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
 #[cfg(test)]
+mod ring_tests;
+#[cfg(test)]
 mod room_tests;
+#[cfg(test)]
+mod spread_tests;

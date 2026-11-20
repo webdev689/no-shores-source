@@ -120,6 +120,15 @@ test("each levelled cell gets a plate at its level, its tiles its block's or pav
   assert.deepEqual(tile(1, 2, 1), [102, 0], "an avenue's sides are lawns");
 });
 
+test('a plan of placed pieces alone has no plates and a one-texel tile map', () => {
+  const plan = madePlan();
+  const pieces = plan.cells.map((cell): PlanCell => ({ ...cell, use: 'pieces' }));
+  const plates = groundPlates({ ...plan, cells: pieces }, blocksOf(), [100], 7);
+  assert.equal(plates.tops.length, 0);
+  assert.equal(plates.width, 1);
+  assert.equal(plates.tiles.length, 2);
+});
+
 test("an avenue on the grid's west edge runs no road off it, whatever stands at the east end of the row above", () => {
   const plan = madePlan();
   const east: PlanCell = { column: 4, row: 1, ground: 'level', level: 24, use: 'landmark' };
@@ -222,7 +231,7 @@ const TEMPERATE = { climate: 'temperate', season: 'summer' } as const;
 
 test("a port city's drawing is as it was before ruins were laid", () => {
   const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
-  assert.equal(drawingFingerprint(port), 'ce9675c6');
+  assert.equal(drawingFingerprint(port), '91122aa6');
   assert.ok(!port.ruined && [...port.near.values()].flat().every((each) => each.cut === 0));
 });
 

@@ -48,12 +48,14 @@ export const ASKS = {
   /** The Ranged loadout's ammunition set to `count` parts of `AMMO_FULL`; `count` Ammo crates more. */
   grantAmmo: 37,
   grantCrates: 38,
-  /** The Test Ground's grant of a First Mate and a Bosun of a level, sent ashore. */
-  grantOfficers: 39,
+  /** A loadout of `itemKind` worn: the one carried, or else a Normal one of the player's level handed out. */
+  grantWorn: 39,
   /** An Art worn, by its number in `column`; a fragment set, the Art in `column`, the slot (0 to 2) in `slot` and
    *  the fragment's place in its Art's list (0 to 5) in `node`. */
   wearArt: 40,
   setCore: 41,
+  /** The Test Ground's grant of a First Mate and a Bosun of a level, sent ashore. */
+  grantOfficers: 42,
   /** A sea island's wreck scavenged, by its place in the island's list in `node`. */
   scavenge: 63,
 } as const;
@@ -137,9 +139,6 @@ export interface GearDrop {
   readonly flying: number;
 }
 
-/** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
- *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
- *  item a Vestige last opened to, `answered` how many asks have been answered. */
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
 export interface GearNode {
   readonly index: number;
@@ -148,6 +147,9 @@ export interface GearNode {
   readonly resource: number;
 }
 
+/** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
+ *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
+ *  item a Vestige last opened to, `answered` how many asks have been answered. */
 export interface GearState {
   readonly xp: bigint;
   readonly level: number;

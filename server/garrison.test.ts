@@ -13,13 +13,13 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same node, script and fingerprint
  *  (crates/room-wasm/src/garrison_door_tests.rs). */
-const GARRISON_HASH = '0e9683df';
+const GARRISON_HASH = '403d10c6';
 const RUN_IN = 420;
 const SWING_EVERY = 30;
 const RUN_TICKS = 1500;
 
 /** A mission's node: a section 400 m square on land rising 300 m a kilometre east and south, its two spawns near its
- *  southern edge. */
+ *  southern edge, and in the square its room bakes a wall from below the ground up and a roof 4 m or more over it. */
 const grid = (data: readonly number[]) => ({
   width: 4,
   height: 4,
@@ -46,7 +46,10 @@ const NODE = {
     [15, 185],
   ],
   bounds: [-300, -300, 300, 300],
-  boxes: [],
+  boxes: [
+    [-10, 152, 10, 153, 970, 900],
+    [15, 145, 25, 160, 962.5, 962],
+  ],
   ground: {
     land: grid(Array.from({ length: 16 }, (unused, cell) => ((cell % 4) + Math.floor(cell / 4)) * 300)),
     lake_level: Array.from({ length: 16 }, () => 0),
@@ -83,4 +86,40 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
   }
   assert.ok(mostAlert >= 3 && events > 0, `the garrison fights: ${mostAlert} alert at once, ${events} events`);
   assert.equal(hash.toString(16).padStart(8, '0'), GARRISON_HASH);
+});
+
+/** The room door's agreement test holds the same run and fingerprint: two players, the garrison's foes shared out
+ *  between them. */
+const GARRISON_PAIR_HASH = '335a8b69';
+
+test('two players against a node’s garrison fight to the same fingerprint through WebAssembly as natively', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.openNode(JSON.stringify(NODE)), true);
+  const players = [room.join(), room.join()];
+  let hash = 0x811c_9dc5;
+  const struck = [0, 0];
+  for (let tick = 1; tick <= RUN_TICKS; tick++) {
+    players.forEach((player, index) => {
+      // The second player swings half a beat of swings after the first.
+      const running = tick <= RUN_IN;
+      const swing = !running && (tick + 15 * index) % SWING_EVERY === 0 ? 1 : 0;
+      const intent = new Float64Array([running ? 1 : 0, 0, 0, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN]);
+      const look = { anim: '', frame: 0, facing: 0 };
+      assert.equal(room.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) })), 'taken');
+    });
+    room.tick();
+    const bytes = room.snapshot();
+    for (const byte of bytes) hash = Math.imul(hash ^ byte, 0x0100_0193) >>> 0;
+    const message = readFromRoom(bytes);
+    if (message?.kind !== 'snapshot') continue;
+    for (const event of message.events) {
+      const index = players.indexOf(event.defender);
+      if (index >= 0 && event.striker !== event.defender) struck[index] = (struck[index] ?? 0) + 1;
+    }
+  }
+  assert.ok(
+    struck.every((blows) => blows > 0),
+    `the garrison fights both players: ${struck.join(', ')}`,
+  );
+  assert.equal(hash.toString(16).padStart(8, '0'), GARRISON_PAIR_HASH);
 });

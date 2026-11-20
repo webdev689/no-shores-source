@@ -101,7 +101,8 @@ pub(crate) fn step_clashes(
     clashes.retain(near);
     for clash in clashes.iter_mut() {
         let waters = CoastWaters { coasts, swell: &clash.swell };
-        clash.fight.step(&[], &waters, clash.wind, time);
+        let wind = clash.wind;
+        clash.fight.step(&[], &waters, &|_| wind, time);
     }
     for clash in clashes.iter().filter(|clash| clash.settled()) {
         pirates.back_from_clash(clash.sail_on());

@@ -22,6 +22,12 @@ code:
   - client/src/combat/hud.ts#veilOf
   - client/src/combat/hud.ts#clearOf
   - client/src/combat/vitals.ts#Vitals
+  - client/src/combat/hudLayout.ts#hudLayout
+  - client/src/combat/hudLayout.ts#barLength
+  - client/src/plus/barFrame.ts#barFrameSvg
+  - client/src/combat/weapons.ts#WeaponRows
+  - client/src/combat/weapons.ts#weaponsOf
+  - client/src/combat/weaponPicture.ts#lengthwise
   - client/src/combat/statusIcons.ts#StatusRow
   - client/src/combat/foePlate.ts#FoePlate
   - client/src/plus/barLoss.ts#stepLoss
@@ -29,8 +35,12 @@ code:
   - client/src/combat/foeTarget.ts#FoeTarget
   - client/src/combat/foePlate.ts#poiseTrackOf
   - client/src/combat/plateSight.ts#coneWant
+  - client/src/combat/plateSight.ts#aimedFoe
+  - client/src/combat/plateSight.ts#bodyDegrees
+  - client/src/combat/plateSight.ts#landBlocks
   - client/src/combat/plateSight.ts#plateScale
   - client/src/combat/plateSight.ts#PlateSight
+  - client/src/combat/foePlate.ts#OVERHEAD_SIZES
   - client/src/combat/hitWords.ts#wordsOf
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
@@ -55,10 +65,10 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/combat/worldCues.ts#eventCues
   - client/src/game/gearCards.ts#cardOf
-  - client/src/game/itemPictures.ts#ItemPictures
+  - client/src/player/itemPictures.ts#ItemPictures
   - client/src/game/gearDom.ts#HoverCard
   - client/src/game/gearDom.ts#compareNode
-  - client/src/game/iconFit.ts#fitIcon
+  - client/src/player/iconFit.ts#fitIcon
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
   - client/src/game/accountTab.ts#accountPanel
   - client/src/game/menuPages.ts#shipPage
@@ -81,7 +91,7 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-Its words call a ship "it" ([[Ships Are It, Not Her]]).
+Its words call a ship "it" ([[Ships Are It, Not Her]]), and the sea wears it too ([[The Sea's Screens Wear Enhanced Plus]]).
 
 ## How it works
 
@@ -103,8 +113,8 @@ Its words call a ship "it" ([[Ships Are It, Not Her]]).
 - **The palette** names each tone for what it is: the stone from lit to dark, the brass from lit to dark, the grounds
   and the words; and each bar's fill (`FILLS`): red, orange and yellow by rank, and the three vitals.
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
-  Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number; an
-  Elite's brass chevron and a Miniboss's two.
+  Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number, on
+  ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
 - **A hostile ship's mark at sea** is a port's mark in its own dress (`hostileLook`): the ship's faction's emblem in the
   ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
   two chevrons over it as the ship's plate bears them, the ship's name under it and under that "Hostile", its level and its
@@ -134,41 +144,67 @@ Its words call a ship "it" ([[Ships Are It, Not Her]]).
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
-  way while they show. On foot the status line stands under the place's name, and under a boss's bar while one
-  shows; at sea it stands under the compass, and in a sea fight in the top right corner, off the sky the aim looks
-at. On foot the hints stand
-  over the vitals; at sea they rise above the offer to dock or go ashore. The edge's warning stands under the
+  way while they show. On foot the vitals hold the top left, so the place's name and the status line under it stand
+  at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
+  and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
+  vitals, and the prompt for E and the hints stand over the Arts and weapons; at sea the hints rise above the offer
+  to dock or go ashore. The line of keys wraps short of the Acquired feed. The edge's warning stands under the
   compass's column. Where the hints grow to 22 px on a wide screen, the place line's small words grow with them
   ([[Game]]), so the water's name and holder are never the smallest words on the screen.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
-  the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does, and keeps the vitals
-  in their own window at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]). Its bars do what DFO's
-  Enhanced UI Plus does with them ([[Pick - Enhanced Plus UI]]).
-- **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower screen) and 26 px tall over
-  a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
-  larger) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
-  an end. A brass needle marks its middle. Its column stands what comes under it 10 px under its rule, 56 px down:
-  a boss's bar, then the target's plate. At sea it marks each hostile ship within its own sight (5 km at the helm,
-  farther with the voyage's pace, [[Naval Combat]], "At sea") and every other ship within 900 m on its top edge, a
-  bow pointing up,
-  at its bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
-  on the side to turn toward. A mark is red while its ship would take the player (a hostile ship, or a hostile captain in
-  the fight), bone for another player's or a captain who is not hostile, Overlook's blue (`#2f5d9a`) for a
-  friendly ship of the traffic, and grey once its colours are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
-- **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
-  writing its percentage inside: never 0% while anything is left. Where the HUD is wide (1500 by 900 and up) the window
-  is 330 px wide, health and stamina 33 px tall and their words at 22, and the ability bar beside it grows with it. Health at a quarter or less flashes its edge to blood;
-  the stamina flashes white for a swing or a dodge asked with none. Whole and untouched for 4 s (health and stamina
-  short of no whole point, no poise taken), with no buff and no foe on the target plate or the boss bar, the window
-  rests out of sight in six steps over 1.2 s; the first point lost or spent brings it back in two.
+  the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does; the vitals at the
+  top left; and the Arts and weapons at the bottom left
+  ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], with Claude's choices in
+  [[The Display as Claude Lays It Out]]). Its bars do what DFO's Enhanced UI Plus does with them
+  ([[Pick - Enhanced Plus UI]]). It takes a larger step where the view is 1500 by 900 or more, and stands at twice
+  its first size past 1440p (2400 by 1300), as the rest of the display does (`combat/hudLayout.ts`).
+- **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over a 2
+  px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
+  and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
+  strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
+  under its rule, 56 px down: a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px
+  long beside the compass stands the whole column under the vitals instead. On foot past 1440p the whole column (the
+  compass, the boss bar and the target's plate) stands at twice its size, as the corners do. At sea it marks each hostile
+  ship within its own sight (5 km at the helm, farther with the voyage's pace, [[Naval Combat]], "At sea") and every
+  other ship within 900 m on its top edge, a bow pointing up, at its bearing on the same quarter turn, so one
+  north-east stands under NE; one off the strip is held at the end on the side to turn toward. A mark is red while its
+  ship would take the player (a hostile ship, or a hostile captain in the fight), bone for another player's or a
+  captain who is not hostile, Overlook's blue (`#2f5d9a`) for a friendly ship of the traffic, and grey once its colours
+  are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
+- **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
+  over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),
+  drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
+  apart, at the larger step). Health's bar is 26% of the view's width, 150 to 600 px, kept 16 px clear of the
+  compass; stamina's and poise's are as long as what they hold beside health's most. No words stand on health or
+  stamina; poise says Iron, Staggered or Open beside its bar, and a screen reader reads each bar as a meter. Health at
+  a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none; poise's
+  turns brass while open. Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken),
+  with no buff and no foe on the target plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s;
+  the first point lost or spent brings them back in two.
+- **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
+  ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
+  picture in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or muzzle to the right
+  (`combat/weaponPicture.ts`), drawn again when the screen's pixel ratio changes. A Ranged weapon's shots stand large
+  over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
+  name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
+  name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
+  and its own shots. The rows change weapons as the fight's rules take them up, only at rest: one pressed, or put
+  away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over
+  its 0.4 s, and a swap pressed during one trades them again from
+  the start; a reload fills a line under the count, a weapon drawn flashes for 0.3 s, and one put away dims and greys
+  its picture and words over the row's own dark band. In a view too narrow for the vitals beside the compass, the
+  weapons stand over the Arts, so the corner keeps clear of the view's middle and the hands drawn there
+  (`combat/weapons.ts`). A frame that changes nothing writes nothing to the page, and the display reads where its
+  corners stand only after they change size, never each frame.
 - **Status icons** ([[Combat]], "Statuses"): each a 12 by 12 pixel glyph drawn as the elements' are, in its element's
   colours (Crit a burst and Linked two rings in Blaze; Expose a diamond cracked through, the mark the Arts' fragments
   give it, and Veiled a crescent in Cosmic; Charge a crackling bolt and Haste two chevrons in Volt), over a thin line
   in the element's colour that shrinks from the most time it held since it began or was refreshed. Each tells a screen
   reader what it is and the whole seconds it has left. The player's buffs (Crit, Haste, Linked, Veiled) stand in a row
-  over the vitals' health, 24 px each and 6 apart, and keep the window awake while one holds. A foe's debuffs (Expose,
-  then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its plates, 24 px each: over
-  a figure the row is scaled back up as the plate shrinks with distance, so it never reads smaller.
+  under the vitals, 24 px each (36 at the larger step) and 6 apart, and keep the vitals awake while one holds. A
+  foe's debuffs (Expose, then Charge, or the Charge's immunity as a faded Charge) stand beside the bar of each of its
+  plates, 24 px each: over a figure the row is scaled back up as the plate shrinks with distance, so it never reads
+  smaller.
 - **A bar's losses.** After a loss a strip holds where the bar stood for 0.55 s (1.2 s at most however the losses
   keep coming), then drains at 70% of the bar a second: on a vital it is the bar's own colour, faint; on a foe's or a
   ship's, pale. A frame that takes a real bite (1.5% of a vital, 0.5% of a foe's health, 1% of a hull) breaks the
@@ -176,8 +212,9 @@ at. On foot the hints stand
   fading (0.56 s, 0.64 s); two pieces fall in turn, so blows in quick succession each have their own. The vitals'
   health and stamina, the target plate, the boss bar and ships' plates break pieces off; the plates over figures and
   the poise do not.
-- **The target plate** shows the foe the player is fighting: the one their blow last reached, the one their soft
-  lock takes, or one beginning a telegraphed blow at them (unless they struck another in the last 2 s). It stands 6 s
+- **The target plate** shows the foe the player is fighting: the one their blow last reached (of several struck at
+  once, the soft lock's foe, else the first struck), the one their soft lock takes, or one beginning a telegraphed blow
+  at them (unless they struck another in the last 2 s). It stands 6 s
   after the last of these, fading over the last 1.5 s, and goes at once when the foe dies; never the Boss the boss
   bar shows. It remembers the health it last showed of each foe, so one turned back to loses from where its own bar
   stood, and one first shown is taken as whole, the plate coming with the first blow. The boss bar remembers its
@@ -191,37 +228,56 @@ at. On foot the hints stand
   of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
   orange, Volt blue, Cosmic violet (`wardOf`). It is gone once broken. What it takes from the player's own blows is
   said in its element's colour; a blow it holds whole fills no poise, so the poise track says nothing of it.
-- **Plates over figures are never overbearing.** A foe's shows only within 20 degrees of the crosshair, whole within
-  17 and none past 23, easing in and out over 0.25 s; a plate new on the screen starts where the cone puts it, so
-  none pops in. The foes the player traded a blow with in the last minute show wherever they are. A plate shows
-  for no foe farther than 60 m across the ground, nor one whose head the place's blocks have hidden for 0.15 s; seen
-  again it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does
-  farther off, never growing, its name never under 9 px.
+- **Plates over figures are never overbearing**, and few show at once, after Destiny's
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]). The cone round the crosshair shows one plate, the foe in
+  sight nearest it (`aimedFoe`), measured to the nearest point of its body, feet to head (`bodyDegrees`), so a foe is
+  at the crosshair wherever on its body the crosshair rests: whole within 4 degrees and none past 6, easing in and out
+  over 0.25 s. Another foe takes the cone only once it stands a degree nearer, or the cone would show a quarter more of
+  it, so two side by side, or a view wobbling between them, do not trade it. When the foe at the crosshair is already
+  fought or locked, the cone shows no other foe's plate; a Boss there takes the cone too, and shows none over its head.
+  The foe the soft lock holds shows wherever it is, and so does a foe the player traded a blow with, for as long as
+  the target plate would stand from that blow, fading as it fades (`foughtShare`); being the target alone, a foe
+  winding up at the player or one the lock let go, holds no plate. A plate new on the screen starts where the cone puts
+  it, so none pops in. The words of blows keep clear of the plates drawn, never of a foe with none. A plate shows for
+  no foe farther than 60 m across the ground, nor one whose head the place's blocks or its land have hidden for 0.15 s
+  (`landBlocks`, the line tried every 2 m, only for a foe that could show a plate or take the cone); seen again it
+  comes back at once. It is whole as near as 12 m through a
+  60 degree lens and shrinks as its figure does farther off, never growing, its name never under 9 px.
 - **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
   thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
   no stroke one side and the other in turn), and kept on the screen. Each pops
   1.4 times for 2 frames and 1.15 for 2, rises 4 px every 4 frames and blinks out over its last 6, standing 0.95 s; a
   crit's and a kill's stand 1.2 s at 33 px in gold, stamped Crit or Slain beside the number. A number pushes itself
-  down to stand 24 px clear of any foe's plate and clear of the words already shown. Blows by one striker on one
+  down to stand 24 px clear of any plate drawn and clear of the words already shown. Blows by one striker on one
   foe within 0.6 s add into one number, which pops again. A number dealt in an element is in its light. What a blow
   did besides (Staggered) rides on its number as a small word, and the player's blow on a foe winding up that does
-  not break it says "Holds".
+  not break it says "Holds". Stepping onto an Ammo box the room leaves lying, the ammunition full, says "Ammo full" on
+  the player in plain grey, once each time ([[Gear]], "Ammo full").
 - **Reduced motion.** With it asked for, no piece falls, no word pops or rises (each stands and blinks out), no edge
   blinks (it holds blood or white), no flash plays and plates over figures and ships go straight to their places. The
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the compass's column, then the veil over the whole display: blood while
   the player lies dead, plain while the link to the room is lost or joining again. The display never stands over
-  the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just above them.
+  the page's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
+  and one that would fall on the Arts and weapons, or on the game's hints over them, just above them.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round and a soft shade past it, as a ship's plate strokes its words (`HALO`), so they read over bright sky. The
   [[Game]]'s place name and hints, laid straight on the world too, carry the same outline.
-- **A foe's plate**, after the owner's reference: its faction's emblem in a chip square at the left; to its right its
-  name above a long thin track, the meter in its rank's colour. Over each foe, the soft lock's (with its poise under
-  the health) and the boss bar's are this one plate at three sizes. Ships' plates are drawn alike on an SVG, at the
-  same sizes (`PLATES`): 140 by 26 px over a figure, and the boss bar 640 px wide at most, three quarters of a
-  narrower screen, its faction after its name. A ship's hull reads its losses as a foe's health does, and its bar's
-  edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first seen starts whole at its bar.
+- **A foe's plate**, after the owner's reference: its level in a chip square at the left, the number half the square
+  high (over a figure; on the soft lock's and the boss bar's, 22 px on the face's grid), the square empty for a foe of
+  no level; to its right its name above a thin track, the meter in its rank's
+  colour. Over each foe, the soft lock's (with its poise under the health) and the boss bar's are this one plate at
+  three sizes. Over a figure its width and bar go with its foe's rank (`OVERHEAD_SIZES`), all 26 px tall: a Major's
+  140 px with an 8 px bar under the whole name; a Minor's as wide, since "? Crossbowman" fills it in the face, but its
+  bar 6 px and only three fifths as long, still a row of its red and of a shield's colour when drawn at three quarters
+  far off; an Elite's and up 176 px with a 10 px bar, cut in thirds by dark marks edged light, so they read over the
+  fill and the empty trough alike. Ships' plates are drawn alike on an SVG, at the sizes in `PLATES`: a Major's 140 by
+  26 px over a figure, and the boss bar 640 px wide at most, 76% of a narrower view, its faction after its name. The soft lock's is 340 px
+  wide at most, and never wider than 76% of the view. Its name stands at 11 px and the
+  boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
+  foe's health does, and its bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
+  seen starts whole at its bar.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
@@ -245,7 +301,8 @@ weight, and made into a font in the page when it opens (`trueType.ts`), so nothi
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size; keys on keycaps where the menu is wide enough; Journal
+whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
+keys on keycaps where the menu is wide enough; Journal
 and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
 between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
@@ -281,14 +338,17 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the
-  Melee and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and
-  the emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture
-  with its names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's
-  across from it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the
-  loss colour, at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its
-  flyout of the nine it may carry; a click there wears one, and F held over one dismantles it. The emblem's flyout holds every emblem, five a row: those
-  kept to wear with a click, the rest dim, each card saying how it is had.
+- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the Melee
+  and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
+  emblem stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
+  names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
+  it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
+  at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
+  slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
+  it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
+  one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
+  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot. The emblem's
+  flyout holds every emblem, five a row: those kept to wear with a click, the rest dim, each card saying how it is had.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter
   with the gain or loss in green or red. Along its foot what its presses do. Where the menu is wide, every card's words
@@ -302,11 +362,13 @@ never while a press is held. Each press is an ask the room answers.
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
   it in the vault or take it out (at the vault's counter), and, held, feed it a Fruit of Dagon or dismantle it.
-- **Inventory.** The currencies along the top; under them the Vestiges carried, "Vestiges 3/10" over ten places in
-  two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
-  then shelves, each counting what it holds: Consumables, and Materials, a list by name and count. Consumables holds
-  the Fruit of Dagon and the Ammo crate, each with its count; the crate is held ("Hold to fill your ammo") to fill the
-  Ranged weapon's ammunition, and offers nothing with none or at full. The gear is on the Character page alone.
+- **Inventory.** Aurem, the one currency, along the top; under it the Vestiges carried, "Vestiges 3/10" over ten places
+  in two rows of five, as Destiny 2's engrams stand, an empty place a dark Vestige, a click opening one at the Reader;
+  then shelves, each counting what it holds: Consumables, and Materials, the Weapon and Armor Fragments and Essence
+  first, then the islands' resources. Each shelf is a grid as Destiny's is: each thing a stack in a cell with its count,
+  shown only while one is held, then empty places to the end of its row of ten. Consumables holds the Fruit of Dagon and
+  the Ammo crate; the crate is held ("Hold to fill your ammo") to fill the Ranged weapon's ammunition, and offers
+  nothing at full. The gear is on the Character page alone.
 - **Holds.** What cannot be undone is held. As a press is held, what it acts on charges: a wash of its rarity rises
   through a tile, and its picture brightens and quivers toward the end, as Destiny's dismantle does. A piece is held
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
@@ -355,29 +417,30 @@ never while a press is held. Each press is an ask the room answers.
   and an invite waiting; it stands over the veil, so the company shows while the player travels.
 - **Settings** holds the account ([[Accounts]]): whether the player is a guest, signed in, or linked with Discord; a
   username and password to keep a guest by or sign in with; Discord; and signing out, here or everywhere, each held.
-  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface and of the
-  world ("World sounds"), each kept in this browser, and the recorded sounds' credits: each one's name, author,
-  licence and source, and what was changed.
+  Under it, the players blocked, each with a press to unblock them; then the volumes of the interface, the world
+  ("World sounds"), the music ("Music") and the [[Ambience]] ("Ambience"), each kept in this browser, and the recorded
+  sounds' credits: each one's name, author, licence and source, and what was changed.
 - **Motion** runs in steps, as Enhanced Plus's sigils breathe. With less motion asked for, only a hold's fill and
   wash move: no quiver, no shards, and the gains appear without sliding in.
 
 ## World sounds
 
-`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
-[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the
-owner has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the [[Test
+Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner has
+picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
 `content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. A pick is Freesound's,
-put in by `tools/freesound/publish.py`, or one of DFO's own, by `tools/freesound/own.py`
-([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have, plays any but the one it
-played last. The Duskraven plays its raven with a fire of its own under it
-([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
-(`combat/worldCues.ts`):
+put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
+`tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
+plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it ([[The Duskraven
+Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules (`combat/worldCues.ts`):
 
-- **Blows.** A swing as a fighter's attack begins, or as a foe's wound-up blow lands: light (fists, a dagger, a sword,
-  a mace), heavy (a flail, an axe, a warhammer, a greatsword) or a staff's. A blow that lands cuts (a dagger, a sword,
-  an axe, a greatsword) or strikes blunt (the rest, and a gun's ball); an arrow or a bolt strikes as itself. A crit,
-  the element a blow bursts in and an elemental kill's finisher sound over it; a spell's blow is heard as its spell. A
-  blow met by a shield or by a blade, a parry, a guard broken, a kill, a foe's shield struck and broken.
+- **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
+  lands (never before the swing begins, and not once a dodge or a flinch has cut it short), or as a foe's wound-up blow
+  lands: light (fists, a dagger, a sword, a mace), heavy (a flail, an axe, a warhammer, a greatsword) or a staff's.
+  A blow that lands cuts (a dagger, a sword, an axe, a greatsword) or strikes blunt (the rest, and a gun's ball); an
+  arrow or a bolt strikes as itself. A crit, the element a blow bursts in and an elemental kill's finisher sound over
+  it; a spell's blow is heard as its spell. A blow met by a shield or by a blade, a parry, a guard broken, a kill, a
+  foe's shield struck and broken.
 - **Arms.** A weapon drawn or put away (the player's and other players'; foes stand armed). A bow drawn, each shot by
   its weapon (a braced pair fires twice), a crossbow wound, a gun loaded, and a click when the player fires a gun with
   no shot left. Where a shot stops: a ball on stone, an arrow in the ground, any shot in water; on a body, the blow.
@@ -407,7 +470,8 @@ The plate and the card are the on-foot HUD's own build, so the sea reads as the 
 (`plus/barSheet.ts`, worn on foot by `combat/hudSheet.ts` too) and its bar (`plus/meter.ts`, with its lost strip and
 falling pieces).
 
-- **The Sloop's plate**, at the bottom right, is the vitals' window (as `combat/vitals.ts` builds it): three labelled
+- **The Sloop's plate**, at the bottom right, is the vitals' carved window the HUD on foot wore before its vitals went
+  to the top left (`windowVitalsCss` in `plus/barSheet.ts`, the target plate's rules shared with the HUD on foot): three labelled
   bars, Hull, Sails and Crew, each with its name and its percentage written inside it (hull red as health, sails bone,
   crew green as stamina), the hull's frame flashing blood at a quarter or less as health's does; an "On fire" chip while
   it burns and a "Braced" chip while it braces, the kit's chips.

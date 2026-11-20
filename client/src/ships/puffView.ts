@@ -53,7 +53,7 @@ export function puffFloats(
   return { picture: floats(picture), light: floats(marks.filter((mark) => mark.blend === 'glow')) };
 }
 
-const PUFF_WGSL = /* wgsl */ `
+export const PUFF_WGSL = /* wgsl */ `
 struct Camera { from_eye: mat4x4f, eye: vec4f }
 @group(0) @binding(0) var<uniform> camera: Camera;
 

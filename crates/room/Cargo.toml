@@ -18,10 +18,12 @@ naval = { path = "../naval" }
 navmesh = { path = "../navmesh" }
 reach = { path = "../reach" }
 sailing = { path = "../sailing" }
+sky = { path = "../sky" }
 world = { path = "../world" }
 
 [dev-dependencies]
 bake = { path = "../bake" }
+layout = { path = "../layout" }
 city = { path = "../city" }
 serde_json.workspace = true
 

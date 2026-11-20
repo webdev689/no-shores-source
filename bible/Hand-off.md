@@ -9,8 +9,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The scaffold: the TypeScript client on WebGPU, the Rust repo checks, CI, this vault.
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
-- The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP and Context7 keys are
-  network secrets on the Default environment. Kit fixes are logged with task-observer for the co-dev; the log lives
+- The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
+  on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
   in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
@@ -32,11 +33,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   wherever it runs.
 - [[Sailing]], step 1 of the naval port, on `main`: the `sailing` crate (Come Sail Away's helm under DFO's responsive
   helm, the swell's pose, grounding on the land), stepped through `land-wasm`, and the owner's Sloop put to sea and
-  sailed in the World Editor, the water parting round her. Her model and mesh are on R2 (`content/ships/ships.json`).
+  sailed in the World Editor, the water parting round it. Its model and mesh are on R2 (`content/ships/ships.json`).
 - [[Naval Combat]], step 2, on `main`: the `naval` crate (DFO's ballistics, swivel
   and shot kinds, gunnery, damage, the shot field and a pirate captain's AI, and the `Fight` that steps both ships),
   a stateful fight door in `land-wasm`, and the fight in the World Editor (`F` while sailing; the right mouse aims and
-  fires). The Sloop's guns and hit boxes come from her model through the export.
+  fires). The Sloop's guns and hit boxes come from its model through the export.
 - The servers run on Cloudflare ([[Servers on Cloudflare]]) and messages are FlatBuffers
   ([[Messages Are FlatBuffers]]). On `main`: the [[Server]]'s room and its messages, with Google's `flatc` installed
   by the schema step itself; the room hosted by a Cloudflare Durable Object in `server/`; the browser's connection and
@@ -68,11 +69,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   destination. Discovery is kept in the browser. Tested offline in headless Chromium end to end: the map raised, a
   point of the sea chosen, Set sail, the ship under way.
 - The Sloop painted, under DFO's sails, at sea, with pirates and the pan to combat, on its pull request (#50), as
-  the owner decided it ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]): her model UV-mapped and
-  sorted into parts that wear the procedural painter's pictures; DFO's animated sails on her own corners; the
+  the owner decided it ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]): its model UV-mapped and
+  sorted into parts that wear the procedural painter's pictures; DFO's animated sails on its own corners; the
   Overworld's ship; pirates from DFO's director in the sea room, which also runs in the page when playing alone; a bold
-  one meeting her starts a fight in the room, and the view pans down to it at true scale ([[Naval Combat]], "At sea").
-  Tested offline: the full check, the room traced in Node, and headless pictures of her and of a fight beginning.
+  one meeting it starts a fight in the room, and the view pans down to it at true scale ([[Naval Combat]], "At sea").
+  Tested offline: the full check, the room traced in Node, and headless pictures of it and of a fight beginning.
 - On `main`: the forge renders DFO's audit branch had and Overlook did not, published to R2
   ([[The Audit Branch's Forge Renders Come Over]]); the rest of that branch's forge work was already here, newer.
 - On `main` and deployed: the fight
@@ -93,25 +94,25 @@ Where the work stands now, for the next session. Each session rewrites this note
   crosshair, and tracers.
 - Ships in the rooms, on `main` (pull request #51), tested offline
   ([[Server]], "A fleet"; [[Naval Combat]], "The fight", "Ramming", "In a fleet room"): the naval `Fight` holds many
-  ships by number, each sailed by a player's orders or a captain's mind, a captain choosing whom she fights among the
+  ships by number, each sailed by a player's orders or a captain's mind, a captain choosing whom it fights among the
   players' ships; a fleet room (`/room/fleet-<name>`) where up to 16 players put their Sloops to sea, call up to four
-  captains and fight them together, each browser predicting her own ship through `room.wasm` to the bit; DFO's ram
+  captains and fight them together, each browser predicting its own ship through `room.wasm` to the bit; DFO's ram
   and hull push; and the World Editor sailing there with `?room=`. A golden trace showed the one-captain fight
   unchanged line for line. Two players and a captain ran 480 s on the local Cloudflare runtime at 57.8 snapshots a
   second, both predictions equal to the room's ships to the bit.
 - The sea's new work, merged to `main` with the owner's yes (#59), which deploys the page and the rooms together,
   each part as the owner decided it:
   - The ship's two new buttons ([[The Ship Is Managed and Walked From the Sea's Panel]]): the [[Interface]]'s Enhanced
-    Plus kit and the sea bar in it; the Sloop at true scale at the helm; Manage, the view over her deck with her panel
-    and stand-in hands; and Leave the helm, the player walking her deck ([[Sailing]], "Her deck") with the sea room
+    Plus kit and the sea bar in it; the Sloop at true scale at the helm; Manage, the view over its deck with its panel
+    and stand-in hands; and Leave the helm, the player walking its deck ([[Sailing]], "Its deck") with the sea room
     the authority on every step ([[Server]], "The sea").
-  - The Sloop about 18 m long, her quarterdeck opened with steps down ([[The Sloop Is About 18 m Long]]); her model on
-    R2 is the one the `ships` workflow shaped and published. Her deck's walls stand where a body cannot walk, so her
-    steps and her stair aft are the ways off her quarterdeck, and her helm is 0.45 m behind her wheel.
+  - The Sloop about 18 m long, its quarterdeck opened with steps down ([[The Sloop Is About 18 m Long]]); its model on
+    R2 is the one the `ships` workflow shaped and published. Its deck's walls stand where a body cannot walk, so its
+    steps and its stair aft are the ways off its quarterdeck, and its helm is 0.45 m behind its wheel.
   - Pirates met at sea ([[Pirates Must Be Met at Sea]]): they sail on the voyage's clock and hold a voyage as they come
     near, each sea on a seed of its own ([[Naval Combat]], "At sea").
-  - The helm's keys in the Overworld's view, her crew and the player seen from any view, and the wheel all the way in
-    to her at full detail with the World Editor's motion
+  - The helm's keys in the Overworld's view, its crew and the player seen from any view, and the wheel all the way in
+    to it at full detail with the World Editor's motion
     ([[The Sloop Is Sailed by Its Keys and Seen Close From Any View]]; [[Game]], "At sea").
   - Three independent audits and a ponytail review of the whole pull request, every finding checked and the real
     ones fixed with tests; tested offline.
@@ -155,7 +156,7 @@ Where the work stands now, for the next session. Each session rewrites this note
     garrison foes leash to their posts (a leashing Boss resets whole) and walk home after a search; foes no longer
     shake at a guard, a range's edge or a mesh's edge; a body no longer sticks in a block's corner ([[Movement]]);
     sea fights' views read across a deploy, and figures glide after a rejoin; the fight display's layers, outline,
-    veils and overlaps with the Game's own display; at sea the Sloop is never drawn larger than she is as the view
+    veils and overlaps with the Game's own display; at sea the Sloop is never drawn larger than it is as the view
     comes in or a fight begins, and pirates cut the water.
   - The bars do what DFO's Enhanced Plus does with them ([[Pick - Enhanced Plus UI]], read at DFO's fc2a8e6): a
     hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
@@ -186,19 +187,19 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The waters: nine, each the sea nearest an island, with its holder and its island's levels, and a contested seam
     ([[World Map]], "Waters").
   - Hostile ships by water: rank by the water's band, hull by rank, sighted half a minute out at any pace, bold ships
-    coming where they can meet a voyage, and a click on a ship's mark to chase her ([[Naval Combat]], "At sea").
+    coming where they can meet a voyage, and a click on a ship's mark to chase it ([[Naval Combat]], "At sea").
     Measured at x60 over 10 minutes in hostile waters: a fight for 30 to 65% of players sailing on and 70 to 85%
     chasing; ships in sight 37 to 59 s on average.
   - Friendly ships on three lanes between Overlook, Sunspire and Rimeholt, seen from land and sea; the other six
     cities are ruins ([[Cities]], "Ruins").
-  - Every hull sails and fights as herself, each rank lasting as long under a captain's fire ([[Hulls]]); drawn in her
-    side's colours, her square sails braced, every ship in the scene's light and shadow.
+  - Every hull sails and fights as itself, each rank lasting as long under a captain's fire ([[Hulls]]); drawn in its
+    side's colours, its square sails braced, every ship in the scene's light and shadow.
   - Close in, the pace eases to the world's own time and the ship grows a steady step each notch ([[Game]], "At sea").
   - The sea by the weather, every ship riding the swell, wakes and bow waves that read from above ([[Water]]).
   - The fights' ends: sinking and what floats, striking, losing (washed up at the nearest port city by sea), damage
     kept until repaired at a port, fights for many players, sails torn away and masts falling ([[Naval Combat]]).
-  - Boarding: E on a struck ship alongside, then the fight on her deck on foot among her crew, her deck riding her
-    ship; won, her hold's take and a minute to go back aboard ([[Naval Combat]], "Boarding").
+  - Boarding: E on a struck ship alongside, then the fight on its deck on foot among its crew, the deck riding its
+    ship; won, its hold's take and a minute to go back aboard ([[Naval Combat]], "Boarding").
   - The fight's look from the room's own events on every fight path: flash and smoke that thins, splashes of water,
     splinters and holes, torn sails, falling masts, a sinking's foam, and what floats under gold marks.
   - The held map tinted by holder, each water's name coloured by its difficulty; the tiers renamed Normal, Elite and
@@ -220,6 +221,28 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
+  then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
+  the owner's yes to merge: foes show their level, patrol
+  beats, climb by the navmesh's links, spread out, answer at the fight's pace, chase a target walking away, fight as
+  a group (one blow at a target each 1.2 s beat, one going in, a line on their side, one flanker) and share
+  themselves out across players ([[Foes Spread Across the Players They Fight]]); melee swings a quarter faster and
+  strikes every foe in reach; the soft lock lets go past 70 degrees; a click during a swap swings as it ends; a
+  locked-on dodge rolls the way it goes; a slot's grid closes off hover; the inventory holds Aurem alone and its
+  stacks in Destiny's grid; a full Ammo box says Ammo full; and the display's vitals stand at the top left and its
+  Arts and weapons at the bottom left, after the owner's two pictures
+  ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], Claude's choices in
+  [[The Display as Claude Lays It Out]]). The display was looked at headless in the Test Ground at three sizes and a
+  pixel ratio of 2, on the game's page at a patrol and in Overlook, and in every state on a page running the real
+  display; not yet on a real GPU, in a fight with the player's own swing, or beside the owner's pictures, which stayed
+  in the session that took them. Its open choices, each in #68's description: the group's numbers; the display's
+  numbers; a locked-on backstep turning round or not; the vitals' frames over a night sky; starving foes in a crowd
+  of sixteen; a lone crossbowman drawn long; a foe under a ledge; a flanker changing hands; ripostes not held to the
+  beat; patience at one over the cap; sixteen foes about 1.4 m apart; node rooms baking no boxes; no height cap on
+  climbs. `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the owner. Its known
+  limits, left open with reasons in the description: a crowd of many dresses composed ahead only as room comes
+  (keeping more needs a GPU measurement), small objects made each frame, and the Test Ground's panels running the
+  room on while the pointer is free.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
@@ -229,7 +252,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   (`room::crew::pledge_of`); every call beyond the design note is listed in #99's description, the owner's to change.
 - **#75, the sea, waits on the owner's yes to merge**, after #71, which deploys the page and the rooms. Left open
   there: the sky and the light do not follow the weather yet; off the helm the room now takes a change of pace (a
-  rule of the server's); under a player's fire a Frigate lasts about 5% longer than a Sloop of her rank; one voyage in contested
+  rule of the server's); under a player's fire a Frigate lasts about 5% longer than a Sloop of its rank; one voyage in contested
   water held a ship in sight 89 s, unexplained.
 - The bars' proposals, the owner's to choose: a foe's alert "!" showing its plate through the cone for a second;
   a setting to switch the vitals' rest off; near plates growing (DFO's own law grows them to 1.5×, ours caps them);
@@ -255,9 +278,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Sloop Is About 18 m Long]]).
 - #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
   playing alone; when it happens is the owner's to say.
-- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
-  unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
-  renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
+- Which cloud environment sessions run on. The personal Default (unrestricted) holds the SkillsMP key, and
+  check-tools passes there with no FAIL. Whether a second Default and a personal `overlook-source` environment still
+  exist is unchecked: none is listed to a session on the personal Default. A Context7 key, if wanted, goes on the
+  environment the same way.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - #60's audit calls are made, under the owner's "All decisions are yours" ([[The Audit's Calls Are Claude's]]); the
   owner can change any. What stays theirs: the Workers plan (a password sign-in takes about 50 ms of CPU, the Free plan
@@ -311,7 +335,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   and overlap this sea: flotsam stays the gear loop's drops, and the seas chosen bring their own weather.
 - **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
   the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call its
-  there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship opens her cabin in the game yet
+  there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship opens its cabin in the game yet
   ([[Hulls]], "What the code needs"). Splitting each ship into
   parts for upgrades (hull, cannons, sails and wheel), and the cabin's decoration from DFO's `decor/`, were raised and
   set aside by the owner for now. A change to the shared builder is checked by rebuilding each published ship and
@@ -440,7 +464,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   ends red with "Picks not read whole", Freesound's own pages link more than one licence, and `pages/pick-*.html` in its
   download shows where.
 - Proposed to the owner, not done: the comments check also catching a comment that names a note ("see the X note"),
-  as the rule already says; and whether her deck's grid, which `deck.py` measures, stays in the manifest or goes to
+  as the rule already says; and whether its deck's grid, which `deck.py` measures, stays in the manifest or goes to
   R2 as a bake.
 - A whole-repo audit's findings are all fixed and deployed, with the owner's yes: the smaller with #51, then the five
   larger (a flood of messages from one socket, costly courses at sea, a deploy script that built nothing, the look's

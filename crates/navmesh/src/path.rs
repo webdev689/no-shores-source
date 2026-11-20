@@ -121,10 +121,10 @@ impl core::fmt::Debug for Scratch {
     }
 }
 
-/// A* over the polys from `start` to `goal`, measured centre to centre; the heuristic is the straight line between
-/// centres, which never overestimates. A blocked poly cannot be entered unless it is the goal or its obstacle is
-/// waived; leaving the start is always allowed. Answers the corridor, start to goal; none at once when no walk joins
-/// the two.
+/// A* over the polys and links from `start` to `goal`, measured centre to centre, a link's cost added to the way to
+/// its start; the heuristic is the straight line to the goal's centre from a poly's centre or a link's end, which
+/// never overestimates. A blocked poly cannot be entered unless it is the goal or its obstacle is waived; leaving the
+/// start is always allowed. Answers the corridor of nodes, start to goal; none at once when no walk joins the two.
 pub(crate) fn corridor(
     mesh: &Mesh,
     obstacles: &Obstacles,
@@ -135,13 +135,18 @@ pub(crate) fn corridor(
     if mesh.islands[start] != mesh.islands[goal] {
         return None;
     }
-    let apart = |one: usize, two: usize| locate::apart(&mesh.centres, one, two);
-    search.begin(mesh.polys.len());
+    let target = mesh.centres[goal];
+    let to_goal = |node: usize| {
+        let at = mesh.link_of(node).map_or_else(|| mesh.centres[node], |laid| laid.to);
+        libm::hypot(at.0 - target.0, at.1 - target.1)
+    };
+    search.begin(mesh.polys.len() + mesh.links.len());
     search.visit(start);
     search.cost[start] = 0.0;
-    search.estimate[start] = apart(start, goal);
+    search.estimate[start] = locate::apart(&mesh.centres, start, goal);
     let mut offered = 0;
     search.offer(start, &mut offered);
+    let mut ways = Vec::new();
     while let Some(Open { poly: current, .. }) = search.open.pop() {
         if current == goal {
             break;
@@ -150,13 +155,25 @@ pub(crate) fn corridor(
             continue;
         }
         search.closed[current] = true;
-        let links = mesh.polys[current].neighbours.iter().zip(&mesh.steps[current]);
-        for (&next, &step) in links.filter_map(|(next, step)| Some((next.as_ref()?, step))) {
+        ways.clear();
+        if let Some(laid) = mesh.link_of(current) {
+            let (end, to) = (mesh.centres[laid.end], laid.to);
+            ways.push((laid.end, libm::hypot(end.0 - to.0, end.1 - to.1)));
+        } else {
+            let edges = mesh.polys[current].neighbours.iter().zip(&mesh.steps[current]);
+            ways.extend(edges.filter_map(|(next, step)| Some((*next.as_ref()?, *step))));
+            let centre = mesh.centres[current];
+            ways.extend(mesh.exits[current].iter().map(|&at| {
+                let laid = &mesh.links[at];
+                (mesh.polys.len() + at, libm::hypot(laid.from.0 - centre.0, laid.from.1 - centre.1) + laid.cost)
+            }));
+        }
+        for &(next, step) in &ways {
             search.visit(next);
             if search.closed[next] {
                 continue;
             }
-            let blocker = if obstacles.is_empty() { None } else { obstacles.blocked[next] };
+            let blocker = if obstacles.is_empty() { None } else { obstacles.blocked.get(next).copied().flatten() };
             let waived = match (blocker, waive) {
                 (None, _) | (_, Waive::All) => true,
                 (Some(blocker), Waive::One(id)) => blocker == id,
@@ -169,7 +186,7 @@ pub(crate) fn corridor(
             if through < search.cost[next] {
                 search.cost[next] = through;
                 search.came_from[next] = Some(current);
-                search.estimate[next] = through + apart(next, goal);
+                search.estimate[next] = through + to_goal(next);
                 search.offer(next, &mut offered);
             }
         }
@@ -204,6 +221,19 @@ fn same(a: (f64, f64), b: (f64, f64)) -> bool {
     (a.0 - b.0).abs() < 1e-6 && (a.1 - b.1).abs() < 1e-6
 }
 
+/// Whether a point stands on a portal's edge between its ends: a walker there is already through it. A funnel opened
+/// along the edge itself would point both ways at once, and turn back to the end behind the walker.
+fn on_edge(point: (f64, f64), portal: Portal) -> bool {
+    let (along_x, along_y) = (portal.left.0 - portal.right.0, portal.left.1 - portal.right.1);
+    let length = libm::sqrt(along_x * along_x + along_y * along_y);
+    if length < 1e-6 {
+        return false;
+    }
+    let across = triangle_area(portal.right, portal.left, point).abs() / length;
+    let reach = ((point.0 - portal.right.0) * along_x + (point.1 - portal.right.1) * along_y) / length;
+    across < 1e-6 && reach > 1e-6 && reach < length - 1e-6
+}
+
 /// The simple stupid funnel: pulls the line taut through the portals, the first and last of which are the start
 /// and the goal as points. Answers the corners, start and goal included.
 pub(crate) fn funnel(portals: &[Portal]) -> Vec<(f64, f64)> {
@@ -213,6 +243,10 @@ pub(crate) fn funnel(portals: &[Portal]) -> Vec<(f64, f64)> {
     let mut i = 1;
     while i < portals.len() {
         let Portal { left: next_left, right: next_right } = portals[i];
+        if on_edge(apex, portals[i]) {
+            i += 1;
+            continue;
+        }
         if triangle_area(apex, right, next_right) <= 0.0 {
             if same(apex, right) || triangle_area(apex, left, next_right) > 0.0 {
                 right = next_right;
@@ -259,3 +293,7 @@ pub(crate) fn portals(mesh: &Mesh, corridor: &[usize], start: (f64, f64), goal: 
     portals.push(Portal { left: goal, right: goal });
     Some(portals)
 }
+
+#[cfg(test)]
+#[path = "path_tests.rs"]
+mod path_tests;

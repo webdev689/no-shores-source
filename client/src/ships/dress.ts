@@ -1,5 +1,5 @@
-// The sides a ship sails for, and the colours each dresses one model of a hull in: her hull's paint, the stripe
-// along her gunports, her canvas and the flag at her masthead. A side's colours are the painter's, laid over the
+// The sides a ship sails for, and the colours each dresses one model of a hull in: its hull's paint, the stripe
+// along its gunports, its canvas and the flag at its masthead. A side's colours are the painter's, laid over the
 // same pictures every hull wears.
 
 /** Whose a ship is: a player's, a friendly merchantman's, the Grey Tithe's or the pirates'. */
@@ -9,9 +9,9 @@ export type ShipSide = (typeof SHIP_SIDES)[number];
 /** A colour as red, green and blue, 0 to 1. */
 export type Colour = readonly [number, number, number];
 
-/** A side's colours: her hull's paint, her stripe's and her canvas's (each null where her pictures stand as painted),
- *  her flag's ground, the faction whose emblem it bears (null for none) and the colour the emblem's tones are shaded
- *  from on her flag (null for the emblem's own). */
+/** A side's colours: its hull's paint, its stripe's and its canvas's (each null where its pictures stand as painted),
+ *  its flag's ground, the faction whose emblem it bears (null for none) and the colour the emblem's tones are shaded
+ *  from on its flag (null for the emblem's own). */
 export interface ShipDress {
   readonly hull: Colour | null;
   readonly stripe: Colour | null;
@@ -44,7 +44,7 @@ export const DRESSES: Readonly<Record<ShipSide, ShipDress>> = {
     hull: colourOf('#59636b'),
     stripe: colourOf('#ebe0c2'),
     canvas: colourOf('#8f9092'),
-    // Her canvas grey, so at fight range her flag never reads as the pirates' black; the balance in dark slate.
+    // Its canvas grey, so at fight range its flag never reads as the pirates' black; the balance in dark slate.
     flag: colourOf('#8f9092'),
     emblem: 1,
     emblemTint: colourOf('#2e3438'),
@@ -64,7 +64,7 @@ export function factionSide(faction: number): ShipSide {
   return faction === 1 ? 'tithe' : faction === 2 ? 'pirate' : 'friendly';
 }
 
-/** How a ship is drawn: her side, and how light (1 as painted, less for another player's in the World Editor). */
+/** How a ship is drawn: its side, and how light (1 as painted, less for another player's in the World Editor). */
 export interface ShipLook {
   readonly side: ShipSide;
   readonly shade?: number;

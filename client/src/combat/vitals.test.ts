@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { LOSS_DRAIN, LOSS_HOLD, LOSS_HOLD_MOST, type Loss, stepLoss } from '../plus/barLoss.ts';
-import { onFakePage } from './page.test.ts';
+import { findAll, onFakePage } from './page.test.ts';
 import { calmFor, healthLow, LOW_HEALTH, REST_SECONDS, Vitals, vitalOf, vitalsOf, vitalsWhole } from './vitals.ts';
 
 const fighter: FighterView = {
@@ -98,5 +98,64 @@ test('the vitals rest once whole and untouched for four seconds with no foe on t
     assert.equal(vitals.root.classList.contains('rest'), true, 'at rest');
     vitals.update({ ...whole, health: 150 }, 1 / 60, false, false);
     assert.equal(vitals.root.classList.contains('rest'), false, 'back at once');
+  });
+});
+
+test('each bar is as long as what it holds, and tells a screen reader its name and how much of its most is left', () => {
+  onFakePage((root) => {
+    const vitals = new Vitals(root);
+    vitals.lay(300, false);
+    vitals.update(
+      { ...fighter, health: 150, healthMax: 200, stamina: 42, poise: 7, poiseMax: 40 },
+      1 / 60,
+      false,
+      false,
+    );
+    const [health, stamina, poise] = ['health', 'stamina', 'poise'].map((name) => findAll(root, 'vital', name)[0]);
+    assert.deepEqual(
+      [health?.style['width'], stamina?.style['width'], poise?.style['width']],
+      ['300px', '150px', '60px'],
+      'health 200 at the length, stamina 100 half of it, poise 40 a fifth',
+    );
+    const said = (bar: unknown) => {
+      const { role, ariaLabel, ariaValueNow, ariaValueMax } = bar as Record<string, string>;
+      return [role, ariaLabel, ariaValueNow, ariaValueMax];
+    };
+    assert.deepEqual(said(health), ['meter', 'Health', '150', '200']);
+    assert.deepEqual(said(stamina), ['meter', 'Stamina', '42', '100']);
+    assert.deepEqual(said(poise), ['meter', 'Poise', '7', '40']);
+  });
+});
+
+test('poise says what holds the player beside its bar: filling says nothing, a stagger or an opening is named', () => {
+  onFakePage((root) => {
+    const vitals = new Vitals(root);
+    const poise = findAll(root, 'vital', 'poise')[0];
+    const word = () => findAll(root, 'poise-word')[0]?.textContent;
+    vitals.update({ ...fighter, poise: 7 }, 1 / 60, false, false);
+    assert.equal(poise?.classList.contains('poise-filling'), true);
+    assert.equal(word(), '');
+    vitals.update({ ...fighter, action: { kind: 'staggered', left: 30, cause: 'poise' } }, 1 / 60, false, false);
+    assert.deepEqual(
+      [poise?.classList.contains('poise-staggered'), poise?.classList.contains('poise-flash')],
+      [true, true],
+    );
+    assert.equal(word(), 'Staggered');
+    assert.equal((poise as unknown as Record<string, string>)['ariaValueText'], 'Staggered');
+    vitals.update({ ...fighter, action: { kind: 'staggered', left: 20, cause: 'charged' } }, 1 / 60, false, false);
+    assert.equal(word(), 'Charged');
+    vitals.update({ ...fighter, action: { kind: 'overreach', left: 20 } }, 1 / 60, false, false);
+    assert.deepEqual([poise?.classList.contains('poise-open'), word()], [true, 'Open']);
+  });
+});
+
+test('health low marks its bar to flash blood, and a press with no stamina marks stamina’s to flash white', () => {
+  onFakePage((root) => {
+    const vitals = new Vitals(root);
+    vitals.update({ ...fighter, health: 40 }, 1 / 60, true, false);
+    assert.equal(findAll(root, 'vital', 'health', 'low').length, 1);
+    assert.equal(findAll(root, 'vital', 'stamina', 'flash').length, 1);
+    vitals.update(fighter, 1 / 60, false, false);
+    assert.equal(findAll(root, 'low').length + findAll(root, 'flash').length, 0);
   });
 });

@@ -17,6 +17,13 @@ pub const STALE: f64 = 1.5;
 /// A foe notices a fighter it is not already fighting only within this much of where it faces, as DFO's do: half of
 /// all round.
 pub const SIGHT_ARC: f64 = 90.0 * DEGREES;
+/// Foes share themselves out among the fighters they fight. A foe waiting its turn weighs whom to fight every
+/// SHARE_EVERY, as DFO's target timer does (5 of its system timer's 1/18.2 s), and goes for another only to strike it
+/// SHARE_SOONER of a beat sooner; having changed whom it fights, it holds to it SHARE_HOLD, time to run to one in its
+/// range and strike.
+pub const SHARE_EVERY: f64 = 0.27;
+pub const SHARE_SOONER: f64 = 0.5;
+pub const SHARE_HOLD: f64 = 5.0;
 
 /// Awareness, from nothing to full: seeing a fighter raises it by up to SIGHT_GAIN a second, dead ahead at its feet,
 /// falling away to nothing at the edge of its range and of its arc; with nothing stirring it bleeds ALERT_BLEED a
@@ -40,6 +47,9 @@ pub const LEASH: f64 = 50.0;
 pub const HOME_REACHED: f64 = 0.3;
 pub const HOME_FACED: f64 = 0.01;
 pub const SQUARING_PACE: f64 = 0.001;
+/// A foe keeping up with its place as its group walks on walks at the share of a walk its distance behind is of this,
+/// at most a full walk: at a group's stroll it walks a little behind its place, and catches up when farther.
+pub const KEEP_UP: f64 = 2.0;
 /// Noises: the awareness each adds where it is made, falling away to nothing at its reach. A gun alerts outright
 /// within half its reach; a bow or a crossbow only stirs; a swing, or a blow landing, alerts only at a fighter's elbow;
 /// a runner's feet stir once each RUN_EVERY.
@@ -67,12 +77,20 @@ pub const RING_SLACK: f64 = 0.6;
 pub const CIRCLE_PACE: f64 = 0.4;
 pub const SLOT_TURN: f64 = 0.4;
 pub const FLANK_ARC: f64 = 100.0 * DEGREES;
+/// The room each waiting foe takes round its ring: a little more than the longest reach of a foe's weapon and a body,
+/// so the waiting stand clear of each other. A ring holds as many as fit this far apart; the rest wait on a ring this
+/// much farther out, and so on.
+pub const RING_ROOM: f64 = 2.5;
+pub const RANK_GAP: f64 = RING_ROOM;
+/// A waiting foe makes for its place on its ring at this many times its distance from it a second, at most its
+/// circling pace: near its place it slows, and a place drifting on draws it along without a stop.
+pub const FOLLOW: f64 = 3.0;
 /// Stepping back out of reach, at this share of a walk.
 pub const STEP_PACE: f64 = 0.7;
 /// After its blow a foe hops back at most this long, then holds its ground for between these before it waits again.
 pub const RECOVER_HOP: f64 = 0.4;
 pub const RECOVER: (f64, f64) = (0.8, 1.6);
-/// A foe that has waited this long goes in, whatever the tokens say.
+/// A foe that has waited this long goes in, one over the tokens' cap at most.
 pub const PATIENCE: f64 = 6.0;
 
 /// This share of its health lost inside the window, a foe backs off to a farther ring for a while, at most once a
@@ -146,11 +164,19 @@ pub const BACK_TURNED: f64 = 110.0 * DEGREES;
 pub const CLOSING: f64 = 0.5;
 /// How fast a foe turns: DFO's 0.35 radians a classic tick of 1/16 s, a fighter squaring up.
 pub const TURN: f64 = 0.35 * 16.0 / 60.0;
+/// A target nearer than this across, and higher or lower than a blow reaches, is as far as the walk to it: past the ring
+/// of the longest reach (a staff's 2.2 m, and 1.5 m more), so a foe beneath a ledge never takes one on it for in reach.
+pub const OFF_FLOOR_NEAR: f64 = 4.0;
+/// A foe crossing a climb or a drop steps only once it faces square to the block's side, to within this: walked
+/// slantwise into a side, a body slides along it rather than climb.
+pub const SQUARE: f64 = 1e-9;
 /// A foe runs to a spot farther than this.
 pub const RUN_FROM: f64 = 5.0;
-/// Foes steer apart inside this, by up to this share of a walk: DFO's push of 3 m/s, as steering.
+/// Foes steer apart inside this, by up to this share of a walk: DFO's push of 3 m/s, as steering. Nearer than CLEAR,
+/// a little more than a body's width, a foe's move into an ally turns wholly aside round it.
 pub const SPACING: f64 = 1.2;
 pub const SPACING_PACE: f64 = 0.7;
+pub const CLEAR: f64 = 0.8;
 
 /// A swing begins only with the foe's aim this near its target; in reach it waits between these first, which gives a
 /// holder the moment DFO's motor gave it to wind up a telegraphed blow instead.
@@ -189,8 +215,9 @@ pub const CHAIN_LEAST: f64 = 0.55;
 /// A wind-up ended, a foe waits this long at most for the room's word on whether its blow landed: the room judges
 /// each player as their own screen showed it, which may lag.
 pub const WORD_WAIT: f64 = 0.5;
-/// An archer's shots aimed, one in this.
+/// An archer's shots aimed, one in this; an aimed shot flies this many times as fast as a plain one.
 pub const AIMED_SHARE: f64 = 1.0 / 3.0;
+pub const AIMED_SPEED: f64 = 1.3;
 
 /// Into each new phase, a roar this long, as an iron ring.
 pub const ROAR: f64 = 1.2;
@@ -213,3 +240,13 @@ pub const DRAW_BOW: f64 = 1.0;
 pub const DRAW_CROSSBOW: f64 = 1.3;
 pub const DRAW_PISTOLET: f64 = 1.2;
 pub const DRAW_THUNDERLOCK: f64 = 1.5;
+
+/// A crowd's pace: a foe begins a blow at a target only if it lands this long after the latest another foe has begun
+/// there, so blows at one target come one at a time and a player can answer each.
+pub const BEAT: f64 = 1.2;
+/// The waiting hold a line before the group's side of their target, out to this either side of its middle, the
+/// rest on rings farther out; one foe at a time, the best suited, works round to the target's flank instead. The
+/// group's side is where its foes stand round the target, once the mean of their bearings leans this far one way;
+/// short of that the line forms before the target's face.
+pub const LINE_ARC: f64 = 75.0 * DEGREES;
+pub const LINE_LEAN: f64 = 0.25;

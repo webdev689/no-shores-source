@@ -1,7 +1,8 @@
 //! Where a foe can walk, and the way there. A navmesh is baked once from a course's blocks over its ground (open
 //! ground at 0, or any terrain): the course is voxelised, the floor a body fits on is kept, eroded by the body's
-//! radius, split into regions, outlined and cut into convex polys; the places a shooter may fire from are found on it.
-//! A path is an A* over those polys, pulled taut into a few corners. Obstacles laid over the mesh at run time block the
+//! radius, split into regions, outlined and cut into convex polys; the places a shooter may fire from are found on it,
+//! and links laid where the movement rules climb a block's side or drop off its edge. A path is an A* over those polys
+//! and links, pulled taut into a few corners. Obstacles laid over the mesh at run time block the
 //! polys they touch. Coordinates are the game's: x east, y south, z up, in metres. Every number is a 64-bit float and
 //! every sum is taken in a fixed order, so every machine bakes and paths alike.
 
@@ -9,6 +10,7 @@ mod collider;
 mod compact;
 mod contours;
 mod geometry;
+mod links;
 mod locate;
 mod obstacles;
 mod path;
@@ -19,11 +21,12 @@ mod regions;
 mod spots;
 
 pub use collider::{Collider, Ramp, Rise};
+pub use links::{LINK_REACH, Link};
 pub use obstacles::ObstacleId;
 pub use reach::{REACH_LEVEL, Reachable};
 pub use spots::Spot;
 
-use locate::Mesh;
+use locate::{Laid, Mesh};
 use movement::{Block, Flat, Heights, TUNING, Terrain};
 use obstacles::Obstacles;
 use path::{Scratch, Waive};
@@ -45,12 +48,12 @@ pub struct Agent {
     pub cell_height: f64,
 }
 
-/// Overlook's body: its radius and step from the movement rules, standing about 1.8 m. Cells are DFO's 0.25 m. A
+/// Overlook's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
 /// voxel is half the step, so a step is two voxels as in DFO, and the welding of corners within two voxels still
 /// joins the floors on either side of every step a body climbs.
 pub const AGENT: Agent = Agent {
     radius: TUNING.radius,
-    height: 1.8,
+    height: TUNING.height,
     climb: TUNING.step,
     max_slope: 0.7,
     cell_size: 0.25,
@@ -69,8 +72,8 @@ pub struct Bounds {
 /// How far a goal may move before a walker's way is searched afresh, in metres.
 const KEEP_WAY: f64 = 1.0;
 
-/// A walker's way over the mesh: the corridor of polys its last path ran through, the goal it was found for, and the
-/// mesh's epoch then. A walker keeps one for `find_path_kept`.
+/// A walker's way over the mesh: the corridor of polys and links its last path ran through, the goal it was found
+/// for, and the mesh's epoch then. A walker keeps one for `find_path_kept`.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Way {
     corridor: Vec<usize>,
@@ -93,12 +96,22 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
-    /// Bakes the walkable surface of a course: its blocks standing on open ground at 0 across `bounds`. The parts
-    /// of it that no walk joins to the largest are left out.
+    /// Bakes the walkable surface of a course: its blocks on open ground at 0 across `bounds`. Each block is solid
+    /// from its underside to its top, so floors stand over each other: the ground under a deck a body's height or more
+    /// up is walked, and so is the deck. The parts of it that no walk joins to the largest are left out.
     #[must_use]
     pub fn bake(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
         Self::bake_colliders(&colliders, bounds, agent)
+    }
+
+    /// Bakes the walkable surface of blocks laid over open sea at 0 across `bounds`, as ships' decks are: the sea is
+    /// no floor, so the mesh is the blocks' tops alone, and every part of them a body could stand in is kept, since no
+    /// ground joins them into one.
+    #[must_use]
+    pub fn bake_over_sea(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
+        let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
+        Self::baked(&colliders, None, bounds, agent, true)
     }
 
     /// Bakes a course's blocks standing on a terrain, which may dip below 0, as a seabed does: its height is read at
@@ -107,23 +120,25 @@ impl NavMesh {
     #[must_use]
     pub fn bake_on(blocks: &[Block], ground: &dyn Terrain, bounds: Bounds, agent: &Agent) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
-        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent)
+        Self::baked(&colliders, raster::sample(ground, bounds, agent), bounds, agent, false)
     }
 
     /// Bakes from blocks and ramps on open ground at 0.
     #[must_use]
     pub fn bake_colliders(colliders: &[Collider], bounds: Bounds, agent: &Agent) -> Self {
-        Self::baked(colliders, None, bounds, agent)
+        Self::baked(colliders, None, bounds, agent, false)
     }
 
-    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent) -> Self {
+    fn baked(colliders: &[Collider], ground: Option<Heights>, bounds: Bounds, agent: &Agent, over_sea: bool) -> Self {
         let floor: &dyn Terrain = match &ground {
             Some(heights) => heights,
             None => &Flat,
         };
-        let solid = raster::voxelise(colliders, floor, bounds, agent);
+        let solid = raster::voxelise(colliders, floor, bounds, agent, !over_sea);
         let mut field = compact::build(&solid, agent);
-        regions::partition(&mut field);
+        let links = links::bake(colliders, floor);
+        let joins = links::joins(&field, &links);
+        regions::partition(&mut field, &joins, over_sea);
         let spots = spots::bake(&field, colliders, ground.as_ref(), floor, bounds);
         let outlines = contours::build(&field);
         let grid = field.grid;
@@ -137,7 +152,44 @@ impl NavMesh {
         let obstacles = Obstacles::new(mesh.polys.len());
         let (min_x, min_y, cell) = (grid.min_x, grid.min_y, grid.cell);
         let search = Scratch::default();
-        Self { min_x, min_y, cell, colliders: colliders.to_vec(), ground, mesh, spots, obstacles, search }
+        let mut navmesh =
+            Self { min_x, min_y, cell, colliders: colliders.to_vec(), ground, mesh, spots, obstacles, search };
+        navmesh.lay(links);
+        navmesh
+    }
+
+    /// Lays each link whose ends stand on two polys, each within `REACH_LEVEL` of its floor.
+    fn lay(&mut self, links: Vec<Link>) {
+        let on_floor = |point: [f64; 3]| {
+            let poly = self.locate(point)?;
+            let height = self.height_on(Some(poly), point[0], point[1]);
+            ((height - point[2]).abs() <= REACH_LEVEL).then_some(poly)
+        };
+        let laid: Vec<Laid> = links
+            .into_iter()
+            .filter_map(|link| {
+                let (start, end) = (on_floor(link.from)?, on_floor(link.to)?);
+                let (from, to) = (self.to_grid(link.from[0], link.from[1]), self.to_grid(link.to[0], link.to[1]));
+                (start != end).then_some(Laid { link, start, end, from, to, cost: link.cost / self.cell })
+            })
+            .collect();
+        self.mesh.lay(laid);
+    }
+
+    /// The links laid on the mesh, in the bake's order.
+    pub fn links(&self) -> impl Iterator<Item = &Link> {
+        self.mesh.links.iter().map(|laid| &laid.link)
+    }
+
+    /// The link a walker's way crosses from where it stands: one on its corridor whose start is within `LINK_REACH`
+    /// of `from` across, and a step of its height.
+    #[must_use]
+    pub fn crossing(&self, way: &Way, from: [f64; 3]) -> Option<Link> {
+        let near = |link: &Link| {
+            let (east, south) = (link.from[0] - from[0], link.from[1] - from[1]);
+            east * east + south * south <= LINK_REACH * LINK_REACH && (link.from[2] - from[2]).abs() <= TUNING.step
+        };
+        way.corridor.iter().filter_map(|&node| self.mesh.link_of(node)).map(|laid| laid.link).find(near)
     }
 
     /// The ground the mesh was baked on.
@@ -159,6 +211,24 @@ impl NavMesh {
     #[must_use]
     pub fn find_path_ignoring(&self, from: [f64; 3], to: [f64; 3], ignore: ObstacleId) -> Option<Vec<[f64; 3]>> {
         self.solve(from, to, Some(ignore))
+    }
+
+    /// How far a path from `from` to `to` walks across the ground, each link counted at its cost rather than its leg
+    /// across; none where `find_path` finds no path.
+    #[must_use]
+    pub fn path_length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        if self.mesh.polys.is_empty() {
+            return None;
+        }
+        let corridor = self.search(self.locate(from)?, self.locate(to)?, None)?;
+        let points = self.walk(&corridor, from, to)?;
+        let across = |one: [f64; 3], other: [f64; 3]| {
+            let (east, south) = (other[0] - one[0], other[1] - one[1]);
+            libm::sqrt(east * east + south * south)
+        };
+        let legs: f64 = points.windows(2).map(|pair| across(pair[0], pair[1])).sum();
+        let links = corridor.iter().filter_map(|&node| self.mesh.link_of(node));
+        Some(links.fold(legs, |length, laid| length + laid.link.cost - across(laid.link.from, laid.link.to)))
     }
 
     /// Lays a circle at (x, y) over the mesh that blocks every poly it touches, or moves the one with this id.
@@ -223,15 +293,33 @@ impl NavMesh {
         corridor
     }
 
-    /// The line from one point to another pulled taut through a corridor, each corner on the surface walked there.
+    /// The line from one point to another pulled taut through a corridor, each corner on the surface walked there: a
+    /// link's start and end stand in it, and the line is pulled taut on either side of each.
     fn walk(&self, corridor: &[usize], from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
-        let portals = path::portals(&self.mesh, corridor, self.to_grid(from[0], from[1]), self.to_grid(to[0], to[1]))?;
+        let mut points = Vec::new();
+        let (mut start, mut first) = (from, 0);
+        for (at, &node) in corridor.iter().enumerate() {
+            if let Some(laid) = self.mesh.link_of(node) {
+                points.extend(self.taut(&corridor[first..at], start, laid.link.from)?);
+                (start, first) = (laid.link.to, at + 1);
+            }
+        }
+        points.extend(self.taut(&corridor[first..], start, to)?);
+        Some(points)
+    }
+
+    /// The line pulled taut through a run of polys a walk joins, each corner on the poly under it nearest the last
+    /// corner's level, as a run may pass under a deck it later climbs onto.
+    fn taut(&self, polys: &[usize], from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
+        let portals = path::portals(&self.mesh, polys, self.to_grid(from[0], from[1]), self.to_grid(to[0], to[1]))?;
+        let mut level = from[2];
         let points = path::funnel(&portals)
             .into_iter()
             .map(|grid| {
-                let poly = self.mesh.scan(grid.0, grid.1, corridor, None);
+                let poly = self.mesh.scan(grid.0, grid.1, polys, Some(level));
                 let (x, y) = self.to_world(grid);
-                [x, y, self.height_on(poly, x, y)]
+                level = self.height_on(poly, x, y);
+                [x, y, level]
             })
             .collect();
         Some(points)

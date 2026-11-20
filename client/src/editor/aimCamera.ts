@@ -1,21 +1,21 @@
 // The aim camera, DFO's: while a broadside is laid the eye eases out to the battery's
-// aim eye, from one battery's to the other's in her own frame, and stops short of a ship alongside; let go, it eases
-// home. A crippled ship's guns are silent, so her eye never moves (the caller asks for no side).
+// aim eye, from one battery's to the other's in its own frame, and stops short of a ship alongside; let go, it eases
+// home. A crippled ship's guns are silent, so its eye never moves (the caller asks for no side).
 import { headingFrame } from '../rules/landRules.ts';
 import { hullPaint, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { aimEye, type Lying } from './aim.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
 export const AIM_CAM_TAU = 0.22;
-/** How far short of a ship alongside the eye stops on its way out from her ports, metres. */
+/** How far short of a ship alongside the eye stops on its way out from its ports, metres. */
 export const AIM_CAM_CLEAR = 1.2;
-/** How far a hull's rail stands over her upper gun line, metres. */
+/** How far a hull's rail stands over its upper gun line, metres. */
 const RAIL_OVER_GUNS_M = 1;
 
 type Point = readonly [number, number, number];
 
-/** A hull the eye keeps clear of, in the world: her middle on the water (east, south), heading, half length and half
- *  beam, and the heights her keel and her rail stand at. */
+/** A hull the eye keeps clear of, in the world: its middle on the water (east, south), heading, half length and half
+ *  beam, and the heights its keel and its rail stand at. */
 export interface AimHull {
   readonly x: number;
   readonly y: number;
@@ -26,8 +26,8 @@ export interface AimHull {
   readonly top: number;
 }
 
-/** A ship's hull as the eye keeps clear of it, from her numbers and pose: her waterline's box, her draught under it
- *  and her rail over it. */
+/** A ship's hull as the eye keeps clear of it, from its numbers and pose: its waterline's box, its draught under it
+ *  and its rail over it. */
 export function aimHullOf(ship: readonly number[], heave: number, hull: number): AimHull {
   const [x = 0, y = 0, heading = 0] = ship;
   const waterline = hullWaterline(hull);
@@ -51,7 +51,7 @@ function toward(from: Point, to: Point, share: number): Point {
   ];
 }
 
-/** A point in her own frame (along her keel, out to starboard, up from her waterline), and back. */
+/** A point in its own frame (along its keel, out to starboard, up from its waterline), and back. */
 function toLocal(ship: Lying, point: Point): Point {
   const { forward, starboard } = headingFrame(ship.heading);
   const [east, south] = [point[0] - ship.x, point[1] - ship.y];
@@ -97,7 +97,7 @@ export class AimCamera {
   /** How far in the eye has eased, 0 home to 1 at the battery, before it is smoothstepped. */
   private share = 0;
   private side: 1 | -1 | null = null;
-  /** The eye's place in her own frame, eased from one battery's to the other's. */
+  /** The eye's place in its own frame, eased from one battery's to the other's. */
   private local: Point | null = null;
 
   /** The frame's eye, `seconds` on: `home` (the camera's own) eased toward the aim eye on `want`'s side of `ship` (1
@@ -110,7 +110,7 @@ export class AimCamera {
     if (!this.side || this.share <= 0) return home;
     const { starboard } = headingFrame(ship.heading);
     const out = (hullWaterline(SLOOP_HULL).beamM / 2) * this.side;
-    // Her ports' middle on that side, which the eye goes out from.
+    // Its ports' middle on that side, which the eye goes out from.
     const ports: Point = [
       ship.x + starboard[0] * out,
       ship.y + starboard[1] * out,

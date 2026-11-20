@@ -1,6 +1,6 @@
-/** Her own axes (to her bow, to starboard, up) in the world's (east, south, up), as she lies at `heading` (radians
- *  clockwise from north), her bow risen by `pitch` and heeled to starboard by `roll`: her roll, then her pitch, then
- *  her heading. */
+/** Its own axes (to its bow, to starboard, up) in the world's (east, south, up), as it lies at `heading` (radians
+ *  clockwise from north), its bow risen by `pitch` and heeled to starboard by `roll`: its roll, then its pitch, then
+ *  its heading. */
 export function shipAxes(
   heading: number,
   pitch: number,

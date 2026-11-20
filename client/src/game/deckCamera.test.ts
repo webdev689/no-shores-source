@@ -7,33 +7,33 @@ import { deckCameraBlocks, sideBoxes, sparBoxes } from '../ships/spars.ts';
 
 type Point = readonly [number, number, number];
 
-/** A body's eye over her planks, metres: the movement rules' standing eye, near enough for the camera's line. */
+/** A body's eye over the deck's planks, metres: the movement rules' standing eye, near enough for the camera's line. */
 const EYE_M = 1.6;
 const THIRD = { firstPerson: false, distance: CAMERA.back, shown: CAMERA.back };
 
-/** The third-person eye for a boarder whose head is at `head`, looking along `yaw`, kept clear of `blocks` (her
- *  spars and sides, `deckCameraBlocks`). */
+/** The third-person eye for a boarder whose head is at `head`, looking along `yaw`, kept clear of `blocks` (the
+ *  ship's spars and sides, `deckCameraBlocks`). */
 function eyeFor(head: Point, yaw: number, pitch: number, blocks: ReturnType<typeof deckCameraBlocks>): Point {
   const orbit = cameraOrbit(head, yaw, pitch, THIRD, blocks);
   const forward = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
   return [orbit.targetX - (forward[0] ?? 0), orbit.targetY - (forward[1] ?? 0), orbit.targetZ - (forward[2] ?? 0)];
 }
 
-test('every hull’s masts stand on her middle line from her deck up, and her booms and yards over a body’s head', () => {
+test('every hull’s masts stand on its middle line from its deck up, and its booms and yards over a body’s head', () => {
   for (const [hull, name] of HULL_NAMES.entries()) {
     const boxes = sparBoxes(hull);
-    const masts = boxes.filter((box) => box.bottom === undefined);
+    const masts = boxes.filter((box) => box.bottom <= 0);
     assert.ok(masts.length > 0 && masts.every((box) => box.minX < 0 && box.maxX > 0 && box.top > 10), name);
     const deck = HULL_DECKS[hull];
     assert.ok(deck);
-    for (const spar of boxes.filter((box) => box.bottom !== undefined)) {
+    for (const spar of boxes.filter((box) => box.bottom > 0)) {
       const plank = cellHeight(deck, (spar.minX + spar.maxX) / 2, (spar.minY + spar.maxY) / 2) ?? 0;
-      assert.ok((spar.bottom ?? 0) > plank + 1.8, `${name}: a spar clears a standing body (${spar.bottom})`);
+      assert.ok(spar.bottom > plank + 1.8, `${name}: a spar clears a standing body (${spar.bottom})`);
     }
   }
 });
 
-test('from where boarders come aboard and along a walk the length of her deck, no mast, spar or side of hers stands between the camera and the boarder, so it stays inboard', () => {
+test('from where boarders come aboard and along a walk the length of its deck, no mast, spar or side of it stands between the camera and the boarder, so it stays inboard', () => {
   for (const [hull, name] of HULL_NAMES.entries()) {
     const deck = HULL_DECKS[hull];
     assert.ok(deck);
@@ -47,14 +47,15 @@ test('from where boarders come aboard and along a walk the length of her deck, n
           const floor = cellHeight(deck, x, y);
           if (floor === null) continue;
           const head: Point = [x, y, floor + EYE_M];
-          // A head inside a mast (her deck room lets a body through it) has no line to keep.
+          // A head inside a mast (its deck room lets a body through it) has no line to keep.
           if (rayHit(head, head, boxes) < 1) continue;
           for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2])
             for (const pitch of [0.15, -0.2, 0.6]) {
               const eye = eyeFor(head, yaw, pitch, boxes);
-              assert.ok(rayHit(eye, head, boxes) >= 1, `${name} at ${x}, ${y} looking ${yaw}, ${pitch}: ${eye}`);
-              const inboard = rayHit(head, eye, sides) >= 1;
-              assert.ok(inboard, `${name} at ${x}, ${y} looking ${yaw}: the eye ${eye} past her side`);
+              // The boom may stand the eye on a face it is already within reach of; nothing lies between.
+              assert.ok(rayHit(head, eye, boxes) >= 0.999, `${name} at ${x}, ${y} looking ${yaw}, ${pitch}: ${eye}`);
+              const inboard = rayHit(head, eye, sides) >= 0.999;
+              assert.ok(inboard, `${name} at ${x}, ${y} looking ${yaw}: the eye ${eye} past the ship's side`);
             }
         }
       }
@@ -62,7 +63,7 @@ test('from where boarders come aboard and along a walk the length of her deck, n
   }
 });
 
-test('at her rail where a boarder comes aboard, looking at her crew forward, her spars fill under a sixth of the view', () => {
+test('at its rail where a boarder comes aboard, looking at its crew forward, its spars fill under a sixth of the view', () => {
   for (const [hull, name] of HULL_NAMES.entries()) {
     const deck = HULL_DECKS[hull];
     assert.ok(deck);

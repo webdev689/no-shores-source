@@ -4,6 +4,7 @@ status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/heldmap/heldMap.ts#layoutKey
+  - client/src/game/helmMap.ts#HelmMap
   - client/src/heldmap/heldMapLaw.ts#stageOf
   - client/src/heldmap/heldMapLaw.ts#clampView
   - client/src/heldmap/heldMapView.ts#HeldMapView
@@ -33,8 +34,8 @@ war, and a click on it sets the ship's destination.
 ## How it works
 
 - **Opening.** At sea, Map on the navigation panel, or N, takes the view down from the [[Overworld]]'s raised camera
-  to the helm behind the Sloop's wheel on her quarterdeck in first person, over 1.1 s, the eye riding the swell with her.
-  On the way down every ship shrinks from the Overworld's scale to her own, so at the wheel the Sloop is her true size
+  to the helm behind the Sloop's wheel on its quarterdeck in first person, over 1.1 s, the eye riding the swell with it.
+  On the way down every ship shrinks from the Overworld's scale to its own, so at the wheel the Sloop is its true size
   ([[The Ship Is Managed and Walked From the Sea's Panel]]). There the
   painting rises from below the screen over 0.42 s, eased at both ends; it never fades. The ship sails on meanwhile.
 - **The art** is the owner's, from their Blender pipeline, published with the [[Sprite Forge]]'s renders: the
@@ -54,7 +55,7 @@ war, and a click on it sets the ship's destination.
 - **The waters** ([[The Waters Come From the Islands]]). The page opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
   ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
-  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (her ships' slate), the pirates red `#d95c5c`,
+  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the pirates red `#d95c5c`,
   Contested amber `#b8862f`. None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
   CIEDE2000 are told apart by their hatching.
   Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
@@ -67,14 +68,14 @@ war, and a click on it sets the ship's destination.
   ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green `#256327` at level 1, gold `#6a5507` at 8,
   orange `#894314` at 15, red `#a3241f` at 22 and deep purple `#5a1f6e` at 30, blended between and read at the band's
   middle (`difficultyColour`). The ring is filled with the parchment's own colour, and every level's colour reads at
-  least 4.5 : 1 against it. A water is named while any of her charted sea is in view. Her name is tried first at her
-  label point, the middle of her sea cell farthest from land, from other waters and from the frame's edge
-  (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on her
-  sea, nearest the middle of her sea in view first (`HeldMapWaters.letters`); on one line, then on two, her name over
-  her band, in a ring as tall.
+  least 4.5 : 1 against it. A water is named while any of its charted sea is in view. Its name is tried first at its
+  label point, the middle of its sea cell farthest from land, from other waters and from the frame's edge
+  (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on its
+  sea, nearest the middle of its sea in view first (`HeldMapWaters.letters`); on one line, then on two, its name over
+  its band, in a ring as tall.
 - **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the four
   holders' swatches and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
-  her wash as the map shows it, over the map's parchment (`washedOver`), with the contested's and the Tithe's
+  its wash as the map shows it, over the map's parchment (`washedOver`), with the contested's and the Tithe's
   hatching. It stands in a
   corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name, no mark
   and no hand: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
@@ -118,8 +119,8 @@ war, and a click on it sets the ship's destination.
     its name stands beside it there (`layOut`). A click picks a mark where it is drawn.
   - *Priority.* The ship's arrow and every place's mark are laid first and never dropped. Then the names, the place
     chosen first, then ports, waters, ruins and nodes, each where it covers no mark, no hand and no name laid before
-    it, inside the map. A water's name takes the first of her spots wholly on her own sea, on one line or two; with
-    none, the first on no land with its middle on her sea, so across a sea too narrow for her name seen whole (the
+    it, inside the map. A water's name takes the first of its spots wholly on its own sea, on one line or two; with
+    none, the first on no land with its middle on its sea, so across a sea too narrow for its name seen whole (the
     Elmwater and the Rimeholt Deep) it may run over a neighbour's wash, never over land (`onOwnSea`). A name with no clear place is dropped: a place's
     keeps its mark.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
@@ -164,7 +165,7 @@ The player starts with the island they arrive on, its port, the place they arriv
 - The route is inked through at most 128 of its points.
 - Quests are not tracked on the map yet.
 - The waters' wash is laid when the map is raised, as the charted sea's is. A water's sea is judged a 4.8 km cell at a
-  time, so her words may stand over an isle smaller than a cell.
+  time, so its words may stand over an isle smaller than a cell.
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
 - With every corner and edge place taken by marks, ports' names or the hands the key is left off, as on a screen as
   narrow as a phone's with the whole world in view.

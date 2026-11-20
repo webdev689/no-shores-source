@@ -12,7 +12,7 @@ const MASTS = [
   { footZ: 2, topZ: 30 },
 ];
 
-test("her masts are where her sails' heads and luffs stand, fore to aft, each sail on one", () => {
+test("its masts are where its sails' heads and luffs stand, fore to aft, each sail on one", () => {
   const brig = mastsOf(BRIG);
   assert.equal(brig.masts.length, 2);
   assert.ok((brig.masts[0] ?? 0) > (brig.masts[1] ?? 0), 'the foremast first');
@@ -21,7 +21,7 @@ test("her masts are where her sails' heads and luffs stand, fore to aft, each sa
   assert.ok(mastsOf(hullSails(3)).masts.length === 3);
 });
 
-test("her canvas's holes grow with her sail harm, new holes beside old", () => {
+test("its canvas's holes grow with its sail harm, new holes beside old", () => {
   const harm = new ShipHarm(SLOOP);
   harm.wear(0);
   assert.ok(harm.holes.every((holes) => holes.size === 0));
@@ -51,7 +51,7 @@ test('a ball through a sail opens a hole there that stays', () => {
   assert.equal(cellShows(rig.harm, 0, near.cell, 100), true);
 });
 
-test('a torn sail falls to the sea over her side, floats astern a while, then is gone', () => {
+test('a torn sail falls to the sea over its side, floats astern a while, then is gone', () => {
   const rig = new SailRig(SLOOP);
   rig.step(0, { offDeg: 90, set: true }, 0);
   rig.harm.loseSail(1, 0, 1);
@@ -69,17 +69,17 @@ test('a torn sail falls to the sea over her side, floats astern a while, then is
   );
   assert.ok(
     landed && Math.min(...[...landed].filter((unused, index) => index % 3 === 1)) > 2,
-    'over her side to leeward',
+    'over its side to leeward',
   );
   for (let second = 0; second < 10; second++) rig.harm.step(1, 3, FALL_S + second);
   const astern = lying(FALL_S + 10);
-  assert.ok(astern && (astern[0] ?? 0) < (before[1]?.[0] ?? 0) - 20, 'she has sailed on from it');
+  assert.ok(astern && (astern[0] ?? 0) < (before[1]?.[0] ?? 0) - 20, 'it has sailed on from it');
   assert.equal(cellShows(rig.harm, 1, 0, FALL_S + 5), true);
   assert.equal(cellShows(rig.harm, 1, 0, FALL_S + FLOAT_S + 1), false);
   assert.equal(rig.cellNear([0, 0, 8])?.sail, 0, 'no ball holes a sail gone');
 });
 
-test('a fallen mast leans over her side into the water, and its sails go with it', () => {
+test('a fallen mast leans over its side into the water, and its sails go with it', () => {
   const harm = new ShipHarm(BRIG);
   harm.fellMast(0, 0, -1);
   const turned = (now: number) => mastFalls(harm, MASTS, now);
@@ -97,7 +97,7 @@ test('a fallen mast leans over her side into the water, and its sails go with it
   assert.equal(turned(FALL_S + FLOAT_S + 1)[3], 0, 'and gone under at last');
 });
 
-test('her colours come down her mast when she strikes, and are gone once down', () => {
+test('its colours come down its mast when it strikes, and are gone once down', () => {
   const harm = new ShipHarm(SLOOP);
   const masthead = [0, 0, 12] as const;
   assert.deepEqual(flagAt(masthead, harm, [{ footZ: 2, topZ: 12 }], 5), { at: masthead, shows: true });
@@ -107,7 +107,7 @@ test('her colours come down her mast when she strikes, and are gone once down', 
   assert.equal(flagAt(masthead, harm, [{ footZ: 2, topZ: 12 }], STRIKE_S).shows, false);
 });
 
-test('sinking, she is under in twenty seconds', () => {
+test('sinking, it is under in twenty seconds', () => {
   const harm = new ShipHarm(SLOOP);
   assert.equal(harm.sunkShare(10), 0);
   harm.sink(0);

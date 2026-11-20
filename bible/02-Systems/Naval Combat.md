@@ -66,6 +66,8 @@ code:
   - crates/foes/src/crews.rs#deck_crew
   - client/src/game/seaWord.ts#SeaWord
   - client/src/network/seaHarbour.ts#harbourOf
+  - crates/naval/src/fight.rs#ambush
+  - client/src/game/prologue/fightAtSea.ts#StoryFight
 ---
 # Naval Combat
 
@@ -85,6 +87,9 @@ steers and sails, hulls that overlap are pushed apart, each player's stem may ra
 then the players, the balls fly, fires burn and sinking ships go down, each player's hands mend their ship, and a captain who
 has sunk, or lies past every ship they may fight and is not fighting, leaves the fight. A player's ship's step under its hurts
 is one pure function (`sail_hurt`), which a browser predicting it runs too.
+
+Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
+sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 
 ## How it works
 
@@ -139,6 +144,9 @@ is one pure function (`sail_hurt`), which a browser predicting it runs too.
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
   Bosun keeping way its torn canvas costs it, and its Carpenter patching part of each ball's hull harm back.
+- **The wind** a fight on the land worker sails in (the World Editor's and the story's) is the world's where each
+  ship is, read each minute of world time; a fight a story plays is told its own instead, the weather drawn round it
+  ([[Prologue]]), so a storm drawn is a storm sailed.
 
 ## The captain
 
@@ -192,7 +200,7 @@ the Frigate. Their rank scales them, a Major at the numbers of the rest of this 
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Their level raises them as a foe's raises it on land ([[A Ship's Level Raises Her Strength, and the Tiers Reach the
+Their level raises them as a foe's raises it on land ([[A Ship's Level Raises Its Strength, and the Tiers Reach the
 Sea]], [[Foes]]): their hull, their men and their guns' harm are the table's times the land's `foe_health_times` at their level,
 1.07 a level (×1.31 at level 4, ×6.2 at level 27, `Pirate::strength`, `Captain::raised`); a ship of level 0, as the
 editor stands one, is the table's. A wary ship sizes a Sloop up at its raised strength. Their way, reload, aim and when
@@ -361,7 +369,7 @@ as the game's fight does ("The aim, as DFO's"), the look's bearing picks the sid
 lookReach), unless the look is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, and `C` braces.
 
-The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Her look"), and the water cuts its footprint
+The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Its look"), and the water cuts its footprint
 as it does the player's. The balls are small lit spheres, the lay is drawn over the water as the game's fight draws
 it, and the fight looks as "How it looks" says. The player's own hull, canvas, crew and guns are the readout's plate and rose,
 beside the card and the tally, as at sea ("How it looks", "The readout"). The panel shows a line for each captain
@@ -412,7 +420,7 @@ captain's number comes with them in the view, so one leaving the fight never mov
   sail (a rig hit within 1.5 m of a cell of canvas), that cell is shot through for good, with nine pale scraps
   fluttering down; elsewhere in its rig, a burst of splinters at the spar. A ram's stem throws its splinters but leaves
   no hole. A ball striking the player's own ship jars the eye (1.6, a hole 2.5) and tells the side it came from.
-- **Torn sails**: a ship's sails' holes grow with its canvas's harm ([[Sailing]], "Her sails"). A sail torn away
+- **Torn sails**: a ship's sails' holes grow with its canvas's harm ([[Sailing]], "Its sails"). A sail torn away
   (`SailLost`) rips from its yard, head first, falls to leeward over the ship's side onto the water, and floats there 40 s
   as the ship sails on from it before it sinks. A fallen mast (`MastFell`) leans over the ship's leeward side with its yards and
   sails, slowly then fast, for 3 s until its head is in the water, then drifts astern and is gone after 40 s.
@@ -592,6 +600,30 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
 The World Editor's fight and its fleet room ease the eye the same way (`easedAimOf`) and draw the lay with `AimView`
 after the water.
 
+## An ambush
+
+The prologue's ambush ([[The Game Opens With a Story Mission at Sea]]) is the same fight, begun as `Fight::ambush`:
+the player's Sloop put to sea as she lies, and each captain set where and how the story gives her, numbered from 1
+on, her temper drawn from her own seed. Every one comes to fight her at once: bold whatever her temper, and cruising
+straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
+land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
+`way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
+first in `others`, as the sea room's wire does. A captain going down carries, besides her `founder`, how she will lie
+once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
+on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
+nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight
+on any `FightSource`, the sea room's or the land door's, so the story's fight (`StoryFight`) is the sea's own: its
+aim, lay, effects, panel and bars, the panel naming her ship (the Brig). The story places each captain by her
+bearing off the player's bow and her distance, heading for her unless told, and puts every ship to sea under the
+sail and way she was sighted with, her rig drawn on from the one she was last drawn with; hears from each step a ball striking
+her, hers striking a captain, a captain going down and one sunk; and tells the player how many are left to beat.
+An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
+player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves her a point of hull); and it is over
+(`beaten`) once every captain has sunk, is going down, or has struck, her crew having given up the fight. It draws
+the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for
+the drawing only; a captain's hurts and her going down settle, trim and list her on that swell by what the land door
+sends of each (`founder`). By the rules every ship in it is still a Sloop.
+
 ## In a fleet room
 
 With `?room=` in the World Editor's address, Sail joins a fleet room ([[Server]]) instead, on the open sea: every
@@ -620,6 +652,8 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   where its heeled deck's frame would put it; the view cuts to its deck, with no pan down.
 - A player washed up walks into the port city's social space once the page has opened the landmass it stands on, as
   it does for any coast the ship nears.
+- In the story's ambush the player's ship is drawn as the Brig but sails and fights as a Sloop, and its captains
+  never leave it but by sinking: one who runs is chased, and the fight waits for it.
 - A captain's men give out at about four fifths of their hull at every rank, so their rank's run and strike shares of their
   hull are seldom reached; striking at them would take men who stand more blows, a Major's too.
 - Two captains of one rank keep pace: a bold one gives up the chase of a wary one sailing away after 150 s.

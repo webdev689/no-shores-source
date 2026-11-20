@@ -1,4 +1,4 @@
-use super::{heights_bytes, hold_ashore, open_island, plan_json, sea_island};
+use super::{heights_bytes, hold_ashore, isle_landing, open_island, plan_json, sea_island, sea_landed};
 use crate::{Opened, with_open};
 use isle::{Kind, Plan};
 
@@ -60,4 +60,12 @@ fn the_plans_bits_are_the_ones_the_page_pins() {
         .bytes()
         .fold(0xcbf2_9ce4_8422_2325_u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3));
     assert_eq!(format!("{hash:016x}"), PLANS);
+}
+
+#[test]
+fn an_islands_room_checks_landings_and_only_a_sea_answers_one() {
+    assert!(open_island(br#"{"seed":"5","climate":"desert","at":[0,0],"guards":0,"levels":null}"#));
+    assert!(isle_landing(None), "an island's room checks landings");
+    assert!(isle_landing(Some("anchored")));
+    assert!(!sea_landed(1, 5, "anchored"), "an island's room is no sea");
 }

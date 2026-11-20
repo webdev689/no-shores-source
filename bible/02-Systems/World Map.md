@@ -3,6 +3,8 @@ type: system
 status: planned
 code:
   - content/world/layout.json
+  - content/world/open.json
+  - crates/land/src/sites.rs#locked
   - crates/world/src/layout.rs#Layout
   - crates/world/src/check.rs#check
   - crates/world/src/geometry.rs#doubled_area
@@ -83,6 +85,17 @@ patrol area, a world boss) and are taken there. A node is one section of the lan
 go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
 distance, never reached. Each island has one major port city; Saltmere's is Overlook.
 
+Patrol areas and missions open as a pass is done on each ([[Patrol Zones and Missions Open as Their Pass Is Done]]).
+`content/world/open.json` lists the open ones by id. Every other patrol area and mission is locked; social spaces,
+dungeons and world bosses never are. A locked node still shows where the player picks a landing, greyed with a lock
+([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there, and its room
+turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the list to
+patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
+reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
+
+A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
+`&view=` picture it ([[Toolkit]], "Browser QA").
+
 ## Waters
 
 The sea is split into nine waters, one an island ([[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]). The `world` crate judges them
@@ -143,14 +156,14 @@ The numbers are Claude's, under the owner's "Friendly ships should dynamically t
   it stays off the land. Today: Overlook to Sunspire 1,402 km, Overlook to Rimeholt 1,601 km, Sunspire to Rimeholt
   2,950 km across the open sea. Opening the waters and planning them takes about 0.5 s in WebAssembly.
 - **Schedule.** On each route a ship leaves each end every 1,200 s of world time, departure n at n × 1,200 s, and sails
-  at 5 m/s to the other end. There she lies at the roadstead 600 s (`DWELL_S`), heading as she came in, and is then
+  at 5 m/s to the other end. There it lies at the roadstead 600 s (`DWELL_S`), heading as it came in, and is then
   gone: with a ship arriving at each end of a route every 1,200 s, about one lies at each port city's roadstead at any
   moment. World time is seconds since the Unix epoch, passed in, so every machine computes the same ships for the same
   time. The waters' table the door returns carries the pace (`friendly_speed_m_s`), so the page reckons ships on
   between answers at the rules' own pace.
-- **A ship.** Her id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Her hull comes
-  from a fixed hash of her id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. She carries her position,
-  the unit way she sails along her leg, the metres sailed and her route's length.
+- **A ship.** Its id is `n << 8 | route << 1 | direction` (direction 0 from the route's first port). Its hull comes
+  from a fixed hash of its id: a sloop 4 times in 10, a schooner 3, a brig 2, a frigate 1. It carries its position,
+  the unit way it sails along its leg, the metres sailed and its route's length.
 - `ships_near(centre, radius_m, time_s)` works in closed form: per route, the stretches of its path within the radius
   give the distances sailed that put a ship there, and those give the departures; each is then placed exactly.
   `ship(id, time_s)` places one ship. A time or radius that is not a finite number, or a negative radius, finds none.
@@ -168,7 +181,7 @@ source of each.
 | `waters_at` | `waterAt(point)` | The water at a point as one grid byte; null on land |
 | `waters_grid` | `grid(cellM)` | Columns and rows as u32s, then a byte a cell; cells finer than 1,000 m, or not a finite number, are refused |
 | `waters_ships` | `shipsNear(centre, radiusM, timeS)` | The ships near a point, 11 f64s each: id, route, from port, to port, hull, x, y, way x, way y, metres sailed, route length |
-| `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when she is not sailing |
+| `waters_ship` | `ship(id, timeS)` | One ship by id, packed the same; nothing when it is not sailing |
 
 ## Weather and travel
 
@@ -187,7 +200,8 @@ source of each.
   and all of it at 60 km, the share taken as the mean over five rays, the wind's and 10 and 20 degrees either side.
   Within 3 km of a port's roadstead the sea is calm, the swell 0.3 of a moderate sea's whatever the weather, easing
   back to the open sea's over the next 500 m ([[Water]]).
-- DFO's dynamic weather and clouds will draw from it, rewritten for WebGPU ([[WebGPU Only]]).
+- DFO's dynamic weather and clouds draw from the sky's own field (`crates/sky`), rewritten for WebGPU ([[WebGPU Only]],
+  [[Weather and Day and Night Come From DFO, Much Improved]], [[Weather]]).
 - Ships sail faster than real speed, and faster still in the Overworld, DFO's raised travel camera over the same
   world. The speeds are tuning numbers, set by playing.
 

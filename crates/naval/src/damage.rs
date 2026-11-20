@@ -130,6 +130,8 @@ pub struct Damage {
     pub list_deg: f64,
     /// The share of its hull it strikes at.
     pub struck_at: f64,
+    /// The least hull a ball or a fire leaves her: none, but one for a ship the fight must never wreck.
+    pub least_hull: f64,
     player: bool,
     /// The parts of a hull point, a canvas point and a man that balls taking a share of their blow left it owing.
     owed: [f64; 3],
@@ -153,6 +155,7 @@ impl Damage {
             last_hit_at: f64::NEG_INFINITY,
             list_deg: 0.0,
             struck_at: STRUCK_AT,
+            least_hull: 0.0,
             player,
             owed: [0.0; 3],
         }
@@ -250,7 +253,7 @@ impl Damage {
             return None;
         }
         self.last_hit_at = now;
-        self.hull = self.hull.min(floor).max(self.hull - hurt.hull.trunc().max(0.0));
+        self.hull = self.hull.min(floor.max(self.least_hull)).max(self.hull - hurt.hull.trunc().max(0.0));
         self.sail = (self.sail - hurt.sail.trunc().max(0.0)).max(0.0);
         self.crew = (self.crew - hurt.crew.trunc().max(0.0)).max(0.0);
         if hurt.fire && !(floor > 0.0 && self.state == State::Struck) {
@@ -299,7 +302,7 @@ impl Damage {
             for fire in &mut self.fires {
                 let burn = fire.left.min(seconds);
                 fire.left -= burn;
-                self.hull = (self.hull - fire.bite * burn).max(0.0);
+                self.hull = (self.hull - fire.bite * burn).max(self.least_hull.min(self.hull));
                 self.sail = (self.sail - FIRE_SAIL * burn).max(0.0);
                 self.crew_burn += burn;
             }

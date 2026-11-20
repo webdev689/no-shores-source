@@ -53,7 +53,7 @@ async function realWorld() {
   const cities = [];
   const nodes = [];
   for (const continent of layout.continents) {
-    const sites = sitesOf(continent.id, await readFile(new URL(`land/${continent.id}.json`, world), 'utf8'));
+    const sites = sitesOf(continent.id, await readFile(new URL(`land/${continent.id}.json`, world), 'utf8'), []);
     if (sites.city) cities.push(sites.city);
     nodes.push(...sites.nodes);
   }
@@ -216,7 +216,7 @@ test('on the real world no water’s name stands on land, at the opening view or
   assert.ok(checked > 20, `waters' names checked (${checked})`);
 });
 
-test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on her own sea and no land, clear of every word and the key', async () => {
+test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on its own sea and no land, clear of every word and the key', async () => {
   const real = await realWorld();
   for (const screen of SCREENS.slice(0, 2)) {
     const ink = stageOf(screen).ink;
@@ -229,9 +229,9 @@ test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on her own s
       const continent = ask.waters.find((each) => each.text === letter.text)?.continent ?? -1;
       const box = nameBox(letter, 'centre', nameWidth(letter, widthOf), lettering.scale);
       const sea = onOwnSea(real.waters.waters, real.field, view, box, continent);
-      assert.ok(sea >= 1, `${letter.text} on her own sea`);
-      // Wholly on it, unless no spot of her sea seen has room for her name, clear of what was laid before her: then on
-      // no land, her middle on her sea.
+      assert.ok(sea >= 1, `${letter.text} on its own sea`);
+      // Wholly on it, unless no spot of its sea seen has room for its name, clear of what was laid before it: then on
+      // no land, its middle on its sea.
       const order = ask.waters.findIndex((each) => each.continent === continent);
       const before = names.filter(
         (other) =>
@@ -257,7 +257,7 @@ test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on her own s
           );
         }),
       );
-      if (room) assert.equal(sea, 2, `${letter.text} wholly on her own sea`);
+      if (room) assert.equal(sea, 2, `${letter.text} wholly on its own sea`);
       assert.ok(!landUnder(real.field, -1, view, box), `${letter.text} on no land`);
       for (const other of names)
         if (other.letter !== letter) assert.ok(!overlaps(box, other.box), `${letter.text} and ${other.letter.text}`);

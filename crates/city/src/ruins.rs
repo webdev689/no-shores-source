@@ -70,7 +70,15 @@ pub fn broken_landmark(solids: Vec<Solid>, level: f64) -> Vec<Solid> {
                 Shape::Block => Shape::Block,
                 Shape::Column { sides, top } => Shape::Column { sides, top: 1.0 - (1.0 - top) * share },
                 Shape::Pyramid { top } => Shape::Pyramid { top: 1.0 - (1.0 - top) * share },
-                Shape::Dome { .. } | Shape::Gable | Shape::Arch { .. } => return None,
+                // A shape with no straight taper to cut, the rock's and the forged models' among them, falls whole.
+                Shape::Dome { .. }
+                | Shape::Gable
+                | Shape::Arch { .. }
+                | Shape::CaveRoof { .. }
+                | Shape::Overhang { .. }
+                | Shape::RockArch { .. }
+                | Shape::TunnelMouth { .. }
+                | Shape::Module { .. } => return None,
             };
             Some(Solid { shape, size: [solid.size[0], solid.size[1], height], ..solid })
         })

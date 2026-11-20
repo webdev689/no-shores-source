@@ -1,5 +1,5 @@
-// What a ship's mesh is, beyond its parts, worked out once when it loads: which of her hull's faces are the outside
-// of her shell, where a side's paint goes; and which of her spars are the yards of her square sails, which turn
+// What a ship's mesh is, beyond its parts, worked out once when it loads: which of its hull's faces are the outside
+// of its shell, where a side's paint goes; and which of its spars are the yards of its square sails, which turn
 // round their masts as each sail is braced. The tags ride in the vertex's spare part bytes.
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import type { SailCorners } from './sails.ts';
@@ -8,39 +8,39 @@ import { type ShipMesh, VERTEX_BYTES } from './shipMesh.ts';
 
 type Point = readonly [number, number, number];
 
-/** The vertex's part bytes: the part, then 1 where it is the outside of her shell, then its yard's number plus one. */
+/** The vertex's part bytes: the part, then 1 where it is the outside of its shell, then its yard's number plus one. */
 const PART_BYTE = 24;
 const SHELL_BYTE = 25;
 const YARD_BYTE = 26;
 const MAST_BYTE = 27;
-/** A spar stands on a mast when its forward end lies within this of the mast along her, metres: the mast itself, its
+/** A spar stands on a mast when its forward end lies within this of the mast along the ship, metres: the mast itself, its
  *  yards and tops, and a gaff's or boom's jaws; a bowsprit is far forward of any. */
 const ON_MAST_M = 1.2;
-/** Any other piece of her rig (a shroud, a stay, ratlines, crosstrees) is the mast's whose top lies within this of it
- *  along her and this far over its foot, metres: a rope is made fast to the mast it holds up. */
+/** Any other piece of its rig (a shroud, a stay, ratlines, crosstrees) is the mast's whose top lies within this of it
+ *  along the ship and this far over its foot, metres: a rope is made fast to the mast it holds up. */
 const ROPE_ON_MAST_M = 2.5;
 const ROPE_OVER_FOOT_M = 3;
 /** A piece in a cell this wide, or one beside it, holding a mast's spar hangs from it (within about twice this),
  *  metres. */
 const HUNG_M = 0.3;
-/** What is never a mast's: her hull, her deck and her canvas. */
+/** What is never a mast's: its hull, its deck and its canvas. */
 const NOT_RIG = new Set(['hull', 'deck', 'sail']);
-/** Her breadth is measured in slices this long along her and this deep, metres; a vertex within `SHELL_M` of her
- *  breadth in its slice, facing outboard, is her shell. */
+/** Its breadth is measured in slices this long along it and this deep, metres; a vertex within `SHELL_M` of its
+ *  breadth in its slice, facing outboard, is its shell. */
 const SLICE = { alongM: 0.25, acrossM: 0.25, upM: 0.1 } as const;
 const SHELL_M = 0.15;
-/** A face facing inboard is her shell only this close to her breadth, metres: under any bulwark's thickness. */
+/** A face facing inboard is its shell only this close to its breadth, metres: under any bulwark's thickness. */
 const FLUSH_M = 0.03;
-/** A slice is her side only where she is this share of her greatest breadth at that station at or below it: a
- *  deckhouse standing above her rail is the widest thing in its own slices, but far inboard of her sides under it,
- *  while her bow flares out above her narrow forefoot. */
+/** A slice is its side only where it is this share of its greatest breadth at that station at or below it: a
+ *  deckhouse standing above its rail is the widest thing in its own slices, but far inboard of its sides under it,
+ *  while its bow flares out above its narrow forefoot. */
 const TOPSIDE_SHARE = 0.6;
-/** Her stem or transom in a slice across her is her end only within this of as far as she reaches at that height,
+/** Its stem or transom in a slice across it is its end only within this of as far as it reaches at that height,
  *  metres: a deckhouse's front or back stands well inboard of it. */
 const END_M = 0.6;
-/** Her sides' planking: a piece of her hull this long along her, metres. */
+/** Its sides' planking: a piece of its hull this long along it, metres. */
 const PLANK_M = 5;
-/** Her hull's faces are sampled this finely for her breadth, metres: under a slice's depth. */
+/** Its hull's faces are sampled this finely for its breadth, metres: under a slice's depth. */
 const SAMPLE_M = 0.08;
 /** Slices a station holds, for a slice's number: more than any hull is tall. */
 const SLICES_UP = 1000;
@@ -48,26 +48,26 @@ const SLICES_UP = 1000;
  *  width (each yard is modelled as two halves). */
 const YARD_REACH_M = 0.8;
 const YARD_SPAN_SHARE = 0.3;
-/** A yard's piece is round, its thickness between these, and lies across her, a piece of a sail's yard this long at
- *  least and a bare yard's this; a bare yard stands within this of her mast along her, and this high. */
+/** A yard's piece is round, its thickness between these, and lies across the ship, a piece of a sail's yard this long at
+ *  least and a bare yard's this; a bare yard stands within this of its mast along the ship, and this high. */
 const YARD = { thickM: 0.02, thinM: 0.5, pieceM: 1, bareM: 2.5, mastM: 1, overM: 7 } as const;
-/** Square sails whose heads stand this close along her hang from one mast. */
+/** Square sails whose heads stand this close along the ship hang from one mast. */
 const MAST_M = 1.5;
 
-/** A yard: the sail whose brace turns it, and the point of her centreline it turns about, in her frame. */
+/** A yard: the sail whose brace turns it, and the point of its centreline it turns about, in its frame. */
 export interface Yard {
   readonly sail: number;
   readonly pivot: Point;
 }
 
-/** A mast as her spars stand on it: the height of its foot and of its head, in her frame, metres. */
+/** A mast as its spars stand on it: the height of its foot and of its head, in its frame, metres. */
 export interface MastSpan {
   readonly footZ: number;
   readonly topZ: number;
 }
 
-/** Her mesh's vertices with their tags, her yards, each sail's pivot (a square sail's yard's; none for others), and
- *  her masts fore to aft (`mastsOf`), whose spars fall with them. */
+/** Its mesh's vertices with their tags, its yards, each sail's pivot (a square sail's yard's; none for others), and
+ *  its masts fore to aft (`mastsOf`), whose spars fall with them. */
 export interface ShipTags {
   readonly vertices: ArrayBuffer;
   readonly yards: readonly Yard[];
@@ -77,7 +77,7 @@ export interface ShipTags {
 
 const distance = (one: Point, other: Point) => Math.hypot(one[0] - other[0], one[1] - other[1], one[2] - other[2]);
 
-/** Her mesh's vertices joined by her faces into pieces, each a list of its vertices. */
+/** Its mesh's vertices joined by its faces into pieces, each a list of its vertices. */
 function piecesOf(mesh: ShipMesh): number[][] {
   const above = Int32Array.from({ length: mesh.vertexCount }, (unused, index) => index);
   const root = (vertex: number): number => {
@@ -99,7 +99,7 @@ function piecesOf(mesh: ShipMesh): number[][] {
   return [...pieces.values()];
 }
 
-/** Every point over her hull's faces, sampled finely enough for her slices: a long plank has vertices only at its
+/** Every point over its hull's faces, sampled finely enough for its slices: a long plank has vertices only at its
  *  ends. */
 function sampleFaces(
   mesh: ShipMesh,
@@ -134,11 +134,11 @@ const raise = (kept: Map<number, number>, key: number, value: number) => {
   if (value > (kept.get(key) ?? -Infinity)) kept.set(key, value);
 };
 
-/** Tags the outside of her shell. Her sides: a vertex of her hull within `SHELL_M` of her breadth in its slice (along
- *  her and up), facing outboard, where over her waterline her breadth there is a fair share of her greatest at that
- *  station. Her stem and transom the same way along her: within `SHELL_M` of how far forward or aft she reaches in
- *  its slice (across her and up), facing that way, where that is near as far as she reaches at that height and her
- *  breadth there is her side's, not a deckhouse's. */
+/** Tags the outside of its shell. Its sides: a vertex of its hull within `SHELL_M` of its breadth in its slice (along
+ *  it and up), facing outboard, where over its waterline its breadth there is a fair share of its greatest at that
+ *  station. Its stem and transom the same way along it: within `SHELL_M` of how far forward or aft it reaches in
+ *  its slice (across it and up), facing that way, where that is near as far as it reaches at that height and its
+ *  breadth there is its side's, not a deckhouse's. */
 function tagShell(
   mesh: ShipMesh,
   view: DataView,
@@ -155,14 +155,14 @@ function tagShell(
     { length: 6 },
     () => new Map<number, number>(),
   );
-  // Her sides' planks and wales run long along her; her channels, chainplates, catheads and deckhouses are short,
-  // and stand proud of her or inboard of her.
-  const alongHer = new Uint8Array(mesh.vertexCount);
+  // Its sides' planks and wales run long along it; its channels, chainplates, catheads and deckhouses are short,
+  // and stand proud of it or inboard of it.
+  const alongHull = new Uint8Array(mesh.vertexCount);
   for (const piece of pieces) {
     if (partOf(piece[0] ?? 0) !== hull) continue;
     const along = piece.map((vertex) => pointOf(vertex)[0]);
     const long = Math.max(...along) - Math.min(...along) >= PLANK_M ? 1 : 0;
-    for (const vertex of piece) alongHer[vertex] = long;
+    for (const vertex of piece) alongHull[vertex] = long;
   }
   const hullFaces = {
     ...mesh,
@@ -170,13 +170,13 @@ function tagShell(
   };
   sampleFaces(hullFaces, pointOf, (x, y, z, vertex) => {
     raise(breadth, sliceOf(stationOf(x), z), Math.abs(y));
-    if (alongHer[vertex]) raise(planked, sliceOf(stationOf(x), z), Math.abs(y));
+    if (alongHull[vertex]) raise(planked, sliceOf(stationOf(x), z), Math.abs(y));
     raise(ahead, sliceOf(rowOf(y), z), x);
     raise(astern, sliceOf(rowOf(y), z), -x);
     raise(aheadAt, heightOf(z), x);
     raise(asternAt, heightOf(z), -x);
   });
-  // Her greatest breadth in each slice's station, at or below it.
+  // Its greatest breadth in each slice's station, at or below it.
   const below = new Map<number, number>();
   let [running, runningStation] = [0, NaN];
   for (const slice of [...breadth.keys()].sort((one, other) => one - other)) {
@@ -195,14 +195,14 @@ function tagShell(
       return broadest !== undefined && broadest >= share ? (planked.get(sliceOf(along, height)) ?? broadest) : null;
     };
     const topside = sideOf(stationOf(x), z) !== null;
-    // Where she narrows fast a slice's breadth is its wide end's: her side is measured by the narrowest round it.
+    // Where it narrows fast a slice's breadth is its wide end's: its side is measured by the narrowest round it.
     const narrowest = Math.min(
       ...[-1, 0, 1].flatMap((along) =>
         [-1, 0, 1].map((up) => sideOf(stationOf(x) + along, z + up * SLICE.upM) ?? Infinity),
       ),
     );
-    // A face modelled inside out faces inboard on her outside: it counts only flush with her breadth in its own
-    // slice, where the inside of a bulwark never lies, even where she narrows to her bow.
+    // A face modelled inside out faces inboard on its outside: it counts only flush with its breadth in its own
+    // slice, where the inside of a bulwark never lies, even where it narrows to its bow.
     const outboard = (normalY ?? 0) * Math.sign(y) > 0;
     const flush = Math.abs(y) >= (breadth.get(sliceOf(stationOf(x), z)) ?? Infinity) - FLUSH_M;
     const side = topside && (outboard ? Math.abs(y) >= narrowest - SHELL_M : flush);
@@ -216,7 +216,7 @@ function tagShell(
   }
 }
 
-/** Tags her mesh's vertices: her shell, and her square sails' yards (each to its sail, a bare one to its mast's
+/** Tags its mesh's vertices: its shell, and its square sails' yards (each to its sail, a bare one to its mast's
  *  lowest sail). */
 export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags {
   const vertices = mesh.vertices.slice(0);
@@ -227,7 +227,7 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
   const spar = SHIP_PARTS.indexOf('spar');
   const pieces = piecesOf(mesh);
   tagShell(mesh, view, pointOf, partOf, pieces);
-  // Her yards, by the spar pieces along each square sail's head; a round spar across a mast that holds none is bare.
+  // Its yards, by the spar pieces along each square sail's head; a round spar across a mast that holds none is bare.
   const sparPieces = pieces.filter((piece) => piece.every((vertex) => partOf(vertex) === spar));
   const yards: Yard[] = [];
   const pivots: (Point | null)[] = sails.map(() => null);
@@ -244,7 +244,7 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
   };
   const extent = (points: readonly Point[], axis: number) =>
     Math.max(...points.map((point) => point[axis] ?? 0)) - Math.min(...points.map((point) => point[axis] ?? 0));
-  // A piece of a round spar lying across her at least `acrossM` long: a top's flat rim is not one.
+  // A piece of a round spar lying across the ship at least `acrossM` long: a top's flat rim is not one.
   const roundAcross = (points: readonly Point[], acrossM: number) =>
     extent(points, 1) >= acrossM &&
     [0, 2].every((axis) => extent(points, axis) > YARD.thickM && extent(points, axis) < YARD.thinM);
@@ -259,7 +259,7 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
     });
     if (along.length > 0) pivots[index] = mark(along, index);
   });
-  // A mast's sails, by where their heads stand along her; a bare yard turns with the lowest of them.
+  // A mast's sails, by where their heads stand along the ship; a bare yard turns with the lowest of them.
   const masts: { x: number; lowest: number; z: number }[] = [];
   sails.forEach((sail, index) => {
     if (sail.kind !== 'square') return;
@@ -281,7 +281,7 @@ export function tagShip(mesh: ShipMesh, sails: readonly SailCorners[]): ShipTags
 }
 
 /** Tags each spar standing on a mast with the mast's number plus one, and answers each mast's span; then every other
- *  piece of her rig (its shrouds, stays, ratlines and crosstrees) whose top is on that mast, so nothing of a mast
+ *  piece of its rig (its shrouds, stays, ratlines and crosstrees) whose top is on that mast, so nothing of a mast
  *  stands where it fell. */
 function tagMasts(
   view: DataView,
@@ -348,7 +348,7 @@ function tagMasts(
   return spans.map((span) => (span.footZ === Infinity ? { footZ: 0, topZ: 0 } : span));
 }
 
-/** A point of her frame turned about a vertical line through `pivot` by `degrees` of brace, its leeward arm aft (the
+/** A point of its frame turned about a vertical line through `pivot` by `degrees` of brace, its leeward arm aft (the
  *  canvas's own turn): what the shader does to a yard. */
 export function braced(point: Point, pivot: Point, degrees: number): [number, number, number] {
   const turn = (degrees * Math.PI) / 180;

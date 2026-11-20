@@ -18,7 +18,7 @@ import { aimOf, easedAimOf, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.t
 import type { Orbit } from './orbit.ts';
 import { SAILS_RUNG } from './sailing.ts';
 
-/** Another player's Sloop is drawn this light: the same model as hers. */
+/** Another player's Sloop is drawn this light: the same model as the player's own. */
 const OTHER_SHADE = 0.85;
 /** A ball is drawn this many times its size, to be seen. */
 const BALL_DRAWN = 2;
@@ -32,15 +32,15 @@ function aimLay(lay: FleetLay | null): FightLay | null {
   return { side, launches, elevation, reach, ends, radius, on_target: onTarget };
 }
 
-/** Where a ship the room shows is drawn in the window, her height scaled as the land is drawn. */
+/** Where a ship the room shows is drawn in the window, its height scaled as the land is drawn. */
 function placeOf(vessel: FleetVessel, view: LandView, shown: number): ShipPlace {
   const [x = 0, y = 0, heading = 0] = vessel.ship;
   const [heave = 0, pitch = 0, roll = 0] = vessel.pose;
   return { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
 }
 
-/** The owner's Sloop in a fleet room, as the World Editor shows her: her session's orders and prediction (`FleetSloop`),
- *  every other ship the room shows, the balls aloft, her look's lay, and the fight's effects. */
+/** The owner's Sloop in a fleet room, as the World Editor shows it: its session's orders and prediction (`FleetSloop`),
+ *  every other ship the room shows, the balls aloft, its look's lay, and the fight's effects. */
 export class FleetScene {
   readonly play: FleetSloop;
   private readonly marks: MarkDrawer;
@@ -49,9 +49,9 @@ export class FleetScene {
   /** The wind's bearing the sails were last stepped in. */
   private windBearing = 0;
   private lay: FleetLay | null = null;
-  /** Each other ship's rig by her number, for the hull she sails. */
+  /** Each other ship's rig by its number, for the hull it sails. */
   private readonly rigs = new Map<number, { readonly hull: number; readonly rig: SailRig }>();
-  /** What draws her lay's aim over the water, where the marks' device can, and the eye it is laid from. */
+  /** What draws its lay's aim over the water, where the marks' device can, and the eye it is laid from. */
   private readonly aimView: AimView | null;
   private readonly aimEye = new AimCamera();
 
@@ -67,12 +67,12 @@ export class FleetScene {
     return vessel.captain ? this.shown(hullOfCaptain(vessel)) : SLOOP_HULL;
   }
 
-  /** The look the camera lays while aiming from her. */
+  /** The look the camera lays while aiming from it. */
   look(orbit: Orbit, view: LandView): FightLook {
     return lookOf(orbit, this.play, view);
   }
 
-  /** The camera `seconds` on: eased out to her battery while `aiming` and her guns can speak, short of every other
+  /** The camera `seconds` on: eased out to its battery while `aiming` and its guns can speak, short of every other
    *  ship afloat, and home again. */
   aimCamera(orbit: Orbit, view: LandView, shown: number, aiming: boolean, seconds: number): Orbit {
     const alongside = this.play
@@ -83,7 +83,7 @@ export class FleetScene {
     return easedAimOf(this.aimEye, orbit, this.play, view, shown, speaks, alongside, seconds);
   }
 
-  /** One frame: her orders owed and sent, her look's lay laid, the room's events made effects and fires burned. Answers
+  /** One frame: its orders owed and sent, its look's lay laid, the room's events made effects and fires burned. Answers
    *  the water's pushes. */
   step(seconds: number, input: FleetInput, now: number, view: LandView): Splash[] {
     this.play.advance(seconds, input, now);
@@ -101,7 +101,7 @@ export class FleetScene {
     });
   }
 
-  /** Every ship the room shows, by her number, as the fight's feel sees her: hers, and each other with her rig. */
+  /** Every ship the room shows, by its number, as the fight's feel sees it: the player's, each other with its rig. */
   private feelShips(): Map<number, FeelShip> {
     const own = this.play.session.own();
     const ships = new Map<number, FeelShip>();
@@ -115,7 +115,7 @@ export class FleetScene {
     return ships;
   }
 
-  /** Every other ship's footprint on the water while she floats, at her hull's waterline. */
+  /** Every other ship's footprint on the water while it floats, at its hull's waterline. */
   hulls(view: LandView): HullMask[] {
     return this.play
       .others()
@@ -134,8 +134,8 @@ export class FleetScene {
       });
   }
 
-  /** Every other ship afloat, heights as drawn: a captain's in her hull and her faction's colours, another player's
-   *  Sloop a little darker than hers; each one's sails stepped `seconds` on in the wind blowing toward `bearing`. */
+  /** Every other ship afloat, heights as drawn: a captain's in its hull and its faction's colours, another player's
+   *  Sloop a little darker than the player's; each one's sails stepped `seconds` on in the wind blowing toward `bearing`. */
   ships(
     view: LandView,
     shown: number,
@@ -164,7 +164,7 @@ export class FleetScene {
     });
   }
 
-  /** Draws the balls aloft and the effects, heights as drawn (her lay is `drawAimOver`'s). */
+  /** Draws the balls aloft and the effects, heights as drawn (its lay is `drawAimOver`'s). */
   draw(pass: GPURenderPassEncoder, view: LandView, shown: number, camera: ShipCamera, now: number): void {
     const marks: Mark[] = this.feel.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
     const ships = this.feelShips();
@@ -181,7 +181,7 @@ export class FleetScene {
     this.marks.drawInto(pass, marks, camera);
   }
 
-  /** Draws her lay's aim (`aimOf`) over a finished picture, after the water, hidden where `depth` stands nearer;
+  /** Draws its lay's aim (`aimOf`) over a finished picture, after the water, hidden where `depth` stands nearer;
    *  heights as drawn. */
   drawAimOver(
     encoder: GPUCommandEncoder,
@@ -198,7 +198,7 @@ export class FleetScene {
     if (aim) this.aimView?.drawOver(encoder, target, depth, aim, camera, now);
   }
 
-  /** Each captain's bar over her hull's masthead, heights as drawn. */
+  /** Each captain's bar over its hull's masthead, heights as drawn. */
   bars(view: LandView, shown: number): ShipBar[] {
     return this.play
       .others()

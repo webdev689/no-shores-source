@@ -2,6 +2,7 @@
 // instanced modules (drawn, and cast into the sun's shadow map), their vertex layouts and their pipelines.
 import type { Gpu } from '../gpu.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { GROUND_FLOATS } from './isleGround.ts';
@@ -83,11 +84,10 @@ fn placed(point: vec3f, at: vec4f, turn: vec4f) -> vec3f {
 }
 `;
 
-const DRAW_SHADER = /* wgsl */ `
+export const DRAW_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 ${COMMON}
-const AMBIENT = 0.35;
 const SAND = vec3f(0.84, 0.76, 0.56);
 const WET = 0.72;
 const SEABED = vec3f(0.5, 0.52, 0.4);
@@ -137,10 +137,11 @@ fn module_vertex(
   return out;
 }
 
+// The land's light: the sky's, the key light where the shadows and the clouds let it, and the lamps near.
 fn lit(colour: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
-  let direct = max(dot(normal, SUN), 0.0);
-  let sun = select(1.0, sunlit(from_eye, normal), direct > 0.0);
-  return colour * (AMBIENT + (1.0 - AMBIENT) * direct * sun);
+  let direct = max(dot(normal, sky_state.key.xyz), 0.0);
+  let sun = select(1.0, sunlit(from_eye, normal), direct > 0.0) * sky_dapple(from_eye);
+  return colour * (sky_ambient(normal) + sky_direct(normal, sun) + sky_lamps(from_eye, normal));
 }
 
 // The ground by its height and slope: the seabed under water, wet sand below the tide's reach, a beach up to its
@@ -176,7 +177,7 @@ fn module_fragment(surface: Lit, @builtin(front_facing) front: bool) -> @locatio
 }
 `;
 
-const CAST_SHADER = /* wgsl */ `
+export const CAST_SHADER = /* wgsl */ `
 ${SHADOW_CAST_WGSL}
 ${COMMON}
 @vertex
@@ -238,7 +239,8 @@ export function pipelinesOf(gpu: Gpu): Pipelines {
     ],
   });
   const { caster, receiver } = shadowLayouts(device);
-  const drawLayout = device.createPipelineLayout({ bindGroupLayouts: [group, receiver] });
+  const sky = skyUniformFor(device);
+  const drawLayout = device.createPipelineLayout({ bindGroupLayouts: [group, receiver, sky.empty, sky.layout] });
   const castLayout = device.createPipelineLayout({ bindGroupLayouts: [group, caster] });
   const draw = device.createShaderModule({ code: DRAW_SHADER });
   const cast = device.createShaderModule({ code: CAST_SHADER });

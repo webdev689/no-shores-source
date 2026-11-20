@@ -16,6 +16,7 @@ use std::cell::RefCell;
 
 mod fight;
 mod sail;
+pub mod sky_door;
 pub use fight::{end_fight, fight_begin_json, fight_step_json};
 pub use sail::sail_bytes;
 
@@ -75,6 +76,8 @@ pub fn header_of(landmass: &Landmass) -> Value {
         // The biome's low ground (0..1) and snow line, metres; null for a landmass with no biome.
         "ground": landmass.biome.map(|biome| biome.ground.map(|channel| f64::from(channel) / 255.0)),
         "snow_m": landmass.biome.map(|biome| biome.snow_m().round()),
+        // The biome's key, which the weather reads its air by; null for a landmass with no biome.
+        "climate": landmass.biome.map(|biome| biome.key),
         "swell": swell_of(&Swell::default()),
     })
 }
@@ -132,9 +135,11 @@ fn with_open(change: impl FnOnce(&mut Landmass) -> Result<(), String>) -> Vec<u8
 }
 
 /// Opens one continent of a layout: `{ "layout": <layout file>, "id": <continent id>, "edits": <edits file or null>,
-/// "keep": bool, "rmb": <the RMB index or null> }`. Generates its land with the edits on it and answers its view, or a
-/// header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it with the RMB
-/// index's blocks, or none; one not kept is a preview and leaves the open one alone.
+/// "keep": bool, "rmb": <the RMB index or null>, "rmbBlocks": [<each RMB block file>], "forged": { "buildings",
+/// "props" }, "briefs": <the briefs> }`, the last three optional. Generates its land with the edits on it and answers
+/// its view, or a header holding only `error`. Only a kept landmass stays open for strokes, its city settled on it
+/// with the RMB index's blocks, or none, and its nodes' layouts with what they are built with; one not kept is a
+/// preview and leaves the open one alone.
 #[must_use]
 pub fn open_view(request: &[u8]) -> Vec<u8> {
     let opened = read(request).and_then(|request| {
@@ -144,14 +149,15 @@ pub fn open_view(request: &[u8]) -> Vec<u8> {
         let edits = edits_from(&request["edits"])?;
         let keep = request["keep"].as_bool().unwrap_or(true);
         let blocks = settled::blocks_from(&request)?;
+        let builders = settled::book_from(&request)?;
         let continent = layout.continents.iter().find(|continent| continent.id == id);
         let continent = continent.ok_or_else(|| format!("the layout has no continent \"{id}\""))?;
-        generate(continent, edits).map(|landmass| (landmass, keep, blocks))
+        generate(continent, edits).map(|landmass| (landmass, keep, blocks, builders))
     });
     match opened {
-        Ok((landmass, false, _)) => view_bytes(&header_of(&landmass), Some(&landmass)),
-        Ok((mut landmass, true, blocks)) => {
-            settled::keep_blocks(blocks);
+        Ok((landmass, false, _, _)) => view_bytes(&header_of(&landmass), Some(&landmass)),
+        Ok((mut landmass, true, blocks, (book, briefs))) => {
+            settled::keep_blocks(blocks, book, briefs);
             settled::settle(&mut landmass);
             let bytes = view_bytes(&settled::header_with_city(&landmass), Some(&landmass));
             OPEN.with(|open| *open.borrow_mut() = Some(landmass));
@@ -459,6 +465,54 @@ pub extern "C" fn land_fight_end() {
 #[unsafe(no_mangle)]
 pub extern "C" fn land_write() -> u64 {
     hand_over(write_json().into_bytes())
+}
+
+/// Little-endian 64-bit numbers from a request's bytes, and back.
+fn floats_of(bytes: &[u8]) -> Vec<f64> {
+    bytes.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect()
+}
+
+fn floats_bytes(numbers: &[f64]) -> Vec<u8> {
+    numbers.iter().flat_map(|number| number.to_le_bytes()).collect()
+}
+
+/// The sky and weather over a place at a moment, as `sky_door::sky_numbers` reads the request at `address`.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_sky(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(floats_bytes(&sky_door::sky_numbers(&floats_of(request))))
+}
+
+/// The lightning near a place in a window of world time, as `sky_door::strikes_numbers` reads the request.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_strikes(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(floats_bytes(&sky_door::strikes_numbers(&floats_of(request))))
+}
+
+/// The wind a ship's sails feel at a point of the sea, as `sky_door::sea_wind_numbers` reads the request.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_sea_wind(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(floats_bytes(&sky_door::sea_wind_numbers(&floats_of(request))))
+}
+
+/// The climates' keys in their numbers' order, as JSON text.
+#[unsafe(no_mangle)]
+pub extern "C" fn land_climates() -> u64 {
+    hand_over(sky_door::climates_json().into_bytes())
 }
 
 #[cfg(test)]

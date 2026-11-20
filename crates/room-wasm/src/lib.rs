@@ -14,10 +14,12 @@ use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
+use room::winds::epoch_of;
 use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
 use serde::Deserialize;
 use std::cell::RefCell;
 
+mod course_door;
 mod deck_door;
 mod snapshot_door;
 pub use snapshot_door::snapshot;
@@ -32,16 +34,20 @@ mod waters_door;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
-/// The room an instance keeps: on land, with its node's id and window rect when it is a node's; the sea; or a fleet.
+/// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
+/// player when its node is locked; the sea; or a fleet.
 #[derive(Debug)]
 enum Opened {
-    Land { room: Box<Room>, node: Option<(String, [f64; 4])> },
+    Land { room: Box<Room>, node: Option<(String, [f64; 4])>, refusal: Option<String> },
     Sea(Box<Sea>),
     Fleet(Box<Fleet>),
 }
 
 thread_local! {
     static OPEN: RefCell<Option<Opened>> = const { RefCell::new(None) };
+    /// The wall's time at the open room's first tick, milliseconds since 1970, as its host last set it: world time's
+    /// own start until a host sets it.
+    static EPOCH_MS: std::cell::Cell<f64> = const { std::cell::Cell::new(sky::clock::EPOCH_UNIX_MS) };
 }
 
 /// What became of an input the host handed over.
@@ -54,18 +60,23 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its id, kind, section, window, rect and boxes.
+/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, and whether
+/// it is locked. A page playing alone writes its own, never locked.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
     kind: NodeKind,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    locked: bool,
     #[serde(default)]
     continent: String,
     ring: Vec<[f64; 2]>,
     spawns: Vec<[f64; 2]>,
     bounds: [f64; 4],
     ground: Ground,
-    boxes: Vec<[f64; 5]>,
+    boxes: Vec<[f64; BLOCK_FLOATS]>,
     #[serde(default)]
     counters: Vec<NodeCounter>,
 }
@@ -103,9 +114,18 @@ fn keep(opened: Opened) {
     OPEN.with(|open| *open.borrow_mut() = Some(opened));
 }
 
-/// Opens a new room on a course: the spawn's x and y, then the blocks, five numbers each, little-endian floats.
+/// Opens a new room on a course: the spawn's x and y, then the blocks, six numbers each (`BLOCK_FLOATS`), little-endian floats.
 /// Answers whether the numbers made a course.
 pub fn open(bytes: &[u8]) -> bool {
+    open_course(bytes, Room::new)
+}
+
+/// Opens a new room on a course laid over the open sea, written as `open` reads one: its foes walk its blocks alone.
+pub fn open_over_sea(bytes: &[u8]) -> bool {
+    open_course(bytes, Room::over_sea)
+}
+
+fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> bool {
     let floats = floats_of(bytes);
     let Some((spawn, blocks)) = floats.split_first_chunk::<2>() else { return false };
     if !blocks.len().is_multiple_of(BLOCK_FLOATS) {
@@ -114,8 +134,8 @@ pub fn open(bytes: &[u8]) -> bool {
     let blocks =
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
-    fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone());
-    keep(Opened::Land { room: Box::new(Room::new(blocks, (spawn[0], spawn[1]))), node: None });
+    fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
+    keep(Opened::Land { room: Box::new(room_on(blocks, (spawn[0], spawn[1]))), node: None, refusal: None });
     true
 }
 
@@ -141,8 +161,18 @@ pub fn open_node(text: &[u8]) -> bool {
     {
         room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
     }
-    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)) });
+    let refusal = node.locked.then(|| format!("{} is locked", node.name));
+    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal });
     true
+}
+
+/// Why the open room takes no player: a locked node's says so; None for any other room.
+pub fn refusal() -> Option<String> {
+    with_open(|opened| match opened {
+        Opened::Land { refusal, .. } => refusal.clone(),
+        Opened::Sea(_) | Opened::Fleet(_) => None,
+    })
+    .flatten()
 }
 
 /// The sea's opening text with its ports: `{ "layout": <layout file>, "ports": [{ "id", "name", "continent",
@@ -164,6 +194,7 @@ pub fn open_sea(text: &[u8], seed: u32) -> bool {
     let Some((layout, ports)) = opened else { return false };
     let mut sea = Sea::new(&layout, deck_door::sloop_deck().clone(), seed, &ports);
     sea.set_hull_decks(deck_door::hull_decks().to_vec());
+    sea.set_world_start(EPOCH_MS.get() / 1000.0);
     keep(Opened::Sea(Box::new(sea)));
     true
 }
@@ -171,6 +202,20 @@ pub fn open_sea(text: &[u8], seed: u32) -> bool {
 /// Opens a fleet room on the open sea.
 pub fn open_fleet() {
     keep(Opened::Fleet(Box::new(Fleet::new())));
+    // Its predictions take the same world time as the room.
+    set_epoch(EPOCH_MS.get());
+}
+
+/// Sets the wall's time at the open room's first tick, milliseconds since 1970: the room's world time runs from it,
+/// and its welcome says so. A room opened later keeps it too.
+pub fn set_epoch(unix_ms: f64) {
+    EPOCH_MS.set(unix_ms);
+    with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.set_world_start(unix_ms / 1000.0),
+        Opened::Fleet(fleet) => fleet.set_epoch(unix_ms),
+        Opened::Land { .. } => {}
+    });
+    fleet_door::set_world_start(unix_ms / 1000.0);
 }
 
 /// Lets the open room take players' asks for foes, as a course's room does; a node's room otherwise takes none.
@@ -261,11 +306,11 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
 #[must_use]
 pub fn joined(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
-        Opened::Land { room, node } => {
+        Opened::Land { room, node, .. } => {
             let node = node.as_ref().map(|(id, bounds)| (id.as_str(), *bounds));
-            protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node)
+            protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node, epoch_of(EPOCH_MS.get()))
         }
-        Opened::Sea(_) | Opened::Fleet(_) => protocol::joined_bytes(player, &[], None),
+        Opened::Sea(_) | Opened::Fleet(_) => protocol::joined_bytes(player, &[], None, epoch_of(EPOCH_MS.get())),
     })
     .unwrap_or_default()
 }
@@ -314,7 +359,11 @@ pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
     else {
         return false;
     };
-    keep(Opened::Land { room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))), node: None });
+    keep(Opened::Land {
+        room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))),
+        node: None,
+        refusal: None,
+    });
     true
 }
 
@@ -323,6 +372,16 @@ pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
 pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32) -> u32 {
     let byte = |number: u32| u8::try_from(number).unwrap_or(u8::MAX);
     u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
+}
+
+/// Opens a room on the course over the open sea written at `address`, `length` bytes long; 1 if it opened, 0 if not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_open_over_sea(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(open_over_sea(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Opens a node's room from its file's text written at `address`, `length` bytes long; 1 if it opened, 0 if not.
@@ -365,22 +424,36 @@ pub extern "C" fn room_world_start(seconds: f64) {
     fleet_door::set_world_start(seconds);
 }
 
+/// Sets the wall's time at the room's first tick, milliseconds since 1970: the same instant `room_world_start` sets,
+/// in the unit the sky's clock reads.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_epoch(unix_ms: f64) {
+    set_epoch(unix_ms);
+}
+
 /// How long one of the room's ticks is, in seconds: its host ticks it that often.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_tick_seconds() -> f64 {
     movement::TICK_SECONDS
 }
 
-/// A new player's number, or 0 with no room open or the room full.
+/// A new player's number, or 0 with no room open, the room full or its node locked (`room_refusal` says which).
 #[unsafe(no_mangle)]
 pub extern "C" fn room_join() -> PlayerId {
     with_open(|opened| match opened {
-        Opened::Land { room, .. } => room.join(),
+        Opened::Land { room, refusal: None, .. } => room.join(),
+        Opened::Land { .. } => None,
         Opened::Sea(sea) => Some(sea.join()),
         Opened::Fleet(fleet) => fleet.join(),
     })
     .flatten()
     .unwrap_or(0)
+}
+
+/// Why the open room takes no player (`refusal`), as UTF-8; empty when it takes them.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_refusal() -> u64 {
+    hand_over(refusal().unwrap_or_default().into_bytes())
 }
 
 /// The welcome's bytes for a player.
@@ -481,6 +554,13 @@ pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
     let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
     hand_over(fleet_door::lay(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
 }
+
+#[cfg(test)]
+#[path = "climb_door_tests.rs"]
+mod climb_door_tests;
+#[cfg(test)]
+#[path = "course_door_tests.rs"]
+mod course_door_tests;
 
 #[cfg(test)]
 #[path = "door_tests.rs"]
