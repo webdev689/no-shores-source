@@ -43,6 +43,8 @@ export async function ashoreOn(
     maxX: east + held.seen.at[0],
     maxY: south + held.seen.at[1],
     top,
+    // From the ground up: an island's ground stands over the sea, so this is under it everywhere.
+    bottom: -100,
   }));
   const open = (received: (snapshot: Snapshot) => void) => {
     hear = received;

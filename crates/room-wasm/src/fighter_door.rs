@@ -13,11 +13,11 @@ use room::Floor;
 use std::cell::RefCell;
 
 thread_local! {
-    pub(crate) static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    pub(crate) static COURSE: RefCell<movement::Blocks> = RefCell::new(movement::Blocks::default());
     static FLOOR: RefCell<Floor> = const { RefCell::new(Floor::Flat) };
 }
 
-/// Keeps a course for predicting a fighter without a room: the blocks, five numbers each. Answers whether they made
+/// Keeps a course for predicting a fighter without a room: the blocks, six numbers each (`BLOCK_FLOATS`). Answers whether they made
 /// one.
 pub fn set_course(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
@@ -26,7 +26,7 @@ pub fn set_course(bytes: &[u8]) -> bool {
     }
     let blocks =
         floats.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
-    COURSE.with(|course| *course.borrow_mut() = blocks.collect());
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::new(blocks.collect()));
     true
 }
 
@@ -81,7 +81,7 @@ pub fn predict(bytes: &[u8]) -> Vec<u8> {
     let (next, shot) = COURSE.with(|course| {
         FLOOR.with(|floor| {
             let (blocks, floor) = (course.borrow(), floor.borrow());
-            let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &blocks, &*floor);
+            let (next, happening) = combat::player_tick(whole(*id), &fighter, &intent, &view, &*blocks, &*floor);
             let Some(combat::Happening::Loosed(shot)) = happening else { return (next, None) };
             if combat::shots::shot_numbers(shot.ranged).0 > 0.0 {
                 return (next, Some(shot));

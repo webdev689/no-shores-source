@@ -8,8 +8,9 @@ const WORLD_DIR = fileURLToPath(new URL('./content/world/', import.meta.url));
 const FORGED_DIR = fileURLToPath(new URL('./content/forged/', import.meta.url));
 /** The authored world files the editors read and save: the layout, and one edits file a landmass. */
 const WORLD_FILE = /^\/(layout|land\/[a-z0-9-]+)\.json$/;
-/** The tables the game only reads: Daggerfall's RMB town blocks, and the forged models' measures. */
-const READ_ONLY_FILE = /^\/(rmb\/[a-z]+|forged\/[a-z]+)\.json$/;
+/** The tables the game only reads: Daggerfall's RMB town blocks, the forged models' measures, the nodes' briefs and the
+ *  list of nodes open to players. */
+const READ_ONLY_FILE = /^\/(rmb\/[a-z]+|forged\/[a-z]+|briefs|open)\.json$/;
 
 async function bodyOf(request: IncomingMessage): Promise<string> {
   const parts: Buffer[] = [];
@@ -78,6 +79,8 @@ function worldFiles(): Plugin {
         (await readdir(`${WORLD_DIR}${folder}`).catch(() => [])).filter((file) => file.endsWith('.json'));
       for (const name of [
         'layout.json',
+        'briefs.json',
+        'open.json',
         ...(await listed('land')).map((file) => `land/${file}`),
         ...(await listed('rmb')).map((file) => `rmb/${file}`),
       ])

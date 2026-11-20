@@ -10,6 +10,7 @@ import { mainPortsOf } from '../rules/roster.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
 import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
+import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
 import { keptDiscovered } from './discovered.ts';
 import { FigureView } from './figureView.ts';
@@ -58,11 +59,9 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTM
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
   const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
-  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
+  const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
-    fetch(`${base}world/rmb/index.json`)
-      .then((answer) => (answer.ok ? answer.text() : null))
-      .catch(() => null),
+    loadLandTexts(base),
     fetch(`${base}movement.wasm`)
       .then((answer) => {
         if (!answer.ok) throw new Error(`movement.wasm: ${answer.status}`);
@@ -90,14 +89,28 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTM
   }
   const discovered = keptDiscovered(world);
   discovered.arrived(start.continent, start.node);
-  const landmass = await openLandmass(land, world, rmbText, start.continent);
+  const landmass = await openLandmass(land, world, landTexts, start.continent);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
   const terrainFor = (opened: Landmass) => {
     const biome = biomeOf(opened.id);
     return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
   };
-  scene.setLand(landmass.view, terrainFor(landmass));
+  scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
   const views = { scene, figureView, shipModels, forge, firstPerson, store, sloop };
-  const modules = { roomModule, builtSloop, land, movement, seaWeather, seaView, drawersOn, terrainFor };
-  return { hud, flow, story, rooms, link, session, world, rmbText, start, discovered, landmass, ...views, ...modules };
+  const modules = { roomModule, builtSloop, land, movement, seaWeather, seaView, drawersOn, terrainFor, biomeOf };
+  return {
+    hud,
+    flow,
+    story,
+    rooms,
+    link,
+    session,
+    world,
+    landTexts,
+    start,
+    discovered,
+    landmass,
+    ...views,
+    ...modules,
+  };
 }

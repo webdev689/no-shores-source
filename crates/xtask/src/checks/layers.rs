@@ -13,7 +13,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "sky", may_import: &[] },
     Layer { name: "network", may_import: &["rules", "sky"] },
-    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships", "islands", "sky"] },
+    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships", "islands", "city", "layout", "sky"] },
     Layer { name: "terrain", may_import: &["rules", "water", "sky"] },
     Layer {
         name: "game",
@@ -27,6 +27,7 @@ pub const LAYERS: &[Layer] = &[
             "models",
             "textures",
             "city",
+            "layout",
             "nature",
             "forge",
             "firstperson",
@@ -56,6 +57,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "models", may_import: &[] },
     Layer { name: "nature", may_import: &["rules", "water", "sky"] },
     Layer { name: "city", may_import: &["models", "textures", "rules", "water", "sky"] },
+    Layer { name: "layout", may_import: &["city"] },
     Layer { name: "heldmap", may_import: &["editor", "overworld", "forge", "firstperson", "plus"] },
     Layer { name: "plus", may_import: &[] },
     Layer { name: "islands", may_import: &["rules", "water", "textures", "models", "sky"] },
@@ -213,6 +215,16 @@ mod tests {
         let problems = run("client/src/editor/editorMain.ts", "import { fitCanvas } from '../main.ts';\n");
         assert_eq!(problems.len(), 1);
         assert_eq!(problems[0].message, "editor may not import the entry point");
+    }
+
+    #[test]
+    fn the_editor_draws_layouts_with_the_city_but_never_reaches_the_game() {
+        let path = "client/src/editor/layoutCity.ts";
+        assert!(run(path, "import { CityView } from '../city/cityView.ts';\n").is_empty());
+        assert!(run(path, "import { planOfLayouts } from '../layout/layoutPlan.ts';\n").is_empty());
+        let problems = run(path, "import { loadCityAssets } from '../game/landDrawers.ts';\n");
+        assert_eq!(problems.len(), 1);
+        assert_eq!(problems[0].message, "editor may not import game");
     }
 
     #[test]

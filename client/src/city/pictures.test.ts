@@ -59,7 +59,10 @@ test('a city wanting more pictures than the array holds loses only its rarest, w
     for (let record = 0; record < 32; record++) wants.push(want(archive, record, 10_000 - wants.length, ['prop']));
   const book = pictureBook(TEMPERATE, wants, [2], noUses);
   assert.equal(book.pictures.length, PICTURE_LAYERS);
-  assert.equal(new Set(book.pictures.map((picture) => `${picture.archive}.${picture.record}`)).size, PICTURE_LAYERS);
+  assert.equal(
+    new Set(book.pictures.map((picture) => `${picture.archive}.${picture.record}.${picture.tint}`)).size,
+    PICTURE_LAYERS,
+  );
   assert.equal(book.pictures[book.layerOf(506, 0)].archive, 506, 'the most worn is kept');
   assert.equal(book.layerOf(511, 31), 0, 'the rarest falls back');
 });
@@ -88,4 +91,14 @@ test('a picture is resampled square texel for texel and halved down to one texel
   );
   assert.equal(levels[3][0], 128, "the last level is the whole picture's mean");
   assert.equal(levelCount(LAYER_SIZE), Math.log2(LAYER_SIZE) + 1);
+});
+
+test('a chalk picture is in the book only for a city that plans chalk solids', () => {
+  const stoneLayers = (book: ReturnType<typeof pictureBook>) =>
+    book.pictures.filter((picture) => picture.archive === 302 && picture.record === 3).length;
+  const without = pictureBook(TEMPERATE, [], [2], noUses);
+  const chalky = pictureBook(TEMPERATE, [], [2], noUses, true);
+  assert.equal(stoneLayers(chalky), stoneLayers(without) + 1);
+  assert.equal(without.materials.chalk, without.materials.rubble, 'with none planned it falls back to rubble');
+  assert.notEqual(chalky.materials.chalk, chalky.materials.rubble);
 });

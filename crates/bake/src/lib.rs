@@ -9,7 +9,10 @@ use land::edits::Edits;
 use land::ground::Ground;
 use land::landmass::generate;
 use land::sites::NodeKind;
+use layout::book::Book;
+use layout::brief::Briefs;
 use serde::Serialize;
+use std::path::{Path, PathBuf};
 use world::layout::Continent;
 
 /// How far past a section's ring its window reaches, metres: beyond the 60 m where a body dies, so no living body
@@ -29,10 +32,12 @@ pub struct NodeFile {
     /// The window's rect: west, north, east and south.
     pub bounds: [f64; 4],
     pub ground: Ground,
-    /// The boxes a body runs into within the rect: west, north, east, south and top.
-    pub boxes: Vec<[f64; 5]>,
+    /// The boxes a body runs into within the rect: west, north, east, south, top and underside.
+    pub boxes: Vec<city::collision::Box2>,
     /// In a social space, the counters that answer a player's gear, which the room serves only at each.
     pub counters: Vec<Counter>,
+    /// Whether its room takes no player until a pass is done on it ([`lock`]).
+    pub locked: bool,
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -98,29 +103,48 @@ fn answers_gear(kind: StationKind) -> bool {
     matches!(kind, Reader | Vault | Quartermaster | Armsmith | Tailor)
 }
 
-/// Every node of a continent, drawn and social, generated with its edits and its city settled on the land. Fails
-/// for edits that break their rules or a city that cannot be planned.
-pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<Vec<NodeFile>, String> {
+/// What a continent's layouts are built with: the RMB blocks' contents and the forged models' boxes, and every
+/// node's brief.
+#[derive(Debug, Clone, Default)]
+pub struct Builders {
+    pub book: Book,
+    pub briefs: Briefs,
+}
+
+/// Every node of a continent, drawn and social, generated with its edits, its city settled on the land and every
+/// drawn node's layout laid on it: a drawn node's section, spawns and boxes are its layout's. Fails for edits that
+/// break their rules or a city that cannot be planned.
+pub fn nodes_of(
+    continent: &Continent,
+    edits: Edits,
+    blocks: &Blocks,
+    builders: &Builders,
+) -> Result<Vec<NodeFile>, String> {
     let mut landmass = generate(continent, edits)?;
     if let Some(problem) = landmass.problems().first() {
         return Err(format!("{}: {}: {}", continent.id, problem.subject, problem.message));
     }
     let plan = city::settle(&mut landmass, blocks)?;
+    let layouts = layout::settle::settle(&mut landmass, &builders.book, &builders.briefs);
     let cut = |id: String, kind: NodeKind, name: String, ring: Vec<[f64; 2]>, spawns: Vec<[f64; 2]>| {
         let bounds = bounds_of(&ring);
         let [west, north, east, south] = bounds;
         let ground = landmass.surface.window(west, north, east, south);
-        let boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
+        let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
+        boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         let continent = continent.id.clone();
-        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new() }
+        NodeFile { id, kind, name, continent, ring, spawns, bounds, ground, boxes, counters: Vec::new(), locked: false }
     };
     let whole =
         |points: &[world::geometry::Point]| points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
-    let drawn = landmass
-        .edits
-        .nodes
-        .iter()
-        .map(|node| cut(node.id.clone(), node.kind, node.name.clone(), whole(&node.ring), whole(&node.spawns)));
+    let drawn = landmass.edits.nodes.iter().map(|node| {
+        let laid = layouts.iter().find(|layout| layout.id == node.id && layout.ring.len() >= 3);
+        let (ring, spawns) = laid.map_or_else(
+            || (whole(&node.ring), whole(&node.spawns)),
+            |layout| (layout.ring.clone(), layout.spawns.clone()),
+        );
+        cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
+    });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
         let counters = social.stations.iter().filter(|station| answers_gear(station.kind));
@@ -130,6 +154,50 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<
         }
     });
     Ok(drawn.chain(social).collect())
+}
+
+/// Marks each node locked or not by the open list, `open` the ids in `content/world/open.json`
+/// ([`land::sites::locked`]).
+pub fn lock(nodes: &mut [NodeFile], open: &[String]) {
+    for node in nodes {
+        node.locked = land::sites::locked(node.kind, &node.id, open);
+    }
+}
+
+/// What the layouts are built with: every RMB block file beside the index, the forged models' boxes and the briefs,
+/// each left empty where the repository holds none, under the repository's `root`.
+pub fn builders(root: &Path) -> Result<Builders, String> {
+    let mut builders = Builders::default();
+    let rmb = root.join("content/world/rmb");
+    if rmb.is_dir() {
+        let mut files: Vec<PathBuf> = std::fs::read_dir(&rmb)
+            .map_err(|error| format!("{}: {error}", rmb.display()))?
+            .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+            .filter(|path| {
+                path.extension().is_some_and(|extension| extension == "json") && !path.ends_with("index.json")
+            })
+            .collect();
+        files.sort();
+        for file in files {
+            builders.book.add_blocks(&read_text(&file)?)?;
+        }
+    }
+    let forged = root.join("content/forged");
+    for (name, table) in [("buildings.json", &mut builders.book.buildings), ("props.json", &mut builders.book.props)] {
+        let path = forged.join(name);
+        if path.is_file() {
+            *table = layout::book::Book::measures(&read_text(&path)?)?;
+        }
+    }
+    let briefs = root.join("content/world/briefs.json");
+    if briefs.is_file() {
+        builders.briefs = layout::brief::Briefs::parse(&read_text(&briefs)?)?;
+    }
+    Ok(builders)
+}
+
+fn read_text(path: &Path) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
 }
 
 #[cfg(test)]
@@ -149,19 +217,31 @@ mod tests {
 
     fn glade() -> (NodeFile, world::layout::Layout) {
         let layout = world::layout::parse(SQUARE).unwrap();
-        let mut nodes =
-            nodes_of(&layout.continents[0], land::edits::parse(GLADE).unwrap(), &Blocks::default()).unwrap();
+        let mut nodes = nodes_of(
+            &layout.continents[0],
+            land::edits::parse(GLADE).unwrap(),
+            &Blocks::default(),
+            &Builders::default(),
+        )
+        .unwrap();
         assert_eq!(nodes.len(), 1);
         (nodes.remove(0), layout)
     }
 
     #[test]
-    fn a_square_landmass_with_a_node_bakes_its_window_and_section() {
+    fn a_square_landmass_with_a_node_bakes_its_laid_window_and_section() {
         let (node, layout) = glade();
         assert_eq!((node.id.as_str(), node.continent.as_str(), node.kind), ("glade", "square", NodeKind::Patrol));
-        assert_eq!(node.bounds, [259_900.0, 359_900.0, 261_100.0, 361_100.0]);
-        assert!(node.boxes.is_empty(), "no city stands on the square");
-        let whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
+        assert_eq!(node.bounds, bounds_of(&node.ring), "the window covers the laid section and its margin");
+        let [west, north, east, south] = node.bounds;
+        assert!(
+            west >= 259_900.0 - 100.0
+                && east <= 261_100.0 + 100.0
+                && north >= 359_900.0 - 100.0
+                && south <= 361_100.0 + 100.0
+        );
+        let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
+        let _ = layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
         for (x, y) in [(260_500.25, 360_500.75), (259_950.5, 361_050.5)] {
             assert_eq!(node.ground.height_at(x, y).to_bits(), whole.surface.height_at(x, y).to_bits());
         }
@@ -176,5 +256,16 @@ mod tests {
         assert!(ids_problem(&[called("index")]).is_some());
         assert_eq!(ids_problem(&[called(&"a".repeat(35))]), None, "node- and 35 make 40");
         assert!(ids_problem(&[called(&"a".repeat(36))]).is_some());
+    }
+
+    #[test]
+    fn a_patrol_area_the_open_list_does_not_name_is_written_locked() {
+        let (node, _) = glade();
+        let mut nodes = vec![node];
+        lock(&mut nodes, &[]);
+        assert!(nodes[0].locked);
+        assert!(serde_json::to_string(&nodes[0]).unwrap().contains(r#""locked":true"#));
+        lock(&mut nodes, &["glade".to_owned()]);
+        assert!(!nodes[0].locked);
     }
 }

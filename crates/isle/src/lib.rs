@@ -167,6 +167,7 @@ impl Plan {
             max_x: block.max_x + at[0],
             max_y: block.max_y + at[1],
             top: block.top,
+            bottom: block.bottom,
         };
         self.blocks.iter().map(moved).collect()
     }

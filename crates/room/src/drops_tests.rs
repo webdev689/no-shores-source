@@ -74,12 +74,12 @@ fn a_drop_stays_where_it_was_thrown_from_behind_a_thin_wall_off_a_drop_or_past_t
     use movement::Block;
     let from = [0.0, 0.0, 0.0];
     let north = 0.0;
-    let wall = Block { min_x: -5.0, min_y: -1.1, max_x: 5.0, max_y: -0.9, top: 3.0 };
+    let wall = Block { min_x: -5.0, min_y: -1.1, max_x: 5.0, max_y: -0.9, top: 3.0, bottom: 0.0 };
     let room = Room::new(vec![wall], (0.0, 0.0));
     assert_eq!(room.rest_at(from, north), from, "not through a thin wall");
     let south = room.rest_at(from, core::f64::consts::PI);
     assert!((south[1] - THROW_M).abs() < 1e-9, "the open side is open: {south:?}");
-    let ledge = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 3.0 };
+    let ledge = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 3.0, bottom: 0.0 };
     let room = Room::new(vec![ledge], (0.0, 0.0));
     assert_eq!(room.rest_at([0.0, 0.0, 3.0], north), [0.0, 0.0, 3.0], "not off a ledge");
     let step = Block { top: 0.2, ..ledge };

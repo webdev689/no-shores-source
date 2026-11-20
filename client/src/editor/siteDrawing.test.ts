@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Places } from './marks.ts';
-import { type Project, siteMarks } from './siteDrawing.ts';
+import type { Project } from './screenMarks.ts';
+import type { LandView } from '../rules/landRules.ts';
+import { fitOrbit } from './orbit.ts';
+import { groundProjector, siteMarks } from './siteDrawing.ts';
 
 const places: Places = {
   city: { id: 'overlook', name: 'Overlook', centre: [10_000, 10_000], motif: 'beacon' },
@@ -59,4 +62,26 @@ test('a ring that runs behind the camera is drawn in pieces and not filled', () 
   const downs = marks.find((mark) => mark.shape === 'section' && mark.colour === '#5cc96b');
   assert.ok(downs?.shape === 'section' && !downs.whole && !downs.path.endsWith('Z'));
   assert.equal(downs.path, 'M6000.0,5500.0L6000.0,5000.0', 'the edge back to the first point is kept');
+});
+
+test('no name is laid over a box kept clear, such as the 3D scale cues', () => {
+  const marks = siteMarks(places, flat(2), [], [{ left: 4900, top: 4900, right: 5100, bottom: 5100 }]);
+  const names = marks.flatMap((mark) => (mark.shape === 'label' ? [mark.text] : []));
+  assert.deepEqual(names, ['Downs', 'Maw']);
+});
+
+test('3D: a point far off the screen is not drawn, so no line runs out to it', () => {
+  const view = {
+    leftM: 0,
+    topM: 0,
+    cellM: 1000,
+    width: 2,
+    height: 2,
+    heights: new Float32Array(4),
+  } as unknown as LandView;
+  const orbit = fitOrbit(2000, 2000, 1);
+  const project = groundProjector(view, orbit, { width: 800, height: 800 }, 1);
+  assert.ok(project(1000, 1000), 'the target is drawn');
+  // Sideways along the screen, at the target's depth: a hundred kilometres is screens away.
+  assert.equal(project(1000 + 100_000 * Math.cos(orbit.yaw), 1000 + 100_000 * Math.sin(orbit.yaw)), null);
 });

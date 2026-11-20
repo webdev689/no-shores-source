@@ -497,7 +497,7 @@ export class Sea {
   private note(): string {
     const room = roomWords(this.room, this.roomLost);
     if (this.combat) return `Fighting${room}`;
-    if (this.view.kind !== 'sail') return room.slice(3);
+    if (this.view.kind !== 'sail') return (this.view.kind === 'landing' && this.view.said) || room.slice(3);
     // Off the helm, its helmsman has it while it sails on.
     const helmsman = this.aboard.walking && this.passage.sailing ? ' · Your helmsman has the helm' : '';
     return this.voyageNote + helmsman + room;

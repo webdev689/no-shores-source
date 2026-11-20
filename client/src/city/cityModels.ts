@@ -8,15 +8,18 @@ import type { BuildingTable, PropTable } from '../models/tables.ts';
 /** Numbers a model vertex takes: position, normal, UV, and its layer as a whole number. */
 export const MODEL_FLOATS = 9;
 
-/** Which forge stands a placed id: a building's, or the Prop Forge for a prop or a building row that names one. */
-export type ModelKey = `building:${number}` | `prop:${number}`;
+/** Which forge stands a placed id: a building's (`open:` with its doorways open, walked into), or the Prop Forge for
+ *  a prop or a building row that names one. */
+export type ModelKey = `building:${number}` | `open:${number}` | `prop:${number}`;
 
 export function modelKeyOf(
   tables: { readonly buildings: BuildingTable },
   id: number,
   placedAs: 'building' | 'prop',
+  open = false,
 ): ModelKey {
-  return placedAs === 'building' && tables.buildings[id] ? `building:${id}` : `prop:${id}`;
+  if (placedAs !== 'building' || !tables.buildings[id]) return `prop:${id}`;
+  return open ? `open:${id}` : `building:${id}`;
 }
 
 export function forgedModel(
@@ -24,7 +27,8 @@ export function forgedModel(
   key: ModelKey,
 ): ForgedModel | null {
   const [kind, id] = key.split(':');
-  return kind === 'building' ? buildingModel(tables.buildings, Number(id)) : propModel(tables.props, Number(id));
+  if (kind === 'prop') return propModel(tables.props, Number(id));
+  return buildingModel(tables.buildings, Number(id), { open: kind === 'open' });
 }
 
 /** Where each model sits in the shared buffers. */

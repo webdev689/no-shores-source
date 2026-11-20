@@ -90,7 +90,8 @@ pub struct Seen {
 /// what happened since it was last asked.
 #[derive(Debug)]
 pub struct Room {
-    pub(crate) blocks: Vec<Block>,
+    /// The course, with the grid the movement rules find a body's near blocks by.
+    pub(crate) blocks: movement::Blocks,
     pub(crate) floor: Floor,
     spawn_points: Vec<(f64, f64)>,
     section: Option<Section>,
@@ -164,7 +165,7 @@ impl Room {
         nav: navmesh::NavMesh,
     ) -> Self {
         Room {
-            blocks,
+            blocks: blocks.into(),
             floor,
             spawn_points,
             takes_foe_asks: section.is_none(),

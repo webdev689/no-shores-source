@@ -4,6 +4,7 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
+import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
@@ -27,6 +28,8 @@ import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
+import { askedArrival } from './gates.ts';
+import { installQaViews } from './qaViews.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
@@ -50,7 +53,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The size ships are drawn at this frame, which a ruin's wrecks are drawn at too: the sea's, true size on foot.
   let shipScale = 1;
   const boot = await bootGame(gpu, canvas, hudRoot, () => shipScale);
-  const { hud, story, rooms, link, session, world, rmbText, start, discovered, roomModule, land, scene } = boot;
+  const { hud, story, rooms, link, session, world, landTexts, start, discovered, roomModule, land, scene } = boot;
   const { shipModels, figureView, forge, firstPerson, store, sloop, movement, drawersOn, terrainFor, builtSloop } =
     boot;
   const { continents } = world;
@@ -58,7 +61,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
-  const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  // The address may ask for another (`&view=`), to picture a place from first person or nearer.
+  const arrivalView = askedView(location.search) ?? { firstPerson: false, distance: 4.5, shown: 4.5 };
   const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
   /** The ground the camera keeps over: an island's where one stands higher than the land's. */
   const groundAt = (x: number, y: number): number | null => {
@@ -87,6 +91,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foot: null,
     sea: null,
     epilogue: null,
+    through: null,
     helmMap: new HelmMap({
       ...{ gpu, store, root: hudRoot, outlines: continents.map((each) => each.outline) },
       sea: () => playing.sea,
@@ -130,12 +135,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
   const charting = new Charting(
     continents,
-    (id) => openLandmass(land, world, rmbText, id),
+    (id) => openLandmass(land, world, landTexts, id),
     (opened: Landmass) => {
       playing.landmass = opened;
       playing.drawers.release();
       playing.drawers = drawersOn(opened);
-      scene.setLand(opened.view, terrainFor(opened));
+      scene.setLand(opened.view, terrainFor(opened), boot.biomeOf(opened.id));
       playing.sea?.setLandmass(opened);
     },
   );
@@ -233,14 +238,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  const firstNode = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
-  if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
+  const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
+  if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
+  const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
   const arrive = () =>
     behindVeil(playing.flow.mode === 'loading' ? playing.flow.words : '', () =>
-      goFoot(firstNode, arrivalFacing(firstNode, playing.landmass.plan, null)),
+      goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, playing.landmass.plan, null)),
     );
   if (playing.flow.mode === 'loading') arrive();
 
+  installQaViews(window, location.search, !rooms, { node: () => playing.foot?.node ?? null, arrive: goFoot, walker });
   const landAt = (id: string) => {
     discovered.nodes([id]);
     const landing = playing.sea?.view.landingOf(id);
@@ -423,11 +430,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const choose = (id: string) => {
     if (playing.flow.mode === 'sea' && !playing.flow.menu) playing.sea?.sailToMark(id);
     if (playing.flow.mode !== 'landing' || !playing.sea) return;
-    if (playing.flow.chosen === id) landAt(id);
-    else if (playing.sea.view.landingOf(id)) {
-      change({ kind: 'choose', node: id });
-      playing.sea.view.chosen = id;
-    }
+    const choice = playing.sea.view.choose(id, playing.flow.chosen);
+    if (choice === 'land') landAt(id);
+    else if (choice === 'choose') change({ kind: 'choose', node: id });
   };
 
   const respawn = () => (playing.foot ?? playing.sea?.boarding.foot)?.respawn();
@@ -449,6 +454,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.flow.mode === 'sea' ? playing.sea : null,
       playing.seaWord?.keptOf(playing.sea?.sighted ?? null) ?? null,
     );
+  /** Going through the gate the player stands in to the node it leads to. */
+  const goThrough = () => {
+    const way = playing.through;
+    // A gate shut on a locked node takes no one: its offer only says so.
+    if (way?.happening && playing.flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
+  };
+  hud.onPassage(goThrough);
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);
   startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => playing.flow.mode === 'story');
   addEventListener(
@@ -478,6 +490,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'e' && playing.flow.mode === 'sea' && playing.sea?.fight && fightAsk(playing.sea) === 'board')
       input.lock();
     else if (key === 'e' && playing.sea?.aboard.walking) takeHelm();
+    else if (key === 'e' && playing.flow.mode === 'foot' && !playing.flow.menu && playing.through) goThrough();
     else if (key === 'e' && playing.flow.mode === 'foot') playing.foot?.use();
     else if (key === 'enter' && playing.flow.mode === 'landing' && playing.flow.chosen) landAt(playing.flow.chosen);
     else if (key === 'enter' && playing.flow.mode === 'foot') respawn();
@@ -511,6 +524,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       arrive();
     });
   }
+  installQaViews(window, location.search, !rooms, { node: () => playing.foot?.node ?? null, arrive: goFoot, walker });
   startFrames(
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },

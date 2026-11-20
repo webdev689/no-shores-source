@@ -2,8 +2,8 @@ import { canvasSize } from '../canvasSize.ts';
 import { startGpu } from '../gpu.ts';
 import type { Brush } from '../rules/landRules.ts';
 import { type Camera, pan, screenToWorld, worldToScreen, zoomAt } from './camera.ts';
-import { downloadJson } from './dom.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
+import { loadLandTexts } from '../terrain/landTexts.ts';
 import { drawScaleCues, shownExaggeration } from './closeUp.ts';
 import { AIM_HIGHEST_LOOK, AimInput } from './aimInput.ts';
 import { BRUSHES, buildLandPanel, LAND_TOOLS, type LandTool, SITE_TOOLS } from './landPanel.ts';
@@ -13,7 +13,8 @@ import { LandScene } from './landScene.ts';
 import { fitOrbit, type Orbit, panOrbit, pickTerrain, rayAt, rotateOrbit, zoomOrbit } from './orbit.ts';
 import { drawDraft, snapPoint, type Spot } from './placeDrawing.ts';
 import { PlaceTools } from './placeTools.ts';
-import { fitWindow, heightAt, ReliefView } from './reliefView.ts';
+import { ReliefTiles, tilesWanted } from './reliefTiles.ts';
+import { fitWindow, heightAt, readoutAt, ReliefView } from './reliefView.ts';
 import { drawSites, groundProjector, siteMarks } from './siteDrawing.ts';
 import { NODE_COLOURS, siteFocus } from './sites.ts';
 import type { TerrainData } from '../terrain/terrainView.ts';
@@ -41,6 +42,12 @@ export async function startLandEditor(
   const gpu = await startGpu(canvas);
   const relief = new ReliefView(gpu);
   const worker = startLandWorker();
+  // Read once: every landmass is settled with them, as the game settles it.
+  const texts = loadLandTexts(import.meta.env.BASE_URL);
+  const tiles = new ReliefTiles((tile) => {
+    relief.layTile(tile);
+    requestFrame();
+  });
   let session: LandSession | null = null;
   let layoutText = '';
   let restoring = false;
@@ -58,6 +65,7 @@ export async function startLandEditor(
   let editsVersion = 0;
   let walking = false;
   let sailing = false;
+  let [layoutsShown, buildingsShown] = [true, true];
   /** With a fleet room offered by the page (`?room=`), the Sloop sails there. */
   const harbour = fleetOffered();
   const fleet = harbour && new FleetDock(harbour);
@@ -251,22 +259,17 @@ export async function startLandEditor(
 
   const save = async () => {
     if (!session) return;
-    const text = await session.written(selected);
-    const url = `${import.meta.env.BASE_URL}world/land/${encodeURIComponent(selected)}.json`;
-    const answer = import.meta.env.DEV ? await fetch(url, { method: 'PUT', body: text }).catch(() => null) : null;
-    if (answer?.ok) status = `Saved content/world/land/${selected}.json.`;
-    else {
-      downloadJson(text, `${selected}.json`);
-      status = `Downloaded ${selected}.json. Put it in content/world/land/ to keep it.`;
-    }
+    status = await session.save(selected);
     requestFrame();
   };
 
-  const pointedAt = (ground: number | null, where: string) =>
-    ground === null
-      ? ''
-      : `${where} · ${ground >= 0 ? `${Math.round(ground)} m` : `sea, ${Math.round(-ground)} m deep`}`;
-
+  /** A control's change, then a frame to show it. */
+  const redrawn =
+    <Value>(change: (value: Value) => unknown) =>
+    (value: Value) => {
+      change(value);
+      requestFrame();
+    };
   const panel = buildLandPanel(panelRoot, {
     select: (id) => {
       selected = id;
@@ -276,38 +279,22 @@ export async function startLandEditor(
       showSelected(true);
       open(id, true);
     },
-    view: (next) => {
+    view: redrawn((next: '2d' | '3d') => {
       viewMode = next;
       if (next === '2d') [walking, sailing] = [false, false];
-      requestFrame();
-    },
+    }),
     walk: () => toggleWalk(),
+    layouts: redrawn<void>(() => (layoutsShown = !layoutsShown)),
+    buildings: redrawn<void>(() => (buildingsShown = !buildingsShown)),
     sail: () => toggleSail(),
-    exaggeration: (times) => {
-      exaggeration = times;
-      requestFrame();
-    },
-    tool: (next) => {
-      tool = next;
-      tools.draft = null;
-      requestFrame();
-    },
-    radius: (kilometres) => {
-      radiusKm = kilometres;
-      requestFrame();
-    },
-    strength: (value) => {
-      strength[tool] = value;
-      requestFrame();
-    },
-    width: (metres) => {
+    exaggeration: redrawn((times: number) => (exaggeration = times)),
+    tool: redrawn((next: LandTool) => ([tool, tools.draft] = [next, null])),
+    radius: redrawn((kilometres: number) => (radiusKm = kilometres)),
+    strength: redrawn((value: number) => (strength[tool] = value)),
+    width: redrawn((metres: number) => {
       if (tool === 'road' || tool === 'river') tools.width[tool] = metres;
-      requestFrame();
-    },
-    depth: (metres) => {
-      tools.depth = metres;
-      requestFrame();
-    },
+    }),
+    depth: redrawn((metres: number) => (tools.depth = metres)),
     nodeKind: (kind) => tools.setNode({ kind }),
     nodeName: (name) => tools.setNode({ name }),
     cityName: (name) => tools.setCity({ name }),
@@ -361,6 +348,8 @@ export async function startLandEditor(
     const brushShown = world && BRUSHES.includes(tool) ? { ...world, radiusM: radiusKm * 1000 } : null;
     const data = viewMode === '3d' ? terrainData() : null;
     const places = session?.places(selected) ?? {};
+    const laid = landmass()?.layouts ?? [];
+    const layouts = layoutsShown ? laid : [];
     overlay.replaceChildren();
     // Brought in, or walking or on the map before the room let it join, it leaves the fleet.
     if (fleet && !sailing && (fleet.sloop || (fleet.joining && (walking || viewMode === '2d')))) {
@@ -391,6 +380,7 @@ export async function startLandEditor(
         fleet: sailing ? (fleet?.sloop ?? null) : null,
         editsVersion,
         stroking: stroke !== null,
+        buildings: buildingsShown ? laid : null,
       });
       orbit = drawn.orbit;
       // A refused Sail stands the camera back off, as bringing it in does.
@@ -398,12 +388,23 @@ export async function startLandEditor(
       sailing = drawn.sailing;
       const flat = { width: canvas.clientWidth, height: canvas.clientHeight };
       const shownHeight = shownExaggeration(exaggeration, orbit.distance);
-      drawSites(overlay, siteMarks(places, groundProjector(view, orbit, flat, shownHeight)));
-      if (drawn.feet) drawScaleCues(overlay, orbit, flat, drawn.feet, shownHeight);
+      const exact = (x: number, y: number) => scene.exactGround(selected, x, y);
+      // The scale cues first, so no name is laid over them.
+      const cues = drawn.feet ? drawScaleCues(overlay, orbit, flat, drawn.feet, shownHeight) : null;
+      const project = groundProjector(view, orbit, flat, shownHeight, exact);
+      drawSites(overlay, siteMarks(places, project, layouts, cues ? [cues] : []));
       // The water moves, so the 3D view draws every frame.
       requestFrame();
     } else {
-      const scale = size.width / canvas.clientWidth;
+      const { clientWidth, clientHeight } = canvas;
+      const open = session;
+      // No tile is asked for while a stroke is drawn, so its dabs wait behind one in the worker at most once.
+      if (open && !stroke) {
+        const ground = (left: number, top: number, step: number, samples: number) =>
+          open.ground(selected, left, top, step, samples).then((close) => close?.patch ?? null);
+        tiles.keep(selected, editsVersion, tilesWanted(camera, clientWidth, clientHeight, laid), { ground });
+      }
+      const scale = size.width / clientWidth;
       relief.draw(
         {
           camera: { ...camera, metresPerPixel: camera.metresPerPixel / scale },
@@ -415,12 +416,10 @@ export async function startLandEditor(
         },
         size.width,
         size.height,
+        tiles.kept,
       );
-      const { clientWidth, clientHeight } = canvas;
-      drawSites(
-        overlay,
-        siteMarks(places, (x, y) => worldToScreen(camera, clientWidth, clientHeight, x, y)),
-      );
+      const project = (x: number, y: number) => worldToScreen(camera, clientWidth, clientHeight, x, y);
+      drawSites(overlay, siteMarks(places, project, layouts));
     }
     const reach = REACH_PX * camera.metresPerPixel;
     const cursorSpot: Spot | null = !world
@@ -431,10 +430,6 @@ export async function startLandEditor(
     const flat = { camera, width: canvas.clientWidth, height: canvas.clientHeight };
     if (viewMode === '2d') drawDraft(overlay, flat, tools.draft, cursorSpot, NODE_COLOURS[tools.nodeKind]);
     const nodeFields = tools.nodeFields();
-    const ground = view && world ? heightAt(view, world.x, world.y) : null;
-    const where = world
-      ? `${Math.round(world.x / 1000).toLocaleString('en-US')} km east, ${Math.round(world.y / 1000).toLocaleString('en-US')} km south`
-      : '';
     panel.update({
       landmasses: [...(session?.landmasses ?? [])].map(([id, held]) => ({
         id,
@@ -459,8 +454,10 @@ export async function startLandEditor(
       view: viewMode,
       walking,
       sailing,
+      layouts: layoutsShown,
+      buildings: buildingsShown,
       exaggeration,
-      cursor: (walking || sailing) && view ? scene.describe(view, orbit) : pointedAt(ground, where),
+      cursor: (walking || sailing) && view ? scene.describe(view, orbit) : readoutAt(view, world),
       fight: sailing ? scene.fightLines() : [],
       status: session?.storageFailed
         ? `${status} This browser could not keep your shaping: Save often.`.trim()
@@ -547,6 +544,8 @@ export async function startLandEditor(
       return;
     }
     if (key === 'g') toggleWalk();
+    else if (key === 'l') layoutsShown = !layoutsShown;
+    else if (key === 'k') buildingsShown = !buildingsShown;
     else if (key === 'b') toggleSail();
     else if (key === 'enter') tools.finish();
     else if (key === 'escape') tools.draft = null;
@@ -580,7 +579,7 @@ export async function startLandEditor(
         const first = layoutText === '';
         layoutText = nextLayout;
         session?.close();
-        const next = new LandSession(worker, nextLayout);
+        const next = new LandSession(worker, nextLayout, texts);
         const question = 'Restore the shaping you left unsaved in this browser? Cancel opens the saved edits.';
         restoring = first ? next.keptAny() && window.confirm(question) : true;
         if (first && !restoring) next.forgetKept();

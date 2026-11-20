@@ -18,6 +18,11 @@ code:
   - client/src/editor/isleEditor.ts#startIsleEditor
   - client/src/editor/placeTools.ts#PlaceTools
   - client/src/editor/siteDrawing.ts#siteMarks
+  - client/src/editor/layoutDrawing.ts#layoutMarks
+  - client/src/editor/reliefTiles.ts#ReliefTiles
+  - client/src/terrain/layoutMarks.ts#layoutMarksOf
+  - client/src/editor/layoutCity.ts#LayoutCity
+  - client/src/terrain/landTexts.ts#loadLandTexts
   - client/src/terrain/terrainView.ts#TerrainView
   - vite.config.ts#worldFiles
   - .github/workflows/ci.yml
@@ -81,6 +86,7 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Save | On the site, downloads `<landmass>.json`; under `npm run dev`, writes `content/world/land/<landmass>.json` |
 | 2D map, 3D view, `V` | Switches between the shaded relief map and a 3D view of the landmass |
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar. Within 3 km heights are true to scale; they ease to the chosen height by 30 km |
+| Layouts (`L`) | Shows or hides the nodes' layouts over both views, with a legend of their colours |
 | Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift` on land), drag to look round. In water the walker wades, then swims; `C` dives and `Space` rises ([[Water]]). `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
 | Sail (`B`) | Puts the owner's Sloop to sea at the camera's target, heading where the camera looks, and follows it ([[Sailing]]). `W` and `S` (or the up and down arrows) climb and come down the helm's ladder: oars astern, at rest, ahead, then sails set. `A` and `D` steer; on its oars, `Shift` with `A` or `D` rows it sideways. Where the water is shallower than its draught it is refused, the panel says why and the camera stands back off. `B` again, Walk, another landmass, the 2D map or `V` brings it in |
 | Fight (`F`, while sailing) | Calls a pirate captain onto the ring round the Sloop, or sends it off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace. The panel shows both ships, the guns, DFO's messages and the warning to brace |
@@ -123,6 +129,38 @@ across, and under 10 pixels it shows as a dot. Names are laid city first, then t
 a name that would cover another is left out. In 3D they lie on the land as it is drawn, and a line that passes
 behind the camera is broken there.
 
+The land is carved as the game stands on it. Each landmass opened for shaping is settled in its worker with the
+same texts as the game's (the RMB blocks, the forged models' tables and the nodes' briefs), so its city and its
+nodes' [[Layouts]] are planned and laid on it, and its ground is the game's to the bit. After every stroke, place
+change, undo or redo the worker settles it again and plans the layouts again, off the page's thread: about 3.5 s
+for continent 1 on a cloud session's machine (WebAssembly, measured under node), then 0.15 s to cut them down to
+what the editor draws. Until then the views show
+the layouts as they were.
+
+Each layout is drawn over both views once its section is 40 pixels across: its areas as circles in their group's
+colour (arrival, gate, settlement, works, haunt, wilds, arena) named "name · kind", a gate "Gate to" its instance;
+its tracks and footpaths at their widths, never thinner than 2.5 and 1.5 pixels; its section dashed in white; and,
+once it is 120 pixels across, its sites: the landing, gates, beacons and resources as dots, an event's ground and
+where foes hold it as rings at their reach, with the resources', events' and foes' names once it is 600 pixels
+across. Their names are laid after the city's and the nodes', none over another. In 3D a path stands at the heights
+it was laid at and the rest on the ground as drawn, the exact ground where the close-up reaches; a point screens
+off the view is left out, so no line runs out to it.
+
+The 3D view also draws the layouts' buildings, props and solids (plinths, set pieces, great works, rock) with the
+city layer, as the game draws them: the buildings walked into with their doorways open, near models dithering into
+masses and hulls further out. Only the layouts within 4 km of the camera are drawn, gathered again once it has moved
+1.5 km or the layouts were planned again (after a stroke, a place change, an undo or a redo). The page asks the land
+worker for those layouts by name and parses only them, about 2 MB for the Saltgrass Downs and its two neighbours
+against about 8 MB for all of continent 1's, and builds them once a frame before any pass is recorded. Buildings (`K`)
+in the panel, shown in 3D, turns them off and on. The 2D map draws only the plans.
+
+The 1 km land cannot show a canyon 30 m across, so the 2D map lays the exact ground over it round the layouts:
+tiles of 128 steps a side, a step the power of two from 2 m to 16 m nearest a pixel, within 200 m of a layout's
+section and in view, sampled by the worker nearest the middle of the view first, one at a time. Each is drawn
+under its own hillshade, a face steeper than one in one in rock, its fresh water, roads, towns and ports marked,
+fading into the 1 km land over 48 m at the tiles' edge. Up to 64 are kept until the land changes; a tile of the
+land before a change is drawn until its fresh one comes. Further out than 16 m a pixel the map asks for none.
+
 Each landmass's row says when it has unsaved shaping. This browser keeps each landmass's unsaved shaping, undo and
 redo included, until it is saved, and offers to restore it the first time Land mode opens; Cancel forgets it. If the
 browser cannot keep it, the status says so. To keep shaping done on the site, put the downloaded file in
@@ -160,7 +198,14 @@ opens on an island, and `?islePacks=<prefix>` reads the build's packs before the
   after asking, until the strays are joined or erased. Land that meets only at a diagonal counts as two pieces.
 - Isles are not placed in the editor yet.
 - A node's points cannot be moved once it is closed: to reshape one, remove it and draw it again.
-- Closer than about 50 m a pixel the 2D map shows the 1 km land smoothed, not the ground a node stands on; the 3D
-  view's close-up shows that ground.
+- Closer than about 50 m a pixel the 2D map shows the 1 km land smoothed, not the ground a node stands on, except
+  round the layouts, where it lays the exact ground; the 3D view's close-up shows that ground everywhere.
+- The exact ground is slow to sample where it is carved: a tile takes about half a second to two seconds, and the
+  3D view's 2 km close-up about 7 s in Node (3 s uncarved), so a node's carving fills in over a few seconds.
+- The layouts' streets and yards are not painted on the editor's ground, and nothing grows there: the game's
+  ground paint and nature are the game's.
+- Building the layouts near the camera takes the page's thread about 0.25–0.6 s after each change (in Node, for the
+  Saltgrass Downs and its neighbours), on top of the worker's replanning, so the view stalls that long once.
+- All of a landmass's layouts are planned again after every change, not only those it touches.
 - The first draw uploads the whole grid, about 15 MB, to the GPU: instant on a graphics card, slow on a machine
   without one.

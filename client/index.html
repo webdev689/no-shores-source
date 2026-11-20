@@ -509,6 +509,15 @@
       .mark.port {
         --kind: #e8e4d6;
       }
+      .mark.locked {
+        --kind: #8a8f96;
+      }
+      .mark.locked .glyph {
+        filter: grayscale(1);
+      }
+      .mark.locked .name {
+        color: var(--dim);
+      }
       .veil {
         position: absolute;
         inset: 0;

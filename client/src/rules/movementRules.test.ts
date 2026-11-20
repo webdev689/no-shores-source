@@ -17,10 +17,10 @@ const RUN_HASH = '2267bd9bb6ecb0ec';
 
 /** A ledge to catch and climb, a low thin wall to vault, a tower to climb, and a step. */
 const COURSE: readonly Block[] = [
-  { minX: -5, minY: -4, maxX: 5, maxY: -1, top: 2.3 },
-  { minX: -12, minY: 6, maxX: -6, maxY: 6.3, top: 1 },
-  { minX: 8, minY: 2, maxX: 9, maxY: 9, top: 4 },
-  { minX: -2, minY: 3, maxX: 2, maxY: 5, top: 0.4 },
+  { minX: -5, minY: -4, maxX: 5, maxY: -1, top: 2.3, bottom: 0 },
+  { minX: -12, minY: 6, maxX: -6, maxY: 6.3, top: 1, bottom: 0 },
+  { minX: 8, minY: 2, maxX: 9, maxY: 9, top: 4, bottom: 0 },
+  { minX: -2, minY: 3, maxX: 2, maxY: 5, top: 0.4, bottom: 0 },
 ];
 
 /** Ticks, then forward, sideways, yaw, run, jump and crouch (on the first tick only) and mounted. */
@@ -110,4 +110,19 @@ test("a body walking out of its section is warned, dies, and respawns by the roo
   assert.deepEqual(reach.respawn(95, 95), [90, 90]);
   assert.deepEqual(reach.reachTick(90, 90), { kind: 'inside' });
   reach.setSection(null);
+});
+
+test('a block crosses the door with its underside: a bridge over the head is walked under, a rail at the chest stops', async () => {
+  const rules = await movement();
+  const north: Controls = { forward: 1, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  const walk = (course: readonly Block[]) => {
+    rules.setCourse(course);
+    let body = rules.standing(0, 0);
+    for (let tick = 0; tick < 90; tick++) body = rules.step(body, north);
+    return body;
+  };
+  const under = walk([{ minX: -2, minY: -4, maxX: 2, maxY: -1, top: 2.5, bottom: 2.2 }]);
+  assert.ok(under.y < -5 && under.z === 0, `it walked under the bridge to ${under.y}`);
+  const stopped = walk([{ minX: -2, minY: -4, maxX: 2, maxY: -1, top: 1.5, bottom: 1.2 }]);
+  assert.ok(stopped.y > -1 && stopped.y < -0.5, `the rail stopped it at ${stopped.y}`);
 });

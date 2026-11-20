@@ -24,7 +24,8 @@ import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
-import { newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { cameraFollowed, newPlayer, playerCamera, shownBody } from '../player/player.ts';
+import { AIM } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
 import type { OtherPlayers, Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
@@ -121,7 +122,7 @@ async function standOn(
 /** A node's file as the bake writes it, for a room in the page: its section and window rect, the window of the land
  *  cut there, and its boxes. */
 function nodeText(node: NodeInfo, rect: Rect, ground: string, boxes: readonly Block[]): string {
-  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
+  const box = boxes.map((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
   const { id, kind, continent, ring, spawns } = node;
   return `{"id":${JSON.stringify(id)},"kind":${JSON.stringify(kind)},"continent":${JSON.stringify(continent)},"ring":${JSON.stringify(ring)},"spawns":${JSON.stringify(spawns)},"bounds":${JSON.stringify(rect)},"boxes":${JSON.stringify(box)},"ground":${ground}}`;
 }
@@ -351,7 +352,8 @@ export class Foot {
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;
-    const aimed = () => playerCamera(walker.player, movement, [...this.boxes, ...(this.context.cameraBlocks ?? [])]);
+    const aimed = () =>
+      playerCamera(walker.player, movement, [...this.boxes, ...(this.context.cameraBlocks ?? [])], AIM, groundAt);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
@@ -360,6 +362,7 @@ export class Foot {
       zoomOf: () => camera().zoom ?? 1,
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
+    walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
     const ownWeapon = effects.flashes.ownOf(fight.own);

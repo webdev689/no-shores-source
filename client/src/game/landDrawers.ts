@@ -2,9 +2,14 @@ import type { Gpu } from '../gpu.ts';
 import { blockFiles, parseBlockFile, type RmbBlock } from '../city/blocks.ts';
 import type { CityTables } from '../city/cityBuild.ts';
 import { CityView } from '../city/cityView.ts';
+import { loadModules } from '../city/modules.ts';
 import { cityClimate } from '../city/plan.ts';
+import { layoutFollower, type NodeLayout } from '../layout/layouts.ts';
+import { planOfLayouts, plantedOf } from '../layout/layoutPlan.ts';
+import { paintOfLayouts } from './groundPaint.ts';
 import { landSampler } from '../nature/ground.ts';
 import { NatureView } from '../nature/natureView.ts';
+import { type Planted, TILE_M } from '../nature/scatter.ts';
 import type { Landmass } from './landmass.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { Shot } from './camera.ts';
@@ -18,14 +23,63 @@ export interface CityAssets {
   readonly blocks: Map<string, RmbBlock>;
 }
 
-/** The drawers that stand on a landmass besides the land: its city and its nature, and how to let them go. */
+/** The drawers that stand on a landmass besides the land: its city, its nodes' layouts near the eye and its nature,
+ *  and how to let them go. */
 export interface LandDrawers {
   readonly city: Drawer | null;
+  readonly layouts: Drawer | null;
   readonly nature: Drawer | null;
   release(): void;
 }
 
-/** Reads the forged models' tables and the RMB index once, or null where the pages do not serve them. */
+/** How far round the eye layouts are drawn, metres, and how far the eye moves before they are gathered again. */
+const LAYOUT_REACH_M = 4000;
+const LAYOUT_REGATHER_M = 1500;
+/** How far round the eye the layouts' paths and streets are painted on the land, metres: past it they are too thin
+ *  to see. */
+const PAINT_REACH_M = 2500;
+
+/** Draws the layouts near the eye with the city layer, followed before each frame: the ground under them is painted
+ *  again each time the eye has moved on (`painted`), and the city built again when the layouts near the eye change
+ *  and its tables have come (`rebuilt`), when what they planted is handed to nature (`planted`) too. */
+function layoutDrawer(
+  gpu: Gpu,
+  layouts: readonly NodeLayout[],
+  biome: string | null,
+  assets: Promise<CityAssets | null>,
+  painted: (near: readonly NodeLayout[], eye: readonly [number, number]) => void,
+  rebuilt: () => void,
+): {
+  drawer: Drawer;
+  view: CityView;
+  planted: (tileX: number, tileY: number) => readonly Planted[];
+  release(): void;
+} {
+  const view = new CityView(gpu);
+  let tables: CityTables | null = null;
+  let planted = plantedOf([], TILE_M);
+  void assets.then((loaded) => (tables = loaded?.tables ?? null));
+  const follow = layoutFollower(layouts, LAYOUT_REACH_M, LAYOUT_REGATHER_M, painted, (near) => {
+    const plan = planOfLayouts(near);
+    if (plan && tables) view.setCity(plan, cityClimate(biome ?? undefined), new Map(), tables);
+    else view.clear();
+    planted = plantedOf(near, TILE_M);
+    rebuilt();
+  });
+  return {
+    view,
+    planted: (tileX, tileY) => planted(tileX, tileY),
+    drawer: {
+      prepare: (shot) => follow([shot.eye[0], shot.eye[1]], tables !== null),
+      castInto: (pass, fromEye, shot, time, shadow) => view.castInto(pass, fromEye, shot, time, shadow),
+      drawInto: (pass, fromEye, shot, time, shadow) => view.drawInto(pass, fromEye, shot, time, shadow),
+    },
+    release: () => view.clear(),
+  };
+}
+
+/** Reads the forged models' tables and the RMB index once, and the modules' meshes, or null where the pages do not
+ *  serve them. */
 export async function loadCityAssets(base: string): Promise<CityAssets | null> {
   const read = async (path: string) => {
     const answer = await fetch(`${base}world/${path}`);
@@ -37,6 +91,7 @@ export async function loadCityAssets(base: string): Promise<CityAssets | null> {
       read('forged/buildings.json'),
       read('forged/props.json'),
       read('rmb/index.json'),
+      loadModules(),
     ]);
     return {
       tables: { buildings: JSON.parse(buildings), props: JSON.parse(props) } as CityTables,
@@ -100,8 +155,20 @@ export function landDrawers(
       })
       .catch((error: unknown) => console.error(`${landmass.id}'s city could not be drawn:`, error));
   }
-  // The pads are kept clear from the first frame; the city's solids too once it is built.
-  const cleared = (x: number, y: number) => landmass.cleared(x, y) || (city?.cleared(x, y) ?? false);
+  const laid = landmass.layouts.length
+    ? layoutDrawer(
+        gpu,
+        landmass.layouts,
+        biome,
+        assets,
+        (near, eye) =>
+          scene.paintGround(paintOfLayouts(near, eye, PAINT_REACH_M, [landmass.view.leftM, landmass.view.topM])),
+        () => (version += 1),
+      )
+    : null;
+  // The pads are kept clear from the first frame; the city's and the layouts' solids and yards too once built.
+  const cleared = (x: number, y: number) =>
+    landmass.cleared(x, y) || (city?.cleared(x, y) ?? false) || (laid?.view.cleared(x, y) ?? false);
   const nature = biome ? new NatureView(gpu) : null;
   // Nature is updated once a frame, for its shadow's pass and its own alike.
   let updatedFor: Float32Array | null = null;
@@ -117,6 +184,7 @@ export function landDrawers(
       version,
       sample,
       cleared,
+      planted: (tileX: number, tileY: number) => laid?.planted(tileX, tileY) ?? [],
       groundColour: land.ground,
     };
     view.update({ fromEye, eye: shot.eye, exaggeration: 1, time }, ground, shadow);
@@ -133,10 +201,12 @@ export function landDrawers(
   };
   return {
     city: plan && city && withWrecks(gpu, city, plan, shipScale),
+    layouts: laid?.drawer ?? null,
     nature: natureDrawer,
     release: () => {
       released = true;
       city?.clear();
+      laid?.release();
       nature?.destroy();
     },
   };

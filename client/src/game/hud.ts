@@ -45,6 +45,8 @@ export interface ScreenMark {
   readonly arrowDegrees: number | null;
   /** A hostile ship's emblem, rank colour and rank mark. */
   readonly hostile?: HostileLook;
+  /** Its node is locked: greyed, with a lock for its glyph. */
+  readonly locked: boolean;
 }
 
 /** One choice of a menu. */
@@ -62,6 +64,8 @@ const GLYPHS: Record<MarkKind, string> = {
   port: '⚓\uFE0E',
   hostile: '',
 };
+/** A locked node's glyph, in the place of its kind's. */
+const LOCK_GLYPH = '🔒\uFE0E';
 
 /** A mark's elements, kept from frame to frame so a click on one lands on the same element it went down on. */
 interface MarkNode {
@@ -126,6 +130,7 @@ export class Hud {
   private readonly leave: HTMLButtonElement;
   private readonly manageButton = hudButton('Manage  B', () => this.manageWanted());
   private readonly wheel: HTMLButtonElement;
+  private readonly passage: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
   /** The sea fight's readout: the ship's plate and rose, the card and the tally, made in the root. */
   private readonly fight: SeaFightReadout;
@@ -143,6 +148,7 @@ export class Hud {
   private manageWanted: () => void = () => undefined;
   private leaveWanted: () => void = () => undefined;
   private wheelWanted: () => void = () => undefined;
+  private passageWanted: () => void = () => undefined;
 
   constructor(root: HTMLElement) {
     root.classList.add('hud');
@@ -165,6 +171,9 @@ export class Hud {
     this.leave = hudButton('Leave the helm  H', () => this.leaveWanted());
     this.wheel = hudButton('Take the helm  E', () => this.wheelWanted(), 'primary');
     this.wheel.classList.add('landfall');
+    this.passage = hudButton('', () => this.passageWanted(), 'primary');
+    this.passage.classList.add('landfall');
+    this.passage.hidden = true;
     const groups = [
       seaGroup(
         'Navigation',
@@ -195,6 +204,7 @@ export class Hud {
       this.sea,
       this.landfall,
       this.wheel,
+      this.passage,
       this.panel,
       this.menuNode,
       this.death,
@@ -303,11 +313,11 @@ export class Hud {
     marks.forEach((mark, order) => {
       kept.add(mark.id);
       const shown = this.marksShown.get(mark.id) ?? this.markNode(mark.id);
-      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}`;
+      shown.root.className = `mark ${mark.kind}${mark.chosen ? ' chosen' : ''}${mark.arrowDegrees === null ? '' : ' held'}${mark.named ? '' : ' unnamed'}${mark.locked ? ' locked' : ''}`;
       shown.root.style.transform = `translate(${Math.round(mark.x)}px, ${Math.round(mark.y)}px)`;
       shown.root.style.zIndex = String(order + 1);
       shown.root.style.setProperty('--size', `${Math.round(mark.sizePx)}px`);
-      shown.glyph.textContent = GLYPHS[mark.kind];
+      shown.glyph.textContent = mark.locked ? LOCK_GLYPH : GLYPHS[mark.kind];
       dressHostile(shown, mark.hostile);
       shown.name.textContent = mark.name;
       const note = `${KIND_WORDS[mark.kind]} · ${mark.note}`;
@@ -436,6 +446,17 @@ export class Hud {
         const shown = this.panelValues[index];
         if (shown && shown.textContent !== value) shown.textContent = value;
       });
+  }
+
+  /** Offers the way through the gate the player stands in (its words), or takes the offer away (null). */
+  passageOffer(words: string | null): void {
+    this.passage.hidden = words === null;
+    if (words !== null && this.passage.textContent !== words) this.passage.textContent = words;
+  }
+
+  /** What the offer of a way through a gate does. */
+  onPassage(take: () => void): void {
+    this.passageWanted = take;
   }
 
   /** Offers the helm at its wheel, or takes the offer away. */

@@ -1,6 +1,7 @@
 import { type LandRules, startLand } from '../rules/landRules.ts';
 import { worldSeconds } from '../sky/worldClock.ts';
 import { shoreField } from '../water/shore.ts';
+import { layoutMarksOf, layoutsNamed } from './layoutMarks.ts';
 import type { LandAnswer, LandRequest } from './landClient.ts';
 
 /** The worker's own scope: the DOM library types the page's, so the two calls it needs are named here. */
@@ -38,6 +39,18 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
     scope.postMessage({ ticket, text: rules.cityPlan() }, []);
     return;
   }
+  if (request.kind === 'layouts') {
+    scope.postMessage({ ticket, text: rules.layouts() }, []);
+    return;
+  }
+  if (request.kind === 'layout-marks') {
+    scope.postMessage({ ticket, marks: layoutMarksOf(rules.layouts()) }, []);
+    return;
+  }
+  if (request.kind === 'layouts-named') {
+    scope.postMessage({ ticket, text: layoutsNamed(rules.layouts(), request.ids) }, []);
+    return;
+  }
   if (request.kind === 'window') {
     scope.postMessage({ ticket, text: rules.window(...request.rect) }, []);
     return;
@@ -70,7 +83,14 @@ function answer(rules: LandRules, ticket: number, request: LandRequest): void {
   }
   const view =
     request.kind === 'open'
-      ? rules.open(request.layoutText, request.id, request.editsText, request.keep, request.rmbText)
+      ? rules.open(
+          request.layoutText,
+          request.id,
+          request.editsText,
+          request.keep,
+          request.rmbText,
+          request.buildersText,
+        )
       : request.kind === 'settle'
         ? rules.settle()
         : rules.setEdits(request.editsText);

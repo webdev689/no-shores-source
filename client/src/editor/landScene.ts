@@ -35,13 +35,15 @@ import { chosenCaptain, type FleetCall } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
 import { FleetScene } from './fleetScene.ts';
 import { Harbour } from './harbour.ts';
+import { LayoutCity, type LayoutSource } from './layoutCity.ts';
+import type { LayoutMarks } from '../terrain/layoutMarks.ts';
 import { Naval } from './naval.ts';
 import type { SailSource } from './sailing.ts';
 import { type SkyLaw, startSkyLaw, windBearing } from '../sky/skyLaw.ts';
 import { worldSeconds } from '../sky/worldClock.ts';
 
 /** Where the close-up's exact ground comes from, and where a ship is sailed and fought. */
-export interface GroundSource extends SailSource, FightSource {
+export interface GroundSource extends SailSource, FightSource, LayoutSource {
   ground(id: string, left: number, top: number, step: number, size: number): Promise<CloseGround | null>;
   isOpen(id: string): boolean;
 }
@@ -103,6 +105,8 @@ export interface SceneFrame {
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
   readonly stroking: boolean;
+  /** The layouts as last planned, whose buildings are drawn near the camera; null while they are not drawn. */
+  readonly buildings: readonly LayoutMarks[] | null;
 }
 
 interface CloseUp {
@@ -154,6 +158,7 @@ export class LandScene {
   private readonly marks: MarkView;
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
+  private readonly layoutCity: LayoutCity;
   /** Each captain's plate over the picture, and the fight's readout beside it. */
   private readonly fightOverlay: FightOverlay;
   /** The sky's law, for the wind its sails feel: the rules sail it in the weather's, at the wall's world time. */
@@ -169,6 +174,7 @@ export class LandScene {
     this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
     this.marks = new MarkView(gpu);
     this.naval = new Naval(this.marks, (hull) => this.models.shown(hull));
+    this.layoutCity = new LayoutCity(gpu, import.meta.env.BASE_URL);
     fetch(`${import.meta.env.BASE_URL}land.wasm`)
       .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`land.wasm: ${answer.status}`))))
       .then(startSkyLaw)
@@ -220,9 +226,13 @@ export class LandScene {
   /** The ground's height at a world point: exact where the close-up reaches, the 1 km land's elsewhere; the sea's
    *  still surface over the sea. */
   private groundAt(id: string, view: LandView, x: number, y: number): number {
+    return Math.max(0, this.exactGround(id, x, y) ?? heightAt(view, x, y) ?? 0);
+  }
+
+  /** The exact ground's height at a world point, where the current close-up reaches; null elsewhere. */
+  exactGround(id: string, x: number, y: number): number | null {
     const close = this.current(id);
-    const exact = close ? groundUnder(close.patch, x, y) : null;
-    return Math.max(0, exact ?? heightAt(view, x, y) ?? 0);
+    return close ? groundUnder(close.patch, x, y) : null;
   }
 
   /** What the walker or the Sloop is doing and where, for the panel. */
@@ -299,6 +309,7 @@ export class LandScene {
       { exaggeration: shown, brush: frame.brush },
     );
 
+    this.layoutCity.prepare(id, frame.buildings, eyeWorld, frame.source);
     const drawn = this.targets(frame.size.width, frame.size.height);
     const encoder = this.gpu.device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
@@ -319,6 +330,7 @@ export class LandScene {
       },
     });
     terrain.drawInto(pass);
+    this.layoutCity.drawInto(pass, fromEye, camera.eye, view, shown, time);
     const ship = this.ship;
     // Its rig, once its model has come.
     if (ship && !this.rig) {

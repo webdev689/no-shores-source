@@ -174,7 +174,7 @@ export class IslesView {
   }
 
   castInto(pass: GPURenderPassEncoder, _fromEye: Float32Array, shot: IsleShot, _time: number, shadow: ShadowMap): void {
-    this.prepare(shot);
+    this.prepareShot(shot);
     const { castModules } = this.pipelines;
     for (const drawn of this.drawn) {
       if (this.distanceOf(drawn, shot) >= NEAR_M) continue;
@@ -191,7 +191,7 @@ export class IslesView {
 
   drawInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: IsleShot, _time: number, shadow: ShadowMap): void {
     this.gpu.device.queue.writeBuffer(this.frameUniform, 0, fromEye);
-    this.prepare(shot);
+    this.prepareShot(shot);
     const frame = this.frame;
     [frame.triangles, frame.draws, frame.near, frame.middle, frame.far] = [0, 0, 0, 0, 0];
     const { ground, modules } = this.pipelines;
@@ -245,7 +245,7 @@ export class IslesView {
   }
 
   /** Writes each island's offset from the eye, worked out in doubles so the GPU's floats keep their centimetres. */
-  private prepare(shot: IsleShot): void {
+  private prepareShot(shot: IsleShot): void {
     for (const drawn of this.drawn) {
       const { offset } = this.placeOf(drawn, shot);
       this.offset.set([...offset, 0]);

@@ -54,26 +54,32 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize], ruined
         let count = (length / PIECE_M).ceil().max(1.0) as usize;
         for piece in 0..count {
             let middle = ahead(from, along, (piece as f64 + 0.5) * length / count as f64);
-            let foot = ground.height_at(middle[0], middle[1]) - SINK_M;
-            let size = [WALL_THICK_M, length / count as f64 + 0.5, WALL_HEIGHT_M + SINK_M];
+            let each = length / count as f64 + 0.5;
+            // Footed on the lowest ground along it, and as much taller as the ground rises, so on a slope its
+            // underside never stands off the ground for a body to walk under, and its top keeps its height.
+            let (low, high) = lowest_and_highest(
+                ground,
+                &[ahead(middle, along, -each / 2.0), middle, ahead(middle, along, each / 2.0)],
+            );
+            let size = [WALL_THICK_M, each, WALL_HEIGHT_M + SINK_M + (high - low)];
             if ruined && pieces % BREACH_EVERY == 1 {
                 let fallen = [WALL_THICK_M * 2.5, size[1], HEAP_M];
-                solids.push(ruins::heap([middle[0], middle[1], foot + SINK_M], fallen, turn_toward(along)));
+                solids.push(ruins::heap([middle[0], middle[1], low], fallen, turn_toward(along)));
             } else {
                 solids.push(
-                    Solid::upright(Shape::Block, [middle[0], middle[1], foot], size, Material::Stone)
+                    Solid::upright(Shape::Block, [middle[0], middle[1], low - SINK_M], size, Material::Stone)
                         .turned(turn_toward(along)),
                 );
             }
             pieces += 1;
             if pieces % PIECES_PER_TOWER == 0 {
-                let base = ground.height_at(middle[0], middle[1]) - SINK_M;
-                let height = WALL_HEIGHT_M + 8.0 + SINK_M;
+                let (low, high) = lowest_and_highest(ground, &round(middle, 8.0));
+                let tall = WALL_HEIGHT_M + 8.0 + SINK_M + (high - low);
                 if ruined {
-                    solids.push(column(middle, base, 16.0, (height + SINK_M) / 2.0, 1.0, Material::Stone));
+                    solids.push(column(middle, low - SINK_M, 16.0, (tall + SINK_M) / 2.0, 1.0, Material::Stone));
                 } else {
-                    solids.push(column(middle, base, 16.0, height, 1.0, Material::Stone));
-                    solids.push(column(middle, base + height, 19.0, 9.0, 0.0, Material::Roof));
+                    solids.push(column(middle, low - SINK_M, 16.0, tall, 1.0, Material::Stone));
+                    solids.push(column(middle, low - SINK_M + tall, 19.0, 9.0, 0.0, Material::Roof));
                 }
             }
         }
@@ -82,8 +88,12 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize], ruined
         let at = ray_end(footprint, gate);
         let outward = footprint.rays[gate].direction;
         let across = [-outward[1], outward[0]];
-        let foot = ground.height_at(at[0], at[1]) - SINK_M;
-        let height = WALL_HEIGHT_M + 12.0 + SINK_M;
+        // The gatehouse and its towers on the lowest ground under them, as the wall's pieces are.
+        let spots: Vec<[f64; 2]> =
+            [-1.0, 1.0].iter().flat_map(|&side| round(ahead(at, across, side * 14.0), 7.0)).collect();
+        let (low, high) = lowest_and_highest(ground, &spots);
+        let foot = low - SINK_M;
+        let height = WALL_HEIGHT_M + 12.0 + SINK_M + (high - low);
         for side in [-1.0, 1.0] {
             let tower = ahead(at, across, side * 14.0);
             if ruined {
@@ -104,12 +114,31 @@ pub fn city_wall(ground: &Ground, footprint: &Footprint, gates: &[usize], ruined
         let arch = Solid::upright(
             Shape::Arch { opening: 0.6 },
             [at[0], at[1], foot],
-            [16.0, 10.0, WALL_HEIGHT_M + 4.0 + SINK_M],
+            [16.0, 10.0, WALL_HEIGHT_M + 4.0 + SINK_M + (high - low)],
             Material::Trim,
         );
         solids.push(arch.turned(turn_toward(across)));
     }
     solids
+}
+
+/// The lowest and the highest the ground stands at a few points.
+fn lowest_and_highest(ground: &Ground, points: &[[f64; 2]]) -> (f64, f64) {
+    points
+        .iter()
+        .map(|&[x, y]| ground.height_at(x, y))
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), each| (low.min(each), high.max(each)))
+}
+
+/// A round foot's middle and four points on its edge, `reach` metres out.
+fn round(middle: [f64; 2], reach: f64) -> [[f64; 2]; 5] {
+    [
+        middle,
+        [middle[0] + reach, middle[1]],
+        [middle[0] - reach, middle[1]],
+        [middle[0], middle[1] + reach],
+        [middle[0], middle[1] - reach],
+    ]
 }
 
 /// The harbour: a quay along the shore rays' ends, and a pier out to sea from every third of them, longer at the

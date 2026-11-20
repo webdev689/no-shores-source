@@ -52,7 +52,7 @@ function sparBox(from: Corner, to: Corner, half: number): Block {
 
 /** A mast standing at its mesh's `x` on its middle line, from below its deck to `top`. */
 function mast(x: number, top: number): Block {
-  return { minX: -MAST_HALF_M, maxX: MAST_HALF_M, minY: -x - MAST_HALF_M, maxY: -x + MAST_HALF_M, top };
+  return { minX: -MAST_HALF_M, maxX: MAST_HALF_M, minY: -x - MAST_HALF_M, maxY: -x + MAST_HALF_M, top, bottom: 0 };
 }
 
 /** Its sides as walls just past its outermost plank on each row of its deck, and across its bow and stern past its
@@ -72,14 +72,15 @@ export function sideBoxes(deck: Deck): Block[] {
     rows.push({ north, south, west, east });
   }
   for (const { north, south, west, east } of rows) {
-    walls.push({ minX: west - SIDE_M, maxX: west, minY: north, maxY: south, top: top + SIDE_HIGH_M });
-    walls.push({ minX: east, maxX: east + SIDE_M, minY: north, maxY: south, top: top + SIDE_HIGH_M });
+    walls.push({ minX: west - SIDE_M, maxX: west, minY: north, maxY: south, top: top + SIDE_HIGH_M, bottom: 0 });
+    walls.push({ minX: east, maxX: east + SIDE_M, minY: north, maxY: south, top: top + SIDE_HIGH_M, bottom: 0 });
   }
   const [bow, stern] = [rows[0], rows.at(-1)];
   const across = {
     minX: deck.west - SIDE_M,
     maxX: deck.west + deck.cell * deck.columns + SIDE_M,
     top: top + SIDE_HIGH_M,
+    bottom: 0,
   };
   if (bow) walls.push({ ...across, minY: bow.north - SIDE_M, maxY: bow.north });
   if (stern) walls.push({ ...across, minY: stern.south, maxY: stern.south + SIDE_M });

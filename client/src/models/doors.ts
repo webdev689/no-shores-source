@@ -22,6 +22,10 @@ const DOOR_PROUD_M = 0.04,
   DOOR_DEPTH_M = 0.5;
 /** How far a door's picture stands off its face (m), clear of a wall in the same plane. */
 const DOOR_OFF_M = 0.004;
+/** How far either side of its own face an open doorway's passage is cut (m): through the wall it stands in, whose
+ *  face lies in the door's plane or a little before it where the door is set back, and no further, since a measured
+ *  door's normal may point in or out. */
+const DOOR_THROUGH_M = 0.5;
 
 /** What a piece's doors are cut, pictured and framed from. */
 export type DoorMeasure = {
@@ -49,14 +53,20 @@ export const doorsOf = (measure: { readonly doors?: readonly MeasuredDoor[] }): 
     normal: point(door.n),
   }));
 
-export function passageOf(door: DoorCorners): Passage {
+export function passageOf(door: DoorCorners, through = false): Passage {
   const { corners, centre, n, across, up } = doorAxes(door);
   const span = (axis: Vector): number[] => corners.map((corner) => dot(corner, axis));
   const face = dot(n, centre);
-  const planes = [
-    { n: n.map((value) => -value), d: -(face + 0.005) },
-    { n, d: face + DOOR_REACH_M },
-  ];
+  // A pictured door leaves its own face whole for the picture to lie on; an open one is cut through it.
+  const planes = through
+    ? [
+        { n: n.map((value) => -value), d: -(face - DOOR_THROUGH_M) },
+        { n, d: face + DOOR_THROUGH_M },
+      ]
+    : [
+        { n: n.map((value) => -value), d: -(face + 0.005) },
+        { n, d: face + DOOR_REACH_M },
+      ];
   // Past the jambs and the head by a hand; above the sill only, so a floor level with it stays whole.
   planes.push({ n: across, d: Math.max(...span(across)) + DOOR_CLEAR_M });
   planes.push({ n: across.map((value) => -value), d: -(Math.min(...span(across)) - DOOR_CLEAR_M) });
@@ -222,7 +232,8 @@ export function withDoors(
 ): ForgedModel {
   const doors = measure.doors ?? [];
   if (!doors.length) return model;
-  const passages = cut ? doors.map(passageOf) : [],
+  // A cut door with no picture is a doorway walked through: cut through its own wall.
+  const passages = cut ? doors.map((door) => passageOf(door, !picture)) : [],
     cuts: Vector[][] = doors.map(() => []);
   const vertex = (i: number): CutVertex => ({
     p: [model.positions[i * 3], model.positions[i * 3 + 1], model.positions[i * 3 + 2]],

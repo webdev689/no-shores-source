@@ -80,7 +80,12 @@ For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bp
 `--dry-run` writes the mesh into the working folder, so run it from one outside the repo. It reads the objects named
 `Cannon.Port.<n>` and `Cannon.Starboard.<n>` (fore to aft) as its guns, faces in a material named `sail` as canvas
 (one box a connected piece), the faces of every other named material as its hull, and faces in an empty slot as spars
-and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access both publishers use.
+and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use.
+
+For the flora (`tools/flora/`, [[Flora]]): `pip install bpy==5.3.0` on Python 3.13, nothing else (numpy comes with
+it). Cycles renders on the CPU, so it bakes anywhere: `python -I tools/flora/bake.py <folder>` bakes every biome,
+`python -I tools/flora/publish.py` publishes to R2 and writes `content/nature/flora.json`, and
+`python -I tools/flora/test_flora.py` checks the same seed grows the same bytes. The `flora` workflow runs both.
 
 ## Commands
 

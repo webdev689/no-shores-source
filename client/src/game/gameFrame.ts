@@ -35,6 +35,7 @@ import type { NodeInfo } from './worldData.ts';
 import type { Epilogue } from './prologue/epilogue.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
+import { type GateWay, gateWay } from './gates.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -52,6 +53,8 @@ export interface Playing {
   readonly helmMap: HelmMap;
   /** The story's last moment, played on foot once it has ended. */
   epilogue: Epilogue | null;
+  /** The way through the gate the player stands in, if any. */
+  through: GateWay | null;
   seaWord: SeaWord | null;
   landmass: Landmass;
   drawers: LandDrawers;
@@ -136,6 +139,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
+    scene.keepMiddle([body.x, body.y], parts.closeSource);
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
       : undefined;
@@ -150,6 +154,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, [...shown.figures, ...met], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
+    // As E's other use, a gate takes no one while a menu is up or the player is down.
+    playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
+    hud.passageOffer(playing.through?.offer ?? null);
     hud.hints(shown.hints);
     hud.marks([]);
     hideSeaHud(hud);

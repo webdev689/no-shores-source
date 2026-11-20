@@ -101,7 +101,7 @@ fn a_seabed_below_zero_is_walked_at_its_depth() {
 fn a_block_on_the_seabed_stands_from_the_seabed_up() {
     let seabed = Ground(|_, _| -6.0);
     // A rock 7 m tall, from the seabed to a metre over 0, with its north end in the open water.
-    let rock = Block { min_x: -1.0, min_y: -4.0, max_x: 1.0, max_y: 10.0, top: 1.0 };
+    let rock = Block { min_x: -1.0, min_y: -4.0, max_x: 1.0, max_y: 10.0, top: 1.0, bottom: -6.0 };
     let route = path(&bake(&seabed, &[rock]), [-5.0, 5.0, -6.0], [5.0, 5.0, -6.0]);
     ends_near(&route, 5.0, 5.0);
     assert!(closest(&route, &rock) >= AGENT.radius, "round the rock's north end, not under it: {route:?}");
@@ -110,9 +110,9 @@ fn a_block_on_the_seabed_stands_from_the_seabed_up() {
 #[test]
 fn open_ground_handed_in_as_a_terrain_bakes_as_open_ground() {
     let stairs = [
-        Block { min_x: 2.0, min_y: -2.0, max_x: 3.0, max_y: 2.0, top: 0.5 },
-        Block { min_x: 3.0, min_y: -2.0, max_x: 8.0, max_y: 2.0, top: 1.0 },
-        Block { min_x: -1.0, min_y: -8.0, max_x: 1.0, max_y: -3.0, top: 3.0 },
+        Block { min_x: 2.0, min_y: -2.0, max_x: 3.0, max_y: 2.0, top: 0.5, bottom: 0.0 },
+        Block { min_x: 3.0, min_y: -2.0, max_x: 8.0, max_y: 2.0, top: 1.0, bottom: 0.0 },
+        Block { min_x: -1.0, min_y: -8.0, max_x: 1.0, max_y: -3.0, top: 3.0, bottom: 0.0 },
     ];
     let (open, flat) = (NavMesh::bake(&stairs, FIELD, &AGENT), NavMesh::bake_on(&stairs, &Flat, FIELD, &AGENT));
     for (from, to) in [([-5.0, 0.0, 0.0], [6.0, 0.0, 1.0]), ([0.0, -9.0, 0.0], [-4.0, 6.0, 0.0])] {
@@ -121,4 +121,23 @@ fn open_ground_handed_in_as_a_terrain_bakes_as_open_ground() {
     }
     let everywhere = |navmesh: &NavMesh| navmesh.spots_near([0.0, 0.0, 0.0], 100.0).copied().collect::<Vec<_>>();
     assert_eq!(everywhere(&open), everywhere(&flat));
+}
+
+/// Ground rising gently east, 0.1 a metre.
+const RISE: Ground = Ground(|x, _| 0.1 * x);
+
+#[test]
+fn a_path_runs_through_a_roofed_tunnel_cut_in_a_terrain_at_the_ground_beneath_its_roof() {
+    // Two walls of rock from the ground up across the field, a 3 m gap between them, roofed over from 2.5 m.
+    let rock = |min_y: f64, max_y: f64| Block { min_x: -3.0, min_y, max_x: 3.0, max_y, top: 6.0, bottom: -1.0 };
+    let roof = Block { min_x: -3.0, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 6.0, bottom: 2.5 };
+    let navmesh = bake(&RISE, &[rock(-10.0, -1.5), rock(1.5, 10.0), roof]);
+    let route = path(&navmesh, [-8.0, 0.0, -0.8], [8.0, 0.0, 0.8]);
+    ends_near(&route, 8.0, 0.0);
+    rides(&route, &RISE);
+    // The rock's top over the tunnel is reached only by climbing a face outside it, never from the tunnel's floor.
+    let up = path(&navmesh, [-8.0, 0.0, -0.8], [0.0, 0.0, 6.0]);
+    let climb = up.windows(2).find(|pair| pair[1][2] - pair[0][2] > 5.0).expect("the rock's top is climbed onto");
+    let [x, y, _] = climb[0];
+    assert!(!(-3.0..=3.0).contains(&x) || y.abs() > 1.5, "the climb starts in the tunnel: {up:?}");
 }
