@@ -53,10 +53,10 @@ export function levelOf(channels: readonly Float32Array[], sampleRate: number): 
   return Math.min(PEAK / Math.max(0.01, peak), LOUD / Math.max(1e-4, loud));
 }
 
-/** The gain that sets a recording (`mine`) as loud as the sound it stands in for (`theirs`), never peaking past it:
- *  the law that places the synthesiser's sound was set by that sound's peak and loudness. */
-export const matchedLevel = (mine: Measure, theirs: Measure): number =>
-  Math.min(theirs.loud / Math.max(1e-6, mine.loud), theirs.peak / Math.max(1e-6, mine.peak));
+/** The gain that sets a recording (`mine`) as loud as the sound it stands in for (`theirs`), its peak never past
+ *  `most` (in the same units; that sound's own peak where not given). */
+export const matchedLevel = (mine: Measure, theirs: Measure, most = theirs.peak): number =>
+  Math.min(theirs.loud / Math.max(1e-6, mine.loud), most / Math.max(1e-6, mine.peak));
 
 /** A sound's files: a Freesound pick's one, or each variant of one of DFO's own. */
 export const keysOf = (sound: { readonly key: string } | { readonly keys: readonly string[] }): readonly string[] =>
@@ -102,10 +102,11 @@ export function loadSamples(audio: AudioContext): void {
 }
 
 /** When a recording starts (the context's time; at once where not given), and the synthesiser's sound it stands in for,
- *  whose loudness over `windowS` it takes in place of its own levelling. */
+ *  whose loudness over `windowS` it takes in place of its own levelling, its peak never past `most` (that sound's own
+ *  where not given): what the mix's ceiling leaves it. */
 export interface SamplePlay {
   readonly when?: number;
-  readonly like?: { readonly sound: AudioBuffer; readonly windowS: number };
+  readonly like?: { readonly sound: AudioBuffer; readonly windowS: number; readonly most?: number };
 }
 
 /** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come, so the
@@ -129,7 +130,7 @@ export function playSample(
   const gain = audio.createGain();
   const { like } = play;
   gain.gain.value = like
-    ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), measureOfBuffer(like.sound, like.windowS))
+    ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), measureOfBuffer(like.sound, like.windowS), like.most)
     : sound.level;
   source.connect(gain).connect(out);
   source.start(play.when ?? 0);

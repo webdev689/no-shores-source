@@ -72,6 +72,8 @@ export interface Voice {
   readonly pitch: readonly [number, number];
   readonly drift: number;
   readonly drive?: Drive;
+  /** A bird or insect that shelters from the rain, where its sounds do not say so (a voice only recorded). */
+  readonly shelters?: boolean;
 }
 
 /** How a place answers a sound: its reverberation's length and top, its echoes off walls or hillsides, and how much
@@ -421,7 +423,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('frog.peeps', 'canopy', { dusk: 2, night: 3 }, { distance: [6, 30], lift: [1, 6], gain: [0.25, 0.5] }),
       voice('frog.croak', 'ground', byNight(1.5), { distance: [6, 30] }),
       voice('woodpecker', 'canopy', byDay(0.3), { distance: [30, 90] }),
-      recordedOnly('amb.rainforest.parrot', 'canopy', byDay(1.2), { distance: [20, 80], drift: 5 }),
+      recordedOnly('amb.rainforest.parrot', 'canopy', byDay(1.2), { distance: [20, 80], drift: 5, shelters: true }),
       voice('owl.deep', 'canopy', byNight(0.4), { distance: [30, 100] }),
       voice('branch.creak', 'canopy', always(0.4)),
       GULLS(0.6),
@@ -474,7 +476,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('mosquito', 'ear', always(1.5), { drift: 0.5, gain: [0.08, 0.2] }),
       voice('fly', 'ear', byDay(0.5), { drift: 0.8, gain: [0.12, 0.25] }),
       voice('fish.splash', 'around', always(0.3), { distance: [10, 40], lift: [0, 0.2] }),
-      recordedOnly('amb.swamp.heron', 'around', always(0.4), { distance: [40, 150], gain: [0.5, 0.8] }),
+      recordedOnly('amb.swamp.heron', 'around', always(0.4), { distance: [40, 150], gain: [0.5, 0.8], shelters: true }),
       voice('song.warbler', 'around', byDay(0.8), { distance: [10, 40], lift: [0.5, 2], gain: [0.25, 0.5] }),
       RAVEN(byDay(0.25)),
       voice('owl.deep', 'canopy', byNight(0.5), { distance: [30, 100] }),

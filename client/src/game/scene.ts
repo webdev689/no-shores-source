@@ -59,6 +59,13 @@ const DEPTH_COPY = /* wgsl */ `
  * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
  * as the terrain and the water read it; everything else is handed world metres.
  */
+/** What an overlay drawn over the finished picture is drawn in: the picture's size and the light at the eye. */
+export interface Overlay {
+  readonly width: number;
+  readonly height: number;
+  readonly light: readonly [number, number, number];
+}
+
 export class GameScene {
   readonly gpu: Gpu;
   private readonly water: WaterView;
@@ -185,7 +192,7 @@ export class GameScene {
     seconds: number,
     drawers: readonly Drawer[],
     more: {
-      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
+      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
       readonly atSea?: boolean;
@@ -300,7 +307,7 @@ export class GameScene {
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);
       });
-    more.after?.(encoder, target);
+    more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

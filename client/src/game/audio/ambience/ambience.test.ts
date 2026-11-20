@@ -7,7 +7,7 @@ import { Ambience } from './ambience.ts';
 import { Bank } from './bank.ts';
 import { seeded } from './dsp.ts';
 import { CROSSFADE_S } from './law.ts';
-import { ScapePlayer } from './player.ts';
+import { MOST_THUNDERS, ScapePlayer } from './player.ts';
 
 /** An audio parameter that keeps the last value it was set toward. */
 const param = () => {
@@ -195,4 +195,22 @@ test('a strike still on its way thunders though the strikes heard before it are 
     ambience.frame(0.1);
   }
   assert.equal(thundered.mock.callCount(), 1);
+});
+
+test("a storm's thunder never takes the calls' room, and its rolls are held to a few at once", () => {
+  const fake = fakeAudio();
+  const buffer = new AudioBuffer({ length: 80_000, sampleRate: 8000 });
+  const bank = { want: () => undefined, buffer: () => buffer } as unknown as Bank;
+  const calls = { count: 0 };
+  const player = new ScapePlayer(fake.audio, fake.out, 'sea', bank, seeded(4), calls);
+  const heard = { ear: [0, 0, 2], origin: [0, 0, 0] } as unknown as Parameters<ScapePlayer['thunder']>[1];
+  const thunder = (sound: 'thunder.roll' | 'thunder.crack') => {
+    const before = fake.made.count;
+    player.thunder({ sound, arrivesS: 0, gain: 0.3, corner: 2000, pitch: 1, toward: [1, 0] }, heard, 0);
+    return fake.made.count > before;
+  };
+  const rolled = Array.from({ length: 20 }, () => thunder('thunder.roll'));
+  assert.equal(rolled.filter(Boolean).length, MOST_THUNDERS, 'a few rolls at once, the rest let pass');
+  assert.equal(calls.count, 0, 'the calls keep all their room');
+  assert.ok(thunder('thunder.crack'), 'a near crack comes through all the same');
 });

@@ -53,9 +53,12 @@ test("a sound's loudness is its loudest stretch, or the whole of it; a recording
   assert.equal(loudest.peak, 0.5);
   const whole = measureOf([burst], rate, Infinity);
   assert.ok(Math.abs(whole.loud - Math.sqrt((400 * 0.25 + 3600 * 0.0025) / 4000)) < 1e-9, 'over all of it');
-  // As loud as the synthesiser's sound, unless the recording's peaks would then pass that sound's peak.
+  // As loud as the synthesiser's sound, unless the recording's peaks would then pass the most it may reach: that
+  // sound's own peak where nothing else is said, the mix's ceiling where it is, or nothing at all.
   assert.ok(Math.abs(matchedLevel({ peak: 0.2, loud: 0.05 }, { peak: 1, loud: 0.1 }) - 2) < 1e-9);
   assert.ok(Math.abs(matchedLevel({ peak: 0.5, loud: 0.05 }, { peak: 1, loud: 0.1 }) - 2) < 1e-9);
   assert.ok(Math.abs(matchedLevel({ peak: 0.8, loud: 0.05 }, { peak: 1, loud: 0.1 }) - 1.25) < 1e-9);
+  assert.ok(Math.abs(matchedLevel({ peak: 0.8, loud: 0.05 }, { peak: 1, loud: 0.1 }, 2) - 2) < 1e-9);
+  assert.ok(Math.abs(matchedLevel({ peak: 0.9, loud: 0.01 }, { peak: 1, loud: 0.1 }, Infinity) - 10) < 1e-9);
   assert.equal(matchedLevel({ peak: 0, loud: 0 }, { peak: 0, loud: 0 }), 0, 'silence stands in for silence');
 });

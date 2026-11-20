@@ -5,7 +5,7 @@
 import { playSample, type SamplePlay } from '../../../soundSamples.ts';
 import type { Bank } from './bank.ts';
 import { type Random, between } from './dsp.ts';
-import { type Emitter, callChain, emitterOf, release, roomOf, toAudio } from './graph.ts';
+import { type Emitter, callChain, emitterOf, recordedBedChain, release, roomOf, toAudio } from './graph.ts';
 import {
   type AmbienceKey,
   BREAKER_S,
@@ -22,7 +22,15 @@ import {
 import { type Lay, type Point3, cityPoint, placeCall, riverNear, shorePoints } from './places.ts';
 import { type BedLayer, type Drive, SCAPES, type Scape, type Voice } from './scapes.ts';
 import { type Job, type SoundKey, takesOf } from './sounds.ts';
-import { type HeardWeather, SHELTERING, type Thunder, gustDepth, rainCorner, snowSoftening } from './weatherLaw.ts';
+import {
+  type HeardWeather,
+  SHELTERING,
+  THUNDER_MOST,
+  type Thunder,
+  gustDepth,
+  rainCorner,
+  snowSoftening,
+} from './weatherLaw.ts';
 
 /** What the ambience hears this frame: where the ear is and faces, the frame's origin (the ship at sea, so all rides
  *  with her), the land, the phases of the hour, the drives, the weather and the share of the day's birds and insects
@@ -53,6 +61,9 @@ const THUNDER_LIFT_M = 150;
 
 /** The most calls sounding at once in the whole ambience: past it, a new one waits for its next turn. */
 export const MOST_CALLS = 20;
+/** Thunder sounds apart from the calls, at most this many rolls at once (a near crack always comes through), so a
+ *  storm's many strikes never crowd out the birds, the hull and the steps. */
+export const MOST_THUNDERS = 6;
 /** How often the beds' gains and points are set, seconds. */
 const BEDS_EVERY_S = 0.1;
 /** How fast a bed's gain follows its law, seconds. */
@@ -85,7 +96,32 @@ interface BedPlaying {
   readonly layer: BedLayer;
   readonly seed: number;
   emitters: Emitter[];
-  recorded: { readonly gain: GainNode; readonly endsAt: number } | null;
+  /** Its recording's level and where it stands, the play sounding and when it ends, and when the first play began. */
+  recorded: {
+    readonly level: GainNode;
+    readonly panner: PannerNode | null;
+    play: { readonly gain: GainNode; readonly source: AudioBufferSourceNode; readonly endsAt: number } | null;
+    readonly since: number;
+  } | null;
+}
+
+/** An equal-power fade in and out over a crossfade: a recording and what it fades from sum to the same loudness. */
+const FADE_IN = Float32Array.from({ length: 64 }, (unused, step) => Math.sin((Math.PI / 2) * (step / 63)));
+const FADE_OUT = FADE_IN.slice().reverse();
+
+/** A point in the audio's frame, or null for none. */
+const toAudioOf = (point: Point3 | undefined, heard: Heard): readonly [number, number, number] | null =>
+  point ? toAudio(point, heard.origin) : null;
+
+/** Moves a panner to a point (audio's frame): at once the first time, smoothly after. */
+function placePanner(panner: PannerNode, [x, y, z]: readonly [number, number, number], now: number, first: boolean) {
+  for (const [param, value] of [
+    [panner.positionX, x],
+    [panner.positionY, y],
+    [panner.positionZ, z],
+  ] as const)
+    if (first) param.setValueAtTime(value, now);
+    else param.setTargetAtTime(value, now, 0.5);
 }
 
 interface VoiceClock {
@@ -128,6 +164,7 @@ export class ScapePlayer {
   private readonly walked = new Map<number, { x: number; y: number; since: number }>();
   private bedsAt = -Infinity;
   private calls: { count: number };
+  private readonly thunders = { count: 0 };
   /** The room each call is sent a share of. */
   private readonly send: GainNode;
   /** When each recording not yet come may be asked for again. */
@@ -187,6 +224,7 @@ export class ScapePlayer {
   /** Stops everything it plays. */
   stop(): void {
     for (const playing of this.beds) for (const emitter of playing.emitters) release(this.audio, emitter);
+    for (const playing of this.beds) playing.recorded?.play?.source.stop();
     this.gain.disconnect();
   }
 
@@ -199,6 +237,7 @@ export class ScapePlayer {
 
   /** A strike's thunder, `after` seconds from now, from the way it comes. */
   thunder(thunder: Thunder, heard: Heard, after: number): void {
+    if (this.thunders.count >= MOST_THUNDERS && thunder.sound !== 'thunder.crack') return;
     const [east, south] = thunder.toward;
     const [x, y, z] = heard.ear;
     const point: Point3 = [x + east * THUNDER_PLACED_M, y + south * THUNDER_PLACED_M, z + THUNDER_LIFT_M];
@@ -207,9 +246,13 @@ export class ScapePlayer {
     const gain = thunder.gain / this.scape.level;
     const shape = { gain, pitch, near: THUNDER_PLACED_M, drift: 0, corner: thunder.corner };
     const synth = this.bank.buffer({ kind: 'sound', key: thunder.sound, take: 0 });
-    const like = synth ? { sound: synth, windowS: THUNDER_MATCHED_S } : undefined;
-    if (like && this.recorded(THUNDER_RECORDED[thunder.sound], point, heard, shape, after, like)) return;
-    this.call(thunder.sound, point, heard, shape, after);
+    // A recording's peaks may reach the thunder's ceiling, as the synthesiser's nearest crack does, and no further.
+    const like = synth
+      ? { sound: synth, windowS: THUNDER_MATCHED_S, most: THUNDER_MOST / Math.max(1e-3, thunder.gain) }
+      : undefined;
+    const recorded =
+      like && this.recorded(THUNDER_RECORDED[thunder.sound], point, heard, shape, after, like, this.thunders);
+    if (!recorded) this.call(thunder.sound, point, heard, shape, after, undefined, this.thunders);
   }
 
   /** A step of the player's own on wooden planks: the recording once loaded, the synthesiser's until then. */
@@ -258,21 +301,13 @@ export class ScapePlayer {
     const corner = layer.brightens
       ? rainCorner(heard.weather.rain)
       : GUST_CORNER * 2 ** (GUST_OCTAVES * gust) * snowSoftening(heard.weather);
-    if (layer.recorded) law *= this.recordedBed(playing, now, law, buffer);
+    if (layer.recorded) law *= this.recordedBed(playing, now, law, buffer, toAudioOf(points?.[0], heard));
     playing.emitters.forEach((emitter, nth) => {
       const point = points?.[nth] ?? null;
       let gain = law;
       if (point && emitter.panner) {
-        const [x, y, z] = toAudio(point, heard.origin);
-        const moved = !emitter.point;
+        placePanner(emitter.panner, toAudio(point, heard.origin), now, !emitter.point);
         emitter.point = point;
-        for (const [param, value] of [
-          [emitter.panner.positionX, x],
-          [emitter.panner.positionY, y],
-          [emitter.panner.positionZ, z],
-        ] as const)
-          if (moved) param.setValueAtTime(value, now);
-          else param.setTargetAtTime(value, now, 0.5);
       }
       if (layer.breakers) gain *= this.breaker(emitter, clock, heard);
       emitter.gain.gain.setTargetAtTime(gain, now, BED_FOLLOW_S);
@@ -323,39 +358,76 @@ export class ScapePlayer {
     return breakerAt(clock - emitter.wave, emitter.period);
   }
 
-  /** A bed played from its Freesound recording once picked, as loud as the synthesiser's bed `synth`, each play
-   *  crossfading into the next; answers the share of the synthesiser's bed still heard (none once the recording plays). */
-  private recordedBed(playing: BedPlaying, now: number, law: number, synth: AudioBuffer): number {
+  /** A bed played from its Freesound recording once picked, as loud as the synthesiser's bed `synth` and heard from
+   *  where it stands (its first point, for a standing bed); each play fades into the next, and the first takes over
+   *  from the synthesiser, at equal power, so it never dips. Answers the share of the synthesiser's bed still heard. */
+  private recordedBed(
+    playing: BedPlaying,
+    now: number,
+    law: number,
+    synth: AudioBuffer,
+    standing: readonly [number, number, number] | null,
+  ): number {
     const cue = playing.layer.recorded;
-    if (!cue) return 1;
-    const playingNow = playing.recorded;
-    if (playingNow) playingNow.gain.gain.setTargetAtTime(law, now, BED_FOLLOW_S);
-    if (playingNow && now < playingNow.endsAt - RECORDED_FADE_S) return 0;
     const audio = liveContext(this.audio);
-    if (!audio) return playingNow ? 0 : 1;
+    if (!cue || !audio) return 1;
+    const bed = playing.recorded;
+    if (bed) {
+      bed.level.gain.setTargetAtTime(law, now, BED_FOLLOW_S);
+      if (bed.panner && standing) placePanner(bed.panner, standing, now, false);
+    }
+    if (!bed?.play || now >= bed.play.endsAt - RECORDED_FADE_S) this.nextRecordedPlay(playing, audio, now, law, synth);
+    const placed = playing.recorded;
+    if (!bed && placed?.panner && standing) placePanner(placed.panner, standing, now, true);
+    const since = playing.recorded?.since;
+    return since === undefined ? 1 : Math.cos((Math.PI / 2) * Math.min(1, (now - since) / RECORDED_FADE_S));
+  }
+
+  /** The bed's recording played again, fading in over the play before it, which fades out. */
+  private nextRecordedPlay(
+    playing: BedPlaying,
+    audio: AudioContext,
+    now: number,
+    law: number,
+    synth: AudioBuffer,
+  ): void {
+    const cue = playing.layer.recorded;
+    if (!cue) return;
     const gain = audio.createGain();
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(law, now + RECORDED_FADE_S);
-    gain.connect(this.gain);
-    const like = { sound: synth, windowS: BED_MATCHED_S };
+    // A bed lies far under the mix's ceiling (BED_LEVEL), so its recording takes the bed's loudness, spiky or not.
+    const like = { sound: synth, windowS: BED_MATCHED_S, most: Infinity };
     const source = playSample(audio, gain, cue, between(this.random, [0.98, 1.02]), { like });
     if (!source?.buffer) {
       gain.disconnect();
-      return playingNow ? 0 : 1;
+      return;
     }
-    if (playingNow) {
-      playingNow.gain.gain.cancelScheduledValues(now);
-      playingNow.gain.gain.setTargetAtTime(0, now, RECORDED_FADE_S / 3);
+    const standing = playing.layer.at !== 'wide';
+    const bed = playing.recorded ?? {
+      ...recordedBedChain(
+        audio,
+        { standing, near: playing.layer.near ?? NEAR_M[playing.layer.at] },
+        this.gain,
+        this.send,
+      ),
+      play: null,
+      since: now,
+    };
+    if (!playing.recorded) bed.level.gain.setValueAtTime(law, now);
+    gain.gain.setValueCurveAtTime(FADE_IN, now, RECORDED_FADE_S);
+    gain.connect(bed.level);
+    if (bed.play) {
+      bed.play.gain.gain.cancelScheduledValues(now);
+      bed.play.gain.gain.setValueCurveAtTime(FADE_OUT, now, RECORDED_FADE_S);
     }
     source.addEventListener('ended', () => gain.disconnect());
-    playing.recorded = { gain, endsAt: now + source.buffer.duration / source.playbackRate.value };
-    return 0;
+    bed.play = { gain, source, endsAt: now + source.buffer.duration / source.playbackRate.value };
+    playing.recorded = bed;
   }
 
   /** A voice's turn: once its time comes, a bout of its calls where it lives, then a gap by its density now. */
   private voiceTurn(each: VoiceClock, clock: number, heard: Heard): void {
     const { voice } = each;
-    const sheltering = voice.sounds.some((sound) => SHELTERING.has(sound));
+    const sheltering = voice.shelters ?? voice.sounds.some((sound) => SHELTERING.has(sound));
     const density =
       byPhase(voice.perMinute, heard.phases) *
       this.drive(voice.drive, heard) *
@@ -394,6 +466,7 @@ export class ScapePlayer {
     shape: { gain: number; pitch: number; near: number; corner?: number },
     after = 0,
     like?: SamplePlay['like'],
+    tally = this.calls,
   ): boolean {
     const audio = liveContext(this.audio);
     if (!audio || (this.missing.get(cue) ?? -Infinity) > audio.currentTime) return false;
@@ -405,9 +478,9 @@ export class ScapePlayer {
       this.missing.set(cue, audio.currentTime + RECORDING_AGAIN_S);
       return false;
     }
-    this.calls.count++;
+    tally.count++;
     source.addEventListener('ended', () => {
-      this.calls.count--;
+      tally.count--;
       chain.done();
     });
     return true;
@@ -421,6 +494,7 @@ export class ScapePlayer {
     shape: { gain: number; pitch: number; near: number; drift: number; corner?: number },
     after = 0,
     lastTake = new Map<SoundKey, number>(),
+    tally = this.calls,
   ): void {
     const takes = takesOf(sound);
     const last = lastTake.get(sound);
@@ -438,9 +512,9 @@ export class ScapePlayer {
     source.playbackRate.value = shape.pitch;
     source.connect(chain.input);
     source.start(when);
-    this.calls.count++;
+    tally.count++;
     source.addEventListener('ended', () => {
-      this.calls.count--;
+      tally.count--;
       source.disconnect();
       chain.done();
     });
