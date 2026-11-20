@@ -7,8 +7,8 @@ pub const LANDMARKS: &[Landmark] = &[
     Landmark {
         module: "crypt.bone-pit",
         style: "crypt",
-        role: "bone-pit",
-        name: "the Bone Pit",
+        role: "charnel-pit",
+        name: "the Charnel Pit",
         cells: [2, 2],
         wall: false,
         solids: &[
@@ -42,8 +42,8 @@ pub const LANDMARKS: &[Landmark] = &[
     Landmark {
         module: "crypt.collapsed-vault",
         style: "crypt",
-        role: "collapsed-vault",
-        name: "the Collapsed Vault",
+        role: "broken-vault",
+        name: "the Broken Vault",
         cells: [2, 2],
         wall: false,
         solids: &[[0.5, 0.5, 5.9, 5.9, 1.6], [2.6, 2.6, 3.8, 3.8, 2.9]],

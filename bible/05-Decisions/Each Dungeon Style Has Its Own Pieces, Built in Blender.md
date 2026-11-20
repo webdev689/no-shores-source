@@ -22,3 +22,5 @@ yet, and offered three kinds of module (landmark rooms, style kits, or both, wit
   How they are made is Claude's to build ([[Dungeons as Claude Builds Them]]); the owner can change any of it.
 - The earlier decisions hold: a dungeon runs slightly linear, with a clear beginning, middle and end and a return
   portal, its props laid and everything in the procedural textures.
+
+How they are built: [[Dungeon Modules]].

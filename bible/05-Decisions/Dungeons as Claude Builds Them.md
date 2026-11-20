@@ -76,3 +76,23 @@ The purposes, by style (the way in's room first, the end room last):
 | Sanctum | the Narthex; the Nave, the Reliquary, the Scriptorium, the Cloister, the Shrine, the Vestry; the High Altar |
 | Caverns | the Cave Mouth; the Crystal Hollow, the Dripping Gallery, the Bone Pit, the Fungus Grove, the Squatters' Den, the Echoing Chamber; the Deep Cavern |
 | Mines | the Adit; the Gallery, the Stope, the Ore Store, the Miners' Rest, the Collapsed Drift, the Winch Room; the Motherlode |
+
+## The modules
+
+> "I want you to do everything and be as detailed as possible. Return when everything is 100%"
+> ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]])
+
+Claude's choices for the pieces built in Blender ([[Dungeon Modules]]), each open to change.
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What a module is | Both: a kit of eighteen pieces for each style that dresses every room, and three landmarks a style, set pieces a dungeon is remembered by | A landmark alone stands on samey bones; a kit alone gives handsome rooms nobody remembers |
+| Who places them | The page places the kits from the layout, since they stand where nobody walks; the rules place the landmarks, since they have solids the server, the browser and the navmesh must all know | Only what a body meets is the rules' to know |
+| How many landmarks | One a dungeon of two or three blocks, two of four or five, never twice, never in the way in's room or the end room | Each run has a room to remember, and the end stays the Reeve's |
+| Where a landmark stands | Clear of the room's walls where a spot fits, else with its edges on them; never on a doorway, a torch's cell, the way in or the portal; the room still one walk with room for its band. A pillar under it goes | Rooms are small; a landmark against a wall still reads, and nobody is walled in |
+| Their sizes | Two cells by two at most, but the Oubliette one by one and the Gibbets, the Rack, the Ore Cart and the Great Hearth two by one | At three by three the Ritual Circle found a room in 52 of 346 sanctum dungeons |
+| Their names | Their own, never a room purpose's: the Charnel Pit and the Broken Vault in the crypt, not the Bone Pit and the Collapsed Vault | A name taken twice would read "the Old Collapsed Vault" |
+| Low solids | Every solid, however low, is a wall to the navmesh as it is to a body | A foe once walked across the Reflecting Pool and over grave slabs a player could not cross |
+| The pictures | Each part wears the room's own pictures, the climate's timber, the iron, a new dressing set (bone, carving, cloth, rope, ore, brass) or a glow | The pieces belong to the room they stand in, in every climate |
+| The kits' spacing | A wall set every two cells in the crypt, the halls and the sanctum, every three in the cells and the hewn caverns, every cell of the mines with a beam over it | The mines are shored timber; the halls are colonnaded |
+| Their cost | A budget for each kind of piece, the most repeated the least; faces against a wall or the floor are left off | A dungeon lays up to some 320 kit pieces |

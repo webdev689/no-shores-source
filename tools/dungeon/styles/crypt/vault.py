@@ -1,4 +1,4 @@
-"""The Collapsed Vault: a heap of fallen vault round a broken column still standing. Voussoirs, slabs, drums and a
+"""The Broken Vault: a heap of fallen vault round a broken column still standing. Voussoirs, slabs, drums and a
 fallen capital lie half sunk in the rubble with a few bones from the burials it fell on, and dust spreads to the
 walls. Its solids: the rubble [0.5..5.9] to 1.6 and the column [2.6..3.8] to 2.9; daylight falls in on the column.
 """

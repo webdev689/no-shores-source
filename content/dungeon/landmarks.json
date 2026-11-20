@@ -15,8 +15,8 @@
     {
       "module": "crypt.bone-pit",
       "style": "crypt",
-      "role": "bone-pit",
-      "name": "the Bone Pit",
+      "role": "charnel-pit",
+      "name": "the Charnel Pit",
       "cells": [
         2,
         2
@@ -154,8 +154,8 @@
     {
       "module": "crypt.collapsed-vault",
       "style": "crypt",
-      "role": "collapsed-vault",
-      "name": "the Collapsed Vault",
+      "role": "broken-vault",
+      "name": "the Broken Vault",
       "cells": [
         2,
         2

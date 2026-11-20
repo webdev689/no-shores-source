@@ -247,7 +247,7 @@ dungeon").
   wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
   Where a look's style has a pack of pieces, its pillars, brackets and portal arch are the pack's; the jambs, the
   flames, the portal's face and the exit door stay the mesh's.
-- **Its packs** (`dungeonModules.ts`): the packs of every style its looks wear are fetched behind the veil before it
+- **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind the veil before it
   is first drawn (`stylePacks`). A style whose pack is not published, or fails to come, is drawn as above, with one
   warning.
 - **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in

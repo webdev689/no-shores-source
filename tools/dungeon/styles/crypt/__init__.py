@@ -4,8 +4,8 @@ door.a/.b dress a doorway round the code's jambs; pillar.base/.shaft/.capital st
 shaft stretched between them; wall.base/.shaft/.cap make an engaged column on every 2nd wall cell of a room;
 feature.a/.b are a room's set pieces against its wall, two at most; ceiling.a/.b/.c are carved bosses, at each
 dome's middle and every 2nd cell of a vault's ridge; floor.a/.b are tomb slabs on 1 in 4 quiet cells; sconce holds a
-torch's flame; portal and exit frame the code's faces. Landmarks: the Bone Pit, the Founder's Tomb and the
-Collapsed Vault.
+torch's flame; portal and exit frame the code's faces. Landmarks: the Charnel Pit, the Founder's Tomb and the
+Broken Vault.
 """
 import catalog
 from styles.crypt import doors, pieces, pit, tomb, vault

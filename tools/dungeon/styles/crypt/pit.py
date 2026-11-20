@@ -1,4 +1,4 @@
-"""The Bone Pit: a square pit sunk in the floor and heaped with bones and skulls, inside a low coped parapet with a
+"""The Charnel Pit: a square pit sunk in the floor and heaped with bones and skulls, inside a low coped parapet with a
 carved skull on each face, a skull-capped post at each corner. Its solids: the parapet and pit [0.4..6.0] to 0.7,
 the posts [0.3..0.9] at each corner to 1.4; the spirit's glow rises from the heap's middle.
 """
