@@ -403,3 +403,13 @@ impl Room {
         self.players.get(&player)
     }
 }
+
+/// What a body the section killed is stepped by each tick: no push and its facing kept, letting go of any wall or lip
+/// it held, so it falls under its own weight and lies where it lands, as a fight's dead do. The page steps its own
+/// dead body by the same (`combat/fighting.ts`).
+#[must_use]
+pub(crate) fn lying_still(fighter: &combat::Fighter) -> combat::Intent {
+    let holding = matches!(fighter.body.mode, movement::Mode::Hang | movement::Mode::Climb);
+    let controls = movement::Controls { yaw: fighter.body.facing, crouch: holding, ..movement::Controls::default() };
+    combat::Intent { controls, combat: combat::CombatInput::default() }
+}

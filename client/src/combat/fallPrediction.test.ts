@@ -70,9 +70,12 @@ test('a body run off a ledge in a social space dies 6 m down, and the page predi
   for (let tick = 0; tick < 900 && lying < 60; tick += 1) {
     fighting.press({ swing: false, shoot: false, guard: false, dodge: false, pitch: 0 });
     body = steps.step(body, run);
+    // Landed dead, a burst of inputs asking to run goes before the room's next tick: it takes a few, and the page
+    // replays the rest still waiting on its word as the room will take them, lying, never running.
+    if (lying === 1) for (let more = 0; more < 8; more += 1) body = steps.step(body, run);
     const predicted = JSON.stringify(fighting.own);
     room.pump(TICK);
-    // Dead or alive, the room's word is the fighter the page predicted, to the bit.
+    // Dead or alive, the room's word with the inputs it has not taken replayed is the fighter the page predicted.
     assert.equal(JSON.stringify(fighting.own), predicted, `tick ${tick}`);
     if (fighting.standing.kind === 'dead' && diedAt === null) {
       diedAt = tick;

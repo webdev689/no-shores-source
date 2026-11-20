@@ -36,7 +36,7 @@ export class FallWatch {
   figure(standing: Standing, body: Body, facing: number): FigureFall | null {
     const shown = fallShown(standing, body.mode);
     if (shown === null || standing.kind !== 'dead') {
-      [this.held, this.last, this.diedFacing, this.landedAt] = [null, null, null, null];
+      [this.held, this.last, this.diedFacing, this.landedAt, this.secondsDead] = [null, null, null, null, 0];
       return null;
     }
     this.secondsDead = standing.ticks / TICKS_A_SECOND;
@@ -63,19 +63,20 @@ export class FallWatch {
     return fallPlayed(fell, this.secondsDead, this.landedAt);
   }
 
-  /** The falls heard this frame: the player's own body at `feet` while it tumbles, and every other player the room
-   *  says fell, where their figure is drawn, while their body is in the air. */
+  /** The falls heard this frame: the player's own body at `feet` while it tumbles or lies, and every other player
+   *  the room says fell, where their figure is drawn, while their body is in the air or lies where it landed. */
   hear(
-    own: { readonly id: number; readonly feet: Point3; readonly tumbling: boolean },
+    own: { readonly id: number; readonly feet: Point3; readonly tumbling: boolean; readonly lying: boolean },
     others: ReadonlyMap<number, SeenPlayer>,
     placed: ReadonlyMap<number, Placed>,
     frame: { readonly seconds: number; readonly eye: Point3; readonly quiet: boolean },
   ): void {
-    const bodies = [{ id: own.id, at: own.feet, falling: own.tumbling }];
+    const bodies = [{ id: own.id, at: own.feet, falling: own.tumbling, lying: own.lying }];
     for (const [id, seen] of others) {
       const figure = placed.get(id);
       const place: Point3 = figure ? [figure.x, figure.y, figure.z] : [seen.body.x, seen.body.y, seen.body.z];
-      bodies.push({ id, at: place, falling: fallShown(seen.standing, seen.body.mode) === 'tumbling' });
+      const shown = fallShown(seen.standing, seen.body.mode);
+      bodies.push({ id, at: place, falling: shown === 'tumbling', lying: shown === 'lying' });
     }
     this.sounds.frame(bodies, frame.seconds, frame.eye, frame.quiet);
   }

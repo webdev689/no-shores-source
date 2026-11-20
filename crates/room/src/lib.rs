@@ -333,7 +333,7 @@ impl Room {
                 if let Standing::Dead { .. } = found.standing {
                     found.shown = input.shown;
                     found.remember(seen);
-                    let (still, fallen) = (lying_still(&found.fighter), found.armed(found.fighter));
+                    let (still, fallen) = (players::lying_still(&found.fighter), found.armed(found.fighter));
                     found.fighter = player_tick(id, &fallen, &still, &view, &self.blocks, &self.floor).0;
                     if input.respawn && found.standing.may_respawn() {
                         let fallen = found.fighter;
@@ -380,8 +380,9 @@ impl Room {
         if found.stepped + VIEW_LAG >= clock - found.joined {
             return;
         }
-        let standing = if matches!(found.standing, Standing::Dead { .. }) {
-            lying_still(&found.fighter)
+        let dead = matches!(found.standing, Standing::Dead { .. });
+        let standing = if dead {
+            players::lying_still(&found.fighter)
         } else {
             let controls = movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() };
             combat::Intent { controls, combat: combat::CombatInput::default() }
@@ -389,9 +390,13 @@ impl Room {
         let view = self.fighters();
         let Some(found) = self.players.get_mut(&id) else { return };
         found.stepped += 1;
-        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
+        let fighter = if dead { found.armed(found.fighter) } else { found.fighter };
+        let (next, happening) = player_tick(id, &fighter, &standing, &view, &self.blocks, &self.floor);
         found.fighter = next;
-        self.happened(id, &next, happening, &view);
+        // A dead body only falls: nothing it was doing as it died lands now.
+        if !dead {
+            self.happened(id, &next, happening, &view);
+        }
     }
 
     /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
@@ -470,6 +475,8 @@ impl Room {
             .players
             .iter()
             .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
+            // One the section killed too stands again only by its own respawn, which ends that death as well.
+            .filter(|(_, found)| !matches!(found.standing, Standing::Dead { .. }))
             .map(|(id, found)| (*id, found.fighter))
             .collect();
         for (id, fighter) in fallen {
@@ -588,13 +595,3 @@ mod ring_tests;
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
-
-/// What a body the section killed is stepped by each tick: no push and its facing kept, letting go of any wall or lip
-/// it held, so it falls under its own weight and lies where it lands, as a fight's dead do. The page steps its own
-/// dead body by the same (`combat/fighting.ts`).
-#[must_use]
-fn lying_still(fighter: &Fighter) -> combat::Intent {
-    let holding = matches!(fighter.body.mode, Mode::Hang | Mode::Climb);
-    let controls = movement::Controls { yaw: fighter.body.facing, crouch: holding, ..movement::Controls::default() };
-    combat::Intent { controls, combat: combat::CombatInput::default() }
-}

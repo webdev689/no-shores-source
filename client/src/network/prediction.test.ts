@@ -65,14 +65,6 @@ test('on a window of the land, the room’s word and the prediction still agree 
   assert.deepEqual(floatsOf(corrected), last && floatsOf(last));
 });
 
-test('a body the room says is still, as a dead one is, stays where the room saw it', () => {
-  const prediction = new Prediction<Controls>();
-  for (const controls of script.slice(0, 5)) prediction.next(controls);
-  const dead = rules.standing(3, 3);
-  assert.deepEqual(floatsOf(prediction.corrected(dead, 2, step, true)), floatsOf(dead));
-  assert.equal(prediction.waitingCount, 3);
-});
-
 test('where the room knows better, the body moves to the room’s word with the waiting inputs on top', () => {
   const prediction = new Prediction<Controls>();
   for (const controls of script.slice(0, 5)) prediction.next(controls);

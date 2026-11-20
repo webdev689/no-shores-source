@@ -15,6 +15,10 @@ export const LANDED_BEAT_S = 0.6;
 const TURN_RATE = 4;
 /** How far over the feet the held shot looks: about a body's middle. */
 const AIM_OVER_FEET_M = 0.9;
+/** How tall a window round the body the held shot's lens narrows to as it drops away, metres, and the narrowest the
+ *  lens goes, radians: far below, the body still reads, never smaller than this share of the view. */
+const FRAMED_M = 14;
+const NARROWEST_FOV = 0.3;
 /** How fast a tumbling body spins about, turns a second. */
 export const TUMBLE_TURNS_A_SECOND = 1.5;
 /** The whistle's pitch as the fall begins, and the lowest it drops to, hertz; it falls an octave in this many seconds. */
@@ -38,12 +42,16 @@ export function fallPlayed(fell: boolean, secondsDead: number, landedAt: number 
   return landedAt !== null && secondsDead >= landedAt + LANDED_BEAT_S;
 }
 
-/** The held shot one frame `seconds` on from `last`: `held`'s eye and lens, its look turned smoothly (the short way)
- *  toward the body whose feet are at `feet`. */
+/** The held shot one frame `seconds` on from `last`: `held`'s eye, its look turned smoothly (the short way) toward
+ *  the body whose feet are at `feet`, and its lens narrowing as smoothly to frame the body as it drops away. */
 export function heldShot(held: Shot, last: Shot, feet: Point3, seconds: number): Shot {
-  const look = lookAt(held.eye, [feet[0], feet[1], feet[2] + AIM_OVER_FEET_M]);
+  const middle: Point3 = [feet[0], feet[1], feet[2] + AIM_OVER_FEET_M];
+  const look = lookAt(held.eye, middle);
+  const away = Math.hypot(middle[0] - held.eye[0], middle[1] - held.eye[1], middle[2] - held.eye[2]);
+  const framed = Math.max(NARROWEST_FOV, 2 * Math.atan(FRAMED_M / 2 / Math.max(away, 1e-3)));
   const share = 1 - Math.exp(-TURN_RATE * Math.max(0, seconds));
-  return panShot({ ...held, yaw: last.yaw, pitch: last.pitch }, { ...held, ...look }, share);
+  const from = { ...held, yaw: last.yaw, pitch: last.pitch, fov: last.fov };
+  return panShot(from, { ...held, ...look, fov: Math.min(held.fov, framed) }, share);
 }
 
 /** The facing of a tumbling body that faced `facing` as it died, `secondsDead` after: spinning about, within a turn. */

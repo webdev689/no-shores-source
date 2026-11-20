@@ -379,7 +379,15 @@ export class Foot {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) });
+      const facesEye = walker.fall !== null;
+      figures.push({
+        ...own,
+        veiled: veiledIn(fight, fight.player),
+        charged,
+        exposed,
+        smear: smear(fight.player),
+        facesEye,
+      });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
@@ -430,8 +438,10 @@ export class Foot {
       landed: dropped.landed,
       crates: this.gearHeld.gear?.crates ?? null,
     });
-    const fell = { id: fight.player, feet: [body.x, body.y, body.z] as const, tumbling: !!walker.fall?.tumbling };
-    this.falling.hear(fell, fight.others, this.otherPlayers.placed, { seconds, eye: shot.eye, quiet: paused });
+    const { fall } = walker;
+    const fell = { id: fight.player, feet: [body.x, body.y, body.z] as const, tumbling: !!fall?.tumbling };
+    const heard = { ...fell, lying: fall?.tumbling === false };
+    this.falling.hear(heard, fight.others, this.otherPlayers.placed, { seconds, eye: shot.eye, quiet: paused });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
     const handsOf = (dress: Dress | null | undefined) => ({
       right: dress?.outfit.right ?? null,
@@ -491,7 +501,9 @@ export class Foot {
       },
     };
     const edge = this.standing;
-    const hints = edge.kind === 'dead' ? HINTS.dead : footHints(fight.arts?.art ?? 0);
+    // While a fall plays, no keys are listed: none does anything until Respawn is offered.
+    const dead = edge.kind === 'dead' ? (edge.told ? HINTS.dead : []) : null;
+    const hints = dead ?? footHints(fight.arts?.art ?? 0);
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
@@ -540,7 +552,11 @@ export class Foot {
       const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
       const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
-      if (card) cards.push({ card, ...cardStand(atFeet[0], atFeet[1], eyeX, eyeY), z: atFeet[2], flip, flash, veiled });
+      // One dead of a fall leans to face the eye, so it shows whole seen from the ledge above.
+      const fell = fight.others.get(number)?.standing;
+      const facesEye = fell?.kind === 'dead' && fell.fell;
+      const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY);
+      if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled, facesEye });
     }
     otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
     // A social space's people, each keeping a step of its own, their walk's frames at the pace they walk.

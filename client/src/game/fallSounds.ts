@@ -7,11 +7,13 @@ import { whistlePitch } from './fallLaw.ts';
 /** Where the sounds play: a page's audio context and the node they go into (null: none may sound yet). */
 type Output = { readonly audio: AudioContext; readonly out: AudioNode } | null;
 
-/** A body as the sounds hear it this frame: whose, where its feet are, and whether it is falling dead. */
+/** A body as the sounds hear it this frame: whose, where its feet are, and whether it is falling dead or lies dead
+ *  where it landed. */
 export interface HeardFall {
   readonly id: number;
   readonly at: Point3;
   readonly falling: boolean;
+  readonly lying: boolean;
 }
 
 /** A fall is as loud as it is this close (metres), fading by distance beyond; none is heard farther than the most. */
@@ -36,7 +38,9 @@ interface Whistle {
 /** A panner at `at` (world east, south, up as the listener's x, z, y), fading by distance as the world's sounds do. */
 function pannerAt(audio: AudioContext, place: Point3): PannerNode {
   const panner = audio.createPanner();
-  Object.assign(panner, { panningModel: 'equalpower', distanceModel: 'inverse', refDistance: NEAR_M });
+  panner.panningModel = 'equalpower';
+  panner.distanceModel = 'inverse';
+  panner.refDistance = NEAR_M;
   panner.maxDistance = MOST_M;
   placePanner(panner, place);
   return panner;
@@ -70,7 +74,8 @@ export class FallSounds {
       else if (body.falling && whistle) this.follow(whistle, body.at, seconds);
       else if (!body.falling && whistle) {
         this.stop(body.id);
-        if (output) thud(output, body.at);
+        // Landed, it thuds; stood again at a spawn before it landed, it is only silent.
+        if (output && body.lying) thud(output, body.at);
       }
     }
     for (const id of this.whistles.keys()) if (!seen.has(id) || !output) this.stop(id);
@@ -96,6 +101,7 @@ export class FallSounds {
     depth.gain.setValueAtTime(whistlePitch(0) * WARBLE_SHARE, when);
     warble.connect(depth).connect(voice.frequency);
     voice.connect(gain).connect(panner).connect(out);
+    voice.addEventListener('ended', () => panner.disconnect());
     voice.start(when);
     warble.start(when);
     return { voice, warble, depth, gain, panner, seconds: 0 };
@@ -138,7 +144,9 @@ function thud({ audio, out }: NonNullable<Output>, place: Point3): void {
     voice.connect(gain).connect(panner);
     voice.start(when);
     voice.stop(when + length + 0.02);
+    return voice;
   };
-  strike('sine', [110, 38], THUD_PEAK, 0.42);
+  // The longest strike lets the panner go once it has rung out.
+  strike('sine', [110, 38], THUD_PEAK, 0.42).addEventListener('ended', () => panner.disconnect());
   strike('triangle', [260, 90], THUD_PEAK * 0.35, 0.12);
 }

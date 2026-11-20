@@ -65,7 +65,7 @@ impl Driver {
     }
 }
 
-/// Dead this tick by straying, and by a fall.
+/// Dead this tick by straying.
 const STRAYED: Standing = Standing::Dead { ticks: 0, fell: false };
 
 fn flat_node() -> Room {
@@ -371,4 +371,17 @@ fn a_body_that_fell_and_whose_inputs_stopped_still_falls_to_the_floor() {
     }
     let body = room.seen().next().unwrap().fighter.body;
     assert_eq!((body.z, body.mode), (BELOW, Mode::Ground), "stepped as it waits, it lies on the land: {body:?}");
+}
+
+#[test]
+fn a_body_the_section_killed_is_not_stood_again_by_the_fight_s_own_respawn() {
+    let mut room = ledge(20.0, true);
+    let player = Driver::join(&mut room).player;
+    let found = room.players.get_mut(&player).unwrap();
+    found.fighter.action = combat::fighter::Action::Dead { elapsed: combat::tuning::RESPAWN };
+    found.standing = Standing::Dead { ticks: 0, fell: true };
+    room.tick();
+    let seen = room.seen().next().unwrap();
+    assert_eq!(seen.standing, Standing::Dead { ticks: 1, fell: true }, "still dead, until it asks to respawn");
+    assert!(seen.fighter.dead(), "not made whole behind the section's back");
 }

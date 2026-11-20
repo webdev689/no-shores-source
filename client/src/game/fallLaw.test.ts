@@ -37,7 +37,8 @@ test('the held shot keeps its eye and lens and turns toward the body, the short 
   const below: [number, number, number] = [0, 0, -30];
   const first = heldShot(HELD, HELD, below, 1 / 60);
   assert.deepEqual(first.eye, HELD.eye, 'the eye stays put');
-  assert.equal(first.fov, HELD.fov);
+  assert.ok(first.fov < HELD.fov && first.fov > 0.95, `the lens narrows smoothly, not at once: ${first.fov}`);
+  assert.equal(heldShot(HELD, HELD, [0, 0, 0], 1 / 60).fov, HELD.fov, 'a body still near is not zoomed on');
   assert.ok(first.pitch > HELD.pitch, `it looks further down, ${first.pitch}`);
   let shot = first;
   for (let frame = 0; frame < 240; frame++) shot = heldShot(HELD, shot, below, 1 / 60);
@@ -48,11 +49,21 @@ test('the held shot keeps its eye and lens and turns toward the body, the short 
   assert.ok(behind.yaw > 0 && behind.yaw < Math.PI / 2, `turning right, ${behind.yaw}`);
 });
 
+test('the lens narrows to keep a body far below framed, never wider than it was, never past its narrowest', () => {
+  let shot = HELD;
+  for (let frame = 0; frame < 240; frame++) shot = heldShot(HELD, shot, [0, 0, -40], 1 / 60);
+  const away = Math.hypot(4, 42 - 0.9);
+  assert.ok(Math.abs(shot.fov - 2 * Math.atan(7 / away)) < 1e-3, `a 14 m window round the body: ${shot.fov}`);
+  for (let frame = 0; frame < 240; frame++) shot = heldShot(HELD, shot, [0, 0, -400], 1 / 60);
+  assert.ok(Math.abs(shot.fov - 0.3) < 1e-3, `never narrower than 0.3: ${shot.fov}`);
+});
+
 test('the turn is smooth: two half frames reach where one whole frame does', () => {
   const body: [number, number, number] = [6, -10, -20];
   const once = heldShot(HELD, HELD, body, 0.1);
   const twice = heldShot(HELD, heldShot(HELD, HELD, body, 0.05), body, 0.05);
   assert.ok(Math.abs(once.yaw - twice.yaw) < 1e-9 && Math.abs(once.pitch - twice.pitch) < 1e-9);
+  assert.ok(Math.abs(once.fov - twice.fov) < 1e-9);
 });
 
 test('the tumble spins the figure about, the same at every browser from the time since it died', () => {
