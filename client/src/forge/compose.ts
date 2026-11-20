@@ -69,6 +69,8 @@ export function ordersMeet(first: number, second: number): boolean {
 export const lightOf = (rgb: ArrayLike<number>): number =>
   Math.round(0.299 * (rgb[0] ?? 0) + 0.587 * (rgb[1] ?? 0) + 0.114 * (rgb[2] ?? 0));
 
+/** The move a covered piece's span of light is read from, which every body draws each piece in. */
+const SPAN_MOVE = 'idle';
 /** The narrowest span of light a covering ramp is stretched across; a narrower one keeps its light as it is. */
 const SPAN_LEAST = 24;
 /** Each strip's span of light, kept: the forge draws a set dark or light, and its strips stay the same. */
@@ -148,20 +150,20 @@ export async function composeFrame(
   const over = (spot: number, lies: number) => outside || onBody(spot, lies);
   const dyeable = new Set(looks.dye ?? []);
   const rgb = [0, 0, 0];
-  // A covering ramp spans every covered piece's light together, so the pieces keep their light against one another.
-  const covered = await Promise.all(
-    layersOf(figure, anim, looks)
-      .filter((layer) => whole.has(layer))
-      .map(async (layer) => {
-        const found = await strip(layerPath(figure.body, layer, anim));
-        return found ? lightSpan(found) : null;
-      }),
-  );
-  const spans = covered.filter((span) => span !== null);
-  const setSpan =
-    spans.length > 0
-      ? ([Math.min(...spans.map(([low]) => low)), Math.max(...spans.map(([, high]) => high))] as const)
-      : null;
+  // A covering ramp spans the light of every piece it covers together, so they keep their light against one another;
+  // each piece's span is read from its standing move, so it keeps one shade in every move and picture. Pieces of
+  // another ramp (a faction's beside a dye worn) span apart.
+  const spans = new Map<string, [number, number]>();
+  for (const layer of layersOf(figure, anim, looks).filter((each) => whole.has(each))) {
+    const ramp = ramps[layer];
+    const found =
+      (await strip(layerPath(figure.body, layer, SPAN_MOVE))) ?? (await strip(layerPath(figure.body, layer, anim)));
+    if (!ramp || !found) continue;
+    const [low, high] = lightSpan(found);
+    const key = ramp.join();
+    const was = spans.get(key);
+    spans.set(key, was ? [Math.min(was[0], low), Math.max(was[1], high)] : [low, high]);
+  }
   for (const layer of layersOf(figure, anim, looks)) {
     const [colour, depth] = await Promise.all([
       strip(layerPath(figure.body, layer, anim)),
@@ -182,7 +184,7 @@ export async function composeFrame(
       figure.hair?.layer === layer ? hairRamp(colours.hair, figure.body, figure.race, figure.hair.colour) : null;
     const ramp = hair ?? (dyeable.has(layer) ? (ramps[layer] ?? null) : null);
     const coat = layer === HORSE_LAYER ? (ramps[layer] ?? null) : null;
-    const span = whole.has(layer) ? setSpan : null;
+    const span = whole.has(layer) && ramp ? (spans.get(ramp.join()) ?? null) : null;
     const skin =
       figure.tone === null
         ? raceSkinOf(colours.skins, layer, figure.body, figure.race, view)

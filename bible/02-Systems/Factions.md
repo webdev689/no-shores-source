@@ -11,7 +11,7 @@ code:
   - crates/gear/src/factions.rs#wares
   - client/src/game/npc/factionRows.ts#gearRows
   - client/src/player/gearLooks.ts#gearOutfit
-  - client/src/player/dressing.ts#rampsOf
+  - client/src/player/dressing.ts#layerRamps
   - crates/gear/src/art_levels.rs#rise_art
   - crates/gear/src/art_levels.rs#buy_fragment
   - crates/gear/src/art_levels.rs#art_shares

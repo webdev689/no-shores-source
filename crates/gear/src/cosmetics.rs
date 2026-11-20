@@ -103,13 +103,41 @@ pub fn sold_on(seller: Seller, day: u64) -> Vec<u16> {
     sold
 }
 
-/// A dress as a browser wrote it, with the dye, coat and barding worn put in its outfit, and none of a start piece:
-/// the room's word on what others see, not the browser's. A dress that is not an object with an outfit is given back
-/// as sent, for other pages to refuse.
+/// The colours a character may show others among its dress's own dyes: each faction's own colour, by its key, whose
+/// armour or weapon it wears, and a faction's dye, by its id, whose cape it wears.
 #[must_use]
-pub fn dressed(sent: &str, worn: &Cosmetics) -> String {
+pub fn colours_shown(character: &crate::character::Character) -> Vec<String> {
+    let numbers = crate::factions::factions();
+    let mut shown: Vec<String> = crate::kinds::Slot::ALL
+        .into_iter()
+        .filter_map(|slot| character.worn(slot))
+        .filter_map(|item| crate::catalogue::catalogue().named(item.named.as_deref()?))
+        .filter_map(|named| {
+            let faction = numbers.factions.iter().find(|faction| Some(&faction.key) == named.faction.as_ref())?;
+            Some(if named.kind == crate::kinds::Kind::Cloak { faction.dye.clone() } else { faction.key.clone() })
+        })
+        .collect();
+    shown.sort();
+    shown.dedup();
+    shown
+}
+
+/// A dress as a browser wrote it, with the dye, coat and barding worn put in its outfit, and none of a start piece,
+/// and its own dyes keeping no faction's colour and no cosmetic dye but those `shown` allows (`colours_shown`): the
+/// room's word on what others see, not the browser's. A dress that is not an object with an outfit is given back as
+/// sent, for other pages to refuse.
+#[must_use]
+pub fn dressed(sent: &str, worn: &Cosmetics, shown: &[String]) -> String {
     let Ok(serde_json::Value::Object(mut dress)) = serde_json::from_str(sent) else { return sent.to_owned() };
     let Some(serde_json::Value::Object(outfit)) = dress.get_mut("outfit") else { return sent.to_owned() };
+    if let Some(serde_json::Value::Object(dyes)) = outfit.get_mut("dyes") {
+        let earned = |colour: &str| {
+            let factions = &crate::factions::factions().factions;
+            let named = factions.iter().any(|faction| faction.key == colour) || number_of(colour).is_some();
+            !named || shown.iter().any(|allowed| allowed == colour)
+        };
+        dyes.retain(|_, colour| colour.as_str().is_none_or(earned));
+    }
     for (key, kind) in [("dye", CosmeticKind::Dye), ("coat", CosmeticKind::Coat), ("barding", CosmeticKind::Barding)] {
         let piece = worn.worn(kind);
         if piece == starting(kind) {

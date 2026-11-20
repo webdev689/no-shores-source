@@ -250,3 +250,33 @@ test('a dye counts only on a figure with a layer that takes it, and a page pictu
   void undyed.picture(armed, 'guard', 0, 0, 'sword_iron');
   assert.deepEqual(jobs.at(-1)?.alone, ['sword_iron'], 'the layer drawn by itself rides the job');
 });
+
+test('a dye worn reaches the composer with the armour it covers whole', () => {
+  const looks: ForgeLooks = {
+    bodies: {
+      male: {
+        anims: { idle: { cell: [1, 2], frames: 1, root: [0, 1] } },
+        layers: { body: ['idle'], cuirass_iron: ['idle'] },
+      },
+    },
+    dye: ['cuirass_iron'],
+    metal: ['cuirass_iron'],
+  };
+  const jobs: ComposeJob[] = [];
+  const recording: Composer = {
+    offPage: true,
+    compose: (_key: string, job: ComposeJob) => {
+      jobs.push(job);
+      return new Promise(() => undefined);
+    },
+    hurry: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(maker, store, looks, colours, dyes, undefined, recording);
+  const dyed: Dress = { ...bare, outfit: { ...bare.outfit, armour: { cuirass: 'iron' }, garments: [], dye: 'coral' } };
+  forge.card(1, dyed, 'idle', 0, 0);
+  assert.deepEqual(jobs[0]?.whole, ['cuirass_iron']);
+  forge.card(2, { ...dyed, outfit: { ...dyed.outfit, dye: null } }, 'idle', 0, 0);
+  assert.deepEqual(jobs[1]?.whole, [], 'own colours cover nothing');
+});

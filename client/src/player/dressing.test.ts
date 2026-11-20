@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { dressFrom, figureOf, layerRamps, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
+import { dressFrom, figureOf, layerRamps, lookOutfit, wardrobeOf } from './dressing.ts';
+
+const rampsOf = (...args: Parameters<typeof layerRamps>) => layerRamps(...args).ramps;
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import { COSMETICS, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 

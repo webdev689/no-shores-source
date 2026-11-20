@@ -127,9 +127,10 @@ pub struct Player {
     /// The dress as others are shown it (`dressed`), and whether it changed since it was last passed on.
     pub dress: String,
     pub dress_changed: bool,
-    /// The dress as their browser last wrote it, and the dye, coat and barding the room last put in it.
+    /// The dress as their browser last wrote it, and the dye, coat and barding and the colours shown the room last put
+    /// in it.
     pub dress_sent: String,
-    pub(crate) dressed_with: Option<[String; 3]>,
+    pub(crate) dressed_with: Option<Vec<String>>,
     /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
     pub joined: u64,
     pub stepped: u64,
@@ -272,14 +273,18 @@ impl Player {
     /// worn changed since it was last made, so no page shows a piece its player does not keep; whether it changed.
     pub(crate) fn dress_again(&mut self) -> bool {
         use gear::cosmetics::CosmeticKind;
+        let shown = gear::cosmetics::colours_shown(&self.character);
         let worn = [CosmeticKind::Dye, CosmeticKind::Coat, CosmeticKind::Barding]
-            .map(|kind| self.character.cosmetics.worn(kind));
-        let same = self.dressed_with.as_ref().is_some_and(|with| with.iter().map(String::as_str).eq(worn));
+            .map(|kind| self.character.cosmetics.worn(kind).to_owned())
+            .into_iter()
+            .chain(shown.iter().cloned())
+            .collect::<Vec<_>>();
+        let same = self.dressed_with.as_ref() == Some(&worn);
         if self.dress_sent.is_empty() || same {
             return false;
         }
-        let dress = gear::cosmetics::dressed(&self.dress_sent, &self.character.cosmetics);
-        self.dressed_with = Some(worn.map(str::to_owned));
+        let dress = gear::cosmetics::dressed(&self.dress_sent, &self.character.cosmetics, &shown);
+        self.dressed_with = Some(worn);
         let changed = dress != self.dress;
         if changed {
             self.dress = dress;

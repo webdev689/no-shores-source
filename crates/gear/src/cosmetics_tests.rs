@@ -80,3 +80,31 @@ fn a_worn_cosmetic_not_kept_or_of_the_wrong_kind_is_the_start_once_read() {
     assert_eq!((back.cosmetics.dye.as_str(), back.cosmetics.coat.as_str()), ("own_colours", "bay"));
     assert_eq!(number_of("own_colours"), Some(0));
 }
+
+#[test]
+fn a_dress_shows_others_only_the_colours_its_wearer_has_earned() {
+    let mut character = Character::starting();
+    let sent = r#"{"outfit":{"dyes":{"cuirass_steel":"veiled","formal_cloak":"heather","breeches":"White"}}}"#;
+    let shown = crate::cosmetics::colours_shown(&character);
+    let dress: serde_json::Value =
+        serde_json::from_str(&crate::cosmetics::dressed(sent, &character.cosmetics, &shown)).expect("a dress");
+    assert_eq!(dress["outfit"]["dyes"], serde_json::json!({ "breeches": "White" }), "a plain cloth dye stays");
+    character.allegiance = std::mem::take(&mut character.allegiance).kept();
+    character.allegiance.reputation[2] = 3 * crate::factions::factions().reputation_per_rank;
+    character.materials.aurem = 1_000_000;
+    character.xp = crate::power::xp_for_level(20);
+    let cowl = Ask::BuyFactionWare { faction: 3, ware: 1 };
+    assert_eq!(character.ask(cowl, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
+    let id = character
+        .items
+        .values()
+        .find(|(item, _)| item.named.as_deref() == Some("veiled_cowl"))
+        .map(|(item, _)| item.id);
+    let wear = Ask::Wear { item: id.expect("the cowl"), slot: crate::kinds::Slot::Head };
+    assert_eq!(character.ask(wear, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
+    let shown = crate::cosmetics::colours_shown(&character);
+    assert_eq!(shown, ["veiled"], "the Veiled's colour, for the cowl worn");
+    let dress: serde_json::Value =
+        serde_json::from_str(&crate::cosmetics::dressed(sent, &character.cosmetics, &shown)).expect("a dress");
+    assert_eq!(dress["outfit"]["dyes"], serde_json::json!({ "cuirass_steel": "veiled", "breeches": "White" }));
+}

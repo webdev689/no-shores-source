@@ -193,11 +193,3 @@ export function layerRamps(
   if (coat) ramps[HORSE_LAYER] = coat;
   return { ramps, whole };
 }
-
-/** The ramps of `layerRamps` alone. */
-export const rampsOf = (
-  gear: readonly string[],
-  outfit: Outfit,
-  looks: ForgeLooks,
-  table: DyeTable,
-): Record<string, readonly Rgb[]> => layerRamps(gear, outfit, looks, table).ramps;

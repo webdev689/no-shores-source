@@ -11,16 +11,28 @@ import { horseOf } from './appearanceDisplay.ts';
 /** A tile's picture, in pixels: the menu's cell's. */
 const TILE_PX = 48;
 
+/** How far above the ears a tile's cut may start, at least and at most: room for a crest, and the head kept in. */
+const HEADROOM = [4, 16] as const;
+
 /** Where a tile `size` square is cut from `worn`: round the topmost texel of `bare` (the horse's ears), the two lined
- *  up by their roots; null where the bare horse draws nothing. */
+ *  up by their roots, starting where `worn` first draws above that head (a barding's crest or flame), between 4 and 16
+ *  texels above the ears; null where the bare horse draws nothing. */
 export function earsCut(bare: Picture, worn: Picture, size = TILE_PX): readonly [number, number] | null {
   const top = bare.pixels.findIndex((value, byte) => byte % 4 === 3 && value !== 0);
   if (top < 0) return null;
   const [bareX, bareY] = bare.root ?? [0, 0];
   const [wornX, wornY] = worn.root ?? [0, 0];
   const column = ((top >> 2) % bare.width) - bareX + wornX;
-  const row = Math.floor((top >> 2) / bare.width) - bareY + wornY;
-  return [Math.max(0, Math.min(worn.width - size, column - size / 2)), Math.max(0, row)];
+  const ears = Math.floor((top >> 2) / bare.width) - bareY + wornY;
+  const left = Math.max(0, Math.min(worn.width - size, column - size / 2));
+  const drawnAt = (row: number) =>
+    Array.from({ length: size }, (_unused, step) => left + step).some(
+      (x) => (worn.pixels[(row * worn.width + x) * 4 + 3] ?? 0) !== 0,
+    );
+  const [least, most] = HEADROOM;
+  let row = Math.max(0, ears - most);
+  while (row < ears - least && !drawnAt(row)) row += 1;
+  return [left, Math.max(0, row)];
 }
 
 /** The tile of the horse `dress` rides in `barding` (by its id; the bare horse for its start piece or none). */

@@ -1,5 +1,5 @@
 import { type GlowElement, recolourToGlow } from '../elementGlow.ts';
-import { type Strip, coverStep, lightOf, lightSpan } from '../forge/compose.ts';
+import { type Strip, coverStep, lightOf } from '../forge/compose.ts';
 import type { DyeTable, PaletteSnap, Rgb } from '../forge/dyes.ts';
 import type { WeaponKind } from './weaponMachine.ts';
 
@@ -155,6 +155,9 @@ export function setRamp(
  * the forge renders every metal in, and takes that step of the metal's ramp; every other colour goes to its nearest
  * palette colour. The band is steel's ramp, so steel and a ramp of null leave it as the band draws it.
  */
+/** Light from none to full: the span a covering ramp lies across in first person. */
+const FULL_LIGHT = [0, 255] as const;
+
 export class FramePainter {
   private readonly steps = new Uint8Array(256);
   private readonly snap: PaletteSnap;
@@ -174,11 +177,12 @@ export class FramePainter {
   }
 
   /** The strip's texels painted, clear below half alpha; `ramp` the metal's, or null to snap the greys as any colour.
-   *  A ramp that `covers` the strip (a dye worn or a faction's colour) lies on every texel by its light, across the
-   *  strip's own span of light, as the figure's does. */
+   *  A ramp that `covers` the strip (a dye worn or a faction's colour) lies on every texel by its light, as the
+   *  figure's does. */
   paint(strip: Strip, ramp: readonly Rgb[] | null, covers = false): Uint8Array {
     const pixels = Uint8Array.from(strip.data);
-    const span = covers ? lightSpan(strip) : null;
+    // Each frame is a picture of its own, so a covering ramp lies by the light as drawn, the same in every frame.
+    const span = covers ? FULL_LIGHT : null;
     const dyed: [number, number][] = [];
     for (let texel = 0; texel < pixels.length; texel += 4) {
       const drawn = (pixels[texel + 3] ?? 0) >= 128;

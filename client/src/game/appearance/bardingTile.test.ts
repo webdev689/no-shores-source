@@ -30,7 +30,34 @@ test("a barding's tile is cut round the bare horse's ears, not round what the ba
       [8, 4],
     ],
   );
-  assert.deepEqual(earsCut(bare, worn, 4), [6, 4], 'the ears at (8, 4) on the barded horse, the tile centred on them');
-  assert.deepEqual(earsCut(bare, bare, 4), [4, 2], 'the bare horse is cut the same way');
+  assert.deepEqual(earsCut(bare, worn, 4), [6, 0], 'the ears at (8, 4) on the barded horse, the tile centred on them');
+  assert.deepEqual(earsCut(bare, bare, 4), [4, 0], 'the bare horse is cut the same way, as high as it holds');
   assert.equal(earsCut(picture(4, 4, [2, 3], []), worn, 4), null, 'a bare horse not drawn yet cuts no tile');
+});
+
+test("a tile's cut leaves room over the ears, and rises to a crest drawn over the head, never past 16 texels", () => {
+  const bare = picture(40, 40, [20, 39], [[20, 24]]);
+  const plain = picture(
+    40,
+    40,
+    [20, 39],
+    [
+      [20, 24],
+      [2, 3],
+    ],
+  );
+  assert.deepEqual(earsCut(bare, plain, 16), [12, 20], 'four texels over the ears; a wisp aside does not count');
+  const crested = picture(
+    40,
+    40,
+    [20, 39],
+    [
+      [20, 24],
+      [22, 13],
+    ],
+  );
+  assert.deepEqual(earsCut(bare, crested, 16), [12, 13], 'the crest over the head is in the tile');
+  const flame = Array.from({ length: 24 }, (_unused, row): [number, number] => [22, row + 1]);
+  const towering = picture(40, 40, [20, 39], [[20, 24], ...flame]);
+  assert.deepEqual(earsCut(bare, towering, 16), [12, 8], 'at most 16 over the ears, so the head stays in');
 });
