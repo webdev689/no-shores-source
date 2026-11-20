@@ -64,6 +64,8 @@ pub struct SeaFight {
     pub fought: Vec<PlayerId>,
     /// The captains whose holds were opened, who lay nothing more when they go down.
     pub opened: Vec<ShipId>,
+    /// What happened between its ticks (a boarding, a scuttling asked for), told with its next tick's.
+    pub pending: Vec<Event>,
 }
 
 /// What became of a player in a fight this tick: still in it, where their ship lies; out of it afloat, where it left
@@ -98,7 +100,15 @@ fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
 
 impl SeaFight {
     fn new(fight: Fight, hostiles: BTreeMap<ShipId, Pirate>) -> Self {
-        SeaFight { fight, crews: BTreeMap::new(), events: Vec::new(), hostiles, fought: Vec::new(), opened: Vec::new() }
+        SeaFight {
+            fight,
+            crews: BTreeMap::new(),
+            events: Vec::new(),
+            hostiles,
+            fought: Vec::new(),
+            opened: Vec::new(),
+            pending: Vec::new(),
+        }
     }
 
     /// Whether any of its ships still in it lies within `ENGAGE_RANGE` of `at`.
@@ -174,7 +184,7 @@ impl Fights {
         let (id, _, _) = alongside.filter(|_| way(&own) < BOARD_WAY_M_S).ok_or(BoardRefused::NoneAlongside)?;
         let pirate = *fought.hostiles.get(&id).ok_or(BoardRefused::NoneAlongside)?;
         if let Some(boarding) = fought.fight.board(id) {
-            fought.events.push(boarding);
+            fought.pending.push(boarding);
         }
         Ok((id, pirate))
     }
@@ -197,7 +207,7 @@ impl Fights {
     pub fn scuttle_by(&mut self, pirate: u32) {
         if let Some((fought, id)) = self.holding(pirate) {
             let told = fought.fight.scuttle(id);
-            fought.events.extend(told);
+            fought.pending.extend(told);
         }
     }
 
@@ -356,7 +366,9 @@ impl Fights {
         let mut sank = Vec::new();
         for fought in &mut self.list {
             let orders: Vec<(ShipId, Orders)> = fought.crews.values().map(|crew| (crew.ship, crew.orders)).collect();
-            fought.events = fought.fight.step(&orders, waters, wind, time);
+            let stepped = fought.fight.step(&orders, waters, wind, time);
+            fought.events = std::mem::take(&mut fought.pending);
+            fought.events.extend(stepped);
             for crew in fought.crews.values_mut() {
                 // The climb, the fire and the load are presses: they act once.
                 let helm = Helm { climb: 0, ..crew.orders.helm };

@@ -27,6 +27,8 @@ impl Sea {
             }
         }
         for ship in sank {
+            // A boarded ship sunk under her boarders sends them back to their own ships.
+            self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
         }
     }
@@ -107,13 +109,18 @@ impl Sea {
 
     /// The harbour's tick, the sea's ships sailed: every repair runs on, and what floats drifts and is gathered.
     pub(super) fn tick_harbour(&mut self, wind: [f64; 2]) {
-        self.harbour.told.clear();
         for (player, kept) in self.harbour.repairs.tick(TICK_SECONDS) {
             if let Some(berth) = self.berths.get_mut(&player) {
                 keep(berth, &mut self.harbour.characters, player, kept);
             }
         }
-        let ships: Vec<(PlayerId, [f64; 2])> = self.ships().map(|(player, ship)| (player, [ship.x, ship.y])).collect();
+        // A boarder's ship gathers nothing while they stand on her enemy's deck, whose room holds their character.
+        let on_deck = |player: &PlayerId| self.decks.boarded.iter().any(|deck| deck.aboard.contains_key(player));
+        let ships: Vec<(PlayerId, [f64; 2])> = self
+            .ships()
+            .filter(|(player, _)| !on_deck(player))
+            .map(|(player, ship)| (player, [ship.x, ship.y]))
+            .collect();
         let tick = self.clock as f64;
         for (event, player, held) in self.harbour.flotsam.tick(self.clock, wind, &ships, &mut self.harbour.characters) {
             let Event::Gathered { id, .. } = event else { continue };
@@ -138,10 +145,10 @@ impl Sea {
         }
     }
 
-    /// What each player is told this tick, beside their fight's view.
-    #[must_use]
-    pub fn told(&self) -> &[(PlayerId, Vec<f64>)] {
-        &self.harbour.told
+    /// What each player has been told since this was last taken, beside their fight's view: every tick's, so ticks run
+    /// between snapshots lose none.
+    pub fn take_told(&mut self) -> Vec<(PlayerId, Vec<f64>)> {
+        std::mem::take(&mut self.harbour.told)
     }
 
     /// The shares of hull, canvas and men a player's ship keeps, and the seconds her repair has left (0 with none).
@@ -167,6 +174,10 @@ impl Sea {
     /// the accounts gave theirs; none for no player at sea.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
+        // On a deck, its room holds their character as it fights.
+        if let Some(text) = self.deck_character(player) {
+            return Some(text);
+        }
         if let Some(character) = self.harbour.characters.get(&player) {
             return Some(character.to_json());
         }

@@ -39,7 +39,8 @@ fn vessel_mut(sea: &mut Sea, player: PlayerId, ship: naval::shots::ShipId) -> &m
 }
 
 fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
-    sea.told()
+    sea.harbour
+        .told
         .iter()
         .find(|(to, numbers)| *to == player && numbers.first() == Some(&code))
         .map(|(_, numbers)| numbers.clone())
@@ -55,7 +56,8 @@ fn a_voyage_sails_at_her_paces_way_by_the_canvas_she_keeps_never_under_half() {
     for (canvas, way) in [(0.8, 0.8), (0.2, 0.5)] {
         ticks(&mut sea, ticks_waited);
         sea.berths.get_mut(&player).unwrap().kept = [1.0, canvas, 1.0];
-        let from = sea.ships().find(|(each, _)| *each == player).unwrap().1.x;
+        // A course starts from where she is, to the whole metre.
+        let from = sea.ships().find(|(each, _)| *each == player).unwrap().1.x.round();
         sea.course(player, &[[90_000.0, 50_000.0]], 10).unwrap();
         sea.tick();
         let gone = sea.ships().find(|(each, _)| *each == player).unwrap().1.x - from;
@@ -165,7 +167,7 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_her_and_their
     let mut laid = Vec::new();
     for _ in 0..22 * 60 {
         sea.tick();
-        laid.extend(sea.told().iter().filter(|(_, numbers)| numbers[0] == 17.0).cloned());
+        laid.extend(sea.take_told().into_iter().filter(|(_, numbers)| numbers[0] == 17.0));
     }
     assert_eq!(laid.len(), 3, "a Minor lays three pieces for her one player");
     assert!(laid.iter().all(|(to, _)| *to == player));
@@ -187,6 +189,10 @@ fn a_boarder_fights_her_crew_on_her_deck_opens_her_hold_and_she_is_scuttled_when
     }
     assert_eq!(sea.board(player), Ok(()));
     assert!(sea.on_deck(player));
+    sea.tick();
+    let events = &sea.fights.of_mut(player).unwrap().0.events;
+    assert!(events.contains(&naval::fight::Event::Boarding { ship: CAPTAIN }), "told with the next tick's");
+    assert_eq!(sea.course(player, &[[50_500.0, 50_000.0]], 10), Err(crate::sea::CourseRefused::Fighting));
     assert_eq!(sea.decks()[0].room.foes.len(), 3, "a Minor's three hands");
     assert_eq!(sea.leave_deck(player), Err(crate::sea::decks::LeaveRefused::Fighting));
     for foe in sea.decks.boarded[0].room.foes.values_mut() {

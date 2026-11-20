@@ -92,9 +92,6 @@ export class SeaAfter {
   /** Each piece of what floats laid for the player, by its number: what it looks like. */
   private readonly kinds = new Map<number, string>();
   private readonly ports: readonly string[];
-  /** Where the player last washed up, until it is taken. */
-  private washed: { readonly port: number; readonly sunk: boolean } | null = null;
-
   constructor(ports: readonly string[]) {
     this.ports = ports;
   }
@@ -104,8 +101,6 @@ export class SeaAfter {
     for (const piece of room.flotsam) this.kinds.set(piece.id, piece.kind);
     const { naval, told } = room.takeTold();
     for (const event of naval) if (event.kind === 'Flotsam') this.kinds.set(event.id, event.kind_of);
-    for (const numbers of told)
-      if (numbers[0] === WASHED_UP) this.washed = { port: numbers[2] ?? -1, sunk: numbers[3] === 1 };
     return linesOf(told, naval, this.kinds, this.ports);
   }
 
@@ -118,13 +113,6 @@ export class SeaAfter {
   }
 
   private latest: { readonly line: string; readonly at: number } | null = null;
-
-  /** Where the player washed up since this was last asked: the port by its number among the port cities. */
-  takeWashed(): { readonly port: number; readonly sunk: boolean } | null {
-    const washed = this.washed;
-    this.washed = null;
-    return washed;
-  }
 
   /** Her repair as Manage offers it, from the room's word on her kept hurts. */
   static repairOf(room: SeaRoom): RepairShown | null {

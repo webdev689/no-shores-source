@@ -278,7 +278,7 @@ impl Sea {
     /// the helm, only one that keeps her way is taken: her helmsman sails on, at the pace the page eases her to.
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
-        if self.fights.fighting(player) {
+        if self.fights.fighting(player) || self.on_deck(player) {
             return Err(CourseRefused::Fighting);
         }
         if self.aboard.contains_key(&player) && !self.keeps_her_way(player, points) {

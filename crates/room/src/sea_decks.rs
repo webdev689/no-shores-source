@@ -146,6 +146,25 @@ impl Sea {
         }
     }
 
+    /// The character a boarder fights with on her deck, their ship's hurts in it.
+    pub(super) fn deck_character(&self, player: PlayerId) -> Option<String> {
+        let deck = self.decks.boarded.iter().find(|deck| deck.aboard.contains_key(&player))?;
+        let mut character = gear::Character::from_json(&deck.room.kept_character(deck.aboard[&player])?)?;
+        if let Some(held) = self.harbour.characters.get(&player) {
+            character.ship = held.ship;
+        }
+        Some(character.to_json())
+    }
+
+    /// A deck whose ship went down under her boarders: each goes back to their own ship.
+    pub(super) fn end_deck(&mut self, pirate: u32) {
+        let Some(index) = self.decks.boarded.iter().position(|deck| deck.pirate.id == pirate) else { return };
+        let boarders: Vec<PlayerId> = self.decks.boarded[index].aboard.keys().copied().collect();
+        for player in boarders {
+            self.step_off(index, player);
+        }
+    }
+
     /// A player leaving the sea leaves any deck they stood on.
     pub(super) fn leave_decks(&mut self, player: PlayerId) {
         if let Some(index) = self.decks.boarded.iter().position(|deck| deck.aboard.contains_key(&player)) {

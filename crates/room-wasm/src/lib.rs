@@ -261,7 +261,7 @@ pub fn snapshot() -> Vec<u8> {
             let kind = |piece: naval::fight::Piece| piece as u8;
             let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
             let kept = sea.ships().filter_map(|(player, _)| sea.kept(player).map(|(kept, left)| (player, kept, left)));
-            let (flotsam, kept, told) = (flotsam.collect(), kept.collect(), sea.told().to_vec());
+            let (flotsam, kept, told) = (flotsam.collect(), kept.collect(), sea.take_told());
             let decks = sea
                 .decks_mut()
                 .iter_mut()
