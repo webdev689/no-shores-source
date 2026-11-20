@@ -177,6 +177,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Lattice Is Drawn Whole Before It Comes Into the Game]]
 - [[The Lattice's Armour and Weapons Take Daedric's Place]]
 - [[The Lattice Has Props of Its Own, Made in Blender]]
+- [[The Lattice Comes Into the Game Meaningfully, Talked Through First]]
 - [[Fewer Plates Show, Sized by Rank, After Destiny]]
 - [[Three Factions Keep the Arts, After Destiny 1]]
 - [[Each Faction Sells Gear of Its Own, in Its Own Colour]]

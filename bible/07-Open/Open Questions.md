@@ -26,8 +26,13 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **The Lattice's armour and weapons.** How its red and purple share the set, and its shapes; whether the Atheric
   gear keeps it where Daedric stood; what the horse's Daedric barding becomes, since the set leaves it out and its
   name is Bethesda's ([[The Lattice's Armour and Weapons Take Daedric's Place]], [[Gear]]).
-- **The Lattice's places and events.** Where its corrupted areas lie, what a world event of it brings and when, and
-  where its props stand in them ([[The Lattice Has Props of Its Own, Made in Blender]]).
+- **The Lattice's places and events**, being talked through with the owner
+  ([[The Lattice Comes Into the Game Meaningfully, Talked Through First]]): the patrol spaces' public events (run on
+  a clock as Destiny 1's or rising on their own; whether a failed one leaves corruption spreading; what one pays);
+  the nine story missions' shape (three acts of three, one to a port, or one chain through the islands), when the
+  player first meets the Lattice, where the Heart falls and how near the ninth comes to the Cube; who gives the side
+  quests between them; where its corrupted areas lie and where its props stand
+  ([[The Lattice Has Props of Its Own, Made in Blender]]).
 - **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
   ([[Raum's Lore Is Adapted Into One Mystery]]).
 - **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near

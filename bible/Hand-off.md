@@ -293,13 +293,26 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- #77's merge, the owner's yes. Then the Lattice's way into the game, the owner's to choose ([[Open Questions]], "The
-  Lattice in the game"): whether it shows in the [[Test Ground]] only at first; its skin colour; its pictures snapped
-  to the palette and published to R2; the faction in the enemy system. What the pictures leave for the game to draw
-  is in [[Lattice]], "Limits".
-- **The Lattice's props**: the owner has the sheets of all sixteen. Painting them with the game's pictures, exporting
-  them as meshes the game loads, publishing them to R2 (the repository's Cloudflare key, the owner's named yes) and
-  placing them wait on the owner's word ([[Open Questions]], "The Lattice's places and events").
+- **The Lattice in the game, being talked through** ([[The Lattice Comes Into the Game Meaningfully, Talked Through
+  First]]): the owner wants it in "in a meaningful way" and to talk first about the patrol spaces' world events and
+  the nine story missions. The talk stopped at Claude's questions, in [[Open Questions]], "The Lattice's places and
+  events": public events on a clock or rising on their own, a failed one spreading corruption, what one pays; the
+  missions as three acts of three or one chain through the islands, where the Lattice and the Heart come in, how near
+  the ninth comes to the Cube; who gives the side quests. Claude offered public events of its own as suggestions (a
+  crystal fall, a pylon or nest growing until broken, a fissure, the Grey Tithe pressing a hamlet, the two factions
+  clashing); none is the owner's yet. Read with them: #82 (the loop, the nine missions) and #97 (activities, the
+  quest engine), both open.
+- **When it is built**: the owner's named yes covers uploading the Lattice's pictures (every move from all five
+  sides, and the wave) to R2 with the Cloudflare key; where its foes appear first and their skin are Claude's. A map
+  of the way in: the forge's `looks` table and packs (`tools/forge_publish.py`, `merge_roll` as the pattern for
+  merging the Lattice's bodies), a dress per type in `client/src/player/foeDress.ts` naming its body and layers, a
+  per-type move map after `shownMove` in `client/src/combat/foeFigures.ts`, the wave at a death beside
+  `KillLooks.update` (`client/src/combat/killLooks.ts`) after `forgedBirds.ts`'s brightness maps, and the faction and
+  six rows in `crates/foes/src/factions.rs` and `roster.rs` with their counts in tests.
+- #77's merge waits on the owner's yes ("Not yet").
+- **The Lattice's props**: the owner has the sheets of all sixteen, with no word on them yet. Painting them with the
+  game's pictures, exporting them as meshes the game loads, publishing them to R2 and placing them wait on the talk
+  above.
 - **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
   without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
   something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
