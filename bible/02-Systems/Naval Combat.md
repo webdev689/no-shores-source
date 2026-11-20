@@ -222,7 +222,10 @@ Pass]]) with Claude's numbers:
 - **Her deck** (`deck_fight.rs`, `sea_decks.rs`). The sea room holds the deck fight, so the one authority over the fight
   knows when her deck is won and when the last boarder leaves, and no second room is trusted with it: a room on land
   built as a node's room is, its floor her deck's grid of heights from her hull's manifest (in her own frame, a wall off
-  her planks), its ring her deck's bounds, its spawn amidships (at her helm where no plank lies there). So the land
+  her planks), its ring her deck's bounds, its spawns at her rails amidships, half a metre in from her outermost plank
+  (`rail_spot`; at her helm where no plank lies across her middle). A boarder comes over her rail on the side their own
+  ship lies, clear of her masts (which stand on her middle line), facing her bow and her crew; one who falls stands
+  again at the rail nearest. So the land
   combat runs unchanged on her deck, with each boarder's character. Her crew is her faction's deck types for her rank
   (`foes::crews`): a Minor three Minors; a Major four, the Bosun (the pirates' Brute) a Major; an Elite five, the Bosun
   an Elite; a Miniboss six, the Tithe-Mate (the pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six.
@@ -244,7 +247,11 @@ Pass]]) with Claude's numbers:
   rules (`fighter_heights`), as the room steps it. Everything on her deck is in her own frame, laid into the world as
   her ship lies in the fight (the captain nearest where she lay, her heading, heave, pitch and roll): figures by
   `deckToWorld`, the camera's eye riding her and level, and the marks, arcs, blood and display through her deck's turn
-  (`deckTurn`) after the world camera's matrix. While she holds the player the fight's keys and pointer are the foot's.
+  (`deckTurn`) after the world camera's matrix. The third-person camera keeps a clear line to the boarder past her
+  masts, booms, gaffs and yards (`spars.ts`, boxes from her manifest's sails, for the camera alone), pulling in as on
+  land it does off walls. No figure's card stands nearer the eye than a metre, so a foe in a melee seen through the
+  player's own eyes never fills the view (`cardStand`, on land too). While she holds the player the fight's keys and
+  pointer are the foot's.
   Won, the display says "Her deck is yours", the seconds of her minute left, her hold's take as the room laid it ("Her
   hold: 2 crates, a chest, afloat alongside"), and E to go back aboard; E or the minute's end, the room has the boarder
   back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up (below). On her deck
