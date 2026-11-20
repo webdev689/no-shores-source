@@ -212,23 +212,58 @@ fn linked_lingers_and_heals_by_its_sunwell_s_level_after_its_caster_leaves() {
     assert!([3.0, 6.0].iter().any(|heals| (gained - heals).abs() < 1e-9), "3 a heal at level 1, not 5: {gained}");
 }
 
-/// The health a Shadow caster's Duskraven with Hunger gives back over its first bolts, the caster wearing Storm once
-/// the raven is out if `switch`.
-fn hunger_heal(switch: bool) -> f64 {
+/// The health a Shadow caster's Duskraven gives back over its first bolts, cast with the Core `fragments`, `then`
+/// asked once the raven is out.
+fn raven_heal(fragments: &[u8], then: impl FnOnce(&mut Room, PlayerId)) -> f64 {
     let (mut room, player) = room_with_player();
-    wearing(&mut room, player, 3, &[place_of(3, "hunger")]);
+    wearing(&mut room, player, 3, fragments);
     let mut hurt = *room.fighter(player).expect("in");
     hurt.health = 50.0;
     room.set_fighter(player, hurt);
     stand_foe(&mut room, 0.0, -15.0, 1000.0);
     cast(&mut room, player, DUSKRAVEN, None, 0);
-    if switch {
-        room.answer(player, Asked::Art(ArtAsk::Wear { art: 1 }));
-    }
+    then(&mut room, player);
     for _ in 0..120 {
         room.tick();
     }
     room.fighter(player).expect("in").health - 50.0
+}
+
+/// The health a Duskraven with Hunger gives back, the caster wearing Storm once the raven is out if `switch`.
+fn hunger_heal(switch: bool) -> f64 {
+    raven_heal(&[place_of(3, "hunger")], |room, player| {
+        if switch {
+            room.answer(player, Asked::Art(ArtAsk::Wear { art: 1 }));
+        }
+    })
+}
+
+#[test]
+fn a_core_set_after_a_cast_changes_nothing_already_out() {
+    let hunger = place_of(3, "hunger");
+    let set_hunger = |room: &mut Room, player| {
+        room.answer(player, Asked::Art(ArtAsk::SetCore { art: 3, slot: 0, fragment: hunger }));
+    };
+    let (without, set_after) = (raven_heal(&[], |_, _| ()), raven_heal(&[], set_hunger));
+    assert!(without > 0.0);
+    assert!((without - set_after).abs() < 1e-9, "Hunger set after the cast heals all: {without} against {set_after}");
+    let night = place_of(3, "night");
+    let replaced = |room: &mut Room, player| {
+        room.answer(player, Asked::Art(ArtAsk::SetCore { art: 3, slot: 0, fragment: night }));
+    };
+    assert!((hunger_heal(false) - raven_heal(&[hunger], replaced)).abs() < 1e-9, "Hunger taken out after the cast");
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 2, &[]);
+    let foe = stand_foe(&mut room, 2.0, -10.0, 1000.0);
+    room.ask_cast(player, Some(Cast { spell: DAWNFLARE, aim: None }));
+    for _ in 0..19 {
+        room.tick();
+    }
+    room.answer(player, Asked::Art(ArtAsk::SetCore { art: 2, slot: 0, fragment: place_of(2, "searing") }));
+    for _ in 0..60 {
+        room.tick();
+    }
+    assert!(!room.fighter(foe).expect("in").statuses.has(Status::Expose), "Searing set after the cast Exposes");
 }
 
 #[test]

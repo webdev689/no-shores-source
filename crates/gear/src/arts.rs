@@ -185,7 +185,8 @@ pub struct WornArts {
     /// None only in a character kept before fragments were owned, which owns what its Cores held (`kept`).
     #[serde(default)]
     pub owned: Option<Vec<u8>>,
-    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
 }
@@ -333,13 +334,18 @@ impl Character {
         self.fragment_of(self.art().id, key)
     }
 
-    /// A fragment of the Art numbered `art`, by its key, if that Art's Core holds it, worn or not: a spell still out
-    /// after a swap keeps the Core of the Art that cast it.
+    /// A fragment of the Art numbered `art`, by its key, if that Art's Core holds it, worn or not.
     #[must_use]
     pub fn fragment_of(&self, art: u8, key: &str) -> Option<&'static FragmentDef> {
-        let art = arts().art(art)?;
-        let place = art.core.iter().position(|found| found.key == key)?;
-        let held = self.core_of(art.id).contains(&u8::try_from(place).ok());
-        held.then(|| &art.core[place])
+        held_fragment(art, self.core_of(art), key)
     }
+}
+
+/// A fragment of the Art numbered `art`, by its key, if `core` (that Art's slots) holds it: a spell keeps the Core it
+/// was cast with, whatever is set after.
+#[must_use]
+pub fn held_fragment(art: u8, core: [Option<u8>; CORE_SLOTS], key: &str) -> Option<&'static FragmentDef> {
+    let art = arts().art(art)?;
+    let place = art.core.iter().position(|found| found.key == key)?;
+    core.contains(&u8::try_from(place).ok()).then(|| &art.core[place])
 }

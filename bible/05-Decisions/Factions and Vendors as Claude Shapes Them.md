@@ -111,6 +111,7 @@ stands in the arcades.
 | Keeper | Dress |
 |---|---|
 | The Mage | An anole woman in a hooded purple robe |
+| The vault keeper | A grey-haired human man in a white shirt, a grey tunic, breeches and tall boots |
 | The Armorsmith | A human woman in chain and iron |
 | The Weaponsmith | A felid man in leather |
 | The Tailor | A human man in a white shirt and a red waistcoat |
@@ -129,7 +130,7 @@ it (`content/world/social.json`, which the page reads too). Shape visits Overloo
 
 | Call | Choice |
 |---|---|
-| One screen | Every counter opens the same screen, after the owner's three references; the vault's two sides stand in its right column, under the vault keeper |
+| One screen | Every keeper who deals with a player opens the same screen, after the owner's three references; the vault's two sides stand in its right column, under the vault keeper |
 | The keeper | Drawn from the forge in their own dress, idle, facing the viewer, grown by whole pixels, breathing between the idle's two frames |
 | Prompt | A counter's prompt is its keeper's title alone ("The Mage", "Shape") |
 | Lines | One-line scenes, said in turn: three greetings, two thanks and one for being short of the price a keeper (the Mage and the vault keeper none short; he thanks for each thing moved) |

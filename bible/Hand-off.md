@@ -179,35 +179,34 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
-  #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
-  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
-  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
-  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
-  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
-  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
-  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
-  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
-  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
-  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
-  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
-  the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
-  a click starts the intro over the cloud at first light.
+- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought #71's
+  ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story Mission at Sea]]),
+  with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then asked ([[The Prologue
+  Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on it: the intro at first
+  light, down through the cloud to Saltmere's title; the storm at evening and the Brig; creation at her helm; the
+  sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck at night and
+  fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger walks the player
+  into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in; its fires are drawn in
+  the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky), heard in the game's own
+  soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one theme ([[Music]]). The
+  player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]). Tested offline: the full
+  check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and the intro, each started on
+  its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and a click starts the intro
+  over the cloud at first light.
+- The prologue's follow-ups on `main` (#94), merged with the owner's yes after they played it live: the title's prompt
+  goes once the story begins; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about 25 s;
+  the story's sea fight sails in the story's wind, so the Brig makes way in the storm drawn round her; and the sea's 27
+  sounds from Freesound ([[The Sea's Sounds Come From Freesound]]), the open sea's, the story's, the sea fight's and the
+  shore's, the owner's picks from the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to
+  them; its store's `picks` collection holds each cue's Freesound number), published on R2 and in
+  `content/audio/sounds.json`. The seven long beds play their steadiest minute, mono.
 
 ## Waiting on the owner
 
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
-- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
-  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
-  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
-  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
-- **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): all 27, the open sea's, the
-  story's, the sea fight's (new) and the shore's, are the owner's picks from the sea sound sheet,
-  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each
-  cue's Freesound number), published on R2 and in `content/audio/sounds.json`. The seven long beds play their
-  steadiest minute, mono. Not yet: any of them heard in the game, or their level judged by ear. The main sound sheet
-  (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
+- **The sea's sounds** ([[The Sea's Sounds Come From Freesound]]): none yet heard in the game, nor their level judged
+  by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
 - **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,

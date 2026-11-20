@@ -41,7 +41,8 @@ pub struct Item {
     /// A weapon's element, if it was made with one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub element: Option<Element>,
-    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
 }

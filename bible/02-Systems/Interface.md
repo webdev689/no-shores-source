@@ -433,7 +433,7 @@ The Test Ground makes its own sound at full volume on the first click into its v
 
 ## The social space's counters
 
-Every keeper of a counter in the social space, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
+Every keeper in the social space who deals with a player, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
 ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]); E at one opens it in the menu's
 window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
@@ -453,11 +453,11 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   on hover or focus; a ware that cannot be asked for says why under its price (a level not reached, a pack full),
   and "Not enough" is only for one the room would sell. At the foot "Stock refresh" and the time to the next
   midnight, UTC (0:00:00 at midnight), for the smiths, the Tailor and the Tack, or "Leaves in" and the time left for
-  Shape, by the world's clock to Sunday 21:00 UTC. The footer: Hold (buy), I (Open Character), Esc
-  (Dismiss). Arrow keys move among the tiles, Enter presses, Escape steps back, and the focus goes back where it
+  Shape, by the world's clock to Sunday 21:00 UTC. The footer: Hold (Buy; Open at the Mage's), I (Open
+  Character), Esc (Dismiss). Arrow keys move among the tiles, Enter presses, Escape steps back, and the focus goes back where it
   came from.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown
-  after. The Armorsmith: ARMOR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate
+  after. The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate
   with how many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS,
   the day's six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
 - **A faction's rows** (`factionRows`), the faction's own services first and its wares after, so a short screen

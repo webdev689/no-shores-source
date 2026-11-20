@@ -111,7 +111,8 @@ pub struct Allegiance {
     pub pledge: u8,
     pub reputation: Vec<u64>,
     pub collected: Vec<u32>,
-    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
 }

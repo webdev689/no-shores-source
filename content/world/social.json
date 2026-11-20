@@ -1,5 +1,5 @@
 {
-  "about": "Which cities' social spaces are open, and which Shape visits on his weekends, by city id (bible/05-Decisions/Only Overlook's Social Space Opens for Now.md). The other two port cities' open later (\"later\"), and the six desolate cities' never do (the owner's decision Three Port Cities Remain, and the Others Are Desolate and Destroyed). Read by the city crate (the bake marks every social node not open closed) and the page (it says the two later ones open later, and marks the desolate ones' not at all).",
+  "about": "Which cities' social spaces are open, and which Shape visits on his weekends, by city id. The other two port cities' open later (\"later\"), and the six desolate cities' never do. Read by the city crate (the bake marks every social node not open closed) and the page (it says the two later ones open later, and marks the desolate ones' not at all).",
   "open": ["overlook"],
   "later": ["sunspire", "rimeholt"],
   "shapeVisits": ["overlook"]

@@ -58,7 +58,8 @@ pub struct Materials {
     /// Shapes, which only Shape takes (`shape.rs`).
     #[serde(default)]
     pub shapes: u16,
-    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
 }
@@ -152,7 +153,8 @@ pub struct Character {
     /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
-    /// Keys this room does not know, from a later room's save, written back as read so a rollback loses nothing.
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
 }

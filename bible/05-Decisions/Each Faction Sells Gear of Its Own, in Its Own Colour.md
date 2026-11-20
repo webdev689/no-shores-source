@@ -15,7 +15,8 @@ status: in force
 
 > Asked each faction's colour: the Stormcallers, "#1 with color accents" (the first offered, "Storm grey and
 > silver"); the Lamplighters, "White and gold"; the Veiled, "Black and silver". Shown them: "I like them, although
-> the black is too black"
+> the black is too black". Shown them again, the black lightened: "Needs more detail, the color is good but the
+> shading is off"
 
 ## What it settles
 
@@ -24,5 +25,6 @@ status: in force
 - **A faction's gear has a colour of its own**, unique to it, neither glaring nor dark: the Stormcallers' storm grey
   and silver with accents of colour, the Lamplighters' white and gold, and the Veiled's black and silver, not too
   black.
+- **The colours stand, and each piece keeps its shading and detail under its colour.**
 - What the gear is, its ranks, its prices and its colours are Claude's, the owner's to change:
   [[Factions and Vendors as Claude Shapes Them]] ("Faction gear"). How it works: [[Factions]].

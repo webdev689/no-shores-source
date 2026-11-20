@@ -1,6 +1,7 @@
 // Who keeps each counter of a social space, and Shape, who keeps none: the title their screen and their prompt show,
 // a line of what they deal in, the speaker their words are said by (content/story/cast.json), and their whole dress,
 // so the figure at the counter and the figure on their screen are one person.
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import type { Dress, Race } from '../player/dressing.ts';
 import type { Outfit } from '../forge/outfit.ts';
 
@@ -42,6 +43,13 @@ const dressed = (
   tone,
   outfit: { armour, garments, dyes, right: null, left: null, drawn: false, hair },
 });
+
+/** A faction's keeper: its name and words as the faction's own (content/gear/factions.json), so they are said once. */
+function factionKeeper(faction: number, speaker: string, dress: Dress): Keeper {
+  const found = factions.factions.find((each) => each.id === faction);
+  if (!found) throw new Error(`no faction ${faction}`);
+  return { title: found.name, words: found.words, speaker, faction, dress };
+}
 
 export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   mage: {
@@ -121,12 +129,10 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
       { gauntlets: 'leather' },
     ),
   },
-  stormcallers: {
-    title: 'Stormcallers',
-    words: 'Keepers of the Storm Art. Quick feet, and lightning in the hand.',
-    speaker: 'stormcaller',
-    faction: 1,
-    dress: dressed(
+  stormcallers: factionKeeper(
+    1,
+    'stormcaller',
+    dressed(
       'male',
       'anole',
       0.55,
@@ -135,35 +141,24 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
       { short_tunic: 'Blue', breeches: 'Grey', casual_cloak: 'Blue' },
       { gauntlets: 'steel' },
     ),
-  },
-  lamplighters: {
-    title: 'Lamplighters',
-    words: 'Keepers of the Divine Art. They mend, and they light the way for others.',
-    speaker: 'maren',
-    faction: 2,
-    dress: dressed(
-      'female',
-      'human',
-      0.3,
-      { style: 'long', colour: 'white' },
-      ['plain_robes', 'formal_cloak', 'shoes'],
-      {
-        plain_robes: 'Yellow',
-        formal_cloak: 'White',
-        shoes: 'DarkBrown',
-      },
-    ),
-  },
-  veiled: {
-    title: 'The Veiled',
-    words: 'Keepers of the Shadow Art. Few in Overlook could name one.',
-    speaker: 'veiled',
-    faction: 3,
-    dress: dressed('female', 'felid', 0.8, { style: 'short', colour: 'grey' }, ['plain_robes_hooded', 'boots'], {
+  ),
+  lamplighters: factionKeeper(
+    2,
+    'maren',
+    dressed('female', 'human', 0.3, { style: 'long', colour: 'white' }, ['plain_robes', 'formal_cloak', 'shoes'], {
+      plain_robes: 'Yellow',
+      formal_cloak: 'White',
+      shoes: 'DarkBrown',
+    }),
+  ),
+  veiled: factionKeeper(
+    3,
+    'veiled',
+    dressed('female', 'felid', 0.8, { style: 'short', colour: 'grey' }, ['plain_robes_hooded', 'boots'], {
       plain_robes_hooded: 'Grey',
       boots: 'DarkBrown',
     }),
-  },
+  ),
   shape: {
     title: 'Shape',
     words: 'Here from Friday until Sunday evening. Trades in Shapes, and nothing else.',

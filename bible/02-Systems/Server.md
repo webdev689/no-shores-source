@@ -292,7 +292,9 @@ so every decision is Rust and the shell only carries bytes and time.
 - A browser's one text message is its session's token. In a node's room the player's character is claimed with it
   from the [[Accounts]], saved as it changes and let go when they leave. A save keeps the keys a room does not know,
   at its top, in its materials, Arts, allegiance and cosmetics and in each item (not in its Vestiges), so a room that
-  knows fewer fields carries the newer ones through. At sea, where no character is kept, the room
+  knows fewer fields carries the newer ones through; a room built before this keeping drops them, so a rollback to one
+  loses them. A new value of a kind the room knows (a slot, a rarity) reads as a broken save, which is left untouched,
+  and a list longer than the room's Arts or factions is cut to them. At sea, where no character is kept, the room
   tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster. A second text
   message, or any other, closes the socket.
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
