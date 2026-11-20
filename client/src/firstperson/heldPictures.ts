@@ -2,6 +2,7 @@ import type { Strip } from '../forge/compose.ts';
 import {
   type FrameSource,
   type Picture,
+  pieceCover,
   firstOf,
   forgeName,
   layOver,
@@ -54,7 +55,7 @@ async function withHands(
   ownPath: string | readonly string[],
   handsAt: (look: string) => string,
   hands: string | null,
-  paintOwn: (strip: Strip) => Uint8Array,
+  paintOwn: (strip: Strip) => Uint8Array | Promise<Uint8Array>,
 ): Promise<{ width: number; height: number; pixels: Uint8Array } | null> {
   const [own, over] = await Promise.all([
     firstOf(source, typeof ownPath === 'string' ? [ownPath] : ownPath),
@@ -64,8 +65,8 @@ async function withHands(
     ),
   ]);
   if (!own || !over || own.strip.width !== over.strip.width || own.strip.height !== over.strip.height) return null;
-  const pixels = paintOwn(own.strip);
-  layOver(pixels, paintSet(source, over.strip, hands, 'Steel'));
+  const pixels = await paintOwn(own.strip);
+  layOver(pixels, await paintSet(source, over.strip, hands, 'Steel'));
   return { width: own.strip.width, height: own.strip.height, pixels };
 }
 
@@ -159,20 +160,24 @@ export async function lightPicture(
 }
 
 /** A shield of the forge's kind `archive` in its metal's make (the plain wooden shield where none is drawn), dyed by
- *  its metal, at frame `frame` from raised (0) to lowered, the hand on its grip in the gauntlets worn. */
+ *  its metal, at frame `frame` from raised (0) to lowered, the hand on its grip in the gauntlets worn. A faction's
+ *  shield is covered whole by its colour, laid by the light of the forge's shield `layer`, as the figure's is. */
 export async function shieldPicture(
   source: FrameSource,
   archive: number,
   metal: string | null,
   hands: string | null,
   frame: number,
+  layer: string | null = null,
 ): Promise<Picture | null> {
   const makes = [
     ...(metal ? [heldPath(archive, 0, frame, `Shield${metal}`)] : []),
     heldPath(archive, 0, frame, 'Shield'),
   ];
   const handsAt = (look: string) => heldPath(archive, 0, frame, look);
-  const paint = (strip: Strip) => source.painter.paint(strip, source.own?.left ?? metalRamp(source.dyes, metal));
+  const own = source.own?.left;
+  const covers = own && layer ? await pieceCover(source, layer) : null;
+  const paint = (strip: Strip) => source.painter.paint(strip, own ?? metalRamp(source.dyes, metal), covers);
   const laid = await withHands(source, makes, handsAt, hands, paint);
   return laid && { ...laid, at: [0, DESIGN_HEIGHT - laid.height] };
 }

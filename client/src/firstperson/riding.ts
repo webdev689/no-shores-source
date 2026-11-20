@@ -181,7 +181,7 @@ export async function reinPicture(
   const fist = own ?? glove;
   if (!rein || !fist || fist.width !== rein.width || fist.height !== rein.height) return null;
   const pixels = source.painter.paint(rein, null);
-  const fistPixels = own ? paintSet(source, fist, hands, 'Steel') : source.painter.paint(fist, null);
+  const fistPixels = own ? await paintSet(source, fist, hands, 'Steel') : source.painter.paint(fist, null);
   for (let texel = 0; texel < pixels.length; texel += 4)
     if (fistPixels[texel + 3]) pixels.set(fistPixels.subarray(texel, texel + 4), texel);
   return centred(pixels, rein.width, rein.height, sink);

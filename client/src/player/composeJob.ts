@@ -1,5 +1,6 @@
 import { type GlowField, type GlowLook, glowField, recolourToGlow } from '../elementGlow.ts';
 import { type Colours, type Strip, composeFrame } from '../forge/compose.ts';
+import { coverPaths, coversOf } from '../forge/coverLight.ts';
 import type { Rgb } from '../forge/dyes.ts';
 import { type Figure, type ForgeLooks, layerPath, layersOf } from '../forge/looks.ts';
 
@@ -12,7 +13,8 @@ export interface ComposeJob {
   readonly view: number;
   readonly frame: number;
   readonly ramps: Readonly<Record<string, readonly Rgb[]>>;
-  /** The layers whose ramp covers them whole: a dye worn's or a faction's colour on its armour (`layerRamps`). */
+  /** The layers whose ramp covers them whole: a dye worn's or a faction's colour on its armour, and a faction's on
+   *  its cape, shield, bow and staff (`layerRamps`). */
   readonly whole?: readonly string[] | undefined;
   readonly glow: GlowLook;
   readonly alone?: readonly string[] | undefined;
@@ -41,12 +43,21 @@ export interface ComposedCard {
 export const CAST = 'cast';
 const SPARK: ReadonlySet<string> = new Set(['spark']);
 
-/** The strips a job's frame is composed from: each of its layers' colour and depth. */
+/** The layers of a job's frame whose ramp covers them whole. Their sets' light is read from the body's whole table,
+ *  so a piece drawn alone (an item's picture) is laid as it is worn. */
+const coveredOf = (job: ComposeJob, looks: ForgeLooks): string[] =>
+  layersOf(job.figure, job.anim, looksOf(job, looks)).filter((layer) => job.whole?.includes(layer));
+
+/** Every strip a job's frame is composed from: each of its layers' colour and depth, and the strips its covered
+ *  layers' light is read from. */
 export function stripsOf(job: ComposeJob, looks: ForgeLooks): string[] {
-  return layersOf(job.figure, job.anim, looksOf(job, looks)).flatMap((layer) => [
-    layerPath(job.figure.body, layer, job.anim),
-    layerPath(job.figure.body, layer, job.anim, true),
+  const { body } = job.figure;
+  const own = layersOf(job.figure, job.anim, looksOf(job, looks)).flatMap((layer) => [
+    layerPath(body, layer, job.anim),
+    layerPath(body, layer, job.anim, true),
   ]);
+  const covered = coveredOf(job, looks).flatMap((layer) => coverPaths(body, layer, looks));
+  return [...new Set([...own, ...covered])];
 }
 
 /** Composes a job's frame as a card is made from it: a cast's spark recoloured to its Art's glow, and a glowing
@@ -59,6 +70,7 @@ export async function composeCard(
 ): Promise<ComposedCard | null> {
   const cast = job.anim === CAST;
   const { figure, anim, view, frame, ramps, glow } = job;
+  const covers = await coversOf(figure.body, coveredOf(job, looks), looks, strip);
   const composed = await composeFrame(
     figure,
     anim,
@@ -69,7 +81,7 @@ export async function composeCard(
     ramps,
     strip,
     cast ? SPARK : undefined,
-    new Set(job.whole),
+    covers,
   );
   if (!composed) return null;
   if (glow && cast) recolourToGlow(composed.pixels, glow, composed.held);

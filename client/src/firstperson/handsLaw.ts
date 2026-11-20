@@ -14,11 +14,12 @@ export interface Shooter {
 }
 
 /** What a hand holds in first person: a weapon that swings (bare hands and a bow among them), one that fires, a
- *  shield of a kind (`archive`, the forge's) in a metal (null for the plain wooden one), or a light. */
+ *  shield of a kind (`archive`, the forge's) in a metal (null for the plain wooden one) with its forge layer, or a
+ *  light. */
 export type Holding =
   | { readonly kind: 'weapon'; readonly wielded: Wielded }
   | { readonly kind: 'shooter'; readonly shooter: Shooter }
-  | { readonly kind: 'shield'; readonly archive: number; readonly metal: string | null }
+  | { readonly kind: 'shield'; readonly archive: number; readonly metal: string | null; readonly layer: string }
   | { readonly kind: 'light'; readonly light: 'torch' | 'lantern' };
 
 /** The forge's archive for each kind of shield. */
@@ -46,7 +47,7 @@ export function holdingOf(layer: string): Holding | null {
   if (head === 'shield') {
     const archive = SHIELD_ARCHIVE[rest[0] ?? ''];
     const metal = rest[1] && rest[1] !== 'plain' ? forgeName(rest[1]) : null;
-    return archive === undefined ? null : { kind: 'shield', archive, metal };
+    return archive === undefined ? null : { kind: 'shield', archive, metal, layer: layer.replace(/_l$/, '') };
   }
   if (head === 'torch' || head === 'lantern') return { kind: 'light', light: head };
   const wielded = wieldedOf(layer);
