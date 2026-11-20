@@ -25,6 +25,8 @@ pub struct Quarry {
     pub at: [f64; 2],
     pub radius: f64,
     pub depth: f64,
+    /// The natural ground's height at its middle, which its terraces step down from.
+    pub rim: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -44,6 +46,8 @@ pub struct Shape {
     pub pads: Vec<Pad>,
     /// The coast's distance once laid (`lay_coast`); till then the radial measure stands for it.
     coast: Option<Coast>,
+    /// The landing's strand: the coast on its bearing, which the beach widens toward.
+    strand: [f64; 2],
 }
 
 /// The way a bearing points: x east, y south.
@@ -111,11 +115,16 @@ impl Shape {
             quarry: None,
             pads: Vec::new(),
             coast: None,
+            strand: [0.0; 2],
         };
         let radius = wanted / unit.reach();
         let behind = way(landing + PI + behind);
         let off = radius * off;
-        Shape { radius, peak: [behind[0] * off, behind[1] * off], ..unit }
+        let mut shape = Shape { radius, peak: [behind[0] * off, behind[1] * off], ..unit };
+        let [x, y] = way(landing);
+        let edge = shape.edge(landing);
+        shape.strand = [x * edge, y * edge];
+        shape
     }
 
     /// How much of the bay a bearing lies in: 1 facing the landing, 0 past 0.6 radians either side.
@@ -199,9 +208,7 @@ impl Shape {
         }
         // The beach widens toward the landing's strand by distance from it, not by bearing, which swings fast near
         // the middle and would cut a groove behind the bay.
-        let strand = way(self.landing);
-        let strand = [strand[0] * self.edge(self.landing), strand[1] * self.edge(self.landing)];
-        let (off_x, off_y) = (x - strand[0], y - strand[1]);
+        let (off_x, off_y) = (x - self.strand[0], y - self.strand[1]);
         let near = bump((off_x * off_x + off_y * off_y).sqrt() / (0.7 * self.radius));
         let beach = ((0.05 + 0.13 * near) * self.radius).clamp(4.0, 24.0);
         let shore = 1.2 * (inland / beach).min(1.0);
@@ -224,7 +231,7 @@ impl Shape {
     pub fn height(&self, at: [f64; 2], cliffs: f64) -> f64 {
         let mut height = self.natural(at, cliffs);
         if let Some(quarry) = self.quarry {
-            height = height.min(quarried(quarry, at, self.natural(quarry.at, cliffs)));
+            height = height.min(quarried(quarry, at));
         }
         for pad in &self.pads {
             let (along_x, along_y) = (at[0] - pad.at[0], at[1] - pad.at[1]);
@@ -235,9 +242,9 @@ impl Shape {
     }
 }
 
-/// A quarry's floor at a point: three terraces down from its rim at `rim` metres, each a third of its depth, a steep
+/// A quarry's floor at a point: three terraces down from its rim (`rim`), each a third of its depth, a steep
 /// face between them, and the land past its rim untouched.
-fn quarried(quarry: Quarry, [x, y]: [f64; 2], rim: f64) -> f64 {
+fn quarried(quarry: Quarry, [x, y]: [f64; 2]) -> f64 {
     let (along_x, along_y) = (x - quarry.at[0], y - quarry.at[1]);
     let off = (along_x * along_x + along_y * along_y).sqrt() / quarry.radius;
     if off >= 1.0 {
@@ -245,5 +252,5 @@ fn quarried(quarry: Quarry, [x, y]: [f64; 2], rim: f64) -> f64 {
     }
     let step = (3.0 * (1.0 - off)).min(2.999);
     let terrace = step.floor() + smooth(0.0, 0.3, step.fract());
-    rim - quarry.depth * terrace / 3.0
+    quarry.rim - quarry.depth * terrace / 3.0
 }

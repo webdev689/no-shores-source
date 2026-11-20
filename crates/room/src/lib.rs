@@ -147,24 +147,14 @@ pub struct Room {
 }
 
 impl Room {
-    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
-    /// navmesh is baked over the course and open ground around it.
-    #[must_use]
-    pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Flat, blocks, vec![spawn], None)
-    }
-
-    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
-    /// turn and come back to.
-    #[must_use]
-    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
-        let spawns = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
-        Self::on(floor, blocks, spawns, Some(section))
-    }
-
-    fn on(floor: Floor, blocks: Vec<Block>, spawn_points: Vec<(f64, f64)>, section: Option<Section>) -> Self {
-        let first = spawn_points.first().copied().unwrap_or((0.0, 0.0));
-        let nav = garrison::baked(&floor, &blocks, first, section.as_ref());
+    /// An empty room on its floor and navmesh (`garrison.rs` bakes it), its blocks, its spawns and its section.
+    pub(crate) fn on(
+        floor: Floor,
+        blocks: Vec<Block>,
+        spawn_points: Vec<(f64, f64)>,
+        section: Option<Section>,
+        nav: navmesh::NavMesh,
+    ) -> Self {
         Room {
             blocks,
             floor,

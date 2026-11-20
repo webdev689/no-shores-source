@@ -65,6 +65,27 @@ fn guards(faction: u8, draws: &mut naval::random::Mulberry32) -> [Group; 3] {
     ]
 }
 
+/// The navmesh an isle's guards walk: over their posts and `POSTS_AROUND` round them, on the island's ground among the
+/// blocks there.
+fn posts_navmesh(blocks: &[movement::Block], floor: &Floor, posts: &[[f64; 2]]) -> navmesh::NavMesh {
+    let fold =
+        |pick: fn(f64, f64) -> f64, axis: usize, start: f64| posts.iter().map(|post| post[axis]).fold(start, pick);
+    let bounds = navmesh::Bounds {
+        min_x: fold(f64::min, 0, f64::INFINITY) - POSTS_AROUND,
+        min_y: fold(f64::min, 1, f64::INFINITY) - POSTS_AROUND,
+        max_x: fold(f64::max, 0, f64::NEG_INFINITY) + POSTS_AROUND,
+        max_y: fold(f64::max, 1, f64::NEG_INFINITY) + POSTS_AROUND,
+    };
+    let within = |block: &&movement::Block| {
+        block.max_x >= bounds.min_x
+            && block.min_x <= bounds.max_x
+            && block.max_y >= bounds.min_y
+            && block.min_y <= bounds.max_y
+    };
+    let near: Vec<movement::Block> = blocks.iter().filter(within).copied().collect();
+    navmesh::NavMesh::bake_on(&near, floor, bounds, &navmesh::AGENT)
+}
+
 impl Room {
     /// A sea island's room from its plan, its middle at `at` in the world, where every body, block and post of it
     /// stands, as a node's do. An isle's guards are of `guards`' faction (the Grey Tithe's or the pirates') at its
@@ -74,7 +95,16 @@ impl Room {
         let place = |points: &[[f64; 2]]| points.iter().map(|&point| isle::placed(point, at)).collect::<Vec<_>>();
         let section = Section { ring: place(&plan.ring), spawns: place(&plan.sites.spawns) };
         let floor = Floor::Island(Box::new(plan.ground_at(at)));
-        let mut room = Room::node(floor, plan.blocks_at(at), section);
+        let blocks = plan.blocks_at(at);
+        let spawns: Vec<(f64, f64)> = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
+        let (guarded, posts) = (guards.filter(|_| plan.kind.is_isle()), place(&plan.sites.guards));
+        // Baked once: an isle's over its guards' posts, a cove's as a node's by its beach.
+        let nav = if guarded.is_some() {
+            posts_navmesh(&blocks, &floor, &posts)
+        } else {
+            crate::garrison::baked(&floor, &blocks, spawns.first().copied().unwrap_or_default(), Some(&section))
+        };
+        let mut room = Room::on(floor, blocks, spawns, Some(section), nav);
         room.world_seed = SEED ^ isle::draws::mix(plan.seed, 7);
         room.foes_most = crate::NODE_FOES_MOST;
         room.isle = Some(Isle {
@@ -84,30 +114,14 @@ impl Room {
             door: isle::placed(plan.sites.door.at, at),
             ..Isle::default()
         });
-        if let Some(faction) = guards.filter(|_| plan.kind.is_isle()) {
-            room.stand_guards(&place(&plan.sites.guards), faction, levels);
+        if let Some(faction) = guarded {
+            room.stand_guards(&posts, faction, levels);
         }
         room
     }
 
-    /// Bakes the navmesh over the guards' posts, then stands each group at its post in turn.
+    /// Stands each group of an isle's guards at its post in turn, on the navmesh baked over them.
     fn stand_guards(&mut self, posts: &[[f64; 2]], faction: u8, levels: Option<(u8, u8)>) {
-        let fold =
-            |pick: fn(f64, f64) -> f64, axis: usize, start: f64| posts.iter().map(|post| post[axis]).fold(start, pick);
-        let bounds = navmesh::Bounds {
-            min_x: fold(f64::min, 0, f64::INFINITY) - POSTS_AROUND,
-            min_y: fold(f64::min, 1, f64::INFINITY) - POSTS_AROUND,
-            max_x: fold(f64::max, 0, f64::NEG_INFINITY) + POSTS_AROUND,
-            max_y: fold(f64::max, 1, f64::NEG_INFINITY) + POSTS_AROUND,
-        };
-        let within = |block: &&movement::Block| {
-            block.max_x >= bounds.min_x
-                && block.min_x <= bounds.max_x
-                && block.max_y >= bounds.min_y
-                && block.min_y <= bounds.max_y
-        };
-        let blocks: Vec<movement::Block> = self.blocks.iter().filter(within).copied().collect();
-        self.nav = navmesh::NavMesh::bake_on(&blocks, &self.floor, bounds, &navmesh::AGENT);
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
         for (group, post) in guards(faction, &mut draws).iter().zip(posts) {

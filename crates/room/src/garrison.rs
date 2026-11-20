@@ -142,6 +142,25 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
     }
 }
 
+impl Room {
+    /// An empty room on a course of blocks on open ground, where players stand at `spawn` (x, y) when they join. Its
+    /// navmesh is baked over the course and open ground around it.
+    #[must_use]
+    pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
+        let nav = baked(&Floor::Flat, &blocks, spawn, None);
+        Self::on(Floor::Flat, blocks, vec![spawn], None, nav)
+    }
+
+    /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
+    /// turn and come back to.
+    #[must_use]
+    pub fn node(floor: Floor, blocks: Vec<Block>, section: Section) -> Self {
+        let spawns: Vec<(f64, f64)> = section.spawns.iter().map(|&[x, y]| (x, y)).collect();
+        let nav = baked(&floor, &blocks, spawns.first().copied().unwrap_or((0.0, 0.0)), Some(&section));
+        Self::on(floor, blocks, spawns, Some(section), nav)
+    }
+}
+
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
 /// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
 /// its blocks and the open ground round them.
