@@ -17,6 +17,7 @@ mod flank;
 mod leash;
 pub mod noises;
 mod pace;
+mod rally;
 pub mod ranks;
 mod react;
 pub mod roles;

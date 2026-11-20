@@ -21,8 +21,8 @@ code:
   - crates/foes/src/leash.rs#unoccupied
   - crates/foes/src/brain.rs#Orders
   - crates/foes/src/brain.rs#breaks
-  - crates/foes/src/tactics.rs#broken
-  - crates/foes/src/tactics.rs#hold_ground
+  - crates/foes/src/rally.rs#broken
+  - crates/foes/src/rally.rs#hold_ground
   - crates/foes/src/leash.rs#fall_back
   - crates/foes/src/brain.rs#keep_to
   - crates/foes/src/flank.rs#drift

@@ -366,65 +366,6 @@ impl Room {
         self.past = past;
     }
 
-    /// A player a view's lag behind with no input to take is stepped a tick standing still, looking where they aim;
-    /// a body the section killed lies still, but the tick counts, so time spent dead is not banked to catch up on.
-    fn stand_stalled(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if found.stepped + VIEW_LAG >= clock - found.joined {
-            return;
-        }
-        if matches!(found.standing, Standing::Dead { .. }) {
-            found.stepped += 1;
-            return;
-        }
-        let standing = combat::Intent {
-            controls: movement::Controls { yaw: found.fighter.aim, ..movement::Controls::default() },
-            combat: combat::CombatInput::default(),
-        };
-        let view = self.fighters();
-        let Some(found) = self.players.get_mut(&id) else { return };
-        found.stepped += 1;
-        let (next, happening) = player_tick(id, &found.fighter, &standing, &view, &self.blocks, &self.floor);
-        found.fighter = next;
-        self.happened(id, &next, happening, &view);
-    }
-
-    /// A dress waiting its turn is taken at once the first time, then once DRESS_EVERY ticks have passed since the
-    /// last change.
-    fn dress_in_turn(&mut self, id: PlayerId) {
-        let clock = self.clock;
-        let Some(found) = self.players.get_mut(&id) else { return };
-        if found.dressed_at.is_some_and(|at| clock < at + players::DRESS_EVERY) {
-            return;
-        }
-        if let Some(dress) = found.dress_next.take() {
-            found.dress = dress;
-            found.dress_changed = true;
-            found.dressed_at = Some(clock);
-        }
-    }
-
-    /// The player's next input the clock allows, and the room tick it was seeing (never ahead of the clock, never
-    /// behind the last nor more than SEEN_STEP past it, never further back than a view may lag).
-    fn next_input(&mut self, id: PlayerId) -> Option<(Input, u64)> {
-        let clock = self.clock;
-        let found = self.players.get_mut(&id)?;
-        if found.stepped >= clock - found.joined + SLACK_TICKS {
-            return None;
-        }
-        let input = found.waiting.pop_front()?;
-        found.stepped += 1;
-        found.acknowledged = found.acknowledged.wrapping_add(1);
-        let seen = input
-            .seen
-            .min(clock)
-            .min(found.seen + players::SEEN_STEP)
-            .max(found.seen)
-            .max(clock.saturating_sub(VIEW_LAG));
-        Some((input, seen))
-    }
-
     /// What a fighter's tick set off, among `view`, everyone as it saw them: a blow landing on whoever it reaches, a
     /// shot leaving, a feint.
     pub(crate) fn happened(
