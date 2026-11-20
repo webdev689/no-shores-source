@@ -349,7 +349,7 @@ pub(crate) const MINES: Bank = Bank {
         purpose(
             "collapsed-drift",
             "Collapsed Drift",
-            &[rubble(2, &[ROCKS, LOGS, RUBBLE]), walls(6, &[BEAMS, POSTS])],
+            &[rubble(2, &[ROCKS, GREAT_ROCKS, LOGS]), walls(6, &[BEAMS, POSTS])],
             &[POST_LANTERNS, lanterns(10)],
         ),
         purpose(

@@ -112,3 +112,18 @@ fn a_mines_gallery_is_a_hewn_rectangle_and_its_stope_a_cave() {
     }
     assert!(galleries > 50 && stopes > 50, "{galleries} galleries and {stopes} stopes");
 }
+
+#[test]
+fn the_mines_and_the_caverns_fall_in_as_rock_and_timber_never_as_masonry() {
+    use crate::banks::{CAVERNS, MINES};
+    use crate::models::RUBBLE;
+    for bank in [MINES, CAVERNS] {
+        let purposes = [bank.way_in].into_iter().chain(bank.rooms.iter().copied()).chain([bank.end]);
+        for purpose in purposes {
+            for lay in purpose.lays {
+                let masonry = lay.families.iter().any(|family| core::ptr::eq(*family, RUBBLE));
+                assert!(!masonry, "{} strews the ruins' masonry", purpose.role);
+            }
+        }
+    }
+}
