@@ -77,18 +77,62 @@ export function howHad(art: number): string {
  *  level's power, and nothing else of a spell. */
 export const LASTING_LIFE: ReadonlySet<string> = new Set(['sunwell', 'duskraven', 'duskDaggers']);
 /** The fragments whose seconds more the room scales by the lasting, as it adds them to what they lengthen. */
-export const LASTING_MORE: ReadonlySet<string> = new Set(['gale', 'radiance', 'night', 'blades']);
+export const LASTING_MORE: ReadonlySet<string> = new Set(['gale', 'radiance', 'night', 'blades', 'dread']);
 /** What a spell or fragment gives and for how long, in seconds as combat's status.rs holds it (Momentum's Crit lasts
- *  as Quicken's Haste does), scaled by the lasting. The Arts' file does not hold these, so they are written here. */
+ *  as Quicken's Haste does; a Charge lasts its foe's rank's time, a Minor's here), scaled by the lasting. The Arts'
+ *  file does not hold these, so they are written here. */
 export const GIVES: Readonly<Record<string, readonly [label: string, seconds: number]>> = {
   quicken: ['Haste lasts', 6],
-  vanish: ['Veil lasts', 4],
+  arcLash: ['Charges a Minor for', 2],
   momentum: ['Crit lasts', 6],
+  sunwell: ['Linked lingers', 3],
   resolve: ['Crit lasts', 5],
+  searing: ['Exposes for', 6],
+  duskraven: ['Exposes for', 6],
+  duskDaggers: ['Exposes for', 6],
+  vanish: ['Veil lasts', 4],
 };
-/** The fragment whose seconds more a buff above also gains when the Core holds it, as the room adds them before the
- *  lasting: Momentum's Crit lasts as Quicken's Haste, which Gale lengthens. */
-export const GIVES_LONGER_BY: Readonly<Record<string, string>> = { momentum: 'gale' };
+
+/** A spell's or fragment's numbers with a fragment of its Art written as a name and a list, as the room changes them. */
+type Numbered = { readonly key: string; readonly [field: string]: string | number | undefined };
+
+/** How each fragment set in the Core changes a spell's or another fragment's numbers, as the room's cast_spell folds
+ *  it in before the level weighs them: the key changed, its field, the fragment's own field read, and whether that
+ *  sets the field, adds to it or multiplies it. `givesS` is the seconds of what the key gives (GIVES). */
+export const CORE_FOLDS: Readonly<
+  Record<string, readonly (readonly [key: string, field: string, from: string, how: 'set' | 'add' | 'times'])[]>
+> = {
+  pursuit: [['tempest', 'orbs', 'orbs', 'add']],
+  conduction: [['arcLash', 'givesS', 'chargeTimes', 'times']],
+  gale: [
+    ['quicken', 'radius', 'radius', 'set'],
+    ['quicken', 'givesS', 'moreS', 'add'],
+    ['momentum', 'givesS', 'moreS', 'add'],
+  ],
+  radiance: [
+    ['sunwell', 'radius', 'moreRadius', 'add'],
+    ['sunwell', 'lifeS', 'moreS', 'add'],
+  ],
+  hunger: [['duskraven', 'healShare', 'healShare', 'set']],
+  night: [['vanish', 'givesS', 'moreS', 'add']],
+  blades: [
+    ['duskDaggers', 'radius', 'moreRadius', 'add'],
+    ['duskDaggers', 'lifeS', 'moreS', 'add'],
+  ],
+};
+
+/** A spell's or fragment's number `wanted` as written, with the fragments `held` in the Core folded in. */
+export function folded(key: string, wanted: string, value: number, held: readonly Numbered[]): number {
+  return held.reduce(
+    (sum, fragment) =>
+      (CORE_FOLDS[fragment.key] ?? []).reduce((now, [changed, field, from, how]) => {
+        const amount = fragment[from];
+        if (changed !== key || field !== wanted || typeof amount !== 'number') return now;
+        return how === 'set' ? amount : how === 'add' ? now + amount : now * amount;
+      }, sum),
+    value,
+  );
+}
 
 /** The healing each second a spell gives through Linked, as combat's status.rs holds it (LINKED_HEAL), weighed by
  *  the level's power as the room weighs the Sunwell's. */
@@ -99,4 +143,12 @@ export function scaled(key: string, field: string, value: number, level: number)
   const lasting = (field === 'lifeS' && LASTING_LIFE.has(key)) || (field === 'moreS' && LASTING_MORE.has(key));
   const share = field === 'damage' || field === 'heal' ? powerAt(level) : lasting ? lastingAt(level) : 1;
   return Math.round(value * share * 10) / 10;
+}
+
+/** A fragment's words at `level`, the seconds it adds named as the room adds them: "Quicken lasts 1.8 s longer" at
+ *  level 1. The Arts' file writes them at the highest level. */
+export function fragmentWords(fragment: Numbered & { readonly text: string }, level: number): string {
+  const more = fragment['moreS'];
+  if (typeof more !== 'number') return fragment.text;
+  return fragment.text.replace(`${more} s`, `${scaled(fragment.key, 'moreS', more, level)} s`);
 }

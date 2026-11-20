@@ -27,6 +27,7 @@ import {
   emblemSvg,
   fragmentCard,
   fragmentSvg,
+  heldOf,
   frameSvg,
   keyOf,
   spellCard,
@@ -38,6 +39,7 @@ import {
   LEVEL_MOST,
   barWords,
   factionOf,
+  fragmentWords,
   howHad,
   levelOf,
   owns,
@@ -221,10 +223,14 @@ function spellTile(context: ArtsPageContext, art: Art, spell: Spell, row: HTMLEl
   tile.append(picture(spellSvg(art, spell), 'arts-glyph'), make('kbd', key, 'gear-key arts-key'));
   const level = levelOf(context.standing, art.id).level;
   const card = () => {
-    const node = cardWith(spellCard(art, spell, level), spellSvg(art, spell), art.element, [[key, 'Cast in play']]);
+    const core = coreOf(context.cores, art.id);
+    const node = cardWith(spellCard(art, spell, level, core), spellSvg(art, spell), art.element, [
+      [key, 'Cast in play'],
+    ]);
     // Below the highest level, what the spell holds there, muted under its numbers.
-    const now = spellNumbers(spell, level);
-    const most = spellNumbers(spell).filter(([, value], place) => value !== now[place]?.[1]);
+    const held = heldOf(art, core);
+    const now = spellNumbers(spell, level, held);
+    const most = spellNumbers(spell, LEVEL_MOST, held).filter(([, value], place) => value !== now[place]?.[1]);
     if (most.length > 0) {
       const said = most.map(([label, value]) => `${label} ${value}`).join(' · ');
       node.querySelector('.gear-card-body')?.append(make('p', `At level ${LEVEL_MOST}: ${said}`, 'arts-card-most'));
@@ -235,15 +241,15 @@ function spellTile(context: ArtsPageContext, art: Art, spell: Spell, row: HTMLEl
   return tile;
 }
 
-/** The fragments set in a Core, one line each: its name and what it does. */
-function buildList(art: Art, core: readonly (number | null)[]): HTMLElement {
+/** The fragments set in a Core, one line each: its name and what it does at the Art's `level`. */
+function buildList(art: Art, core: readonly (number | null)[], level: number): HTMLElement {
   const list = make('ul', '', 'arts-build');
   list.setAttribute('aria-label', 'Set in the Core');
   for (const chosen of core) {
     const fragment = chosen === null ? undefined : art.core[chosen];
     if (!fragment) continue;
     const line = make('li');
-    line.append(make('b', fragment.name), make('span', fragment.text));
+    line.append(make('b', fragment.name), make('span', fragmentWords(fragment, level)));
     list.append(line);
   }
   return list;
@@ -295,7 +301,7 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
     };
     context.tip.over(tile, card, row);
   }
-  shown.append(buildList(art, core));
+  shown.append(buildList(art, core, standing.level));
   if (open === null) return shown;
   const flyout = make('div', '', `gear-flyout arts-flyout ${ROLES.panel}`);
   flyout.append(make('div', `Core slot ${open + 1}`, 'gear-flyout-head'));

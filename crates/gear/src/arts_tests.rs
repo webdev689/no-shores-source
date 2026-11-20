@@ -45,6 +45,9 @@ fn wearing_an_art_and_setting_its_core_keep_through_a_save() {
     assert_eq!(character.ask_art(ArtAsk::SetCore { art: 1, slot: 2, fragment: 5 }), Ok(()));
     assert_eq!(character.fragment("hunger").map(|found| found.heal_share), Some(1.0), "the worn Art's own");
     assert!(character.fragment("gale").is_none(), "another Art's Core counts only while it is worn");
+    assert_eq!(character.fragment_of(1, "gale").map(|found| found.radius), Some(18.0), "its own Art's Core, not worn");
+    assert!(character.fragment_of(1, "overload").is_none(), "not set in Storm's Core");
+    assert!(character.fragment_of(3, "gale").is_none(), "a fragment of another Art");
     let back = Character::from_json(&character.to_json()).expect("a character");
     assert_eq!((back.art().key.as_str(), back.core_of(3)[0], back.core_of(1)[2]), ("shadow", Some(0), Some(5)));
 }

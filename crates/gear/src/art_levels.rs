@@ -49,12 +49,6 @@ impl Character {
         (levels.power.get(at).copied().unwrap_or(1.0), levels.lasting.get(at).copied().unwrap_or(1.0))
     }
 
-    /// The worn Art's shares (`art_shares`).
-    #[must_use]
-    pub fn spell_shares(&self) -> (f64, f64) {
-        self.art_shares(self.art().id)
-    }
-
     /// A kill's XP to the worn Art, until its bar is full.
     pub(crate) fn earn_art_xp(&mut self, xp: u32) {
         let worn = self.art().id;

@@ -175,9 +175,13 @@ pub struct Player {
 }
 
 impl Player {
+    /// A player joining at `joined`, on the Test Ground if `test_ground`, where every spell is tried as written.
     #[must_use]
-    pub fn new(fighter: Fighter, joined: u64) -> Self {
-        let character = Character::starting();
+    pub fn new(fighter: Fighter, joined: u64, test_ground: bool) -> Self {
+        let mut character = Character::starting();
+        if test_ground {
+            character.arts = gear::arts::WornArts::mastered();
+        }
         Player {
             fighter: Fighter { ammo: Some(u32::from(character.shots())), ..fighter },
             standing: Standing::Inside,

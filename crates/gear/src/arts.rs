@@ -201,6 +201,14 @@ impl Default for WornArts {
 }
 
 impl WornArts {
+    /// The Test Ground's: every Art at its highest level owning every fragment, so each spell is tried as written.
+    #[must_use]
+    pub fn mastered() -> Self {
+        let empty = Self::default();
+        let count = empty.levels.len();
+        WornArts { levels: vec![LEVEL_MOST; count], owned: Some(vec![(1 << FRAGMENTS) - 1; count]), ..empty }
+    }
+
     /// As kept, made whole: an Art the rules do not know is Storm; a Core, a level, XP and owned fragments for every
     /// Art; a level within 1 to `LEVEL_MOST` and XP within its bar; a fragment that is none of its Art's, set twice, or
     /// not owned taken out. A character kept before fragments were owned owns those its Cores held.
@@ -318,7 +326,14 @@ impl Character {
     /// A fragment of the worn Art, by its key, if its Core holds it: only the worn Art's Core counts.
     #[must_use]
     pub fn fragment(&self, key: &str) -> Option<&'static FragmentDef> {
-        let art = self.art();
+        self.fragment_of(self.art().id, key)
+    }
+
+    /// A fragment of the Art numbered `art`, by its key, if that Art's Core holds it, worn or not: a spell still out
+    /// after a swap keeps the Core of the Art that cast it.
+    #[must_use]
+    pub fn fragment_of(&self, art: u8, key: &str) -> Option<&'static FragmentDef> {
+        let art = arts().art(art)?;
         let place = art.core.iter().position(|found| found.key == key)?;
         let held = self.core_of(art.id).contains(&u8::try_from(place).ok());
         held.then(|| &art.core[place])
