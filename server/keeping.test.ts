@@ -396,3 +396,25 @@ test('a run keeps no one unkept: a token that is no session, none in time, or no
   assert.equal(await open.signIn(2, 'f'.repeat(64), now, here), false);
   assert.equal(sent.length, 3, 'any other room still lets a player play unkept');
 });
+
+test('a run asks again for a player’s company the accounts did not give, then sends them to try again', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  for (const player of [1, 2]) room.held.set(player, '{"starting":true}');
+  const sent: unknown[][] = [];
+  const told = (player: number, why?: string, rejoinable?: boolean) => void sent.push([player, why, rejoinable]);
+  const [now, here, run] = [() => clock.now, () => true, 'node-krakens-grotto--run-k3j4h5g6'];
+  let failures = 2;
+  const shaky = {
+    ...kept,
+    companions: (account: string) =>
+      failures-- > 0 ? Promise.reject(new Error('the accounts are down')) : kept.companions(account),
+  };
+  const keeper = new Keeper(shaky, room, run, told, () => Promise.resolve()).forCompany();
+  assert.equal(await keeper.signIn(1, token, now, here), true, 'answered on the third ask');
+  await keeper.leave(1);
+  const down = { ...kept, companions: () => Promise.reject(new Error('the accounts are down')) };
+  const cut = new Keeper(down, room, run, told, () => Promise.resolve()).forCompany();
+  assert.equal(await cut.signIn(2, token, now, here), false);
+  assert.deepEqual(sent, [[2, 'Something went wrong. Try again.', true]], 'not another company’s: joining again');
+});

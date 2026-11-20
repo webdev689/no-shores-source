@@ -85,8 +85,8 @@ export class Keeper {
   }
 
   /** Keeps this room to one company: a character is given while no one was let in yet, to one let in before, or to
-   *  one in the company of someone let in; any other is let go untouched, its player sent away with the reason. A player it cannot keep
-   *  is sent away too, since one unkept could play in it unseen by the company's check. */
+   *  one in the company of someone let in; any other is let go untouched, its player sent away with the reason. A
+   *  player it cannot keep is sent away too, since one unkept could play in it unseen by the company's check. */
   forCompany(): this {
     this.company = true;
     return this;
@@ -98,12 +98,7 @@ export class Keeper {
     const characters = this.characters;
     if (!characters || this.held.has(player) || this.room.character(player) === null) return false;
     const holder = `${this.name}:${crypto.randomUUID()}`;
-    let claimed = await characters.claim(token, holder).catch(() => undefined);
-    for (const millis of CLAIM_WAITS_MS) {
-      if (claimed !== undefined || !here()) break;
-      await this.wait(millis);
-      claimed = await characters.claim(token, holder).catch(() => undefined);
-    }
+    const claimed = await this.tried(() => characters.claim(token, holder), here);
     if (!claimed) {
       // A claim the accounts never answered (undefined) may be answered on a join again; no session never is.
       const passing = claimed === undefined;
@@ -111,9 +106,13 @@ export class Keeper {
       return false;
     }
     // Asked before the checks, so nothing waits between judging the company and keeping the character.
-    const companions = this.company
-      ? await characters.companions(claimed.account).catch(() => [claimed.account])
-      : null;
+    const companions = this.company ? await this.tried(() => characters.companions(claimed.account), here) : null;
+    if (companions === undefined) {
+      // The company cannot be judged: refused for now, with nothing of this room saved over the character.
+      await characters.release(claimed.account, holder, null).catch(() => false);
+      if (here()) this.lost(player, ACCOUNTS_TROUBLE, true);
+      return false;
+    }
     const shut =
       this.room.shut(player, claimed.body) || (companions && !this.admits(companions) ? ANOTHER_COMPANY : '');
     if (shut !== '') {
@@ -140,6 +139,18 @@ export class Keeper {
       inFlight: null,
     });
     return true;
+  }
+
+  /** What `ask` answers, asked again after each of a claim's waits while the accounts do not answer and the player is
+   *  still here; undefined if they never did. */
+  private async tried<T>(ask: () => Promise<T>, here: () => boolean): Promise<T | undefined> {
+    let answer = await ask().catch(() => undefined);
+    for (const millis of CLAIM_WAITS_MS) {
+      if (answer !== undefined || !here()) break;
+      await this.wait(millis);
+      answer = await ask().catch(() => undefined);
+    }
+    return answer;
   }
 
   /** In a run's room, sends away a player who has sent no token (`signed`) once a claim's own waits have passed. */
