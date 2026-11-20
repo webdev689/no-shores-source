@@ -36,6 +36,9 @@ export interface RoomDoor {
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
+  /** Opens a captain's deck as a room alone, as the sea holds one boarded: her hull's number, her faction, her rank
+   *  (1 Minor to 5 Boss) and level; false if the hull or the rank is not one. */
+  openDeck(hull: number, faction: number, rank: number, level: number): boolean;
   /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`, its clock
    *  started at `worldStartS` (seconds since the Unix epoch, which sets its fights' weather); false if the text is not
    *  a layout. */
@@ -97,6 +100,7 @@ interface RoomExports {
   room_tick_seconds(): number;
   room_open(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
+  room_open_deck(hull: number, faction: number, rank: number, level: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
   room_world_start(seconds: number): void;
@@ -158,6 +162,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => exports.room_open(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
+    openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,
     openSea: (layoutText, seed, worldStartS = 0) => {
       const opened = openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText);
       exports.room_world_start(worldStartS);

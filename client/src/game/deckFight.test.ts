@@ -3,11 +3,15 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
-import type { Snapshot } from '../network/roomConnection.ts';
+import { Fighting } from '../combat/fighting.ts';
+import { readFromRoom } from '../network/messages.ts';
+import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
+import { startCombatRules } from '../rules/combatRules.ts';
+import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
-import { deckToWorld, HULL_DECKS, type Lying } from '../ships/deck.ts';
+import { cellHeight, deckFloats, deckToWorld, HULL_DECKS, type Lying } from '../ships/deck.ts';
 import { fromEyeMatrix, shifted, type Shot } from './camera.ts';
 import { deckLink, deckNode, deckTurn, herLying, holdWords, laidOnHer, times } from './deckFight.ts';
 import type { FootFrame } from './foot.ts';
@@ -154,4 +158,51 @@ test('the sea room hands each snapshot of the deck the player stands on, decoded
     'the boarder stands on her deck',
   );
   assert.equal(room.deck?.holdLeft, 1200);
+});
+
+test('the page predicts its boarder on her deck exactly as her deck room steps them, on her planks among her crew', () => {
+  const schooner = HULL_DECKS[1];
+  assert.ok(schooner);
+  const door = startRoomDoor(compiled);
+  assert.ok(door.openDeck(1, 2, 1, 5), 'a Minor pirate Schooner’s deck');
+  assert.equal(door.openDeck(9, 2, 1, 5), false, 'no such hull');
+  door.openDeck(1, 2, 1, 5);
+  let fight: Fighting | null = null;
+  const link: RoomLink = {
+    player: door.join(),
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: (bytes) => void door.input(link.player, bytes),
+    pump: () => {
+      door.tick();
+      const message = readFromRoom(door.snapshot());
+      if (message?.kind === 'snapshot') fight?.receive(message);
+    },
+  };
+  const rules = startCombatRules(compiled);
+  rules.setCourse([]);
+  assert.ok(rules.setHeights(deckFloats(schooner)));
+  assert.equal(rules.setHeights([1, 2]), false, 'numbers that are no grid');
+  rules.setHeights(deckFloats(schooner));
+  const fighting = new Fighting(rules, link);
+  fight = fighting;
+  link.pump();
+  const steps = fighting.steps({ tickSeconds: 1 / 60 } as unknown as MovementRules);
+  const still: Controls = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  for (const [count, controls] of [
+    [30, { ...still, sideways: 1 }],
+    [40, { ...still, forward: -1, yaw: 0.2 }],
+  ] as const)
+    for (let tick = 0; tick < count; tick += 1) {
+      steps.step({} as Body, controls);
+      const predicted = JSON.stringify(fighting.own);
+      link.pump();
+      assert.equal(JSON.stringify(fighting.own), predicted, `the room's word is the page's, tick ${tick}`);
+    }
+  const own = fighting.own;
+  assert.ok(own && Math.hypot(own.x, own.y) > 1, 'walked');
+  assert.ok(Math.abs(own.z - (cellHeight(schooner, own.x, own.y) ?? -9)) < 0.05, `on her planks: ${own.z}`);
+  assert.equal(fighting.foes.size, 3, 'a Minor’s three hands');
 });

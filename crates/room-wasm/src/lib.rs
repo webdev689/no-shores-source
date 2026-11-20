@@ -303,6 +303,26 @@ pub unsafe extern "C" fn room_open(address: *const u8, length: usize) -> u32 {
     u32::from(open(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
+/// Opens a captain's deck as a room alone, as the sea holds one boarded: her hull's deck by its number, her faction's
+/// deck crew for her rank (1 Minor to 5 Boss) at her level. The page's tests and pictures of the fight on her deck
+/// stand on it; the sea opens its own. Answers whether the hull and the rank are ones.
+#[must_use]
+pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
+    let (Some(deck), Some(rank)) = (deck_door::hull_decks().get(usize::from(hull)), foes::Rank::from_number(rank))
+    else {
+        return false;
+    };
+    keep(Opened::Land { room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))), node: None });
+    true
+}
+
+/// Opens a captain's deck as a room alone (`open_deck`); 1 if it opened, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32) -> u32 {
+    let byte = |number: u32| u8::try_from(number).unwrap_or(u8::MAX);
+    u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
+}
+
 /// Opens a node's room from its file's text written at `address`, `length` bytes long; 1 if it opened, 0 if not.
 ///
 /// # Safety
