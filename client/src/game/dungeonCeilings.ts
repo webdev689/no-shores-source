@@ -169,6 +169,13 @@ export function closeEdge(
   }
 }
 
+/** How far a cave's rock wall stands back into the rock (less than nothing: out into the cell) at a point (x, y) of
+ *  its cell's edge, `along` the edge and `up` the wall, each from 0 to 1: none at the edge's ends, its foot or its
+ *  head. */
+export function caveBulge(x: number, y: number, along: number, up: number): number {
+  return (roughness(x, y + up * 7, 11) * 2 - 1) * CAVE_BULGE_M * Math.sin(Math.PI * along) * Math.sin(Math.PI * up);
+}
+
 /** A cave cell's rock wall on its side from the floor to its ceiling, facing into the cell, bulging in and out by the
  *  lattice and never at its edges, so it meets the floor, the ceiling and the next wall without a gap. */
 export function caveWall(
@@ -187,8 +194,7 @@ export function caveWall(
   const [rightX, rightY] = [edgeX + south * half, edgeY - east * half];
   const point = (along: number, up: number): Point => {
     const [x, y] = [leftX + (rightX - leftX) * along, leftY + (rightY - leftY) * along];
-    const bulge =
-      (roughness(x, y + up * 7, 11) * 2 - 1) * CAVE_BULGE_M * Math.sin(Math.PI * along) * Math.sin(Math.PI * up);
+    const bulge = caveBulge(x, y, along, up);
     return [x + east * bulge, y + south * bulge, high * up];
   };
   const facing: Point = [-east, -south, 0];

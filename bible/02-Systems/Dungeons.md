@@ -245,12 +245,34 @@ dungeon").
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
   layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Each cell
   wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
+  Where a look's style has a pack of pieces, its pillars, brackets and portal arch are the pack's; the jambs, the
+  flames, the portal's face and the exit door stay the mesh's.
+- **Its packs** (`dungeonModules.ts`): the packs of every style its looks wear are fetched behind the veil before it
+  is first drawn (`stylePacks`). A style whose pack is not published, or fails to come, is drawn as above, with one
+  warning.
+- **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
+  every doorway; a pillar's base, its shaft stretched to its capital; wall sets every `wallEvery` cells along a straight
+  wall, the cap's top where the ceiling comes lowest over it, never on a cave's rock, and in the mines a timber set on
+  both walls of a way with a beam across; up to `features` a room on its quiet cells' walls, set back into a cave's
+  rock; and a sconce at every torch, round the code-built flame, and arches round the portal and the exit door.
+- **Overhead and underfoot**, by the style's `ceiling` and `floor`: a boss at a dome's top and every second cell of a
+  vault's ridge; a beam across the way on every flat cell; stalactites from one cave cell in six, where its rock comes
+  lowest, their roots in the rock; slabs on one quiet cell in four, a runner or rails along the straight corridors, a
+  drain a room, a circle in a room of 4 × 4 or more, or scree on one cell in five. No ceiling piece hangs below 2.4 m.
+- **Where kits never go.** A cell with a doorway, a torch, the exit or the portal holds only their own pieces, its
+  floor's and a boss. No wall piece stands where a prop stands against the wall. No floor piece lies under a solid,
+  on the arrival's cell, in the end room, where the cache stands, or in an alcove. Nothing stands on a landmark.
+  Variants are drawn by `kitHash`: FNV-1a over the dungeon's name, the cell and a salt.
+- **Its landmarks** (`dungeonDressing.ts`): each is laid from its style's pack, turned within its footprint, and lays
+  its own floor, so the mesh lays none on its cells. Without a pack its floor stays and its solids stand as plain stone
+  boxes. Its glows burn as lights beside the torches and the fixtures (`burningOf`).
 - **Its ceilings** (`dungeonCeilings.ts`): a room's ceiling is flat, a barrel vault across its narrower side, a dome
   over its middle, or rough rock over a cave. A vault rises up to 1.6 m and a dome up to 2.2 m, each at most 0.6 of
   its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m.
   Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
-- **Its light** (`dungeonLight.ts`): each torch and fixture burns in its own colour, reach and flicker (`LIGHT_KINDS`):
-  a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus. Each look has its own faint light,
+- **Its light** (`dungeonLight.ts`): each torch, fixture and landmark's glow burns in its own colour, reach and
+  flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
+  glow's spirit, daylight, water and rune. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
   lights nearest the eye, and the shader and the figures sum the same light (`lightAt`).
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
@@ -264,7 +286,8 @@ dungeon").
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
 - **Its pictures**, every one painted by the procedural textures: each look's sets (records 0 to 4, each turned by
   the island's climate), the textures' ironwork (93, record 0), the
-  entrance's door picture (56 or 331, record 2), the climate's timber and the props' own.
+  entrance's door picture (56 or 331, record 2), the climate's timber, the dressing set the pieces wear (1021, turned
+  by the climate) and the props' own.
 - **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the six above, lifted as the
   table says, turned by the room's yaw; E reaches a door within 2.5 m of its quad's middle.
 - **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room

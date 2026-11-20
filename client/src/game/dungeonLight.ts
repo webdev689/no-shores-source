@@ -89,6 +89,24 @@ export interface Light {
   readonly burning: Burning;
 }
 
+/** Every light a dungeon burns but the portal's: its torches, its fixtures and its landmarks' glows, numbered in that
+ *  order. */
+export function burningOf(layout: DungeonLayout): Light[] {
+  const torch = { ...LIGHT_KINDS.torch, reach: layout.torchReach };
+  const placed =
+    (kinds: readonly Burning[], first: number) =>
+    ([x, y, z, kind]: readonly [number, number, number, number], index: number): Light => ({
+      at: [x, y, z],
+      number: first + index,
+      burning: kinds[kind] ?? torch,
+    });
+  return [
+    ...layout.torches.map(([x, y, z], number): Light => ({ at: [x, y, z], number, burning: torch })),
+    ...layout.fixtures.map(placed(FIXTURE_KINDS, layout.torches.length)),
+    ...layout.glows.map(placed(GLOW_KINDS, layout.torches.length + layout.fixtures.length)),
+  ];
+}
+
 /** How bright a light burns at `time`, by its number and how much its kind flickers: a steady one never changes. */
 export function flicker(time: number, number: number, amount = 1): number {
   const wave = 0.07 * Math.sin(time * 9.3 + number * 2.17) + 0.05 * Math.sin(time * 15.1 + number * 4.41);

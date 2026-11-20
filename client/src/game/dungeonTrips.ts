@@ -34,7 +34,7 @@ export interface TripGame {
   readonly ontoPatrol: (patrol: NodeInfo, facing: number, seas: Difficulty, arriving?: AtEntrance) => Promise<void>;
   readonly drawers: {
     readonly props: PropTable | null;
-    show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): void;
+    show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): Promise<void> | void;
   };
 }
 
@@ -49,7 +49,7 @@ export function dungeonTrips(game: TripGame): {
   const into = (patrol: NodeInfo, text: string, number: number, seas: Difficulty, entrance?: Entrance) => async () => {
     const layout = askDungeon(await game.module, patrol.id, patrol.name, number);
     await game.intoDungeon({ node: patrol, text }, number, layout, seas);
-    game.drawers.show(layout, patrol, entrance);
+    await game.drawers.show(layout, patrol, entrance);
     wentIn = entrance;
   };
   return {

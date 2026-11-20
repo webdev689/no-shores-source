@@ -118,6 +118,11 @@ export function openAt(layout: DungeonLayout, column: number, row: number): bool
   return inside && (layout.cells[row * layout.columns + column] ?? ROCK) !== ROCK;
 }
 
+/** The style a cell wears, its look's; null for rock. */
+export function styleAt(layout: DungeonLayout, cell: number): StyleKey | null {
+  return layout.looks[layout.cellLooks[cell] ?? -1]?.style ?? null;
+}
+
 /** The ceiling over a point (m): its cell's, null over rock or off the grid. */
 export function ceilingAt(layout: DungeonLayout, x: number, y: number): number | null {
   const [column, row] = [Math.floor(x / layout.cell), Math.floor(y / layout.cell)];

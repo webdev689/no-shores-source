@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import landmarks from '../../../content/dungeon/landmarks.json' with { type: 'json' };
 import {
   type Burning,
+  burningOf,
   falloff,
   FIXTURE_KINDS,
   flicker,
@@ -104,4 +105,32 @@ test('a rune swells and fades slowly; a light that does not pulse is always full
   assert.ok(Math.abs(strength(Math.PI / 0.9) - strength(0)) > 0.2 * strength(0), 'but dimmer half a pulse on');
   const daylight = [{ at: [0, 0, 3] as const, number: 0, burning: LIGHT_KINDS.daylight }];
   assert.deepEqual(lightAt(daylight, [1, 0, 0], 3.7, MOODS.crypt), lightAt(daylight, [1, 0, 0], 0, MOODS.crypt));
+});
+
+test("a landmark's glows burn beside the torches and the fixtures, each by its kind, numbered after them", () => {
+  const layout = {
+    torchReach: 8,
+    torches: [[1, 2, 2.1, 0]],
+    fixtures: [[3, 4, 1, 4]],
+    glows: [
+      [5, 6, 0.3, 6],
+      [7, 8, 0.4, 9],
+    ],
+  } as unknown as DungeonLayout;
+  const burning = burningOf(layout);
+  assert.deepEqual(
+    burning.map(({ at, number }) => [...at, number]),
+    [
+      [1, 2, 2.1, 0],
+      [3, 4, 1, 1],
+      [5, 6, 0.3, 2],
+      [7, 8, 0.4, 3],
+    ],
+  );
+  assert.deepEqual(
+    burning.map((light) => light.burning),
+    [{ ...LIGHT_KINDS.torch, reach: 8 }, LIGHT_KINDS.hearth, LIGHT_KINDS.spirit, LIGHT_KINDS.rune],
+  );
+  const lit = lightAt(burning, [7, 8, 1], 0, MOODS.sanctum);
+  assert.ok(lit[2] > MOODS.sanctum[2] + 0.5, 'the rune lights what stands by it, as the shader lights the walls');
 });

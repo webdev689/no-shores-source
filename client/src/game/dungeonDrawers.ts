@@ -4,6 +4,7 @@ import { cityClimate } from '../city/plan.ts';
 import { ENTRANCE_MODELS, type Entrance } from './entrances.ts';
 import { EntranceView } from './entranceView.ts';
 import type { DungeonLayout } from './dungeonLayout.ts';
+import { stylePacks } from './dungeonDressing.ts';
 import { DungeonScene } from './dungeonScene.ts';
 import { DungeonView } from './dungeonView.ts';
 import type { Gpu } from '../gpu.ts';
@@ -58,10 +59,12 @@ export class DungeonDrawers {
     return cityClimate(this.biomeOf(node.continent) ?? undefined);
   }
 
-  /** Draws this dungeon of `patrol` from now on, its exit door wearing the door picture its entrance's model wears. */
-  show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): void {
+  /** Draws this dungeon of `patrol` from now on, its exit door wearing the door picture its entrance's model wears,
+   *  once the packs of the styles it wears have come. */
+  async show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): Promise<void> {
+    const packs = await stylePacks(layout);
     const look = entrance && this.props?.[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook;
-    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, this.props ?? {});
+    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, this.props ?? {}, packs);
   }
 
   /** Lets go of the dungeon last drawn and the scene's targets, once the player is somewhere that is no dungeon. */

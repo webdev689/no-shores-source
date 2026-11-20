@@ -6,7 +6,7 @@
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
-import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
+import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS, styleAt, type StyleKey } from './dungeonLayout.ts';
 import { uvOf } from './dungeonUv.ts';
 
 /** The trim bands' heights at a wall's foot and head. */
@@ -236,8 +236,14 @@ function doorFrame(
   );
 }
 
-/** A torch's iron bracket on its wall, the edge of its cell on its side, and its flame. */
-function torch(mesh: MeshBuilder, [x, y, z, side]: readonly [number, number, number, number], cell: number): void {
+/** A torch's iron bracket on its wall, the edge of its cell on its side, unless its style's sconce holds it; and its
+ *  flame. */
+function torch(
+  mesh: MeshBuilder,
+  [x, y, z, side]: readonly [number, number, number, number],
+  cell: number,
+  bracket: boolean,
+): void {
   const [east, south] = SIDE_STEPS[side] ?? [0, 0];
   const edge = (along: number, step: number) =>
     step === 0 ? along : (Math.floor(along / cell) + 0.5 + step / 2) * cell;
@@ -251,9 +257,11 @@ function torch(mesh: MeshBuilder, [x, y, z, side]: readonly [number, number, num
       [Math.max(fromX, toX) + half * Math.abs(south), Math.max(fromY, toY) + half * Math.abs(east), z + high],
     );
   const plate = [wallX - east * PLATE.thick, wallY - south * PLATE.thick] as const;
-  across(PLATE.half, plate[0], plate[1], wallX, wallY, PLATE.low, PLATE.high);
-  across(ARM.half, x, y, plate[0], plate[1], ARM.low, ARM.high);
-  box(mesh, iron, [x - CUP.half, y - CUP.half, z + CUP.low], [x + CUP.half, y + CUP.half, z + CUP.high]);
+  if (bracket) {
+    across(PLATE.half, plate[0], plate[1], wallX, wallY, PLATE.low, PLATE.high);
+    across(ARM.half, x, y, plate[0], plate[1], ARM.low, ARM.high);
+    box(mesh, iron, [x - CUP.half, y - CUP.half, z + CUP.low], [x + CUP.half, y + CUP.half, z + CUP.high]);
+  }
   const glow: Picture = [COLOUR.glow, 0];
   const ring: Point[] = [
     [x - FLAME.half, y, z + FLAME.waist],
@@ -312,9 +320,9 @@ function doorFace(mesh: MeshBuilder, { x, y, width, height }: Opening, side: num
   mesh.quad(picture, corners, [-east, -south, 0], mapping);
 }
 
-/** The return portal: a stone arch, two posts and a lintel standing off the end room's wall in its trim, round a face
- *  the shader shows dark while it is shut and glowing while it is open. */
-function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
+/** The return portal: a stone arch, two posts and a lintel standing off the end room's wall in its trim (unless its
+ *  style's own arch stands there), round a face the shader shows dark while it is shut and glowing while it is open. */
+function portal(mesh: MeshBuilder, layout: DungeonLayout, arch: boolean): void {
   const opening = layout.portal;
   const [east, south] = SIDE_STEPS[opening.side] ?? [0, 0];
   const trim: Picture = [lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0).set, ROLE.trim];
@@ -333,18 +341,27 @@ function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
     );
   };
   const half = opening.width / 2;
-  piece(-half - ARCH.post, -half, 0, opening.height + ARCH.lintel);
-  piece(half, half + ARCH.post, 0, opening.height + ARCH.lintel);
-  piece(-half, half, opening.height, opening.height + ARCH.lintel);
+  if (arch) {
+    piece(-half - ARCH.post, -half, 0, opening.height + ARCH.lintel);
+    piece(half, half + ARCH.post, 0, opening.height + ARCH.lintel);
+    piece(-half, half, opening.height, opening.height + ARCH.lintel);
+  }
   const face = { ...opening, x: opening.x - east * ARCH.face, y: opening.y - south * ARCH.face };
   doorFace(mesh, face, opening.side, [COLOUR.portal, 0]);
 }
 
-/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it. */
+/** What a dungeon's kits draw in the mesh's place: the styles whose pillars, brackets and portal arch they stand
+ *  instead, and the cells whose floor a landmark lays itself. */
+export type Kitted = { readonly styles: ReadonlySet<StyleKey>; readonly floorless: ReadonlySet<number> };
+const UNKITTED: Kitted = { styles: new Set(), floorless: new Set() };
+
+/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it,
+ *  and `kitted` says what it draws instead of the mesh. */
 export function dungeonMesh(
   layout: DungeonLayout,
   door: Picture,
   furnish: (mesh: MeshBuilder) => void = () => undefined,
+  kitted: Kitted = UNKITTED,
 ): ForgedModel {
   const mesh = meshBuilder();
   const { cell, columns, rows, cells, ceilings } = layout;
@@ -369,7 +386,7 @@ export function dungeonMesh(
         [west + cell, north + cell, z],
         [west, north + cell, z],
       ];
-      face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
+      if (!kitted.floorless.has(index)) face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
       if (curved(index)) curvedCeiling(mesh, [look.set, ROLE.ceiling], west, north, cell, height);
       else face(mesh, [look.set, ROLE.ceiling], square(ceiling), [0, 0, -1], ceiling);
       SIDE_STEPS.forEach(([east, south], side) => {
@@ -401,19 +418,17 @@ export function dungeonMesh(
     const look = lookAt(layout, frameCell);
     doorFrame(mesh, look, layout.boxes.slice(index * 2, index * 2 + 2), layout.doorway.lintel, height);
   });
-  for (const [x, y, height] of layout.pillars) {
-    pillar(
-      mesh,
-      lookAt(layout, Math.floor(y / cell) * columns + Math.floor(x / cell)),
-      x,
-      y,
-      height,
-      layout.pillarHalf,
-    );
-  }
-  for (const each of layout.torches) torch(mesh, each, cell);
+  const cellOf = (x: number, y: number) => Math.floor(y / cell) * columns + Math.floor(x / cell);
+  const kittedAt = (index: number) => {
+    const style = styleAt(layout, index);
+    return !!style && kitted.styles.has(style);
+  };
+  for (const [x, y, height] of layout.pillars)
+    if (!kittedAt(cellOf(x, y))) pillar(mesh, lookAt(layout, cellOf(x, y)), x, y, height, layout.pillarHalf);
+  for (const each of layout.torches) torch(mesh, each, cell, !kittedAt(cellOf(each[0], each[1])));
   doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
-  portal(mesh, layout);
+  const endStyle = layout.looks[layout.rooms[layout.end]?.look ?? 0]?.style ?? layout.style;
+  portal(mesh, layout, !kitted.styles.has(endStyle));
   furnish(mesh);
   return mesh.model();
 }

@@ -1,5 +1,6 @@
-// A dungeon drawn on WebGPU: its floor's mesh and its cache in its pictures, painted by the city's painter, lit by
-// the torches nearest the eye. A Drawer the dungeon's scene draws into its pass.
+// A dungeon drawn on WebGPU: its floor's mesh, dressed in its styles' pieces and landmarks, and its cache in its
+// pictures, painted by the city's painter, lit by the lights nearest the eye. A Drawer the dungeon's scene draws into
+// its pass.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter } from '../city/painter.ts';
@@ -9,17 +10,17 @@ import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { PORTAL_FLAG, smallBook, type SmallBook, type Wanted } from './dungeonBook.ts';
+import { dungeonBook, type SmallBook } from './dungeonBook.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
-import type { DungeonLayout } from './dungeonLayout.ts';
-import { FIXTURE_KINDS, LIGHT_KINDS, type Light, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
-import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
+import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
+import { dressingOf } from './dungeonDressing.ts';
+import { burningOf, LIGHT_KINDS, type Light, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
+import { dungeonMesh } from './dungeonMesh.ts';
+import type { ModulePack } from './dungeonModules.ts';
 import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
-import type { PictureUse } from '../textures/picture.ts';
-import { SIDE_STEPS } from './dungeonLayout.ts';
 import { DUNGEON_SHADER, LIGHT_FLOATS, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
 /** How far out from its face the open portal's light stands, metres. */
@@ -123,38 +124,33 @@ export class DungeonView {
   }
 
   /** Draws this dungeon from now on, in the island's climate: its exit door in `door`, its cache's wood the
-   *  climate's timber. */
-  set(layout: DungeonLayout, climate: CityClimate, door: readonly [number, number], props: PropTable): void {
+   *  climate's timber, and each style's pieces and landmarks from its pack in `packs`. */
+  set(
+    layout: DungeonLayout,
+    climate: CityClimate,
+    door: readonly [number, number],
+    props: PropTable,
+    packs: ReadonlyMap<StyleKey, ModulePack> = new Map(),
+  ): void {
     this.clear();
     const { device } = this.gpu;
-    const [timberArchive, timberRecord, timberUse, timberTint] = MATERIALS[climate.climate].timber;
+    const [timberArchive, timberRecord] = MATERIALS[climate.climate].timber;
     const wood = [timberArchive, timberRecord] as const;
-    const model = dungeonMesh(layout, door, (mesh) => {
-      for (const [id, x, y, z, yaw] of layout.props) {
-        const forged = propModel(props, id);
-        if (forged) layModel(mesh, forged, [x, y, z], yaw);
-      }
-      for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
-    });
-    const end = lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0);
-    const sets = new Set(layout.looks.flatMap((look) => look.pictures));
-    // A set's record by its role; the exit door's picture as a door; the props' and the iron as a prop's.
-    const useOf = (archive: number, record: number): PictureUse => {
-      if (!sets.has(archive)) return archive === door[0] && record === door[1] ? 'door' : 'prop';
-      return record === ROLE.floor ? 'floor' : record === ROLE.ceiling ? 'ceiling' : 'wall';
-    };
-    const wanted: Wanted[] = [
-      [timberArchive, timberRecord, timberUse, timberTint],
-      [...IRON, 'prop'],
-      [end.set, end.wall, 'wall'],
-      ...model.parts.map((part): Wanted => [part.archive, part.record, useOf(part.archive, part.record)]),
-    ];
-    const plain = smallBook(climate, wanted);
-    const book: SmallBook = {
-      pictures: plain.pictures,
-      layerOf: (archive, record) =>
-        archive === COLOUR.portal ? PORTAL_FLAG | plain.layerOf(end.set, end.wall) : plain.layerOf(archive, record),
-    };
+    const dressing = dressingOf(layout, packs, climate.climate);
+    const model = dungeonMesh(
+      layout,
+      door,
+      (mesh) => {
+        for (const [id, x, y, z, yaw] of layout.props) {
+          const forged = propModel(props, id);
+          if (forged) layModel(mesh, forged, [x, y, z], yaw);
+        }
+        for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
+        dressing.lay(mesh);
+      },
+      dressing,
+    );
+    const book = dungeonBook(layout, climate, door, model.parts);
     const painter = new CityPainter(this.gpu, book, () => undefined);
     const view = device.createBuffer({
       size: VIEW_FLOATS.all * 4,
@@ -187,15 +183,7 @@ export class DungeonView {
         { binding: 4, resource: { buffer: cellLooks } },
       ],
     });
-    const torch = { ...LIGHT_KINDS.torch, reach: layout.torchReach };
-    const burning: Light[] = [
-      ...layout.torches.map(([x, y, z], number): Light => ({ at: [x, y, z], number, burning: torch })),
-      ...layout.fixtures.map(([x, y, z, kind], index): Light => ({
-        at: [x, y, z],
-        number: layout.torches.length + index,
-        burning: FIXTURE_KINDS[kind] ?? torch,
-      })),
-    ];
+    const burning = burningOf(layout);
     const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
     const { x, y, height } = layout.portal;
     const portalLight: Light = {

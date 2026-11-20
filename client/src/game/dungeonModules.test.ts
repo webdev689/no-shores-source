@@ -17,47 +17,7 @@ import {
   turnAbout,
   wallTurns,
 } from './dungeonModules.ts';
-
-/** A vertex as a test writes it: position, normal and part. */
-type Vertex = readonly [x: number, y: number, z: number, nx: number, ny: number, nz: number, part: number];
-type Written = { readonly name: string; readonly vertices: readonly Vertex[]; readonly indices: readonly number[] };
-
-/** A pack in the format the exporter writes: the header's length, the header, 28-byte vertices, then the corners,
- *  each module's counted from its own first vertex. `header` overrides the header's fields; `extra` bytes trail. */
-function packOf(modules: readonly Written[], header: Record<string, unknown> = {}, extra = 0): ArrayBuffer {
-  let vertexStart = 0;
-  let indexStart = 0;
-  const entries = modules.map(({ name, vertices, indices }) => {
-    const axis = (index: number) => vertices.map((vertex) => vertex[index]);
-    const bounds = [0, 1, 2].map((index) => Math.min(...axis(index)));
-    bounds.push(...[0, 1, 2].map((index) => Math.max(...axis(index))));
-    const entry = { name, vertexStart, vertexCount: vertices.length, indexStart, indexCount: indices.length, bounds };
-    vertexStart += vertices.length;
-    indexStart += indices.length;
-    return entry;
-  });
-  const json = new TextEncoder().encode(
-    JSON.stringify({ format: 1, style: 'crypt', parts: PARTS, modules: entries, ...header }),
-  );
-  const bytes = new ArrayBuffer(4 + json.length + vertexStart * 28 + indexStart * 4 + extra);
-  const data = new DataView(bytes);
-  data.setUint32(0, json.length, true);
-  new Uint8Array(bytes, 4).set(json);
-  let offset = 4 + json.length;
-  for (const [x, y, z, east, south, up, part] of modules.flatMap((module) => module.vertices)) {
-    [x, y, z].forEach((value, axis) => data.setFloat32(offset + axis * 4, value, true));
-    [east, south, up].forEach((value, axis) => data.setInt8(offset + 12 + axis, Math.round(value * 127)));
-    data.setFloat32(offset + 16, x, true);
-    data.setFloat32(offset + 20, z, true);
-    data.setUint8(offset + 24, part);
-    offset += 28;
-  }
-  for (const index of modules.flatMap((module) => module.indices)) {
-    data.setUint32(offset, index, true);
-    offset += 4;
-  }
-  return bytes;
-}
+import { packOf, type Vertex, type Written } from './dungeonPacks.test.ts';
 
 /** A door's slab facing +y, two triangles of stone; and a wall's foot, one triangle of iron facing +y. */
 const DOOR: Written = {
