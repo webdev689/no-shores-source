@@ -287,7 +287,7 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
         "the Tailor's, the Tack's"
     );
     assert_eq!(gear.shapes(), 9);
-    let week = gear::shape::week_of(friday);
+    let week = gear::clock::week_of(friday);
     assert_eq!(usize::from(gear.shape_place()), gear::shape::place(week));
     let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
     assert_eq!(wares.len(), gear::shape::WARES);

@@ -255,9 +255,9 @@ the factions' counters are in [[Factions]].
   ("Cosmetics").
 - A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
-  the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
-  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold from level
-  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
+  the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
+  Legendary and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold
+  from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
   only from kills at the Elite and Abyss seas: one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own

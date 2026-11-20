@@ -97,7 +97,7 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     assert_eq!(room.shape_at(), None, "not on a Thursday");
     room.take_gear_change(player);
     room.set_minute(FRIDAY_NOON);
-    let week = gear::shape::week_of(FRIDAY_NOON);
+    let week = gear::clock::week_of(FRIDAY_NOON);
     let spot = room.shape_spots[gear::shape::place(week)];
     assert_eq!(room.shape_at(), Some(spot));
     assert!(room.players.get(&player).expect("in").gear_changed, "his coming is sent");
@@ -110,6 +110,11 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     assert_eq!(room.player(player).expect("in").character.materials.shapes, 13);
     room.counters = None;
     assert_eq!(room.shape_at(), None, "he keeps to a social space");
+    let tuesday_nine = THURSDAY + 5 * 1_440 + 9 * 60;
+    room.set_minute(tuesday_nine - 1);
+    assert_eq!(room.here(player, &Ask::UseCrate).week, week, "his week runs to Tuesday 09:00 UTC, the clock's");
+    room.set_minute(tuesday_nine);
+    assert_eq!(room.here(player, &Ask::UseCrate).week, week + 1);
 }
 
 /// The Shapes a foe of a rank gives its one striker when slain at a sea's difficulty.

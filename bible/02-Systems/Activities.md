@@ -53,8 +53,8 @@ Company]]).
 - **A day** runs from 09:00 UTC to 09:00 UTC, and **a week** from Tuesday 09:00 UTC, as Destiny 1's resets did.
 - `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in, and the minutes to
   the next of each. The rules keep no clock of their own.
-- **Everything that turns reads it**: the vendors' daily wares, Shape's week (Monday now; Shape
-  still comes Friday 09:00 to Sunday 21:00 inside it), the activities, the bounties and the quests.
+- **Everything that turns reads it**: the vendors' daily wares, Shape's week (he comes Friday 09:00 and goes
+  Sunday 21:00 inside it), the activities, the bounties and the quests.
 
 ## The tiers
 

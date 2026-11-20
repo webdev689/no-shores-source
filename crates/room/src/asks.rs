@@ -168,13 +168,13 @@ impl Room {
             counters.into_iter().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
         let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
-        Here { social, day: self.day(), week: gear::shape::week_of(self.minute) }
+        Here { social, day: self.day(), week: gear::clock::week_of(self.minute) }
     }
 
     /// Where Shape stands, while he is in this social space: his place of the week among its spots.
     #[must_use]
     pub fn shape_at(&self) -> Option<[f64; 2]> {
-        let week = gear::shape::week_of(self.minute);
+        let week = gear::clock::week_of(self.minute);
         let present = self.counters.is_some() && gear::shape::present(self.minute);
         present.then(|| self.shape_spots.get(gear::shape::place(week)).copied()).flatten()
     }
