@@ -49,10 +49,26 @@ The owner picked on the sea sound sheet and said "Picks done. Some sections didn
 
 For a ball falling in the sea and a ship breaking up, the owner chose None of these over the one candidate each had.
 The wash, the rigging, both rains, the hull's creak and slap, the bow's thump, the blocks, the story's splash and a
-ball striking a hull had no candidates yet, and are searched again.
+ball striking a hull had no candidates. Searched again with plainer words, the owner picked the rest and said "picks
+done"; for the hull's slap they chose None of these with the note "use wave3", Kayyy's recording offered for the bow:
 
-Claude's call: the five picks longer than two minutes or about it (the swell, the sea's wind, the surf, the lapping
-and the storm waves) play their steadiest minute, mono, found by their loudness second by second, so the game holds
-a minute of each rather than up to five.
+| Sound | Pick |
+|---|---|
+| The wash along her hull | Walking.With.Microphones's "boat wake" (556052, CC0) |
+| The rigging | timsc's "shipyard2" (179899, CC0) |
+| Rain on the sea | tomtenney's "Rain_Light_Ocean" (126580, CC BY) |
+| Rain on her deck | douglasbruce's "Rainfall on roof of sailboat at the dock" (849790, CC0) |
+| Her hull's creak | "shipcreaks2", by a deleted account (113362, CC0) |
+| A wave slapping her side | Kayyy's "wave3" (61013, CC BY) |
+| Her bow's thump | Kayyy's "wave4" (61014, CC BY) |
+| A block knocking | InspectorJ's "Light, Pulley Switch, On, B" (414439, CC BY) |
+| The story's splash | Kayyy's "Splash" (61015, CC BY) |
+| A ball striking a hull | kyles's "door wood impact hit kick open" (452596, CC0) |
+| A ball falling in the sea | qubodup's "Big Water Splash" (442773, CC0) |
+| A ship breaking up | jorickhoofd's "Breaking wood" (178658, CC BY) |
+
+Claude's call: the seven beds longer than about 80 s (the swell, the sea's wind, both rains, the surf, the lapping
+and the storm waves) play their steadiest minute, mono, found by their loudness second by second, so the game holds a
+minute of each rather than up to five.
 
 [[Ambience]], [[Naval Combat]].

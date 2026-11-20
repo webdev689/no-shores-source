@@ -1164,7 +1164,8 @@
       "seconds": [
         10.0,
         180.0
-      ]
+      ],
+      "picked": 556052
     },
     {
       "id": "amb.sea.wind",
@@ -1188,7 +1189,8 @@
       "seconds": [
         10.0,
         180.0
-      ]
+      ],
+      "picked": 179899
     },
     {
       "id": "amb.sea.timbers",
@@ -1207,7 +1209,13 @@
       "seconds": [
         20.0,
         300.0
-      ]
+      ],
+      "picked": 126580,
+      "cut": [
+        23,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "amb.sea.rain.deck",
@@ -1216,7 +1224,13 @@
       "seconds": [
         10.0,
         180.0
-      ]
+      ],
+      "picked": 849790,
+      "cut": [
+        20,
+        60
+      ],
+      "mono": true
     },
     {
       "id": "amb.sea.hull.creak",
@@ -1225,7 +1239,8 @@
       "seconds": [
         0.5,
         6.0
-      ]
+      ],
+      "picked": 113362
     },
     {
       "id": "amb.sea.rope.creak",
@@ -1244,7 +1259,8 @@
       "seconds": [
         0.3,
         4.0
-      ]
+      ],
+      "picked": 61013
     },
     {
       "id": "amb.sea.bow.thump",
@@ -1253,7 +1269,8 @@
       "seconds": [
         0.5,
         5.0
-      ]
+      ],
+      "picked": 61014
     },
     {
       "id": "amb.sea.canvas.flap",
@@ -1272,7 +1289,8 @@
       "seconds": [
         0.1,
         2.0
-      ]
+      ],
+      "picked": 414439
     },
     {
       "id": "story.waves",
@@ -1326,7 +1344,8 @@
       "seconds": [
         0.5,
         5.0
-      ]
+      ],
+      "picked": 61015
     },
     {
       "id": "story.deep",
@@ -1375,7 +1394,8 @@
       "seconds": [
         0.3,
         4.0
-      ]
+      ],
+      "picked": 452596
     },
     {
       "id": "sea.ball.splash",
@@ -1387,7 +1407,8 @@
       ],
       "skip": [
         273834
-      ]
+      ],
+      "picked": 442773
     },
     {
       "id": "sea.ship.break",
@@ -1399,7 +1420,8 @@
       ],
       "skip": [
         256688
-      ]
+      ],
+      "picked": 178658
     },
     {
       "id": "amb.shore.surf",
