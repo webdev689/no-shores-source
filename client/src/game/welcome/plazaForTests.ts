@@ -90,13 +90,15 @@ post('smith', -48.9, between, Math.sign(forge) > 0 ? EAST : WEST, 'kept', pointA
   post(task, 42.6, across + 0.75, EAST, 'visited', from);
 });
 const band = pointAt(-14, -45, 'band');
-const BAND: readonly [Task, number][] = [
-  ['play_lute', -48.3],
-  ['play_flute', -46.1],
-  ['play_recorder', -43.9],
-  ['play_tambourine', -41.7],
+const BAND: readonly [Task, number, number][] = [
+  ['play_lute', -2.9, -48.3],
+  ['play_flute', -3.5, -46.1],
+  ['play_recorder', -3.5, -43.9],
+  ['play_tambourine', -2.9, -41.7],
 ];
-for (const [task, across] of BAND) post(task, -3.5, across, LANDWARD, 'kept', band);
+// Each faces the dancer at (-7.5, -45): east is -across, south is +toward.
+for (const [task, toward, across] of BAND)
+  post(task, toward, across, Math.atan2(-(-45 - across), -(-7.5 - toward)), 'kept', band);
 post('dance', -7.5, -45, SEAWARD, 'kept', band);
 post('juggle', -4, 45, LANDWARD, 'kept', pointAt(-14, 45, 'juggler'));
 const SWEPT: readonly (readonly [number, number])[] = [

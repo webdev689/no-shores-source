@@ -115,13 +115,22 @@ const OTHER_KEEPERS: Readonly<Record<string, Outfit>> = {
     formal_cloak: 'Blue',
   }),
 };
-/** The townsfolk's clothes, worn in turn and dyed in turn. */
-const CLOTHES: readonly (readonly string[])[] = [
-  ['shirt_long_v', 'peasant_blouse', 'breeches', 'long_skirt', 'shoes'],
-  ['shirt_short_round', 'vest', 'casual_pants', 'tights', 'sandals'],
-  ['shirt_long_round', 'short_tunic', 'casual_dress', 'breeches', 'tall_boots'],
-  ['shirt_long_deep', 'day_gown', 'casual_pants', 'shoes', 'casual_cloak'],
-];
+/** The townsfolk's clothes by body, worn in turn and dyed in turn: only garments the forge draws on that body in
+ *  every move the townsfolk make, at work and at play as well as walking, so no one at a post is left undrawn. */
+export const CLOTHES: Readonly<Record<'male' | 'female', readonly (readonly string[])[]>> = {
+  male: [
+    ['shirt_long_v', 'breeches', 'shoes'],
+    ['shirt_short_round', 'vest', 'casual_pants', 'sandals'],
+    ['shirt_long_round', 'short_tunic', 'breeches', 'tall_boots'],
+    ['shirt_long_deep', 'casual_pants', 'shoes'],
+  ],
+  female: [
+    ['peasant_blouse', 'long_skirt', 'shoes'],
+    ['shirt_short_round', 'vest', 'tights', 'sandals'],
+    ['shirt_long_round', 'casual_dress', 'tall_boots'],
+    ['shirt_long_deep', 'day_gown', 'shoes'],
+  ],
+};
 const DYES = ['White', 'LightBrown', 'DarkBrown', 'Blue', 'Grey', 'Red', 'Green', 'Yellow', 'Purple', 'Aquamarine'];
 const RACES: readonly Race[] = ['human', 'human', 'felid', 'human', 'anole'];
 const STYLES: Readonly<Record<string, readonly string[]>> = {
@@ -136,7 +145,8 @@ function dressOf(index: number, clothes: Outfit | null, random: () => number): D
   const styles = STYLES[body] ?? ['crop'];
   const hair = { style: styles[Math.floor(random() * styles.length)] ?? 'crop', colour: 'brown' };
   if (clothes) return { body, race, tone: random(), outfit: { ...clothes, hair } };
-  const garments = [...(CLOTHES[index % CLOTHES.length] ?? [])];
+  const worn = CLOTHES[body];
+  const garments = [...(worn[Math.floor(index / 2) % worn.length] ?? [])];
   const dyes = Object.fromEntries(garments.map((garment) => [garment, DYES[Math.floor(random() * DYES.length)]]));
   return { body, race, tone: random(), outfit: outfit(garments, dyes as Record<string, string>) };
 }

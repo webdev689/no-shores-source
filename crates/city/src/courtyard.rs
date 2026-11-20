@@ -86,11 +86,14 @@ const AT_PARAPET_IN_M: f64 = 1.6;
 const AT_BENCH_IN_M: f64 = 17.4;
 const TALKED_BENCHES_M: [f64; 5] = [-80.0, -40.0, 0.0, 40.0, 80.0];
 const VIEWS_M: [f64; 7] = [-110.0, -80.0, -40.0, 0.0, 40.0, 80.0, 110.0];
-/// The band before the brazier west of the obelisk, its dancer, and a juggler before the one east of it: metres
-/// toward the sea and across.
-const BAND_M: [(Task, f64); 4] =
-    [(Task::PlayLute, -48.3), (Task::PlayFlute, -46.1), (Task::PlayRecorder, -43.9), (Task::PlayTambourine, -41.7)];
-const BAND_TOWARD_M: f64 = -3.5;
+/// The band before the brazier west of the obelisk, in an arc round its dancer, and a juggler before the one east of
+/// it: metres toward the sea and across.
+const BAND_M: [(Task, [f64; 2]); 4] = [
+    (Task::PlayLute, [-2.9, -48.3]),
+    (Task::PlayFlute, [-3.5, -46.1]),
+    (Task::PlayRecorder, [-3.5, -43.9]),
+    (Task::PlayTambourine, [-2.9, -41.7]),
+];
 const DANCER_M: [f64; 2] = [-7.5, -45.0];
 const JUGGLER_M: [f64; 2] = [-4.0, 45.0];
 /// The sweeper's round of the ring laid round the obelisk, in turn: metres toward the sea and across.
@@ -158,8 +161,9 @@ pub fn townsfolk_life(frame: &Frame, stations: &[Station]) -> (Ways, Vec<Post>) 
         plan.post(task, [edge - AT_BENCH_IN_M, across + 0.75], across_way.map(|axis| -axis), Keep::Visited, from);
     }
     let band = plan.point([ROWS_M[1], DANCER_M[1]], "band");
-    for (task, across) in BAND_M {
-        plan.post(task, [BAND_TOWARD_M, across], landward, Keep::Kept, band);
+    for (task, place) in BAND_M {
+        let to_dancer = plan.bearing_in([DANCER_M[0] - place[0], DANCER_M[1] - place[1]]);
+        plan.post_facing(task, place, to_dancer, Keep::Kept, band);
     }
     plan.post(Task::Dance, DANCER_M, frame.seaward, Keep::Kept, band);
     let juggler = plan.point([ROWS_M[1], JUGGLER_M[1]], "juggler");

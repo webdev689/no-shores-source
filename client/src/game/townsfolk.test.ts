@@ -100,3 +100,26 @@ test('the plaza frame finds the sea from the spawns and maps its points both way
   assert.deepEqual(point, [980, 1962]);
   assert.deepEqual(inPlaza(frame, point), { toward: -38, across: 20 });
 });
+
+/** The garments the forge draws on each body in every move the townsfolk make (walk, idle, the work moves and the
+ *  four instruments), as its published looks list them. */
+const DRAWN_AT_WORK: Readonly<Record<string, readonly string[]>> = {
+  male: [
+    ...['shirt_long_v', 'breeches', 'shoes', 'shirt_short_round', 'vest', 'casual_pants', 'sandals'],
+    ...['shirt_long_round', 'short_tunic', 'tall_boots', 'shirt_long_deep'],
+  ],
+  female: [
+    ...['peasant_blouse', 'long_skirt', 'shoes', 'shirt_short_round', 'vest', 'tights', 'sandals'],
+    ...['shirt_long_round', 'casual_dress', 'tall_boots', 'shirt_long_deep', 'day_gown'],
+  ],
+};
+
+test('every townsperson wears only garments their body is drawn in at work and at play, so none is left undrawn', () => {
+  const folk = new Townsfolk(plazaOf(SOCIAL), 11);
+  const people = folk.peopleAt(0).slice(plazaOf(SOCIAL).stations.length);
+  assert.equal(people.length, folk.townsfolk);
+  for (const { dress } of people)
+    for (const garment of dress.outfit.garments)
+      assert.ok(DRAWN_AT_WORK[dress.body]?.includes(garment), `a ${dress.body} townsperson in ${garment}`);
+  assert.ok(new Set(people.map(({ dress }) => dress.outfit.garments.join())).size >= 6, 'dressed variously');
+});
