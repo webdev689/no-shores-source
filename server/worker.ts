@@ -46,8 +46,8 @@ function entranceOf(request: Request): number | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--rough` or
- * `--storm` at a voyage's harder seas, and `--dungeon-<number>` after that for one of a patrol's dungeons),
+ * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--elite` or
+ * `--abyss` at a voyage's harder difficulty, and `--dungeon-<number>` after that for one of a patrol's dungeons),
  * `fleet-<name>` a fleet's place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
  * room in step with the clock and sends every player the snapshot after each tick. Its sockets live and die with it:

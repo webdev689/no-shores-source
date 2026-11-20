@@ -253,8 +253,8 @@ and its art (`gear::emblems`).
   their character; a character kept before emblems reads with the starting one, and one wearing an emblem it does not
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
-  (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Storm
-  seas, a resource gathered); and the Tailor, who sells six a day of twelve, the same for everyone that day, at 500
+  (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
+  difficulty, a resource gathered); and the Tailor, who sells six a day of twelve, the same for everyone that day, at 500
   Aurem for Magic and 2,500 for Rare, some from a level. Levels and a piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
   others see of it beside it (`shown`): level, Defense, the Melee loadout's Attack (the Ranged one's without one),
@@ -282,10 +282,11 @@ and its art (`gear::emblems`).
 
 - **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
-- **The seas** a voyage sets out at raise them: Calm as they are, Rough two levels higher, Storm three, never past
-  level 32; and pay by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
+- **The difficulty** a voyage sets out at raises them: Normal as they are, Elite two levels higher, Abyss three,
+  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
+  The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
 - **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
-  drawn evenly from their island's band, from the node's id, raised by the room's seas; a Boss's called foes at its
+  drawn evenly from their island's band, from the node's id, raised by the room's difficulty; a Boss's called foes at its
   level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might
   and defence on top ([[Foes]]). A node with no island stands its foes at level 0.
 

@@ -122,7 +122,7 @@ pub unsafe extern "C" fn room_furnish(address: *const u8, length: usize) -> u32 
     u32::from(furnish(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
-/// Sets the difficulty a node's room's voyage set out at: 0 calm, 1 rough, 2 storm; false for no such difficulty, or
+/// Sets the difficulty a node's room's voyage set out at: 0 Normal, 1 Elite, 2 Abyss; false for no such difficulty, or
 /// no room on land.
 pub fn set_difficulty(number: u32) -> bool {
     let Some(difficulty) = usize::try_from(number).ok().and_then(|index| gear::Difficulty::ALL.get(index).copied())

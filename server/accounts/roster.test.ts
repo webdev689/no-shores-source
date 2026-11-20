@@ -109,7 +109,7 @@ test('the Roster lists those in the same room beside the company, each with wher
   const { player, play, kept, tokens, ask } = await world('Ada', 'Ben', 'Cal');
   await play('Ada', 'node-overlook-social', 12);
   await play('Ben', 'node-overlook-social', 9);
-  await play('Cal', 'node-saltgrass--rough');
+  await play('Cal', 'node-saltgrass--elite');
   const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
   const held = await kept.claim(guest, 'node-overlook-social:guest');
   await kept.save(held?.account ?? '', 'node-overlook-social:guest', '{}');
@@ -124,8 +124,8 @@ test('the Roster lists those in the same room beside the company, each with wher
   assert.deepEqual(names(roster.nearby), ['Ben'], 'Cal is elsewhere');
   assert.equal(roster.guests, 1, 'a guest is counted, not named');
   assert.equal(await kept.present(tokens['Cal'] ?? '', 'sea'), true);
-  const cal = await kept.claim(tokens['Cal'] ?? '', 'node-saltgrass--rough:Cal');
-  await kept.release(cal?.account ?? '', 'node-saltgrass--rough:Cal', null);
+  const cal = await kept.claim(tokens['Cal'] ?? '', 'node-saltgrass--elite:Cal');
+  await kept.release(cal?.account ?? '', 'node-saltgrass--elite:Cal', null);
   await player('Ada').ask('friend/ask', { name: 'Cal' });
   await player('Cal').ask('friend/accept', { name: 'Ada' });
   assert.deepEqual((await player('Ada').roster()).friends[0]?.place, 'sea', 'at sea, as the sea room says');

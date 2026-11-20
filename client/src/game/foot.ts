@@ -181,7 +181,7 @@ export class Foot {
     context: FootContext,
     node: NodeInfo,
     facing: number,
-    seas: Difficulty = 'calm',
+    seas: Difficulty = 'normal',
     arriving?: AtEntrance,
   ): Promise<Foot> {
     const { module, rules } = await rulesOf(context);

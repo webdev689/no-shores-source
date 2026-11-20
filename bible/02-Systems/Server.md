@@ -292,9 +292,10 @@ each room's name. The object keeps its room in WebAssembly: the room and protoco
 so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
-  continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--rough` or `--storm` the same
-  node at a voyage's harder seas, a room of its own; `--dungeon-0`, `-1` or `-2` after either is one of a patrol's
-  dungeons at those seas, opened from the patrol's baked file; `fleet-<name>` a fleet's place on the open sea;
+  continents; `node-<id>` is that node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
+  node at a voyage's harder difficulty, a room of its own; `--dungeon-0`, `-1` or `-2` after either is one of a
+  patrol's dungeons at that difficulty, opened from the patrol's baked file; `fleet-<name>` a fleet's place on the
+  open sea;
   any other name is the Test Ground's course,
   `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon whose node is no patrol. Any other spelling of a node's room is no room. A name is 64 characters at most.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
