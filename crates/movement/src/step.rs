@@ -148,10 +148,11 @@ fn on_wall(body: &Body, controls: &Controls, blocks: &[Block], terrain: &dyn Ter
         let (back_x, back_y) = (-libm::sin(body.facing) * 3.0, libm::cos(body.facing) * 3.0);
         return Body { mode: Mode::Air, vx: back_x, vy: back_y, vz: TUNING.jump, moving: false, ..*body };
     }
-    if controls.forward > 0.0 && lip_above <= TUNING.hang + 0.01 {
-        if let Some(over) = go_over(body, &ahead, body.facing, false, terrain) {
-            return over;
-        }
+    if controls.forward > 0.0
+        && lip_above <= TUNING.hang + 0.01
+        && let Some(over) = go_over(body, &ahead, body.facing, false, terrain)
+    {
+        return over;
     }
     let (along_x, along_y) = (libm::cos(body.facing), libm::sin(body.facing));
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };

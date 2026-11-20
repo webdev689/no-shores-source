@@ -18,9 +18,10 @@ const standing = (zone: number, more: Partial<Seen> = {}): Seen => ({
 /** A point of a zone's area over the open sea, no block of the wreck under it, a body fallen in there. */
 const sea = (zone: number, more: Partial<Seen> = {}): Seen => {
   const [minX, minY, maxX, maxY] = layout.zones[zone]?.area ?? [0, 0, 0, 0];
+  const course = courseOf(layout);
   for (let x = minX; x <= maxX; x += 0.25)
     for (let y = minY; y <= maxY; y += 0.25)
-      if (topAt(courseOf(layout), x, y) === 0) return { ...standing(zone), x, y, z: 0, ...more };
+      if (topAt(course, x, y) === 0) return { ...standing(zone), x, y, z: 0, ...more };
   throw new Error(`no sea in ${layout.zones[zone]?.name}`);
 };
 

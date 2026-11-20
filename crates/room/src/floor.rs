@@ -17,8 +17,9 @@ pub enum Floor {
 impl Terrain for Floor {
     fn height_at(&self, x: f64, y: f64) -> f64 {
         match self {
-            Floor::Flat => 0.0,
-            Floor::Sea(rim) => rim.height_at(x, y),
+            // The sea is at 0 m off the blocks as under them: its rim walls bodies in, but a drop or a shot over the
+            // sea meets the water, not a wall's height.
+            Floor::Flat | Floor::Sea(_) => 0.0,
             Floor::Land(ground) => ground.height_at(x, y),
         }
     }

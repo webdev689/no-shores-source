@@ -243,7 +243,8 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
 - **Nothing falls off.** The room over the sea holds a rim round the wreck's ground, a grid of 0.3 m cells, open
   where a block covers a cell and a wall everywhere else, as a ship's deck holds her crew ([[Movement]]): a body
   walks, jumps, vaults and climbs anywhere over the decks and the rafts and is held at their edge, its rails and
-  open breaks alike. The page's own movement holds the same rim (`rimOf`), to the bit. A foe found off it is stood
+  open breaks alike, while what falls or flies over the sea meets it at 0 m. The page's own movement holds the same
+  rim (`rimOf`), to the bit. A foe found off it is stood
   again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
   back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, her gun deck and
   the Sloop's side, is never the sea.

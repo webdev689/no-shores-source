@@ -109,7 +109,7 @@ impl Heights {
         let span = |low: f64, high: f64, start: f64, most: usize| {
             let first = ((low - start) / cell - 0.5).ceil().max(0.0) as usize;
             let last = ((high - start) / cell - 0.5).floor().min(most as f64 - 1.0);
-            (last >= first as f64).then(|| first..=last as usize)
+            (last >= first as f64).then_some(first..=last as usize)
         };
         for block in blocks {
             let (Some(across), Some(down)) =

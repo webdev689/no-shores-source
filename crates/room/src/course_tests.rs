@@ -1,5 +1,5 @@
 use super::*;
-use movement::{Block, Controls};
+use movement::{Block, Controls, Heights, Terrain};
 
 /// A deck 2.3 m up, from x -5 to 5, and the open floor beside it.
 fn deck() -> Block {
@@ -223,4 +223,23 @@ fn every_outer_edge_of_the_wreck_holds_a_body_running_and_jumping_off_it() {
         }
     }
     assert!(edges > 1000, "the wreck's outer edges were walked: {edges}");
+}
+
+#[test]
+fn the_sea_round_a_course_is_at_0_m_for_what_falls_or_flies_over_it() {
+    let room = Room::over_sea(vec![deck()], (0.0, 0.0));
+    assert_eq!(room.floor.height_at(9.0, 0.0), 0.0, "the sea, not the rim's wall");
+    assert!(room.floor.walled((4.0, 0.0), (9.0, 0.0)), "yet no body walks out to it");
+}
+
+#[test]
+fn the_rim_round_the_wreck_holds_its_blocks_cell_for_cell_as_the_page_s_does() {
+    // The page's rimOf is checked against the same measure (wreckLayout.test.ts): both hold the blocks' area.
+    let course = wreck_course();
+    let rim = Heights::rim(&course, course::RIM_CELL_M);
+    let floats = rim.to_floats();
+    let open = floats[movement::heights::SHAPE_FLOATS..].iter().filter(|height| **height == 0.0).count();
+    let area: f64 = course.iter().map(|block| (block.max_x - block.min_x) * (block.max_y - block.min_y)).sum();
+    let held = open as f64 * course::RIM_CELL_M * course::RIM_CELL_M;
+    assert!((held - area).abs() < 1.0, "the rim holds {held:.0} m2 of the blocks' {area:.0}");
 }
