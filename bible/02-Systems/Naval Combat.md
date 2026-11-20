@@ -248,9 +248,10 @@ Pass]]) with Claude's numbers:
   her ship lies in the fight (the captain nearest where she lay, her heading, heave, pitch and roll): figures by
   `deckToWorld`, the camera's eye riding her and level, and the marks, arcs, blood and display through her deck's turn
   (`deckTurn`) after the world camera's matrix. The third-person camera keeps a clear line to the boarder past her
-  masts, booms, gaffs and yards (`spars.ts`, boxes from her manifest's sails, for the camera alone), pulling in as on
-  land it does off walls. No figure's card stands nearer the eye than a metre, so a foe in a melee seen through the
-  player's own eyes never fills the view (`cardStand`, on land too). While she holds the player the fight's keys and
+  masts, booms, gaffs and yards, and stays inboard of her sides (`spars.ts`: boxes from her manifest's sails, and walls
+  past her outermost plank on each row and across her bow and stern, for the camera alone), pulling in as on land it
+  does off walls. In first person no other figure's card stands nearer the eye than a metre, so a foe in a melee never
+  fills the view (`cardStand`'s `nearest`, on land too). While she holds the player the fight's keys and
   pointer are the foot's.
   Won, the display says "Her deck is yours" over her hold's take as the room laid it ("Her hold: 2 crates, a chest"),
   and the keys begin "E: back aboard your ship · 45 s left"; E or the minute's end, the room has the boarder

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { CAMERA, cameraOrbit, rayHit } from '../player/playerCamera.ts';
 import { cellHeight, HULL_DECKS, railSpot } from '../ships/deck.ts';
 import { HULL_NAMES } from '../ships/hulls.ts';
-import { sparBoxes } from '../ships/spars.ts';
+import { deckCameraBlocks, sideBoxes, sparBoxes } from '../ships/spars.ts';
 
 type Point = readonly [number, number, number];
 
@@ -13,7 +13,7 @@ const THIRD = { firstPerson: false, distance: CAMERA.back, shown: CAMERA.back };
 
 /** The third-person eye for a boarder whose head is at `head`, looking along `yaw`, kept clear of her spars. */
 function eyeFor(head: Point, yaw: number, pitch: number, hull: number): Point {
-  const orbit = cameraOrbit(head, yaw, pitch, THIRD, sparBoxes(hull));
+  const orbit = cameraOrbit(head, yaw, pitch, THIRD, deckCameraBlocks(hull));
   const forward = [Math.cos(pitch) * Math.sin(yaw), -Math.cos(pitch) * Math.cos(yaw), -Math.sin(pitch)];
   return [orbit.targetX - (forward[0] ?? 0), orbit.targetY - (forward[1] ?? 0), orbit.targetZ - (forward[2] ?? 0)];
 }
@@ -32,11 +32,11 @@ test('every hull’s masts stand on her middle line from her deck up, and her bo
   }
 });
 
-test('from where boarders come aboard and along a walk the length of her deck, no mast or spar stands between the camera and the boarder', () => {
+test('from where boarders come aboard and along a walk the length of her deck, no mast, spar or side of hers stands between the camera and the boarder, so it stays inboard', () => {
   for (const [hull, name] of HULL_NAMES.entries()) {
     const deck = HULL_DECKS[hull];
     assert.ok(deck);
-    const boxes = sparBoxes(hull);
+    const boxes = deckCameraBlocks(hull);
     const [north, south] = [deck.north + 0.5, deck.north + deck.cell * deck.rows - 0.5];
     for (const side of [1, -1]) {
       const [railX] = railSpot(deck, side);
@@ -47,10 +47,12 @@ test('from where boarders come aboard and along a walk the length of her deck, n
           const head: Point = [x, y, floor + EYE_M];
           // A head inside a mast (her deck room lets a body through it) has no line to keep.
           if (rayHit(head, head, boxes) < 1) continue;
-          for (const yaw of [0, Math.PI, Math.PI / 2])
+          for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2])
             for (const pitch of [0.15, -0.2, 0.6]) {
               const eye = eyeFor(head, yaw, pitch, hull);
               assert.ok(rayHit(eye, head, boxes) >= 1, `${name} at ${x}, ${y} looking ${yaw}, ${pitch}: ${eye}`);
+              const inboard = rayHit(head, eye, sideBoxes(deck)) >= 1;
+              assert.ok(inboard, `${name} at ${x}, ${y} looking ${yaw}: the eye ${eye} past her side`);
             }
         }
       }

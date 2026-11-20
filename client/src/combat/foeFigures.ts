@@ -76,7 +76,7 @@ export class FoeFigures {
   cards(
     fight: Fighting,
     forge: Cards,
-    eye: { readonly x: number; readonly y: number },
+    eye: { readonly x: number; readonly y: number; readonly nearest?: number },
     clock: number,
     frameTicks: number,
     tickSeconds: number,
@@ -128,7 +128,7 @@ export class FoeFigures {
       this.over.set(kept.id, { feet: drawnAt, staggered, exposed: exposed && alive });
       if (dissolve && dissolve.share >= 1) continue;
       const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
-      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
+      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card)
         cards.push({
           card,

@@ -48,16 +48,17 @@ export function frameAt(seconds: number, frames: number, fps: number): number {
 /** How far a figure's card stands in front of its body's centre, toward the eye: a body's radius in the movement
  *  rules. A card is flat, so standing at the centre, a wall the body touches or a lip it is going over would cut it. */
 const CARD_FORWARD_M = 0.35;
-/** A card never stands nearer the eye than this, metres: one nearer, a foe in a melee seen through the player's own
- *  eyes, would fill the view; it stands this far off along the same line instead. */
-const CARD_NEAREST_M = 1;
+/** In first person no other figure's card stands nearer the eye than this, metres: one nearer, a foe in a melee,
+ *  would fill the view; it stands this far off along the same line instead. */
+export const CARD_NEAREST_M = 1;
 
-/** Where a figure's card stands: its body's centre (x, y) moved toward the eye by the body's radius, never past it. */
-export function cardStand(x: number, y: number, eyeX: number, eyeY: number): { x: number; y: number } {
+/** Where a figure's card stands: its body's centre (x, y) moved toward the eye by the body's radius, never past it,
+ *  and never nearer the eye than `nearest` (`CARD_NEAREST_M` for another figure seen in first person). */
+export function cardStand(x: number, y: number, eyeX: number, eyeY: number, nearest = 0): { x: number; y: number } {
   const [toEyeX, toEyeY] = [eyeX - x, eyeY - y];
   const length = Math.hypot(toEyeX, toEyeY);
   if (length < 1e-6) return { x, y };
-  const toward = 1 - Math.max(CARD_NEAREST_M, length - CARD_FORWARD_M) / length;
+  const toward = 1 - Math.max(nearest, length - CARD_FORWARD_M, 0) / length;
   return { x: x + toEyeX * toward, y: y + toEyeY * toward };
 }
 

@@ -96,6 +96,12 @@ test('her deck is a place on foot whose ring is her bounds and whose spawn is at
     ({ player: { ship: [aside, 3, 0] }, captain: captain(0, 0, 'Her'), others: [] }) as unknown as FightView;
   // Her heading 0.4 rad: her starboard lies east and a little south; a ship east of her lies to starboard.
   assert.deepEqual([boardingSide(view(25)), boardingSide(view(-25))], [1, -1]);
+  // A captain still fighting nearer the player's ship is not the one boarded.
+  const afloat = { ...captain(24, 3, 'Afloat'), state: 'afloat', ship: [24, 3, 1.9] } as unknown as FightCaptain;
+  const two = { player: { ship: [25, 3, 0] }, captain: afloat, others: [captain(0, 0, 'Her')] } as unknown as FightView;
+  assert.equal(boardingSide(two), 1);
+  const turned = { ...two, captain: { ...afloat, ship: [24, 3, 1.9 + Math.PI] } } as unknown as FightView;
+  assert.equal(boardingSide(turned), 1, 'her side, whatever the other captain’s heading');
 });
 
 test('her deck room is reached through the sea’s link: the boarder’s inputs sent there, its gear the link’s', () => {

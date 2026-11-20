@@ -8,7 +8,7 @@ import type { CardAt } from '../player/cards.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { cellHeight, type Deck, deckFloats, deckToWorld, HULL_DECKS, type Lying, railSpot } from '../ships/deck.ts';
-import { sparBoxes } from '../ships/spars.ts';
+import { deckCameraBlocks } from '../ships/spars.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import type { Shot } from './camera.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
@@ -98,11 +98,14 @@ export function herLying(
   return { captain, lying: { x, y, heading, scale, heave, pitch, roll } };
 }
 
-/** The side of the captain nearest the player's ship in the fight `view` (the one they board) that their ship lies
- *  on, as her deck room reckons it (crates/room/src/sea_decks.rs `side_of`): 1 her starboard, -1 her port. */
+/** The side of the struck captain nearest the player's ship in the fight `view` (the one the room boards, as
+ *  `Fights::board` chooses her) that their ship lies on, as her deck room reckons it (crates/room/src/sea_decks.rs
+ *  `side_of`): 1 her starboard, -1 her port. */
 export function boardingSide(view: FightView): number {
   const [x = 0, y = 0] = view.player.ship;
-  const { lying } = herLying(view, [x, y], 1);
+  const struck = [view.captain, ...(view.others ?? [])].filter((captain) => captain.state === 'struck');
+  const [first, ...others] = struck.length > 0 ? struck : [view.captain];
+  const { lying } = herLying({ ...view, captain: first ?? view.captain, others }, [x, y], 1);
   const across = (x - lying.x) * Math.cos(lying.heading) + (y - lying.y) * Math.sin(lying.heading);
   return across < 0 ? -1 : 1;
 }
@@ -182,7 +185,7 @@ export class DeckFight {
     const her = HULL_DECKS[deck.hull] ?? HULL_DECKS[0];
     if (!her) throw new Error('no hull has a deck');
     const groundAt = (x: number, y: number) => cellHeight(her, x, y);
-    const onHer = { ...context, groundAt, cameraBlocks: sparBoxes(deck.hull) };
+    const onHer = { ...context, groundAt, cameraBlocks: deckCameraBlocks(deck.hull) };
     // What floats for the player as they board, so a hold won while the fight stands up is told apart from it.
     const before = new Set(sea.flotsam.map((piece) => piece.id));
     let heard: DeckSea['hearDeck'] = null;
