@@ -30,5 +30,6 @@ status: in force
   after all four are ticked; foes fighting the crew further on leave it up. That task counts the "Foes standing" while
   any do. The boss fight's is "Face Captain Brannoc Thule".
 - The key strip drops walking on foot, which the lessons teach, and keeps the click that takes the mouse to look.
-- The old objective panel goes with the tracker; its one word that was no task, "You will rise at the last
-  checkpoint." on falling in the wreck, is a toast.
+- The story's old objective panel goes with the tracker; its one word that was no task, "You will rise at the last
+  checkpoint." on falling in the wreck, is a toast. Elder Maren Hale's welcome after the story still shows its
+  "Follow" on that card; whether the tracker takes it is the owner's to say.
