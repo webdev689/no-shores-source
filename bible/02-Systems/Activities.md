@@ -159,8 +159,8 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
   every Vestige keeps now (no Legendary from foes under level 18).
 - **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
-  and the Abyss boon: a quarter more of each kill's XP, rounded down, and reputation once factions are in, until the
-  week turns.
+  and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
+  reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it.
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and lays
   the Vestige 1.4 m before the cache (`pay_clear`). A player playing unkept finds the cache's own Vestige alone. A
   run's first clear pays only in the day or the week it was opened for, as its modifiers are fixed then. The day's
@@ -268,8 +268,8 @@ server and the browser both run; each system reads them.
 4. **Companies of four**, private runs and Find a Company.
 5. **Quests and bounties**: the engine and the board.
 
-It builds on the dungeons (#72, #88) and the owner's plan (#82); the board's place and the boon's reputation wait on
-the factions (#92).
+It builds on the dungeons (#72, #88), the owner's plan (#82) and the factions (#92); the board's place waits on the
+plaza's rebuild.
 
 **Who builds what:** this session builds 1 to 5's rules and screens, and places the board, which has no keeper. The
 plaza's session (#92) moves Shape and the vendors onto the clock. The sea's session (#75) takes the tiers at sea and

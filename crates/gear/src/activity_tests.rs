@@ -123,3 +123,18 @@ fn the_abyss_boon_gives_a_quarter_more_xp_until_the_week_turns() {
     assert_eq!(character.boon_xp(2_968, 1_000, None), 0, "and never turns back");
     assert_eq!(character.xp, before + 250);
 }
+
+#[test]
+fn the_abyss_boon_earns_a_quarter_more_reputation_for_the_faction_pledged_with_its_cape_worn() {
+    let reputation = |boon: bool| {
+        let mut character = crate::factions_tests::caped(1);
+        character.activity.this_week(2_968).boon = boon;
+        let dice = Dice { seed: 7, tick: 1, player: 1 };
+        let reward = character.reward_kill(crate::rewards::Foe::Brute, 5, None, Difficulty::Normal, &dice);
+        character.boon_xp(2_968, reward.xp, None);
+        (u64::from(reward.xp), character.reputation(1))
+    };
+    let (xp, without) = reputation(false);
+    assert_eq!(without, xp, "a kill's reputation is its XP");
+    assert_eq!(reputation(true).1, xp + xp / 4, "and a quarter more, rounded down, with the boon");
+}

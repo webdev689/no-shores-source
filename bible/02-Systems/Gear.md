@@ -126,7 +126,8 @@ number is one of [[Gear as Claude Shapes It]].
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
-  them a quarter more of its XP, rounded down, to them and to the weapon that earned it (`boon_xp`).
+  them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
+  as the kill's own goes ([[Factions]]) (`boon_xp`).
 - **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
   and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
   at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",

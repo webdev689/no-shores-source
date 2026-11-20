@@ -79,12 +79,13 @@ impl Character {
     }
 
     /// A quarter more of a kill's XP while the Abyss boon is held this week, to the player and to `weapon` as the
-    /// kill's own XP goes; the XP it gave.
+    /// kill's own XP goes, and as reputation as the kill's goes (`earn_reputation`); the XP it gave.
     pub fn boon_xp(&mut self, week: u64, xp: u32, weapon: Option<Slot>) -> u32 {
         if !self.activity.this_week(week).boon {
             return 0;
         }
         let more = xp / BOON_SHARE;
+        self.earn_reputation(more);
         self.earn_xp(more, weapon);
         more
     }
