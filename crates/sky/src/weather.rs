@@ -4,8 +4,8 @@
 //! blows round the cloudy lows over the steering flow and rises in a storm.
 
 use crate::air::Air;
-use crate::drift::{Drift, steering_m_s};
 use crate::clock::DAY_S;
+use crate::drift::{Drift, steering_m_s};
 use crate::heavens::{heavens_at, latitude_deg, sun_up_at};
 use land::biome::LAPSE_C_PER_M;
 use land::exact::{clamp, smooth};

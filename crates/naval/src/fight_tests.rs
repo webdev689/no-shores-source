@@ -65,7 +65,9 @@ fn alongside(x: f64, temper: Temper) -> Fight {
 }
 
 fn run(fight: &mut Fight, orders: &Orders, ticks: u32) -> Vec<Event> {
-    (0..ticks).flat_map(|tick| fight.step(&[(PLAYER, *orders)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS)).collect()
+    (0..ticks)
+        .flat_map(|tick| fight.step(&[(PLAYER, *orders)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS))
+        .collect()
 }
 
 #[test]
