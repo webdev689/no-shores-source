@@ -117,8 +117,9 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
   from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
   top, and a basin's shelf or platform a climb level along it inside the floor, raised over it as an embankment. The floor's distance counts the climbs, so a section reaches up them, and the floor's level at a point
-  (`floor_level`) is the nearest floor's or climb's: 0 for a floor, a climb's level where it is nearer, so a face's
-  foot and dead rock are measured over a terrace or a ramp as over the land's own floor. Its raised floors
+  (`floor_level`) is the nearest floor's or climb's, a raised floor's wherever the land stands at it: 0 for a floor,
+  a climb's level where it is nearer, so a face's foot and dead rock are measured over a terrace or a ramp as over the
+  land's own floor. `floor_share` is that level as a share of the massif's height, where a climb or a valley starts. Its raised floors
   (`levels`, capsules as climbs are) are floor at a height: a place standing high, a way graded between places. The
   land is cut to them first, then to its climbs, so a terrace stands on a raised floor as on the land's own; their
   edges wander as a floor's do; and an outcrop standing on one rises from its level. A climb's and a raised floor's

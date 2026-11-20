@@ -9,6 +9,7 @@ use crate::brief::AreaKind;
 use crate::field::distance;
 use crate::paths::{Path, Tier, off_line, simplified};
 use crate::pieces::{Kit, ahead, turn_along};
+use crate::skyline::carved_at;
 use city::solids::{Material, Shape, Solid};
 use land::sculpts::{Outcrop, Sculpts};
 
@@ -120,7 +121,7 @@ pub fn retaining_walls(kit: &mut Kit, areas: &[Area], paths: &[Path], outcrops: 
 /// stone lies on one.
 fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) {
     let run = land::sculpts::CLIFF_RUN_M;
-    let floor = kit.height(middle);
+    let floor = carved_at(kit, carved, middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);
     let reach = (half * 1.35 + run) + 26.0;
@@ -174,8 +175,8 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
         let at = ahead(ahead(middle, across, along, 0.0), way, out, 0.0);
         let size = [1.5 + kit.draw() * 2.5, 1.2 + kit.draw() * 2.0, 1.0 + kit.draw() * 1.8];
         let spin = kit.draw() * 3.0;
-        let stone =
-            Solid::upright(Shape::Block, [at[0], at[1], kit.height(at) - 0.4], size, Material::Stone).turned(spin);
+        let base = carved_at(kit, carved, at) - 0.4;
+        let stone = Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Stone).turned(spin);
         if (out.abs() >= WALL_THICK_M / 2.0 + 2.0 || along.abs() >= tier.width())
             && clear_of_ways(&[stone], paths, floor)
         {
@@ -188,7 +189,7 @@ fn great_wall(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Pa
 /// arches between them, and one span fallen, its stones lying in the gorge beside the way.
 fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path], carved: &Sculpts) {
     let run = land::sculpts::CLIFF_RUN_M;
-    let floor = kit.height(middle);
+    let floor = carved_at(kit, carved, middle);
     let across = [-way[1], way[0]];
     let turn = turn_along(across);
     let deck = floor + (crate::skyline::rim_across(kit, carved, middle, way, half) - floor) * 0.92;
@@ -249,7 +250,8 @@ fn viaduct(kit: &mut Kit, (middle, way, half): Place, tier: Tier, paths: &[Path]
         }
         let size = [2.0 + kit.draw() * 3.0, 1.5 + kit.draw() * 2.0, 1.2 + kit.draw()];
         let spin = kit.draw() * 3.0 + f64::from(stone);
-        kit.stand(Shape::Block, at, size, spin, Material::Stone, 0.5);
+        let base = carved_at(kit, carved, at) - 0.5;
+        kit.solid(Solid::upright(Shape::Block, [at[0], at[1], base], size, Material::Stone).turned(spin));
     }
 }
 
@@ -295,6 +297,10 @@ fn retaining(kit: &mut Kit, area: &Area, (paths, outcrops): (&[Path], &[Outcrop]
         if on_path || in_rock {
             continue;
         }
-        kit.stand(Shape::Block, at, [1.4, 7.2, 4.2], turn_along(tangent), Material::Stone, 1.0);
+        let base = carved_at(kit, carved, at) - 1.0;
+        kit.solid(
+            Solid::upright(Shape::Block, [at[0], at[1], base], [1.4, 7.2, 4.2], Material::Stone)
+                .turned(turn_along(tangent)),
+        );
     }
 }

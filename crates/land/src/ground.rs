@@ -445,13 +445,13 @@ impl Ground {
     pub fn height_at(&self, x: f64, y: f64) -> f64 {
         if let Some(level) = self.pads.level_at(x, y) {
             // Where another pad meets this one, each blends to their middle at the seam, so it is no lip.
-            return self.pads.edge_near(x, y).map_or(level, |(other, off)| {
+            return self.pads.seam_near(x, y).map_or(level, |(other, off)| {
                 level + (other - level) * 0.5 * (1.0 - smooth(0.0, crate::pads::EDGE_M, off))
             });
         }
         let mut ground = self.padded(x, y);
         // Just past a pad's edge the land blends into its level, so a lip is a slope a body walks.
-        if let Some((level, off)) = self.pads.edge_near(x, y) {
+        if let Some((level, off)) = self.pads.seam_near(x, y) {
             ground = level + (ground - level) * smooth(0.0, crate::pads::EDGE_M, off);
         }
         if let Some((river, distance)) = self.nearest(x, y, false) {

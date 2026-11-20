@@ -92,7 +92,14 @@ pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32
         |at: [f64; 2]| ground.height_at(at[0], at[1]) + carved.raise(at[0], at[1], ground.coast.at(at[0], at[1]));
     let top = [ledge.edge[0] + ledge.way[0] * OVER_M, ledge.edge[1] + ledge.way[1] * OVER_M];
     let foot_of = |run: f64| [top[0] - ledge.way[0] * run, top[1] - ledge.way[1] * run];
-    let top_m = land(top);
+    // Its top landing (from the edge to its top, `OVER_M`) stands at the highest the land does under it, so no land
+    // stands over the landing where the slot's end rises into the high floor.
+    let top_m = (0..=(OVER_M / SAMPLE_STEP_M) as i32)
+        .map(|step| {
+            let reach = f64::from(step) * SAMPLE_STEP_M;
+            land([ledge.edge[0] + ledge.way[0] * reach, ledge.edge[1] + ledge.way[1] * reach])
+        })
+        .fold(f64::NEG_INFINITY, f64::max);
     let mut fitted = stair_for(top_m - land(ledge.start))?;
     for _ in 0..2 {
         fitted = stair_for(top_m - land(foot_of(fitted.1)))?;
@@ -207,19 +214,28 @@ pub fn slot(ledge: &Ledge, share: f64) -> [f64; 7] {
 /// How many ledges, the shortest first, are measured with their slots cut at the most.
 const TRIES: usize = 12;
 
-/// Cuts a layout's ledges into its sculpt, last of what is carved so they yield to its runs and climbs: each kept only
-/// where its stair climbs on the land with its slot cut, measured as the stair will stand (`measured`), its slot a
-/// raised floor at the low floor's level.
+/// Cuts a layout's ledges into its sculpt, last of what is carved so they yield to its runs and climbs, clear of every
+/// run's line: each kept only
+/// where its stair, and every stair cut before it, climbs on the land with its slot cut, measured as the stair will
+/// stand (`measured`), its slot a raised floor at the low floor's level.
 pub fn cut(field: &Field, (areas, ground): (&[Area], &Ground), sculpt: &mut Sculpt) -> Vec<Ledge> {
     let bare = Sculpts::from(vec![sculpt.clone()]);
     let mut chosen: Vec<Ledge> = Vec::new();
-    for ledge in candidates(field, (areas, ground), &sculpt.levels, &bare).into_iter().take(TRIES) {
+    // A run's line is kept clear of all that stands, a stair and its slot among them.
+    let off_runs = |ledge: &Ledge| {
+        sculpt.runs.iter().all(|&[x1, y1, x2, y2, half, ..]| {
+            crate::paths::segments_apart([ledge.start, ledge.edge], [[x1, y1], [x2, y2]]) > half + SLOT_HALF_M + 2.0
+        })
+    };
+    for ledge in candidates(field, (areas, ground), &sculpt.levels, &bare).into_iter().filter(off_runs).take(TRIES) {
         if !apart(&chosen, &ledge) {
             continue;
         }
-        let share = crate::heights::share_at(&sculpt.floors, &sculpt.levels, ledge.start);
+        let share = bare.floor_share(ledge.start[0], ledge.start[1]);
         sculpt.levels.push(slot(&ledge, share));
-        if measured(&ledge, ground, &Sculpts::from(vec![sculpt.clone()])).is_some() {
+        // Its slot cut, it and every ledge already cut still climb: one slot never spoils another's stair.
+        let carved = Sculpts::from(vec![sculpt.clone()]);
+        if chosen.iter().chain([&ledge]).all(|each| measured(each, ground, &carved).is_some()) {
             chosen.push(ledge);
         } else {
             sculpt.levels.pop();

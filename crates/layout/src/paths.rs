@@ -200,9 +200,30 @@ pub fn smoothed(field: &Field, cells: &[usize], from: [f64; 2], to: [f64; 2]) ->
 /// (Douglas and Peucker), its ends kept.
 #[must_use]
 pub fn simplified(points: &[[f64; 2]], tolerance: f64) -> Vec<[f64; 2]> {
+    kept(points, None, tolerance).into_iter().map(|at| points[at]).collect()
+}
+
+/// Which of a line's points `simplified` keeps, by their places in it; with each point's height (`heights`, metres),
+/// also every point whose height strays more than `HEIGHT_KEPT_M` from the straight run between those kept either side
+/// of it, so a way graded flat, then up a ramp, then flat again keeps each of its bends in height.
+#[must_use]
+pub fn kept(points: &[[f64; 2]], heights: Option<&[f64]>, tolerance: f64) -> Vec<usize> {
     if points.len() < 3 {
-        return points.to_vec();
+        return (0..points.len()).collect();
     }
+    // How far along the line each point lies, so a height is read between two kept points by the way walked.
+    let along: Vec<f64> = std::iter::once(0.0)
+        .chain(points.windows(2).scan(0.0, |walked, pair| {
+            *walked += crate::field::distance(pair[0], pair[1]);
+            Some(*walked)
+        }))
+        .collect();
+    let strays = |at: usize, from: usize, to: usize| {
+        heights.map_or(0.0, |heights| {
+            let share = (along[at] - along[from]) / (along[to] - along[from]).max(1e-9);
+            (heights[at] - (heights[from] + (heights[to] - heights[from]) * share)).abs() / HEIGHT_KEPT_M
+        })
+    };
     let mut keep = vec![false; points.len()];
     let (first, last) = (0, points.len() - 1);
     keep[first] = true;
@@ -211,7 +232,7 @@ pub fn simplified(points: &[[f64; 2]], tolerance: f64) -> Vec<[f64; 2]> {
     while let Some((from, to)) = spans.pop() {
         let (mut farthest, mut far) = (0.0, from);
         for at in from + 1..to {
-            let away = off_line(points[at], points[from], points[to]);
+            let away = off_line(points[at], points[from], points[to]).max(strays(at, from, to) * tolerance);
             if away > farthest {
                 (farthest, far) = (away, at);
             }
@@ -222,8 +243,11 @@ pub fn simplified(points: &[[f64; 2]], tolerance: f64) -> Vec<[f64; 2]> {
             spans.push((far, to));
         }
     }
-    points.iter().zip(keep).filter(|(_, kept)| *kept).map(|(point, _)| *point).collect()
+    (0..points.len()).filter(|&at| keep[at]).collect()
 }
+
+/// How far a way's height may stray from the straight run between its kept points, metres.
+const HEIGHT_KEPT_M: f64 = 0.25;
 
 /// How far a point lies from the segment between two others.
 #[must_use]

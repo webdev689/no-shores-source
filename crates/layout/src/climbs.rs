@@ -67,7 +67,7 @@ pub(crate) fn climb_along(
     way: [f64; 2],
     rise: f64,
 ) -> Option<[[f64; 7]; 2]> {
-    let from = (bare.floor_level(start[0], start[1]) / rise).clamp(0.0, 1.0);
+    let from = bare.floor_share(start[0], start[1]).clamp(0.0, 1.0);
     let length = (rise * 1.15 * (1.0 - from) / CLIMB_STEEPEST).max(LOOKOUT_HALF_M);
     let end = [start[0] + way[0] * length, start[1] + way[1] * length];
     climb_clear(field, bare, taken, start, way, length).then_some([

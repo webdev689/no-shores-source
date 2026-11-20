@@ -106,8 +106,9 @@ city stands on it:
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the
 same to the bit wherever it is sampled, and a window cut round the social space keeps it ([[Land]]). Past a pad's
-edge the land blends into its level within a metre, and where two pads meet each blends to their middle, so a lip a
-body would step is a slope it walks; a terrace standing higher is still a step its wall stands on.
+edge the land blends into its level within a metre, and where the pad on top changes each side blends to their
+middle, so a lip a body would step is a slope it walks; a terrace standing higher is still a step its wall stands on.
+A seam hidden under a later pad (the cells under the plaza) shows nothing (`Pads::seam_near`).
 
 ## Solids and collision
 

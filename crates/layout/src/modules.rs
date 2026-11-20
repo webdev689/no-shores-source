@@ -28,7 +28,11 @@ pub fn seat(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
     let Some(name) = of(area.kind) else { return };
     let Some(number) = city::modules::number_of(name) else { return };
     let module = &city::modules::all()[number as usize];
-    let [width, depth, _] = module.size;
+    let socket = module.sockets.first().map_or("", |socket| socket.name.as_str());
+    // Its foot as it will stand, turned a quarter or not.
+    let quarters = (turn_toward(number, socket, toward) / std::f64::consts::FRAC_PI_2).round() as i32;
+    let [width, depth] =
+        if quarters % 2 == 0 { [module.size[0], module.size[1]] } else { [module.size[1], module.size[0]] };
     let low = (-2..=2)
         .flat_map(|east| (-2..=2).map(move |south| (east, south)))
         .map(|(east, south)| {
@@ -36,7 +40,6 @@ pub fn seat(kit: &mut Kit, area: &Area, toward: [f64; 2]) {
             kit.height(at)
         })
         .fold(f64::INFINITY, f64::min);
-    let socket = module.sockets.first().map_or("", |socket| socket.name.as_str());
     stand(kit, name, [area.at[0], area.at[1], low], (socket, toward));
 }
 
@@ -50,13 +53,21 @@ pub fn stand(kit: &mut Kit, name: &str, at: [f64; 3], toward: (&str, [f64; 2])) 
 /// Stands a module as `stand` does, stretched up to `high` metres from its own height (`modules::stretched`).
 pub fn stand_stretched(kit: &mut Kit, name: &str, at: [f64; 3], (socket, toward): (&str, [f64; 2]), high: f64) {
     let Some(number) = city::modules::number_of(name) else { return };
+    let turn = turn_toward(number, socket, toward);
+    for solid in city::modules::stretched(number, at, turn, high) {
+        kit.solid(solid);
+    }
+}
+
+/// The whole quarter turn, radians, that best faces a module's socket named `socket` toward `toward`.
+fn turn_toward(number: u32, socket: &str, toward: [f64; 2]) -> f64 {
     let facing = city::modules::all()[number as usize]
         .sockets
         .iter()
         .find(|each| each.name == socket)
         .map_or([0.0, 1.0], |each| each.facing);
     let quarter = std::f64::consts::FRAC_PI_2;
-    let turn = (0..4)
+    (0..4)
         .map(|quarters| f64::from(quarters) * quarter)
         .max_by(|&first, &second| {
             let toward_of = |turn: f64| {
@@ -66,10 +77,7 @@ pub fn stand_stretched(kit: &mut Kit, name: &str, at: [f64; 3], (socket, toward)
             };
             toward_of(first).total_cmp(&toward_of(second))
         })
-        .unwrap_or(0.0);
-    for solid in city::modules::stretched(number, at, turn, high) {
-        kit.solid(solid);
-    }
+        .unwrap_or(0.0)
 }
 
 /// Where a way reaches the module standing at an area's middle: 2 m out past its first socket, or the middle where

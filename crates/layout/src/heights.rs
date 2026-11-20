@@ -145,6 +145,18 @@ pub fn graded(
     paths.iter().zip(&starts).map(|(path, &start)| level[start..start + path.points.len()].to_vec()).collect()
 }
 
+/// How far along a capsule's line a point lies, 0 at its first end to 1 at its second, as the land reads a capsule's
+/// level: the point's nearest on the line.
+fn along(from: [f64; 2], to: [f64; 2], at: [f64; 2]) -> f64 {
+    let (span_x, span_y) = (to[0] - from[0], to[1] - from[1]);
+    let length = span_x * span_x + span_y * span_y;
+    if length > 0.0 {
+        (((at[0] - from[0]) * span_x + (at[1] - from[1]) * span_y) / length).clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
+}
+
 /// The level of the floor under a point, as a share of the massif's height: the raised floor's there where one is
 /// nearer than any floor at the land's own level, else 0.
 pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -> f64 {
@@ -153,9 +165,7 @@ pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -
         .map(|&[x1, y1, x2, y2, half]| off_line(at, [x1, y1], [x2, y2]) - half)
         .fold(f64::INFINITY, f64::min);
     let nearest = raised.iter().map(|&[x1, y1, x2, y2, half, from, to]| {
-        let (from_end, to_end) = (distance(at, [x1, y1]), distance(at, [x2, y2]));
-        let along = if from_end + to_end > 0.0 { from_end / (from_end + to_end) } else { 0.0 };
-        (off_line(at, [x1, y1], [x2, y2]) - half, from + (to - from) * along)
+        (off_line(at, [x1, y1], [x2, y2]) - half, from + (to - from) * along([x1, y1], [x2, y2], at))
     });
     nearest
         .filter(|&(off, _)| off < floor)
@@ -175,42 +185,45 @@ pub fn floors_of(
     let mut held: Vec<[f64; 7]> = Vec::new();
     for ((basin, &level), area) in basins.iter().zip(levels).zip(areas) {
         let tiered = heights && area.kind == AreaKind::Ruin;
+        // A tiered ruin's bowl is a plaza at its middle.
+        let plaza = basin.floors.first().map_or(0.0, |floor| floor[4].min(area.radius * 0.55));
         for (number, &[x1, y1, x2, y2, half]) in basin.floors.iter().enumerate() {
             let (near, far) = if distance([x1, y1], area.at) <= distance([x2, y2], area.at) {
                 ([x1, y1], [x2, y2])
             } else {
                 ([x2, y2], [x1, y1])
             };
-            let tier =
-                if tiered && number > 0 { (level + TIERS[(number - 1) % TIERS.len()]).clamp(0.0, 0.95) } else { level };
-            // A tiered ruin's bowl is a plaza at its middle; each of its spokes a ramp up or down to a flat tier where its
-            // block stands, so no building is tilted across a slope. A tier reaches past its spoke's own reach, so what
-            // stands on it keeps room before its doors before its edge blends down into the plaza or the spoke beside it.
-            let half = if tiered && number == 0 {
-                half.min(area.radius * 0.55)
-            } else if tiered {
-                half + TIER_ROOM_M
-            } else {
-                half
-            };
             let length = distance(near, far);
-            let ramp = ((tier - level).abs() * rise / STEEPEST).min(length * 0.6);
-            let turn = if length > 0.0 { ramp / length } else { 0.0 };
-            let foot = [near[0] + (far[0] - near[0]) * turn, near[1] + (far[1] - near[1]) * turn];
-            let capsules = if tier == level {
-                vec![[near[0], near[1], far[0], far[1], half, level, level]]
-            } else {
+            let at = |along: f64| {
+                let share = if length > 0.0 { along / length } else { 0.0 };
+                [near[0] + (far[0] - near[0]) * share, near[1] + (far[1] - near[1]) * share]
+            };
+            let capsules = if tiered && number > 0 {
+                // Each spoke runs on at the plaza's level to its edge, then a ramp up or down, at the steepest a track
+                // takes, to a flat tier where its block stands, so no building is tilted across a slope; a spoke too
+                // short for its ramp takes a lower tier. The tier reaches past the spoke's own reach, so what stands on
+                // it keeps room before its doors before its edge blends down into the plaza or the spoke beside it.
+                let flat = plaza.min(length * 0.4);
+                let most = (length - flat) * 0.6 * STEEPEST / rise;
+                let step = TIERS[(number - 1) % TIERS.len()].clamp(-most, most);
+                let tier = (level + step).clamp(0.0, 0.95);
+                let foot = flat + (tier - level).abs() * rise / STEEPEST;
+                let [start, top] = [at(flat), at(foot)];
                 vec![
-                    [near[0], near[1], foot[0], foot[1], half, level, tier],
-                    [foot[0], foot[1], far[0], far[1], half, tier, tier],
+                    [near[0], near[1], start[0], start[1], half, level, level],
+                    [start[0], start[1], top[0], top[1], half, level, tier],
+                    [top[0], top[1], far[0], far[1], half + TIER_ROOM_M, tier, tier],
                 ]
+            } else {
+                let half = if tiered { plaza } else { half };
+                vec![[near[0], near[1], far[0], far[1], half, level, level]]
             };
             for capsule in capsules {
                 held.push(capsule);
-                if level > 0.0 || tier > 0.0 {
+                if capsule[5] > 0.0 || capsule[6] > 0.0 {
                     raised.push(capsule);
                 } else {
-                    floors.push([capsule[0], capsule[1], capsule[2], capsule[3], half]);
+                    floors.push([capsule[0], capsule[1], capsule[2], capsule[3], capsule[4]]);
                 }
             }
         }
@@ -222,13 +235,10 @@ pub fn floors_of(
 /// (`[x1, y1, x2, y2, half, from, to]`) it lies on, at its place along it; none off them all.
 #[must_use]
 pub fn on_capsules(capsules: &[[f64; 7]], at: [f64; 2]) -> Option<f64> {
-    capsules.iter().find(|&&[x1, y1, x2, y2, half, ..]| off_line(at, [x1, y1], [x2, y2]) <= half).map(
-        |&[x1, y1, x2, y2, _, from, to]| {
-            let (from_end, to_end) = (distance(at, [x1, y1]), distance(at, [x2, y2]));
-            let along = if from_end + to_end > 0.0 { from_end / (from_end + to_end) } else { 0.0 };
-            from + (to - from) * along
-        },
-    )
+    capsules
+        .iter()
+        .find(|&&[x1, y1, x2, y2, half, ..]| off_line(at, [x1, y1], [x2, y2]) <= half)
+        .map(|&[x1, y1, x2, y2, _, from, to]| from + (to - from) * along([x1, y1], [x2, y2], at))
 }
 
 /// The tiers a spoke of a raised ruin's basin rises or falls to from its middle, in turn, as shares of the massif's

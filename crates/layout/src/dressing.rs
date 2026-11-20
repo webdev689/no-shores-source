@@ -25,6 +25,8 @@ pub(crate) const WALL_REACH_M: f64 = 170.0;
 /// A drystone wall's length a stretch and how far it stands off the track's edge, metres.
 const WALL_STRETCH_M: f64 = 8.0;
 pub(crate) const WALL_OFF_M: f64 = 3.5;
+/// A drystone wall's thickness, metres.
+pub(crate) const DRYSTONE_M: f64 = 0.8;
 
 /// Places with folk living or working in them, lit along their ways.
 const fn settled(kind: AreaKind) -> bool {
@@ -298,7 +300,7 @@ fn drystone(kit: &mut Kit, ways: &[&Path], others: &[&Path], at: [f64; 2], way: 
         ([at[0] - way[0] * reach, at[1] - way[1] * reach], [at[0] + way[0] * reach, at[1] + way[1] * reach]);
     let base = kit.height(at) - 0.25;
     let mut lengths = Vec::new();
-    crate::halls::wall(&mut lengths, from, to, base, base + high, 0.8, Material::Rubble);
+    crate::halls::wall(&mut lengths, from, to, base, base + high, DRYSTONE_M, Material::Rubble);
     for length in lengths {
         let [west, north, east, south, ..] = length.bounds();
         if crate::paths::clear_of([west, north, east, south], ways.iter().copied()) {

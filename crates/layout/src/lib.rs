@@ -355,7 +355,9 @@ pub fn plan(
     basins::graves(&mut kit, &terraces, &carved);
     // The climbs, the works, the marks and the rock came after what stands was first kept off the ways: keep it off
     // them all again. A run keeps its own pieces off its line (run_kits.rs).
-    clearing::keep_off_paths(&mut seating, &paths[..walked], &|x, y| ground.height_at(x, y));
+    // Each piece now stands on the land as carved, lifted onto its raised floor.
+    let carved_height = |x: f64, y: f64| ground.height_at(x, y) + carved.raise(x, y, ground.coast.at(x, y));
+    clearing::keep_off_paths(&mut seating, &paths[..walked], &carved_height);
     // Last, so what is planted keeps off all that stands.
     let takes = |at: [f64; 2], reach: f64| plantings::takes(ground, &sculpt, &carved, &ring, at, reach);
     let zone = plantings::Zone { biome, seed, takes: &takes };
@@ -363,7 +365,10 @@ pub fn plan(
     let spawns = spawns_round(&field, anchor);
     let ways: Vec<(Path, [usize; 2])> = paths.iter().cloned().zip(joined.iter().copied()).collect();
     let raise = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
-    let land = spaces::Land { floor: &|at| ground.height_at(at[0], at[1]) + raise(at), level: &|at| raise(at) / rise };
+    let land = spaces::Land {
+        floor: &|at| ground.height_at(at[0], at[1]) + raise(at),
+        level: &|at| carved.floor_share(at[0], at[1]),
+    };
     let climbs: Vec<&[[f64; 7]]> = carve::lookouts(&sculpt.climbs).collect();
     let drawn = spaces::Drawn {
         areas: &areas,

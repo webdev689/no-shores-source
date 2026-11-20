@@ -245,7 +245,11 @@ pub fn carve(
         found.and_then(|index| grades.get(number).map(|levels| levels[index])).unwrap_or(0.0)
     };
     for (number, path) in paths.iter().enumerate() {
-        let points = simplified(&path.points, 3.0);
+        // Its points kept wherever it bends on the ground or in height, so each capsule runs one stretch of its grade.
+        let levels = grades.get(number);
+        let metres: Option<Vec<f64>> = levels.map(|levels| levels.iter().map(|level| level * rise).collect());
+        let kept = crate::paths::kept(&path.points, metres.as_deref(), 3.0);
+        let points: Vec<[f64; 2]> = kept.iter().map(|&at| path.points[at]).collect();
         // With heights, a way between two areas near each other opens out into one wide floor, so they read as one
         // large place rather than two bowls and a lane.
         let open = joined.get(number).filter(|_| heights).and_then(|&[from, to]| {
@@ -255,7 +259,7 @@ pub fn carve(
         });
         for (index, pair) in points.windows(2).enumerate() {
             let half = canyon_half(path, index, &points, areas).max(open.unwrap_or(0.0));
-            let (from, to) = (graded(number, pair[0]), graded(number, pair[1]));
+            let (from, to) = levels.map_or((0.0, 0.0), |levels| (levels[kept[index]], levels[kept[index + 1]]));
             if from > 0.0 || to > 0.0 {
                 raised.push([pair[0][0], pair[0][1], pair[1][0], pair[1][1], half, from, to]);
             } else {

@@ -231,7 +231,8 @@ from the sea, fresh water and the claim's edge), then:
     or pear grows anywhere). A farm with "orchard" as a whole word of its name is planted with the tree in rows along
     its field, 9 m apart in rows 10 m apart, 60 m either way along the field from its middle and 45 m across. Every
     farm's tracks have a hedgerow of the shrub every 2 m either side, as far out as their drystone walls run, 2.2 m
-    behind each wall's line, so a bush clears the wall's half (0.4 m) by its reach. A wilds with "moor" as a whole word
+    behind each wall's line, so a bush clears the wall's half (0.4 m) by its reach; none where no length of wall
+    stands, at a gap or where a way crossing took one. A wilds with "moor" as a whole word
     of its name holds eight thickets of the shrub, each reaching 5 to 10 m from its middle, a quarter to most of the
     way out. A planting stands only in the section, on the floor by its reach (a tree 4 m, a shrub 1.6 m) and as far
     off every climb, run and outcrop, on dry land no steeper than 0.4. It also keeps that far clear of every way, a
@@ -340,18 +341,21 @@ from it, and lowered likewise toward a lower place's floor; points of different 
 So a place up high stands on its platform over the ways with a ramp up to it, a way between two places up high runs
 along a causeway, one between two places down low keeps down, and no stretch of any way climbs steeper than a track
 may, nor two ways side by side stand further apart than such a slope. A ruin's floor is tiered: its bowl a plaza at
-its middle (0.55 of its reach at most), each of its spokes in turn a ramp up 0.1, up 0.2 or down 0.1 of the massif's
-height at the steepest a track takes, onto a flat tier 4 m wider than the spoke, so a ruin lies on broken ground and
-no building stands across a slope. A hamlet stands whole at its height on one floor: its blocks start within a few
+its middle (0.55 of its reach at most), each of its spokes running on at the plaza's level to its edge, then a ramp up
+0.1, up 0.2 or down 0.1 of the massif's height in turn at the steepest a track takes (less where the spoke is too
+short for its ramp) onto a flat tier 4 m wider than the spoke, so a ruin lies on broken ground round a level plaza
+and no building stands across a slope. A hamlet stands whole at its height on one floor: its blocks start within a few
 metres of its plaza, so no ramp up to a tier fits between them, and a tiered lobe stood the Vale's largest building
 across 5 m of slope. No hamlet building on Saltmere stands on more than a metre of the massif's own roll
 (`crates/room/tests/map_planned.rs`). A way's points on a basin hold the level of the floor under them. What stands
 where a raised floor's edge has wandered past its reach is lifted with it. A way between two areas whose reaches stand within 120 m of each other opens its
 canyon to 0.7 of the smaller's reach along its length, so the two read as one large place at their two heights, not
 two bowls and a lane. A raised area's floors and every stretch of way off the land's own
-level are carved as the sculpt's raised floors ([[Land]]); a terrace stands its area's level higher, a ramp's foot at
-the level of the land under it; a lookout's climb starts at its floor's level, and a pocket opens at its way's. What
-was stood on the land before the carving is lifted onto it. A retaining wall stands only where a cliff rises from the
+level are carved as the sculpt's raised floors ([[Land]]), each way's in stretches between its points kept wherever
+it bends on the ground (3 m) or in height (0.25 m), so a way held flat across a low place, then ramped, keeps flat
+there; a terrace stands its area's level higher, a ramp's foot at the level of the land under it; a lookout's climb
+starts at its floor's share of the massif's height, and a pocket opens at its way's. What was stood on the land
+before the carving is lifted onto it, and the great works stand on the land as carved. A retaining wall stands only where a cliff rises from the
 floor: past a raised floor's edge the land may fall away instead. In each of Saltmere's zones every way and climb is
 walked without a step a body cannot take (`crates/room/tests/map_planned.rs`). The Vale stands its keep highest,
 then its shrine, its hamlet and its farm, its mill, meadows and coven by the river.
@@ -372,7 +376,8 @@ rock runs on past the stair, the slot is a cleft leading to its foot. The cliff 
 top landing 3 m onto the high floor, past where the slot and the floor blend. The shortest are tried first, twelve at
 most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 24 m there, its slot's
 floor runs from its start to the stair's foot without a step, and no land stands over the steps as they climb. Up to
-three are cut, 60 m apart. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
+three are cut, 60 m apart, each keeping every stair cut before it climbing and its slot off every run's line. The
+stair's top landing (3 m, from the high floor's edge) stands at the highest the land does under it. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
 ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
 
 With heights a gate stands in a cleft of the rock, a floor of 14 m reach where its way arrives and its gorge leaves,

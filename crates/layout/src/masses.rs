@@ -59,10 +59,10 @@ pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
                 sculpt.climbs.splice(at..at, climb);
                 cut.push(climb);
             }
-            // A valley runs at the levels of the floors it joins, so it never cuts a raised floor down.
+            // A valley runs at the levels of the floors it joins (a raised floor's, a platform's or a ramp's as the
+            // land is carved there), so it never cuts a raised floor down.
             Some(Answer::Valley(valley @ [x1, y1, x2, y2, half])) => {
-                let share = |at: [f64; 2]| crate::heights::share_at(&sculpt.floors, &sculpt.levels, at);
-                let (from, to) = (share([x1, y1]), share([x2, y2]));
+                let (from, to) = (carved.floor_share(x1, y1), carved.floor_share(x2, y2));
                 if from > 0.0 || to > 0.0 {
                     sculpt.levels.push([x1, y1, x2, y2, half, from, to]);
                 } else {

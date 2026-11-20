@@ -445,6 +445,20 @@ impl Sculpts {
     /// a body's footing are measured over it, so a terrace, a ramp or a raised floor is floor as the land's own is.
     #[must_use]
     pub fn floor_level(&self, x: f64, y: f64) -> f64 {
+        self.nearest_floor(x, y)
+            .map_or(0.0, |(number, share)| share * self.rise_at(number, x, y) * self.fade_at(number, x, y))
+    }
+
+    /// The level of the nearest floor or climb as a share of its massif's height (`floor_level` before its massif's
+    /// local height): 0 for a floor and far from any. A climb starting there starts at this share.
+    #[must_use]
+    pub fn floor_share(&self, x: f64, y: f64) -> f64 {
+        self.nearest_floor(x, y).map_or(0.0, |(_, share)| share)
+    }
+
+    /// The nearest floor, climb or raised floor of every sculpt reaching a point: its sculpt and its level there, a
+    /// share of the massif's height.
+    fn nearest_floor(&self, x: f64, y: f64) -> Option<(usize, f64)> {
         (0..self.sculpts.len())
             .filter(|&number| {
                 let reach = self.reaches[number];
@@ -453,19 +467,20 @@ impl Sculpts {
             .map(|number| {
                 let floor = self.off_floor(number, x, y);
                 let ((climb, climbed), (raised, level)) = (self.off_climb(number, x, y), self.off_level(number, x, y));
-                // A climb or terrace cut into a raised floor is the floor where it covers the point.
+                // As the land is carved: a climb or terrace cut into a raised floor is the floor where it covers the
+                // point, and a raised floor where it does, over a floor at the land's own level under it.
                 let (off, share) = if climb <= 0.0 || (climb < raised && climb < floor) {
                     (climb, climbed)
-                } else if raised < floor {
+                } else if raised <= 0.0 || raised < floor {
                     (raised, level)
                 } else {
                     (floor, 0.0)
                 };
-                (off, share * self.rise_at(number, x, y) * self.fade_at(number, x, y))
+                (number, off, share)
             })
-            .filter(|(off, _)| off.is_finite())
-            .min_by(|first, second| first.0.total_cmp(&second.0))
-            .map_or(0.0, |(_, level)| level)
+            .filter(|(_, off, _)| off.is_finite())
+            .min_by(|first, second| first.1.total_cmp(&second.1))
+            .map(|(number, _, share)| (number, share))
     }
 
     /// How far the sculpts raise the land at a point, metres; `coast` is its distance from the painted coast, positive

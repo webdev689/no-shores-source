@@ -6,7 +6,7 @@
 use crate::areas::Area;
 use crate::basins::Basin;
 use crate::brief::AreaKind;
-use crate::dressing::{WALL_OFF_M, WALL_REACH_M, beside, samples};
+use crate::dressing::{DRYSTONE_M, WALL_OFF_M, WALL_REACH_M, beside, samples};
 use crate::field::{distance, ring_holds};
 use crate::paths::{Path, Tier, off_line};
 use crate::runs::{Run, half_of};
@@ -110,7 +110,7 @@ pub fn plantings(
         };
         wanted.extend(kind.map(|kind| (kind, reach, points)));
     }
-    wanted.extend(shrub.map(|shrub| (shrub, SHRUB_REACH_M, hedgerows(areas, paths))));
+    wanted.extend(shrub.map(|shrub| (shrub, SHRUB_REACH_M, hedgerows(areas, paths, seating))));
     let Some(near) = wanted
         .iter()
         .flat_map(|(_, _, points)| points)
@@ -176,9 +176,24 @@ fn thickets(area: &Area, seed: u32) -> Vec<[f64; 2]> {
 }
 
 /// The hedgerows behind the drystone walls along the tracks out of every farm, as far out as the walls run
-/// (dressing.rs), on both sides.
-fn hedgerows(areas: &[Area], paths: &[Path]) -> Vec<[f64; 2]> {
+/// (dressing.rs), on both sides: a bush only behind a length of wall still standing, none where a gap was left or a
+/// way crossing took a length away.
+fn hedgerows(areas: &[Area], paths: &[Path], seating: &Seating) -> Vec<[f64; 2]> {
     let farms: Vec<&Area> = areas.iter().filter(|area| area.kind == AreaKind::Farm).collect();
+    // Each length of drystone wall still standing, as the line along it.
+    let walls: Vec<[[f64; 2]; 2]> = seating
+        .solids
+        .iter()
+        .filter(|solid| solid.material == city::solids::Material::Rubble && solid.shape == city::solids::Shape::Block)
+        .filter(|solid| (solid.size[0] - DRYSTONE_M).abs() < 1e-9 && solid.lean == 0.0 && solid.roll == 0.0)
+        .map(|solid| {
+            let (sine, cosine) = sin_cos(solid.turn);
+            let (half, [x, y, _]) = (solid.size[1] / 2.0, solid.at);
+            [[x + sine * half, y - cosine * half], [x - sine * half, y + cosine * half]]
+        })
+        .collect();
+    let lines_a_wall =
+        |at: [f64; 2]| walls.iter().any(|&[from, to]| off_line(at, from, to) <= HEDGE_BEHIND_M + DRYSTONE_M / 2.0);
     let mut bushes = Vec::new();
     for path in paths.iter().filter(|path| path.tier == Tier::Track) {
         let out = path.tier.width() / 2.0 + WALL_OFF_M + HEDGE_BEHIND_M;
@@ -186,7 +201,9 @@ fn hedgerows(areas: &[Area], paths: &[Path]) -> Vec<[f64; 2]> {
             let walled = farms.iter().any(|farm| distance(farm.at, at) < farm.radius + WALL_REACH_M)
                 && areas.iter().all(|area| distance(area.at, at) >= area.radius);
             if walled {
-                bushes.extend([beside(at, way, out), beside(at, way, -out)]);
+                bushes.extend(
+                    [beside(at, way, out), beside(at, way, -out)].into_iter().filter(|&bush| lines_a_wall(bush)),
+                );
             }
         }
     }
@@ -377,10 +394,11 @@ mod tests {
         let end = [AT[0] + AXIS[0] * 400.0, AT[1] + AXIS[1] * 400.0];
         let track = Path { tier: Tier::Track, points: vec![AT, end], crossings: Vec::new(), heights: Vec::new() };
         // Its drystone walls either side in 8 m stretches past the farm's reach, as dressing.rs lays them, on a slant
-        // so each stretch is laid in short pieces whose boxes reach out past the wall.
+        // so each stretch is laid in short pieces whose boxes reach out past the wall; one stretch left out, as a way
+        // crossing takes one, so no bush stands there.
         let out = Tier::Track.width() / 2.0 + WALL_OFF_M;
         let (mut stretches, mut walls) = (Vec::new(), Vec::new());
-        for step in 0..22 {
+        for step in (0..22).filter(|&step| step != 9) {
             let at =
                 [AT[0] + AXIS[0] * (100.0 + 8.0 * f64::from(step)), AT[1] + AXIS[1] * (100.0 + 8.0 * f64::from(step))];
             for side in [-1.0, 1.0] {
@@ -396,7 +414,7 @@ mod tests {
         let seating = Seating { solids: walls, ..Seating::default() };
         let basin = Basin { floors: vec![[AT[0], AT[1], end[0], end[1], 60.0]], terraces: Vec::new() };
         let zone = Zone { biome: Some("temperate-coast"), seed: 7, takes: &|_, _| true };
-        let wanted = hedgerows(std::slice::from_ref(&farm), std::slice::from_ref(&track)).len();
+        let wanted = hedgerows(std::slice::from_ref(&farm), std::slice::from_ref(&track), &seating).len();
         let planted = plantings(&[farm], &[basin], &[track], &seating, &[], &zone);
         let bushes = planted.iter().find(|planting| planting.kind == "gorse").map_or(&[][..], |hedge| &hedge.points);
         assert!(wanted > 100 && bushes.len() * 10 >= wanted * 9, "{} of {wanted} hedge bushes stand", bushes.len());
