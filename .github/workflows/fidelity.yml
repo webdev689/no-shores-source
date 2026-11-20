@@ -19,8 +19,7 @@ jobs:
         env:
           BODY: ${{ github.event.pull_request.body }}
         run: |
-          # The section runs to the description's end, so a report pasted under it with headings of its own still counts.
-          section=$(printf '%s\n' "$BODY" | tr -d '\r' | awk '/^## Fidelity review/ { inside = 1; next } inside')
+          section=$(printf '%s\n' "$BODY" | tr -d '\r' | awk '/^## Fidelity review/ { inside = 1; next } /^## / { inside = 0 } inside')
           if ! printf '%s\n' "$section" | grep -q '^Verdict: '; then
             echo '::error::This pull request changes a decision. Run tools/claude-toolkit/workers/fidelity-review.sh and put its "Verdict:" line, with its findings fixed or answered, in the description under "## Fidelity review".'
             exit 1

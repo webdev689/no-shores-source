@@ -202,8 +202,9 @@ WebAssembly, so names, factions and weapons are read in one place.
   and shows none over its head); the foe the soft lock holds shows its plate wherever it is, and so do the foes fought
   in the last 6 s, theirs fading as the target plate does. None is seen through a block or the land, nor past 60 m; each
   shrinks with distance as its figure does ([[Interface]]; Claude's calls in [[Plates as Claude Shows Them]]).
-- **Plates never overlap.** The nearest foe's stays over it, in front; a farther one that would cover it is lifted
-  just clear, and the plates hold still from frame to frame ([[Interface]]).
+- **Plates never overlap**, but for one fading out of the cone, which holds its place for its quarter second. The
+  nearest foe's stays over it, in front; a farther one that would cover it is lifted just clear, and the plates hold
+  still from frame to frame ([[Interface]]).
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
   screen: its level, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
   track under it. A Boss has no plate over its head.

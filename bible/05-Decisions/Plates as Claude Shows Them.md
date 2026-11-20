@@ -25,7 +25,7 @@ recorded in [[Interface]] and [[Enemies]]. The owner can change any of them.
 | A Minor's bar | 6 px high, three fifths of the plate's width; the plate itself as wide as a Major's | "? Crossbowman", a Minor's longest name, fills the plate in the game's face; a 6 px bar keeps its colour far off |
 | An Elite's and up | 176 px with a 10 px bar, marked in thirds by dark marks edged light, over figures only | The thirds read over a full bar and an empty trough alike; the target plate at the top keeps its own look |
 | The land hiding a plate | The line to the head tried against the ground every 2 m | No rise in the ground near the eye is narrower than twice that |
-| A plate fading out of the cone | Holds its place and lifts no other plate over it | The plate taking the cone stands where it will stay, rather than being lifted over the one going and let down |
+| A plate fading out of the cone | Holds its place and lifts no other plate over it, so for its quarter second it may overlap the one taking the cone | The plate taking the cone stands where it will stay, rather than being lifted over the one going and let down |
 | A plate's elements | Kept, hidden, while its foe stands, for its next showing | A view sweeping across a crowd built a plate for every foe it passed |
 | The words of blows | Keep clear of the plates drawn, never of a foe with none; a word pushed down clear of a plate stays down as the plate goes | A word over a foe with no plate stays by its blow, and never jumps back up as a plate fades |
-| Ships' plates at sea | As they were | The request was about foes on foot |
+| Ships' plates at sea | As they were | The recommendation the owner said yes to named foes' plates only; whether "enemy health bars" takes in ships is the owner's to say |

@@ -111,10 +111,11 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
   Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number, on
   ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
-- **Bars over figures never overlap** (`BarLayout`). Each frame the nearest keeps its place over its figure, in front,
-  and each farther one that would cover a bar already placed is lifted just above it. The order changes only when a
-  figure comes 6% nearer, a lifted bar comes down only once it is 10 px further clear, and a bar eases to a new height,
-  so the bars hold still from frame to frame.
+- **Bars over figures never overlap** (`BarLayout`), but for a plate fading out of the cone, which holds its place for
+  its quarter second. Each frame the nearest keeps its place over its figure, in front, and each farther one that would
+  cover a bar already placed is lifted just above it. The order changes only when a figure comes 6% nearer, a lifted bar
+  comes down only once it is 10 px further clear, and a bar eases to a new height, so the bars hold still from frame to
+  frame.
 - **Where it is worn.** The [[Game]]'s heads-up display lays the kit's sheet once. The sea bar is a window, its groups
   (Navigation, Pace and Ship) parted by rails; the dock or landing offer, Take the helm and Respawn are primaries;
   the status line is a chip; the menu is a window under a header.
@@ -212,14 +213,15 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   none over its head. The foe the soft lock holds shows wherever it is, and so does a foe the player traded a blow with,
   for as long as the target plate would stand from that blow, fading as it fades (`foughtShare`); being the target
   alone, a foe winding up at the player or one the lock let go, holds no plate. A plate new on the screen starts at what
-  it should show: past the cone it starts hidden, fought or locked it starts whole. A plate fading out of the cone holds
-  its place and lifts none over it, so the one taking the cone stands where it will stay. The words of blows keep clear
-  of the plates drawn, never of a foe with none, and a word pushed down clear of a plate stays down as the plate goes. A
-  plate shows for no foe farther than 60 m across the ground, nor one whose head the place's blocks or its land hide
-  (`landBlocks`, the line tried every 2 m, only for a foe that could show a plate or take the cone): a plate showing
-  goes once its line has stayed blocked 0.15 s, one not showing stays hidden from the moment it is; seen again it comes
-  back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does farther off, never
-  growing, its name never under 9 px.
+  it should show, without easing in: past the cone it starts hidden, at the cone's edge or in a fought plate's fade it
+  starts at that share, and otherwise whole. A plate fading out of the cone holds its place and lifts none over it, so
+  the one taking the cone stands where it will stay; for that quarter second the two may overlap. The words of blows
+  keep clear of the plates drawn, never of a foe with none, and a word pushed down clear of a plate stays down as the
+  plate goes. A plate shows for no foe farther than 60 m across the ground, nor one whose head the place's blocks or its
+  land hide (`landBlocks`, the line tried every 2 m, only for a foe that could show a plate or take the cone): a plate
+  showing goes once its line has stayed blocked 0.15 s, one not showing stays hidden from the moment it is; seen again
+  it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does farther
+  off, never growing, its name never under 9 px.
 - **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
   thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
   no stroke one side and the other in turn), and kept on the screen. Each pops
