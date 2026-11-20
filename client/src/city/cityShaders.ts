@@ -3,7 +3,7 @@
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
-import { COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
+import { CLOTH_COLOURS, COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
 import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
@@ -16,6 +16,14 @@ export const PULL_M = 0.05;
 export const PULL_SHARE = 0.012;
 /** How far under its level a plate is drawn. */
 const PLATE_DROP_M = 0.03;
+
+/** Each cloth's case of `colour_of`: its dye under the weave. */
+const CLOTH_CASES = Object.entries(CLOTH_COLOURS)
+  .map(([cloth, colour]) => {
+    const layer = COLOUR_LAYERS[cloth as keyof typeof CLOTH_COLOURS];
+    return `    case ${layer}u: { return vec3f(${colour.map((channel) => channel.toFixed(3)).join(', ')}) * weave; }`;
+  })
+  .join('\n');
 
 const VIEW = /* wgsl */ `
 ${SHARED_WGSL}
@@ -83,11 +91,18 @@ fn kept(tier: u32, fades: vec2f, pixel: vec2f) -> bool {
   }
 }
 
-fn colour_of(layer: u32, sampled: vec3f) -> vec3f {
+// A plain colour's albedo, or the sampled picture's. Cloth is its dye under a fine weave of threads, faded out where
+// the threads grow finer than a pixel so the far cloth does not shimmer.
+fn colour_of(layer: u32, sampled: vec3f, uv: vec2f) -> vec3f {
+  let threads = uv * 160.0;
+  let fade = clamp(1.5 - 2.0 * max(length(fwidth(threads)), 0.0), 0.0, 1.0);
+  let crossing = abs(fract(threads) - 0.5) * 2.0;
+  let weave = 1.0 - 0.1 * fade * max(crossing.x, crossing.y);
   switch layer {
     case GOLD: { return vec3f(0.86, 0.66, 0.26); }
     case IRON: { return vec3f(0.24, 0.25, 0.27); }
     case BONE: { return vec3f(0.86, 0.83, 0.74); }
+${CLOTH_CASES}
     default: { return sampled; }
   }
 }
@@ -128,10 +143,11 @@ struct Surface {
 @fragment
 fn surface_fragment(surface: Surface) -> @location(0) vec4f {
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
+  let albedo = colour_of(surface.layer, sampled, surface.uv);
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
     discard;
   }
-  return vec4f(lit(surface.layer, colour_of(surface.layer, sampled), surface.normal, surface.from_eye), 1.0);
+  return vec4f(lit(surface.layer, albedo, surface.normal, surface.from_eye), 1.0);
 }
 `;
 

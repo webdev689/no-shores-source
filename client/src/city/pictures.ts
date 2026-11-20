@@ -1,13 +1,52 @@
 // Which pictures a city wears and where each sits in its one texture array: the forged models' pictures turned to the
 // city's climate, the ground's tiles of its terrain set, and the pictures chosen for its solids' materials. The most
 // used come first, so a city that needs more than the array holds loses only its rarest.
+import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import { climateArchive, pictureSize, type Climate, type PictureUse, type Season } from '../textures/picture.ts';
-import type { CityClimate, SolidMaterial } from './plan.ts';
+import type { CityClimate, ClothMaterial, SolidMaterial } from './plan.ts';
 
 /** Layers the array holds for pictures; the four above them are the plain colours. WebGPU's default limit is 256. */
 export const PICTURE_LAYERS = 252;
-/** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, and the glow of a fire. */
-export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as const;
+/** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, the glow of a fire, and cloth.
+ *  A plain colour never samples its own layer, so cloth's numbers lie past the array and cost it none. */
+export const COLOUR_LAYERS = {
+  gold: 252,
+  iron: 253,
+  bone: 254,
+  glow: 255,
+  linen: 256,
+  crimson: 257,
+  verdant: 258,
+  black: 259,
+  stormcaller_blue: 260,
+  lamplighter_gold: 261,
+  veiled_dusk: 262,
+  straw: 263,
+} as const;
+
+/** A dye's cloth colour: the middle of its four-step ramp (its second and third steps' mean), as a cape wears it. */
+function dyeColour(dye: string): Tint {
+  const look = cosmetics.cosmetics.find((each) => each.id === dye)?.look ?? [];
+  const channel = (hex: string | undefined, start: number): number =>
+    parseInt((hex ?? '#808080').slice(start, start + 2), 16);
+  return [1, 3, 5].map((start) => (channel(look[1], start) + channel(look[2], start)) / 2 / 255) as unknown as Tint;
+}
+
+const factionDye = (key: string): string => factions.factions.find((each) => each.key === key)?.dye ?? '';
+
+/** Each cloth's colour (0 to 1 a channel): undyed linen, crimson, verdant, black and straw, and each faction's own dye, so
+ *  a chapel's hangings are its capes' colour. */
+export const CLOTH_COLOURS: Readonly<Record<ClothMaterial, Tint>> = {
+  linen: [0.8, 0.75, 0.63],
+  crimson: [0.56, 0.11, 0.12],
+  verdant: [0.2, 0.42, 0.22],
+  black: [0.1, 0.1, 0.11],
+  straw: [0.78, 0.66, 0.36],
+  stormcaller_blue: dyeColour(factionDye('stormcallers')),
+  lamplighter_gold: dyeColour(factionDye('lamplighters')),
+  veiled_dusk: dyeColour(factionDye('veiled')),
+};
 /** Every picture is resampled to this square, so one array holds them all. */
 export const LAYER_SIZE = 128;
 

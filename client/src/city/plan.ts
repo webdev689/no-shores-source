@@ -21,7 +21,24 @@ export type SolidShape =
   | RockShape;
 
 export type SolidMaterial =
-  'stone' | 'trim' | 'roof' | 'timber' | 'plaster' | 'paving' | 'gold' | 'iron' | 'bone' | 'glow' | 'rubble' | 'chalk';
+  | 'stone'
+  | 'trim'
+  | 'roof'
+  | 'timber'
+  | 'plaster'
+  | 'paving'
+  | 'gold'
+  | 'iron'
+  | 'bone'
+  | 'glow'
+  | 'rubble'
+  | 'chalk'
+  | ClothMaterial;
+
+/** Cloth's plain dyed colours (the city crate's `Material`): linen, crimson, verdant, black, straw, and each
+ *  faction's dye. */
+export type ClothMaterial =
+  'linen' | 'crimson' | 'verdant' | 'black' | 'straw' | 'stormcaller_blue' | 'lamplighter_gold' | 'veiled_dusk';
 
 /** One solid: the middle of its base in world metres (z up), its width, depth and height, its turn clockwise from
  *  north (its own x east and y south at 0), its lean toward its own +y and its roll about its own y, radians. */

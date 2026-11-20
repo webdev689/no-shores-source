@@ -12,9 +12,11 @@ import bpy  # noqa: I001 (Blender's bmesh and mathutils load with bpy)
 import bmesh
 import mathutils
 
-# The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture, in the order
-# its groups are written: paving last, as the first group carries the parts and paving is never run into.
-MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'paving')
+# The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture or its plain
+# colour, in the order its groups are written: paving last, as the first group carries the parts and paving is never
+# run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the three factions' own.
+CLOTHS = ('linen', 'crimson', 'verdant', 'black', 'straw', 'stormcaller_blue', 'lamplighter_gold', 'veiled_dusk')
+MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'plaster', 'roof', 'gold', 'bone', 'glow', *CLOTHS, 'paving')
 
 
 class Module:
@@ -314,5 +316,8 @@ def exported(module):
     sockets = [dict(name=s['name'], at=[s['at'][0], -s['at'][1], s['at'][2]], facing=[s['facing'][0], -s['facing'][1]])
                for s in module.sockets]
     size = [max(abs(low[0]), abs(high[0])) * 2, max(abs(low[1]), abs(high[1])) * 2, high[2]]
+    unknown = set(groups) - set(MATERIALS)
+    if unknown:
+        raise ValueError(f'{module.name}: materials the game does not know: {sorted(unknown)}')
     return dict(groups={name: groups[name] for name in MATERIALS if name in groups}, parts=parts, sockets=sockets,
                 pads=pads, size=[round(side, 3) for side in size])
