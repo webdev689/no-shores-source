@@ -159,3 +159,24 @@ fn a_run_started_over_remembers_no_one_who_left() {
     let ada = back(&mut room, "ada");
     assert!(!room.players[&ada].fighter.dead(), "whole, as the run is whole again");
 }
+
+#[test]
+fn a_run_once_won_is_never_wiped_though_its_end_post_stands_again_and_its_cache_shuts() {
+    let mut room = abyss_run();
+    let both = [room.join().expect("in"), room.join().expect("in")];
+    let post = room.cache.expect("a cache").post;
+    for id in room.garrison[post].standing.clone() {
+        let found = room.foes.get_mut(&id).expect("standing");
+        (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    }
+    room.tick();
+    room.stand_post(post);
+    room.tick();
+    assert_eq!(room.cache().map(|cache| cache[4]), Some(0.0), "its cache shut again");
+    room.take_events();
+    for player in both {
+        fallen(&mut room, player);
+    }
+    room.tick();
+    assert!(wiped(&room.take_events()).is_empty(), "won: no wipe");
+}

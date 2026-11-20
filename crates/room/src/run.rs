@@ -40,6 +40,9 @@ pub struct Run {
     /// In a run that counts revives, the share of their health each kept player left with, by account, 0 for one
     /// who left down: given back as they come again, so leaving stands no one up whole (`abyss::keep_body`).
     pub left: std::collections::BTreeMap<String, f64>,
+    /// Whether its cache has stood open: a run once won is never wiped, though its end post stands again later and
+    /// shuts the cache.
+    pub won: bool,
 }
 
 impl Run {

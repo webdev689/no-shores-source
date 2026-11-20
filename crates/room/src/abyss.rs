@@ -1,7 +1,7 @@
 //! Abyss's rules, in every Abyss run: the company shares REVIVES, each fallen player's stand taking one, and the fallen
 //! stay down once none is left, though they leave and come back. When every player in it is down at once, the run is
 //! wiped and starts over: its foes stand again, its cache shuts, its revives are whole and its players stand at the way
-//! in. A run whose cache stands open is won, and a room no one is in is never wiped.
+//! in. A run once won, its cache opened, and a room no one is in are never wiped.
 
 use super::REVIVES;
 use crate::players::GRACE;
@@ -53,12 +53,12 @@ impl Room {
         }
     }
 
-    /// Whether an Abyss run has just been wiped: someone is in it, every one of them is down, and its cache is shut.
+    /// Whether an Abyss run has just been wiped: someone is in it, every one of them is down, and it was never won.
     pub(crate) fn wiped(&self) -> bool {
         self.revives().is_some()
             && !self.players.is_empty()
             && self.players.values().all(|found| found.fighter.dead())
-            && !self.cache.is_some_and(|cache| cache.open)
+            && !self.run.as_ref().is_some_and(|run| run.won)
     }
 
     /// Starts an Abyss run over: every player is told Wiped; every foe, its way and the board's memory of it are

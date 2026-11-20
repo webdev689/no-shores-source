@@ -243,6 +243,9 @@ impl Room {
         let Some(post) = self.garrison.get(cache.post) else { return };
         let open = post.cleared_at.is_some();
         if open && !cache.open {
+            if let Some(run) = self.run.as_mut() {
+                run.won = true;
+            }
             let level = self.at_seas(post.girds.first().map_or(0, |&(level, _)| level));
             let players: Vec<PlayerId> = self.players.keys().copied().collect();
             for player in players {

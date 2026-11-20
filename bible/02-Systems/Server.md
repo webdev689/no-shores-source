@@ -141,7 +141,7 @@ on Cloudflare.
 - **The dead** stand again, whole, after four seconds, at the spawn nearest where they fell (in a dungeon, at its way
   in, facing into the room), and the foes leave them be for three more unless they strike first; a dead foe is gone
   after ten. In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none
-  is left; when every player in it is down at once and its cache is shut, the run starts over (`abyss.rs`).
+  is left; when every player in it is down at once and it was never won, the run starts over (`abyss.rs`).
 - **A run's room** opens from a JSON ask (`room_open_run`): its dungeon (a patrol's by its number, an Elite Dungeon
   by its place, or a sea island's by its seed, style and continent), its tier and the Unix minute it opens, as
   `Room::dungeon_run` stands it ([[Dungeons]]); an ask no rule lays opens nothing. `room_activities` answers what is
