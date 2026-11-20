@@ -268,6 +268,17 @@ impl Sea {
         self.islands.hold_ashore(id, self.clock)
     }
 
+    /// Whether a course's path stands on, or crosses, a continent's coast or a standing island's.
+    pub(super) fn crosses_land(&self, path: &[Point]) -> bool {
+        let islands: Vec<&Coast> = self.islands.coasts().collect();
+        let land = |point| super::on_land(&self.coasts, point) || super::on_land(islands.iter().copied(), point);
+        let crosses = |leg: &[Point]| {
+            super::leg_meets_land(&self.coasts, leg[0], leg[1])
+                || super::leg_meets_land(islands.iter().copied(), leg[0], leg[1])
+        };
+        path.iter().any(|&point| land(point)) || path.windows(2).any(crosses)
+    }
+
     /// The islands' tick, after the ships have sailed.
     pub(super) fn tick_islands(&mut self) {
         let ships: Vec<ShipAndCourse> = self

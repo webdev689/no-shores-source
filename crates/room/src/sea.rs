@@ -302,12 +302,7 @@ impl Sea {
         };
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
-        let islands: Vec<&Coast> = self.islands.coasts().collect();
-        let land = |point| on_land(&self.coasts, point) || on_land(islands.iter().copied(), point);
-        let crosses = |leg: &[Point]| {
-            leg_meets_land(&self.coasts, leg[0], leg[1]) || leg_meets_land(islands.iter().copied(), leg[0], leg[1])
-        };
-        if path.iter().any(|&point| land(point)) || path.windows(2).any(crosses) {
+        if self.crosses_land(&path) {
             return Err(CourseRefused::CrossesLand);
         }
         self.stop_repair(player);
