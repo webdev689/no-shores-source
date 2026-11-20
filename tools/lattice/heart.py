@@ -1,12 +1,9 @@
-"""The Heart, the Lattice's boss on land. After the owner's own in project-final: "a rough crystalline GEM in the
-Sims-plumbob silhouette", a jittered, faceted diamond crusted with smaller shards, "RED crystal threaded with PURPLE
-VEINS", floating and spinning in a cradle, "a rough crystal CLUSTER" clasping its point; inside it, its core, a glowing
-bipyramid, the target once the shell is gone; descended, it walks on jointed crystal tendrils. It is built on the
-forge's own body at a quarter of its size and drawn four times as large: the gem rides the chest, which spins it, over
-legs held straight and unseen; the cradle stands on one planted foot; the arms and legs are its four tendrils, three
-segments each; the shell's port, which opens to loose what it throws, rides the neck. The shell, core, cradle and
-tendrils are layers of their own, for the game to show by its phase. Drawn by render.py; its moves are
-heart_moves.py's."""
+"""The Heart, the Lattice's boss on land, after the owner's own in project-final: a rough plumbob of crystal, red
+threaded with purple, floating and spinning over its cradle, its core glowing within, walking on jointed tendrils once
+it descends (The Lattice as Claude Shapes It). Built on the forge's own body at a quarter of its size and drawn four
+times as large: the chest carries and spins the gem over legs held straight and unseen; the cradle stands on a planted
+foot; the arms and legs are its four tendrils; the shell's port rides the neck, whose tilt opens it. Its shell, core,
+cradle and tendrils are layers of their own, for the game to show by its phase."""
 import numpy as np
 
 import growth
