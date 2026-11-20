@@ -352,7 +352,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). Daedric is one of the forge's twelve metals, drawn on
   every armour piece and weapon class in third and first person, on shields and the horse's barding; the game names
   it in the Atheric gear, the swing arc's tint and the dyes. The forge stays as DFO had it, so the set is drawn from
-  beside it as the Lattice's foes are. Its look, name and reach are the owner's to choose first ([[Open Questions]]).
+  beside it as the Lattice's foes are. The owner chose: Lattice by name, red and purple crystal, crystal only, in
+  third-person armour, first person, weapons and shields, not the horse's armour. How the two crystals share it is
+  open ([[Open Questions]]).
 
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
