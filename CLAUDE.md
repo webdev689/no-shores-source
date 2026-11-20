@@ -27,7 +27,8 @@ rules are Rust, with the server the sole authority. Everything else is in the Ob
    `bash ~/.claude/skills/task-observer/scripts/session-start-scan.sh ${SHARED_DIR:-$HOME/toolkit-data}/task-observer`.
 4. At the end: `bash tools/claude-toolkit/claude-mem-save.sh`, then `bash tools/claude-toolkit/toolkit-data.sh save`
    (the observation log, to the branch `toolkit-data`), then `headroom learn --project . --apply` (say so if Gemini is
-   unreachable), then rewrite `bible/Hand-off.md`.
+   unreachable, or if it finds no data because the session started in another folder; never apply it to that folder's
+   repository), then rewrite `bible/Hand-off.md`.
 
 When a tool is skipped, clashes or misfires: fix the setup, log it with task-observer, and propose the rule change.
 Rules for keys, security and deploys need the owner's named approval.
