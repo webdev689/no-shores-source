@@ -18,7 +18,8 @@
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
 // waits minutes behind. The console's errors and warnings are printed, each the first time it is said, and so is
 // every shader that fails to compile, with its line: WebGPU reports a refused frame (a buffer too small for its
-// binding) and a broken shader only as warnings, and a refused frame repeats every frame.
+// binding) and a broken shader only as warnings, and a refused frame repeats every frame. Each answer of 400 or more
+// is printed with its URL.
 const { chromium } = require('playwright');
 const { readFileSync } = require('node:fs');
 
@@ -129,6 +130,10 @@ async function main() {
     console.log(`console ${kind}:`, text);
   });
   page.on('pageerror', (error) => console.log('page error:', error.message.slice(0, 300)));
+  // The console names only a failed load's status, not what was asked for.
+  page.on('response', (answer) => {
+    if (answer.status() >= 400) console.log(`response ${answer.status()}:`, answer.url().slice(0, 300));
+  });
   for (const [part, file] of Object.entries(plan.routes ?? {}))
     await page.route(`**/*${part}*`, (route) =>
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
