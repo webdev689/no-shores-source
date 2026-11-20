@@ -42,8 +42,8 @@ test('a frame whose key is unchanged does no layout; a changed one lays out agai
   const kept = new Kept<string>();
   let laidOut = 0;
   const layout = () => `layout ${++laidOut}`;
-  assert.equal(kept.of(keyOf(), layout), 'layout 1');
-  for (let frame = 0; frame < 60; frame++) assert.equal(kept.of(keyOf(), layout), 'layout 1');
+  assert.equal(kept.made(keyOf(), layout), 'layout 1');
+  for (let frame = 0; frame < 60; frame++) assert.equal(kept.made(keyOf(), layout), 'layout 1');
   assert.equal(laidOut, 1, 'sixty still frames, one layout');
-  assert.equal(kept.of(keyOf({ heading: 2 }), layout), 'layout 2');
+  assert.equal(kept.made(keyOf({ heading: 2 }), layout), 'layout 2');
 });

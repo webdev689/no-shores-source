@@ -305,7 +305,7 @@ export class HeldMap {
       this.widths.clear();
     }
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
-    const lettering = this.laidOut.of(reads, () => this.layout(scene, stage.sprite));
+    const lettering = this.laidOut.made(reads, () => this.layout(scene, stage.sprite));
     this.layoutCard(drop);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering]);
@@ -449,7 +449,7 @@ export class Kept<Value> {
   private key: string | null = null;
   private value: Value | undefined;
 
-  of(key: string, make: () => Value): Value {
+  made(key: string, make: () => Value): Value {
     if (key !== this.key || this.value === undefined) [this.value, this.key] = [make(), key];
     return this.value;
   }
