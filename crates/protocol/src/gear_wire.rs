@@ -364,10 +364,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let held = &character.materials;
     let mut builder = FlatBufferBuilder::new();
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
-    // In a social space, the day's wares, each numbered by its place among its vendor's.
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
     let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
+    // In a social space, the day's wares, each numbered by its place among its vendor's.
     let wares: Vec<_> = if room.in_social_space(player) {
         gear::vendor::Vendor::ALL
             .into_iter()

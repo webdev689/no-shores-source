@@ -89,11 +89,11 @@ looking 17° down over the parapet onto the city, the harbour and the sea. Arriv
 stranger's last moment plays there once the veil has fallen ([[Prologue]]); leaving the node ends it.
 
 With `?at=<node id>` in the address the player arrives at that node instead, on its continent (a city's social space
-is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. A ruined
-city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins"),
-on the veil too: arriving at a city's social space other than Overlook's, the page waits for the rules' module to
-say which cities are ports (`mainPortsOf`); if it does not come, the city is named alone. On foot there the line
-under its name says "Ruins", never what kind of node it is (`placeWords`). With
+is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook, and so
+does a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
+never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
+(the page waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
+name says "Ruins" (`placeWords`). With
 `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
 offline: a way to look at one place.
 
@@ -332,8 +332,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 Within 30 km of the open landmass's coast the ship is offered a landfall (`landfallOf`): within 20 km of its port's
 harbour, to dock there ("Dock at Overlook"); anywhere else, to go ashore. A ruined city's harbour is no port
-(`portOf`): off it the ship is offered only to go ashore, and its social space, "Ruins of" its name, is among the
-side's nodes as any other. Either one, by Enter, L or the offer's own
+(`portOf`): off it the ship is offered only to go ashore, and its social space, locked for good, shows no mark among
+the side's nodes. Either one, by Enter, L or the offer's own
 button, flies the view up over the island's side the ship lies off (`sideNodes`, `frameSide`, `flyRig`), over 2.5 s;
 the ship heaves to, its voyage kept to be resumed. The side's nodes are marked by kind with names and distances from
 the ship; docking keeps the city's social space among them. A click chooses one; a second click on it, or

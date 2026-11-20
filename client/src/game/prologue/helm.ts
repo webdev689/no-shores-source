@@ -85,7 +85,7 @@ export function creationShot(place: ShipPlace, turn: number, aspect: number): Sh
   };
 }
 
-/** The player at its helm, facing its bow, in their story dress and `anim`. */
+/** The player at the Brig's helm, facing its bow, in their story dress and `anim`. */
 export function youAtHelm(story: Story, place: ShipPlace, anim: string, since = 0): Actor {
   const [x, y, z] = helmSpot();
   const [worldX, worldY, worldZ] = deckPoint(place, x, y, z);

@@ -93,7 +93,7 @@ test('the throw overboard begins black, as the fight faded out, and only then fa
   assert.ok(shown.drawers?.includes(scenery.drawer), 'the wreck is drawn');
 });
 
-test('the deep shows the wreck above and the Brig its own hands, and speaks on its own clock', () => {
+test('the deep shows the wreck above and the Brig with its own hands, and speaks on its own clock', () => {
   const { story, calls } = recorded();
   const beat = new Deep(story, layout, scenery);
   assert.ok(

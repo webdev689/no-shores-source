@@ -1,6 +1,7 @@
 //! The social space's vendors: the Armorsmith sells armour, the Weaponsmith loadouts, two Melee to each Ranged, and the
 //! Shipwright a ship's modules, each six pieces a day, three Rare and three Magic at the buyer's level (the
-//! Shipwright's at their ship's), the same for everyone that day. Their wares are paid in Aurem; Legendary and Atheric gear is never sold for Aurem, only earned, or had from Shape (`shape.rs`).
+//! Shipwright's at their ship's), the same for everyone that day. Their wares are paid in Aurem; Legendary and
+//! Atheric gear is never sold for Aurem, only earned, or had from Shape (`shape.rs`).
 
 use crate::dice::Dice;
 use crate::item::{Item, NAMED_LEVEL};

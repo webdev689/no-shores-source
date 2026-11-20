@@ -465,8 +465,8 @@ table GearDrop {
 // a sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Mage's counter, or the
 // stall); and the answer to their last ask (0 done, then the gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
-// island's resource; and in a social space, the smiths' wares of the day, the Armorsmith's then the Weaponsmith's,
-// each numbered by its place among its vendor's and priced in Aurem.
+// island's resource; and in a social space, the vendors' wares of the day, the Armorsmith's, the Weaponsmith's then
+// the Shipwright's, each numbered by its place among its vendor's and priced in Aurem.
 table Gear {
   xp: ulong;
   level: ubyte;

@@ -64,7 +64,7 @@ test('the first shot at the helm has no hand standing close before the lens', ()
 
 const AT_SEA: ShipPlace = { x: 1200, y: -800, z: 0, heading: 0.7, pitch: 0, roll: 0 };
 
-/** The corners round the figure at its helm: a body's breadth with sword and shield, feet to the top of the head. */
+/** The corners round the figure at the Brig's helm: a body's breadth with sword and shield, feet to the top of the head. */
 function figureCorners(): [number, number, number][] {
   const [forward, starboard, up] = helmInShip();
   const corners: [number, number, number][] = [];

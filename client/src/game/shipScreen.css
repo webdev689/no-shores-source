@@ -154,7 +154,7 @@
   box-shadow: inset 0 -2px 0 var(--brass-lit);
 }
 
-/* The harbourmaster's counter: the Shipwright's wares over the muster. */
+/* The harbourmaster's counter: the Shipwright's wares; the muster stands on the pledged faction's screen. */
 .ship-harbour {
   display: flex;
   flex-direction: column;

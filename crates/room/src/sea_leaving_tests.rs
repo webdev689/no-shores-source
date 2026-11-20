@@ -1,5 +1,5 @@
 //! Losing and leaving: what a player who leaves a fight is kept as, what floats for whom across a rejoin, who takes a
-//! ship's lot and its hold, and the one word the sea gives for each ship that goes down.
+//! ship's lot and its hold, and a captain's ship that goes down after its last player left its fight.
 use super::tests::{met, vessel_mut};
 use super::*;
 use crate::battle::Sank;

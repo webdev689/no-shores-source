@@ -186,7 +186,7 @@ function crewPart(context: PageContext, officer: number | null, open: (id: numbe
   roster.setAttribute('role', 'list');
   roster.append(...officers.map((each) => officerRow(context, each, open)));
   if (officers.length === 0)
-    roster.append(make('p', "No officers yet. Sign them on at the harbourmaster's counter.", 'gear-hint gear-empty'));
+    roster.append(make('p', "No officers yet. Sign them on at your faction's counter.", 'gear-hint gear-empty'));
   return roster;
 }
 
