@@ -24,6 +24,7 @@ pub mod sea;
 mod spells;
 mod statuses;
 pub mod threat;
+pub mod winds;
 
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
@@ -142,13 +143,6 @@ impl Room {
     #[must_use]
     pub fn new(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
         Self::on(Floor::Flat, blocks, vec![spawn], None)
-    }
-
-    /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: a body that falls off them
-    /// stands in the sea at 0, and its foes' navmesh is the blocks' tops alone.
-    #[must_use]
-    pub fn over_sea(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
-        Self::on(Floor::Sea, blocks, vec![spawn], None)
     }
 
     /// An empty node's room: its floor, the blocks standing on it, and its section, whose spawns players join at in
@@ -572,6 +566,8 @@ impl Room {
 /// fight for the same inputs.
 const SEED: u64 = 0x4f56_4552_4c4f_4f4b;
 #[cfg(test)]
+mod climb_tests;
+#[cfg(test)]
 mod course_tests;
 #[cfg(test)]
 mod faction_tests;
@@ -588,8 +584,14 @@ mod loadout_tests;
 #[cfg(test)]
 mod node_tests;
 #[cfg(test)]
+mod pace_tests;
+#[cfg(test)]
 mod patrol_tests;
 #[cfg(test)]
 mod perks_tests;
 #[cfg(test)]
+mod ring_tests;
+#[cfg(test)]
 mod room_tests;
+#[cfg(test)]
+mod spread_tests;

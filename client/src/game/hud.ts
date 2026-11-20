@@ -79,7 +79,8 @@ export class Hud {
   private readonly shade = make('div', '', 'vignette');
   private readonly death = make('div', '', 'death');
   private readonly respawn: HTMLButtonElement;
-  private readonly hintList = make('div', '', 'hints');
+  /** The keys' hints, which the fight's display keeps its arrows clear of (`FootView`). */
+  readonly hintList = make('div', '', 'hints');
   private readonly veilText = make('div', '', 'veil-text');
   private readonly veilNode = make('div', '', 'veil shown');
   private readonly markLayer = make('div', '', 'marks');

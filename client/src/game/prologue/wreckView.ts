@@ -78,7 +78,7 @@ export interface WreckLook {
   readonly time: number;
 }
 
-const SHADER = /* wgsl */ `
+export const WRECK_WGSL = /* wgsl */ `
 struct Place {
   from_eye: mat4x4f,
   // The wreck's origin from the eye, metres.
@@ -173,7 +173,7 @@ export class WreckView {
     const { device } = gpu;
     this.device = device;
     this.mesh = mesh;
-    const module = device.createShaderModule({ code: SHADER });
+    const module = device.createShaderModule({ code: WRECK_WGSL });
     this.pipeline = device.createRenderPipeline({
       layout: 'auto',
       vertex: {

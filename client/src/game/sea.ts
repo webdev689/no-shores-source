@@ -26,6 +26,7 @@ import type { Landmass } from './landmass.ts';
 import type { CardAt } from '../player/cards.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { Swell } from '../rules/landRules.ts';
+import { SKY_NOW } from '../sky/skyDriver.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { ShipBar } from '../ships/shipBars.ts';
 import { type Stir, wakeStirs } from '../ships/swellPose.ts';
@@ -410,16 +411,15 @@ export class Sea {
   zoom(notches: number): void {
     if (this.aboard.active) this.aboard.zoom(notches);
     else if (this.view.kind === 'sail') {
-      const ceiling = ceilingFor(null);
-      const atLowest = this.camera.heightTarget <= heightBand(ceiling)[0] + 1e-6;
-      this.camera = zoomCamera(this.camera, this.close.zoom(notches, atLowest), ceiling);
+      const atLowest = this.camera.heightTarget <= heightBand(ceilingFor(SKY_NOW.current.reading))[0] + 1e-6;
+      this.camera = zoomCamera(this.camera, this.close.zoom(notches, atLowest), ceilingFor(SKY_NOW.current.reading));
     }
   }
 
   /** One frame at sea. */
   frame(input: SeaInput): SeaFrame {
     const { seconds: dt, time, viewport } = input;
-    const windBearing = input.swell?.bearing ?? 0;
+    const windBearing = SKY_NOW.current.sails ?? input.swell?.bearing ?? 0;
     this.viewport = viewport;
     // A room whose link was lost says no more: the player is called to the helm and sails on alone.
     if (this.room?.lost) {
@@ -450,7 +450,7 @@ export class Sea {
     const stepped = stepCamera(this.camera, {
       feet: [ship.x, ship.y, 0],
       dt,
-      ceiling: ceilingFor(null),
+      ceiling: ceilingFor(SKY_NOW.current.reading),
       heightAt: this.landmass.heightAt,
     });
     this.camera = stepped.camera;

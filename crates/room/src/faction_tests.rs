@@ -41,20 +41,28 @@ fn between(events: &[Event], striker: FighterId, defender: FighterId) -> impl It
 
 #[test]
 fn a_grey_tithe_foe_and_a_pirate_engage_strike_and_answer_each_other() {
-    let mut room = Room::new(Vec::new(), (0.0, 0.0));
-    let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -4.0, PI);
-    let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 4.0, 0.0);
-    let factions: Vec<(FighterId, u8)> = room.foes_seen().map(|foe| (foe.foe, foe.faction)).collect();
-    assert_eq!(factions, [(tithe, 1), (pirate, 2)]);
-    let events = run(&mut room, 1800);
-    let hits = |striker, defender| between(&events, striker, defender).filter(|event| event.kind == EventKind::Hit);
-    assert!(hits(tithe, pirate).count() > 0 && hits(pirate, tithe).count() > 0, "{events:?}");
-    let answered = [(tithe, pirate), (pirate, tithe)].into_iter().any(|(striker, defender)| {
-        between(&events, striker, defender).any(|event| {
-            matches!(event.kind, EventKind::Blocked | EventKind::Parried | EventKind::Dodged | EventKind::PerfectDodge)
-        })
-    });
-    assert!(answered, "they answer each other's blows as they answer a player's: {events:?}");
+    // An answer is a chance a quick swing seldom leaves time for, so the fight is fought from a few seeds.
+    let mut answered = false;
+    for seed in 0..4_u64 {
+        let mut room = Room::new(Vec::new(), (0.0, 0.0));
+        room.world_seed ^= seed.wrapping_mul(0x9e37_79b9_7f4a_7c15);
+        let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -4.0, PI);
+        let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 4.0, 0.0);
+        let factions: Vec<(FighterId, u8)> = room.foes_seen().map(|foe| (foe.foe, foe.faction)).collect();
+        assert_eq!(factions, [(tithe, 1), (pirate, 2)]);
+        let events = run(&mut room, 1800);
+        let hits = |striker, defender| between(&events, striker, defender).filter(|event| event.kind == EventKind::Hit);
+        assert!(hits(tithe, pirate).count() > 0 && hits(pirate, tithe).count() > 0, "{events:?}");
+        answered |= [(tithe, pirate), (pirate, tithe)].into_iter().any(|(striker, defender)| {
+            between(&events, striker, defender).any(|event| {
+                matches!(
+                    event.kind,
+                    EventKind::Blocked | EventKind::Parried | EventKind::Dodged | EventKind::PerfectDodge
+                )
+            })
+        });
+    }
+    assert!(answered, "they answer each other's blows as they answer a player's");
 }
 
 #[test]

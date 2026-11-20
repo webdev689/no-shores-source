@@ -14,19 +14,21 @@ import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { FigureView } from './figureView.ts';
+import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
+import { Ambience } from './audio/ambience/ambience.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FootView } from './footView.ts';
 import { keptDiscovered } from './discovered.ts';
 import { Hud } from './hud.ts';
-import { KIND_WORDS, type Standing } from './hudLaw.ts';
+import { ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
-import { type Drawer, GameScene } from './scene.ts';
+import { type Drawer, GameScene, type Overlay } from './scene.ts';
 import { Sea } from './sea.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
@@ -44,20 +46,12 @@ import { installInterfaceSounds } from './uiSounds.ts';
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
 const FIRST_NODE = 'overlook-social';
-/** The islands' names the owner has given, by continent. */
-const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
 /** The veil stays down until the exact ground round the player has come, or this long. */
 const GROUND_WAIT_S = 20;
 /** How often the sea looks for another continent's coast nearby, seconds. */
 const CHART_EVERY_S = 1;
-
-/** The words under a place's name: its kind, and its island's name where it has one. */
-function placeWords(node: NodeInfo): string {
-  const island = ISLANDS[node.continent];
-  return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
-}
 
 /**
  * The game: the player arrives in Overlook's social space, plays on foot, returns to their ship, sails the sea, views
@@ -92,6 +86,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const figureView = new FigureView(gpu);
   const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const { continents } = world;
+  const ambience = new Ambience(world);
   const cityAssets = loadCityAssets(base);
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   const drawersOn = (opened: Landmass) => landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets);
@@ -131,7 +126,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
   };
-  const footView = new FootView(gpu, hudRoot);
+  const footView = new FootView(gpu, hudRoot, forge, [hud.hintList]);
+  const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
   /** The held map, made when it is first asked for, since its coasts are worked out then. */
@@ -430,16 +426,22 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    music.onFoot(world, here.node, shown.fight, seconds);
+    ambience.onFoot(here.node, landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
     const hands = walker.inFirstPerson
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
+      ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
       : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: (x, y) => scene.groundAt(x, y) });
     // The story's last moment, on foot once the veil is gone: the stranger before the player, till she walks off.
     const met = epilogue?.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot') ?? [];
-    scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), { after: hands });
+    const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
+    scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), {
+      after: hands,
+      carried,
+    });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     hud.hints(shown.hints);
@@ -477,6 +479,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       paused,
     });
     for (const stir of shown.stirs) scene.stir(stir);
+    music.atSea(here, seconds);
+    const voyage = { ...shown, deck: here.helmView || here.aboard.active, feet: walker.player.body };
+    ambience.atSea(landmass, here.position, shown.shot, voyage, seconds);
     // Back at the helm, or called to it, the pointer is the player's again.
     if (wasWalking && !here.aboard.walking && input.locked) document.exitPointerLock();
     wasWalking = here.aboard.walking;
@@ -501,9 +506,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const after = mapFrame
       ? (encoder: GPUCommandEncoder, view: GPUTextureView) => heldMap?.draw(encoder, view, mapFrame)
       : shown.firstPerson
-        ? (encoder: GPUCommandEncoder, view: GPUTextureView) => firstPerson.draw(encoder, view, size.width, size.height)
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus };
+    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true };
     scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {
@@ -575,6 +580,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     if (shown?.mode === 'story' && story) storyFrame(story, controls, seconds, size);
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
+    ambience.frame(seconds);
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
       waited += elapsed;

@@ -1,15 +1,23 @@
-//! What a page playing a course alone may ask of its own room, and a server never does: a foe of the roster stood
-//! where the page puts it, every foe sent away at once, the spawn the next respawn stands the player at, the player
-//! stood somewhere at once, and a block stood on the course after it opened or taken from it. A story level is played
-//! so: its waves placed, its checkpoints kept, a fall into the sea brought back, its ways closed until a wave falls.
+//! What a page playing a course alone may ask of its own room, and a server never does: a room laid over the open
+//! sea, a foe of the roster stood where the page puts it, every foe sent away at once, the spawn the next respawn
+//! stands the player at, the player stood somewhere at once, and a block stood on the course after it opened or taken
+//! from it. A story level is played so: its waves placed, its checkpoints kept, a fall into the sea brought back,
+//! its ways closed until a wave falls.
 
-use crate::{PlayerId, Room};
+use crate::{Floor, PlayerId, Room};
 use ::foes::{Rank, foe_type};
 use combat::fighter::FighterId;
 use movement::blocks::ground_at;
 use movement::{Block, Body, standing};
 
 impl Room {
+    /// An empty room on a course of blocks laid over the open sea, as a wreck's decks are: a body that falls off them
+    /// stands in the sea at 0, and its foes' navmesh is the blocks' tops alone.
+    #[must_use]
+    pub fn over_sea(blocks: Vec<Block>, spawn: (f64, f64)) -> Self {
+        Self::on(Floor::Sea, blocks, vec![spawn], None)
+    }
+
     /// A body standing at (x, y) on the top of the highest block under it, or on the floor where none stands.
     pub(crate) fn on_top(&self, x: f64, y: f64) -> Body {
         Body { z: ground_at(&self.blocks, &self.floor, x, y, f64::INFINITY), ..standing(x, y) }

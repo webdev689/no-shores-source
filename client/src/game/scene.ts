@@ -4,6 +4,13 @@ import { LightLayer } from '../combat/lightLayer.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
+import { BoltView } from '../sky/bolts.ts';
+import { FallView } from '../sky/fall.ts';
+import { CITY_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
+import { startSkyLaw } from '../sky/skyLaw.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
+import { cloudBaseOf } from '../overworld/overworldCamera.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
@@ -38,7 +45,7 @@ interface CloseUp {
   readonly centre: readonly [number, number];
 }
 
-const DEPTH_COPY = /* wgsl */ `
+export const DEPTH_COPY = /* wgsl */ `
 @group(0) @binding(0) var depths: texture_depth_multisampled_2d;
 @vertex fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let corner = vec2f(f32((index << 1u) & 2u), f32(index & 2u));
@@ -56,6 +63,13 @@ const DEPTH_COPY = /* wgsl */ `
  * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
  * as the terrain and the water read it; everything else is handed world metres.
  */
+/** What an overlay drawn over the finished picture is drawn in: the picture's size and the light at the eye. */
+export interface Overlay {
+  readonly width: number;
+  readonly height: number;
+  readonly light: readonly [number, number, number];
+}
+
 export class GameScene {
   readonly gpu: Gpu;
   private readonly water: WaterView;
@@ -63,9 +77,13 @@ export class GameScene {
   private readonly copy: GPURenderPipeline;
   private readonly light: LightLayer;
   private readonly atmosphere: Atmosphere;
-  /** What the sky and sea are doing, read each frame: the water drawn on its gained swell, its weather laid over the
-   *  finished picture before the first person's hands. Clear draws the picture exactly as without it. */
+  /** What the story's sky and sea are doing, read each frame: the water drawn on its gained swell, its weather laid
+   *  over the finished picture before the first person's hands. Clear draws the picture exactly as without it. */
   weather: Weather = CLEAR;
+  /** The sky over the eye, read from the sky's law each frame. */
+  readonly sky: SkyDriver;
+  private readonly fall: FallView;
+  private readonly bolts: BoltView;
   private terrain: { view: LandView; drawn: TerrainView } | null = null;
   private close: CloseUp | null = null;
   private shownClose: CloseUp | null = null;
@@ -79,6 +97,12 @@ export class GameScene {
     this.shadow = new ShadowMap(gpu);
     this.light = new LightLayer(gpu, 'float');
     this.atmosphere = new Atmosphere(gpu);
+    const law = fetch(`${import.meta.env.BASE_URL}land.wasm`)
+      .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`land.wasm: ${answer.status}`))))
+      .then(startSkyLaw);
+    this.sky = new SkyDriver(law, skyUniformFor(gpu.device));
+    this.fall = new FallView(gpu);
+    this.bolts = new BoltView(gpu);
     const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
     this.copy = gpu.device.createRenderPipeline({
       layout: 'auto',
@@ -170,7 +194,7 @@ export class GameScene {
   /** Draws one frame from `shot` into the canvas, with the drawers drawn with the land; `after` may draw over the
    *  finished picture (the first person's hands) before it is shown, `hulls` are the ships on the water (world
    *  metres), which it keeps out of and foams round, and the water's ripples follow `focus` (world metres; the eye
-   *  unless said). */
+   *  unless said). The sky is the weather's over the eye, in the open sea's air `atSea`, else the landmass's. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
@@ -178,9 +202,13 @@ export class GameScene {
     seconds: number,
     drawers: readonly Drawer[],
     more: {
-      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
+      readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
       readonly hulls?: readonly HullMask[];
       readonly focus?: readonly [number, number];
+      readonly atSea?: boolean;
+      /** What the player's left hand carries (`torch_l`, `lantern`) and where their feet are (world metres): a light
+       *  there lights round them. */
+      readonly carried?: { readonly left: string | null; readonly feet: readonly [number, number, number] };
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -204,8 +232,18 @@ export class GameScene {
     );
     const targets = this.targetsOf(size.width, size.height);
     const encoder = this.gpu.device.createCommandEncoder();
+    // The lamps follow the daylight the sky last showed: a frame behind, which no eye can tell.
+    const light = carriedLight(more.carried?.left);
+    const lamps = lampsRound(
+      shot.eye,
+      CITY_LAMPS.current,
+      light && more.carried ? { light, feet: more.carried.feet } : null,
+      SKY_NOW.current.look.daylight,
+      time,
+    );
+    const { look } = this.sky.frame(shot.eye, more.atSea ? 'sea' : (view.climate ?? 'sea'), lamps, ground);
     // The sun's shadows first: what casts draws its depth along the sun into each cascade, for everything after to read.
-    this.shadow.update(shot.eye, shot.yaw, above);
+    this.shadow.update(shot.eye, shot.yaw, above, look.key);
     this.shadow.cast(encoder, (cast) => {
       for (const drawer of drawers) drawer.castInto?.(cast, fromEye, shot, time, this.shadow);
     });
@@ -253,7 +291,8 @@ export class GameScene {
       time,
       seconds,
       exaggeration: 1,
-      fogM: Math.max(25_000, above * 60),
+      // The weather's fog thickens the haze: their densities add.
+      fogM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity),
       world: [...origin],
       swell: this.drawnSwell(view),
       coarse: drawn.cells,
@@ -266,11 +305,19 @@ export class GameScene {
       target,
     });
     for (const drawer of drawers) drawer.overWater?.(encoder, target, fromEye, targets.depth);
+    // The weather over all of it: what falls round the eye, and lightning's bolts while they flash.
+    const over = { target, depth: targets.depth, size: [size.width, size.height] as const };
+    this.fall.encode(encoder, over, { fromEye, eye: shot.eye, aboveM: above }, look, time);
+    const { strikes, worldS, reading } = SKY_NOW.current;
+    const groundAt = (x: number, y: number) => this.groundAt(x, y);
+    // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
+    const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
+    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt });
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
       });
-    // Clear weather, the game's own, lays nothing: no frame for the pass is made.
+    // The story's weather over the game's; clear, as it stands outside the story, lays nothing and makes no pass.
     if (!drawsNothing(this.weather))
       this.atmosphere.encode(encoder, target, targets.depth, {
         weather: this.weather,
@@ -280,7 +327,7 @@ export class GameScene {
         time,
         motionReduced: motionReduced(),
       });
-    more.after?.(encoder, target);
+    more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

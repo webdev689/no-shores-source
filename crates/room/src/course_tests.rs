@@ -35,7 +35,10 @@ fn a_foe_stood_by_the_page_stands_on_the_top_under_it_facing_as_asked_at_its_lev
     assert_eq!((seen.fighter.body.x, seen.fighter.body.y, seen.fighter.body.z), (2.0, 1.0, 2.3));
     assert_eq!(seen.fighter.aim, 1.5);
     let brain = format!("{:?}", room.foes[&foe].brain);
-    assert!(brain.contains("home: Some(Home { at: [2.0, 1.0, 2.3], facing: 1.5 })"), "posted where it stands: {brain}");
+    assert!(
+        brain.contains("home: Some(Home { at: [2.0, 1.0, 2.3], facing: 1.5, marching: false })"),
+        "posted where it stands: {brain}"
+    );
     assert_eq!(room.stand_foe_at(99, 1, (2.0, 1.0), 0.0, 0), None, "no type has that number");
 }
 

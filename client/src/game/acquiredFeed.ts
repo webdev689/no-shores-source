@@ -12,7 +12,7 @@ import { emblemImage, emblemOf } from './emblemArt.ts';
 import { type Gain, gainsOf } from './gains.ts';
 import { glyphImage, itemIcon, rarityOf } from './gearDom.ts';
 import type { GearHere } from './gearScreen.ts';
-import type { ItemPictures } from './itemPictures.ts';
+import type { ItemPictures } from '../player/itemPictures.ts';
 import type { Cards } from '../player/cards.ts';
 import { chime } from './uiSounds.ts';
 

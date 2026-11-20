@@ -12,6 +12,7 @@ use crate::clash::{Clash, sighted, sloop, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates};
 use crate::threat::held_pace;
+use crate::winds::epoch_of;
 use core::f64::consts::{PI, TAU};
 use land::sea::{FULL_DEPTH_M, Swell};
 use movement::{Controls, TICK_SECONDS};
@@ -19,7 +20,8 @@ use naval::fight::{CAPTAIN, Event, Fight, Orders, PLAYER, Vessel};
 use naval::ranks::Commission;
 use naval::wire::view_numbers;
 use sailing::ship::{Helm, SAILS_SET};
-use sailing::waters::{Spot, Waters, steady_wind};
+use sailing::waters::sea_wind_at;
+use sailing::waters::{Spot, Waters};
 use std::collections::{BTreeMap, VecDeque};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::{Point, edges, ring_contains, segments_meet};
@@ -149,6 +151,8 @@ pub struct Sea {
     aboard: BTreeMap<PlayerId, Aboard>,
     swell: Swell,
     clock: u64,
+    /// World time at its first tick, seconds, which its winds are read at.
+    epoch_s: f64,
     next_player: PlayerId,
     berths: BTreeMap<PlayerId, Berth>,
     pirates: Pirates,
@@ -184,6 +188,7 @@ impl Sea {
             aboard: BTreeMap::new(),
             swell: Swell::default(),
             clock: 0,
+            epoch_s: 0.0,
             next_player: 1,
             berths: BTreeMap::new(),
             pirates: Pirates::new(seed),
@@ -362,9 +367,9 @@ impl Sea {
             sail(sailing, f64::from(sailing.ship.rate) * SHIP_SPEED_M_S * TICK_SECONDS);
         }
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
-        let wind = steady_wind(&self.swell);
+        let wind_at = |at: [f64; 2]| sea_wind_at(at, self.epoch_s + time);
         for (player, fought) in &mut self.fights {
-            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, wind, time);
+            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, &wind_at, time);
             // The climb, the fire and the load are presses: they act once.
             let helm = Helm { climb: 0, ..fought.orders.helm };
             fought.orders = Orders { helm, fire: false, load: None, ..fought.orders };
@@ -375,7 +380,7 @@ impl Sea {
             }
         }
         let players: Vec<[f64; 2]> = self.ships().map(|(_, ship)| [ship.x, ship.y]).collect();
-        step_clashes(&mut self.clashes, &mut self.pirates, &players, (&waters, wind, time));
+        step_clashes(&mut self.clashes, &mut self.pirates, &players, (&waters, wind_at, time));
         // Each player's waters run at the pace they sail, the world's own time at rest.
         let ships: Vec<(PlayerId, [f64; 2], bool, f64)> = self
             .ships()
@@ -418,6 +423,11 @@ impl Sea {
         let at_sea =
             |(&player, berth): (&PlayerId, &Berth)| berth.sailing.as_ref().map(|sailing| (player, sailing.ship));
         self.berths.iter().filter_map(at_sea)
+    }
+
+    /// Sets the wall's time at the room's first tick, milliseconds since 1970.
+    pub fn set_epoch(&mut self, unix_ms: f64) {
+        self.epoch_s = epoch_of(unix_ms);
     }
 
     #[must_use]

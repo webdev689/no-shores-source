@@ -34,8 +34,9 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { COURSE, RESOURCE_NODES, STALL, START, WOODEN } from './course.ts';
 import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
 import { startGearPanel } from './gearPanel.ts';
+import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
-import { gearOutfit } from '../player/gearLooks.ts';
+import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
 import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
@@ -158,15 +159,16 @@ async function start(): Promise<void> {
   });
   // The player's gear, as the room last sent it, and the panel that shows it and asks of it.
   let gear: GearState | null = null;
-  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => fight?.askGear(ask));
+  const asks = new PanelAsks();
+  const showGear = startGearPanel(element<HTMLElement>('#gear-panel'), (ask) => asks.ask(fight, ask));
   // Third person's aiming view where the panel places it; held there while the box is ticked, to place it by eye.
   let aimPlace: AimPlace = AIM;
   let aimHeld = false;
   startAimPanel(element<HTMLElement>('#panel'), (place, held) => {
     [aimPlace, aimHeld] = [place, held];
   });
-  startStatusPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
-  const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => fight?.askGear(ask));
+  startStatusPanel(element<HTMLElement>('#panel'), (ask) => asks.ask(fight, ask));
+  const showArts = startArtsPanel(element<HTMLElement>('#panel'), (ask) => asks.ask(fight, ask));
   const feel = new AttackFeel(combatRules, movement.tickSeconds);
   startFeelPanel(element<HTMLElement>('#panel'), (set) => {
     feel.set(set);
@@ -241,7 +243,7 @@ async function start(): Promise<void> {
   otherPlayers.takeDresses(link.dressed);
   const steps = fighting.steps(movement);
   const playerFight = new PlayerFight(fighting, combatRules, player);
-  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures);
+  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures, forge);
   const effects = new FightEffects();
   const dropsShown = new DropsShown();
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
@@ -268,20 +270,27 @@ async function start(): Promise<void> {
       const wardrobe = wardrobeOf(you.dress.body, bodyLayers);
       const outfit = gearOutfit(ownGear, wardrobe, you.dress.outfit, player.player.loadout);
       you.dress = { ...you.dress, outfit };
+      player.spare = spareOutfit(ownGear, wardrobe, outfit, player.player.loadout);
     }
     player.glow = feel.glow(heldElements(ownGear, player.player.loadout));
+    player.spareGlow = feel.glow(heldElements(ownGear, otherLoadout(player.player.loadout)))[0];
     const bodies = [...foes.placed.values(), ...others.values()].map(
       (placed) => [placed.x, placed.y, placed.z] as const,
     );
     const aspect = canvas.width / Math.max(1, canvas.height);
     // Alone, the room in the page waits while the pointer is free: Escape pauses the fight.
     const running = roomUrl !== null || controls.locked;
-    // An ask made from the panel while the pointer is free still goes, carried by a tick of the player standing still.
+    // An ask made from a panel while the pointer is free still goes, carried by a tick of the player standing still;
+    // alone, the room in the page runs on so until it has answered.
     if (!controls.locked && fighting.asking) {
-      const { yaw, mounted, body: standingBody } = player.player;
+      const { yaw, mounted } = player.player;
       const still = { forward: 0, sideways: 0, yaw, run: false, jump: false, crouch: false, mounted };
-      player.player = { ...player.player, body: steps.step(standingBody, still) };
-      if (!roomUrl) fighting.pump(movement.tickSeconds);
+      const tick = () => {
+        player.player = { ...player.player, body: steps.step(player.player.body, still) };
+        if (!roomUrl) fighting.pump(movement.tickSeconds);
+      };
+      if (roomUrl) tick();
+      else asks.carry(fighting, () => gear?.answered ?? 0, tick);
     }
     const shown = playerFight.frame(controls, steps, seconds, clock, {
       running,
@@ -406,21 +415,23 @@ async function start(): Promise<void> {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fighting.player, view: own, ...handsOf(you.dress), looks: player.glowing },
+      { id: fighting.player, view: own, ...handsOf(player.shownDress), looks: player.glowing },
       ...[...fighting.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({ id: number, view, ...handsOf(others.get(number)?.dress) })),
     ];
     scene.setSwings(feel.arcsMesh(clock, strikers, figuresDrawn, cameraOf(camera).eye, inFirstPerson));
     blood.frame(seconds, events, fighting, bloodCamera(camera, aspect));
     scene.draw(camera, canvas.width, canvas.height, drawn, chosen === you ? null : chosen, (encoder, view) => {
-      if (inFirstPerson) firstPerson.draw(encoder, view, canvas.width, canvas.height);
+      // The Test Ground keeps a clear afternoon: its hands are drawn as made.
+      if (inFirstPerson)
+        firstPerson.draw(encoder, view, { width: canvas.width, height: canvas.height, light: [1, 1, 1] });
     });
     const where = (id: number): [number, number, number] | null => {
       if (id === fighting.player && own) return [own.x, own.y, own.z];
       const figure = foes.placed.get(id) ?? others.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const bow = you.dress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw';
+    const bow = player.shownDress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw';
     hud.update(
       {
         own,
@@ -441,7 +452,9 @@ async function start(): Promise<void> {
         // The shots left stand beside the crosshair while the Ranged loadout is drawn.
         ammo: sights && shown.rangedDrawn ? (own?.ammo ?? null) : null,
         ammoMost: gear?.ammoMost ?? null,
+        ammoFull: !!own && dropsShown.ammoFull(gear?.drops ?? [], [own.x, own.y, own.z], (gear?.ammoShare ?? 1) >= 1),
         crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
+        arms: { gear, loadout: player.player.loadout, drawn: you.dress.outfit.drawn, dress: you.dress },
       },
       seconds,
     );

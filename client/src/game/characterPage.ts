@@ -15,6 +15,7 @@ import {
   type HoverCard,
   DISMANTLE_KEY,
   cardNode,
+  closeOffHover,
   dismantleOnHold,
   glyphImage,
   itemIcon,
@@ -24,7 +25,7 @@ import {
   tileLabel,
 } from './gearDom.ts';
 import { characterOf } from './gearScreen.ts';
-import { LARGE_CAP } from './iconFit.ts';
+import { LARGE_CAP } from '../player/iconFit.ts';
 import { EMBLEM_SLOT, emblemSlot } from './emblemSlot.ts';
 
 /** What a page of the gear screen draws from: the gear, the way to ask of it, the card, the pictures, and the height
@@ -164,6 +165,7 @@ export function characterPage(
       if (filled === 0) flyout.append(make('p', 'Nothing carried for this slot yet.', 'gear-hint'));
       flyout.append(grid);
       holder.append(flyout);
+      closeOffHover(holder, () => choose(null));
     }
     return holder;
   };

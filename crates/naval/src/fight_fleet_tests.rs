@@ -53,7 +53,7 @@ fn idle_both() -> Vec<(ShipId, Orders)> {
 
 fn run(fight: &mut Fight, orders: &[(ShipId, Orders)], ticks: u32) -> Vec<Event> {
     let start = fight.clock;
-    (0..ticks).flat_map(|tick| fight.step(orders, &Open, WIND, start + f64::from(tick) * TICK_SECONDS)).collect()
+    (0..ticks).flat_map(|tick| fight.step(orders, &Open, &|_| WIND, start + f64::from(tick) * TICK_SECONDS)).collect()
 }
 
 #[test]
@@ -212,7 +212,7 @@ fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_
     let mut fired = BTreeMap::new();
     let mut nearest = first.clone();
     for tick in 0..(240 * 60) {
-        for event in fight.step(&[(PLAYER, IDLE)], &Open, WIND, f64::from(tick) * TICK_SECONDS) {
+        for event in fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS) {
             if let Event::Shot(ShotEvent::Muzzle { shooter, .. }) = event {
                 *fired.entry(shooter).or_insert(0) += 1;
             }

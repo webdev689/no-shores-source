@@ -64,15 +64,15 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   const prints: string[] = [];
   for (const leg of FIGHT_LEGS) {
     const ticks = leg[7] ?? 0;
-    view = rules.fightStep(ordersOf(leg), time, ticks);
+    view = rules.fightStep(ordersOf(leg), time, ticks, 0);
     prints.push(view.fingerprint);
     time += ticks / 60;
   }
   assert.equal(view.player.guns.load, 'grape');
   assert.equal(
     prints.join(' '),
-    'f7ba7663f1a5a8f5 32cf95fe62a0a453 e4ab140683ed4d79 a3c91988b6f46a93 b6429b7c94d58b60 36f3fdf574d0a3bc ' +
-      '59a9408c4c2455d0 23017c1a3a61a784 3ffe4b1dc14aa2f2',
+    'd2fc521c1ce4f11a 4af906e5d52e9ad0 6452a0f544ca209f 993a0119722494ee 449a9a9543770d74 017389218c22b1b6 ' +
+      '4e8c1f2fce5c4823 691d0a7dacdb1507 0c50c8eef94dfc05',
   );
 });
 
@@ -80,17 +80,17 @@ test('the fight door refuses a step with no fight and a look past its reach', as
   const rules = await openSquare();
   rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);
   const far = { ...ordersOf([0, 0, 90, 0]), aim: { bearing: 90, range: 1e9 } };
-  assert.throws(() => rules.fightStep(far, 1000, 1), /100 km/);
+  assert.throws(() => rules.fightStep(far, 1000, 1, 0), /100 km/);
   rules.fightEnd();
-  assert.throws(() => rules.fightStep(ordersOf([]), 1000, 1), /no fight/);
+  assert.throws(() => rules.fightStep(ordersOf([]), 1000, 1, 0), /no fight/);
 });
 
 test('the fight door refuses a look whose ray is not numbers', async () => {
   const rules = await openSquare();
   rules.fightBegin(new Float64Array([180_000, 360_000, 0, 0, 0, 0, 0, 0]), 7, 1000);
   const looked = (ray: readonly number[]) => ({ ...ordersOf([]), aim: { bearing: 90, range: 80, ray } });
-  assert.equal(rules.fightStep(looked([5, 3, 6, 1, 0, -0.1]), 1000, 1).lay?.side, 'starboard');
-  assert.throws(() => rules.fightStep(looked([5, 3, 6, 1, 0, Number.NaN]), 1000, 1), /ray/);
+  assert.equal(rules.fightStep(looked([5, 3, 6, 1, 0, -0.1]), 1000, 1, 0).lay?.side, 'starboard');
+  assert.throws(() => rules.fightStep(looked([5, 3, 6, 1, 0, Number.NaN]), 1000, 1, 0), /ray/);
 });
 
 test('a fight begun through WebAssembly with captains sets each where given and shows the rest in others', async () => {

@@ -38,7 +38,7 @@ function firstPerson(drawn: (path: string) => boolean) {
   const frame = async (seconds: number, state: FirstPersonState, input = still) => {
     const events = person.update(seconds, input, state);
     await new Promise((resolve) => setImmediate(resolve));
-    person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 640, 400);
+    person.draw({} as GPUCommandEncoder, {} as GPUTextureView, { width: 640, height: 400, light: [1, 1, 1] });
     const glows = quads.map((quad) => quad.glow?.look ?? 0);
     return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })), glows };
   };
@@ -86,6 +86,16 @@ test('aiming zooms the hands with the view, about the middle of the screen, and 
     [160 + (gun.x - 160) * 2, 100 + (gun.y - 100) * 2, gun.width * 2, gun.height * 2],
   );
   assert.deepEqual(person.muzzle, [160 + (ownX - 160) * 2, 100 + (ownY - 100) * 2]);
+});
+
+test("the other loadout's weapon is asked for ahead of a swap, while the sword drawn shows", async () => {
+  const { frame, asked } = firstPerson(wholeFrames);
+  const shown = await frame(0.016, { ...standing, spare: { right: 'mace_iron', left: null } });
+  assert.equal(shown.quads.length, 1, 'the sword');
+  assert.ok(
+    asked.some((path) => path.startsWith('forge/WEAPON05/')),
+    'the mace asked for too',
+  );
 });
 
 test('a drawn sword rests 60 design pixels below and 40 right of its own place, and strikes from its own; sheathed, nothing shows', async () => {

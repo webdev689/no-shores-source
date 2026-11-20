@@ -140,9 +140,9 @@ export function beginRequest(ship: ShipFloats, seed: number, time: number, capta
   return JSON.stringify({ ship: [...ship], seed, time, ...(captains ? { captains } : {}) });
 }
 
-/** A fight's step request. */
-export function stepRequest(orders: FightOrders, time: number, ticks: number): string {
-  return JSON.stringify({ ...orders, time, ticks });
+/** A fight's step request: its orders, the swell's time, its ticks and the world's time for its wind. */
+export function stepRequest(orders: FightOrders, time: number, ticks: number, world: number): string {
+  return JSON.stringify({ ...orders, time, ticks, world });
 }
 
 /** A fight's answer, or the rules' refusal as an error. */

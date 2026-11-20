@@ -100,20 +100,20 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's, the Arts' line ("R Anima · Q G Tenets") adding how to aim Dusk Daggers only while Shadow is worn.
   Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand at 22 px a line,
-  over the vitals and the buffs above them.
+  over the Arts and weapons.
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
-  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
-  foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
-  tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
-  place, the keys (over the vitals), the menus and the veil; while a boss's bar shows, the place's name gives it the
-  top of the screen, and the status line stands under the place's name, under the boss's bar ([[Interface]]).
+  display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
+  Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
+  view, the marks of telegraphed blows, the tracers, where blows land and kills fall, the blood and the flashes. The game's own display stands over it: the
+  place's name and the status line at the top right, the keys (over the Arts and weapons), the menus and the veil;
+  while a boss's bar shows, the status line stands under it ([[Interface]]).
 - **The attack feel.** The [[Test Ground]]'s four effects over the blows play on foot at their defaults: each blow's
-  swing arc over its striker (none through the eyes), with the smear its strike leaves behind the striker's card; the
-  hit-stop holding the fighters a blow lands on; the camera's kick (moving the view but never turning it while a
-  crosshair shows); and the lunge driving a striker's figure into its blow. Only the drawing moves, never the rules or
-  their clock (`combat/attackFeel.ts`). A player who asks for reduced motion keeps a still view: no kick, no shake, no
-  lunge carrying the eye and no Anima push-in; the Anima's edge frame still shows. The feel's light is on too: the
-  brightest marks and arcs light what stands round them ("Drawing").
+  swing arc where its blade goes, its striker's figure hiding what passes behind it (none through the eyes), with the
+  smear its strike leaves behind the striker's card; the hit-stop holding the fighters a blow lands on; the camera's
+  kick (moving the view but never turning it while a crosshair shows); and the lunge driving a striker's figure into its
+  blow. Only the drawing moves, never the rules or their clock (`combat/attackFeel.ts`). A player who asks for reduced
+  motion keeps a still view: no kick, no shake, no lunge carrying the eye and no Anima push-in; the Anima's edge frame
+  still shows. The feel's light is on too: the brightest marks and arcs light what stands round them ("Drawing").
 - **A struck figure.** Drawn only, never the rules' body. A foe a blow harms flashes in held frames: its whole figure
   white for two, its outline white for two, then its outline for one in the blow's element's light (steel `#cfe0ff` for
   a plain blow), then nothing; the player's own outline flashes red for four, after two whole frames only for a blow of
@@ -134,8 +134,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
 - **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
   plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
-  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step. The floor under each
-  is found again only once they have walked a step. The fight never takes them for targets.
+  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step, the walk's frames at
+  the pace they stroll. The floor under each is found again only once they have walked a step. The fight never takes
+  them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
   player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
@@ -160,7 +161,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 
 - **The ship** is the owner's Sloop ([[Sailing]]), in her parts' pictures. Like the World Editor's, she rides the
   swell the sea draws and heels into her turns ([[Sailing]], "Drawn at sea"). Her sails are set while she is under way
-  and furled at rest, filled by the steady wind along the swell's bearing. The Overworld is not to scale: a ship is
+  and furled at rest, filled by the weather's wind ([[Weather]]). The Overworld is not to scale: a ship is
   drawn 75 m long (four times the Sloop), so one reads from the raised view. Every other player's ship is the Sloop
   too. At the helm every ship is her true size ([[Held Map]]).
 - **Her size coming in** (`shownScale`). Every view near her (close in, the helm's, Manage's, the walk's and a fight's)
@@ -274,19 +275,22 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
 
 ## Drawing
 
-`GameScene` draws the open landmass in rings round the eye, the exact ground round the player or the ship, every
-drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then what a drawer
-draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each tested by hand
-against the scene's depth, so the water's sky and its surface near a coast never cover them. The fight's solid marks
-write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the marks and arcs give
-their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The attack feel"), under
-the first person's hands. Off foot, or with no mark or arc to draw, it is not run. The game adds the
-open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView` ([[Cities]]), drawn in
-its continent's climate once the forged models' tables and the RMB blocks its plan names have come from the pages'
-`world/` folder; the blocks are kept for every later city. Its nature is the nature layer's `NatureView`
-([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
-(`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture.
-The land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
+`GameScene` reads the sky over the eye each frame with the lamps lit round it, a torch or lantern in the player's left
+hand among them ([[Sky]]), then draws the open landmass in rings round the eye, the exact ground round the player or
+the ship, every drawer into the same pass, then the water's sky, haze and surface over all of it ([[Water]]), then
+what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
+tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
+
+The fight's solid marks write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the
+marks and arcs give their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The
+attack feel"), under the first person's hands. Off foot, or with no mark or arc to draw, it is not run.
+
+The game adds the open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView`
+([[Cities]]), drawn in its continent's climate once the forged models' tables and the RMB blocks its plan names have
+come from the pages' `world/` folder; the blocks are kept for every later city. Its nature is the nature layer's
+`NatureView` ([[Nature]]), grown round the eye from the exact ground round the player, off the city's pads and solids
+(`cleared`). Ships and figures are drawn into the same pass; the first person's hands over the finished picture. The
+land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
 
 **The sun's shadows.** Before the pass, what casts draws its depth along the sun into two maps (`shadow.ts`), 2048
 texels a side each, every square ahead of the camera and snapped to its own texels so the edges hold still:

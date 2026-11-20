@@ -13,6 +13,7 @@
     "prebuild": "npm run -s schema && npm run -s wasm",
     "preview": "vite preview",
     "schema": "node tools/schema.mjs",
+    "shaders": "node tools/shaders.mjs",
     "bake": "cargo run -q --release -p bake",
     "server": "npm run -s schema && npm run -s wasm && npm run -s bake && wrangler dev --config server/wrangler.jsonc",
     "server:deploy": "npm run -s schema && npm run -s wasm && npm run -s bake && wrangler deploy --config server/wrangler.jsonc",

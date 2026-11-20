@@ -1,9 +1,13 @@
 ---
 type: decision
 date: 2026-11-18
-status: in force
+status: replaced
+replaced_by: "[[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]"
 ---
 # The Vitals Keep Their Panel Under DFO's Compass
+
+Its placing of the vitals is replaced by [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]; its
+compass stands.
 
 > Shown DFO's compass at the top and the vitals moved into a row along the foot: "Lets go back the ui you had
 > actually for the vitals"

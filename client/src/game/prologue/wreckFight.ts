@@ -6,6 +6,7 @@ import { Cues } from '../../cinema/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
 import { onScreen, type Shot } from '../camera.ts';
+import type { Overlay } from '../scene.ts';
 import type { Beat, Tick } from './beat.ts';
 import { ACTOR_IDS, type Actor } from './actors.ts';
 import { storyCue } from './music.ts';
@@ -176,8 +177,7 @@ export class WreckFight implements Beat {
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
     const hands =
       walker.inFirstPerson && !coming
-        ? (encoder: GPUCommandEncoder, view: GPUTextureView) =>
-            firstPerson.draw(encoder, view, tick.size.width, tick.size.height)
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined;
     const heads = new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]);
     const shot = coming ? this.comingShot() : shown.shot;

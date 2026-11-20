@@ -1,6 +1,7 @@
 //! Blocks laid over the open sea, as ships' decks are: the sea is no floor, so the mesh is their tops alone, and every
 //! deck a body could stand in is kept, though no walk joins it to the largest; a crate's top too small to stand in is
-//! still left out. The same blocks on open ground keep the ground alone, as every other course does.
+//! still left out. On open ground the same blocks stand on the ground, each deck joined to it by the climb up its
+//! side.
 
 use movement::Block;
 use navmesh::{AGENT, Bounds, NavMesh};
@@ -28,8 +29,12 @@ fn over_the_sea_every_deck_is_walked_and_the_sea_is_not() {
 }
 
 #[test]
-fn on_open_ground_the_same_blocks_leave_the_ground_alone() {
+fn on_open_ground_the_ground_is_walked_and_each_deck_is_climbed_from_it() {
     let mesh = NavMesh::bake(&DECKS, WATER, &AGENT);
     assert!(on_mesh(&mesh, [30.0, 20.0, 0.0]), "the ground");
-    assert!(!on_mesh(&mesh, [17.0, 2.5, 3.7]), "a top no step reaches");
+    assert!(on_mesh(&mesh, [17.0, 2.5, 3.7]), "the higher deck, which the ground joins");
+    let climbed = |link: &navmesh::Link| link.from[2] == 0.0 && (link.to[2] - 3.7).abs() < 1e-9 && !link.jump;
+    assert!(mesh.links().any(climbed), "the climb up its side");
+    assert!(!on_mesh(&mesh, [4.5, 2.5, 3.2]), "a crate's top no one stands in");
+    assert!(mesh.find_path([25.0, 2.5, 0.0], [17.0, 2.5, 3.7]).is_some(), "a way from the ground up onto it");
 }

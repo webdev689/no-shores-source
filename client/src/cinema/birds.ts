@@ -74,7 +74,7 @@ export function birdAt(bird: Bird, centre: Point, seconds: number): BirdPose {
 
 // A gull's few triangles, in metres forward and to the right of its body, with how far each corner rises as the
 // wings lift and how pale it is. The wingtips are dark, as a gull's are.
-const BIRD_WGSL = /* wgsl */ `
+export const BIRD_WGSL = /* wgsl */ `
 struct View { from_eye: mat4x4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Out { @builtin(position) position: vec4f, @location(0) shade: f32 }

@@ -46,6 +46,15 @@ export const KIND_WORDS = {
 
 export type MarkKind = keyof typeof KIND_WORDS;
 
+/** The islands' names the owner has given, by continent. */
+export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+
+/** The words under a place's name: its kind, and its island's name where it has one. */
+export function placeWords(node: { readonly kind: MarkKind; readonly continent: string }): string {
+  const island = ISLANDS[node.continent];
+  return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
+}
+
 /** A distance as a mark shows it: metres near, kilometres past one. */
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;

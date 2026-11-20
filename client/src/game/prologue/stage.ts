@@ -22,7 +22,7 @@ import type { FootView } from '../footView.ts';
 import type { Hud } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
-import type { Drawer, GameScene } from '../scene.ts';
+import type { Drawer, GameScene, Overlay } from '../scene.ts';
 import { standingDrawers } from '../standing.ts';
 import { type Actor, actorCards } from './actors.ts';
 import type { Objective } from './objective.ts';
@@ -40,7 +40,7 @@ export interface StoryFrame {
   readonly hulls?: readonly HullMask[];
   readonly focus?: readonly [number, number];
   /** Over the finished picture: the first person's hands. */
-  readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void;
+  readonly after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void;
   /** World points over the heads that speak or feel, by the name barks and emotes use. */
   readonly heads?: ReadonlyMap<string, readonly [number, number, number]>;
   /** Whether the land's own drawers (its city and nature) are drawn: not under the sea's storm far from any coast. */

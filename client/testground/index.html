@@ -16,7 +16,8 @@
         margin: 0;
         height: 100vh;
         display: grid;
-        grid-template-columns: 320px 1fr 360px;
+        /* The panels narrow on a smaller screen, so the view between them keeps room for the fight's display. */
+        grid-template-columns: clamp(220px, 22vw, 320px) 1fr clamp(240px, 24vw, 360px);
       }
       #panel,
       #gear-panel {

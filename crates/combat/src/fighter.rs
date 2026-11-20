@@ -148,13 +148,14 @@ pub struct Held {
 }
 
 /// Presses not yet acted on, each kept PRESS_KEPT ticks, so one made while the fighter is busy is acted on as soon
-/// as it can be: ticks left for the attack (and its stroke), the guard and the dodge.
+/// as it can be: ticks left for the attack (and its stroke), the guard, the dodge, and a trigger pulled in a swap.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Kept {
     pub attack: u8,
     pub stroke: Option<Stroke>,
     pub guard: u8,
     pub dodge: u8,
+    pub shoot: u8,
 }
 
 /// A fighter and everything a fight keeps for it.
@@ -177,9 +178,8 @@ pub struct Fighter {
     pub action: Action,
     /// The bearing its arms point: where it swings and guards. Its body faces it while it fights.
     pub aim: f64,
-    /// The foe its soft lock holds, and for how long the lock has been turned away from it or lost sight of it.
+    /// The foe its soft lock holds, and for how long the lock has lost sight of it.
     pub target: Option<FighterId>,
-    pub lock_away: u32,
     pub lock_unseen: u32,
     /// A staggered foe open to this fighter's riposte, and the ticks left to strike it.
     pub riposte: Option<(FighterId, u32)>,
@@ -250,7 +250,6 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         action: Action::Idle,
         aim: body.facing,
         target: None,
-        lock_away: 0,
         lock_unseen: 0,
         riposte: None,
         counter: 0,
@@ -304,7 +303,8 @@ impl Fighter {
 
     /// The fighter holding `arms`, taken up only at rest (or dead): a weapon is never changed in the middle of a swing,
     /// a guard, a draw or a reload. A weapon changed for another, as a loadout for the other, or put away starts a
-    /// swap; one taken up from bare hands is drawn at once, though a swap begun as another was put away runs on.
+    /// swap; one taken up from bare hands is drawn at once, though a swap begun as another was put away runs on. A swap
+    /// begun is the newest press: a click or a pull kept for an earlier one's end is let go.
     #[must_use]
     pub fn holding(&self, arms: Arms) -> Self {
         if !matches!(self.action, Action::Idle | Action::Dead { .. }) {
@@ -312,8 +312,11 @@ impl Fighter {
         }
         let weapon = |arms: Arms| arms.melee != crate::arms::WeaponClass::Fists || arms.ranged.is_some();
         let changed = (arms.melee, arms.ranged) != (self.arms.melee, self.arms.ranged);
-        let swap = if changed && weapon(self.arms) { crate::tuning::SWAP_TICKS } else { self.swap };
-        Fighter { arms, swap, ..*self }
+        if !(changed && weapon(self.arms)) {
+            return Fighter { arms, ..*self };
+        }
+        let kept = Kept { attack: 0, stroke: None, shoot: 0, ..self.kept };
+        Fighter { arms, swap: crate::tuning::SWAP_TICKS, kept, ..*self }
     }
 
     /// Whether it is staggered by anything: it takes more from every blow.

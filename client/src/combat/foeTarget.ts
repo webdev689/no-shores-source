@@ -65,14 +65,19 @@ export class FoeTarget {
       if (since + seconds >= FOUGHT_SECONDS || !foes.has(id)) this.fought.delete(id);
       else this.fought.set(id, since + seconds);
     }
+    const reached: number[] = [];
     for (const event of frame.events.filter((each) => BLOWS.has(each.kind))) {
       const [striker, defender] = [event.striker, event.defender];
       if (striker === frame.player && foes.has(defender)) this.fought.set(defender, 0);
       if (defender === frame.player && foes.has(striker)) this.fought.set(striker, 0);
-      if (striker === frame.player && living(foes.get(defender))) {
-        this.take(defender);
-        this.sinceStruck = 0;
-      }
+      if (striker === frame.player && living(foes.get(defender))) reached.push(defender);
+    }
+    // A stroke that strikes several keeps to the lock's foe among them, else the first it struck: the rules strike the
+    // lock's foe first, then the nearest.
+    const kept = reached.find((id) => id === frame.lock) ?? reached[0];
+    if (kept !== undefined) {
+      this.take(kept);
+      this.sinceStruck = 0;
     }
     if (frame.lock !== this.lock && living(foes.get(frame.lock ?? NaN))) this.take(frame.lock ?? 0);
     this.lock = frame.lock;

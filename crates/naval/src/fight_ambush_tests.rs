@@ -40,7 +40,7 @@ fn an_ambush_left_unfought_is_never_won_her_never_wrecked_and_no_captain_sails_o
     let mut fight = story_ambush();
     let mut events = Vec::new();
     for tick in 0..(900 * 60) {
-        events.extend(fight.step(&[(PLAYER, IDLE)], &Open, WIND, f64::from(tick) * TICK_SECONDS));
+        events.extend(fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS));
     }
     let player = &fight.ships[&PLAYER];
     assert_ne!(player.damage.state, State::Wrecked, "the captains' balls never wreck her");
@@ -79,7 +79,7 @@ fn a_fight_that_is_no_ambush_is_never_beaten_and_its_captains_still_sail_off() {
     assert!(!fight.beaten(), "only an ambush is won by her captains striking");
     // A struck captain far from every foe leaves a fight that is no ambush.
     fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}")).ship = sloop_at(5000.0, 0.0, 0.0);
-    let events = fight.step(&[(PLAYER, IDLE)], &Open, WIND, 0.0);
+    let events = fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, 0.0);
     assert!(events.iter().any(|event| matches!(event, Event::Gone { end: End::Gone, .. })), "{events:?}");
 }
 
@@ -90,7 +90,7 @@ fn an_ambushs_captain_far_off_and_struck_stays_in_it() {
     let vessel = fight.ships.get_mut(&id).unwrap_or_else(|| panic!("{id}"));
     vessel.damage.state = State::Struck;
     vessel.ship = sloop_at(5000.0, 0.0, 0.0);
-    let events = fight.step(&[(PLAYER, IDLE)], &Open, WIND, 0.0);
+    let events = fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, 0.0);
     assert!(!events.iter().any(|event| matches!(event, Event::Gone { .. })), "{events:?}");
     assert!(fight.ships[&id].in_fight());
 }
