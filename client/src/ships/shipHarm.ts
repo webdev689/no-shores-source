@@ -16,11 +16,8 @@ export const FALL_S = 3;
 export const FLOAT_S = 40;
 /** Her colours come down her mast in this long, seconds. */
 export const STRIKE_S = 4;
-/** She goes down in this long (her `Sinking` to her `Gone`), listing to this much and trimmed by her worse-hit end to
- *  this much, radians. */
+/** She goes down in this long (her `Sinking` to her `Gone`), seconds: the foam's and the flag's timing. */
 export const SINK_S = 20;
-const MOST_LIST = (20 * Math.PI) / 180;
-const MOST_TRIM = (10 * Math.PI) / 180;
 const GRAVITY = 9.81;
 
 /** Where her masts stand along her (x in her frame, fore to aft) and which mast each sail is on: a square sail's by its
@@ -202,25 +199,14 @@ export class ShipHarm {
     return this.sinkingAt === null ? 0 : Math.min(1, Math.max(0, now - this.sinkingAt) / SINK_S);
   }
 
-  /** Her place as she goes down `now`: she settles, slowly then fast, by her worse-hit end (her bow if the holes in
-   *  her lie forward), lists to the side most holed up to 20 degrees, and is under once `depthM` (her masthead's
-   *  height over her waterline, as drawn) has gone. */
+  /** Her place as she goes down: the pose the rules send, which already holds her list, trim and drop (the rules'
+   *  `founder`), so the page adds none of its own and the picture agrees with the room. */
   settle<Place extends { readonly z: number; readonly pitch: number; readonly roll: number }>(
     place: Place,
-    now: number,
-    depthM: number,
+    _now: number,
+    _depthM: number,
   ): Place {
-    const share = this.sunkShare(now);
-    if (share === 0) return place;
-    const forward = this.scars.reduce((sum, scar) => sum + scar.at[0], 0);
-    const starboard = this.scars.reduce((sum, scar) => sum + scar.at[1], 0);
-    const eased = share * share * (3 - 2 * share);
-    return {
-      ...place,
-      z: place.z - (depthM + 2) * share ** 2.5,
-      pitch: place.pitch + Math.sign(-forward) * MOST_TRIM * eased,
-      roll: place.roll + (starboard < 0 ? -1 : 1) * MOST_LIST * eased,
-    };
+    return place;
   }
 }
 

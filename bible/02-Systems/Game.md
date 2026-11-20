@@ -5,6 +5,10 @@ code:
   - client/index.html
   - client/src/main.ts
   - client/src/game/game.ts#startGame
+  - client/src/game/gameBoot.ts#bootGame
+  - client/src/game/gameFrame.ts#startFrames
+  - client/src/game/pageWaters.ts#watersOnce
+  - client/src/game/seaShots.ts#SeaShots
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
@@ -54,7 +58,9 @@ place loads, as Destiny's orbit does.
 
 `flow.ts` holds where the player is: loading behind a veil, on foot in a node, at sea, or over an island's side
 choosing a landing; on foot and at sea a menu may be open. It is pure: the page hands it what happened and draws what
-it answers. `game.ts` wires the rest and keeps the flow; each mode is its own module.
+it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
+`game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
+the mode the flow is in; each mode is its own module.
 
 | From | Happening | To |
 |---|---|---|
@@ -79,7 +85,8 @@ With `?at=<node id>` in the address the player arrives at that node instead, on 
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook. A ruined
 city's social space is arrived at as any other, empty, and named "Ruins of" and the city's name ([[Cities]], "Ruins"),
 on the veil too: arriving at a city's social space other than Overlook's, the page waits for the rules' module to
-say which cities are ports (`mainPortsOf`); if it does not come, the city is named alone.
+say which cities are ports (`mainPortsOf`); if it does not come, the city is named alone. On foot there the line
+under its name says "Ruins", never what kind of node it is (`placeWords`).
 
 ## On foot
 
@@ -259,8 +266,10 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
   It marks each hostile ship within her sight of hers in red, other players' within 900 m in bone, a fight's struck
   captains grey ([[Interface]]). It hides while the held map is up at the helm.
-- **The waters.** The page opens the waters as the ship first puts to sea, with the port cities from the land files
-  (`portsOf`, which the server reads too), and the place's line at sea and at the helm names
+- **The waters.** The page opens the waters once, just after its first frame (`pageWaters.ts`), with the port
+  cities from the land files (`portsOf`, which the server reads too); the held map, the friendly ships and the sea all
+  read that one opening, the ship's first putting to sea awaiting it. The place's line at sea, at the helm and in
+  Manage names
   the water she is in, its band and holder ("The Fen Deeps, levels 22-26, Grey Tithe"; "The Lantern Sea, Overlook's
   home waters"; a contested one or the seam "contested"). The voyage's line says for 6 s when she enters another
   water ("Entering The Mistwrack, levels 16-19, Pirates.") and when a hostile ship is first sighted ("A Tithe Brig
@@ -288,11 +297,14 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
   `friendlyShips.ts`). The page asks the waters' rules where they are at world time, seconds since the Unix epoch by
   the page's clock (the sea room sends none), four times a second within the sea view's reach of her (its far plane),
-  and between answers reckons each on along her leg at 5 m/s; a new answer's gap, as at a turn onto her next leg, is
-  closed over about a second. Each is drawn by the ships layer as her hull in friendly colours, her sails set and
-  filled by the steady wind, posed on the swell, at the size every ship is drawn: the Overworld's from the raised view
-  and her true size on every view near hers (`shownScale`). Her footprint joins the water's with the nearest. The
-  compass marks those within 900 m in Overlook's blue (`#2f5d9a`).
+  and between answers reckons each on along her leg at the pace the waters' table gives (5 m/s); a new answer's gap,
+  as at a turn onto her next leg, is closed over about a second. One arrived lies at anchor at her destination's
+  roadstead, no way on her, until she is gone. Of each hull only as many as the ships layer has slots for are drawn,
+  16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
+  by the ships layer as her hull in friendly colours, her sails set and filled by the steady wind, posed on the swell,
+  at the size every ship is drawn: the Overworld's from the raised view and her true size on every view near hers
+  (`shownScale`). Her footprint joins the water's with the nearest. The compass marks every one within 900 m in
+  Overlook's blue (`#2f5d9a`).
 - **Other continents.** Once the ship is nearer another continent's coast than the open one's, within 60 km, that
   landmass opens in the worker, kept, and is drawn and charted in its place.
 
@@ -338,7 +350,7 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   room is joined again after its socket closed, the page sails her alone and shows none of its ships, a fight in it
   over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and she puts to sea
   where she lies, on her voyage. A sea room that sends the player away is lost: they are called to the helm and sail
-  on alone, the voyage's line saying so. Playing alone, the same sea room runs in the page, so its pirates and
+  on alone, the voyage's line saying so. While the room is well, the line says nothing of it (`roomWords`). Playing alone, the same sea room runs in the page, so its pirates and
   fights are the same law.
 
 ## Drawing
@@ -379,7 +391,7 @@ through the maps, each of its points asked of them from past that turned card, s
 shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
 past the near square leans the way the sun throws one, standing in for it.
 
-At sea the footprints of the player's ship and the seven ships nearest her (other players', pirates, friendly ships and
+At sea the footprints of the player's ship and the 47 ships nearest her (other players', pirates, friendly ships and
 a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round her bow under
 way.
 Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the

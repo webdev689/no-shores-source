@@ -368,8 +368,9 @@ captain's number comes with her in the view, so one leaving the fight never move
   sails, slowly then fast, for 3 s until its head is in the water, then drifts astern and is gone after 40 s.
 - **Fire**: flames and dark smoke up from her deck, along a third of her length, for each fire the view gives her.
 - **Struck** (`Struck`): her flag comes down her mast in 4 s to a metre over its foot and is gone.
-- **Sinking** (`Sinking`): over 20 s she settles, slowly then fast, by her worse-hit end (her bow if her holes lie
-  forward of her middle, trimmed 10 degrees), lists up to 20 degrees to the side most holed, and goes under; from
+- **Sinking** (`Sinking`): over 20 s she is drawn in the pose the rules send (their `founder`: she lists up to 32
+  degrees to the side her seed says, trims 20 degrees by one end, settles slowly and then plunges), the page adding
+  none of its own; from
   halfway down until 8 s after, foam and rising bubbles fill the water over her length. Her flotsam (`Flotsam`:
   crates, barrels and a chest, which the rules lay) rides the swell the water draws where it lies (bobbing 0.12 m every
   4 s where the page draws none), drawn at the size the view draws ships and lit and shadowed as the land is, each

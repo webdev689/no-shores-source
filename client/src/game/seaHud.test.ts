@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, ShipState } from '../rules/fightRules.ts';
-import { seaShipMarks } from './seaHud.ts';
+import { seaPlace, seaShipMarks } from './seaHud.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
   ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
@@ -36,4 +36,16 @@ test('in a fight it marks its captains: red while she would take the player, gre
     { x: 50, y: 50, kind: 'struck' },
     { x: 60, y: 60, kind: 'struck' },
   ]);
+});
+
+test('the place line names the water she is in as the helm does, managing her too', () => {
+  const waterWords = 'The Lantern Sea, Overlook’s home waters';
+  const here = (helmView: boolean, managing: boolean) =>
+    ({ boarding: { words: null }, helmView, aboard: { walking: false, managing }, waterWords }) as never;
+  const state = { landing: false, island: 'Saltmere', region: 'The Pale Expanse' };
+  const shown = { landfall: null } as never;
+  assert.deepEqual(seaPlace(here(true, false), shown, state), ['At the helm', waterWords]);
+  assert.deepEqual(seaPlace(here(false, true), shown, state), ['Managing the Sloop', waterWords]);
+  const nowhere = { boarding: { words: null }, helmView: false, aboard: { walking: false, managing: true } } as never;
+  assert.deepEqual(seaPlace(nowhere, shown, state), ['Managing the Sloop', 'The Pale Expanse']);
 });

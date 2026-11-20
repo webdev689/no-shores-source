@@ -53,19 +53,33 @@ export function seaShipMarks(
   ];
 }
 
+/** The place line at sea: the deck's fight's words on a struck ship's deck, the coast while landings are chosen, else
+ *  what she is doing over the water she is in (its name and holder, as the helm says it; the region where it has
+ *  none), or the island she lies off. */
+export function seaPlace(
+  here: Pick<Sea, 'boarding' | 'helmView' | 'aboard' | 'waterWords'>,
+  shown: Pick<SeaFrame, 'landfall'>,
+  state: Pick<SeaHudState, 'landing' | 'island' | 'region'>,
+): [string, string] {
+  const { island, region } = state;
+  const deck = here.boarding.words;
+  const water = here.waterWords ?? region;
+  if (deck) return [deck.place, deck.line];
+  if (state.landing) return ['Landings', island ? `The side of ${island} in view` : 'The coast in view'];
+  if (here.helmView) return ['At the helm', water];
+  if (here.aboard.walking) return ['Aboard the Sloop', 'Off the helm'];
+  if (here.aboard.managing) return ['Managing the Sloop', water];
+  return ['At sea', shown.landfall && island ? `Off ${island}` : water];
+}
+
 /** Shows one frame at sea, `shown`, on the display. */
 export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudState): void {
-  const { island, region, onSea } = state;
+  const { onSea } = state;
   const atHelm = here.helmView;
   const { aboard } = here;
   // On a struck ship's deck, the display says where her fight stands and lists the keys on foot.
   const deck = here.boarding.words;
-  if (deck) hud.place(deck.place, deck.line);
-  else if (state.landing) hud.place('Landings', island ? `The side of ${island} in view` : 'The coast in view');
-  else if (atHelm) hud.place('At the helm', here.waterWords ?? region);
-  else if (aboard.walking) hud.place('Aboard the Sloop', 'Off the helm');
-  else if (aboard.managing) hud.place('Managing the Sloop', region);
-  else hud.place('At sea', shown.landfall && island ? `Off ${island}` : (here.waterWords ?? region));
+  hud.place(...seaPlace(here, shown, state));
   const fighting = here.fight?.lines(state.clock) ?? null;
   hud.hints(deck ? deck.hints : seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);

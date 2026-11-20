@@ -1,3 +1,6 @@
+import { ruinedName } from '../ruinedName.ts';
+import type { NodeInfo } from './worldData.ts';
+
 /** Where a player stands against their section's edge, as the room judges it (the reach rules in Rust). */
 export type Standing =
   | { readonly kind: 'inside' }
@@ -51,4 +54,15 @@ export type MarkKind = keyof typeof KIND_WORDS;
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;
   return metres < 20_000 ? `${(metres / 1000).toFixed(1)} km` : `${Math.round(metres / 1000)} km`;
+}
+
+/** The islands' names the owner has given, by continent. */
+export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+
+/** The words under a place's name: its kind, and its island's name where it has one. A ruined city's place is no
+ *  social space: it says only that it lies in ruins. */
+export function placeWords(node: NodeInfo): string {
+  const island = ISLANDS[node.continent];
+  const kind = node.name.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
+  return island ? `${kind} · ${island}` : kind;
 }

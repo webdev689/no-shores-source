@@ -82,7 +82,14 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
         })
         .collect();
     let main_ports = world::ports::MAIN_PORTS;
-    json!({ "waters": table, "borders": waters.borders(), "main_ports": main_ports, "ports": ports, "routes": routes })
+    json!({
+        "waters": table,
+        "borders": waters.borders(),
+        "main_ports": main_ports,
+        "ports": ports,
+        "routes": routes,
+        "friendly_speed_m_s": world::traffic::SPEED_M_S,
+    })
 }
 
 /// The water at a point as one grid byte: its continent's layout index, with 0x80 set on the contested seam; 255 on

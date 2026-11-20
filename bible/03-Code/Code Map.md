@@ -42,7 +42,13 @@ decision, made in the same change as its entry here.
 | `client/src/game/seaHostiles.ts` | The hostile ships the sea's view marks, the voyage's line on each first sighted and on other waters entered, and the water named for the status line ([[Game]], "At sea") |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
 | `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, the waters tinted by holder, its words laid out by priority clear of the gauntlets and keyed in one panel, the ruins marked, panned, zoomed and clicked for a destination ([[Held Map]]) |
-| `client/src/game/friendlyShips.ts` | The waters opened once a page, and the friendly ships round the eye at sea and on foot: asked at world time, eased between answers, drawn and marked on the compass ([[Game]]) |
+| `client/src/game/friendlyShips.ts` | The friendly ships round the eye at sea and on foot: asked at world time, eased between answers at the waters' pace, at anchor at a route's end, only as many of each hull as the ships layer can draw, drawn and marked on the compass ([[Game]]) |
+| `client/src/game/pageWaters.ts` | The waters opened once a page, off the first frame: the rules, the table and the held map's grid, and what the sea reads of them (the water named, the port cities) ([[Game]], [[Held Map]]) |
+| `client/src/game/gameBoot.ts`, `client/src/game/game.ts`, `client/src/game/gameFrame.ts` | The game's three jobs: booting the rooms, modules, scene, world and the place arrived at; the travel between places and the player's actions; and each frame on foot or at sea ([[Game]]) |
+| `client/src/game/seaShots.ts` | The sea's camera and its shots: turned, dragged and zoomed over her, brought in close, flown up over an island's side and back, and down to her helm ([[Game]], "At sea") |
+| `client/src/ruinedName.ts` | A ruined city's name as the city crate names it, for the held map and arriving ([[Cities]], "Ruins") |
+| `client/src/rules/feelEvents.ts` | What a sea room tells of its fights beside the World Editor's events, and the one mapping that hands each to the fight's feel ([[Naval Combat]]) |
+| `server/seaPorts.ts` | The ports the sea room is opened with, each continent's city read from its land file as the page reads it ([[Server]]) |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
@@ -62,13 +68,14 @@ decision, made in the same change as its entry here.
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the paths across it, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
-| `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
+| `crates/foes` | [[Enemies]] and [[Foes]]: factions, roles, the roster and ranks, a deck's crews (`crews.rs`), and the brain each foe fights with: awareness and noises, turns at a target, the ring and flanking, cover, the combat director, telegraphed blows and phases, and answers to blows |
 | `crates/sailing` | [[Sailing]]: how a ship sails, her helm, her sails against the wind, her pose on the swell and where she grounds, one tick at a time |
 | `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems, the [[Arts]] a player wears, and what a player holds and shows others |
-| `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, and a captain who fights, one tick at a time |
+| `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, her rigging shot away (`rigging.rs`), the events a fight sends (`fight_events.rs`), and a captain who fights, one tick at a time |
 | `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room-wasm/src/waters_door.rs` | The waters and the friendly traffic for the browser: the water at a point, the held map's grid as bytes, the ships near a point ([[World Map]]) |
+| `crates/room-wasm/src/snapshot_door.rs` | The room's snapshot after its tick, sent to each player as theirs: at sea what floats, a ship's kept hurts, what the sea tells and a boarded deck only to the player they are for ([[Server]]) |
 | `crates/room-wasm/src/sea_door.rs` | The sea by weather for the browser: the swell under the weather at a point, its height over a grid round the view, and its fingerprint ([[Water]]) |
 | `crates/room/src/sea_weather.rs` | The weather a room's fight is fought in, taken where and when it began, and the fight's waters made from the coasts ([[Sailing]]) |
 | `crates/room` | The [[Server]]'s core: one shared space, its players' inputs in order, their bodies stepped tick by tick on its ground and judged against its section; the sea, its ships sailing their courses at DFO's paces or the world's own time; and a fleet, its ships sailed by their helms and fighting at true scale |
@@ -112,7 +119,7 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
-(imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain` and `ships`),
+(imports `rules`, the water's sun and samples, `textures` and `plus`), `editor` (imports `rules`, `water`, `terrain` and `ships`),
 `combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
 `forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
 and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
