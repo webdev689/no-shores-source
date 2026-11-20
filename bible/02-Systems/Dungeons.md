@@ -268,9 +268,10 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   over it, so it meets the rock all over.
 - **Overhead and underfoot**, by the style's `ceiling` and `floor`: a boss at a dome's top and every second cell of a
   vault's ridge; a beam across the way on every flat cell; stalactites from one cave cell in six, where its rock comes
-  lowest, their roots in the rock; slabs on one quiet cell in four, a runner or rails along the straight corridors, a
-  drain a room or a circle in a room of 3 × 3 cells or more, each on the clear cell nearest the room's middle (which
-  mostly holds a prop or a pillar), or scree on one cell in five. No ceiling piece hangs below 2.4 m.
+  lowest, their roots in the rock; slabs on one quiet cell in four, a runner (`floor.a`, unbroken) or rails along the
+  straight corridors, the runner's medallion (`floor.b`) a room, a drain a room or a circle in a room of 3 × 3 cells
+  or more, each on the clear cell nearest the room's middle (which mostly holds a prop or a pillar), or scree on one
+  cell in five. No ceiling piece hangs below 2.4 m.
 - **Where kits never go.** A cell with a doorway, a torch, the exit or the portal holds only their own pieces, its
   floor's and a boss. No wall piece stands within 0.05 m of a prop as its forged model is drawn (`propPlans`), a
   picture hung on the wall among them. No floor piece lies under a solid,

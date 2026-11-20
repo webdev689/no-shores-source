@@ -440,9 +440,10 @@ function floorPiece(site: Site, cell: number, piece: string, [x, y]: readonly [n
   return fits && !crowded(site.layout, site.props, plan, 0) && put(site, cell, [[piece, place]]);
 }
 
-/** The floor pieces: slabs on one quiet room cell in four, a runner along the corridors, a drain a room and a circle
- *  in a room of 3 by 3 or more, each on the clear cell nearest its middle, scree on one cell in five, and rails along
- *  the straight corridors. */
+/** The floor pieces: slabs on one quiet room cell in four, a runner (`floor.a`) unbroken along the straight
+ *  corridors, and its medallion (`floor.b`) a room; a drain a room and a circle in a room of 3 by 3 or more, each of
+ *  these on the clear cell nearest its room's middle; scree on one cell in five, and rails along the straight
+ *  corridors. */
 function floors(site: Site): void {
   const { layout } = site;
   const size = layout.cell;
@@ -457,20 +458,23 @@ function floors(site: Site): void {
     const way = room === CORRIDOR ? wayTurns(layout, cell) : null;
     if (kind === 'slabs' && quiet(layout, cell) && drawn(4)) floorPiece(site, cell, piece(cell), middle, turned(cell));
     if (kind === 'scree' && drawn(5)) floorPiece(site, cell, piece(cell), middle, turned(cell));
-    if ((kind === 'runner' || kind === 'rails') && way !== null) floorPiece(site, cell, piece(cell), middle, way);
+    if (kind === 'runner' && way !== null) floorPiece(site, cell, 'floor.a', middle, way);
+    if (kind === 'rails' && way !== null) floorPiece(site, cell, piece(cell), middle, way);
   });
   layout.rooms.forEach((room, number) => {
     const style = layout.looks[room.look]?.style;
     if (!style) return;
     const middle = [(room.x + room.width / 2) * size, (room.y + room.depth / 2) * size] as const;
     const kind = RULES[style].floor;
-    // A room's middle mostly holds a prop or a pillar, so its circle lies on the clear cell nearest it.
-    if (kind !== 'drain' && !(kind === 'circle' && room.width >= 3 && room.depth >= 3)) return;
+    // A room's middle mostly holds a prop or a pillar, so its piece lies on the clear cell nearest it.
+    const one = kind === 'drain' || kind === 'runner' || (kind === 'circle' && room.width >= 3 && room.depth >= 3);
+    if (!one) return;
     const off = (cell: number) =>
       Math.hypot(...centreOf(layout, cell).map((value, axis) => value - (middle[axis] ?? 0)));
     const cells = layout.cells.flatMap((kept, cell) => (kept === number ? [cell] : []));
     cells.sort((first, second) => off(first) - off(second) || first - second);
-    cells.some((cell) => floorPiece(site, cell, piece(cell), centreOf(layout, cell), 0));
+    const chosen = (cell: number) => (kind === 'runner' ? 'floor.b' : piece(cell));
+    cells.some((cell) => floorPiece(site, cell, chosen(cell), centreOf(layout, cell), 0));
   });
 }
 

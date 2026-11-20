@@ -385,6 +385,7 @@ test('stalactites hang where the cave comes lowest, their roots in the rock all 
 
 test('floor pieces lie off every solid, the arrival’s cell, the end room and every landmark, each kind where its style lays it', () => {
   const kinds = new Set<string>();
+  let medallions = 0;
   each((layout, placed) => {
     const arrival = cellOf(layout, layout.arrival.x, layout.arrival.y);
     const covered = new Set(placedLandmarks(layout).flatMap((landmark) => landmark.cells));
@@ -400,22 +401,27 @@ test('floor pieces lie off every solid, the arrival’s cell, the end room and e
       const floor = kits.styles[styleOf(piece.module)].floor;
       kinds.add(floor);
       const room = layout.cells[piece.cell] ?? -1;
-      if (floor === 'runner' || floor === 'rails') {
+      // A runner's own piece runs unbroken along the corridors; its medallion lies in the rooms.
+      const medallion = floor === 'runner' && pieceName(piece.module) === 'floor.b';
+      if ((floor === 'runner' && !medallion) || floor === 'rails') {
         assert.equal(room, CORRIDOR);
         const [alongX] = turnAbout([1, 0, 0], piece.place.turns);
         assert.ok(rockOn(layout, piece.cell, Math.round(alongX) === 0 ? 0 : 1), 'along the way');
       }
       if (floor === 'slabs') assert.ok(room >= 0);
-      if (floor === 'drain' || floor === 'circle') drains.set(room, (drains.get(room) ?? 0) + 1);
+      if (floor === 'drain' || floor === 'circle' || medallion) drains.set(room, (drains.get(room) ?? 0) + 1);
       if (floor === 'circle') {
         const each = layout.rooms[room];
         assert.ok(each && each.width >= 3 && each.depth >= 3);
-        assert.deepEqual(piece.place.origin.slice(0, 2), [...centreOf(layout, piece.cell)]);
       }
+      if (floor === 'circle' || medallion)
+        assert.deepEqual(piece.place.origin.slice(0, 2), [...centreOf(layout, piece.cell)]);
+      medallions += medallion ? 1 : 0;
     }
-    for (const count of drains.values()) assert.equal(count, 1);
+    for (const [room, count] of drains) assert.ok(room >= 0 && count === 1, 'one a room');
   });
   assert.deepEqual([...kinds].sort(), ['circle', 'drain', 'rails', 'runner', 'scree', 'slabs']);
+  assert.ok(medallions > 20, `${medallions} medallions`);
 });
 
 test('a sconce at every torch holds its flame, and the arches stand on the portal’s and the exit’s walls', () => {
