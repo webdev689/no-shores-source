@@ -27,6 +27,8 @@ import export  # noqa: E402
 import kit  # noqa: E402
 import preview  # noqa: E402
 
+WATER = catalog.PARTS.index('water')
+
 
 def named(style, made):
     """The style's objects by module name, in the pack's order, and the problems with what build(kit) gave."""
@@ -77,7 +79,9 @@ def build_style(style):
             # The refusal names the object, which is named by its module.
             problems.append(str(refusal))
             continue
-        problems += envelope.problems(module, [[corner[0] for corner in corners] for corners in triangles[module]])
+        water = [[corner[0] for corner in corners] for corners in triangles[module] if corners[0][3] == WATER]
+        problems += envelope.problems(module, [[corner[0] for corner in corners] for corners in triangles[module]],
+                                      water=water)
     return modules, triangles, problems
 
 

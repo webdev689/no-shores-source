@@ -15,6 +15,9 @@ from styles.caverns import forms
 
 MIDDLE = 3.2
 WATER_Z = -0.1
+# The share of the way from the Still Lake's rim to its foot that its water reaches, under the shore: a section of
+# the shore there stands 0.02 m over the floor's middle, at least 0.08 m over the water whatever its roughness.
+WATER_UNDER = 0.7
 # The page lays the room's floor at z 0 up to the footprint's edge and none under it, so a cave floor eases down to
 # meet it over this much, metres, and stands at z 0 on the edge itself.
 EDGE_EASE_M = 0.6
@@ -152,7 +155,9 @@ def still_lake(entry):
     for x0, y0, x1, y1 in ((0, 0, size, inner), (0, size - inner, size, size), (0, inner, inner, size - inner),
                            (size - inner, inner, size, size - inner)):
         rim += forms.ground(x0, y0, x1, y1, 0.4, lambda x, y: 0.0)
-    edge = [shore(turn, 1.0) for turn in turns]
+    # The shore falls past the water's line to its foot, so the water runs out under it, to the ring of the shore's
+    # sections where it stands over the water: the shore then meets the water along its own slope, with no trench.
+    edge = [shore(turn, WATER_UNDER) for turn in turns]
     water = forms.fan((MIDDLE, MIDDLE, WATER_Z), [(x, y, WATER_Z) for x, y, _ in edge], rings=2)
     parts = {'floor': rim + ground, 'water': water}
     def keep(point):

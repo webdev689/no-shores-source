@@ -123,8 +123,10 @@ def _curtain(rows, place):
 
 
 def wall_streaks(middle, _normal):
+    """A curtain's parts: calcite down its folds, in the cave's floor picture, its smoothest and palest; the cave's
+    rock in their grooves, so the folds band it and it stands out of the wall it hangs on."""
     share = max(-1.0, min(1.0, middle[0] / WALL_HALF_M))
-    return 'stoneAlt' if _WALL_FOLDS((share + 1) * math.pi) > 0.86 else 'stone'
+    return 'floor' if _WALL_FOLDS((share + 1) * math.pi) > 0.35 else 'stone'
 
 
 def wall_base():

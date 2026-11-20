@@ -11,6 +11,7 @@ code:
   - tools/dungeon/envelope.py#walk_zone
   - tools/dungeon/envelope.py#edge_steps
   - tools/dungeon/envelope.py#dome_drop
+  - tools/dungeon/envelope.py#water_edges
   - tools/dungeon/export.py#pack
   - tools/dungeon/kit/core.py#bevel
   - tools/dungeon/preview.py#sheet
@@ -67,8 +68,9 @@ ceiling piece 600, a door 1,500, a portal 2,500. A landmark keeps 12,000.
   drains and trapdoors. The Oubliette, the Gibbets, the Rack.
 - **Sanctum**: pointed and trefoil arches on dark clustered colonnettes, rune bands, the brass crescent of the faith,
   ribbed bosses, a rune circle. The Altar of the Deep, the Ritual Circle, the Reflecting Pool.
-- **Caverns**: natural rock arches, some crystal-studded, flowstone columns and curtains, glowing fungus and
-  crystals, stalactite clusters, scree and puddles. The Still Lake, the Crystal Heart, the Stone Teeth.
+- **Caverns**: natural rock arches, some crystal-studded, flowstone columns, curtains whose folds are pale
+  calcite (the caverns' floor picture) banded by the rock in their grooves, glowing fungus and crystals, stalactite
+  clusters, scree and puddles. The Still Lake, the Crystal Heart, the Stone Teeth.
 - **Mines**: timber door sets and adits, posts with knee braces, cap beams with lagging, tool racks, rails. The Lift
   Shaft, the Ore Cart, the Collapse.
 
@@ -82,7 +84,8 @@ ceiling piece 600, a door 1,500, a portal 2,500. A landmark keeps 12,000.
 - **The envelopes.** `envelope.py` refuses a piece that breaks its room or its budget. A landmark is refused if it
   leaves its footprint, rises within 0.1 m of its style's least ceiling, leaves its floor open, or has anything
   between 0.05 m and 2.2 m that lies over no solid. A solid stops a body whatever its height, so nothing seen
-  there can be walked through.
+  there can be walked through. A landmark's still water lies over nothing, so just past its edge a bank must stand
+  at or over it, or the side under the edge shows; the build gives the envelope each module's water to check.
 - **Where pieces meet the room.** The page lays no floor under a landmark, so along its footprint's edge, away from
   its solids, its floor meets the room's at z 0 within 2 mm, or a skirt closes its side down to 0.05 m below it.
   Where a style's ceilings are domes and vaults, a ceiling piece hangs at a dome's top or on a vault's ridge. It
@@ -116,7 +119,8 @@ own normal and its UV, in pictures of 3.2 m. Bone, carving, cloth and brass take
 every 0.4 m, so a skull or a strand is its own size. A stretched or fitted corner's UV moves along the mean gradient
 (`uvPerZ`) of the triangles that share it, so a post's grain or a shaft's stones keep their scale and a corner keeps
 one UV. Its normal turns as the stretch or the fit turns the surface. Each part wears the cell's look's pictures,
-the climate's timber, the iron, the dressing set or a glow (`partPicture`, [[Procedural Textures]]). Where and when they are laid is in [[Dungeons]] ("In the Game").
+the climate's timber, the iron, the dressing set or a glow (`partPicture`, [[Procedural Textures]]), and still water
+its look's floor as its bed, wet rock's included. Where and when they are laid is in [[Dungeons]] ("In the Game").
 
 ## Contact sheets
 

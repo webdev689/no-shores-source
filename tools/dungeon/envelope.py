@@ -1,8 +1,9 @@
 """The envelopes a module keeps, so nothing a body could walk into stands unblocked: each kit piece's room in its own
 frame, and a landmark's footprint, height, walk zone and floor. Plain Python, without Blender.
 
-`problems(module, triangles)` takes a module's triangles, three (x, y, z) corners each in the dungeon's frame (x east,
-y south, z up, metres), and gives every rule it breaks as a readable line; an empty list passes. A rule is a box the
+`problems(module, triangles, water)` takes a module's triangles, three (x, y, z) corners each in the dungeon's frame
+(x east, y south, z up, metres), and those of them that are water, and gives every rule it breaks as a readable line;
+an empty list passes. A rule is a box the
 piece may not reach into, so a triangle that only crosses it, its corners all outside, is caught as well.
 """
 import math
@@ -47,6 +48,11 @@ DOME_RISE_M = 1.92
 # must reach in under the flame's foot: a cup's floor or a solid cup, not an arm ending at its edge.
 CUP = ((-0.04, 0.04), (0.31, 0.39), (-0.155, -0.065))
 FLAME = ((-0.05, 0.05), (0.30, 0.40), (-0.07, 0.2))
+# A landmark's still water lies level over nothing: past its edge, this far, metres, a bank must stand at or over it,
+# or the side under the edge shows, a trench or the void. A kit piece's water lies on the room's floor, which runs
+# under it.
+WATER_OUT_M = 0.03
+LEVEL_M = 0.001
 # How many offending corners or triangles a problem quotes.
 EXAMPLES = 1
 
@@ -311,6 +317,44 @@ def _closed(skirt, along, top):
     return all(_covered(skirt, along, low + (high - low) * k / count) for k in range(count + 1))
 
 
+def water_edges(triangles, water):
+    """The points WATER_OUT_M past the middle of each edge of still water (level water's triangles, an edge one of
+    them alone has) where none of the other triangles covers it at or over the water: each (x, y, the water's
+    height)."""
+    still = [corners for corners in water if max(c[2] for c in corners) - min(c[2] for c in corners) <= LEVEL_M]
+    kept = {tuple(corners) for corners in water}
+    others = _bucketed([corners for corners in triangles if tuple(corners) not in kept])
+    edges = {}
+    for corners in still:
+        for k in range(3):
+            ends, third = (corners[k], corners[(k + 1) % 3]), corners[(k + 2) % 3]
+            key = tuple(sorted(tuple(round(value, 4) for value in end[:2]) for end in ends))
+            edges.setdefault(key, []).append((ends, third))
+    found = []
+    for sides in edges.values():
+        if len(sides) != 1:
+            continue
+        ((ax, ay, az), (bx, by, _)), third = sides[0]
+        length = math.hypot(bx - ax, by - ay)
+        if length < 1e-6:
+            continue
+        middle = ((ax + bx) / 2, (ay + by) / 2)
+        out = ((by - ay) / length, -(bx - ax) / length)
+        if out[0] * (third[0] - middle[0]) + out[1] * (third[1] - middle[1]) > 0:
+            out = (-out[0], -out[1])
+        x, y = middle[0] + out[0] * WATER_OUT_M, middle[1] + out[1] * WATER_OUT_M
+        top = max(_heights(others, x, y), default=None)
+        if top is None or top < az - TOUCH_M:
+            found.append((x, y, az))
+    return found
+
+
+def _water_problem(module, edges):
+    x, y, z = edges[0]
+    return (f'{module}: still water at z {z:.3f} ends over no bank at {len(edges)} point(s) of its edge, e.g. '
+            f'({x:.3f}, {y:.3f}): the side under the edge shows')
+
+
 def landmark_problems(landmark, triangles):
     """Every rule a landmark's triangles break: its footprint, its height, the walk zone and its floor."""
     module = landmark['module']
@@ -368,9 +412,13 @@ def kit_problems(module, piece, triangles):
     return found
 
 
-def problems(module, triangles):
-    """Every rule a module's triangles break, readable, one a line; an empty list passes."""
-    triangles = [tuple(tuple(float(value) for value in corner) for corner in corners) for corners in triangles]
+def problems(module, triangles, water=()):
+    """Every rule a module's triangles break, readable, one a line; an empty list passes. `water` is those of its
+    triangles that are water."""
+    def exact(listed):
+        return [tuple(tuple(float(value) for value in corner) for corner in corners) for corners in listed]
+
+    triangles, water = exact(triangles), exact(water)
     if not triangles:
         return [f'{module}: no triangles']
     piece = catalog.piece_of(module)
@@ -379,4 +427,5 @@ def problems(module, triangles):
     landmark = catalog.landmark(module)
     if landmark is None:
         return [f'{module}: neither a kit piece nor a landmark in content/dungeon']
-    return landmark_problems(landmark, triangles)
+    edges = water_edges(triangles, water)
+    return landmark_problems(landmark, triangles) + ([_water_problem(module, edges)] if edges else [])

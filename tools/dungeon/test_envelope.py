@@ -246,6 +246,27 @@ class LandmarkEnvelopes(unittest.TestCase):
         found = broken('caverns.stone-teeth', raised)
         self.assertTrue(any('edge' in problem for problem in found), found)
 
+    def test_still_waters_edge_meets_a_bank_at_or_over_it(self):
+        def square(x0, y0, x1, y1, z):
+            return [((x0, y0, z), (x1, y0, z), (x1, y1, z)), ((x0, y0, z), (x1, y1, z), (x0, y1, z))]
+
+        def frame(inner):
+            low, high = 3.2 - inner, 3.2 + inner
+            return (square(0, 0, 6.4, low, 0) + square(0, high, 6.4, 6.4, 0) + square(0, low, low, high, 0)
+                    + square(high, low, 6.4, high, 0))
+
+        water = square(2.0, 2.0, 4.4, 4.4, -0.1)
+        # The shore falls to a foot below the water just past its edge: the trench shows under the edge.
+        trench = frame(1.4) + square(1.8, 1.8, 4.6, 4.6, -0.3)
+        found = envelope.problems('caverns.still-lake', trench + water, water=water)
+        self.assertTrue(any('still water' in problem for problem in found), found)
+        # A bank the water runs under closes it.
+        bank = frame(1.0) + square(2.2, 2.2, 4.2, 4.2, -0.3)
+        self.assertEqual(envelope.problems('caverns.still-lake', bank + water, water=water), [])
+        # A kit piece's puddle lies on the room's floor, which runs under it, so its edge shows no void.
+        puddle = square(-0.5, -0.5, 0.5, 0.5, 0.01)
+        self.assertEqual(envelope.problems('caverns.floor.b', puddle, water=puddle), [])
+
     def test_a_landmark_floor_off_the_rooms_over_a_solid_at_its_edge_passes(self):
         rest = [face for x0, y0, x1, y1 in ((0, 0, 0.6, 3.2), (5.8, 0, 6.4, 3.2), (0.6, 1.2, 5.8, 3.2))
                 for face in shapes.box(x0, y0, -0.01, x1, y1, 0)]
@@ -308,9 +329,12 @@ class Pack(unittest.TestCase):
             with open(os.path.join(os.environ['DUNGEON_MODULES'], f'{style}.modules'), 'rb') as file:
                 header, modules = read_pack(file.read())
             self.assertEqual((header['style'], list(modules)), (style, catalog.required(style)))
+            water = catalog.PARTS.index('water')
             for name, read in modules.items():
-                self.assertEqual(envelope.problems(name, [[vertex[0:3] for vertex in corners] for corners in read]),
-                                 [])
+                found = envelope.problems(name, [[vertex[0:3] for vertex in corners] for corners in read],
+                                          water=[[vertex[0:3] for vertex in corners] for corners in read
+                                                 if corners[0][9] == water])
+                self.assertEqual(found, [])
 
     def test_a_pack_refuses_a_part_past_the_parts_and_an_empty_module(self):
         with self.assertRaises(ValueError):
