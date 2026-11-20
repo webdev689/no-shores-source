@@ -5,7 +5,7 @@ use super::messages;
 use naval::arms::Side;
 use naval::captain::Mode;
 use naval::damage::{State, Zone};
-use naval::fight::{Aim, End, Event, Fight, Orders, Part, Piece, Refusal};
+use naval::fight::{Aim, End, Event, Fight, Orders, Refusal};
 use naval::guns::Shot;
 use naval::ranks::{Commission, PIRATES, Rank};
 use naval::shots::{ShipId, ShotEvent};
@@ -192,7 +192,7 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
         Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),
-        Event::Hit { ship, at, part } => (STRUCK_AT, ship, 0, part_code(part), 0, at, none, 0.0),
+        Event::Hit { ship, at, part } => (STRUCK_AT, ship, 0, part.number(), 0, at, none, 0.0),
         Event::SailLost { ship, sail } => {
             (SAIL_LOST, ship, 0, u8::try_from(sail).unwrap_or(u8::MAX), 0, none, none, 0.0)
         }
@@ -201,30 +201,12 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         }
         Event::Struck { ship } => (STRUCK, ship, 0, 0, 0, none, none, 0.0),
         Event::Sinking { ship } => (SINKING, ship, 0, 0, 0, none, none, 0.0),
-        Event::Flotsam { id, at, kind } => (FLOTSAM, id, 0, piece_code(kind), 0, [at[0], at[1], 0.0], none, 0.0),
+        Event::Flotsam { id, at, kind } => (FLOTSAM, id, 0, kind.number(), 0, [at[0], at[1], 0.0], none, 0.0),
         Event::Gathered { id, by } => (GATHERED, id, by, 0, 0, none, none, 0.0),
         Event::Boarding { ship } => (BOARDING, ship, 0, 0, 0, none, none, 0.0),
         // A ball's splash is told with its shot's.
         Event::Splash { .. } => return None,
     })
-}
-
-/// A ball's part struck as the messages number it: her hull, a sail, her rig.
-fn part_code(part: Part) -> u8 {
-    match part {
-        Part::Hull => 0,
-        Part::Sail => 1,
-        Part::Rig => 2,
-    }
-}
-
-/// A piece of what floats as the messages number it: a crate, a barrel, a chest.
-fn piece_code(piece: Piece) -> u8 {
-    match piece {
-        Piece::Crate => 0,
-        Piece::Barrel => 1,
-        Piece::Chest => 2,
-    }
 }
 
 /// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken

@@ -25,7 +25,6 @@ import {
   type SailedPace,
   timeText,
   WORLD_PACE,
-  HOLD_REACH_M,
   paceToAskAgain,
 } from './seaLaw.ts';
 
@@ -219,14 +218,16 @@ test("at the world's own time, with no word from the room, she sails at her true
 
 test('the page asks a pace again where the room sails her otherwise, but not where a hostile ship holds her', () => {
   const room = (pace: number) => ({ x: 0, y: 0, pace });
-  assert.equal(paceToAskAgain(1, null, []), false, 'no word yet');
-  assert.equal(paceToAskAgain(1, room(0), []), false, 'at rest');
-  assert.equal(paceToAskAgain(1, room(1), []), false, 'they agree');
-  assert.equal(paceToAskAgain(1, room(5), []), true, 'a step down refused');
-  assert.equal(paceToAskAgain(60, room(40), []), true, 'a step up refused, no hostile ship near');
-  assert.equal(paceToAskAgain(60, room(5), [{ x: 1_500, y: 0 }]), false, 'held by a hostile ship near');
-  assert.equal(paceToAskAgain(1, room(5), [{ x: 1_500, y: 0 }]), true, 'faster than asked is never a hold');
-  assert.equal(paceToAskAgain(60, room(40), [{ x: HOLD_REACH_M + 1, y: 0 }]), true, 'one past the hold’s reach');
+  const reach = 1_642.8;
+  assert.equal(paceToAskAgain(1, null, [], reach), false, 'no word yet');
+  assert.equal(paceToAskAgain(1, room(0), [], reach), false, 'at rest');
+  assert.equal(paceToAskAgain(1, room(1), [], reach), false, 'they agree');
+  assert.equal(paceToAskAgain(1, room(5), [], reach), true, 'a step down refused');
+  assert.equal(paceToAskAgain(60, room(40), [], reach), true, 'a step up refused, no hostile ship near');
+  assert.equal(paceToAskAgain(60, room(5), [{ x: 1_500, y: 0 }], reach), false, 'held by a hostile ship near');
+  assert.equal(paceToAskAgain(1, room(5), [{ x: 1_500, y: 0 }], reach), true, 'faster than asked is never a hold');
+  assert.equal(paceToAskAgain(60, room(40), [{ x: reach + 1, y: 0 }], reach), true, 'one past the hold’s reach');
+  assert.equal(paceToAskAgain(60, room(5), [{ x: 1_500, y: 0 }], 1_000), true, 'the reach is the rules’');
 });
 
 test('the sea’s note speaks of its room only when the link is lost or being joined again, never of a player number', () => {

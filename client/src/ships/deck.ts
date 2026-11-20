@@ -3,6 +3,7 @@
 // waterline), and the spot behind her wheel where her helm is kept. The sea room stands its walkers on the same grid.
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
 import { shipAxes } from './shipAxes.ts';
+import { HULL_NAMES } from './hulls.ts';
 
 /** A ship's deck: its grid's west and north edges and square cell, its columns and rows, each cell's height row by
  *  row from the north (null where no body stands), and the spot behind her wheel. */
@@ -49,9 +50,7 @@ export const SLOOP_DECK: Deck = deckOf(ships.ships.sloop.deck);
 
 /** Every hull's deck by her hull's number, as the sea room boards them (crates/room-wasm/src/deck_door.rs
  *  `hull_decks`): the Sloop's, the Schooner's, the Brig's and the Frigate's. */
-export const HULL_DECKS: readonly Deck[] = (['sloop', 'schooner', 'brig', 'frigate'] as const).map((name) =>
-  deckOf(ships.ships[name].deck),
-);
+export const HULL_DECKS: readonly Deck[] = HULL_NAMES.map((name) => deckOf(ships.ships[name].deck));
 
 /** A boarder stands this far in from her outermost plank at the rail they come over, metres, the rail sought in
  *  steps of this (crates/room/src/deck_fight.rs `RAIL_IN_M`, `RAIL_STEP_M`). */

@@ -33,7 +33,7 @@ fn a_player_not_fighting_who_comes_within_sight_of_a_fight_joins_it_with_a_numbe
 fn each_player_sees_the_fight_from_their_own_ship() {
     let mut fights = begun();
     fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0);
-    let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&[], 0.0).map(|(player, view, _)| (player, view)).collect();
+    let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&[], 0.0).map(|seen| (seen.player, seen.numbers)).collect();
     // A view's player's ship comes after its clock and its end: her x and y first.
     let (first, second) = (&views[0].1, &views[1].1);
     assert_eq!((views[0].0, first[2], first[3]), (1, 0.0, 0.0));

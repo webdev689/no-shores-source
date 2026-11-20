@@ -68,17 +68,19 @@ export class LocalRoom implements RoomLink {
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
    *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default, and the
-   *  Grey Tithe patrols the lanes between those of `ports` that are port cities (none with none). */
+   *  Grey Tithe patrols the lanes between those of `ports` that are port cities (none with none); its ships come at
+   *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss). */
   static openSea(
     module: WebAssembly.Module,
     layoutText: string,
     snapshot: (snapshot: Snapshot) => void,
     seed = Math.floor(Math.random() * 2 ** 32),
     ports: readonly PortInfo[] = [],
+    seas = 0,
   ): LocalRoom {
     const door = startRoomDoor(module);
     const text = ports.length > 0 ? `{"layout":${layoutText},"ports":${JSON.stringify(ports)}}` : layoutText;
-    if (!door.openSea(text, seed, Date.now() / 1000))
+    if (!door.openSea(text, seed, Date.now() / 1000) || !door.difficulty(seas))
       throw new Error('the world’s layout is not one the sea can open round');
     return new LocalRoom(door, snapshot, () => undefined);
   }

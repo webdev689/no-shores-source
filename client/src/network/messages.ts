@@ -77,6 +77,8 @@ export interface SeenSeaFight {
   readonly faction: number;
   readonly rank: number;
   readonly hull?: number;
+  /** Whether the player may board a captain of it now, as the sea would take the boarding. */
+  readonly mayBoard?: boolean;
 }
 
 /** A node's room's word on where its player is: the node's id, and the rect (west, north, east, south) its window of
@@ -412,7 +414,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       if (!fight) throw new Error(`snapshot fight ${index} does not read`);
       const { faction, rank } = commissionOf(fight.faction(), fight.rank());
       const view = withOthers(fight.viewArray() ?? [], fight.othersArray());
-      return { player: fight.player(), view, faction, rank, hull: fight.hull() };
+      return { player: fight.player(), view, faction, rank, hull: fight.hull(), mayBoard: fight.mayBoard() };
     });
     const dressed = dressesOf(snapshot.dressedLength(), (index) => snapshot.dressed(index));
     return {

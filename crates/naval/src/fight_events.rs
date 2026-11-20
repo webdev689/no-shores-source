@@ -105,12 +105,28 @@ pub enum Part {
     Rig,
 }
 
+impl Part {
+    /// Her part as every wire numbers it: 0 her hull, 1 a sail, 2 her rig.
+    #[must_use]
+    pub fn number(self) -> u8 {
+        self as u8
+    }
+}
+
 /// A piece of what floats: a crate or a barrel of what she carried, or a chest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Piece {
     Crate,
     Barrel,
     Chest,
+}
+
+impl Piece {
+    /// The piece as every wire numbers it: 0 a crate, 1 a barrel, 2 a chest.
+    #[must_use]
+    pub fn number(self) -> u8 {
+        self as u8
+    }
 }
 
 /// How a captain left the fight.

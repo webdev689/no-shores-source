@@ -9,3 +9,12 @@ export function nodeRoom(name: string): { readonly id: string; readonly seas: nu
   if (id === '' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
   return { id, seas: difficulty };
 }
+
+/** The sea's room by its name: `sea` at Normal, `sea--elite` or `sea--abyss`, answering its difficulty; null for any
+ *  other name. */
+export function seaRoom(name: string): number | null {
+  const [sea, seas, ...more] = name.split('--');
+  const difficulty = seas === undefined ? 0 : SEAS.indexOf(seas);
+  if (sea !== 'sea' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
+  return difficulty;
+}

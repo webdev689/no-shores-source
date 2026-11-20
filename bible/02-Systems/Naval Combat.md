@@ -64,7 +64,7 @@ code:
   - crates/room/src/deck_fight.rs
   - crates/room/src/sea_decks.rs#Decks
   - crates/foes/src/crews.rs#deck_crew
-  - client/src/game/seaAfter.ts#SeaAfter
+  - client/src/game/seaWord.ts#SeaWord
   - client/src/network/seaHarbour.ts#harbourOf
 ---
 # Naval Combat
@@ -226,7 +226,8 @@ Pass]]) with Claude's numbers:
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where she went, 3 pieces for a
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought her, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
-  of their pieces gathers it. Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
+  of their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
+  floating are theirs again (`Sea::own`). Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
   her rank at her level (her water's, raised by the sea's tier): its Vestige by the rewards' foe her rank names
   (a Minor the Skirmisher's chance,
   a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one; at Elite or Abyss times
@@ -238,8 +239,10 @@ Pass]]) with Claude's numbers:
   fight may board her: their ship within 30 m of hers, both under 2 m/s, and her deck holding a crew (the pirates have
   no deck Boss, so their Boss is not boarded). With no one aboard by then she is scuttled
   (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player her
-  colours are down and to come alongside; E asks to board her (`seaAfter.ts` `boardable`, the fight's controls let E
-  through), and the sea's line says "Boarders away" as the boarder goes from their helm to her deck.
+  colours are down and to come alongside, naming her ("The Tithe Brig's colours are down: …"); E asks to board her
+  when the sea's snapshot says the player may (`may_board`, from `Fights::alongside`, the rule a boarding is taken by;
+  the fight's controls let E through), and the sea's line says "Boarders away: the Tithe Brig's crew stands to meet
+  them." as the boarder goes from their helm to her deck.
 - **Her deck** (`deck_fight.rs`, `sea_decks.rs`). The sea room holds the deck fight, so the one authority over the fight
   knows when her deck is won and when the last boarder leaves, and no second room is trusted with it: a room on land
   built as a node's room is, its floor her deck's grid of heights from her hull's manifest (in her own frame, a wall off
@@ -253,7 +256,7 @@ Pass]]) with Claude's numbers:
   The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
   pirates' Skirmisher, Swordsman and Archer), standing two abreast along her deck from 2 m forward of amidships, 1.6 m
   apart, facing aft, at her level. Clearing her deck opens her hold: what floats, twice over, every chest a rank higher
-  still, for each boarder. A boarder leaves her deck (back aboard their own ship) once her crew has fallen, and a
+  still, for each boarder, on top of the lot every player who fought her takes when she is scuttled. A boarder leaves her deck (back aboard their own ship) once her crew has fallen, and a
   minute after it fell every boarder still aboard is sent back; she is scuttled when the last one has left her. A
   boarder's own ship takes no orders or course while they stand on her deck. Her deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
@@ -282,8 +285,15 @@ Pass]]) with Claude's numbers:
   up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, on the traffic's sea mask: one
   search from every port when the room opens gives each cell of open water its nearest, so asking is a lookup): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
   of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
-  player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at. Every
-  boarder of a deck lost is let go of the fight, and she is scuttled with no one aboard.
+  player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at; one who
+  leaves under a third of her hull is kept as sunk (`LEFT_AS_SUNK`). Every boarder of a deck lost is let go of the
+  fight, and she is scuttled with no one aboard; a captain going down or struck in a fight its last player left (gone,
+  or gone down) goes down all the same, laying what floats for those who fought her. The page says washing up one way, on the status line and the
+  veil alike: "Your ship went down: you washed up at Sunspire; your ship lies at its roadstead."
+- **A ship gone down.** Each captain's ship sunk or taken (a won ship is scuttled, so she counts once) is kept once for
+  the sea's hosts, for the bounties: `ShipDown` (`battle.rs`), the water she went down in and its holder, her rank and
+  level, and the accounts the room keeps of the players who fought her (`Sea::take_ship_downs`, the last tick's). No
+  host takes them yet: the bounties are still to come.
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; she starts every fight with them, and
   her voyage sails at her pace times the canvas she keeps (never under half), in the room and the page alike. Where
@@ -294,8 +304,8 @@ Pass]]) with Claude's numbers:
   edge, but she is kept within it: where the fight has her, where she washes up and where her next course starts.
   What changes her character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up) is sent
   to the player as their gear, five times a second at most, and so saved within 2 s ([[Accounts]]).
-- **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers "Repair
-  her" (R): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
+- **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers
+  "Repair: free, lying at rest within 3 km of a port city" (R; the reach is the rules', from the waters' table): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
   and men), 100 s at most. Setting a course, heaving to for a fight or leaving the sea stops it where it stood.
 - **Its weather.** Each fight at sea, and each fight among captains alone (`clash.rs`), takes the swell and the wind
   where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and

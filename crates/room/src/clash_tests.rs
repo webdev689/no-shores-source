@@ -105,3 +105,15 @@ fn a_clash_keeps_the_weather_it_began_in() {
     step_clashes(&mut clashes, &mut Pirates::default(), &[[150.0, 0.0]], (&[], 1.0 / 60.0));
     assert_eq!((clashes[0].swell.bearing, clashes[0].wind), (swell.bearing, wind));
 }
+
+#[test]
+fn a_level_27_ship_in_a_clash_has_her_raised_hull() {
+    let elite = Commission { faction: GREY_TITHE, rank: Rank::Elite };
+    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
+    let raised = Pirate { level: 27, ..at_sea(3, elite, 0.0, true) };
+    let clash = Clash::begin([raised, at_sea(4, minor, 400.0, true)], still(), &[], 0.0);
+    let hull = clash.fight.vessel(CAPTAIN).map(|vessel| vessel.damage.max_hull);
+    assert!(raised.strength() > 1.0, "level 27 raises her");
+    assert_eq!(hull, Some(elite.damage_at(raised.strength()).max_hull), "her hull as her level raises it");
+    assert!(hull > Some(elite.damage().max_hull));
+}

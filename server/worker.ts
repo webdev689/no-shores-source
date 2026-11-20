@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
 import { Keeper, TOKEN } from './keeping.ts';
-import { nodeRoom } from './roomNames.ts';
+import { nodeRoom, seaRoom } from './roomNames.ts';
 import { SEA_PORTS } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
 
@@ -40,7 +40,7 @@ function roomName(request: Request): string | null {
 
 /**
  * One room on Cloudflare: a Durable Object, one for each room's name, that keeps the room in WebAssembly. Its name
- * says which: `sea` is the sea, `node-<id>` that node's room on its baked window of the land (`node-<id>--elite` or
+ * says which: `sea` is the sea (`sea--elite` or `sea--abyss` at a voyage's harder difficulty), `node-<id>` that node's room on its baked window of the land (`node-<id>--elite` or
  * `--abyss` at a voyage's harder difficulty), `fleet-<name>` a fleet's
  * place on the open sea, and any other the Test Ground's course. Players join by WebSocket; each binary message is one
  * of their inputs, at sea their ship's course, or in a fleet their ship's orders. While anyone is in, it ticks the
@@ -111,19 +111,22 @@ export class RoomHost extends DurableObject<Env> {
     };
     // The game's nodes and the sea keep characters (at sea, with their ship's hurts): the Test Ground grants gear to try
     // it, and a fleet room is the World Editor's.
-    const keeps = name.startsWith('node-') || name === 'sea';
+    const seas = seaRoom(name);
+    const keeps = name.startsWith('node-') || seas !== null;
     this.keeper = new Keeper(keeps ? characters : null, room, name, (player) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
     // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept her.
-    if (name === 'sea')
+    if (seas !== null)
       return (
         this.room.openSea(
           JSON.stringify({ layout, ports: SEA_PORTS }),
           crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
           Date.now() / 1000,
-        ) && this.room.keepCharacters()
+        ) &&
+        this.room.difficulty(seas) &&
+        this.room.keepCharacters()
       );
     if (name.startsWith('fleet-')) return this.room.openFleet(Date.now() / 1000);
     const node = /^node-(.+)$/.exec(name)?.[1];
@@ -160,7 +163,7 @@ export class RoomHost extends DurableObject<Env> {
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
         });
       // At sea the room also says who is there, for the Roster.
-      if (this.name === 'sea') {
+      if (seaRoom(this.name) !== null) {
         held.token = message;
         void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
       }
@@ -168,7 +171,7 @@ export class RoomHost extends DurableObject<Env> {
     }
     held.count = count;
     // At sea an input before any token sails at once; a token after it still gives her back where she was kept.
-    if (this.name === 'sea' && !held.signed && !held.spoke) {
+    if (seaRoom(this.name) !== null && !held.signed && !held.spoke) {
       held.spoke = true;
       this.guarded(() => this.room.noneKept(player), undefined);
     }

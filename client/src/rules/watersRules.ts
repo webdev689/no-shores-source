@@ -53,6 +53,17 @@ export interface WatersTable {
   readonly routes: readonly TrafficRoute[];
   /** The pace every friendly ship keeps, m/s. */
   readonly friendlySpeedMS: number;
+  readonly sea: SeaFacts;
+}
+
+/** The sea's rules the page reads beside its waters: the reach a hostile ship meets a player within and the furthest
+ *  one may hold a voyage, metres; the reach of a port city's repairs, metres; and each ship's name by her faction's
+ *  number and then her hull's (crates/naval/src/ranks.rs `ship_name`). */
+export interface SeaFacts {
+  readonly engageM: number;
+  readonly holdReachM: number;
+  readonly repairReachM: number;
+  readonly shipNames: readonly (readonly string[])[];
 }
 
 /** The water at a point of sea: its continent's index, its holder (contested on the seam), and the seam. */
@@ -157,6 +168,7 @@ interface TableAnswer {
   readonly ports: TrafficPort[];
   readonly routes: { from_port: number; to_port: number; length_m: number; path: [number, number][] }[];
   readonly friendly_speed_m_s: number;
+  readonly sea: { engage_m: number; hold_reach_m: number; repair_reach_m: number; ship_names: string[][] };
 }
 
 /** Copies an answer's bytes out of the module's memory and gives the memory back. */
@@ -222,6 +234,12 @@ export function startWatersRules(module: WebAssembly.Module): WatersRules {
           path: route.path,
         })),
         friendlySpeedMS: answer.friendly_speed_m_s,
+        sea: {
+          engageM: answer.sea.engage_m,
+          holdReachM: answer.sea.hold_reach_m,
+          repairReachM: answer.sea.repair_reach_m,
+          shipNames: answer.sea.ship_names,
+        },
       };
     },
     waterAt: ([x, y]) => {
