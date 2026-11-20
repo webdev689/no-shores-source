@@ -6,7 +6,7 @@ fn a_major_is_a_ship_as_she_was_before_ranks() {
     let major = Commission::default();
     assert_eq!((major.faction, major.rank), (PIRATES, Rank::Major));
     assert_eq!(major.build(), PIRATE_SLOOP);
-    assert_eq!(major.armed(SWIVEL), SWIVEL);
+    assert_eq!(major.armed(SWIVEL, 1.0), SWIVEL);
     let scale = Rank::Major.scale();
     assert_eq!([scale.hull, scale.might, scale.reload, scale.aim_error], [1.0; 4]);
     assert_eq!((scale.always_bold, scale.runs_at, scale.strikes_at), (false, PIRATE_RUNS_AT, STRUCK_AT));
@@ -31,7 +31,7 @@ fn each_rank_scales_her_hull_her_guns_her_reload_her_aim_and_her_boldness() {
         let exposed = hull_exposure(rank.hull());
         assert_eq!(commission.build().hull, (264.0 * hull * exposed).round(), "whole points: {rank:?}");
         assert_eq!(commission.damage().struck_at, strikes_at, "{rank:?}");
-        let gun = commission.armed(SWIVEL);
+        let gun = commission.armed(SWIVEL, 1.0);
         assert_eq!([gun.hull, gun.sail, gun.crew], [5.0 * might, 2.0 * might, 2.0 * might]);
         assert_eq!([gun.yaw_spread_deg, gun.pitch_spread_deg], [1.3 * aim_error, 0.8 * aim_error]);
         assert_eq!((gun.speed, gun.reload_s, gun.radius_m), (SWIVEL.speed, SWIVEL.reload_s, SWIVEL.radius_m));

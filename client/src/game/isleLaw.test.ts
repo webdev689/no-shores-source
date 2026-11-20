@@ -82,7 +82,8 @@ test('the way to an island goes round it to its offing and in to its anchorage',
 test("an island's room is named by its number and its seed in 16 hex digits, and it stands in world metres", () => {
   const island = seen(7, [5000, 6000], 'ruin');
   assert.equal(isleRoomName(island), 'isle-7-00000000000000ff');
-  const node = isleNode(island, [[1, 2]], [[3, 4]], 'continent-4');
+  const node = isleNode(island, [[1, 2]], [[3, 4]], { continent: 'continent-4', seas: 'normal' });
+  assert.equal(isleRoomName(island, 'abyss'), 'isle-7-00000000000000ff--abyss');
   assert.deepEqual([node.ring, node.spawns, node.name], [[[5001, 6002]], [[5003, 6004]], 'A ruined isle']);
 });
 

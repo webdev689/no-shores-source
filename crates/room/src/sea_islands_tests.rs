@@ -18,6 +18,21 @@ fn ticks(sea: &mut Sea, count: u64) {
     }
 }
 
+/// The way in to an anchorage as the page sails it: round the island 1.5 km out, to its offing 1.5 km out on its
+/// landing's bearing, then in.
+fn round_to(at: [f64; 2], anchorage: [f64; 2], from: [f64; 2]) -> Vec<[f64; 2]> {
+    let unit = |[x, y]: [f64; 2]| {
+        let length = (x * x + y * y).sqrt();
+        [x / length, y / length]
+    };
+    let out = |[x, y]: [f64; 2]| [at[0] + x * 1_500.0, at[1] + y * 1_500.0];
+    let landing = unit([anchorage[0] - at[0], anchorage[1] - at[1]]);
+    let ship = unit([from[0] - at[0], from[1] - at[1]]);
+    let between = [landing[0] + ship[0], landing[1] + ship[1]];
+    let side = if between[0].abs() + between[1].abs() < 1e-6 { [-landing[1], landing[0]] } else { unit(between) };
+    vec![out(side), out(landing), anchorage]
+}
+
 /// A player at rest 50 km off the continent's north-west, in open sea.
 fn at_rest(sea: &mut Sea) -> PlayerId {
     let player = sea.join();
@@ -77,7 +92,7 @@ fn a_ship_finds_an_island_she_sails_near_and_is_told_of_those_in_sight() {
     assert_eq!(sea.islands().sighted([50_000.0, 50_000.0]).count(), sea.islands().standing.len());
     assert!(!sea.islands().found(player, id), "found from afar");
     ticks(&mut sea, 30);
-    sea.course(player, &[anchorage], 100).expect("the anchorage is open sea");
+    sea.course(player, &round_to(at, anchorage, [50_000.0, 50_000.0]), 100).expect("the way in is open sea");
     for _ in 0..60 * 60 {
         sea.tick();
         if sea.ships().all(|(_, ship)| ship.pace == 0) {

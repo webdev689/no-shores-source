@@ -17,6 +17,8 @@ export const RING = 6;
 /** Each mark's half width: a port's filled ring, a ruin's diamond, a node's ring, and the ship's arrow. */
 const MARK_HALF: Readonly<Record<string, number>> = { port: 4.5, ruin: 5, ship: 10 };
 const NODE_HALF = 4;
+/** The clear gap a mark keeps round it from a mark laid before it, units. */
+const MARK_GAP = 1.5;
 export const markHalf = (kind: string) => MARK_HALF[kind] ?? NODE_HALF;
 
 /** Who is lettered first, and who is dropped first when no clear place is left: ports, waters' names, ruins, then
@@ -83,8 +85,9 @@ export function nameWidth(
   return Math.max(...waterLines(letter.text, letter.lines).map((line) => widthOf(line, letter.kind)));
 }
 
-/** What one frame letters on the parchment, ink pixels from the map's top-left: the words and marks, the ship's
- *  arrow (null off the map), the key, and how many times over they are drawn at their sizes (`letterScale`). */
+/** What one frame letters on the parchment, ink pixels from the map's top-left: the words and marks (each place's
+ *  first, in the order asked, at its mark), the ship's arrow (null off the map), the key, and how many times over
+ *  they are drawn at their sizes (`letterScale`). */
 export interface Lettering {
   readonly letters: readonly MapLetter[];
   readonly ship: { readonly x: number; readonly y: number; readonly heading: number } | null;
@@ -185,10 +188,11 @@ function besideSpots<T extends { x: number; y: number; kind: string }>(
  *  round it. */
 export function layOut(ask: LayoutAsk): Lettering {
   const { scale, ink } = ask;
-  const marks: Rect[] = ask.places.map((place) => markBox(place.kind, place.x, place.y, scale));
+  const spacedPlaces = spaced(ask.places, scale, ink);
+  const marks: Rect[] = spacedPlaces.map((place) => markBox(place.kind, place.x, place.y, scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, scale));
   const asked = [
-    ...ask.places.map((place) => ({ ...place, continent: -1, colour: undefined as string | undefined, spots: [] })),
+    ...spacedPlaces.map((place) => ({ ...place, continent: -1, colour: undefined as string | undefined, spots: [] })),
     ...ask.waters.map((water) => ({ ...water, x: 0, y: 0, kind: 'water', chosen: false })),
   ];
   const first = laidOut(ask, asked, [...ask.covers, ...marks]);
@@ -226,6 +230,59 @@ export function layOut(ask: LayoutAsk): Lettering {
   if (!best) return { letters: first.letters, ship: ask.ship, key: null, scale };
   const { place: key, again } = best;
   return { letters: again.letters, ship: ask.ship, key, scale };
+}
+
+/** Which marks stand where they lie when two meet: a port's, then a ruin's, then any node's. */
+const markRank = (kind: string) => {
+  const rank = ['port', 'ruin'].indexOf(kind);
+  return rank < 0 ? 2 : rank;
+};
+
+/** The places with every mark clear of every other, laid ports first, then ruins, then nodes: a mark that meets one
+ *  laid before it moves out along the line between their middles, just far enough to clear every mark. */
+function spaced<T extends { x: number; y: number; kind: string }>(
+  places: readonly T[],
+  scale: number,
+  ink: { readonly width: number; readonly height: number },
+): T[] {
+  const order = places
+    .map((place, index) => ({ place, index }))
+    .sort((one, other) => markRank(one.place.kind) - markRank(other.place.kind) || one.index - other.index);
+  const laid: Rect[] = [];
+  const out = [...places];
+  const inside = (box: Rect) =>
+    box.x >= 0 && box.y >= 0 && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
+  for (const { place, index } of order) {
+    const boxAt = (x: number, y: number) => markBox(place.kind, x, y, scale);
+    const clear = (box: Rect) => inside(box) && !laid.some((each) => overlaps(each, box));
+    let stand: readonly [number, number] = [place.x, place.y];
+    const hit = laid.find((box) => overlaps(box, boxAt(place.x, place.y)));
+    if (hit) {
+      const [middleX, middleY] = [hit.x + hit.width / 2, hit.y + hit.height / 2];
+      const line = place.x === middleX && place.y === middleY ? 0 : Math.atan2(place.y - middleY, place.x - middleX);
+      const reach = hit.width / 2 + markHalf(place.kind) * scale;
+      // Out along the line from the mark it meets to the first spot clear of every mark and inside the map; where
+      // that way is blocked, the same a twelfth of a turn either side, then two. With none, it stands where it lies.
+      search: for (let turn = 0; turn < 12; turn++) {
+        const angle = line + (Math.PI / 6) * (turn % 2 ? -Math.ceil(turn / 2) : turn / 2);
+        const [towardX, towardY] = [Math.cos(angle), Math.sin(angle)];
+        const first = Math.min(reach / Math.abs(towardX), reach / Math.abs(towardY)) + 0.01;
+        for (let along = first; along < first + 6 * reach; along += scale) {
+          const spot = [middleX + towardX * along, middleY + towardY * along] as const;
+          if (clear(boxAt(...spot))) {
+            stand = spot;
+            break search;
+          }
+        }
+      }
+    }
+    const box = boxAt(...stand);
+    // Grown by a clear gap, so two marks never stand edge to edge, read as one.
+    const gap = MARK_GAP * scale;
+    laid.push({ x: box.x - gap, y: box.y - gap, width: box.width + gap * 2, height: box.height + gap * 2 });
+    out[index] = { ...place, x: stand[0], y: stand[1] };
+  }
+  return out;
 }
 
 type Asked = {

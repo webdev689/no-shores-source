@@ -15,11 +15,10 @@ use crate::clash::{Clash, ship_at, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates, Voyager};
 use crate::sea_weather::SeaWeather;
-use crate::threat::held_pace;
+use crate::threat::{held_pace, holds};
 use core::f64::consts::{PI, TAU};
 use movement::{Controls, TICK_SECONDS};
 use naval::fight::Orders;
-use naval::ranks::Commission;
 use std::collections::{BTreeMap, VecDeque};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::{Point, edges, ring_contains, segments_meet};
@@ -376,14 +375,23 @@ impl Sea {
     /// rest where it left them.
     pub fn tick(&mut self) {
         self.clock += 1;
+        // The ships gone down are its last tick's: a host takes them after each, and none pile up untaken.
+        self.harbour.downs.clear();
         for aboard in self.aboard.values_mut() {
             aboard.tick(&self.deck, self.clock);
         }
         let time = self.clock as f64 * TICK_SECONDS;
-        let pirates: Vec<[f64; 2]> = self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect();
+        let (pirates, sailing_count) = (self.pirates(), self.pirates.sailing.len());
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
+            // A ship in a clash is joined by a player who comes in sight of it, so she holds as a bold one does.
+            let (chased, hull) = (self.pirates.chased(*player), berth.kept[0]);
+            let pirates: Vec<([f64; 2], bool)> = (pirates.iter().enumerate())
+                .map(|(at, hostile)| {
+                    ([hostile.x, hostile.y], at >= sailing_count || holds(hostile, [ship.x, ship.y], chased, hull))
+                })
+                .collect();
             // Judged along every leg her pace would take her through this tick, so no turn of her course slips by.
             let reach = f64::from(ship.pace) * SHIP_SPEED_M_S * TICK_SECONDS;
             let held = |way: f64| held_pace(ship.pace, [ship.x, ship.y], way, pirates.iter().copied());
@@ -463,9 +471,12 @@ impl Sea {
 
     /// Each fighting player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's
     /// waters now, and its first captain's commission.
-    pub fn fight_views(&self) -> Vec<(PlayerId, Vec<f64>, Commission)> {
+    pub fn fight_views(&self) -> Vec<crate::battle::FightSeen> {
         let time = self.clock as f64 * TICK_SECONDS;
-        self.fights.views(&self.coasts, time).collect()
+        // One on a deck boards no other.
+        let seen = self.fights.views(&self.coasts, time);
+        seen.map(|seen| crate::battle::FightSeen { may_board: seen.may_board && !self.on_deck(seen.player), ..seen })
+            .collect()
     }
 }
 
@@ -584,3 +595,7 @@ mod ports;
 #[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;
+
+#[cfg(test)]
+#[path = "fight_measure_tests.rs"]
+mod fight_measure_tests;

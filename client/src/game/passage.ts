@@ -49,6 +49,8 @@ export class Passage {
   private straight = false;
   private travelled = 0;
   private dial: Pace = PACE_DEFAULT;
+  /** The furthest a hostile ship may hold her, as the sea's rules give it (`Sea.facts`); none known, none held. */
+  holdReachM = 0;
   /** The pace she is sailed at, eased toward the view's a step at a time, and the seconds toward its next step. */
   private sailed: SailedPace = PACE_DEFAULT;
   private easing = 0;
@@ -193,7 +195,7 @@ export class Passage {
     if (!this.voyage) return;
     const settled = this.room?.settledShip ?? null;
     // A step the room refused is asked again, once its word on the last has come, until the two agree.
-    if (paceToAskAgain(this.sailed, settled, this.room?.pirates ?? [])) this.sendVoyage();
+    if (paceToAskAgain(this.sailed, settled, this.room?.pirates ?? [], this.holdReachM)) this.sendVoyage();
     if (settled?.pace === 0) {
       this.restWhereTheRoomHasHer(this.voyage, settled);
       return;

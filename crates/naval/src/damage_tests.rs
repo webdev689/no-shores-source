@@ -192,7 +192,8 @@ fn a_crew_struck_down_to_the_last_man_strikes_with_her_fires_still_burning() {
 /// (`zone`), as the fight takes them: her mean hull, canvas, men and fires lost a broadside.
 fn broadsides(guns: usize, rank: crate::ranks::Rank, shot: Shot, zone: Zone) -> [f64; 4] {
     let commission = crate::ranks::Commission { faction: crate::ranks::PIRATES, rank };
-    let gun = Gun { share: crate::arms::SLOOP_GUNS_A_SIDE / guns as f64, ..commission.armed(loaded(&SWIVEL, shot)) };
+    let gun =
+        Gun { share: crate::arms::SLOOP_GUNS_A_SIDE / guns as f64, ..commission.armed(loaded(&SWIVEL, shot), 1.0) };
     let mut draws = crate::random::Mulberry32::new(91);
     let mut target = Damage::new(&Build { hull: 1e9, sail: 1e9, crew: 1e9, ..PIRATE_SLOOP }, false);
     let mut lost = [0.0; 4];

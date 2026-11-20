@@ -14,7 +14,17 @@ use naval::wire::told_numbers;
 use std::collections::BTreeMap;
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
+/// A player who leaves a fight with less than this share of her hull is kept as a sunk ship comes back.
+pub const LEFT_AS_SUNK: f64 = 1.0 / 3.0;
+
 impl Sea {
+    /// Sets the sea's tier, as a host sets it once the sea has opened: an Elite or Abyss sea sends its ships at the
+    /// levels the tier raises foes to on land, and their pieces hold a Vestige as often as a harder voyage pays one.
+    pub fn set_difficulty(&mut self, difficulty: gear::Difficulty) {
+        self.pirates.difficulty = difficulty;
+        self.harbour.flotsam.difficulty = difficulty;
+    }
+
     /// What its fights' tick made of each player and each captain's ship that sank: a player's ship where the fight
     /// has her, her hurts kept once it lets her go, a player whose ship went down washed up, and what floats laid for
     /// each player who fought a ship that sank.
@@ -33,7 +43,52 @@ impl Sea {
             // A boarded ship sunk under her boarders sends them back to their own ships.
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
+            self.tell_down(ship);
         }
+    }
+
+    /// The word for a captain's ship gone down: where, her rank and level, and the accounts of those who fought her.
+    fn tell_down(&mut self, ship: &Sank) {
+        let water = self.chart.water(ship.at);
+        let accounts = &self.harbour.accounts;
+        self.harbour.downs.push(crate::battle::ShipDown {
+            water: water.map(|(water, _)| water.continent),
+            holder: water.map_or(world::waters::Holder::Home, |(water, _)| water.holder),
+            rank: ship.pirate.commission.rank,
+            level: ship.pirate.level,
+            players: ship.players.iter().filter_map(|player| accounts.get(player).cloned()).collect(),
+        });
+    }
+
+    /// Each captain's ship gone down in the last tick and not yet taken, for the sea's hosts (its bounties).
+    pub fn take_ship_downs(&mut self) -> Vec<crate::battle::ShipDown> {
+        std::mem::take(&mut self.harbour.downs)
+    }
+
+    /// Notes the account that keeps a player's character: what floats for that account, laid for them before they
+    /// dropped, is theirs again. False for a player not in the sea.
+    pub fn own(&mut self, player: PlayerId, account: &str) -> bool {
+        if !self.berths.contains_key(&player) {
+            return false;
+        }
+        let before: Vec<PlayerId> =
+            self.harbour.accounts.iter().filter(|(_, held)| *held == account).map(|(each, _)| *each).collect();
+        for piece in &mut self.harbour.flotsam.pieces {
+            if before.contains(&piece.player) {
+                piece.player = player;
+            }
+        }
+        // A player gone is forgotten once nothing they fought or left floating needs their account, so the map holds
+        // only those still at sea or still owed.
+        let (berths, fights, pieces) = (&self.berths, &self.fights, &self.harbour.flotsam.pieces);
+        self.harbour.accounts.retain(|each, _| {
+            berths.contains_key(each)
+                || fights.list.iter().any(|fought| fought.fought.contains(each))
+                || fights.lost.iter().any(|sank| sank.players.contains(each))
+                || pieces.iter().any(|piece| piece.player == *each)
+        });
+        self.harbour.accounts.insert(player, account.to_owned());
+        true
     }
 
     /// Lays what floats from a ship that sank, `times` over with each chest `chest_up` ranks higher besides, each
@@ -158,9 +213,10 @@ impl Sea {
         let tick = self.clock as f64;
         for (who, told) in joined {
             let numbers = match *who {
-                crate::battle::Joined::Player(player) => vec![JOINED, tick, f64::from(player), 0.0, 0.0],
+                crate::battle::Joined::Player(player) => vec![JOINED, tick, f64::from(player), 0.0, 0.0, 0.0],
                 crate::battle::Joined::Hostile(commission) => {
-                    vec![JOINED, tick, 0.0, f64::from(commission.faction), f64::from(commission.rank.number())]
+                    let (faction, rank) = (f64::from(commission.faction), f64::from(commission.rank.number()));
+                    vec![JOINED, tick, 0.0, faction, rank, f64::from(commission.hull().number())]
                 }
             };
             self.harbour.told.extend(told.iter().map(|player| (*player, numbers.clone())));
@@ -203,8 +259,9 @@ impl Sea {
         // In a fight, she is kept as the fight has her, and lies at the port city she would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.
         let (kept, at) = match self.fights.hurts_of(player) {
+            // Leaving a fight under a third of her hull counts as sunk: never more than she had.
             Some((kept, at)) => (
-                kept,
+                if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
                 in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
             ),
             None => {
@@ -322,7 +379,7 @@ pub(super) fn wary_meet(
             !ship.fighting
                 && near
                 && !met.iter().any(|(player, _)| *player == ship.player)
-                && naval::captain::wary_takes(pirate.commission, hull)
+                && naval::captain::wary_takes(pirate.commission, pirate.strength(), hull)
         };
         match ships.iter().find(takes).filter(|_| !pirate.bold) {
             Some(ship) => met.push((ship.player, pirates.sailing.remove(at))),
@@ -360,3 +417,7 @@ mod course_tests;
 #[cfg(test)]
 #[path = "sea_boarding_tests.rs"]
 mod boarding_tests;
+
+#[cfg(test)]
+#[path = "sea_leaving_tests.rs"]
+mod leaving_tests;

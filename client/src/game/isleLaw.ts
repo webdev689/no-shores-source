@@ -2,6 +2,7 @@
 // is offered to go ashore on, the course round it to its anchorage, a voyage's legs bent round every island in sight
 // (the route planner's grid is far coarser than an island), and an island's room and place on foot.
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { SeenIsle } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Use } from './footGear.ts';
@@ -113,9 +114,11 @@ export function approach(from: Point2, isle: IsleAt): Point2[] {
   return [...detour([from, offing], [circle]), anchorage];
 }
 
-/** An island's room's name: its number and its seed as 16 hex digits (server/roomNames.ts `isleRoom`). */
-export function isleRoomName(seen: SeenIsle): string {
-  return `isle-${seen.id}-${BigInt(seen.seed).toString(16).padStart(16, '0')}`;
+/** An island's room's name: its number and its seed as 16 hex digits, and the tier of the sea room it was rolled in
+ *  (server/roomNames.ts `isleRoom`). */
+export function isleRoomName(seen: SeenIsle, seas: Difficulty = 'normal'): string {
+  const tier = seas === 'normal' ? '' : `--${seas}`;
+  return `isle-${seen.id}-${BigInt(seen.seed).toString(16).padStart(16, '0')}${tier}`;
 }
 
 /** An island in words: a cove, or an isle by what stands on it. */
@@ -129,11 +132,11 @@ export function isleNode(
   seen: SeenIsle,
   ring: readonly Point2[],
   spawns: readonly Point2[],
-  continent: string,
+  { continent, seas }: { readonly continent: string; readonly seas: Difficulty },
 ): NodeInfo {
   const place = ([x, y]: Point2): Point2 => [x + seen.at[0], y + seen.at[1]];
   return {
-    id: isleRoomName(seen),
+    id: isleRoomName(seen, seas),
     kind: 'patrol',
     name: isleWords(seen).replace(/^a /, 'A '),
     continent,

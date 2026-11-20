@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { MarkDrawer } from '../editor/naval.ts';
 import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
-import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
+import type { FightCaptain, FightOrders, FightVessel, FightView } from '../rules/fightRules.ts';
 import { BAR_OVER_M } from '../ships/shipBars.ts';
 import { panShot, type Shot } from './camera.ts';
 import { SeaCombat } from './seaCombat.ts';
@@ -142,6 +142,94 @@ test('a captain keeps her own harm when another leaves the fight and the view mo
   assert.equal(views.length, 0, 'both views were taken');
   assert.equal(scarsOf(5300), 1, 'the one struck keeps her hole');
   assert.equal(scarsOf(5000), 0);
+});
+
+/** A fight whose room keeps every order sent, stepped `frames` frames of a thirtieth of a second from `from`. */
+function ordered(view: FightView = FIRST) {
+  const orders: FightOrders[] = [];
+  const room = { orders: (sent: FightOrders) => orders.push(sent), takeFight: () => null } as unknown as SeaRoom;
+  const fight = new SeaCombat(room, view, MARKS, 0);
+  let clock = 0;
+  const frames = async (count: number) => {
+    const shots: Shot[] = [];
+    for (let frame = 0; frame < count; frame++) {
+      clock += 1 / 30;
+      shots.push(fight.frame(1 / 30, clock, 1000, (error) => assert.fail(String(error))));
+      await new Promise((settled) => setImmediate(settled));
+    }
+    return shots;
+  };
+  return { fight, orders, frames, clock: () => clock };
+}
+const away = (shot: Shot, from: readonly number[]) =>
+  Math.hypot(...shot.eye.map((value, axis) => value - (from[axis] ?? 0)));
+
+test('pressing aim eases the eye out to her battery, not a cut from the orbit in one frame', async () => {
+  const { fight, frames } = ordered();
+  const [orbit] = await frames(1);
+  fight.aim(true);
+  const [first] = await frames(1);
+  assert.ok(
+    orbit && first && away(first, orbit.eye) < 10,
+    `the first aimed frame moved ${orbit && first && away(first, orbit.eye)} m`,
+  );
+  const shots = await frames(30);
+  const last = shots.at(-1);
+  const [x = 0, y = 0] = vessel.ship;
+  assert.ok(last && Math.hypot(last.eye[0] - x, last.eye[1] - y) < 8, 'a second on it stands by her side');
+});
+
+test("a crippled ship's guns are silent: aiming never moves her eye", async () => {
+  const { fight, frames } = ordered({ ...FIRST, player: { ...vessel, state: 'wrecked' } });
+  const [orbit] = await frames(1);
+  fight.aim(true);
+  const shots = await frames(30);
+  assert.ok(orbit && shots.every((shot) => away(shot, orbit.eye) < 1e-6));
+});
+
+test('while aiming the look may rise over the horizon to the longest throw; the orbit keeps its own clamp', async () => {
+  const { fight, orders, frames } = ordered();
+  fight.aim(true);
+  // Turned to look over her starboard side, and up past the horizon.
+  fight.drag(Math.PI / 2 / 0.005, -1000);
+  await frames(30);
+  const range = orders.at(-1)?.aim?.range ?? 0;
+  assert.ok(range >= 153.6, `the look reaches ${range} m`);
+  fight.aim(false);
+  fight.drag(0, -1000);
+  const [shot] = await frames(1);
+  assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
+});
+
+test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s steps it again', async () => {
+  const { fight, orders, frames } = ordered();
+  fight.aim(true);
+  for (let event = 0; event < 12; event++) fight.wheel(4, 1 + event * 0.01);
+  await frames(20);
+  assert.equal(orders.filter((sent) => sent.load).length, 1);
+  fight.wheel(4, 1.11 + 0.181);
+  await frames(20);
+  assert.equal(orders.filter((sent) => sent.load).length, 2);
+});
+
+test("out of the aim the wheel zooms the fight's camera by half again a notch, and never steps the load", async () => {
+  const { fight, orders, frames } = ordered();
+  const [far] = await frames(1);
+  fight.wheel(-100, 1);
+  const [nearer] = await frames(1);
+  const [x = 0, y = 0] = vessel.ship;
+  const [heave = 0] = vessel.pose;
+  const her = [x, y, heave + 6];
+  assert.ok(far && nearer);
+  assert.ok(Math.abs(away(far, her) - 75) < 1e-6 && Math.abs(away(nearer, her) - 50) < 1e-6, `${away(nearer, her)} m`);
+  fight.wheel(100, 2);
+  fight.wheel(100, 2.01);
+  const [out] = await frames(1);
+  assert.ok(out && Math.abs(away(out, her) - 75) < 1e-6, 'no farther than the fight camera stands');
+  for (let notch = 0; notch < 20; notch++) fight.wheel(-100, 3 + notch);
+  const [closest] = await frames(1);
+  assert.ok(closest && Math.abs(away(closest, her) - 11.4) < 1e-6, 'no nearer than DFO keeps');
+  assert.equal(orders.filter((sent) => sent.load).length, 0);
 });
 
 test("each captain's plate is keyed by her own fight number, so plates in a fight of three never share a lift", () => {

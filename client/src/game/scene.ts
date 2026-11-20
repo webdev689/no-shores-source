@@ -254,6 +254,7 @@ export class GameScene {
       eyeAboveM: Math.abs(shot.eye[2] - (eyeWater?.surface ?? ground)),
       focus: more.focus ? [more.focus[0] - origin[0], more.focus[1] - origin[1]] : [local.eye[0], local.eye[1]],
       hulls: (more.hulls ?? []).map((hull) => ({ ...hull, x: hull.x - origin[0], y: hull.y - origin[1] })),
+      shadow: this.shadow,
       drawn: targets,
       target,
     });

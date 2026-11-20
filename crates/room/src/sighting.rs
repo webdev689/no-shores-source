@@ -19,16 +19,22 @@ pub const COME_OUT: [f64; 2] = [0.9, 1.0];
 pub const AHEAD_ARC_RAD: f64 = PI / 3.0;
 /// A Tithe ship keeps to a lane within this of where she comes (metres).
 pub const LANE_REACH_M: f64 = 50_000.0;
-/// The ranks a roll sends, and their shares by the lowest level of the water's band: each row holds from its level
-/// up to the next row's.
+/// The ranks a roll sends, and their shares by the lowest level of the water's band, a row for each island's band:
+/// each row holds from its level up to the next row's.
 pub const RANKS_AT_SEA: [Rank; 4] = [Rank::Minor, Rank::Major, Rank::Elite, Rank::Miniboss];
-pub const RANKS_BY_BAND: [(u8, [f64; 4]); 5] = [
-    (0, [0.50, 0.40, 0.10, 0.0]),
+pub const RANKS_BY_BAND: [(u8, [f64; 4]); 9] = [
+    (1, [0.50, 0.40, 0.10, 0.0]),
+    (4, [0.45, 0.42, 0.13, 0.0]),
+    (7, [0.40, 0.43, 0.17, 0.0]),
     (10, [0.35, 0.45, 0.20, 0.0]),
     (13, [0.25, 0.45, 0.25, 0.05]),
+    (16, [0.20, 0.45, 0.27, 0.08]),
     (19, [0.15, 0.45, 0.30, 0.10]),
+    (22, [0.13, 0.43, 0.32, 0.12]),
     (26, [0.10, 0.40, 0.35, 0.15]),
 ];
+/// A roll's chance of a hostile ship in the first island's band and in the last: it rises evenly band by band.
+pub const HOSTILE_CHANCE: [f64; 2] = [0.18, 0.36];
 /// A Miniboss's way over the Sloop's, the fastest at sea.
 pub const FASTEST_WAY: f64 = 1.2;
 
@@ -67,6 +73,16 @@ pub fn faction_of(holder: Holder, roll: f64) -> Option<u8> {
         Holder::GreyTithe => Some(GREY_TITHE),
         Holder::Contested => Some(if roll < 0.5 { GREY_TITHE } else { PIRATES }),
     }
+}
+
+/// A roll's chance of a hostile ship in a water of this band: `HOSTILE_CHANCE` from the first island's band to the
+/// last, evenly between; a water with no band rolls as the first.
+#[must_use]
+pub fn hostile_chance(levels: Option<(u8, u8)>) -> f64 {
+    let bands = gear::world::ISLANDS.len() - 1;
+    let band = levels.and_then(|(low, _)| gear::world::ISLANDS.iter().rposition(|&(_, from, _)| low >= from));
+    let [first, last] = HOSTILE_CHANCE;
+    first + (last - first) * band.unwrap_or(0) as f64 / bands as f64
 }
 
 /// The rank `roll` in 0 to 1 draws in a water whose band starts at `low`.

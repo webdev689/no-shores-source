@@ -109,7 +109,7 @@ export function shipPanelOf(
         rows: [
           ['Hull', have(build.hull, kept?.hull)],
           ['Canvas', have(build.sail, kept?.sail)],
-          ['Men', have(build.crew, kept?.crew)],
+          ...(build.crew > 0 ? [['Men', have(build.crew, kept?.crew)] as const] : []),
           ['Guns', guns],
           ['Loads', build.loads.map(capital).join(', ')],
           ['Length', metres(measure.lengthM)],
@@ -125,7 +125,7 @@ export function shipPanelOf(
               rows: [
                 ['Heading', compassOf(voyage.heading)],
                 ['Pace', `×${voyage.paceStep}`],
-                ['Under way', voyage.voyageNote],
+                ['Now', voyage.voyageNote],
               ] as const,
               later: false,
             },

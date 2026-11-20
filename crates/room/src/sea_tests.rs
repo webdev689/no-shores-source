@@ -2,7 +2,7 @@ use super::*;
 use crate::clash::tests::at_sea;
 use crate::pirates::Pirate;
 use naval::fight::{CAPTAIN, End, Fight, HOSTILE_NEAR_M, PLAYER, Sailor, Vessel};
-use naval::ranks::{GREY_TITHE, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use sailing::ship::{Helm, SAILS_SET};
 
 /// A ship of a fight, by its number.
@@ -211,7 +211,7 @@ fn voyage_on(ahead: f64, bold: bool) -> (Sea, PlayerId) {
 }
 
 #[test]
-fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_by_her_to_the_worlds_time() {
+fn a_voyage_eases_down_as_a_wary_ship_comes_near_along_her_way_and_is_never_held_by_her_to_the_worlds_time() {
     let (mut sea, player) = voyage_on(1_800.0, false);
     let mut sailed = Vec::new();
     for _ in 0..60 * 60 {
@@ -226,7 +226,8 @@ fn a_voyage_eases_down_as_a_pirate_comes_near_along_her_way_and_is_held_by_her_t
     assert!(rates.windows(2).all(|pair| pair[1] <= pair[0]), "easing down, never back up: {rates:?}");
     assert!(rates.last().is_some_and(|&rate| rate <= 5), "down to the near-enemy pace by her ring: {rates:?}");
     assert!(sailed[inside].0 > HOSTILE_NEAR_M - 2.0, "into her ring a metre at a time: {} m", sailed[inside].0);
-    assert!(sailed[inside + 1..].iter().all(|&(_, rate)| rate == 1), "held to the world's time inside it");
+    // She will not engage a whole Sloop, so inside her ring the ladder caps the pace and nothing holds it.
+    assert!(sailed[inside + 1..].iter().all(|&(_, rate)| rate >= 5), "never held to the world's time: {sailed:?}");
 }
 
 #[test]
@@ -420,7 +421,7 @@ fn a_ship_met_at_sea_fights_under_her_own_faction_and_rank() {
     let (_, fought) = sea.fights().next().expect("a fight");
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
     assert_eq!(captain.map(|command| command.her.commission), Some(commission));
-    assert_eq!(sea.fight_views().into_iter().map(|(_, _, shown)| shown).collect::<Vec<_>>(), [commission]);
+    assert_eq!(sea.fight_views().into_iter().map(|seen| seen.captain).collect::<Vec<_>>(), [commission]);
 }
 
 /// A player at rest at (50 km, 50 km), and 1 km north of them two ships 400 m apart heading north: a bold Elite of
@@ -478,7 +479,7 @@ fn a_player_who_comes_within_sight_of_a_clash_joins_it_and_its_captains_choose_w
     assert!(sea.clashes().is_empty() && sea.pirates().is_empty(), "the fight is hers now");
     assert_eq!((sailed(&fought.fight, PLAYER).rung, ship(&sea, player).pace), (0, 0), "hove to");
     let others_at = 2 + 2 * naval::wire::VESSEL_NUMBERS + 4;
-    let views: Vec<Vec<f64>> = sea.fight_views().into_iter().map(|(_, view, _)| view).collect();
+    let views: Vec<Vec<f64>> = sea.fight_views().into_iter().map(|seen| seen.numbers).collect();
     assert_eq!(
         views[0][others_at..others_at + 4],
         [1.0, 2.0, 2.0, 2.0],
@@ -507,7 +508,7 @@ fn a_captain_of_each_rank_at_sea_meets_a_player_in_her_ranks_hull() {
         let (_, fought) = sea.fights().next().expect("a fight");
         let hull = fought.fight.vessel(CAPTAIN).map(|vessel| vessel.hull);
         assert_eq!(hull, Some(rank.hull()), "{rank:?}");
-        let shown: Vec<_> = sea.fight_views().into_iter().map(|(_, _, commission)| commission.hull()).collect();
+        let shown: Vec<_> = sea.fight_views().into_iter().map(|seen| seen.captain.hull()).collect();
         assert_eq!(shown, [rank.hull()], "{rank:?}: the snapshot names her hull");
     }
 }
@@ -632,4 +633,18 @@ fn a_player_who_chases_a_wary_ship_to_within_750_m_begins_the_fight_with_her() {
     assert!(fight_within_ten_minutes(&mut sea).is_some(), "the player brought the fight");
     let (mut unchased, _) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
     assert!(fight_within_ten_minutes(&mut unchased).is_none(), "a wary ship not chased sails by");
+}
+
+#[test]
+fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_she_is_out_of_reach_for_her_give_up_time() {
+    let course = [[50_000.0, 400_000.0], [50_000.0, 380_000.0]];
+    let (mut sea, player) = come_for_on(&course, [50_000.0, 390_000.0], std::f64::consts::PI, false);
+    sea.chase(player, Some(1));
+    fight_within_ten_minutes(&mut sea).expect("the chase brings the fight");
+    let bound = (naval::captain::CHASE_GIVE_UP_S + 30.0) as usize * 60;
+    let lasted = (0..bound).find(|_| {
+        sea.tick();
+        !sea.fights.fighting(player)
+    });
+    assert!(lasted.is_some(), "she broke off within her give-up time and the fight ended for the player too");
 }

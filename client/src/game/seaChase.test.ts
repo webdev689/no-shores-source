@@ -19,6 +19,7 @@ test('the chase heads where she will be: lead pursuit, or where she is if she ca
 
 test('a chase plans again each half second while she is sighted, says whom, and ends once she is lost', () => {
   const chase = new Chase();
+  chase.metM = 750;
   const pirate: SeenPirate = { id: 3, x: 0, y: -8_000, heading: 0, faction: 1, rank: 4, hull: 2, sight: 25_920 };
   assert.deepEqual(chase.begin('hostile-3', [pirate], [0, 0]), meetingPoint([0, 0], pirate));
   assert.equal(chase.begin('hostile-9', [pirate], [0, 0]), null, 'no such ship sighted');
@@ -31,6 +32,10 @@ test('a chase plans again each half second while she is sighted, says whom, and 
   chase.begin('hostile-3', [pirate], [0, 0]);
   chase.step(CHASE_EVERY_S, [pirate], [0, -7_300]);
   assert.equal(chase.chasing, null, 'within 750 m of her: met');
+  chase.metM = 500;
+  chase.begin('hostile-3', [pirate], [0, 0]);
+  chase.step(CHASE_EVERY_S, [pirate], [0, -7_300]);
+  assert.equal(chase.chasing, 3, 'the meeting reach is the rules’: 700 m off is not met within 500 m');
   chase.begin('hostile-3', [pirate], [0, 0]);
   chase.stop();
   assert.equal(chase.words, null, 'another course set');
@@ -39,6 +44,7 @@ test('a chase plans again each half second while she is sighted, says whom, and 
 test('the room is told whom the ship chases, and told none when another course is set or she is lost', () => {
   const told: (number | null)[] = [];
   const chase = new Chase((ship) => told.push(ship));
+  chase.metM = 750;
   const pirate: SeenPirate = { id: 4, x: 0, y: -8_000, heading: 0, faction: 2, rank: 1, sight: 25_920, way: 2.16 };
   chase.begin('hostile-4', [pirate], [0, 0]);
   chase.stop();

@@ -172,6 +172,9 @@
           font-size: 22px;
           line-height: 33px;
         }
+        .place .kind {
+          font-size: 16px;
+        }
         #hud:has(> .fight:not([hidden])) .hints {
           bottom: 198px;
         }
@@ -376,6 +379,13 @@
         font-size: 13px;
         letter-spacing: 1px;
         text-transform: none;
+      }
+      /* Where the hints grow, the map's place words grow with the map's own words. */
+      @media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+        (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+        #hud:has(> .held-map:not([hidden])) .place .kind {
+          font-size: 20px;
+        }
       }
       .mark {
         --size: 28px;

@@ -395,3 +395,51 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_her() {
     }
     assert!(whole[0] >= 40.0, "the Sloop's ten balls take whole: {whole:?}");
 }
+
+#[test]
+fn a_captain_coming_to_engage_is_round_to_her_broadside_as_the_range_comes_to_her_reach() {
+    use crate::captain::course::{distance, heading_to, wrap};
+    use crate::ranks::{PIRATES, Rank};
+    for rank in Rank::ALL {
+        let commission = Commission { faction: PIRATES, rank };
+        let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Bold).unwrap();
+        let coming = Ship { heading: std::f64::consts::PI, ..sloop_at(0.0, -700.0) };
+        let mut fight = Fight::meet(sloop_at(0.0, 0.0), coming, commission, seed, &Open, 0.0);
+        let her = |fight: &Fight| {
+            let vessel = captain(fight);
+            let reach =
+                lay(&vessel.ship, &vessel.pose, arms_of(vessel.hull), Side::Starboard, vessel.guns.load, 0.0, None);
+            let (at, mark) = ([vessel.ship.x, vessel.ship.y], [player(fight).ship.x, player(fight).ship.y]);
+            let off_beam = (wrap(heading_to(at, mark) - vessel.ship.heading).abs() - 90f64.to_radians()).abs();
+            (distance(at, mark), reach.reach, off_beam.to_degrees())
+        };
+        let mut came = None;
+        for _ in 0..600 * 60 {
+            fight.step(&[(PLAYER, IDLE)], &Open, WIND, 0.0);
+            let (apart, reach, off_beam) = her(&fight);
+            if apart <= reach {
+                came = Some(off_beam);
+                break;
+            }
+        }
+        let off_beam = came.unwrap_or_else(|| panic!("{rank:?} never came within her reach"));
+        assert!(off_beam <= 30.0, "{rank:?} came within her reach {off_beam:.0} degrees off her beam");
+    }
+}
+
+#[test]
+fn a_captain_raised_to_a_strength_fights_with_that_many_times_her_hull_men_and_guns_harm() {
+    let commission = Commission { faction: crate::ranks::PIRATES, rank: crate::ranks::Rank::Minor };
+    let mut fight = Fight::meet(sloop_at(0.0, 0.0), sloop_at(0.0, -400.0), commission, 3, &Open, 0.0);
+    fight.raise(CAPTAIN, 2.0);
+    let (plain, raised, build) = (commission.damage(), &captain(&fight).damage, commission.build_at(2.0));
+    assert!((build.hull / plain.max_hull - 2.0).abs() < 0.01 && (build.crew / plain.max_crew - 2.0).abs() < 0.1);
+    assert_eq!((raised.max_hull, raised.hull, raised.max_crew), (build.hull, build.hull, build.crew), "sound, raised");
+    assert_eq!(raised.struck_at, plain.struck_at, "she strikes at her rank's share");
+    let Sailor::Captain(command) = &captain(&fight).sailor else { panic!("a captain") };
+    assert_eq!(command.her.strength, 2.0);
+    let gun = commission.armed(crate::guns::SWIVEL, command.her.strength);
+    assert_eq!(gun.hull, commission.armed(crate::guns::SWIVEL, 1.0).hull * 2.0, "her guns' harm as many times");
+    assert!(!crate::captain::wary_takes(commission, 1.0, 1.0), "a wary Minor will not fall on a whole Sloop");
+    assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, she outguns her");
+}

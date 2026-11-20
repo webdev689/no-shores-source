@@ -8,6 +8,7 @@ import { panShot, type Shot } from './camera.ts';
 import type { Landmass } from './landmass.ts';
 import { portOf } from './nodes.ts';
 import type { Swell } from '../rules/landRules.ts';
+import type { SeaFacts } from '../rules/watersRules.ts';
 import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
 import { Boarding } from './deckBoarding.ts';
@@ -53,6 +54,12 @@ export class Sea {
   private combat: SeaCombat | null = null;
   /** The water at a point, once the page has opened the waters; and what the voyage's line says of them. */
   waterAt: ((point: Point2) => WaterNamed | null) | null = null;
+
+  /** The sea's rules as its waters' table gives them: the reaches the chase meets her within and the voyage is held
+   *  within. */
+  set facts(facts: SeaFacts) {
+    [this.chase.metM, this.passage.holdReachM] = [facts.engageM, facts.holdReachM];
+  }
   private readonly watch = new SeaWatch();
   private readonly chase = new Chase((ship) => this.room?.chase(ship));
   /** Where she lies and heads, her voyage and pace dial, and her courses to the sea room. */

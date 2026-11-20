@@ -33,7 +33,7 @@ fn a_player_not_fighting_who_comes_within_sight_of_a_fight_joins_it_with_a_numbe
 fn each_player_sees_the_fight_from_their_own_ship() {
     let mut fights = begun();
     fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0);
-    let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&[], 0.0).map(|(player, view, _)| (player, view)).collect();
+    let views: Vec<(PlayerId, Vec<f64>)> = fights.views(&[], 0.0).map(|seen| (seen.player, seen.numbers)).collect();
     // A view's player's ship comes after its clock and its end: her x and y first.
     let (first, second) = (&views[0].1, &views[1].1);
     assert_eq!((views[0].0, first[2], first[3]), (1, 0.0, 0.0));
@@ -96,4 +96,25 @@ fn a_sloop_put_into_a_fight_starts_it_with_the_hurts_she_keeps() {
     assert_eq!(damage.hull, (damage.max_hull * 0.1).round());
     assert_eq!(damage.sail, (damage.max_sail * 0.25).round());
     assert_eq!(damage.crew, (damage.max_crew * 0.5).round());
+}
+
+#[test]
+fn a_ships_level_raises_her_hull_men_and_guns_as_a_foes_level_raises_it_on_land_wherever_she_fights() {
+    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
+    let at_level = |level: u8| Pirate { level, ..at_sea(9, minor, 0.0, true) };
+    let met = |level: u8| {
+        let mut fights = Fights::default();
+        fights.begin_met((1, sloop(0.0, 0.0), [1.0; 3]), &at_level(level), (still(), &[]), 0.0);
+        let captain = fights.list[0].fight.vessel(CAPTAIN).unwrap();
+        let strength = captain.command().unwrap().her.strength;
+        (captain.damage.max_hull, captain.damage.max_crew, strength)
+    };
+    let (four, twenty_seven) = (met(4), met(27));
+    assert_eq!(four.2, gear::power::foe_health_times(4), "the land's own law");
+    assert_eq!(twenty_seven.2, gear::power::foe_health_times(27));
+    assert!(twenty_seven.0 > 4.0 * four.0 && twenty_seven.1 > 4.0 * four.1, "{twenty_seven:?} over {four:?}");
+    let mut fights = begun();
+    assert!(fights.join_hostile(&Pirate { level: 27, ..at_sea(12, minor, 500.0, false) }, &[], 0.0));
+    let joined = fights.list[0].fight.vessel(CAPTAIN + 1).unwrap();
+    assert_eq!(joined.damage.max_hull, twenty_seven.0, "one who joins a fight is raised as one who began it");
 }

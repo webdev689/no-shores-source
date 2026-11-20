@@ -120,16 +120,8 @@ fn vessel_numbers(vessel: &Vessel) -> Vec<f64> {
 /// An event's numbers in a view of the fight's tick `tick`, its ships as the view numbers them (`seen`).
 fn event_numbers(event: &Event, tick: f64, seen: &impl Fn(ShipId) -> f64) -> Option<Vec<f64>> {
     let point = |at: [f64; 3]| at.to_vec();
-    let part = |part: Part| match part {
-        Part::Hull => 0.0,
-        Part::Sail => 1.0,
-        Part::Rig => 2.0,
-    };
-    let piece = |kind: Piece| match kind {
-        Piece::Crate => 0.0,
-        Piece::Barrel => 1.0,
-        Piece::Chest => 2.0,
-    };
+    let part = |part: Part| f64::from(part.number());
+    let piece = |kind: Piece| f64::from(kind.number());
     let count = |count: usize| count as f64;
     Some(match *event {
         Event::Shot(ShotEvent::Muzzle { shooter, point: at, launch }) => {

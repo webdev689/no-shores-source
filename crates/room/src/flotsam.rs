@@ -76,13 +76,15 @@ pub struct Flotsam {
     pub pieces: Vec<Floating>,
     next_id: u32,
     seed: u64,
+    /// The sea's tier, which raises the chance of a Vestige in a piece as it raises a kill's on land.
+    pub difficulty: gear::Difficulty,
 }
 
 impl Flotsam {
     /// No pieces yet, their contents rolled from `seed`.
     #[must_use]
     pub fn new(seed: u32) -> Self {
-        Flotsam { pieces: Vec::new(), next_id: 1, seed: u64::from(seed) }
+        Flotsam { pieces: Vec::new(), next_id: 1, seed: u64::from(seed), difficulty: gear::Difficulty::Normal }
     }
 
     /// Lays what floats where a ship sank, `times` over (twice from her hold), each chest rolled `chest_up` ranks
@@ -141,7 +143,7 @@ impl Flotsam {
             });
             // Only a player whose character the room holds can take what it holds: for anyone else it floats on.
             let Some(character) = characters.get_mut(&piece.player).filter(|_| near) else { return true };
-            let held = open(piece, seed, character);
+            let held = open(piece, seed, self.difficulty, character);
             gathered.push((Event::Gathered { id: piece.id, by: piece.player }, piece.player, held));
             false
         });
@@ -155,11 +157,18 @@ impl Flotsam {
 }
 
 /// A piece opened into a character: the drop of a foe of its rank and level, each part taken where there is room.
-fn open(piece: &Floating, seed: u64, character: &mut Character) -> Held {
+/// The chance a piece of a ship of `rank` holds a Vestige at `difficulty`: her foe's on land, raised as a harder
+/// voyage raises a kill's.
+#[must_use]
+pub fn vestige_chance(rank: Rank, difficulty: gear::Difficulty) -> f64 {
+    (worth(foe_of(rank)).vestige * difficulty.reward()).min(1.0)
+}
+
+fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &mut Character) -> Held {
     let dice = Dice { seed, tick: u64::from(piece.id), player: piece.player };
     let foe = worth(foe_of(piece.rank));
     let rank = piece.rank.number();
-    let vestige = gear::vestige::dropped(foe.vestige, foe.boss, piece.level, &dice)
+    let vestige = gear::vestige::dropped(vestige_chance(piece.rank, difficulty), foe.boss, piece.level, &dice)
         .map(|(rarity, slot, level)| Vestige { id: 0, rarity, slot, level })
         .filter(|vestige| character.pick_up(*vestige));
     let ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();

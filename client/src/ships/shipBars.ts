@@ -30,7 +30,8 @@ const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
 /** Her ship's name, by the faction she sails for and her hull (the Sloop unless named): the Tithe's or the pirates'
  *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names her. */
 export function shipName(faction: number, hull = 0): string {
-  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Sloop';
+  // Any faction but the Tithe's sails as the pirates do, as the rules name her.
+  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Pirate Sloop';
   return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
 

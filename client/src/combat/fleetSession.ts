@@ -2,7 +2,7 @@ import { type FleetOrders, type NavalEvent, type SeenVessel, ordersBytes } from 
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import type { FightEvent, ShipState, ShotName } from '../rules/fightRules.ts';
-import { feelOf, type NavalEvent as SeaEvent } from '../rules/feelEvents.ts';
+import { feelOf, type NavalEvent as SeaEvent, PARTS, PIECES } from '../rules/feelEvents.ts';
 import type { FleetLay, FleetLook, FleetRules, LaySighted } from '../rules/fleetRules.ts';
 import type { Helm, Pose, ShipFloats } from '../rules/landRules.ts';
 
@@ -15,10 +15,8 @@ const MOST_AHEAD_S = 0.25;
 const GRAVITY = 9.81;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 const ZONES = ['hull', 'holed', 'rig'] as const;
-const PARTS = ['hull', 'sail', 'rig'] as const;
 /** The most of the fight's events kept for its feel until taken. */
 export const MOST_FELT = 512;
-const PIECES = ['crate', 'barrel', 'chest'] as const;
 const SIDES = ['port', 'starboard'] as const;
 const STATES = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'] as const;
 /** A ship whose hurts are not known yet: sound, her canvas whole. */

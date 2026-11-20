@@ -3,6 +3,9 @@ import { headingFrame } from '../rules/landRules.ts';
 /** DFO's aim eye while laying a broadside: this far out from her middle (past her ports), up from her waterline and
  *  aft of her middle, metres. */
 export const AIM_EYE = { out: 5.1, up: 5.5, aft: 3 } as const;
+/** While aiming, the look may rise this far over the horizon (radians), so it reaches the guns' longest throw on the
+ *  water, as DFO's free look does. */
+export const AIM_LOOK_TOP = 0.15;
 /** Past the dip where the look's point moves out faster than this (metres a degree), it goes on at this rate. */
 export const AIM_SLOPE = 30;
 

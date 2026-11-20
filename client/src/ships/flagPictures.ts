@@ -5,7 +5,7 @@ import { emblemPixels } from '../plus/emblems.ts';
 import { hash01 } from '../textures/noise.ts';
 import type { Picture } from '../textures/picture.ts';
 import { SHIP_PICTURE_TEXELS } from '../textures/shipPictures.ts';
-import { colourOf, DRESSES, SHIP_SIDES } from './dress.ts';
+import { type Colour, colourOf, DRESSES, SHIP_SIDES } from './dress.ts';
 
 /** Texels an emblem's pixel takes across and down the flag's picture. */
 const EMBLEM_TEXELS = [2, 3] as const;
@@ -33,11 +33,19 @@ export function flagPictures(): Picture[] {
         [...row].forEach((letter, pixelX) => {
           const tone = emblem.tones[letter];
           if (!tone) return;
+          const shade = tinted(colourOf(tone), dress.emblemTint);
           for (let y = 0; y < down; y++)
-            for (let x = 0; x < across; x++) paint(left + pixelX * across + x, top + pixelY * down + y, colourOf(tone));
+            for (let x = 0; x < across; x++) paint(left + pixelX * across + x, top + pixelY * down + y, shade);
         }),
       );
     }
     return { width: size, height: size, rgba, glass: null };
   });
+}
+
+/** An emblem's tone on a flag that tints it: the tint, lighter or darker as the tone is, so its shading stays. */
+function tinted(tone: Colour, tint: Colour | null): Colour {
+  if (!tint) return tone;
+  const light = 0.75 + (tone[0] + tone[1] + tone[2]) / 6;
+  return [tint[0] * light, tint[1] * light, tint[2] * light];
 }

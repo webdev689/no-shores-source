@@ -319,7 +319,10 @@ fn fragment_main(surface: Surface) -> @location(0) vec4f {
   var colour = mix(dry, wet, under);
   let direct = max(dot(normal, SUN), 0.0);
   let on_ground = vec3f(surface.offset, bed * view.brush.w - view.eye.z);
-  let sun = select(1.0, sunlit(on_ground, normal), direct > 0.0);
+  // Under water the sun's shadow fades with the depth it is seen through, scattered by the water above: a ship's
+  // shadow lies on the surface beside her, not on the seabed far from her.
+  let lit = select(1.0, sunlit(on_ground, normal), direct > 0.0);
+  let sun = mix(lit, 1.0, under * (1.0 - exp(-max(depth, 0.0) / 1.5)));
   colour *= AMBIENT + (1.0 - AMBIENT) * direct * sun;
   let ring = 1.0 - smoothstep(0.0, ring_width * 1.5, abs(from_brush - view.brush.z));
   colour = mix(colour, RING, select(0.0, ring, view.brush.z > 0.0));

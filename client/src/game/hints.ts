@@ -9,23 +9,23 @@ const AIMED: Readonly<Record<string, string>> = { duskDaggers: 'hold Q to aim Du
 export const HINTS = {
   foot: [
     'Click to look round · W A S D move · Shift run',
-    'Space jump · C crouch · Wheel: third person · M menu',
+    'Space jump · C crouch · Wheel third person · M menu',
     'Z weapon · 1 Melee · 2 Ranged · Right button swing or aim · Left button or F guard or fire · V dodge',
     'R Anima · Q G Tenets',
   ],
-  dead: ['Enter or Respawn: back at the nearest spawn'],
+  dead: ['Enter or Respawn back at the nearest spawn'],
   sea: [
     'Click the sea to sail · W sail on · A D steer · S heave to',
     'Drag to look · Wheel zoom · N map · [ ] pace · Space stop or resume',
     'B manage · H leave the helm · M menu',
   ],
-  manage: ['Drag to turn round her · Wheel to zoom', 'B back to the sea · M menu'],
-  deck: ['Click to look round · W A S D move · Shift run · Space jump', 'At her wheel, E: take the helm · M menu'],
+  manage: ['Drag to turn round her · Wheel zoom', 'B back to the sea · M menu'],
+  deck: ['Click to look round · W A S D move · Shift run · Space jump', 'At her wheel, E take the helm · M menu'],
   fight: [
     'A D steer · W S sails · Drag to look',
-    'Hold right button: aim, let go: fire · Click: hold fire · C brace · Wheel shot',
+    'Hold right button aim · Let go fire · Click hold fire · C brace · Wheel shot',
   ],
-  map: ['Drag to pan · Wheel to zoom · Click a port or the sea', 'Enter set sail · Esc put the map away'],
+  map: ['Drag to pan · Wheel zoom · Click a port or the sea', 'Enter set sail · Esc put the map away'],
   landing: ['Click a mark to choose it', 'Click it again or Enter to land · Esc back to sea'],
 } as const;
 

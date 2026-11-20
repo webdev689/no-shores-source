@@ -3,6 +3,7 @@
 // modules' boxes, in the world's metres. On foot E scavenges a wreck within reach, once each, and opens the dungeon's
 // door; the room judges both.
 import type { GearState } from '../network/gearMessages.ts';
+import type { Difficulty } from '../heldmap/heldMap.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import { Foot, type FootContext } from './foot.ts';
@@ -15,10 +16,10 @@ import type { Sea } from './sea.ts';
 export async function ashoreOn(
   context: FootContext,
   held: IsleHeld,
-  { word, continent }: { readonly word: string | null; readonly continent: string },
+  { word, continent, seas }: { readonly word: string | null; readonly continent: string; readonly seas: Difficulty },
   enter: (door: DungeonDoor) => void,
 ): Promise<Foot> {
-  const node = isleNode(held.seen, held.plan.ring, held.plan.spawns, continent);
+  const node = isleNode(held.seen, held.plan.ring, held.plan.spawns, { continent, seas });
   const gear: { gear: GearState | null } = { gear: null };
   let hear: (snapshot: Snapshot) => void = () => undefined;
   const heard = (snapshot: Snapshot) => hear(snapshot);
@@ -26,10 +27,15 @@ export async function ashoreOn(
   let link: RoomLink;
   if (rooms) {
     const session = await context.session;
-    link = await RoomConnection.open(rooms(isleRoomName(held.seen)), heard, (sent) => (gear.gear = sent), session);
+    link = await RoomConnection.open(
+      rooms(isleRoomName(held.seen, seas)),
+      heard,
+      (sent) => (gear.gear = sent),
+      session,
+    );
   } else {
     if (!word) throw new Error('the sea no longer holds this island');
-    link = LocalRoom.openIsland(await context.roomModule, word, heard);
+    link = LocalRoom.openIsland(await context.roomModule, word, heard, DIFFICULTIES.indexOf(seas));
   }
   const boxes = held.plan.blocks.map(([west, north, east, south, top]) => ({
     minX: west + held.seen.at[0],
@@ -45,6 +51,9 @@ export async function ashoreOn(
   const place = { boxes, facing: held.plan.facing, uses: isleUses(held, enter), gear };
   return Foot.onDeck(context, node, Array.from(held.heights), open, place);
 }
+
+/** The tiers by their number in the rooms. */
+const DIFFICULTIES: readonly Difficulty[] = ['normal', 'elite', 'abyss'];
 
 /** The landing under way: the island the ship sails in to anchor off, until she lies at its anchorage. */
 export class IsleLanding {
