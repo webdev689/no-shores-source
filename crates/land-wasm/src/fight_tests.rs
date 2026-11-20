@@ -222,3 +222,35 @@ fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
     };
     assert!(refused("0") && refused("6") && refused("2.5") && refused("\"boss\""));
 }
+
+#[test]
+fn a_balls_hit_tells_where_on_her_it_struck_and_the_sea_fights_own_events_are_told() {
+    use naval::damage::Zone;
+    use naval::fight::{Part, Piece};
+    let gun = naval::guns::SWIVEL;
+    let shot = naval::guns::Shot::Round;
+    let hit = ShotEvent::Hit {
+        shooter: 0,
+        target: 1,
+        zone: Zone::Hull,
+        point: [1.0, 2.0, 3.0],
+        flight: 0.5,
+        gun,
+        shot,
+        sail: None,
+    };
+    let events = [
+        Event::Hit { ship: 1, at: [4.0, -1.0, 2.0], part: Part::Hull },
+        Event::Shot(hit),
+        Event::SailLost { ship: 1, sail: 0 },
+        Event::Struck { ship: 1 },
+        Event::Flotsam { id: 7, at: [5.0, 6.0], kind: Piece::Chest },
+    ];
+    let told = events_json(&events);
+    assert_eq!(told.len(), 4, "her new hit is told with the shot's");
+    assert_eq!((told[0]["kind"].as_str(), told[0]["part"].as_str()), (Some("hit"), Some("hull")));
+    assert_eq!(told[0]["at"], serde_json::json!([4.0, -1.0, 2.0]));
+    assert_eq!(told[1]["kind"], "sail-lost");
+    assert_eq!(told[2]["kind"], "struck");
+    assert_eq!((told[3]["kind"].as_str(), told[3]["item"].as_str()), (Some("flotsam"), Some("chest")));
+}

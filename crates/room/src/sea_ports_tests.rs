@@ -11,7 +11,7 @@ pub(super) fn sea() -> Sea {
     let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
     sea.harbour.harbours =
-        Harbours { ports: vec![("east".into(), [60_000.0, 50_000.0]), ("far".into(), [5_000.0, 5_000.0])] };
+        Harbours { ports: vec![("east".into(), [60_000.0, 50_000.0]), ("far".into(), [5_000.0, 5_000.0])], ways: None };
     sea
 }
 

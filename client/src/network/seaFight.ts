@@ -113,6 +113,33 @@ export function navalEventOf(kind: number, next: () => number): NavalEvent | nul
   }
 }
 
+/** One of the sea's own events as the fight's feel reads it among the World Editor's (`ships/fightFeel.ts`
+ *  `FeelEvent`); none for a ball's splash and hit, which its shot's own events carry. */
+export function feelOf(event: NavalEvent): FightEvent | null {
+  const feel = ((): object | null => {
+    switch (event.kind) {
+      case 'SailLost':
+        return { kind: 'sail-lost', ship: event.ship, sail: event.sail };
+      case 'MastFell':
+        return { kind: 'mast-fell', ship: event.ship, mast: event.mast };
+      case 'Struck':
+        return { kind: 'struck', ship: event.ship };
+      case 'Sinking':
+        return { kind: 'sinking', ship: event.ship };
+      case 'Flotsam':
+        return { kind: 'flotsam', id: event.id, at: event.at, item: event.kind_of };
+      case 'Gathered':
+        return { kind: 'gathered', id: event.id, by: event.by };
+      case 'Boarding':
+        return { kind: 'boarding', ship: event.ship };
+      default:
+        return null;
+    }
+  })();
+  // The rules' fight events are the World Editor's; the feel reads these beside them by their kinds.
+  return feel as FightEvent | null;
+}
+
 /** Who a fight's captain is: her name, her faction and her rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 /** A captain the room has not named: a Major of the pirates. */
@@ -187,19 +214,26 @@ export function fightViewOf(
     lay = { side, elevation, reach, ends, radius, on_target: onTarget, launches };
   }
   const naval: NavalEvent[] = [];
+  // The hit the room tells just before its ball's, where on her it struck and on which part, for that ball's hit.
+  let struck: Extract<NavalEvent, { kind: 'Hit' }> | null = null;
   const told = Array.from({ length: next() }, (): FightEvent | null => {
     const kind = next();
     if (kind > 10) {
       const event = navalEventOf(kind, next);
       if (!event) throw new Error('a fight’s event is of no kind');
       naval.push(event);
-      return null;
+      if (event.kind === 'Hit') struck = event;
+      return feelOf(event);
     }
     switch (kind) {
       case 1:
         return { kind: 'muzzle', ship: next(), point: point(), launch: point() };
-      case 2:
-        return { kind: 'hit', ship: next(), by: next(), zone: named(ZONES), point: point() };
+      case 2: {
+        const hit = { kind: 'hit', ship: next(), by: next(), zone: named(ZONES), point: point() } as const;
+        const along = struck?.ship === hit.ship ? { at: struck.at, part: struck.part } : {};
+        struck = null;
+        return { ...hit, ...along };
+      }
       case 3:
         return { kind: 'splash', point: point() };
       case 4:

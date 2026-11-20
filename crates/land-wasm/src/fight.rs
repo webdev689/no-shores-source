@@ -10,7 +10,7 @@ use naval::arms::Side;
 use naval::ballistics::flight;
 use naval::captain::Mode;
 use naval::damage::{State, Zone};
-use naval::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
+use naval::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Part, Piece, Refusal, Sailor, Vessel};
 use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
@@ -89,6 +89,41 @@ fn vessel_json(vessel: &Vessel) -> Value {
     })
 }
 
+/// A piece of what floats by its look's name.
+fn piece_name(piece: Piece) -> &'static str {
+    match piece {
+        Piece::Crate => "crate",
+        Piece::Barrel => "barrel",
+        Piece::Chest => "chest",
+    }
+}
+
+/// A tick's events as the page reads them: a ball's hit carries where on her it struck in her own frame and the part
+/// it struck, from the hit the fight tells just before it.
+fn events_json(events: &[Event]) -> Vec<Value> {
+    let mut told = Vec::new();
+    let mut struck = None;
+    for event in events {
+        if let Event::Hit { ship, at, part } = *event {
+            struck = Some((ship, at, part));
+        }
+        let Some(mut shown) = event_json(event) else { continue };
+        if let (Event::Shot(ShotEvent::Hit { target, .. }), Some((ship, at, part))) = (event, struck.take())
+            && *target == ship
+        {
+            let part = match part {
+                Part::Hull => "hull",
+                Part::Sail => "sail",
+                Part::Rig => "rig",
+            };
+            shown["at"] = json!(at);
+            shown["part"] = json!(part);
+        }
+        told.push(shown);
+    }
+    told
+}
+
 fn event_json(event: &Event) -> Option<Value> {
     // The editor's fight has one player, so what happens to her ship goes without its number.
     Some(match *event {
@@ -115,8 +150,15 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::Ram { ship, by, point, dealt } => {
             json!({ "kind": "ram", "ship": ship, "by": by, "point": point, "dealt": dealt })
         }
-        // The sea's own events (its splashes, hits, torn rig, colours, flotsam and boarding) cross only at sea.
-        _ => return None,
+        Event::SailLost { ship, sail } => json!({ "kind": "sail-lost", "ship": ship, "sail": sail }),
+        Event::MastFell { ship, mast } => json!({ "kind": "mast-fell", "ship": ship, "mast": mast }),
+        Event::Struck { ship } => json!({ "kind": "struck", "ship": ship }),
+        Event::Sinking { ship } => json!({ "kind": "sinking", "ship": ship }),
+        Event::Boarding { ship } => json!({ "kind": "boarding", "ship": ship }),
+        Event::Flotsam { id, at, kind } => json!({ "kind": "flotsam", "id": id, "at": at, "item": piece_name(kind) }),
+        Event::Gathered { id, by } => json!({ "kind": "gathered", "id": id, "by": by }),
+        // A ball's own splash and hit are told with its shot's (`events_json`).
+        Event::Splash { .. } | Event::Hit { .. } => return None,
     })
 }
 
@@ -175,7 +217,7 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
         "captain": captain,
         "balls": balls,
         "lay": lay_json(fight, aim, waters, time),
-        "events": events.iter().filter_map(event_json).collect::<Vec<_>>(),
+        "events": events_json(events),
         "over": fight.over().map(|end| match end { End::Sunk => "sunk", End::Gone => "gone" }),
         "fingerprint": format!("{:016x}", fingerprint(fight.numbers())),
     })

@@ -8,7 +8,7 @@
 use crate::PlayerId;
 use std::collections::BTreeMap;
 use world::layout::Layout;
-use world::traffic::{Port, Traffic};
+use world::traffic::{Port, SeaWays, Traffic};
 
 /// What a sunk ship comes back with: a tenth of her hull, a quarter of her canvas and half her men.
 pub const SUNK_KEPT: [f64; 3] = [0.10, 0.25, 0.5];
@@ -48,10 +48,12 @@ impl Repair {
     }
 }
 
-/// The port cities ships wash up at and are repaired by: each one's id and its roadstead.
-#[derive(Clone, Debug, Default, PartialEq)]
+/// The port cities ships wash up at and are repaired by: each one's id and its roadstead, and the sea's ways between
+/// points of open water that reckon which is nearest.
+#[derive(Debug, Default)]
 pub struct Harbours {
     pub ports: Vec<(String, [f64; 2])>,
+    pub ways: Option<SeaWays>,
 }
 
 impl Harbours {
@@ -61,19 +63,24 @@ impl Harbours {
         if ports.is_empty() {
             return Harbours::default();
         }
-        let traffic = Traffic::new(layout, &world::waters::Waters::new(layout), ports);
+        let waters = world::waters::Waters::new(layout);
+        let traffic = Traffic::new(layout, &waters, ports);
         let roadstead = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
         let ports = traffic.ports.iter().zip(&traffic.roadsteads).map(|(port, at)| (port.id.clone(), roadstead(at)));
-        Harbours { ports: ports.collect() }
+        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters)) }
     }
 
-    /// The port nearest `at`, by its number among them.
-    // shortcut: nearest in a straight line to its roadstead, not by the sea's own way round the coasts; reckon it by
-    // sea once the waters' routes can be asked for one leg's length.
+    /// The port nearest `at` by the sea's way there (round land, as the traffic's routes are planned), by its number
+    /// among them; in a straight line to one no way reaches, or with no ways planned.
     #[must_use]
     pub fn nearest(&self, at: [f64; 2]) -> Option<usize> {
-        let apart = |port: &(String, [f64; 2])| libm::hypot(port.1[0] - at[0], port.1[1] - at[1]);
-        (0..self.ports.len()).min_by(|one, other| apart(&self.ports[*one]).total_cmp(&apart(&self.ports[*other])))
+        let point = |[x, y]: [f64; 2]| world::geometry::Point::new(x.round() as i64, y.round() as i64);
+        let apart = |port: &(String, [f64; 2])| {
+            let by_sea = self.ways.as_ref().and_then(|ways| ways.length(point(at), point(port.1)));
+            by_sea.unwrap_or_else(|| libm::hypot(port.1[0] - at[0], port.1[1] - at[1]))
+        };
+        let lengths: Vec<f64> = self.ports.iter().map(apart).collect();
+        (0..lengths.len()).min_by(|one, other| lengths[*one].total_cmp(&lengths[*other]))
     }
 
     /// Whether `at` lies within `REPAIR_REACH_M` of a port's roadstead.
