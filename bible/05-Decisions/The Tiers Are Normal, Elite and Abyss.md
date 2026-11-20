@@ -28,7 +28,6 @@ Asked whether one should be renamed, since "Elite" also names the 18 Elite Dunge
 - **The visual storm idea is dropped**: it replaces
   [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]].
 - **Elite keeps all three meanings**: the tier, the Elite Dungeons and the foe's rank.
-- **Not in the game yet**: the voyage's card still offers Calm, Rough and Storm.
 
 The days and the weeks over them: [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]].
 
