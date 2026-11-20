@@ -119,7 +119,8 @@ The game's screens wear Enhanced Plus, DFO's own interface, brought over and ada
   shows; at sea it stands under the compass, and in a sea fight in the top right corner, off the sky the aim looks
 at. On foot the hints stand
   over the vitals; at sea they rise above the offer to dock or go ashore. The edge's warning stands under the
-  compass's column.
+  compass's column. Where the hints grow to 22 px on a wide screen, the place line's small words grow with them
+  ([[Game]]), so the water's name and holder are never the smallest words on the screen.
 - **The fight's display** ([[Enemies]], [[Test Ground]]) lays its own sheet after the kit's. It stands the compass at
   the top's middle with a boss's bar and the target's plate under it, as DFO's Enhanced HUD does, and keeps the vitals
   in their own window at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]). Its bars do what DFO's

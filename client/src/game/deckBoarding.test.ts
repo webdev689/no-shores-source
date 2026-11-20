@@ -9,7 +9,7 @@ import { Boarding } from './deckBoarding.ts';
 import type { DeckSea } from './deckFight.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
 import type { StandOnDeck } from './deckFight.ts';
-import { deckKey, fightAsk } from './seaAfter.ts';
+import { deckKey, fightAsk } from './seaWord.ts';
 
 /** A ship of the fight lying at (x, y), still on the water. */
 const vessel = (x: number, state: FightVessel['state']): FightVessel =>
@@ -26,8 +26,9 @@ const fight = (state: FightVessel['state']): FightView =>
 /** The sea room as the boarding sees it, the asks the page made of it, and the deck room's snapshots heard. */
 function seaRoom() {
   const asked: string[] = [];
-  const sea: DeckSea & { deck: SeenDeck | null; flotsam: SeenFlotsam[]; ask(ask: string): void } = {
+  const sea: DeckSea & { deck: SeenDeck | null; flotsam: SeenFlotsam[]; mayBoard: boolean; ask(ask: string): void } = {
     deck: null,
+    mayBoard: false,
     own: 1,
     rejoining: false,
     lost: null,
@@ -74,17 +75,19 @@ const INPUT = {
   paused: false,
   viewport: { width: 1280, height: 720 },
 };
-const CONTEXT = { walker: { inFirstPerson: false } } as unknown as FootContext;
+const CONTEXT = { walker: { inFirstPerson: false }, movement: { tickSeconds: 1 / 60 } } as unknown as FootContext;
 const settle = () => new Promise((done) => setTimeout(done, 0));
 
 test('a struck captain alongside is boarded with E: the boarder stands on her deck, which rides her ship', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
-  const atSea = { fight: { view: fight('afloat') }, boarding, sighted: sea };
+  const atSea = { boarding, sighted: sea };
   assert.equal(fightAsk(atSea), null, 'her colours still fly');
   const struck = fight('struck');
-  assert.equal(fightAsk({ ...atSea, fight: { view: struck } }), 'board');
+  // The sea says she may be boarded.
+  sea.mayBoard = true;
+  assert.equal(fightAsk(atSea), 'board');
   assert.deepEqual(asked, ['board']);
   assert.equal(boarding.frame(sea, struck, INPUT), null, 'the sea has not said she is boarded yet');
   sea.deck = { aboard: [[1, 4]], hull: 0, snapshot: new Uint8Array(), holdLeft: null };
@@ -101,7 +104,7 @@ test('a struck captain alongside is boarded with E: the boarder stands on her de
     [boarding.words?.place, boarding.words?.line],
     ['Pirate Sloop', 'Aboard her: her crew stands to meet you'],
   );
-  assert.equal(fightAsk({ ...atSea, fight: { view: struck } }), null, 'E asks nothing while her crew fights');
+  assert.equal(fightAsk(atSea), null, 'E asks nothing while her crew fights');
 });
 
 test('her deck won holds the boarder a minute, its time left and her hold’s take shown; E or the minute’s end brings them back aboard their own ship', async () => {
@@ -125,8 +128,8 @@ test('her deck won holds the boarder a minute, its time left and her hold’s ta
   boarding.frame(sea, view, INPUT);
   assert.equal(boarding.won, true);
   assert.equal(boarding.words?.line, 'Her hold: 2 crates, a chest');
-  assert.equal(boarding.words?.hints[0], 'E: back aboard your ship · 60 s left');
-  assert.equal(fightAsk({ fight: { view }, boarding, sighted: sea }), 'leave-deck');
+  assert.equal(boarding.words?.hints[0], 'E back aboard your ship · 60 s left');
+  assert.equal(fightAsk({ boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
   // The room has the boarder back aboard their own ship: the view is the sea's fight's again, at their helm.
   sea.deck = null;
@@ -147,8 +150,7 @@ test('beaten aboard her, the boarder is let go of her deck as they wash up, and 
   sea.deck = null;
   assert.equal(boarding.frame(sea, null, INPUT), null);
   assert.equal(foot.left, 1);
-  const sunk = fight('sinking');
-  assert.equal(fightAsk({ fight: { view: sunk }, boarding, sighted: sea }), null);
+  assert.equal(fightAsk({ boarding, sighted: sea }), null);
 });
 
 test('two boarders of one deck each fight there as themselves: the page’s own number on her deck is the room’s', async () => {

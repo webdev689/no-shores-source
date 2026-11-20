@@ -163,7 +163,7 @@ impl sailing::waters::Waters for Open {
 /// Two fights as a snapshot carries them: each its player, and its view with the player's look laid to starboard, the
 /// captain's port guns run out and the player's stem ramming her; player 2's with a pirate fighting too, player 5's the
 /// same fight without her (the client's test reads both back).
-fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
+fn fights_seen() -> Vec<room::battle::FightSeen> {
     let at = |x: f64, y: f64, heading: f64| sailing::ship::Ship {
         x,
         y,
@@ -187,7 +187,9 @@ fn fights_seen() -> Vec<(PlayerId, Vec<f64>, Commission)> {
         fight.put_to_sea(player, at(0.0, 0.0, 0.0), &Open, 0.0);
         naval::wire::view_numbers(&fight, naval::fight::PLAYER, &events, Some(&aim), &Open, 0.0)
     };
-    vec![(2, view(&captains), TITHE_MINIBOSS), (5, view(&captains[..1]), TITHE_MINIBOSS)]
+    let seen =
+        |player, numbers, may_board| room::battle::FightSeen { player, numbers, captain: TITHE_MINIBOSS, may_board };
+    vec![seen(2, view(&captains), true), seen(5, view(&captains[..1]), false)]
 }
 
 /// The captain of the fight the client's test reads: a Miniboss of the Grey Tithe.
@@ -411,12 +413,13 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let fight = sea.fights().unwrap().get(0);
     assert_eq!((fight.faction(), fight.rank()), (1, 4), "her captain a Grey Tithe Miniboss");
     assert_eq!(fight.hull(), sailing::HullKind::Brig.number(), "in a Brig");
+    assert!(fight.may_board() && !sea.fights().unwrap().get(1).may_board(), "whether each player may board");
     let numbers =
         |numbers: Option<flatbuffers::Vector<'_, f64>>| -> Option<Vec<f64>> { Some(numbers?.iter().collect()) };
     let alone = sea.fights().unwrap().get(1);
     // A page that knows one captain reads the view whole, the same with others in the fight or without them.
     assert_eq!((fight.player(), numbers(fight.view())), (2, numbers(alone.view())));
-    let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].1.clone(), numbers(fight.others()).unwrap());
+    let (seen, others): (Vec<f64>, Vec<f64>) = (fights_seen()[0].numbers.clone(), numbers(fight.others()).unwrap());
     assert_eq!((others[0], others.len()), (1.0, 1 + 3 + naval::wire::VESSEL_NUMBERS + 4), "one other captain");
     assert!(seen.windows(others.len()).any(|part| part == others), "her numbers as the fight's view holds them");
     assert_eq!((alone.player(), numbers(alone.others())), (5, None), "none, as a room from before others sends it");

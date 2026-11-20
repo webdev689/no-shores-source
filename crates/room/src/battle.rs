@@ -64,8 +64,6 @@ pub struct SeaFight {
     pub events: Vec<Event>,
     pub hostiles: BTreeMap<ShipId, Pirate>,
     pub fought: Vec<PlayerId>,
-    /// The captains whose holds were opened, who lay nothing more when they go down.
-    pub opened: Vec<ShipId>,
     /// What happened between its ticks (a boarding, a scuttling asked for), told with its next tick's.
     pub pending: Vec<Event>,
     /// The swell and the wind where it began, kept while it lasts.
@@ -91,6 +89,28 @@ pub struct Sank {
     pub players: Vec<PlayerId>,
     /// The wind of her fight, which what floats drifts down.
     pub wind: [f64; 2],
+}
+
+/// A captain's ship gone down, sunk or taken (a won ship is scuttled), as the sea tells its hosts once for each: the
+/// water she went down in (its continent's index in the layout; none off every water) and its holder, her rank and
+/// level, and the accounts of the players who fought her that the room keeps.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ShipDown {
+    pub water: Option<usize>,
+    pub holder: world::waters::Holder,
+    pub rank: naval::ranks::Rank,
+    pub level: u8,
+    pub players: Vec<String>,
+}
+
+/// A fighting player's fight as their browser is sent it: the naval crate's numbers, its first captain's commission,
+/// and whether a boarding they asked now would be taken (`Fights::alongside`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct FightSeen {
+    pub player: PlayerId,
+    pub numbers: Vec<f64>,
+    pub captain: Commission,
+    pub may_board: bool,
 }
 
 /// The shares of hull, canvas and men a ship's hurts leave her.
@@ -121,7 +141,6 @@ impl SeaFight {
             events: Vec::new(),
             hostiles,
             fought: Vec::new(),
-            opened: Vec::new(),
             pending: Vec::new(),
         }
     }
@@ -156,6 +175,8 @@ impl SeaFight {
 #[derive(Debug, Default)]
 pub struct Fights {
     pub list: Vec<SeaFight>,
+    /// Each captain going down in a fight its last player left, sunk all the same, told with the next tick's.
+    pub(crate) lost: Vec<Sank>,
 }
 
 impl Fights {
@@ -181,11 +202,23 @@ impl Fights {
         true
     }
 
-    /// A player boards the nearest captain who struck within `BOARD_REACH_M` of their ship, both making less way than
-    /// `BOARD_WAY_M_S`, whose deck holds a crew: she is no longer scuttled for want of boarders. Answers her number and
-    /// her ship as she sailed at sea.
+    /// A player boards the captain `alongside` them: she is no longer scuttled for want of boarders. Answers her number
+    /// and her ship as she sailed at sea.
     pub fn board(&mut self, player: PlayerId) -> Result<(ShipId, Pirate), BoardRefused> {
-        let (fought, crew) = self.of_mut(player).ok_or(BoardRefused::NotFighting)?;
+        let (id, pirate) = self.alongside(player)?;
+        let (fought, _) = self.of_mut(player).ok_or(BoardRefused::NotFighting)?;
+        if let Some(boarding) = fought.fight.board(id) {
+            fought.pending.push(boarding);
+        }
+        Ok((id, pirate))
+    }
+
+    /// The captain a player would board: the nearest who struck within `BOARD_REACH_M` of their ship, both making less
+    /// way than `BOARD_WAY_M_S`, whose deck holds a crew. Answers her number and her ship as she sailed at sea.
+    pub fn alongside(&self, player: PlayerId) -> Result<(ShipId, Pirate), BoardRefused> {
+        let fought =
+            self.list.iter().find(|fought| fought.crews.contains_key(&player)).ok_or(BoardRefused::NotFighting)?;
+        let crew = fought.crews.get(&player).ok_or(BoardRefused::NotFighting)?;
         let own = fought.fight.vessel(crew.ship).filter(|vessel| vessel.damage.fighting());
         let own = own.ok_or(BoardRefused::NotFighting)?.ship;
         let way = |ship: &Ship| libm::hypot(ship.ahead, ship.abeam);
@@ -201,9 +234,6 @@ impl Fights {
             .min_by(|one, other| one.1.total_cmp(&other.1));
         let (id, _, _) = alongside.filter(|_| way(&own) < BOARD_WAY_M_S).ok_or(BoardRefused::NoneAlongside)?;
         let pirate = *fought.hostiles.get(&id).ok_or(BoardRefused::NoneAlongside)?;
-        if let Some(boarding) = fought.fight.board(id) {
-            fought.pending.push(boarding);
-        }
         Ok((id, pirate))
     }
 
@@ -230,13 +260,6 @@ impl Fights {
         }
     }
 
-    /// Her hold opened, she lays nothing more when she goes down.
-    pub fn forget_hold(&mut self, pirate: u32) {
-        if let Some((fought, id)) = self.holding(pirate) {
-            fought.opened.push(id);
-        }
-    }
-
     /// A player leaves their fight afloat: their ship leaves it, with the hurts she keeps.
     pub fn release(&mut self, player: PlayerId) -> Option<[f64; 3]> {
         let kept = self.hurts_of(player).map(|(kept, _)| kept);
@@ -260,6 +283,21 @@ impl Fights {
         if let Some((fought, crew)) = self.of_mut(player) {
             fought.fight.leave(crew.ship);
             fought.crews.remove(&player);
+        }
+        self.drop_empty();
+    }
+
+    /// Ends each fight with no player left in it. A captain of one going down, or struck (scuttled with no boarder),
+    /// goes down all the same, told with the next tick's.
+    fn drop_empty(&mut self) {
+        for fought in self.list.iter().filter(|fought| fought.crews.is_empty()) {
+            for (id, vessel) in &fought.fight.ships {
+                let down = matches!(vessel.damage.state, State::Struck | State::Sinking);
+                let going = down && vessel.command().is_some_and(|it| it.gone.is_none());
+                let Some(pirate) = fought.hostiles.get(id).filter(|_| going) else { continue };
+                let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
+                self.lost.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
+            }
         }
         self.list.retain(|fought| !fought.crews.is_empty());
     }
@@ -402,7 +440,7 @@ impl Fights {
             }
         }
         self.list.retain(|fought| fought.fight.over().is_none());
-        let mut sank = Vec::new();
+        let mut sank = std::mem::take(&mut self.lost);
         for fought in &mut self.list {
             let orders: Vec<(ShipId, Orders)> = fought.crews.values().map(|crew| (crew.ship, crew.orders)).collect();
             let waters = CoastWaters { coasts, swell: &fought.swell };
@@ -416,9 +454,6 @@ impl Fights {
             }
             for event in &fought.events {
                 let Event::Gone { ship, end: End::Sunk } = *event else { continue };
-                if fought.opened.contains(&ship) {
-                    continue;
-                }
                 let (Some(pirate), Some(vessel)) = (fought.hostiles.get(&ship), fought.fight.vessel(ship)) else {
                     continue;
                 };
@@ -440,7 +475,7 @@ impl Fights {
                 fought.crews.remove(&player);
             }
         }
-        self.list.retain(|fought| !fought.crews.is_empty());
+        self.drop_empty();
         (outcomes, sank)
     }
 
@@ -450,18 +485,19 @@ impl Fights {
     }
 
     /// Each fighting player's view of their fight (the naval crate's numbers, their ship as its player's), its lay
-    /// over the fight's waters now, and its first captain's commission.
+    /// over the fight's waters now, its first captain's commission, and whether they may board (`alongside`).
     pub(crate) fn views<'fights>(
         &'fights self,
         coasts: &'fights [Coast],
         time: f64,
-    ) -> impl Iterator<Item = (PlayerId, Vec<f64>, Commission)> + 'fights {
+    ) -> impl Iterator<Item = FightSeen> + 'fights {
         self.list.iter().flat_map(move |fought| {
             fought.crews.iter().map(move |(player, crew)| {
                 let aim = crew.orders.aim;
                 let waters = CoastWaters { coasts, swell: &fought.swell };
-                let view = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), &waters, time);
-                (*player, view, fought.first_captain())
+                let numbers = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), &waters, time);
+                let may_board = self.alongside(*player).is_ok();
+                FightSeen { player: *player, numbers, captain: fought.first_captain(), may_board }
             })
         })
     }

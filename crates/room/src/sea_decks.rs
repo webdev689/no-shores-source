@@ -149,8 +149,7 @@ impl Sea {
             deck.room.tick();
             if deck.won_at.is_none() && deck.room.cleared() {
                 deck.won_at = Some(self.clock);
-                // Her hold is opened: she lays no more when she goes down.
-                self.fights.forget_hold(deck.pirate.id);
+                // Her hold is her boarders', on top of the lot each who fought her takes when she goes down.
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
                 let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind };
                 self.lay_flotsam(&sank, (2, 1));

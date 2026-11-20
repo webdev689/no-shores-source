@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { startWatersRules } from '../rules/watersRules.ts';
 import { BarLayout } from '../plus/barLayout.ts';
 import {
   barOver,
@@ -129,4 +131,17 @@ test('her hull’s losses read as a foe’s: she starts whole at her bar, a bite
 test('a bite’s flash steps down in three: whole, two thirds, a third, then none', () => {
   const steps = [0, 0.07, 0.09, 0.17, 0.23, 0.24].map(flashLeft);
   [1, 1, 2 / 3, 1 / 3, 1 / 3, 0].forEach((left, index) => assert.ok(Math.abs((steps[index] ?? -1) - left) < 1e-12));
+});
+
+test('every ship is named as the rules name her: each faction, each hull', async () => {
+  const module = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
+  const bytes = await readFile(module).catch(() => {
+    throw new Error('room_wasm.wasm is not built: run `npm run wasm` first');
+  });
+  const layout = await readFile(new URL('../../../content/world/layout.json', import.meta.url), 'utf8');
+  const { shipNames } = startWatersRules(new WebAssembly.Module(bytes)).open(layout, []).sea;
+  shipNames.forEach((hulls, faction) =>
+    hulls.forEach((name, hull) => assert.equal(shipName(faction, hull), name, `faction ${faction}, hull ${hull}`)),
+  );
+  assert.equal(shipNames.length, 3, 'the players’, the Tithe’s and the pirates’');
 });

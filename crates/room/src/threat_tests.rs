@@ -57,3 +57,12 @@ fn a_ship_that_will_not_engage_caps_the_pace_by_the_ladder_but_never_holds_it() 
         "one that engages holds"
     );
 }
+
+#[test]
+fn past_the_hold_reach_no_pirate_ahead_slows_the_fastest_pace_and_within_it_one_does() {
+    let reach = hold_reach_m();
+    let most = *crate::sea::PACES.iter().max().unwrap();
+    let ahead = |metres: f64| held_pace(most, [0.0, 0.0], 0.0, [([0.0, -metres], false)]);
+    assert_eq!(ahead(reach + 1.0), most, "past it, she sails at her pace");
+    assert!(ahead(reach - 10.0) < most, "within it, the ladder holds her");
+}

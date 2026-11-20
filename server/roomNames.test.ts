@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { nodeRoom } from './roomNames.ts';
+import { nodeRoom, seaRoom } from './roomNames.ts';
 
 test('a node has one room at each difficulty, by one spelling each', () => {
   assert.deepEqual(nodeRoom('tidewall'), { id: 'tidewall', seas: 0 });
@@ -12,4 +12,13 @@ test('a node has one room at each difficulty, by one spelling each', () => {
   assert.equal(nodeRoom('--elite'), null);
   assert.equal(nodeRoom('tidewall--rough'), null, 'the old names open no second room at a difficulty');
   assert.equal(nodeRoom('tidewall--storm'), null);
+});
+
+test('the sea has one room at each difficulty: sea, sea--elite and sea--abyss', () => {
+  assert.equal(seaRoom('sea'), 0);
+  assert.equal(seaRoom('sea--elite'), 1);
+  assert.equal(seaRoom('sea--abyss'), 2);
+  assert.equal(seaRoom('sea--normal'), null, 'Normal is the plain name');
+  assert.equal(seaRoom('sea--abyss--1'), null, 'no fresh copies');
+  assert.equal(seaRoom('node-sea'), null);
 });

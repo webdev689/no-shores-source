@@ -23,7 +23,7 @@ struct SeaParts {
     tick: u64,
     ships: Vec<(PlayerId, room::sea::Ship)>,
     pirates: Vec<room::pirates::Pirate>,
-    fights: Vec<(PlayerId, Vec<f64>, naval::ranks::Commission)>,
+    fights: Vec<room::battle::FightSeen>,
     /// The players in each fight.
     crews: Vec<Vec<PlayerId>>,
     aboard: Vec<(PlayerId, u32, movement::Body)>,
@@ -34,7 +34,7 @@ impl SeaParts {
     fn bytes(
         &self,
         (ships, pirates): (&[(PlayerId, room::sea::Ship)], &[room::pirates::Pirate]),
-        fights: &[(PlayerId, Vec<f64>, naval::ranks::Commission)],
+        fights: &[room::battle::FightSeen],
         harbour: &protocol::SeaHarbour,
     ) -> Vec<u8> {
         protocol::sea_snapshot_bytes(self.tick, ships, pirates, fights, &self.aboard, harbour)
@@ -126,7 +126,7 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                     .collect(),
             };
             // Each player's fight view is theirs alone too.
-            let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.0 == player).cloned().collect();
+            let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
             let (ships, pirates) = parts.near(player);
             parts.bytes((&ships, &pirates), &fights, &harbour)
         }

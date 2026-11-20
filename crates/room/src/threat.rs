@@ -32,6 +32,18 @@ pub fn metres_to_reach(east: f64, south: f64, reach: f64, [way_east, way_south]:
     if enter >= 0.0 { enter } else { f64::INFINITY }
 }
 
+/// The fastest closing of a voyage and a pirate, metres a second: the ship's way and the fastest rank's, so the
+/// warning holds whoever comes.
+const CLOSING_M_S: f64 = SHIP_SPEED_M_S + PIRATE_WAY_M_S * FASTEST_WAY;
+
+/// How far off a pirate may hold a voyage at its fastest pace, metres: her reach, and the warning at that pace closing
+/// as fast as any rank can. Past it no pirate slows her.
+#[must_use]
+pub fn hold_reach_m() -> f64 {
+    let most = crate::sea::PACES.iter().copied().max().unwrap_or(1);
+    REACH_M + WARN_S * CLOSING_M_S * f64::from(most)
+}
+
 /// A rate down DFO's ladder of paces, by whole fives: none under five, where `held_pace` keeps to `FOE_PACE`.
 #[must_use]
 pub fn step_down(rate: f64) -> f64 {
@@ -47,13 +59,11 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
         return 0;
     }
     let way = [libm::sin(heading), -libm::cos(heading)];
-    // The fastest rank's way, so the warning holds whoever comes.
-    let closing = SHIP_SPEED_M_S + PIRATE_WAY_M_S * FASTEST_WAY;
     let (mut ratio, mut held) = (f64::INFINITY, false);
     for ([x, y], engages) in pirates {
         let (east, south) = (x - at[0], y - at[1]);
         held |= engages && (east * east + south * south).sqrt() <= HOSTILE_NEAR_M;
-        ratio = ratio.min(metres_to_reach(east, south, REACH_M, way) / (WARN_S * closing));
+        ratio = ratio.min(metres_to_reach(east, south, REACH_M, way) / (WARN_S * CLOSING_M_S));
     }
     if held {
         return 1;

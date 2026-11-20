@@ -1,6 +1,6 @@
 // The friendly ships the waters' traffic sails between the port cities, as the page draws them at sea and from land:
 // asked of the waters' rules a few times a second round the eye at world time, moved smoothly between answers along
-// their way, each drawn as her hull in friendly colours, her sails set and filled, posed on the swell.
+// their way, each drawn as her hull in friendly colours, her sails set and filled (furled at anchor), posed on the swell.
 import type { ShipMark } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
@@ -125,7 +125,7 @@ export class FriendlyShips {
   }
 
   /** Each ship as the ships layer draws her, `scale` times her size, in friendly colours, her sails set and filled by
-   *  the wind blowing toward `windBearing`, posed on `water`'s swell at `time`. */
+   *  the wind blowing toward `windBearing` (furled at anchor), posed on `water`'s swell at `time`. */
   drawn(
     ships: readonly FriendlySailing[],
     scale: number,
@@ -135,7 +135,7 @@ export class FriendlyShips {
     time: number,
   ): DrawnShip[] {
     return ships.map((ship) => {
-      const wind = { offDeg: windOff(ship.heading, windBearing), set: true };
+      const wind = { offDeg: windOff(ship.heading, windBearing), set: !ship.lying };
       let rig = this.rigs.get(ship.id);
       if (!rig) {
         rig = new SailRig(hullSails(ship.hull));
