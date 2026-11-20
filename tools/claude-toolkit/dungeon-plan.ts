@@ -130,10 +130,15 @@ function overview(index: number, toward: readonly number[] | null, label: string
   const room = layout.rooms[index];
   if (!room) return;
   const middle = toward ?? [(room.x + room.width / 2) * layout.cell, (room.y + room.depth / 2) * layout.cell];
-  // A doorway's cell would put the camera behind the player out in the corridor.
+  // A doorway's cell would put the camera behind the player out in the corridor, and rock inside a room can stand
+  // between a cell and what it faces.
   const doorways = new Set(layout.frames.map(([cell]) => cell));
   const open = roomCells(index).filter((cell) => clear(centreOf(layout, cell)));
-  const own = open.some((cell) => !doorways.has(cell)) ? open.filter((cell) => !doorways.has(cell)) : open;
+  const prefer = (cells: number[], keep: (cell: number) => boolean) => (cells.some(keep) ? cells.filter(keep) : cells);
+  const own = prefer(
+    prefer(open, (cell) => seen(centreOf(layout, cell), middle)),
+    (cell) => !doorways.has(cell),
+  );
   const far = (cell: number) => distance(centreOf(layout, cell), middle);
   const spot = own.reduce((best, cell) => (far(cell) > far(best) ? cell : best), own[0] ?? 0);
   const from = centreOf(layout, spot);
