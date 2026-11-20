@@ -54,6 +54,13 @@ export function windowRect(ring: readonly Point[]): Rect {
   ];
 }
 
+/** The middle of a node's spawns, or its centre where it has none. */
+function spawnsMiddle(node: NodeInfo): Point {
+  if (node.spawns.length === 0) return node.centre;
+  const sum = node.spawns.reduce<[number, number]>((total, [east, south]) => [total[0] + east, total[1] + south], [0, 0]);
+  return [sum[0] / node.spawns.length, sum[1] / node.spawns.length];
+}
+
 /** A city's social space as a node: `<city id>-social`, named for its city, its plaza's section and spawns. */
 export function socialNode(plan: CityPlan, continent: string): NodeInfo {
   const { ring, spawns, stations = [], visitor_spots: visitorSpots = [] } = plan.social;
@@ -101,10 +108,11 @@ export function clearedBy(pads: readonly Pad[]): (x: number, y: number) => boole
     pads.some(({ bounds: [west, north, east, south] }) => x >= west && x <= east && y >= north && y <= south);
 }
 
-/** The way a player faces on arriving in a node: in a city's social space, out from its landmark over the city;
- *  elsewhere, inland, the way they came ashore from `from` (their ship), or north with nowhere to come from. */
+/** The way a player faces on arriving in a node: in a city's social space, out from its landmark through the middle
+ *  of its spawns, over the city, however far its ring reaches elsewhere; elsewhere, inland, the way they came ashore
+ *  from `from` (their ship), or north with nowhere to come from. */
 export function arrivalFacing(node: NodeInfo, plan: CityPlan | null, from: Point | null): number {
   const spawn = node.spawns[0] ?? node.centre;
-  if (node.kind === 'social' && plan) return bearingTo(plan.centre, node.centre);
+  if (node.kind === 'social' && plan) return bearingTo(plan.centre, spawnsMiddle(node));
   return from && Math.hypot(spawn[0] - from[0], spawn[1] - from[1]) > 1 ? bearingTo(from, spawn) : 0;
 }

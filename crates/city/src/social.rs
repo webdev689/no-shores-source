@@ -53,13 +53,25 @@ pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4
 }
 
 /// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
-/// looks out over the city to the sea.
+/// looks out over the city to the sea. The city of the hub (`hub::HUB_CITY`) lays its own on it.
 #[must_use]
-pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], landmark: &Landmark) -> Social {
+pub fn plaza(
+    city_id: &str,
+    ground: &Ground,
+    centre: [f64; 2],
+    level: f64,
+    seaward: [f64; 2],
+    landmark: &Landmark,
+) -> Social {
     let (bounds, along_seaward) = plaza_bounds(centre, seaward, landmark.reach);
     let (extent_x, extent_y) = (bounds[2] - bounds[0], bounds[3] - bounds[1]);
     let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
     let depth = if along_seaward[0] == 0.0 { extent_y } else { extent_x };
+    let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
+    if city_id == crate::hub::HUB_CITY {
+        let frame = Frame { middle, seaward: along_seaward, depth, length, level };
+        return crate::hub::overlook(ground, &frame, bounds);
+    }
     // The section is the plaza's own edge, along the parapet's middle: the floor is walked right to the parapet to look
     // down over it, and only climbing onto it or over it warns.
     let ring = vec![[bounds[0], bounds[1]], [bounds[2], bounds[1]], [bounds[2], bounds[3]], [bounds[0], bounds[3]]];
@@ -94,7 +106,6 @@ pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], l
         [extent_x, extent_y, 0.05],
         Material::Paving,
     ));
-    let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
     let frame = Frame { middle, seaward: along_seaward, depth, length, level };
     solids.extend(courtyard(&frame));
     let (stations, stalls) = stations(&frame);

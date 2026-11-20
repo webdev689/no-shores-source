@@ -3,25 +3,43 @@
 //! walked, so only what stands round it is ever asked for.
 
 use crate::Plan;
-use crate::solids::{Material, Solid};
+use crate::solids::{Material, Shape, Solid};
 
 /// A box a body runs into: west, north, east and south edges, its top and its underside, metres.
 pub type Box2 = [f64; 6];
 
 /// Solids lower than this over their foot are stepped over and left out, metres.
 const LEAST_HEIGHT_M: f64 = 0.3;
+/// An arch's opening as a share of its width, as the page draws it (`solidMesh.ts`, `OPENING_WIDTH`).
+const ARCH_OPENING_WIDTH: f64 = 0.8;
+
 /// A solid as a box, its underside where it really is: a roof, a lintel or a hung lamp over the floor is walked under.
-/// Natural rock is its parts' boxes, so a body walks under a cave roof and through a rock arch.
+/// Natural rock and a module are their parts' boxes (a module's surfaces after its first carry none), so a body walks
+/// under a cave roof, through a rock arch and into a stall; an arch is its jambs and the head over its crown, so a
+/// body walks through it.
 fn into_boxes(solid: &Solid) -> Vec<Box2> {
     if solid.material == Material::Paving || solid.size[2] < LEAST_HEIGHT_M {
         return Vec::new();
     }
-    let rock = crate::rock::boxes(solid);
-    if !rock.is_empty() {
-        return rock;
+    if crate::rock::is_rock(solid.shape) {
+        return crate::rock::boxes(solid);
     }
-    let [west, north, east, south, bottom, top] = solid.bounds();
-    vec![[west, north, east, south, top, bottom]]
+    let own = |part: [f64; 6]| {
+        let [west, north, east, south, bottom, top] = solid.bounds_of(part);
+        [west, north, east, south, top, bottom]
+    };
+    let [width, depth, height] = solid.size;
+    let (half_width, half_depth) = (width / 2.0, depth / 2.0);
+    if let Shape::Arch { opening } = solid.shape {
+        let radius = half_width * ARCH_OPENING_WIDTH;
+        let crown = opening.clamp(0.05, 0.95) * height;
+        return vec![
+            own([-half_width, -half_depth, 0.0, -radius, half_depth, height]),
+            own([radius, -half_depth, 0.0, half_width, half_depth, height]),
+            own([-radius, -half_depth, crown, radius, half_depth, height]),
+        ];
+    }
+    vec![own([-half_width, -half_depth, 0.0, half_width, half_depth, height])]
 }
 
 /// The plan's solids reaching into `bounds` (west, north, east, south), as boxes.
@@ -60,6 +78,28 @@ mod tests {
         let column = Solid::upright(Shape::Block, [0.0, 0.0, 10.0], [1.0, 1.0, 6.0], Material::Stone);
         assert_eq!(into_boxes(&roof), vec![[-5.0, -40.0, 5.0, 40.0, 19.0, 16.0]]);
         assert_eq!(into_boxes(&column), vec![[-0.5, -0.5, 0.5, 0.5, 16.0, 10.0]]);
+    }
+
+    #[test]
+    fn an_arch_is_walked_through_under_its_crown() {
+        let arch = Solid::upright(Shape::Arch { opening: 0.8 }, [0.0, 0.0, 0.0], [10.0, 1.0, 10.0], Material::Trim);
+        let boxes = into_boxes(&arch);
+        assert_eq!(boxes.len(), 3, "two jambs and the head");
+        assert!(
+            boxes.iter().all(|&[west, _, east, _, _, bottom]| east <= -4.0 + 1e-9
+                || west >= 4.0 - 1e-9
+                || bottom >= 8.0 - 1e-9)
+        );
+    }
+
+    #[test]
+    fn a_modules_later_surfaces_run_into_nothing() {
+        let Some(number) = crate::modules::number_of("old-stones") else { panic!("the Old Stones are a module") };
+        let standing = crate::modules::solids(number, [0.0, 0.0, 0.0], 0.0);
+        assert!(!into_boxes(&standing[0]).is_empty(), "the first surface carries the parts");
+        for later in &standing[1..] {
+            assert_eq!(into_boxes(later), Vec::<Box2>::new(), "a later surface is no box of its own");
+        }
     }
 
     #[test]
