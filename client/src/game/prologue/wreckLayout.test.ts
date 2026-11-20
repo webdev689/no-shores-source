@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HULL_FIT } from '../../water/hullMask.ts';
+import { HULL_FIT, HULLS } from '../../water/hullMask.ts';
 import { courseOf, inArea, layoutAt, readWreck, rimOf, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
@@ -70,7 +70,7 @@ test('the rim round the ground holds every block and nothing past them, cell for
 });
 
 test("no sea is drawn inside the wreck's hulls or over its rafts: a footprint over every ship and raft", () => {
-  assert.ok(layout.dry.length >= 10 && layout.dry.length <= 12, `${layout.dry.length} footprints`);
+  assert.ok(layout.dry.length >= 10 && layout.dry.length <= HULLS, `${layout.dry.length} footprints`);
   const inside = (x: number, y: number) =>
     layout.dry.some((mask) => {
       const [east, south] = [x - mask.x, y - mask.y];

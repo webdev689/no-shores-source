@@ -30,6 +30,14 @@ export class StripCache<Kept = Strip> {
     return this.bytes;
   }
 
+  /** Lets go the strip at `path`, kept, on its way or failed, so the next ask loads it afresh. */
+  forget(path: string): void {
+    const entry = this.held.get(path);
+    if (!entry) return;
+    this.held.delete(path);
+    this.bytes -= entry.bytes;
+  }
+
   /** Whether a strip at `path` is kept or on its way. */
   has(path: string): boolean {
     return this.held.has(path);
