@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { NoticeStack } from './notices.ts';
+import { NoticeStack, noticesCss } from './notices.ts';
 
 /** The least of a page the stack touches: elements that keep their children in order. */
 class Node {
@@ -51,4 +51,9 @@ test('the notices stand newest last, three at most, and one said again moves to 
   assert.deepEqual(words(stack), ['b', 'c', 'd']);
   stack.show([]);
   assert.equal(stack.root.hidden, true, 'none hides the stack');
+});
+
+test("the notices' right edge lines up with the status chip's, 28 px in from the screen's", () => {
+  const rule = /\.plus-notices \{([^}]*)\}/.exec(noticesCss())?.[1] ?? '';
+  assert.match(rule, /right: 28px/);
 });

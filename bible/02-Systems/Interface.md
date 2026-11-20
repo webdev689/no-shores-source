@@ -35,7 +35,7 @@ code:
   - client/src/combat/foePlate.ts#wardOf
   - client/src/plus/kit.ts#motionReduced
   - client/src/plus/notices.ts#NoticeStack
-  - client/src/ships/fightDisplay.ts#fightNotices
+  - client/src/game/seaWord.ts#SeaWord
   - client/src/ships/shipBars.ts#drawShipBars
   - client/src/ships/shipBars.ts#HullLosses
   - client/src/game/gearScreen.ts#characterOf
@@ -105,9 +105,9 @@ Its words call a ship "it" ([[Ships Are It, Not Her]]).
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
   Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number; an
   Elite's brass chevron and a Miniboss's two.
-- **A hostile ship's mark at sea** is a port's mark in her own dress (`hostileLook`): her faction's emblem in the
-  ring, the ring and its arrow in her rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
-  two chevrons over it as her plate bears them, her name under it and under that "Hostile", her level and her
+- **A hostile ship's mark at sea** is a port's mark in its own dress (`hostileLook`): the ship's faction's emblem in the
+  ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's
+  two chevrons over it as the ship's plate bears them, the ship's name under it and under that "Hostile", its level and its
   distance.
 - **Bars over figures never overlap** (`BarLayout`). Each frame the nearest keeps its place over its figure, in front,
   and each farther one that would cover a bar already placed is lifted just above it. The order changes only when a
@@ -118,13 +118,16 @@ Its words call a ship "it" ([[Ships Are It, Not Her]]).
   the status line is a chip; the menu is a window under a header. At sea, every surface wears its role:
   - sailing: the sea bar (window, rails), the status line (chip), the place line and the hints (the on-foot words,
     outlined), the dock or landing offer and Take the helm (primary); a sighting's hostile marks wear its rank's colour
-    and emblem, and the sighting's words stand in the status line;
+    and emblem; the status line keeps the state alone ("Under way", "Fighting"), and the sea's word (a ship
+    sighted, other waters entered, who joins, colours struck, boarders away, what floats gathered, washing up) stands
+    as notices, DFO's toasts;
   - the fight: the player's plate and the card (panel), the rose's sides (chip), the bars (track and meter), the tally and the
-    broadside warning over the sight (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
-    over her masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line,
-    its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
-  - her deck: the place line (her hold's take on its second line) and the hints, as on foot;
-  - washing up: the status line's words, then the veil's;
+    broadside warning directly under the card at the top's middle (under the compass while no card shows), never over
+    the sight or the ship aimed at (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
+    over its masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in
+    as the chip's, its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
+  - the ship's deck: the place line (the ship's hold's take on its second line) and the hints, as on foot;
+  - washing up: its notice, then the veil's own words;
   - Manage's panel: a window under a header, each part's heading ruled, Back to the sea a button on its footer;
   - what floats: the Acquired feed's rows and the gold marks over the water;
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
@@ -144,13 +147,13 @@ at. On foot the hints stand
   a 2 px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals
   larger) stand by the bearing the view looks at, the shortest way round; one off the strip is hidden, never held at
   an end. A brass needle marks its middle. Its column stands what comes under it 10 px under its rule, 56 px down:
-  a boss's bar, then the target's plate. At sea it marks each hostile ship within her own sight (5 km at the helm,
+  a boss's bar, then the target's plate. At sea it marks each hostile ship within its own sight (5 km at the helm,
   farther with the voyage's pace, [[Naval Combat]], "At sea") and every other ship within 900 m on its top edge, a
   bow pointing up,
-  at her bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
-  on the side to turn toward. She is red while she would take the player (a hostile ship, or a hostile captain in
+  at its bearing on the same quarter turn, so one north-east stands under NE; one off the strip is held at the end
+  on the side to turn toward. A mark is red while its ship would take the player (a hostile ship, or a hostile captain in
   the fight), bone for another player's or a captain who is not hostile, Overlook's blue (`#2f5d9a`) for a
-  friendly ship of the traffic, and grey once her colours are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
+  friendly ship of the traffic, and grey once its colours are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** are one window at the bottom left, three tracks in it (health, stamina, poise), each naming itself and
   writing its percentage inside: never 0% while anything is left. Where the HUD is wide (1500 by 900 and up) the window
   is 330 px wide, health and stamina 33 px tall and their words at 22, and the ability bar beside it grows with it. Health at a quarter or less flashes its edge to blood;
@@ -216,8 +219,8 @@ at. On foot the hints stand
   name above a long thin track, the meter in its rank's colour. Over each foe, the soft lock's (with its poise under
   the health) and the boss bar's are this one plate at three sizes. Ships' plates are drawn alike on an SVG, at the
   same sizes (`PLATES`): 140 by 26 px over a figure, and the boss bar 640 px wide at most, three quarters of a
-  narrower screen, its faction after its name. A ship's hull reads its losses as a foe's health does, and her bar's
-  edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first seen starts whole at her bar.
+  narrower screen, its faction after its name. A ship's hull reads its losses as a foe's health does, and its bar's
+  edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first seen starts whole at its bar.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
@@ -329,8 +332,8 @@ never while a press is held. Each press is an ask the room answers.
   toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
   loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
-- **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
-  while she is at sea; her cargo and crew marked Later.
+- **Ship.** The Sloop's details, as Manage shows them at sea: its hull, canvas, guns, loads and measure; its voyage
+  while it is at sea; its cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
   Roster"): three columns, Game, Friends and Guild, each a page of fourteen rows, fewer where the screen is too short
   to show them without scrolling, with arrows between pages; its empty rows kept so each column keeps its length. Game holds invites to a company, then the company (its leader marked with a
@@ -395,19 +398,26 @@ The Test Ground makes its own sound at full volume on the first click into its v
 In a sea fight the display shows DFO's helm readout in the Plus kit (`plus/seaFight.ts`), made once and updated each
 frame, never pressed, from the fight's first frame to its last, at sea (`Hud.seaFight`) and in the World Editor's
 fight (`ships/fightOverlay.ts`); on a struck ship's deck it gives way to the fight on foot's display ([[Naval Combat]]).
-The fight's panel leaves her own hurts and guns to it:
+The fight's panel leaves the Sloop's own hurts and guns to it:
 
-- **Her plate**, at the bottom right, 272 px wide: "Your Sloop", her hull, sails and crew as bars cut in ten bands
-  (hull red, canvas bone, crew green), an "On fire" chip while she burns and a "Braced" chip while she braces.
+The plate and the card are the on-foot HUD's own build, so the sea reads as the same HUD: both wear the kit's bar sheet
+(`plus/barSheet.ts`, worn on foot by `combat/hudSheet.ts` too) and its bar (`plus/meter.ts`, with its lost strip and
+falling pieces).
+
+- **The Sloop's plate**, at the bottom right, is the vitals' window (as `combat/vitals.ts` builds it): three labelled
+  bars, Hull, Sails and Crew, each with its name and its percentage written inside it (hull red as health, sails bone,
+  crew green as stamina), the hull's frame flashing blood at a quarter or less as health's does; an "On fire" chip while
+  it burns and a "Braced" chip while it braces, the kit's chips.
 - **The battery rose** on the plate: bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
   loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
-  blow came from (bow, stern, port or starboard, by where it struck her) is outlined red for 1.4 s.
-- **The card**, centred under the compass, 400 px wide at most, on the ship the look is on (while her guns are laid,
-  the captain nearest where they fall; else the nearest captain): her name, her class and how far
-  ("Brig - 70 m"), her hull and sail bars, and her state: "Hostile", "Colors struck", "Colors struck - E: board"
-  once she can be boarded, or "Going down". The ships' plates keep under it while it shows, as under the compass.
-- **The tally**, under the middle of the screen, for 4 s once her last volley's last ball is down: "3 of 6 balls
+  blow came from (bow, stern, port or starboard, by where it struck the Sloop) is outlined red for 1.4 s.
+- **The card**, centred under the compass, is the target's plate (as `combat/foePlate.ts` builds it), light and never a
+  box, on the ship the look is on (while the Sloop's guns are laid, the captain nearest where they fall; else the nearest
+  captain): its faction's emblem framed, its name, one hull bar in its rank's colour (an ally's blue), and as small
+  words its class and how far ("Brig - 70 m") and its state: "Hostile", "Colors struck", "Colors struck - E: board"
+  once it can be boarded, or "Going down". The ships' plates keep under it while it shows, as under the compass.
+- **The tally**, under the middle of the screen, for 4 s once the Sloop's last volley's last ball is down: "3 of 6 balls
   struck - 1 below the waterline - 2 in the rigging".
 
 ## The social space's counters

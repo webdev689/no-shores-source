@@ -91,7 +91,7 @@ test('ships are marked within 900 m of the player, and none farther', () => {
   });
 });
 
-test('a hostile ship is marked as far off as she is sighted, and no farther', () => {
+test('a hostile ship is marked as far off as it is sighted, and no farther', () => {
   const from: [number, number] = [0, 0];
   const far = { x: 12_000, y: 0, kind: 'hostile', rangeM: 25_920 } as const;
   const past = { x: 30_000, y: 0, kind: 'hostile', rangeM: 25_920 } as const;

@@ -1,8 +1,8 @@
 // A bar of the fight's display: its trough and fill in the kit's roles, and behind the fill what it last lost. As DFO's
 // Enhanced HUD did, a strip holds where the bar stood for a moment after a loss and then drains to it, and a real bite
 // breaks off the bar as a piece that falls, so a blow reads as how much it took and not only where it left the bar.
-import { bitten, type Loss, pieceAt, stepLoss } from '../plus/barLoss.ts';
-import { motionReduced, ROLES } from '../plus/kit.ts';
+import { bitten, type Loss, pieceAt, stepLoss } from './barLoss.ts';
+import { motionReduced, ROLES } from './kit.ts';
 
 const percent = (share: number) => `${Math.round(Math.max(0, Math.min(1, share)) * 1000) / 10}%`;
 
@@ -85,3 +85,9 @@ export class Meter {
     });
   }
 }
+
+/** A bar warns low (the vitals' health, a ship's hull) with some left but no more than this share of it. */
+export const LOW_SHARE = 0.25;
+
+/** Whether a bar at `share` warns low. */
+export const lowShare = (share: number): boolean => share > 0 && share <= LOW_SHARE;

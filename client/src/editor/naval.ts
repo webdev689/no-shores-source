@@ -240,6 +240,11 @@ export class Naval {
     return this.calling ? ['Calling a captain…'] : [];
   }
 
+  /** The fight's messages standing at `now` (`Fighting.messages`); none out of a fight. */
+  messages(now: number): string[] {
+    return this.fight?.messages(now) ?? [];
+  }
+
   /** The fight's readout at `now` (`fightDisplay`): her plate and rose, the card on the nearest captain with `board`'s
    *  key while she can be boarded, and her last volley's tally; none out of a fight. */
   display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {

@@ -3,7 +3,7 @@ import { motionReduced } from '../plus/kit.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe } from './foePlate.ts';
-import { element } from './meter.ts';
+import { element } from '../plus/meter.ts';
 import { coneStep, coneWant, offDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
 
 export type { MarkedFoe } from './foePlate.ts';

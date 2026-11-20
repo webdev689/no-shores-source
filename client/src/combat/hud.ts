@@ -12,7 +12,7 @@ import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { wearFightSheet } from './hudSheet.ts';
-import { element } from './meter.ts';
+import { element } from '../plus/meter.ts';
 import { cameraOf, plateScale, SIGHT_SKIN_M } from './plateSight.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { BOSS_RANK } from '../rules/roster.ts';

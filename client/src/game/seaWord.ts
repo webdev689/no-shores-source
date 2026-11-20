@@ -11,10 +11,10 @@ import type { SeaRoom } from './seaRoom.ts';
 import type { Kept } from './shipPanel.ts';
 import type { PortCity } from './worldData.ts';
 
-/** How long the latest of these lines stands in the sea's status line, seconds. */
+/** How long each of these lines stands as a notice, seconds. */
 const LINE_S = 6;
 
-/** What E asks of the sea in a fight, and asks it: from her won deck, to go back aboard the player's own ship; off
+/** What E asks of the sea in a fight, and asks it: from a won deck, to go back aboard the player's own ship; off
  *  any deck, to board a captain who struck alongside, as the sea says they may; else nothing. */
 export function fightAsk(sea: {
   readonly boarding: { readonly onDeck: boolean; readonly won: boolean };
@@ -26,7 +26,7 @@ export function fightAsk(sea: {
   return ask;
 }
 
-/** A key pressed on her deck: E asks the sea (to leave her won deck), Enter respawns, and the menu's keys are the
+/** A key pressed on a struck ship's deck: E asks the sea (to leave the won deck), Enter respawns, and the menu's keys are the
  *  game's; every other is the fight's on foot, so the sea's own (a voyage, the pace, the map) wait. Answers whether
  *  it was taken here. */
 export function deckKey(key: string, sea: Parameters<typeof fightAsk>[0] | null, respawn: () => void): boolean {
@@ -56,7 +56,7 @@ export function washedUpWords(port: string, isle = false): string {
 }
 
 /** What the lines are told with: each piece's look by its number, the port cities' names in the sea's order, and a
- *  ship of the fight's name by the number its events give her (null for one not in it). */
+ *  ship of the fight's name by the number its events give it (null for one not in it). */
 export interface WordsOf {
   readonly kinds: ReadonlyMap<number, string>;
   readonly ports: readonly string[];
@@ -109,7 +109,7 @@ export class SeaWord {
    *  they washed up on, by its number. */
   private washed: number | null = null;
   private washedIsle: number | null = null;
-  private latest: { readonly line: string; readonly at: number } | null = null;
+  private said: { readonly line: string; readonly at: number }[] = [];
 
   /** `ports` the port cities in the sea's order; `facts` the sea's rules as its waters' table gives them. */
   constructor(ports: readonly PortCity[], facts: SeaFacts) {
@@ -130,15 +130,18 @@ export class SeaWord {
     return linesOf(told, naval, { kinds: this.kinds, ports, nameOf: (ship) => room.shipNamed(ship) });
   }
 
-  /** The sea's status line at `now`: the latest line of the room's word while it stands, else `base`. */
-  note(base: string, room: SeaRoom | null, now: number): string {
-    const lines = room ? this.step(room) : [];
-    const latest = lines.at(-1);
-    if (latest) this.latest = { line: latest, at: now };
-    return this.latest && now - this.latest.at < LINE_S ? this.latest.line : base;
+  /** The notices of the room's word standing at `now`, the newest last: each line for `LINE_S`. */
+  notices(room: SeaRoom | null, now: number): string[] {
+    const fresh = (room ? this.step(room) : []).map((line) => ({ line, at: now }));
+    // A line said again stands newest, once, as the fight's messages keep theirs.
+    const again = new Set(fresh.map((each) => each.line));
+    this.said = [...this.said.filter((each) => !again.has(each.line)), ...fresh].filter(
+      (each) => now - each.at < LINE_S,
+    );
+    return this.said.map((each) => each.line);
   }
 
-  /** Once the landmass holding the port city she washed up at is open, its social space to walk into, standing there
+  /** Once the landmass holding the port city the player washed up at is open, its social space to walk into, standing there
    *  as on arriving, and the veil's words saying why; taken once. */
   ashore<Node extends { readonly id: string }>(landmass: {
     readonly id: string;
@@ -159,14 +162,14 @@ export class SeaWord {
     return isle;
   }
 
-  /** Her repair as Manage offers it, from the room's word on her kept hurts. */
+  /** The ship's repair as Manage offers it, from the room's word on its kept hurts. */
   static repairOf(room: SeaRoom): RepairShown | null {
     const kept = room.kept;
     if (!kept) return null;
     return { whole: kept.hull >= 1 && kept.sail >= 1 && kept.crew >= 1, left: kept.repairLeft };
   }
 
-  /** Her kept hurts and repair as Manage's panel shows them; none out of the sea room. */
+  /** The ship's kept hurts and repair as Manage's panel shows them; none out of the sea room. */
   keptOf(room: SeaRoom | null): Kept | null {
     const kept = room?.kept;
     if (!kept || !room) return null;
