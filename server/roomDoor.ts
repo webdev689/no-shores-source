@@ -103,9 +103,6 @@ export interface RoomDoor {
   /** A patrol's dungeon by its patrol's id and name and its number, as JSON (crates/room-wasm/src/dungeon_door.rs),
    *  or "null" for an ask that does not read. */
   dungeon(patrol: string, name: string, number: number): string;
-  /** A dungeon laid by a seed and a style's key where no patrol lays it (a sea island's), named for its place `name`,
-   *  as `dungeon` answers it; "null" for a style that is none. */
-  dungeonOf(seed: number, style: string, name: string): string;
   /** A dungeon by any ask `room_dungeon` reads (a patrol's, an Elite Dungeon's place, or a seed and a style), as JSON;
    *  "null" for one that does not read. */
   layout(ask: string): string;
@@ -250,10 +247,6 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
     dungeon: (patrol, name, number) => {
       const bytes = new TextEncoder().encode(JSON.stringify({ patrol, name, number }));
-      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
-    },
-    dungeonOf: (seed, style, name) => {
-      const bytes = new TextEncoder().encode(JSON.stringify({ name, seed: seed >>> 0, style }));
       return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
     },
     layout: (ask) => {

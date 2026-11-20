@@ -109,6 +109,20 @@ export class LocalRoom implements RoomLink {
     return new LocalRoom(door, snapshot, gear);
   }
 
+  /** Opens a dungeon's run from its ask (as `RoomDoor.openRun` reads it) from the compiled `room-wasm` module, its
+   *  player joined at its way in; the player's own gear goes to `gear`. */
+  static openRun(
+    module: WebAssembly.Module,
+    ask: string,
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.openRun(ask)) throw new Error('the run is not one a room can stand in');
+    door.minute(Math.floor(Date.now() / 60_000));
+    return new LocalRoom(door, snapshot, gear);
+  }
+
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
    *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default. */
   static openSea(

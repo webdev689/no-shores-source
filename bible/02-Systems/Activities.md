@@ -12,6 +12,7 @@ code:
   - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/abyss.rs#start_over
   - crates/room-wasm/src/run_door.rs#open_run
+  - client/src/game/activities.ts#eliteRun
 ---
 # Activities
 

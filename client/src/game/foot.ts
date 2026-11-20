@@ -223,7 +223,7 @@ export class Foot {
     seas: Difficulty = 'normal',
   ): Promise<Foot> {
     const { module, rules } = await rulesOf(context);
-    standInDungeon(context.movement, rules.combat, patrol.node, number);
+    standInDungeon(context.movement, rules.combat, { patrol: patrol.node.id, name: patrol.node.name, number });
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
     const address = context.rooms?.(dungeonRoom(patrol.node, seas, number));
     const dungeon = { patrol: patrol.node, number, layout };

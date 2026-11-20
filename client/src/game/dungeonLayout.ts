@@ -1,5 +1,5 @@
-// A patrol's dungeon as the page reads it: room-wasm's `room_dungeon` answer, and what the movement rules and the
-// camera stand on in it.
+// A dungeon as the page reads it: room-wasm's `room_dungeon` answer, and what the movement rules and the camera stand
+// on in it.
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 import type { Block } from '../rules/movementRules.ts';
 
@@ -98,32 +98,36 @@ const ROCK_TOP_M = 12;
 const doors = new WeakMap<WebAssembly.Module, ReturnType<typeof startRoomDoor>>();
 const laid = new Map<string, DungeonLayout>();
 
-/** A dungeon laid by `seed` and the style keyed `style` where no patrol lays it (a sea island's), named for its place
- *  `name`, by the room module's own rules; a style that is none throws. */
-export function askDungeonOf(module: WebAssembly.Module, seed: number, style: StyleKey, name: string): DungeonLayout {
-  const key = `${seed}\n${style}\n${name}`;
+/** Which dungeon, as the room module's `room_dungeon` and `fighter_dungeon` read it: a patrol's by its number, an
+ *  Elite Dungeon by its place, or one laid by a seed and a style (a sea island's); each with its place's name. */
+export type DungeonAsk =
+  | { readonly patrol: string; readonly name: string; readonly number: number }
+  | { readonly place: string; readonly name: string }
+  | { readonly seed: number; readonly style: StyleKey; readonly name: string };
+
+/** The dungeon an ask names, laid by the room module's own rules; an ask it does not answer throws. */
+export function askLayout(module: WebAssembly.Module, ask: DungeonAsk): DungeonLayout {
+  const key = JSON.stringify(ask);
   const known = laid.get(key);
   if (known) return known;
   const door = doors.get(module) ?? startRoomDoor(module);
   doors.set(module, door);
-  const layout = readDungeon(door.dungeonOf(seed, style, name));
-  if (!layout) throw new Error(`no ${style} dungeon from seed ${seed}`);
+  const layout = readDungeon(door.layout(key));
+  if (!layout) throw new Error(`no dungeon is laid for ${key}`);
   laid.set(key, layout);
   return layout;
+}
+
+/** A dungeon laid by `seed` and the style keyed `style` where no patrol lays it (a sea island's), named for its place
+ *  `name`, by the room module's own rules; a style that is none throws. */
+export function askDungeonOf(module: WebAssembly.Module, seed: number, style: StyleKey, name: string): DungeonLayout {
+  return askLayout(module, { seed: seed >>> 0, style, name });
 }
 
 /** The dungeon `number` of the patrol `patrol` (its id) named `name`, laid by the room module's own rules; an ask it
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {
-  const key = `${patrol}\n${name}\n${number}`;
-  const known = laid.get(key);
-  if (known) return known;
-  const door = doors.get(module) ?? startRoomDoor(module);
-  doors.set(module, door);
-  const layout = readDungeon(door.dungeon(patrol, name, number));
-  if (!layout) throw new Error(`${patrol} has no dungeon ${number}`);
-  laid.set(key, layout);
-  return layout;
+  return askLayout(module, { patrol, name, number });
 }
 
 /** A dungeon as the room module answers it, null for none. A module older than the landmarks answers none of them

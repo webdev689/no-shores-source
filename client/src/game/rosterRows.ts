@@ -45,15 +45,19 @@ export function placeWords(place: string | null): string {
   if (place === 'sea') return 'At sea';
   const node = nodeOfRoom(place);
   if (!node) return 'Playing';
-  const { id, seas } = node;
+  const { id, seas, dungeon, run } = node;
   const city = id.endsWith('-social') ? id.slice(0, -'-social'.length) : id;
   const name = city.replace(
     /(^|-)([a-z])/g,
     (_whole, gap: string, first: string) => `${gap ? ' ' : ''}${first.toUpperCase()}`,
   );
+  const tierName = `${seas[0]?.toUpperCase()}${seas.slice(1)}`;
+  // An Elite Dungeon's run says which it is, the week's by its own tier.
+  if (run !== null && dungeon === null)
+    return [name, seas === 'normal' ? 'Elite Dungeon' : `${tierName} Dungeon of the week`].join(' · ');
   // "difficulty" keeps an Elite voyage apart from an Elite foe.
-  const tier = seas === 'normal' ? [] : [`${seas[0]?.toUpperCase()}${seas.slice(1)} difficulty`];
-  return [name, ...(node.dungeon === null ? [] : ['Dungeon']), ...tier].join(' · ');
+  const tier = seas === 'normal' ? [] : [`${tierName} difficulty`];
+  return [name, ...(dungeon === null ? [] : ['Dungeon']), ...tier].join(' · ');
 }
 
 /** A name with its guild's tag, as Destiny shows one: `Ada [SWK]`. */

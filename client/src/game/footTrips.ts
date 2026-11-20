@@ -1,6 +1,6 @@
 // Going into a patrol's dungeons and out again on foot: what E offers at an entrance's door or a dungeon's exit
 // door, and the place a dungeon is played as.
-import { askDungeon, type DungeonLayout } from './dungeonLayout.ts';
+import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -50,12 +50,12 @@ export function dungeonPlace(patrol: NodeInfo, layout: DungeonLayout): NodeInfo 
   };
 }
 
-/** Stands the fight's rules on dungeon `number` of `patrol` as its room stands its bodies, on the dungeon's own
- *  ground; the movement rules, which only find the floor, on open ground at 0 m with no course. */
-export function standInDungeon(movement: MovementRules, combat: CombatRules, patrol: NodeInfo, number: number): void {
+/** Stands the fight's rules on the dungeon an ask names as its room stands its bodies, on the dungeon's own ground;
+ *  the movement rules, which only find the floor, on open ground at 0 m with no course. */
+export function standInDungeon(movement: MovementRules, combat: CombatRules, ask: DungeonAsk): void {
   movement.setCourse([]);
   movement.setGround(null);
-  if (!combat.setDungeon(patrol.id, patrol.name, number)) throw new Error('the dungeon’s ground did not load');
+  if (!combat.setDungeon(ask)) throw new Error('the dungeon’s ground did not load');
 }
 
 /** A patrol's entrances as its room last gave them, and each one's dungeon's name, asked of the room's module once. */

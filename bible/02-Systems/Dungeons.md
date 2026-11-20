@@ -41,6 +41,7 @@ code:
   - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
   - client/src/game/dungeonLayout.ts#askDungeonOf
+  - client/src/game/dungeonLayout.ts#askLayout
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
   - client/src/game/dungeonLight.ts#lightAt
@@ -274,9 +275,10 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 
 ## In the Game
 
-The page reads a dungeon from the room module's own `room_dungeon` (`askDungeon`) and plays it as [[Game]] says ("A
-dungeon"). A module older than the landmarks answers no landmarks or glows, and is read as standing none
-(`readDungeon`).
+The page reads a dungeon from the room module's own `room_dungeon` by one ask (`askLayout`, a `DungeonAsk`: a
+patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it is; or a seed and a style,
+`askDungeonOf`) and plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks
+or glows, and is read as standing none (`readDungeon`).
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the

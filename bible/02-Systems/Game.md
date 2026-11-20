@@ -340,6 +340,11 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
   the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
   alone, the room in the page keeps no gear.
+- **A run's room** ([[Activities]]) is its dungeon's room's name and an instance (`runOf`): eight letters or digits
+  the page draws at random (`runInstance`). A company member's run of the same dungeon at the same tier is found
+  among the places a fresh Roster gives the company's members (`companyPlaces`, `sharedRun`), so a company enters
+  one run. The Roster says where a member plays (`placeWords`): a patrol's dungeon with its difficulty, or "Elite
+  Dungeon", "Elite Dungeon of the week" or "Abyss Dungeon of the week".
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as she lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on her
   is taken 60 ticks after her course is sent, a round trip's allowance of a second: until then the page sails her at
