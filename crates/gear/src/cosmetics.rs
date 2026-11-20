@@ -92,7 +92,8 @@ pub fn sold_on(seller: Seller, day: u64) -> Vec<u16> {
         })
         .filter_map(|at| u16::try_from(at).ok())
         .collect();
-    let dice = Dice { seed: day, tick: seller as u64, player: 0 };
+    // A tick of their own, so no day's cosmetics share a roll with its emblems (`emblems::sold_on`, tick 0).
+    let dice = Dice { seed: day, tick: 1 + seller as u64, player: 0 };
     for at in (1..sold.len()).rev() {
         let nth = u32::try_from(at).unwrap_or_default();
         sold.swap(at, dice.pick(Purpose::Cosmetic, nth, at + 1));

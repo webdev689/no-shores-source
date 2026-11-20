@@ -373,11 +373,14 @@ impl Character {
     }
 
     /// Adds what an item dismantled gives back: Aurem, and its stock's fragments and, from a Legendary or Atheric,
-    /// Essence with a third of what was spent on it.
+    /// Essence with a third of what was spent on it. A faction's cape, sold for Aurem, gives back as a Normal piece,
+    /// so buying and dismantling capes makes no Essence.
     pub(crate) fn salvage(&mut self, item: &Item, dice: &Dice) {
         let stock = item.kind.stock();
         let back = u16::try_from(item.essence_spent() / 3).unwrap_or(u16::MAX);
-        let (aurem, fragments, essence) = match item.rarity {
+        let cape = item.named.as_deref().is_some_and(crate::factions::is_cape);
+        let rarity = if cape { Rarity::Normal } else { item.rarity };
+        let (aurem, fragments, essence) = match rarity {
             Rarity::Normal => (20, 0, 0),
             Rarity::Magic => (50, 1, 0),
             Rarity::Rare => (100, if item.level >= NAMED_LEVEL { 3 } else { 2 }, 0),

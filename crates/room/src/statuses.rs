@@ -38,18 +38,28 @@ impl Room {
         }
     }
 
-    /// Each second of the room's clock, every living Linked fighter heals.
+    /// Each second of the room's clock, every living Linked fighter heals, as much as its giver's Sunwell gives at
+    /// the level of the Art it is cast from.
     pub(crate) fn heal_linked(&mut self) {
         if !self.clock.is_multiple_of(HEAL_EVERY) {
             return;
         }
-        let heal = |fighter: &mut Fighter| {
+        let sunwell = gear::arts::arts().arts.iter().find(|art| art.anima.key == "sunwell").map(|art| art.id);
+        let share_of = |giver: Option<crate::FighterId>| {
+            let giver = giver.and_then(|id| self.players.get(&id));
+            giver.zip(sunwell).map_or(1.0, |(found, art)| found.character.art_shares(art).0)
+        };
+        let shares: Vec<f64> =
+            self.players.values().map(|found| share_of(found.fighter.statuses.giver(Status::Linked))).collect();
+        let foes: Vec<f64> =
+            self.foes.values().map(|foe| share_of(foe.fighter.statuses.giver(Status::Linked))).collect();
+        let heal = |fighter: &mut Fighter, share: f64| {
             if fighter.statuses.has(Status::Linked) && !fighter.dead() {
-                fighter.health = (fighter.health + LINKED_HEAL).min(fighter.health_max);
+                fighter.health = (fighter.health + LINKED_HEAL * share).min(fighter.health_max);
             }
         };
-        self.players.values_mut().for_each(|found| heal(&mut found.fighter));
-        self.foes.values_mut().for_each(|foe| heal(&mut foe.fighter));
+        self.players.values_mut().zip(shares).for_each(|(found, share)| heal(&mut found.fighter, share));
+        self.foes.values_mut().zip(foes).for_each(|(foe, share)| heal(&mut foe.fighter, share));
     }
 
     /// A verdict's damage as statuses weigh it: a crit, its striker's Linked (as the striker stands now) and its

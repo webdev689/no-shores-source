@@ -38,6 +38,14 @@ fn every_ask() -> Vec<Asked> {
         Asked::Art(gear::arts::ArtAsk::SetCore { art: 2, slot: 1, fragment: 5 }),
         Asked::Grant(Grant::Ammo(360)),
         Asked::Grant(Grant::Crates(2)),
+        Asked::Gear(Ask::Pledge { faction: 2 }),
+        Asked::Gear(Ask::BuyCape { faction: 3 }),
+        Asked::Gear(Ask::CollectPackage { faction: 1 }),
+        Asked::Gear(Ask::RiseArt { art: 2, fragment: 4 }),
+        Asked::Gear(Ask::BuyFragment { art: 3, fragment: 5 }),
+        Asked::Gear(Ask::WearCosmetic { cosmetic: 17 }),
+        Asked::Gear(Ask::BuyCosmetic { cosmetic: 26 }),
+        Asked::Gear(Ask::BuyFromShape { ware: 5 }),
     ]
 }
 
@@ -173,4 +181,52 @@ fn the_gear_for_the_clients_test_is_written() {
     std::fs::create_dir_all(folder).expect("the folder");
     let (room, player) = furnished();
     std::fs::write(format!("{folder}/gear.bin"), gear_bytes(&room, player).expect("written")).expect("written");
+}
+
+#[test]
+fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() {
+    let (mut room, player) = furnished();
+    let kept = room.kept_character(player).expect("a player of the room");
+    let mut character = gear::Character::from_json(&kept).expect("a character");
+    character.allegiance.pledge = 2;
+    character.allegiance.reputation = vec![5, 35_000, 0];
+    character.arts.levels = vec![3, 1, 5];
+    character.arts.xp = vec![700, 0, 0];
+    character.arts.owned = Some(vec![0b101, 0, 0b11_1111]);
+    character.keep_cosmetic("ember_plate");
+    character.cosmetics.barding = "ember_plate".to_owned();
+    character.add_shapes(9);
+    assert!(room.restore_character(player, &character.to_json()), "kept again");
+    room.counters = Some(Vec::new());
+    room.shape_spots = vec![[0.0, 0.0]; gear::shape::PLACES];
+    // Friday at noon, UTC, in the week of 1,793,491,200 s after 1970.
+    let friday = 1_793_491_200 / 60 + 19 * 1_440 + 12 * 60;
+    room.set_minute(friday);
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!(gear.pledge(), 2);
+    assert_eq!(gear.reputation().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![5, 35_000, 0]));
+    assert_eq!(gear.packages().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![0, 1, 0]), "rank 3");
+    assert_eq!(gear.art_levels().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![3, 1, 5]));
+    assert_eq!(gear.art_xp().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![700, 0, 0]));
+    assert_eq!(gear.art_owned().map(|each| each.iter().collect::<Vec<_>>()), Some(vec![0b101, 0, 0b11_1111]));
+    let barding = gear::cosmetics::number_of("ember_plate").expect("a barding");
+    assert_eq!((gear.dye(), gear.barding()), (gear::cosmetics::number_of("own_colours").expect("the start"), barding));
+    assert!(gear.cosmetics().is_some_and(|kept| kept.iter().any(|number| number == barding)));
+    assert_eq!(
+        gear.cosmetics_sold().map(|sold| sold.len()),
+        Some(2 * gear::cosmetics::SOLD_A_DAY),
+        "the Tailor's, the Tack's"
+    );
+    assert_eq!(gear.shapes(), 9);
+    let week = gear::shape::week_of(friday);
+    assert_eq!(usize::from(gear.shape_place()), gear::shape::place(week));
+    assert_eq!(gear.shape_minutes(), u32::try_from(gear::shape::minutes_left(friday)).expect("minutes"));
+    let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
+    assert_eq!(wares.len(), gear::shape::WARES);
+    assert_eq!((wares[0].price(), wares[5].price()), (7, 15), "Legendary, then Atheric, in Shapes");
+    room.set_minute(friday - 2 * 1_440);
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    assert_eq!((gear.shape_place(), gear.shape_wares().map(|wares| wares.len())), (SHAPE_AWAY, Some(0)), "away");
 }

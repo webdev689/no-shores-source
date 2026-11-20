@@ -9,7 +9,8 @@ code:
   - crates/gear/src/factions.rs#collect_package
   - crates/gear/src/art_levels.rs#rise_art
   - crates/gear/src/art_levels.rs#buy_fragment
-  - crates/gear/src/art_levels.rs#spell_shares
+  - crates/gear/src/art_levels.rs#art_shares
+  - crates/room/src/statuses.rs#heal_linked
   - crates/gear/src/arts.rs#LevelsDef
   - crates/gear/src/arts.rs#WornArts
   - crates/room/src/spells.rs#spell_strikes
@@ -41,18 +42,22 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   level for a slot of the dice's (Rare, or Legendary one time in four from level 18) and 1,000 Aurem, and is refused
   while ten Vestiges are carried.
 - **The cape.** Each faction's cape is a named Legendary cloak (`content/gear/items.json`, with its faction's key),
-  level 1, sold for 2,500 Aurem only to a player pledged to it, one kept at a time. No Vestige and no Shape offers one.
+  level 1, sold for 2,500 Aurem only to a player pledged to it, one kept at a time. No Vestige and no Shape offers one,
+  and one dismantled gives back as a Normal piece, so capes bought and broken make no Essence.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each
   (`WornArts`). Every kill's XP fills the worn Art's bar (`content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
   and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level for its price
-  (`levels.rise`), and the ask names one fragment not owned, which becomes the player's. The bar starts again.
+  (`levels.rise`), and the ask names one fragment not owned, which becomes the player's; one who owns all six,
+  bought before rising, rises taking none. The bar starts again.
 - **Fragments.** A Core slot holds only a fragment owned; the room refuses another (answer 114). The faction sells
   fragments for 7,500 Aurem each from its first rank. A character kept before fragments were owned owns those its
   Cores held, and every Art starts at level 1.
-- **Power by level.** The room weighs every spell by its caster's level for the worn Art (`spell_shares`): its harm
-  and healing by `levels.power`, and how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs the
-  spells give (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil) by `levels.lasting`; 0.6 at level 1 up
-  to 1.0 at level 5, the spells as written ([[Arts]]).
+- **Power by level.** The room weighs every spell by its caster's level in the Art that cast it (`art_shares`), even
+  once another is worn: its harm and healing (the Sunwell's healing each second by its caster's Divine level) by
+  `levels.power`, and how long the Sunwell, the Duskraven and Dusk Daggers last and the buffs the spells give
+  (Quicken's Haste, Momentum's and Resolve's Crit, Vanish's veil) by `levels.lasting`; 0.6 at level 1 up to 1.0 at
+  level 5, the spells as written ([[Arts]]). The Sunwell's Linked damage share is a buff: its time is weighed, its
+  1.2 is not.
 - **At the counters.** The room serves a faction's asks (pledge, cape, package) and its Art's (rise, fragment) only
   within reach of that faction's counter, as it serves a vendor's ([[Gear]], "In the rooms"); the Test Ground's stall
   serves them all.

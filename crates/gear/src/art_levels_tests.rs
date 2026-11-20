@@ -114,3 +114,28 @@ fn a_save_from_before_the_levels_owns_what_its_cores_held_at_level_one() {
     let back = Character::from_json(&kept.to_string()).expect("a broken save reads");
     assert_eq!((back.art_level(1), back.art_level(2), back.art_xp(1)), (LEVEL_MOST, 1, 0));
 }
+
+#[test]
+fn an_art_whose_fragments_are_all_owned_still_rises_taking_none() {
+    let mut character = stocked();
+    character.allegiance.reputation[0] = factions().reputation_per_rank;
+    character.materials.aurem = 25_000;
+    character.arts.owned = Some(vec![0b11_1111, 0, 0]);
+    character.arts.xp[0] = bar(1);
+    assert!(character.ask(Ask::RiseArt { art: 1, fragment: 255 }, AT_COUNTER, &DICE).is_ok(), "all six bought first");
+    assert_eq!(character.art_level(1), 2);
+}
+
+#[test]
+fn an_old_save_with_a_full_core_still_reaches_the_highest_level() {
+    let mut kept: serde_json::Value = serde_json::from_str(&stocked().to_json()).expect("a character");
+    kept["arts"] = serde_json::json!({ "worn": 1, "cores": [[0, 1, 2], [null, null, null], [null, null, null]] });
+    let mut character = Character::from_json(&kept.to_string()).expect("an old save reads");
+    for (level, fragment) in [(1, 3), (2, 4), (3, 5), (4, 255)] {
+        character.arts.xp[0] = bar(level);
+        character.materials.aurem = 25_000;
+        let rose = character.ask(Ask::RiseArt { art: 1, fragment }, AT_COUNTER, &DICE);
+        assert!(rose.is_ok(), "from level {level}: {rose:?}");
+    }
+    assert_eq!(character.art_level(1), LEVEL_MOST);
+}

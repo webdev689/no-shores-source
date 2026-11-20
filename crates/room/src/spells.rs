@@ -223,7 +223,8 @@ impl Room {
     fn spell_strikes(&mut self, spell: &Spell, foe: FighterId, from: [f64; 3], damage: f64) -> Option<f64> {
         let found = self.players.get(&spell.caster)?;
         let (attack, hand) = spell_power(&found.character);
-        let damage = damage * found.character.spell_shares().0;
+        // The level of the Art that cast it, which may no longer be the one worn as it strikes.
+        let damage = damage * found.character.art_shares(spell.art).0;
         let then = self.foes.get(&foe).map(|foe| foe.fighter).filter(|then| !then.dead())?;
         let element = arts().art(spell.art).and_then(|art| gear::Element::from_number(art.element));
         let blow = Blow {
@@ -263,7 +264,8 @@ impl Room {
         let (feet, chest, ahead) = (feet_of(&fighter), fighter.chest(), ahead_of(&fighter));
         let made = |at, life, radius| Spell::new(cast.spell, caster, art.id, def, at, life, radius);
         // The Art's level: its share of the healing given, and of how long the spell and the buffs it gives last.
-        let (power, lasting) = self.players.get(&caster).map_or((1.0, 1.0), |found| found.character.spell_shares());
+        let shares = |found: &crate::players::Player| found.character.art_shares(art.id);
+        let (power, lasting) = self.players.get(&caster).map_or((1.0, 1.0), shares);
         let last = |ticks: u32| combat::ticks(f64::from(ticks) / 60.0 * lasting);
         match def.key.as_str() {
             "tempest" => self.tempest(made(chest, ticks(def.life_s), def.reach), fighter.aim),

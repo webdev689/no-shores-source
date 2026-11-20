@@ -41,12 +41,18 @@ impl Character {
         usize::from(fragment) < FRAGMENTS && owned & 1 << fragment != 0
     }
 
-    /// The worn Art's shares of a spell's harm and healing, and of how long it and what it gives last, by its level.
+    /// An Art's shares of its spells' harm and healing, and of how long they and what they give last, by its level.
     #[must_use]
-    pub fn spell_shares(&self) -> (f64, f64) {
-        let at = usize::from(self.art_level(self.art().id) - 1);
+    pub fn art_shares(&self, art: u8) -> (f64, f64) {
+        let at = usize::from(self.art_level(art) - 1);
         let levels = &arts().levels;
         (levels.power.get(at).copied().unwrap_or(1.0), levels.lasting.get(at).copied().unwrap_or(1.0))
+    }
+
+    /// The worn Art's shares (`art_shares`).
+    #[must_use]
+    pub fn spell_shares(&self) -> (f64, f64) {
+        self.art_shares(self.art().id)
     }
 
     /// A kill's XP to the worn Art, until its bar is full.
@@ -60,7 +66,8 @@ impl Character {
     }
 
     /// Raises an Art a level at its faction's counter, its bar full, for the rise's price, and the player takes one
-    /// of its fragments they do not own. The bar starts again.
+    /// of its fragments they do not own; one who owns all six (bought before rising) takes none, and `fragment` is not
+    /// read. The bar starts again.
     pub(crate) fn rise_art(&mut self, art: u8, fragment: u8, here: Here) -> Result<Option<Done>, Refusal> {
         let at = self.faction_ask(art, here)?;
         let level = self.art_level(art);
@@ -70,7 +77,10 @@ impl Character {
         if !self.art_ready(art) {
             return Err(Refusal::NotReady);
         }
-        self.fragment_free(art, fragment)?;
+        let every = (0..FRAGMENTS).all(|place| u8::try_from(place).is_ok_and(|place| self.owns_fragment(art, place)));
+        if !every {
+            self.fragment_free(art, fragment)?;
+        }
         let rise = arts().levels.rise[usize::from(level - 1)];
         let held = &self.materials;
         let stocks = [Stock::Weapon, Stock::Armor];
@@ -87,7 +97,9 @@ impl Character {
         materials.armor_essence -= rise.essence;
         self.arts.levels[at] = level + 1;
         self.arts.xp[at] = 0;
-        self.own_fragment(at, fragment);
+        if !every {
+            self.own_fragment(at, fragment);
+        }
         Ok(None)
     }
 

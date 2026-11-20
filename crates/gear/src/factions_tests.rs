@@ -134,3 +134,14 @@ fn a_save_from_before_the_factions_reads_pledged_to_none() {
     let back = Character::from_json(&broken).expect("a broken save reads");
     assert_eq!((back.allegiance.pledge, back.reputation(1), back.allegiance.reputation.len()), (0, 5, 3));
 }
+
+#[test]
+fn a_dismantled_cape_gives_back_as_a_normal_piece_so_capes_make_no_essence() {
+    let mut character = caped(2);
+    let cape = character.worn(Slot::Cloak).expect("worn").id;
+    assert!(character.ask(Ask::TakeOff { slot: Slot::Cloak }, AFIELD, &DICE).is_ok());
+    let before = character.materials.clone();
+    assert!(character.ask(Ask::Dismantle { item: cape }, AFIELD, &DICE).is_ok());
+    assert_eq!((character.materials.armor_essence, character.materials.armor_fragments), (0, 0));
+    assert_eq!(character.materials.aurem, before.aurem + 20);
+}

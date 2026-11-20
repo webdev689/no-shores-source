@@ -120,3 +120,71 @@ fn a_boss_slain_at_the_abyss_seas_gives_shapes_and_at_normal_none() {
         assert_eq!(room.player(player).expect("in").character.materials.shapes, shapes, "{difficulty:?}");
     }
 }
+
+/// The health a hurt player standing in a Sunwell gains over three seconds, cast at a Divine level.
+fn sunwell_gain(level: u8) -> f64 {
+    let (mut room, player) = room_with_player();
+    room.players.get_mut(&player).expect("in").character.arts.levels[1] = level;
+    wearing(&mut room, player, 2, &[]);
+    let mut hurt = *room.fighter(player).expect("in");
+    hurt.health = 10.0;
+    room.set_fighter(player, hurt);
+    cast(&mut room, player, SUNWELL, None, 0);
+    let before = room.fighter(player).expect("in").health;
+    for _ in 0..180 {
+        room.tick();
+    }
+    room.fighter(player).expect("in").health - before
+}
+
+#[test]
+fn a_sunwell_heals_by_the_level_of_its_caster_s_art() {
+    let (whole, first) = (sunwell_gain(5), sunwell_gain(1));
+    assert!(whole > 0.0, "a Sunwell heals");
+    assert!((first - whole * 0.6).abs() < 1e-9, "level 1 heals 0.6 of level 5's: {first} against {whole}");
+}
+
+/// The harm Dusk Daggers do to a foe held in their ring, cast at Shadow's first level, the caster wearing Storm (at
+/// its highest) once the ring is out if `switch`.
+fn daggers_harm(switch: bool) -> f64 {
+    let (mut room, player) = room_with_player();
+    room.players.get_mut(&player).expect("in").character.arts.levels[2] = 1;
+    wearing(&mut room, player, 3, &[]);
+    let foe = stand_foe(&mut room, 0.0, -10.0, 1000.0);
+    room.give(foe, combat::Status::Charge, Some(400), None);
+    cast(&mut room, player, 8, Some([0.0, -10.0, 0.0]), 0);
+    if switch {
+        room.answer(player, Asked::Art(gear::arts::ArtAsk::Wear { art: 1 }));
+    }
+    for _ in 0..300 {
+        room.tick();
+    }
+    1000.0 - health(&room, foe)
+}
+
+#[test]
+fn a_spell_already_out_strikes_at_the_level_of_the_art_that_cast_it() {
+    let (kept, switched) = (daggers_harm(false), daggers_harm(true));
+    assert!(kept > 0.0);
+    assert!((kept - switched).abs() < 1e-9, "wearing Storm after the cast changes nothing: {kept} against {switched}");
+}
+
+#[test]
+fn shape_sells_nowhere_outside_his_days_and_his_going_is_sent() {
+    let (mut room, player) = room_with_player();
+    room.counters = Some(Vec::new());
+    room.shape_spots = (0..8).map(|spot| [f64::from(spot) * 20.0, 30.0]).collect();
+    room.set_minute(FRIDAY_NOON);
+    let spot = room.shape_at().expect("here on a Friday");
+    move_to(&mut room, player, spot);
+    room.players.get_mut(&player).expect("in").character.add_shapes(20);
+    room.set_minute(THURSDAY);
+    assert_eq!(ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0 }), answer_code(Err(Refusal::NotHere)));
+    // Sunday 21:00, the Friday's week: he goes, and every player is told.
+    room.set_minute(FRIDAY_NOON);
+    room.take_gear_change(player);
+    room.players.get_mut(&player).expect("in").gear_changed = false;
+    room.set_minute(THURSDAY + 3 * 1_440 + 21 * 60);
+    assert_eq!(room.shape_at(), None);
+    assert!(room.players.get(&player).expect("in").gear_changed, "his going is sent");
+}

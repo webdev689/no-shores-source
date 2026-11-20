@@ -147,8 +147,10 @@ impl ArtsDef {
             }
         }
         let shares = self.levels.power.iter().chain(&self.levels.lasting);
-        if shares.clone().any(|share| !(*share > 0.0 && *share <= 1.0)) || self.levels.power[4] != 1.0 {
-            problems.push("a level's share is outside (0, 1], or level 5's is not whole".to_owned());
+        let highest = usize::from(LEVEL_MOST - 1);
+        let whole = self.levels.power[highest] == 1.0 && self.levels.lasting[highest] == 1.0;
+        if shares.clone().any(|share| !(*share > 0.0 && *share <= 1.0)) || !whole {
+            problems.push("a level's share is outside (0, 1], or the highest level's is not whole".to_owned());
         }
         if self.levels.xp.contains(&0) {
             problems.push("a level's bar holds no XP".to_owned());

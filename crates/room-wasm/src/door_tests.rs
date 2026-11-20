@@ -107,6 +107,10 @@ fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
         assert_eq!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), !locked, "{}", node.id);
         node.open = true;
         assert!(open_node(serde_json::to_string(&node).unwrap().as_bytes()), "{} opens", node.id);
+        // Every counter the bake writes is one the room serves: a name it does not know would drop its counter.
+        let written: Vec<NodeCounter> = serde_json::from_value(serde_json::to_value(&node.counters).unwrap()).unwrap();
+        assert_eq!(written.iter().filter_map(counter_of).count(), written.len(), "{}'s counters", node.id);
+        assert_eq!(written.len(), if locked { 10 } else { 0 }, "every keeper but the Harbourmaster's and the chandler's");
         let player = room_join();
         let welcome = joined(player);
         let joined = messages::root_as_from_room(&welcome).unwrap().joined().unwrap();

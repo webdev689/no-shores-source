@@ -21,7 +21,8 @@ pub(crate) struct Standing<'built> {
     pub shape_wares: WIPOffset<Vector<'built, flatbuffers::ForwardsUOffset<messages::GearItem<'built>>>>,
 }
 
-/// A worn cosmetic's number, or the first's (each kind's start) for one the catalogue does not hold.
+/// A worn cosmetic's number; a worn id the catalogue does not hold never reaches here, as the character is made whole
+/// when read (`earn_cosmetics_due`), so 0 is only a guard.
 pub(crate) fn number_of_worn(id: &str) -> u16 {
     gear::cosmetics::number_of(id).unwrap_or_default()
 }
@@ -40,8 +41,9 @@ pub(crate) fn standing_of<'built>(
     let arts = &gear::arts::arts().arts;
     let art_levels: Vec<u8> = arts.iter().map(|art| character.art_level(art.id)).collect();
     let art_xp: Vec<u32> = arts.iter().map(|art| character.art_xp(art.id)).collect();
+    let places = 0..u8::try_from(gear::arts::FRAGMENTS).unwrap_or(u8::MAX);
     let owned = |art: u8| {
-        (0..6).filter(|fragment| character.owns_fragment(art, *fragment)).fold(0, |bits, fragment| bits | 1 << fragment)
+        places.clone().filter(|place| character.owns_fragment(art, *place)).fold(0, |bits, place| bits | 1 << place)
     };
     let art_owned: Vec<u8> = arts.iter().map(|art| owned(art.id)).collect();
     let kept = character.cosmetics.kept.iter().filter_map(|id| gear::cosmetics::number_of(id));
