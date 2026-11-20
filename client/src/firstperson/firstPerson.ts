@@ -1,5 +1,6 @@
 import { type GlowElement, type GlowLook, glowField } from '../elementGlow.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
+import { cosmeticRamp } from '../forge/cosmetics.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import type { Gpu } from '../gpu.ts';
 import { gripFrame, gripPicture, gripPlace } from './climbing.ts';
@@ -70,6 +71,8 @@ export interface FirstPersonState {
   readonly mounted?: boolean;
   /** The coat and barding the ridden horse wears, by their cosmetics' ids; none for the bay and the bare horse. */
   readonly horse?: { readonly coat: string | null; readonly barding: string | null };
+  /** The cosmetic dye worn, by its id, which the gauntlets and boots take; none for their own colours. */
+  readonly dye?: string | null;
   readonly yaw?: number;
   readonly blocking?: boolean;
   /** A weapon held in a fight's pose, one of its strokes' frames: a guard, a parry's deflect. */
@@ -186,7 +189,9 @@ const holds = (holding: Holding | null | undefined) =>
  *  scene. */
 export class FirstPerson {
   private readonly view: QuadDrawer;
-  private readonly source: FrameSource;
+  private source: FrameSource;
+  /** The cosmetic dye the pictures were composed in. */
+  private dye: string | null = null;
   private readonly chain = new ChainSwing();
   private readonly bob = new Bob();
   private readonly hands: Hands;
@@ -296,6 +301,12 @@ export class FirstPerson {
     const shot = state.mounted ? this.ride.step(seconds, gaitOf(state), state.yaw ?? null) : null;
 
     this.horse = state.horse ?? this.horse;
+    // A new dye recolours every gauntlet and boot: what was composed in the old one is let go.
+    if ((state.dye ?? null) !== this.dye) {
+      this.dye = state.dye ?? null;
+      this.source = { ...this.source, dye: cosmeticRamp(this.dye) };
+      this.letGo();
+    }
     const lookKey = `${state.right}|${state.left}|${state.drawn}|${worn.hands}|${worn.feet}|${!!state.mounted}|${this.horse.coat}|${this.horse.barding}`;
     this.wanted = this.wantedNow(state, worn, drop, sway, shot);
     // What is wanted now is asked for first, ahead of the rest of a new look's pictures.

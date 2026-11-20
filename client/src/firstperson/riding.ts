@@ -1,5 +1,5 @@
 import type { Strip } from '../forge/compose.ts';
-import { bardingLayer, bardingLook, cosmeticRamp, hideShade } from '../forge/cosmetics.ts';
+import { RIDE_HIDE, bardingLayer, bardingLook, cosmeticRamp, hideShade } from '../forge/cosmetics.ts';
 import type { Rgb } from '../forge/dyes.ts';
 import { type FrameSource, type Picture, layOver, setRamp } from './fpFrames.ts';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './fpMotion.ts';
@@ -149,14 +149,15 @@ export async function horsePicture(
   return centred(pixels, strip.width, strip.height, sink);
 }
 
-/** A ride strip with a coat laid on the horse's hide, by its own light, as the third person's horse takes it. */
+/** A ride strip with a coat laid on the horse's hide, by its own light, as the third person's horse takes it, told
+ *  from its bridle as the ride's colours tell it. */
 function coated(strip: Strip, ramp: readonly Rgb[]): Strip {
   const data = Uint8ClampedArray.from(strip.data);
   const rgb = [0, 0, 0];
   for (let texel = 0; texel < data.length; texel += 4) {
     if (!data[texel + 3]) continue;
     [rgb[0], rgb[1], rgb[2]] = [data[texel] ?? 0, data[texel + 1] ?? 0, data[texel + 2] ?? 0];
-    hideShade(rgb, ramp);
+    hideShade(rgb, ramp, RIDE_HIDE);
     data.set(rgb, texel);
   }
   return { ...strip, data };
@@ -180,7 +181,7 @@ export async function reinPicture(
   const fist = own ?? glove;
   if (!rein || !fist || fist.width !== rein.width || fist.height !== rein.height) return null;
   const pixels = source.painter.paint(rein, null);
-  const fistPixels = source.painter.paint(fist, own ? setRamp(source.dyes, hands, 'Steel') : null);
+  const fistPixels = source.painter.paint(fist, own ? setRamp(source, hands, 'Steel') : null);
   for (let texel = 0; texel < pixels.length; texel += 4)
     if (fistPixels[texel + 3]) pixels.set(fistPixels.subarray(texel, texel + 4), texel);
   return centred(pixels, rein.width, rein.height, sink);

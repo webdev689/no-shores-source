@@ -27,7 +27,7 @@ function firstPerson(drawn: (path: string) => boolean) {
   };
   let quads: readonly ScreenQuad[] = [];
   const view: QuadDrawer = {
-    texture: () => ({}) as GPUTexture,
+    texture: () => ({ destroy: () => undefined }) as GPUTexture,
     glow: () => ({}) as GPUTexture,
     forget: () => undefined,
     draw: (_encoder, _colour, _width, _height, drawnQuads) => {
@@ -288,4 +288,18 @@ test('one crossbow is carried at a run in the forge’s own frames; a pair keeps
   for (let step = 0; step < 20; step++)
     await pair.frame(0.05, { ...crossbow, left: 'crossbow_iron_l', stride: step * 0.3 });
   assert.ok(!pair.asked.some((path) => path.startsWith('forge/held/CROSSBOW_')));
+});
+
+test('a new dye worn composes the hands again in it; the same dye composes nothing again', async () => {
+  const { frame, asked } = firstPerson(() => true);
+  const gauntleted = { ...standing, armour: { gauntlets: 'gauntlets_daedric' } };
+  await frame(0.016, gauntleted);
+  const first = asked.length;
+  await frame(0.016, gauntleted);
+  assert.equal(asked.length, first, 'kept');
+  await frame(0.016, { ...gauntleted, dye: 'coral' });
+  assert.ok(asked.length > first, 'composed again in the dye');
+  const dyed = asked.length;
+  await frame(0.016, { ...gauntleted, dye: 'coral' });
+  assert.equal(asked.length, dyed, 'kept in the dye');
 });

@@ -70,7 +70,7 @@ export function barWords(standing: ArtLevel, art: number): string {
 export function howHad(art: number): string {
   const counter = counterOf(factionOf(art)?.name ?? 'its faction');
   const rank = RANKS[factions.fragmentRank - 1] ?? `rank ${factions.fragmentRank}`;
-  return `Rise the Art at ${counter}, or buy it there from their ${rank} rank.`;
+  return `Raise the Art at ${counter}, or buy it there from their ${rank} rank.`;
 }
 
 /** The spells whose own life the room scales by the level's lasting; every spell's harm and healing it scales by the
@@ -86,6 +86,9 @@ export const GIVES: Readonly<Record<string, readonly [label: string, seconds: nu
   momentum: ['Crit lasts', 6],
   resolve: ['Crit lasts', 5],
 };
+/** The fragment whose seconds more a buff above also gains when the Core holds it, as the room adds them before the
+ *  lasting: Momentum's Crit lasts as Quicken's Haste, which Gale lengthens. */
+export const GIVES_LONGER_BY: Readonly<Record<string, string>> = { momentum: 'gale' };
 
 /** The healing each second a spell gives through Linked, as combat's status.rs holds it (LINKED_HEAL), weighed by
  *  the level's power as the room weighs the Sunwell's. */

@@ -124,3 +124,17 @@ test('a dress warmed again asks for its moves only the first time, as a figure w
   forge.warm(bare, moves, 0, 1);
   assert.equal(asked, 2, 'once for each dress');
 });
+
+test('a move with no horse in it keeps one frame whatever the coat and barding, so a new coat composes none again', async () => {
+  const { forge, counts } = countedForge(40, 30);
+  const horsed = (coat: string | null, barding: string | null): Dress => ({
+    ...armed,
+    outfit: { ...armed.outfit, coat, barding },
+  });
+  forge.card(1, horsed(null, null), 'guard', 0, 0);
+  await pumped(forge, 2);
+  const once = counts.composed;
+  forge.card(1, horsed('grey', 'ember_plate'), 'guard', 0, 0);
+  await pumped(forge, 2);
+  assert.equal(counts.composed, once, 'the guard draws no horse: the frame kept serves');
+});

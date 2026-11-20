@@ -8,7 +8,7 @@ import { FRAGMENT_MAPS } from './artFragments.ts';
 import { EMBLEM_FRAME, EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { ArtState } from '../network/artMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
-import { GIVES, HEALS_A_SECOND, LEVEL_MOST, lastingAt, powerAt, scaled } from './artLevels.ts';
+import { GIVES, GIVES_LONGER_BY, HEALS_A_SECOND, LEVEL_MOST, lastingAt, powerAt, scaled } from './artLevels.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -91,10 +91,14 @@ const NUMBERS: readonly (readonly [field: string, label: string, written: (value
   ['healShare', 'Heals you', (value) => `${Math.round(value * 100)}% of its damage`],
 ];
 
-/** What a spell or fragment gives and how long it lasts at `level`, as a card's row; none if it gives nothing. */
-function givesRow(key: string, level: number): [string, string][] {
+/** What a spell or fragment gives and how long it lasts at `level`, with the fragments `held` in the Core, as a card's
+ *  row; none if it gives nothing. */
+function givesRow(key: string, level: number, held: readonly Fragment[] = []): [string, string][] {
   const gives = GIVES[key];
-  return gives ? [[gives[0], `${Math.round(gives[1] * lastingAt(level) * 10) / 10} s`]] : [];
+  if (!gives) return [];
+  const longer = held.find((fragment) => fragment.key === GIVES_LONGER_BY[key])?.['moreS'];
+  const seconds = gives[1] + (typeof longer === 'number' ? longer : 0);
+  return [[gives[0], `${Math.round(seconds * lastingAt(level) * 10) / 10} s`]];
 }
 
 /** A spell's numbers at an Art's `level`, as its card's rows: its harm, healing and life as the room scales them. */
@@ -112,11 +116,15 @@ export function spellNumbers(spell: Spell, level = LEVEL_MOST): [string, string]
 }
 
 /** A fragment's numbers the room scales by an Art's `level`, as its card's rows: the seconds it adds and what it
- *  gives. Its other numbers stay in its words. */
-export function fragmentNumbers(fragment: Fragment, level = LEVEL_MOST): [string, string][] {
+ *  gives, with the fragments `held` in the Core. Its other numbers stay in its words. */
+export function fragmentNumbers(
+  fragment: Fragment,
+  level = LEVEL_MOST,
+  held: readonly Fragment[] = [],
+): [string, string][] {
   const more = typeof fragment['moreS'] === 'number' ? scaled(fragment.key, 'moreS', fragment['moreS'], level) : null;
   const rows: [string, string][] = more === null || more === fragment['moreS'] ? [] : [['Longer by', `${more} s`]];
-  return [...rows, ...givesRow(fragment.key, level)];
+  return [...rows, ...givesRow(fragment.key, level, held)];
 }
 
 /** A recharge as a player reads one: under a minute in seconds ("38 s"), else minutes and seconds ("8:20"). */
@@ -141,22 +149,24 @@ export function spellCard(art: Art, spell: Spell, level = LEVEL_MOST): Card {
   };
 }
 
-/** A fragment's card: its name, its Art and element, its numbers at the Art's `level`, what it does, and, set in a
- *  slot, which; not owned, how it is had (`howHad`). */
+/** A fragment's card: its name, its Art and element, its numbers at the Art's `level` with the Core's fragments
+ *  (`core`, each slot's index in the Art's), what it does, and, set in a slot, which; not owned, how it is had. */
 export function fragmentCard(
   art: Art,
   fragment: Fragment,
   setIn: number | null = null,
   level = LEVEL_MOST,
   howHad: string | null = null,
+  core: readonly (number | null)[] = [],
 ): Card {
+  const held = core.flatMap((index) => (index === null ? [] : (art.core[index] ?? [])));
   const where = setIn === null ? '' : ` Set in Core slot ${setIn + 1}.`;
   return {
     name: fragment.name,
     rarity: 0,
     kind: `${art.name} fragment${howHad ? ', not owned' : ''}`,
     big: null,
-    rows: fragmentNumbers(fragment, level),
+    rows: fragmentNumbers(fragment, level, held),
     element: art.element,
     traits: [],
     words: `${fragment.text}${where}${howHad ? ` ${howHad}` : ''}`,

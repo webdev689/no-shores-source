@@ -48,6 +48,9 @@ export const PART = {
 } as const;
 const NO_HANG = new Set<number>([PART.armL, PART.armR, PART.footL, PART.footR, PART.weapon]);
 const FAR = 0x7fffffff;
+/** How far behind the horse's hide a barding texel may lie and still be drawn over it, in metres: the forge renders
+ *  a barding a little off the hide, while its far side and inside lie well behind the horse. */
+const BARDING_CLEAR_M = 0.15;
 
 /** Whether two layers' orders weigh where their texels meet: on one part (a shirt and the cuirass over it), or a
  *  drape over what it hangs over, never over an arm, a foot or a weapon, nor anything over a weapon. The horse is no
@@ -67,8 +70,8 @@ export function ordersMeet(first: number, second: number): boolean {
  * laid on the figure's cell by its root; at each pixel the nearest texel, a layer drawn nearer by its order where it
  * meets another on one part, armour over the clothes under it by its cover, a worn weapon and a drape by `under`.
  * The skin takes the race or the human tone, the hair its colour's ramp, a dyed layer's grey its dye's ramp, the horse's
- * hide its coat's (its ramp under HORSE_LAYER, `hideShade`); the frame
- * is then snapped to the palette. The layers in `held` count as the weapon in its mask, whatever part they name.
+ * hide its coat's (its ramp under HORSE_LAYER, `hideShade`); the frame is then snapped to the palette. The layers in
+ * `held` count as the weapon in its mask, whatever part they name.
  */
 export async function composeFrame(
   figure: Figure,
@@ -85,6 +88,7 @@ export async function composeFrame(
   if (!box) return null;
   const [width, height] = box.cell;
   const scale = looks.depth?.scale ?? 10000;
+  const bardingClear = Math.round(BARDING_CLEAR_M * scale);
   const weigh = (table: Readonly<Record<string, number>> | undefined, layer: string) =>
     Math.round((table?.[layer] ?? 0) * scale);
   const pixels = new Uint8Array(width * height * 4);
@@ -150,9 +154,10 @@ export async function composeFrame(
             if (cover && (bestBias[spot] ?? 0) < bias) mine = cover;
             else if (bestCover[spot] && bias < (bestBias[spot] ?? 0)) theirs = bestCover[spot] ?? 0;
           }
-          // A barding lies on the horse's hide, rendered clear of what hides it: over the horse it is always drawn.
+          // A barding lies on the horse's hide, rendered a little clear of it: over the horse it is drawn unless it
+          // lies further behind than that, as its far side and inside do.
           // A drape and a worn weapon: whether this texel is drawn, whatever the depths.
-          let wins: boolean | null = barding && bestHorse[spot] ? true : null;
+          let wins: boolean | null = barding && bestHorse[spot] ? lies - there <= bardingClear : null;
           const bare = worn[spot] === FAR;
           if (part === PART.drape && bestUnder[spot]) {
             if (bias <= (bestBias[spot] ?? 0)) {

@@ -286,7 +286,7 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
   for (const { tile, fragment, slot } of slots) {
     const card = () => {
       if (fragment) {
-        const shown = fragmentCard(art, fragment, null, standing.level);
+        const shown = fragmentCard(art, fragment, null, standing.level, null, core);
         return cardWith(shown, fragmentSvg(art, fragment), art.element, CHANGE);
       }
       const node = cardNode(slotCard(art, slot), null, CHOOSE);
@@ -332,7 +332,7 @@ function coreRow(context: ArtsPageContext, art: Art, open: number | null, choose
       focusSoon(`core-${open}`);
     });
     const hints = ask ? SET : [];
-    const shown = fragmentCard(art, fragment, setIn, standing.level, owned ? null : howHad(art.id));
+    const shown = fragmentCard(art, fragment, setIn, standing.level, owned ? null : howHad(art.id), core);
     const card = () => cardWith(shown, fragmentSvg(art, fragment), art.element, hints);
     context.tip.over(cell, card, flyout);
     grid.append(cell);

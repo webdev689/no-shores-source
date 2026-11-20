@@ -146,6 +146,31 @@ test('a kick wears the boots and a punch the gauntlets; bare fists take iron, a 
   assert.deepEqual(pixelAt(barehanded?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Iron?.[4] ?? []), 255]);
 });
 
+test('a dye worn takes the gauntlets and boots, whatever their set, and leaves bare fists and the blade', async () => {
+  const punch = wholePath('WEAPON10', 2, 0, 'Fighters');
+  const kick = wholePath('WEAPON10', 1, 0, 'Daedric');
+  const bare = wholePath('WEAPON10', 2, 0, null);
+  const plain = sourceOf({ [punch]: strip([grey(4)]), [kick]: strip([grey(4)]), [bare]: strip([grey(4)]) }, [
+    punch,
+    kick,
+    bare,
+  ]);
+  const source = { ...plain, dye: dyes.armour.Ebony ?? null };
+  const fists = wield(null);
+  const worn = { hands: 'Fighters', feet: 'Daedric' };
+  const green = [...(dyes.armour.Ebony?.[4] ?? []), 255];
+  assert.deepEqual(
+    pixelAt((await weaponPicture(source, fists, worn, 2, 0, false))?.pixels ?? new Uint8Array(), 0),
+    green,
+  );
+  assert.deepEqual(
+    pixelAt((await weaponPicture(source, fists, worn, 1, 0, false))?.pixels ?? new Uint8Array(), 0),
+    green,
+  );
+  const barehanded = await weaponPicture(source, fists, none, 2, 0, false);
+  assert.deepEqual(pixelAt(barehanded?.pixels ?? new Uint8Array(), 0), [...(dyes.armour.Iron?.[4] ?? []), 255]);
+});
+
 test('the nearer of hand and weapon shows where both are drawn, either alone where only it is', () => {
   const hand = new Uint8Array([1, 1, 1, 255, 1, 1, 1, 255, 1, 1, 1, 255, 0, 0, 0, 0]);
   const weapon = new Uint8Array([2, 2, 2, 255, 2, 2, 2, 255, 0, 0, 0, 0, 2, 2, 2, 255]);

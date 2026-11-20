@@ -33,7 +33,7 @@ export async function gripPicture(
     return {
       width: arm.width,
       height: arm.height,
-      pixels: source.painter.paint(arm, setRamp(source.dyes, hands, 'Iron')),
+      pixels: source.painter.paint(arm, setRamp(source, hands, 'Iron')),
       at: [0, 0],
     };
   const strips = await Promise.all(CLIMB_GARMENTS.map((garment) => source.strip(climbPath(garment, frame))));

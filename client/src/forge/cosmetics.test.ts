@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   COSMETICS,
+  RIDE_HIDE,
   bardingLayer,
   bardingLook,
   cosmeticOf,
@@ -62,5 +63,30 @@ test("a coat takes the horse's hide by its light, and leaves the tack, the blank
     const kept = [...colour];
     hideShade(kept, ramp);
     assert.deepEqual(kept, colour, what);
+  }
+});
+
+test("from the saddle a coat takes the ride's lit hide and leaves its bridle, by the forge's own ride colours", () => {
+  const ramp = rampOf(['#000000', '#000000', '#000000', '#ff0000']);
+  // Texels of the published RIDE_stand-0 strip, told by its hide mask: the hide lit and turning away, the bridle.
+  for (const hide of [
+    [187, 126, 86],
+    [175, 112, 69],
+    [148, 86, 46],
+    [117, 71, 39],
+  ]) {
+    const coated = [...hide];
+    hideShade(coated, ramp, RIDE_HIDE);
+    assert.equal(coated[1], 0, `the hide ${hide.join(',')} takes the coat`);
+  }
+  for (const strap of [
+    [80, 49, 29],
+    [69, 41, 24],
+    [59, 23, 11],
+    [70, 42, 24],
+  ]) {
+    const kept = [...strap];
+    hideShade(kept, ramp, RIDE_HIDE);
+    assert.deepEqual(kept, strap, `the strap ${strap.join(',')} keeps its leather`);
   }
 });
