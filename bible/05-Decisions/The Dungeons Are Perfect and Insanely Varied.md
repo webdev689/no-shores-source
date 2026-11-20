@@ -18,3 +18,5 @@ build was finished and its pictures and review were reported.
   ([[Dungeons as Claude Builds Them]]); the owner can change any of it.
 - The earlier decisions hold: a dungeon runs slightly linear, with a clear beginning, middle and end and a return
   portal, its props laid and everything in the procedural textures.
+
+Its pieces built in Blender: [[Each Dungeon Style Has Its Own Pieces, Built in Blender]].
