@@ -110,7 +110,7 @@ fn events_json(events: &[Event]) -> Vec<Value> {
         let Some(mut shown) = event_json(event) else { continue };
         // Her torn rig and her state may be told between the two: the hit waits for its ball's.
         if let Event::Shot(ShotEvent::Hit { target, .. }) = event
-            && let Some((ship, at, part)) = struck.take_if(|(ship, ..)| ship == target)
+            && let Some((_, at, part)) = struck.take_if(|(ship, ..)| ship == target)
         {
             let part = match part {
                 Part::Hull => "hull",
