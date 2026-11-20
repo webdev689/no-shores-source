@@ -20,6 +20,7 @@ import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES, SLOOP_HULL } from '../ships/hulls.ts';
 import { openHull, ShipModels } from '../ships/shipModels.ts';
+import { Charting } from './charting.ts';
 import { FigureView } from './figureView.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
@@ -42,7 +43,7 @@ import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
 import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
-import { continentToOpen, offshore } from './seaLaw.ts';
+import { offshore } from './seaLaw.ts';
 import { arrivalAt, loadWorld, type NodeInfo, portsOf } from './worldData.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
@@ -56,8 +57,6 @@ const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 const REGION = 'The Pale Expanse';
 /** The veil stays down until the exact ground round the player has come, or this long. */
 const GROUND_WAIT_S = 20;
-/** How often the sea looks for another continent's coast nearby, seconds. */
-const CHART_EVERY_S = 1;
 
 /** The forge's figures and the first person's hands, read from the forge's published renders. */
 async function openForge(gpu: Gpu, figures: FigureView) {
@@ -170,10 +169,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   let [ready, waited] = [false, 0];
   let wasDead = false;
   let wasWalking = false;
-  let charting: string | null = null;
-  let sinceChart = 0;
-  /** Continents that would not open: not tried again this visit. */
-  const unchartable = new Set<string>();
+  const charting = new Charting(
+    continents,
+    (id) => openLandmass(land, world, rmbText, id),
+    (opened: Landmass) => {
+      landmass = opened;
+      drawers.release();
+      drawers = drawersOn(opened);
+      scene.setLand(opened.view, terrainFor(opened));
+      sea?.setLandmass(opened);
+    },
+  );
   let [last, clock] = [performance.now(), 0];
 
   /** A way that failed, tried again with Enter. */
@@ -278,7 +284,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
     // deck, landing, or while another landmass opens.
     const free = (flow.mode === 'foot' || flow.mode === 'sea') && !flow.menu;
-    if (!free || heldMap?.shown || mapWanted || sea?.aboard.active || charting)
+    if (!free || heldMap?.shown || mapWanted || sea?.aboard.active || charting.busy)
       return 'You are in their company. Choose Go to them once nothing else is under way.';
     // As other games keep travel out of a fight, and the fallen respawn before they go anywhere.
     if (flow.mode === 'sea' && sea?.fight) return 'You are in their company. Go to them once the fight is over.';
@@ -315,7 +321,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** Docks or goes ashore as the sea offers: the view flies up over the island's side to choose a landing. */
   const goAshore = () => {
     // While another landmass opens, the worker's landmass is not the one the landings would be on.
-    if (flow.mode !== 'sea' || !sea || charting) return;
+    if (flow.mode !== 'sea' || !sea || charting.busy) return;
     if (flow.menu) change({ kind: 'back' });
     if (!sea.goAshore()) return;
     change({ kind: 'view-landings' });
@@ -532,37 +538,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       clock,
       build: builtSloop,
       waterline: sloop.waterline,
-      charting: charting !== null,
+      charting: charting.busy,
       friendly: fleet.marks,
     });
-    sinceChart += seconds;
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
-    if (!charting && flow.mode === 'sea' && sinceChart >= CHART_EVERY_S) {
-      sinceChart = 0;
-      chart(here);
-    }
-  };
-
-  /** Opens the continent whose coast the ship nears, and draws it in place of the one it leaves. */
-  const chart = (here: Sea) => {
-    const other = continentToOpen(here.position, continents, landmass.id);
-    if (!other || unchartable.has(other)) return;
-    charting = other;
-    openLandmass(land, world, rmbText, other)
-      .then((opened: Landmass) => {
-        landmass = opened;
-        drawers.release();
-        drawers = drawersOn(opened);
-        scene.setLand(opened.view, terrainFor(opened));
-        here.setLandmass(opened);
-      })
-      .catch((error: unknown) => {
-        unchartable.add(other);
-        console.error(`${other} could not be opened:`, error);
-      })
-      .finally(() => {
-        charting = null;
-      });
+    charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
   };
 
   /** The GPU's work for the frame drawn last. */
