@@ -81,7 +81,7 @@ export class FleetScene {
     return this.feel.frame({
       events: this.play.takeEvents(),
       ships: this.feelShips(),
-      balls: this.play.balls(now).map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
+      balls: this.play.balls(now).map(([x = 0, y = 0, z = 0, radius = 0]) => [x, y, z, radius] as const),
       now,
       seconds,
       windBearing: this.windBearing,

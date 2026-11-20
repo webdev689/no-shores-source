@@ -5,7 +5,7 @@ import { type RoomDoor, startRoomDoor } from '../../../server/roomDoor.ts';
 import { readFromRoom } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { startFleetRules } from '../rules/fleetRules.ts';
-import { FleetSession, fleetFeel, type SessionInput } from './fleetSession.ts';
+import { FleetSession, fleetFeel, MOST_FELT, type SessionInput } from './fleetSession.ts';
 import type { NavalEvent } from '../network/fleetMessages.ts';
 
 const compiled = new WebAssembly.Module(
@@ -248,4 +248,43 @@ test("a fleet room's events reach the feel by each ship's own number, the sea's 
     { kind: 'Boarding', tick: 3, ship: 31 },
     { kind: 'ram', ship: 31, by: 12, point: [7, 8, 1], dealt: 5 },
   ]);
+});
+
+test("a session whose feel nobody takes keeps only the latest of the fight's events", () => {
+  const door = startRoomDoor(compiled);
+  door.openFleet();
+  const player = door.join();
+  const link: RoomLink = {
+    player,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  };
+  const play = new FleetSession(link, startFleetRules(compiled), [200_000, 300_000, 0]);
+  door.tick();
+  const snapshot = readFromRoom(door.snapshot());
+  if (snapshot?.kind !== 'snapshot') throw new Error('the fleet room answers snapshots');
+  const muzzle = (ship: number): NavalEvent => ({
+    tick: 1n,
+    kind: 'muzzle',
+    ship,
+    by: 0,
+    detail: 0,
+    side: 0,
+    point: [0, 0, 0],
+    launch: [1, 0, 0],
+    left: 0,
+  });
+  const many = Array.from({ length: MOST_FELT + 5 }, (unused, index) => muzzle(index));
+  play.receive({ ...snapshot, naval: many } as Snapshot, 0);
+  const felt = play.takeFeel();
+  assert.equal(felt.length, MOST_FELT);
+  assert.deepEqual(
+    [felt[0], felt.at(-1)].map((event) => event && 'ship' in event && event.ship),
+    [5, MOST_FELT + 4],
+    'the oldest dropped',
+  );
 });

@@ -1,4 +1,5 @@
 import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
+import type { ShadowMap } from '../shadow.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
 import { type Cue, type FeelShip, FightFeel } from '../ships/fightFeel.ts';
@@ -152,7 +153,7 @@ export class Naval {
     const splashes = this.feel.frame({
       events: fighting.takeEvents(),
       ships: this.feelShips(answer),
-      balls: answer.balls.map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
+      balls: answer.balls,
       now: time,
       seconds,
       windBearing: this.windBearing,
@@ -258,7 +259,8 @@ export class Naval {
 
   /** Draws the balls aloft, the lay's arcs and the effects, heights as drawn: each effect and ball `scale` times its
    *  size, as the ships are drawn, and the holes in the hulls where `scarred` says each ship is drawn (by default her
-   *  own Sloop and her captain's). */
+   *  own Sloop and her captain's); what floats on the drawn swell (`sea.water`, its height at a window point) where
+   *  the page has one, all in the sun's shadows when a map is given. */
   draw(
     pass: GPURenderPassEncoder,
     view: Window,
@@ -267,6 +269,7 @@ export class Naval {
     now: number,
     scale = 1,
     scarred: Parameters<FightFeel['scars']>[0] | null = null,
+    sea: { readonly water?: (x: number, y: number) => number; readonly shadow?: ShadowMap } = {},
   ): void {
     const answer = this.fight?.view;
     const marks: Mark[] = [];
@@ -294,8 +297,9 @@ export class Naval {
       marks.push(...Naval.arcs(answer, view, shown));
     }
     // The balls and the lay first: past the most marks a frame draws, the effects' last puffs wait.
-    marks.push(...this.feel.marks(now, scale).map((mark) => ({ ...mark, z: mark.z * shown })));
-    this.marks.drawInto(pass, marks, camera);
+    const floated = this.feel.marks(now, scale, sea.water ?? null, camera.eye);
+    marks.push(...floated.map((mark) => ({ ...mark, z: mark.z * shown })));
+    this.marks.drawInto(pass, marks, camera, sea.shadow);
   }
 
   /** The lay's arcs (`arcsOf`) of the fight's answer. */

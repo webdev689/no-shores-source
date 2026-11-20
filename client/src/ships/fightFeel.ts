@@ -24,7 +24,10 @@ export type FeelEvent =
       readonly part?: 'hull' | 'sail' | 'rig';
     }
   | { readonly kind: 'splash'; readonly point?: Point; readonly at?: readonly number[] }
-  | RoomEvent;
+  | TickTold<RoomEvent>;
+
+/** A room's event as the feel reads it: the sea's and the fleet's tell its tick, the World Editor's JSON none. */
+type TickTold<Event> = Event extends unknown ? Omit<Event, 'tick'> & { readonly tick?: number } : never;
 
 export { feelOf, type RoomEvent } from '../rules/feelEvents.ts';
 
@@ -91,6 +94,8 @@ export class FightFeel {
   readonly effects: Effects;
   readonly flotsam = new Flotsam();
   private cues: Cue[] = [];
+  /** The balls aloft at the last frame, for the size of the splash each makes. */
+  private aloft: readonly (readonly [number, number, number, number])[] = [];
   /** Where each ship went down and until when its water foams, by her number. */
   private readonly wentDown = new Map<
     number,
@@ -106,7 +111,8 @@ export class FightFeel {
   frame(input: {
     readonly events: readonly FeelEvent[];
     readonly ships: ReadonlyMap<number, FeelShip>;
-    readonly balls: readonly Point[];
+    /** Each ball aloft: where it is (world metres) and its radius. */
+    readonly balls: readonly (readonly [number, number, number, number])[];
     readonly now: number;
     readonly seconds: number;
     readonly windBearing: number;
@@ -114,7 +120,11 @@ export class FightFeel {
   }): Splash[] {
     const { ships, now, toWindow } = input;
     this.effects.blow(input.windBearing);
-    this.effects.trail(input.balls.map(toWindow), now);
+    this.effects.trail(
+      input.balls.map(([x, y, z]) => toWindow([x, y, z])),
+      now,
+    );
+    this.aloft = input.balls;
     const splashes = input.events.flatMap((event) => this.take(event, ships, now, toWindow, input.windBearing));
     ships.forEach((ship, index) => {
       const { vessel, rig, hull } = ship;
@@ -162,7 +172,7 @@ export class FightFeel {
         const spot = toWindow([x, y, event.point?.[2] ?? 0]);
         // A page that never takes them (the World Editor's, which has no sound) keeps only the latest.
         this.cues = [...this.cues.slice(-31), { cue: 'shot.splash', at: spot }];
-        return [this.effects.splash(spot, now)];
+        return [this.effects.splash(spot, now, this.ballNear(x, y))];
       }
       case 'land':
         this.effects.dust(toWindow(event.point), now);
@@ -197,9 +207,11 @@ export class FightFeel {
         this.flotsam.lay(event.id, [spot[0], spot[1]], event.kind_of);
         return [];
       }
-      case 'Gathered':
-        this.flotsam.gather(event.id);
+      case 'Gathered': {
+        const spot = this.flotsam.gather(event.id);
+        if (spot) this.effects.gathered([spot[0], spot[1], 0], now);
         return [];
+      }
       default:
         return [];
     }
@@ -253,9 +265,25 @@ export class FightFeel {
     return ship.vessel.state !== 'sunk' && (ship.rig?.harm.sunkShare(now) ?? 0) < 1;
   }
 
-  /** The puffs and the flotsam at `now`, drawn `scale` times their size. */
-  marks(now: number, scale = 1): Mark[] {
-    return [...this.effects.marks(now, scale), ...this.flotsam.marks(now, scale)];
+  /** The radius of the ball last seen aloft nearest a splash at (x, y), world metres: the one that fell there. */
+  private ballNear(x: number, y: number): number | undefined {
+    let nearest: { readonly away: number; readonly radius: number } | null = null;
+    for (const [ballX, ballY, , radius] of this.aloft) {
+      const away = Math.hypot(ballX - x, ballY - y);
+      if (!nearest || away < nearest.away) nearest = { away, radius };
+    }
+    return nearest?.radius;
+  }
+
+  /** The puffs and the flotsam at `now`, drawn `scale` times their size, the flotsam on the drawn swell (`water`)
+   *  where the page has one and its marks sized for the eye at `eye` (window metres). */
+  marks(
+    now: number,
+    scale = 1,
+    water: ((x: number, y: number) => number) | null = null,
+    eye: readonly [number, number, number] | null = null,
+  ): Mark[] {
+    return [...this.effects.marks(now, scale), ...this.flotsam.marks(now, scale, water, eye)];
   }
 
   /** The holes in each ship's hull, where she is drawn (window metres, heights as drawn, her scale). */

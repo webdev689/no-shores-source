@@ -33,7 +33,7 @@ export function standingDrawers(
       drawInto: (pass, fromEye, shot, time, shadow) => {
         const camera = { fromEye, eye: shot.eye };
         parts.shipModels.draw(pass, ships, camera, shadow);
-        parts.seaFight?.draw(pass, camera, time);
+        parts.seaFight?.draw(pass, camera, time, shadow);
       },
     },
     {
