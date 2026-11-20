@@ -554,7 +554,10 @@ fn aerial(colour: vec3f, direction: vec3f, distance_to: f32) -> vec3f {
   let ground_fog = sky_state.fog.w * 1.5 * clamp(low, 0.0, 1.0) * distance_to;
   let haze = 1.0 - exp(-distance_to / frame.view.z - ground_fog);
   let foggy = clamp(sky_state.fog.w * frame.view.z + ground_fog * 0.2, 0.0, 1.0);
-  let air = mix(sky_haze(vec3f(direction.xy, max(direction.z, 0.02))) * 0.95, fog_light(direction), foggy);
+  // Only what the fog leaves of the dome's colour is worked out, and the fog's only where there is fog.
+  var air = vec3f(0.0);
+  if (foggy < 1.0) { air = sky_haze(vec3f(direction.xy, max(direction.z, 0.02))) * 0.95; }
+  if (foggy > 0.0) { air = mix(air, fog_light(direction), foggy); }
   return mix(colour, air, haze);
 }
 
