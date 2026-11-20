@@ -334,6 +334,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   test (the pull request lists them). On a cloud session's machine continent 1's layouts settle in about 2.3 s
   natively, and the World Editor's whole settle of continent 1 takes about 3.5 s. Left: switchbacks (waiting on the
   owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
+- **#63 conflicts with `main`** since #74, #90 and #91 merged: 31 files, about 50 hunks, in movement, the navmesh,
+  the garrison, the game's client, xtask and the bible. Beyond the marked hunks, `main`'s foes (climbing square into
+  a wall, spreading out, tactics) are written against `main`'s movement: a public `blocking_at` over a slice, and
+  blocks with no underside. This branch's movement has undersides and the spatial index, so merging `main` means
+  porting that foe code onto them, and the agreement pins move with `main`'s climb rule. CI runs on #63 only once
+  `main` is merged in.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
