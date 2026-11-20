@@ -32,6 +32,8 @@ const COURSE_EVERY_TICKS = 45;
  *  snapshot already on its way with the course before is never read as the room's answer.
  *  shortcut: a round trip over 1 s still reads the old word; the room naming the course it took would end the guess. */
 const SETTLE_TICKS = 60;
+/** The sea's word that the player washed up at a port city (crates/room/src/harbour.rs `WASHED_UP`). */
+const WASHED_UP = 20;
 
 export class SeaRoom {
   own: number;
@@ -56,6 +58,8 @@ export class SeaRoom {
   kept: SeenKept | null = null;
   flotsam: readonly SeenFlotsam[] = [];
   deck: SeenDeck | null = null;
+  /** Where the room moored the player's ship once they washed up (crates/room/src/harbour.rs), until it is taken. */
+  private washedAt: { readonly x: number; readonly y: number; readonly heading: number } | null = null;
   /** The room's tick by its last snapshot (none before the first), the tick the last course was sent at, and a course
    *  waiting to be sent. */
   private tick: number | null = null;
@@ -129,6 +133,22 @@ export class SeaRoom {
       this.naval.push(...view.naval);
     } else if (this.fight?.over === null) this.fight = null;
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.
+    const washed = snapshot.told.some((told) => told.player === this.own && told.numbers[0] === WASHED_UP);
+    if (washed) this.washUp(snapshot);
+  }
+
+  /** The player washed up: their fight is over for them, and their ship lies where the room moored her. */
+  private washUp(snapshot: Snapshot): void {
+    const moored = snapshot.ships.find((ship) => ship.player === this.own);
+    if (moored) this.washedAt = { x: moored.x, y: moored.y, heading: moored.heading };
+    if (this.fight?.over === null) this.fight = { ...this.fight, over: 'sunk', events: [] };
+  }
+
+  /** Where the room moored the player's ship once they washed up, taken once. */
+  takeWashed(): { readonly x: number; readonly y: number; readonly heading: number } | null {
+    const washed = this.washedAt;
+    this.washedAt = null;
+    return washed;
   }
 
   /** Every other player's ship. */

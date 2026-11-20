@@ -237,6 +237,10 @@ Pass]]) with Claude's numbers:
 - **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers "Repair
   her" (R): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
   and men), 100 s at most. Setting a course or leaving the sea stops it where it stood.
+- **Its weather.** Each fight at sea, and each fight among captains alone (`clash.rs`), takes the swell and the wind
+  where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and
+  keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps
+  its own, and what floats drifts down the wind of the fight it came from.
 - **Many in a fight** (`battle.rs`). Any player not fighting who comes within 750 m of a ship of a fight joins it, a
   fight with players in it too, their Sloop hove to under a number of their own; every player in it fights every
   captain, and players never harm one another (a ball passes through a ship of its own flag). A hostile ship at sea
@@ -436,9 +440,9 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 - A wary ship at sea meets a player she outguns only once they come within 750 m: she does not steer for them as a
   bold ship does (the chase is the sea's pirates', `pirates.rs`).
 - The page shows the deck fight's word (the boarding, the hold opened, washing up) but not yet the deck fight itself:
-  walking her deck on foot among her crew, as walking a deck already is, with the fight's display. Washing up moves the
-  ship to the port's roadstead, and the page's own view of the sea follows only once the room's word reaches it; the
-  walk into the port's social space is not yet the page's.
+  walking her deck on foot among her crew, as walking a deck already is, with the fight's display. Washing up ends the
+  page's fight view and lays its ship where the room moored her, at the port's roadstead; the walk into the port's
+  social space is not yet the page's.
 - A captain's men give out at about four fifths of her hull at every rank, so her rank's run and strike shares of her
   hull are seldom reached; striking at them would take men who stand more blows, a Major's too.
 - Two captains of one rank keep pace: a bold one gives up the chase of a wary one sailing away after 150 s.

@@ -273,7 +273,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   colours struck ("Her colours are down: come alongside and press E to board her."), the boarding, each piece of what
   floats gathered and what it held ("Gathered a chest: a Rare Vestige, an Ammo box."; what found no room, "nothing you
   had room for"), and washing up ("Your ship went down: you washed up at Sunspire, your ship moored at its
-  roadstead.", or "Beaten aboard her: …"). In a fight, E boards a captain who struck once she lies within 30 m and both
+  roadstead.", or "Beaten aboard her: …"). Washed up, the fight's view goes back up and the ship lies where the room moored her. In a fight, E boards a captain who struck once she lies within 30 m and both
   ships make under 2 m/s (`boardable`); the fight's own keys let E through. Manage's panel shows her hull, canvas and
   men as the sea keeps them and a Repair part: R asks for her repair, which the panel shows with its seconds left
   ("Repairing her: 13 s left"), "She is whole", or where it is had.

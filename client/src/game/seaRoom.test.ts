@@ -26,7 +26,7 @@ async function joined() {
     [50_000, 150_000],
     10,
   );
-  const atTick = (tick: number, ships: readonly SeenShip[] = []) =>
+  const atTick = (tick: number, ships: readonly SeenShip[] = [], told: readonly number[][] = []) =>
     hand({
       tick: BigInt(tick),
       players: [],
@@ -35,7 +35,7 @@ async function joined() {
       fights: [],
       flotsam: [],
       kept: [],
-      told: [],
+      told: told.map((numbers) => ({ player: 1, numbers })),
       decks: [],
     } as unknown as Snapshot);
   return { room, sent, atTick, link };
@@ -88,4 +88,15 @@ test('while its link rejoins the sea shows none of its ships; joined again, she 
   assert.deepEqual([room.rejoined(), room.rejoined(), room.own], [true, false, 4]);
   room.course([[50_000, 150_000]], 10);
   assert.equal(sent.length, 2, 'put to sea again at once, with no wait on the old room’s clock');
+});
+
+test('washed up, the player’s ship lies where the room moored her, taken once, and what the sea told is kept', async () => {
+  const { room, atTick } = await joined();
+  const moored = { player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 };
+  atTick(5, [moored], [[20, 5, 0, 1]]);
+  assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 1 });
+  assert.equal(room.takeWashed(), null, 'taken once');
+  atTick(6, [moored]);
+  assert.equal(room.takeWashed(), null, 'only the snapshot that tells it moors her');
+  assert.deepEqual(room.takeTold().told, [[20, 5, 0, 1]]);
 });

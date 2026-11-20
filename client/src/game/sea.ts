@@ -471,7 +471,7 @@ export class Sea {
     const place = scale === 1 ? truePlace : this.drawn.placeOf('own', own, scale, this.water, 0, time);
     const lying: Lying = { ...ship, scale, heave: place.z, pitch: place.pitch, roll: place.roll };
     if (combat?.done) {
-      this.passage.placeAt(combat.lying);
+      this.passage.placeAt(this.room?.takeWashed() ?? combat.lying);
       this.combat = null;
     }
     const others = this.room?.others ?? [];

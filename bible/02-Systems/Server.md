@@ -203,6 +203,9 @@ A room named `fleet-<name>` is a place at sea at true scale, on the open sea und
 where each player sails her own Sloop by her helm and fights, and captains called into the room, of a faction and a
 rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
 
+- **Its weather.** The host opens it at the world's time (`room_world_start`); its sea takes the weather at its place
+  then and keeps it, and its snapshot carries that time (`world_start`), so a browser predicting its ship sails in the
+  same weather.
 - **Putting to sea.** A player joins with no ship at sea. The first of her orders that says where puts her Sloop to
   sea there, at that heading, anywhere in the world's frame; after that only her helm moves her.
 - **Orders** are taken as a land room takes inputs: numbered 1, 2, 3 and so on, refused out of order or with a number
