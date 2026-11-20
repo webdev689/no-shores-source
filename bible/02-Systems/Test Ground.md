@@ -220,9 +220,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   before it drains, the health's frame flashing blood at a quarter or less and the stamina's flashing when a swing or a
   dodge is pressed with none; the Arts and the weapons in hand and in the other loadout at the bottom left; the soft
   lock's target marked at its chest; the target's plate (level, name, health and poise track) under the compass (below
-  the boss bar while one shows); over each living foe but a Boss, near the crosshair or fought in the last minute, its
-  plate: its level, its type's name with an Elite's or a Miniboss's mark, and its health in red, orange or yellow by
-  rank, a "?" while it is suspicious or searching and a "!" for a second as it turns alert, no plate over another's;
+  the boss bar while one shows); over the living foe nearest the crosshair within 6 degrees of its body, the one locked
+  and those fought in the last 6 s, but never a Boss, its plate ([[Fewer Plates Show, Sized by Rank, After Destiny]]): its level, its type's name with an Elite's or a Miniboss's mark, and its health in
+  red, orange or yellow by rank, sized by rank, a "?" while it is suspicious or searching and a "!" for a second as it
+  turns alert, no plate over another's;
   under the compass, for the nearest living Boss alert or struck, the boss bar: its level, name and faction, "Phase n of
   3", and its health in yellow marked at 2/3 and 1/3 ([[Enemies]]); words where each blow met the body for each blow and
   what it came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Crit, Slain, a

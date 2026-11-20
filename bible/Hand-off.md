@@ -161,8 +161,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   - The bars do what DFO's Enhanced Plus does with them ([[Pick - Enhanced Plus UI]], read at DFO's fc2a8e6): a
     hit's piece breaks off and falls, each foe's health is remembered, the poise track says Iron, Staggered and Open,
     the target plate follows the foe last struck and fades after 6 s, the vitals rest when whole, ships' plates read a
-    hit the same way; and plates stay light: only near the crosshair or for foes fought in the last minute, never
-    larger, never through a block, none past 60 m.
+    hit the same way; and plates stay light: never larger, never through a block, none past 60 m (which plates show,
+    and their sizes, change on #95).
   - DFO's compass across the top, with the boss bar and the target's plate under it; the vitals kept in their window
     at the bottom left ([[The Vitals Keep Their Panel Under DFO's Compass]]); the plates just over a foe's head.
   - The gear loop fitted in, `main` with #60 merged into #61: the garrisons stand at their island's levels raised by
@@ -196,6 +196,30 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#95, fewer plates, sized by rank, after Destiny**, a draft from branch `ccr-800481d9-kbbd62`, waits on the
+  owner's yes ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate,
+  the foe in sight nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and
+  shows none over its head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's
+  bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates.
+  Three audits of it (the code; its fidelity to the approval and its records; its frame cost and look) are fixed on
+  it, each fix with a test seen to fail without it. Tested offline: the full check; headless on the built page,
+  walking into the Saltgrass Downs garrison, six plates on `main` against one on #95, over the foe at the crosshair
+  (the foes stayed wary, so no blow was traded in the pictures); and each rank's plate whole and at three quarters.
+  Claude's calls, listed in its description, are the owner's to change: the cone's numbers and its hold; no second
+  plate by the cone while the foe at the crosshair is fought, locked or a Boss; a fought plate fading within the 6 s,
+  as the target plate does; the bars' sizes; thirds only over figures; the words of blows clear only of plates drawn;
+  ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
+  to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
+  writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
+- **#96, the kit's first review**, a draft from branch `ccr-800481d9-kbbd62-kit`, waits on the owner's yes: a fidelity
+  review (`workers/fidelity-review.sh`, a fixed brief) with a CI check that fails a pull request changing a decision
+  without its verdict, as the owner chose for a rule broken three times in one task; workers' worktrees made ready to
+  test; the observation log kept on the branch `toolkit-data`, saved by a git merge so a parallel session's save is
+  kept, with a test check-tools runs; `cargo xtask check` naming the commit it checked; and Toolkit rows for web research
+  and for measuring text before sizing a box. Tested offline: the full check, check-tools with a headless worker, the
+  save's test, and a fidelity review of #95, whose eight findings are fixed or answered there. Open for the owner, in
+  its description: where the claude-mem store lives (an archive, kept out of git), whether CI should require the verdict
+  to name the pull request's head (a new review after each push), and making the check required on GitHub.
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
 - **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
@@ -255,7 +279,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   port's label giving way, and DFO's other ships back.
 - The bars' proposals, the owner's to choose: a foe's alert "!" showing its plate through the cone for a second;
   a setting to switch the vitals' rest off; near plates growing (DFO's own law grows them to 1.5×, ours caps them);
-  ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
+  ships' plates fading with distance; a soft-locked Boss shown once; a mark for
   a Major; the display scaled with the screen; one look for both kinds of death in the Game. DFO's blade face is
   left out: its pictures are another person's ([[Own Work]]).
 - The attack feel plays in the game on #69 at the [[Test Ground]]'s defaults, with the light layer on, as Claude's call
@@ -341,9 +365,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
   fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
-- **The first review of the kit's observations waits on the owner's yes**: four changes to the instructions, and one
-  observation to close as already fixed, each in the session's report and in
-  `~/toolkit-data/task-observer/skill-observations/review-2026-11-20.md`, which a container loses at its end.
+- **The kit's observation log** has had its first review: all five observations are actioned, their fixes on #96,
+  waiting on the owner's merge. The log is on the orphan branch `toolkit-data` (#96's `toolkit-data.sh`; until #96
+  merges, its restore and save are on that branch only). The earlier review's four changes to the instructions, and one
+  closing, were lost with their container; only that session's report has them.
 
 ## Next
 
