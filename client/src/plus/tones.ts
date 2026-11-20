@@ -22,6 +22,11 @@ export const TONES = {
   groove: 'rgba(163,152,128,0.26)',
   word: '#fbf8f0',
   wordDim: '#e2dccd',
+  /** DFO's hourglass glass. */
+  glass: '#d8cfae',
+  /** Stone gone to blood, as `BEVELS.blood` lights and shades it. */
+  blood: '#b83a2e',
+  bloodDark: '#5a130f',
 } as const;
 
 /** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a soft

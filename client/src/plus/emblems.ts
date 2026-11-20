@@ -3,7 +3,7 @@
 import { TONES } from './tones.ts';
 
 /** A picture's rows, a letter a pixel ('.' is clear), and the tone each letter paints. */
-interface Pixels {
+export interface Pixels {
   readonly rows: readonly string[];
   readonly tones: Readonly<Record<string, string>>;
 }
@@ -75,7 +75,7 @@ function pixelSvg(pixels: Pixels): string {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}' shape-rendering='crispEdges'>${rects.join('')}</svg>`;
 }
 
-const urlOf = (pixels: Pixels) => `data:image/svg+xml,${encodeURIComponent(pixelSvg(pixels))}`;
+export const urlOf = (pixels: Pixels) => `data:image/svg+xml,${encodeURIComponent(pixelSvg(pixels))}`;
 
 /** A faction's emblem as a picture's address (an SVG's data URL), or null for a faction with none. */
 export function emblemUrl(faction: number): string | null {
