@@ -55,3 +55,12 @@ fn a_prologue_finished_in_the_room_before_the_claim_answers_is_kept_and_a_kept_s
     assert!(room.restore_character(player, &ahead.to_json()));
     assert!(room.players[&player].character.story.prologue, "a kept story ahead of the room's is never put back");
 }
+
+#[test]
+fn an_elite_dungeons_node_keeps_out_a_character_short_of_the_prologue() {
+    let (room, _) = node_of(NodeKind::Dungeon, gear::Difficulty::Normal);
+    assert_eq!(room.shut(&gear::Character::starting()), Some(gear::gate::Shut::Prologue));
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert_eq!(room.shut(&past), None);
+}

@@ -1,7 +1,8 @@
 //! The gates: a patrol and its dungeons after the prologue, and the seas by level; a social space never shut.
 
+use crate::activities::Weekly;
 use crate::character::Character;
-use crate::gate::{Place, Shut, shut};
+use crate::gate::{Place, Shut, shut, shut_at};
 use crate::world::Difficulty;
 
 fn at_level(level: u8, prologue: bool) -> Character {
@@ -44,4 +45,25 @@ fn each_shut_says_why_in_a_short_plain_line() {
     assert_eq!(Shut::Prologue.reason(), "This place opens after the prologue.");
     assert_eq!(Shut::Seas(Difficulty::Elite).reason(), "Elite seas open at level 10.");
     assert_eq!(Shut::Seas(Difficulty::Abyss).reason(), "Abyss seas open at level 20.");
+}
+
+#[test]
+fn an_elite_dungeon_opens_after_the_prologue_and_the_weeks_two_at_24_and_28() {
+    assert_eq!(shut_at(30, false, Place::EliteDungeon, Difficulty::Normal), Some(Shut::Prologue));
+    assert_eq!(shut_at(1, true, Place::EliteDungeon, Difficulty::Normal), None);
+    for (weekly, opens) in [(Weekly::Elite, 24), (Weekly::Abyss, 28)] {
+        let place = Place::Week(weekly);
+        assert_eq!(
+            shut_at(30, false, place, weekly.tier()),
+            Some(Shut::Prologue),
+            "the prologue stands in for the campaign"
+        );
+        assert_eq!(shut_at(opens - 1, true, place, weekly.tier()), Some(Shut::Level(opens)));
+        assert_eq!(shut_at(opens, true, place, weekly.tier()), None);
+    }
+    assert_eq!(Shut::Level(24).reason(), "This dungeon opens at level 24.");
+    assert_eq!(
+        shut(&at_level(9, true), Place::Patrol, Difficulty::Elite),
+        shut_at(9, true, Place::Patrol, Difficulty::Elite)
+    );
 }

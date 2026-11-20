@@ -220,12 +220,14 @@ fn open_points(section: &Section, middle: (f64, f64)) -> Vec<(f64, f64)> {
     open
 }
 
-/// What the gates know a node of a kind as: a mission, a boss or a named dungeon by its seas alone.
+/// What the gates know a node of a kind as: an Elite Dungeon's opens after the prologue, a mission's or a boss's by
+/// its seas alone.
 fn place_of(kind: NodeKind) -> gear::gate::Place {
     match kind {
         NodeKind::Social => gear::gate::Place::Social,
         NodeKind::Patrol => gear::gate::Place::Patrol,
-        NodeKind::Mission | NodeKind::Dungeon | NodeKind::Boss => gear::gate::Place::Node,
+        NodeKind::Dungeon => gear::gate::Place::EliteDungeon,
+        NodeKind::Mission | NodeKind::Boss => gear::gate::Place::Node,
     }
 }
 

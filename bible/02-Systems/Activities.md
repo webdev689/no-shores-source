@@ -148,13 +148,15 @@ One engine counts both, since the owner's side quests and the board's bounties a
 - **Characters saved before the story was kept** count as past the prologue: a save with no `story` reads as past
   it.
 - **The rooms refuse a join a gate shuts**, and say why: no kept character passes a gate it has not opened. A player
-  the accounts do not hand over plays unkept, as a new character, and keeps nothing. The gate is `gear::gate::shut`:
-  a social space never shuts; a patrol and its dungeons need the prologue; then Elite seas need level 10 and Abyss
-  seas level 20, anywhere else. A room asks it before it gives a player their kept character, with the story they
-  already hold in the room carried forward (`Story::merged`, which never goes back), and a new one is judged as it
-  starts. The reasons read "This place opens after the prologue.", "Elite seas open at level 10." and "Abyss
-  seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screen shows what is shut and what
-  opens it.
+  the accounts do not hand over plays unkept, as a new character, and keeps nothing. The gate is `gear::gate::shut`,
+  which reads a character's level and prologue into `shut_at`: a social space never shuts; a patrol, its dungeons
+  and an Elite Dungeon (its node, its approach and its run at Normal) need the prologue; the week's two need it and
+  then their own level, 24 or 28, whatever the seas; then Elite seas need level 10 and Abyss seas level 20, anywhere
+  else. A room asks it before it gives a player their kept character, with the story they already hold in the room
+  carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
+  "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "Elite seas open at level 10."
+  and "Abyss seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screen shows what is
+  shut and what opens it.
 
 ## The screen
 
