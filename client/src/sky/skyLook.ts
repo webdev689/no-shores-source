@@ -67,6 +67,9 @@ export function cloudDrift(steeringMS: number, worldS: number): Pick<SkyLook, 'd
   ];
   return { drift: placed(index), driftNext: placed(index + 1), driftFade: smooth(1 - CLOUD_FADE, 1, spells - index) };
 }
+/** The sun's height (its sine) where its light is gone and the key passes to the moon, and where the moon's is whole. */
+const SUN_GONE = -0.03;
+const MOON_KEYED = -0.08;
 /** The fog's density, per metre, in a thick bank, a heavy fall and a sandstorm. */
 const FOG_BANK = 0.004;
 const FALL_HAZE = 0.0012;
@@ -110,10 +113,10 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
   const moonUp = smooth(-0.05, 0.25, moon[2]);
   const moonShown = reading.moonLit * moonUp * (1 - daylight);
   const moonAtGround = scale(FULL_MOON, moonShown * (1 - 0.85 * cover));
-  // The key light is whichever body gives more: the sun by day, the moon once the sun has set.
-  const sunBright = luminance(sunAtGround);
-  const byMoon = sunBright < luminance(moonAtGround) || sun[2] < -0.02;
-  const keyLight = byMoon ? moonAtGround : sunAtGround;
+  // The key light is the sun until it has wholly set, then the moon, risen through the dusk from nothing: the light
+  // swaps sides of the sky only while it is dark, so no shadow or lit face turns at once.
+  const byMoon = sun[2] < SUN_GONE;
+  const keyLight = byMoon ? scale(moonAtGround, smooth(SUN_GONE, MOON_KEYED, sun[2])) : sunAtGround;
   const key = byMoon ? moon : sun;
   const moonSky = scale(MOON_SKY, moonShown * (1 - 0.7 * cover));
   const clearZenith = add(clearSky(sun[2], NIGHT_ZENITH, CIVIL_ZENITH, SET_ZENITH, DAY_ZENITH), moonSky);

@@ -160,9 +160,14 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
   let ambient = mix(sky_state.horizon.rgb, sky_state.zenith.rgb, 0.5);
   let grey = mix(ambient, vec3f(luma(ambient)), 0.55);
   let key = sky_state.key.xyz;
-  let key_light = sky_state.key_light.rgb + twilight_glow() * 0.9 * step(0.999, dot(key, sky_state.sun.xyz));
+  let key_light = sky_state.key_light.rgb;
   let toward_key = max(dot(direction, key), 0.0);
   let silver = pow(toward_key, 12.0) * 1.4 + pow(toward_key, 3.0) * 0.25;
+  // The low sun's glow lights the clouds from its side, whichever body is the key, until it is 12 degrees under.
+  let toward_sun = max(dot(direction, sky_state.sun.xyz), 0.0);
+  let sun_silver = pow(toward_sun, 12.0) * 1.4 + pow(toward_sun, 3.0) * 0.25;
+  let sun_side = 0.5 + 0.5 * dot(normalize(direction.xy + vec2f(1e-5, 0.0)), normalize(sky_state.sun.xy + vec2f(1e-5, 0.0)));
+  let glow = twilight_glow() * 0.9 * (0.3 + 0.7 * sun_side * sun_side);
 
   // Cirrus, far up: streaks long along the drift (east), drifting twice as fast as the deck.
   let high = direction.xy / (up + 0.02) * 0.3;
@@ -172,7 +177,7 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
     wisps = sky_spell_mix(wisps, wisps_at(high, sky_state.drift_next.xy, wisp_keep), 0.325);
   }
   let wisp = smoothstep(0.5, 0.85, wisps) * (0.18 + 0.3 * cover) * smoothstep(0.02, 0.2, up);
-  let wisp_colour = grey * 0.9 + key_light * (0.45 + silver) + twilight_glow() * 0.35;
+  let wisp_colour = grey * 0.9 + key_light * (0.45 + silver) + glow * (0.85 + sun_silver);
 
   // The deck: lower in a storm, so its cells loom larger.
   let reach_scale = 0.9 / (1.0 - 0.4 * storm);
@@ -192,6 +197,7 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
     let thick = smoothstep(threshold, threshold + 0.45, puff);
     let shade = (1.2 - 0.75 * thick) * (1.0 - 0.6 * storm);
     var colour = grey * shade + key_light * (0.2 + 0.55 * lit + silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
+    colour += glow * (0.2 + 0.55 * lit + sun_silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
     colour += vec3f(0.75, 0.8, 1.0) * flash * (0.5 + 1.5 * thick) * (0.6 + 0.8 * value_noise((plane - sky_state.drift.xy) * 0.5));
     out = vec4f(mix(out.rgb * out.a, colour, alpha) / max(mix(out.a, 1.0, alpha), 1e-4), mix(out.a, 1.0, alpha));
   }

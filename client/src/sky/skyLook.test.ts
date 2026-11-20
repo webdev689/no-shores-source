@@ -92,3 +92,18 @@ test('the clouds are carried only through their spell, so a steering flow that c
   assert.ok(Math.abs((numbers[11 * 4 + 3] ?? 0) - 0.25) < 1e-6, 'drift.w: the moon phase');
   assert.ok(Math.abs((numbers[12 * 4 + 2] ?? 0) - look.driftFade) < 1e-6, 'drift_next.z: how far the next has come');
 });
+
+test('the key light passes from the sun to a risen moon only while it is dark, so it never jumps at dusk', () => {
+  // A first-quarter moon high in the east as the sun sets in the west: the case where the key once swapped early.
+  const dusk = (sunUp: number) => lookOf(readingAt(sunUp, { moon: [0.6, 0, 0.6], moonLit: 0.5 }), 0, 0);
+  const heights = Array.from({ length: 400 }, (unused, step) => 0.1 - step * 0.0005);
+  for (const [above, below] of heights.slice(0, -1).map((height, step) => [height, heights[step + 1] ?? 0])) {
+    const [before, after] = [dusk(above), dusk(below)];
+    assert.ok(Math.abs(before.keyBright - after.keyBright) < 0.01, `no jump in the key's light at ${below}`);
+    // The sun sets in the west and the moon stands in the east: the key's side says which it is.
+    if (Math.sign(before.key[0]) !== Math.sign(after.key[0]))
+      assert.ok(before.keyBright < 1e-3 && after.keyBright < 1e-3, 'it swaps in the dark');
+  }
+  assert.deepEqual(dusk(0.01).key.slice(0, 3), readingAt(0.01).sun, 'the sun is the key while it is up');
+  assert.ok(dusk(-0.1).keyBright > 0.01, 'the moon is the key once the sun is well set');
+});
