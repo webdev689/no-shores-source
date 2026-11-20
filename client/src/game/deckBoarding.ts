@@ -131,7 +131,7 @@ export class Boarding {
     const left = fight.holdLeft;
     const take = fight.take;
     if (left === null)
-      return { place: `Aboard the ${captain.name}`, line: 'Her crew stands to meet you', hints: frame.hints };
+      return { place: captain.name, line: 'Aboard her: her crew stands to meet you', hints: frame.hints };
     const hold = take ? `Her hold: ${holdWords(take)}, afloat alongside` : 'Her hold is open';
     const line = `${hold} · ${left} s to go back aboard your ship`;
     return { place: `Her deck is yours`, line, hints: ['E: back aboard your ship', ...frame.hints] };

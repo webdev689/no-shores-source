@@ -94,7 +94,10 @@ test('a struck captain alongside is boarded with E: the boarder stands on her de
   const her = { x: 20, y: 0, heading: 0.5, scale: 1, heave: 0.2, pitch: 0.01, roll: -0.03 };
   assert.deepEqual(shown.shot.eye, deckToWorld(her, 0, 3, 2), 'the eye rides her ship');
   assert.deepEqual([shown.figures[0]?.x, shown.figures[0]?.y], deckToWorld(her, 0, -2, 0.9).slice(0, 2));
-  assert.equal(boarding.words?.place, 'Aboard the Pirate Sloop');
+  assert.deepEqual(
+    [boarding.words?.place, boarding.words?.line],
+    ['Pirate Sloop', 'Aboard her: her crew stands to meet you'],
+  );
   assert.equal(fightAsk({ ...atSea, fight: { view: struck } }), null, 'E asks nothing while her crew fights');
 });
 

@@ -70,14 +70,15 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   hud.hints(deck ? deck.hints : seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
   hud.marks(shown.marks);
   const { eye, yaw, pitch, fov } = shown.shot;
-  hud.shipBars(shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
+  // Aboard her the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
+  hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   // The held map raised at the helm covers the view, the compass with it.
   const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted);
   hud.compass(
     atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
   );
   const ship = { canLeave: here.inRoom && fighting === null, canManage: fighting === null };
-  hud.seaBar(onSea && !atHelm && !aboard.active ? { ...shown, ...ship } : null);
+  hud.seaBar(onSea && !atHelm && !aboard.active && !deck ? { ...shown, ...ship } : null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);
