@@ -16,6 +16,7 @@ code:
   - client/src/game/dungeonTrips.ts#dungeonTrips
   - client/src/game/activityWords.ts#thisWeekOf
   - client/src/game/activityWords.ts#entranceCardOf
+  - server/accounts/finding.ts#Queue
 ---
 # Activities
 

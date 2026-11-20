@@ -24,6 +24,19 @@ export interface Claimed {
   readonly body: string | null;
 }
 
+/** The account a session's token is for, seen at `now`; null when the token is no session, or one that lapsed. */
+export async function liveAccount(database: Db, token: string, now: number): Promise<string | null> {
+  const session = await database
+    .prepare(
+      `UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2 AND (seen_at >= ?3 OR EXISTS
+       (SELECT 1 FROM accounts WHERE accounts.id = sessions.account_id AND username IS NULL AND discord_id IS NULL))
+       RETURNING account_id`,
+    )
+    .bind(now, await hashOf(token), now - SESSION_IDLE_MS)
+    .first<{ account_id: string }>();
+  return session?.account_id ?? null;
+}
+
 /** What the accounts answer the rooms over their binding. */
 export interface Characters {
   claim(token: string, holder: string): Promise<Claimed | null>;
@@ -47,18 +60,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
           )
           .bind(holder, now() + HOLD_MS, account, now())
     ).first<{ body: string | null }>();
-  /** The account a session's token is for, seen now; null when the token is no session, or one that lapsed. */
-  const live = async (token: string) => {
-    const session = await database
-      .prepare(
-        `UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2 AND (seen_at >= ?3 OR EXISTS
-         (SELECT 1 FROM accounts WHERE accounts.id = sessions.account_id AND username IS NULL AND discord_id IS NULL))
-         RETURNING account_id`,
-      )
-      .bind(now(), await hashOf(token), now() - SESSION_IDLE_MS)
-      .first<{ account_id: string }>();
-    return session?.account_id ?? null;
-  };
+  const live = (token: string) => liveAccount(database, token, now());
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */

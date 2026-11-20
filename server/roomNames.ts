@@ -71,6 +71,16 @@ export function runAsk(room: string, minute: number): string | null {
   return JSON.stringify({ dungeon, tier: named.seas, minute });
 }
 
+/** The letters a run's instance is drawn from: 36, so each of its 8 random bytes is taken modulo 36. */
+const INSTANCE = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+/** A new run's instance: eight lowercase letters or digits, drawn at random so no one outside the company finds it. */
+export function runInstance(
+  random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array = (bytes) => crypto.getRandomValues(bytes),
+): string {
+  return Array.from(random(new Uint8Array(8)), (byte) => INSTANCE[byte % INSTANCE.length]).join('');
+}
+
 /** Whether a room is a run, kept to the company that entered it. */
 export function privateRun(room: string): boolean {
   return RUN_ENDING.test(room);

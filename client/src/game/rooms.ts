@@ -81,15 +81,8 @@ export function nodeOfRoom(room: string): {
   return { id: found[1], seas, dungeon, run: found[4] ?? null };
 }
 
-/** The letters a run's instance is drawn from: 36, so each of its 8 random bytes is taken modulo 36. */
-const INSTANCE = 'abcdefghijklmnopqrstuvwxyz0123456789';
-
-/** A new run's instance: eight lowercase letters or digits, drawn at random so no one outside the company finds it. */
-export function runInstance(
-  random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array = (bytes) => crypto.getRandomValues(bytes),
-): string {
-  return Array.from(random(new Uint8Array(8)), (byte) => INSTANCE[byte % INSTANCE.length]).join('');
-}
+// A run's instance is drawn as the server's Find a Company draws one, by one rule.
+export { runInstance } from '../../../server/roomNames.ts';
 
 /** A run's room: the dungeon's room's name, then its instance. */
 export function runOf(base: string, instance: string): string {

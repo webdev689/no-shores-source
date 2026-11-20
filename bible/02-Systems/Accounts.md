@@ -22,6 +22,9 @@ code:
   - server/accounts/names.ts#refusalOf
   - server/accounts/people.ts#PERSON
   - server/keeping.ts#Keeper
+  - server/accounts/finding.ts#Finder
+  - server/accounts/finder.ts#CompanyFinder
+  - server/accounts/migrations/20261120181039_found_runs.sql
   - client/src/network/accounts.ts#AccountLink
   - crates/gear/src/character.rs#from_json
 ---
@@ -149,10 +152,31 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
 
+## Find a Company
+
+Find a Company ([[Activities]]) matches players for an Elite Dungeon at Normal or the Elite Dungeon of the week,
+never the Abyss Dungeon of the week, whose company forms it.
+
+- **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
+  reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
+  week's. A socket's first message is its session's token; one that is no session is closed with 4003 and "Sign in to
+  find a company.". At most 64 sockets wait in one.
+- **Bands.** A seeker is matched by the level their room last kept (`shown.level`, 1 for none yet), in bands of ten:
+  1 to 10, 11 to 20 and 21 to 30 (`bandOf`).
+- **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
+  none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
+  many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while anyone waits.
+- **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
+  "You are finding a company in another tab.". Closing the socket leaves the queue.
+- **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`, kept a day), so its room
+  lets them in together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their
+  socket closed. The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a
+  Company only where the gate is open.
+
 ## Running it here
 
 `npm run accounts` applies the migrations to a local database and runs the accounts on port 8788, beside
-`npm run server`; the rooms' binding finds them. The game takes `?accounts=http://127.0.0.1:8788` with its
+`npm run server`; the rooms' binding finds them, and Find a Company runs there too. The game takes `?accounts=http://127.0.0.1:8788` with its
 `?room=ws://127.0.0.1:8787`.
 
 ## Limits
