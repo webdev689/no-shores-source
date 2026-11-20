@@ -319,6 +319,13 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let arts = gear::arts::arts().arts.iter();
     let cores: Vec<u8> = arts.flat_map(|art| character.core_of(art.id)).map(|set| set.unwrap_or(NO_FRAGMENT)).collect();
     let casting = found.casting;
+    // In a patrol, its entrances: x, y, the ground's height, the yaw and the model, each.
+    let dungeons: Vec<f64> = room
+        .entrances()
+        .iter()
+        .flat_map(|entrance| [entrance.at[0], entrance.at[1], entrance.at[2], entrance.yaw, entrance.model as f64])
+        .collect();
+    let dungeons = (!dungeons.is_empty()).then(|| builder.create_vector(&dungeons));
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -354,6 +361,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         ammo_share: f64::from(character.ammo) / f64::from(gear::ammo::AMMO_FULL),
         crates: u8::try_from(held.crates).unwrap_or(u8::MAX),
         crate_price: if room.in_social_space(player) { gear::ammo::CRATE_PRICE } else { 0 },
+        dungeons,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

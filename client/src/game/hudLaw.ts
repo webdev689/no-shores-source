@@ -48,11 +48,18 @@ export type MarkKind = keyof typeof KIND_WORDS;
 
 /** The islands' names the owner has given, by continent. */
 export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
+/** The region every island lies in. */
+export const REGION = 'The Pale Expanse';
 
-/** The words under a place's name: its kind, and its island's name where it has one. */
-export function placeWords(node: { readonly kind: MarkKind; readonly continent: string }): string {
-  const island = ISLANDS[node.continent];
-  return island ? `${KIND_WORDS[node.kind]} · ${island}` : KIND_WORDS[node.kind];
+/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, and its island's
+ *  name where it has one. */
+export function placeWords(
+  place: { readonly kind: MarkKind; readonly continent: string },
+  room?: string | null,
+): string {
+  const island = ISLANDS[place.continent];
+  const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${KIND_WORDS[place.kind]}` : KIND_WORDS[place.kind];
+  return island ? `${named} · ${island}` : named;
 }
 
 /** A distance as a mark shows it: metres near, kilometres past one. */

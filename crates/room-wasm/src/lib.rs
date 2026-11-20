@@ -21,11 +21,13 @@ use std::cell::RefCell;
 
 mod course_door;
 mod deck_door;
+mod dungeon_door;
 mod fighter_door;
 mod fleet_door;
 mod gear_door;
 mod roster_door;
 
+pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground};
 pub use gear_door::{character, furnish, gear, restore_character, set_day, set_difficulty};
 
@@ -265,6 +267,7 @@ pub fn snapshot() -> Vec<u8> {
             let lines = room.take_lines();
             let shots: Vec<combat::Shot> = room.shots().copied().collect();
             let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
+            let cache = room.cache();
             let snapshot = protocol::Snapshot {
                 tick,
                 players: &players,
@@ -274,6 +277,7 @@ pub fn snapshot() -> Vec<u8> {
                 shots: &shots,
                 lines: &lines,
                 spells: &spells,
+                cache: cache.as_ref().map_or(&[], |cache| cache.as_slice()),
             };
             protocol::snapshot_bytes(&snapshot)
         }
@@ -458,6 +462,17 @@ pub extern "C" fn room_sloop() -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_roster() -> u64 {
     hand_over(roster_door::roster_json().into_bytes())
+}
+
+/// A patrol's dungeon as JSON (`dungeon_door::dungeon_json`), asked for by the JSON written at `address`, `length`
+/// bytes long: its patrol's id and name and its number.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_dungeon(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    hand_over(dungeon_door::dungeon_json(unsafe { std::slice::from_raw_parts(address, length) }).into_bytes())
 }
 
 /// Lets the open room take players' asks for foes; see `take_foe_asks`.

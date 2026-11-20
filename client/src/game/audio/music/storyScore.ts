@@ -49,16 +49,16 @@ const RAISED_COUNTER = measured(
 /** The theme's first notes high on the flute, over the title. */
 const TITLE = measured('D5:1.5 A5:.5 Bb5:1 A5:1 | F5:4 | E5:2 C#5:2 | D5:4', FOUR);
 
-/** The title: first light (two bars of the pad and a bell), the theme on the horn over the harp, its answer on the
- *  flute with the cello under it and the choir coming in, the theme again on the horn and the fiddle an octave apart
- *  with the choir, the brass and the drums, and the title's bars, the theme's first notes high on the flute, quiet
- *  as the game waits to begin. About 91 s, the intro's length, before it comes round. */
+/** The title: first light (two bars of the pad and a bell, the intro's 6 s over the cloud), then, as the camera goes
+ *  down through the cloud, the theme on the horn and the fiddle an octave apart with the choir, the brass and the
+ *  drums, rising to the title over Saltmere; then, as the game waits to begin, its answer on the flute with the cello
+ *  under it and the choir, and the title's bars, the theme's first notes high on the flute, quiet. About 67 s before
+ *  it comes round, so it never begins again under a title the player has only just reached. */
 function themeSong(): Song {
   const sections = [
     ['dawn', harmony('Dm | Dm', FOUR)],
-    ['theme', harmony(UNDER.theme, FOUR)],
-    ['answer', harmony(UNDER.answer, FOUR)],
     ['full', harmony(UNDER.theme, FOUR)],
+    ['answer', harmony(UNDER.answer, FOUR)],
     ['title', harmony('Dm | Bb | A | Dm', FOUR)],
   ] as const;
   const starts = sections.map((unused, index) =>
@@ -101,12 +101,11 @@ function themeSong(): Song {
         if (name === 'full') held(w, 'choir', first, bars, FOUR, 57, 70);
       }
       dawn(w, startOf('dawn'));
-      lay(w, 'horn', startOf('theme'), THEME, 90, { legato: 0.95 });
-      lay(w, 'flute', startOf('answer'), ANSWER, 88, { legato: 0.94 });
-      lay(w, 'cello', startOf('answer'), COUNTER, 72, { legato: 0.97, accent: 4 });
       lay(w, 'horn', startOf('full'), THEME, 100, { legato: 0.95 });
       lay(w, 'fiddle', startOf('full'), THEME, 90, { octave: 1, legato: 0.93 });
-      broaden(w, startOf('answer'), startOf('full'));
+      broaden(w, startOf('full'));
+      lay(w, 'flute', startOf('answer'), ANSWER, 84, { legato: 0.94 });
+      lay(w, 'cello', startOf('answer'), COUNTER, 68, { legato: 0.97, accent: 4 });
       lay(w, 'flute', startOf('title'), TITLE, 72, { legato: 0.96 });
       w.note('bells', startOf('title'), 0, 4, 'D5', 54);
     },
@@ -119,9 +118,9 @@ function dawn(w: Write, first: number): void {
   for (const key of ['A5', 'D6']) w.note('trem', first, 1, 7, key, 34);
 }
 
-/** The answer's last bar rolls on the timpani into the full theme, which the brass swells into and the drums keep. */
-function broaden(w: Write, answer: number, full: number): void {
-  for (let step = 0; step < 8; step++) w.note('timpani', answer + 7, 2 + step * 0.25, 0.25, 'A2', 60 + step * 6);
+/** First light's last bar rolls on the timpani into the full theme, which the brass swells into and the drums keep. */
+function broaden(w: Write, full: number): void {
+  for (let step = 0; step < 8; step++) w.note('timpani', full - 1, 2 + step * 0.25, 0.25, 'A2', 60 + step * 6);
   w.hit('crash', full, 0, 92);
   const chords = harmony(UNDER.theme, FOUR);
   chords.forEach((bar, index) => {

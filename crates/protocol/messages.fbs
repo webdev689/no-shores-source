@@ -305,6 +305,9 @@ table Snapshot {
   naval: [Naval];
   fight_clock: double;
   spells: [Spell];
+  // In a dungeon's room, its cache beside the farthest post: x, y, z, the way it faces (radians clockwise from
+  // north), and 1 while it stands open or 0 while it is shut. Empty in any other room.
+  cache: [double];
 }
 
 // One column of an item's nodes: what it holds (0 an upgrade, 1 handling, 2 finish, 3 perks, 4 an Atheric's own), the
@@ -429,6 +432,10 @@ table Gear {
   ammo_share: double;
   crates: ubyte;
   crate_price: uint;
+  // In a patrol, the entrances of its dungeons, five numbers each in the dungeons' order: x, y, the ground's height
+  // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
+  // the four entrance models it is (0 to 3).
+  dungeons: [double];
 }
 
 // What a room sends: exactly one of these is present.

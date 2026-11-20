@@ -29,6 +29,7 @@ import { Aboard, type AboardContext } from './aboard.ts';
 import { Passage } from './passage.ts';
 import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, type SeaShip, SeaShips } from './seaShips.ts';
+import type { FightHeard } from './audio/ambience/seaFight.ts';
 import { roomSource, SeaCombat } from './seaCombat.ts';
 import { SeaRoom } from './seaRoom.ts';
 import { type Landfall, landfallOf, pictureAt, shownScale } from './seaLaw.ts';
@@ -83,6 +84,8 @@ export interface SeaFrame {
   /** Where her bow and quarters stir the water's ripples this frame, which follow her (`focus`, world metres). */
   readonly stirs: readonly Stir[];
   readonly focus: readonly [number, number];
+  /** A fight's events this frame and its ships as they lie, for the sea's sounds; none out of a fight. */
+  readonly fightHeard: FightHeard | null;
 }
 
 /**
@@ -429,6 +432,7 @@ export class Sea {
       feet: combat ? null : this.aboard.feetOn(lying),
       stirs: !combat && own.underWay ? this.wake(lying, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],
+      fightHeard: combat?.heard ?? null,
       note: this.note(),
       landfall: this.landfall,
       sailing: this.passage.sailing,

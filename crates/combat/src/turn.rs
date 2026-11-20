@@ -19,12 +19,12 @@ pub fn player_tick(
     terrain: &dyn Terrain,
 ) -> (Fighter, Option<Happening>) {
     let (yaw, combat, ranged) = (intent.controls.yaw, &intent.combat, fighter.arms.ranged.is_some());
-    let held = hold(fighter, yaw, view, blocks);
+    let held = hold(fighter, yaw, view, blocks, terrain);
     // An aimed shot flies where the look is; one from the hip flies at the foe the lock takes, as a swing would.
     let held = if ranged && combat.aim {
         let_go(&held)
     } else if ranged && combat.shoot {
-        take(id, &held, yaw, view, blocks)
+        take(id, &held, yaw, view, blocks, terrain)
     } else {
         held
     };
@@ -32,7 +32,7 @@ pub fn player_tick(
         held.target.and_then(|target| view.iter().find(|(other, _)| *other == target)).map(|(_, other)| other.chest());
     let (next, happening) = step_fighter(&held, intent, &Surroundings { blocks, terrain, target_at });
     let next = match happening {
-        Some(Happening::Swung(_) | Happening::Guarded { .. }) => take(id, &next, yaw, view, blocks),
+        Some(Happening::Swung(_) | Happening::Guarded { .. }) => take(id, &next, yaw, view, blocks, terrain),
         _ => next,
     };
     (next, happening)

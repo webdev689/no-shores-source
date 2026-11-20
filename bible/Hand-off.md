@@ -179,7 +179,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on pull request #74, as the owner set it ([[The Game Opens With a Story
+- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
+  #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
   Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
   asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
   it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
@@ -190,14 +191,25 @@ Where the work stands now, for the next session. Each session rewrites this note
   heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
   theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
   Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
-  the intro, each started on its own with `?prologue=<beat>`.
+  the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
+  a click starts the intro over the cloud at first light.
 
 ## Waiting on the owner
 
-- **#74, the prologue**, now merges into `main` (it was stacked on #71, still open, so it carries #71's ships too),
-  and waits on the owner's yes, which deploys the page and the rooms. Every call inside the beats is in
-  [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's day and night, its music and its
-  sound.
+- **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
+  day and night, its music and its sound.
+- **The prologue's follow-ups (#94)**, after the owner played it live: the title's prompt no longer stays over the
+  storm and creation once begun; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about
+  25 s; the story's sea fight sails in the story's wind, not the world's, so the Brig makes way in the storm drawn
+  round her. Waits on the owner's yes to merge, which deploys the page and the rooms.
+- **The sea's sounds from Freesound (#94)** ([[The Sea's Sounds Come From Freesound]]): all 27, the open sea's, the
+  story's, the sea fight's (new) and the shore's, are the owner's picks from the sea sound sheet,
+  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each
+  cue's Freesound number), published on R2 and in `content/audio/sounds.json`. The seven long beds play their
+  steadiest minute, mono. Not yet: any of them heard in the game, or their level judged by ear. The main sound sheet
+  (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
+- **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
+  the prologue names the Cube or a crystal, and the voice in the deep is not named.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
@@ -209,6 +221,24 @@ Where the work stands now, for the next session. Each session rewrites this note
   layer yet"). A touch player can start the story but not play its fights.
 - Without `?room=` the page has no accounts, so creation's account step only says accounts are kept online. The online
   default is the owner's.
+- **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
+  areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
+  calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in
+  about half, rooms shaped, purposed, named, furnished and lit by their style, vaults, domes and caves, cave mouths
+  for the caverns and the mines. Tested offline: `cargo xtask check`, and headless pictures of every room of six
+  dungeons, one of each style. Two reviews' findings are fixed, each with a test; #72 lists them. Not tested live: a
+  deployed dungeon room.
+
+- **#88, the dungeon modules, stacked on #72, waits on the owner's yes after #72**: each style's own pieces built
+  by script in Blender, a kit of eighteen and three landmarks
+  ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]], Claude's calls in
+  [[Dungeons as Claude Builds Them]], "The modules"). The rules place the landmarks; the page places the kits and
+  draws both from packs the `dungeon-modules` workflow publishes to R2. Tested offline: `cargo xtask check`, the
+  packs built twice to the same bytes here and by the workflow, four code reviews and five rounds of headless
+  pictures of over a dozen dungeons that hold every style and landmark, every finding fixed at its cause with a test.
+  The last two fixes (rock hiding a flame from still water, the mines' drifts strewing rock) are not yet pictured.
+  Not tested live.
+
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
   then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
   the owner's yes to merge: foes show their level, patrol
@@ -335,10 +365,17 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
+  deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
+- **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
+  merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
+  publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
   with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
   whether its foes can be seen well enough away from the fires.
+- **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
+  `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
 - **The weather and day and night (#76, on `main`)**, tested offline: the full check, the weather's statistics per
   climate and its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under
   cloud, at sunset and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to

@@ -1,0 +1,88 @@
+name: dungeon-modules
+
+# Builds every dungeon style's pieces in Blender, checks each against its envelope, and publishes the packs and the
+# model to R2 with the repository's Cloudflare token, whenever the pieces' tools or contracts change. R2's objects are
+# named by their hashes, so a pack already published is not sent again, and the model is kept while every pack is
+# the one the manifest names. The log ends with the manifest on one line, which a commit then takes into
+# content/dungeon/modules.json. The contact sheets are kept as the run's artifact.
+on:
+  push:
+    paths:
+      - tools/dungeon/**
+      - content/dungeon/kits.json
+      - content/dungeon/landmarks.json
+      - .github/workflows/dungeon-modules.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Installs others' code (pip, npm), so it holds no secret: what it builds goes on as an artifact.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check the envelopes without Blender
+        run: python -I tools/dungeon/test_envelope.py
+      - name: Install Blender's module and the TypeScript tools
+        run: pip install bpy==5.3.0 pillow && npm ci
+      # The previews are the pieces in the game's own pictures by torchlight, for a person to look over.
+      - name: Build every style's pieces
+        run: python -I tools/dungeon/build.py --out "$RUNNER_TEMP/modules" --preview
+      - name: Check the packs the build wrote
+        env:
+          DUNGEON_MODULES: ${{ runner.temp }}/modules
+        run: python -I tools/dungeon/test_envelope.py
+      # A pack is named by its hash, so a build that changes its bytes from run to run would publish a new pack and
+      # leave the manifest and every machine's own build disagreeing.
+      - name: Build again and check every pack is the same bytes
+        run: |
+          python -I tools/dungeon/build.py --out "$RUNNER_TEMP/again"
+          for pack in "$RUNNER_TEMP"/modules/*.modules; do cmp "$pack" "$RUNNER_TEMP/again/$(basename "$pack")"; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dungeon-module-previews
+          path: ${{ runner.temp }}/modules/previews/*.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dungeon-modules
+          path: |
+            ${{ runner.temp }}/modules/*.modules
+            ${{ runner.temp }}/modules/modules.blend
+
+  # A fresh machine with nothing installed: the publisher needs Python's own library and the repository alone.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/download-artifact@v4
+        with:
+          name: dungeon-modules
+          path: ${{ runner.temp }}/modules
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing.
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+      - name: Publish the packs and the model
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: python -I tools/dungeon/publish.py "$RUNNER_TEMP/modules"

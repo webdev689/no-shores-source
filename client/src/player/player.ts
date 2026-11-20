@@ -157,14 +157,15 @@ export function shownBody(player: Player): Body {
   };
 }
 
-/** The camera the scene draws the player's frame from, its aiming view at `place`. */
+/** The camera the scene draws the player's frame from, its aiming view at `place`, under the ceiling `roof` gives. */
 export function playerCamera(
   player: Player,
   movement: MovementRules,
   blocks: readonly Block[],
   place: AimPlace = AIM,
+  roof: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
   const body = shownBody(player);
   const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, roof);
 }

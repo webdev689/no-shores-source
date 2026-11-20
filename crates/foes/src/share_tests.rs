@@ -27,6 +27,7 @@ fn thinks(brain: &mut Brain, fighters: &[(FighterId, Fighter)], board: &Board, t
         seed: 0,
         fighters,
         blocks: &[],
+        terrain: &movement::Flat,
         routes: &Straight,
         spots: &NoSpots,
         director: Director::default(),

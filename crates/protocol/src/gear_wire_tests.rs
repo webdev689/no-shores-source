@@ -167,6 +167,30 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 
+#[test]
+fn a_patrols_players_are_sent_its_entrances_and_no_one_else_is() {
+    let ring = vec![[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]];
+    let section = room::Section { ring, spawns: vec![[0.0, 0.0]] };
+    let mut room = Room::node(room::Floor::Flat, Vec::new(), section);
+    room.start_patrol("saltgrass-downs", 0);
+    let player = room.join().expect("a room with space");
+    let read = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+        gear.dungeons().map(|dungeons| dungeons.iter().collect::<Vec<f64>>())
+    };
+    let sent = read(&room).expect("the entrances");
+    let entrances = room.entrances();
+    assert_eq!(sent.len(), entrances.len() * 5);
+    for (numbers, entrance) in sent.chunks_exact(5).zip(entrances) {
+        let [x, y, z] = entrance.at;
+        assert_eq!(numbers, [x, y, z, entrance.yaw, entrance.model as f64]);
+    }
+    let mut course = Room::new(Vec::new(), (0.0, 0.0));
+    assert_eq!(course.join(), Some(player));
+    assert_eq!(read(&course), None);
+}
+
 /// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit.
 #[test]
 fn the_gear_for_the_clients_test_is_written() {

@@ -62,7 +62,7 @@ pub fn share(brain: &mut Brain, here: &Here<'_, '_>, board: &Board, sight: Optio
     }
     let striker = brain.struck_by.take().and_then(|id| here.enemy(id).map(|other| (id, *other)));
     if let Some((id, other)) = striker.filter(|(_, other)| within(brain, here, other)) {
-        let seen = sees(here.world.blocks, &here.fighter, &other);
+        let seen = sees(here.world.blocks, here.world.terrain, &here.fighter, &other);
         brain.drawn_at = Some(tick);
         return Some(turn_to(brain, here, id, &other, seen));
     }

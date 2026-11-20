@@ -178,6 +178,8 @@ export type FromRoomMessage =
       readonly fights: readonly SeenSeaFight[];
       /** Every spell in a room on land, which every player sees. */
       readonly spells: readonly SeenSpell[];
+      /** In a dungeon's room, its cache: x, y, z, the way it faces and 1 open or 0 shut; empty in any other. */
+      readonly cache: readonly number[];
     } & FleetPart)
   | ({ readonly kind: 'gear' } & GearState);
 
@@ -392,6 +394,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       pirates,
       fights,
       spells: spellsOf(snapshot),
+      cache: Array.from(snapshot.cacheArray() ?? []),
       ...fleetOf(snapshot),
     };
   } catch {

@@ -62,6 +62,9 @@ then the players, the balls fly, fires burn and sinking ships go down, each play
 has sunk, or lies past every ship she may fight and is not fighting, leaves the fight. A player's step under her hurts
 is one pure function (`sail_hurt`), which a browser predicting her runs too.
 
+Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
+sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
+
 ## How it works
 
 - **A ball** is a point under gravity alone (9.81 m/s², no drag), leaving its gun at the gun's speed plus the deck's
@@ -98,6 +101,8 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
   of her way. Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15
   s, with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
+- **The wind** every ship sails in is the world's where she is, read each minute of world time; a fight a story
+  plays is told its own instead, the weather drawn round it ([[Prologue]]), so a storm drawn is a storm sailed.
 
 ## The captain
 

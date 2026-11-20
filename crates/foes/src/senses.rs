@@ -132,8 +132,9 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Si
 
 /// The stir of every foe of another side it hears, each with what it adds and where.
 fn stirring<'here>(here: &'here Here<'_, '_>) -> impl Iterator<Item = (f64, [f64; 3])> + 'here {
-    let heard =
-        |other: &Fighter| stir_of(other).map(|noise| (noise.heard_at(here.feet(), here.world.blocks), noise.at));
+    let heard = |other: &Fighter| {
+        stir_of(other).map(|noise| (noise.heard_at(here.feet(), here.world.blocks, here.world.terrain), noise.at))
+    };
     here.world.fighters.iter().filter(|(_, other)| here.hostile(other)).filter_map(move |(_, other)| heard(other))
 }
 
@@ -147,7 +148,7 @@ fn kept(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     let tick = here.tick();
     let target = brain.target?;
     match here.enemy(target) {
-        Some(other) if sees(here.world.blocks, &here.fighter, other) => {
+        Some(other) if sees(here.world.blocks, here.world.terrain, &here.fighter, other) => {
             brain.last_seen = Some(feet(other));
             brain.seen_at = tick;
             Some(sight(here, target, other, true, brain.last_seen))
@@ -177,7 +178,9 @@ pub(crate) fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64
         .filter_map(|(id, other)| {
             let distance = apart(at, [other.body.x, other.body.y]);
             let turn = off(here.fighter.aim, bearing(at, [other.body.x, other.body.y]));
-            let seen = distance <= here.range() && turn <= SIGHT_ARC && sees(here.world.blocks, &here.fighter, other);
+            let seen = distance <= here.range()
+                && turn <= SIGHT_ARC
+                && sees(here.world.blocks, here.world.terrain, &here.fighter, other);
             let ahead = (libm::cos(turn) - edge) / (1.0 - edge);
             let gain = SIGHT_GAIN * (1.0 - distance / here.range()) * ahead / 60.0;
             seen.then_some((distance, *id, *other, gain))

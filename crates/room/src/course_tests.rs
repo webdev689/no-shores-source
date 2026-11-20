@@ -1,4 +1,6 @@
 use super::*;
+use combat::fighter::Action;
+use combat::tuning::RESPAWN;
 use movement::Block;
 
 /// A deck 2.3 m up, from x -5 to 5, and the open floor beside it.

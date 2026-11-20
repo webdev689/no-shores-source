@@ -178,6 +178,9 @@ export interface GearState {
   readonly ammoShare?: number;
   readonly crates?: number;
   readonly cratePrice?: number;
+  /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
+   *  of the four entrance models it is. */
+  readonly dungeons?: readonly number[];
 }
 
 /** No node chosen in a column, and no resource. */
@@ -292,6 +295,7 @@ export function gearOf(gear: Gear): GearState {
     ammoShare: gear.ammoShare(),
     crates: gear.crates(),
     cratePrice: gear.cratePrice(),
+    dungeons: Array.from(gear.dungeonsArray() ?? []),
   };
 }
 

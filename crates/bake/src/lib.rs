@@ -59,9 +59,11 @@ impl From<&NodeFile> for Listed {
     }
 }
 
-/// The longest room name the server's router takes, and the prefix of a node's room.
-pub const ROOM_NAME_LIMIT: usize = 40;
+/// The longest room name the server's router takes, the prefix of a node's room, and the longest ending one takes: a
+/// patrol's last dungeon's at storm seas.
+pub const ROOM_NAME_LIMIT: usize = 64;
 pub const NODE_ROOM: &str = "node-";
+pub const LONGEST_ENDING: &str = "--storm--dungeon-2";
 
 /// Why a world's nodes cannot each have a file and a room of their own: two with one id (an edits file checks its
 /// own ids only), the index's own name, or an id too long for a room's name. None when every node can.
@@ -73,8 +75,11 @@ pub fn ids_problem(nodes: &[NodeFile]) -> Option<String> {
             Some(format!("two nodes are called {}", node.id))
         } else if node.id == "index" {
             Some("no node may be called index, the index's own name".to_owned())
-        } else if NODE_ROOM.len() + node.id.len() > ROOM_NAME_LIMIT {
-            Some(format!("{} is too long for its room's name, {NODE_ROOM}<id>, of {ROOM_NAME_LIMIT}", node.id))
+        } else if NODE_ROOM.len() + node.id.len() + LONGEST_ENDING.len() > ROOM_NAME_LIMIT {
+            Some(format!(
+                "{} is too long for its rooms' names, {NODE_ROOM}<id>{LONGEST_ENDING}, of {ROOM_NAME_LIMIT}",
+                node.id
+            ))
         } else {
             None
         }
@@ -174,7 +179,7 @@ mod tests {
         assert_eq!(ids_problem(&[called("glade"), called("glen")]), None);
         assert_eq!(ids_problem(&[called("glade"), called("glade")]), Some("two nodes are called glade".to_owned()));
         assert!(ids_problem(&[called("index")]).is_some());
-        assert_eq!(ids_problem(&[called(&"a".repeat(35))]), None, "node- and 35 make 40");
-        assert!(ids_problem(&[called(&"a".repeat(36))]).is_some());
+        assert_eq!(ids_problem(&[called(&"a".repeat(41))]), None, "node-, 41 and --storm--dungeon-2 make 64");
+        assert!(ids_problem(&[called(&"a".repeat(42))]).is_some());
     }
 }

@@ -7,18 +7,22 @@
 // and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first.
 //
-// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "init": "js run before the
-// page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each
+// steps.json: { "url": "...", "size": [w, h], "scale": deviceScaleFactor (1 unless given), "routes":
+// { "<url part>": "<local file>" }, "init": "js run before the page's own, e.g. a shifted Date.now for the world's
+// hour", "steps": [ ... ] }, each
 // step one of { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
-// { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
+// { "eval": "js" }, { "viewport": [w, h] } (a small one walks a long way faster), { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
 // player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
 // writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
 // frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
-// waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
-// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing.
+// waits minutes behind. The console's errors and warnings are printed, each the first time it is said, and so is
+// every shader that fails to compile, with its line: WebGPU reports a refused frame (a buffer too small for its
+// binding) and a broken shader only as warnings, and a refused frame repeats every frame. Each answer of 400 or more
+// is printed with its URL.
 const { chromium } = require('playwright');
-const { readFileSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
+const { resolve } = require('node:path');
 
 const SHADER_ERRORS = () => {
   const create = GPUDevice.prototype.createShaderModule;
@@ -113,16 +117,27 @@ const OWN_TEXTURE = () => {
 
 async function main() {
   const plan = JSON.parse(readFileSync(process.argv[2], 'utf8'));
+  // A route's file is read only as the page asks for it, where a missing one fails unseen: so each is found first.
+  for (const file of Object.values(plan.routes ?? {}))
+    if (!existsSync(file)) throw new Error(`route file ${resolve(file)} is missing (relative to ${process.cwd()})`);
   const browser = await chromium.launch({
     channel: 'chromium',
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   });
   const [width, height] = plan.size ?? [1280, 800];
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: plan.scale ?? 1 });
+  const said = new Set();
   page.on('console', (message) => {
-    if (message.type() === 'error') console.log('console:', message.text().slice(0, 300));
+    const [kind, text] = [message.type(), message.text().slice(0, 300)];
+    if ((kind !== 'error' && kind !== 'warning') || said.has(text)) return;
+    said.add(text);
+    console.log(`console ${kind}:`, text);
   });
   page.on('pageerror', (error) => console.log('page error:', error.message.slice(0, 300)));
+  // The console names only a failed load's status, not what was asked for.
+  page.on('response', (answer) => {
+    if (answer.status() >= 400) console.log(`response ${answer.status()}:`, answer.url().slice(0, 300));
+  });
   for (const [part, file] of Object.entries(plan.routes ?? {}))
     await page.route(`**/*${part}*`, (route) =>
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
@@ -142,6 +157,7 @@ async function main() {
       await page.keyboard.up(step.hold[0]);
     }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
+    else if (step.viewport) await page.setViewportSize({ width: step.viewport[0], height: step.viewport[1] });
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);
       await page.mouse.wheel(0, step.wheel[2]);

@@ -18,6 +18,8 @@ code:
   - crates/room/src/garrison.rs#stand_garrison
   - crates/room/src/garrison.rs#keep_garrison
   - crates/room/src/garrison.rs#gird_of
+  - crates/room/src/dungeon_room.rs#stand_dungeon_garrison
+  - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/garrison.rs#raise_garrison
   - crates/room/src/garrison.rs#walk_beats
   - crates/room/src/beat.rs#Beat
@@ -174,6 +176,13 @@ WebAssembly, so names, factions and weapons are read in one place.
   its post and round again. It halts while any of its foes is stirred, fights or walks back to its place, and waits
   for one more than 4 m from its place. A group that holds its post stands 2.5 m round it, each foe facing outward,
   a leader in the middle facing the nearest spawn.
+- **A forged dungeon's garrison** ([[Dungeons]], "In the rooms") stands where the Forge puts foes rather than on the
+  lattice: the Reeve, a Miniboss, alone in the end room, facing the way in; in each other room past the way in's, a
+  band drawn from the dungeon's foes above, one for each ten of the room's cells, rounded, two to four, each on one of
+  the room's free cells nearest its middle, those its props leave, its quiet cells first, facing out from the middle.
+  When the bands and the Reeve would pass the room's 24, the rooms that stand one are the most that fit, spread evenly
+  along the walk from the way in to the end. A dungeon has no lattice to draw beats from, so its bands hold their
+  posts. Its levels, shields, leash and standing again are any garrison's, at its patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
   place in its group or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
   whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight began, so it walks

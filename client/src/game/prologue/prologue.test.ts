@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
 import type { Beat, BeatName } from './beat.ts';
-import type { Islands } from './islands.ts';
 import type { Nameplate } from './nameplate.ts';
 import { Prologue } from './prologue.ts';
 import type { StoryFrame } from './stage.ts';
@@ -81,7 +80,7 @@ function directed(made: Map<BeatName, Played>, from: BeatName) {
     }
   }
   const story = { stage } as unknown as Story;
-  const director = new Directed(story, {} as Islands, {} as Nameplate, {} as WreckContext, from);
+  const director = new Directed(story, {} as Nameplate, {} as WreckContext, from);
   return { director, asked, heard };
 }
 
@@ -182,7 +181,7 @@ test('a beat that cannot even be made is passed over for the one after it', () =
       return beat;
     }
   }
-  const director = new Unmade({ stage } as unknown as Story, {} as Islands, {} as Nameplate, {} as WreckContext, 'ram');
+  const director = new Unmade({ stage } as unknown as Story, {} as Nameplate, {} as WreckContext, 'ram');
   const ram = made.get('ram');
   assert.ok(ram);
   ram.done = true;

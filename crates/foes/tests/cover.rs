@@ -23,7 +23,7 @@ fn wall() -> Block {
 
 /// Whether nothing stands between two fighters' chests.
 fn line(room: &Room, from: u32, to: u32) -> bool {
-    clear_line(&room.blocks, room.fighter(from).chest(), room.fighter(to).chest())
+    clear_line(&room.blocks, &movement::Flat, room.fighter(from).chest(), room.fighter(to).chest())
 }
 
 fn loosed(room: &Room, id: u32) -> Vec<u64> {

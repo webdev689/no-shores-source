@@ -26,6 +26,7 @@ code:
   - crates/gear/src/character.rs#has_drawn_trait
   - crates/gear/src/asks.rs#Ask
   - crates/gear/src/vestige.rs#dropped
+  - crates/room/src/dungeon_room.rs#keep_cache
   - crates/gear/src/vestige.rs#opens_to
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
@@ -119,6 +120,9 @@ number is one of [[Gear as Claude Shapes It]].
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below).
+- **A dungeon's cache.** When a dungeon's Reeve falls, its cache opens, and every player then in the dungeon's room
+  finds a Vestige lying before it, theirs alone, whoever struck him: sure, at the Reeve's level, in the colours a
+  Reeve's kill leaves (a boss's), and lying for them as a kill's drop does ("Drops", below; [[Dungeons]], "In the rooms").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the

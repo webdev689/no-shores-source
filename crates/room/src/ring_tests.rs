@@ -96,7 +96,7 @@ fn run(blocks: Vec<Block>, player: (f64, f64), from: (f64, f64), types: &[u8], c
                 continue;
             }
             measured.waiting += 1;
-            measured.hidden += u32::from(!clear_line(&room.blocks, foe.fighter.chest(), chest));
+            measured.hidden += u32::from(!clear_line(&room.blocks, &room.floor, foe.fighter.chest(), chest));
             let touching = room.blocks.iter().find(|block| {
                 let out_x = (block.min_x - body.x).max(body.x - block.max_x).max(0.0);
                 let out_y = (block.min_y - body.y).max(body.y - block.max_y).max(0.0);

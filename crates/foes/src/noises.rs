@@ -1,7 +1,7 @@
 //! The noises a fighter makes: a shot loosed (a gun's bang carries far, a bow's twang barely), a swing begun or a blow
-//! landing, a runner's feet, and a foe's own stir. One heard through a block carries half as loud and half as far. The
-//! room tells every foe of every noise; a foe heeds only those of another side, each adding to its awareness less the
-//! farther off it was made.
+//! landing, a runner's feet, and a foe's own stir. One heard through a block or a wall of the ground carries half as
+//! loud and half as far. The room tells every foe of every noise; a foe heeds only those of another side, each adding
+//! to its awareness less the farther off it was made.
 
 use crate::tuning::{
     BLOW_LOUDNESS, BLOW_REACH, BOW_LOUDNESS, BOW_REACH, GUN_LOUDNESS, GUN_REACH, MUFFLED, PRESENCE_LOUDNESS,
@@ -11,7 +11,7 @@ use combat::fighter::Side;
 use combat::sight::{apart, clear_line};
 use combat::tuning::CHEST;
 use combat::{Fighter, Ranged};
-use movement::Block;
+use movement::{Block, Terrain};
 
 /// A noise: where it was made and by which side, the awareness it adds there, and how far it carries.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -30,15 +30,15 @@ impl Noise {
     }
 
     /// The awareness it adds to a foe whose feet stand at `at`: its loudness, falling away evenly to nothing at its
-    /// reach; through a block between their chests, half as loud and reaching half as far.
+    /// reach; through a block or a wall of the terrain between their chests, half as loud and reaching half as far.
     #[must_use]
-    pub fn heard_at(&self, at: [f64; 3], blocks: &[Block]) -> f64 {
+    pub fn heard_at(&self, at: [f64; 3], blocks: &[Block], terrain: &dyn Terrain) -> f64 {
         let distance = apart([at[0], at[1]], [self.at[0], self.at[1]]);
         if distance >= self.reach {
             return 0.0;
         }
         let chest = |point: [f64; 3]| [point[0], point[1], point[2] + CHEST];
-        let share = if clear_line(blocks, chest(self.at), chest(at)) { 1.0 } else { MUFFLED };
+        let share = if clear_line(blocks, terrain, chest(self.at), chest(at)) { 1.0 } else { MUFFLED };
         let reach = self.reach * share;
         if distance >= reach { 0.0 } else { self.loudness * share * (1.0 - distance / reach) }
     }

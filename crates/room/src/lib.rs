@@ -10,6 +10,10 @@ pub mod clash;
 mod course;
 pub mod deck;
 mod drops;
+pub mod dungeon_ground;
+mod dungeon_room;
+mod entrances;
+mod fallen;
 pub mod fleet;
 mod floor;
 mod foes;
@@ -29,6 +33,7 @@ pub mod winds;
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
+pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
@@ -41,11 +46,10 @@ pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
 
 use combat::arms::{Arms, BARE_HANDS};
-use combat::fighter::{Action, FighterId, player};
+use combat::fighter::{FighterId, player};
 use combat::judge::swing_blow;
 use combat::shots::Line;
 use combat::strike::struck;
-use combat::tuning::{FOE_GONE, RESPAWN};
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
@@ -133,6 +137,9 @@ pub struct Room {
     /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: Option<patrol::Patrol>,
+    /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
+    pub(crate) facing: f64,
+    pub(crate) cache: Option<dungeon_room::Cache>,
     /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
     pub day: u64,
 }
@@ -196,6 +203,8 @@ impl Room {
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Calm,
             patrol: None,
+            facing: core::f64::consts::PI,
+            cache: None,
             day: 0,
         }
     }
@@ -208,7 +217,9 @@ impl Room {
 
     /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) }
+        let body =
+            if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
+        Body { facing: self.facing, ..body }
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
@@ -229,13 +240,17 @@ impl Room {
         if self.players.len() >= PLAYERS_MOST {
             return None;
         }
-        let id = self.next_id();
         let turn = self.joins % self.spawn_points.len().max(1);
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
-        let fighter = player(self.stand(spawn), BARE_HANDS);
-        self.players.insert(id, Player::new(fighter, self.clock));
-        Some(id)
+        Some(self.join_standing(self.stand(spawn)))
+    }
+
+    /// A new player standing as `body` stands, with nothing drawn.
+    pub(crate) fn join_standing(&mut self, body: Body) -> PlayerId {
+        let id = self.next_id();
+        self.players.insert(id, Player::new(player(body, BARE_HANDS), self.clock));
+        id
     }
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
@@ -295,6 +310,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_cache();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {
@@ -439,7 +455,7 @@ impl Room {
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
-                for defender in struck(id, fighter, &attack, view, &self.blocks) {
+                for defender in struck(id, fighter, &attack, view, &self.blocks, &self.floor) {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
@@ -466,40 +482,6 @@ impl Room {
             }
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
             _ => {}
-        }
-    }
-
-    /// A player dead long enough stands again at the spawn nearest where they fell, whole; a foe dead long enough is
-    /// gone.
-    fn raise_the_dead(&mut self) {
-        let mut raised = Vec::new();
-        let fallen: Vec<(PlayerId, Fighter)> = self
-            .players
-            .iter()
-            .filter(|(_, found)| matches!(found.fighter.action, Action::Dead { elapsed } if elapsed >= RESPAWN))
-            .map(|(id, found)| (*id, found.fighter))
-            .collect();
-        for (id, fighter) in fallen {
-            let body = self.stand_again(fighter.body.x, fighter.body.y);
-            let graced = self.clock + GRACE;
-            if let Some(found) = self.players.get_mut(&id) {
-                found.fighter = found.armed(player(body, fighter.arms));
-                found.graced = graced;
-                raised.push(id);
-            }
-        }
-        for id in raised {
-            self.tell(EventKind::Respawned, None, id, id, 0.0);
-        }
-        let gone: Vec<FighterId> = self
-            .foes
-            .iter()
-            .filter(|(_, foe)| matches!(foe.fighter.action, Action::Dead { elapsed } if elapsed >= FOE_GONE))
-            .map(|(id, _)| *id)
-            .collect();
-        for id in gone {
-            self.foes.remove(&id);
-            self.board.forget(id);
         }
     }
 

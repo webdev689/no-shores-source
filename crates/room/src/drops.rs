@@ -72,15 +72,18 @@ impl Room {
     }
 
     /// Where a drop thrown from `from` along `angle` rests: on the ground or a block's top there; or where it was
-    /// thrown from when a block more than a step high stands anywhere in the throw's way, the ground there lies more
-    /// than a step below, or there is past the section's ring, so a drop is never out of its player's reach.
+    /// thrown from when a block more than a step high or a wall of the floor stands anywhere in the throw's way, the
+    /// ground there lies more than a step below, there is past the section's ring, or it lies so deep in a solid no
+    /// body may stand on (a dungeon's lake, dais or pool) that no body standing off it can reach it, so a drop is
+    /// never out of its player's reach.
     fn rest_at(&self, from: [f64; 3], angle: f64) -> [f64; 3] {
         let (x, y) = (from[0] + libm::sin(angle) * THROW_M, from[1] - libm::cos(angle) * THROW_M);
         let high = from[2] + TUNING.step;
-        let walled = !combat::sight::clear_line(&self.blocks, [from[0], from[1], high], [x, y, high]);
+        let walled = !combat::sight::clear_line(&self.blocks, &self.floor, [from[0], from[1], high], [x, y, high]);
         let outside = self.section.as_ref().is_some_and(|section| !reach::inside(&section.ring, x, y));
+        let buried = self.floor.depth_in_solid(x, y) > PICK_UP_REACH - TUNING.radius;
         let ground = ground_at(&self.blocks, &self.floor, x, y, from[2]);
-        if walled || outside || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
+        if walled || outside || buried || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
     }
 
     /// Lays a drop for a player where it lies already, thrown from nowhere: for tests and the Test Ground.
@@ -89,7 +92,7 @@ impl Room {
     }
 
     /// Lays a drop for a player, numbered as their own: a Vestige by its number, anything else a fresh one.
-    fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
+    pub(crate) fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
         let Some(found) = self.players.get_mut(&player) else { return };
         let id = match what {
             Dropped::Vestige(vestige) => vestige.id,

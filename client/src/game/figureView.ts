@@ -10,14 +10,19 @@ import { SKY_WGSL, skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 const VIEW_BYTES = 80;
-const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
+const CARD_BYTES = 64 + CARD_LOOK_FLOATS * 4;
+
+/** The light at a point, red, green and blue. */
+type Light = (point: readonly [number, number, number]) => readonly [number, number, number];
+/** How far over a figure's feet the light it is lit by is taken, metres: about its chest. */
+const LIT_AT_M = 1.2;
 
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
-struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f }
+struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f, light: vec4f }
 @group(2) @binding(0) var<uniform> card: Card;
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
@@ -96,8 +101,10 @@ const SHADED = 0.55;
   let facing = normalize(vec3f(-in.from_eye.xy, 0.0) + vec3f(1e-4, 0.0, 0.0));
   let lamps = sky_lamps(in.from_eye, facing);
   let light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun) + lamps;
+  // Where no sun shines (a dungeon), the light the page found where the figure stands.
+  let lit = select(texel.rgb * light, texel.rgb * card.light.rgb, card.light.w > 0.5);
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
-  let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * light, root);
+  let shown = card_shade(card.status, card.look, card.tint, picture, at, lit, root);
   if (shown.a < 0.5) { discard; }
   return vec4f(shown.rgb, 1.0);
 }
@@ -267,12 +274,13 @@ export class FigureView implements CardMaker {
   }
 
   /** Writes the view's and each card's terms once a frame, for its shadow's pass and its own, and answers each card's
-   *  group. */
+   *  group; `light` lights each figure in place of the sun. */
   private groupsFor(
     fromEye: Float32Array,
     eye: readonly [number, number, number],
     yaw: number,
     figures: readonly CardAt[],
+    light?: Light,
   ): GPUBindGroup[] {
     if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
     const values = new Float32Array(VIEW_BYTES / 4);
@@ -295,6 +303,7 @@ export class FigureView implements CardMaker {
         ...[card.width * metres, card.height * metres, 0, 0],
         ...[rootX, card.root[1] * metres, 0, 0],
         ...cardLookValues(shown, time, !!smear),
+        ...(light ? [...light([x, y, z + LIT_AT_M]), 1] : [0, 0, 0, 0]),
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;
@@ -328,8 +337,8 @@ export class FigureView implements CardMaker {
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
-   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given; then the outlines of the
-   *  weapons that glow. */
+   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given, or lit by `light` where
+   *  no sun shines; then the outlines of the weapons that glow. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -337,9 +346,10 @@ export class FigureView implements CardMaker {
     yaw: number,
     figures: readonly CardAt[],
     shadow?: ShadowMap,
+    light?: Light,
   ): void {
     if (figures.length === 0) return;
-    const groups = this.groupsFor(fromEye, eye, yaw, figures);
+    const groups = this.groupsFor(fromEye, eye, yaw, figures, light);
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));

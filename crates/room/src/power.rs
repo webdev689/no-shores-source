@@ -82,7 +82,7 @@ pub(crate) fn drawn(character: &Character, fighter: &Fighter) -> Slot {
 }
 
 /// The foe kinds as the gear's rewards know them, by the foes crate's numbers.
-fn worth_of(kind: u8) -> Option<Worth> {
+pub(crate) fn worth_of(kind: u8) -> Option<Worth> {
     Some(match kind {
         1 => Worth::Skirmisher,
         2 => Worth::Swordsman,

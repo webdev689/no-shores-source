@@ -453,8 +453,8 @@ the Tailor's stall.
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a company member on foot on the landmass open now; one across the sea, or at sea, is not reached, and
-  the Roster says so.
+- A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
+  or at sea, is not reached, and the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has

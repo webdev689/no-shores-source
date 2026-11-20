@@ -1,8 +1,8 @@
 //! Bearings between points, the turn between two bearings, and whether a straight line passes clear of the course's
-//! blocks: what a lock, a blow, a shot and a foe's eyes all ask.
+//! blocks and the walls of the ground they stand on: what a lock, a blow, a shot and a foe's eyes all ask.
 
-use movement::Block;
 pub use movement::wrap;
+use movement::{Block, Terrain};
 
 /// The bearing from one point to another on the ground, clockwise from north.
 #[must_use]
@@ -31,10 +31,10 @@ pub fn apart(first: [f64; 2], second: [f64; 2]) -> f64 {
 }
 
 /// Whether the straight line from one point to another (x, y, z) passes clear of every block, each standing from the
-/// ground to its top.
+/// ground to its top, and of the terrain's own walls.
 #[must_use]
-pub fn clear_line(blocks: &[Block], from: [f64; 3], to: [f64; 3]) -> bool {
-    blocks.iter().all(|block| !crosses(block, from, to))
+pub fn clear_line(blocks: &[Block], terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> bool {
+    blocks.iter().all(|block| !crosses(block, from, to)) && !terrain.line_walled(from, to)
 }
 
 /// Whether the segment passes through the block's box, by the slabs between its faces.
