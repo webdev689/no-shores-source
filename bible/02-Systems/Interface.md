@@ -373,6 +373,23 @@ already doing. In the game they play through the interface's engine at the World
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
 
+## The sea fight's readout
+
+In a sea fight the display shows DFO's helm readout in the Plus kit (`plus/seaFight.ts`), made once and updated each
+frame, never pressed ([[Naval Combat]]):
+
+- **Her plate**, at the bottom right, 272 px wide: "Your Sloop", her hull, sails and crew as bars cut in ten bands
+  (hull red, canvas bone, crew green), an "On fire" chip while she burns and a "Braced" chip while she braces.
+- **The battery rose** on the plate: bow over stern, port and starboard either side. Each side is a chip with its load
+  ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
+  loaded, gold where the look lays it, flashing twice over 0.7 s as it comes ready. The side a blow came from (bow,
+  stern, port or starboard, by where it struck her) is outlined red for 1.4 s.
+- **The card**, centred under the compass, 400 px wide at most: the nearest captain's name, her class and how far
+  ("Brig - 70 m"), her hull and sail bars, and her state: "Hostile", "Colors struck", "Colors struck - E: board"
+  once she can be boarded, or "Going down".
+- **The tally**, under the middle of the screen, for 4 s once her last volley's last ball is down: "3 of 6 balls
+  struck - 1 below the waterline - 2 in the rigging".
+
 ## The social space's counters
 
 The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at
