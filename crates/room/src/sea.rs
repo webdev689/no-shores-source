@@ -141,7 +141,7 @@ impl Default for Berth {
 
 /// The sea: the continents' coasts, its clock in ticks, each player's ship once it has put to sea, the pirates, each
 /// player's fight and each fight among captains alone, the deck every ship has, each player off the helm walking
-/// it, and the chart its hostile ships read.
+/// it, the chart its hostile ships read, and the Unix minute the host keeps (`set_minute`).
 #[derive(Debug)]
 pub struct Sea {
     coasts: Vec<Coast>,
@@ -158,6 +158,8 @@ pub struct Sea {
     harbour: crate::harbour::Harbour,
     decks: decks::Decks,
     islands: islands::Islands,
+    /// The minute it is, counted from the Unix epoch, as the host sets it.
+    pub minute: u64,
 }
 
 /// A point to the nearest whole metre, or None for one that is not a number or lies outside the world's frame.
@@ -194,6 +196,7 @@ impl Sea {
                 seed,
                 layout.continents.iter().map(|continent| continent.climate.clone().unwrap_or_default()).collect(),
             ),
+            minute: 0,
         }
     }
 
@@ -371,8 +374,6 @@ impl Sea {
     /// rest where it left them.
     pub fn tick(&mut self) {
         self.clock += 1;
-        // The ships gone down are its last tick's: a host takes them after each, and none pile up untaken.
-        self.harbour.downs.clear();
         for aboard in self.aboard.values_mut() {
             aboard.tick(&self.deck, self.clock);
         }

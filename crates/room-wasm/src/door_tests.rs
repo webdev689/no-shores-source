@@ -151,6 +151,17 @@ fn a_node_with_no_spawn_or_text_that_is_no_node_does_not_open() {
 }
 
 #[test]
+fn an_open_sea_holds_the_unix_minute_it_is_set_to() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 7));
+    assert!(set_minute(29_891_520), "a sea takes the minute as a land room does");
+    with_open(|opened| {
+        let Opened::Sea(sea) = opened else { panic!("a sea is open") };
+        assert_eq!(sea.minute, 29_891_520);
+    });
+}
+
+#[test]
 fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(!open_sea(b"not a layout", 7));

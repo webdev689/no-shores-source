@@ -2,7 +2,7 @@
 //! ship's lot and its hold, and the one word the sea gives for each ship that goes down.
 use super::tests::{met, vessel_mut};
 use super::*;
-use crate::battle::ShipDown;
+use crate::battle::Sank;
 use crate::harbour::JOINED;
 use crate::pirates::Pirate;
 use crate::sea::decks::HOLD_TICKS;
@@ -43,14 +43,14 @@ fn laid_over(sea: &mut Sea, count: usize) -> BTreeMap<PlayerId, usize> {
     laid
 }
 
-/// Every ship-down word over `count` ticks.
-fn downs_over(sea: &mut Sea, count: usize) -> Vec<ShipDown> {
-    let mut downs = Vec::new();
+/// The captains' ships lost by fights with no player left in them over `count` ticks, each as its fight lost it.
+fn lost_over(sea: &mut Sea, count: usize) -> Vec<Sank> {
+    let mut lost = Vec::new();
     for _ in 0..count {
         sea.tick();
-        downs.extend(sea.take_ship_downs());
+        lost.extend(sea.fights.lost.iter().cloned());
     }
-    downs
+    lost
 }
 
 #[test]
@@ -113,52 +113,25 @@ fn everyone_who_fought_it_keeps_their_own_lot_and_its_boarders_take_its_hold_on_
 }
 
 #[test]
-fn each_way_a_ship_goes_down_gives_one_word_of_it_naming_its_water_rank_level_and_accounts() {
-    // Sunk by the fight: scuttled where it lies.
-    let (mut sea, player) = met(60.0, Rank::Minor);
-    assert!(sea.own(player, "account-1"));
-    vessel_mut(&mut sea, player, CAPTAIN).damage.scuttle();
-    let downs = downs_over(&mut sea, 60 * 60);
-    assert_eq!(downs.len(), 1, "sunk: {downs:?}");
-    assert_eq!((downs[0].rank, downs[0].level), (Rank::Minor, 9));
-    assert_eq!(downs[0].players, vec!["account-1".to_owned()]);
-
-    // Taken: boarded, won, and scuttled once its boarders step off.
-    let (mut sea, player) = met(20.0, Rank::Minor);
-    strike(&mut sea, player);
-    sea.board(player).unwrap();
-    for foe in sea.decks.boarded[0].room.foes.values_mut() {
-        foe.fighter.action = combat::Action::Dead { elapsed: 0 };
-    }
-    assert_eq!(downs_over(&mut sea, HOLD_TICKS as usize + 60 * 60).len(), 1, "won and scuttled");
-
-    // Its boarders all beaten, it is scuttled.
-    let (mut sea, player) = met(20.0, Rank::Minor);
-    strike(&mut sea, player);
-    sea.board(player).unwrap();
-    let boarder = sea.decks.boarded[0].aboard[&player];
-    sea.decks.boarded[0].room.players.get_mut(&boarder).unwrap().fighter.action = combat::Action::Dead { elapsed: 0 };
-    assert_eq!(downs_over(&mut sea, 60 * 60).len(), 1, "its boarders beaten");
-
-    // It goes down under its boarders.
-    let (mut sea, player) = met(20.0, Rank::Minor);
-    strike(&mut sea, player);
-    sea.board(player).unwrap();
-    vessel_mut(&mut sea, player, CAPTAIN).damage.scuttle();
-    assert_eq!(downs_over(&mut sea, 60 * 60).len(), 1, "sunk under its boarders");
-
+fn a_captain_whose_last_player_left_its_fight_still_goes_down() {
     // Its last player goes down before it does.
     let (mut sea, player) = met(60.0, Rank::Minor);
     vessel_mut(&mut sea, player, CAPTAIN).damage.scuttle();
     vessel_mut(&mut sea, player, PLAYER).damage.scuttle();
     vessel_mut(&mut sea, player, PLAYER).damage.sink_t = naval::damage::SINK_SECONDS - 0.5;
-    assert_eq!(downs_over(&mut sea, 60 * 60).len(), 1, "its last player sunk first");
+    let lost = lost_over(&mut sea, 60 * 60);
+    assert_eq!(lost.len(), 1, "its last player sunk first: {lost:?}");
+    assert_eq!(
+        (lost[0].pirate.commission.rank, lost[0].pirate.level, &lost[0].players),
+        (Rank::Minor, 9, &vec![player])
+    );
 
     // Every player leaves it struck: it is scuttled with no one aboard.
     let (mut sea, player) = met(20.0, Rank::Minor);
     strike(&mut sea, player);
     sea.leave(player);
-    assert_eq!(downs_over(&mut sea, 2).len(), 1, "left struck");
+    assert_eq!(sea.fights.lost.len(), 1, "left struck");
+    assert_eq!(sea.fights.lost[0].players, vec![player]);
 }
 
 #[test]

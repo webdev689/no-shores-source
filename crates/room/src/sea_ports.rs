@@ -43,27 +43,8 @@ impl Sea {
             // A boarded ship sunk under its boarders sends them back to their own ships.
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
-            self.tell_down(ship);
             self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
         }
-    }
-
-    /// The word for a captain's ship gone down: where, its rank and level, and the accounts of those who fought it.
-    fn tell_down(&mut self, ship: &Sank) {
-        let water = self.chart.water(ship.at);
-        let accounts = &self.harbour.accounts;
-        self.harbour.downs.push(crate::battle::ShipDown {
-            water: water.map(|(water, _)| water.continent),
-            holder: water.map_or(world::waters::Holder::Home, |(water, _)| water.holder),
-            rank: ship.pirate.commission.rank,
-            level: ship.pirate.level,
-            players: ship.players.iter().filter_map(|player| accounts.get(player).cloned()).collect(),
-        });
-    }
-
-    /// Each captain's ship gone down in the last tick and not yet taken, for the sea's hosts (its bounties).
-    pub fn take_ship_downs(&mut self) -> Vec<crate::battle::ShipDown> {
-        std::mem::take(&mut self.harbour.downs)
     }
 
     /// Notes the account that keeps a player's character: what floats for that account, laid for them before they

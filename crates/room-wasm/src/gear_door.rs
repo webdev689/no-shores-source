@@ -204,14 +204,18 @@ pub extern "C" fn room_difficulty(number: u32) -> u32 {
 }
 
 /// Sets the minute, counted from the epoch, whose day sets the wares a room's vendors show and whose week sets when
-/// Shape comes and where he stands; false with no room on land.
+/// Shape comes and where he stands, or the sea's; false in a fleet.
 pub fn set_minute(minute: u32) -> bool {
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
             room.set_minute(u64::from(minute));
             true
         }
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => {
+            sea.minute = u64::from(minute);
+            true
+        }
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }
