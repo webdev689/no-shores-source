@@ -30,7 +30,7 @@ import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
-import { fontOf, paintLettering } from './mapLetters.ts';
+import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
 import type { MapWaters } from './watersWash.ts';
 
 /** The world's frame, metres. */
@@ -51,6 +51,14 @@ export interface MapPlace {
   readonly kind: string;
   readonly at: Point2;
   readonly sail: Point2;
+}
+
+/** A found island as the map marks it: where it lies in the world, its kind (`cove`, `ruin`, `quarry`), and whether it
+ *  is an isle, which is marked with a tower. */
+export interface IsleMark {
+  readonly at: Point2;
+  readonly kind: string;
+  readonly isle: boolean;
 }
 
 /** A route as the map inks it, or why there is none. */
@@ -118,6 +126,7 @@ export class HeldMap {
   /** The waters once they are open: their wash, letters and key, and which cities are ports. */
   private waters: HeldMapWaters | null = null;
   private charted: Uint8Array | null = null;
+  private isles: readonly IsleMark[] = [];
 
   constructor(gpu: Gpu, field: CoastField, store: ForgeStore, plan: (to: Point2) => Course, root: HTMLElement) {
     this.view = new HeldMapView(gpu, field);
@@ -138,6 +147,11 @@ export class HeldMap {
     this.waters = new HeldMapWaters(waters);
     this.chartings++;
     if (this.charted) this.view.setWash(this.waters.chart(this.charted));
+  }
+
+  /** The found islands the map marks from now on, each where it lies. */
+  setIsles(marks: readonly IsleMark[]): void {
+    this.isles = marks;
   }
 
   /** Whether the map is up, rising or lowering: the sea's own input waits while it is. */
@@ -307,10 +321,11 @@ export class HeldMap {
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
     const lettering = this.laidOut.made(reads, () => this.layout(scene, stage.sprite));
     this.layoutCard(drop);
+    const isles = this.isleInks(lettering.scale);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
-    const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering]);
+    const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering, isles]);
     const letteringChanged = shape !== this.letteredShape;
-    if (letteringChanged) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering);
+    if (letteringChanged) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
     this.letteredShape = shape;
     return {
       parchment: picture,
@@ -393,6 +408,18 @@ export class HeldMap {
     });
     this.key = lettering.key;
     return lettering;
+  }
+
+  /** The found islands' marks on the sheet now, ink pixels, whole marks only. */
+  private isleInks(scale: number): IsleInk[] {
+    const inks: IsleInk[] = [];
+    const half = ISLE_HALF * scale;
+    for (const mark of this.isles) {
+      const [x, y] = toInk(this.mapView, mark.at[0], mark.at[1]);
+      if (x < half || y < half || x > this.ink.width - half || y > this.ink.height - half) continue;
+      inks.push({ x: Math.round(x * 4) / 4, y: Math.round(y * 4) / 4, isle: mark.isle });
+    }
+    return inks;
   }
 
   /** A word's width in its kind's face, units, measured once a word and kind. */

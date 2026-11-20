@@ -41,6 +41,7 @@ decision, made in the same change as its entry here.
 | `client/src/game/deckBoarding.ts`, `client/src/game/deckFight.ts`, `client/src/ships/spars.ts` | The fight on a boarded ship's deck: `Foot` on her grid of heights, her deck room reached through the sea's link, every figure, mark and the display laid on her ship as the fight lies her, her minute and her hold's take; her masts and spars as boxes the deck camera keeps a clear line past ([[Naval Combat]], "The fight on her deck, on the page") |
 | `client/src/game/seaHostiles.ts` | The hostile ships the sea's view marks, the voyage's line on each first sighted and on other waters entered, and the water named for the status line ([[Game]], "At sea") |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
+| `client/src/islands/` | The sea's procedural islands drawn: an island's plan read and checked, each kit's module pack read, its ground meshed near and far, its modules instanced by kit and distance, near, middle and far ([[Island Drawing]]) |
 | `client/src/heldmap/` | The held map: the parchment raised at the helm, the world inked on it under fog of war, the waters tinted by holder, its words laid out by priority clear of the gauntlets and keyed in one panel, the ruins marked, panned, zoomed and clicked for a destination ([[Held Map]]) |
 | `client/src/game/friendlyShips.ts` | The friendly ships round the eye at sea and on foot: asked at world time, eased between answers at the waters' pace, at anchor at a route's end, only as many of each hull as the ships layer can draw, drawn and marked on the compass ([[Game]]) |
 | `client/src/game/pageWaters.ts` | The waters opened once a page, off the first frame: the rules, the table and the held map's grid, and what the sea reads of them (the water named, the port cities) ([[Game]], [[Held Map]]) |
@@ -119,13 +120,13 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
-(imports `rules`, the water's sun and samples, `textures` and `plus`), `editor` (imports `rules`, `water`, `terrain` and `ships`),
+(imports `rules`, the water's sun and samples, `textures` and `plus`), `editor` (imports `rules`, `water`, `terrain`, `ships` and `islands`),
 `combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
 `forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
 and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
 `water`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page
 helpers),
-`plus` (imports nothing) and `game` (imports the layers it wires, `combat` among them;
+`plus` (imports nothing), `islands` (imports `rules`, `water`, `textures` and `models`) and `game` (imports the layers it wires, `combat` among them;
 [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
 

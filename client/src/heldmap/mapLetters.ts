@@ -61,14 +61,42 @@ export type Painter = Pick<
   lineJoin: CanvasLineJoin;
 };
 
+/** A found island's mark where it lies on the map, ink pixels: a cove, or an isle (a ruin's or a quarry's). */
+export interface IsleInk {
+  readonly x: number;
+  readonly y: number;
+  readonly isle: boolean;
+}
+
+/** Units across a cove's ring and an isle's, either side of its middle. */
+export const COVE_HALF = 2.5;
+export const ISLE_HALF = 4;
+
+/** A found island's mark at the origin, units, in the lighter ink: a cove a small ring; an isle a wider ring with a
+ *  tower standing in it, crenellated at its top. */
+export function paintIsle(painter: Painter, isle: boolean): void {
+  painter.lineWidth = 1.2;
+  painter.strokeStyle = LIGHT_INK;
+  painter.fillStyle = LIGHT_INK;
+  painter.beginPath();
+  painter.arc(0, 0, isle ? ISLE_HALF : COVE_HALF, 0, 2 * Math.PI);
+  painter.stroke();
+  if (!isle) return;
+  painter.fillRect(-1, -1.5, 2, 3.5);
+  painter.fillRect(-1.6, -2.6, 0.9, 1.2);
+  painter.fillRect(0.7, -2.6, 0.9, 1.2);
+  painter.fillRect(-0.45, -2.6, 0.9, 1.2);
+}
+
 /** Paints `lettering` onto the parchment's picture: `inkAt` is where the map's top-left stands in it, and `scale` its
- *  pixels a screen pixel. The picture is cleared first. */
+ *  pixels a screen pixel. The picture is cleared first. Found islands' marks go under the words. */
 export function paintLettering(
   painter: Painter,
   picture: { readonly width: number; readonly height: number },
   inkAt: { readonly x: number; readonly y: number },
   scale: number,
   lettering: Lettering,
+  isles: readonly IsleInk[] = [],
 ): void {
   painter.setTransform(1, 0, 0, 1, 0, 0);
   painter.clearRect(0, 0, picture.width, picture.height);
@@ -82,6 +110,7 @@ export function paintLettering(
     draw();
     painter.restore();
   };
+  for (const mark of isles) local(mark.x, mark.y, () => paintIsle(painter, mark.isle));
   for (const letter of lettering.letters) local(letter.x, letter.y, () => paintLetter(painter, letter));
   const { ship } = lettering;
   if (ship) local(ship.x, ship.y, () => paintShip(painter, ship.heading));

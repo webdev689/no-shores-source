@@ -12,6 +12,7 @@ code:
   - client/src/heldmap/watersWash.ts#labelPoints
   - client/src/heldmap/heldMapWaters.ts#HeldMapWaters
   - client/src/heldmap/heldMapWaters.ts#ruinedPlaces
+  - client/src/heldmap/mapLetters.ts#paintIsle
   - client/src/heldmap/heldMapWaters.ts#onOwnSea
   - client/src/heldmap/mapKey.ts#keyEdges
   - client/src/heldmap/watersWash.ts#washedOver
@@ -87,7 +88,8 @@ war, and a click on it sets the ship's destination.
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
   open every city is drawn as a port. The ship is a red-brown arrow along its heading, ringed in the parchment. The
-  voyage under way is inked as a dashed red-brown line.
+  voyage under way is inked as a dashed red-brown line. Found islands (`setIsles`) are marked in the lighter ink under
+  the words: a cove a small ring, an isle a wider ring with a tower in it (`paintIsle`, [[Island Drawing]]).
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
