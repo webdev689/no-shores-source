@@ -7,6 +7,7 @@ import { CITY_LAMPS, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
+import { cloudBaseOf } from '../overworld/overworldCamera.ts';
 import { CLOSE_RANGE_M, closeUpData, groundUnder, PATCH_SAMPLES, PATCH_STEP_M, REFRESH_M } from '../editor/closeUp.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import { clipmapLevels, finestSpacing } from '../terrain/clipmap.ts';
@@ -290,9 +291,11 @@ export class GameScene {
     // The weather over all of it: what falls round the eye, and lightning's bolts while they flash.
     const over = { target, depth: targets.depth, size: [size.width, size.height] as const };
     this.fall.encode(encoder, over, { fromEye, eye: shot.eye, aboveM: above }, look, time);
-    const { strikes, worldS } = SKY_NOW.current;
-    const baseM = 900 - 400 * look.storm;
-    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundM: ground });
+    const { strikes, worldS, reading } = SKY_NOW.current;
+    const groundAt = (x: number, y: number) => this.groundAt(x, y);
+    // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
+    const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
+    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt });
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);

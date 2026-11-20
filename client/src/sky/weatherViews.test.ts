@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { boltPath } from './bolts.ts';
+import { boltPath, boltsInto, LOWEST_BASE_OVER_GROUND_M, MOST_SEGMENTS } from './bolts.ts';
 import { carriedOn, FALL_BOX_M, fallingOf, LONGEST_FALL_STEP_S } from './fall.ts';
 import { AFTERNOON } from './skyUniform.ts';
 
@@ -19,9 +19,65 @@ test('a bolt to the ground runs from the cloud base to the strike, and every bro
   assert.notDeepEqual(boltPath({ ...strike, atS: 51 }, 900, 12), path, 'another strike makes another bolt');
 });
 
-test('a bolt in the cloud runs across under the base and never reaches the ground', () => {
-  const path = boltPath({ ...strike, toGround: false }, 900, 12);
-  assert.ok(path.every(([from, to]) => from[2] > 900 && to[2] > 900));
+test('a bolt in the cloud runs across just under the base and never reaches the ground', () => {
+  for (const atS of [50.25, 51, 52.5, 60, 75.125]) {
+    const path = boltPath({ ...strike, atS, toGround: false }, 900, 12);
+    assert.ok(path.every(([from, to]) => Math.max(from[2], to[2]) < 900 && Math.min(from[2], to[2]) > 700));
+  }
+});
+
+test('a hill that rises into the deck still takes its bolt from above, running down to it', () => {
+  const path = boltPath(strike, 150, 400);
+  const main = path.filter(([, , brightness]) => brightness === 1);
+  assert.equal(main[0]?.[0][2], 400 + LOWEST_BASE_OVER_GROUND_M, 'the base stands over the hill');
+  assert.equal(main.at(-1)?.[1][2], 400, 'it lands on the hill');
+  assert.ok(
+    path.every(([from, to]) => from[2] >= 400 && to[2] >= 400),
+    'nothing runs under the ground',
+  );
+  const inCloud = boltPath({ ...strike, toGround: false }, 150, 400);
+  assert.ok(
+    inCloud.every(([from, to]) => from[2] > 400 && to[2] > 400),
+    'a strike in the cloud stays over the hill',
+  );
+});
+
+/** The ends of every segment written, as points from the eye. */
+function endsOf(into: Float32Array, floats: number): number[][] {
+  const ends: number[][] = [];
+  for (let first = 0; first < floats; first += 8) {
+    ends.push([...into.slice(first, first + 3)], [...into.slice(first + 4, first + 7)]);
+  }
+  return ends;
+}
+
+test('a bolt ends on the ground under its own strike, or on the sea, wherever the eye stands', () => {
+  const into = new Float32Array(MOST_SEGMENTS * 8);
+  const eye = [0, 0, 302] as const;
+  const groundAt = (x: number, y: number) => (x === 0 && y === 0 ? 300 : x === 1000 ? -40 : 120);
+  const flashing = { worldS: strike.atS + 0.01, baseM: 900, groundAt };
+  const overSea = endsOf(into, boltsInto(into, eye, { ...flashing, list: [strike] }));
+  assert.ok(overSea.length > 0, 'a strike flashing near the eye is drawn');
+  assert.ok(
+    overSea.some(([east, south, up]) => east === 1000 && south === 2000 && up === -302),
+    'it lands on the sea',
+  );
+  assert.ok(
+    overSea.every(([, , up]) => (up ?? 0) >= -302),
+    'nothing runs under the sea',
+  );
+  const onLand = endsOf(into, boltsInto(into, eye, { ...flashing, list: [{ ...strike, x: 3000 }] }));
+  assert.ok(
+    onLand.some(([east, , up]) => east === 3000 && up === 120 - 302),
+    'it lands on the land under it',
+  );
+  const unknown = endsOf(into, boltsInto(into, eye, { ...flashing, groundAt: () => null, list: [strike] }));
+  assert.ok(
+    unknown.some(([, , up]) => up === -302),
+    'where no land is known it lands on the sea',
+  );
+  const many = Array.from({ length: 40 }, (_unused, which) => ({ ...strike, x: 1000 + which * 10 }));
+  assert.ok(boltsInto(into, eye, { ...flashing, list: many }) <= into.length, 'it writes no more than fits');
 });
 
 const RAIN = { box: [FALL_BOX_M, FALL_BOX_M, FALL_BOX_M], frame: 1 / 60 } as const;
