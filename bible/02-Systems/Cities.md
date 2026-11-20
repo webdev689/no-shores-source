@@ -108,8 +108,13 @@ city stands on it:
 
 **Open and locked.** Only Overlook's social space opens for now (`OPEN_SOCIAL_SPACES`,
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
-room opens none on it. Shape visits Overlook alone (`SHAPE_VISITS`), the only social node whose file carries his
-places.
+room opens none on it. In the page, over another city's island its social space's landing says "Opens later" and
+cannot be chosen, and a page asked to start there starts in Overlook. Shape visits Overlook alone (`SHAPE_VISITS`),
+the only social node whose file carries his places.
+
+**Its people.** Each keeper stands behind their counter in their own dress (`client/src/game/keepers.ts`), Elder
+Maren Hale behind the Lamplighters'; the Harbourmaster and the chandler as the townsfolk are. While the room says Shape
+is here, he stands at his week's place, facing the plaza's middle, ringed in brass, E within 3 m opening his wares.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the

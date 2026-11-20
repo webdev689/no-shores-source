@@ -29,6 +29,10 @@ code:
   - client/src/game/prologue/shore.ts#Shore
   - client/src/game/prologue/beach.ts#findBeach
   - client/src/game/prologue/epilogue.ts#Epilogue
+  - client/src/game/welcome/welcome.ts#Welcome
+  - client/src/game/welcome/walk.ts#WelcomeWalk
+  - client/src/game/welcome/afterStory.ts#AfterStory
+  - content/story/welcome.json
   - client/src/game/prologue/brig.ts#Brig
   - client/src/game/prologue/places.ts#stormPlaces
   - client/src/game/flow.ts#next
@@ -116,6 +120,22 @@ veil has fallen, the story's black has gone and she is in the player's view. The
 unknown), and is let go once none of her, feet to head, is on the player's view, or a minute after she set off if she
 still stands in sight, held at the water or at the town's middle. Leaving Overlook's social space before then ends her
 part at once, her words with it. The game is the player's from there.
+
+**The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
+first arrival only, Elder Maren Hale of the Lamplighters comes from her counter, round its end on the plaza's side,
+at 1.1 m/s, and stops 1.8 m before the player, facing them. She walks them round the plaza in its order: the Mage,
+the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault on her side, the Stormcallers, the Veiled, and
+last her own counter, where she stays. Each stop is where customers stand before its counter (3.1 m out), a pair's
+the middle of the two. At each she waits until the player is within 6 m, then says its lines in the dialogue box, the
+keepers she names marked with an alert over their heads and some of them answering her; while she leads or waits and
+the player is farther than 6 m, the HUD says "Follow" over her name. The player walks freely the whole time: it is no
+cutscene. What she says (`content/story/welcome.json`) is the state of the world as Overlook's people know it and what
+the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying nothing, three ports standing and
+ruins no one agrees about, and the town's memory (the vault's keeper is not sure whether he has kept it forty years or
+thirty, and three people name four builders of the beacon). Begun, it is kept as played in the browser
+(`overlook.welcome`); leaving the social space ends it where she is, and leaving before the stranger has gone forgoes
+it. When it ends she is her counter's keeper again, never two of her at once. Under `npm run dev`, and on a built page
+served on `localhost`, `?welcome=1` plays it at once in the social space.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is

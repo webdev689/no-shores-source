@@ -429,20 +429,42 @@ The Test Ground makes its own sound at full volume on the first click into its v
 
 ## The social space's counters
 
-The vault, the vendors and the Tailor keep counters in the social space, as Destiny's keep theirs in the Tower; E at
-one opens its screen in the menu's window, its name where the tabs stand. The Reader of Vestiges opens the inventory,
-its Vestiges at the top. The room serves each ask only at its own counter ([[Gear]], "In the rooms").
+Every keeper of a counter in the social space, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
+([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]); E at one opens it in the menu's
+window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
+serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
 - **The vault**, after Destiny 1's: what it keeps on the left and what the player carries on the right, each in
   weapons, armour and Vestiges, the vault's shelves counting toward their twenty. A click moves a piece across; a
   right-click shows its page. Where the menu is wide its shelves stand in two rows of ten; Vestiges stand five a row,
   an empty place a dark Vestige, as the inventory's.
-- **A vendor's stall**: the Quartermaster's armour or the Armsmith's loadouts of the day ([[Gear]], "Vendors"). Each
-  ware is a press held to buy it: its picture, name, kind, level and power, and its price, in red with the words when
-  the player cannot pay it; its card shows what it changes over the piece worn. After the Quartermaster's armour, an
-  Ammo crate every day, with how many of the five are carried; it cannot be held with five.
-- **The Tailor's stall**: the six emblems sold that day ([[Gear]], "Emblems"), each its nameplate, name and price, held
-  to buy; one kept, too dear or for a higher level says so.
+- **A keeper's screen** (`npcPage`), one for every keeper but the vault's, after the owner's Destiny 1 references: the
+  keeper large at the left, from the forge in their own dress (`keepers.ts`), idle and facing the viewer, grown by
+  whole pixels and breathing between the idle's two frames (still with less motion asked for), over a ground lit in
+  their colour (a faction's in its Art's element, the rest brass), with their mark and their title in capitals above
+  them. At the right their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank,
+  its meter to the next and the materials an Art's rise takes), the band they speak in, then their wares in rows
+  under engraved headings, each a gear tile held to buy, its price under it, red with "Not enough" when short, a card
+  on hover or focus. At the foot "Stock refresh" and the time to the next midnight, UTC, for the smiths, the Tailor
+  and the Tack, or "Leaves in" and the time left for Shape. The footer: Hold (buy), I (Open Character), Esc
+  (Dismiss). Arrow keys move among the tiles, Enter presses, Escape steps back, and the focus goes back where it
+  came from.
+- **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown
+  after. The Armorsmith: ARMOR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate
+  with how many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS,
+  the day's six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
+- **A faction's rows** (`factionRows`): REPUTATION (the rank, the meter, what the next ranks keep, and each package
+  waiting held to collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, sold
+  only to the pledged; kept says so), ART (the faction's Art: its level as five pips, its bar, and when the bar is
+  full a Rise press with the rise's price that opens a choice of the fragments not owned; with all six owned it rises
+  at once, "No fragment left to choose") and FRAGMENTS (the Art's six, owned lit, the rest dim with their price, sold
+  from the first rank).
+- **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape has gone. He comes
+  again on Friday."
+- **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
+  the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
+  refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
+  a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]].
 
 ## Emblems
 

@@ -99,3 +99,41 @@ cartographer's, herbalist's and smith's stalls gave their alcoves to the new kee
 
 Only Overlook's social space opens: the bake marks every other city's social node closed and the room opens none on
 it (`city::OPEN_SOCIAL_SPACES`). Shape visits Overlook alone (`city::SHAPE_VISITS`).
+
+## The keepers' screen
+
+| Call | Choice |
+|---|---|
+| One screen | Every keeper but the vault opens the same screen, after the owner's three references; the vault keeps its own two sides |
+| The keeper | Drawn from the forge in their own dress, idle, facing the viewer, grown by whole pixels, breathing between the idle's two frames |
+| Prompt | A counter's prompt is its keeper's title alone ("The Mage", "Shape") |
+| Lines | One-line scenes, said in turn: three greetings, two thanks and one for being short of the price a keeper (the Mage none short, the vault keeper none) |
+| Voice | Through the world's sound, as the dialogue box's |
+| Currencies | A faction's top shows Aurem and the four materials an Art's rise takes; the Mage's shows none |
+| Countdown | "Stock refresh" for the smiths, the Tailor and the Tack (to midnight, UTC); "Leaves in" for Shape; none for the Mage and the factions |
+| A short ware | Stays held to buy, red with "Not enough"; the room refuses it and the keeper answers |
+| Shape away | "Shape has gone. He comes again on Friday." |
+
+## Elder Maren Hale's welcome
+
+| Call | Choice |
+|---|---|
+| When | Once, after the stranger has gone, on the first arrival after the story; leaving before she has gone forgoes it |
+| How | A walk, not a cutscene: she leads the player round the plaza's counters in its order, speaking at each once they are within 6 m, and ends at her own counter |
+| Pace | 1.1 m/s, a little under the townsfolk's; she stops 1.8 m before the player |
+| Marks | The keepers she names show an alert over their heads; the HUD says "Follow" over her name while the player lags |
+| Lines | In the dialogue box, as the epilogue's; the factions are "houses" in her mouth, and her last line invites a pledge without naming it |
+
+## Appearance and the Art's screen
+
+| Call | Choice |
+|---|---|
+| The button | A wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner, labelled "Appearance" |
+| The display | The figure turning a view every 1.2 s, the horse still from the side under it, without its rider |
+| Rows | Emblems five a row, dyes, coats and bardings eight a row, so all four show at 1280 by 720 |
+| Worn | Set in brass with a brass corner; a dim piece's card says how it is had |
+| A dye | Takes the armour's padding with the armour |
+| A coat | Takes only the hide (the forge publishes no mane mask), so the mane stays grey |
+| A barding | Always over the horse's own texels; depth decides only between it and the rider |
+| The Art's level | Five pips by its name; the bar under the three diamonds; brass when full or at the highest |
+| Before the room's word | Every Art shows level 1 with every fragment owned, so the screen locks nothing the room would allow |

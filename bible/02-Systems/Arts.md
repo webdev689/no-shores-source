@@ -23,6 +23,7 @@ code:
   - client/src/combat/abilityBar.ts#abilityBarOf
   - crates/gear/src/arts.rs#WornArts
   - crates/gear/src/arts.rs#ArtRefusal
+  - client/src/game/artLevels.ts#levelOf
   - crates/room/src/arts.rs#Casting
   - crates/room/src/arts.rs#spell_power
   - crates/room/src/spells.rs#SpellSeen
@@ -61,8 +62,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 ## How it works
 
 - **The Art's diamond** is the first row under the Character page's Weapons heading, as tall as a slot's row, so the
-  weapons' rows stand level with the armour's: the worn Art's emblem, "Art" and its name in its element's colour. Its
-  card names the Art, its spells and its words. Pressed, it opens the Art's screen in the Character page's place, the
+  weapons' rows stand level with the armour's: the worn Art's emblem, "Art" and its name in its element's colour, its
+  level as five small pips under the name. Its card names the Art, its spells and its words. Pressed, it opens the Art's screen in the Character page's place, the
   focus on its Anima, the footer's Back closing it as Escape does.
 - **The Art's screen**, after Destiny's subclass screen: the Art's scene behind it (below), its drama in the room right
   of the rows, over a dark ground lit in the Art's colour, strongest at the right and darkened at the top and foot. At
@@ -71,8 +72,19 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   others stand subdued; the worn one is ringed in brass, a focused one in white, each 2 px over a dark pixel. Pressing
   another asks the room to wear it. To the right, in rows under engraved headings tinted in the element and ticked at
   their right ends: ANIMA (one large tile, key R), TENETS (two tiles, keys Q and G), and CORE (three slots), the Core's
-  heading counting what is set ("Core · 1 of 3") and its rule as long as the line above. Under the Core, each fragment
-  set is written out: its name in the element's light, what it does after it.
+  heading counting what is set and owned ("Core · 1 of 3 · 2 owned") and its rule as long as the line above. Under the
+  Core, each fragment set is written out: its name in the element's light, what it does after it.
+- **The level** ([[Factions]]): the worn Art's name carries five pips lit to its level, read aloud as "Level n". Under
+  the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its kills
+  earn: "3,200 of 8,000", then, full, "Ready to rise at the Stormcallers' counter", or "Highest level", in brass when
+  full or at level 5, with the faction's emblem small at its end, its card naming the faction and what its counter
+  does. The element's line says the share the spells hold ("Spells at 70%"). Spell and fragment cards give their
+  numbers at the level worn, the harm and healing by its power and how long a spell and its buffs last by its lasting
+  (the Sunwell's healing a second too), with what differs at level 5 muted under them; the rest as written. A fragment
+  not owned stands dim under a padlock, its card saying how it is had ("Rise the Art at the Stormcallers' counter, or
+  buy it there from their first rank."), and choosing it in a slot's flyout is refused before it is asked, with the
+  refusal's sound and words. Until the room has said where the player stands, every Art shows level 1 with every
+  fragment owned, so the screen locks nothing the room would allow.
 - **Tiles** are the menu's gear tiles ([[Interface]]), their bevel and glow in the Art's element where an item's are in
   its rarity. A spell's tile is no press: it takes the focus for its card, and its key stands on a keycap centred
   under it, half over its frame, as on the bar. An empty Core slot keeps its frame whole and its mark faint.
@@ -219,7 +231,8 @@ The numbers are an Art's at level 5.
 - **The spells' view.** Every spell in the snapshot is kept and drawn gliding between the snapshots as the figures
   do (below). The fight keeps the last spell the player cast, with the room tick it was asked at, so an Anima's sigil
   starts as it is asked.
-- **The Test Ground** has an Arts panel: the Art worn, each Core slot, and a button that fills the Anima and readies
+- **The Test Ground** has an Arts panel: the Art worn, each Art's level (a grant, 39, setting it with no XP and every
+  fragment owned, the Test Ground alone), each Core slot, and a button that fills the Anima and readies
   the Tenets, so every spell can be tried at once ([[Test Ground]]). After each ask, the room's next word sets every
   list back to what it holds, so a refused choice does not stay shown.
 
