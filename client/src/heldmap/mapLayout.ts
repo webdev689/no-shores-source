@@ -84,10 +84,13 @@ export interface LayoutAsk {
   /** What the hands cover, ink pixels (`handsCover`). */
   readonly covers: readonly Rect[];
   readonly places: readonly { text: string; x: number; y: number; kind: string; chosen: boolean }[];
-  readonly waters: readonly { text: string; x: number; y: number; colour?: string | undefined }[];
+  readonly waters: readonly { text: string; x: number; y: number; continent: number; colour?: string | undefined }[];
   readonly ship: { readonly x: number; readonly y: number; readonly heading: number } | null;
   /** A word's width in its kind's face, units. */
   readonly widthOf: (text: string, kind: string) => number;
+  /** How well a box, ink pixels, stands on the sea of the water whose continent's index is given: 2 wholly, 1 off
+   *  land with its middle on hers, 0 not at all (`onOwnSea`). */
+  readonly sea: (box: Rect, continent: number) => 0 | 1 | 2;
   /** Whether discovered land lies under a box, ink pixels. */
   readonly land: (box: Rect) => boolean;
   /** The key's panel's size, units; null while the waters are not open. */
@@ -153,7 +156,7 @@ function besideSpots<T extends { x: number; y: number; kind: string }>(
 }
 
 /** Where a water's name may stand, nearest her point first: on it, then a line and two above and below, each held
- *  inside the map and, where it would lie under a hand, moved inward clear of it. */
+ *  inside the map and, where it would lie under a hand, moved inward clear of that hand. */
 function waterSpots(ask: LayoutAsk, water: { x: number; y: number }, width: number): { x: number; y: number }[] {
   const { scale, ink } = ask;
   const half = (width / 2 + RING + SPACE) * scale;
@@ -165,7 +168,8 @@ function waterSpots(ask: LayoutAsk, water: { x: number; y: number }, width: numb
     const x = inside(water.x);
     spots.push({ x, y });
     for (const cover of ask.covers) {
-      if (y + rise <= cover.y || y - rise >= cover.y + cover.height) continue;
+      const under = y + rise > cover.y && y - rise < cover.y + cover.height;
+      if (!under || x + half <= cover.x || x - half >= cover.x + cover.width) continue;
       const inward = cover.x + cover.width / 2 < ink.width / 2 ? cover.x + cover.width + half : cover.x - half;
       spots.push({ x: inside(inward), y });
     }
@@ -174,8 +178,9 @@ function waterSpots(ask: LayoutAsk, water: { x: number; y: number }, width: numb
 }
 
 /** Lays the map's lettering out: the ship and every mark first, then each name in its priority, beside its mark
- *  (right, else left) or, a water's, on her point or near it; then the key by its clear-corner rule (`keyPlace`).
- *  Every name stands inside the map and clear of the hands, of every mark and of every name laid before it. */
+ *  (right, else left) or, a water's, on her point or near it and on her own sea; then the key by its
+ *  clear-corner rule (`keyPlace`). Every name stands inside the map and clear of the hands, of every mark and of
+ *  every name laid before it. */
 export function layOut(ask: LayoutAsk): Lettering {
   const { scale, ink } = ask;
   const within = (box: Rect) =>
@@ -203,7 +208,12 @@ export function layOut(ask: LayoutAsk): Lettering {
     const width = ask.widthOf(letter.text, letter.kind);
     if (letter.kind === 'water') {
       const boxAt = (spot: { x: number; y: number }) => nameBox({ ...spot, kind: 'water' }, 'centre', width, scale);
-      const spot = waterSpots(ask, letter, width).find((each) => clear(boxAt(each)));
+      const continent = (letter as { continent?: number }).continent ?? -1;
+      // Wholly on her own sea where any spot is, else on no land with her middle on her sea.
+      const spots = waterSpots(ask, letter, width).filter((each) => clear(boxAt(each)));
+      const spot =
+        spots.find((each) => ask.sea(boxAt(each), continent) === 2) ??
+        spots.find((each) => ask.sea(boxAt(each), continent) === 1);
       if (!spot) continue;
       taken.push((boxes[index] = boxAt(spot)));
       laid[index] = { ...letter, ...spot, side: 'centre' };

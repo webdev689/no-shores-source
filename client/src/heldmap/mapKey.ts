@@ -49,13 +49,14 @@ export function keySize(painter: Measure): { width: number; height: number } {
   };
 }
 
-/** Whether any discovered land lies under `box` (ink pixels), the map showing `view` (its top-left in metres and
- *  pixels a metre): the coast field asked every few pixels across it, its corners and edges included. */
-export function landUnder(
-  field: CoastField,
-  knownIslands: number,
+/** Whether any cell of a grid of `cellM` cells, `columns` across and `rows` down, under `box` (ink pixels) passes
+ *  `test`, the map showing `view` (its top-left in metres and pixels a metre): the grid asked every few pixels across
+ *  the box, its corners and edges included; cells off the grid are not asked. */
+export function anyCellUnder(
+  grid: { readonly columns: number; readonly rows: number; readonly cellM: number },
   view: { readonly left: number; readonly top: number; readonly scale: number },
   box: Rect,
+  test: (cell: number) => boolean,
 ): boolean {
   const step = 4;
   const across = Math.max(1, Math.ceil(box.width / step));
@@ -64,15 +65,25 @@ export function landUnder(
     for (let column = 0; column <= across; column++) {
       const x = view.left + (box.x + (box.width * column) / across) / view.scale;
       const y = view.top + (box.y + (box.height * row) / down) / view.scale;
-      const cellX = Math.floor(x / field.cellM);
-      const cellY = Math.floor(y / field.cellM);
-      if (cellX < 0 || cellY < 0 || cellX >= field.columns || cellY >= field.rows) continue;
-      const cell = cellY * field.columns + cellX;
-      const island = field.island[cell] ?? NO_ISLAND;
-      const known = island !== NO_ISLAND && ((knownIslands >>> Math.min(island, 31)) & 1) === 1;
-      if (known && (field.distance[cell] ?? 1) < 0) return true;
+      const [cellX, cellY] = [Math.floor(x / grid.cellM), Math.floor(y / grid.cellM)];
+      if (cellX < 0 || cellY < 0 || cellX >= grid.columns || cellY >= grid.rows) continue;
+      if (test(cellY * grid.columns + cellX)) return true;
     }
   return false;
+}
+
+/** Whether any discovered land lies under `box` (ink pixels), the map showing `view` (`anyCellUnder`). */
+export function landUnder(
+  field: CoastField,
+  knownIslands: number,
+  view: { readonly left: number; readonly top: number; readonly scale: number },
+  box: Rect,
+): boolean {
+  return anyCellUnder(field, view, box, (cell) => {
+    const island = field.island[cell] ?? NO_ISLAND;
+    const known = island !== NO_ISLAND && ((knownIslands >>> Math.min(island, 31)) & 1) === 1;
+    return known && (field.distance[cell] ?? 1) < 0;
+  });
 }
 
 /** The key's box in `corner` of a map `ink` wide and high, ink pixels. */

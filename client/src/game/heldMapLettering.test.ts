@@ -2,8 +2,18 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { coastField } from '../heldmap/coastField.ts';
-import { leastScale, type Rect, SCALE_MOST, stageOf, toInk, type View, zoomAt } from '../heldmap/heldMapLaw.ts';
-import { HeldMapWaters, ruinedPlaces } from '../heldmap/heldMapWaters.ts';
+import {
+  clampView,
+  leastScale,
+  type Rect,
+  SCALE_MOST,
+  stageOf,
+  toInk,
+  type View,
+  viewOn,
+  zoomAt,
+} from '../heldmap/heldMapLaw.ts';
+import { HeldMapWaters, onOwnSea, ruinedPlaces } from '../heldmap/heldMapWaters.ts';
 import { landUnder } from '../heldmap/mapKey.ts';
 import {
   handsCover,
@@ -96,6 +106,7 @@ function lettered(screen: { width: number; height: number }, view: View, real: A
     waters: real.waters.letters(ink, (x, y) => toInk(view, x, y)),
     ship: onMap(shipX, shipY) ? { x: shipX, y: shipY, heading: 1 } : null,
     widthOf,
+    sea: (box, continent) => onOwnSea(real.waters.waters, real.field, view, box, continent),
     land: (box) => landUnder(real.field, real.known, view, box),
     key: KEY,
     current: null,
@@ -169,4 +180,32 @@ test('on the real world at five zooms no name overlaps another or a mark, and ea
     }
   }
   assert.ok(named > 100, `the world's places are named across the views (${named})`);
+});
+
+test('on the real world no water’s name stands on land, at the opening view or any of five zooms', async () => {
+  const real = await realWorld();
+  let checked = 0;
+  for (const screen of SCREENS) {
+    const ink = stageOf(screen).ink;
+    const least = leastScale(ink, WORLD);
+    const views = [viewOn([2_809_214, 1_206_000], ink, WORLD)];
+    for (let zoom = 0; zoom < 5; zoom++) {
+      const scale = least * (SCALE_MOST / least) ** (zoom / 4);
+      for (const [x, y] of CENTRES)
+        views.push(clampView({ left: x - ink.width / 2 / scale, top: y - ink.height / 2 / scale, scale }, ink, WORLD));
+    }
+    for (const view of views) {
+      const { lettering } = lettered(screen, view, real);
+      for (const letter of lettering.letters.filter((each) => each.kind === 'water')) {
+        const box = nameBox(letter, 'centre', widthOf(letter.text, 'water'), lettering.scale);
+        // Every island counted, known or not: a name is on the sea, not on any land.
+        assert.ok(
+          !landUnder(real.field, -1, view, box),
+          `${letter.text} at ${Math.round(letter.x)}, ${Math.round(letter.y)}`,
+        );
+        checked += 1;
+      }
+    }
+  }
+  assert.ok(checked > 20, `waters' names checked (${checked})`);
 });

@@ -11,6 +11,7 @@ code:
   - client/src/heldmap/watersWash.ts#labelPoints
   - client/src/heldmap/heldMapWaters.ts#HeldMapWaters
   - client/src/heldmap/heldMapWaters.ts#ruinedPlaces
+  - client/src/heldmap/heldMapWaters.ts#onOwnSea
   - client/src/heldmap/mapLetters.ts#paintLettering
   - client/src/heldmap/mapLayout.ts#layOut
   - client/src/heldmap/mapLayout.ts#handsCover
@@ -97,7 +98,9 @@ war, and a click on it sets the ship's destination.
   - *Priority.* The ship's arrow and every place's mark are laid first and never dropped. Then the names, the place
     chosen first, then ports, waters, ruins and nodes, each where it covers no mark, no hand and no name laid before
     it, inside the map. A water's name tries her point, then a line and two above and below, each held inside the map
-    and, where it would lie under a hand, moved inward clear of it. A name with no clear place is dropped: a place's
+    and, where it would lie under a hand, moved inward clear of that hand. It takes the first spot wholly on her own
+    sea; with none, the first on no land with its middle on her sea, so across a narrow sea seen whole it may run over
+    a neighbour's wash, never over land (`onOwnSea`). A name with no clear place is dropped: a place's
     keeps its mark.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not

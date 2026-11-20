@@ -27,7 +27,7 @@ import {
   zoomAt,
 } from './heldMapLaw.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
-import { HeldMapWaters, ruinedPlaces } from './heldMapWaters.ts';
+import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { fontOf, paintLettering } from './mapLetters.ts';
@@ -373,6 +373,8 @@ export class HeldMap {
       ship: onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null,
       widthOf: (text, kind) => this.widthOf(text, kind),
       land: (box) => landUnder(this.field, scene.knownIslands, this.mapView, box),
+      sea: (box, continent) =>
+        this.waters ? onOwnSea(this.waters.waters, this.field, this.mapView, box, continent) : 2,
       key: this.waters ? (this.keySize ??= keySize(this.painter)) : null,
       current: this.key,
     });
