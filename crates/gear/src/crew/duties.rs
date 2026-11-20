@@ -13,11 +13,11 @@ use crate::ship::materials::ShipMaterial;
 
 impl Character {
     /// Signs on one of the officers offered today at the counter of the faction the player is pledged to.
-    pub(crate) fn recruit(&mut self, offer: u8, here: Here) -> Result<Option<Done>, Refusal> {
+    pub(crate) fn recruit(&mut self, faction: u8, offer: u8, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        if here.pledge == 0 {
+        if here.pledge == 0 || here.pledge != faction {
             return Err(Refusal::NoPledge);
         }
         let offers = recruit::offers(here.pledge, here.day, self.level(), here.rank);

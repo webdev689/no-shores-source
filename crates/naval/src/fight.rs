@@ -131,6 +131,8 @@ pub struct Fight {
     pub ships: BTreeMap<ShipId, Vessel>,
     pub balls: Vec<Ball>,
     stems: BTreeMap<ShipId, ram::Stem>,
+    /// Each player's ship as her own gear fits her (`fitting.rs`).
+    fittings: BTreeMap<ShipId, fitting::Fitting>,
 }
 
 /// What a player's hurts leave her helm: whether she is a wreck, the canvas she has left, and the share of her way it
@@ -140,18 +142,27 @@ pub struct Hurts {
     pub wrecked: bool,
     pub sail: f64,
     pub way_share: f64,
+    /// The share of the turn her helm asks that her trim gives her.
+    pub turn: f64,
 }
 
 impl Hurts {
     #[must_use]
     pub fn of(damage: &Damage) -> Self {
-        Self { wrecked: damage.state == State::Wrecked, sail: damage.sail, way_share: damage.way_share() }
+        Self { wrecked: damage.state == State::Wrecked, sail: damage.sail, way_share: damage.way_share(), turn: 1.0 }
     }
 
     /// Her hurts from her numbers as a snapshot gives them.
     #[must_use]
     pub fn from_numbers(wrecked: bool, sail: f64, max_sail: f64) -> Self {
-        Self { wrecked, sail, way_share: way_share_of(sail, max_sail) }
+        Self { wrecked, sail, way_share: way_share_of(sail, max_sail), turn: 1.0 }
+    }
+
+    /// Her hurts as her fitting trims them: the way her canvas leaves her, and her turn.
+    #[must_use]
+    pub fn fitted(self, fitting: Option<&fitting::Fitting>) -> Self {
+        let Some(fitting) = fitting else { return self };
+        Self { way_share: fitting.way_share(self.way_share), turn: fitting.trim.turn, ..self }
     }
 }
 
@@ -179,6 +190,7 @@ pub fn sail_hurt(
     let pull = Pull {
         sail: if hurts.wrecked { 0.0 } else { hurts.way_share },
         oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 },
+        turn: hurts.turn,
     };
     (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)
 }
@@ -249,7 +261,8 @@ impl Fight {
     #[must_use]
     pub fn new(seed: u32) -> Self {
         let ships = BTreeMap::new();
-        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls: Vec::new(), stems: BTreeMap::new() }
+        let (balls, stems, fittings) = (Vec::new(), BTreeMap::new(), BTreeMap::new());
+        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls, stems, fittings }
     }
 
     /// A player's Sloop and one captain of `commission` in her rank's hull, put to sea on the ring round her, where the
@@ -385,6 +398,7 @@ impl Fight {
     pub fn leave(&mut self, id: ShipId) {
         self.ships.remove(&id);
         self.stems.remove(&id);
+        self.fittings.remove(&id);
         for vessel in self.ships.values_mut() {
             if let Sailor::Captain(command) = &mut vessel.sailor {
                 command.her.forget(id);
@@ -494,6 +508,8 @@ impl Fight {
 #[path = "fight_events.rs"]
 mod events;
 pub use events::{End, Event, Part, Piece, Refusal};
+#[path = "fitting.rs"]
+pub mod fitting;
 #[path = "fight_ram.rs"]
 mod ram;
 #[path = "fight_step.rs"]

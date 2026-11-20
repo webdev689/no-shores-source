@@ -62,9 +62,10 @@ fn a_counter_offers_three_a_day_the_better_grades_by_rank_the_same_to_everyone()
 #[test]
 fn an_officer_is_signed_on_only_at_a_pledged_counter_for_their_wage() {
     let mut character = Character::starting();
-    let first = Ask::Recruit { offer: 0 };
+    let first = Ask::Recruit { faction: 1, offer: 0 };
     assert_eq!(character.ask(first, Here { social: false, ..counter(1, 0) }, &dice(0)), Err(Refusal::NotHere));
     assert_eq!(character.ask(first, counter(0, 0), &dice(0)), Err(Refusal::NoPledge));
+    assert_eq!(character.ask(first, counter(2, 0), &dice(0)), Err(Refusal::NoPledge), "only the faction pledged to");
     assert_eq!(character.ask(first, counter(1, 0), &dice(0)), Err(Refusal::Short));
     character.materials.aurem = 20_000;
     character.ask(first, counter(1, 0), &dice(0)).expect("signed on");

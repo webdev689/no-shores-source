@@ -28,13 +28,13 @@ pub const USE_CRATE: u8 = 15;
 pub const BUY_CRATE: u8 = 16;
 /// A module fed into another: the kept one in `item`, the fed one in `count`.
 pub const INFUSE: u8 = 17;
-/// The crew's asks: an officer of the day signed on (`node` the offer), one stationed (`item` the officer, `slot` the
+/// The crew's asks: an officer of the day signed on (`column` the faction, `node` the offer), one stationed (`item` the officer, `slot` the
 /// duty: 0 aboard, 1 at their post, 2 ashore), paid off, and their nodes bought and chosen (`column`, `node`).
-pub const RECRUIT: u8 = 50;
-pub const STATION: u8 = 51;
-pub const DISMISS: u8 = 52;
-pub const TRAIN: u8 = 53;
-pub const CHOOSE_OFFICER: u8 = 54;
+pub const RECRUIT: u8 = 58;
+pub const STATION: u8 = 59;
+pub const DISMISS: u8 = 60;
+pub const TRAIN: u8 = 61;
+pub const CHOOSE_OFFICER: u8 = 62;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -97,7 +97,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
         INFUSE => Asked::Gear(Ask::Infuse { item, fed: ask.count() }),
-        RECRUIT => Asked::Gear(Ask::Recruit { offer: node }),
+        RECRUIT => Asked::Gear(Ask::Recruit { faction: column, offer: node }),
         STATION => Asked::Gear(Ask::Station { officer: item, duty: duty_of(ask.slot())? }),
         DISMISS => Asked::Gear(Ask::Dismiss { officer: item }),
         TRAIN => Asked::Gear(Ask::Train { officer: item, column, node }),
@@ -158,7 +158,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::UseCrate => args = messages::AskArgs { kind: USE_CRATE, ..args },
             Ask::BuyCrate => args = messages::AskArgs { kind: BUY_CRATE, ..args },
             Ask::Infuse { item, fed } => args = messages::AskArgs { kind: INFUSE, item, count: fed, ..args },
-            Ask::Recruit { offer } => args = messages::AskArgs { kind: RECRUIT, node: offer, ..args },
+            Ask::Recruit { faction, offer } => args = messages::AskArgs { kind: RECRUIT, column: faction, node: offer, ..args },
             Ask::Station { officer, duty } => {
                 args = messages::AskArgs { kind: STATION, item: officer, slot: duty_code(duty), ..args };
             }
