@@ -59,7 +59,10 @@ impl Room {
         let spots = Dice { seed: named(node), tick: 0, player: 0 };
         let nodes = places(&section.ring, &section.spawns, &spots, SPOTS, [SPOTS_APART_M, SPOTS_FROM_SPAWNS_M]);
         let dry = |x: f64, y: f64| crate::entrances::dry(&self.floor, x, y);
-        let entrances = crate::entrances::laid(node, &self.floor, &dry, &section.ring, &section.spawns, &nodes);
+        let dungeons: Vec<(u32, dungeon::Style)> =
+            (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol(node, number)).collect();
+        let (ring, spawns) = (&section.ring, &section.spawns);
+        let entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, ring, spawns, &nodes);
         self.resource_nodes = nodes.into_iter().map(|[x, y]| ResourceNode { x, y, resource }).collect();
         self.patrol = Some(Patrol { entrances, ..Patrol::default() });
     }

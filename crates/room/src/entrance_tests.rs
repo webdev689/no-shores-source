@@ -104,7 +104,10 @@ fn coast() -> Heights {
 #[test]
 fn an_entrance_stands_on_dry_level_ground() {
     let floor = coast();
-    let entrances = laid("saltgrass-downs", &floor, &|x, y| floor.height_at(x, y) >= 0.0, &ring(), &SPAWNS, &[]);
+    let dungeons: Vec<_> =
+        (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol("saltgrass-downs", number)).collect();
+    let dry = |x, y| floor.height_at(x, y) >= 0.0;
+    let entrances = laid("saltgrass-downs", &dungeons, &floor, &dry, &ring(), &SPAWNS, &[]);
     assert!(!entrances.is_empty(), "the dry land takes some");
     for entrance in &entrances {
         let [x, y, z] = entrance.at;
@@ -186,4 +189,19 @@ fn every_style_lays_entrances_of_its_own_kind_each_a_model_with_a_door() {
         let own: std::collections::BTreeSet<u32> = style.entrances.iter().map(|&id| u32::from(id)).collect();
         assert_eq!(drawn, own, "{} draws each of its own", style.key);
     }
+}
+
+#[test]
+fn an_elite_dungeons_node_lays_one_entrance_of_its_style_and_is_joined_before_it() {
+    let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec() });
+    room.lay_elite_entrance("krakens-grotto");
+    assert_eq!(room.entrances().len(), 1);
+    let (seed, style) = crate::elite_laid("krakens-grotto").expect("an Elite Dungeon");
+    assert_eq!(room.entrances()[0].model, crate::entrances::model_of(&style, seed));
+    assert!([4, 5].contains(&room.entrances()[0].model), "the caverns': a cave mouth");
+    assert!(room.join_at(0).is_some());
+    assert!(room.join_at(1).is_none());
+    let mut patrol_land = Room::node(Floor::Flat, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec() });
+    patrol_land.lay_elite_entrance("saltgrass-downs");
+    assert!(patrol_land.entrances().is_empty(), "a patrol is no Elite Dungeon");
 }

@@ -34,6 +34,7 @@ code:
   - crates/room/src/entrances.rs#model_of
   - crates/room/src/entrances.rs#MODELS
   - crates/room/src/entrances.rs#join_at
+  - crates/room/src/entrances.rs#lay_elite_entrance
   - crates/navmesh/src/lib.rs#bake_anchored
   - crates/room-wasm/src/dungeon_door.rs#open_dungeon
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
@@ -249,7 +250,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
-  the Caverns and the Mines. The six Daggerfall's blocks stand keep their numbers on the wire (0 to 5), raised as
+  the Caverns and the Mines. An Elite Dungeon's node keeps its open-air approach and lays one entrance, to the
+  dungeon `elite_laid` lays, drawn from its id as a patrol's are (`lay_elite_entrance`). The six Daggerfall's blocks stand keep their numbers on the wire (0 to 5), raised as
   those blocks raise them:
 
 | Model | Stood by | Raised (m) |
