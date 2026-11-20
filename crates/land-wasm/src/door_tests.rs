@@ -85,13 +85,13 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     let (mut time, mut sailed) = (1000.0, Vec::new());
     for [steer, crab, climb, ticks] in VOYAGE {
         let answer = sail_answer(&sail_bytes(&sail_request(&ship, &[steer, crab, climb], time, ticks)));
-        assert_eq!(answer.len(), 12, "a ship and her pose");
+        assert_eq!(answer.len(), 12, "a ship and its pose");
         ship = answer[..8].to_vec();
         sailed.extend(answer);
         time += ticks / 60.0;
     }
-    assert_eq!(ship[7], 1.0, "she ends on her oars");
-    assert!(ship[1] < 360_000.0 - 10.0, "she sailed north: {ship:?}");
+    assert_eq!(ship[7], 1.0, "it ends on its oars");
+    assert!(ship[1] < 360_000.0 - 10.0, "it sailed north: {ship:?}");
     assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "b8ec838cee72c75e");
 }
 
@@ -162,7 +162,7 @@ fn manifest() -> Value {
 }
 
 #[test]
-fn each_hull_sails_on_the_waterline_and_rig_her_export_measured() {
+fn each_hull_sails_on_the_waterline_and_rig_its_export_measured() {
     let ships = manifest();
     for kind in sailing::HullKind::ALL {
         let entry = &ships["ships"][kind.name()];
@@ -177,12 +177,12 @@ fn each_hull_sails_on_the_waterline_and_rig_her_export_measured() {
         let manifested: Vec<&str> =
             entry["sails"].as_array().unwrap().iter().map(|sail| sail["kind"].as_str().unwrap()).collect();
         let ruled: Vec<String> = hull.sails.iter().map(|sail| format!("{:?}", sail.kind).to_lowercase()).collect();
-        assert_eq!(ruled, manifested, "{}: her sails, kind for kind", kind.name());
+        assert_eq!(ruled, manifested, "{}: its sails, kind for kind", kind.name());
     }
 }
 
 #[test]
-fn each_hulls_guns_and_boxes_are_where_her_export_measured() {
+fn each_hulls_guns_and_boxes_are_where_its_export_measured() {
     let ships = manifest();
     let triple = |value: &Value| -> [f64; 3] { [0, 1, 2].map(|axis| value[axis].as_f64().unwrap()) };
     let corners = |value: &Value| [triple(&value[0]), triple(&value[1])];
@@ -203,7 +203,7 @@ fn each_hulls_guns_and_boxes_are_where_her_export_measured() {
 }
 
 /// A voyage onto the square's west shore and off it, the browser's test sails too: under sail for two minutes until
-/// she takes the ground, her sails struck, then her oars astern.
+/// it takes the ground, its sails struck, then its oars astern.
 fn shore_voyage() -> Vec<[f64; 4]> {
     let mut legs = vec![[0.0, 0.0, 0.0, 60.0]; 120];
     legs.extend([[0.0, 0.0, -1.0, 60.0], [0.0, 0.0, -1.0, 60.0], [0.0, 0.0, -1.0, 60.0]]);
@@ -225,13 +225,13 @@ fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
         sailed.extend(answer);
         time += ticks / 60.0;
     }
-    assert!(touched, "she took the ground: furthest east {furthest}");
-    assert!(ship[0] < furthest - 5.0, "her oars took her off: {} from {furthest}", ship[0]);
+    assert!(touched, "it took the ground: furthest east {furthest}");
+    assert!(ship[0] < furthest - 5.0, "its oars took it off: {} from {furthest}", ship[0]);
     assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "1ef6157690e8c148");
 }
 
 #[test]
-fn a_request_naming_her_hull_sails_that_hull_and_one_naming_none_the_sloop() {
+fn a_request_naming_its_hull_sails_that_hull_and_one_naming_none_the_sloop() {
     assert!(header(&open_view(SAIL_SQUARE.as_bytes())).get("error").is_none());
     let ship = [180_000.0, 360_000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0];
     let sailed = |hull: Option<f64>| {

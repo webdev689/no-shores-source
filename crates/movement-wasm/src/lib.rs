@@ -334,12 +334,12 @@ mod tests {
 
     #[test]
     fn on_a_ships_deck_a_body_stands_and_walks_its_heights_as_the_movement_crate_steps_it() {
-        // A wall one cell thick across her, thinner than a run's tick, at 0.0 to 0.1 m.
+        // A wall one cell thick across it, thinner than a run's tick, at 0.0 to 0.1 m.
         let heights = (0..800).map(|index| if index / 20 == 20 { None } else { Some(0.8) }).collect();
         let deck = Heights::new(-1.0, -2.0, 0.1, 20, 40, heights).unwrap();
         set_course(&[]);
         assert!(set_heights(&bytes_of(&deck.to_floats())));
-        assert_eq!(stood_at(0.25, 1.0), deck.standing(0.25, 1.0), "on her planks, facing her bow");
+        assert_eq!(stood_at(0.25, 1.0), deck.standing(0.25, 1.0), "on its planks, facing its bow");
         let controls = Controls { forward: 1.0, run: true, ..Controls::default() };
         let mut body = stood_at(0.25, 1.0);
         for _ in 0..120 {

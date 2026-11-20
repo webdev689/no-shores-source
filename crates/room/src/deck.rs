@@ -1,5 +1,5 @@
-//! A player off the helm, aboard their own ship: their body walks her deck in her own frame (x to her starboard, y to
-//! her stern, the origin amidships), by the movement crate's law on the deck's grid of heights, so her way and the
+//! A player off the helm, aboard their own ship: their body walks its deck in its own frame (x to its starboard, y to
+//! its stern, the origin amidships), by the movement crate's law on the deck's grid of heights, so its way and the
 //! swell never move it. Their inputs are numbered and taken in order, as a land room takes them: never faster than
 //! the clock and its slack allow, and a few a tick to catch up after a stall.
 
@@ -7,11 +7,11 @@ use crate::players::{CATCH_UP, SLACK_TICKS, VIEW_LAG, WAITING_LIMIT};
 use movement::{Body, Controls, Heights, Mode, TICK_SECONDS, step_body};
 use std::collections::VecDeque;
 
-/// How near the spot behind her wheel a body stands to take the helm, metres.
+/// How near the spot behind a ship's wheel a body stands to take the helm, metres.
 pub const WHEEL_REACH_M: f64 = 0.8;
 
-/// A ship's deck: its grid of heights, the spot behind her wheel (x, y in her frame) where the helm is kept, and the
-/// grid's bounds (its north-west and south-east corners in her frame).
+/// A ship's deck: its grid of heights, the spot behind its wheel (x, y in its frame) where the helm is kept, and the
+/// grid's bounds (its north-west and south-east corners in its frame).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Deck {
     pub heights: Heights,
@@ -44,7 +44,7 @@ pub struct Aboard {
 }
 
 impl Aboard {
-    /// A player who has just left the helm at the room's tick `clock`: standing behind the wheel, facing her bow.
+    /// A player who has just left the helm at the room's tick `clock`: standing behind the wheel, facing the bow.
     #[must_use]
     pub fn left_helm(deck: &Deck, clock: u64) -> Self {
         let [x, y] = deck.helm;
@@ -115,8 +115,8 @@ impl Aboard {
     }
 }
 
-/// A deck for tests: 2 m across and 7 m long in cells of 0.1 m, level 0.8 m over her waterline, her mast a cell
-/// amidships, and her helm 2.7 m aft.
+/// A deck for tests: 2 m across and 7 m long in cells of 0.1 m, level 0.8 m over its waterline, its mast a cell
+/// amidships, and its helm 2.7 m aft.
 #[cfg(test)]
 #[must_use]
 pub fn test_deck() -> Deck {

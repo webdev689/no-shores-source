@@ -1,6 +1,6 @@
 //! The sea's fights measured: a plain player in the starting Sloop against one bold captain of each rank, met 700 m
-//! off in each kind of hostile water of the world's own layout, the player either standing off (turning her
-//! broadside at 300 m out) or closing to 150 m before she turns. Run by hand, in release, to print the table:
+//! off in each kind of hostile water of the world's own layout, the player either standing off (turning their
+//! broadside at 300 m out) or closing to 150 m before they turn. Run by hand, in release, to print the table:
 //! `cargo test -p room --release measure_fights -- --ignored --nocapture --test-threads=1`.
 
 use super::*;
@@ -27,7 +27,7 @@ fn going_down(vessel: &naval::fight::Vessel) -> bool {
     matches!(vessel.damage.state, State::Sinking | State::Sunk)
 }
 
-/// A plain player: sails set, the nearest fighting captain kept on her beam from `close` m in (60 degrees off her
+/// A plain player: sails set, the nearest fighting captain kept on their beam from `close` m in (60 degrees off their
 /// bow from 100 m farther), a laid broadside fired every quarter second it bears within 260 m, braced when none bears
 /// within 400 m.
 pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> Orders {
@@ -71,8 +71,8 @@ pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> 
     Orders { helm: Helm { steer, crab: false, climb }, aim: Some(aim), fire, brace: !laid && range < 400.0, load: None }
 }
 
-/// How one fight went: whether the player won (she struck or went down), was sunk, or neither within `LONGEST_S`;
-/// its length; and the share of her hull the player kept.
+/// How one fight went: whether the player won (the captain struck or went down), was sunk, or neither within
+/// `LONGEST_S`; its length; and the share of their hull the player kept.
 struct Fought {
     won: bool,
     sunk: bool,

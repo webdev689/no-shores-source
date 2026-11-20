@@ -1,6 +1,6 @@
-//! A captain's guns, as DFO's: each broadside laid on where her mark will be when its balls arrive, run out as a
-//! warning (the tell) when it is loaded, in reach, near her beam, bearing soon and its lay would strike, and fired no
-//! sooner than the tell's 1.3 s, within her gunners' window, long or short by their error. A side run out too long
+//! A captain's guns, as DFO's: each broadside laid on where its mark will be when its balls arrive, run out as a
+//! warning (the tell) when it is loaded, in reach, near its beam, bearing soon and its lay would strike, and fired no
+//! sooner than the tell's 1.3 s, within its gunners' window, long or short by their error. A side run out too long
 //! unfired, or that loses its mark, is run in.
 
 use super::course::{DEG, distance, heading_to, lead_point, velocity_of, wrap};
@@ -13,26 +13,26 @@ use sailing::pose::Pose;
 use sailing::ship::Ship;
 use std::f64::consts::PI;
 
-/// She lays on her mark this share of its freeboard up.
+/// The captain lays on its mark this share of its freeboard up.
 pub const AIM_FREEBOARD: f64 = 0.4;
-/// The tell: seconds a side stands run out before it fires; within this many degrees of her beam it may run out,
+/// The tell: seconds a side stands run out before it fires; within this many degrees of its beam it may run out,
 /// past this many it runs in; unfired this long after the tell it runs in; and once run in it waits this long.
 pub const RUN_OUT_S: f64 = 1.3;
 pub const RUN_OUT_DEG: f64 = 30.0;
 pub const RUN_IN_DEG: f64 = 45.0;
 pub const RUN_OUT_WAIT_S: f64 = 2.5;
 pub const RUN_IN_S: f64 = 2.0;
-/// She runs out within this share of her reach, and fires within this many degrees at the most.
+/// It runs out within this share of its reach, and fires within this many degrees at the most.
 pub const RUN_OUT_REACH: f64 = 1.0;
 pub const BEAR_DEG: f64 = 13.0;
-/// The miss her gunners allow, as a share of the mark's length across her line of fire, and its skill's part.
+/// The miss its gunners allow, as a share of the mark's length across its line of fire, and its skill's part.
 pub const FIRE_EXTENT_K: f64 = 0.35;
 pub const FIRE_EXTENT_SKILL: f64 = 0.65;
-/// Her crew's lay is long or short by up to half this share of the range, by their want of skill.
+/// Its crew's lay is long or short by up to half this share of the range, by their want of skill.
 pub const LAY_ERR: f64 = 0.9;
 
-/// Her mark as her guns see it: where it is, its heading if it has way, its velocity now and smoothed over the last
-/// second, the water under it, and its arms (its hull's box).
+/// The captain's mark as its guns see it: where it is, its heading if it has way, its velocity now and smoothed over
+/// the last second, the water under it, and its arms (its hull's box).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Mark {
     pub place: [f64; 2],
@@ -43,7 +43,7 @@ pub struct Mark {
     pub arms: &'static Arms,
 }
 
-/// Her ship as her guns work it, and how far her rank widens her gunners' error (1 a Major's).
+/// The captain's ship as its guns work it, and how far its rank widens its gunners' error (1 a Major's).
 #[derive(Debug, Clone, Copy)]
 pub struct Aboard<'a> {
     pub ship: &'a Ship,
@@ -54,8 +54,8 @@ pub struct Aboard<'a> {
     pub aim_error: f64,
 }
 
-/// The degrees off her beam she fires within at `at`: the miss her gunners allow on the mark's length across her
-/// line of fire (all of it, end-on, over a mark with no way), never under her scatter nor over `BEAR_DEG`.
+/// The degrees off its beam it fires within at `at`: the miss its gunners allow on the mark's length across its
+/// line of fire (all of it, end-on, over a mark with no way), never under its scatter nor over `BEAR_DEG`.
 #[must_use]
 pub fn fire_window(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, target: &Arms, skill: f64) -> f64 {
     let [low, high] = target.hull;
@@ -71,8 +71,8 @@ pub fn fire_window(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, target
 }
 
 /// The metres of a fight's range, centre to centre, that lie inside the two hulls along the line of fire from `me`
-/// to `at`: her own half beam, out to her gun mouths, and the mark's depth along the line (her half length end-on,
-/// her half beam abeam; her middle with no way). A ball laid to her reach strikes a mark their sum farther off.
+/// to `at`: its own half beam, out to its gun mouths, and the mark's depth along the line (its half length end-on,
+/// its half beam abeam; its middle with no way). A ball laid to its reach strikes a mark their sum farther off.
 #[must_use]
 pub fn hull_span(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, own: &Arms, target: &Arms) -> [f64; 2] {
     let half = |arms: &Arms| ((arms.hull[1][0] - arms.hull[0][0]) / 2.0, (arms.hull[1][1] - arms.hull[0][1]) / 2.0);
@@ -84,7 +84,7 @@ pub fn hull_span(me: [f64; 2], at: [f64; 2], mark_heading: Option<f64>, own: &Ar
     [own_beam, depth]
 }
 
-/// Seconds until the bearing of `lead`, moving at `rel` to her, comes within `window` of `want_deg` off her bow;
+/// Seconds until the bearing of `lead`, moving at `rel` to it, comes within `window` of `want_deg` off its bow;
 /// never while it opens or stands.
 #[must_use]
 pub fn bears_within(ship: &Ship, lead: [f64; 2], rel: [f64; 2], want_deg: f64, window: f64) -> f64 {
@@ -120,8 +120,8 @@ pub fn lay_passes(lay: &Lay, carry: [f64; 3], at: [f64; 2], band: [f64; 2]) -> b
     (band[0] - 0.25..=band[1]).contains(&height)
 }
 
-/// The nearest range, in whole metres, at which her broadside laid on a mark of her own height passes through it,
-/// set by her own gun mouths and hull box: inside it her carriage cannot depress onto her mark.
+/// The nearest range, in whole metres, at which its broadside laid on a mark of its own height passes through it,
+/// set by its own gun mouths and hull box: inside that range its carriage cannot depress onto its mark.
 #[must_use]
 pub fn dead_zone(arms: &Arms) -> f64 {
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
@@ -177,14 +177,14 @@ impl RunOut {
     }
 }
 
-/// What her guns did this step: a side run out (the tell), and a side fired, laid.
+/// What its guns did this step: a side run out (the tell), and a side fired, laid.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Battery {
     pub run_out: Option<Side>,
     pub fire: Option<Lay>,
 }
 
-/// Her broadsides at `clock` against her mark. The lay's error is drawn from `draws`; the caller fires the lay.
+/// Its broadsides at `clock` against its mark. The lay's error is drawn from `draws`; the caller fires the lay.
 pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draws: &mut Mulberry32) -> Battery {
     let mut battery = Battery { run_out: None, fire: None };
     let ship = at.ship;
@@ -200,7 +200,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         let range = distance(me, lead);
         let error = wrap(heading_to(me, lead) - ship.heading - want * DEG).abs() / DEG;
         let loaded = at.guns.ready(side);
-        // Her reach out to the mark's near side, as a player's balls strike her.
+        // Its reach out to the mark's near side, as a player's balls strike it.
         let [beam, depth] = hull_span(me, lead, mark.heading, at.arms, mark.arms);
         let reach = lay(ship, at.pose, at.arms, side, at.guns.load, 0.0, None).reach + beam + depth;
         let lay_k = |share: f64| {
@@ -211,7 +211,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             ];
             lay_on(ship, at.pose, at.arms, side, at.guns.load, target)
         };
-        // The mark's near side, where a ball laid past her middle's reach still strikes her.
+        // The mark's near side, where a ball laid past its middle's reach still strikes it.
         let toward = depth.min(range) / range.max(1e-6);
         let near = [lead[0] - (lead[0] - me[0]) * toward, lead[1] - (lead[1] - me[1]) * toward];
         let strikes = || lay_passes(&lay_k(1.0), carry, lead, band) || lay_passes(&lay_k(1.0), carry, near, band);

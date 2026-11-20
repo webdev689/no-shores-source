@@ -47,7 +47,7 @@ pub(super) fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
 }
 
 #[test]
-fn a_voyage_sails_at_her_paces_way_by_the_canvas_she_keeps_never_under_half() {
+fn a_voyage_sails_at_its_paces_way_by_the_canvas_it_keeps_never_under_half() {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
@@ -56,7 +56,7 @@ fn a_voyage_sails_at_her_paces_way_by_the_canvas_she_keeps_never_under_half() {
     for (canvas, way) in [(0.8, 0.8), (0.2, 0.5)] {
         ticks(&mut sea, ticks_waited);
         sea.berths.get_mut(&player).unwrap().kept = [1.0, canvas, 1.0];
-        // A course starts from where she is, to the whole metre.
+        // A course starts from where it is, to the whole metre.
         let from = sea.ships().find(|(each, _)| *each == player).unwrap().1.x.round();
         sea.course(player, &[[90_000.0, 50_000.0]], 10).unwrap();
         sea.tick();
@@ -67,7 +67,7 @@ fn a_voyage_sails_at_her_paces_way_by_the_canvas_she_keeps_never_under_half() {
 }
 
 #[test]
-fn a_wary_ship_meets_a_player_whose_sloop_she_outguns_and_lets_a_sound_one_be() {
+fn a_wary_ship_meets_a_player_whose_sloop_it_outguns_and_lets_a_sound_one_be() {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
@@ -77,11 +77,11 @@ fn a_wary_ship_meets_a_player_whose_sloop_she_outguns_and_lets_a_sound_one_be() 
     assert!(!sea.fights.fighting(player), "a wary Minor lets a sound Sloop be");
     sea.berths.get_mut(&player).unwrap().kept = [0.3, 1.0, 1.0];
     sea.tick();
-    assert!(sea.fights.fighting(player), "she falls on one holed under GRAPPLE_HULL");
+    assert!(sea.fights.fighting(player), "it falls on one holed under GRAPPLE_HULL");
 }
 
 #[test]
-fn a_player_whose_ship_goes_down_washes_up_at_the_nearest_port_city_her_hurts_a_sunk_ships() {
+fn a_player_whose_ship_goes_down_washes_up_at_the_nearest_port_city_their_hurts_a_sunk_ships() {
     let (mut sea, player) = met(700.0, Rank::Major);
     let vessel = vessel_mut(&mut sea, player, PLAYER);
     vessel.damage.apply(Hurt { hull: vessel.damage.hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
@@ -99,7 +99,7 @@ fn a_player_whose_ship_goes_down_washes_up_at_the_nearest_port_city_her_hurts_a_
 }
 
 #[test]
-fn her_hurts_are_kept_after_a_fight_and_she_starts_the_next_with_them() {
+fn a_ships_hurts_are_kept_after_a_fight_and_it_starts_the_next_with_them() {
     let (mut sea, player) = met(700.0, Rank::Major);
     vessel_mut(&mut sea, player, PLAYER).damage.hull = 120.0;
     if let Sailor::Captain(command) = &mut vessel_mut(&mut sea, player, CAPTAIN).sailor {
@@ -117,7 +117,7 @@ fn her_hurts_are_kept_after_a_fight_and_she_starts_the_next_with_them() {
 }
 
 #[test]
-fn her_hurts_are_kept_in_the_players_character_across_sessions() {
+fn a_ships_hurts_are_kept_in_the_players_character_across_sessions() {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
@@ -131,7 +131,7 @@ fn her_hurts_are_kept_in_the_players_character_across_sessions() {
 }
 
 #[test]
-fn by_a_port_at_rest_she_is_repaired_free_over_a_second_a_hundredth_and_sailing_stops_it_where_it_stood() {
+fn by_a_port_at_rest_a_ship_is_repaired_free_over_a_second_a_hundredth_and_sailing_stops_it_where_it_stood() {
     let mut sea = sea();
     let player = sea.join();
     sea.course(player, &[[58_000.0, 50_000.0]], 10).unwrap();
@@ -158,7 +158,7 @@ fn by_a_port_at_rest_she_is_repaired_free_over_a_second_a_hundredth_and_sailing_
 }
 
 #[test]
-fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_her_and_their_ship_gathers_it() {
+fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_it_and_their_ship_gathers_it() {
     let (mut sea, player) = met(60.0, Rank::Minor);
     if let Some(vessel) = sea.fights.of_mut(player).map(|(fought, _)| fought.fight.ships.get_mut(&CAPTAIN).unwrap()) {
         vessel.damage.hull = 0.0;
@@ -169,17 +169,17 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_her_and_their
         sea.tick();
         laid.extend(sea.take_told().into_iter().filter(|(_, numbers)| numbers[0] == 17.0));
     }
-    assert_eq!(laid.len(), 3, "a Minor lays three pieces for her one player");
+    assert_eq!(laid.len(), 3, "a Minor lays three pieces for its one player");
     assert!(laid.iter().all(|(to, _)| *to == player));
     let pieces: Vec<_> = sea.flotsam_for(player).copied().collect();
     assert_eq!(pieces.len(), 3);
-    assert!(pieces.iter().all(|piece| piece.level == 9), "rolled at her level");
+    assert!(pieces.iter().all(|piece| piece.level == 9), "rolled at its level");
 }
 
 #[test]
-fn a_boarder_fights_her_crew_on_her_deck_opens_her_hold_and_she_is_scuttled_when_the_last_leaves() {
+fn a_boarder_fights_a_captains_crew_on_its_deck_opens_its_hold_and_it_is_scuttled_when_the_last_leaves() {
     let (mut sea, player) = met(20.0, Rank::Minor);
-    assert!(sea.board(player).is_err(), "she has not struck");
+    assert!(sea.board(player).is_err(), "it has not struck");
     let clock = sea.fights.of_mut(player).unwrap().0.fight.clock;
     let vessel = vessel_mut(&mut sea, player, CAPTAIN);
     vessel.damage.apply(Hurt { hull: vessel.damage.max_hull * 0.8, sail: 0.0, crew: 0.0, fire: false }, clock, 0.0);
@@ -200,15 +200,15 @@ fn a_boarder_fights_her_crew_on_her_deck_opens_her_hold_and_she_is_scuttled_when
     }
     sea.tick();
     let hold = sea.flotsam_for(player).count();
-    assert_eq!(hold, 6, "her hold: what floats, twice over");
+    assert_eq!(hold, 6, "its hold: what floats, twice over");
     assert_eq!(sea.leave_deck(player), Ok(()));
     assert!(!sea.on_deck(player) && sea.decks().is_empty());
     let state = sea.fights.of_mut(player).unwrap().0.fight.vessel(CAPTAIN).unwrap().damage.state;
-    assert_eq!(state, State::Sinking, "scuttled once the last boarder left her");
+    assert_eq!(state, State::Sinking, "scuttled once the last boarder left it");
 }
 
 #[test]
-fn boarders_all_beaten_on_her_deck_wash_up_with_their_ships_hurts_and_she_is_scuttled() {
+fn boarders_all_beaten_on_its_deck_wash_up_with_their_ships_hurts_and_it_is_scuttled() {
     let (mut sea, player) = met(20.0, Rank::Minor);
     let clock = sea.fights.of_mut(player).unwrap().0.fight.clock;
     let vessel = vessel_mut(&mut sea, player, CAPTAIN);
@@ -225,7 +225,7 @@ fn boarders_all_beaten_on_her_deck_wash_up_with_their_ships_hurts_and_she_is_scu
         "beaten, not sunk"
     );
     let (hurts, _) = sea.kept(player).unwrap();
-    assert!((hurts[0] - 0.5).abs() < 1e-9, "moored with her hurts: {hurts:?}");
+    assert!((hurts[0] - 0.5).abs() < 1e-9, "moored with its hurts: {hurts:?}");
 }
 
 #[test]

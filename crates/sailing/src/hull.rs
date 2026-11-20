@@ -1,5 +1,5 @@
-//! A hull's own numbers: her waterline's size and draught, her rig, and the gain DFO measured for it; and the hulls
-//! the game sails, each named by her key in the ships manifest (`content/ships/ships.json`).
+//! A hull's own numbers: its waterline's size and draught, its rig, and the gain DFO measured for it; and the hulls
+//! the game sails, each named by its key in the ships manifest (`content/ships/ships.json`).
 
 /// A sail's kind, as Come Sail Away names them: each pulls along its own curve against the wind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,8 +24,8 @@ pub struct Sail {
     pub size: SailSize,
 }
 
-/// A hull: half her waterline's length and beam and her draught below it, metres; her gain (her way under the
-/// responsive helm over the mod's own, which her handling's rates are read at); and her sails.
+/// A hull: half its waterline's length and beam and its draught below it, metres; its gain (its way under the
+/// responsive helm over the mod's own, which its handling's rates are read at); and its sails.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Hull {
     pub name: &'static str,
@@ -36,9 +36,9 @@ pub struct Hull {
     pub sails: &'static [Sail],
 }
 
-/// The owner's Sloop, her waterline measured off her model by the ship export. She sails as Come Sail Away's Large
-/// Boat II, whose rig is hers (a small staysail and a small gaff sail, as her manifest lists them): its handling is
-/// the mod's own, unscaled, and its gain DFO's for that rig.
+/// The owner's Sloop, its waterline measured off its model by the ship export. It sails as Come Sail Away's
+/// Large Boat II, whose rig is the Sloop's (a small staysail and a small gaff sail, as its manifest lists them): its
+/// handling is the mod's own, unscaled, and its gain DFO's for that rig.
 pub const SLOOP: Hull = Hull {
     name: "sloop",
     half_length_m: 18.6775 / 2.0,
@@ -53,8 +53,8 @@ const fn small(kind: SailKind) -> Sail {
     Sail { kind, size: SailSize::Small }
 }
 
-/// The Schooner, her waterline measured off her model by the ship export: a staysail and two gaff sails, as her
-/// manifest has them. Her gain is DFO's for Come Sail Away's Large Boat V, its rig of a staysail and two gaffs.
+/// The Schooner, its waterline measured off its model by the ship export: a staysail and two gaff sails, as its
+/// manifest has them. Its gain is DFO's for Come Sail Away's Large Boat V, its rig of a staysail and two gaffs.
 pub const SCHOONER: Hull = Hull {
     name: "schooner",
     half_length_m: 25.1942 / 2.0,
@@ -64,8 +64,8 @@ pub const SCHOONER: Hull = Hull {
     sails: &[small(SailKind::Stay), small(SailKind::Gaff), small(SailKind::Gaff)],
 };
 
-/// The Brig, her waterline measured off her model: two staysails, three square sails on each of her two masts and a
-/// gaff spanker, as her manifest has them. Her gain is DFO's for its galleon, its square-rigged two-master (the Small
+/// The Brig, its waterline measured off its model: two staysails, three square sails on each of its two masts and a
+/// gaff spanker, as its manifest has them. Its gain is DFO's for its galleon, its square-rigged two-master (the Small
 /// Ship) with a gaff and a jib.
 pub const BRIG: Hull = Hull {
     name: "brig",
@@ -86,8 +86,8 @@ pub const BRIG: Hull = Hull {
     ],
 };
 
-/// The Frigate, her waterline measured off her model: two staysails, eight square sails on her three masts and a gaff
-/// spanker, as her manifest has them. Her gain is DFO's for the Carrack, its square-rigged three-master.
+/// The Frigate, its waterline measured off its model: two staysails, eight square sails on its three masts and a gaff
+/// spanker, as its manifest has them. Its gain is DFO's for the Carrack, its square-rigged three-master.
 pub const FRIGATE: Hull = Hull {
     name: "frigate",
     half_length_m: 38.0581 / 2.0,
@@ -109,7 +109,7 @@ pub const FRIGATE: Hull = Hull {
     ],
 };
 
-/// Which hull a ship is, numbered 0 to 3 on the wire (0 the Sloop, so a reader that knows none reads her).
+/// Which hull a ship is, numbered 0 to 3 on the wire (0 the Sloop, so a reader that knows none reads it).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum HullKind {
     #[default]
@@ -122,7 +122,7 @@ pub enum HullKind {
 impl HullKind {
     pub const ALL: [HullKind; 4] = [HullKind::Sloop, HullKind::Schooner, HullKind::Brig, HullKind::Frigate];
 
-    /// Her number on the wire.
+    /// Its number on the wire.
     #[must_use]
     pub fn number(self) -> u8 {
         self as u8
@@ -134,7 +134,7 @@ impl HullKind {
         Self::ALL.into_iter().find(|kind| kind.number() == number)
     }
 
-    /// Her hull's numbers.
+    /// Its hull's numbers.
     #[must_use]
     pub fn hull(self) -> &'static Hull {
         match self {
@@ -145,7 +145,7 @@ impl HullKind {
         }
     }
 
-    /// Her key in the ships manifest.
+    /// Its key in the ships manifest.
     #[must_use]
     pub fn name(self) -> &'static str {
         self.hull().name

@@ -503,9 +503,14 @@ export class Sea {
     return this.voyageNote + helmsman + room;
   }
 
-  /** Where her voyage stands: a hostile ship just sighted or other waters entered; under way, hove to, or at anchor. */
+  /** Where the voyage stands: a chase, under way, hove to, or at anchor. */
   get voyageNote(): string {
-    return this.watch.words ?? this.chase.words ?? this.passage.note;
+    return this.chase.words ?? this.passage.note;
+  }
+
+  /** What the watch says now, a notice: a hostile ship just sighted, or other waters entered; none else. */
+  get watchWords(): string | null {
+    return this.watch.words;
   }
 
   /** The water she is in, as the status line names it; null before the waters are open. */

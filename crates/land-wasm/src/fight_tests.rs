@@ -149,7 +149,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     let fired = kinds.iter().filter(|kind| kind.as_str() == r#""muzzle"0"#).count();
     assert_eq!(fired, 6, "two broadsides of three, the third refused braced or loading: {kinds:?}");
     assert_eq!(last["player"]["guns"]["load"], "grape");
-    // Each leg's: the balls aloft at a leg's end are in it, and her captain's commission and strike share.
+    // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
         "b4b2b472c1c548e2 47f35009e4c474b7 8ff59cbbbab5b793 5b2d1d8fe9f53cb7 078ad1af53744762 bc7cd318e0ad73dd c4dcc79b6e20cda4 f639d699a4272179 b3e44646db9f037b"
@@ -180,7 +180,7 @@ fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
     }
 }
 
-/// The fight `FIGHT_LEGS` fights against a pirate captain of `rank`, in her rank's hull: each leg's fingerprint.
+/// The fight `FIGHT_LEGS` fights against a pirate captain of `rank`, in its rank's hull: each leg's fingerprint.
 fn fought_with(rank: u8) -> Vec<String> {
     opened();
     let begin = format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#);
@@ -211,8 +211,8 @@ fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
             format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#)
                 .as_bytes(),
         ));
-        assert_eq!(begun["captain"]["hull_kind"], hull, "a captain of rank {rank} sails her rank's hull");
-        assert_eq!(begun["player"]["hull_kind"], 0, "the player sails her Sloop");
+        assert_eq!(begun["captain"]["hull_kind"], hull, "a captain of rank {rank} sails its rank's hull");
+        assert_eq!(begun["player"]["hull_kind"], 0, "the player sails their Sloop");
         assert_eq!(prints.last().map(String::as_str), Some(print), "rank {rank}: {prints:?}");
     }
     let refused = |rank: &str| {
@@ -224,7 +224,7 @@ fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
 }
 
 #[test]
-fn a_balls_hit_tells_where_on_her_it_struck_and_the_sea_fights_own_events_are_told() {
+fn a_balls_hit_tells_where_on_the_ship_it_struck_and_the_sea_fights_own_events_are_told() {
     use naval::damage::Zone;
     use naval::fight::{Part, Piece};
     let gun = naval::guns::SWIVEL;
@@ -247,8 +247,8 @@ fn a_balls_hit_tells_where_on_her_it_struck_and_the_sea_fights_own_events_are_to
         Event::Flotsam { id: 7, at: [5.0, 6.0], kind: Piece::Chest },
     ];
     let told = events_json(&events);
-    assert_eq!(told.len(), 4, "her new hit is told with the shot's");
-    // As the fight tells them: her torn sail and her colours between the hit and its ball's.
+    assert_eq!(told.len(), 4, "its new hit is told with the shot's");
+    // As the fight tells them: its torn sail and its colours between the hit and its ball's.
     assert_eq!(told[0]["kind"], "SailLost");
     assert_eq!(told[1]["kind"], "Struck");
     assert_eq!((told[2]["kind"].as_str(), told[2]["part"].as_str()), (Some("hit"), Some("hull")));

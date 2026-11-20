@@ -94,8 +94,8 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
 }
 
 /// What the page reads of the sea's rules beside its waters: the reach a hostile ship meets a player within, the
-/// furthest one may hold a voyage, metres; the reach of a port city's repairs; and each ship's name, by her faction's
-/// number (0 to the captains' last) and then her hull's.
+/// furthest one may hold a voyage, metres; the reach of a port city's repairs; and each ship's name, by its faction's
+/// number (0 to the captains' last) and then its hull's.
 fn sea_facts() -> Value {
     let factions = 0..=naval::ranks::CAPTAIN_FACTIONS.into_iter().max().unwrap_or(0);
     let names: Vec<Vec<&str>> = factions
@@ -142,7 +142,7 @@ pub fn grid_bytes(cell_m: f64) -> Vec<u8> {
 }
 
 /// Ships packed as little-endian f64s, `SHIP_FLOATS` each: id, route, from port, to port, hull (0 sloop, 1 schooner,
-/// 2 brig, 3 frigate), x, y, the unit way she sails (x, y), metres sailed, and her route's length.
+/// 2 brig, 3 frigate), x, y, the unit way it sails (x, y), metres sailed, and its route's length.
 fn ship_bytes(ships: &[TrafficShip]) -> Vec<u8> {
     let mut bytes = Vec::with_capacity(ships.len() * SHIP_FLOATS * 8);
     for ship in ships {
@@ -182,7 +182,7 @@ pub fn ships_near_bytes(x: f64, y: f64, radius_m: f64, time_s: f64) -> Vec<u8> {
     })
 }
 
-/// One friendly ship by her id at world time `time_s`, packed as `ship_bytes` says; empty when she is not sailing then.
+/// One friendly ship by its id at world time `time_s`, packed as `ship_bytes` says; empty when it is not sailing then.
 #[must_use]
 pub fn ship_by_id_bytes(id: u64, time_s: f64) -> Vec<u8> {
     OPEN.with(|open| {
@@ -220,7 +220,7 @@ pub extern "C" fn waters_ships(x: f64, y: f64, radius_m: f64, time_s: f64) -> u6
     hand_over(ships_near_bytes(x, y, radius_m, time_s))
 }
 
-/// One friendly ship by her id at a world time, packed (`ship_by_id_bytes`).
+/// One friendly ship by its id at a world time, packed (`ship_by_id_bytes`).
 #[unsafe(no_mangle)]
 pub extern "C" fn waters_ship(id: u64, time_s: f64) -> u64 {
     hand_over(ship_by_id_bytes(id, time_s))

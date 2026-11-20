@@ -2,7 +2,7 @@
 //! a tick (`prepare`), then sent to each player as theirs (`snapshot_for`): at sea what floats, each ship's kept hurts,
 //! what the sea tells and each deck boarded go only to the player they are for, and a deck's own snapshot only to its
 //! boarders; and each player is sent only the ships near them: the hostile ships their ship keeps at sea (within
-//! `KEEP_SHARE` times her sight, as she reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in
+//! `KEEP_SHARE` times its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in
 //! their fight.
 
 use crate::{Opened, with_open};

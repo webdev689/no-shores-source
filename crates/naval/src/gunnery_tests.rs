@@ -56,9 +56,9 @@ fn sailing_north(ahead: f64) -> Ship {
 const LEVEL: Pose = Pose { heave: 0.0, pitch: 0.0, roll: 0.0, aground: false };
 
 #[test]
-fn a_side_is_laid_square_to_her_hull_for_its_range() {
+fn a_side_is_laid_square_to_its_hull_for_its_range() {
     let laid = lay(&sailing_north(0.0), &LEVEL, &SLOOP_ARMS, Side::Starboard, Shot::Round, 50.0, None);
-    // Heading north, her starboard guns bear east.
+    // Heading north, its starboard guns bear east.
     assert!(near(laid.dir[0], 1.0) && laid.dir[1].abs() < 1e-12);
     let rise = laid.centre[2];
     let landed = crate::ballistics::range_at(laid.elevation, SWIVEL.speed, rise);
@@ -93,11 +93,11 @@ fn a_volley_ripples_its_guns_and_each_leaves_its_own_port_moving_with_the_deck()
 }
 
 #[test]
-fn her_muzzles_ride_her_heel() {
+fn its_muzzles_ride_its_heel() {
     let heeled = Pose { roll: 0.14, ..LEVEL };
     let upright = lay(&sailing_north(0.0), &LEVEL, &SLOOP_ARMS, Side::Starboard, Shot::Round, 50.0, None);
     let leaning = lay(&sailing_north(0.0), &heeled, &SLOOP_ARMS, Side::Starboard, Shot::Round, 50.0, None);
-    assert!(leaning.mouths[0][2] < upright.mouths[0][2], "her starboard ports go down");
+    assert!(leaning.mouths[0][2] < upright.mouths[0][2], "its starboard ports go down");
     assert!(near(leaning.dir[0], 1.0), "the lay stays the upright hull's");
 }
 

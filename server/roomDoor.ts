@@ -36,7 +36,7 @@ export interface RoomDoor {
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[]): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
-  /** Opens a captain's deck as a room alone, as the sea holds one boarded: her hull's number, her faction, her rank
+  /** Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's number, its faction, its rank
    *  (1 Minor to 5 Boss) and level; false if the hull or the rank is not one. */
   openDeck(hull: number, faction: number, rank: number, level: number): boolean;
   /** Opens the sea round the continents of a layout file's text, its pirates' chances drawn from `seed`, its clock
@@ -94,13 +94,13 @@ export interface RoomDoor {
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;
   /** The open sea keeps characters from now on: a player's courses wait for the keeper's word on theirs (a character
-   *  given back, or `noneKept`), so a ship comes back where the room last kept her; false if no sea is open. */
+   *  given back, or `noneKept`), so a ship comes back where the room last kept it; false if no sea is open. */
   keepCharacters(): boolean;
   /** The keeper has no character to give a player at sea (none kept, or the page plays unkept): the course held for
    *  them sails. */
   noneKept(player: number): void;
-  /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
-   *  and the loads her guns take. */
+  /** The Sloop's build as the naval rules hold it, as JSON: its name, hull and canvas whole, crew, guns on each side,
+   *  and the loads its guns take. */
   sloop(): string;
   /** Every enemy type the rules know, as JSON, in their order: each one's number (`type`), name, faction (`faction`
    *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest

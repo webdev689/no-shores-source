@@ -429,9 +429,9 @@ export class SeaCombat {
     return this.naval.display(now, { boardable: this.room.mayBoard, boardKey: 'E' });
   }
 
-  /** The panel's lines: the captains' hurts, the broadside warning, and DFO's messages. */
-  lines(now: number): string[] {
-    return this.naval.lines(now);
+  /** The fight's messages standing at `now`, DFO's toasts. */
+  messages(now: number): string[] {
+    return this.naval.messages(now);
   }
 }
 

@@ -7,7 +7,7 @@
 import { motionReduced } from '../plus/kit.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { EVENT, type Tone, wordOf } from './cues.ts';
-import { element } from './meter.ts';
+import { element } from '../plus/meter.ts';
 
 /** How long a word stands, in frames at 60 a second: a crit's and a kill's longer. */
 export const WORD_FRAMES = { plain: 57, loud: 72 } as const;

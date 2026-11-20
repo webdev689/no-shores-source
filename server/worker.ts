@@ -135,7 +135,7 @@ export class RoomHost extends DurableObject<Env> {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, ELSEWHERE, 'your character joined another room');
     });
-    // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept her.
+    // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept it.
     if (seas !== null)
       return (
         this.room.openSea(
@@ -190,7 +190,7 @@ export class RoomHost extends DurableObject<Env> {
     if (typeof message === 'string' && TOKEN.test(message) && !held.signed) {
       held.signed = true;
       held.count = count;
-      // Whatever the keeper answers, the sea then sails the course it held: from where it kept her, if it did.
+      // Whatever the keeper answers, the sea then sails the course it held: from where it kept the ship, if it did.
       void (this.keeper?.signIn(player, message, Date.now, here) ?? Promise.resolve(false))
         .catch(() => false)
         .then(() => {
@@ -204,7 +204,7 @@ export class RoomHost extends DurableObject<Env> {
       return;
     }
     held.count = count;
-    // At sea an input before any token sails at once; a token after it still gives her back where she was kept.
+    // At sea an input before any token sails at once; a token after it still gives the ship back where it was kept.
     if (seaRoom(this.name) !== null && !held.signed && !held.spoke) {
       held.spoke = true;
       this.guarded(() => this.room.noneKept(player), undefined);

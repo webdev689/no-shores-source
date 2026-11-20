@@ -7,7 +7,7 @@ use naval::damage::Hurt;
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
 use naval::ranks::{GREY_TITHE, PIRATES, Rank};
 
-/// The captain of the player's fight struck where she lies, making no way.
+/// The captain of the player's fight struck where it lies, making no way.
 fn strike(sea: &mut Sea, player: PlayerId) {
     let clock = sea.fights.of_mut(player).unwrap().0.fight.clock;
     let vessel = vessel_mut(sea, player, CAPTAIN);
@@ -26,7 +26,7 @@ fn beaten(sea: &mut Sea, player: PlayerId) {
 }
 
 #[test]
-fn each_captains_rank_is_the_same_rank_among_the_foes_so_her_deck_holds_the_crew_of_her_rank() {
+fn each_captains_rank_is_the_same_rank_among_the_foes_so_its_deck_holds_the_crew_of_its_rank() {
     for rank in [Rank::Minor, Rank::Major, Rank::Elite, Rank::Miniboss, Rank::Boss] {
         assert_eq!(format!("{:?}", foe_rank(rank)), format!("{rank:?}"));
     }
@@ -44,14 +44,14 @@ fn each_captains_rank_is_the_same_rank_among_the_foes_so_her_deck_holds_the_crew
 }
 
 #[test]
-fn a_boarding_is_refused_when_her_deck_would_hold_no_crew_and_nothing_is_told() {
+fn a_boarding_is_refused_when_its_deck_would_hold_no_crew_and_nothing_is_told() {
     assert!(::foes::crews::deck_crew(PIRATES, ::foes::Rank::Boss).is_empty(), "the pirates have no deck Boss");
     let (mut sea, player) = met(20.0, Rank::Boss);
     strike(&mut sea, player);
     assert_eq!(sea.board(player), Err(BoardRefused::NoneAlongside));
     assert!(sea.decks().is_empty() && !sea.on_deck(player));
     assert!(sea.fights.of_mut(player).unwrap().0.pending.is_empty(), "no boarding told");
-    // The Grey Tithe's Boss has her deck crew: she is boarded.
+    // The Grey Tithe's Boss has its deck crew: it is boarded.
     let (mut sea, player) = met(20.0, Rank::Boss);
     sea.fights.of_mut(player).unwrap().0.hostiles.get_mut(&CAPTAIN).unwrap().commission.faction = GREY_TITHE;
     strike(&mut sea, player);
@@ -59,7 +59,7 @@ fn a_boarding_is_refused_when_her_deck_would_hold_no_crew_and_nothing_is_told() 
 }
 
 #[test]
-fn a_boarding_is_refused_from_too_far_too_fast_twice_and_out_of_a_fight_and_her_own_ship_takes_nothing_meanwhile() {
+fn a_boarding_is_refused_from_too_far_too_fast_twice_and_out_of_a_fight_and_their_own_ship_takes_nothing_meanwhile() {
     let (mut sea, player) = met(60.0, Rank::Minor);
     strike(&mut sea, player);
     assert_eq!(sea.board(player), Err(BoardRefused::NoneAlongside), "60 m off");
@@ -70,7 +70,7 @@ fn a_boarding_is_refused_from_too_far_too_fast_twice_and_out_of_a_fight_and_her_
     vessel_mut(&mut sea, player, PLAYER).ship.ahead = 0.0;
     assert_eq!(sea.board(player), Ok(()));
     assert!(sea.board(player).is_err(), "twice");
-    assert!(sea.orders(player, crate::battle::QUIET).is_err(), "orders on her deck");
+    assert!(sea.orders(player, crate::battle::QUIET).is_err(), "orders on its deck");
     assert!(sea.repair(player).is_err());
     assert!(sea.leave_helm(player).is_err());
     let other = sea.join();
@@ -101,11 +101,11 @@ fn a_boarders_deck_inputs_stand_no_foe_replay_nothing_reach_no_other_player_and_
     let clock = sea.decks()[0].room.clock();
     let _ = sea.deck_input(player, Input { sequence: 2, seen: clock, respawn: true, ..Default::default() });
     sea.tick();
-    assert!(!sea.on_deck(player), "beaten, washed up: a respawn ask does not stand her up again");
+    assert!(!sea.on_deck(player), "beaten, washed up: a respawn ask does not stand them up again");
 }
 
 #[test]
-fn two_boarders_one_beaten_both_take_her_hold_when_her_crew_falls_and_both_step_off_after_it() {
+fn two_boarders_one_beaten_both_take_its_hold_when_its_crew_falls_and_both_step_off_after_it() {
     let (mut sea, one) = met(20.0, Rank::Minor);
     let two = sea.join();
     sea.course(two, &[[50_010.0, 50_000.0]], 10).unwrap();
@@ -126,13 +126,13 @@ fn two_boarders_one_beaten_both_take_her_hold_when_her_crew_falls_and_both_step_
         foe.fighter.action = combat::Action::Dead { elapsed: 0 };
     }
     sea.tick();
-    assert_eq!((sea.flotsam_for(one).count(), sea.flotsam_for(two).count()), (6, 6), "her hold for each");
+    assert_eq!((sea.flotsam_for(one).count(), sea.flotsam_for(two).count()), (6, 6), "its hold for each");
     ticks(&mut sea, HOLD_TICKS as usize + 1);
     assert!(!sea.on_deck(one) && !sea.on_deck(two));
 }
 
 #[test]
-fn her_ship_going_down_under_her_boarders_sends_them_home_with_what_floats_once_and_no_hold() {
+fn a_ship_going_down_under_its_boarders_sends_them_home_with_what_floats_once_and_no_hold() {
     let (mut sea, player) = met(20.0, Rank::Minor);
     strike(&mut sea, player);
     sea.board(player).unwrap();
