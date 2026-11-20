@@ -10,6 +10,7 @@ import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import { type FeelShip, FightFeel } from '../ships/fightFeel.ts';
 import { playCues } from '../ships/fightSounds.ts';
+import { Shake } from '../ships/shake.ts';
 import type { Stir } from '../ships/swellPose.ts';
 import type { ShadowMap } from '../shadow.ts';
 import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
@@ -17,6 +18,7 @@ import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { factionSide } from '../ships/dress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
+import type { MarkView } from '../ships/markView.ts';
 import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { Lying } from '../ships/deck.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
@@ -72,6 +74,7 @@ function roomSource(room: SeaRoom, first: FightView): FightSource {
 
 export class SeaCombat {
   private readonly naval: Naval;
+  private readonly marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>;
   /** The hull a ship is drawn as: her own once her model has come. */
   private readonly shown: (hull: number) => number;
   private readonly fought = new Fought();
@@ -96,15 +99,18 @@ export class SeaCombat {
   private swell: ShelteredSwell | undefined;
   private waterTime = 0;
   private stirred: Stir[] = [];
+  /** The eye jarred by her guns, the balls striking her, falls alongside and magazines near. */
+  private readonly shake = new Shake(1);
 
   constructor(
     room: SeaRoom,
     first: FightView,
-    marks: MarkDrawer,
+    marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>,
     now: number,
     shown: (hull: number) => number = (hull) => hull,
   ) {
     this.shown = shown;
+    this.marks = marks;
     this.naval = new Naval(marks, shown);
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     this.naval.join(Fighting.joined(roomSource(room, first), 'sea', first, now));
@@ -211,10 +217,15 @@ export class SeaCombat {
     if (!this.naval.fighting) this.going = -1;
     this.down = Math.min(1, Math.max(0, this.down + (this.going * seconds) / PAN_S));
     const camera = cameraOf(this.aiming ? this.naval.aimCamera(orbit, this.fought, this.window, 1) : orbit);
+    const jar = this.shake.jarAt(time);
     return {
-      eye: [camera.eye[0] + this.window.leftM, camera.eye[1] + this.window.topM, camera.eye[2]],
-      yaw: this.orbit.yaw,
-      pitch: this.orbit.pitch,
+      eye: [
+        camera.eye[0] + this.window.leftM + jar.east,
+        camera.eye[1] + this.window.topM + jar.south,
+        camera.eye[2] + jar.up,
+      ],
+      yaw: this.orbit.yaw + jar.yaw,
+      pitch: this.orbit.pitch + jar.pitch,
       fov: FIELD_OF_VIEW,
       near: 0.3,
       far,
@@ -275,7 +286,7 @@ export class SeaCombat {
       const [x = 0, y = 0, heading = 0] = ship.vessel.ship;
       const [heave = 0, pitch = 0, roll = 0] = ship.vessel.pose;
       const place = { x, y, z: heave, heading, pitch, roll, scale };
-      return [{ ship, place: this.naval.settled(ship, place, time, scale) }];
+      return [{ ship, place }];
     });
   }
 
@@ -334,15 +345,28 @@ export class SeaCombat {
       water,
       shadow,
     });
-    playCues(worldOutput(), this.naval.takeCues(), eye, this.orbit.yaw);
+    const cues = this.naval.takeCues();
+    this.shake.take(cues, now);
+    playCues(worldOutput(), cues, eye, this.orbit.yaw);
+  }
+
+  /** The fight's see-through puffs over the finished picture `target`, after the water, hidden where the scene's
+   *  `depth` stands nearer; and their light on what stands round them. */
+  overWater(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture): void {
+    this.marks.drawOver?.(encoder, target, depth);
+  }
+
+  lightInto(pass: GPURenderPassEncoder): void {
+    this.marks.drawLight?.(pass);
   }
 
   /** Each captain's bar over her hull's masthead, in world metres, her drawn `scale` times her size, while she
    *  floats. */
   bars(scale: number): ShipBar[] {
-    const bar = (captain: FightCaptain) =>
+    // Each keyed by the number the fight names her by, so the plates' layout keeps them apart.
+    const bar = (captain: FightCaptain, index: number) =>
       barOver(
-        { ...captain, maxHull: captain.max_hull },
+        { ...captain, maxHull: captain.max_hull, id: index === 0 ? 1 : (captain.number ?? index + 1) },
         { leftM: 0, topM: 0 },
         scale,
         plateOverM(this.shown(hullOfCaptain(captain))),

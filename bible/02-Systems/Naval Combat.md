@@ -328,8 +328,10 @@ left click holds fire, the wheel changes shot, and `C` braces.
 
 Her ship is drawn in her hull and her faction's colours ([[Sailing]], "Her look"), and the water cuts her footprint
 as it does the player's. The balls and the lay's arcs are small lit spheres, and the fight looks as "How it looks"
-says. The panel shows both ships' hull, canvas and men, the guns' reload and load, DFO's messages,
-and "BROADSIDE! Brace (C)." while her guns stand run out. Each arc of the lay starts where its ball leaves, a
+says. The panel shows her hull, canvas, guns' reload and load, a line for each captain within 400 m (nearest
+first, her mode in plain words: closing, cruising, running, struck, going down), DFO's messages naming each ship by
+her own name, and "Broadside from the Pirate Brig: C to brace." for the nearest captain whose guns stand run out. A
+captain is sighted in the voyage's one sentence: "A Pirate Sloop sighted, 1.0 km off.". Each arc of the lay starts where its ball leaves, a
 ripple after the gun before it and carried on by her way, and runs only to where that ball stops: a larger red mark
 where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
 the panel reads "Laying the ... guns: on target.", only when an unscattered ball strikes her.
@@ -337,7 +339,14 @@ the panel reads "Laying the ... guns: on target.", only when an unscattered ball
 ## How it looks
 
 Only the look of it: the rules say what happened, in the fight's events and its view, and `FightFeel` turns each into
-puffs of small lit spheres (`Effects`), harm kept on the ship it struck (`ShipHarm`, on her rig), flotsam and sounds.
+puffs (`Effects`, after DFO's `navalEffects.js`), harm kept on the ship it struck (`ShipHarm`, on her rig), flotsam,
+sounds and, on the player's own ship, jars of the eye. Smoke, spray and foam are soft round puffs blended over what
+is behind them, smoke swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light
+added unlit; splinters, shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
+where the scene stands nearer (`puffView.ts`), and a flash's or a fire's light falls on the hulls round it through
+the light layer: a muzzle's 26 m for 0.12 s, a burning ship's 16 m, three burning ships at most. At most 900 puffs
+live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
+and smoke last.
 The view's own numbers stand in where no event says more: her canvas's share left holes her sails, a ship `struck`
 lowers her colours and one `sinking` goes down.
 
@@ -348,39 +357,55 @@ and `Hit` come with its shot's own events, the hit carrying where on her it stru
 ship's harm is kept by the number the events name her by: at sea the player is 0, the first captain 1, and each other
 captain's number comes with her in the view, so one leaving the fight never moves another's holes onto her.
 
-- **A gun fired** (`muzzle`): a flash at its mouth for 0.1 s, and ten puffs of white powder smoke that roll a few
-  metres out the way the ball went, slowing, lift off the water and drift downwind at 1.5 m/s, thinning most of the
-  way within a few seconds and gone by 7 s, so what it hid (her holes, the foam, what floats) shows again. A
-  broadside's guns each smoke from their own mouths, so the smoke hangs along her side a while.
+- **A gun fired** (`muzzle`): a bloom at its mouth for 0.11 s and a tongue of fire along the shot, its light, and
+  eight puffs of powder smoke that roll out down the shot, slow to the wind and hang as a bank down her side 9 to
+  14 s, swelling to 6 to 10 m across as they thin; her own gun jars the eye (1.1).
 - **A ball in flight** keeps its sphere and leaves a faint grey trail, a puff every 0.04 s that lasts half a second.
-- **A ball in the water** (`Splash`): a column of water thrown up, white at its head and the sea's own colour lower
-  down, that rises about 4 m for a round shot, spreads as it rises and falls back in a second, its size by its ball
-  beside a round shot's (the ball last seen aloft nearest where it fell; 0.6 to 2 times); a ragged patch of foam
-  over where it fell for about 2.5 s; and a push on the water's ripples ([[Water]], "In the water").
+  A ball coming within 8 m of her hull whistles once where it passed; one of hers going out never does.
+- **A ball in the water** (`Splash`): a column of spray thrown up and falling back, a spout of a few drops nearly
+  straight up over it (10 m/s, a heavy ball's 14), and a ring of foam spreading flat on the water for 2.4 s (a heavy
+  ball's larger, 3.2 s); a push on the water's ripples ([[Water]], "In the water"). A fall within 6 m of her hull
+  throws a sheet of its water over her rail toward her deck and rocks the eye, the more the nearer (0.7 at her side).
 - **A hit** (`Hit`, its point in her frame and the part struck; until the rules send them, the world point turned into
-  her frame and the zone): on her hull, 32 chips, most of her side's paint, burst out of her side and fall to the
-  water, and a ragged hole, a dark middle in a rim of splintered raw timber that reads on any paint, stays there for the fight; on a sail (a rig hit within
-  1.5 m of a cell of canvas), that cell is shot through for good, with a few shreds drifting down; elsewhere in her
-  rig, a puff of splinters at the spar. A ram's stem throws her splinters but leaves no hole.
+  her frame and the zone): on her hull, ten splinters, most of her side's paint, thrown out and falling to the water,
+  a puff of smoke and a small flash, and a ragged hole, a dark middle in a rim of splintered raw timber that reads on
+  any paint, stays there for the fight; a hole below her waterline also leaves two planks afloat for some 18 s. On a
+  sail (a rig hit within 1.5 m of a cell of canvas), that cell is shot through for good, with nine pale scraps
+  fluttering down; elsewhere in her rig, a burst of splinters at the spar. A ram's stem throws her splinters but leaves
+  no hole. A ball striking her own ship jars the eye (1.6, a hole 2.5) and tells the side it came from.
 - **Torn sails**: her sails' holes grow with her canvas's harm ([[Sailing]], "Her sails"). A sail torn away
   (`SailLost`) rips from its yard, head first, falls to leeward over her side onto the water, and floats there 40 s
   as she sails on from it before it sinks. A fallen mast (`MastFell`) leans over her leeward side with its yards and
   sails, slowly then fast, for 3 s until its head is in the water, then drifts astern and is gone after 40 s.
-- **Fire**: flames and dark smoke up from her deck, along a third of her length, for each fire the view gives her.
+- **Fire**: unlit flames, embers rising and gouts of dark smoke up from her deck, along a third of her length, for
+  each fire the view gives her, and her light on the hulls round her.
+- **Run out**: a captain's battery running out glints at four ports along each side run out, about thirty flickers a
+  second, while her guns stand out.
+- **Battered**: under three fifths of her hull, the player's ship smokes grey along her deck, more as she is hurt.
 - **Struck** (`Struck`): her flag comes down her mast in 4 s to a metre over its foot and is gone.
 - **Sinking** (`Sinking`): over 20 s she is drawn in the pose the rules send (their `founder`: she lists up to 32
   degrees to the side her seed says, trims 20 degrees by one end, settles slowly and then plunges), the page adding
-  none of its own; from
-  halfway down until 8 s after, foam and rising bubbles fill the water over her length. Her flotsam (`Flotsam`:
+  none of its own; from halfway down until 8 s after, rings of foam and the air boiling up in drops fill the water over
+  her length. A ship going down afire blows her magazine at 55% of the time, 1.5 to 4.5 s in, decided by her own
+  number and the room's tick she began going down, so everyone in the fight sees the same: a fireball, a column of
+  smoke, splinters and a big splash, jarring the eye 2.4 at her side and less to none at 160 m. Her flotsam (`Flotsam`:
   crates, barrels and a chest, which the rules lay) rides the swell the water draws where it lies (bobbing 0.12 m every
   4 s where the page draws none), drawn at the size the view draws ships and lit and shadowed as the land is, each
   under a gold mark 2.5 m over it that stands as large on the screen at any distance (some ten pixels across at the
   fight's camera), until gathered (`Gathered`: a ring of gold glints rises from it and a little water is thrown up)
   or the fight is over.
-- **Sounds**: each plays the game's own recording where it has one: a ball in the water plays its splash
-  (`shot.splash`). The sound sheet has none yet for a gun fired, a ball through a hull or a sail, a sail torn away, a
-  mast falling, colours struck, a ship sinking, what floats laid or gathered, or a boarding: each stays silent until
-  the owner picks one.
+- **Sounds**: each plays the game's own recording where it has one, over DFO's sea distances (full within the first,
+  gone past the second, metres): a gun fired `ship.cannon` (30, 2400), heard past 260 m as the far roll
+  `ship.cannon-far` (70, 3000) crossfaded over 60 m either side and played once a volley; a ball striking a ship
+  `ship.hit` (16, 1000); a magazine `ship.blast` (26, 1800); a boarding's grapnels `ship.grapple` (6, 240); a captain
+  running out `ship.runout` (24, 900); a side of hers come ready `ship.ready` (10, 80); a ship going down
+  `ship.sinking` (18, 420); a ball going by her `ship.whistle` (8, 90); a ball in the water `shot.splash` (12, 600).
+  The `ship.` cues are on the sound sheet with DFO's own synthesised sounds as their candidates
+  ([[DFO's Own Sounds Join the Sound Sheet]]); each stays silent until the owner picks one.
+- **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
+  turning it up to a degree a unit of jar, the jars at once added together.
+- **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`): her plate, its battery rose, the card on the
+  nearest captain and her volley's tally ([[Interface]], "The sea fight's readout").
 - **From above**: at the raised view, where the ships are drawn larger ([[Overworld]]), every puff, ball, hole and
   piece of flotsam is drawn as many times larger about the point it came from, as the wakes are, so the fight reads
   from there; close in, all are their true size. The sea's splashes push its ripples as wide.

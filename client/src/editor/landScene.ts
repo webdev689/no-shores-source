@@ -357,6 +357,7 @@ export class LandScene {
     copy.draw(3);
     copy.end();
     const eyeWater = this.waterAt(id, view, camera.eye[0], camera.eye[1], time);
+    const target = this.gpu.context.getCurrentTexture().createView();
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(FIELD_OF_VIEW / 2) },
       size: [frame.size.width, frame.size.height],
@@ -373,8 +374,10 @@ export class LandScene {
       focus: [orbit.targetX, orbit.targetY],
       hulls: this.hulls(view),
       drawn,
-      target: this.gpu.context.getCurrentTexture().createView(),
+      target,
     });
+    // The fight's see-through puffs after the water, so its sky and surface never cover them.
+    this.marks.drawOver(encoder, target, drawn.depth);
     this.gpu.device.queue.submit([encoder.finish()]);
     const feet =
       near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;

@@ -198,16 +198,6 @@ export class ShipHarm {
   sunkShare(now: number): number {
     return this.sinkingAt === null ? 0 : Math.min(1, Math.max(0, now - this.sinkingAt) / SINK_S);
   }
-
-  /** Her place as she goes down: the pose the rules send, which already holds her list, trim and drop (the rules'
-   *  `founder`), so the page adds none of its own and the picture agrees with the room. */
-  settle<Place extends { readonly z: number; readonly pitch: number; readonly roll: number }>(
-    place: Place,
-    _now: number,
-    _depthM: number,
-  ): Place {
-    return place;
-  }
 }
 
 /** Where a falling part's point goes as it lies (`Fallen`), in her frame: turned over her side about the line along
