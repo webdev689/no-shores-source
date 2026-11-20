@@ -85,7 +85,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         WITHDRAW => Asked::Gear(Ask::Withdraw { item }),
         STORE_VESTIGE => Asked::Gear(Ask::StoreVestige { vestige: item }),
         WITHDRAW_VESTIGE => Asked::Gear(Ask::WithdrawVestige { vestige: item }),
-        VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node }),
+        VEND => Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::from_number(column)?, ware: node, day: item }),
         WEAR_EMBLEM => Asked::Gear(Ask::WearEmblem { emblem: u16::try_from(item).ok()? }),
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         USE_CRATE => Asked::Gear(Ask::UseCrate),
@@ -146,8 +146,8 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::WithdrawVestige { vestige } => {
                 args = messages::AskArgs { kind: WITHDRAW_VESTIGE, item: vestige, ..args };
             }
-            Ask::Vend { vendor, ware } => {
-                args = messages::AskArgs { kind: VEND, column: vendor as u8, node: ware, ..args };
+            Ask::Vend { vendor, ware, day } => {
+                args = messages::AskArgs { kind: VEND, column: vendor as u8, node: ware, item: day, ..args };
             }
             Ask::WearEmblem { emblem } => {
                 args = messages::AskArgs { kind: WEAR_EMBLEM, item: u32::from(emblem), ..args };
@@ -343,12 +343,12 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         })
         .collect();
     let vestiges = Some(builder.create_vector(&vestiges));
-    let drops: Vec<Drop> = room.drops_for(player).copied().collect();
+    let drops: Vec<Drop> = room.drops_for(player).cloned().collect();
     let drops: Vec<_> = drops
         .iter()
         .map(|drop| {
             let (at, from) = (Some(builder.create_vector(&drop.at)), Some(builder.create_vector(&drop.from)));
-            let (kind, rarity, slot) = match drop.what {
+            let (kind, rarity, slot) = match &drop.what {
                 Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8),
                 Dropped::AmmoBox => (1, 0, 0),
                 Dropped::Crate => (2, 0, 0),
@@ -420,6 +420,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         shape_place: more.shape_place,
         shape_wares: Some(more.shape_wares),
         faction_wares: Some(more.faction_wares),
+        day: u32::try_from(room.day()).unwrap_or(u32::MAX),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

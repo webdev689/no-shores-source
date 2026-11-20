@@ -178,7 +178,7 @@ impl Room {
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.
     #[must_use]
     pub fn in_social_space(&self, player: PlayerId) -> bool {
-        self.counters.is_some() || self.here(player, &Ask::Vend { vendor: Vendor::Armorsmith, ware: 0 }).social
+        self.counters.is_some() || self.here(player, &Ask::Vend { vendor: Vendor::Armorsmith, ware: 0, day: 0 }).social
     }
 
     /// Whether a player stands where a Vestige opens: at the Mage's counter, or the stall.
@@ -299,7 +299,7 @@ impl Room {
         match grant {
             Grant::Vestige { rarity, slot, level } => {
                 let id = character.take_id();
-                let vestige = Vestige { id, rarity, slot, level: level.clamp(1, gear::item::ITEM_LEVEL_MOST) };
+                let vestige = Vestige::new(id, rarity, slot, level.clamp(1, gear::item::ITEM_LEVEL_MOST));
                 if !character.pick_up(vestige) {
                     return answer_code(Err(Refusal::VestigesFull));
                 }

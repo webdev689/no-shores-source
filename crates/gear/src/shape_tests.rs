@@ -57,12 +57,16 @@ fn no_week_sells_one_piece_twice() {
 #[test]
 fn a_piece_is_bought_with_shapes_at_his_place() {
     let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(20);
     let here = Here { social: true, day: 0, week: 5_000 };
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE), Err(Refusal::Short));
     character.add_shapes(500);
     assert_eq!(character.materials.shapes, 200, "held to the most");
     let afield = Here { social: false, ..here };
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, afield, &DICE), Err(Refusal::NotHere));
+    character.xp = crate::power::xp_for_level(19);
+    assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE), Err(Refusal::TooLow), "made at level 20");
+    character.xp = crate::power::xp_for_level(20);
     assert!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE).is_ok());
     assert_eq!(character.materials.shapes, 200 - price(Rarity::Atheric));
     let bought = character.items.values().map(|(item, _)| item).find(|item| item.rarity == Rarity::Atheric);

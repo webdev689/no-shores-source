@@ -50,7 +50,7 @@ fn at_level(amount: u32, foe_level: u8) -> u32 {
 }
 
 /// What one player got from a kill.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Reward {
     pub xp: u32,
     pub aurem: u32,
@@ -86,12 +86,8 @@ impl Character {
         }
         self.materials.add_aurem(aurem);
         let chance = (worth.vestige * difficulty.reward()).min(1.0);
-        let vestige = vestige::dropped(chance, worth.boss, foe_level, dice).map(|(rarity, slot, level)| Vestige {
-            id: self.take_id(),
-            rarity,
-            slot,
-            level,
-        });
+        let vestige = vestige::dropped(chance, worth.boss, foe_level, dice)
+            .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level));
         Reward { xp, aurem, vestige }
     }
 

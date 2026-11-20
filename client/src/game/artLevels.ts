@@ -86,6 +86,7 @@ export const GIVES: Readonly<Record<string, readonly [label: string, seconds: nu
   sunwell: ['Linked lingers', 3],
   resolve: ['Crit lasts', 5],
   searing: ['Exposes for', 6],
+  overload: ['Exposes for', 6],
   duskraven: ['Exposes for', 6],
   duskDaggers: ['Exposes for', 6],
   vanish: ['Veil lasts', 4],

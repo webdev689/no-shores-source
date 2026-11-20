@@ -127,10 +127,10 @@ pub struct Player {
     /// The dress as others are shown it (`dressed`), and whether it changed since it was last passed on.
     pub dress: String,
     pub dress_changed: bool,
-    /// The dress as their browser last wrote it, and the dye, coat and barding and the colours shown the room last put
-    /// in it.
+    /// The dress as their browser last wrote it, and whether what the room makes of it may have changed since it was
+    /// last made: their browser's dress or their gear.
     pub dress_sent: String,
-    pub(crate) dressed_with: Option<Vec<String>>,
+    pub(crate) dress_stale: bool,
     /// The room's clock when the player joined, and how many of their inputs have stepped their fighter since.
     pub joined: u64,
     pub stepped: u64,
@@ -194,7 +194,7 @@ impl Player {
             dress: String::new(),
             dress_changed: false,
             dress_sent: String::new(),
-            dressed_with: None,
+            dress_stale: false,
             joined,
             stepped: 0,
             received: 0,
@@ -255,36 +255,29 @@ impl Player {
     }
 
     /// The dress shown to others changes at once the first time, then once DRESS_EVERY ticks have passed since the
-    /// last change: to a dress waiting its turn, or to the cosmetics worn (`dress_again`).
+    /// last change: to a dress waiting its turn, or to the cosmetics and faction pieces worn (`dress_again`). Their
+    /// gear sent marks the dress to be made again; otherwise it is left as it is.
     pub(crate) fn dress_in_turn(&mut self, clock: u64) {
-        if self.dressed_at.is_some_and(|at| clock < at + DRESS_EVERY) {
+        if self.dress_sent.is_empty() && self.dress_next.is_none()
+            || !self.dress_stale && self.dress_next.is_none()
+            || self.dressed_at.is_some_and(|at| clock < at + DRESS_EVERY)
+        {
             return;
         }
         if let Some(dress) = self.dress_next.take() {
             self.dress_sent = dress;
-            self.dressed_with = None;
         }
         if self.dress_again() {
             self.dressed_at = Some(clock);
         }
     }
 
-    /// Makes the dress others are shown again (`gear::cosmetics::dressed`) when the browser's dress or the cosmetics
-    /// worn changed since it was last made, so no page shows a piece its player does not keep; whether it changed.
+    /// Makes the dress others are shown again (`gear::cosmetics::dressed`) from the browser's dress and the gear worn,
+    /// so no page shows a piece its player does not keep; whether it changed.
     pub(crate) fn dress_again(&mut self) -> bool {
-        use gear::cosmetics::CosmeticKind;
+        self.dress_stale = false;
         let shown = gear::cosmetics::colours_shown(&self.character);
-        let worn = [CosmeticKind::Dye, CosmeticKind::Coat, CosmeticKind::Barding]
-            .map(|kind| self.character.cosmetics.worn(kind).to_owned())
-            .into_iter()
-            .chain(shown.iter().cloned())
-            .collect::<Vec<_>>();
-        let same = self.dressed_with.as_ref() == Some(&worn);
-        if self.dress_sent.is_empty() || same {
-            return false;
-        }
         let dress = gear::cosmetics::dressed(&self.dress_sent, &self.character.cosmetics, &shown);
-        self.dressed_with = Some(worn);
         let changed = dress != self.dress;
         if changed {
             self.dress = dress;
@@ -334,6 +327,7 @@ impl Room {
         }
         found.placed_sent = placed;
         found.gear_changed = false;
+        found.dress_stale = true;
         found.gear_urgent = false;
         found.gear_sent = Some(clock);
         true

@@ -210,6 +210,9 @@ export interface GearState {
   readonly shape?: { readonly place: number; readonly wares: readonly GearItem[] } | null;
   /** In a social space, every faction's wares, each numbered by its place among its faction's and priced in Aurem. */
   readonly factionWares?: readonly GearItem[];
+  /** The day, counted from the epoch, whose smiths' wares these are: a smith's ware is asked by it, so the room
+   *  refuses one shown before the day turned. */
+  readonly day?: number;
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -359,6 +362,7 @@ export function gearOf(gear: Gear): GearState {
             wares: listed(gear.shapeWaresLength(), (index) => gear.shapeWares(index), 'Shape ware'),
           },
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
+    day: gear.day(),
   };
 }
 

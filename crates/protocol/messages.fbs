@@ -453,6 +453,9 @@ table Gear {
   // In a social space, every faction's wares in the factions' order, each numbered by its place among its faction's
   // and priced in Aurem: its cape, its armour and its weapons, as the room makes them.
   faction_wares: [GearItem];
+  // The day, counted from the epoch at UTC midnight, whose smiths' wares the message shows: a smith's ware is asked
+  // by it, so none sent as the day turns buys the next day's.
+  day: uint;
 }
 
 // What a room sends: exactly one of these is present.

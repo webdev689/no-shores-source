@@ -8,7 +8,7 @@ use crate::dice::Dice;
 use crate::emblems::{Source, emblems};
 use crate::factions::{factions, wares};
 use crate::item::Item;
-use crate::kinds::Slot;
+use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 use crate::rewards::Foe;
 use crate::world::Difficulty;
@@ -199,12 +199,12 @@ fn ranks_keep_the_emblem_then_the_dye_then_leave_packages_without_end() {
     assert!(character.ask(Ask::CollectPackage { faction: 3 }, AT_COUNTER, &DICE).is_ok());
     assert_eq!((character.packages(3), character.vestiges.len()), (38, carried + 1));
     assert_eq!(character.materials.aurem, aurem + factions().package_aurem);
-    let (opened, _) = character.vestiges.values().last().copied().expect("the package's Vestige");
+    let (opened, _) = character.vestiges.values().last().cloned().expect("the package's Vestige");
     assert!(matches!(opened.rarity, Rarity::Rare | Rarity::Legendary));
     assert_eq!(character.ask(Ask::CollectPackage { faction: 1 }, AT_COUNTER, &DICE), Err(Refusal::NoPackage));
     while character.vestiges.len() < VESTIGES_MOST {
         let id = character.take_id();
-        character.vestiges.insert(id, (Vestige { id, rarity: Rarity::Magic, slot: Slot::Head, level: 1 }, false));
+        character.vestiges.insert(id, (Vestige::new(id, Rarity::Magic, Slot::Head, 1), false));
     }
     assert_eq!(character.ask(Ask::CollectPackage { faction: 3 }, AT_COUNTER, &DICE), Err(Refusal::VestigesFull));
 }
@@ -299,4 +299,30 @@ fn a_dismantled_factions_piece_gives_back_a_third_of_the_essence_spent_on_it() {
     let back = u32::from(character.materials.armor_essence - before.armor_essence);
     assert_eq!((back, character.materials.armor_fragments), (spent / 3, before.armor_fragments));
     assert_eq!(character.materials.aurem, before.aurem + 20, "as a Normal piece");
+}
+
+#[test]
+fn a_cape_stored_in_the_vault_is_still_the_one_cape_kept() {
+    let mut character = caped(2);
+    let cape = character.worn(Slot::Cloak).map(|item| item.id).expect("the cape worn");
+    assert!(character.ask(Ask::TakeOff { slot: Slot::Cloak }, AT_COUNTER, &DICE).is_ok());
+    assert!(character.ask(Ask::Store { item: cape }, AT_COUNTER, &DICE).is_ok());
+    assert_eq!(character.items.get(&cape).map(|(_, at)| *at), Some(At::Vault));
+    let again = Ask::BuyFactionWare { faction: 2, ware: CAPE };
+    assert_eq!(character.ask(again, AT_COUNTER, &DICE), Err(Refusal::Kept));
+}
+
+#[test]
+fn a_package_opens_to_a_vestige_of_no_higher_level_than_items_are_made_at() {
+    let mut character = caped(3);
+    character.xp = crate::power::xp_for_level(20);
+    for (kind, slot) in [(Kind::Head, Slot::Head), (Kind::Torso, Slot::Torso), (Kind::Arms, Slot::Arms)] {
+        let id = character.take_id();
+        character.items.insert(id, (Item::new(id, kind, Rarity::Atheric, 20, slot), At::Worn(slot)));
+    }
+    assert!(character.level() > crate::item::ITEM_LEVEL_MOST, "past 20 by Prestige");
+    character.allegiance.reputation[2] = 3 * factions().reputation_per_rank;
+    assert!(character.ask(Ask::CollectPackage { faction: 3 }, AT_COUNTER, &DICE).is_ok());
+    let (opened, _) = character.vestiges.values().last().cloned().expect("the package's Vestige");
+    assert_eq!(opened.level, crate::item::ITEM_LEVEL_MOST);
 }

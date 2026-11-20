@@ -102,12 +102,16 @@ impl Character {
         self.materials.shapes = self.materials.shapes.saturating_add(shapes).min(STOCK_MOST);
     }
 
-    /// Buys one of Shape's pieces of the week, at his place, for Shapes, carried with its slot's.
+    /// Buys one of Shape's pieces of the week, at his place, for Shapes, carried with its slot's: each made at its own
+    /// level, as a faction's are, and sold to none who could not wear it yet.
     pub(crate) fn buy_from_shape(&mut self, ware: u8, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
         }
         let mut item = wares(here.week).into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
+        if self.level() < item.level {
+            return Err(Refusal::TooLow);
+        }
         let cost = price(item.rarity);
         if self.materials.shapes < cost {
             return Err(Refusal::Short);

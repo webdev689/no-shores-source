@@ -154,6 +154,7 @@ fn a_cosmetic_is_refused_unknown_never_sold_too_high_and_short() {
 #[test]
 fn shapes_piece_is_refused_with_its_slot_full() {
     let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(20);
     let here = Here { social: true, day: 0, week: 5_000 };
     let bucket = crate::shape::wares(here.week)[0].bucket;
     while character.carried_in(bucket) < CARRIED_MOST {

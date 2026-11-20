@@ -221,7 +221,7 @@ export function vendorsOf(state: GearState): readonly { readonly name: string; r
       affordable: state.aurem >= item.price,
       press: {
         label: `Hold to buy · ${item.price.toLocaleString()}`,
-        ask: { kind: ASKS.vend, column: vendor, node: item.id },
+        ask: { kind: ASKS.vend, column: vendor, node: item.id, ...(state.day !== undefined && { item: state.day }) },
         role: 'button',
         held: true,
       },

@@ -56,10 +56,12 @@ pub enum Ask {
     WithdrawVestige {
         vestige: u32,
     },
-    /// Buys one of a vendor's wares of the day, by its place among them.
+    /// Buys one of a vendor's wares of the day, by its place among them on the day they were shown (`day`, counted
+    /// from the epoch).
     Vend {
         vendor: Vendor,
         ware: u8,
+        day: u32,
     },
     /// Wears an emblem the player keeps, by its number in the catalogue.
     WearEmblem {
@@ -208,7 +210,7 @@ impl Character {
             Ask::Withdraw { item } => self.move_item(item, here, At::Vault, At::Carried),
             Ask::StoreVestige { vestige } => self.move_vestige(vestige, here, true),
             Ask::WithdrawVestige { vestige } => self.move_vestige(vestige, here, false),
-            Ask::Vend { vendor, ware } => self.vend(vendor, ware, here),
+            Ask::Vend { vendor, ware, day } => self.vend(vendor, ware, day, here),
             Ask::WearEmblem { emblem } => self.wear_emblem(emblem),
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
             Ask::UseCrate => self.use_crate(),
@@ -258,10 +260,14 @@ impl Character {
         Ok(None)
     }
 
-    /// Buys a vendor's ware of the day, at the buyer's own level, carried with its slot's: only in a social space.
-    fn vend(&mut self, vendor: Vendor, ware: u8, here: Here) -> Result<Option<Done>, Refusal> {
+    /// Buys a vendor's ware of the day, at the buyer's own level, carried with its slot's: only in a social space, and
+    /// only as shown today, since the wares at each place change as the day turns.
+    fn vend(&mut self, vendor: Vendor, ware: u8, day: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
+        }
+        if u64::from(day) != here.day {
+            return Err(Refusal::NotSold);
         }
         let wares = vendor::wares(vendor, here.day, self.level());
         let mut item = wares.into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
@@ -399,7 +405,7 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        let (vestige, vaulted) = *self.vestiges.get(&id).ok_or(Refusal::NoSuchVestige)?;
+        let (vestige, vaulted) = self.vestiges.get(&id).cloned().ok_or(Refusal::NoSuchVestige)?;
         if vaulted {
             return Err(Refusal::WrongPlace);
         }

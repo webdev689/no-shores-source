@@ -82,6 +82,7 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.equal(sold.length, 21, 'seven pieces of each faction’s');
   const hood = sold.find((ware) => ware.named === 'lamplighters_hood');
   assert.deepEqual([hood?.id, hood?.price, hood?.level], [1, 6_000, 20]);
+  assert.equal(here.day, 20_777, 'the day of that Friday, which the smiths’ wares are asked by');
 });
 
 test('an ask crosses into an input with every field it names', () => {

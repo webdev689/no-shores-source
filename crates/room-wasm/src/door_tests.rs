@@ -306,8 +306,9 @@ fn a_social_space_shows_the_days_wares_and_sells_them_for_aurem_at_the_vendors_c
     let wares = message.gear().unwrap().wares().unwrap();
     assert_eq!(wares.len(), 2 * gear::vendor::WARES, "the Armorsmith's and the Weaponsmith's");
     assert_eq!((wares.get(0).price(), wares.get(5).price()), (2_000, 600), "Rare, then Magic");
+    assert_eq!(message.gear().unwrap().day(), 20_400, "the day the wares are of, which a ware is asked by");
     // Too poor to buy: refused, and the wares stay.
-    let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 4 });
+    let ask = room::Asked::Gear(gear::Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 4, day: 20_400 });
     let bytes = protocol::input_bytes(&room::Input { sequence: 1, ask: Some(ask), ..room::Input::default() });
     assert_eq!(input(player, &bytes), 0);
     // The answer goes out once the room may send this player's gear again.
