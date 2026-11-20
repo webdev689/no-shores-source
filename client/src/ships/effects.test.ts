@@ -11,6 +11,7 @@ test("a gun's flash lasts a tenth of a second, its smoke rolls out with the shot
   const flashes = (now: number) =>
     effects.marks(now).filter((mark) => mark.colour.every((value, axis) => value === FLASH_COLOUR[axis]));
   assert.equal(flashes(0.05).length, 1);
+  assert.ok((flashes(0.05)[0]?.radius ?? 0) > 0.5, 'it flashes at its full size, not shrinking from the start');
   assert.equal(flashes(FLASH_S + 0.01).length, 0);
   const early = effects.marks(0.5);
   const later = effects.marks(4);

@@ -218,7 +218,7 @@ export class ShipHarm {
     return {
       ...place,
       z: place.z - (depthM + 2) * share ** 2.5,
-      pitch: place.pitch + (forward > 0 ? -1 : 1) * MOST_TRIM * eased,
+      pitch: place.pitch + Math.sign(-forward) * MOST_TRIM * eased,
       roll: place.roll + (starboard < 0 ? -1 : 1) * MOST_LIST * eased,
     };
   }

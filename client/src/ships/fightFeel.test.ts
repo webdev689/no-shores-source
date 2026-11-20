@@ -114,6 +114,9 @@ test('where she went down the water foams, and her flotsam bobs there until gath
   frame(feel, ships, [{ kind: 'sinking', ship: 1 }], 0);
   for (let now = 11; now < 14; now += 1 / 30) frame(feel, ships, [], now);
   assert.ok(feel.marks(14).some((mark) => Math.hypot(mark.x - 100, mark.y - 50) < 20 && Math.abs(mark.z) < 0.01));
+  const gone = new Map([[1, { ...brig('sunk') }]]);
+  for (let now = 14; now < 40; now += 0.5) frame(feel, gone, [], now);
+  assert.equal(feel.effects.marks(40).length, 0, 'the foam is gone a while after she is under');
   frame(
     feel,
     ships,

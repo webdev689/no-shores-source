@@ -58,6 +58,11 @@ test('a torn sail falls to the sea over her side, floats astern a while, then is
   const before = rig.canvas();
   const lying = (now: number) => harmedCanvas(rig.canvas(), rig.harm, [{ footZ: 1.4, topZ: 9 }], 2, now)[1];
   const landed = lying(FALL_S);
+  const other = new SailRig(SLOOP);
+  other.step(0, { offDeg: -90, set: true }, 0);
+  other.harm.loseSail(1, 0, -1);
+  const toPort = harmedCanvas(other.canvas(), other.harm, [{ footZ: 1.4, topZ: 9 }], 2, FALL_S)[1];
+  assert.ok(toPort && Math.max(...[...toPort].filter((unused, index) => index % 3 === 1)) < -2, 'or to port');
   assert.ok(
     landed && Math.max(...[...landed].filter((unused, index) => index % 3 === 2)) < 0.1,
     'it lies on the water',
@@ -115,4 +120,7 @@ test('sinking, she settles by her worse-hit end and lists, and is under in twent
   assert.ok(late.pitch < 0, 'down by her bow, where she is holed');
   assert.ok(late.roll > 0 && Math.abs(late.roll - (20 * Math.PI) / 180) < 1e-9, 'listed twenty degrees to starboard');
   assert.equal(harm.sunkShare(SINK_S * 2), 1);
+  const unholed = new ShipHarm(SLOOP);
+  unholed.sink(0);
+  assert.equal(unholed.settle(place, SINK_S, 12).pitch, 0, 'with no holes she settles on an even keel');
 });

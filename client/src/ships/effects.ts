@@ -206,7 +206,7 @@ export class Effects {
       ],
       radius: 0.04 + this.draw() * 0.04,
       gravity: GRAVITY,
-      floor: -anchor[2],
+      floor: 0,
       colour: this.draw() < 0.3 ? TIMBER : colour,
       life: 1.6,
       holds: 1,
@@ -228,7 +228,7 @@ export class Effects {
       velocity: [this.spread(2.5), this.spread(2.5), this.spread(1.5)],
       radius: 0.04,
       gravity: GRAVITY,
-      floor: -anchor[2],
+      floor: 0,
       colour: TIMBER,
       life: 1.4,
       holds: 1,
@@ -308,14 +308,13 @@ export class Effects {
         const [windEast, windSouth] = puff.windborne ? this.wind : [0, 0];
         const fall = (puff.gravity * age * age) / 2;
         const rawZ = puff.from[2] + puff.velocity[2] * carried - fall;
-        const z = Math.max(puff.floor, rawZ);
         // Each holds its size, then thins away over the rest of its life.
-        const left = (puff.life - age) / (puff.life * (1 - puff.holds) || 1);
-        const fade = Math.min(1, Math.max(0, left));
+        const thinning = puff.life * (1 - puff.holds);
+        const fade = thinning > 0 ? Math.min(1, Math.max(0, (puff.life - age) / thinning)) : 1;
         return {
           x: puff.anchor[0] + (puff.from[0] + puff.velocity[0] * carried + windEast * age) * scale,
           y: puff.anchor[1] + (puff.from[1] + puff.velocity[1] * carried + windSouth * age) * scale,
-          z: puff.anchor[2] + z * scale,
+          z: Math.max(puff.floor, puff.anchor[2] + rawZ * scale),
           radius: (puff.radius + puff.grow * age) * fade * scale,
           colour: puff.colour,
         };

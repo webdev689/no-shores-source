@@ -134,14 +134,13 @@ export class FightFeel {
       const share = harm?.sunkShare(now) ?? 0;
       if (share > 0.5 || vessel.state === 'sunk') {
         const water = toWindow([middle[0], middle[1], 0]);
-        if (!this.wentDown.has(index) || vessel.state !== 'sunk')
+        // Going down, her foam is kept up; once she is under, it lasts a while from when she went.
+        if (vessel.state !== 'sunk' || !this.wentDown.has(index))
           this.wentDown.set(index, { at: water, until: now + FOAM_AFTER_S, radiusM: halfLength });
       }
     });
-    for (const [index, down] of this.wentDown) {
-      if (now > down.until) this.wentDown.delete(index);
-      else this.effects.foam(down.at, down.radiusM, now, input.seconds);
-    }
+    for (const down of this.wentDown.values())
+      if (now <= down.until) this.effects.foam(down.at, down.radiusM, now, input.seconds);
     return splashes;
   }
 

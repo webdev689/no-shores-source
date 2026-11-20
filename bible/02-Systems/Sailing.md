@@ -214,7 +214,7 @@ along the swell's bearing.
 Sail (`B`) puts her to sea at the camera's target, heading where the camera looks; the rules refuse her where the
 water is shallower than her draught, and the camera stands back off. Each frame owes her its time in whole ticks, one
 request at a time; time spent waiting on the land worker is caught up, a second at most. The ships layer draws her
-into the land's pass, lit as the land is, so the water sees her ([[Water]]): none inside her, foam at her bow, and her
+into the land's pass, lit as the land is and in the sun's shadows, casting her own ([[Game]], "Drawing"), so the water sees her ([[Water]]): none inside her, foam at her bow, and her
 wake in the ripples. Picking another landmass brings her in.
 
 With `?room=` in the editor's address, Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep

@@ -269,7 +269,7 @@ export class Naval {
     scarred: Parameters<FightFeel['scars']>[0] | null = null,
   ): void {
     const answer = this.fight?.view;
-    const marks: Mark[] = this.feel.marks(now, scale).map((mark) => ({ ...mark, z: mark.z * shown }));
+    const marks: Mark[] = [];
     if (answer) {
       const ships = this.feelShips(answer);
       const [own, captain] = [ships.get(0), ships.get(1)];
@@ -293,6 +293,8 @@ export class Naval {
         });
       marks.push(...Naval.arcs(answer, view, shown));
     }
+    // The balls and the lay first: past the most marks a frame draws, the effects' last puffs wait.
+    marks.push(...this.feel.marks(now, scale).map((mark) => ({ ...mark, z: mark.z * shown })));
     this.marks.drawInto(pass, marks, camera);
   }
 

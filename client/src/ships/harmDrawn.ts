@@ -13,13 +13,12 @@ const OVERBOARD_M = 3;
 
 /** A torn sail's point as it lies (`Fallen`), `seconds` after it tore: it drops to the water and is blown out over her
  *  side, then drifts astern; its head tears from the yard first, so its rows fall one after another. */
-function tornPoint(point: Point, row: number, lies: Fallen, seconds: number, halfBeamM: number): Point {
+function tornPoint(point: Point, row: number, lies: Fallen, seconds: number, overboardM: number): Point {
   const late = (1 - row / (SAIL_ROWS - 1)) * 0.3;
   const falling = Math.max(0, seconds - late);
-  const out = Math.min(1, falling / FALL_S) * (halfBeamM + OVERBOARD_M - Math.abs(point[1]));
   return [
     point[0] - lies.astern,
-    point[1] + lies.side * Math.max(0, out),
+    point[1] + lies.side * Math.min(1, falling / FALL_S) * overboardM,
     point[2] - dropOf(point[2], falling) - lies.sunk,
   ];
 }
@@ -41,12 +40,16 @@ export function harmedCanvas(
     const moved = new Float32Array(points.length);
     const span = masts[mast] ?? { footZ: 0, topZ: 0 };
     const turn = { footZ: span.footZ, most: fallAngle(span.footZ, span.topZ - span.footZ) };
+    // How far the whole sail is blown out, so its nearest edge lands clear of her side.
+    const across = points.filter((unused, index) => index % 3 === 1);
+    const inboard = torn && torn.side > 0 ? Math.min(...across) : -Math.max(...across);
+    const overboardM = Math.max(0, halfBeamM + OVERBOARD_M - inboard);
     for (let index = 0; index < points.length; index += 3) {
       const point: Point = [points[index] ?? 0, points[index + 1] ?? 0, points[index + 2] ?? 0];
       const row = Math.floor(index / 3 / SAIL_COLUMNS);
       const spot = fell
         ? fallenPoint(point, fell, turn)
-        : tornPoint(point, row, torn as Fallen, (torn as Fallen).down ** 0.5 * FALL_S, halfBeamM);
+        : tornPoint(point, row, torn as Fallen, (torn as Fallen).down ** 0.5 * FALL_S, overboardM);
       moved.set(spot, index);
     }
     return moved;
