@@ -5,14 +5,14 @@ use sky::air::Air;
 use sky::drift::steering_m_s;
 use sky::heavens::heavens_at;
 use sky::lightning::strikes_near;
-use sky::weather::{weather_at, wetness_at};
+use sky::weather::{ground_at, weather_at};
 
 /// A sky request: x, y, height above the sea, world time, and the climate's number.
 pub const SKY_REQUEST_FLOATS: usize = 5;
 /// An answer: latitude; the sun; the moon, its phase and lit share; the stars' turn; the daylight; the cloud, the fall
 /// and its snow, the storm, the fog and the sand; the wind east and south, its gusts; the temperature; the wetness;
 /// the steering flow that carries the weather, m/s east.
-pub const SKY_ANSWER_FLOATS: usize = 23;
+pub const SKY_ANSWER_FLOATS: usize = 24;
 /// A strikes request: x, y, the reach, from and to (world time) and the climate's number; and each strike's
 /// numbers: x, y, its moment, whether it reaches the ground, its power.
 pub const STRIKES_REQUEST_FLOATS: usize = 6;
@@ -44,9 +44,22 @@ pub fn sky_numbers(request: &[f64]) -> Vec<f64> {
     out.extend([heavens.moon_phase, heavens.moon_lit, heavens.star_turn, heavens.daylight()]);
     out.extend([weather.cloud, weather.falling, weather.snow_share, weather.storm, weather.fog, weather.sand]);
     out.extend(weather.wind);
-    out.extend([weather.gust, weather.temperature_c, wetness_at(&air, x, y, world)]);
+    let ground = ground_at(&air, (x, y, altitude), world);
+    out.extend([weather.gust, weather.temperature_c, ground.wet]);
     out.push(steering_m_s(heavens.latitude_deg));
+    out.push(ground.snow);
     out
+}
+
+/// The wind a ship's sails feel at a point of the sea at a world time (m/s, east and south), the rules' own, or
+/// nothing for numbers that are not one.
+#[must_use]
+pub fn sea_wind_numbers(request: &[f64]) -> Vec<f64> {
+    let &[x, y, world] = request else { return Vec::new() };
+    if !request.iter().all(|number| number.is_finite()) {
+        return Vec::new();
+    }
+    sailing::waters::sea_wind_at([x, y], world).to_vec()
 }
 
 /// The lightning a request asks of, earliest first, or nothing for numbers that are not one.
@@ -85,5 +98,17 @@ mod tests {
         assert!(strikes_numbers(&[0.0, 0.0, 1e6, 0.0, 1.0, 0.0]).is_empty(), "too far a reach");
         assert!(strikes_numbers(&[0.0, 0.0, 1000.0, 0.0, 600.0, 0.0]).is_empty(), "too long a window");
         assert!(climates_json().contains("\"tundra\"") && climates_json().ends_with("\"sea\"]}"));
+    }
+
+    #[test]
+    fn the_sails_wind_is_the_rules_own_and_its_way_is_the_weathers() {
+        let (x, y, world) = (1_000_000.0, 1_500_000.0, 1830.0);
+        let wind = sea_wind_numbers(&[x, y, world]);
+        assert_eq!(wind, sailing::waters::sea_wind_at([x, y], world).to_vec());
+        let sea = (Air::keys().len() - 1) as f64;
+        let weather = sky_numbers(&[x, y, 0.0, 1800.0, sea]);
+        let (blows, sails) = ((weather[17], weather[18]), (wind[0], wind[1]));
+        assert!((blows.0 * sails.1 - blows.1 * sails.0).abs() < 1e-9 && blows.0 * sails.0 + blows.1 * sails.1 > 0.0);
+        assert!(sea_wind_numbers(&[f64::NAN, 0.0, 0.0]).is_empty() && sea_wind_numbers(&[0.0, 0.0]).is_empty());
     }
 }

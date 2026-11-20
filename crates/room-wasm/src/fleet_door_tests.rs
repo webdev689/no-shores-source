@@ -128,7 +128,7 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         let ray = [[eye[0], eye[1], eye[2]], [east, south, her.pose.heave + 0.6 - 2.0]];
         let aim = Aim { bearing_deg: bearing, range_m: (east * east + south * south).sqrt(), ray: Some(ray) };
         let time = fleet.time();
-        let waters = sailing::waters::OpenSea { swell: fleet.weather().0 };
+        let waters = sailing::waters::OpenSea { swell: fleet.swell() };
         let shown = fight.preview(player, &aim, &waters, time);
         let sighted = |ship: &naval::laying::Sighted| {
             let flag = f64::from(ship.flag.number());

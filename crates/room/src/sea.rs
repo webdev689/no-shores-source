@@ -369,8 +369,7 @@ impl Sea {
         let waters = CoastWaters { coasts: &self.coasts, swell: &self.swell };
         let wind_at = |at: [f64; 2]| sea_wind_at(at, self.epoch_s + time);
         for (player, fought) in &mut self.fights {
-            let at = fought.fight.vessel(PLAYER).map_or([0.0, 0.0], |vessel| [vessel.ship.x, vessel.ship.y]);
-            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, wind_at(at), time);
+            fought.events = fought.fight.step(&[(PLAYER, fought.orders)], &waters, &wind_at, time);
             // The climb, the fire and the load are presses: they act once.
             let helm = Helm { climb: 0, ..fought.orders.helm };
             fought.orders = Orders { helm, fire: false, load: None, ..fought.orders };

@@ -1,4 +1,4 @@
-import type { SkyLaw, SkyReading, Strike } from './skyLaw.ts';
+import { type SkyLaw, type SkyReading, type Strike, windBearing } from './skyLaw.ts';
 import { lookOf } from './skyLook.ts';
 import { AFTERNOON, type Lamp, type SkyLook, type SkyUniform } from './skyUniform.ts';
 import { WORLD_CLOCK } from './worldClock.ts';
@@ -17,11 +17,14 @@ export interface SkyNow {
   readonly worldS: number;
   /** Every strike within reach in the last STRIKE_KEPT_S seconds, earliest first. */
   readonly strikes: readonly Strike[];
+  /** The way the sails' wind blows at the eye, radians clockwise from north (as a swell's bearing runs): the wind the
+   *  rules sail a ship in there. Null until the law has come. */
+  readonly sails: number | null;
 }
 
 /** The page's one view of the sky. */
 export const SKY_NOW: { current: SkyNow } = {
-  current: { reading: null, look: AFTERNOON, climate: 'sea', eye: [0, 0, 0], worldS: 0, strikes: [] },
+  current: { reading: null, look: AFTERNOON, climate: 'sea', eye: [0, 0, 0], worldS: 0, strikes: [], sails: null },
 };
 
 /** A strike's light at an eye `distanceM` away, `ageS` after it: a bright stroke and two return strokes, gone in a
@@ -71,7 +74,8 @@ export class SkyDriver {
     );
     const look = lookOf(reading, worldS, flash);
     this.uniform.write(look, lamps, [eye[0], eye[1]]);
-    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes };
+    const sails = windBearing(law.seaWind(eye[0], eye[1], worldS));
+    SKY_NOW.current = { reading, look, climate, eye, worldS, strikes: this.strikes, sails };
     return SKY_NOW.current;
   }
 }

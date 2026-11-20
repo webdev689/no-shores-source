@@ -5,7 +5,8 @@
 
 use crate::air::Air;
 use crate::drift::{Drift, steering_m_s};
-use crate::heavens::{heavens_at, latitude_deg};
+use crate::clock::DAY_S;
+use crate::heavens::{heavens_at, latitude_deg, sun_up_at};
 use land::biome::LAPSE_C_PER_M;
 use land::exact::{clamp, smooth};
 
@@ -47,18 +48,25 @@ pub struct Weather {
     pub temperature_c: f64,
 }
 
-/// What every reading of a place's weather shares: its steering flow, how high the sun stands and how damp its air is.
+/// What every reading of a place's weather shares: its steering flow, how high the sun stands, how high it stood as
+/// long ago as the land takes to warm, and how damp its air is.
 #[derive(Debug, Clone, Copy)]
 struct Setting {
     steering: f64,
     sun_up: f64,
+    warming: f64,
     damp: f64,
 }
+
+/// The air warms behind the sun: the day's heat, and the storms the land grows from it, peak this long after noon,
+/// world seconds (two hours of the day).
+const WARMING_LAG_S: f64 = DAY_S / 12.0;
 
 fn setting(air: &Air, y: f64, world_s: f64) -> Setting {
     Setting {
         steering: steering_m_s(latitude_deg(y)),
         sun_up: heavens_at(y, world_s).sun_up(),
+        warming: sun_up_at(y, world_s - WARMING_LAG_S),
         damp: clamp((air.rain_mm - 900.0) / 1200.0, -0.55, 0.75),
     }
 }
@@ -79,11 +87,31 @@ fn fall_and_storm(air: &Air, x: f64, y: f64, world_s: f64, deck: f64, place: Set
     // Dry air dries twice over: what little cloud a desert has seldom rains.
     let falling = smooth(0.85, 2.3, deck + 0.6 * damp + 1.4 * place.damp + 0.8 * place.damp.min(0.0));
     let warm = smooth(8.0, 20.0, air.warmth_c);
-    // Land heats through the afternoon and grows its storms then; the sea's are as likely by night.
-    let heating = if air.at_sea { 0.5 } else { smooth(0.2, 0.75, place.sun_up) };
+    // Land heats behind the sun and grows its storms in the afternoon; the sea's are as likely by night.
+    let heating = if air.at_sea { 0.5 } else { smooth(0.2, 0.75, place.warming) };
     let cells = score(&CELLS, x, y, world_s, place.steering);
     let storm = smooth(0.9, 2.0, cells + 0.9 * heating * warm + 0.4 * place.damp) * smooth(0.15, 0.5, falling) * warm;
     (falling.max(0.85 * storm), storm)
+}
+
+/// The air's temperature, Celsius, at a point (x, y, altitude above the sea) at `world_s`: its place's warmth, cooler
+/// with height, swinging through the day behind the sun, in warm and cold spells, and cooled by what falls.
+fn temperature_of(air: &Air, place: Setting, (x, y, altitude_m): (f64, f64, f64), world_s: f64, falling: f64) -> f64 {
+    let swing = if air.at_sea {
+        1.5
+    } else if air.sand > 0.5 {
+        7.0
+    } else {
+        4.5
+    };
+    let spell = 2.5 * score(&SPELLS, x, y, world_s, place.steering);
+    air.warmth_c - LAPSE_C_PER_M * altitude_m.max(0.0) + swing * (2.0 * smooth(-0.3, 0.8, place.warming) - 1.0) + spell
+        - 1.5 * falling
+}
+
+/// The share of what falls that is snow, by the air's temperature.
+fn snow_share_of(temperature_c: f64) -> f64 {
+    smooth(3.0, 0.5, temperature_c)
 }
 
 /// The weather over a point (x, y) of the map at `altitude_m` above the sea, at `world_s`, in its place's air.
@@ -95,18 +123,7 @@ pub fn weather_at(air: &Air, x: f64, y: f64, altitude_m: f64, world_s: f64) -> W
     let (falling, storm) = fall_and_storm(air, x, y, world_s, deck, place);
     let wind = wind_of(x, y, world_s, place.steering, storm);
     let speed = (wind[0] * wind[0] + wind[1] * wind[1]).sqrt();
-    let swing = if air.at_sea {
-        1.5
-    } else if air.sand > 0.5 {
-        7.0
-    } else {
-        4.5
-    };
-    let spell = 2.5 * score(&SPELLS, x, y, world_s, place.steering);
-    let temperature_c = air.warmth_c - LAPSE_C_PER_M * altitude_m.max(0.0)
-        + swing * (2.0 * smooth(-0.3, 0.8, place.sun_up) - 1.0)
-        + spell
-        - 1.5 * falling;
+    let temperature_c = temperature_of(air, place, (x, y, altitude_m), world_s, falling);
     let mist = score(&MIST, x, y, world_s, place.steering);
     let humid = smooth(400.0, 1400.0, air.rain_mm);
     let low_sun = 1.0 - smooth(0.0, 0.4, place.sun_up);
@@ -117,7 +134,7 @@ pub fn weather_at(air: &Air, x: f64, y: f64, altitude_m: f64, world_s: f64) -> W
     Weather {
         cloud: cloud.max(storm),
         falling,
-        snow_share: smooth(3.0, 0.5, temperature_c),
+        snow_share: snow_share_of(temperature_c),
         storm,
         fog,
         sand,
@@ -133,14 +150,6 @@ pub fn storm_at(air: &Air, x: f64, y: f64, world_s: f64) -> f64 {
     let place = setting(air, y, world_s);
     let deck = score(&COVER, x, y, world_s, place.steering);
     fall_and_storm(air, x, y, world_s, deck, place).1
-}
-
-/// How hard it falls over a point, alone: what the ground's wetness asks of the weather.
-#[must_use]
-pub fn falling_at(air: &Air, x: f64, y: f64, world_s: f64) -> f64 {
-    let place = setting(air, y, world_s);
-    let deck = score(&COVER, x, y, world_s, place.steering);
-    fall_and_storm(air, x, y, world_s, deck, place).0
 }
 
 /// The wind: round the deck's lows, which turn the way the north's do, over the share of the steering flow felt at
@@ -166,16 +175,29 @@ fn wind_of(x: f64, y: f64, world_s: f64, steering: f64, storm: f64) -> [f64; 2] 
     [east * held, south * held]
 }
 
-/// How hard and how wet the ground is at a point: the rain of the last twenty minutes, the latest counting most, so a
-/// shower leaves the ground dark a while after it passes and the same for everyone.
+/// What lies on the ground at a point: how wet it is and how much fresh snow, each 0 to 1.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Ground {
+    pub wet: f64,
+    pub snow: f64,
+}
+
+/// What lies on the ground at a point (x, y, altitude above the sea): the rain and the snow of the last twenty
+/// minutes, the latest counting most, so a shower leaves the ground dark, and a fall of snow leaves it white, a while
+/// after it passes, the same for everyone.
 #[must_use]
-pub fn wetness_at(air: &Air, x: f64, y: f64, world_s: f64) -> f64 {
+pub fn ground_at(air: &Air, (x, y, altitude_m): (f64, f64, f64), world_s: f64) -> Ground {
     let steps = 10;
-    let mut wet: f64 = 0.0;
-    for step in 0..steps {
-        let ago = f64::from(step) * 120.0;
-        let kept = 1.0 - f64::from(step) / f64::from(steps);
-        wet = wet.max(smooth(0.0, 0.4, falling_at(air, x, y, world_s - ago)) * kept);
+    let mut ground = Ground { wet: 0.0, snow: 0.0 };
+    for step in 0..=steps {
+        let then = world_s - f64::from(step) * 120.0;
+        let kept = 1.0 - f64::from(step) / f64::from(steps + 1);
+        let place = setting(air, y, then);
+        let deck = score(&COVER, x, y, then, place.steering);
+        let (falling, _) = fall_and_storm(air, x, y, then, deck, place);
+        let snow = falling * snow_share_of(temperature_of(air, place, (x, y, altitude_m), then, falling));
+        ground.wet = ground.wet.max(smooth(0.0, 0.4, falling - snow) * kept);
+        ground.snow = ground.snow.max(smooth(0.0, 0.4, snow) * kept);
     }
-    wet
+    ground
 }

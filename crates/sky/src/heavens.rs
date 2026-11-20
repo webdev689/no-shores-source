@@ -58,6 +58,13 @@ pub fn heavens_at(y_m: f64, world_s: f64) -> Heavens {
     }
 }
 
+/// The sine of the sun's height at a place on the map at `world_s`: the sun alone, for what follows it through the day.
+#[must_use]
+pub fn sun_up_at(y_m: f64, world_s: f64) -> f64 {
+    let hour_angle = TAU * (day_fraction(world_s) - 0.5);
+    toward(latitude_deg(y_m).to_radians(), DECLINATION_DEG.to_radians(), hour_angle)[2]
+}
+
 /// The direction of a body at a declination and hour angle seen from a latitude: east, south and up.
 fn toward(latitude: f64, declination: f64, hour_angle: f64) -> [f64; 3] {
     let (latitude_sine, latitude_cosine) = sin_cos(latitude);

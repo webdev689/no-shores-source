@@ -1,6 +1,6 @@
 use crate::air::Air;
 use crate::lightning::strikes_near;
-use crate::weather::{Weather, weather_at, wetness_at};
+use crate::weather::{Ground, Weather, ground_at, weather_at};
 use land::exact::fingerprint;
 
 /// Each climate's island at the latitude its continent lies at on the owner's map, metres down it.
@@ -137,12 +137,31 @@ fn lightning_strikes_alike_however_its_window_is_cut_and_only_in_storms() {
 fn the_ground_stays_wet_a_while_after_the_rain() {
     let air = Air::of_climate("swamp", 1_945_000.0);
     let wet_after_dry: Vec<f64> =
-        (0..2000).map(|step| wetness_at(&air, 4_000_000.0, 1_945_000.0, f64::from(step) * 30.0)).collect();
+        (0..2000).map(|step| ground_at(&air, (4_000_000.0, 1_945_000.0, 0.0), f64::from(step) * 30.0).wet).collect();
     assert!(wet_after_dry.iter().any(|wet| *wet > 0.8) && wet_after_dry.iter().any(|wet| *wet < 0.05));
 }
 
+#[test]
+fn snow_whitens_the_ground_and_never_wets_it_and_rain_the_other_way() {
+    let (tundra, swamp) = (Air::of_climate("tundra", 373_000.0), Air::of_climate("swamp", 1_945_000.0));
+    let grounds = |air: &Air, x: f64, y: f64, altitude: f64| -> Vec<(Ground, f64)> {
+        (0..3000)
+            .map(|step| {
+                let world_s = f64::from(step) * 40.0;
+                (ground_at(air, (x, y, altitude), world_s), weather_at(air, x, y, altitude, world_s).temperature_c)
+            })
+            .collect()
+    };
+    let cold = grounds(&tundra, 1_200_000.0, 373_000.0, 900.0);
+    assert!(cold.iter().any(|(ground, _)| ground.snow > 0.5), "the tundra's high ground whitens");
+    assert!(cold.iter().all(|(ground, celsius)| *celsius > 2.5 || ground.wet < 0.5), "frozen ground is not soaked");
+    let warm = grounds(&swamp, 4_000_000.0, 1_945_000.0, 0.0);
+    assert!(warm.iter().any(|(ground, _)| ground.wet > 0.8), "a swamp's rain soaks it");
+    assert!(warm.iter().all(|(ground, _)| ground.snow == 0.0), "and never whitens it");
+}
+
 /// The weather sampled across the map and through a day; the client's test of land.wasm holds the same fingerprint.
-pub const WEATHER_HASH: &str = "5af61f0292b3fc5f";
+pub const WEATHER_HASH: &str = "9ad102e7d7c276ec";
 
 #[test]
 fn the_weather_samples_to_its_fingerprint() {

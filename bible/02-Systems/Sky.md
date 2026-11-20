@@ -81,13 +81,14 @@ what show the ground there.
 - **Clouds' shadows.** Under a broken sky the key light is dappled on the ground in soft patches as wide as the cover,
   drifting as the clouds overhead do. A clear sky has none, and under a whole deck they fade out: the key light is
   dimmed already.
-- **Wet and snow.** The weather's wetness darkens the land and the city's stone and gives them a sheen toward a grazing
-  eye; once the ground is soaked, rain stands in puddles in the flat hollows of the land and the plaza. Fresh snow
-  whitens the flat tops a little where snow lies already. Wet leaves glisten.
+- **Wet and snow.** The weather's wetness darkens the land and the city's stone and gives them a sheen toward a
+  grazing eye; once the ground is soaked, rain stands in puddles in the flat hollows of the land and the plaza. Snow
+  that has fallen in the last twenty minutes whitens the flat ground near the snow line. Wet leaves glisten.
 
 ## Limits
 
 - There are no seasons: the year stands in its summer.
-- The World Editor and the Test Ground keep a clear afternoon: only the game reads the clock and the weather.
+- The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
+  sails fill, in the weather's wind.
 - Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

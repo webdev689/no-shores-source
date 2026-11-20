@@ -28,6 +28,7 @@ function readingAt(sunUp: number, change: Partial<SkyReading> = {}): SkyReading 
     gust: 0,
     temperatureC: 20,
     wetness: 0,
+    snowCover: 0,
     steeringMS: 10,
     ...change,
   };

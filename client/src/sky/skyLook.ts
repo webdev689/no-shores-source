@@ -150,6 +150,7 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
     ambientGround,
     wetness: reading.wetness,
     snowShare: reading.snowShare,
+    snowCover: reading.snowCover,
     fogColour,
     fogDensity,
     wind: reading.wind,

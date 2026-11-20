@@ -7,12 +7,11 @@ use naval::fight::{Aim, Hurts, sail_hurt};
 use naval::guns::Shot;
 use naval::laying::{Sighted, preview};
 use naval::shots::Flag;
-use room::fleet::fleet_wind;
 use sailing::SLOOP;
 use sailing::floats::{HELM_FLOATS, POSE_FLOATS, SHIP_FLOATS};
 use sailing::pose::{Pose, pose_of};
 use sailing::ship::{Helm, Ship};
-use sailing::waters::OpenSea;
+use sailing::waters::{OpenSea, sea_wind_at};
 use std::sync::OnceLock;
 
 /// The room's swell: the world's.
@@ -59,9 +58,10 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     };
     let hurts = Hurts::from_numbers(wrecked != 0.0, sail, max_sail);
     let waters = OpenSea { swell: swell() };
-    let wind = fleet_wind(epoch, time);
-    // Out on the open sea a ship's step does not hang on the hour: only her pose does.
-    let ship = helms.iter().fold(ship, |ship, helm| sail_hurt(&ship, *helm, hurts, &waters, wind, time).0);
+    // Out on the open sea a ship's step does not hang on the hour, only on the wind where she is: her pose does.
+    let ship = helms.iter().fold(ship, |ship, helm| {
+        sail_hurt(&ship, *helm, hurts, &waters, sea_wind_at([ship.x, ship.y], epoch + time), time).0
+    });
     let pose = pose_of(&ship, &SLOOP, &waters, time);
     ship.to_floats().into_iter().chain(pose.to_floats()).collect()
 }

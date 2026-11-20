@@ -170,7 +170,9 @@ export interface SkyLook {
   readonly ambientSky: readonly [number, number, number];
   readonly ambientGround: readonly [number, number, number];
   readonly wetness: number;
+  /** The share of what falls that is snow, and the fresh snow lying on the ground. */
   readonly snowShare: number;
+  readonly snowCover: number;
   readonly fogColour: readonly [number, number, number];
   /** The fog's own density, per metre, over the scene's haze. */
   readonly fogDensity: number;
@@ -216,6 +218,7 @@ export const AFTERNOON: SkyLook = {
   ambientGround: [0.35, 0.35, 0.35],
   wetness: 0,
   snowShare: 0,
+  snowCover: 0,
   fogColour: [0.7, 0.81, 0.92],
   fogDensity: 0,
   wind: [0, 0],
@@ -250,7 +253,7 @@ export function skyNumbers(look: SkyLook, lamps: readonly Lamp[], eye?: readonly
     [...look.zenith, look.cloud],
     [...look.horizon, look.storm],
     [...look.ambientSky, look.wetness],
-    [...look.ambientGround, look.snowShare],
+    [...look.ambientGround, look.snowCover],
     [...look.fogColour, look.fogDensity],
     [...look.wind, look.gust, look.falling],
     [look.sand, look.flash, look.stars, look.starTurn],
