@@ -15,7 +15,7 @@ test('what is neither a name nor an address is no room', () => {
   assert.equal(roomAddress(''), null);
   assert.equal(roomAddress('play test'), null);
   assert.equal(roomAddress('a'.repeat(65)), null);
-  const longest = 'node-thunderhoof-grasslands--storm--dungeon-2';
+  const longest = 'node-thunderhoof-grasslands--abyss--dungeon-2';
   assert.equal(roomAddress(longest), `${LIVE_ROOMS}/room/${longest}`, 'a dungeon’s room, past 40 characters');
   assert.equal(roomAddress('a'.repeat(64)), `${LIVE_ROOMS}/room/${'a'.repeat(64)}`);
   assert.equal(roomAddress('https://example.com/room/x'), null);

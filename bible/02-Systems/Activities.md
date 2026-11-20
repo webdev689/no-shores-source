@@ -39,7 +39,8 @@ Company]]).
 
 ## The tiers
 
-- **Normal, Elite and Abyss** replace Calm, Rough and Storm in code and on every screen, the voyage's card included.
+- **Normal, Elite and Abyss** are the tiers in code, in the rooms' names (`--elite`, `--abyss`) and on every screen,
+  the voyage's card included. The Roster says "Elite difficulty", so a voyage's tier is not read as a foe's rank.
 - **The seas chosen set the tier**, as the owner decided: a voyage set out at Abyss makes the patrols it reaches, and
   the dungeons in them, Abyss. Each tier adds 0, 2 or 3 levels over the area's band, never past 32, and pays 1, 1.5
   or 2 times, as `gear::world::Difficulty` does now.

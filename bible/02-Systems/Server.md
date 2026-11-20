@@ -236,7 +236,7 @@ city terraces included; the boxes of the city a body runs into there; and, for a
 serve a player's gear (the Reader's, the vaults', the Quartermaster's, the Armsmith's and the Tailor's). The bake takes about 8 s for the nine
 continents' 99 nodes, a few at a time, and writes about 0.44 MB in all, 145 KB compressed. `server`, `server:bundle`
 and `server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is
-called `index`, or when an id is too long for its rooms' longest name, `node-<id>--storm--dungeon-2`, of at most 64
+called `index`, or when an id is too long for its rooms' longest name, `node-<id>--abyss--dungeon-2`, of at most 64
 characters.
 
 ## Messages

@@ -179,6 +179,7 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     assert_eq!(names.map(Difficulty::from_name), Difficulty::ALL.map(Some));
     assert_eq!(Difficulty::default(), Difficulty::Normal);
     assert_eq!(Difficulty::from_name("gale"), None);
+    assert_eq!(Difficulty::from_name("storm"), None, "the old names are gone");
     assert_eq!((Difficulty::Elite.raise(10), Difficulty::Abyss.raise(10)), (12, 13));
     assert_eq!(Difficulty::Abyss.raise(30), FOE_LEVEL_MOST);
     let mut normal = Character::starting();

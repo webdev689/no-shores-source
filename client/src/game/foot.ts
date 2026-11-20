@@ -218,7 +218,7 @@ export class Foot {
     patrol: { readonly node: NodeInfo; readonly text: string },
     number: number,
     layout: DungeonLayout,
-    seas: Difficulty = 'calm',
+    seas: Difficulty = 'normal',
   ): Promise<Foot> {
     const { module, rules } = await rulesOf(context);
     standInDungeon(context.movement, rules.combat, patrol.node, number);
