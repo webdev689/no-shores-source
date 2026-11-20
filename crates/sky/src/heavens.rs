@@ -50,7 +50,7 @@ pub fn heavens_at(y_m: f64, world_s: f64) -> Heavens {
     Heavens {
         latitude_deg,
         sun: toward(latitude, declination, hour_angle),
-        // The moon trails the sun by its phase, and stands as far south of the sun's path at full as the sun is north.
+        // The moon trails the sun by its phase, and at full stands as far south of the equator as the sun is north.
         moon: toward(latitude, declination * phase_cosine, hour_angle - TAU * moon_phase),
         moon_phase,
         moon_lit: (1.0 - phase_cosine) / 2.0,

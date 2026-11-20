@@ -40,12 +40,13 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
   swells them, opens their top and raises the wind's pitch, wandering without a beat.
 - **Calls.** Each voice has a rate a minute by the time of day, a wandering mood (0.4 to 1.6 times its rate, over
   minutes), and gaps drawn at random, never under a quarter of the mean. Some call in bouts: a cuckoo's run, an
-  anvil's blows. Each call is placed at a spot of its kind: in the trees, on the ground, high overhead, on the
-  highest ground near, at the shore, over the water, at the harbour, in the city, on the plaza's ledges, at the
-  smith, in the hull or the rigging, or at the ear. Where there is no such spot near, it is not called. A call is
-  heard through its own panner (by the ear's shape, HRTF, within 60 m; panned beyond), darkened by the air with
-  distance, and sent to the place's room, more of it the farther it is. Some drift as they sound: a gull, a cart, a
-  mosquito. At most 20 sound at once; thunder is counted apart (below).
+  anvil's blows.
+- **Where calls sound.** Each call is placed at a spot of its kind: in the trees, on the ground, high overhead, on the
+  highest ground near, at the shore, over the water, at the harbour, in the city, on the plaza's ledges, at the smith,
+  in the hull or the rigging, or at the ear. Where there is no such spot near, it is not called. A call is heard
+  through its own panner (by the ear's shape, HRTF, within 60 m; panned beyond), darkened by the air with distance,
+  and sent to the place's room, more of it the farther it is. Some drift as they sound: a gull, a cart, a mosquito. At
+  most 20 sound at once; thunder is counted apart (below).
 - **Rooms.** Each place answers in its own way: a forest's long, soft tail; a valley's echoes; the plaza's walls; the
   open steppe's short, dry air.
 - **The sea.** The swell rises and falls on three long waves. The wash past her hull grows with her way: none hove

@@ -15,7 +15,8 @@ code:
 # Sky
 
 The world's clock and what stands in its sky: the sun, the moon and the stars over any place at any moment, the same
-in every room and browser ([[A Day Lasts One Real Hour]], [[Weather and Day as Claude Shapes It]]).
+in every room and browser ([[Weather and Day and Night Come From DFO, Much Improved]], [[A Day Lasts One Real Hour]],
+[[Weather and Day as Claude Shapes It]]).
 
 ## How it works
 
@@ -24,12 +25,12 @@ in every room and browser ([[A Day Lasts One Real Hour]], [[Weather and Day as C
 - **Latitude.** A place's latitude comes from how far down the map it lies: 62 degrees north at the top edge, 8 at
   the foot. The tundra, the highland and the steppe lie in the north; the desert, the savanna and the rainforest in
   the south.
-- **The sun.** It rises in the east, stands south at noon and sets in the west, on the path a real sun takes at the
-  place's latitude in a long summer (15 degrees north of the equator). The north's noon sun is lower and its night
-  shorter: night, once the sun is 6 degrees under the horizon, lasts about 18 minutes of the hour in the far north and
-  27 in the far south.
+- **The sun.** It rises in the east, stands south at noon (in the far south, under 15 degrees, a little north of
+  overhead) and sets in the west, on the path a real sun takes at the place's latitude in a long summer (15 degrees
+  north of the equator). The north's noon sun is lower and its night shorter: night, once the sun is 6 degrees under
+  the horizon, lasts about 14 minutes of the hour at the map's top edge (18 over the tundra) and 27 at its foot.
 - **The moon.** One moon, new to new in eight days. It trails the sun by its phase, so a full moon rises at dusk and
-  stands highest at midnight, and it rides as far south of the sun's path at full as the sun rides north.
+  stands highest at midnight, and at full it stands as far south of the equator as the sun stands north of it.
 - **The stars** wheel about the pole once a day.
 
 ## How the sky looks
@@ -55,8 +56,8 @@ the water's backdrop draws the sky from them, and the water reflects it.
   round the sun and darker undersides. At sunset they take the glow's colours, and at night the moon lights them.
 - **Lightning** lights the sky and the clouds from within for the flash's moment; the water's reflection carries it.
 - **Haze and fog.** Distant land fades into the sky's colour near the horizon. The weather's fog adds its own density
-  and colour: grey in rain, tan in sand, and thickest low down, so a valley fills before a hilltop. In thick fog the
-  sky itself closes in to the fog's colour.
+  and colour: grey in rain, tan in sand, and thickest near sea level, so a low coast fills before the hills above it.
+  In thick fog the sky itself closes in to the fog's colour.
 - **The overworld camera** stays under the cloud deck. A deck forms from half cover, about 1150 m up, and lowers as
   the cover closes. Steady rain brings it down to about 400 m, the heaviest to about 200 m and a storm a little lower
   still; the camera keeps 60 m under it, and never comes lower than its floor.
@@ -91,4 +92,5 @@ what show the ground there.
 - The World Editor and the Test Ground keep a clear afternoon sky; the World Editor's ships still sail, and their
   sails fill, in the weather's wind.
 - Lamps cast no shadows, and windows are never lit: the city's plan gives windows no places.
+- A carried torch or lantern lights round the player ashore; walking the Sloop's deck it does not yet.
 - The ground's hollows where puddles stand are a pattern, not the land's real low spots.

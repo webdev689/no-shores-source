@@ -5,8 +5,8 @@ status: in force
 ---
 # Weather and Day and Night Come From DFO, Much Improved
 
-The owner: "I wanted to import the weather systems / day and night from DFO but vastly improve them while also
-attaching the sounds that dont have a home"
+> "I wanted to import the weather systems / day and night from DFO but vastly improve them while also attaching the
+> sounds that dont have a home"
 
 ## What it settles
 

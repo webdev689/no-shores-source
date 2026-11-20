@@ -14,7 +14,7 @@ export const SKY_GROUP = 3;
 /**
  * What every sunlit shader reads of the sky, at SKY_GROUP: the key light (the sun by day, the moon by night), the sky's
  * colours, the ambient light from above and below, the fog, the wind and the fall, and the lamps round the eye.
- * `sky_ambient` and `sky_direct` are the light on a surface: what a clear noon's AMBIENT 0.35 and its sun gave.
+ * `sky_ambient` and `sky_direct` are the light on a surface, scaled so a clear noon's ambient light is 0.35.
  */
 export const SKY_WGSL = /* wgsl */ `
 struct Sky {
@@ -94,7 +94,7 @@ fn sky_noise(at: vec2f) -> f32 {
 }
 
 // The clouds' shadows on the ground, a share of the key light to multiply 'shade' by: patches under cloud as wide as
-// the cover, carried by the wind. Clear skies have none; under a whole deck the key light is already dimmed.
+// the cover, drifting as the clouds overhead do. Clear skies have none; under a whole deck the key light is already dimmed.
 fn sky_dapple(from_eye: vec3f) -> f32 {
   let cover = sky_state.zenith.w;
   let strength = 0.7 * smoothstep(0.05, 0.3, cover) * (1.0 - smoothstep(0.75, 0.97, cover)) * sky_state.lamp_count.w;
@@ -203,7 +203,7 @@ export interface Lamp {
   readonly light: readonly [number, number, number];
 }
 
-/** The sky before anything sets it: the clear afternoon the game was drawn in, with no wind, fall or lamps. */
+/** The sky before anything sets it: a clear afternoon, with no wind, fall or lamps. */
 export const AFTERNOON: SkyLook = {
   key: [-0.5417, 0.5417, 0.6428],
   keyBright: 1,

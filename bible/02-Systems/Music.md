@@ -111,12 +111,13 @@ ships within 1,000 m, the fight, whether she lies off a coast to land on, and th
   if the player killed a foe in it. A sting holds the next song until it ends; where none is written, silence
   stands in.
 - **The sea.** Out of danger a sea song comes now and then, played whole and once through: the sea at night once dusk
-  is gone, the still sea in a wind under 4 m/s, the open sea otherwise. After it, or after any danger or time ashore,
-  4 to 8 minutes of silence pass before another may come. None plays in rain or snow, a storm or fog; a sky turning
-  foul fades the one playing. As she comes off a coast where she may dock or go ashore, landfall plays once through,
-  whatever the sky or the silence, and not again for four minutes along the same coast. A hostile ship closing brings
-  in a sea song's tension; the fight, its fight. The song is chosen as the encounter begins and kept to its end: the
-  storm for two hostile ships or one of Elite rank or over, else the sea fight.
+  is gone, the still sea in a wind under 4 m/s, the open sea otherwise. After a song 4 to 8 minutes of silence pass
+  before another may come, and after any danger or time ashore at least four. None plays in rain or snow, a storm or
+  fog; a sky turning foul fades the one playing. As she comes off a coast where she may dock or go ashore, landfall
+  plays once through, whatever the sky or the silence, and not again for four minutes.
+- **Danger at sea.** A hostile ship closing brings in a sea song's tension; the fight, its fight. The song is chosen
+  as the encounter begins and kept to its end: the storm for two hostile ships or one of Elite rank or over, else the
+  sea fight.
 - **The social space.** Saltmere's theme plays whole there while nothing threatens, the ambience at 0.8.
 - **A hidden page** falls silent at once; the music starts again from the song's top when the page is seen, but a
   sea song cut short by it is not begun again.
