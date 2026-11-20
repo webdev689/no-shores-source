@@ -18,7 +18,7 @@ export const PARTS: readonly string[] = kits.parts;
 /** Metres one picture spans on a part: the dungeon's 3.2 m but where the thing is small, so a rope's strands, a
  *  cloth's weave, a skull, a rune and hammered brass come out their own size. */
 const FINER_M: Readonly<Record<string, number>> = { bone: 1.6, relief: 1.6, cloth: 1.6, rope: 0.4, brass: 1.6 };
-const PART_TILE_M: readonly number[] = PARTS.map((name) => FINER_M[name] ?? TILE_M);
+export const PART_TILE_M: readonly number[] = PARTS.map((name) => FINER_M[name] ?? TILE_M);
 
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), UV (2 × float32, metres) and part (4 ×
  *  uint8, the first its number in `PARTS`). */

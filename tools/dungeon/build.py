@@ -1,15 +1,17 @@
 """Builds every dungeon style's modules in Blender, checks each against its envelope, and writes the packs.
 
-    <python with bpy> -I tools/dungeon/build.py --out DIR [--style S ...] [--preview]
+    <python with bpy> -I tools/dungeon/build.py --out DIR [--style S ...] [--preview [flat]] [--pictures DIR]
 
 For each style (all of kits.json's by default) it runs styles/<style>.py's build(kit), refuses a missing or extra
 name, and checks every module (envelope.py). It writes DIR/<style>.modules for each style that passes, DIR/modules.blend
-with every style built in a collection of its own, and with --preview DIR/previews/<style>.png. It fails listing every
-problem. Point --out outside the repository: packs, models and renders are kept out of git.
+with every style in a collection of its own, and with --preview DIR/previews/<style>.png: in the game's pictures by
+torchlight (from --pictures, else painted by previewPictures.ts into DIR/pictures), or flat parts. It fails listing
+every problem. Point --out outside the repository: packs, models and renders are kept out of git.
 """
 import argparse
 import importlib
 import os
+import subprocess
 import sys
 import time
 
@@ -81,7 +83,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     parser.add_argument('--out', required=True, help='the folder to write into, outside the repository')
     parser.add_argument('--style', action='append', choices=list(catalog.STYLES), help='a style (repeat for more)')
-    parser.add_argument('--preview', action='store_true', help='render a contact sheet a style')
+    parser.add_argument('--preview', nargs='?', const='pictures', choices=['pictures', 'flat'],
+                        help="render a contact sheet a style, in the game's pictures (the default) or flat parts")
+    parser.add_argument('--pictures', help="previewPictures.ts's folder, for pictures of another climate or season")
     args = parser.parse_args()
     out = os.path.abspath(args.out)
     os.makedirs(out, exist_ok=True)
@@ -104,9 +108,17 @@ def main():
     preview.paint()
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, 'modules.blend'), compress=True)
     if args.preview:
+        folder = args.pictures or os.path.join(out, 'pictures')
+        if args.preview == 'pictures' and not args.pictures:
+            painter = ['node', os.path.join(HERE, 'previewPictures.ts'), folder]
+            subprocess.run(painter + [word for style in styles for word in ('--style', style)], check=True)
         for style, (modules, triangles) in built.items():
             counts = {module: len(triangles.get(module, ())) for module in modules}
-            print(f'{style}: {preview.sheet(style, modules, counts, os.path.join(out, "previews"))}', flush=True)
+            pictures = None
+            if args.preview == 'pictures':
+                pictures = preview.read_pictures(os.path.join(folder, f'{style}.pictures'))
+            path = preview.sheet(style, modules, counts, os.path.join(out, 'previews'), pictures)
+            print(f'{style}: {path}', flush=True)
     if problems:
         sys.exit('\n'.join([f'{len(problems)} problem(s):'] + problems))
 
