@@ -47,17 +47,20 @@ arctangents. Its frame is its own: metres from its middle, x east, y south.
 - **Its places** (`sites`): three spawns on the beach facing inland; the anchorage 45 m out past the coast on the
   landing's bearing; the door (a cove's set into the hillside to one side of the beach, a ruin's 16 to 22 m from its
   landmark, a quarry's in its pit's wall); an isle's landmark (a ruined tower or temple on a pad at its top, or a
-  derrick at its quarry's rim), its camp 28 m from it, and its guards' posts by the landmark, the door and the camp;
+  derrick at its quarry's rim), its camp 28 m from it (a quarry's on its rim, its pad clear of the pit), and its
+  guards' posts, one for each group: by the landmark, at the door and at the camp;
   and two or three wrecks on a cove's strand, three to five on an isle's, apart from each other and the landing.
 - **Its section** is its coast on 64 bearings, 14 m out into the shallows.
 - **Its dressing** (`dressing`), from content/islands/kits.json: cliff faces every 8.5 m along its cliffs, raised to
   the land above them, and now and then a sea stack off them; rocks along the coast that is neither cliff nor beach,
   driftwood on the beach; boulders and outcrops; trees in clumps where noise runs high; shrubs and grass; a ruin's
   columns, walls, arches, fallen drums and statues in a ring 20 to 42 m round its landmark (a cove now and then keeps
-  a broken column and a run of wall); each wreck's hull lying along the strand with two to four of its cargo spilt
+  two or three ruin pieces of its own); each wreck's hull lying along the strand with two to four of its cargo spilt
   inland of it; an isle's camp. Each climate dresses from its own kit and trees (the contract's `climates`): a tundra
-  isle's spruces and snow-capped slate, a desert's date palms and banded sandstone. No module stands on another, or on a
-  place kept clear: the spawns, a lane from them to the door, the door's front, the landmark, the camp and the wrecks.
+  isle's spruces and snow-capped slate, a desert's date palms and banded sandstone. The door, the landmark, the wrecks'
+  hulls and cargo and the camp are set first, on their places; every module laid after them stands wholly off the
+  places kept clear (the spawns, a lane from them to the door, the door's front, the landmark, the camp and the wrecks)
+  and at least half its own and each neighbour's reach from every other, so a cliff breaks where a wreck lies under it.
   Each module's solids, discs as tall as it, stand as blocks a body cannot walk through.
 
 ## At sea
@@ -72,18 +75,21 @@ The sea room holds its islands (`sea_islands.rs`):
   a ship within 2 km of one finds it. The [[Held Map]] marks the found ones while they stand.
 - **Held and faded.** A ship within 8 km holds an island; so does its room while players stand ashore, telling the
   sea each minute. One held by nothing for ten minutes fades, and is forgotten by those who found it.
-- **Land.** A standing island's coast, 34 m out past its shallows, is land: a course that crosses it is refused, and
-  the hostile ships' chart keeps them off it.
+- **Land.** A standing island's coast, 34 m out past it (its shallows' 14 m and 20 m more), is land to the player told
+  of it: a course that crosses an island in sight of the ship, or one they found, is refused, as the page bends its
+  voyages round those alone; and the hostile ships' chart keeps them off every one. A ship a fight or a roll left within
+  an island's land is not held by it: it sails out.
 - **Whose guards**: its water's holder, the Grey Tithe or the pirates; on the contested seam, by its seed.
 - **Washing up.** A player who loses a fight washes up at the nearest port city, or at the nearest island they have
   found that still stands where that is nearer: their ship lies at its anchorage with a sunk ship's hurts, unrepaired
-  (only a port city repairs), and they walk ashore on its beach.
+  (only a port city repairs), and once the fight's view has panned home they walk ashore on its beach.
 
 ## Ashore
 
 - **The room.** An island's room is `isle-<number>-<seed>` (its seed in 16 hex digits, so an island rolled after the
   sea restarts never opens an older one's room). It opens only on the sea's word: the server's room asks the `sea`
-  room for the island by its number, and opens it if it stands with that seed ([[Server]]). Its ground and blocks
+  room for the island by its number, and opens it if it stands with that seed ([[Server]]); while players stand ashore
+  it holds that island, by its number and seed, each minute, until the sea says it no longer stands. Its ground and blocks
   stand in the world's metres, the island's own moved to its place, as a node's do, so the page predicts the player on
   the room's own ground to the bit.
 - **Guards.** An isle stands three groups of its holder's foes at its water's levels: one led by a Reeve or a pirate
@@ -94,20 +100,28 @@ The sea room holds its islands (`sea_islands.rs`):
   `gear::ship::found`): a cove's wreck two common ship materials (Timber, Canvas or Iron) of two to five each, Heartwood
   8 times in a hundred and a module one time in ten; an isle's three of three to six, Heartwood one time in seven and a
   module one time in five. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
-  straight into the player's ship materials, a module carried as any item.
-- **The door** stands where the dungeon of its style is entered, seeded by the island's seed. Until the dungeons'
-  rooms take it, E there says that dungeon is not open yet.
+  straight into the player's ship materials, a module carried as any item. The wrecks spent for their account are
+  told them as a gathered node is (their gear's `spent`), so the page offers them no more, however often they come.
+- **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
+  `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
+  (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,
+  `DungeonDoor`). Until that trip is in, E there says the way down is not open yet.
 
 ## On the page
 
 - The sea snapshot carries the islands the player is told of; the page builds each once through the room module, at
-  most one a frame (`isles.ts`), and every voyage's legs are bent round each island in sight, since the route
-  planner's grid is far coarser than an island (`isleLaw.ts`, `detour`).
+  most one a frame (`isles.ts`, by its number and seed, let go of once the room tells of it no more), and every
+  voyage's legs are bent round each island in sight, since the route planner's grid is far coarser than an island
+  (`isleLaw.ts`, `detour`); a leg for a point within an island's keeping (its anchorage) comes in along the line out
+  from its middle through that point. An island come into sight bends the voyage still ahead round it.
 - Within 700 m past an island's coast the ship is offered to go ashore on it ("Go ashore on a cove"); taken, the ship sails
   out to the island's offing on its landing's bearing, round it where it must, and in to its anchorage, and once it lies
-  there the player walks ashore on its beach behind the veil ("Going ashore on a cove"). The menu's Return to ship
-  takes them back aboard, where the ship lies.
-- On foot E scavenges a wreck within 3 m ("Scavenge the wreck") and tries the door ("Enter the caverns").
+  there, once nothing else is under way (the map put away, the deck left, no fight), the player walks ashore on its
+  beach behind the veil ("Going ashore on a cove"). Steered, sent elsewhere or chasing, the ship gives the landing
+  up. The sea is left only once the island's room has opened: one that does not leaves the player aboard, told so.
+  The menu's Return to ship takes them back aboard, where the ship lies.
+- On foot E scavenges a wreck within 3 m not spent for them ("Scavenge the wreck") and tries the door ("Enter the
+  caverns").
 
 ## Limits
 
@@ -116,3 +130,7 @@ The sea room holds its islands (`sea_islands.rs`):
 - What a player has found is kept by the sea room while they are in it; a player who leaves the sea and joins it
   again finds its islands again as they sail near.
 - Playing alone, the sea in the page is a new one each time it opens, so its islands are too.
+- An island's room opens to any player who names it while the sea holds it: nothing checks their ship lies at its
+  anchorage, or that they found it.
+- The wrecks an account has scavenged are kept by the island's room while it is open: a room opened again while its
+  island still stands has them all to give again.

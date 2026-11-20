@@ -18,8 +18,8 @@ fn ticks(sea: &mut Sea, count: u64) {
     }
 }
 
-/// The way in to an anchorage as the page sails it: round the island 1.5 km out, to its offing 1.5 km out on its
-/// landing's bearing, then in.
+/// A way in to an anchorage the room must take: round the island 1.5 km out, to a point 1.5 km out on its landing's
+/// bearing, then in on that bearing. The page's own way in is nearer (isleLaw.ts `approach`), its land the same.
 fn round_to(at: [f64; 2], anchorage: [f64; 2], from: [f64; 2]) -> Vec<[f64; 2]> {
     let unit = |[x, y]: [f64; 2]| {
         let length = (x * x + y * y).sqrt();
@@ -49,7 +49,7 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_her() {
     assert!(!islands.is_empty(), "no island in three minutes");
     for island in islands {
         let off = apart(island.at, [50_000.0, 50_000.0]);
-        assert!((1_200.0..=7_000.0).contains(&off), "an island {off} m off the ship");
+        assert!((3_000.0..=7_000.0).contains(&off), "an island {off} m off the ship");
         assert_eq!(island.climate, "desert");
         assert_eq!(island.guards, Some(::foes::factions::PIRATES));
         assert!(island.anchorage != island.at);
@@ -121,6 +121,48 @@ fn a_course_through_an_island_is_refused_and_its_middle_is_land() {
     assert_eq!(sea.course(player, &[at], 10), Err(CourseRefused::CrossesLand));
 }
 
+/// Lays the player's ship at rest at a point, as a fight's end or a rejoin does.
+fn lay_at(sea: &mut Sea, player: PlayerId, [x, y]: [f64; 2]) {
+    let sailing = sea.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()).expect("at sea");
+    sailing.ship.x = x;
+    sailing.ship.y = y;
+    sailing.course.clear();
+}
+
+#[test]
+fn a_ship_left_within_an_islands_land_sails_out_of_it() {
+    let mut sea = sea_round("continent-4", "desert");
+    let player = at_rest(&mut sea);
+    while sea.islands().standing.is_empty() {
+        sea.tick();
+    }
+    let (at, anchorage) = (sea.islands().standing[0].at, sea.islands().standing[0].anchorage);
+    ticks(&mut sea, 30);
+    // Halfway from its middle to its anchorage: on the beach, within its land.
+    let inside = [(at[0] + anchorage[0]) * 0.5, (at[1] + anchorage[1]) * 0.5];
+    lay_at(&mut sea, player, inside.map(f64::round));
+    assert_eq!(sea.course(player, &[[50_000.0, 50_000.0]], 10), Ok(()), "held in the island's land for good");
+}
+
+#[test]
+fn only_the_islands_a_player_is_told_of_hold_their_course() {
+    let mut sea = sea_round("continent-4", "desert");
+    let player = at_rest(&mut sea);
+    while sea.islands().standing.is_empty() {
+        sea.tick();
+    }
+    let at = sea.islands().standing[0].at;
+    let (east, south) = (at[0] - 50_000.0, at[1] - 50_000.0);
+    let off = (east * east + south * south).sqrt();
+    // From out of its sight, on the line through it: the page is not told of it, so it does not bend round it.
+    let far = [at[0] - east / off * (SIGHT_M + 2_000.0), at[1] - south / off * (SIGHT_M + 2_000.0)];
+    let beyond = [at[0] + east / off * 3_000.0, at[1] + south / off * 3_000.0];
+    ticks(&mut sea, 30);
+    assert!(!sea.islands().found(player, sea.islands().standing[0].id));
+    lay_at(&mut sea, player, far.map(f64::round));
+    assert_eq!(sea.course(player, &[beyond], 10), Ok(()), "refused for an island the page does not know");
+}
+
 #[test]
 fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
     let mut sea = sea_round("continent-4", "desert");
@@ -129,18 +171,21 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
         sea.tick();
     }
     let (kept, left) = (sea.islands().standing[0].id, sea.islands().standing[1].id);
+    let seed = |id| sea.islands().by_id(id).map(|island| island.seed).expect("it stands");
+    let (kept_seed, left_seed) = (seed(kept), seed(left));
     // The ship sails far off, out of every island's hold and too fast for new ones to keep it company long.
     ticks(&mut sea, 30);
     sea.course(player, &[[50_000.0, 350_000.0]], 100).expect("open sea to the south");
     for held in 0..FADE_TICKS + 2 * 60 * 60 {
         if held.is_multiple_of(ASHORE_TICKS) {
-            assert!(sea.hold_ashore(kept), "the island players stand on fell");
+            assert!(sea.hold_ashore(kept, kept_seed), "the island players stand on fell");
+            assert!(!sea.hold_ashore(left, kept_seed), "an island is held by its own seed alone");
         }
         sea.tick();
     }
     assert!(sea.islands().by_id(kept).is_some(), "players ashore hold it");
     assert!(sea.islands().by_id(left).is_none(), "nothing held it");
-    assert!(!sea.hold_ashore(left), "a faded island is held no more");
+    assert!(!sea.hold_ashore(left, left_seed), "a faded island is held no more");
 }
 
 #[test]

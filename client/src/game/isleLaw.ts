@@ -1,7 +1,7 @@
 // The page's law of the sea's islands (crates/isle, crates/room/src/sea_islands.rs): which island a ship lies off and
 // is offered to go ashore on, the course round it to its anchorage, a voyage's legs bent round every island in sight
 // (the route planner's grid is far coarser than an island), and an island's room and place on foot.
-import { ASKS, type GearAsk } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { SeenIsle } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
@@ -69,8 +69,10 @@ export function keptClear(isles: readonly IsleAt[]): KeptClear[] {
 }
 
 /** A voyage's points with each leg that passes through a circle bent round it: two points at 45 degrees either side
- *  of where the leg comes nearest its middle, 1.5 times out, whose chord clears it. A bent leg is looked at again, a
- *  few times at most, so a leg among several islands clears each. */
+ *  of where the leg comes nearest its middle, 1.5 times out, whose chord clears it. A leg that ends inside a circle
+ *  (at an island's anchorage) comes in along the line out from its middle through its end, as an island's coast
+ *  lies once round its middle: from its gate 1.5 times out on that line, any leg there bent round. A bent leg is looked
+ *  at again, a few times at most, so a leg among several islands clears each. */
 export function detour(points: readonly Point2[], circles: readonly KeptClear[], depth = 3): Point2[] {
   const [first] = points;
   if (!first || depth === 0) return [...points];
@@ -80,6 +82,17 @@ export function detour(points: readonly Point2[], circles: readonly KeptClear[],
     const crossed = circles.find(
       (circle) => offLeg(circle.at, from, to) < circle.radius && apart(to, circle.at) >= circle.radius,
     );
+    const entered = circles.find(
+      (circle) =>
+        apart(to, circle.at) < circle.radius &&
+        apart(from, circle.at) >= circle.radius &&
+        offLeg(circle.at, from, to) < apart(to, circle.at) - 1,
+    );
+    if (!crossed && entered) {
+      const gate = onBearing(entered.at, bearingOf(entered.at, to), entered.radius * 1.5);
+      out.push(...detour([from, gate], circles, depth - 1).slice(1), to);
+      continue;
+    }
     if (!crossed) {
       out.push(to);
       continue;
@@ -149,11 +162,21 @@ export function isleNode(
 /** How near a wreck's heap or the door a player stands for E to use it, metres: inside the room's own reach. */
 export const ISLE_USE_M = 3;
 
-/** The dungeon behind an island's door, as the dungeons' rooms take it: its style, and the island's seed and number. */
+/** The dungeon behind an island's door, as the dungeons' trip takes it: its room, and where the door stands in the
+ *  world and the bearing its front faces, to come back out at. */
 export interface DungeonDoor {
-  readonly style: string;
-  readonly seed: string;
-  readonly isle: number;
+  readonly room: string;
+  readonly at: Point2;
+  readonly facing: number;
+}
+
+/** The room of the dungeon behind an island's door: its water's continent, its style, the island's seed folded to 32
+ *  bits in 8 hex digits, and the tier of the sea it was rolled in. */
+export function dungeonRoomName(seed: string, style: string, continent: string, seas: Difficulty = 'normal'): string {
+  const whole = BigInt.asUintN(64, BigInt(seed));
+  const folded = BigInt.asUintN(32, whole ^ (whole >> 32n));
+  const tier = seas === 'normal' ? '' : `--${seas}`;
+  return `sea-dungeon-${continent}-${style}-${folded.toString(16).padStart(8, '0')}${tier}`;
 }
 
 /** The words for the dungeon's door by its style. */
@@ -163,29 +186,35 @@ const DOOR_WORDS: Readonly<Record<string, string>> = {
   mines: 'Enter the mine',
 };
 
-/** What E does on an island where the player stands: a wreck not yet scavenged this visit, else the door. */
+/** What E does on an island where the player stands: a wreck the room has not told them is spent (`gear.spent`, for
+ *  their account, however often they come), and not asked of and still unanswered; else the door. */
 export function isleUses(
   held: IsleHeld,
   enter: (door: DungeonDoor) => void,
+  gear: { readonly gear: GearState | null },
+  { continent, seas }: { readonly continent: string; readonly seas: Difficulty },
 ): (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null {
   const [atX, atY] = held.seen.at;
-  const scavenged = new Set<number>();
+  // Each wreck asked of, and how many asks the room had answered then.
+  const asked = new Map<number, number>();
+  const spent = (index: number) =>
+    (gear.gear?.spent.includes(index) ?? false) || asked.get(index) === (gear.gear?.answered ?? 0);
   return (x, y, ask) => {
     const wreck = held.plan.wrecks.findIndex(
-      ([wreckX, wreckY], index) =>
-        !scavenged.has(index) && Math.hypot(wreckX + atX - x, wreckY + atY - y) <= ISLE_USE_M,
+      ([wreckX, wreckY], index) => !spent(index) && Math.hypot(wreckX + atX - x, wreckY + atY - y) <= ISLE_USE_M,
     );
     if (wreck >= 0)
       return {
         words: 'Scavenge the wreck',
         run: () => {
-          scavenged.add(wreck);
+          asked.set(wreck, gear.gear?.answered ?? 0);
           ask({ kind: ASKS.scavenge, node: wreck });
         },
       };
-    const { at, style } = held.plan.door;
+    const { at, facing, style } = held.plan.door;
     if (Math.hypot(at[0] + atX - x, at[1] + atY - y) > ISLE_USE_M) return null;
-    const door = { style, seed: held.seen.seed, isle: held.seen.id };
+    const room = dungeonRoomName(held.seen.seed, style, continent, seas);
+    const door: DungeonDoor = { room, at: [at[0] + atX, at[1] + atY], facing };
     return { words: DOOR_WORDS[style] ?? 'Enter', run: () => enter(door) };
   };
 }

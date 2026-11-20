@@ -108,7 +108,7 @@ export class SeaWord {
   /** The port city the player washed up at, by the sea's number, until they walk ashore there; or the found island
    *  they washed up on, by its number. */
   private washed: number | null = null;
-  private washedIsle: number | null = null;
+  private washedOn: number | null = null;
   private latest: { readonly line: string; readonly at: number } | null = null;
 
   /** `ports` the port cities in the sea's order; `facts` the sea's rules as its waters' table gives them. */
@@ -124,7 +124,7 @@ export class SeaWord {
     for (const numbers of told) {
       if (numbers[0] !== TOLD.WASHED_UP) continue;
       const isle = numbers[4] ?? 0;
-      [this.washed, this.washedIsle] = isle > 0 ? [null, isle] : [numbers[2] ?? null, null];
+      [this.washed, this.washedOn] = isle > 0 ? [null, isle] : [numbers[2] ?? null, null];
     }
     const ports = this.ports.map((port) => port.name);
     return linesOf(told, naval, { kinds: this.kinds, ports, nameOf: (ship) => room.shipNamed(ship) });
@@ -154,9 +154,14 @@ export class SeaWord {
 
   /** The found island the player washed up on, by its number, taken once. */
   takeWashedIsle(): number | null {
-    const isle = this.washedIsle;
-    this.washedIsle = null;
+    const isle = this.washedOn;
+    this.washedOn = null;
     return isle;
+  }
+
+  /** The found island the room last washed the player up on, until it is taken. */
+  get washedIsle(): number | null {
+    return this.washedOn;
   }
 
   /** Her repair as Manage offers it, from the room's word on her kept hurts. */

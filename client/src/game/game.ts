@@ -240,12 +240,18 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
 
   /** Joins a company member where they play: a node of this landmass at their seas, the ship left where she lies. */
+  /** Whether the player may be taken elsewhere: on foot or on deck with nothing else under way, never under the map,
+   *  on the way to the helm, walking the deck, landing, or while another landmass opens. */
+  const free = () =>
+    (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') &&
+    !playing.flow.menu &&
+    !playing.heldMap?.shown &&
+    !playing.mapWanted &&
+    !playing.sea?.aboard.active &&
+    !charting.busy;
+
   const joinAt = (place: string): string | null => {
-    // Only on foot or on deck with nothing else under way: never under the map, on the way to the helm, walking the
-    // deck, landing, or while another landmass opens.
-    const free = (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') && !playing.flow.menu;
-    if (!free || playing.heldMap?.shown || playing.mapWanted || playing.sea?.aboard.active || charting.busy)
-      return 'You are in their company. Choose Go to them once nothing else is under way.';
+    if (!free()) return 'You are in their company. Choose Go to them once nothing else is under way.';
     // As other games keep travel out of a fight, and the fallen respawn before they go anywhere.
     if (playing.flow.mode === 'sea' && playing.sea?.fight)
       return 'You are in their company. Go to them once the fight is over.';
@@ -295,39 +301,63 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     discovered.nodes(playing.sea.landings);
   };
 
-  /** The dungeon behind an island's door: the dungeons' rooms take it from here. */
-  const enterDungeon = (door: DungeonDoor) => hud.note(`The ${door.style} below are not open yet.`);
+  /** The dungeon behind an island's door: the dungeons' trip takes its room and door from here. */
+  // shortcut: the second stack's trip takes it (`trips.enterSeaDungeon(door.room, { x, y, facing })`); until then, said.
+  const enterDungeon = (_door: DungeonDoor) => hud.note('The way down is not open yet.');
 
-  /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. */
+  /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
+   *  is left only once the island's room has opened: one that does not (it faded, or the sea no longer holds it)
+   *  leaves the player aboard, told so. */
   const goIsle = (held: IsleHeld, words: string) => {
-    const word = playing.sea?.sighted?.isleWord(held.seen.id) ?? null;
     const continent = continents[held.seen.continent]?.id ?? '';
     travel({ kind: 'isle', node: held.seen.id.toString(), words }, async () => {
+      const word = playing.sea?.sighted?.isleWord(held.seen.id) ?? null;
+      let foot: Foot;
+      try {
+        foot = await ashoreOn(footContext, held, { word, continent, seas: seaSeas }, enterDungeon);
+      } catch (error) {
+        // Still aboard, at sea: the veil lifts on the ship, as no load is under way.
+        playing.flow = { mode: 'sea', menu: false };
+        hud.veil(null);
+        hud.note(`You could not go ashore: ${error instanceof Error ? error.message : String(error)}.`);
+        return;
+      }
       leaveHere();
       playing.foot?.leave();
-      playing.foot = null;
       playing.sea?.leaveRoom();
       ashore = held;
-      playing.foot = await ashoreOn(footContext, held, { word, continent, seas: seaSeas }, enterDungeon);
+      playing.foot = foot;
     });
   };
 
   /** Each frame at sea: the islands the room tells of kept and built, and a landing walked ashore once the ship anchors or
    *  a beaten player washed up on a found island's beach. */
   const isleFrame = () => {
-    // Off the island's beach, at sea or in a node, the island is the sea's again.
-    if (playing.flow.mode !== 'foot' || !playing.foot?.node.id.startsWith('isle-')) ashore = null;
+    // Off the island's beach, at sea or in a node, the island is the sea's again; under the veil ashore it is kept.
+    if (playing.flow.mode === 'sea' || (playing.foot && !playing.foot.node.id.startsWith('isle-'))) ashore = null;
     islesView.show(isles.shown(ashore));
     const sea = playing.sea;
     if (!sea || playing.flow.mode !== 'sea') return;
-    isles.update(sea.sighted?.islands ?? []);
+    // An island new in sight bends the voyage ahead round it.
+    if (isles.update(sea.sighted?.islands ?? [])) sea.bendRound();
     const found = isles.all().filter((each) => each.seen.found);
     playing.heldMap?.setIsles(found.map(({ seen }) => ({ at: seen.at, kind: seen.kind, isle: seen.kind !== 'cove' })));
+    // Ashore only once nothing else is under way: the map put away, the deck left, the fight's view panned home.
+    if (!free() || sea.fight) return;
+    const washed = playing.seaWord?.washedIsle ?? null;
+    if (washed !== null) {
+      // Washed up on a found island: ashore once the page has built it, or never if the room no longer tells of it.
+      const held = isles.byId(washed);
+      const told = isles.all().some((each) => each.seen.id === washed);
+      if (held || !told) playing.seaWord?.takeWashedIsle();
+      if (held) {
+        isleLanding.cancel();
+        goIsle(held, ashoreWords(held, true));
+      }
+      return;
+    }
     const anchored = isleLanding.arrived(sea, isles);
-    if (anchored) return goIsle(anchored, ashoreWords(anchored));
-    const washed = playing.seaWord?.takeWashedIsle();
-    const held = washed === null || washed === undefined ? null : isles.byId(washed);
-    if (held) goIsle(held, ashoreWords(held, true));
+    if (anchored) goIsle(anchored, ashoreWords(anchored));
   };
 
   /** The map is wanted: it is raised once the view stands at the helm. */

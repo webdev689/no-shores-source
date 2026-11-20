@@ -160,7 +160,7 @@ pub struct Player {
     pub answer: u8,
     pub identified: u32,
     pub answered: u32,
-    /// The room's resource nodes they have gathered from this turn, spent for them.
+    /// The room's resource nodes they have gathered from this turn, spent for them; on a sea island, the wrecks.
     pub spent: Vec<u8>,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
@@ -324,9 +324,13 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
-    /// spent for them again, however often they rejoin; and the Arts' charge the room kept for it is theirs again.
+    /// spent for them again, however often they rejoin, as on a sea island are the wrecks it scavenged; and the Arts'
+    /// charge the room kept for it is theirs again.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
-        let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let mut gathered =
+            self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let scavenged = self.isle.as_ref().and_then(|isle| isle.scavenged.get(owner));
+        gathered.extend(scavenged.into_iter().flatten().copied());
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.owner = Some(owner.to_owned());
         for node in gathered {

@@ -60,7 +60,8 @@ impl Chart for SeaChart<'_> {
         let home = is_home(to) && !is_home(from);
         match [whole(&from), whole(&to)] {
             [Some(from), Some(to)] => {
-                let islands = self.islands.iter().copied();
+                let islands = crate::sea::islands::outside(self.islands.iter().copied(), Some(from));
+                let islands = islands.iter().copied();
                 !home
                     && !on_land(self.coasts, to)
                     && !leg_meets_land(self.coasts, from, to)
