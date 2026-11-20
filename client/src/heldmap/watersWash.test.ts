@@ -5,6 +5,10 @@ import {
   chartedWaters,
   difficultyColour,
   HOLDER_COLOURS,
+  HATCHES,
+  MAP_PARCHMENT,
+  washedOver,
+  type WaterHolder,
   labelPoints,
   levelColour,
   type MapWaters,
@@ -43,7 +47,7 @@ const rgba = (hex: string, alpha: number) => [
   alpha,
 ];
 
-test('each holder washes its water in its own colour, the seam as contested and hatched', () => {
+test('each holder washes its water in its own colour; the seam is contested, the contested and the Tithe hatched', () => {
   const block = (cell: number) => Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => cell));
   for (const [cell, holder] of [
     [0, 'home'],
@@ -55,7 +59,11 @@ test('each holder washes its water in its own colour, the seam as contested and 
     const grid = gridOf(block(cell));
     const wash = washOf(grid, new Uint8Array(9).fill(1));
     assert.deepEqual([...wash.colour.subarray(16, 20)], rgba(HOLDER_COLOURS[holder], 255), holder);
-    assert.equal(wash.hatch[4], holder === 'contested' ? 255 : 0, `${holder} hatched only if contested`);
+    assert.deepEqual(
+      [wash.hatch[8], wash.hatch[9]],
+      [holder === 'contested' ? 255 : 0, holder === 'grey-tithe' ? 255 : 0],
+      `${holder}'s hatching`,
+    );
   }
 });
 
@@ -124,10 +132,10 @@ test('a city that is no port is drawn as ruins and named so; the ports as they a
 });
 
 test('the difficulty ramp runs green at the easiest level to deep purple at the hardest, blended between', () => {
-  assert.equal(levelColour(1), '#2f7d32');
+  assert.equal(levelColour(1), '#256327');
   assert.equal(levelColour(30), '#5a1f6e');
   assert.equal(levelColour(22), '#a3241f', 'a stop is its own colour');
-  assert.equal(levelColour(0), '#2f7d32', 'under the easiest, the easiest');
+  assert.equal(levelColour(0), '#256327', 'under the easiest, the easiest');
   assert.equal(levelColour(40), '#5a1f6e', 'past the hardest, the hardest');
   const greens = [1, 8, 15, 22].map((level) => Number.parseInt(levelColour(level).slice(3, 5), 16));
   assert.ok(
@@ -140,4 +148,42 @@ test('a water takes the colour of the middle of her level band; one with no band
   assert.equal(difficultyColour([1, 4]), levelColour(2.5));
   assert.equal(difficultyColour([26, 30]), levelColour(28));
   assert.equal(difficultyColour(null), null);
+});
+
+/** A colour, 0-255 a channel, in CIE L*a*b* (D65). */
+function labOf(rgb: readonly number[]): [number, number, number] {
+  const [red, green, blue] = rgb.map((value) => {
+    const channel = value / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  const bend = (share: number) => (share > 0.008856 ? Math.cbrt(share) : 7.787 * share + 16 / 116);
+  const x = bend((0.4124 * red + 0.3576 * green + 0.1805 * blue) / 0.95047);
+  const y = bend(0.2126 * red + 0.7152 * green + 0.0722 * blue);
+  const z = bend((0.0193 * red + 0.1192 * green + 0.9505 * blue) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+test('the holders’ washes are told apart on the parchment, by colour or by their hatching, and none darkens it much', () => {
+  const washed = Object.fromEntries(
+    (Object.keys(HOLDER_COLOURS) as WaterHolder[]).map((holder) => [
+      holder,
+      labOf(rgba(washedOver(holder), 0).slice(0, 3)),
+    ]),
+  ) as Record<WaterHolder, [number, number, number]>;
+  const bare = labOf(MAP_PARCHMENT.map((channel, index) => channel * 0.92 + [58, 40, 22][index]! * 0.08));
+  const holders = Object.keys(washed) as WaterHolder[];
+  for (const [index, one] of holders.entries()) {
+    assert.ok(bare[0] - washed[one][0] < 6, `${one}'s wash darkens the parchment by ${bare[0] - washed[one][0]}`);
+    for (const other of holders.slice(index + 1)) {
+      const [a, b] = [washed[one], washed[other]];
+      const apart = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+      const hatchedApart = one in HATCHES !== other in HATCHES || (one in HATCHES && other in HATCHES);
+      assert.ok(apart >= 10 || hatchedApart, `${one} and ${other}: ${apart.toFixed(1)} apart, and hatched alike`);
+    }
+  }
+});
+
+test('a holder’s wash as the map shows it is her colour at the wash’s strength over the parchment', () => {
+  // Home's teal over the parchment reads as the map's olive green, 161, 152, 110 (worked out apart from the code).
+  assert.equal(washedOver('home'), '#a1986e');
 });

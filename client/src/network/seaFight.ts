@@ -15,6 +15,7 @@ import {
   type ShotName,
   type SideName,
 } from '../rules/fightRules.ts';
+import { feelOf, type NavalEvent, PARTS, PIECES } from '../rules/feelEvents.ts';
 
 const STATES: readonly ShipState[] = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'];
 const MODES: readonly CaptainMode[] = ['cruise', 'engage', 'flee', 'struck', 'sinking'];
@@ -59,24 +60,7 @@ export function withOthers(view: ArrayLike<number>, others: ArrayLike<number> | 
   return new Float64Array([...numbers.slice(0, OTHERS_AT), ...between, ...numbers.slice(OTHERS_AT)]);
 }
 
-/** The part of her a ball struck, and what floats looks like (crates/naval/src/fight_events.rs). */
-export const PARTS = ['hull', 'sail', 'rig'] as const;
-export const PIECES = ['crate', 'barrel', 'chest'] as const;
-
-/** What the sea's fights tell beside the World Editor's events, each on the fight's tick it happened on: a ball's
- *  splash (x, y), a ball that struck a ship (where, in her own frame), a sail torn away (her sail index, as her
- *  manifest lists them), a mast fallen (0 fore to aft), her colours struck, her going down, a piece of what floats laid
- *  (by its number) or gathered (by a player's number), and players gone aboard her. Ships go by the view's numbers. */
-export type NavalEvent =
-  | { kind: 'Splash'; tick: number; at: [number, number] }
-  | { kind: 'Hit'; tick: number; ship: number; at: Point; part: (typeof PARTS)[number] }
-  | { kind: 'SailLost'; tick: number; ship: number; sail: number }
-  | { kind: 'MastFell'; tick: number; ship: number; mast: number }
-  | { kind: 'Struck'; tick: number; ship: number }
-  | { kind: 'Sinking'; tick: number; ship: number }
-  | { kind: 'Flotsam'; tick: number; id: number; at: [number, number]; kind_of: (typeof PIECES)[number] }
-  | { kind: 'Gathered'; tick: number; id: number; by: number }
-  | { kind: 'Boarding'; tick: number; ship: number };
+export { type NavalEvent, PARTS, PIECES } from '../rules/feelEvents.ts';
 
 /** A sea fight's view: the World Editor's fight view, and what the sea's fights tell beside it. */
 export type SeaFightView = FightView & { naval: NavalEvent[] };
@@ -113,32 +97,8 @@ export function navalEventOf(kind: number, next: () => number): NavalEvent | nul
   }
 }
 
-/** One of the sea's own events as the fight's feel reads it among the World Editor's (`ships/fightFeel.ts`
- *  `FeelEvent`); none for a ball's splash and hit, which its shot's own events carry. */
-export function feelOf(event: NavalEvent): FightEvent | null {
-  const feel = ((): object | null => {
-    switch (event.kind) {
-      case 'SailLost':
-        return { kind: 'sail-lost', ship: event.ship, sail: event.sail };
-      case 'MastFell':
-        return { kind: 'mast-fell', ship: event.ship, mast: event.mast };
-      case 'Struck':
-        return { kind: 'struck', ship: event.ship };
-      case 'Sinking':
-        return { kind: 'sinking', ship: event.ship };
-      case 'Flotsam':
-        return { kind: 'flotsam', id: event.id, at: event.at, item: event.kind_of };
-      case 'Gathered':
-        return { kind: 'gathered', id: event.id, by: event.by };
-      case 'Boarding':
-        return { kind: 'boarding', ship: event.ship };
-      default:
-        return null;
-    }
-  })();
-  // The rules' fight events are the World Editor's; the feel reads these beside them by their kinds.
-  return feel as FightEvent | null;
-}
+/** One of the sea's own events as the fight's feel reads it: `ships/fightFeel.ts`'s, the one mapping. */
+export { feelOf };
 
 /** Who a fight's captain is: her name, her faction and her rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
@@ -195,9 +155,9 @@ export function fightViewOf(
   const player = vessel();
   const captain = commanded(who);
   const others = Array.from({ length: next() }, () => {
-    const [faction, rank] = [next(), next()];
+    const [number, faction, rank] = [next(), next(), next()];
     const other = commanded({ name: '', faction, rank });
-    return { ...other, name: nameOf(faction, other.hull_kind ?? 0) };
+    return { ...other, number, name: nameOf(faction, other.hull_kind ?? 0) };
   });
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
   // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.

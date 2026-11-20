@@ -371,6 +371,12 @@
       .held-card button {
         pointer-events: auto;
       }
+      /* While the map is up, the place's small words are set as the map's own words are: as written, at their size. */
+      #hud:has(> .held-map:not([hidden])) .place .kind {
+        font-size: 13px;
+        letter-spacing: 1px;
+        text-transform: none;
+      }
       .mark {
         --size: 28px;
         position: absolute;

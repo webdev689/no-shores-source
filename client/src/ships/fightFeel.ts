@@ -1,16 +1,17 @@
 // How a sea fight looks and sounds round its ships, from the fight's events and what its view already says of them
 // (their hurts, fires and states): each event becomes its puffs (`Effects`), its harm on the ship it struck
 // (`ShipHarm`, on her rig), its flotsam and its sound. The World Editor's fights and the sea's draw through it.
+import type { RoomEvent } from '../rules/feelEvents.ts';
 import type { FightEvent, FightVessel, Point } from '../rules/fightRules.ts';
 import { DRESSES, type ShipSide } from './dress.ts';
 import { Effects, type Mark, type Splash } from './effects.ts';
-import { Flotsam, type FlotsamItem } from './flotsam.ts';
+import { Flotsam } from './flotsam.ts';
 import { hullPaint, hullWaterline, plateOverM, SLOOP_HULL } from './hulls.ts';
 import { type SailRig, windOff } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 
-/** The fight's events of the feel (the combat contract's), beside those it always had. A ball's hit names where on
- *  her it struck in her own frame and what it struck, once the rules send them. */
+/** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on her it struck in her
+ *  own frame and what it struck (from the room's `Hit` told with it), and the room's own. */
 export type FeelEvent =
   | Exclude<FightEvent, { kind: 'hit' } | { kind: 'splash' }>
   | {
@@ -23,13 +24,9 @@ export type FeelEvent =
       readonly part?: 'hull' | 'sail' | 'rig';
     }
   | { readonly kind: 'splash'; readonly point?: Point; readonly at?: readonly number[] }
-  | { readonly kind: 'sail-lost'; readonly ship: number; readonly sail: number }
-  | { readonly kind: 'mast-fell'; readonly ship: number; readonly mast: number }
-  | { readonly kind: 'struck'; readonly ship: number }
-  | { readonly kind: 'sinking'; readonly ship: number }
-  | { readonly kind: 'flotsam'; readonly id: number; readonly at: readonly number[]; readonly item: FlotsamItem }
-  | { readonly kind: 'gathered'; readonly id: number; readonly by: number }
-  | { readonly kind: 'boarding'; readonly ship: number };
+  | RoomEvent;
+
+export { feelOf, type RoomEvent } from '../rules/feelEvents.ts';
 
 /** What the feel reads of a ship's numbers in the fight's view. */
 export type FeelVessel = Pick<FightVessel, 'fires' | 'sail' | 'max_sail'> & {
@@ -178,29 +175,29 @@ export class FightFeel {
         if (ship) this.hullHit(ship, frameOf(ship.vessel, event.point), now, toWindow, false);
         return [];
       }
-      case 'sail-lost': {
+      case 'SailLost': {
         const ship = shipOf(event.ship);
         ship?.rig?.harm.loseSail(event.sail, now, leeward(ship, windBearing));
         return [];
       }
-      case 'mast-fell': {
+      case 'MastFell': {
         const ship = shipOf(event.ship);
         ship?.rig?.harm.fellMast(event.mast, now, leeward(ship, windBearing));
         return [];
       }
-      case 'struck':
+      case 'Struck':
         shipOf(event.ship)?.rig?.harm.strike(now);
         return [];
-      case 'sinking':
+      case 'Sinking':
         shipOf(event.ship)?.rig?.harm.sink(now);
         return [];
-      case 'flotsam': {
+      case 'Flotsam': {
         const [x = 0, y = 0] = event.at;
         const spot = toWindow([x, y, 0]);
-        this.flotsam.lay(event.id, [spot[0], spot[1]], event.item);
+        this.flotsam.lay(event.id, [spot[0], spot[1]], event.kind_of);
         return [];
       }
-      case 'gathered':
+      case 'Gathered':
         this.flotsam.gather(event.id);
         return [];
       default:

@@ -65,6 +65,8 @@ export interface FleetSession {
   balls(now: number): (readonly [number, number, number, number])[];
   lay(look: FleetLook, now: number): FleetLay | null;
   takeEvents(): FightEvent[];
+  /** The fight's events for its feel, each ship by her own number. */
+  takeFeel(): FightEvent[];
 }
 
 /** Where the editor finds a fleet room: it joins one with the Sloop put to sea at (x, y) heading `heading`, answering

@@ -58,6 +58,8 @@ export interface FightCaptain extends FightVessel {
   readonly mode: CaptainMode;
   readonly hostile: boolean;
   readonly run_out: readonly SideName[];
+  /** The number the fight's events name her by, at sea for a captain past the first (her place in the list can move). */
+  readonly number?: number;
 }
 
 export type FightEvent =

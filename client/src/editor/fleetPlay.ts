@@ -16,7 +16,6 @@ const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
  */
 export class FleetSloop extends Afloat {
   readonly session: FleetSession;
-  private events: FightEvent[] = [];
   private messages: { readonly text: string; readonly until: number }[] = [];
 
   constructor(session: FleetSession) {
@@ -57,7 +56,6 @@ export class FleetSloop extends Afloat {
     this.session.advance(seconds, input, now);
     this.moveTo(new Float64Array(this.session.shipFloats()) as ShipFloats, this.session.shipPose());
     for (const event of this.session.takeEvents()) {
-      this.events.push(event);
       const words = event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, 'captain’s Sloop');
       if (words) this.say(words, now);
     }
@@ -67,11 +65,9 @@ export class FleetSloop extends Afloat {
     this.messages = [...this.messages.filter((message) => message.text !== text), { text, until: now + MESSAGE_S }];
   }
 
-  /** The events since last taken, for the effects. */
+  /** The fight's events since last taken, for its feel. */
   takeEvents(): FightEvent[] {
-    const taken = this.events;
-    this.events = [];
-    return taken;
+    return this.session.takeFeel();
   }
 
   /** The panel's lines at `now`: her hurts and guns, the nearest captain's, her lay, the broadside warning, the fleet,

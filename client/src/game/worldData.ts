@@ -1,3 +1,4 @@
+import { ruinedName } from '../ruinedName.ts';
 import type { StationInfo } from './nodes.ts';
 
 /** A node's kind, as the edits files and the plans name it. */
@@ -117,5 +118,5 @@ export function arrivalAt(
   const city = world.cities.find((each) => `${each.id}-social` === id);
   if (!city) return null;
   const ruined = mainPorts !== null && !mainPorts.includes(city.id);
-  return { continent: city.continent, node: id, name: ruined ? `Ruins of ${city.name}` : city.name };
+  return { continent: city.continent, node: id, name: ruined ? ruinedName(city.name) : city.name };
 }

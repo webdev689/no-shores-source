@@ -11,8 +11,13 @@ code:
   - client/src/heldmap/watersWash.ts#labelPoints
   - client/src/heldmap/heldMapWaters.ts#HeldMapWaters
   - client/src/heldmap/heldMapWaters.ts#ruinedPlaces
+  - client/src/heldmap/heldMapWaters.ts#onOwnSea
+  - client/src/heldmap/mapKey.ts#keyEdges
+  - client/src/heldmap/watersWash.ts#washedOver
   - client/src/heldmap/mapLetters.ts#paintLettering
-  - client/src/heldmap/mapLetters.ts#keyPlace
+  - client/src/heldmap/mapLayout.ts#layOut
+  - client/src/heldmap/mapLayout.ts#handsCover
+  - client/src/heldmap/mapKey.ts#keyPlace
   - client/src/game/discovered.ts#Discovered
   - client/src/overworld/discovery.ts#chartAround
   - client/src/overworld/discovery.ts#sightIslands
@@ -46,33 +51,66 @@ war, and a click on it sets the ship's destination.
   engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
 - **The waters** ([[The Waters Come From the Islands]]). The page opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `FriendlyTraffic`), and takes their grid at the coast field's own 4.8 km cell
-  ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour:
-  Home green `#3f7f6f`, the Grey Tithe slate `#5d6670`, the pirates dark red `#8a2f2a`, Contested amber `#b8862f`.
+  ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
+  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (her ships' slate), the pirates red `#d95c5c`,
+  Contested amber `#b8862f`. None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
+  CIEDE2000 are told apart by their hatching.
   Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
   soft over a cell or two and never stepped. The contested waters and the seam are hatched over their wash with fine
-  diagonal lines in the ink, 7 screen pixels apart. Fog of war is as it was: the wash is laid for the sea charted when
-  the map is raised.
+  diagonal lines in a dark amber (`#6b4a12` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at
+  0.3), each 7 device pixels apart (`HATCHES`). Fog of war is as it was: the wash is laid for the sea charted when the
+  map is raised.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
   point, the name and a ring round it inked in the band's colour on the difficulty ramp
-  ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green at level 1, gold at 8, orange at 15, red at 22
-  and deep purple at 30, blended between and read at the band's middle (`difficultyColour`), dark enough to read as
-  ink. Its label point is the middle of its sea cell farthest from land, from other waters and from the frame's edge
-  (`labelPoints`, chamfer distances in cells), once any of its sea is charted, held inside the map's edges.
-- **The key** names the four holders by their colours, and under them the difficulty ramp, "Levels 1" to "30". It stands
-  in a corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name and
-  no mark: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
-  left, upper right. With every corner taken it is laid in one row, on a box of the parchment's colour, in the middle of
-  the parchment's margin under the map. So it moves only when it must, and never back and forth while the map stands
-  still (`keyPlace`).
+  ([[The Held Map Colours Each Water's Name by Its Difficulty]]): green `#256327` at level 1, gold `#6a5507` at 8,
+  orange `#894314` at 15, red `#a3241f` at 22 and deep purple `#5a1f6e` at 30, blended between and read at the band's
+  middle (`difficultyColour`). The ring is filled with the parchment's own colour, and every level's colour reads at
+  least 4.5 : 1 against it. A water is named while any of her charted sea is in view. Her name is tried first at her
+  label point, the middle of her sea cell farthest from land, from other waters and from the frame's edge
+  (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on her
+  sea, nearest the middle of her sea in view first (`HeldMapWaters.letters`); on one line, then on two, her name over
+  her band, in a ring as tall.
+- **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the four
+  holders' swatches and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
+  her wash as the map shows it, over the map's parchment (`washedOver`), with the contested's and the Tithe's
+  hatching. It stands in a
+  corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name, no mark
+  and no hand: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper
+  left, upper right. With none clear it takes, of the place it stood, the corners and the places along the map's four
+  edges half its size apart (`keyEdges`), one clear of the hands, the marks and the ports' and the chosen place's
+  names, round which the other names laid again lose least: a water's name lost counts ten, land under the key five,
+  any other name lost one. So it moves only when it must, and never back and forth while the map stands still
+  (`keyPlace`). It is never laid on the
+  parchment's margin, where the page's hints stand under the map.
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
-  open every city is drawn as a port. The ship is a red-brown arrow along its heading. The voyage under way is inked
-  as a dashed red-brown line.
-- **Lettering.** Every name, glyph, the ship's arrow and the key is part of the parchment: painted, whenever they
-  change, in the page's face at 11 px, ringed in the parchment's colour, onto a picture of the parchment
-  (`paintLettering`), which the ink's pass lays down over the ink, before the gauntlets are drawn. So the hands cover
-  them as they cover the parchment. Only the card that offers Set sail stands over the picture as a page element.
+  open every city is drawn as a port. The ship is a red-brown arrow along its heading, ringed in the parchment. The
+  voyage under way is inked as a dashed red-brown line.
+- **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
+  change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
+  gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
+  over the picture as a page element. How it reads:
+  - *Sizes.* In the page's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
+    mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
+    1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
+  - *Hierarchy.* Ports strongest: the larger size, the darkest ink and a filled ring. Waters' names in their rings in
+    their difficulty's colour. Ruins (a dashed diamond) and nodes (a ring) in a lighter brown, `#5c4631`. The place
+    chosen is named in the route's red-brown. Every word is haloed in the parchment's colour, 3 px, so it reads at
+    least 4.5 : 1 over the coasts' lines and the washes.
+  - *Alignment.* A place's name stands right of its mark, its middle on the mark's, 5 px from it; where the right is
+    taken or off the map, the same on the left; where the ship's arrow stands on the mark and both are taken, the same
+    right and then left of the arrow. A water's name is centred on the spot it takes.
+  - *The clear region.* The thumbs of every set of gauntlets reach over the parchment in any frame of their fidget, as
+    measured from the forge's strips (274 × 181 texels a frame): the left over the painting's shares 0-0.29 across and
+    0.45-0.56 down, the right over 0.71-1 across and 0.46-0.57 down (`HANDS_COVER`). No name and not the key stands
+    there; the ship's arrow and the places' marks stand where they lie.
+  - *Priority.* The ship's arrow and every place's mark are laid first and never dropped. Then the names, the place
+    chosen first, then ports, waters, ruins and nodes, each where it covers no mark, no hand and no name laid before
+    it, inside the map. A water's name takes the first of her spots wholly on her own sea, on one line or two; with
+    none, the first on no land with its middle on her sea, so across a sea too narrow for her name seen whole (the
+    Elmwater and the Rimeholt Deep) it may run over a neighbour's wash, never over land (`onOwnSea`). A name with no clear place is dropped: a place's
+    keeps its mark.
 - **The view**, DFO's: it opens centred on the ship, 1,600 km across. A drag pans; the wheel zooms about the cursor,
   from the whole world fitting the parchment to 6 px a kilometre; the world stays centred on an axis it does not
   fill. A press that moves more than 6 px is a pan, not a click.
@@ -114,5 +152,8 @@ The player starts with the island they arrive on, its port, the place they arriv
 - The charted sea's wash is laid when the map is raised: what the ship charts while it is up shows the next time.
 - The route is inked through at most 128 of its points.
 - Quests are not tracked on the map yet.
-- The waters' wash is laid when the map is raised, as the charted sea's is. A water's label point is a 4.8 km cell's
-  middle, so its words may stand over a small isle.
+- The waters' wash is laid when the map is raised, as the charted sea's is. A water's sea is judged a 4.8 km cell at a
+  time, so her words may stand over an isle smaller than a cell.
+- A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
+- With every corner and edge place taken by marks, ports' names or the hands the key is left off, as on a screen as
+  narrow as a phone's with the whole world in view.

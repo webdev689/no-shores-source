@@ -74,7 +74,7 @@ export class SeaCombat {
   private readonly shown: (hull: number) => number;
   private readonly fought = new Fought();
   /** Each ship's rig, the player's first, one more as each other captain comes into the fight. */
-  private readonly rigs: { readonly hull: number; readonly rig: SailRig }[] = [];
+  private readonly rigs = new Map<number, { readonly hull: number; readonly rig: SailRig }>();
   /** The world point the fight is drawn from, where it began: marks lie near it, so float32 holds them exactly. */
   private readonly window: Window;
   private last: FightView;
@@ -235,13 +235,15 @@ export class SeaCombat {
     return [this.last.captain, ...(this.last.others ?? [])];
   }
 
-  /** Every ship in the fight with her hull and side: the player's Sloop, then each captain's. */
+  /** Every ship in the fight with her hull, side and the number its events name her by: the player's Sloop (0), then
+   *  each captain's (the first 1, each other by her own number, or her place after the first where none is given). */
   private vessels(answer: FightView = this.last) {
-    const player = { vessel: answer.player, hull: SLOOP_HULL, side: 'player' as const };
-    const captains = [answer.captain, ...(answer.others ?? [])].map((captain) => ({
+    const player = { vessel: answer.player, hull: SLOOP_HULL, side: 'player' as const, number: 0 };
+    const captains = [answer.captain, ...(answer.others ?? [])].map((captain, index) => ({
       vessel: captain,
       hull: this.shown(hullOfCaptain(captain)),
       side: factionSide(captain.faction),
+      number: index === 0 ? 1 : (captain.number ?? index + 1),
     }));
     return [player, ...captains];
   }
@@ -249,13 +251,13 @@ export class SeaCombat {
   /** Every ship in the fight by her number, as its feel sees her: each with her rig, made for the hull she sails. */
   private feelShips(answer: FightView = this.last): Map<number, FeelShip> {
     return new Map(
-      this.vessels(answer).map(({ vessel, hull, side }, index) => {
-        let rigged = this.rigs[index];
+      this.vessels(answer).map(({ vessel, hull, side, number }) => {
+        let rigged = this.rigs.get(number);
         if (!rigged || rigged.hull !== hull) {
           rigged = { hull, rig: new SailRig(hullSails(hull)) };
-          this.rigs[index] = rigged;
+          this.rigs.set(number, rigged);
         }
-        return [index, { vessel, rig: rigged.rig, hull, side }];
+        return [number, { vessel, rig: rigged.rig, hull, side }];
       }),
     );
   }

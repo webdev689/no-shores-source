@@ -11,6 +11,8 @@ status: in force
 
 > Asked how a voyage should look sailing fast up close: "Whatever is the best way to handle this"
 
+> Of the held map: "Do a detailed pass again on this with autonomy. Just needs to be readable and organized"
+
 > "Yes, build everything in bulk and be as detailed as possible. No exceptions. Come back when you're done at 100%"
 
 ## What it settles
@@ -94,3 +96,36 @@ Her rank, by the lowest level of her water's band:
   faster than 1 m/s and throws spray.
 - **Her wake**: Kelvin arms at 19.5 degrees, 0.7 m wide at her stern and widening 0.03 m a metre aft; a bow wave 1.2 of
   her lengths long; her track's wash gone in 20 s. The water carries up to 48 ships' footprints, the player's first.
+
+### The held map
+
+- **Sizes**: words 13 px and a port's name 15 px on a 1280 x 720 screen, growing with the map; each word with a
+  parchment halo.
+- **What gives way**: words are placed by priority (the place chosen, ports, waters, ruins, nodes), clear of the
+  gauntlets' thumbs, every mark and every other word. One with no clear place is dropped; the ship and the marks never
+  are. A place's name stands right of its mark, else left.
+- **The waters' names**: tried across her own sea in view, 10 px apart, nearest its middle first; wholly on her sea if
+  any spot allows, else with her middle on it, never on land.
+- **The washes**: each holder's colour at 0.26 over the parchment: home `#3f7f6f`, the Grey Tithe slate `#6b7785`,
+  the pirates `#d95c5c`, the contested `#b8862f`. The contested and the Grey Tithe are hatched too, 7 px apart.
+- **Difficulty**: green, gold, orange, red and deep purple at levels 1, 8, 15, 22 and 30, darkened to read at 5 : 1
+  on the ring, taken at a band's middle.
+- **The key**: one framed panel, "Held by" and "Levels", each swatch painted as the map shows that holder. It stands
+  in a clear corner. With none clear, it takes the place that costs least: a water's name it covers counts 10, land
+  under it 5, any other name 1.
+
+### The fights' ends
+
+- **Sinking**: any ship at no hull goes down over 20 s. She leaves each player who fought her 3, 4, 5, 6 or 8 pieces,
+  Minor to Boss, each a kill's drop by the gear loop's law; from an Elite up, one piece is a chest a rank higher.
+  They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are gathered within 25 m.
+- **Striking**: a struck ship lies hove to 90 s, then is scuttled.
+- **Boarding**: within 30 m of her, both ships under 2 m/s. Her crew are 3 hands at a Minor, 3 and a heavy at a
+  Major, 4 and a heavy at an Elite, 5 and a mate at a Miniboss, 6 and her Boss at a Boss. A deck won is held 60 s,
+  then she is scuttled.
+- **Losing**: washed up at the port city nearest by the sea's way; a sunk ship comes back with 10% of her hull, 25%
+  of her canvas and half her men.
+- **Repair**: free at a port city, within 3 km of its roadstead, at rest: a second for each hundredth missing, 100 s
+  at most.
+- **Limits**: a player or a hostile ship within 750 m of a fight joins it. A wary captain falls on a Sloop by DFO's
+  own rule: one she outguns 1.25 to one, or one holed under 0.35 of her hull.

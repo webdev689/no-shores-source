@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type FeelEvent, type FeelShip, FightFeel, frameOf } from './fightFeel.ts';
+import { type FeelEvent, type FeelShip, FightFeel, feelOf, frameOf } from './fightFeel.ts';
 import { hullSails } from './hulls.ts';
 import { SailRig } from './sails.ts';
 
@@ -92,10 +92,10 @@ test("the contract's events tear her sails, fell her masts, strike and sink her"
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(5);
   const events: FeelEvent[] = [
-    { kind: 'sail-lost', ship: 1, sail: 3 },
-    { kind: 'mast-fell', ship: 1, mast: 1 },
-    { kind: 'struck', ship: 1 },
-    { kind: 'sinking', ship: 1 },
+    { kind: 'SailLost', tick: 0, ship: 1, sail: 3 },
+    { kind: 'MastFell', tick: 0, ship: 1, mast: 1 },
+    { kind: 'Struck', tick: 0, ship: 1 },
+    { kind: 'Sinking', tick: 0, ship: 1 },
   ];
   frame(feel, ships, events, 0);
   const harm = ships.get(1)?.rig?.harm;
@@ -111,7 +111,7 @@ test("the contract's events tear her sails, fell her masts, strike and sink her"
 test('where she went down the water foams, and her flotsam bobs there until gathered', () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(6);
-  frame(feel, ships, [{ kind: 'sinking', ship: 1 }], 0);
+  frame(feel, ships, [{ kind: 'Sinking', tick: 0, ship: 1 }], 0);
   for (let now = 11; now < 14; now += 1 / 30) frame(feel, ships, [], now);
   assert.ok(feel.marks(14).some((mark) => Math.hypot(mark.x - 100, mark.y - 50) < 20 && Math.abs(mark.z) < 0.01));
   const gone = new Map([[1, { ...brig('sunk') }]]);
@@ -121,9 +121,9 @@ test('where she went down the water foams, and her flotsam bobs there until gath
     feel,
     ships,
     [
-      { kind: 'flotsam', id: 1, at: [100, 52], item: 'crate' },
-      { kind: 'flotsam', id: 2, at: [98, 49], item: 'barrel' },
-      { kind: 'flotsam', id: 3, at: [101, 47], item: 'chest' },
+      { kind: 'Flotsam', tick: 0, id: 1, at: [100, 52], kind_of: 'crate' },
+      { kind: 'Flotsam', tick: 0, id: 2, at: [98, 49], kind_of: 'barrel' },
+      { kind: 'Flotsam', tick: 0, id: 3, at: [101, 47], kind_of: 'chest' },
     ],
     20,
   );
@@ -135,7 +135,7 @@ test('where she went down the water foams, and her flotsam bobs there until gath
   assert.deepEqual(shapes().sort(), ['box', 'chest', 'drum']);
   const bob = (now: number) => feel.flotsam.marks(now)[0]?.z ?? 0;
   assert.notEqual(bob(20), bob(21), 'it rides the swell');
-  frame(feel, ships, [{ kind: 'gathered', id: 2, by: 0 }], 21);
+  frame(feel, ships, [{ kind: 'Gathered', tick: 0, id: 2, by: 0 }], 21);
   assert.deepEqual(shapes().sort(), ['box', 'chest']);
 });
 
@@ -147,4 +147,30 @@ test("a gun's smoke at the raised view rolls out from her side as far as she is 
   const flash = (marks: typeof near) => marks.reduce((best, mark) => (mark.radius > best.radius ? mark : best));
   assert.ok(Math.abs(flash(near).y - 54) < 0.5, "the flash at the gun's mouth");
   assert.ok(Math.abs(flash(far).y - 66) < 2, 'four times as far off her middle at four times her size');
+});
+
+test("each of the room's events reaches the feel through the one mapping, kind by kind", () => {
+  const ships = new Map([[1, brig()]]);
+  const feel = new FightFeel(8);
+  const harm = () => ships.get(1)?.rig?.harm;
+  const take = (event: Parameters<typeof feelOf>[0], now = 0) => {
+    const felt = feelOf(event);
+    frame(feel, ships, felt ? [felt] : [], now);
+    return felt;
+  };
+  assert.equal(take({ kind: 'Splash', tick: 1, at: [1, 2] }), null, "a ball's splash comes with its shot's events");
+  assert.equal(take({ kind: 'Hit', tick: 1, ship: 1, at: [0, 4, 1], part: 'hull' }), null, 'and its hit');
+  take({ kind: 'SailLost', tick: 1, ship: 1, sail: 4 });
+  assert.ok(harm()?.sailLost(4, 1));
+  take({ kind: 'MastFell', tick: 1, ship: 1, mast: 0 });
+  assert.ok(harm()?.isFallen(0));
+  take({ kind: 'Struck', tick: 1, ship: 1 });
+  assert.ok((harm()?.struck(1) ?? 0) > 0);
+  take({ kind: 'Sinking', tick: 1, ship: 1 });
+  assert.ok(harm()?.sinking);
+  take({ kind: 'Flotsam', tick: 1, id: 4, at: [100, 50], kind_of: 'barrel' });
+  assert.equal(feel.flotsam.count, 1);
+  take({ kind: 'Gathered', tick: 1, id: 4, by: 0 });
+  assert.equal(feel.flotsam.count, 0);
+  assert.deepEqual(take({ kind: 'Boarding', tick: 1, ship: 1 }), { kind: 'Boarding', tick: 1, ship: 1 });
 });
