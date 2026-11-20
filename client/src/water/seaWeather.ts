@@ -80,7 +80,20 @@ export class SeaWeather {
     const cellM = (2 * reachM) / SEA_GRID.cells;
     const corner: Point = [centre[0] - reachM, centre[1] - reachM];
     const heights = this.rules.seaHeights(corner, cellM, SEA_GRID.cells, SEA_GRID.cells, time);
-    const shares = heights.map((height) => (middle.height > 0 ? height / middle.height : 1));
+    // Each cell takes the mean of the cells round it: one cell's fetch alone may flip as a coast passes its rays.
+    const smoothed = heights.map((_height, index) => {
+      const [column, row] = [index % SEA_GRID.cells, Math.floor(index / SEA_GRID.cells)];
+      let [sum, count] = [0, 0];
+      for (let down = -1; down <= 1; down++)
+        for (let across = -1; across <= 1; across++) {
+          const [east, south] = [column + across, row + down];
+          if (east < 0 || south < 0 || east >= SEA_GRID.cells || south >= SEA_GRID.cells) continue;
+          sum += heights[south * SEA_GRID.cells + east] ?? 0;
+          count++;
+        }
+      return sum / count;
+    });
+    const shares = smoothed.map((height) => (middle.height > 0 ? height / middle.height : 1));
     const grid: SeaGrid = { corner, cellM, cells: SEA_GRID.cells, shares };
     return { ...middle, grid, shelterAt: (x, y) => gridShare(grid, x, y) };
   }

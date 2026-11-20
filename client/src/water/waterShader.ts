@@ -183,7 +183,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     // to a storm's; and so does the share of crests that break white.
     let height_here = frame.sea.x * shelter_at(surface.offset);
     let rise = clamp((height_here - 0.35) / 2.65, 0.0, 1.0);
-    let slope = chop_slope(local, vec2f(0.0), 0.35 + 0.55 * height_here, footprint) + breaker.slope;
+    // Held at 1.4: steeper, a storm's glints alias into blocks.
+    let slope = chop_slope(local, vec2f(0.0), min(0.15 + 0.55 * height_here, 1.4), footprint) + breaker.slope;
     rough = 0.2 * (0.55 + 0.25 * height_here);
     let rolled = swell_normal(swell);
     normal = normalize(rolled / max(rolled.z, 0.05) + vec3f(-slope, 0.0));
@@ -195,7 +196,7 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
     let standing = swell.height / max(sqrt(swell.energy * 0.5), 1e-3);
     // Broken into patches, as wind-blown caps are, never whole crest lines.
     let broken = smoothstep(0.45, 0.8, value_noise(local * 0.045 + vec2f(frame.eye.w * 0.05, 0.0)));
-    let caps = smoothstep(mix(2.0, 1.1, rise), mix(2.6, 1.7, rise), standing) * smoothstep(1.1, 2.6, height_here) * broken;
+    let caps = smoothstep(mix(2.0, 1.1, rise), mix(2.6, 1.7, rise), standing) * smoothstep(0.8, 2.2, height_here) * broken * 0.85;
     whitecap = max(1.0 - smoothstep(0.28, 0.6, squeeze), caps);
     drift = breaker.toward_shore * frame.eye.w * 0.45 * breaker.broken;
   }

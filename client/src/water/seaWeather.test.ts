@@ -62,3 +62,26 @@ test('the swell is asked again every few seconds, or once the view moves or grow
   assert.equal(asked.swells, 4, 'grown');
   assert.equal(asked.grids, 4);
 });
+
+test("one cell's odd fetch is smoothed into the cells round it, never a lone square", () => {
+  const middle = Math.floor(SEA_GRID.cells / 2) * SEA_GRID.cells + Math.floor(SEA_GRID.cells / 2);
+  const rules = {
+    seaSwell: (): WeatherSwell => ({
+      waves: [],
+      fullDepthM: 15,
+      goneDepthM: 1,
+      bearing: 0,
+      wind: [5, 0],
+      state: 0.4,
+      open: 1,
+      harbour: 0,
+      height: 1,
+    }),
+    seaHeights: (_corner: readonly [number, number], _cellM: number, columns: number, rows: number) =>
+      Float32Array.from({ length: columns * rows }, (_value, index) => (index === middle ? 10 : 1)),
+  };
+  const { shares } = new SeaWeather(rules).follow([0, 0], 8_000, 0).grid;
+  assert.equal(shares[middle], 2);
+  assert.equal(shares[middle + 1], 2);
+  assert.equal(shares[middle + 2], 1);
+});
