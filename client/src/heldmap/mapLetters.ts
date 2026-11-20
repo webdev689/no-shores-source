@@ -121,7 +121,7 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
   if (!letter.side || letter.side === 'centre') return;
   // A name on the left ends at its offset from the mark; on the right it starts there.
   painter.textAlign = letter.side === 'left' ? 'right' : 'left';
-  const offset = half + NAME_GAP;
+  const offset = letter.away ?? half + NAME_GAP;
   word(painter, letter.text, letter.side === 'right' ? offset : -offset, 0, letter.chosen ? ROUTE : ink);
 }
 

@@ -90,3 +90,18 @@ test('the key yields to nothing but land, marks, hands and ports’ names: with 
     ['Rime', 'Gilt', 'Cairn'],
   );
 });
+
+test('a port the ship lies at keeps its name, beside the ship’s arrow where a mark takes its other side', () => {
+  const lettering = layOut({
+    ...ASK,
+    places: [
+      { text: 'Overlook', x: 300, y: 200, kind: 'port', chosen: false },
+      { text: 'The Broken Causeway', x: 288, y: 199, kind: 'patrol', chosen: false },
+    ],
+    ship: { x: 303, y: 198, heading: 1 },
+  });
+  const port = lettering.letters.find((letter) => letter.kind === 'port');
+  assert.equal(port?.side, 'right');
+  const box = nameBox(port!, 'right', widthOf('Overlook', 'port'), 1);
+  assert.ok(box.x >= 303 + 10, 'clear of the arrow');
+});

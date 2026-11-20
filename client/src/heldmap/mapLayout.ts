@@ -60,6 +60,9 @@ export interface MapLetter {
   readonly kind: string;
   readonly chosen: boolean;
   readonly side: 'right' | 'left' | 'centre' | null;
+  /** How far a place's name stands from its mark's middle, units: past its mark, or past the ship's arrow where that
+   *  stands on it. */
+  readonly away?: number | undefined;
   /** A water's colour on the difficulty ramp, which her name and its ring are inked in. */
   readonly colour?: string | undefined;
 }
@@ -107,7 +110,7 @@ export function markBox(kind: string, x: number, y: number, scale: number): Rect
 /** The box a name covers, ink pixels, its text `width` units wide: beside its mark on `side`, or a water's centred
  *  in her ring; each with the clear space a word keeps. */
 export function nameBox(
-  letter: Pick<MapLetter, 'x' | 'y' | 'kind'>,
+  letter: Pick<MapLetter, 'x' | 'y' | 'kind' | 'away'>,
   side: 'right' | 'left' | 'centre',
   width: number,
   scale: number,
@@ -123,10 +126,30 @@ export function nameBox(
       height: height + SPACE * 2 * scale,
     };
   }
-  const reach = (markHalf(letter.kind) + NAME_GAP) * scale;
+  const reach = (letter.away ?? markHalf(letter.kind) + NAME_GAP) * scale;
   const span = (width + SPACE * 2) * scale;
   const x = side === 'right' ? letter.x + reach - SPACE * scale : letter.x - reach - width * scale - SPACE * scale;
   return { x, y: top, width: span, height: height + SPACE * 2 * scale };
+}
+
+/** Where a place's name may stand: right of its mark, then left; where the ship's arrow stands on the mark, right and
+ *  left of the arrow after. */
+function besideSpots<T extends { x: number; y: number; kind: string }>(
+  letter: T,
+  ship: { x: number; y: number } | null,
+  scale: number,
+): (T & { side: 'right' | 'left'; away: number | undefined })[] {
+  const spots = (['right', 'left'] as const).map((side) => ({
+    ...letter,
+    side,
+    away: undefined as number | undefined,
+  }));
+  if (ship && overlaps(markBox('ship', ship.x, ship.y, scale), markBox(letter.kind, letter.x, letter.y, scale))) {
+    const past = markHalf('ship') + NAME_GAP;
+    spots.push({ ...letter, side: 'right', away: past + (ship.x - letter.x) / scale });
+    spots.push({ ...letter, side: 'left', away: past + (letter.x - ship.x) / scale });
+  }
+  return spots;
 }
 
 /** Where a water's name may stand, nearest her point first: on it, then a line and two above and below, each held
@@ -187,9 +210,9 @@ export function layOut(ask: LayoutAsk): Lettering {
       laid[index] = { ...letter, ...spot, side: 'centre' };
       continue;
     }
-    const side = (['right', 'left'] as const).find((each) => clear(nameBox(letter, each, width, scale))) ?? null;
-    if (side) taken.push((boxes[index] = nameBox(letter, side, width, scale)));
-    laid[index] = { ...letter, side };
+    const spot = besideSpots(letter, ask.ship, scale).find((each) => clear(nameBox(each, each.side, width, scale)));
+    if (spot) taken.push((boxes[index] = nameBox(spot, spot.side, width, scale)));
+    laid[index] = spot ?? { ...letter, side: null };
   }
   if (!ask.key) return { letters: laid.filter((letter) => letter !== null), ship: ask.ship, key: null, scale };
   const size = { width: ask.key.width * scale, height: ask.key.height * scale };

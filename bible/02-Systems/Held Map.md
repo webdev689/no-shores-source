@@ -88,7 +88,8 @@ war, and a click on it sets the ship's destination.
     chosen is named in the route's red-brown. Every word is haloed in the parchment's colour, 3 px, so it reads at
     least 4.5 : 1 over the coasts' lines and the washes.
   - *Alignment.* A place's name stands right of its mark, its middle on the mark's, 5 px from it; where the right is
-    taken or off the map, the same on the left. A water's name is centred on her label point.
+    taken or off the map, the same on the left; where the ship's arrow stands on the mark and both are taken, the same
+    right and then left of the arrow. A water's name is centred on her label point.
   - *The clear region.* The thumbs of every set of gauntlets reach over the parchment in any frame of their fidget, as
     measured from the forge's strips (274 × 181 texels a frame): the left over the painting's shares 0-0.29 across and
     0.45-0.56 down, the right over 0.71-1 across and 0.46-0.57 down (`HANDS_COVER`). No name and not the key stands
