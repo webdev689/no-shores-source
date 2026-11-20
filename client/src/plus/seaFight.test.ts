@@ -31,6 +31,8 @@ const card = {
   state: 'afloat',
   hostile: true,
   boardKey: null,
+  faction: 2,
+  band: 'orange',
 } as const;
 
 test("the rose's chip says its load, and the seconds a side still loads", () => {

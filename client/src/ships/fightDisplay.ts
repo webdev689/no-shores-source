@@ -4,6 +4,7 @@
 import type { SeaFightModel } from '../plus/seaFight.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import type { FightFeel } from './fightFeel.ts';
+import { rankBand } from '../rules/roster.ts';
 import { hullOfCaptain, HULL_NAMES } from './hulls.ts';
 
 /** A side's flash as it comes ready, seconds (DFO's READY_FLASH_S). */
@@ -72,6 +73,8 @@ export function fightDisplay(
           state,
           hostile: near.hostile,
           boardKey: state === 'struck' && board.boardable ? board.boardKey : null,
+          faction: near.faction,
+          band: near.hostile ? rankBand(near.rank) : 'ally',
         }
       : null,
     tally: feel.tally(now),

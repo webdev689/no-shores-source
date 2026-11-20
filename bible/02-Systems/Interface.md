@@ -400,15 +400,22 @@ frame, never pressed, from the fight's first frame to its last, at sea (`Hud.sea
 fight (`ships/fightOverlay.ts`); on a struck ship's deck it gives way to the fight on foot's display ([[Naval Combat]]).
 The fight's panel leaves the Sloop's own hurts and guns to it:
 
-- **The Sloop's plate**, at the bottom right, 272 px wide: "Your Sloop", its hull, sails and crew as bars cut in ten bands
-  (hull red, canvas bone, crew green), an "On fire" chip while it burns and a "Braced" chip while it braces.
+The plate and the card are the on-foot HUD's own build, so the sea reads as the same HUD: both wear the kit's bar sheet
+(`plus/barSheet.ts`, worn on foot by `combat/hudSheet.ts` too) and its bar (`plus/meter.ts`, with its lost strip and
+falling pieces).
+
+- **The Sloop's plate**, at the bottom right, is the vitals' window (as `combat/vitals.ts` builds it): three labelled
+  bars, Hull, Sails and Crew, each with its name and its percentage written inside it (hull red as health, sails bone,
+  crew green as stamina), the hull's frame flashing blood at a quarter or less as health's does; an "On fire" chip while
+  it burns and a "Braced" chip while it braces, the kit's chips.
 - **The battery rose** on the plate: bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
   loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
   blow came from (bow, stern, port or starboard, by where it struck the Sloop) is outlined red for 1.4 s.
-- **The card**, centred under the compass, 400 px wide at most, on the ship the look is on (while the Sloop's guns are laid,
-  the captain nearest where they fall; else the nearest captain): its name, its class and how far
-  ("Brig - 70 m"), its hull and sail bars, and its state: "Hostile", "Colors struck", "Colors struck - E: board"
+- **The card**, centred under the compass, is the target's plate (as `combat/foePlate.ts` builds it), light and never a
+  box, on the ship the look is on (while the Sloop's guns are laid, the captain nearest where they fall; else the nearest
+  captain): its faction's emblem framed, its name, one hull bar in its rank's colour (an ally's blue), and as small
+  words its class and how far ("Brig - 70 m") and its state: "Hostile", "Colors struck", "Colors struck - E: board"
   once it can be boarded, or "Going down". The ships' plates keep under it while it shows, as under the compass.
 - **The tally**, under the middle of the screen, for 4 s once the Sloop's last volley's last ball is down: "3 of 6 balls
   struck - 1 below the waterline - 2 in the rigging".
