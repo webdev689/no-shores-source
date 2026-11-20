@@ -115,13 +115,15 @@ export class FightBlood {
   }
 
   /** Every fighter the page knows, keyed by who it is, with the id the room's events name it by. */
-  private fighters(fight: Fighting): Map<number, { key: string; view: FighterView }> {
-    const seen = new Map<number, { key: string; view: FighterView }>();
+  private fighters(fight: Fighting): Map<number, { key: string; view: FighterView; player: boolean }> {
+    const seen = new Map<number, { key: string; view: FighterView; player: boolean }>();
     const own = fight.own;
-    if (own) seen.set(fight.player, { key: `player ${fight.player}`, view: own });
+    if (own) seen.set(fight.player, { key: `player ${fight.player}`, view: own, player: true });
     for (const other of fight.others.values())
-      if (other.fighter) seen.set(other.player, { key: `player ${other.player}`, view: fighterView(other.fighter) });
-    for (const foe of fight.foes.values()) seen.set(foe.id, { key: `foe ${foe.id}`, view: foe.view });
+      if (other.fighter)
+        seen.set(other.player, { key: `player ${other.player}`, view: fighterView(other.fighter), player: true });
+    // A crewman on the players' side is a foe of the room's, and his blood is a foe's.
+    for (const foe of fight.foes.values()) seen.set(foe.id, { key: `foe ${foe.id}`, view: foe.view, player: false });
     return seen;
   }
 
@@ -133,8 +135,9 @@ export class FightBlood {
     for (const event of events) {
       const defender = fighters.get(event.defender)?.view;
       if (event.kind !== EVENT.hit || event.amount <= 0 || !defender) continue;
-      const striker = fighters.get(event.striker)?.view;
-      const player = striker?.side === 'players';
+      const striking = fighters.get(event.striker);
+      const striker = striking?.view;
+      const player = !!striker && !!striking?.player;
       const heavy = player && (striker.arms & 0xff) === WARHAMMER;
       // Only a player's swing throws its spray, the way its blade went (DFO's swingThrow); a shot's or a foe's lands
       // where it struck. The way it struck is from the striker to the struck.

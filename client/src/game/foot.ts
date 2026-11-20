@@ -426,10 +426,11 @@ export class Foot {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
+      { id: fight.player, player: true, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
       ...[...otherViews].map(([number, view]) => ({
         id: number,
+        player: true,
         view,
         ...handsOf(this.otherPlayers.placed.get(number)?.dress),
       })),

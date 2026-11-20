@@ -359,7 +359,7 @@ export class WreckRun {
       left: dress?.outfit.left ?? null,
     });
     const strikers = [
-      { id: fight.player, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
+      { id: fight.player, player: true, view: fight.own, ...handsOf(walker.you.dress), looks: walker.glowing },
       ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
     ];
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
