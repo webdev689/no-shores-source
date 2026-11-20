@@ -6,7 +6,7 @@ import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMa
 import type { Point2 } from '../overworld/ground.ts';
 import type { ScreenMark } from './hud.ts';
 import { distanceText } from './hudLaw.ts';
-import { LOCKED_WORDS, socialLocked } from './nodes.ts';
+import { LOCKED_WORDS, socialLater, socialLocked } from './nodes.ts';
 import { declutter, namesShown, PORT_SEEN_M } from './seaLaw.ts';
 
 /** How far in from the picture's top and foot a held mark stands, clear of the place's name and, at sea, the sea's
@@ -36,7 +36,8 @@ export function seaMarks(
     view === 'sail'
       ? island.filter((mark) => mark.kind === 'port' && away(mark) <= PORT_SEEN_M)
       : view === 'landing'
-        ? side
+        ? // A desolate city's social space is no landing, and shows no mark.
+          side.filter((mark) => !socialLocked(mark.id) || socialLater(mark.id))
         : [];
   const laid = placeMarks(marks, pose, viewport, view === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side);
   const placed = view === 'sail' ? declutter(laid, MARK_GAP_PX) : laid;
@@ -45,7 +46,7 @@ export function seaMarks(
     const mark = marks.find((one) => one.id === each.id);
     return {
       ...each,
-      note: socialLocked(each.id) ? LOCKED_WORDS : distanceText(mark ? away(mark) : each.distance),
+      note: socialLater(each.id) ? LOCKED_WORDS : distanceText(mark ? away(mark) : each.distance),
       chosen: each.id === chosen,
       named: named.has(each.id) || each.id === chosen,
     };

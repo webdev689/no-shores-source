@@ -28,7 +28,7 @@ test('the smiths sell their halves of the day’s wares, red when short; the Wea
   const wares = [item({ id: 0, kind: 13, rarity: 2, price: 2_000 }), item({ id: 0, kind: 2, rarity: 2, price: 600 })];
   const gear = state({ wares, aurem: 1_000, cratePrice: 300, crates: 5 });
   const [armour] = rowsOf('armorsmith', gear);
-  assert.deepEqual(headings(rowsOf('armorsmith', gear)), ['Armor']);
+  assert.deepEqual(headings(rowsOf('armorsmith', gear)), ['Armour']);
   assert.deepEqual(
     [armour?.wares[0]?.short, armour?.wares[0]?.ask],
     [true, { kind: ASKS.vend, column: 0, node: 0 }],

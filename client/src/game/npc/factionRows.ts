@@ -83,12 +83,15 @@ function riseMore(gear: GearState, fragments: number, essence: number) {
   return { more: more.join(', '), held };
 }
 
+/** A faction as a sentence names it, from its name alone: "the Veiled", "the Stormcallers". */
+const called = ({ name }: { readonly name: string }) => `the ${name.replace(/^The /, '')}`;
+/** The same at a sentence's start. */
+const opening = (faction: { readonly name: string }) => `T${called(faction).slice(1)}`;
+
 /** What a faction's armour and weapons are drawn in: its own colour, by name. */
 function colourWords(id: number): string {
   const faction = factionOf(id)?.faction;
-  return faction
-    ? `Drawn in ${faction.gear.colour}, a colour none but the ${faction.name.replace(/^The /, '')} wear.`
-    : '';
+  return faction ? `Drawn in ${faction.gear.colour}, a colour none but ${called(faction)} wear.` : '';
 }
 
 /** The faction's pieces as the room made them, and how many the player carries in a piece's slot. */
@@ -105,13 +108,16 @@ function gearRows(id: number, gear: GearState, rank: number, pledged: boolean): 
   const { sold, carried } = soldBy(id, gear);
   const ask = (item: GearItem) => ({ kind: ASKS.buyFactionWare, column: id, node: item.id });
   const piece = (item: GearItem, from: number): Ware => {
-    const [low, full] = [rank < from, carried(item).length >= CARRIED_MOST];
+    // Each piece is made at its own level, and the room sells none to a player who could not wear it yet.
+    const [rankLow, levelLow] = [rank < from, gear.level < item.level];
+    const [low, full] = [rankLow || levelLow, carried(item).length >= CARRIED_MOST];
     const ware = itemWare(`gear-${item.id}`, item, { amount: item.price, currency: 'aurem' }, false, null);
+    const lowWords = rankLow ? `From rank ${from}` : `From level ${item.level}`;
     return {
       ...ware,
       words: item.bucket === SLOT_CLOAK ? itemWords(item) : `${itemWords(item)} ${colourWords(id)}`,
       short: !low && gear.aurem < item.price,
-      note: low ? `From rank ${from}` : full ? 'Its slot carries nine' : '',
+      note: low ? lowWords : full ? 'Its slot carries nine' : '',
       ask: low || full ? null : ask(item),
       dim: low,
     };
@@ -166,7 +172,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
     name: 'Package',
     rarity: 2,
     picture: { kind: 'package' },
-    about: `From the ${faction.name}`,
+    about: `From ${called(faction)}`,
     words: 'A Vestige and Aurem, left for you as your rank rose.',
     note: room ? '' : 'Ten Vestiges carried',
     ask: room ? { kind: ASKS.collectPackage, column: id } : null,
@@ -178,7 +184,7 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
   const pledge: Ware = {
     ...plain,
     key: 'pledge',
-    name: pledged ? `Pledged to the ${faction.name}` : `Pledge to the ${faction.name}`,
+    name: pledged ? `Pledged to ${called(faction)}` : `Pledge to ${called(faction)}`,
     picture: { kind: 'emblem', emblem: faction.emblem },
     about: pledged ? 'Pledged' : switching ? 'Your pledge moves here' : 'Your first pledge is free',
     words: faction.words,
@@ -232,8 +238,8 @@ export function factionRows(id: number, gear: GearState, choosing: boolean): Row
       picture: { kind: 'art', art: art.id },
       about: none ? NO_FRAGMENT_LEFT : 'Choose a fragment to learn',
       words: none
-        ? `The ${faction.name} raise your ${art.name} Art.`
-        : `The ${faction.name} raise your ${art.name} Art, and teach you a fragment of its Core.`,
+        ? `${opening(faction)} raise your ${art.name} Art.`
+        : `${opening(faction)} raise your ${art.name} Art, and teach you a fragment of its Core.`,
       price: { amount: rise.aurem, currency: 'aurem', ...(more ? { more } : {}) },
       short,
       ...(none

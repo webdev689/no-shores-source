@@ -106,3 +106,17 @@ test('an Ammo box taken gains its shots and a crate gained shows; a crate used g
     [['ammo-crate', 'Ammo crate', 2, 'ammo-crate']],
   );
 });
+
+test('Shapes gained and a cosmetic newly kept are gains, each with a picture of its own', () => {
+  const gains = gainsOf(state({ shapes: 2, cosmetics: [0] }), state({ shapes: 6, cosmetics: [0, 1, 25] }));
+  assert.deepEqual(
+    gains.map((each) => [each.key, each.name, each.count]),
+    [
+      ['shapes', 'Shapes', 4],
+      ['cosmetic-1', 'Harbour Blue', 1],
+      ['cosmetic-25', 'Wraith Mist', 1],
+    ],
+  );
+  assert.ok(gains.every((each) => each.icon?.startsWith('data:image/svg+xml')));
+  assert.deepEqual(gainsOf(state({ shapes: 6 }), state({ shapes: 1 })), [], 'Shapes spent are no gain');
+});

@@ -1,6 +1,6 @@
 // A keeper's wares drawn as Destiny 1's vendors draw theirs: a row of tiles under an engraved heading ruled across,
 // each tile the ware's picture in a frame of its rarity with its price beneath, red with "Not enough" when short, and
-// its card beside it on hover or focus. A ware is held to buy, as the vendors' wares always were (gearDom's hold).
+// its card beside it on hover or focus. A ware is held to buy (gearDom's hold), so a stray click buys nothing.
 import { make } from '../../editor/dom.ts';
 import type { GearItem } from '../../network/gearMessages.ts';
 import { WORN } from '../../player/gear.ts';

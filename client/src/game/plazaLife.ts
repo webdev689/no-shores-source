@@ -32,9 +32,8 @@ const OFFERS: Readonly<Record<string, Offer>> = Object.fromEntries(
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
   for (const station of stations) {
     const offer = OFFERS[station.kind];
-    const near = Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M;
-    // A keeper away from their counter (the elder on her welcome) serves nothing there, so two of her never speak.
-    if (offer && near && !awayFromCounters.has(station.kind)) return offer;
+    // A keeper away from their counter (the elder on her welcome) is called back to it as it is opened.
+    if (offer && Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M) return offer;
   }
   return null;
 }

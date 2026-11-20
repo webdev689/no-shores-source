@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { keeperMap, keeperMarkSvg, shapesSvg } from './npcMarks.ts';
 
-test('every keeper but the factions’ and the vault’s has a sign of its own in a diamond', () => {
-  const kinds = ['mage', 'armorsmith', 'weaponsmith', 'tailor', 'tack', 'shape'];
+test('every keeper but the factions’ has a sign of its own in a diamond', () => {
+  const kinds = ['mage', 'vault', 'armorsmith', 'weaponsmith', 'tailor', 'tack', 'shape'];
   const maps = kinds.map((kind) => keeperMap(kind)?.join('/'));
   assert.ok(maps.every(Boolean));
   assert.equal(new Set(maps).size, kinds.length, 'no two drawn the same');

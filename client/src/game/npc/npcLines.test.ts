@@ -19,14 +19,14 @@ test('a keeper’s greetings are said in turn, each keeper’s turns its own', (
   assert.equal(turns.next('mage', 'Short'), null, 'a keeper with no such line says nothing');
 });
 
-test('every keeper but the vault’s greets, thanks and is heard in a voice of the cast; all but the Mage turn the short away', () => {
+test('every keeper greets, thanks and is heard in a voice of the cast; all but the Mage and the vault’s turn the short away', () => {
   const turns = new LineTurns(KEEPER_LINES);
   for (const [kind, keeper] of Object.entries(KEEPERS)) {
-    if (kind === 'vault') continue;
     const hello = new Set([0, 1, 2].map(() => turns.next(keeper.speaker, 'Hello')?.say));
     assert.equal(hello.size, 3, `${kind} has three greetings`);
     assert.ok(turns.next(keeper.speaker, 'Thanks'), `${kind} thanks`);
-    if (kind !== 'mage') assert.ok(turns.next(keeper.speaker, 'Short'), `${kind} turns the short away`);
+    if (kind !== 'mage' && kind !== 'vault')
+      assert.ok(turns.next(keeper.speaker, 'Short'), `${kind} turns the short away`);
   }
 });
 

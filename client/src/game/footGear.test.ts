@@ -35,20 +35,13 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
   );
 });
 
-test('a counter whose keeper is away offers nothing until they are back', () => {
+test('a counter whose keeper is away still opens, which calls her back to it', () => {
   const LAMPLIGHTERS: StationInfo = { kind: 'lamplighters', keeper: [0, -2], counter: [0, 0] };
   const here = { stations: [LAMPLIGHTERS] };
-  assert.ok(
-    useAt(0, 0, here, null, () => undefined),
-    'served while she stands behind it',
-  );
   awayFromCounters.add('lamplighters');
   try {
-    assert.equal(
-      useAt(0, 0, here, null, () => undefined),
-      null,
-      'empty while she walks the plaza',
-    );
+    assert.equal(useAt(0, 0, here, null, () => undefined)?.words, 'Lamplighters', 'offered while she walks the plaza');
+    assert.equal(groundRings(null, here, () => 0, 0).length > 0, true, 'and ringed');
   } finally {
     awayFromCounters.delete('lamplighters');
   }

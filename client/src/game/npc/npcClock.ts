@@ -3,7 +3,7 @@
 
 const DAY_S = 86_400;
 
-/** Monday 00:00 UTC comes three days after the epoch's Thursday; Shape goes on Sunday at 21:00 UTC
+/** The epoch's Thursday stands three days into a week begun on Monday 00:00 UTC; Shape goes on Sunday at 21:00 UTC
  *  (crates/gear/src/shape.rs). */
 const EPOCH_PAST_MONDAY_S = 3 * DAY_S;
 const WEEK_S = 7 * DAY_S;
