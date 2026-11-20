@@ -8,8 +8,8 @@ use crate::captain::{Captain, Mode};
 use crate::damage::{State, Zone};
 use crate::fight::{Aim, CAPTAIN, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
 use crate::guns::Shot;
-use crate::shots::ShotEvent;
 use crate::shots::Stop;
+use crate::shots::{ShipId, ShotEvent};
 use sailing::ship::Helm;
 use sailing::waters::Waters;
 
@@ -170,7 +170,8 @@ fn captain_numbers(her: &Captain) -> [f64; 4] {
 
 /// The fight as the browser shows it, after a tick whose events are `events`, its lay the look `aim` holds over
 /// `waters` at `time`: a fight of the player's Sloop and `CAPTAIN`'s (`Fight::meet`), then any other captains still
-/// in it, each with her faction and rank; none for a fight without both.
+/// in it, each with her number in the fight (as its events name her), her faction and rank; none for a fight without
+/// both.
 #[must_use]
 pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters, time: f64) -> Vec<f64> {
     let (Some(player), Some(captain)) = (fight.vessel(PLAYER), fight.vessel(CAPTAIN)) else { return Vec::new() };
@@ -184,15 +185,15 @@ pub fn view_numbers(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: 
     numbers.extend(vessel_numbers(player));
     numbers.extend(vessel_numbers(captain));
     numbers.extend(captain_numbers(&command.her));
-    let others: Vec<(&Vessel, &Captain)> = fight
+    let others: Vec<(ShipId, &Vessel, &Captain)> = fight
         .ships
         .iter()
         .filter(|(id, vessel)| **id != CAPTAIN && vessel.in_fight())
-        .filter_map(|(_, vessel)| vessel.command().map(|command| (vessel, &command.her)))
+        .filter_map(|(id, vessel)| vessel.command().map(|command| (*id, vessel, &command.her)))
         .collect();
     numbers.push(others.len() as f64);
-    for (vessel, her) in others {
-        numbers.extend([f64::from(her.commission.faction), f64::from(her.commission.rank.number())]);
+    for (id, vessel, her) in others {
+        numbers.extend([f64::from(id), f64::from(her.commission.faction), f64::from(her.commission.rank.number())]);
         numbers.extend(vessel_numbers(vessel));
         numbers.extend(captain_numbers(her));
     }

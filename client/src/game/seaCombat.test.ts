@@ -24,6 +24,7 @@ const vessel: FightVessel = {
 };
 const captain: FightCaptain = {
   ...vessel,
+  id: 1,
   ship: [5400, 5500, 2, 0, 0, 0, 0, 2],
   name: 'Pirate Sloop',
   faction: 2,
@@ -67,8 +68,9 @@ test('a fight draws every Sloop, her footprint, everyone aboard and each bar at 
 });
 
 test('each captain keeps a plate of her own, keyed by her number in the fight, so a hit lowers her bar alone', () => {
-  const struck = { ...captain, hull: captain.max_hull / 2 };
-  const view: FightView = { ...FIRST, captain, others: [struck, { ...captain, ship: [5600, 5500, 0, 0, 0, 0, 0, 0] }] };
+  const struck = { ...captain, id: 2, hull: captain.max_hull / 2 };
+  const third = { ...captain, id: 3, ship: [5600, 5500, 0, 0, 0, 0, 0, 0] };
+  const view: FightView = { ...FIRST, captain, others: [struck, third] };
   const fight = new SeaCombat(roomSource(ROOM, view), view, MARKS, [], 0);
   const bars = fight.bars(1);
   assert.deepEqual(
@@ -78,6 +80,13 @@ test('each captain keeps a plate of her own, keyed by her number in the fight, s
   assert.deepEqual(
     bars.map((bar) => bar.share),
     [1, 0.5, 1],
+  );
+  // The second gone from the fight, as the wire leaves her out: the third keeps her own plate.
+  const after: FightView = { ...view, others: [third] };
+  const later = new SeaCombat(roomSource(ROOM, after), after, MARKS, [], 0).bars(1);
+  assert.deepEqual(
+    later.map((bar) => bar.key),
+    [1, 3],
   );
 });
 

@@ -23,6 +23,7 @@ const vessel: FightVessel = {
 };
 const captain: FightCaptain = {
   ...vessel,
+  id: 1,
   ship: [600, 800, 0, 0, 0, 0, 0, 2],
   name: 'Pirate Sloop',
   faction: 2,

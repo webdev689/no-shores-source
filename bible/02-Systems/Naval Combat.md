@@ -255,7 +255,9 @@ on, her temper drawn from her own seed. Every one comes to fight her at once: bo
 straight for her until she is in sight (750 m). A captain set where the water does not float her is refused. The
 land door's begin takes an optional `captains` list (each one's `x`, `y`, heading, faction and rank, and an optional
 `way` in m/s: given, she comes on under sail at it, else she lies at rest); its view carries every captain after the
-first in `others`, as the sea room's wire does. A captain going down carries, besides her `founder`, how she will lie
+first in `others`, as the sea room's wire does, each with her number in the fight (`id`, the first 1), as its events
+name her: a captain gone from the fight is left out, and every plate, message and count follows her by it. A captain
+going down carries, besides her `founder`, how she will lie
 once sunk (`sunk_founder`) and in how many seconds (`sinks_in`), so a drawing that lets go of the fight can carry her
 on under as the rules would. A fight begun with more than one captain is sighted on the panel by how many and the
 nearest ("3 ships are sighted, the nearest 820 m off."). The game's `SeaCombat` steps a fight

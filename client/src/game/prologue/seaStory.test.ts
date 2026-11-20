@@ -153,6 +153,7 @@ export const viewOf = (
   } as const;
   const [first, ...rest] = states.map((state, index) => ({
     ...vessel,
+    id: index + 1,
     ship: [10_300 + index * 50, 19_300, 3, 0, 0, 0, 0, 2],
     state,
     name: 'Pirate Sloop',

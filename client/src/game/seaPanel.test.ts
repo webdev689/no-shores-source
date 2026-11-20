@@ -18,6 +18,7 @@ const VESSEL: FightVessel = {
 };
 const captain = (state: FightCaptain['state'], runOut: FightCaptain['run_out'] = []): FightCaptain => ({
   ...VESSEL,
+  id: 1,
   name: 'Pirate Sloop',
   faction: 2,
   rank: 2,

@@ -51,8 +51,9 @@ const vessel: FightVessel = {
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
 };
-const captainAt = (x: number, state: FightVessel['state']): FightCaptain => ({
+const captainAt = (x: number, state: FightVessel['state'], id = 1): FightCaptain => ({
   ...vessel,
+  id,
   // The rules' own pose rides their own swell: the drawing takes her settling from `founder` alone.
   pose: [state === 'sinking' ? -7 : 0, 0, 0.1, 0],
   founder: state === 'sinking' ? [3, 0, 0.4] : [0, 0, 0],
@@ -66,7 +67,7 @@ const captainAt = (x: number, state: FightVessel['state']): FightCaptain => ({
   run_out: [],
 });
 const viewOf = (states: readonly FightVessel['state'][], events: FightEvent[] = []): FightView => {
-  const [first, ...rest] = states.map((state, index) => captainAt(5000 + 100 * index, state));
+  const [first, ...rest] = states.map((state, index) => captainAt(5000 + 100 * index, state, index + 1));
   if (!first) throw new Error('a fight has a captain');
   return {
     clock: 0,
