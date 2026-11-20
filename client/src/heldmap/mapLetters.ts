@@ -7,9 +7,9 @@ import { LINE, type Lettering, type MapLetter, markHalf, NAME_GAP, PORT_PX, RING
 
 /** The map's face, Overlook's own (face.css): a port's name a step larger than every other word. */
 export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_PX}px ${FACE}`;
-/** The inks besides the key's iron-gall (mapKey.ts): a lighter brown for ruins and nodes, the route's red-brown for the place
- *  chosen, and the parchment's own colour, which rings every word and fills each water's ring so it reads over the
- *  coasts' lines and the washes. */
+/** The inks besides the key's iron-gall (mapKey.ts): a lighter brown for ruins and nodes, the route's red-brown for
+ *  the place chosen, and the parchment's own colour, which rings every word and fills each water's ring so it reads
+ *  over the coasts' lines and the washes. */
 export const LIGHT_INK = '#5c4631';
 const ROUTE = '#781c14';
 export const PARCHMENT = '#eedebe';
