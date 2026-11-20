@@ -98,7 +98,7 @@ cartographer's, herbalist's and smith's stalls gave their alcoves to the new kee
 ## Locked social spaces
 
 Only Overlook's social space opens: the bake marks every other city's social node closed and the room opens none on
-it (`city::OPEN_SOCIAL_SPACES`). Shape visits Overlook alone (`city::SHAPE_VISITS`).
+it (`content/world/social.json`, which the page reads too). Shape visits Overlook alone (its `shapeVisits`).
 
 ## The keepers' screen
 

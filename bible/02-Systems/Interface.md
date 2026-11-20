@@ -447,8 +447,10 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   them. At the right their words, the currencies they deal in (Aurem; Shapes at Shape's; at a faction's its rank,
   its meter to the next and the materials an Art's rise takes), the band they speak in, then their wares in rows
   under engraved headings, each a gear tile held to buy, its price under it, red with "Not enough" when short, a card
-  on hover or focus. At the foot "Stock refresh" and the time to the next midnight, UTC, for the smiths, the Tailor
-  and the Tack, or "Leaves in" and the time left for Shape. The footer: Hold (buy), I (Open Character), Esc
+  on hover or focus; a ware that cannot be asked for says why under its price (a level not reached, a pack full),
+  and "Not enough" is only for one the room would sell. At the foot "Stock refresh" and the time to the next
+  midnight, UTC (0:00:00 at midnight), for the smiths, the Tailor and the Tack, or "Leaves in" and the time left for
+  Shape, by the world's clock to Sunday 21:00 UTC. The footer: Hold (buy), I (Open Character), Esc
   (Dismiss). Arrow keys move among the tiles, Enter presses, Escape steps back, and the focus goes back where it
   came from.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown
@@ -456,17 +458,18 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   with how many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS,
   the day's six. The Tack: MOUNT, the day's four coats and bardings. A piece kept says so.
 - **A faction's rows** (`factionRows`): REPUTATION (the rank, the meter, what the next ranks keep, and each package
-  waiting held to collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, sold
-  only to the pledged; kept says so), ART (the faction's Art: its level as five pips, its bar, and when the bar is
+  waiting held to collect), PLEDGE (a press, priced when it is a switch, or "Pledged"), CAPE (the faction's cape, a
+  Legendary cloak worn at any level, sold only to the pledged and not while nine cloaks are carried; kept says so), ART (the faction's Art: its level as five pips, its bar, and when the bar is
   full a Rise press with the rise's price that opens a choice of the fragments not owned; with all six owned it rises
   at once, "No fragment left to choose") and FRAGMENTS (the Art's six, owned lit, the rest dim with their price, sold
   from the first rank).
-- **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape has gone. He comes
-  again on Friday."
+- **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
+  Fridays."
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
   refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
-  a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]].
+  a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]]. Once typed whole, the line is read to a
+  screen reader from a polite live copy.
 
 ## Emblems
 

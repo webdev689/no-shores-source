@@ -1,0 +1,5 @@
+{
+  "about": "Which cities' social spaces are open, and which Shape visits on his weekends, by city id (bible/05-Decisions/Only Overlook's Social Space Opens for Now.md). Read by the city crate (the bake marks the others' social nodes closed) and the page (it shows them locked).",
+  "open": ["overlook"],
+  "shapeVisits": ["overlook"]
+}

@@ -14,7 +14,8 @@ code:
   - crates/city/src/social.rs#plaza
   - crates/city/src/stations.rs#stations
   - crates/city/src/courtyard.rs#visitor_spots
-  - crates/city/src/lib.rs#OPEN_SOCIAL_SPACES
+  - crates/city/src/lib.rs#social_open
+  - content/world/social.json
   - crates/city/src/courtyard.rs#courtyard
   - crates/city/src/articulation.rs#articulated
   - crates/city/src/collision.rs#boxes_within
@@ -106,10 +107,10 @@ city stands on it:
    for a wall, so what is built beneath it is hidden and the city runs right up to its foot. No terrace wall crosses
    it.
 
-**Open and locked.** Only Overlook's social space opens for now (`OPEN_SOCIAL_SPACES`,
+**Open and locked.** Only Overlook's social space opens for now (`content/world/social.json`, read by the city crate and the page;
 [[Only Overlook's Social Space Opens for Now]]): the bake writes every other city's social node as closed, and the
 room opens none on it. In the page, over another city's island its social space's landing says "Opens later" and
-cannot be chosen, and a page asked to start there starts in Overlook. Shape visits Overlook alone (`SHAPE_VISITS`),
+cannot be chosen, and a page asked to start there starts in Overlook. Shape visits Overlook alone (the same file's `shapeVisits`),
 the only social node whose file carries his places.
 
 **Its people.** Each keeper stands behind their counter in their own dress (`client/src/game/keepers.ts`), Elder

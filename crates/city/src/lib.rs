@@ -213,14 +213,42 @@ pub fn social_id(city_id: &str) -> String {
     format!("{city_id}{}", land::sites::SOCIAL_SUFFIX)
 }
 
-/// The cities whose social spaces are open, by id: Overlook's alone for now. The other port cities' wait, locked,
-/// for later.
-pub const OPEN_SOCIAL_SPACES: [&str; 1] = ["overlook"];
-/// The cities Shape visits on his weekends, by id: Overlook alone for now.
-pub const SHAPE_VISITS: [&str; 1] = ["overlook"];
+/// Which cities' social spaces are open, and which Shape visits, by id (`content/world/social.json`, which the page
+/// reads too): Overlook's alone for now, the other port cities' waiting, locked, for later.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SocialSpaces {
+    open: Vec<String>,
+    shape_visits: Vec<String>,
+}
+
+fn social_spaces() -> &'static SocialSpaces {
+    static READ: std::sync::OnceLock<SocialSpaces> = std::sync::OnceLock::new();
+    READ.get_or_init(|| {
+        serde_json::from_str(include_str!("../../../content/world/social.json"))
+            .expect("content/world/social.json reads: its test says so")
+    })
+}
 
 /// Whether a city's social space is open.
 #[must_use]
 pub fn social_open(city_id: &str) -> bool {
-    OPEN_SOCIAL_SPACES.contains(&city_id)
+    social_spaces().open.iter().any(|open| open == city_id)
+}
+
+/// Whether Shape visits a city's social space.
+#[must_use]
+pub fn shape_visits(city_id: &str) -> bool {
+    social_spaces().shape_visits.iter().any(|visited| visited == city_id)
+}
+
+#[cfg(test)]
+mod social_spaces_tests {
+    #[test]
+    fn only_overlooks_social_space_is_open_and_shape_visits_it_alone() {
+        assert!(super::social_open("overlook") && super::shape_visits("overlook"));
+        for city in ["sunspire", "rimeholt", "cairnwatch", "Overlook", ""] {
+            assert!(!super::social_open(city) && !super::shape_visits(city), "{city}");
+        }
+    }
 }

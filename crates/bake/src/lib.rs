@@ -128,7 +128,7 @@ pub fn nodes_of(continent: &Continent, edits: Edits, blocks: &Blocks) -> Result<
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
         let counters = social.stations.iter().filter(|station| answers_gear(station.kind));
-        let visited = city::SHAPE_VISITS.contains(&plan.id.as_str());
+        let visited = city::shape_visits(&plan.id);
         NodeFile {
             counters: counters.map(|station| Counter { kind: station.kind, at: station.counter }).collect(),
             shape_spots: if visited { social.visitor_spots.clone() } else { Vec::new() },

@@ -250,7 +250,8 @@ the factions' counters are in [[Factions]].
   and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes. **Shapes** come
   only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
-- The room keeps the minute, set by its host each second, whose day sets the wares and whose week sets Shape. It
+- The room keeps the minute, set by its host each second (and by the page as its own room steps, playing alone),
+  whose day sets the wares and whose week sets Shape. It
   sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place, his
   wares and the minutes until he goes with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware, 16 an Ammo

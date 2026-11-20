@@ -1,3 +1,4 @@
+import social from '../../../content/world/social.json' with { type: 'json' };
 import { type NodeInfo, ringMiddle } from './worldData.ts';
 
 type Point = readonly [number, number];
@@ -69,9 +70,9 @@ export function socialNode(plan: CityPlan, continent: string): NodeInfo {
   };
 }
 
-/** The cities whose social spaces open, by id, as the city crate has them (`OPEN_SOCIAL_SPACES`): Overlook's alone.
- *  The other ports' wait, locked, for later: shown so, and never gone to. */
-export const OPEN_SOCIAL_SPACES: readonly string[] = ['overlook'];
+/** The cities whose social spaces open, by id (`content/world/social.json`, which the city crate reads too): Overlook's
+ *  alone. The other ports' wait, locked, for later: shown so, and never gone to. */
+export const OPEN_SOCIAL_SPACES: readonly string[] = social.open;
 /** What a locked social space says where it is offered. */
 export const LOCKED_WORDS = 'Opens later';
 const SOCIAL_SUFFIX = '-social';
