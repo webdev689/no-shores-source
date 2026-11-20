@@ -5,7 +5,7 @@ import type { Block } from '../rules/movementRules.ts';
 type Point = readonly [number, number, number];
 
 /** A body as a shot meets it: an upright cylinder this wide and tall from its feet (crates/combat/src/tuning.rs). */
-const BODY_RADIUS = 0.35;
+export const BODY_RADIUS = 0.35;
 export const BODY_HEIGHT = 1.8;
 /** The farthest the crosshair is laid, in metres: past it, the point that far out along the view. */
 export const CROSSHAIR_REACH = 120;

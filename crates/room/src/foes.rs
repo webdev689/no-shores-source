@@ -251,6 +251,8 @@ impl Room {
         self.quiet.clear();
         self.groups.clear();
         self.pending.retain(|pending| self.players.contains_key(&pending.blow.striker));
+        // Its garrison sent away, not beaten: no wave comes for it until it stands again.
+        self.no_waves();
     }
 
     /// Raises a foe just stood to its level, its health its kind's at that level, and gives it a whole shield of

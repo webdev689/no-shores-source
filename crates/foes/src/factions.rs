@@ -13,13 +13,16 @@ pub enum Presence {
     Both,
 }
 
-/// A faction: its number (its side's, 1 and up, on the wire), its name, its presence, and its ships by name.
+/// A faction: its number (its side's, 1 and up, on the wire), its name, its presence, its ships by name, and whether
+/// its groups' leaders fight screened: behind their followers' front, holding the line before their target as its
+/// shield-bearers do, until none of them stands unbroken, then going in at once.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Faction {
     pub number: u8,
     pub name: &'static str,
     pub presence: Presence,
     pub ships: &'static [&'static str],
+    pub screens: bool,
 }
 
 pub const GREY_TITHE: u8 = 1;
@@ -28,8 +31,14 @@ pub const PIRATES: u8 = 2;
 pub const CREW: u8 = 0;
 
 pub const FACTIONS: [Faction; 2] = [
-    Faction { number: GREY_TITHE, name: "The Grey Tithe", presence: Presence::Both, ships: &["Tithe Sloop"] },
-    Faction { number: PIRATES, name: "Pirates", presence: Presence::Sea, ships: &["Pirate Sloop"] },
+    Faction {
+        number: GREY_TITHE,
+        name: "The Grey Tithe",
+        presence: Presence::Both,
+        ships: &["Tithe Sloop"],
+        screens: true,
+    },
+    Faction { number: PIRATES, name: "Pirates", presence: Presence::Sea, ships: &["Pirate Sloop"], screens: false },
 ];
 
 /// The faction a number names, or none.
