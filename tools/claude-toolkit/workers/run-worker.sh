@@ -16,7 +16,10 @@ cd "$WT"
 # Refuse a brief copied from brief-common-template.md whose <...> lines were never filled in (check-tools expects this).
 left=$(grep -oE '<(the hand-off doc|project rules:|the session.s attribution lines)[^>]*>' "$BRIEF" | head -3 | tr '\n' ' ')
 [ -z "$left" ] || { echo "run-worker.sh: brief $BRIEF still has: $left(fill in the template's <...> lines first)" >&2; exit 2; }
-INBOX="$OUT/inbox-$NAME.md"; [ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
+INBOX="$OUT/inbox-$NAME.md"
+# A fresh run starts an empty inbox: one left by an earlier worker of this name is kept aside, not handed on.
+[ "$MODE" != "--resume" ] && [ -f "$INBOX" ] && mv "$INBOX" "$OUT/inbox-$NAME.$(date +%Y%m%d%H%M%S).md"
+[ -f "$INBOX" ] || printf '# Inbox for worker %s: the controller appends late owner changes here.\n' "$NAME" > "$INBOX"
 echo $$ > "$OUT/$NAME.pid"; trap 'rm -f "$OUT/$NAME.pid"' EXIT
 pgrep -x graphify >/dev/null || rm -f graphify-out/.rebuild.lock   # a stopped worker can leave a stale lock
 # A worktree holds only what git tracks. Link the main checkout's packages, and build here, once, what the client's
@@ -65,10 +68,19 @@ CAVE=$(python3 -c "import re,os;print(re.sub(r'\A---.*?---\s*','',open(os.path.e
 NOTE="CAVEMAN MODE ACTIVE (worker only): your final reply goes to the controller Claude, never to a person. Keep code, comments, commits, docs, ledger and report files in normal prose.
 Your inbox is $INBOX: re-read it before each commit and before your final report, and act on anything new in it (the controller appends late owner changes there)."
 export TASK_OBSERVER_ROLE=worker WORKER_INBOX=$INBOX
-C=(); [ "$MODE" = "--resume" ] && C=(-c)
-claude "${C[@]}" -p "$(cat "$BRIEF")" --append-system-prompt "$CAVE
+work() {   # work <prompt> [-c]: one headless run, its output to the log
+  claude "${@:2}" -p "$1" --append-system-prompt "$CAVE
 
 $NOTE" --strict-mcp-config --mcp-config "$CFG" \
-  --allowedTools "Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*" \
-  --max-turns 600 </dev/null >> "$OUT/$NAME.log" 2>&1
-echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
+    --allowedTools "Bash,Edit,Write,Read,Grep,Glob,Agent,Task,TodoWrite,Skill,mcp__serena__*,mcp__context7__*,mcp__headroom__*,mcp__claude-mem__*,mcp__skillsmp__*" \
+    --max-turns 600 </dev/null >> "$OUT/$NAME.log" 2>&1
+  echo "WORKER $NAME EXIT $?" >> "$OUT/$NAME.log"
+}
+C=(); [ "$MODE" = "--resume" ] && C=(-c)
+work "$(cat "$BRIEF")" "${C[@]}"
+# The branch is the deliverable: a run that ends with its edits uncommitted is resumed once to commit them.
+left=$(git status --porcelain | grep -vc 'graphify-out/')
+if [ "$left" -gt 0 ]; then
+  echo "WORKER $NAME UNCOMMITTED $left files: resumed once to commit" >> "$OUT/$NAME.log"
+  work "Your run ended with $left files changed and not committed. Re-read your inbox, finish what your brief and inbox still ask, run the brief's checks, commit on your branch with the brief's trailer, write your report and give the final reply the brief asks for." -c
+fi

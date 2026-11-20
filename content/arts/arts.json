@@ -1,6 +1,18 @@
 {
   "about": "The Arts: Overlook's subclasses (bible/05-Decisions/Arts Are Overlook's Subclasses.md), with Claude's numbers (Arts and Loadouts as Claude Shapes Them.md). Read by the rules (the gear crate) and the client alike. Times in seconds, distances in metres, damage before power as a weapon's is; element by the gear crate's numbers (1 Blaze, 2 Volt, 3 Cosmic).",
   "cast": { "releaseS": 0.3, "animaKillShare": 0.02 },
+  "levels": {
+    "about": "An Art rises from level 1 to 5 at its faction's counter. xp: the XP each level's bar holds, from level 1 to 2 first; rise: what each rise costs, to level 2 first; power and lasting: each level's share of a spell's harm and healing, and of how long it and what it gives last, level 1 first. Level 5 is the spells as written.",
+    "xp": [8000, 16000, 32000, 64000],
+    "rise": [
+      { "aurem": 1000, "fragments": 0, "essence": 0 },
+      { "aurem": 2500, "fragments": 0, "essence": 0 },
+      { "aurem": 5000, "fragments": 10, "essence": 0 },
+      { "aurem": 10000, "fragments": 0, "essence": 2 }
+    ],
+    "power": [0.6, 0.7, 0.8, 0.9, 1.0],
+    "lasting": [0.6, 0.7, 0.8, 0.9, 1.0]
+  },
   "arts": [
     {
       "id": 1,

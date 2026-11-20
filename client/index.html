@@ -172,6 +172,10 @@
           line-height: 33px;
         }
       }
+      /* While someone speaks, the hints give way to the dialogue box, which stands where a long list of keys reaches. */
+      #hud:has(> .speech-box:not([hidden])) .hints {
+        visibility: hidden;
+      }
       /* On foot the fight's display holds the compass; the game's own is the sea's. */
       #hud:has(> .fight:not([hidden])) > .compass-column {
         display: none;
@@ -526,6 +530,15 @@
       }
       .mark.port {
         --kind: #e8e4d6;
+      }
+      .mark.locked {
+        --kind: #8a8f96;
+      }
+      .mark.locked .glyph {
+        filter: grayscale(1);
+      }
+      .mark.locked .name {
+        color: var(--dim);
       }
       .veil {
         position: absolute;

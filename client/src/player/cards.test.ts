@@ -128,6 +128,20 @@ test('a dress warmed again asks for its moves only the first time, as a figure w
   assert.equal(asked, 2, 'once for each dress');
 });
 
+test('a move with no horse in it keeps one frame whatever the coat and barding, so a new coat composes none again', async () => {
+  const { forge, counts } = countedForge(40, 30);
+  const horsed = (coat: string | null, barding: string | null): Dress => ({
+    ...armed,
+    outfit: { ...armed.outfit, coat, barding },
+  });
+  forge.card(1, horsed(null, null), 'guard', 0, 0);
+  await pumped(forge, 2);
+  const once = counts.composed;
+  forge.card(1, horsed('grey', 'ember_plate'), 'guard', 0, 0);
+  await pumped(forge, 2);
+  assert.equal(counts.composed, once, 'the guard draws no horse: the frame kept serves');
+});
+
 test('a frame shown now is composed ahead of every frame warmed, and asks for the rest of its move with it', async () => {
   const walk = { cell: [1, 2], frames: 3, root: [0, 1] } as const;
   const moving: ForgeLooks = { bodies: { male: { anims: { walk }, layers: { body: ['walk'] } } } };
@@ -232,4 +246,61 @@ test('warming a new dress fetches every strip its moves draw, as drawn and as mi
   assert.ok(layers.includes('body_guard.png') && layers.includes('body_guard_z.png'), layers.join());
   assert.ok(layers.includes('sword_iron_guard.png'), 'the sword in its own fist');
   assert.ok(layers.includes('sword_iron_l_guard.png'), 'and in the other, as a mirrored view draws it');
+});
+
+test('a dye counts only on a figure with a layer that takes it, and a page picture goes through the composer', () => {
+  const jobs: ComposeJob[] = [];
+  const recording: Composer = {
+    offPage: true,
+    compose: (_key: string, job: ComposeJob) => {
+      jobs.push(job);
+      return new Promise(() => undefined);
+    },
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const coral = { ...armed, outfit: { ...armed.outfit, dye: 'coral' } };
+  const undyed = new Cards(maker, store, looks, colours, dyes, undefined, recording);
+  undyed.card(1, armed, 'guard', 0, 0);
+  undyed.card(2, coral, 'guard', 0, 0);
+  assert.equal(jobs.length, 1, 'nothing worn takes the dye, so the frame is the same one');
+  const dyeable = new Cards(maker, store, { ...looks, dye: ['sword_iron'] }, colours, dyes, undefined, recording);
+  dyeable.card(1, armed, 'guard', 0, 0);
+  dyeable.card(2, coral, 'guard', 0, 0);
+  assert.equal(jobs.length, 3, 'a dyed layer is drawn in it');
+  void undyed.picture(armed, 'guard', 0, 0, 'sword_iron');
+  assert.deepEqual(jobs.at(-1)?.alone, ['sword_iron'], 'the layer drawn by itself rides the job');
+});
+
+test('a dye worn reaches the composer with the armour it covers whole', () => {
+  const looks: ForgeLooks = {
+    bodies: {
+      male: {
+        anims: { idle: { cell: [1, 2], frames: 1, root: [0, 1] } },
+        layers: { body: ['idle'], cuirass_iron: ['idle'] },
+      },
+    },
+    dye: ['cuirass_iron'],
+    metal: ['cuirass_iron'],
+  };
+  const jobs: ComposeJob[] = [];
+  const recording: Composer = {
+    offPage: true,
+    compose: (_key: string, job: ComposeJob) => {
+      jobs.push(job);
+      return new Promise(() => undefined);
+    },
+    hurry: () => undefined,
+    prefetch: () => undefined,
+  };
+  const colours = { skins: { bodies: {} }, hair: { bodies: {} } };
+  const dyes = { palette: [], clothing: {}, armour: {} };
+  const forge = new Cards(maker, store, looks, colours, dyes, undefined, recording);
+  const dyed: Dress = { ...bare, outfit: { ...bare.outfit, armour: { cuirass: 'iron' }, garments: [], dye: 'coral' } };
+  forge.card(1, dyed, 'idle', 0, 0);
+  assert.deepEqual(jobs[0]?.whole, ['cuirass_iron']);
+  forge.card(2, { ...dyed, outfit: { ...dyed.outfit, dye: null } }, 'idle', 0, 0);
+  assert.deepEqual(jobs[1]?.whole, [], 'own colours cover nothing');
 });

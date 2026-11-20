@@ -34,6 +34,7 @@ fn course() -> Course {
             max_x: number(block, "maxX"),
             max_y: number(block, "maxY"),
             top: number(block, "top"),
+            bottom: number(block, "bottom"),
         })
         .collect();
     Course { start: [number(&json["start"], "x"), number(&json["start"], "y"), 0.0], blocks }

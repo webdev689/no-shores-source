@@ -61,8 +61,9 @@ export interface WreckLayout {
 const RADIANS = Math.PI / 180;
 
 /** A block from a box's west, north, east and south edges and its top. */
-function blockOf([minX = 0, minY = 0, maxX = 0, maxY = 0, top = 0]: readonly number[]): CourseBlock {
-  return { minX, minY, maxX, maxY, top };
+// A block stands from the sea's level up, the course's ground, unless the file gives its underside.
+function blockOf([minX = 0, minY = 0, maxX = 0, maxY = 0, top = 0, bottom = 0]: readonly number[]): CourseBlock {
+  return { minX, minY, maxX, maxY, top, bottom };
 }
 
 const pointOf = ([x = 0, y = 0]: readonly number[]): Point => [x, y];
@@ -86,7 +87,7 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
   const gate = zones[file.arena.zone - 1]?.gate;
   if (!gate) throw new Error("no gate closes the way into the wreck's arena");
   return {
-    course: file.course,
+    course: file.course.map((block) => ({ ...block, bottom: 0 })),
     wake: { at: [wakeX, wakeY], facing: wakeFacing * RADIANS },
     path: file.path.map(pointOf),
     zones,

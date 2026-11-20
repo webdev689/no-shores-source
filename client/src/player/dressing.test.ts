@@ -1,6 +1,10 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { dressFrom, figureOf, lookOutfit, rampsOf, wardrobeOf } from './dressing.ts';
+import { dressFrom, figureOf, layerRamps, lookOutfit, wardrobeOf } from './dressing.ts';
+
+const rampsOf = (...args: Parameters<typeof layerRamps>) => layerRamps(...args).ramps;
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
+import { COSMETICS, cosmeticRamp, factionRamp } from '../forge/cosmetics.ts';
 
 const LAYERS = [
   'body',
@@ -104,4 +108,159 @@ test('another player’s dress is taken only when it has a dress’s shape', () 
     JSON.stringify({ ...dress, outfit: { ...outfit, hair: { style: 'crop' } } }),
   ])
     assert.equal(dressFrom(broken), null, broken.slice(0, 60));
+});
+
+test('a dye worn takes every armour piece and garment, never a weapon, a shield, the cloak or the hair', () => {
+  const ramp = (light: number) => [[light, light, light] as const];
+  const table = { palette: [], clothing: { LightBrown: ramp(2), Red: ramp(1) }, armour: { Iron: ramp(3) } };
+  const looks = {
+    bodies: {},
+    dye: ['cuirass_iron', 'helm_iron', 'shirt_long_v', 'casual_cloak_plated', 'shield_kite_iron', 'pauldrons_chain'],
+    metal: ['cuirass_iron', 'helm_iron', 'shield_kite_iron', 'sheath_bow_long_iron', 'under_iron'],
+  };
+  const gear = [
+    'cuirass_iron',
+    'under_iron',
+    'helm_iron',
+    'pauldrons_chain',
+    'shirt_long_v',
+    'casual_cloak_plated',
+    'shield_kite_iron',
+    'sheath_bow_long_iron',
+    'sword_iron',
+    'hair_long',
+  ];
+  const armour = { cuirass: 'iron', helm: 'iron', pauldrons: 'chain' } as const;
+  const dyed = rampsOf(gear, { ...outfit, armour, dyes: { casual_cloak: 'Red' }, dye: 'coral' }, looks, table);
+  const coral = dyed['cuirass_iron'];
+  assert.equal(coral?.length, 16, 'the dye is a ramp of 16');
+  for (const layer of ['helm_iron', 'pauldrons_chain', 'shirt_long_v', 'under_iron'])
+    assert.equal(dyed[layer], coral, layer);
+  assert.deepEqual(dyed['casual_cloak_plated'], ramp(1), 'the cloak keeps its own dye');
+  assert.deepEqual(dyed['shield_kite_iron'], ramp(3), 'the shield keeps its metal');
+  for (const layer of ['sword_iron', 'hair_long']) assert.equal(dyed[layer], undefined, layer);
+  // Own Colours keeps every set's own metal.
+  assert.deepEqual(rampsOf(gear, { ...outfit, armour, dye: null }, looks, table)['cuirass_iron'], ramp(3));
+});
+
+test("a coat is the ridden horse's ramp, and a cape's cosmetic dye is its cloak's", () => {
+  const table = { palette: [], clothing: {}, armour: {} };
+  const looks = { bodies: {}, dye: ['formal_cloak_drape'], metal: [] };
+  const coated = rampsOf(
+    ['formal_cloak_drape'],
+    { ...outfit, coat: 'grey', dyes: { formal_cloak: 'stormcaller_blue' } },
+    looks,
+    table,
+  );
+  assert.equal(coated['horse']?.length, 16);
+  assert.deepEqual(coated['horse'], cosmeticRamp('grey', table.palette), 'the coat ramp');
+  assert.deepEqual(
+    coated['formal_cloak_drape'],
+    cosmeticRamp('stormcaller_blue', table.palette),
+    "the Stormcallers' blue",
+  );
+  assert.equal(rampsOf([], { ...outfit, coat: null }, looks, table)['horse'], undefined, 'Bay keeps its own');
+});
+
+test('a barding worn is stacked over the horse', () => {
+  const figure = figureOf(
+    { body: 'male', race: 'human', tone: 0.4, outfit: { ...outfit, barding: 'ember_plate' } },
+    drawn,
+  );
+  assert.equal(figure.barding, 'horse_warhorse');
+  assert.equal(figureOf({ body: 'male', race: 'human', tone: 0.4, outfit }, drawn).barding, undefined);
+});
+
+test('a barding is in the figure only for a move that draws the horse', () => {
+  const dress = { body: 'male', race: 'human', tone: 0.4, outfit: { ...outfit, barding: 'ember_plate' } } as const;
+  const ridden = { ...drawn, horse: ['horseidle'] };
+  assert.equal(figureOf(dress, ridden, 'horseidle').barding, 'horse_warhorse');
+  assert.equal(figureOf(dress, ridden, 'idle').barding, undefined, 'standing, the rider has no horse under them');
+});
+
+test('a dress is read back with its dye, coat and barding; a cosmetic of the wrong kind or none such is refused', () => {
+  const dress = {
+    body: 'male',
+    race: 'human',
+    tone: 0.3,
+    outfit: { ...outfit, dye: 'coral', coat: 'grey', barding: 'dawnfire' },
+  };
+  assert.deepEqual(dressFrom(JSON.stringify(dress)), dress);
+  const bare = { ...dress, outfit: { ...outfit, dye: null, coat: null, barding: null } };
+  assert.deepEqual(dressFrom(JSON.stringify(bare)), bare);
+  for (const broken of [
+    { dye: 'grey' },
+    { coat: 'coral' },
+    { barding: 'horse_warhorse' },
+    { dye: 'nonsense' },
+    { coat: 7 },
+    { barding: { id: 'dawnfire' } },
+  ])
+    assert.equal(
+      dressFrom(JSON.stringify({ ...dress, outfit: { ...outfit, ...broken } })),
+      null,
+      JSON.stringify(broken),
+    );
+});
+
+test("a faction's piece wears its faction's own colour over any dye worn, and put away still wears it", () => {
+  const ramp = (light: number) => [[light, light, light] as const];
+  const table = { palette: [], clothing: {}, armour: { Iron: ramp(3), Mages: ramp(5), Elven: ramp(6) } };
+  const layers = ['cuirass_mages', 'under_mages', 'helm_iron', 'sheath_bow_long_elven'];
+  const looks = { bodies: {}, dye: layers, metal: layers };
+  const dyes = { cuirass_mages: 'lamplighters', under_mages: 'lamplighters', bow_long_elven: 'stormcallers' };
+  const armour = { cuirass: 'mages', helm: 'iron' } as const;
+  const dyed = rampsOf(layers, { ...outfit, armour, dyes, dye: 'coral' }, looks, table);
+  assert.deepEqual(dyed['cuirass_mages'], factionRamp('lamplighters', table.palette));
+  assert.deepEqual(dyed['under_mages'], factionRamp('lamplighters', table.palette), 'the padding under it too');
+  assert.deepEqual(
+    dyed['sheath_bow_long_elven'],
+    factionRamp('stormcallers', table.palette),
+    'on the back, as in hand',
+  );
+  assert.deepEqual(dyed['helm_iron'], cosmeticRamp('coral', table.palette), 'the rest take the dye worn');
+});
+
+test("each faction's own colour is one no dye sells, and no other faction's", () => {
+  const looks = factions.factions.map((faction) => faction.gear.look.join());
+  assert.equal(new Set(looks).size, factions.factions.length);
+  for (const cosmetic of COSMETICS) assert.ok(!looks.includes(cosmetic.look.join()), cosmetic.id);
+});
+
+test('a dye worn and a faction colour cover their armour whole, and padding; garments, weapons and metals keep greys', () => {
+  const ramp = (light: number) => [[light, light, light] as const];
+  const table = { palette: [], clothing: { White: ramp(2) }, armour: { Elven: ramp(3), Iron: ramp(4) } };
+  const layers = ['cuirass_elven', 'under_elven', 'helm_mages', 'shirt_long_v', 'shield_kite_iron'];
+  const looks = { bodies: {}, dye: layers, metal: ['cuirass_elven', 'helm_mages', 'shield_kite_iron'] };
+  const armour = { cuirass: 'elven', helm: 'mages' } as const;
+  const dyes = { helm_mages: 'lamplighters', shirt_long_v: 'White' };
+  const { whole } = layerRamps(layers, { ...outfit, armour, dyes, dye: 'coral' }, looks, table);
+  assert.deepEqual(whole, ['cuirass_elven', 'under_elven', 'helm_mages']);
+  const own = layerRamps(layers, { ...outfit, armour, dyes, dye: null }, looks, table);
+  assert.deepEqual(own.whole, ['helm_mages'], 'with no dye worn, only the faction piece');
+});
+
+test("a faction's shield, bow and staff are covered whole by its colour, in hand or put away; a blade is not", () => {
+  const table = { palette: [], clothing: {}, armour: { Elven: [[3, 3, 3] as const] } };
+  const layers = [
+    'formal_cloak_plated',
+    'shield_kite_elven',
+    'slung_shield_kite_elven',
+    'sheath_bow_long_elven',
+    'staff_elven',
+    'sword_elven',
+    'casual_cloak_drape',
+  ];
+  const looks = { bodies: {}, dye: layers, metal: layers.slice(1, 5) };
+  const faction = 'stormcallers';
+  const dyes = {
+    formal_cloak: 'stormcaller_blue',
+    shield_kite_elven: faction,
+    bow_long_elven: faction,
+    staff_elven: faction,
+    sword_elven: faction,
+  };
+  const { ramps, whole } = layerRamps(layers, { ...outfit, dyes, dye: 'coral' }, looks, table);
+  assert.deepEqual(whole, layers.slice(1, 5));
+  assert.deepEqual(ramps['formal_cloak_plated'], cosmeticRamp('stormcaller_blue', table.palette), 'the cape its dye');
 });

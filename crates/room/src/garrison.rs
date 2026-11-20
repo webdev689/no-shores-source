@@ -148,19 +148,27 @@ fn groups(kind: NodeKind, draws: &mut Mulberry32) -> Vec<Group> {
     }
 }
 
-/// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, and never over
-/// its city's boxes or its whole section, which would cost more time and memory than a room has; a course's room over
-/// its blocks and the open ground round them, or over the sea, its blocks' tops alone.
+/// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, among its
+/// layout's boxes inside that square, and never over its whole section, which would cost more time and memory than a
+/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone.
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
-    let (walked, middle, around): (&[Block], (f64, f64), f64) = match section {
-        Some(section) => (&[], ground_middle(section, first), NODE_AROUND),
-        None => (blocks, first, GROUND_AROUND),
+    let (walked, bounds): (Vec<Block>, navmesh::Bounds) = match section {
+        Some(section) => {
+            let bounds = ground_around(&[], ground_middle(section, first), NODE_AROUND);
+            let inside = |block: &&Block| {
+                block.min_x < bounds.max_x
+                    && block.max_x > bounds.min_x
+                    && block.min_y < bounds.max_y
+                    && block.max_y > bounds.min_y
+            };
+            (blocks.iter().filter(inside).copied().collect(), bounds)
+        }
+        None => (blocks.to_vec(), ground_around(blocks, first, GROUND_AROUND)),
     };
-    let bounds = ground_around(walked, middle, around);
     match floor {
-        Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
-        Floor::Sea(_) => NavMesh::bake_over_sea(walked, bounds, &navmesh::AGENT),
-        Floor::Land(_) => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
+        Floor::Flat => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
+        Floor::Sea(_) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
+        Floor::Land(_) => NavMesh::bake_on(&walked, floor, bounds, &navmesh::AGENT),
     }
 }
 

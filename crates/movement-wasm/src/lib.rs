@@ -8,7 +8,7 @@ use land::ground::Ground;
 use movement::blocks::ground_at;
 use movement::floats::{BLOCK_FLOATS, BODY_FLOATS, CONTROLS_FLOATS};
 use movement::heights::RIM_CELL_M;
-use movement::{Block, Body, Controls, Heights, TICK_SECONDS, TUNING, Terrain, standing, step_body};
+use movement::{Block, Blocks, Body, Controls, Heights, TICK_SECONDS, TUNING, Terrain, standing, step_body};
 use std::cell::RefCell;
 
 pub mod reach_door;
@@ -17,7 +17,7 @@ pub mod reach_door;
 pub const STEP_FLOATS: usize = BODY_FLOATS + CONTROLS_FLOATS;
 
 thread_local! {
-    static COURSE: RefCell<Vec<Block>> = const { RefCell::new(Vec::new()) };
+    static COURSE: RefCell<Blocks> = RefCell::new(Blocks::default());
     static LAND: RefCell<OnLand> = const { RefCell::new(OnLand::Open) };
 }
 
@@ -49,7 +49,8 @@ fn floats_of(bytes: &[u8]) -> impl Iterator<Item = f64> {
     bytes.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default()))
 }
 
-/// Keeps the course's blocks, five numbers each, for every step after; answers how many it kept.
+/// Keeps the course's blocks, five numbers each, with the grid that finds the ones near a body, for every step after;
+/// answers how many it kept.
 pub fn set_course(bytes: &[u8]) -> usize {
     let floats: Vec<f64> = floats_of(bytes).collect();
     let blocks: Vec<Block> = floats
@@ -57,7 +58,7 @@ pub fn set_course(bytes: &[u8]) -> usize {
         .map(|numbers| Block::from_floats(numbers.try_into().unwrap_or(&[0.0; BLOCK_FLOATS])))
         .collect();
     let kept = blocks.len();
-    COURSE.with(|course| *course.borrow_mut() = blocks);
+    COURSE.with(|course| *course.borrow_mut() = Blocks::new(blocks));
     kept
 }
 
@@ -104,7 +105,7 @@ pub fn step(bytes: &mut [u8; STEP_FLOATS * 8]) {
     let body = Body::from_floats(body_floats.try_into().unwrap_or(&[0.0; BODY_FLOATS]));
     let controls = Controls::from_floats(controls_floats.try_into().unwrap_or(&[0.0; CONTROLS_FLOATS]));
     let next = COURSE
-        .with(|course| LAND.with(|land| step_body(&body, &controls, &course.borrow(), &*land.borrow(), TICK_SECONDS)));
+        .with(|course| LAND.with(|land| step_body(&body, &controls, &*course.borrow(), &*land.borrow(), TICK_SECONDS)));
     for (chunk, value) in bytes.chunks_exact_mut(8).zip(next.to_floats()) {
         chunk.copy_from_slice(&value.to_le_bytes());
     }
@@ -122,7 +123,7 @@ pub fn stand(bytes: &mut [u8; STEP_FLOATS * 8]) {
         match &*land {
             OnLand::Open => standing(x, y),
             OnLand::Land(ground) => {
-                let floor = COURSE.with(|course| ground_at(&course.borrow(), &*land, x, y, ground.height_at(x, y)));
+                let floor = COURSE.with(|course| ground_at(&*course.borrow(), &*land, x, y, ground.height_at(x, y)));
                 Body { z: floor, ..standing(x, y) }
             }
             OnLand::Deck(deck) => deck.standing(x, y),
@@ -288,8 +289,11 @@ mod tests {
 
     #[test]
     fn a_step_through_the_door_is_the_movement_crates_step() {
-        let ledge = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3 };
-        assert_eq!(set_course(&bytes_of(&[ledge.min_x, ledge.min_y, ledge.max_x, ledge.max_y, ledge.top])), 1);
+        let ledge = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 2.3, bottom: 0.0 };
+        assert_eq!(
+            set_course(&bytes_of(&[ledge.min_x, ledge.min_y, ledge.max_x, ledge.max_y, ledge.top, ledge.bottom])),
+            1
+        );
         let controls = Controls { forward: 1.0, yaw: 0.3, run: true, ..Controls::default() };
         let mut body = standing(0.5, 0.2);
         for _ in 0..30 {

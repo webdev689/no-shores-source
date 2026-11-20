@@ -65,6 +65,8 @@ export function oklab(red: number, green: number, blue: number): [number, number
 
 /** How much more a step of hue counts than a step of light when finding the nearest palette colour. */
 const HUE_WEIGHT = 4;
+/** How far apart two OKLab lightnesses may be and count as one, past the rounding of the palette's kept lightness. */
+export const LIGHTNESS_TOLERANCE = 1e-4;
 
 /** Snaps pictures to Daggerfall's palette, as the forge's game lays its look on a composed frame: each drawn texel to
  *  the nearest of the palette's colours 1..255 (0 is a clear texel), nearest in OKLab with hue weighed above light. */
@@ -96,6 +98,27 @@ export class PaletteSnap {
         bestDistance = distance;
         best = index;
       }
+    }
+    return best;
+  }
+
+  /** The palette colour nearest `colour` among those the snap keeps as they are and no darker than `least` (OKLab
+   *  lightness), as a ramp's next step is chosen so that its light never falls; null where there is none. */
+  nearestNoDarker(colour: Rgb, least: number): Rgb | null {
+    const [lightness, hueA, hueB] = oklab(...colour);
+    let best: Rgb | null = null;
+    let bestDistance = Infinity;
+    for (let index = 1; index < 256; index++) {
+      if ((this.lab[index * 3] ?? 0) < least - LIGHTNESS_TOLERANCE) continue;
+      const own = [this.rgb[index * 3] ?? 0, this.rgb[index * 3 + 1] ?? 0, this.rgb[index * 3 + 2] ?? 0] as const;
+      const kept = Uint8Array.of(...own, 255);
+      this.snap(kept);
+      if (kept.subarray(0, 3).some((value, channel) => value !== own[channel])) continue;
+      const dLight = lightness - (this.lab[index * 3] ?? 0);
+      const dHueA = hueA - (this.lab[index * 3 + 1] ?? 0);
+      const dHueB = hueB - (this.lab[index * 3 + 2] ?? 0);
+      const distance = dLight * dLight + HUE_WEIGHT * HUE_WEIGHT * (dHueA * dHueA + dHueB * dHueB);
+      if (distance < bestDistance) [best, bestDistance] = [own, distance];
     }
     return best;
   }

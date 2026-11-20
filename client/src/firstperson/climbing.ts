@@ -1,4 +1,4 @@
-import { type FrameSource, type Picture, layOver, setRamp } from './fpFrames.ts';
+import { type FrameSource, type Picture, layOver, paintSet } from './fpFrames.ts';
 import { hardened } from './heldPictures.ts';
 import type { Hand } from './handsLaw.ts';
 
@@ -34,7 +34,7 @@ export async function climbPicture(
     return {
       width: arm.width,
       height: arm.height,
-      pixels: source.painter.paint(arm, setRamp(source.dyes, hands, 'Iron')),
+      pixels: await paintSet(source, arm, hands, 'Iron'),
       at: [0, 0],
     };
   const strips = await Promise.all(CLIMB_GARMENTS.map((garment) => source.strip(climbPath(garment, frame, series))));

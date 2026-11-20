@@ -15,24 +15,35 @@ use crate::tuning::{
 };
 use core::f64::consts::FRAC_PI_2;
 use movement::blocks::{ground_at, pushed_out, slide};
-use movement::{Block, Body, Controls, Mode, TICK_SECONDS, Terrain, step_body, step_body_paced};
+use movement::{Block, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body, step_body_paced};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
 const LANDED: f64 = 1e-6;
 
 /// What a fighter's tick reads beyond itself: the course and the ground it stands on (open ground, or a node's window
-/// of the land), and where its soft lock's target's chest stands as this fighter's own view has it.
-#[derive(Clone, Copy)]
-pub struct Surroundings<'a> {
-    pub blocks: &'a [Block],
+/// of the land), and where its soft lock's target's chest stands as this fighter's own view has it. The blocks are any
+/// the movement rules can ask for the ones near a body: a plain list, or a room's `movement::Blocks` with its grid.
+pub struct Surroundings<'a, B: Near + ?Sized = [Block]> {
+    pub blocks: &'a B,
     pub terrain: &'a dyn Terrain,
     pub target_at: Option<[f64; 3]>,
 }
 
-impl core::fmt::Debug for Surroundings<'_> {
+impl<B: Near + ?Sized> Clone for Surroundings<'_, B> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<B: Near + ?Sized> Copy for Surroundings<'_, B> {}
+
+impl<B: Near + ?Sized> core::fmt::Debug for Surroundings<'_, B> {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let surroundings = &mut formatter.debug_struct("Surroundings");
-        surroundings.field("blocks", &self.blocks).field("target_at", &self.target_at).finish_non_exhaustive()
+        surroundings
+            .field("blocks", &self.blocks.all().len())
+            .field("target_at", &self.target_at)
+            .finish_non_exhaustive()
     }
 }
 
@@ -51,7 +62,11 @@ pub enum Happening {
 
 /// One tick of a fighter under its player's or brain's intent.
 #[must_use]
-pub fn step_fighter(fighter: &Fighter, intent: &Intent, around: &Surroundings<'_>) -> (Fighter, Option<Happening>) {
+pub fn step_fighter<B: Near + ?Sized>(
+    fighter: &Fighter,
+    intent: &Intent,
+    around: &Surroundings<'_, B>,
+) -> (Fighter, Option<Happening>) {
     let intent = &clean(intent, fighter.aim);
     let input = &intent.combat;
     let now = Held { attack: input.attack.is_some(), guard: input.guard, dodge: input.dodge, shoot: input.shoot };
@@ -164,7 +179,12 @@ fn guards(fighter: &Fighter) -> bool {
 
 /// What the fighter is doing, carried on a tick or ended, and anything new it begins; `pulled` a fresh pull of the
 /// shot's trigger.
-fn act(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>, pulled: bool) -> Option<Happening> {
+fn act<B: Near + ?Sized>(
+    next: &mut Fighter,
+    intent: &Intent,
+    around: &Surroundings<'_, B>,
+    pulled: bool,
+) -> Option<Happening> {
     let input = &intent.combat;
     let countdown = |left: u32| left.saturating_sub(1);
     if dodge_leaves(&next.action) && next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
@@ -272,12 +292,12 @@ pub fn dodge_leaves(action: &Action) -> bool {
 }
 
 /// Whether a dodge's hop has come down: out of the air, or touching down.
-fn landed(body: &Body, around: &Surroundings<'_>) -> bool {
+fn landed<B: Near + ?Sized>(body: &Body, around: &Surroundings<'_, B>) -> bool {
     body.mode != Mode::Air || touching_down(body, around)
 }
 
 /// In the air, falling, and within a hair of the ground: a hop's last tick, whatever the sums' last bits.
-fn touching_down(body: &Body, around: &Surroundings<'_>) -> bool {
+fn touching_down<B: Near + ?Sized>(body: &Body, around: &Surroundings<'_, B>) -> bool {
     let ground = ground_at(around.blocks, around.terrain, body.x, body.y, body.z);
     body.mode == Mode::Air && body.vz <= 0.0 && body.z - ground <= LANDED
 }
@@ -285,7 +305,7 @@ fn touching_down(body: &Body, around: &Surroundings<'_>) -> bool {
 /// From rest, in this order: a dodge pressed, a foe's telegraphed blow, a swing pressed, a guard pressed or held (never
 /// with a ranged weapon), a ranged weapon raised to aim, a quick shot, and a swing while the button is held. The
 /// newest press wins over a button only held.
-fn begin(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) -> Option<Happening> {
+fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_, B>) -> Option<Happening> {
     let input = &intent.combat;
     if next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
         return Some(dodge(next, intent.controls, around));
@@ -355,14 +375,14 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
     Some(Happening::Swung(attack))
 }
 
-fn can_dodge(next: &Fighter, controls: Controls, around: &Surroundings<'_>) -> bool {
+fn can_dodge<B: Near + ?Sized>(next: &Fighter, controls: Controls, around: &Surroundings<'_, B>) -> bool {
     let footed = next.body.mode == Mode::Ground || touching_down(&next.body, around);
     footed && !controls.mounted && next.stamina > 0.0
 }
 
 /// The dodge's hop: the way the controls point (straight back with none), fast and low, facing the lock's target if
 /// it has one and else the way it goes.
-fn dodge(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) -> Happening {
+fn dodge<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surroundings<'_, B>) -> Happening {
     let (sin, cos) = (libm::sin(controls.yaw), libm::cos(controls.yaw));
     let forward = if controls.forward.is_finite() { controls.forward.clamp(-1.0, 1.0) } else { 0.0 };
     let sideways = if controls.sideways.is_finite() { controls.sideways.clamp(-1.0, 1.0) } else { 0.0 };
@@ -393,7 +413,11 @@ fn dodge(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) -> H
 
 /// A telegraphed blow's wind-up: a tracker turns after its target through the first part; a feint is cut at its tick;
 /// at the end it lands.
-fn wind_up(next: &mut Fighter, telegraph: Telegraph, around: &Surroundings<'_>) -> Option<Happening> {
+fn wind_up<B: Near + ?Sized>(
+    next: &mut Fighter,
+    telegraph: Telegraph,
+    around: &Surroundings<'_, B>,
+) -> Option<Happening> {
     let elapsed = telegraph.elapsed + 1;
     let mut telegraph = Telegraph { elapsed, ..telegraph };
     // A tracker turns through the first part of its wind-up, and never once a charge or a leap has set off.
@@ -480,7 +504,7 @@ fn slowed(controls: Controls, share: f64) -> Controls {
 /// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck or while
 /// a Charge holds (one waiting out a reload too), and a charge or a leap carried to its landing at the end of its
 /// wind-up.
-fn move_body(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) {
+fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surroundings<'_, B>) {
     let allowed = match next.action {
         _ if next.statuses.has(crate::Status::Charge) => still(controls),
         Action::Idle | Action::Reload { .. } => controls,
@@ -506,7 +530,7 @@ fn move_body(next: &mut Fighter, controls: Controls, around: &Surroundings<'_>) 
 }
 
 /// A charge crosses its lane and a leap flies to its disc in the last ticks of the wind-up.
-fn travel(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_>) -> Option<Body> {
+fn travel<B: Near + ?Sized>(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_, B>) -> Option<Body> {
     let landing = telegraph.landing()?;
     let travel = telegraph.travel_ticks();
     let begun = telegraph.windup.saturating_sub(travel);
@@ -520,7 +544,7 @@ fn travel(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_>) -> Opti
     let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
     // Off a drop its feet come down beside the block it slid off at its old height: it is set down clear of it.
     let feet = |x, y| ground_at(around.blocks, around.terrain, x, y, body.z) + rise;
-    let (x, y) = pushed_out(around.blocks, around.terrain, x, y, feet);
+    let (x, y) = pushed_out(around.blocks, around.terrain, x, y, body.height(), feet);
     let facing = telegraph.bearing;
     Some(Body { x, y, z: feet(x, y), vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }
@@ -528,7 +552,7 @@ fn travel(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_>) -> Opti
 /// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach, a
 /// guard turns to face it, and a weapon aimed points along its aim; a blow, once it lands, is locked where it was,
 /// and a shot's weapon stays pointed where it fired while it reloads.
-fn aim(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_>) {
+fn aim<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_, B>) {
     let (yaw, body) = (intent.controls.yaw, next.body);
     // The lock steers a swing or a guard only at a target the look is toward: turned to face another, the guard
     // follows the look.

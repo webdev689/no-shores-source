@@ -87,3 +87,13 @@ test('a strip already held is not fetched ahead again', async () => {
   await settled();
   assert.deepEqual(asked, ['bytes=0-7', 'bytes=108-115']);
 });
+
+test('a strip the page said nothing of is none, and not kept as missing, since it may be drawn after all', async () => {
+  const { asked, fetchRange } = fetching();
+  const fetcher = new StripFetcher(fetchRange, decode);
+  const places = pack(1);
+  const path = 'forge/layers/male/layer0_idle.png';
+  assert.equal(await fetcher.strip(path, {}), null);
+  assert.ok(await fetcher.strip(path, places), 'drawn once the page says where it lies');
+  assert.equal(asked.length, 1);
+});

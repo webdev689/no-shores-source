@@ -91,6 +91,39 @@ test("a shield is drawn in its metal's make, else the plain one, dyed by its met
   assert.deepEqual(picture && pixelAt(picture.pixels, 134, 1, 0), [...(daedric[8] ?? []), 255]);
 });
 
+test("a faction's shield wears its faction's colour over its metal, and the hands keep the gauntlets'", async () => {
+  const board = strip(134, 131, (x) => (x === 0 ? [128, 128, 128] : null));
+  const hands = strip(134, 131, (x) => (x === 1 ? [128, 128, 128] : null));
+  const plain = sourceOf({
+    [heldPath(112360, 0, 1, 'Shield')]: board,
+    [heldPath(112360, 0, 1, 'HandsDaedric')]: hands,
+  });
+  const picture = await shieldPicture({ ...plain, own: { left: daedric } }, 112360, 'Iron', 'Daedric', 1);
+  assert.deepEqual(picture && pixelAt(picture.pixels, 134, 0, 0), [...(daedric[8] ?? []), 255]);
+  assert.deepEqual(picture && pixelAt(picture.pixels, 134, 1, 0), [...(daedric[8] ?? []), 255]);
+  const right = await shieldPicture({ ...plain, own: { right: daedric } }, 112360, 'Iron', 'Daedric', 1);
+  assert.deepEqual(right && pixelAt(right.pixels, 134, 0, 0), [...(iron[8] ?? []), 255], 'the right hand is not its');
+});
+
+test("a faction's shield drawn in colours of its own is covered whole by its faction's colour", async () => {
+  const board = strip(134, 131, (x) => (x === 0 ? [180, 140, 60] : null));
+  const hands = strip(134, 131, (x) => (x === 1 ? [128, 128, 128] : null));
+  const plain = sourceOf({ [heldPath(112360, 0, 1, 'ShieldElven')]: board, [heldPath(112360, 0, 1, 'Hands')]: hands });
+  const own = await shieldPicture(
+    { ...plain, own: { left: daedric } },
+    112360,
+    'Elven',
+    null,
+    1,
+    'shield_buckler_elven',
+  );
+  const colour = own && pixelAt(own.pixels, 134, 0, 0);
+  assert.ok(
+    daedric.some((step) => [...step, 255].join() === colour?.join()),
+    `a step of its colour: ${colour}`,
+  );
+});
+
 test('a torch stands at the left, its hand still while its flame moves; a lantern hangs flush to the left edge', async () => {
   const flame = strip(90, 205, (x, y) => (x === 50 && y === 20 ? [250, 200, 40] : null));
   const lantern = strip(110, 138, (x) => (x === 60 ? [250, 200, 40] : null));

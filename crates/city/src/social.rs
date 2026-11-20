@@ -3,7 +3,7 @@
 //! walled all round with a parapet and laid out as a courtyard (`courtyard`); from it the city below and the harbour
 //! are seen whole and never reached.
 
-use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard};
+use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, stations};
@@ -30,6 +30,8 @@ pub struct Social {
     pub solids: Vec<Solid>,
     /// The stations in its arcades' alcoves (`stations`).
     pub stations: Vec<Station>,
+    /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
+    pub visitor_spots: Vec<[f64; 2]>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -97,5 +99,6 @@ pub fn plaza(ground: &Ground, centre: [f64; 2], level: f64, seaward: [f64; 2], l
     solids.extend(courtyard(&frame));
     let (stations, stalls) = stations(&frame);
     solids.extend(stalls);
-    Social { bounds, level, ring, spawns, solids, stations }
+    let visitor_spots = visitor_spots(&frame);
+    Social { bounds, level, ring, spawns, solids, stations, visitor_spots }
 }

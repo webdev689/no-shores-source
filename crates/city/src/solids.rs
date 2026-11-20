@@ -3,7 +3,7 @@
 //! section reaches them.
 
 use land::exact::sin_cos;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// A solid's shape. Every shape stands on the middle of its base, its own x across, y along and z up.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
@@ -21,10 +21,20 @@ pub enum Shape {
     Gable,
     /// A half-round arch across its width (x), its opening `opening` of its height high, as thick as its depth.
     Arch { opening: f64 },
+    /// Natural rock (`rock`): a thick slab spanning a cavern, its underside rough, standing on its underside.
+    CaveRoof { seed: u32 },
+    /// Natural rock: a mass against a face at its -y end, its lip jutting toward +y over the ground.
+    Overhang { seed: u32 },
+    /// Natural rock: an arch across its width (x), heavier than the built one, its opening square-shouldered.
+    RockArch { seed: u32 },
+    /// Natural rock: a frame round an opening along y into rising rock, a brow jutting over it at its -y side.
+    TunnelMouth { seed: u32 },
+    /// One surface group of a handcrafted module (`modules`), drawn from its mesh; its first group carries its parts.
+    Module { module: u32, group: u32 },
 }
 
 /// What a solid is dressed in; the browser picks each one's picture from the city's climate.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Material {
     Stone,
@@ -36,6 +46,8 @@ pub enum Material {
     Gold,
     Iron,
     Bone,
+    /// Rough natural stone, as the terraces' rubble: boulders, outcrops and the rock of cliffs.
+    Rubble,
     /// Glows at night: a beacon's fire, a lantern.
     Glow,
 }
@@ -68,27 +80,51 @@ impl Solid {
     }
 
     /// The solid's footprint and height as a box square to the world: west, north, east, south, bottom, top. A
-    /// leaning or rolled solid's box holds the whole of it: round its base, as far as its top swings out.
+    /// leaning or rolled solid's box holds its turned corners, so no more than the whole of it.
     #[must_use]
     pub fn bounds(&self) -> [f64; 6] {
-        let (sine, cosine) = sin_cos(self.turn);
         let (half_width, half_depth) = (self.size[0] / 2.0, self.size[1] / 2.0);
-        let mut reach_east = half_width * cosine.abs() + half_depth * sine.abs();
-        let mut reach_south = half_width * sine.abs() + half_depth * cosine.abs();
-        if self.lean != 0.0 || self.roll != 0.0 {
-            let swing = sin_cos(self.lean).0.abs().max(sin_cos(self.roll).0.abs());
-            let tallest = self.size[2] * swing + half_width.max(half_depth) * core::f64::consts::SQRT_2;
-            reach_east = reach_east.max(tallest);
-            reach_south = reach_south.max(tallest);
+        self.bounds_of([-half_width, -half_depth, 0.0, half_width, half_depth, self.size[2]])
+    }
+
+    /// A box of the solid's own frame (its low x, y and z, then its high ones) as a box square to the world round
+    /// its turned corners: west, north, east, south, bottom, top.
+    #[must_use]
+    pub fn bounds_of(&self, own: [f64; 6]) -> [f64; 6] {
+        let start =
+            [f64::INFINITY, f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+        let mut found = start;
+        let turns = self.turns();
+        for corner in 0..8 {
+            let x = if corner & 1 == 0 { own[0] } else { own[3] };
+            let y = if corner & 2 == 0 { own[1] } else { own[4] };
+            let z = if corner & 4 == 0 { own[2] } else { own[5] };
+            for (axis, value) in self.placed([x, y, z], turns).into_iter().enumerate() {
+                found[axis] = found[axis].min(value);
+                found[axis + 3] = found[axis + 3].max(value);
+            }
         }
-        [
-            self.at[0] - reach_east,
-            self.at[1] - reach_south,
-            self.at[0] + reach_east,
-            self.at[1] + reach_south,
-            self.at[2],
-            self.at[2] + self.size[2],
-        ]
+        [found[0], found[1], found[3], found[4], found[2], found[5]]
+    }
+
+    /// A point of the solid's own frame in the world: rolled about its y, leaned toward its +y, turned and stood at
+    /// its place, as the browser draws it (client/src/city/solidMesh.ts solidTurn).
+    #[must_use]
+    pub fn place(&self, point: [f64; 3]) -> [f64; 3] {
+        self.placed(point, self.turns())
+    }
+
+    /// The sines and cosines of its roll, lean and turn, worked once for every point a caller places.
+    fn turns(&self) -> [(f64, f64); 3] {
+        [sin_cos(self.roll), sin_cos(self.lean), sin_cos(self.turn)]
+    }
+
+    /// A point of its own frame in the world, as `place`, from its turns' sines and cosines.
+    fn placed(&self, [x, y, z]: [f64; 3], turns: [(f64, f64); 3]) -> [f64; 3] {
+        let [(roll_sine, roll_cosine), (lean_sine, lean_cosine), (sine, cosine)] = turns;
+        let (x, z) = (x * roll_cosine + z * roll_sine, -x * roll_sine + z * roll_cosine);
+        let (y, z) = (y * lean_cosine + z * lean_sine, -y * lean_sine + z * lean_cosine);
+        [self.at[0] + x * cosine - y * sine, self.at[1] + x * sine + y * cosine, self.at[2] + z]
     }
 }
 
@@ -100,9 +136,12 @@ mod tests {
     fn a_leaning_solid_reaches_only_as_far_as_its_top_swings() {
         let lean = 5.0 * core::f64::consts::PI / 180.0;
         let shaft = Solid { lean, ..Solid::upright(Shape::Block, [0.0; 3], [20.0, 20.0, 190.0], Material::Stone) };
-        let [west, _, east, _, _, top] = shaft.bounds();
-        assert!(east > 190.0 * libm::sin(lean) && east < 35.0, "{east}");
-        assert!((west + east).abs() < 1e-9 && (top - 190.0).abs() < 1e-9);
+        let [west, north, east, south, bottom, top] = shaft.bounds();
+        let (sine, cosine) = (libm::sin(lean), libm::cos(lean));
+        // It leans toward its own +y, south when not turned: its top's far edge swings out, its foot's near edge in.
+        assert!((south - (190.0 * sine + 10.0 * cosine)).abs() < 1e-9, "{south}");
+        assert!((north + 10.0 * cosine).abs() < 1e-9 && (west + 10.0).abs() < 1e-9 && (east - 10.0).abs() < 1e-9);
+        assert!((bottom + 10.0 * sine).abs() < 1e-9 && (top - (190.0 * cosine + 10.0 * sine)).abs() < 1e-9);
     }
 
     #[test]

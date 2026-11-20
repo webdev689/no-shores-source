@@ -39,8 +39,10 @@ export class StripFetcher {
     this.decode = decode;
   }
 
-  /** The strip at `path`, decoded: kept, or fetched (or taken from its bytes kept) and decoded. */
+  /** The strip at `path`, decoded: kept, or fetched (or taken from its bytes kept) and decoded. One the page said
+   *  nothing of is none, and not kept as missing, since it may be drawn after all. */
   strip(path: string, places: Places): Promise<Strip | null> {
+    if (places[path] === undefined) return Promise.resolve(null);
     return this.decoded.get(path, async () => {
       const where = places[path];
       const bytes = await this.bytes(path, places);

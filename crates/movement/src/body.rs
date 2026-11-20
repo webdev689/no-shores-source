@@ -20,6 +20,9 @@ pub struct Tuning {
     pub step: f64,
     pub eye: f64,
     pub crouched_eye: f64,
+    /// The body's height, feet to crown, standing and crouched: the eye and a little over it.
+    pub height: f64,
+    pub crouched_height: f64,
     pub crouch_seconds: f64,
     pub grounded_to_jump: f64,
     pub crouched_jump: f64,
@@ -49,6 +52,8 @@ pub const TUNING: Tuning = Tuning {
     step: 0.5,
     eye: 1.7,
     crouched_eye: 0.8,
+    height: 1.8,
+    crouched_height: 1.0,
     crouch_seconds: 0.1,
     grounded_to_jump: 0.1,
     crouched_jump: 0.8,
@@ -116,6 +121,14 @@ pub struct Body {
     pub lip: f64,
     /// Whether it moved along the ground or the wall this tick.
     pub moving: bool,
+}
+
+impl Body {
+    /// How tall it is, feet to crown: crouched or standing.
+    #[must_use]
+    pub fn height(&self) -> f64 {
+        if self.crouched { TUNING.crouched_height } else { TUNING.height }
+    }
 }
 
 /// A body standing on open ground at (x, y), facing south.

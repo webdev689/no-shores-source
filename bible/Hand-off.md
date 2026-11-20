@@ -19,7 +19,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   space, with the port city.
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
-  shows it in 2D and 3D, close up at true scale, and on foot.
+  shows it in 2D and 3D, close up at true scale, and on foot, carved by the nodes' layouts as the game stands on it,
+  with each layout's areas, paths, section and sites drawn over both views.
 - The [[Water]], on `main`: the shared swell in the land crate, breakers that shoal and break on every shore, a
   stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an underwater
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
@@ -179,20 +180,74 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
-- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
-  #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
-  Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
-  asked ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on
-  it: the intro at first light over four islands to Saltmere's title; the storm at evening and the Brig; creation at
-  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck
-  at night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger
-  walks the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in;
-  its fires are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky),
-  heard in the game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one
-  theme ([[Music]]). The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]).
-  Tested offline: the full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and
-  the intro, each started on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and
-  a click starts the intro over the cloud at first light.
+- On `main` (#63), merged and deployed with the owner's yes, as the owner decided it
+  ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]): every patrol area and instance laid out
+  ([[Layouts]]) from its brief (all 90 written): places scored on the land, a loop of tracks and footpaths, RMB
+  hamlets, farms, ruins, keeps, graveyards, covens and caves seated building by building, set pieces of forged props
+  and stone, sites for events, beacons, resources and foes; the land carved into basins and canyons under stepped
+  cliffs with mesas and spires, the bounds rock, after the Cosmodrome; a great ruined wall with its breach, a viaduct
+  with a fallen span, retaining walls and talus; every shop, hall, temple, tavern and house walked into, lined,
+  floored, stair'd and furnished; each instance moved beside its patrol area behind a gate the player goes through on
+  foot (E). The bake and the land's worker settle them alike; native and WebAssembly runs over a carved patrol
+  area agree to the bit. Movement blocks gained an underside, so a body walks under decks and lintels and up stairs
+  ([[Movement]]). Deeper detail since: talus heaps, leant slabs and scree at every cliff's foot and rubble pillars round
+  each mesa and spire; along every way signposts, milestones, wayside scenes, lanterns near settlements and drystone
+  walls by the farms and hamlets; the land wearing its climate's painted ground tiles instead of flat colour, its
+  classes meeting by their grains ([[Game]], "The ground's pictures"); the paths and streets painted into the terrain
+  with worn, wandering edges in place of hard quads; a middle ground (8 km every 16 m) so the carving shows as far as
+  the layouts are drawn; every piece re-seated on the ground as the roads lay it; ruins of an older frontier on the
+  cliff tops, a natural arch over a canyon; climbs cut up the cliffs to lookouts, so a patrol area has heights; a
+  pocket off its path for each resource, and beacons, ore, salvage, herbs and timber each standing as a place.
+  After the owner's look: rock lies on the floor at each face's foot, nothing stuck into the hillsides; walk-in
+  buildings' doorways are open from outside too (they were cut from just behind the door's face, so the wall in its
+  plane stayed); a room shows its building's windows; carved ground samples about six times faster; no lamp, post
+  or resource stands on a path (a sweep of three continents finds none); each climate's cliffs and rubble take its
+  own stone's colour, the ground's grain no longer speckles a dark tile's colours, and lanterns are iron and glass.
+  From the movement worker: a spatial index under the movement rules (same answers to the bit, a tick 2.5 times
+  faster natively), the third-person camera kept off walls and inside rooms, `&view=first` for pictures, and rooms
+  every body can walk into and up (`crates/room/tests/rooms_walked.rs`). From the editor worker: the World Editor
+  opens each landmass carved as the game does and draws every layout's areas, paths, section and sites, in 2D (over
+  tiles of the exact carved ground) and in 3D, where the layouts near the camera stand with their buildings,
+  props and solids drawn by the city layer ([[World Editor]]).
+- Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
+  Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, on R2. A second pass gave the
+  swamp's cypresses distinct drooping tiers, the rainforest giants buttress fins with thickness, firs their full
+  width, umbrella pines their flat crowns far off and the rainforest a closed canopy from above, and made the drawing
+  cheaper; its frame on SwiftShader is now 1.3 to 1.6 times the frame before the bake (the goal was no slower), and
+  the cost on a real GPU is unchecked. Still wrong ([[Nature]]): near cypresses look thinner since the cards shrank,
+  the rainforest seen 2 km off from 90 m up shows bare trunks between 300 m and 1 km, tundra spruces read as dark
+  dots far off. The next steps for the cost: indexed near meshes and fewer cards.
+- The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought #71's
+  ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story Mission at Sea]]),
+  with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then asked
+  ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]). The default page opens on it:
+  the intro at first light, down through the cloud to Saltmere's title; the storm at evening and the Brig; creation at
+  her helm; the sighting, the sea fight, the calm at sunset, and Thule's Frigate out of the dusk; waking on the wreck at
+  night and fighting through it to Thule; overboard, the deep, and the shore at the next dawn, where a stranger walks
+  the player into Overlook. The wreck is built in Blender (`tools/wreck`), its fire and sky light baked in; its fires
+  are drawn in the game's pixel look. The story is told under the game's own sky ([[Sky]], a told sky), heard in the
+  game's own soundscape ([[Ambience]]), and scored by #73's director with six songs of its own on one theme ([[Music]]).
+  The player's sword and shield are holstered ([[The Player's Sword and Shield Are Holstered]]). Tested offline: the
+  full check, and headless pictures of the storm, the calm, the wake on the wreck, the shore and the intro, each started
+  on its own with `?prologue=<beat>`. Tested live, headless: the page opens on the way in, and a click starts the intro
+  over the cloud at first light.
+- The prologue's follow-ups on `main` (#94), merged with the owner's yes after they played it live: the title's prompt
+  goes once the story begins; the intro goes straight to Saltmere ([[The Intro Goes Straight to Saltmere]]), about 25 s;
+  the story's sea fight sails in the story's wind, so the Brig makes way in the storm drawn round her; and the sea's 27
+  sounds from Freesound ([[The Sea's Sounds Come From Freesound]]), the open sea's, the story's, the sea fight's and the
+  shore's, the owner's picks from the sea sound sheet, https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to
+  them; its store's `picks` collection holds each cue's Freesound number), published on R2 and in
+  `content/audio/sounds.json`. The seven long beds play their steadiest minute, mono.
+- **#95, fewer plates, sized by rank, after Destiny**, merged to `main` with the owner's yes
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate, the foe in sight
+  nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and shows none over its
+  head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's bar three fifths long
+  and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates. Not yet seen on a real GPU
+  or with blows traded. Found in passing: the compass writes its marks' place and visibility every frame, changed or
+  not (`client/src/plus/compass.ts`).
+- **#96, the kit's first review**, merged with the owner's yes: workers' worktrees made ready to test; the observation
+  log kept on the branch `toolkit-data`; `cargo xtask check` naming the commit it checked; Toolkit rows for web
+  research and for measuring text before sizing a box. Its fidelity reviewer is taken out, at the owner's word (#105).
 
 - **The prologue's follow-ups and the sea's sounds**, on `main` (#94), merged and deployed with the owner's yes: the
   title's prompt no longer stays over the storm and creation once begun; the intro goes straight to Saltmere
@@ -202,41 +257,38 @@ Where the work stands now, for the next session. Each session rewrites this note
   and a key hides the prompt.
 
 ## Waiting on the owner
-
-- **#95, fewer plates, sized by rank, after Destiny**, a draft from branch `ccr-800481d9-kbbd62`, waits on the
-  owner's yes ([[Fewer Plates Show, Sized by Rank, After Destiny]]): the cone round the crosshair shows one plate,
-  the foe in sight nearest it, measured to its body (whole within 4°, none past 6°; a Boss there takes the cone and
-  shows none over its head); the soft lock's foe and the foes fought in the last 6 s show wherever they are; a Minor's
-  bar three fifths long and 6 px, an Elite's and up 176 px and cut in thirds over a figure; the land hides plates.
-  Three audits of it (the code; its fidelity to the approval and its records; its frame cost and look) are fixed on
-  it, each fix with a test seen to fail without it. Tested offline: the full check; headless on the built page,
-  walking into the Saltgrass Downs garrison, six plates on `main` against one on #95, over the foe at the crosshair
-  (the foes stayed wary, so no blow was traded in the pictures); and each rank's plate whole and at three quarters.
-  Claude's calls, listed in its description, are the owner's to change: the cone's numbers and its hold; no second
-  plate by the cone while the foe at the crosshair is fought, locked or a Boss; a fought plate fading within the 6 s,
-  as the target plate does; the bars' sizes; thirds only over figures; the words of blows clear only of plates drawn;
-  ships' plates as they are. Not yet seen on a real GPU or with blows traded. The target's own plate over its head is
-  to be looked at again once the owner has played with which plates show. Found in passing, not on #95: the compass
-  writes its marks' place and visibility every frame, changed or not (`client/src/plus/compass.ts`).
-- **#96, the kit's first review**, a draft from branch `ccr-800481d9-kbbd62-kit`, waits on the owner's yes: a fidelity
-  review (`workers/fidelity-review.sh`, a fixed brief) with a CI check that fails a pull request changing a decision
-  without its verdict, as the owner chose for a rule broken three times in one task; workers' worktrees made ready to
-  test; the observation log kept on the branch `toolkit-data`, saved by a git merge so a parallel session's save is
-  kept, with a test check-tools runs; `cargo xtask check` naming the commit it checked; and Toolkit rows for web research
-  and for measuring text before sizing a box. Tested offline: the full check, check-tools with a headless worker, the
-  save's test, and a fidelity review of #95, whose eight findings are fixed or answered there. Open for the owner, in
-  its description: where the claude-mem store lives (an archive, kept out of git), whether CI should require the verdict
-  to name the pull request's head (a new review after each push), and making the check required on GitHub.
+- **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
+  none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
+  places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
+  are wanted as a cliff climb of their own, beside the ledges' stairs, and where.
+- The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
+  onto the layouts' places, and will coordinate before it touches the layout code.
+- **#95's and #96's open points**, both merged: the target's own plate over its head is to be looked at again once the
+  owner has played with which plates show, and #95's calls (in its description) are the owner's to change; for #96,
+  where the claude-mem store lives (an archive, kept out of git).
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
-- **The sea's 27 recordings, by ear**: the owner's picks play in the game now
-  ([[The Sea's Sounds Come From Freesound]]), from the sea sound sheet,
-  https://claude.ai/artifact/4bFEQMrE6vYy2sHcszKdfC (private to them; its store's `picks` collection holds each cue's
-  Freesound number). Not yet heard in the game: their levels, and the minute each of the seven long beds plays, wait
-  on the owner's ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the
-  sea sheet.
+- **The sea's sounds** ([[The Sea's Sounds Come From Freesound]]): none yet heard in the game, nor their level judged
+  by ear. The main sound sheet (YT29RAFbgdPRLByLUVC7nh) could not be read from the session that made the sea sheet.
 - **The lore on #77 and #75**: the intro no longer visits the other islands, so #75's ruins do not touch it. Nothing in
   the prologue names the Cube or a crystal, and the voice in the deep is not named.
+- **#92, Overlook's factions, faction gear, Art levels, keepers, Shape, appearance and Elder Maren Hale's welcome**,
+  based on `main`, waits on the owner's yes to merge, which deploys the page and the rooms. The owner named the
+  factions and the elder, said yes to faction gear "with its own unique color" and chose its colours: the Stormcallers
+  "#1 with color accents" (storm grey and silver; the storm blue of the accents is Claude's), the Lamplighters "White
+  and gold", the Veiled "Black and silver"; then their look, "Top strip, fixes kept". The owner also decided that
+  characters made before the Arts' levels start every Art at level 1, that no save-keeping lands on `main` first (so a
+  rollback of the rooms after the merge loses this round's progress), that the page publishes only after the rooms
+  deploy, and that Maren keeps her ruins line before the ruins are drawn. Every call made under the owner's
+  "autonomy" is in [[Factions and Vendors as Claude Shapes Them]], the owner's to change. Tested offline: the full
+  check. Tested in a local room (`npm run server`, the built page headless): Shape present with his six wares, "From
+  level 20" and the right time left; the vault keeper's two sides at 1920x1080; a faction piece's card naming its
+  colour; Maren greeting a browser that had played the story before, the keys' hints giving way while she speaks. Not
+  yet seen: anything on a real GPU or the deployed rooms, two players seeing each other's dyes, horses and faction
+  gear, a faction set worn in the page (composed offline from the published strips), and Maren's whole walk (her start
+  and her coming by the lanes are tested offline; headless frames take about a second each). The
+  open questions are in [[Open Questions]]. The Wraith Mist barding's first-person ride strips on R2 are blank: a forge
+  re-render. Sunspire's and Rimeholt's ports are #75's; this round only locks their social spaces.
 - **The wreck on R2**: the `wreck` workflow builds, bakes and publishes the wreck when `tools/wreck` changes, with the
   repository's Cloudflare token, as the ships workflow does. Its first run is published and committed in
   `content/prologue/wreck.json`. After a later run, take its keys from the log's last line, and its level by exporting
@@ -368,13 +420,57 @@ Where the work stands now, for the next session. Each session rewrites this note
   same colours. #90 fixes what pictures across the islands showed in the weather: stars through a closed storm deck,
   fresh snow that never settled below the snow line, a flash that lit the sky and not the land, bolts hanging over a
   fogged sea, a sandstorm's grey ground and a thin snowfall. Not yet seen: any of them on a real GPU.
-- **The kit's observation log** has had its first review: all five observations are actioned, their fixes on #96,
-  waiting on the owner's merge. The log is on the orphan branch `toolkit-data` (#96's `toolkit-data.sh`; until #96
-  merges, its restore and save are on that branch only). The earlier review's four changes to the instructions, and one
+- **The kit's observation log** has had its first review: all five observations are actioned, their fixes merged with
+  #96. The log is on the orphan branch `toolkit-data` (`toolkit-data.sh`). The earlier review's four changes to the instructions, and one
   closing, were lost with their container; only that session's report has them.
+
+- From a worker branch (`wt-bodies`), tested offline: the movement rules find a body's blocks through a grid
+  ([[Movement]], "The blocks near a body"), every answer the same to the bit, a tick among a patrol area's boxes
+  about two and a half times cheaper natively and twice through WebAssembly; the third-person camera's boom eased in
+  off every block and the ground, so indoors it shows the room from inside ([[Player]]); `&view=first` and
+  `&view=third,<metres>` in the address, and the QA driver's `hold` and `anyPort` ([[Toolkit]]); and the rooms fixed
+  where a body could not walk them: a stair laid in front of a door, a stairwell a head going up could hit, planks the
+  land showed through ([[Layouts]]). Seen in pictures but not fixed, as it is the drawing's: an open building's door
+  leaf is still drawn from outside, though bodies pass it.
+- #63's readings the owner left to Claude: the answer "3. A" was read as (a) of where RMB layouts go; the flora's
+  look (textured, not palette-snapped) was Claude's call.
+- **Climbing over gates.** A body pressed square into a wall too high to grab climbs it, as `main`'s climbing has it.
+  So a gate's palisade and arch can be climbed, as can a rampart's walls. Whether a gate should keep bodies out is
+  the owner's to say.
+- Also on #63: the runs ([[Patrol Zones Stay as Built and Gain Linear Combat Areas]], [[Layouts]], "Runs"), three
+  in each of Saltmere's zones, for the owner to look at before the other 24 zones get theirs; the client audit's
+  fixes (far paths' tint, the ground paint swapped mid-frame, fine detail stepped by single precision, plate tiles);
+  the World Editor drawing the layouts' buildings and runs; the well house's posts. Tested offline, with a body
+  walked through every run, and headless pictures of eight of the nine.
+- Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
+  an instance's room is still a node's shared room until the server makes rooms per party.
 
 ## Next
 
+- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is on `main` (#63),
+  tested offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
+  kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no
+  steeper than a track; a hamlet's blocks stepping up its hillside on terraces of their own, as the owner chose; a
+  ruin's spokes on tiers; a terraced massif top in plateaus that follows the floors ([[Land]]); ledges with cliff
+  stairs between heights; stone bridges over the Vale's river; the Hollow Coven's cavern under real rock, its roofs
+  resting on rock that stands whole beside the cave; gates in clefts; dead rock answered by climbs to lookouts and by
+  valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted [[Modules]] scripted
+  in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]), each walked by a body
+  (`crates/room/tests/modules_walked.rs`). A third audit found what the second missed, each fixed at its cause with a
+  test (the pull request lists them). On a cloud session's machine continent 1's layouts settle in about 2.3 s
+  natively, and the World Editor's whole settle of continent 1 takes about 3.5 s. Left: switchbacks (waiting on the
+  owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
+- The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
+  low enough to climb in places: its runs will need their end arenas cut deeper or walled.
+- The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
+  is the terrain's only), and the land texts and the city's assets fetch the same files twice.
+- The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
+  that will stand on the sites (public events, beacons, resource nodes, foes).
+- **After #92**: reputation from bounties and activities when they exist; Shape at Sunspire and Rimeholt when their
+  social spaces open; a hide and mane mask from the forge for coats (the ride's `_uv` strips are one); the Elite and
+  Abyss tiers' names on the voyage's card (#82), where Shapes are found; a faction set worn and two players seen in
+  the page on a real GPU; the welcome and the prologue's marks kept per character rather than per browser, if the
+  owner wants it.
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
   with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
@@ -541,9 +637,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
-  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows
-  the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
-  stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
+  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, the layouts'
+  buildings, woods and shadows the game draws (its worker now settles the city and the layouts as the game's does,
+  but the city layer that draws them may not be imported by the editor's); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
 - Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]), of a
   built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a

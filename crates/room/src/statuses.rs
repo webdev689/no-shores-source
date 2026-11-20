@@ -19,10 +19,19 @@ impl Room {
         let ticks = ticks.unwrap_or_else(|| self.lasts(fighter, status));
         let Some(next) = self.fighter(fighter).and_then(|now| give(now, status, ticks, from)) else { return false };
         self.set_fighter(fighter, next);
-        // Overload: a foe the player Charges is Exposed too.
-        let overloads = from.is_some_and(|from| self.core(from, "overload").is_some());
-        if status == Status::Charge && overloads {
-            self.give(fighter, Status::Expose, None, from);
+        // A Sunwell keeps its share as it gives Linked; any other giver's Linked heals as written.
+        if status == Status::Linked {
+            self.spells.linked.remove(&fighter);
+        }
+        // Overload: a foe the player Charges is Exposed too, as long as the Art that holds it lasts at its level; a
+        // room without Arts gives no fragment (`core`).
+        let by = from.filter(|from| self.core(*from, "overload").is_some()).and_then(|from| self.players.get(&from));
+        let overload = by.map(|by| by.character.art_shares(by.character.art().id).1);
+        if status == Status::Charge
+            && let Some(lasting) = overload
+        {
+            let lasts = combat::ticks(f64::from(Status::Expose.ticks()) / 60.0 * lasting);
+            self.give(fighter, Status::Expose, Some(lasts), from);
         }
         true
     }
@@ -37,18 +46,25 @@ impl Room {
         }
     }
 
-    /// Each second of the room's clock, every living Linked fighter heals.
+    /// Each second of the room's clock, every living Linked fighter heals: by the share of the Sunwell that Linked it,
+    /// kept from its cast, or as written for a Linked no Sunwell gave (the Test Ground's grant). A share is let go once
+    /// its fighter is no longer Linked.
     pub(crate) fn heal_linked(&mut self) {
         if !self.clock.is_multiple_of(HEAL_EVERY) {
             return;
         }
-        let heal = |fighter: &mut Fighter| {
-            if fighter.statuses.has(Status::Linked) && !fighter.dead() {
-                fighter.health = (fighter.health + LINKED_HEAL).min(fighter.health_max);
+        let shares = std::mem::take(&mut self.spells.linked);
+        let players = self.players.iter_mut().map(|(id, found)| (*id, &mut found.fighter));
+        let foes = self.foes.iter_mut().map(|(id, foe)| (*id, &mut foe.fighter));
+        for (id, fighter) in players.chain(foes).filter(|(_, fighter)| fighter.statuses.has(Status::Linked)) {
+            let share = shares.get(&id).copied();
+            if !fighter.dead() {
+                fighter.health = (fighter.health + LINKED_HEAL * share.unwrap_or(1.0)).min(fighter.health_max);
             }
-        };
-        self.players.values_mut().for_each(|found| heal(&mut found.fighter));
-        self.foes.values_mut().for_each(|foe| heal(&mut foe.fighter));
+            if let Some(share) = share {
+                self.spells.linked.insert(id, share);
+            }
+        }
     }
 
     /// A verdict's damage as statuses weigh it: a crit, its striker's Linked (as the striker stands now) and its

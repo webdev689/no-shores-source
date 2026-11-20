@@ -1,14 +1,15 @@
 import type { GlowElement, GlowField, GlowLook } from '../elementGlow.ts';
-import { type Colours, composeFrame } from '../forge/compose.ts';
+import type { Colours } from '../forge/compose.ts';
+import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { type DyeTable, PaletteSnap } from '../forge/dyes.ts';
-import { type ForgeLooks, layersOf, mirroredGear } from '../forge/looks.ts';
+import { type ForgeLooks, HORSE_LAYER, layersOf, mirroredGear } from '../forge/looks.ts';
 import type { HairColours, RaceSkins } from '../forge/skins.ts';
 import { ForgeStore } from '../forge/store.ts';
 import { RETRY_AFTER_MS } from '../forge/stripCache.ts';
 import { stripsOf } from './composeJob.ts';
 import type { Haste } from './composeQueue.ts';
 import { type Composer, PageComposer, WorkerComposer } from './composer.ts';
-import { type Dress, type Wardrobe, figureOf, rampsOf, wardrobeOf } from './dressing.ts';
+import { type Dress, type Wardrobe, figureOf, layerRamps, wardrobeOf } from './dressing.ts';
 import { onTheMove } from './playerMoves.ts';
 import type { Picture } from './picture.ts';
 
@@ -117,9 +118,7 @@ export class Cards {
   /** The dress each warmed frame was warmed for, so a warmed frame let go has its dress warmed again. */
   private readonly warmedBy = new Map<string, string>();
   private readonly scene: CardMaker;
-  private readonly store: ForgeStore;
   private readonly looks: ForgeLooks;
-  private readonly colours: Colours;
   private readonly dyes: DyeTable;
   private readonly limits: KeptCards;
   private readonly composer: Composer;
@@ -137,9 +136,7 @@ export class Cards {
     composer: Composer | null = null,
   ) {
     this.scene = scene;
-    this.store = store;
     this.looks = looks;
-    this.colours = colours;
     this.dyes = dyes;
     this.limits = limits;
     this.composer = composer ?? new PageComposer(looks, colours, (path) => store.strip(path));
@@ -151,26 +148,38 @@ export class Cards {
   }
 
   /** A figure's frame as plain pixels, for a page to draw rather than the scene: composed now, never kept. Given
-   *  `alone`, one of its layers, that layer is drawn by itself: a weapon in hand whole, with no hand over its grip. */
-  async picture(dress: Dress, anim: string, view: number, frame = 0, alone?: string): Promise<Picture | null> {
+   *  `alone`, one or more of its layers, those are drawn by themselves: a weapon in hand whole, with no hand over its
+   *  grip, or a horse without its rider. Given `flip`, the view is drawn mirrored, its gear kept on its own sides. */
+  async picture(
+    dress: Dress,
+    anim: string,
+    view: number,
+    frame = 0,
+    alone?: string | readonly string[],
+    flip = false,
+  ): Promise<Picture | null> {
     const own = this.looks.bodies[dress.body];
-    const figure = figureOf(dress, own?.layers ?? {}, anim);
-    const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
-    const strip = (path: string) => this.store.strip(path);
-    // The forge renders each layer by itself; read as a body that draws that layer alone, it stacks nothing else.
-    const looks =
-      alone && own
-        ? { ...this.looks, bodies: { [dress.body]: { ...own, layers: { [alone]: own.layers[alone] ?? [] } } } }
-        : this.looks;
-    const composed = await composeFrame(figure, anim, view, frame, looks, this.colours, ramps, strip);
-    return (
-      composed && {
-        width: composed.width,
-        height: composed.height,
-        pixels: new Uint8ClampedArray(composed.pixels),
-        root: composed.root,
-      }
-    );
+    const layers = own?.layers ?? {};
+    const dressed = figureOf(dress, layers, anim);
+    const held = [dress.outfit.right, dress.outfit.left];
+    const figure = flip ? { ...dressed, gear: mirroredGear(dressed.gear, anim, layers, held) } : dressed;
+    const { ramps, whole } = layerRamps(figure.gear, dress.outfit, this.looks, this.dyes);
+    const only = typeof alone === 'string' ? [alone] : alone;
+    // Through the composer the world's frames take, so a page's picture is composed off the page's thread too.
+    const job = { figure, anim, view, frame, ramps, whole, glow: 0, alone: only } as const;
+    const composed = await this.composer.compose(`picture ${anim} ${view} ${frame} ${only?.join() ?? ''}`, job, 'now');
+    if (!composed) return null;
+    const { width, height } = composed;
+    const pixels = new Uint8ClampedArray(composed.pixels);
+    // A view drawn mirrored, as the scene draws the other side.
+    if (flip)
+      for (let row = 0; row < height; row++)
+        for (let across = 0; across < width; across++) {
+          const from = (row * width + across) * 4;
+          pixels.set(composed.pixels.subarray(from, from + 4), (row * width + width - 1 - across) * 4);
+        }
+    const root = flip ? ([width - 1 - composed.root[0], composed.root[1]] as const) : composed.root;
+    return { width, height, pixels, root };
   }
 
   /** What a body can wear, as the forge draws it; null for a body it has not. */
@@ -201,15 +210,28 @@ export class Cards {
   }
 
   /** The figure a frame of `dress` draws, with what its move carries in hand, and the key it is kept by. */
-  private framed(dress: Dress, anim: string, view: number, frame: number, flip: boolean, glow: GlowLook) {
+  /** The layers a dress draws in a move, as drawn or mirrored. */
+  private figured(dress: Dress, anim: string, flip: boolean) {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
     const gear = [...dressed.gear, ...carried];
     // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
     const held = [dress.outfit.right, dress.outfit.left, ...carried];
-    const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
-    return { figure, key: JSON.stringify([figure, dress.outfit.dyes, anim, view, frame, glow]) };
+    return { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
+  }
+
+  private framed(dress: Dress, anim: string, view: number, frame: number, flip: boolean, glow: GlowLook) {
+    const layers = this.looks.bodies[dress.body]?.layers ?? {};
+    const figure = this.figured(dress, anim, flip);
+    const { dyes, dye, coat } = dress.outfit;
+    // The coat counts only where the move draws the horse; the barding is in the figure only there.
+    const horse = layers[HORSE_LAYER]?.includes(anim) ? (coat ?? null) : null;
+    const { ramps, whole } = layerRamps(figure.gear, dress.outfit, this.looks, this.dyes);
+    // The dye worn counts only where a layer takes it: each dye's ramp is one made once, so it is found by itself.
+    const worn = cosmeticRamp(dye, this.dyes.palette);
+    const dyed = worn && Object.values(ramps).includes(worn) ? dye : null;
+    return { figure, ramps, whole, key: JSON.stringify([figure, dyes, dyed, horse, anim, view, frame, glow]) };
   }
 
   /** A figure's frame in a move and a view, composed `haste` if it is not kept or under way, and hurried if it is
@@ -226,7 +248,7 @@ export class Cards {
     glow: GlowLook = 0,
     haste: Haste = 'now',
   ): Card | null {
-    const { figure, key } = this.framed(dress, anim, view, frame, flip, glow);
+    const { figure, ramps, whole, key } = this.framed(dress, anim, view, frame, flip, glow);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
       // Asked again, it is kept the longest of all.
@@ -242,9 +264,8 @@ export class Cards {
     if (failed !== undefined && performance.now() - failed < RETRY_AFTER_MS) return null;
     this.failedAt.delete(key);
     this.composing.add(key);
-    const ramps = rampsOf(figure.gear, dress.outfit, this.looks, this.dyes);
     this.composer
-      .compose(key, { figure, anim, view, frame, ramps, glow }, haste)
+      .compose(key, { figure, anim, view, frame, ramps, whole, glow }, haste)
       .then((composed) => {
         const card = composed && this.scene.card(composed.pixels, composed.width, composed.height, composed.root);
         const field = composed?.field;
@@ -299,7 +320,7 @@ export class Cards {
     for (const anim of anims()) {
       if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
       for (const flip of [false, true]) {
-        const { figure } = this.framed(kept, anim, 0, 0, flip, glow);
+        const figure = this.figured(kept, anim, flip);
         for (const path of stripsOf({ figure, anim, view: 0, frame: 0, ramps: {}, glow }, this.looks)) strips.add(path);
       }
       for (let view = 0; view < VIEWS; view++)

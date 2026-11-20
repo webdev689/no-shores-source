@@ -1,10 +1,12 @@
-/** A block standing on the ground: its footprint (x east, y south, metres) and its top. */
+/** A block: its footprint (x east, y south, metres), its top, and its underside: at or below the ground for a block
+ *  from the ground up, over it for a floor, a bridge or a roof a body walks under. */
 export interface Block {
   readonly minX: number;
   readonly minY: number;
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
+  readonly bottom: number;
 }
 
 /** What the player asks of the body for a tick: movement relative to where it looks (-1..1), the look's bearing in
@@ -144,6 +146,11 @@ export const CONTROLS_FLOATS = 7;
 
 /** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
  *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */
+/** Blocks as the movement crate reads them (`Block::from_floats`): every list of blocks the rules take. */
+export function blockFloats(blocks: readonly Block[]): number[] {
+  return blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
+}
+
 export function floatsOf(body: Body): number[] {
   const over = body.over ?? { from: [0, 0, 0], to: [0, 0, 0], progress: 0, seconds: 0 };
   return [
@@ -242,7 +249,7 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       return readBody();
     },
     setCourse: (blocks) => {
-      const floats = blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
+      const floats = blockFloats(blocks);
       const address = exports.reserve(floats.length * 8);
       const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
       floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));
@@ -260,7 +267,7 @@ export async function startMovementRules(moduleBytes: BufferSource): Promise<Mov
       }
     },
     setRim: (blocks) => {
-      const floats = blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]);
+      const floats = blockFloats(blocks);
       const address = exports.reserve(Math.max(1, floats.length) * 8);
       const numbers = new DataView(exports.memory.buffer, address, floats.length * 8);
       floats.forEach((value, index) => numbers.setFloat64(index * 8, value, true));

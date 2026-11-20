@@ -43,9 +43,9 @@ function landHit(groundAt: (x: number, y: number) => number, from: Vector, direc
   return null;
 }
 
-/** The ground and the course's blocks as boxes up to their tops: the nearest surface a ray meets entering it, with
- *  that face's normal. The ground is open ground at height zero, or the land `groundAt` gives. A ray starting inside a
- *  box does not meet it. */
+/** The ground and the course's blocks as boxes from their undersides to their tops: the nearest surface a ray meets
+ *  entering it, with that face's normal. The ground is open ground at height zero, or the land `groundAt` gives. A ray
+ *  starting inside a box does not meet it. */
 export function surfacesOf(blocks: readonly Block[], groundAt?: (x: number, y: number) => number): Surfaces {
   return (from, direction, reach) => {
     let nearest: SurfaceHit | null = null;
@@ -57,7 +57,7 @@ export function surfacesOf(blocks: readonly Block[], groundAt?: (x: number, y: n
     if (land) keep(land.distance, land.normal);
     else if (!groundAt && direction[2] < 0 && from[2] >= 0) keep(from[2] / -direction[2], [0, 0, 1]);
     for (const block of blocks) {
-      const low = [block.minX, block.minY, 0];
+      const low = [block.minX, block.minY, block.bottom];
       const high = [block.maxX, block.maxY, block.top];
       let enter = -Infinity;
       let leave = Infinity;

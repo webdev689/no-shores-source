@@ -20,7 +20,7 @@ export interface Lay {
   readonly harbour: Point2 | null;
   readonly city: Point2 | null;
   readonly plaza: { readonly bounds: readonly [number, number, number, number]; readonly level: number } | null;
-  /** Where its smith works: the Smith's alcove, or the Armsmith's. */
+  /** Where its smith works: the Weaponsmith's alcove. */
   readonly smithy: Point3 | null;
 }
 

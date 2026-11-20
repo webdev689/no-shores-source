@@ -11,13 +11,14 @@ import { ROLES } from '../plus/kit.ts';
 import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artDiamond, artsPage } from './artsPage.ts';
 import { coresOf, gearAskOf } from './artsCards.ts';
 import { type PageContext, characterPage } from './characterPage.ts';
+import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
+import { APPEARANCE_KEY } from './appearanceButton.ts';
 import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
 import {
   ACCOUNT_CHANGED,
   type GearHere,
   OPEN_AT,
   type Opening,
-  type Station,
   TABS,
   type Tab,
   STEP_BACK,
@@ -33,7 +34,8 @@ export { gearScreenOpen } from './gearScreen.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
-import { tailorPage, vaultPage, vendorPage } from './stationPages.ts';
+import { KEEPERS } from './keepers.ts';
+import { isKeeperView, keyBeside, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
 import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
 import { startCompanyHud } from './companyHud.ts';
 import { accountMark } from './accountMark.ts';
@@ -49,13 +51,6 @@ const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: 
   social: { label: 'Social', key: '' },
   guild: { label: 'Guild', key: '', later: 'Your guild will gather here.' },
   settings: { label: 'Settings', key: '' },
-};
-/** Each station's screen's name. */
-const STATIONS: Readonly<Record<Station, string>> = {
-  vault: 'The Vault',
-  quartermaster: 'The Quartermaster',
-  armsmith: 'The Armsmith',
-  tailor: 'The Tailor',
 };
 /** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
 const BANNER_SCALE = 3;
@@ -77,9 +72,6 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Right-click / X', 'Details'],
     [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
-  quartermaster: [['Hold', 'Buy']],
-  armsmith: [['Hold', 'Buy']],
-  tailor: [['Hold', 'Buy']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],
@@ -181,6 +173,8 @@ export function startGearWindow(
   /** Whether the Character page shows the worn Art's screen, and the Core slot whose flyout is open on it. */
   let arts = false;
   let artSlot: number | null = null;
+  /** Whether the Character page shows the Appearance screen. */
+  let appearance = false;
   /** The Art and Core the Art's screen was last built with (null while it is not shown), and the Core slot whose ask
    *  waits on the room's word. */
   let artsBuilt: { readonly art: number; readonly core: readonly (number | null)[] } | null = null;
@@ -231,11 +225,12 @@ export function startGearWindow(
    *  shown (the room lost), none of those stands on the page, so the menu closes at once. */
   const back = () => {
     letGo();
-    if (!here()?.gear) [inspecting, slot, artSlot, arts] = [null, null, null, false];
+    if (!here()?.gear) [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
     if (inspecting !== null) inspecting = null;
     else if (slot !== null) slot = null;
     else if (artSlot !== null) artSlot = null;
     else if (arts) [arts, returnTo] = [false, ART_DIAMOND_KEY];
+    else if (appearance) [appearance, returnTo] = [false, APPEARANCE_KEY];
     else return shut();
     play('back');
   };
@@ -245,9 +240,10 @@ export function startGearWindow(
     letGo();
     const opening = view === null;
     [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
-    [arts, artSlot] = [false, null];
+    [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
+    npcOpened(wanted);
     play(opening ? 'open' : 'tab');
     screen.hidden = scrim.hidden = false;
     setGearScreenOpen(true);
@@ -295,7 +291,16 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
   startCompanyHud(root, link);
-  const stepBack = pressOf('Back', () => (back(), render()), 'button', 'Esc');
+  // The page shown takes the step first when it has one of its own (a panel, a player's details, a keeper's choice);
+  // either way the hold under way is let go, so a step back never buys what was being held.
+  const stepOnce = () => {
+    letGo();
+    const step = new Event(STEP_BACK, { cancelable: true });
+    if (body.firstElementChild?.dispatchEvent(step) !== false) back();
+    else play('back');
+    render();
+  };
+  const stepBack = pressOf('Back', stepOnce, 'button', 'Esc');
 
   /** The banner's emblem, drawn again to the banner's width whenever that changes. */
   let bannered: Emblem | null = null;
@@ -357,7 +362,7 @@ export function startGearWindow(
 
   function render(): void {
     if (view === null) return;
-    const station = isTab(view) ? null : STATIONS[view];
+    const station = isTab(view) ? null : KEEPERS[view].title;
     // The tabs, title and labels change only with the view, so the menu writes nothing while it stands open.
     if (view !== tabbed) {
       tabbed = view;
@@ -403,7 +408,7 @@ export function startGearWindow(
         });
     }
     // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    const state = JSON.stringify([view, slot, arts, artSlot, artPending, shelf, inspecting, drawn, now === null]);
+    const state = JSON.stringify([view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn, !now]);
     // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
     const holding = pressing || screen.querySelector('.gear-holding') !== null;
     if (holding || (gear === shownGear && state === shownState)) {
@@ -417,9 +422,7 @@ export function startGearWindow(
     // the one beside it takes the focus, else the tab or station it is under.
     const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focused = held?.dataset['key'];
-    const beside = [held?.nextElementSibling, held?.previousElementSibling]
-      .map((node) => (node instanceof HTMLElement ? node.dataset['key'] : undefined))
-      .find(Boolean);
+    const beside = keyBeside(held);
     // A key's focus in a slot's grid goes back to its slot as the grid closes; a pointer's would open the slot's card.
     const slotted = held?.matches(':focus-visible')
       ? held.closest('.gear-slot-holder')?.querySelector<HTMLElement>('.gear-slot')?.dataset['key']
@@ -461,9 +464,15 @@ export function startGearWindow(
       },
       atVault: view === 'vault',
       ...(gear.arts && {
-        art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip),
+        art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip, gear.standing),
       }),
+      appearance: () => ((appearance = true), (slot = null), render()),
+      forge: now.forge ?? null,
+      dress,
     };
+    const dressing = view === 'character' && appearance;
+    const closeLooks = () => ((appearance = false), (returnTo = APPEARANCE_KEY), render());
+    const looks = dressing ? appearancePage({ ...context, forge: now.forge ?? null, dress, close: closeLooks }) : null;
     const worn = view === 'character' && arts ? gear.arts : undefined;
     const cores = worn ? coresOf(worn) : {};
     const core = worn ? (cores[worn.art] ?? []) : [];
@@ -480,6 +489,7 @@ export function startGearWindow(
           {
             worn: worn.art,
             cores,
+            standing: gear.standing,
             ask: (asked) => {
               if (asked.kind === 'setCore') artPending = asked.slot;
               now.ask(gearAskOf(asked));
@@ -494,14 +504,10 @@ export function startGearWindow(
           (chosen) => ((artSlot = chosen), render()),
         )
       : view === 'character'
-        ? characterPage(context, slot, (chosen) => ((slot = chosen), render()))
-        : view === 'inventory'
-          ? inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()))
-          : view === 'vault'
-            ? vaultPage(context)
-            : view === 'tailor'
-              ? tailorPage(context)
-              : vendorPage(context, view === 'quartermaster' ? 0 : 1);
+        ? (looks ?? characterPage(context, slot, (chosen) => ((slot = chosen), render())))
+        : isKeeperView(view)
+          ? npcPage(context, view, now.forge, redraw)
+          : inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()));
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;
     const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
@@ -510,13 +516,20 @@ export function startGearWindow(
     body.replaceChildren(page, ...(shown ? [shown.page] : []));
     // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
     // page, else a step back while a flyout is open, else closing the menu.
-    // A Vestige opens with a click only at the Reader's counter, so the footer offers it only there.
+    // A Vestige opens with a click only at the Mage's counter, so the footer offers it only there.
     const opens: readonly Hint[] =
-      gear.atReader && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
+      gear.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
     const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
-    const hints = shown ? HINTS.item : worn ? ARTS_HINTS : view === 'inventory' ? shelfHints : HINTS[view];
+    const aside = worn
+      ? ARTS_HINTS
+      : dressing
+        ? APPEARANCE_HINTS
+        : isKeeperView(view) && npcChoosing()
+          ? npcHints(view)
+          : null;
+    const hints = shown ? HINTS.item : (aside ?? (view === 'inventory' ? shelfHints : (HINTS[view] ?? npcHints(view))));
     hinted(hints ?? []);
-    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || worn ? [stepBack] : [close]));
+    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || aside ? [stepBack] : [close]));
     // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
     // goes back to the item's tile.
     const found = (key: string | null | undefined) =>
@@ -526,7 +539,7 @@ export function startGearWindow(
       // The page is read from its name, so no card opens over it unasked.
       shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
     else {
-      const next = again ?? found(returnTo) ?? found(beside) ?? found(slotted);
+      const next = again ?? found(returnTo) ?? beside.map(found).find(Boolean) ?? found(slotted);
       // Given back once, the tile to return to is forgotten, so it never takes the focus from a later choice.
       returnTo = null;
       if (next) next.focus();
@@ -562,10 +575,7 @@ export function startGearWindow(
       if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
-        // The page shown takes the step first when it has one of its own (a panel, a player's details).
-        const step = new Event(STEP_BACK, { cancelable: true });
-        if (body.firstElementChild?.dispatchEvent(step) !== false) back();
-        render();
+        stepOnce();
       } else if (key === 'x' && !typing && document.activeElement instanceof HTMLElement) {
         // X shows the focused piece's details, as a right-click does.
         if (document.activeElement.dataset['details'] === undefined) return;

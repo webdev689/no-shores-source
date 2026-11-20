@@ -1,4 +1,4 @@
-import type { Block } from './movementRules.ts';
+import { type Block, blockFloats } from './movementRules.ts';
 
 /** A fired shot's numbers after a predicted fighter's: its weapon, where it left, its velocity. */
 const FIRED_FLOATS = 7;
@@ -91,15 +91,11 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
   return {
     sizes,
     setCourse: (blocks) => {
-      const floats = new Float64Array(
-        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
-      );
+      const floats = new Float64Array(blockFloats(blocks));
       lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
     },
     setRim: (blocks) => {
-      const floats = new Float64Array(
-        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
-      );
+      const floats = new Float64Array(blockFloats(blocks));
       return lend(floatBytes(floats), (address) => exports.fighter_rim(address, floats.byteLength)) === 1;
     },
     setGround: (windowJson) => {

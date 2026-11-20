@@ -7,8 +7,8 @@ use movement::{Block, Body, Controls, Heights, Mode, TICK_SECONDS, Terrain, step
 /// and 0.3 m thick, as a bulwark measured from a wreck is: low and thin enough to vault.
 fn deck() -> Vec<Block> {
     vec![
-        Block { min_x: -3.0, min_y: -1.5, max_x: 2.7, max_y: 1.5, top: 2.0 },
-        Block { min_x: 2.7, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 3.0 },
+        Block { min_x: -3.0, min_y: -1.5, max_x: 2.7, max_y: 1.5, top: 2.0, bottom: 0.0 },
+        Block { min_x: 2.7, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 3.0, bottom: 0.0 },
     ]
 }
 
@@ -54,8 +54,8 @@ fn a_body_running_and_jumping_at_the_rail_is_held_on_the_deck_never_vaulted_into
 #[test]
 fn a_body_climbing_the_rail_from_the_deck_goes_no_further_than_its_top() {
     let blocks = vec![
-        Block { min_x: -3.0, min_y: -1.5, max_x: 2.7, max_y: 1.5, top: 2.0 },
-        Block { min_x: 2.7, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 5.2 },
+        Block { min_x: -3.0, min_y: -1.5, max_x: 2.7, max_y: 1.5, top: 2.0, bottom: 0.0 },
+        Block { min_x: 2.7, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 5.2, bottom: 0.0 },
     ];
     let rim = Heights::rim(&blocks, 0.3);
     let start = Body { z: 2.0, ..movement::standing(1.5, 0.0) };
@@ -69,8 +69,8 @@ fn a_body_climbing_the_rail_from_the_deck_goes_no_further_than_its_top() {
 fn a_body_climbing_a_wall_shimmies_along_it_no_further_than_the_rim() {
     // A deck with a tall wall along its north edge, both ending at x 3: the wall's end stands at the rim's.
     let blocks = vec![
-        Block { min_x: -3.0, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 2.0 },
-        Block { min_x: -3.0, min_y: -1.8, max_x: 3.0, max_y: -1.5, top: 5.2 },
+        Block { min_x: -3.0, min_y: -1.5, max_x: 3.0, max_y: 1.5, top: 2.0, bottom: 0.0 },
+        Block { min_x: -3.0, min_y: -1.8, max_x: 3.0, max_y: -1.5, top: 5.2, bottom: 0.0 },
     ];
     let rim = Heights::rim(&blocks, 0.3);
     let start = Body { z: 2.0, ..movement::standing(2.5, -1.0) };

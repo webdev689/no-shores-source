@@ -8,10 +8,11 @@ use movement::Controls;
 use protocol::wire::overlook::wire as messages;
 
 /// A mission's node file: a section 400 m square on land rising 300 m a kilometre east and south, its two spawns near
-/// its southern edge.
+/// its southern edge, and in the square its room bakes a wall from below the ground up and a roof 4 m or more over it.
 pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "The Glade", "continent": "square",
     "ring": [[-200, -200], [200, -200], [200, 200], [-200, 200]], "spawns": [[0, 180], [15, 185]],
-    "bounds": [-300, -300, 300, 300], "boxes": [],
+    "bounds": [-300, -300, 300, 300],
+    "boxes": [[-10, 152, 10, 153, 970, 900], [15, 145, 25, 160, 962.5, 962]],
     "ground": { "lake_level": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rivers": [], "roads": [], "towns": [],
         "pads": [], "seed": 7,
         "land": { "width": 4, "height": 4, "left_m": -2000, "top_m": -2000, "cell_m": 1000, "first_column": 0,
@@ -25,7 +26,7 @@ pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "
             -50] } } }"#;
 
 /// Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
-pub const GARRISON_HASH: &str = "54facbf5";
+pub const GARRISON_HASH: &str = "456d2b58";
 
 /// Ticks the player runs north into the garrison, then stands and swings each SWING_EVERY ticks until RUN_TICKS.
 const RUN_IN: u32 = 420;
@@ -66,7 +67,7 @@ fn input_of(player: PlayerId, input: &room::Input) -> i32 {
 }
 
 /// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
-pub const GARRISON_PAIR_HASH: &str = "a6a20745";
+pub const GARRISON_PAIR_HASH: &str = "f024e822";
 
 #[test]
 fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {

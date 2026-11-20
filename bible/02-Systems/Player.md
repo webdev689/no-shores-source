@@ -5,6 +5,7 @@ code:
   - client/src/player/walker.ts#Walker
   - client/src/player/player.ts#updatePlayer
   - client/src/player/playerCamera.ts#cameraOrbit
+  - client/src/player/boom.ts#boomReach
   - client/src/player/playerMoves.ts#shownMove
   - client/src/player/input.ts#BINDINGS
   - client/src/player/cards.ts#Cards
@@ -36,23 +37,28 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   fighter ([[Combat]]), or a ship's deck. In a fight the walker steps and shows the frame in two halves, the fight's
   buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
   Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
-- **The camera** sits in the head, or behind it and up in third person, short of any block between
-  (`cameraOrbit`). The page draws from it.
-- **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the scene
-  makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass. Each
-  figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working out the
-  moves only for a new dress), and again once one of them is let go before it was asked for ([[Test Ground]], "Limits").
-  The figure holds the weapon the fight's rules hold: one changed while they are busy shows once they take it up at
-  rest. The walker gives the player's own card for an eye; other players' figures stand where their room last saw them,
-  in their own dress when it reads as one (`OtherPlayers`, `showOther`), as in the game's nodes so on the Test Ground.
+- **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Where a block
+  or the ground stands between the head and the boom's end, the boom comes in to stand 0.25 m short of it, eased in
+  fast and let out slowly so it never snaps (`boomFollowed`, `boom.ts`); however it eases it stands no nearer a block
+  or the ground than 0.12 m, so the near plane never cuts through a wall, and indoors it shows the room from inside.
+  A block the head stands in, as a room's volume, does not hold it. The page draws from it. An address asks for a
+  camera to arrive with, as for a spawn: `&view=first` or `&view=third,<metres>`.
+- **The figure** is composed from the [[Sprite Forge]]'s strips and kept as cards (`Cards`). Whatever draws the
+  scene makes the cards (`CardMaker`): the Test Ground's scene, or the game's figures, drawn into its scene's pass.
+  Each figure's likeliest moves are queued once for each dress it wears (`Cards.warm`, asked each frame but working
+  out the moves only for a new dress), and again once one of them is let go before it was asked for ([[Test Ground]],
+  "Limits"). The figure holds the weapon the fight's rules hold: one changed while they are
+  busy shows once they take it up at rest. The walker gives the player's own card for an eye; other players' figures
+  stand where their room last saw them, in their own dress when it reads as one (`OtherPlayers`, `showOther`), as in
+  the game's nodes so on the Test Ground.
 - **Its strips are fetched ahead.** A new dress has every strip of its likeliest moves fetched at once, as drawn and as
   mirrored, in the order the moves are likeliest shown: a move's strips take a second or more to fetch and a few
   milliseconds to compose, so a blow first played would otherwise show as a still. The worker composing the frames
   (`StripFetcher`) fetches six at a time, each dress's next in turn, skipping any strip already held, and each strip
   with its depth in one range, as the packs lay them side by side; a joined range that fails falls back to each strip's
-  own. A strip fetched ahead that fails is let go at once, so a frame that wants it fetches it again. The fetched bytes
-  are kept (96 MB) apart from the decoded strips (128 MB, a few moves of a few dresses), so a strip let go is decoded
-  again rather than fetched.
+  own. A strip fetched ahead that fails is let go at once, so a frame that wants it fetches it again; one the page names
+  no place for is none, and is not kept as missing. The fetched bytes are kept (96 MB) apart from the decoded strips
+  (128 MB, a few moves of a few dresses), so a strip let go is decoded again rather than fetched.
 - **A room** (`Fighting`): it is joined with the player's session, if they have one, to keep their character
   ([[Accounts]]). Each tick's intent goes to it, with what the figure shows, the dress when it changed, a gear ask and
   a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,

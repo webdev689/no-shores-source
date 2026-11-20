@@ -59,6 +59,7 @@ fn course() -> ((f64, f64), Vec<movement::Block>) {
         max_x: number(block, "maxX"),
         max_y: number(block, "maxY"),
         top: number(block, "top"),
+        bottom: 0.0,
     });
     ((number(&json["start"], "x"), number(&json["start"], "y")), blocks.collect())
 }

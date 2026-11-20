@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/testground/index.html
+  - client/src/testground/rockRow.ts#ROCK_ROW
   - client/src/testground/testgroundMain.ts
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/testground/aimPanel.ts
@@ -108,7 +109,9 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   for its own time or for as many seconds as asked (ten minutes at most), through the room's own door, as a spell or a
   perk will: the icons show on the foes' plates and under the vitals, and the rules act on them. Only a course's room
   grants them; a node's refuses.
-- **Arts.** The panel wears an Art and sets each slot of its Core, showing the room's word on both, and a button fills
+- **Arts.** The player joins with every Art at level 5 owning every fragment. The panel wears an Art, sets each slot of
+  its Core and each Art's level (a row of buttons, 1 to 5: a press sets that level, the one shown too, and owns every
+  fragment of that Art again), showing the room's word on all of them, and a button fills
   the Anima and readies both Tenets at once, so every spell can be tried in turn ([[Arts]]). After each ask the room's
   next word sets every list back to what it holds, so a choice it refused does not stay shown. The ability bar stands at
   the bottom left, beside the weapons. An Anima's release pushes the view in and frames the screen in its element, as in
@@ -272,6 +275,15 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   share of a full load kept for one.
 
 The room in the page runs one tick as the page opens, so the gear is there before the player first plays.
+
+## Natural rock
+
+With `?rock` and no room, a row of the city's natural rock stands east of the course, 10 m north of the start's line
+([[Cities]], "Solids and collision"): a cave roof 3.5 m up at 40 m east, an overhang at 60 m with its lip jutting
+south, a rock arch at 80 m and a tunnel mouth at 100 m, each walked through to the north. The body and the room in
+the page stand against each rock's boxes as the course's; the rocks are drawn with the course's blocks, lit flat in
+its grey with its metre lines, not in the city's pictures. `?rock=<east>,<south>[,<bearing>,<degrees down>]` starts
+the player there, looking that way, to picture a rock from in front of it or under it.
 
 ## Playing together
 
