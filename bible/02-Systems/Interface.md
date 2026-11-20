@@ -92,7 +92,8 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-Where a part of it can be drawn without HTML, it is ([[HTML Is Avoided Where It Can Be]]).
+Its panels, plates and words are HTML laid over the canvas; by the owner's word, what can be made without HTML
+should be ([[HTML Is Avoided Where It Can Be]]).
 
 ## How it works
 
@@ -260,24 +261,25 @@ Where a part of it can be drawn without HTML, it is ([[HTML Is Avoided Where It 
   boss bar's at 22, on the face's grid. A ship's hull reads its losses as a
   foe's health does, and her bar's edge flashes for a bite, whole, two thirds and a third over 0.24 s; a ship first
   seen starts whole at her bar.
-- **The task tracker** (`TaskTracker`) is a window naming the quest in its header band (11 px, in brass), the task
-  now under it at 22 px, and the task's steps at 11: each a box, its words, the keys that do it on keycaps, and a
-  count of what is left at 22 in brass. A step met has its box filled in brass and its words dimmed; the moment it is
-  met its row lights in brass and settles in four steps over 0.7 s, and a new task slides in from the right over
-  0.35 s. A quest hands it a name, a task and steps (`Quest`), so any quest uses it with data alone. It reads what
-  the player does, never a press of its own, so keys and touch tick it alike, and it writes the page only when its
-  words change. At the larger step its words stand at 22 and it is 396 px wide (264 below).
+- **The task tracker** (`TaskTracker`, [[Quests Get a Task Tracker, and the Placeholder Panel Goes]]) is a window naming
+  the quest in its header band (11 px, in brass), the task now under it at 22 px, and the task's steps at 11: each a
+  box, its words, the keys that do it on keycaps, and a count of what is left at 22 in brass. A step met has its box
+  filled in brass and its words dimmed; the moment it is met its row lights in brass and settles in four steps over
+  0.7 s, and a new task slides in from the right over 0.35 s. A quest hands it a name, a task and steps (`Quest`), so
+  any quest uses it with data alone. It reads what the player does, never a press of its own, so keys and touch tick it
+  alike, and it writes the page only when its words change. At the larger step its words stand at 22 and it is 396 px
+  wide (264 below).
 - **A sea fight's panel** (`FightPanel`) is a window at the bottom left naming her ship in its header band ("Your
-  Brig"), with her hull, sails and crew as bars (each in a track, its numbers beside it), each side's guns (Ready,
-  the seconds left to reload, Laying or On target as the look lays them), the shot loaded in a chip and Braced in
-  another while she braces. While an afloat captain has a side run out at her, a warning in blood stands under the
-  header: Broadside! Brace, with C on its keycap. Each captain's hull stands on her own plate over her; the fight's
-  task in the tracker says to defeat their crews, counts the ships left (afloat) and their men, and says they need not
+  Brig"), with her hull, sails and crew as bars (each in a track, its numbers beside it), each side's guns (Ready, the
+  seconds left to reload, Laying or On target as the look lays them), the shot loaded in a chip and Braced in another
+  while she braces. While an afloat captain has a side run out at her, a warning in blood stands under the header:
+  Broadside! Brace, with C on its keycap. Each captain's hull stands on her own plate over her; the fight's task in the
+  tracker says to defeat their crews, counts the ships fighting her still afloat and their men, and says they need not
   be sunk, as the rules strike a ship whose men are gone or whose hull is beaten low. DFO's messages are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place.
 - **The key strip** shows the keys of what the player does now, each on a keycap beside its words, wrapping right to
-  left. On foot it keeps to the fight's keys and the body's beyond walking and looking.
+  left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while one is worn.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.

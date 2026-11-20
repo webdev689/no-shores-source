@@ -11,8 +11,8 @@ status: in force
 
 - A speech blurb shows its words alone: its glyphs are removed ([[Speech]]).
 - An emote's few syllables of voice went with its glyph. Asked whether they should come back without the glyphs, the
-  owner chose "Keep them removed": "With no glyph over a head, the syllables would come from nowhere you can see;
-  barks keep their words and voice."
+  owner chose "Keep them removed", the option that read: "With no glyph over a head, the syllables would come from
+  nowhere you can see; barks keep their words and voice."
 
 ## Claude's calls
 

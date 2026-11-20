@@ -10,6 +10,6 @@ status: in force
 ## What it settles
 
 - Through the [[Prologue]] the player has no Art: no Anima, no Tenets, nothing an Art gives.
-- Arts are obtained after the prologue, through a faction system the owner has named but not yet set out.
+- Arts are obtained after the prologue, with "the new faction system"; no decision sets that system out yet.
 
 [[Arts Are Overlook's Subclasses]].

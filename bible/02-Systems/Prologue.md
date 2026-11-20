@@ -87,7 +87,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm, where it ends in the helm's own shot, riding her deck as the helm's camera does (all her rise and fall, a quarter of her pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
 | `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down her deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over her stern as three pirate Sloops come out of the dark, and comes down behind her through the fight's own lens | shown |
-| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as hers, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships left (afloat) and "No need to sink them", until every one is beaten, sunk or struck; her ship's panel, the fight's keys and DFO's messages as toasts | played |
+| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as hers, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting her still afloat and "No need to sink them", until every one is beaten, sunk or struck; her ship's panel, the fight's keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where and as the fight left them, each in her own settle, trim and list, and her sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on her until she reads however far off she lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round her; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side at 6 m/s (about 12 knots), lightning striking past her at 2.3 s and 4.8 s so her masts and sails stand against it: Captain Brannoc Thule's Frigate at her own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of her stem first touches the Brig's side where her hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
@@ -187,8 +187,8 @@ their hands free, and on the wreck a swing draws the sword and the shield, as th
 ## The wreck
 
 Where the ram leaves the player: the Brig broken in two by Thule's Frigate, fought through on foot to the boss. It is a
-scene of its own, built in Blender ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in
-Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the lines are the story's.
+scene of its own, built in Blender ([[The Prologue Is Brought to Life With Music, Sound and a Wreck Built in Blender]]);
+the cutscenes, the camera's moves, the nameplate, the fires and the lines are the story's.
 
 - **The scene** (`tools/wreck/`), spread out at true size ([[The Wreck Is Spread Out Much Larger, True to Scale]]).
   The ships tool builds the Brig, the Frigate and the Sloop, each at her own size. The Frigate lies north to south,
@@ -238,14 +238,15 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
   reaches it; and three spots near the wave on open deck where the Brig's crew stand (`crew`). At most 6 of the
   wreck's foes are alive at once.
-- **The Brig's crew** fight on in each zone with a wave, two or three of them ([[Allied Crew Fight on the Wreck and Can
-  Fall]]), stood with the zone's first boarder as the player enters, so they are fighting from the first. Each stands at
-  one of the zone's `crew` spots in the layout, facing the nearest boarder; for a zone that lays none, 1.6 m from one of
-  its first boarders on the same deck within the zone, toward its checkpoint where that stands. They are the roster's
-  crew, Minors at the boarders' level, a swordsman and a skirmisher in turn, dressed as the Brig's plain hands in the
-  storm with their weapons drawn, named "Crew" over a green bar. The boarders fight them and they fight back; they can
-  fall. Neither the music nor a foe's growl on noticing the player takes one of them for a foe. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at once, so the boarders
-  always have room. A zone is cleared once its boarders are down, whatever became of its crew.
+- **The Brig's crew** fight on in each zone with a wave, two or three of them
+  ([[Allied Crew Fight on the Wreck and Can Fall]]), stood with the zone's first boarder as the player enters, so they
+  are fighting from the first. Each stands at one of the zone's `crew` spots in the layout, facing the nearest boarder;
+  for a zone that lays none, 1.6 m from one of its first boarders on the same deck within the zone, toward its
+  checkpoint where that stands. They are the roster's crew, Minors at the boarders' level, a swordsman and a skirmisher
+  in turn, dressed as the Brig's plain hands in the storm with their weapons drawn, named "Crew" over a green bar. The
+  boarders fight them and they fight back; they can fall. Neither the music nor a foe's growl on noticing the player
+  takes one of them for a foe. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at
+  once, so the boarders always have room. A zone is cleared once its boarders are down, whatever became of its crew.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
   piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from her quarterdeck), standing
   from the start. It is cleared once its zone's wave has stood whole and
@@ -287,13 +288,14 @@ Blender]]); the cutscenes, the camera's moves, the nameplate, the fires and the 
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the
   shot its camera takes of the player standing, where the wake's flight ends. A cutscene holds it still. Its room is
   let go as the wreck's fight ends. The key strip is foot's, without the menu: the story has none.
-- **The tasks** (`Lessons`), in the tracker under the quest "Prologue". Waking, the task is "Learn the controls", four
-  steps each ticked off once the player does it, read from what their body and fight did: Move (W A S D, 2 m walked
-  from where they woke), Look round (Mouse, the view turned a radian in all), Attack (Right button, a swing begun)
-  and Block or dodge (F and V, a guard, a parry or a dodge). Foes standing further on, fighting the crew, leave it
-  up. Once a hostile foe takes the player as its target, or 1.5 s after all four are met, the task is "Fight your way
-  through the wreck", counting the hostile foes standing while any do, and it never goes back. The boss
-  fight's task is "Face Captain Brannoc Thule". The tracker hides while a cutscene holds the fight.
+- **The tasks** (`Lessons`), in the tracker under the quest "Prologue"
+  ([[Quests Get a Task Tracker, and the Placeholder Panel Goes]]). Waking, the task is "Learn the controls", four steps
+  each ticked off once the player does it, read from what their body and fight did: Move (W A S D, 2 m walked from where
+  they woke), Look round (Mouse, the view turned a radian in all), Attack (Right button, a swing begun) and Block or
+  dodge (F and V, a guard, a parry or a dodge). Foes standing further on, fighting the crew, leave it up. Once a hostile
+  foe takes the player as its target, or 1.5 s after all four are met, the task is "Fight your way through the wreck",
+  counting the hostile foes standing while any do, and it never goes back. The boss fight's task is "Face Captain
+  Brannoc Thule". The tracker hides while a cutscene holds the fight.
 - **No Art.** The player fights the wreck with no Art ([[The Player Has No Art in the Prologue]]): its room is told
   to forbid them (`Room::forbid_arts`), so no ability bar shows and no cast is taken.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,

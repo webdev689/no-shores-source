@@ -8,8 +8,8 @@ status: in force
 > "There should be allied crew mates fighting others on board with green health bars"
 
 Asked how they should work (fighting and able to fall, fighting and never dying, or following the player), the owner
-chose "Fight, and can fall": two or three of the crew in each zone, already fighting the boarders when the player
-arrives, able to win or die, so helping them matters.
+chose "Fight, and can fall", the option that read: "Two or three of your crew in each zone, already fighting the
+boarders when you arrive. They can win or die, so helping them matters."
 
 ## What it settles
 
@@ -17,8 +17,8 @@ arrives, able to win or die, so helping them matters.
 - They can win their fights or fall.
 - The crew and the players cannot harm each other. Asked "Right now you cannot hurt your own crew on the wreck, and
   they cannot hurt you: your swings, shots and spells pass through them. Is that what you want?", the owner chose
-  "No friendly fire": "Keep it as built: crew and player can't harm each other, so swinging into a crowded fight never
-  kills an ally."
+  "No friendly fire", the option that read: "Keep it as built: crew and player can't harm each other, so swinging
+  into a crowded fight never kills an ally."
 
 ## Claude's calls
 

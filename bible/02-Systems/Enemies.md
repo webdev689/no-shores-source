@@ -209,7 +209,7 @@ WebAssembly, so names, factions and weapons are read in one place.
   just clear, and the plates hold still from frame to frame ([[Interface]]).
 - **Plates stand still however far out.** Each is placed through the camera's matrix kept in 64-bit numbers
   (`shiftedExactly`): out at sea, some 2,800 km from the world's origin, a 32-bit matrix rounds its offset to a quarter
-  metre, and every plate shook some 30 px as the camera moved.
+  metre, enough to shake a plate some 30 px as the camera moves.
 - **The boss bar**: for the nearest living Boss that is alert or struck, the same plate wide across the top of the
   screen: its level, its name and faction, "Phase n of 3", its health in yellow marked at 2/3 and 1/3, and its poise
   track under it. A Boss has no plate over its head.

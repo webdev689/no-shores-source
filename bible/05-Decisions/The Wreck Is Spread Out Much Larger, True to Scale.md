@@ -11,8 +11,10 @@ After playing the [[Prologue]] live:
 
 > "After the cinematic and you wake, enemies are right on top of you, no time to breath or learn the game controls"
 
-Asked how it should grow (spread out at true size, scaled up half again, or its decks cleared), the owner chose to
-spread it out at true size, and wrote: "#1, the playspace needs to be much larger".
+Asked how it should grow (spread out at true size, scaled up half again, or its decks cleared), the owner chose
+"Spread out, true size", the option that read: "Rebuild it in Blender with the hulls pushed apart and joined by wide
+wreckage (fallen masts, decking, a floating debris field), each fight zone about three times the area. The ships stay
+true to scale." They wrote: "#1, the playspace needs to be much larger".
 
 ## What it settles
 
@@ -23,8 +25,8 @@ spread it out at true size, and wrote: "#1, the playspace needs to be much large
 ## Claude's calls
 
 - The wreckage between the hulls is six wide rafts of torn decking on mast lengths and casks, ground a body can
-  circle on, kept clear of the swell. Every fight zone has at least four times its old ground, and the export refuses
-  a wreck where under 2,000 m² is walked.
+  circle on, kept clear of the swell. Every fight zone has at least four times its old ground, more than the option's
+  "about three times", for "much larger"; the export refuses a wreck where under 2,000 m² is walked.
 - The player wakes on the Brig's quiet stern: no wave, no crew and nothing across the way on. A zone's wave stands
   only as the player enters it, well across from where they come in.
 - To join the ships, the Frigate's port side is stove in abreast her gun deck and her port bulwark broken forward,

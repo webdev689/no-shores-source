@@ -99,9 +99,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock holds a
   foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The key strip
-  shows the fight's keys and the body's beyond walking and looking, the Arts' (R Anima, Q and G Tenets) adding how to
-  aim Dusk Daggers only while Shadow is worn. Where the HUD is wide and not doubled (1500 by 900 and up, under 2400
-  by 1300), its keys stand at 22 px, at the bottom right ([[Interface]]).
+  shows the fight's keys and the body's beyond walking, the Arts' (R Anima, Q and G Tenets) only while an Art is worn,
+  and how to aim Dusk Daggers only while Shadow is. Where the HUD is wide and not doubled (1500 by 900 and up, under
+  2400 by 1300), its keys stand at 22 px, at the bottom right ([[Interface]]).
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
   Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
