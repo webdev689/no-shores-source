@@ -132,7 +132,10 @@ test("at sea the ambience counts the listener's frame from her ship: a blow is p
   const sounds = new WorldSounds(() => output, play);
   sounds.frame(frameOf({ events: [hit()] }));
   listen(output.audio, [0, 3, 2], 0, ship);
-  assert.deepEqual(played.map(({ at }) => at), [[505, 0, -700]]);
+  assert.deepEqual(
+    played.map((sound) => sound.at),
+    [[505, 0, -700]],
+  );
   assert.deepEqual([listener.positionX.value, listener.positionY.value, listener.positionZ.value], [500, 2, -697]);
 });
 
