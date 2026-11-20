@@ -114,9 +114,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const drawersOn = (opened: Landmass) =>
     landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets, () => shipScale);
   const asked = new URLSearchParams(location.search).get('at');
-  // Which cities are ports, so a ruin's social space is arrived at under its ruin's name; by its name alone if the
-  // rules' module does not come.
-  const mainPorts = await roomModule.then(mainPortsOf).catch(() => null);
+  // Only arriving at another city's social space waits for the rules' module, to learn whether it is a ruin.
+  const another = asked !== FIRST_NODE && asked?.endsWith('-social');
+  const mainPorts = another ? await roomModule.then(mainPortsOf).catch(() => null) : null;
   const start = (asked === null ? null : arrivalAt(world, asked, mainPorts)) ?? arrivalAt(world, FIRST_NODE);
   if (!start) throw new Error('the world has no Overlook to arrive at');
   if (start.node !== FIRST_NODE) {
