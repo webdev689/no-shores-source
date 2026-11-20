@@ -131,6 +131,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Display as Claude Lays It Out]]
 - [[The Swing's Arc Never Covers Its Striker]]
 - [[A Player's Melee Weapon Reaches a Tenth Further]]
+- [[The Arts' Birds Are Forged in Blender]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

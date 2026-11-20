@@ -1,11 +1,12 @@
 """The Arts' birds: Divine's Dawnflare, a bird of fire, and Shadow's Duskraven, a raven, each in its four wing beats
-(up, half down, down, half up), seen from its side a little from above, its head to the right.
+(up, half down, down, half up), seen a little from above in the forge's five views as its figures are: facing the
+eye, then turned to the eye's left an eighth at a time to its back (the other three are these mirrored).
 
     python -I tools/sprite-forge/artbirds.py --out public/art/arts/birds
 
 Each frame is a brightness map, not a colour: the game turns its light into the four steps of the caster's element,
-so one render serves any Art. Writes `<bird>-<beat>.png` at the bird's size in the game's figure pixels, grey in
-its colour and its cover in its alpha. Renders with Cycles on the CPU at four times the size, then each block of
+so one render serves any Art. Writes `<bird>-<view>-<beat>.png` at the bird's size in the game's figure pixels, grey
+in its colour and its cover in its alpha, each view the same size, the body in its middle. Renders with Cycles on the CPU at four times the size, then each block of
 texels is averaged down, so its edges are clean at the game's size."""
 import argparse
 import math
@@ -15,8 +16,13 @@ import bpy
 import numpy as np
 from mathutils import Vector
 
-# Each bird's size in figure pixels, as the game draws it, and how much of the frame its wingspan fills.
-BIRDS = {'fire': (99, 81), 'raven': (29, 21)}
+# Each bird's frame in figure pixels, as the game draws it, and the metres of the bird's own measure it spans: wide
+# and tall enough for its tail, its spread wings and its raised ones in every view, at the same pixels a unit.
+BIRDS = {'fire': (110, 110), 'raven': (32, 32)}
+SPANS = {'fire': 9.6, 'raven': 7.7}
+# The bird turned in each of the forge's views (its head on +X): facing the eye, then to the eye's left to its back,
+# as forge.py's VIEW_YAW turns a figure.
+VIEW_YAW = [-90.0, -135.0, -180.0, -225.0, -270.0]
 OVERSAMPLE = 4
 # How far back from straight out a wing reaches from its shoulder, degrees.
 SWEEP_BACK = 28
@@ -138,7 +144,8 @@ SHAPES = {
 }
 
 
-def build(bird, beat, fold):
+def build(bird, beat, fold, yaw):
+    """The bird posed at its beat, turned `yaw` degrees about its middle."""
     s = SHAPES[bird]
     fire = bird == 'fire'
     # Fire is lit from within, hottest at its heart; the raven is of Cosmic light, its eye the brightest of it.
@@ -172,6 +179,12 @@ def build(bird, beat, fold):
                 0.55 if fire else 0.5, mats['tail'], normal=(0, 1, 0), bend=-s['tail_curl'] * (1 + abs(t)))
     for side in 'LR':
         wing(side, beat, fold, s, mats)
+    root = bpy.data.objects.new('root', None)
+    bpy.context.collection.objects.link(root)
+    for ob in bpy.context.collection.objects:
+        if ob is not root and ob.parent is None and ob.type != 'CAMERA' and ob.type != 'LIGHT':
+            ob.parent = root
+    root.rotation_euler = (0, 0, math.radians(yaw))
 
 
 def stage(bird):
@@ -185,12 +198,12 @@ def stage(bird):
     scene.view_settings.view_transform = 'Standard'
     cam_data = bpy.data.cameras.new('camera')
     cam_data.type = 'ORTHO'
-    cam_data.ortho_scale = 8.6 if bird == 'fire' else 7.0
+    cam_data.ortho_scale = SPANS[bird]
     cam = bpy.data.objects.new('camera', cam_data)
     bpy.context.collection.objects.link(cam)
     # From the bird's left, a little above it: its head to the right of the frame.
     elevation = math.radians(20)
-    cam.location = (-0.3, -12 * math.cos(elevation), 12 * math.sin(elevation) + 0.2)
+    cam.location = (0.0, -12 * math.cos(elevation), 12 * math.sin(elevation))
     cam.rotation_euler = (math.radians(90) - elevation, 0, 0)
     scene.camera = cam
     for name, rotation, energy in (('key', (40, 0, 30), 3.0), ('fill', (120, 0, -150), 1.0)):
@@ -235,16 +248,18 @@ def main():
     args = parser.parse_args()
     os.makedirs(args.out, exist_ok=True)
     for bird in args.birds.split(','):
-        for beat, (turn, fold) in enumerate(BEATS):
-            clear()
-            stage(bird)
-            build(bird, turn, fold)
-            work = os.path.join(args.out, f'.{bird}-{beat}-work.png')
-            bpy.context.scene.render.filepath = work
-            bpy.ops.render.render(write_still=True)
-            save(downsampled(work, bird), os.path.join(args.out, f'{bird}-{beat}.png'))
-            os.remove(work)
-            print(f'{bird}-{beat}', flush=True)
+        for view, yaw in enumerate(VIEW_YAW):
+            for beat, (turn, fold) in enumerate(BEATS):
+                clear()
+                stage(bird)
+                build(bird, turn, fold, yaw)
+                name = f'{bird}-{view}-{beat}'
+                work = os.path.join(args.out, f'.{name}-work.png')
+                bpy.context.scene.render.filepath = work
+                bpy.ops.render.render(write_still=True)
+                save(downsampled(work, bird), os.path.join(args.out, f'{name}.png'))
+                os.remove(work)
+                print(name, flush=True)
 
 
 if __name__ == '__main__':
