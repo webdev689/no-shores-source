@@ -61,7 +61,8 @@ Her rank, by the lowest level of her water's band:
 
 - **One strength a rank.** Every hull's best way is the Sloop's. A side's broadside weighs the Sloop's, spread over
   her guns, each ball's chances times three over her guns a side, and harm's fractions carried. Her hull, canvas and
-  men scale by how often she is hit, so every hull of a rank lasts as long under the same fire.
+  men scale by how often a captain's gunners hit her, so every hull of a rank lasts as long under a captain's fire.
+  Under a player's, a Frigate lasts about 5% longer.
 - **Rigs and names.** Her handling gain is the matching rig's in DFO: the Large Boat V for the Schooner, the galleon
   for the Brig, the Carrack for the Frigate. Every sail is small. A captain is named by her side and hull, as "Tithe
   Brig".

@@ -177,19 +177,40 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[Third-Person Strikes Run Faster Than DFO's]]), and keeps a drawn sword and its sheath on their own sides in a
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
+- The sea as the owner decided it, on pull request #75 (branch `claude/waters-from-islands`, stacked on #71's
+  ships), tested offline and not yet merged ([[The Waters Come From the Islands]],
+  [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]],
+  [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]],
+  [[The Held Map Colours Each Water's Name by Its Difficulty]]). Every call the owner left open is Claude's, in
+  [[The Sea as Claude Shapes It]]:
+  - The waters: nine, each the sea nearest an island, with its holder and its island's levels, and a contested seam
+    ([[World Map]], "Waters").
+  - Hostile ships by water: rank by the water's band, hull by rank, sighted half a minute out at any pace, bold ships
+    coming where they can meet a voyage, and a click on a ship's mark to chase her ([[Naval Combat]], "At sea").
+    Measured at x60 over 10 minutes in hostile waters: a fight for 30 to 65% of players sailing on and 70 to 85%
+    chasing; ships in sight 37 to 59 s on average.
+  - Friendly ships on three lanes between Overlook, Sunspire and Rimeholt, seen from land and sea; the other six
+    cities are ruins ([[Cities]], "Ruins").
+  - Every hull sails and fights as herself, each rank lasting as long under a captain's fire ([[Hulls]]); drawn in her
+    side's colours, her square sails braced, every ship in the scene's light and shadow.
+  - Close in, the pace eases to the world's own time and the ship grows a steady step each notch ([[Game]], "At sea").
+  - The sea by the weather, every ship riding the swell, wakes and bow waves that read from above ([[Water]]).
+  - The fights' ends: sinking and what floats, striking, losing (washed up at the nearest port city by sea), damage
+    kept until repaired at a port, fights for many players, sails torn away and masts falling ([[Naval Combat]]).
+  - The held map tinted by holder, each water's name coloured by its difficulty; the tiers renamed Normal, Elite and
+    Abyss.
 
 ## Waiting on the owner
 
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
-  Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
+  Corvane, Claude's for now; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
   change: a captain strikes from losing men at about 80% of her hull at every rank, and the foes' numbers are in
   [[Foes]].
-- Pirates at sea: nothing stops them, on `main` or #61; they are rare by the numbers ported from DFO (a roll every
-  60–140 s, 0.24 of rolls a pirate, the wait starting again at each return to the ship), so about half of players
-  see none in their first 5–7 minutes. Measured options were offered and the owner skipped them for now: hostiles
-  taking the cut ships' share, DFO's faster rolls, both (about 1 minute to the first), pirates ahead on voyages, the
-  port's label giving way, and DFO's other ships back.
+- **#75, the sea, waits on the owner's yes to merge**, after #71, which deploys the page and the rooms. Left open
+  there: the sky and the light do not follow the weather yet; off the helm the room now takes a change of pace (a
+  rule of the server's); under a player's fire a Frigate lasts about 5% longer than a Sloop of her rank; one voyage in contested
+  water held a ship in sight 89 s, unexplained.
 - The bars' proposals, the owner's to choose: a foe's alert "!" showing its plate through the cone for a second;
   a setting to switch the vitals' rest off; near plates growing (DFO's own law grows them to 1.5×, ours caps them);
   ships' plates fading with distance; land, not only blocks, hiding plates; a soft-locked Boss shown once; a mark for
@@ -209,7 +230,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
   overboard should meet (the deck keeps them aboard for now), and whether DFO's Travel Options encounter (a journey
-  stopped near an enemy) or wary pirates falling on a ship they outgun should come over.
+  stopped near an enemy) should come over.
 - #50's open choice: where another player's colour goes on the Sloop. Her drawn size at sea, 75 m, is settled
   ([[The Sloop Is About 18 m Long]]).
 - #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
@@ -259,27 +280,21 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The waters, next** ([[The Waters Come From the Islands]]): decided by the owner and not built. Nine waters, each
-  the sea nearest one island, with its island's level band; owners by the table there (home safe, the second
-  contested, the third and seventh to ninth the Grey Tithe's, the fourth to sixth the pirates', and a contested seam
-  along the fourth and eighth's border); hull by rank; hostile ships sighted about 5 km out, farther with a voyage's
-  pace so each stays in sight at least 30 s; friendly ships on routes between ports, seen from land and sea, their
-  port factions later; the held map tinted by owner with Claude's names. Build order: the waters as a pure module
-  with tests, then the map's tint, then the hostile ships by water, then the friendly ships. The prologue session
-  (`claude/loving-darwin-sw4eae`) works in the sea room and draws ships: coordinate.
+- **The sea after #75**: the friendly ships' port factions (deferred by the owner); ships' own upgrade materials,
+  planned only ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]); the sky and light
+  following the weather; the long contested hold, to explain. #82's decisions (the owner's loop) wait to be built
+  and overlap this sea: flotsam stays the gear loop's drops, and the seas chosen bring their own weather.
 - **The ships** ([[The Ships as Claude Shapes Them]], [[Hulls]]): the Schooner, the cabin, the Brig and the Frigate have
   the owner's yes, and the three ships are published. The owner asked for the Frigate as one more model "and call it
-  there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship but the Sloop sails or opens her
-  cabin in the game yet, and the game sets no square sail ([[Hulls]], "What the code needs"). Splitting each ship into
+  there", so the Tithe Ram and the Fluyt wait until the owner asks for them. No ship opens her cabin in the game yet
+  ([[Hulls]], "What the code needs"). Splitting each ship into
   parts for upgrades (hull, cannons, sails and wheel), and the cabin's decoration from DFO's `decor/`, were raised and
   set aside by the owner for now. A change to the shared builder is checked by rebuilding each published ship and
   comparing its dry-run mesh hash with the manifest's. The manifest is 388 KB with the two new decks (77 KB on `main`
   before), and the client imports it and the room embeds it whole: loading each ship's deck on its own may be wanted
-  before more ships join. Then the sea as the owner approved it: waters with owners and levels, ships sighted on the
-  horizon, sea fights paying into the gear loop, boarding, the opening voyage as the first sea strike, the ship as gear,
-  then merchantmen, bounties, public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]). Measured on
-  the sea room as it is, at a voyage's pace a fight began for 17% of players by 5 minutes and 28% by 10, and most
-  hostile ships stayed in sight under 3 seconds: the reason the sea felt empty.
+  before more ships join. Of the sea the owner approved, #75 builds the waters, the ships sighted and the fights'
+  ends; still to come are the opening voyage as the first sea strike, the ship as gear, then merchantmen, bounties,
+  public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
   layer (`combat/worldCues.ts`, `combat/worldSounds.ts`), its picks on R2, tested offline. Not yet: any world sound
@@ -407,12 +422,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   wrap on foot, and the session kit's unpinned downloads). The rooms' fixes were tested on the local Cloudflare
   runtime; a cloud session's proxy cannot open a WebSocket, so none was tested live in a deployed room.
 - Step 1 of [[Gameplay Starts With the Shared Rules]] is done. Step 2, sailing, is under way: [[Sailing]] and
-  [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room. The rest of
-  the pick's step 3 is boarding, crew, quays and ports ([[Pick - Sailing and Naval Combat]]); and at sea a fight's
-  hurts kept after it, ports' waters and the land a fight is fought over. Boarding waits on the owner: which foe kinds
-  crew a boarded ship, the Sloop's deck as a place to walk, and what a taken prize becomes. A body on a moving deck,
-  which boarding needs, is the `movement` crate's grid of heights, walked on the player's own Sloop.
-- The water's open ends ([[Water]]): a body for the walker, and the weather driving the swell and the wind.
+  [[Naval Combat]] are on `main`, with the sea's pirates and fights, and ramming and the fleet room; #75 adds a fight's
+  hurts kept after it, the ports' waters and boarding. The rest of the pick's step 3 is crew and quays
+  ([[Pick - Sailing and Naval Combat]]), and the land a fight is fought over.
+- The water's open ends ([[Water]]): a body for the walker.
 - Swimming, which the water has in TypeScript, moves into the `movement` crate, so a body on foot meets the water by
   the same rules everywhere.
 - The fight's open ends ([[Combat]], [[Foes]]): running's stamina, casting's harm. Whether players may harm one another
