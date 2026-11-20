@@ -28,6 +28,8 @@ pub enum Purpose {
     Emblem = 10,
     /// Whether a kill leaves an Ammo box.
     AmmoBox = 11,
+    /// The draws of what is on (`activities`).
+    Draw = 12,
     /// Where a patrol stands a foe, what kind and its level (the try added to the purpose's number).
     Patrol = 64,
 }

@@ -6,6 +6,7 @@ code:
   - crates/gear/src/activity.rs#Activity
   - crates/gear/src/story.rs#Story
   - crates/gear/src/gate.rs#shut
+  - crates/gear/src/activities.rs#week_dungeons
 ---
 # Activities
 
@@ -61,8 +62,10 @@ Company]]).
 | Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
 | Breaches | Later | | Campaign's end |
 
-- **Draws** are seeded by the day or the week, so every player and room sees the same (`gear::activities`). The
-  week's two never fall on the same dungeon.
+- **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
+  same. Each island's dungeon of the day is one of its patrols' nine, evenly; the day's modifier is one of the eight,
+  and Burn's Art one of the three. The week's two are two of the 18 Elite Dungeons, never the same one; the Elite's
+  has one modifier, the Abyss's three of different kinds.
 - **The dungeon of the day** carries one modifier of the day at Elite and Abyss.
 - **Elite names three things**, as the owner kept it: the tier, the Elite Dungeons and a foe's rank. Each screen says
   which it means, as "Elite seas", "Elite Dungeon" or an Elite foe's nameplate.

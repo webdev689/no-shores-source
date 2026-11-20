@@ -2,8 +2,9 @@
 //! their nodes unlocked by XP and bought with Aurem, fragments, island resources and Essence; Prestige carried by
 //! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems; everything a player holds;
-//! and the game's one clock, its day and week.
+//! the game's one clock, its day and week; and what is on, drawn by the day and the week.
 
+pub mod activities;
 pub mod activity;
 pub mod ammo;
 pub mod arts;
@@ -36,6 +37,8 @@ pub use kinds::{Kind, Slot};
 pub use rarity::Rarity;
 pub use world::Difficulty;
 
+#[cfg(test)]
+mod activities_tests;
 #[cfg(test)]
 mod activity_tests;
 #[cfg(test)]
