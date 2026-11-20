@@ -348,13 +348,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The Lattice's armour and weapons in Daedric's place**, the owner's ask once #77's pass was done
-  ([[The Lattice's Armour and Weapons Take Daedric's Place]]). Daedric is one of the forge's twelve metals, drawn on
-  every armour piece and weapon class in third and first person, on shields and the horse's barding; the game names
-  it in the Atheric gear, the swing arc's tint and the dyes. The forge stays as DFO had it, so the set is drawn from
-  beside it as the Lattice's foes are. The owner chose: Lattice by name, red and purple crystal, crystal only, in
-  third-person armour, first person, weapons and shields, not the horse's armour. How the two crystals share it is
-  open ([[Open Questions]]).
+- **The Lattice's armour and weapons in Daedric's place**
+  ([[The Lattice's Armour and Weapons Take Daedric's Place]]). The armour is built after the owner's reference and
+  the owner likes it (`tools/lattice/armoury.py`, drawn standing still on the man's body). Still to do: the woman's
+  body; every move, about 48,000 renders, in a workflow that renders in parallel and publishes to R2 with the
+  repository's Cloudflare key, which needs the owner's named yes; first person; the weapons and shields; and the game's
+  own names (gear tiers, dyes, outfits, first person's metals, the swing's tint, their tests) from Daedric to Lattice.
+  The horse's Daedric barding is left out by the owner and still bears Bethesda's name ([[Open Questions]]).
 
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time

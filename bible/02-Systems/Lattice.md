@@ -18,6 +18,7 @@ code:
   - tools/lattice/bulwark_moves.py
   - tools/lattice/heart.py
   - tools/lattice/heart_moves.py
+  - tools/lattice/armoury.py
 ---
 # Lattice
 
@@ -47,6 +48,11 @@ compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, O
   sink where a leg cannot reach; a walk plants the foot bearing its weight. Every attack holds a frame or more before
   it lands, its tell, and starts and ends in the foe's idle stance. `<foe>_still` is a one-frame still of its first
   move, to judge its look by.
+- **The Lattice's armour** (`armoury.py`), in Daedric's place
+  ([[The Lattice's Armour and Weapons Take Daedric's Place]]): a set registered beside the forge's own, every piece
+  its own make, built from the forge's armour kit (its bands, plates, blades, cuffs and helm shells), so it is graded
+  and shaded as every set is. Its crystal is drawn grey and graded red, purple in its shadows; every plate's edge is
+  rolled in the seam's own light, purple. `python -I ../lattice/armoury.py --body male --anims idle --out <folder>`.
 - **Sizes.** The Bulwark is drawn at 1.2 times a man and the Heart at 3 times, each on a larger work frame. Every
   move has rows under the ground for what it brings down before its feet (a maul's head, an anchor's crown).
 
@@ -60,6 +66,8 @@ Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge
 
 - Not yet in the game: the faction, the foes' numbers and blows, and their places in the world are not built, and the
   pictures are not on R2.
+- The Lattice's armour is drawn standing still on the man's body only; its every move, the woman's body, first
+  person and its weapons and shields are not yet drawn, and the game still names Daedric.
 - The body's skin is coloured by the game as it composes a frame; the ashen skin each foe needs is not chosen yet.
 - Left for the game to draw, since a picture's light cannot change from frame to frame: the Idol's beam and its
   lens's glow growing through the charge, the Bulwark's core flaring before it discharges, the shards the Ravager
