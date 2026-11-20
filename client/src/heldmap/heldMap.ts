@@ -99,8 +99,7 @@ export class HeldMap {
   private measuredFonts = '';
   private letteredShape = '';
   /** The last layout, and what it read: laid out again only when that has changed. */
-  private laidOut: Lettering | null = null;
-  private laidOutFrom = '';
+  private readonly laidOut = new Kept<Lettering>();
   /** Counts the times the charted sea and its waters were set, which the layout reads but no key can cheaply hold. */
   private chartings = 0;
   private phase: Phase = { kind: 'closed' };
@@ -306,9 +305,7 @@ export class HeldMap {
       this.widths.clear();
     }
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
-    if (reads !== this.laidOutFrom || !this.laidOut)
-      [this.laidOut, this.laidOutFrom] = [this.layout(scene, stage.sprite), reads];
-    const lettering = this.laidOut;
+    const lettering = this.laidOut.of(reads, () => this.layout(scene, stage.sprite));
     this.layoutCard(drop);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
     const shape = JSON.stringify([width, height, inkAt, dpr, fonts, lettering]);
@@ -445,4 +442,15 @@ export function layoutKey(
 ): string {
   const { ship, heading, places, knownIslands } = scene;
   return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ship, heading, places, knownIslands, chosen]);
+}
+
+/** A value made again only when its key changes: the held map's layout, keyed by `layoutKey`. */
+export class Kept<Value> {
+  private key: string | null = null;
+  private value: Value | undefined;
+
+  of(key: string, make: () => Value): Value {
+    if (key !== this.key || this.value === undefined) [this.value, this.key] = [make(), key];
+    return this.value;
+  }
 }

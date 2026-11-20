@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { layoutKey } from './heldMap.ts';
+import { Kept, layoutKey } from './heldMap.ts';
 
 const view = { left: 10, top: 20, scale: 0.5 };
 const stage = { ink: { x: 1, y: 2, width: 1313, height: 844 }, sprite: { x: 0, y: 0, width: 1500, height: 1000 } };
@@ -36,4 +36,14 @@ test('the held map lays out again only when something its layout reads has chang
   ];
   for (const [index, changed] of changes.entries()) assert.notEqual(changed, keyOf(), `change ${index} lays out again`);
   assert.equal(keyOf({ course: [[1, 1]] }), keyOf(), 'the course sailed is drawn, not lettered');
+});
+
+test('a frame whose key is unchanged does no layout; a changed one lays out again', () => {
+  const kept = new Kept<string>();
+  let laidOut = 0;
+  const layout = () => `layout ${++laidOut}`;
+  assert.equal(kept.of(keyOf(), layout), 'layout 1');
+  for (let frame = 0; frame < 60; frame++) assert.equal(kept.of(keyOf(), layout), 'layout 1');
+  assert.equal(laidOut, 1, 'sixty still frames, one layout');
+  assert.equal(kept.of(keyOf({ heading: 2 }), layout), 'layout 2');
 });

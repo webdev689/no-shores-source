@@ -1,9 +1,8 @@
 //! Friendly traffic: ships sailing between the port cities all the time. One route joins every pair of them, planned
 //! round land, so each port trades with both others and the lanes cross the most waters. On each route a ship leaves
 //! each end every 1,200 s of world time, sails at 5 m/s, lies 600 s at her destination's roadstead and is then gone.
-//! World time is seconds since the
-//! Unix epoch, so every machine computes the same ships for the same time, and a ship's place comes in closed form
-//! from her departure, never by stepping her.
+//! World time is seconds since the Unix epoch, so every machine computes the same ships for the same time, and a
+//! ship's place comes in closed form from her departure, never by stepping her.
 
 use crate::geometry::Point;
 use crate::layout::Layout;

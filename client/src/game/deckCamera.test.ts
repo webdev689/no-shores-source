@@ -40,11 +40,10 @@ test('from where boarders come aboard and along a walk the length of her deck, n
     const boxes = deckCameraBlocks(hull);
     const sides = sideBoxes(deck);
     const [north, south] = [deck.north + 0.5, deck.north + deck.cell * deck.rows - 0.5];
-    // Her hull, masts and spars are the same either side of her middle line, so one side stands for both.
-    for (const side of [1]) {
+    for (const side of [1, -1]) {
       const [railX] = railSpot(deck, side);
       for (const x of [railX, 0]) {
-        for (let y = north; y <= south; y += 1) {
+        for (let y = north; y <= south; y += 0.25) {
           const floor = cellHeight(deck, x, y);
           if (floor === null) continue;
           const head: Point = [x, y, floor + EYE_M];
