@@ -70,7 +70,7 @@ const VOYAGE: [[f64; 4]; 9] = [
 ];
 
 fn sail_request(ship: &[f64], helm: &[f64], time: f64, ticks: f64) -> Vec<u8> {
-    ship.iter().chain(helm).chain(&[time, ticks]).flat_map(|number| number.to_le_bytes()).collect()
+    ship.iter().chain(helm).chain(&[time, ticks, 0.0]).flat_map(|number| number.to_le_bytes()).collect()
 }
 
 fn sail_answer(bytes: &[u8]) -> Vec<f64> {
@@ -92,7 +92,7 @@ fn a_voyage_steps_to_its_pinned_fingerprint() {
     }
     assert_eq!(ship[7], 1.0, "she ends on her oars");
     assert!(ship[1] < 360_000.0 - 10.0, "she sailed north: {ship:?}");
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "94b2fdc71ffa3fa3");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "dd5fd4bf72949605");
 }
 
 #[test]
@@ -212,5 +212,5 @@ fn a_voyage_onto_the_shore_and_off_it_steps_to_its_pinned_fingerprint() {
     }
     assert!(touched, "she took the ground: furthest east {furthest}");
     assert!(ship[0] < furthest - 5.0, "her oars took her off: {} from {furthest}", ship[0]);
-    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "47228ab3b66e850c");
+    assert_eq!(format!("{:016x}", land::exact::fingerprint(sailed)), "2c00a5d54a56496b");
 }

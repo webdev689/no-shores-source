@@ -6,6 +6,7 @@ import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../p
 import type { Card, CardAt, CardMaker } from '../player/cards.ts';
 import { GlowCards } from '../player/glowCards.ts';
 import { NEAR, SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '../shadow.ts';
+import { SKY_WGSL, skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 const VIEW_BYTES = 80;
@@ -20,8 +21,7 @@ struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f,
 @group(2) @binding(0) var<uniform> card: Card;
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
-// SHARED_WGSL's SUN (water/waterCommon.ts).
-const SUN = vec3f(-0.5417, 0.5417, 0.6428);
+${SKY_WGSL}
 const CORNERS = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
 
 // How far a corner (0 to 1 across, 0 to 1 down) stands across the card from its feet, metres.
@@ -54,7 +54,7 @@ fn picture_at(corner: vec2f) -> vec4f {
 `;
 
 /** The cards turned to the eye about their upright, lit through the sun's shadows, and their contact shades. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 ${CARD}
 ${SHADOW_WGSL}
 ${STATUS_WGSL}
@@ -73,11 +73,9 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
   return out;
 }
 
-// A figure in a shadow keeps what the land's ambient light gives an upright face: about half its sunlit colour.
+// A figure in a shadow keeps what the land's ambient light gives an upright face: at a clear noon about half its
+// sunlit colour.
 const SHADED = 0.55;
-// The way the light runs over the ground, away from the sun, and how much of a step along the sun is over the ground.
-const LIGHT_ACROSS = vec2f(0.7071068, -0.7071068);
-const SUN_ACROSS = 0.766;
 
 @fragment fn card_fragment(in: Out) -> @location(0) vec4f {
   let root = root_texel();
@@ -87,10 +85,19 @@ const SUN_ACROSS = 0.766;
   if (texel.a < 0.5) { discard; }
   // A figure's shadow is drawn from its card turned square to the sun about its feet. A point of the card the eye sees
   // that lies behind that one from the sun is asked of the map from past it, so a figure never shades itself.
-  let behind = max(across_of(in.corner) * dot(view.right.xy, LIGHT_ACROSS), 0.0);
-  let sun = sunlit(in.from_eye + SUN * (behind / SUN_ACROSS + 0.15), SUN);
+  // The way the light runs over the ground, away from the key light, and how much of a step along it is across.
+  let toward = key_toward();
+  let light_across = -normalize(toward.xy + vec2f(1e-6, 0.0));
+  let behind = max(across_of(in.corner) * dot(view.right.xy, light_across), 0.0);
+  let lifted = in.from_eye + toward * (behind / max(length(toward.xy), 0.05) + 0.15);
+  let sun = sunlit(lifted, toward) * sky_dapple(in.from_eye);
+  let shaded_light = sky_ambient(vec3f(0.0)) * (SHADED / 0.35);
+  // The card faces the eye: a lamp before it lights it, one behind it hardly.
+  let facing = normalize(vec3f(-in.from_eye.xy, 0.0) + vec3f(1e-4, 0.0, 0.0));
+  let lamps = sky_lamps(in.from_eye, facing);
+  let light = mix(shaded_light, shaded_light + sky_state.key_light.rgb * (1.0 - SHADED), sun) + lamps;
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
-  let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * mix(SHADED, 1.0, sun), root);
+  let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * light, root);
   if (shown.a < 0.5) { discard; }
   return vec4f(shown.rgb, 1.0);
 }
@@ -107,7 +114,7 @@ struct Shade { @builtin(position) position: vec4f, @location(0) rim: f32, @locat
   let rim = select(1.0, 0.0, corner == 0u);
   let light = shadow.near * vec4f(card.feet.xyz, 1.0);
   let own = shadow.map.w > 0.5 && max(abs(light.x), abs(light.y)) < 0.8;
-  let lean = select(-SUN.xy / SUN.z * card.size.y * 0.25, vec2f(0.0), own);
+  let lean = select(-key_toward().xy / key_toward().z * card.size.y * 0.25, vec2f(0.0), own);
   let radius = vec2f(0.45, 0.45) * rim * select(1.0, 0.75, own);
   let offset = vec3f(card.feet.xy + lean * 0.5 * rim + vec2f(cos(angle), sin(angle)) * radius, card.feet.z + 0.03);
   var out: Shade;
@@ -125,7 +132,7 @@ struct Shade { @builtin(position) position: vec4f, @location(0) rim: f32, @locat
 
 /** A card's depth along the sun, for the near shadow map: turned square to the sun about its feet, the picture kept
  *  the way round the eye sees it, and anything clear cut away. */
-const CAST_SHADER = /* wgsl */ `
+export const CAST_SHADER = /* wgsl */ `
 ${CARD}
 ${SHADOW_CAST_WGSL}
 
@@ -133,7 +140,7 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
 
 @vertex fn card_cast(@builtin(vertex_index) index: u32) -> Shadowed {
   let corner = CORNERS[index];
-  let square = normalize(vec2f(-SUN.y, SUN.x));
+  let square = normalize(vec2f(-key_toward().y, key_toward().x) + vec2f(1e-6, 0.0));
   let right = select(-square, square, dot(square, view.right.xy) >= 0.0);
   var out: Shadowed;
   out.position = shadow.from_eye * vec4f(card_point(corner, right), 1.0);
@@ -176,8 +183,9 @@ export class FigureView implements CardMaker {
       ],
     });
     const shadows = shadowLayouts(device);
+    const sky = skyUniformFor(device);
     const drawLayout = device.createPipelineLayout({
-      bindGroupLayouts: [viewLayout, shadows.receiver, this.cardLayout],
+      bindGroupLayouts: [viewLayout, shadows.receiver, this.cardLayout, sky.layout],
     });
     this.pipeline = device.createRenderPipeline({
       layout: drawLayout,
@@ -200,7 +208,9 @@ export class FigureView implements CardMaker {
       multisample: { count: SAMPLES },
     });
     this.cast = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [viewLayout, shadows.caster, this.cardLayout] }),
+      layout: device.createPipelineLayout({
+        bindGroupLayouts: [viewLayout, shadows.caster, this.cardLayout, sky.layout],
+      }),
       vertex: { module: castModule, entryPoint: 'card_cast' },
       fragment: { module: castModule, entryPoint: 'card_cast_fragment', targets: [] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
@@ -307,6 +317,7 @@ export class FigureView implements CardMaker {
     const groups = this.groupsFor(fromEye, eye, yaw, figures);
     pass.setPipeline(this.cast);
     pass.setBindGroup(0, this.viewGroup);
+    skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
     // A Veiled figure is all but unseen, so it throws no shadow and has no contact shade.
     groups.forEach((group, index) => {
@@ -330,6 +341,7 @@ export class FigureView implements CardMaker {
     if (figures.length === 0) return;
     const groups = this.groupsFor(fromEye, eye, yaw, figures);
     pass.setBindGroup(0, this.viewGroup);
+    skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
     groups.forEach((group, index) => {

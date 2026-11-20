@@ -59,7 +59,8 @@ const WHOLE = /* wgsl */ `
 }
 `;
 
-/** The scene's depth at the light's size, a point in each block, pushed back by LIGHT.behind (nearer is more). */
+/** The scene's depth at the light's size, a point in each block, pushed back by LIGHT.behind (nearer is more); read
+ *  from a depth texture, or from depth copied into a float one. */
 const primeWgsl = (depth: 'depth' | 'float') => /* wgsl */ `
 @group(0) @binding(0) var depths: ${depth === 'depth' ? 'texture_depth_2d' : 'texture_2d<f32>'};
 ${WHOLE}
@@ -70,8 +71,9 @@ struct Primed { @location(0) light: vec4f, @builtin(frag_depth) depth: f32 }
   return Primed(vec4f(0.0), textureLoad(depths, at, 0)${depth === 'depth' ? '' : '.r'} / ${(1 + LIGHT.behind).toFixed(3)});
 }
 `;
+export const PRIME_WGSL = { depth: primeWgsl('depth'), float: primeWgsl('float') } as const;
 
-const PASSES = /* wgsl */ `
+export const PASSES = /* wgsl */ `
 @group(0) @binding(0) var light: texture_2d<f32>;
 ${WHOLE}
 @fragment fn blur(@builtin(position) position: vec4f) -> @location(0) vec4f {
@@ -120,7 +122,7 @@ export class LightLayer {
   constructor(gpu: Gpu, depth: 'depth' | 'float') {
     const { device } = gpu;
     this.device = device;
-    const primeModule = device.createShaderModule({ code: primeWgsl(depth) });
+    const primeModule = device.createShaderModule({ code: PRIME_WGSL[depth] });
     const sampleType = depth === 'depth' ? 'depth' : 'unfilterable-float';
     const primeLayout = device.createBindGroupLayout({
       entries: [{ binding: 0, visibility: SHADER_STAGE.fragment, texture: { sampleType } }],

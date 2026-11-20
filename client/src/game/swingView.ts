@@ -4,7 +4,7 @@ import { SWING_ATTRIBUTES, SWING_WGSL } from '../combat/swingLook.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 
 /** The swings' arcs, measured from the eye as the land is, drawn with the arcs' own pixel fragment. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 struct View { from_eye: mat4x4f }
 @group(0) @binding(0) var<uniform> view: View;
 ${SWING_WGSL}

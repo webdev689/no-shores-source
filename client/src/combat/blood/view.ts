@@ -22,7 +22,7 @@ export interface BloodCamera {
 }
 
 /** The sky the scene fogs into, the light its blocks take, and how it fogs: sceneView.ts's own. */
-const SHADER = /* wgsl */ `
+export const SHADER = /* wgsl */ `
 struct Scene { viewProjection: mat4x4f, focus: vec4f, eye: vec4f }
 @group(0) @binding(0) var<uniform> scene: Scene;
 struct Art { picture: vec4f }

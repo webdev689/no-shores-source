@@ -38,7 +38,7 @@ function firstPerson(drawn: (path: string) => boolean) {
   const frame = async (seconds: number, state: FirstPersonState, input = still) => {
     const events = person.update(seconds, input, state);
     await new Promise((resolve) => setImmediate(resolve));
-    person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 640, 400);
+    person.draw({} as GPUCommandEncoder, {} as GPUTextureView, { width: 640, height: 400, light: [1, 1, 1] });
     const glows = quads.map((quad) => quad.glow?.look ?? 0);
     return { events, quads: quads.map(({ x, y, width, height, flip }) => ({ x, y, width, height, flip })), glows };
   };
@@ -180,7 +180,7 @@ test('a screen drawn with no width keeps the last lens, so the fists on a wall s
   const climb = { mode: 'hang', feet: [0, 0, 1], wall: 0, over: 0, rise: 0 } as const;
   const hanging = { ...standing, climbing: 1, climb, yaw: 0.3, fov: 0.9 };
   const before = await frame(1, hanging);
-  person.draw({} as GPUCommandEncoder, {} as GPUTextureView, 0, 400);
+  person.draw({} as GPUCommandEncoder, {} as GPUTextureView, { width: 0, height: 400, light: [1, 1, 1] });
   const after = await frame(0, hanging);
   assert.equal(after.quads.length, 2);
   assert.deepEqual(

@@ -8,7 +8,17 @@ import { accountPanel } from './accountTab.ts';
 import { pressOf } from './gearDom.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { soundCredits } from '../soundSamples.ts';
-import { interfaceVolume, play, setInterfaceVolume, setWorldVolume, worldVolume } from './uiSounds.ts';
+import {
+  ambienceVolume,
+  interfaceVolume,
+  musicVolume,
+  play,
+  setAmbienceVolume,
+  setInterfaceVolume,
+  setMusicVolume,
+  setWorldVolume,
+  worldVolume,
+} from './uiSounds.ts';
 
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
 export function laterPage(name: string, words: string): HTMLElement {
@@ -53,13 +63,16 @@ export function settingsPage(link: AccountLink | null): HTMLElement {
   return page;
 }
 
-/** The volumes of the interface and the world, each from silent to full, kept in this browser. */
+/** The volumes of the interface, the world, the music and the ambience, each from silent to full, kept in this
+ *  browser. */
 function soundPanel(): HTMLElement {
   const panel = make('section', '', 'gear-sound');
   panel.append(
     make('h2', 'Sound', `gear-heading ${ROLES.rule}`),
     volumeRow('Interface sounds', interfaceVolume, setInterfaceVolume),
     volumeRow('World sounds', worldVolume, setWorldVolume),
+    volumeRow('Music', musicVolume, setMusicVolume),
+    volumeRow('Ambience', ambienceVolume, setAmbienceVolume),
     creditsList(),
   );
   return panel;
