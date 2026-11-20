@@ -104,7 +104,9 @@ fn moon_light(direction: vec3f) -> vec4f {
   if (moon.z < -0.05 || direction.z < 0.0) { return vec4f(0.0); }
   let night = 1.0 - 0.75 * sky_state.sun.w;
   let apart = acos(clamp(dot(direction, moon), -1.0, 1.0));
-  let halo = (exp(-apart / 0.04) * 0.07 + exp(-apart / 0.3) * 0.025) * sky_state.moon.w * night;
+  // The air round the moon glows with it, wider and brighter through haze or a thin veil of cloud.
+  let veiled = 1.0 + 1.5 * max(sky_state.zenith.w, sky_state.fog.w * 250.0);
+  let halo = (exp(-apart / 0.05) * 0.12 + exp(-apart / 0.35) * 0.04) * sky_state.moon.w * night * min(veiled, 2.5);
   var out = vec4f(vec3f(0.62, 0.7, 0.9) * halo, 0.0);
   if (apart > MOON_RADIUS * 1.2) { return out; }
   let right = normalize(cross(moon, vec3f(0.0, 0.0, 1.0)) + vec3f(1e-5, 0.0, 0.0));
@@ -188,14 +190,18 @@ fn cloud_light(direction: vec3f, blur: f32) -> vec4f {
   // The detail averaged away softens the edge, so however blurred the deck keeps its mean cover.
   let lost = length((vec4f(1.0) - keep) * DECK_WEIGHTS) * 0.5;
   let threshold = 0.74 - 0.66 * cover;
-  let density = smoothstep(threshold - lost, threshold + 0.2 + lost, puff);
+  // Fair-weather cumulus has crisp edges; a closing deck's soften into one sheet.
+  let edge = mix(0.12, 0.24, cover);
+  let density = smoothstep(threshold - lost, threshold + edge + lost, puff);
   let alpha = density * smoothstep(0.0, 0.12, up) * (0.85 + 0.15 * cover);
   var out = vec4f(wisp_colour, wisp);
   if (alpha > 0.0) {
     let toward_plane = normalize(key.xy + vec2f(1e-5, 0.0)) * 0.3;
     let lit = clamp(0.55 + (puff - deck_drifted(plane + toward_plane, keep * vec4f(1.0, 1.0, 1.0, 0.0))) * 4.0, 0.0, 1.0);
     let thick = smoothstep(threshold, threshold + 0.45, puff);
-    let shade = (1.2 - 0.75 * thick) * (1.0 - 0.6 * storm);
+    // A closed deck keeps its relief: thicker billows darker underneath, thinner ones paler, the more so in a storm.
+    let relief = 1.0 + (0.5 - puff) * (0.5 + 0.9 * storm) * smoothstep(0.6, 1.0, cover);
+    let shade = (1.2 - 0.75 * thick) * (1.0 - 0.6 * storm) * relief;
     var colour = grey * shade + key_light * (0.2 + 0.55 * lit + silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
     colour += glow * (0.2 + 0.55 * lit + sun_silver * (1.0 - thick)) * (1.0 - 0.5 * storm);
     colour += vec3f(0.75, 0.8, 1.0) * flash * (0.5 + 1.5 * thick) * (0.6 + 0.8 * value_noise((plane - sky_state.drift.xy) * 0.5));
@@ -218,7 +224,10 @@ fn sky(direction: vec3f, blur: f32) -> vec3f {
   let disc = smoothstep(cos(SUN_RADIUS * 1.15), cos(SUN_RADIUS), toward) * (1.0 - smoothstep(0.0, 0.02, blur));
   let halo = pow(toward, 400.0) * 0.4 + pow(toward, 24.0) * (0.1 + 0.1 * low) + pow(toward, 5.0) * 0.05 * low;
   // The disc keeps its own hue at full brightness, so a low orange sun still stands out of its glow.
-  let disc_colour = sun_colour / max(max(sun_colour.r, sun_colour.g), max(sun_colour.b, 1e-3)) * 1.8;
+  // Its limb darker than its middle, as a real sun's is: the disc reads as a sphere, not a flat coin.
+  let off_middle = clamp((1.0 - toward) / (1.0 - cos(SUN_RADIUS)), 0.0, 1.0);
+  let limb = 0.62 + 0.38 * sqrt(1.0 - off_middle);
+  let disc_colour = sun_colour / max(max(sun_colour.r, sun_colour.g), max(sun_colour.b, 1e-3)) * 1.8 * limb;
   let clouds = cloud_light(direction, blur);
   colour = mix(mix(colour, disc_colour, disc * clear * step(1e-4, luma(sun_colour))), clouds.rgb, clouds.a * clear);
   colour += sun_colour * halo * (1.0 - 0.6 * clouds.a) * (0.3 + 0.7 * clear);

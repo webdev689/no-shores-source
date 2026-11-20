@@ -272,12 +272,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **The weather and day and night (#76)**, tested offline: the full check, the weather's statistics per climate and
   its fingerprint native against WebAssembly, and the built game headless in Saltmere at noon, under cloud, at sunset
-  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Not
-  yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in 60 world days, and the page always
-  arrives there), ships and marks under the lamps, snow, a real GPU's frame time (the sky reads some ten noise lookups
-  a pixel, twice while one cloud pattern fades into the next), and a person playing through an hour's day. An offline
-  WGSL check in `cargo xtask` (naga) would have caught the bolts' shader that never compiled; adding it is the
-  owner's call.
+  and dawn, by moonlight and on a moonless night, in rain, fog and a storm, with no shader failing to compile. Four
+  audits (the Rust, the sky, the sound, the notes) found and fixed, among others: sails drawn by the old wind, a fleet
+  sailing in the map's middle's wind, clouds that raced as the eye moved, a key light that swapped sun for moon in
+  daylight, rain and snow that raced as the wind changed, thunder that silenced the birds, and a recording held under
+  its synthesised sound's peak. Not yet: lightning's bolts seen in a picture (no strike falls near Saltmere by day in
+  60 world days, and the page always arrives there), ships and marks under the lamps, snow, a carried light on the
+  Sloop's deck, a real GPU's frame time (the sky reads some ten noise lookups a pixel, twice while one cloud pattern
+  fades into the next), and a person playing through an hour's day.
 - **The music and the ambience (#73)**, tested offline: every piece rendered and measured, and the built game headless
   in Saltmere (its theme, its calls, every recording loaded) and in a fight on the Saltgrass Downs (the green score in
   as three foes attacked). Not yet: a person listening in the game, a real GPU's frame time with both running. Left
