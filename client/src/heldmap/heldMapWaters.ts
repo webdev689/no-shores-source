@@ -28,6 +28,9 @@ export function ruinedPlaces(places: readonly MapPlace[], mainPorts: readonly st
 }
 
 /** The waters as the map keeps them: their label points, worked out once, their letters and the key. */
+/** How far apart the points a water's name is tried at are, ink pixels. */
+const SPOT_PX = 10;
+
 export class HeldMapWaters {
   readonly waters: MapWaters;
   private readonly points: Map<number, readonly [number, number]>;
@@ -44,26 +47,53 @@ export class HeldMapWaters {
     return washOf(this.waters, charted);
   }
 
-  /** The charted waters' names on a map `ink` wide and high, `toInk` giving a world point's place on it: each at its
-   *  label point while that is on the map, in her difficulty's colour. The layout holds each inside the map. */
+  /** The charted waters in view on a map `ink` wide and high (`toWorld` the world point at a point of it, `toInk`
+   *  the reverse): each water's name, her difficulty's colour, and the spots her name may stand at, ink pixels. Her
+   *  label point comes first while it is on the map, then every point of a grid `SPOT_PX` apart over the map that
+   *  lies on her sea, nearest the middle of her sea in view first. */
   letters(
     ink: { readonly width: number; readonly height: number },
     toInk: (x: number, y: number) => readonly [number, number],
-  ): { text: string; x: number; y: number; continent: number; colour: string | undefined }[] {
+    toWorld: (x: number, y: number) => readonly [number, number],
+  ): { text: string; continent: number; colour: string | undefined; spots: { x: number; y: number }[] }[] {
+    const { columns, rows, cellM } = this.waters;
+    const seen = new Map<number, { x: number; y: number }[]>();
+    for (let y = SPOT_PX / 2; y < ink.height; y += SPOT_PX)
+      for (let x = SPOT_PX / 2; x < ink.width; x += SPOT_PX) {
+        const [east, south] = toWorld(x, y);
+        const [column, row] = [Math.floor(east / cellM), Math.floor(south / cellM)];
+        if (column < 0 || row < 0 || column >= columns || row >= rows) continue;
+        const water = this.waters.water[row * columns + column] ?? -1;
+        if (water < 0 || !this.charted.has(water)) continue;
+        const spots = seen.get(water) ?? [];
+        spots.push({ x, y });
+        seen.set(water, spots);
+      }
     return this.waters.waters.flatMap((water) => {
+      const grid = seen.get(water.continent);
+      if (!grid) return [];
+      const middle = grid.reduce(
+        (sum, spot) => ({ x: sum.x + spot.x / grid.length, y: sum.y + spot.y / grid.length }),
+        {
+          x: 0,
+          y: 0,
+        },
+      );
+      const away = (spot: { x: number; y: number }) => Math.hypot(spot.x - middle.x, spot.y - middle.y);
+      const spots = [...grid].sort((one, other) => away(one) - away(other));
       const point = this.points.get(water.continent);
-      if (!point || !this.charted.has(water.continent)) return [];
-      const [x, y] = toInk(point[0], point[1]);
-      if (x < 0 || y < 0 || x > ink.width || y > ink.height) return [];
+      const [x, y] = point ? toInk(point[0], point[1]) : [-1, -1];
+      if (x >= 0 && y >= 0 && x <= ink.width && y <= ink.height) spots.unshift({ x, y });
       const colour = difficultyColour(water.levels) ?? undefined;
-      return [{ text: waterWords(water), x, y, continent: water.continent, colour }];
+      return [{ text: waterWords(water), continent: water.continent, colour, spots }];
     });
   }
 }
 
-/** How well a water's name in `box` (ink pixels), the map showing `view`, stands on the sea of the water whose
- *  continent's index is `continent`: 2 wholly on hers; 1 on no land of any island (`field`), known or not, with its
- *  middle on hers, so across a narrow sea seen whole it runs over a neighbour's wash; 0 over land or off her sea. */
+/** How a water's name in `box` (ink pixels), the map showing `view`, stands on the sea of the water whose continent's
+ *  index is `continent`: 2 wholly on hers; 1 on no land of any island (`field`), known or not, with its middle on hers,
+ *  as across a sea too narrow for her name seen whole, where it runs over a neighbour's wash; 0 over land or off her
+ *  sea. */
 export function onOwnSea(
   waters: MapWaters,
   field: CoastField,

@@ -2,7 +2,7 @@
 // size that grows with the map, inside the part of the parchment the gauntlets leave clear, and never over another
 // word or mark. A word that finds no clear place is dropped, the least needed first. Nothing here draws.
 import { type Rect, stageOf } from './heldMapLaw.ts';
-import { keyCorners, type KeyPlace, keyPlace } from './mapKey.ts';
+import { keyCorners, keyEdges, type KeyPlace, keyPlace } from './mapKey.ts';
 
 /** The words' sizes at a 1280 x 720 screen, pixels: every word at least `WORD_PX`, a port's name a step larger. They
  *  grow with the map, `letterScale` times over, and every other length the lettering is drawn with grows with them. */
@@ -65,6 +65,22 @@ export interface MapLetter {
   readonly away?: number | undefined;
   /** A water's colour on the difficulty ramp, which her name and its ring are inked in. */
   readonly colour?: string | undefined;
+  /** A water's words lettered as two lines, her name over her level band (`waterLines`), where one would not fit. */
+  readonly lines?: 1 | 2 | undefined;
+}
+
+/** A water's words as the lines they are lettered in: "The Fen Deeps, 22-26" whole, or her name over "22-26". */
+export function waterLines(text: string, lines: 1 | 2 | undefined): string[] {
+  const comma = text.lastIndexOf(', ');
+  return lines === 2 && comma > 0 ? [text.slice(0, comma), text.slice(comma + 2)] : [text];
+}
+
+/** A word's width, units, as `widthOf` measures its kind's face: a water's on two lines the wider line's. */
+export function nameWidth(
+  letter: Pick<MapLetter, 'text' | 'kind' | 'lines'>,
+  widthOf: (text: string, kind: string) => number,
+) {
+  return Math.max(...waterLines(letter.text, letter.lines).map((line) => widthOf(line, letter.kind)));
 }
 
 /** What one frame letters on the parchment, ink pixels from the map's top-left: the words and marks, the ship's
@@ -84,12 +100,19 @@ export interface LayoutAsk {
   /** What the hands cover, ink pixels (`handsCover`). */
   readonly covers: readonly Rect[];
   readonly places: readonly { text: string; x: number; y: number; kind: string; chosen: boolean }[];
-  readonly waters: readonly { text: string; x: number; y: number; continent: number; colour?: string | undefined }[];
+  /** Each water in view: her name, her continent's index, her colour, and the spots her name may stand at, ink pixels,
+   *  the likeliest first (`HeldMapWaters.letters`). */
+  readonly waters: readonly {
+    text: string;
+    continent: number;
+    colour?: string | undefined;
+    spots: readonly { x: number; y: number }[];
+  }[];
   readonly ship: { readonly x: number; readonly y: number; readonly heading: number } | null;
   /** A word's width in its kind's face, units. */
   readonly widthOf: (text: string, kind: string) => number;
-  /** How well a box, ink pixels, stands on the sea of the water whose continent's index is given: 2 wholly, 1 off
-   *  land with its middle on hers, 0 not at all (`onOwnSea`). */
+  /** How a box, ink pixels, stands on the sea of the water whose continent's index is given: 2 wholly, 1 on no land
+   *  with its middle on hers, 0 not at all (`onOwnSea`). */
   readonly sea: (box: Rect, continent: number) => 0 | 1 | 2;
   /** Whether discovered land lies under a box, ink pixels. */
   readonly land: (box: Rect) => boolean;
@@ -113,12 +136,12 @@ export function markBox(kind: string, x: number, y: number, scale: number): Rect
 /** The box a name covers, ink pixels, its text `width` units wide: beside its mark on `side`, or a water's centred
  *  in her ring; each with the clear space a word keeps. */
 export function nameBox(
-  letter: Pick<MapLetter, 'x' | 'y' | 'kind' | 'away'>,
+  letter: Pick<MapLetter, 'x' | 'y' | 'kind' | 'away' | 'lines'>,
   side: 'right' | 'left' | 'centre',
   width: number,
   scale: number,
 ): Rect {
-  const height = (letter.kind === 'water' ? LINE + 2 : LINE) * scale;
+  const height = (letter.kind === 'water' ? LINE * (letter.lines ?? 1) + 2 : LINE) * scale;
   const top = letter.y - height / 2 - SPACE * scale;
   if (side === 'centre') {
     const half = (width / 2 + RING) * scale;
@@ -155,45 +178,75 @@ function besideSpots<T extends { x: number; y: number; kind: string }>(
   return spots;
 }
 
-/** Where a water's name may stand, nearest her point first: on it, then a line and two above and below, each held
- *  inside the map and, where it would lie under a hand, moved inward clear of that hand. */
-function waterSpots(ask: LayoutAsk, water: { x: number; y: number }, width: number): { x: number; y: number }[] {
-  const { scale, ink } = ask;
-  const half = (width / 2 + RING + SPACE) * scale;
-  const rise = (LINE / 2 + SPACE + 1) * scale;
-  const inside = (x: number) => Math.min(Math.max(x, half), ink.width - half);
-  const spots: { x: number; y: number }[] = [];
-  for (const lines of [0, -1, 1, -2, 2]) {
-    const y = Math.min(Math.max(water.y + lines * (LINE + 4) * scale, rise), ink.height - rise);
-    const x = inside(water.x);
-    spots.push({ x, y });
-    for (const cover of ask.covers) {
-      const under = y + rise > cover.y && y - rise < cover.y + cover.height;
-      if (!under || x + half <= cover.x || x - half >= cover.x + cover.width) continue;
-      const inward = cover.x + cover.width / 2 < ink.width / 2 ? cover.x + cover.width + half : cover.x - half;
-      spots.push({ x: inside(inward), y });
-    }
-  }
-  return spots;
-}
-
 /** Lays the map's lettering out: the ship and every mark first, then each name in its priority, beside its mark
- *  (right, else left) or, a water's, on her point or near it and on her own sea; then the key by its
- *  clear-corner rule (`keyPlace`). Every name stands inside the map and clear of the hands, of every mark and of
- *  every name laid before it. */
+ *  (right, else left), or a water's at the first of her spots wholly on her own sea, else on no land; then the key by its
+ *  clear-corner rule (`keyPlace`). Every name stands inside the map and clear of the hands, of every mark and of every
+ *  name laid before it. With no corner clear, the key takes the corner that costs least, and the names are laid again
+ *  round it. */
 export function layOut(ask: LayoutAsk): Lettering {
   const { scale, ink } = ask;
-  const within = (box: Rect) =>
-    box.x >= 0 && box.y >= 0 && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
-  const taken: Rect[] = [...ask.covers];
   const marks: Rect[] = ask.places.map((place) => markBox(place.kind, place.x, place.y, scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, scale));
-  taken.push(...marks);
-  const clear = (box: Rect) => within(box) && !taken.some((each) => overlaps(each, box));
   const asked = [
-    ...ask.places.map((place) => ({ ...place, colour: undefined as string | undefined })),
-    ...ask.waters.map((water) => ({ ...water, kind: 'water', chosen: false })),
+    ...ask.places.map((place) => ({ ...place, continent: -1, colour: undefined as string | undefined, spots: [] })),
+    ...ask.waters.map((water) => ({ ...water, x: 0, y: 0, kind: 'water', chosen: false })),
   ];
+  const first = laidOut(ask, asked, [...ask.covers, ...marks]);
+  if (!ask.key) return { letters: first.letters, ship: ask.ship, key: null, scale };
+  const size = { width: ask.key.width * scale, height: ask.key.height * scale };
+  const clearKey = keyPlace(ink, size, scale, [...ask.covers, ...marks, ...first.boxes], ask.land, ask.current);
+  if (clearKey) return { letters: first.letters, ship: ask.ship, key: clearKey, scale };
+  // No corner clear: the key takes a corner, or a place along the top or bottom edge, clear of the hands, the marks and
+  // the ports' and the chosen place's names (where it stood first),
+  // round which the names laid again lose least: a water's name lost counts ten, land under the key five, any other
+  // name lost one.
+  const kept = first.boxes.filter(
+    (box, index) => asked[first.indices[index]!]?.chosen || first.kinds[index] === 'port',
+  );
+  const yielding = [...ask.covers, ...marks, ...kept];
+  const places = [
+    ...(ask.current ? [ask.current] : []),
+    ...keyCorners(ink, size, scale, null),
+    ...keyEdges(ink, size, scale),
+  ];
+  const tries = places
+    .filter((place) => !yielding.some((box) => overlaps(box, place.box)))
+    .map((place) => {
+      const again = laidOut(ask, asked, [...ask.covers, ...marks, place.box]);
+      const named = (kind: string) =>
+        again.letters.filter((letter) => (kind === 'water') === (letter.kind === 'water') && letter.side).length;
+      const lost = (named('water') - first.letters.filter((letter) => letter.kind === 'water').length) * -10;
+      const lesser = first.letters.filter((letter) => letter.kind !== 'water' && letter.side).length - named('place');
+      return { place, again, cost: (ask.land(place.box) ? 5 : 0) + lost + lesser };
+    });
+  const best = tries.reduce<(typeof tries)[number] | null>(
+    (most, each) => (most && most.cost <= each.cost ? most : each),
+    null,
+  );
+  if (!best) return { letters: first.letters, ship: ask.ship, key: null, scale };
+  const { place: key, again } = best;
+  return { letters: again.letters, ship: ask.ship, key, scale };
+}
+
+type Asked = {
+  text: string;
+  x: number;
+  y: number;
+  kind: string;
+  chosen: boolean;
+  continent: number;
+  colour?: string | undefined;
+  spots: readonly { x: number; y: number }[];
+};
+
+/** Each name laid in its priority, clear of `blocked` and of the names before it: the letters, and each laid name's
+ *  box with its kind and its place in `asked`. */
+function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect[]) {
+  const { scale, ink } = ask;
+  const taken = [...blocked];
+  const within = (box: Rect) =>
+    box.x >= 0 && box.y >= 0 && box.x + box.width <= ink.width && box.y + box.height <= ink.height;
+  const clear = (box: Rect) => within(box) && !taken.some((each) => overlaps(each, box));
   const order = asked
     .map((letter, index) => ({ letter, index }))
     .sort(
@@ -203,52 +256,48 @@ export function layOut(ask: LayoutAsk): Lettering {
         one.index - other.index,
     );
   const laid: (MapLetter | null)[] = asked.map(() => null);
-  const boxes: (Rect | null)[] = asked.map(() => null);
+  const boxes: Rect[] = [];
+  const kinds: string[] = [];
+  const indices: number[] = [];
+  const keep = (box: Rect, index: number, kind: string) => {
+    taken.push(box);
+    boxes.push(box);
+    kinds.push(kind);
+    indices.push(index);
+  };
   for (const { letter, index } of order) {
     const width = ask.widthOf(letter.text, letter.kind);
     if (letter.kind === 'water') {
-      const boxAt = (spot: { x: number; y: number }) => nameBox({ ...spot, kind: 'water' }, 'centre', width, scale);
-      const continent = (letter as { continent?: number }).continent ?? -1;
-      // Wholly on her own sea where any spot is, else on no land with her middle on her sea.
-      const spots = waterSpots(ask, letter, width).filter((each) => clear(boxAt(each)));
-      const spot =
-        spots.find((each) => ask.sea(boxAt(each), continent) === 2) ??
-        spots.find((each) => ask.sea(boxAt(each), continent) === 1);
-      if (!spot) continue;
-      taken.push((boxes[index] = boxAt(spot)));
-      laid[index] = { ...letter, ...spot, side: 'centre' };
+      // On one line or two, wholly on her own sea at any spot that allows it, else on no land, her middle on her sea.
+      let found: { spot: { x: number; y: number }; lines: 1 | 2; box: Rect } | null = null;
+      for (const sea of [2, 1] as const)
+        for (const lines of [1, 2] as const) {
+          if (found) break;
+          const shape = { kind: 'water', lines, text: letter.text };
+          const boxAt = (point: { x: number; y: number }): Rect =>
+            nameBox({ ...point, ...shape }, 'centre', nameWidth(shape, ask.widthOf), scale);
+          const fits = letter.spots.find(
+            (each) => clear(boxAt(each)) && ask.sea(boxAt(each), letter.continent) === sea,
+          );
+          if (fits) found = { spot: fits, lines, box: boxAt(fits) };
+        }
+      if (!found) continue;
+      keep(found.box, index, 'water');
+      laid[index] = {
+        text: letter.text,
+        kind: 'water',
+        chosen: false,
+        colour: letter.colour,
+        ...found.spot,
+        side: 'centre',
+        lines: found.lines,
+      };
       continue;
     }
-    const spot = besideSpots(letter, ask.ship, scale).find((each) => clear(nameBox(each, each.side, width, scale)));
-    if (spot) taken.push((boxes[index] = nameBox(spot, spot.side, width, scale)));
-    laid[index] = spot ?? { ...letter, side: null };
+    const place = { text: letter.text, x: letter.x, y: letter.y, kind: letter.kind, chosen: letter.chosen };
+    const spot = besideSpots(place, ask.ship, scale).find((each) => clear(nameBox(each, each.side, width, scale)));
+    if (spot) keep(nameBox(spot, spot.side, width, scale), index, letter.kind);
+    laid[index] = spot ?? { ...place, side: null };
   }
-  if (!ask.key) return { letters: laid.filter((letter) => letter !== null), ship: ask.ship, key: null, scale };
-  const size = { width: ask.key.width * scale, height: ask.key.height * scale };
-  let key = keyPlace(ink, size, scale, taken, ask.land, ask.current);
-  if (!key) {
-    // No corner clear: the key takes a corner clear of the hands, the marks and the ports' and the chosen place's
-    // names, over no land where it can, dropping the fewest names under it, a water's counting as ten.
-    const kept = boxes.filter((box, index) => box && (asked[index]?.chosen || rankOf(asked[index]?.kind ?? '') === 0));
-    const yielding = [...ask.covers, ...marks, ...(kept as Rect[])];
-    const cost = (place: KeyPlace) =>
-      (ask.land(place.box) ? 1000 : 0) +
-      boxes.reduce(
-        (sum, box, index) => sum + (box && overlaps(box, place.box) ? (asked[index]?.kind === 'water' ? 10 : 1) : 0),
-        0,
-      );
-    const open = keyCorners(ink, size, scale, ask.current).filter(
-      (place) => !yielding.some((box) => overlaps(box, place.box)),
-    );
-    key = open.reduce<KeyPlace | null>((best, place) => (best && cost(best) <= cost(place) ? best : place), null);
-    if (key) {
-      const under = key.box;
-      boxes.forEach((box, index) => {
-        const letter = laid[index];
-        if (!box || !letter || !overlaps(box, under)) return;
-        laid[index] = letter.kind === 'water' ? null : { ...letter, side: null };
-      });
-    }
-  }
-  return { letters: laid.filter((letter) => letter !== null), ship: ask.ship, key, scale };
+  return { letters: laid.filter((letter) => letter !== null), boxes, kinds, indices };
 }

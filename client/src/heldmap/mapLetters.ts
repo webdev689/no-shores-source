@@ -3,7 +3,17 @@
 // parchment that its ink pass lays down with the ink, so the gauntlets holding the map cover them as they cover the
 // parchment.
 import { FACE, INK, paintKey } from './mapKey.ts';
-import { LINE, type Lettering, type MapLetter, markHalf, NAME_GAP, PORT_PX, RING, WORD_PX } from './mapLayout.ts';
+import {
+  LINE,
+  type Lettering,
+  type MapLetter,
+  markHalf,
+  NAME_GAP,
+  PORT_PX,
+  RING,
+  waterLines,
+  WORD_PX,
+} from './mapLayout.ts';
 
 /** The map's face, Overlook's own (face.css): a port's name a step larger than every other word. */
 export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_PX}px ${FACE}`;
@@ -93,9 +103,11 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
   painter.font = fontOf(letter.kind);
   if (letter.kind === 'water') {
     const colour = letter.colour ?? INK;
-    paintRing(painter, painter.measureText(letter.text).width / 2 + RING, colour);
+    const lines = waterLines(letter.text, letter.lines);
+    const widest = Math.max(...lines.map((line) => painter.measureText(line).width));
+    paintRing(painter, widest / 2 + RING, (lines.length - 1) * LINE, colour);
     painter.textAlign = 'center';
-    word(painter, letter.text, 0, 0, colour);
+    lines.forEach((line, index) => word(painter, line, 0, (index - (lines.length - 1) / 2) * LINE, colour));
     return;
   }
   const ink = letter.kind === 'port' ? INK : LIGHT_INK;
@@ -125,18 +137,20 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
   word(painter, letter.text, letter.side === 'right' ? offset : -offset, 0, letter.chosen ? ROUTE : ink);
 }
 
-/** A water's ring round her name, a capsule `half` wide either side of its middle, filled with the parchment and
- *  drawn in her difficulty's colour. */
-function paintRing(painter: Painter, half: number, colour: string): void {
+/** A water's ring round her name, `half` wide either side of its middle and `taller` than one line: rounded at its
+ *  ends, filled with the parchment and drawn in her difficulty's colour. */
+function paintRing(painter: Painter, half: number, taller: number, colour: string): void {
   const radius = LINE / 2 + 1;
   const straight = Math.max(0, half - radius);
+  const rise = taller / 2;
   painter.lineWidth = 1.5;
   painter.strokeStyle = colour;
   painter.fillStyle = RING_FILL;
   painter.beginPath();
-  painter.arc(-straight, 0, radius, Math.PI / 2, (3 * Math.PI) / 2);
-  painter.lineTo(straight, -radius);
-  painter.arc(straight, 0, radius, -Math.PI / 2, Math.PI / 2);
+  painter.arc(-straight, -rise, radius, Math.PI, (3 * Math.PI) / 2);
+  painter.arc(straight, -rise, radius, -Math.PI / 2, 0);
+  painter.arc(straight, rise, radius, 0, Math.PI / 2);
+  painter.arc(-straight, rise, radius, Math.PI / 2, Math.PI);
   painter.closePath();
   painter.fill();
   painter.stroke();

@@ -369,7 +369,12 @@ export class HeldMap {
       scale: letterScale(this.ink),
       covers: handsCover(sprite, this.ink),
       places,
-      waters: this.waters?.letters(this.ink, (x, y) => toInk(this.mapView, x, y)) ?? [],
+      waters:
+        this.waters?.letters(
+          this.ink,
+          (x, y) => toInk(this.mapView, x, y),
+          (x, y) => toWorld(this.mapView, x, y),
+        ) ?? [],
       ship: onSheet(shipX, shipY) ? { x: shipX, y: shipY, heading: scene.heading } : null,
       widthOf: (text, kind) => this.widthOf(text, kind),
       land: (box) => landUnder(this.field, scene.knownIslands, this.mapView, box),

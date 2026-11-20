@@ -35,6 +35,13 @@ const ASK: LayoutAsk = {
   key: null,
   current: null,
 };
+/** A water whose name may stand at `spots`, likeliest first. */
+const water = (text: string, ...spots: [number, number][]) => ({
+  text,
+  continent: 0,
+  colour: '#256327',
+  spots: spots.map(([x, y]) => ({ x, y })),
+});
 
 test('a name with no clear place is dropped by priority: a port before a water, a water before a ruin and a node', () => {
   const lettering = layOut({
@@ -44,15 +51,14 @@ test('a name with no clear place is dropped by priority: a port before a water, 
       { text: 'Ruins of Elmhaven', x: 200, y: 100, kind: 'ruin', chosen: false },
       { text: 'Overlook', x: 200, y: 100, kind: 'port', chosen: false },
     ],
-    waters: [{ text: 'The Lantern Sea, 1-4', x: 200, y: 100, continent: 0, colour: '#256327' }],
+    waters: [water('The Lantern Sea, 1-4', [200, 100], [200, 60])],
   });
   const named = Object.fromEntries(lettering.letters.map((letter) => [letter.text, letter.side]));
   assert.equal(named['Overlook'], 'right', 'the port takes the first place, right of its mark');
   assert.equal(named['Ruins of Elmhaven'], 'left', 'the ruin the other side');
   assert.equal(named['Hollow Barrow'], null, 'the node keeps its mark, its name dropped');
-  assert.ok(named['The Lantern Sea, 1-4'] === 'centre', 'the water moves a line off her point');
-  const water = lettering.letters.find((letter) => letter.kind === 'water');
-  assert.notEqual(water?.y, 100);
+  const lantern = lettering.letters.find((letter) => letter.kind === 'water');
+  assert.deepEqual([lantern?.x, lantern?.y], [200, 60], 'the water takes her next spot, clear of the port');
 });
 
 test('a name runs right of its mark, and left where the right is the map’s edge', () => {
@@ -60,36 +66,70 @@ test('a name runs right of its mark, and left where the right is the map’s edg
   assert.equal(lettering.letters[0]?.side, 'left');
 });
 
-test('a water’s name under a hand moves inward clear of it rather than vanishing', () => {
-  const cover = { x: 0, y: 150, width: 120, height: 80 };
+test('a water’s name under a hand takes her next spot clear of it rather than vanishing', () => {
+  const cover = { x: 480, y: 150, width: 120, height: 80 };
   const lettering = layOut({
     ...ASK,
     covers: [cover],
-    waters: [{ text: 'The Mistwrack, 16-19', x: 40, y: 190, continent: 0, colour: '#894314' }],
+    waters: [water('The Elmwater, 7-10', [560, 190], [380, 190])],
   });
-  const water = lettering.letters[0];
-  assert.ok(water, 'still named');
-  const box = nameBox(water, 'centre', widthOf(water.text, 'water'), 1);
-  assert.ok(!overlaps(box, cover), 'clear of the hand');
+  const elmwater = lettering.letters[0];
+  assert.deepEqual([elmwater?.x, elmwater?.y], [380, 190]);
+  assert.ok(!overlaps(nameBox(elmwater!, 'centre', widthOf(elmwater!.text, 'water'), 1), cover));
 });
 
-test('the key yields to nothing but land, marks, hands and ports’ names: with no corner clear it drops the lesser names under it', () => {
-  const crowded = layOut({
+test('a water’s name stands only where it lies wholly on her own sea, else is dropped', () => {
+  const lettering = layOut({
+    ...ASK,
+    sea: (box, continent) => (continent === 0 && box.x > 300 ? 2 : 0),
+    waters: [
+      water('The Elmwater, 7-10', [100, 100], [400, 100]),
+      { ...water('The Fen Deeps, 22-26', [100, 300]), continent: 1 },
+    ],
+  });
+  assert.deepEqual(
+    lettering.letters.map((letter) => [letter.text, letter.x]),
+    [['The Elmwater, 7-10', 400]],
+  );
+});
+
+test('with no corner clear the key takes the one covering fewest names, a water’s weighing most, and they move round it', () => {
+  const lettering = layOut({
+    ...ASK,
+    ink: { width: 300, height: 200 },
+    key: { width: 120, height: 80 },
+    places: [{ text: 'Ruins', x: 150, y: 160, kind: 'ruin', chosen: false }],
+    waters: [water('Fen', [60, 160], [150, 100]), water('Gilt', [60, 40]), water('Cairn', [240, 40])],
+  });
+  assert.equal(lettering.key?.corner, 'lower-right');
+  assert.deepEqual(
+    lettering.letters.map((letter) => [letter.text, letter.side, letter.x, letter.y]),
+    [
+      ['Ruins', 'left', 150, 160],
+      ['Fen', 'centre', 60, 160],
+      ['Gilt', 'centre', 60, 40],
+      ['Cairn', 'centre', 240, 40],
+    ],
+  );
+});
+
+test('a water the key must cover is named again at her next spot clear of it', () => {
+  const lettering = layOut({
     ...ASK,
     ink: { width: 300, height: 200 },
     key: { width: 120, height: 80 },
     waters: [
-      { text: 'Fen', x: 60, y: 160, continent: 0, colour: '#256327' },
-      { text: 'Rime', x: 240, y: 160, continent: 0, colour: '#256327' },
-      { text: 'Gilt', x: 60, y: 40, continent: 0, colour: '#256327' },
-      { text: 'Cairn', x: 240, y: 40, continent: 0, colour: '#256327' },
+      water('Fen', [60, 160], [160, 100]),
+      water('Rime', [240, 160]),
+      water('Gilt', [60, 40]),
+      water('Cairn', [240, 40]),
     ],
   });
-  assert.equal(crowded.key?.corner, 'lower-left');
-  assert.deepEqual(
-    crowded.letters.map((letter) => letter.text),
-    ['Rime', 'Gilt', 'Cairn'],
-  );
+  assert.equal(lettering.key?.corner, 'lower-left');
+  const fen = lettering.letters.find((letter) => letter.text === 'Fen');
+  assert.deepEqual([fen?.x, fen?.y], [160, 100]);
+  for (const letter of lettering.letters)
+    assert.ok(!overlaps(nameBox(letter, 'centre', widthOf(letter.text, 'water'), 1), lettering.key!.box), letter.text);
 });
 
 test('a port the ship lies at keeps its name, beside the ship’s arrow where a mark takes its other side', () => {
@@ -112,63 +152,11 @@ test('with every corner over land the key still takes one clear of marks, hands 
   assert.equal(lettering.key?.corner, 'lower-left');
 });
 
-test('with no corner clear the key takes the one dropping the fewest names, a water’s name weighing most', () => {
+test('a water’s name takes a spot wholly on her own sea before an earlier one that runs over a neighbour’s', () => {
   const lettering = layOut({
     ...ASK,
-    ink: { width: 300, height: 200 },
-    key: { width: 120, height: 80 },
-    places: [{ text: 'Ruins', x: 150, y: 160, kind: 'ruin', chosen: false }],
-    waters: [
-      { text: 'Fen', x: 60, y: 160, continent: 0, colour: '#256327' },
-      { text: 'Gilt', x: 60, y: 40, continent: 0, colour: '#256327' },
-      { text: 'Cairn', x: 240, y: 40, continent: 0, colour: '#256327' },
-    ],
+    sea: (box) => (box.x > 300 ? 2 : 1),
+    waters: [water('The Elmwater, 7-10', [200, 100], [400, 100])],
   });
-  assert.equal(lettering.key?.corner, 'lower-right');
-  assert.deepEqual(
-    lettering.letters.map((letter) => [letter.text, letter.side]),
-    [
-      ['Ruins', null],
-      ['Fen', 'centre'],
-      ['Gilt', 'centre'],
-      ['Cairn', 'centre'],
-    ],
-  );
-});
-
-test('a water’s name under one hand moves inward from that hand, never from the other across the map', () => {
-  const left = { x: 0, y: 150, width: 120, height: 80 };
-  const right = { x: 480, y: 150, width: 120, height: 80 };
-  const lettering = layOut({
-    ...ASK,
-    covers: [left, right],
-    waters: [{ text: 'The Elmwater, 7-10', x: 560, y: 190, continent: 0, colour: '#6a5507' }],
-  });
-  const water = lettering.letters[0];
-  assert.ok(water && water.x > 300, `kept on the right, beside the right hand (${water?.x})`);
-});
-
-test('a water’s name stands only where it lies wholly on her own sea, else is dropped', () => {
-  const seaOnRight = (box: Rect) => (box.x > 300 ? 2 : 0);
-  const lettering = layOut({
-    ...ASK,
-    sea: seaOnRight,
-    waters: [
-      { text: 'The Elmwater, 7-10', x: 400, y: 100, continent: 0, colour: '#6a5507' },
-      { text: 'The Fen Deeps, 22-26', x: 100, y: 100, continent: 1, colour: '#a3241f' },
-    ],
-  });
-  assert.deepEqual(
-    lettering.letters.map((letter) => letter.text),
-    ['The Elmwater, 7-10'],
-  );
-});
-
-test('a water’s name takes a spot wholly on her own sea before one that runs over a neighbour’s', () => {
-  const lettering = layOut({
-    ...ASK,
-    sea: (box) => (box.y < 75 ? 2 : 1),
-    waters: [{ text: 'The Elmwater, 7-10', x: 300, y: 100, continent: 0, colour: '#6a5507' }],
-  });
-  assert.ok((lettering.letters[0]?.y ?? 100) < 100, 'moved up a line onto her own sea');
+  assert.equal(lettering.letters[0]?.x, 400);
 });

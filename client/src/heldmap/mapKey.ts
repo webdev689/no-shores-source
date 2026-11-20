@@ -110,6 +110,32 @@ export function keyCorners(
   return order.map((corner) => ({ corner, box: cornerBox(corner, ink, size, KEY.inset * scale) }));
 }
 
+/** The key along the map's four edges between its corners, half its width or height apart, ink pixels: where it may
+ *  stand when no corner will do. Each is named by the corner it slid from. */
+export function keyEdges(
+  ink: { readonly width: number; readonly height: number },
+  size: { readonly width: number; readonly height: number },
+  scale: number,
+): KeyPlace[] {
+  const inset = KEY.inset * scale;
+  const places: KeyPlace[] = [];
+  for (const corner of CORNERS) {
+    const { x, y } = cornerBox(corner, ink, size, inset);
+    const along = (start: number, step: number, room: number) =>
+      Array.from(
+        { length: Math.max(0, Math.floor((room - 2 * inset) / step) - 2) },
+        (unused, index) => start + step * (index + 1),
+      );
+    if (corner.endsWith('left'))
+      for (const left of along(inset, size.width / 2, ink.width - size.width + size.width / 2))
+        places.push({ corner, box: { x: left, y, width: size.width, height: size.height } });
+    if (corner.startsWith('upper'))
+      for (const top of along(inset, size.height / 2, ink.height - size.height + size.height / 2))
+        places.push({ corner, box: { x, y: top, width: size.width, height: size.height } });
+  }
+  return places;
+}
+
 /** Where the key goes (`keyCorners`): the corner it stands in while that stays clear of land (`land`) and of every box
  *  `taken`, else the first clear corner; null with none clear. So it moves only when it must, and never back and
  *  forth while the map stands still. */
