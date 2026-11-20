@@ -44,7 +44,8 @@ throws more often than an Elite, a Boss's called foes fall with it and a garriso
 ## Factions
 
 A fighter's side is the players' or a faction's, by its number. Fighters of different sides are enemies: foes of two
-factions fight each other as they fight players, and never their own side.
+factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
+fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player.
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
@@ -81,6 +82,8 @@ out among them ([[Foes]]).
 | 16 | Archer (pirate) | Archer | `bow_short_iron` | | Minor, Major |
 | 17 | Captain (pirate) | Captain | `sword_ebony` | | Elite, Miniboss |
 | 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
+| 19 | Crew (the Brig's) | Swordsman | `sword_iron` | | Minor, Major |
+| 20 | Crew (the Brig's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).
@@ -192,7 +195,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a long thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before
-  the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]).
+  the name while it is suspicious or searching, and a "!" for a second when it turns alert ([[Foes]]). An ally on the
+  players' side (the Brig's crew) has its bar in green and no "?" or "!".
 - **Plates are never overbearing.** A foe's plate shows near the crosshair, fading in and out at the cone's edge, and
   always for the foes fought in the last minute; never through a block, nor past 60 m; it shrinks with distance as
   its figure does ([[Interface]]).
@@ -215,7 +219,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with
   a grey sash; the Reeve in iron with a grey surcoat and cloak; Thule in full steel plate, a grey surcoat and a long
   grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the pirates as the Test Ground's foes
-  were dressed.
+  were dressed. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
+  crew as the Brig's hands ([[Prologue]]).
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.
 

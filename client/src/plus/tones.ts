@@ -52,12 +52,13 @@ export const BEVELS = {
   bloodSunk: '#3d0d0a #b83a2e #e0584a #5a130f',
 } as const;
 
-/** A bar's fill by what it measures: a foe's or a ship's health in the band its rank is drawn in, and the player's
- *  three vitals. */
+/** A bar's fill by what it measures: a foe's or a ship's health in the band its rank is drawn in, an ally's in green,
+ *  and the player's three vitals. */
 export const FILLS = {
   red: '#c8382f',
   orange: '#e07a2a',
   yellow: '#e8c23a',
+  green: '#4fae4a',
   health: '#b53a2e',
   stamina: '#2f9152',
   poise: '#c08a3e',
