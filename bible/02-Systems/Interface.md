@@ -315,7 +315,9 @@ never while a press is held. Each press is an ask the room answers.
   (eight a row), every one of the catalogues: kept pieces lit and worn with a click or Enter, the rest dim, each card
   saying how it is had ("Sold by the Tailor.", "Reach the Lamplighters' second rank."); the worn one of each kind in
   brass with a brass corner. A dye's tile is its ramp over a cuirass, a coat's a swatch, a barding's the horse's head
-  and chest wearing it. Hovering or focusing a dye, coat or barding shows it on the display before it is worn. Escape
+  and chest wearing it. Hovering or focusing a dye, coat or barding shows it on the display before it is worn; after the pointer leaves,
+  a piece keeps its preview only if the keys focused it. The display keeps the figure's pictures without coat or
+  barding and the horse's without the dyes, 96 at most, letting go of the least lately shown. Escape
   goes back to the button. On a screen 800 px tall or less the tiles are 52 px, so every row shows at 1280 by 720.
 - **The card.** An item's name on its rarity's band, its kind, pips and element, its picture, its main number large,
   its level, its chosen traits, its words, and what it changes over the piece it would replace, each number's meter

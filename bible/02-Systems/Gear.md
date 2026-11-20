@@ -335,9 +335,11 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   A dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) in place of the
   forge's own on every armour piece's layer, its padding and every garment but the cloak; never on a weapon, a shield,
   a sheath, the cloak or the hair. A coat lays its ramp on the horse's hide by its light (texels of the hide's hue,
-  25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them. A barding is the forge's own
-  layer stacked over the horse in every mounted move, drawn over the hide whatever its depth, and in the riding view
-  its own published strip. Own Colours, Bay and Bare change nothing. Another player's dress naming a dye, coat or
+  25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them; the ride from the saddle
+  has its own hide test, so a coat covers its hide and leaves the bridle. A barding is the forge's own layer stacked
+  over the horse in every mounted move, drawn over the hide unless it lies more than 0.15 m behind it, so its far side
+  and inside stay hidden, and in the riding view its own published strip. In first person the gauntlets and boots
+  take the worn dye as the figure's armour does. Own Colours, Bay and Bare change nothing. Another player's dress naming a dye, coat or
   barding that is not one of its kind is refused as any broken dress is.
 - Each rolled item keeps its own look by its name; a named item takes its rarity's first.
 
@@ -353,4 +355,8 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own,
   and a Normal head or arms piece shows nothing over the figure.
 - No Breach items exist yet. Of the cloaks, only the three factions' capes belong to a faction ([[Factions]]).
+- The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them
+  again. In the ride, about a tenth of the hide (its darkest texels) keeps the bay's colour under a coat: colour alone
+  cannot tell it from the bridle, and the forge's ride `_uv` strips would make an exact mask. A coat leaves the mane
+  grey (the forge publishes no mane mask).
 - The traits' and items' words are English only.
