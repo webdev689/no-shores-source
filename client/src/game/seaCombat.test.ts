@@ -116,3 +116,30 @@ test("in a fight the player's footprint comes first, then the captains nearest h
     ],
   );
 });
+
+test('a captain keeps her own harm when another leaves the fight and the view moves her up its list', async () => {
+  const [north, south] = [
+    { ...captain, ship: [5100, 5800, 0, 0, 0, 0, 0, 2], number: 5 },
+    { ...captain, ship: [5300, 6200, 0, 0, 0, 0, 0, 2], number: 7 },
+  ];
+  const views: FightView[] = [
+    // A ball through the hull of the captain the events name 7, the second of the others.
+    {
+      ...FIRST,
+      others: [north, south],
+      events: [{ kind: 'hit', ship: 7, by: 0, zone: 'hull', point: [5300, 6203, 1] }],
+    },
+    { ...FIRST, others: [south] },
+  ];
+  const room = { orders: () => undefined, takeFight: () => views.shift() ?? null } as unknown as SeaRoom;
+  const fight = new SeaCombat(room, { ...FIRST, others: [north, south] }, MARKS, 0);
+  const scarsOf = (x: number) =>
+    fight.ships(0.1, 0, 0, 1).find(({ place }) => place.x === x)?.rig?.harm.scars.length ?? -1;
+  for (let frame = 1; frame <= 6; frame++) {
+    fight.frame(1 / 30, frame / 30, 1000, (error) => assert.fail(String(error)));
+    await new Promise((settled) => setImmediate(settled));
+  }
+  assert.equal(views.length, 0, 'both views were taken');
+  assert.equal(scarsOf(5300), 1, 'the one struck keeps her hole');
+  assert.equal(scarsOf(5000), 0);
+});

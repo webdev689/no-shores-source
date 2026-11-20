@@ -1,7 +1,9 @@
 import { type FleetOrders, type NavalEvent, type SeenVessel, ordersBytes } from '../network/fleetMessages.ts';
 import { Prediction } from '../network/prediction.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
+import type { NavalEvent as SeaEvent } from '../network/seaFight.ts';
 import type { FightEvent, ShipState, ShotName } from '../rules/fightRules.ts';
+import { feelOf } from '../ships/fightFeel.ts';
 import type { FleetLay, FleetLook, FleetRules, LaySighted } from '../rules/fleetRules.ts';
 import type { Helm, Pose, ShipFloats } from '../rules/landRules.ts';
 
@@ -14,6 +16,8 @@ const MOST_AHEAD_S = 0.25;
 const GRAVITY = 9.81;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 const ZONES = ['hull', 'holed', 'rig'] as const;
+const PARTS = ['hull', 'sail', 'rig'] as const;
+const PIECES = ['crate', 'barrel', 'chest'] as const;
 const SIDES = ['port', 'starboard'] as const;
 const STATES = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'] as const;
 /** A ship whose hurts are not known yet: sound, her canvas whole. */
@@ -64,6 +68,7 @@ export class FleetSession {
   /** Every ship a captain sails that the room has shown: a number is never given twice, so one gone stays known. */
   private readonly captains = new Set<number>();
   private events: FightEvent[] = [];
+  private felt: FightEvent[] = [];
 
   constructor(link: RoomLink, rules: FleetRules, start: readonly [number, number, number]) {
     this.link = link;
@@ -167,6 +172,7 @@ export class FleetSession {
       const said = this.fightEvent(event);
       if (said) this.events.push(said);
     }
+    this.felt.push(...fleetFeel(snapshot.naval));
   }
 
   /** Owes the room `seconds` more and sends a tick's orders for each whole tick owed: her rudder as held, her look
@@ -287,10 +293,68 @@ export class FleetSession {
     }
   }
 
-  /** The events since last taken, for the effects and the panel. */
+  /** The fight's events since last taken for its feel, each ship by her own number. */
+  takeFeel(): FightEvent[] {
+    const taken = this.felt;
+    this.felt = [];
+    return taken;
+  }
+
+  /** The events since last taken, for the panel. */
   takeEvents(): FightEvent[] {
     const taken = this.events;
     this.events = [];
     return taken;
   }
+}
+
+/** A fleet room's events for the fight's feel, each ship by her own number: a ball's muzzle, hit (with where on her it
+ *  struck and on which part, told just before it), splash, landing and a stem's ram; then the sea's own, through the
+ *  feel's one mapping (`feelOf`). */
+export function fleetFeel(events: readonly NavalEvent[]): FightEvent[] {
+  const felt: FightEvent[] = [];
+  let struck: NavalEvent | null = null;
+  for (const event of events) {
+    const { ship, point } = event;
+    const room = ((): SeaEvent | null => {
+      const tick = Number(event.tick);
+      switch (event.kind) {
+        case 'sail-lost':
+          return { kind: 'SailLost', tick, ship, sail: event.detail };
+        case 'mast-fell':
+          return { kind: 'MastFell', tick, ship, mast: event.detail };
+        case 'struck':
+          return { kind: 'Struck', tick, ship };
+        case 'sinking':
+          return { kind: 'Sinking', tick, ship };
+        case 'flotsam':
+          return {
+            kind: 'Flotsam',
+            tick,
+            id: ship,
+            at: [point[0], point[1]],
+            kind_of: PIECES[event.detail] ?? 'crate',
+          };
+        case 'gathered':
+          return { kind: 'Gathered', tick, id: ship, by: event.by };
+        case 'boarding':
+          return { kind: 'Boarding', tick, ship };
+        default:
+          return null;
+      }
+    })();
+    const feel = room && feelOf(room);
+    if (feel) felt.push(feel);
+    else if (event.kind === 'struck-at') struck = event;
+    else if (event.kind === 'muzzle') felt.push({ kind: 'muzzle', ship, point, launch: event.launch });
+    else if (event.kind === 'splash' || event.kind === 'land') felt.push({ kind: event.kind, point });
+    else if (event.kind === 'ram') felt.push({ kind: 'ram', ship, by: event.by, point, dealt: event.left });
+    else if (event.kind === 'hit') {
+      const hit = { kind: 'hit', ship, by: event.by, zone: ZONES[event.detail] ?? 'hull', point } as const;
+      const along = struck?.ship === ship ? { at: struck.point, part: PARTS[struck.detail] ?? 'hull' } : {};
+      struck = null;
+      felt.push({ ...hit, ...along });
+    }
+  }
+  return felt;
 }

@@ -249,9 +249,9 @@ fn a_balls_hit_tells_where_on_her_it_struck_and_the_sea_fights_own_events_are_to
     let told = events_json(&events);
     assert_eq!(told.len(), 4, "her new hit is told with the shot's");
     // As the fight tells them: her torn sail and her colours between the hit and its ball's.
-    assert_eq!(told[0]["kind"], "sail-lost");
-    assert_eq!(told[1]["kind"], "struck");
+    assert_eq!(told[0]["kind"], "SailLost");
+    assert_eq!(told[1]["kind"], "Struck");
     assert_eq!((told[2]["kind"].as_str(), told[2]["part"].as_str()), (Some("hit"), Some("hull")));
     assert_eq!(told[2]["at"], serde_json::json!([4.0, -1.0, 2.0]));
-    assert_eq!((told[3]["kind"].as_str(), told[3]["item"].as_str()), (Some("flotsam"), Some("chest")));
+    assert_eq!((told[3]["kind"].as_str(), told[3]["kind_of"].as_str()), (Some("Flotsam"), Some("chest")));
 }

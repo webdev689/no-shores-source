@@ -15,6 +15,7 @@ import {
   type ShotName,
   type SideName,
 } from '../rules/fightRules.ts';
+import { feelOf } from '../ships/fightFeel.ts';
 
 const STATES: readonly ShipState[] = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'];
 const MODES: readonly CaptainMode[] = ['cruise', 'engage', 'flee', 'struck', 'sinking'];
@@ -113,32 +114,8 @@ export function navalEventOf(kind: number, next: () => number): NavalEvent | nul
   }
 }
 
-/** One of the sea's own events as the fight's feel reads it among the World Editor's (`ships/fightFeel.ts`
- *  `FeelEvent`); none for a ball's splash and hit, which its shot's own events carry. */
-export function feelOf(event: NavalEvent): FightEvent | null {
-  const feel = ((): object | null => {
-    switch (event.kind) {
-      case 'SailLost':
-        return { kind: 'sail-lost', ship: event.ship, sail: event.sail };
-      case 'MastFell':
-        return { kind: 'mast-fell', ship: event.ship, mast: event.mast };
-      case 'Struck':
-        return { kind: 'struck', ship: event.ship };
-      case 'Sinking':
-        return { kind: 'sinking', ship: event.ship };
-      case 'Flotsam':
-        return { kind: 'flotsam', id: event.id, at: event.at, item: event.kind_of };
-      case 'Gathered':
-        return { kind: 'gathered', id: event.id, by: event.by };
-      case 'Boarding':
-        return { kind: 'boarding', ship: event.ship };
-      default:
-        return null;
-    }
-  })();
-  // The rules' fight events are the World Editor's; the feel reads these beside them by their kinds.
-  return feel as FightEvent | null;
-}
+/** One of the sea's own events as the fight's feel reads it: `ships/fightFeel.ts`'s, the one mapping. */
+export { feelOf };
 
 /** Who a fight's captain is: her name, her faction and her rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
@@ -195,9 +172,9 @@ export function fightViewOf(
   const player = vessel();
   const captain = commanded(who);
   const others = Array.from({ length: next() }, () => {
-    const [faction, rank] = [next(), next()];
+    const [number, faction, rank] = [next(), next(), next()];
     const other = commanded({ name: '', faction, rank });
-    return { ...other, name: nameOf(faction, other.hull_kind ?? 0) };
+    return { ...other, number, name: nameOf(faction, other.hull_kind ?? 0) };
   });
   const balls = Array.from({ length: next() }, () => [next(), next(), next(), next()] as const);
   // Where a gun's ball stops: whether it does, its time and point, whether in the water, and where it strikes her.

@@ -5,7 +5,7 @@ use super::messages;
 use naval::arms::Side;
 use naval::captain::Mode;
 use naval::damage::{State, Zone};
-use naval::fight::{Aim, End, Event, Fight, Orders, Refusal};
+use naval::fight::{Aim, End, Event, Fight, Orders, Part, Piece, Refusal};
 use naval::guns::Shot;
 use naval::ranks::{Commission, PIRATES, Rank};
 use naval::shots::{ShipId, ShotEvent};
@@ -152,6 +152,17 @@ pub const NO_SAIL: u8 = 8;
 pub const LOAD: u8 = 9;
 pub const GONE: u8 = 10;
 pub const RAM: u8 = 11;
+/// The sea's own events, for the fight's feel: where on her a ball struck (her frame's point, the part as detail), a
+/// sail torn away and a mast fallen (its number as detail), her colours struck, her going down, what floats laid (its
+/// number as the ship, its kind as detail, where as the point) and gathered (by whom), and players gone aboard her.
+pub const STRUCK_AT: u8 = 12;
+pub const SAIL_LOST: u8 = 13;
+pub const MAST_FELL: u8 = 14;
+pub const STRUCK: u8 = 15;
+pub const SINKING: u8 = 16;
+pub const FLOTSAM: u8 = 17;
+pub const GATHERED: u8 = 18;
+pub const BOARDING: u8 = 19;
 
 /// An event's numbers as the messages carry them: kind, ship, who fired, detail, side, point, launch, seconds left.
 type NavalParts = (u8, ShipId, ShipId, u8, u8, [f64; 3], [f64; 3], f64);
@@ -181,9 +192,39 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
         Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),
-        // The sea's own events (its splashes, hits, torn rig, colours, flotsam and boarding) cross only at sea.
-        _ => return None,
+        Event::Hit { ship, at, part } => (STRUCK_AT, ship, 0, part_code(part), 0, at, none, 0.0),
+        Event::SailLost { ship, sail } => {
+            (SAIL_LOST, ship, 0, u8::try_from(sail).unwrap_or(u8::MAX), 0, none, none, 0.0)
+        }
+        Event::MastFell { ship, mast } => {
+            (MAST_FELL, ship, 0, u8::try_from(mast).unwrap_or(u8::MAX), 0, none, none, 0.0)
+        }
+        Event::Struck { ship } => (STRUCK, ship, 0, 0, 0, none, none, 0.0),
+        Event::Sinking { ship } => (SINKING, ship, 0, 0, 0, none, none, 0.0),
+        Event::Flotsam { id, at, kind } => (FLOTSAM, id, 0, piece_code(kind), 0, [at[0], at[1], 0.0], none, 0.0),
+        Event::Gathered { id, by } => (GATHERED, id, by, 0, 0, none, none, 0.0),
+        Event::Boarding { ship } => (BOARDING, ship, 0, 0, 0, none, none, 0.0),
+        // A ball's splash is told with its shot's.
+        Event::Splash { .. } => return None,
     })
+}
+
+/// A ball's part struck as the messages number it: her hull, a sail, her rig.
+fn part_code(part: Part) -> u8 {
+    match part {
+        Part::Hull => 0,
+        Part::Sail => 1,
+        Part::Rig => 2,
+    }
+}
+
+/// A piece of what floats as the messages number it: a crate, a barrel, a chest.
+fn piece_code(piece: Piece) -> u8 {
+    match piece {
+        Piece::Crate => 0,
+        Piece::Barrel => 1,
+        Piece::Chest => 2,
+    }
 }
 
 /// Every ship in a fleet room after its tick `tick`, each player's ship with the number of her last orders taken

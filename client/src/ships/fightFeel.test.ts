@@ -92,10 +92,10 @@ test("the contract's events tear her sails, fell her masts, strike and sink her"
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(5);
   const events: FeelEvent[] = [
-    { kind: 'sail-lost', ship: 1, sail: 3 },
-    { kind: 'mast-fell', ship: 1, mast: 1 },
-    { kind: 'struck', ship: 1 },
-    { kind: 'sinking', ship: 1 },
+    { kind: 'SailLost', tick: 0, ship: 1, sail: 3 },
+    { kind: 'MastFell', tick: 0, ship: 1, mast: 1 },
+    { kind: 'Struck', tick: 0, ship: 1 },
+    { kind: 'Sinking', tick: 0, ship: 1 },
   ];
   frame(feel, ships, events, 0);
   const harm = ships.get(1)?.rig?.harm;
@@ -111,7 +111,7 @@ test("the contract's events tear her sails, fell her masts, strike and sink her"
 test('where she went down the water foams, and her flotsam bobs there until gathered', () => {
   const ships = new Map([[1, brig()]]);
   const feel = new FightFeel(6);
-  frame(feel, ships, [{ kind: 'sinking', ship: 1 }], 0);
+  frame(feel, ships, [{ kind: 'Sinking', tick: 0, ship: 1 }], 0);
   for (let now = 11; now < 14; now += 1 / 30) frame(feel, ships, [], now);
   assert.ok(feel.marks(14).some((mark) => Math.hypot(mark.x - 100, mark.y - 50) < 20 && Math.abs(mark.z) < 0.01));
   const gone = new Map([[1, { ...brig('sunk') }]]);
@@ -121,9 +121,9 @@ test('where she went down the water foams, and her flotsam bobs there until gath
     feel,
     ships,
     [
-      { kind: 'flotsam', id: 1, at: [100, 52], item: 'crate' },
-      { kind: 'flotsam', id: 2, at: [98, 49], item: 'barrel' },
-      { kind: 'flotsam', id: 3, at: [101, 47], item: 'chest' },
+      { kind: 'Flotsam', tick: 0, id: 1, at: [100, 52], kind_of: 'crate' },
+      { kind: 'Flotsam', tick: 0, id: 2, at: [98, 49], kind_of: 'barrel' },
+      { kind: 'Flotsam', tick: 0, id: 3, at: [101, 47], kind_of: 'chest' },
     ],
     20,
   );
@@ -135,7 +135,7 @@ test('where she went down the water foams, and her flotsam bobs there until gath
   assert.deepEqual(shapes().sort(), ['box', 'chest', 'drum']);
   const bob = (now: number) => feel.flotsam.marks(now)[0]?.z ?? 0;
   assert.notEqual(bob(20), bob(21), 'it rides the swell');
-  frame(feel, ships, [{ kind: 'gathered', id: 2, by: 0 }], 21);
+  frame(feel, ships, [{ kind: 'Gathered', tick: 0, id: 2, by: 0 }], 21);
   assert.deepEqual(shapes().sort(), ['box', 'chest']);
 });
 
