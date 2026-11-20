@@ -477,3 +477,39 @@ test('one account is one player in a room: a second socket signed in sends the f
   await keeper.due(clock.now + SAVE_UNCHANGED_MS);
   assert.deepEqual(sent, [[1, undefined]], 'and the newer keeps its hold');
 });
+
+test('a run is full by its four accounts: a member signing in again is kept, a fifth account refused', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben', 'Cal', 'Dee', 'Eve']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  for (const name of ['Ben', 'Cal', 'Dee']) {
+    await made.ask('POST', '/v1/social/company/invite', { name }, tokens['Ada']);
+    await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens[name]);
+  }
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const room = roomOf();
+  for (const player of [1, 2, 3, 4, 5, 6]) room.held.set(player, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(kept, room, 'node-krakens-grotto--run-k3j4h5g6', (player, why) => {
+    sent.push([player, why]);
+  }).forCompany();
+  const [now, here] = [() => made.clock.now, () => true];
+  for (const [player, name] of [
+    [1, 'Ada'],
+    [2, 'Ben'],
+    [3, 'Cal'],
+    [4, 'Dee'],
+  ] as const)
+    assert.equal(await keeper.signIn(player, tokens[name] ?? '', now, here), true, name);
+  assert.equal(await keeper.signIn(5, tokens['Ada'] ?? '', now, here), true, 'Ada again, her old socket still open');
+  assert.deepEqual(sent, [[1, undefined]], 'the old one sent away');
+  assert.equal(await keeper.signIn(6, tokens['Eve'] ?? '', now, here), false);
+  assert.deepEqual(sent.at(-1), [6, 'This run is full.']);
+});

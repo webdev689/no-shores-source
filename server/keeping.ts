@@ -4,10 +4,11 @@
  * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
  * player who sends no token, or whose token is no session, plays a character that is not kept. Should another room
  * take the character (the same player joined elsewhere), this room's next save learns it, and the player is let go.
- * A run's room is kept to one company (`forCompany`), and keeps no one unkept.
+ * A run's room is kept to one company of four accounts at most (`forCompany`), and keeps no one unkept.
  */
 
 import type { Characters as Kept } from './accounts/characters.ts';
+import { runFull } from './roomNames.ts';
 
 /** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
 type Characters = Pick<Kept, 'claim' | 'save' | 'release' | 'companions'>;
@@ -115,8 +116,13 @@ export class Keeper {
       if (here()) this.lost(player, ACCOUNTS_TROUBLE, true);
       return false;
     }
+    // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
+    const others = new Set(
+      [...this.held.values()].map((held) => held.account).filter((one) => one !== claimed.account),
+    );
+    const full = this.company ? runFull(this.name, others.size + 1) : null;
     const shut =
-      this.room.shut(player, claimed.body) || (companions && !this.admits(companions) ? ANOTHER_COMPANY : '');
+      this.room.shut(player, claimed.body) || (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : ''));
     if (shut !== '') {
       // Left as kept: the gate shuts here, so nothing of this room may be saved over it.
       await characters.release(claimed.account, holder, null).catch(() => false);

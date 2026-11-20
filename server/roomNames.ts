@@ -89,10 +89,10 @@ export function privateRun(room: string): boolean {
 /** The most a run holds: a company's most (`accounts/companies.ts`), as an Elite Dungeon's run is for. */
 export const RUN_MOST = 4;
 
-/** Why a run sends away a player who would make it more than RUN_MOST, counting them; null for a run with room, or
- *  a room that is no run. */
-export function runFull(room: string, players: number): string | null {
-  return privateRun(room) && players > RUN_MOST ? 'This run is full.' : null;
+/** Why a run sends away a player whose account would make it more than RUN_MOST accounts, counting theirs; null for
+ *  a run with room, or a room that is no run. */
+export function runFull(room: string, accounts: number): string | null {
+  return privateRun(room) && accounts > RUN_MOST ? 'This run is full.' : null;
 }
 
 /** The tiers' old names in a node's room, by their names now. */
