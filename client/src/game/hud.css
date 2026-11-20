@@ -263,6 +263,23 @@
   }
 }
 
+/* The key strip's keycaps at 22 short of 2400 by 1300, past which the page zooms the whole strip twice over. */
+@media (min-width: 1500px) and (max-width: 2399.98px) and (min-height: 900px),
+  (min-width: 2400px) and (min-height: 900px) and (max-height: 1299.98px) {
+  .hints {
+    --type-xs: 22px;
+  }
+}
+/* Narrow, the ship panel stands where the toasts would: while it shows they stand in the room right of it. */
+@media (max-width: 890px) {
+  .fight-ship:not([hidden]) ~ .toasts {
+    left: 292px;
+    translate: none;
+    align-items: flex-start;
+    max-width: calc(100vw - 320px);
+  }
+}
+
 /* The larger step: words at 22, the windows wide enough to hold them. */
 @media (min-width: 1500px) and (min-height: 900px) {
   .tasks {
@@ -281,7 +298,6 @@
     width: 16px;
     height: 16px;
   }
-  .hints,
   .tasks {
     --type-xs: 22px;
   }

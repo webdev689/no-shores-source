@@ -215,7 +215,7 @@ export class WreckFight implements Beat {
     });
     hud.hints(held ? [] : shown.hints);
     // Read every frame, a cutscene's too, so a turn the camera makes for it is never taken for the player's look.
-    const tasks = this.lessons.frame(this.didNow(run, shown.fight));
+    const tasks = this.lessons.frame(this.didNow(run, shown.fight, tick.seconds));
     hud.tasks.show(held ? null : tasks);
     hud.reach(shown.standing);
     const thule = coming ? this.thuleActor(tick.clock - coming.since) : null;
@@ -260,10 +260,13 @@ export class WreckFight implements Beat {
 
   /** What the player did this frame, for the tasks: where they stand and look, what their fight does, the foes
    *  alive, and whether the boss fight is on. */
-  private didNow(run: WreckRun, fight: FootFight): Done {
+  private didNow(run: WreckRun, fight: FootFight, seconds: number): Done {
     const { body, yaw } = this.story.walker.player;
-    const foes = fight.foes.filter((foe) => foe.view.health > 0).length;
-    return { x: body.x, y: body.y, yaw, action: fight.own?.action.kind, foes, boss: this.fought || run.arena };
+    // The crew stand on the players' side: neither counted as foes nor taken for one coming at the player.
+    const hostile = fight.foes.filter((foe) => foe.view.side === 'foes' && foe.view.health > 0);
+    const engaged = hostile.some((foe) => foe.view.target === fight.player);
+    const action = fight.own?.action.kind;
+    return { seconds, x: body.x, y: body.y, yaw, action, foes: hostile.length, engaged, boss: this.fought || run.arena };
   }
 
   /** A death before the boss fight says what happens, for as long as the player lies dead: the room raises them at

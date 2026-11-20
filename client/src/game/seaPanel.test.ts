@@ -88,3 +88,9 @@ test('the ships left are those still afloat: a struck one is beaten, and the tas
     { text: 'No need to sink them' },
   ]);
 });
+
+test('a rival not fighting her is no ship of hers to beat, nor her broadside a warning', () => {
+  const rival = { ...captain('afloat', ['port']), hostile: false };
+  const readout = readoutOf(view([captain('afloat'), rival]), 'Brig', []);
+  assert.deepEqual([readout.left, readout.men, readout.ship.broadside], [1, 12, false]);
+});

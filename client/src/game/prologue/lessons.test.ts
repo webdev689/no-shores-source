@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { justMet } from '../tasks.ts';
 import { type Done, Lessons } from './lessons.ts';
 
-const STILL: Done = { x: 10, y: 20, yaw: 0, action: 'idle', foes: 0, boss: false };
+const STILL: Done = { seconds: 1 / 60, x: 10, y: 20, yaw: 0, action: 'idle', foes: 0, engaged: false, boss: false };
 const ticked = (lessons: Lessons, done: Done) =>
   lessons
     .frame(done)
@@ -34,19 +34,22 @@ test('each control is ticked off once the player does it, and stays ticked', () 
   assert.deepEqual(ticked(lessons, { ...STILL, action: 'attack' }), ['Move', 'Look round', 'Attack']);
 });
 
-test('a dodge or a guard both learn the last control, and then the fight takes over', () => {
+test('a dodge or a guard both learn the last control, shown ticked a moment before the fight takes over', () => {
   for (const action of ['guard', 'dodge']) {
     const lessons = new Lessons();
     lessons.frame(STILL);
     lessons.frame({ ...STILL, x: 13, yaw: 1.2, action: 'attack' });
-    assert.equal(lessons.frame({ ...STILL, action }).task, 'Fight your way through the wreck', action);
+    assert.equal(ticked(lessons, { ...STILL, action }).length, 4, `${action}: all four ticked`);
+    assert.equal(lessons.frame({ ...STILL, seconds: 1 }).task, 'Learn the controls', 'still up a second on');
+    assert.equal(lessons.frame({ ...STILL, seconds: 0.6 }).task, 'Fight your way through the wreck', action);
   }
 });
 
-test('the first foes standing begin the fight with what is left of the lessons, never going back to them', () => {
+test('foes standing further on leave the lessons up, and one coming at the player begins the fight', () => {
   const lessons = new Lessons();
   lessons.frame(STILL);
-  const fight = lessons.frame({ ...STILL, foes: 3 });
+  assert.equal(lessons.frame({ ...STILL, foes: 5 }).task, 'Learn the controls', 'they fight the crew ahead');
+  const fight = lessons.frame({ ...STILL, foes: 3, engaged: true });
   assert.equal(fight.task, 'Fight your way through the wreck');
   assert.deepEqual(fight.steps, [{ text: 'Foes standing', count: 3 }]);
   assert.deepEqual(lessons.frame(STILL).steps, [], 'between waves');
@@ -60,7 +63,7 @@ test('a step just met is told from one of a new task, which never flashes', () =
   const moved = lessons.frame({ ...STILL, x: 13 });
   assert.deepEqual(justMet(first, moved), [0]);
   assert.deepEqual(justMet(moved, lessons.frame({ ...STILL, x: 13 })), [], 'met already');
-  assert.deepEqual(justMet(moved, lessons.frame({ ...STILL, foes: 2 })), [], 'a new task');
+  assert.deepEqual(justMet(moved, lessons.frame({ ...STILL, foes: 2, engaged: true })), [], 'a new task');
   assert.deepEqual(justMet(null, moved), []);
 });
 

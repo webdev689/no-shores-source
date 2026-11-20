@@ -7,10 +7,12 @@ import type { Hint } from './gearDom.ts';
 /** What the Arts' keys add for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */
 const AIMED: Readonly<Record<string, Hint>> = { duskDaggers: ['Hold Q', 'Aim Dusk Daggers'] };
 
-/** The keys each mode shows. On foot the strip keeps to what the fight and the body do beyond walking and looking,
- *  which the player learns first and needs no reminder of. */
+/** The keys each mode shows. On foot the strip keeps to what the fight and the body do beyond walking, which the
+ *  player learns first and needs no reminder of; the click that takes the mouse to look round stays, as nothing else
+ *  says it once the pointer is let go. */
 export const HINTS = {
   foot: [
+    ['Click', 'Look round'],
     ['Right button', 'Swing or aim'],
     ['Left button / F', 'Guard or fire'],
     ['V', 'Dodge'],
@@ -45,6 +47,7 @@ export const HINTS = {
     ['M', 'Menu'],
   ],
   deck: [
+    ['Click', 'Look round'],
     ['W / A / S / D', 'Move'],
     ['Shift', 'Run'],
     ['Space', 'Jump'],

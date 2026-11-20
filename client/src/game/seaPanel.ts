@@ -33,7 +33,8 @@ export interface FightReadout {
 export function readoutOf(view: FightView, own: string, said: readonly string[]): FightReadout {
   const { player, lay } = view;
   const captains = [view.captain, ...(view.others ?? [])];
-  const afloat = captains.filter((each) => each.state === 'afloat');
+  // Only those fighting her are hers to beat: a rival's ship in a clash she joined is not.
+  const afloat = captains.filter((each) => each.state === 'afloat' && each.hostile);
   const side = (index: 0 | 1): string => {
     if (lay && lay.side === (index === 0 ? 'port' : 'starboard')) return lay.on_target ? 'On target' : 'Laying';
     const left = player.guns.left[index];
