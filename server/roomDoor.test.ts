@@ -142,7 +142,7 @@ function nodeFile(): { text: string; ground: string } {
     ],
   };
   const named = { id: 'glade', kind: 'patrol', name: 'The Glade', continent: 'square', ...section };
-  const file = { ...named, bounds: [-150, -150, 150, 150], ground, boxes: [[-5, -8, 5, -7, 13]] };
+  const file = { ...named, bounds: [-150, -150, 150, 150], ground, boxes: [[-5, -8, 5, -7, 13, 12]] };
   return { text: JSON.stringify(file), ground: JSON.stringify(ground) };
 }
 
@@ -186,7 +186,7 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   // The browser stands bodies on the same ground and boxes, and finds the same bodies, to the bit.
   const movement = await startMovementRules(await built('movement_wasm'));
   assert.equal(movement.setGround(ground), true);
-  movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13 }]);
+  movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13, bottom: 12 }]);
   room.tick();
   const joined = readFromRoom(room.snapshot());
   const bodies = joined?.kind === 'snapshot' ? joined.players.map((seen) => floatsOf(seen.body)) : [];
@@ -209,6 +209,17 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   seen = play(room, second, ++sequence, east, true);
   assert.deepEqual(seen.standing, { kind: 'inside' });
   assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
+});
+
+test('a locked node’s room takes no player and says why, so the host turns every join away; any other takes them', () => {
+  const { text } = nodeFile();
+  const locked = startRoomDoor(compiled);
+  assert.equal(locked.openNode(JSON.stringify({ ...(JSON.parse(text) as object), locked: true })), true);
+  assert.deepEqual([locked.join(), locked.refusal()], [0, 'The Glade is locked']);
+  const open = startRoomDoor(compiled);
+  assert.equal(open.openNode(text), true);
+  assert.notEqual(open.join(), 0);
+  assert.equal(open.refusal(), null);
 });
 
 test('a node’s room stands the foes a player asks for only once a page playing alone tells it to', () => {

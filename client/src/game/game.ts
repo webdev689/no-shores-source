@@ -5,6 +5,7 @@ import type { CardAt } from '../player/cards.ts';
 import type { Placed } from '../player/figures.ts';
 import { type Action, Input, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
+import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
@@ -22,6 +23,8 @@ import { Hud } from './hud.ts';
 import { ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
+import { askedArrival, type GateWay, gateWay } from './gates.ts';
+import { installQaViews } from './qaViews.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { HelmMap } from './helmMap.ts';
@@ -82,7 +85,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
-  const { world, rmbText, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
+  const { world, landTexts, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const { continents } = world;
   const ambience = new Ambience(world);
   const cityAssets = loadCityAssets(base);
@@ -97,20 +100,21 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const discovered = keptDiscovered(world);
   discovered.arrived(start.continent, start.node);
 
-  let landmass = await openLandmass(land, world, rmbText, start.continent);
+  let landmass = await openLandmass(land, world, landTexts, start.continent);
   let drawers = drawersOn(landmass);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
   const terrainFor = (opened: Landmass) => {
     const biome = biomeOf(opened.id);
     return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
   };
-  scene.setLand(landmass.view, terrainFor(landmass));
+  scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
 
   const input = new Input(canvas);
   const dress = plainDressOf(keptLook(localStorage) ?? FIRST_LOOK);
   const you: Placed = { id: 1, x: 0, y: 0, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
   // Arriving, the camera stands far enough back to show the whole figure against the view it arrives to.
-  const arrivalView = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  // The address may ask for another (`&view=`), to picture a place from first person or nearer.
+  const arrivalView = askedView(location.search) ?? { firstPerson: false, distance: 4.5, shown: 4.5 };
   const walker = new Walker({ ...newPlayer(movement, 0, 0), view: arrivalView }, you, firstPerson, forge);
   const footContext: FootContext = {
     movement,
@@ -215,11 +219,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     );
   };
 
-  const firstNode = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
-  if (!firstNode) throw new Error(`${start.name} has no place to arrive at`);
+  const arrived = landmass.nodes.find((node) => node.id === start.node) ?? landmass.nodes[0];
+  if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
+  const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
   const arrive = () =>
     behindVeil(flow.mode === 'loading' ? flow.words : '', () =>
-      goFoot(firstNode, arrivalFacing(firstNode, landmass.plan, null)),
+      goFoot(firstNode, firstFacing ?? arrivalFacing(firstNode, landmass.plan, null)),
     );
   if (flow.mode === 'loading') arrive();
   if (story) {
@@ -229,6 +234,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     story.begin({ ...game, ...more, ...lands }, () => ((flow = arriving(FIRST_NODE, 'Overlook')), arrive()));
   }
 
+  installQaViews(window, location.search, !rooms, { node: () => foot?.node ?? null, arrive: goFoot, walker });
   const landAt = (id: string) => {
     discovered.nodes([id]);
     const landing = sea?.view.landingOf(id);
@@ -319,11 +325,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const choose = (id: string) => {
     if (flow.mode === 'sea' && !flow.menu) sea?.sailToMark(id);
     if (flow.mode !== 'landing' || !sea) return;
-    if (flow.chosen === id) landAt(id);
-    else if (sea.view.landingOf(id)) {
-      change({ kind: 'choose', node: id });
-      sea.view.chosen = id;
-    }
+    const choice = sea.view.choose(id, flow.chosen);
+    if (choice === 'land') landAt(id);
+    else if (choice === 'choose') change({ kind: 'choose', node: id });
   };
 
   const respawn = () => void (foot?.standing.kind === 'dead' && foot.standing.canRespawn && foot.respawn());
@@ -359,6 +363,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (key === 'b') manage();
     else if (key === 'h') leaveHelm();
     else if (key === 'e' && sea?.aboard.walking) takeHelm();
+    else if (key === 'e' && flow.mode === 'foot' && !flow.menu && through) goThrough();
     else if (key === 'e' && flow.mode === 'foot') foot?.use();
     else if (key === 'enter' && flow.mode === 'landing' && flow.chosen) landAt(flow.chosen);
     else if (key === 'enter' && flow.mode === 'foot') respawn();
@@ -389,6 +394,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       fight,
     );
 
+  /** The way through the gate the player stands in, if any, and going through it to the node it leads to. */
+  let through: GateWay | null = null;
+  const goThrough = () => {
+    const way = through;
+    // A gate shut on a locked node takes no one: its offer only says so.
+    if (way?.happening && flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
+  };
+  hud.onPassage(goThrough);
+
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
@@ -397,6 +411,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     ambience.onFoot(here.node, landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], closeSource, () => undefined);
+    scene.keepMiddle([body.x, body.y], closeSource);
     const hands = walker.inFirstPerson
       ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
       : undefined;
@@ -411,6 +426,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
+    // As E's other use, a gate takes no one while a menu is up or the player is down.
+    through = paused || here.fallen ? null : gateWay(landmass, here.node.id, [body.x, body.y]);
+    hud.passageOffer(through?.offer ?? null);
     hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);
@@ -492,12 +510,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const other = continentToOpen(here.position, continents, landmass.id);
     if (!other || unchartable.has(other)) return;
     charting = other;
-    openLandmass(land, world, rmbText, other)
+    openLandmass(land, world, landTexts, other)
       .then((opened: Landmass) => {
         landmass = opened;
         drawers.release();
         drawers = drawersOn(opened);
-        scene.setLand(opened.view, terrainFor(opened));
+        scene.setLand(opened.view, terrainFor(opened), biomeOf(opened.id));
         here.setLandmass(opened);
       })
       .catch((error: unknown) => {

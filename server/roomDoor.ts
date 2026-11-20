@@ -1,10 +1,11 @@
-/** A block of a room's course: its footprint (x east, y south, metres) and its top. */
+/** A block of a room's course: its footprint (x east, y south, metres), its top and its underside. */
 export interface CourseBlock {
   readonly minX: number;
   readonly minY: number;
   readonly maxX: number;
   readonly maxY: number;
   readonly top: number;
+  readonly bottom: number;
 }
 
 /** A resource node on a course: where it stands, and its island's resource by its place in the gear's list. */
@@ -45,8 +46,10 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** A new player's number, or 0 when the room is full. */
+  /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
+  /** Why the room takes no player, a locked node's words; null for a room that takes them. */
+  refusal(): string | null;
   /** The welcome's bytes for a player. */
   joined(player: number): Uint8Array;
   leave(player: number): void;
@@ -112,6 +115,7 @@ interface RoomExports {
   room_open_fleet(): number;
   room_take_foe_asks(): void;
   room_join(): number;
+  room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
   room_input(player: number, address: number, length: number): number;
@@ -132,8 +136,8 @@ interface RoomExports {
   room_clear_foes(): number;
   room_set_spawn(x: number, y: number): number;
   room_put_player(player: number, x: number, y: number): number;
-  room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number): number;
-  room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number): number;
+  room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
+  room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
 }
 
 /** Starts a room from the compiled `room-wasm` module. Each call is a room of its own. */
@@ -166,7 +170,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const numbers = [
         spawn.x,
         spawn.y,
-        ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
+        ...blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]),
       ];
       const bytes = new Uint8Array(new Float64Array(numbers).buffer);
       const entry = overSea ? exports.room_open_over_sea : exports.room_open;
@@ -178,6 +182,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openFleet: () => exports.room_open_fleet() === 1,
     takeFoeAsks: () => exports.room_take_foe_asks(),
     join: () => exports.room_join(),
+    refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
     input: (player, bytes) =>
@@ -212,7 +217,9 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     clearFoes: () => exports.room_clear_foes() === 1,
     setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
     putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
-    standBlock: ({ minX, minY, maxX, maxY, top }) => exports.room_stand_block(minX, minY, maxX, maxY, top) === 1,
-    takeBlock: ({ minX, minY, maxX, maxY, top }) => exports.room_take_block(minX, minY, maxX, maxY, top) === 1,
+    standBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
+      exports.room_stand_block(minX, minY, maxX, maxY, top, bottom) === 1,
+    takeBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
+      exports.room_take_block(minX, minY, maxX, maxY, top, bottom) === 1,
   };
 }

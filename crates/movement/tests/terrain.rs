@@ -107,7 +107,7 @@ fn a_rise_too_steep_to_walk_straight_up_is_climbed_slantwise_as_steeply_as_the_p
 
 #[test]
 fn a_block_sunk_into_a_slope_is_walked_onto_and_off_again() {
-    let sunk = Block { min_x: -1.0, min_y: -4.0, max_x: 1.0, max_y: -2.0, top: 1.2 };
+    let sunk = Block { min_x: -1.0, min_y: -4.0, max_x: 1.0, max_y: -2.0, top: 1.2, bottom: 0.0 };
     let mut body = standing_on(&GENTLE, 0.0, 0.0);
     let mut on_the_block = false;
     for _ in 0..120 {
@@ -152,7 +152,7 @@ fn walking_off_a_drop_higher_than_a_step_the_body_falls_to_the_ground_below() {
 
 #[test]
 fn the_ground_is_the_higher_of_the_terrain_and_a_block_within_a_step() {
-    let block = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 1.0 };
+    let block = Block { min_x: -1.0, min_y: -1.0, max_x: 1.0, max_y: 1.0, top: 1.0, bottom: 0.0 };
     assert_eq!(ground_at(&[block], &Shaped(|_, _| 2.0), 0.0, 0.0, 2.0), 2.0, "a buried block");
     assert_eq!(ground_at(&[block], &Shaped(|_, _| 0.5), 0.0, 0.0, 0.5), 1.0, "a block on the ground");
     assert_eq!(ground_at(&[block], &Shaped(|_, _| 0.2), 0.0, 0.0, 0.2), 0.2, "a block more than a step up");
@@ -161,7 +161,7 @@ fn the_ground_is_the_higher_of_the_terrain_and_a_block_within_a_step() {
 #[test]
 fn a_body_on_raised_ground_climbs_down_a_wall_no_lower_than_the_ground() {
     let raised = Shaped(|_, _| 1.0);
-    let tower = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 5.0 };
+    let tower = Block { min_x: -5.0, min_y: -4.0, max_x: 5.0, max_y: -1.0, top: 5.0, bottom: 0.0 };
     let mut body = standing_on(&raised, 0.0, 0.0);
     for _ in 0..30 {
         body = step_body(&body, &heading(0.0, false), &[tower], &raised, TICK_SECONDS);

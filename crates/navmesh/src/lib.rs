@@ -48,12 +48,12 @@ pub struct Agent {
     pub cell_height: f64,
 }
 
-/// Overlook's body: its radius and step from the movement rules, standing about 1.8 m. Cells are DFO's 0.25 m. A
+/// Overlook's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
 /// voxel is half the step, so a step is two voxels as in DFO, and the welding of corners within two voxels still
 /// joins the floors on either side of every step a body climbs.
 pub const AGENT: Agent = Agent {
     radius: TUNING.radius,
-    height: 1.8,
+    height: TUNING.height,
     climb: TUNING.step,
     max_slope: 0.7,
     cell_size: 0.25,
@@ -96,8 +96,9 @@ pub struct NavMesh {
 }
 
 impl NavMesh {
-    /// Bakes the walkable surface of a course: its blocks standing on open ground at 0 across `bounds`. The parts
-    /// of it that no walk joins to the largest are left out.
+    /// Bakes the walkable surface of a course: its blocks on open ground at 0 across `bounds`. Each block is solid
+    /// from its underside to its top, so floors stand over each other: the ground under a deck a body's height or more
+    /// up is walked, and so is the deck. The parts of it that no walk joins to the largest are left out.
     #[must_use]
     pub fn bake(blocks: &[Block], bounds: Bounds, agent: &Agent) -> Self {
         let colliders: Vec<Collider> = blocks.iter().copied().map(Collider::from).collect();
@@ -307,15 +308,18 @@ impl NavMesh {
         Some(points)
     }
 
-    /// The line pulled taut through a run of polys a walk joins.
+    /// The line pulled taut through a run of polys a walk joins, each corner on the poly under it nearest the last
+    /// corner's level, as a run may pass under a deck it later climbs onto.
     fn taut(&self, polys: &[usize], from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
         let portals = path::portals(&self.mesh, polys, self.to_grid(from[0], from[1]), self.to_grid(to[0], to[1]))?;
+        let mut level = from[2];
         let points = path::funnel(&portals)
             .into_iter()
             .map(|grid| {
-                let poly = self.mesh.scan(grid.0, grid.1, polys, None);
+                let poly = self.mesh.scan(grid.0, grid.1, polys, Some(level));
                 let (x, y) = self.to_world(grid);
-                [x, y, self.height_on(poly, x, y)]
+                level = self.height_on(poly, x, y);
+                [x, y, level]
             })
             .collect();
         Some(points)

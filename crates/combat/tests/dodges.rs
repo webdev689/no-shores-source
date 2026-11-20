@@ -77,7 +77,7 @@ fn no_dodge_from_the_air_the_saddle_or_an_empty_stamina_bar() {
 
 #[test]
 fn a_dodge_into_a_wall_stops_at_it_and_catches_no_ledge() {
-    let wall = [Block { min_x: 1.0, min_y: -5.0, max_x: 2.0, max_y: 5.0, top: 1.9 }];
+    let wall = [Block { min_x: 1.0, min_y: -5.0, max_x: 2.0, max_y: 5.0, top: 1.9, bottom: 0.0 }];
     let (fighter, _) = run_on(player_at(0.0, 0.0), dodging(FRAC_PI_2, 1.0, 0.0), DODGE_TICKS + 2, None, &wall);
     assert_eq!(fighter.body.mode, Mode::Ground);
     assert!(fighter.body.x < 1.0 && fighter.body.z.abs() < 1e-9, "against the wall, on the ground: {:?}", fighter.body);

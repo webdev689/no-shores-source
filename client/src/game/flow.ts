@@ -18,6 +18,7 @@ export type Happening =
   | { readonly kind: 'view-landings' }
   | { readonly kind: 'choose'; readonly node: string }
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
+  | { readonly kind: 'pass'; readonly node: string; readonly name: string; readonly into: boolean }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
   | { readonly kind: 'back' }
   | { readonly kind: 'story-ended'; readonly node: string; readonly name: string };
@@ -46,6 +47,13 @@ export function next(flow: Flow, happening: Happening): Flow {
       return {
         mode: 'loading',
         words: `Landing at ${happening.name}`,
+        then: { mode: 'foot', node: happening.node, menu: false },
+      };
+    case 'pass':
+      if (flow.mode !== 'foot' || flow.menu) return flow;
+      return {
+        mode: 'loading',
+        words: `${happening.into ? 'Entering' : 'Returning to'} ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
     case 'join':

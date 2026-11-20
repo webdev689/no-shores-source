@@ -119,3 +119,14 @@ fn a_city_and_its_nodes_come_back_from_their_written_form() {
 fn a_file_with_no_city_or_nodes_still_reads() {
     assert_eq!(parse("{\"strokes\": []}").unwrap(), Edits::default());
 }
+
+#[test]
+fn a_patrol_area_or_mission_is_locked_until_the_open_list_names_it_and_no_other_kind_ever_is() {
+    let open = ["downs".to_owned()];
+    assert!(!locked(NodeKind::Patrol, "downs", &open));
+    assert!(locked(NodeKind::Patrol, "moors", &open));
+    assert!(locked(NodeKind::Mission, "mill", &open));
+    for kind in [NodeKind::Social, NodeKind::Dungeon, NodeKind::Boss] {
+        assert!(!locked(kind, "grotto", &[]), "{kind:?}");
+    }
+}

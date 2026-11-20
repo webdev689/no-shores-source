@@ -20,7 +20,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   space, with the port city.
 - The [[Land]], on `main`: generated relief, erosion and water from the painted coasts; sculpting brushes; carved
   rivers, roads, towns and ports; and the ground anywhere to the metre, for the runtime. The World Editor's Land mode
-  shows it in 2D and 3D, close up at true scale, and on foot.
+  shows it in 2D and 3D, close up at true scale, and on foot, carved by the nodes' layouts as the game stands on it,
+  with each layout's areas, paths, section and sites drawn over both views.
 - The [[Water]], on `main`: the shared swell in the land crate, breakers that shoal and break on every shore, a
   stylised-realism surface over the sea, lakes and rivers, ripples, and wading, swimming and diving with an underwater
   view ([[The Water Is Stylised Realism]]). Its pass for jaggies put the coast on its painted line, lakes and banks on
@@ -180,6 +181,43 @@ Where the work stands now, for the next session. Each session rewrites this note
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
 
+- On `main` (#63), merged and deployed with the owner's yes, as the owner decided it
+  ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]): every patrol area and instance laid out
+  ([[Layouts]]) from its brief (all 90 written): places scored on the land, a loop of tracks and footpaths, RMB
+  hamlets, farms, ruins, keeps, graveyards, covens and caves seated building by building, set pieces of forged props
+  and stone, sites for events, beacons, resources and foes; the land carved into basins and canyons under stepped
+  cliffs with mesas and spires, the bounds rock, after the Cosmodrome; a great ruined wall with its breach, a viaduct
+  with a fallen span, retaining walls and talus; every shop, hall, temple, tavern and house walked into, lined,
+  floored, stair'd and furnished; each instance moved beside its patrol area behind a gate the player goes through on
+  foot (E). The bake and the land's worker settle them alike; native and WebAssembly runs over a carved patrol
+  area agree to the bit. Movement blocks gained an underside, so a body walks under decks and lintels and up stairs
+  ([[Movement]]). Deeper detail since: talus heaps, leant slabs and scree at every cliff's foot and rubble pillars round
+  each mesa and spire; along every way signposts, milestones, wayside scenes, lanterns near settlements and drystone
+  walls by the farms and hamlets; the land wearing its climate's painted ground tiles instead of flat colour, its
+  classes meeting by their grains ([[Game]], "The ground's pictures"); the paths and streets painted into the terrain
+  with worn, wandering edges in place of hard quads; a middle ground (8 km every 16 m) so the carving shows as far as
+  the layouts are drawn; every piece re-seated on the ground as the roads lay it; ruins of an older frontier on the
+  cliff tops, a natural arch over a canyon; climbs cut up the cliffs to lookouts, so a patrol area has heights; a
+  pocket off its path for each resource, and beacons, ore, salvage, herbs and timber each standing as a place.
+  After the owner's look: rock lies on the floor at each face's foot, nothing stuck into the hillsides; walk-in
+  buildings' doorways are open from outside too (they were cut from just behind the door's face, so the wall in its
+  plane stayed); a room shows its building's windows; carved ground samples about six times faster; no lamp, post
+  or resource stands on a path (a sweep of three continents finds none); each climate's cliffs and rubble take its
+  own stone's colour, the ground's grain no longer speckles a dark tile's colours, and lanterns are iron and glass.
+  From the movement worker: a spatial index under the movement rules (same answers to the bit, a tick 2.5 times
+  faster natively), the third-person camera kept off walls and inside rooms, `&view=first` for pictures, and rooms
+  every body can walk into and up (`crates/room/tests/rooms_walked.rs`). From the editor worker: the World Editor
+  opens each landmass carved as the game does and draws every layout's areas, paths, section and sites, in 2D (over
+  tiles of the exact carved ground) and in 3D, where the layouts near the camera stand with their buildings,
+  props and solids drawn by the city layer ([[World Editor]]).
+- Also on #63, from a worker branch: the flora baked from detailed Blender models ([[Flora Is Baked From Detailed
+  Models]], [[Flora]], [[Nature]]): textured near meshes and impostor sprites to 6 km, on R2. A second pass gave the
+  swamp's cypresses distinct drooping tiers, the rainforest giants buttress fins with thickness, firs their full
+  width, umbrella pines their flat crowns far off and the rainforest a closed canopy from above, and made the drawing
+  cheaper; its frame on SwiftShader is now 1.3 to 1.6 times the frame before the bake (the goal was no slower), and
+  the cost on a real GPU is unchecked. Still wrong ([[Nature]]): near cypresses look thinner since the cards shrank,
+  the rainforest seen 2 km off from 90 m up shows bare trunks between 300 m and 1 km, tundra spruces read as dark
+  dots far off. The next steps for the cost: indexed near meshes and fewer cards.
 - The first story mission, the [[Prologue]], on `main` (#74), merged and deployed with the owner's yes; it brought
   #71's ships with it, so #71 shows as merged too. It is as the owner set it ([[The Game Opens With a Story
   Mission at Sea]]), with Claude's calls in [[The Prologue as Claude Shapes It]], brought to life as the owner then
@@ -209,6 +247,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   unless struck; a screened leader, Corvane among them, holding back while its lower ranks fight before it; a wave the
   room's limit has no room for not coming later; whether "no blurbs" covers the plate's alert mark too (nothing is
   added to it). Not yet seen: a group fight played by hand on a real GPU.
+- **Switchbacks** ([[Zones Rise and Fall, Above and Below Ground]] approved "ways that switch back down cliffs"):
+  none is built. Read as ways too short for their climb, no Saltmere way needs one: none is graded past what its
+  places allow, and none is carved steeper than a track (`map_planned.rs`). The owner's to say whether switchbacks
+  are wanted as a cliff climb of their own, beside the ledges' stairs, and where.
+- The Dungeons session (#82, the owner's loop decisions) plans to move each patrol's procedural dungeon entrances
+  onto the layouts' places, and will coordinate before it touches the layout code.
 - **The prologue's calls** are in [[The Prologue as Claude Shapes It]], the owner's to change: among them the story's
   day and night, its music and its sound.
 - **The prologue's follow-ups (#94, on `main`)**, after the owner played it live: the title's prompt no longer stays
@@ -364,8 +408,48 @@ Where the work stands now, for the next session. Each session rewrites this note
   request's head, and making the check required on GitHub. Found in passing: the compass writes its marks' place and
   visibility every frame, changed or not (`client/src/plus/compass.ts`).
 
+- From a worker branch (`wt-bodies`), tested offline: the movement rules find a body's blocks through a grid
+  ([[Movement]], "The blocks near a body"), every answer the same to the bit, a tick among a patrol area's boxes
+  about two and a half times cheaper natively and twice through WebAssembly; the third-person camera's boom eased in
+  off every block and the ground, so indoors it shows the room from inside ([[Player]]); `&view=first` and
+  `&view=third,<metres>` in the address, and the QA driver's `hold` and `anyPort` ([[Toolkit]]); and the rooms fixed
+  where a body could not walk them: a stair laid in front of a door, a stairwell a head going up could hit, planks the
+  land showed through ([[Layouts]]). Seen in pictures but not fixed, as it is the drawing's: an open building's door
+  leaf is still drawn from outside, though bodies pass it.
+- #63's readings the owner left to Claude: the answer "3. A" was read as (a) of where RMB layouts go; the flora's
+  look (textured, not palette-snapped) was Claude's call.
+- **Climbing over gates.** A body pressed square into a wall too high to grab climbs it, as `main`'s climbing has it.
+  So a gate's palisade and arch can be climbed, as can a rampart's walls. Whether a gate should keep bodies out is
+  the owner's to say.
+- Also on #63: the runs ([[Patrol Zones Stay as Built and Gain Linear Combat Areas]], [[Layouts]], "Runs"), three
+  in each of Saltmere's zones, for the owner to look at before the other 24 zones get theirs; the client audit's
+  fixes (far paths' tint, the ground paint swapped mid-frame, fine detail stepped by single precision, plate tiles);
+  the World Editor drawing the layouts' buildings and runs; the well house's posts. Tested offline, with a body
+  walked through every run, and headless pictures of eight of the nine.
+- Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
+  an instance's room is still a node's shared room until the server makes rooms per party.
+
 ## Next
 
+- **The height rework of Saltmere's zones ([[Zones Rise and Fall, Above and Below Ground]]) is on `main` (#63),
+  tested offline, for the owner to look at.** All three zones take heights (each brief's `heights`): places at their
+  kinds' levels on raised floors, every way graded between them as one network, walked without a step and carved no
+  steeper than a track; a hamlet's blocks stepping up its hillside on terraces of their own, as the owner chose; a
+  ruin's spokes on tiers; a terraced massif top in plateaus that follows the floors ([[Land]]); ledges with cliff
+  stairs between heights; stone bridges over the Vale's river; the Hollow Coven's cavern under real rock, its roofs
+  resting on rock that stands whole beside the cave; gates in clefts; dead rock answered by climbs to lookouts and by
+  valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted [[Modules]] scripted
+  in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]), each walked by a body
+  (`crates/room/tests/modules_walked.rs`). A third audit found what the second missed, each fixed at its cause with a
+  test (the pull request lists them). On a cloud session's machine continent 1's layouts settle in about 2.3 s
+  natively, and the World Editor's whole settle of continent 1 takes about 3.5 s. Left: switchbacks (waiting on the
+  owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
+- The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
+  low enough to climb in places: its runs will need their end arenas cut deeper or walled.
+- The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground
+  is the terrain's only), and the land texts and the city's assets fetch the same files twice.
+- The layouts' open ends ([[Layouts]], "Limits"): replanning only the layouts a change touches, and the activities
+  that will stand on the sites (public events, beacons, resource nodes, foes).
 - **The prologue, not yet seen or heard**: on a real GPU; any of its music, sound or voices listened to; played
   through in one run (headless, each beat was started on its own and a frame takes seconds); the wreck's frame time
   with its mesh, its ground and every fire. Headless frames of the wreck at night read dark: on a real screen, judge
@@ -532,9 +616,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - The Test Ground's open ends: the shield, torch and lantern in first person, weapon wear, and riding speeds of
   Overlook's own.
 - The world's open ends ([[Game]], [[Cities]]): colliders for the city's blocks before any node walks among them
-  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, woods and shadows
-  the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
-  stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
+  (no node comes within 2 km of a city's wall yet); the World Editor's 3D view without the city, the layouts'
+  buildings, woods and shadows the game draws (its worker now settles the city and the layouts as the game's does,
+  but the city layer that draws them may not be imported by the editor's); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
 - Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]), of a
   built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a

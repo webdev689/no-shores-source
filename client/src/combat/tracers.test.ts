@@ -13,7 +13,7 @@ const ball = { ranged: 3, at: [0, 0, 1.5] as const, velocity: [0, -30 / TICK, 0]
 const arrow = { ranged: 1, at: [0, 0, 1.5] as const, velocity: [0, -45, 1] as const };
 
 /** A wall across the way north, its south face at `y`. */
-const wall = (y: number): Block[] => [{ minX: -2, maxX: 2, minY: y - 0.5, maxY: y, top: 3 }];
+const wall = (y: number): Block[] => [{ minX: -2, maxX: 2, minY: y - 0.5, maxY: y, top: 3, bottom: 0 }];
 /** The mark vertices of a mesh: place, colour and opacity. */
 const vertices = (mesh: readonly number[]) =>
   Array.from({ length: mesh.length / MARK_FLOATS }, (unused, index) =>

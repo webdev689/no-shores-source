@@ -550,7 +550,8 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     let hidden = |place: f64| {
         let at = goal(place);
         let blocks = here.world.blocks;
-        !clear_line(blocks, chest, [at[0], at[1], chest[2]]) || blocking_at(blocks, at[0], at[1], at[2]).is_some()
+        !clear_line(blocks, chest, [at[0], at[1], chest[2]])
+            || blocking_at(blocks, at[0], at[1], at[2], TUNING.height).is_some()
     };
     if sight.distance < ring - RING_SLACK {
         if tick < brain.hop_until {

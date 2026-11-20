@@ -129,7 +129,8 @@ const PINNED: Record<'buildings' | 'buildingsWithoutDoors' | 'props' | 'kit', Re
     43113: '130babb493b3b668b27e7fa94815192bcb545dc98eb0283612f52549d7e04fb9',
     43137: '7bdc4bf7b151df4771908b060fd1c80ee7296d6e165ae8b0d6afa03331e9bd55',
     43200: '2d874b26bff87467b60be193360a9927fc526d2464dc51171acb0179ea906b73',
-    43202: '65ab90f9645c5cabdb9dbf9b6fd5d476d09fbe5eecb6658932d25295c8a245cb',
+    // Not DFO's: the well house's posts carry its ridge, where DFO's stop at the eaves.
+    43202: '2f1d45850b8735397d8a9e71a24bd907783a85b96dd2d167b4fa4160db9c6123',
     43307: '7226984d34b8ee0a2039ade4da8ea778a08a2cc72835c50fbaf0262d39f2cafe',
     43600: '7d901c39d6729df05b64880c8c1e704ea647ca676c423ebda5a4757ff31a10b6',
     43702: '7cf13aa9e271a1c66ce4fe7ed3bf7b3670c6afe8b92779d99d8d92a60c22dc3d',
