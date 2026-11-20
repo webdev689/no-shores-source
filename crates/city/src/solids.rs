@@ -94,11 +94,12 @@ impl Solid {
         let start =
             [f64::INFINITY, f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
         let mut found = start;
+        let turns = self.turns();
         for corner in 0..8 {
             let x = if corner & 1 == 0 { own[0] } else { own[3] };
             let y = if corner & 2 == 0 { own[1] } else { own[4] };
             let z = if corner & 4 == 0 { own[2] } else { own[5] };
-            for (axis, value) in self.place([x, y, z]).into_iter().enumerate() {
+            for (axis, value) in self.placed([x, y, z], turns).into_iter().enumerate() {
                 found[axis] = found[axis].min(value);
                 found[axis + 3] = found[axis + 3].max(value);
             }
@@ -109,10 +110,18 @@ impl Solid {
     /// A point of the solid's own frame in the world: rolled about its y, leaned toward its +y, turned and stood at
     /// its place, as the browser draws it (client/src/city/solidMesh.ts solidTurn).
     #[must_use]
-    pub fn place(&self, [x, y, z]: [f64; 3]) -> [f64; 3] {
-        let (roll_sine, roll_cosine) = sin_cos(self.roll);
-        let (lean_sine, lean_cosine) = sin_cos(self.lean);
-        let (sine, cosine) = sin_cos(self.turn);
+    pub fn place(&self, point: [f64; 3]) -> [f64; 3] {
+        self.placed(point, self.turns())
+    }
+
+    /// The sines and cosines of its roll, lean and turn, worked once for every point a caller places.
+    fn turns(&self) -> [(f64, f64); 3] {
+        [sin_cos(self.roll), sin_cos(self.lean), sin_cos(self.turn)]
+    }
+
+    /// A point of its own frame in the world, as `place`, from its turns' sines and cosines.
+    fn placed(&self, [x, y, z]: [f64; 3], turns: [(f64, f64); 3]) -> [f64; 3] {
+        let [(roll_sine, roll_cosine), (lean_sine, lean_cosine), (sine, cosine)] = turns;
         let (x, z) = (x * roll_cosine + z * roll_sine, -x * roll_sine + z * roll_cosine);
         let (y, z) = (y * lean_cosine + z * lean_sine, -y * lean_sine + z * lean_cosine);
         [self.at[0] + x * cosine - y * sine, self.at[1] + x * sine + y * cosine, self.at[2] + z]

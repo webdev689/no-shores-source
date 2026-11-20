@@ -105,10 +105,10 @@ pub struct Drawn<'a> {
 /// A layout's map, read off what was laid.
 #[must_use]
 pub fn map(drawn: &Drawn, land: &Land) -> Map {
+    let bounds: Vec<[f64; 6]> = drawn.solids.iter().map(Solid::bounds).collect();
     let covered = |at: [f64; 2]| {
         let floor = (land.floor)(at);
-        drawn.solids.iter().any(|solid| {
-            let [west, north, east, south, bottom, _] = solid.bounds();
+        bounds.iter().any(|&[west, north, east, south, bottom, _]| {
             at[0] >= west && at[0] <= east && at[1] >= north && at[1] <= south && bottom >= floor + HEADROOM_M
         })
     };

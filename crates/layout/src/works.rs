@@ -293,20 +293,22 @@ fn retaining(kit: &mut Kit, area: &Area, (paths, outcrops): (&[Path], &[Outcrop]
         // Walked out from the area's middle, since a tiered area's floor may end short of its reach; the floor's edge
         // wanders out to 1.35 of its reach; the wall stands its half-thickness in front of the foot.
         let mut out = 0.0;
-        // A mesa standing on the floor is not the cliff: the foot lies past the floor's edge.
-        let foot = |out: f64| {
+        // Off the floor, the land raised a foot's height is the cliff's foot (a mesa standing on the floor is not the
+        // cliff), and fallen as far is a raised floor's edge where the land falls away, with no cliff to hold back.
+        let off_floor = |out: f64| {
             let at = ahead(area.at, outward, out, 0.0);
-            crate::rocks::raised(kit, carved, at) >= FOOT && carved.floor_distance(at[0], at[1]) > 0.0
+            let raised = crate::rocks::raised(kit, carved, at);
+            (raised.abs() >= FOOT && carved.floor_distance(at[0], at[1]) > 0.0).then_some(raised)
         };
-        // Past a raised floor's edge the land may fall away instead: no cliff rises there to hold back.
-        let falls = |out: f64| {
-            let at = ahead(area.at, outward, out, 0.0);
-            crate::rocks::raised(kit, carved, at) <= -FOOT && carved.floor_distance(at[0], at[1]) > 0.0
-        };
-        while out < (edge + 2.0) * 1.35 && !foot(out) && !falls(out) {
+        let mut found = None;
+        while out < (edge + 2.0) * 1.35 {
+            found = off_floor(out);
+            if found.is_some() {
+                break;
+            }
             out += 0.5;
         }
-        if out >= (edge + 2.0) * 1.35 || falls(out) {
+        if !found.is_some_and(|raised| raised >= FOOT) {
             continue;
         }
         let at = ahead(area.at, outward, out - 0.7, 0.0);
