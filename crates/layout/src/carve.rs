@@ -231,7 +231,8 @@ pub fn carve(
     // floor, as does every way graded to it.
     let mut floors: Vec<[f64; 5]> = Vec::new();
     let (mut terraces, mut raised): (Vec<[f64; 7]>, Vec<[f64; 7]>) = (Vec::new(), Vec::new());
-    // With heights, a hamlet's lobes and a ruin's spokes rise or fall from its middle to tiers of their own.
+    // With heights, a ruin's spokes rise or fall from its middle to tiers of their own; a hamlet stands whole at its
+    // level, as its blocks start at its plaza's edge, leaving no room for a ramp up to a tier.
     let held = crate::heights::floors_of(&basins, areas, (levels, rise, heights), (&mut floors, &mut raised));
 
     let grades = if levels.iter().any(|&level| level > 0.0) {

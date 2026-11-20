@@ -265,7 +265,9 @@ fn every_climb_is_walked_to_its_lookout() {
             let ([foot_x, foot_y, top_x, top_y, ..], lookout) = (pair[0], [pair[1][0], pair[1][1]]);
             let raised = zone.floor.height_at(top_x, top_y) - zone.floor.height_at(foot_x, foot_y);
             let (body, _) = walked(zone, [foot_x, foot_y], &[lookout], (60.0 / TICK_SECONDS) as usize);
-            if distance([body.x, body.y], lookout) > THERE_M || raised < 10.0 {
+            // A climb from a raised floor rises less than one from the land's own level; that its lookout stands on
+            // the massif's top, map_planned.rs checks.
+            if distance([body.x, body.y], lookout) > THERE_M || raised < 3.0 {
                 failed.push(format!(
                     "{}: up the climb from {foot_x:.0},{foot_y:.0} the body stops at {:.0},{:.0}, the top {raised:.1} m up",
                     zone.id, body.x, body.y

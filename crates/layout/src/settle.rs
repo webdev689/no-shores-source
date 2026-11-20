@@ -21,10 +21,14 @@ const PATH_STEP_M: f64 = 8.0;
 /// or a footing is sunk, metres.
 const SUNK_AT_MOST_M: f64 = 1.2;
 
-/// A solid stood on the ground it was planned on (`was`), rather than at a height of its own: a deck, a pile in the
-/// water, a battlement.
+/// How far over the ground it was planned on a solid's underside may stand and still rest on it, or on what rests on
+/// it, metres: a log stacked on logs, a rolled one on its side.
+const RESTS_ON_M: f64 = 1.0;
+
+/// A solid stood on the ground it was planned on (`was`) by its underside (`base`), or on what stands on it, rather
+/// than at a height of its own: a deck, a pile in the water, a battlement.
 fn stood_on(base: f64, was: f64) -> bool {
-    base >= was - SUNK_AT_MOST_M && base <= was + 0.05
+    base >= was - SUNK_AT_MOST_M && base <= was + RESTS_ON_M
 }
 
 /// Moves every piece that stood on the ground as it was planned (`was`, the ground's height under it then) by as far
@@ -62,7 +66,9 @@ fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &
         .solids
         .iter()
         .zip(&was.solids)
-        .filter(|(solid, before)| stood_on(solid.at[2], **before) && !under_pad(solid.at) && bridge_of(solid).is_none())
+        .filter(|(solid, before)| {
+            stood_on(solid.bounds()[4], **before) && !under_pad(solid.at) && bridge_of(solid).is_none()
+        })
         .map(|(solid, _)| place(solid.at))
         .collect();
     let shifts: Vec<f64> = bridges
@@ -261,18 +267,30 @@ mod tests {
             grounded,
         };
         let solid = |at: [f64; 3]| Solid::upright(Shape::Block, at, [0.3, 0.3, 2.0], Material::Timber);
+        // A log rolled onto its side on the ground, its middle at its radius, and one stacked on two others beside it.
+        let log = |at: [f64; 3]| Solid {
+            roll: std::f64::consts::FRAC_PI_2,
+            ..Solid::upright(Shape::Column { sides: 8, top: 1.0 }, at, [0.55, 0.55, 4.0], Material::Timber)
+        };
         let mut seating = Seating {
             props: vec![prop([0.0, 0.0, 10.0], true), prop([5.0, 0.0, 14.0], false)],
             // A post sunk in the ground with a cage on it, and a deck's pile standing in the water far below.
-            solids: vec![solid([1.0, 1.0, 9.7]), solid([1.0, 1.0, 12.4]), solid([3.0, 3.0, -8.0])],
+            solids: vec![
+                solid([1.0, 1.0, 9.7]),
+                solid([1.0, 1.0, 12.4]),
+                solid([3.0, 3.0, -8.0]),
+                log([6.0, 6.0, 10.275]),
+                log([6.0, 6.275, 10.745]),
+            ],
             ..Seating::default()
         };
-        let was = Planned { props: vec![10.0, 10.0], solids: vec![10.0, 10.0, 10.0], bridges: Vec::new() };
+        let was = Planned { props: vec![10.0, 10.0], solids: vec![10.0; 5], bridges: Vec::new() };
         // The road's bed lowered the ground 0.2 m everywhere.
         follow_ground(&mut seating, &|_, _| 9.8, &was);
         let heights = |list: &[[f64; 3]]| list.iter().map(|at| (at[2] * 100.0).round() / 100.0).collect::<Vec<_>>();
         assert_eq!(heights(&seating.props.iter().map(|prop| prop.at).collect::<Vec<_>>()), [9.8, 14.0]);
-        assert_eq!(heights(&seating.solids.iter().map(|solid| solid.at).collect::<Vec<_>>()), [9.5, 12.2, -8.0]);
+        let solids = heights(&seating.solids.iter().map(|solid| solid.at).collect::<Vec<_>>());
+        assert_eq!(solids, [9.5, 12.2, -8.0, 10.08, 10.55], "the post, its cage and the logs with it; the pile stays");
     }
 
     #[test]

@@ -13,7 +13,7 @@ const content = (path: string) => readFile(new URL(`../../../content/world/${pat
 
 /** The room crate's agreement test holds the same fingerprint, nodes, rects, starts and scripts
  *  (crates/room/tests/agree_node.rs). */
-const NODE_RUN_HASH = 'c61ace29845958fb';
+const NODE_RUN_HASH = '3ae151e0478fda0a';
 
 /** Ticks, then forward, sideways, yaw, run, and jump on the first tick only. */
 type Phase = readonly [number, number, number, number, boolean, boolean];
@@ -44,7 +44,7 @@ const RUNS: readonly {
   {
     continent: 'continent-6',
     node: 'emerald-tangle',
-    bounds: [489_191, 2_279_231.5, 490_895.5, 2_280_142],
+    bounds: [489_191, 2_279_225, 490_895.5, 2_280_142],
     script: [
       [600, 1, 0, 0, true, false],
       [600, 1, 0, Math.PI / 2, true, false],
@@ -55,7 +55,7 @@ const RUNS: readonly {
   {
     continent: 'continent-1',
     node: 'saltgrass-downs',
-    bounds: [2_806_420, 1_206_627.5, 2_808_221.5, 1_208_301],
+    bounds: [2_806_420.5, 1_206_627.5, 2_808_221.5, 1_208_301],
     script: [
       [900, 1, 0, Math.PI * 1.5, true, false],
       [600, 1, 0, 0, true, false],
@@ -66,7 +66,7 @@ const RUNS: readonly {
   {
     continent: 'continent-1',
     node: 'saltgrass-downs',
-    bounds: [2_806_420, 1_206_627.5, 2_808_221.5, 1_208_301],
+    bounds: [2_806_420.5, 1_206_627.5, 2_808_221.5, 1_208_301],
     from: OVER_A_WHALEBACK.from,
     script: [[600, 1, 0, OVER_A_WHALEBACK.bearing, true, false]],
   },

@@ -189,7 +189,6 @@ fn every_way_and_climb_of_the_vales_is_walked_without_a_step() {
 }
 
 #[test]
-#[ignore = "the Driftwood Moors' way from Moorend steps 0.5 to 0.7 m onto the Tithe Camp's platform where its ramp, cut straight, leaves the way's line; it waits on the Moors taking the graded network the Vale has"]
 fn every_way_and_climb_of_saltmeres_is_walked_without_a_step() {
     let steps = steps_on(&ZONES);
     assert!(steps.is_empty(), "{} steps: {steps:#?}", steps.len());
@@ -331,7 +330,7 @@ fn fly_list() {
 }
 
 #[test]
-fn the_vales_hamlet_steps_up_its_hillside_in_tiers() {
+fn the_vales_hamlet_stands_whole_on_its_terrace_over_the_land() {
     let laid = continent_one().iter().find(|laid| laid.id == "gullwing-vale").expect("the Vale lays out");
     let hamlet = laid.areas.iter().find(|area| area.name == "Gullwing").expect("the hamlet is laid out");
     let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
@@ -350,7 +349,40 @@ fn the_vales_hamlet_steps_up_its_hillside_in_tiers() {
     let (low, high) =
         raised.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), &each| (low.min(each), high.max(each)));
     assert!(raised.len() >= 4, "the hamlet has its buildings: {}", raised.len());
-    assert!(high - low >= 2.5, "its buildings stand {:.1} m apart in height: {raised:?}", high - low);
+    // Its one floor rolls only with the massif's own height, never by a step between its blocks.
+    assert!(low >= 4.0, "every building stands up on the hamlet's terrace: {raised:?}");
+    assert!(high - low < 2.0, "its buildings stand {:.1} m apart in height: {raised:?}", high - low);
+}
+
+#[test]
+fn no_hamlet_building_of_saltmeres_stands_across_a_step_or_a_slope() {
+    let mut across = Vec::new();
+    for laid in continent_one().iter().filter(|laid| ZONES.contains(&laid.id.as_str())) {
+        let carved = land::sculpts::Sculpts::from(vec![laid.sculpt.clone()]);
+        for hamlet in laid.areas.iter().filter(|area| area.kind == layout::brief::AreaKind::Hamlet) {
+            for building in &laid.seating.buildings {
+                let [west, north, east, south] = building.footprint;
+                if distance([(west + east) / 2.0, (north + south) / 2.0], hamlet.at) > hamlet.radius {
+                    continue;
+                }
+                // The land under it and 4 m round it, where its doors open.
+                let (west, north, wide, deep) = (west - 4.0, north - 4.0, east - west + 8.0, south - north + 8.0);
+                let raised: Vec<f64> = (0..9)
+                    .map(|at| {
+                        let [x, y] = [west + wide * f64::from(at % 3) / 2.0, north + deep * f64::from(at / 3) / 2.0];
+                        carved.raise(x, y, 1000.0)
+                    })
+                    .collect();
+                let spread = raised.iter().fold(f64::NEG_INFINITY, |high, &each| high.max(each))
+                    - raised.iter().fold(f64::INFINITY, |low, &each| low.min(each));
+                // The massif's own roll lifts a large building's far side by under a metre; a tier's step, by metres.
+                if spread > 1.0 {
+                    across.push(format!("{}: {} at {west:.0},{north:.0} on {spread:.2} m", laid.id, hamlet.name));
+                }
+            }
+        }
+    }
+    assert!(across.is_empty(), "{across:#?}");
 }
 
 #[test]

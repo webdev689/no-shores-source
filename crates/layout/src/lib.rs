@@ -232,18 +232,6 @@ pub fn plan(
         moduled: &moduled,
     };
     let (mut sculpt, basins, caverns) = carve::carve(&field, claim_of(node), network, &seating, shape, rise, seed);
-    // What stands on a terrace or a raised floor (a place at a height, a way graded between places) was stood on the
-    // land before it was carved: lift it onto the land's level there.
-    let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
-    let raised_floors: Vec<[f64; 7]> = terraces.iter().chain(&sculpt.levels).copied().collect();
-    if !raised_floors.is_empty() {
-        let lifting = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
-        let raised = |[x, y]: [f64; 2]| lifting.raise(x, y, ground.coast.at(x, y));
-        basins::seat_on_terraces(&mut seating, &raised_floors, &raised);
-    }
-    // A module levels the ground under its floors, where it now stands.
-    let module_pads: Vec<land::pads::Pad> = seating.solids.iter().flat_map(city::modules::pads).collect();
-    seating.pads.extend(module_pads);
     // Rock in the middle of the claim that no floor or climb reaches is given a climb or a valley, before the runs are
     // found in what is left.
     let mass_climbs = masses::reach_masses(&field, &mut sculpt);
@@ -269,6 +257,19 @@ pub fn plan(
     let ledges = if brief.heights { ledges::cut(&field, (&areas, ground), &mut sculpt) } else { Vec::new() };
     let reach = wide.as_ref().unwrap_or(&field);
     let carved = land::sculpts::Sculpts::from(vec![sculpt.clone()]);
+    // What stands on a terrace or a raised floor (a place at a height, a way graded between places) was stood on the
+    // land before it was carved: lift it onto the land's level there, as the last cut (a climb's face, a ledge's slot)
+    // leaves it.
+    let terraces: Vec<[f64; 7]> = basins.iter().flat_map(|basin| basin.terraces.iter().copied()).collect();
+    let raised_floors: Vec<[f64; 7]> = terraces.iter().chain(&sculpt.levels).copied().collect();
+    if !raised_floors.is_empty() {
+        let raised = |[x, y]: [f64; 2]| carved.raise(x, y, ground.coast.at(x, y));
+        let floor = |[x, y]: [f64; 2]| carved.floor_distance(x, y) <= 0.0;
+        basins::seat_on_terraces(&mut seating, &raised_floors, &raised, &floor);
+    }
+    // A module levels the ground under its floors, where it now stands.
+    let module_pads: Vec<land::pads::Pad> = seating.solids.iter().flat_map(city::modules::pads).collect();
+    seating.pads.extend(module_pads);
     let cells = ring::section_cells(reach, &|x, y| carved.floor_distance(x, y), anchor, &seating.bridges);
     let ring = ring::traced(reach, &cells);
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x3A11, draws: 0, into: &mut seating };

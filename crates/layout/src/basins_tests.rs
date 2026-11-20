@@ -272,7 +272,7 @@ fn what_stands_on_a_terrace_is_lifted_with_it() {
     };
     let platform = [AT[0], AT[1], AT[0], AT[1], 20.0, 0.2, 0.2];
     // The carving raises the land 4 m on the platform, and 3 m a little off its middle.
-    seat_on_terraces(&mut seating, &[platform], &|at| {
+    let raised = |at: [f64; 2]| {
         if distance(at, AT) < 1.0 {
             4.0
         } else if distance(at, AT) < 22.0 {
@@ -280,7 +280,8 @@ fn what_stands_on_a_terrace_is_lifted_with_it() {
         } else {
             0.0
         }
-    });
+    };
+    seat_on_terraces(&mut seating, &[platform], &raised, &|at| distance(at, AT) < 22.0);
     assert_eq!(seating.buildings[0].at[2], 14.0, "the house by the raise at its middle");
     assert_eq!(seating.pads[0].level, 14.0);
     assert_eq!(

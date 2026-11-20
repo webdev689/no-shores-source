@@ -38,6 +38,8 @@ const PLATFORM_ROOM_M: f64 = 6.0;
 /// A ramp's half-width, metres, and how steep it rises at most, a rise a metre, where the massif's level stands
 /// highest (the highland's at its roughest, `TALLEST_LEVEL_M`): lower massifs' ramps are gentler.
 const RAMP_HALF_M: f64 = 4.5;
+/// How near two ramps' bearings run (the cosine of the angle between them) for one to serve the way the other climbs.
+const SAME_WAY: f64 = 0.9;
 const RAMP_STEEPEST: f64 = 0.25;
 const TALLEST_LEVEL_M: f64 = 44.0;
 /// How far a terrace's edge runs from its level down to the floor, metres, as the land crate cuts a climb's.
@@ -332,17 +334,23 @@ fn platform(
     }
     let run = ramp_run(share);
     let mut terraces = vec![[middle[0], middle[1], middle[0], middle[1], half, share, share]];
-    // A ramp from `run` metres out along `out` up to just inside the edge at `edge`, unless one already arrives there.
-    let ramp = |terraces: &mut Vec<[f64; 7]>, edge: [f64; 2], out: [f64; 2]| {
-        let foot = [edge[0] + out[0] * run, edge[1] + out[1] * run];
-        let top = [edge[0] - out[0] * 2.0, edge[1] - out[1] * 2.0];
-        if terraces[1..].iter().all(|other| distance([other[2], other[3]], top) > 2.0 * RAMP_HALF_M) {
-            terraces.push([foot[0], foot[1], top[0], top[1], RAMP_HALF_M, 0.0, share]);
-        }
-    };
     let unit = |from: [f64; 2], to: [f64; 2]| {
         let length = distance(from, to).max(1e-9);
         [(to[0] - from[0]) / length, (to[1] - from[1]) / length]
+    };
+    // A ramp from `run` metres out along `out` up to just inside the edge at `edge`, unless one already arrives there
+    // along the same way: two ways meeting the edge side by side from different bearings each climb their own.
+    let ramp = |terraces: &mut Vec<[f64; 7]>, edge: [f64; 2], out: [f64; 2]| {
+        let foot = [edge[0] + out[0] * run, edge[1] + out[1] * run];
+        let top = [edge[0] - out[0] * 2.0, edge[1] - out[1] * 2.0];
+        let served = terraces[1..].iter().any(|other| {
+            let along = unit([other[0], other[1]], [other[2], other[3]]);
+            distance([other[2], other[3]], top) <= 2.0 * RAMP_HALF_M
+                && -(along[0] * out[0] + along[1] * out[1]) >= SAME_WAY
+        });
+        if !served {
+            terraces.push([foot[0], foot[1], top[0], top[1], RAMP_HALF_M, 0.0, share]);
+        }
     };
     for path in paths {
         for pair in path.points.windows(2) {
@@ -461,11 +469,21 @@ fn headstones(
 }
 
 /// Lifts what stands on a terrace or its ramp (or within its edge's fall) onto the land as carved there, `raised` being
-/// how far the carving raises the land at a point: a building whole, with its pad, plinth, rooms and walls and all in
-/// its footprint, by the raise at its middle, and every other prop and solid by the raise under it.
-pub fn seat_on_terraces(seating: &mut Seating, terraces: &[[f64; 7]], raised: &dyn Fn([f64; 2]) -> f64) {
+/// how far the carving raises the land at a point and `floor` whether the carving makes a point floor: a building
+/// whole, with its pad, plinth, rooms and walls and all in its footprint, by the raise at its middle, and every other
+/// prop and solid by the raise under it. A raised floor's edge wanders out past its reach as a floor's does, and what
+/// stands where it has wandered is on it too.
+pub fn seat_on_terraces(
+    seating: &mut Seating,
+    terraces: &[[f64; 7]],
+    raised: &dyn Fn([f64; 2]) -> f64,
+    floor: &dyn Fn([f64; 2]) -> bool,
+) {
     let on = |at: [f64; 2]| {
-        terraces.iter().any(|&[x1, y1, x2, y2, half, ..]| off_line(at, [x1, y1], [x2, y2]) <= half + TERRACE_EDGE_M)
+        terraces.iter().any(|&[x1, y1, x2, y2, half, ..]| {
+            let off = off_line(at, [x1, y1], [x2, y2]);
+            off <= half + TERRACE_EDGE_M || (off <= half * (1.0 + land::sculpts::WANDER) + TERRACE_EDGE_M && floor(at))
+        })
     };
     let mut lifted: Vec<([f64; 4], f64)> = Vec::new();
     for building in &mut seating.buildings {

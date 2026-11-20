@@ -136,15 +136,15 @@ from the sea, fresh water and the claim's edge), then:
      headstones stand on the shelf, askew, a few gone, either side of a lane down its middle, the last pieces stood,
      none in a building, a prop, a solid or on a ramp;
    - a keep and a camp: such a bowl with a platform round the middle, ramped wherever a way crosses its edge or ends
-     short of it. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
+     short of it, each way its own ramp unless one already climbs there on the same bearing. A keep's reaches 6 m past its buildings and 34 m at the least, at 0.18 of the massif's height; a
      camp's reaches 6 m past its palisade, at 0.12;
    - every other kind: a round bowl 32 m wider than its reach.
 
    A shelf and a platform are level climbs, and a ramp a climb from the floor to their level ([[Land]]), 9 m wide,
    rising at most 0.25 a metre where the massif stands highest. What was stood before the carving on a terrace,
-   a ramp or the fall of their edges is lifted onto the land as carved there: a building whole by the raise at its
-   middle, with its pad, plinth, rooms and walls and all in its footprint, every other prop and solid by the raise
-   under it. Each path becomes a canyon, segment by segment: 15 m either side of a track and 11 of a footpath, closing
+   a ramp or the fall of their edges is lifted onto the land as the last cut leaves it: a building whole by the raise
+   at its middle, with its pad, plinth, rooms and walls and all in its footprint, every other prop and solid by the
+   raise under it. Each path becomes a canyon, segment by segment: 15 m either side of a track and 11 of a footpath, closing
    to a slot (11 and 7 m) where the way runs 80 m or more with every point 60 m past any area's reach, and opening
    to a bay (22 and 18 m) at a bend sharper than 0.5 rad or by a river crossing; the great works take the half-width
    where they stand. The edges of basins and canyons wander outward with a noise; a gorge runs out of the claim from each gate toward its instance and from
@@ -180,13 +180,14 @@ from the sea, fresh water and the claim's edge), then:
    of its height (a terraced massif's lowest plateau stands at about a third), more than 150 m from every floor, climb
    and run and 120 m inside the claim's edge (the bounds). Before the
    runs are found, each layout answers its largest mass, seeks them again, and so on seven times at most: a straight
-   climb from a floor reached out of the mass's deepest point (sixteen headings tried) back up toward it, to a lookout
+   climb from where a floor reached out of the mass's deepest point really ends (sixteen headings tried, the edge
+   found to 2 m) back up toward it, to a lookout
    as above with a broken tower standing on the top 24 m past it (ahead or to either side, where the top is level and
    clear of every outcrop as for the rim's ruins, else none), where that leaves under 2,500 m2 of the mass dead;
    else a valley 22 m wide through the deepest point that joins two existing floors over walked land, keeps 48 m off
-   every climb past both edges and off every outcrop, and reaches most of the mass; else the climb that reaches most.
-   On Saltmere the Downs take three climbs, the Vale three valleys across the rock round its keep and a climb, the
-   Moors three valleys and two climbs.
+   every climb past both edges and off every outcrop, and reaches most of the mass, running at the levels of the
+   floors it joins so it never cuts a raised floor down; else the climb that reaches most. On Saltmere the Downs take
+   six climbs, the Vale four valleys across the rock round its keep, the Moors three valleys and three climbs.
 7. **The great works**, across and along the canyons, so they make the ways and the bounds, each where a work as wide
    as the great wall would keep 12 m off every outcrop (the outcrops are placed first): a colossal
    ruined wall of ashlar dammed across the longest track's straightest run, as high as the lower of its canyon's two
@@ -338,19 +339,22 @@ levels, raised wherever a higher point lies near enough along the ways that the 
 from it, and lowered likewise toward a lower place's floor; points of different ways within 10 m count as one way.
 So a place up high stands on its platform over the ways with a ramp up to it, a way between two places up high runs
 along a causeway, one between two places down low keeps down, and no stretch of any way climbs steeper than a track
-may, nor two ways side by side stand further apart than such a slope. A hamlet's and a ruin's floor is tiered: its bowl a
-plaza at its middle (0.55 of its reach at most), each of its lobes or spokes in turn a ramp up 0.1, up 0.2 or down 0.1
-of the massif's height at the steepest a track takes, onto a flat tier where its block stands; so a hamlet steps up
-its hillside and a ruin lies on broken ground, and no building stands across a slope. A way's points on a basin hold
-the level of the tier under them. A way between two areas whose reaches stand within 120 m of each other opens its
+may, nor two ways side by side stand further apart than such a slope. A ruin's floor is tiered: its bowl a plaza at
+its middle (0.55 of its reach at most), each of its spokes in turn a ramp up 0.1, up 0.2 or down 0.1 of the massif's
+height at the steepest a track takes, onto a flat tier 4 m wider than the spoke, so a ruin lies on broken ground and
+no building stands across a slope. A hamlet stands whole at its height on one floor: its blocks start within a few
+metres of its plaza, so no ramp up to a tier fits between them, and a tiered lobe stood the Vale's largest building
+across 5 m of slope. No hamlet building on Saltmere stands on more than a metre of the massif's own roll
+(`crates/room/tests/map_planned.rs`). A way's points on a basin hold the level of the floor under them. What stands
+where a raised floor's edge has wandered past its reach is lifted with it. A way between two areas whose reaches stand within 120 m of each other opens its
 canyon to 0.7 of the smaller's reach along its length, so the two read as one large place at their two heights, not
 two bowls and a lane. A raised area's floors and every stretch of way off the land's own
 level are carved as the sculpt's raised floors ([[Land]]); a terrace stands its area's level higher, a ramp's foot at
 the level of the land under it; a lookout's climb starts at its floor's level, and a pocket opens at its way's. What
 was stood on the land before the carving is lifted onto it. A retaining wall stands only where a cliff rises from the
-floor: past a raised floor's edge the land may fall away instead. In the Vale every way and climb is walked without a
-step a body cannot take (`crates/room/tests/map_planned.rs`), its keep highest, then its shrine, its hamlet and its
-farm, its mill, meadows and coven by the river.
+floor: past a raised floor's edge the land may fall away instead. In each of Saltmere's zones every way and climb is
+walked without a step a body cannot take (`crates/room/tests/map_planned.rs`). The Vale stands its keep highest,
+then its shrine, its hamlet and its farm, its mill, meadows and coven by the river.
 
 With heights a shrine, a keep and every cavern stand handcrafted [[Modules]] in place of their blocks, set pieces
 and dressing, and every river crossing a stone bridge in place of a timber one.
@@ -366,7 +370,8 @@ floor's edge more closely than its slot's half and 2 m, 10 m from its ends.
 Its slot, a raised floor 6.8 m wide at the low floor's level, runs from there to the high floor's edge. Where the
 rock runs on past the stair, the slot is a cleft leading to its foot. The cliff stair ([[Modules]]) stands in it, its
 top landing 3 m onto the high floor, past where the slot and the floor blend. The shortest are tried first, twelve at
-most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 25 m there. Up to
+most, each measured on the land with its slot cut: one is kept only where its stair climbs 3 to 25 m there, its slot's
+floor runs from its start to the stair's foot without a step, and no land stands over the steps as they climb. Up to
 three are cut, 60 m apart. The map joins each ledge's two nearest places by a `Stair`. In the Vale they climb from the
 ways below Gullwing, Valeguard and the Old Stones straight up onto their floors.
 
@@ -430,6 +435,8 @@ whole, by name (`layoutsNamed`), so the page parses only them ([[World Editor]])
 ## Limits
 
 - Only Saltmere's three zones have runs; the other 24 zones' briefs name none yet.
+- A hamlet takes no terraces of its own, though the design asked for a hamlet's terraces: its RMB blocks, 102.4 m
+  each, are laid 10 to 32 m apart round its middle, leaving no room for a ramp up to a block's tier.
 - Few mesas show their ledges: a second face needs a radius of 49 m, which only a wide basin's rim has room for, so
   most stand in one face under their flat top.
 - No layout seats a temple to walk into yet, so a temple's benches and lectern have not been seen inside.

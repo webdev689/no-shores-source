@@ -59,7 +59,16 @@ pub fn reach_masses(field: &Field, sculpt: &mut Sculpt) -> Vec<[[f64; 7]; 2]> {
                 sculpt.climbs.splice(at..at, climb);
                 cut.push(climb);
             }
-            Some(Answer::Valley(valley)) => sculpt.floors.push(valley),
+            // A valley runs at the levels of the floors it joins, so it never cuts a raised floor down.
+            Some(Answer::Valley(valley @ [x1, y1, x2, y2, half])) => {
+                let share = |at: [f64; 2]| crate::heights::share_at(&sculpt.floors, &sculpt.levels, at);
+                let (from, to) = (share([x1, y1]), share([x2, y2]));
+                if from > 0.0 || to > 0.0 {
+                    sculpt.levels.push([x1, y1, x2, y2, half, from, to]);
+                } else {
+                    sculpt.floors.push(valley);
+                }
+            }
             None => break,
         }
     }
@@ -98,21 +107,25 @@ fn answer(field: &Field, (sculpt, carved): (&Sculpt, &Sculpts), mass: &Mass) -> 
     };
     // The floor reached from the mass's middle along a way, if the land on the way is in the claim (and walked).
     let floor_along = |way: [f64; 2], walked: bool| {
+        let point = |out: f64| [mass.middle[0] + way[0] * out, mass.middle[1] + way[1] * out];
+        let on_floor = |at: [f64; 2]| carved.floor_distance(at[0], at[1]) <= 0.0;
         let mut out = 0.0;
         while out < VALLEY_REACH_M {
             out += CELL_M;
-            let at = [mass.middle[0] + way[0] * out, mass.middle[1] + way[1] * out];
+            let at = point(out);
             let (column, row) = field.cell_of(at[0], at[1])?;
             let cell = field.index(column, row);
             if !field.claimed[cell] {
                 return None;
             }
-            if carved.floor_distance(at[0], at[1]) <= 0.0 {
+            if on_floor(at) {
                 // A floor, or a lookout's climb in the rock, which is no floor to join or climb from.
                 let on_climb = lookouts(&sculpt.climbs)
                     .flatten()
                     .any(|climb| off_line(at, [climb[0], climb[1]], [climb[2], climb[3]]) <= climb[4] + CELL_M);
-                return (!on_climb).then_some(at);
+                // Where the floor really ends, to 2 m: a climb starts at its edge, boring into the rock from there.
+                let edge = (1..4).map(|step| out - CELL_M + 2.0 * f64::from(step)).find(|&back| on_floor(point(back)));
+                return (!on_climb).then(|| point(edge.unwrap_or(out)));
             }
             if walked && !field.walkable(cell) {
                 return None;

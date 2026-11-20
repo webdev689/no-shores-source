@@ -164,7 +164,7 @@ pub(crate) fn share_at(floors: &[[f64; 5]], raised: &[[f64; 7]], at: [f64; 2]) -
 }
 
 /// Each basin's floors as carved, at its area's level: at the land's own level as `floors`, else as raised floors
-/// (`raised`); with heights a hamlet's or a ruin's tiered. Returns them all, with their levels, as the ways' grading holds
+/// (`raised`); with heights a ruin's tiered. Returns them all, with their levels, as the ways' grading holds
 /// them.
 pub fn floors_of(
     basins: &[crate::basins::Basin],
@@ -174,7 +174,7 @@ pub fn floors_of(
 ) -> Vec<[f64; 7]> {
     let mut held: Vec<[f64; 7]> = Vec::new();
     for ((basin, &level), area) in basins.iter().zip(levels).zip(areas) {
-        let tiered = heights && matches!(area.kind, AreaKind::Hamlet | AreaKind::Ruin);
+        let tiered = heights && area.kind == AreaKind::Ruin;
         for (number, &[x1, y1, x2, y2, half]) in basin.floors.iter().enumerate() {
             let (near, far) = if distance([x1, y1], area.at) <= distance([x2, y2], area.at) {
                 ([x1, y1], [x2, y2])
@@ -183,9 +183,16 @@ pub fn floors_of(
             };
             let tier =
                 if tiered && number > 0 { (level + TIERS[(number - 1) % TIERS.len()]).clamp(0.0, 0.95) } else { level };
-            // A tiered area's bowl is a plaza at its middle; each lobe or spoke a ramp up or down to a flat tier where
-            // its block stands, so no building is tilted across a slope.
-            let half = if tiered && number == 0 { half.min(area.radius * 0.55) } else { half };
+            // A tiered ruin's bowl is a plaza at its middle; each of its spokes a ramp up or down to a flat tier where its
+            // block stands, so no building is tilted across a slope. A tier reaches past its spoke's own reach, so what
+            // stands on it keeps room before its doors before its edge blends down into the plaza or the spoke beside it.
+            let half = if tiered && number == 0 {
+                half.min(area.radius * 0.55)
+            } else if tiered {
+                half + TIER_ROOM_M
+            } else {
+                half
+            };
             let length = distance(near, far);
             let ramp = ((tier - level).abs() * rise / STEEPEST).min(length * 0.6);
             let turn = if length > 0.0 { ramp / length } else { 0.0 };
@@ -224,9 +231,11 @@ pub fn on_capsules(capsules: &[[f64; 7]], at: [f64; 2]) -> Option<f64> {
     )
 }
 
-/// The tiers a lobe or a spoke of a raised area's basin rises or falls to from its middle, in turn, as shares of the
-/// massif's height: so a hamlet steps up its hillside and a ruin lies on broken ground.
+/// The tiers a spoke of a raised ruin's basin rises or falls to from its middle, in turn, as shares of the massif's
+/// height: so a ruin lies on broken ground.
 pub const TIERS: [f64; 3] = [0.1, 0.2, -0.1];
+/// How far a tier reaches past its spoke's own reach, metres: a doorway's step out and the blend of its edge.
+const TIER_ROOM_M: f64 = 4.0;
 
 /// A point's level waiting to be spread, highest first, ties by its place.
 #[derive(Debug, Clone, Copy)]

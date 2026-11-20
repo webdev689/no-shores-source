@@ -82,7 +82,8 @@ fn apart(chosen: &[Ledge], ledge: &Ledge) -> bool {
 
 /// A ledge's stair on the land as carved (its slot cut): its module, its run, and the heights of its foot on the
 /// slot's floor and its top `OVER_M` onto the high floor, metres; none where it would not climb 3 to 25 m. The stair is
-/// the baked rise nearest the climb measured at its foot, which a longer stair stands further down: so twice.
+/// the baked rise nearest the climb measured at its foot, which a longer stair stands further down: so twice. None
+/// where the slot's floor steps before the stair's foot, or the land stands over its steps.
 #[must_use]
 pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32, f64, f64, f64)> {
     let land =
@@ -96,8 +97,30 @@ pub fn measured(ledge: &Ledge, ground: &Ground, carved: &Sculpts) -> Option<(u32
     }
     let (number, run) = fitted;
     let foot_m = land(foot_of(run));
-    (LEAST_RISE_M - 1.0..=MOST_RISE_M + 1.0).contains(&(top_m - foot_m)).then_some((number, run, foot_m, top_m))
+    // The slot's floor walked from its start to the stair's foot without a step, and no land standing over the steps
+    // as they climb, so a body meets only the stair.
+    let foot = foot_of(run);
+    let lead = distance(ledge.start, foot);
+    let walked = (1..=(lead / SAMPLE_STEP_M).ceil() as i32).all(|step| {
+        let share = |step: i32| (f64::from(step) * SAMPLE_STEP_M / lead.max(1e-9)).min(1.0);
+        let point = |share: f64| {
+            [ledge.start[0] + (foot[0] - ledge.start[0]) * share, ledge.start[1] + (foot[1] - ledge.start[1]) * share]
+        };
+        (land(point(share(step))) - land(point(share(step - 1)))).abs() <= STEP_M
+    });
+    let under_steps = (0..=(run / SAMPLE_STEP_M).ceil() as i32).all(|step| {
+        let along = (f64::from(step) * SAMPLE_STEP_M).min(run);
+        let at = [foot[0] + ledge.way[0] * along, foot[1] + ledge.way[1] * along];
+        land(at) <= foot_m + (top_m - foot_m) * along / run + STEP_M
+    });
+    let rises = (LEAST_RISE_M - 1.0..=MOST_RISE_M + 1.0).contains(&(top_m - foot_m));
+    (rises && walked && under_steps).then_some((number, run, foot_m, top_m))
 }
+
+/// How far apart the slot's floor and the land under a stair are sampled, and the most they may rise between two
+/// samples, or stand over the stair's steps, metres: a body's step.
+const SAMPLE_STEP_M: f64 = 0.5;
+const STEP_M: f64 = 0.5;
 
 /// The place whose middle lies nearest a point.
 fn nearest(areas: &[Area], at: [f64; 2]) -> Option<usize> {
