@@ -80,7 +80,7 @@ pub fn adorn(frame: &Frame, laid: &mut Laid) {
         hang(frame, laid, "ivy", (BASE_FACE_M + 0.05, side * 48.0, 0.0), north);
         stand(frame, laid, "statue-keeper", (BASE_FACE_M + 19.0, side * 32.0), north);
         stand(frame, laid, "planter", (51.0, side * 50.0), north);
-        stand(frame, laid, "planter", (51.0, side * 125.0), north);
+        stand(frame, laid, "planter", (51.0, side * 127.0), north);
         stand(frame, laid, "potted-tree", (44.0, side * 70.0), north);
         stand(frame, laid, "potted-tree", (-56.0, side * 70.0), north);
         stand(frame, laid, "statue-sentinel", (-56.0, side * 20.0), north);

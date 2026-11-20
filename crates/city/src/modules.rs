@@ -116,7 +116,8 @@ mod tests {
         assert!(!all().is_empty(), "the manifest reads");
         for module in all() {
             let [width, depth, height] = module.size;
-            assert!(!module.parts.is_empty() && !module.groups.is_empty(), "{}", module.name);
+            // A piece hung out of reach or lying flat underfoot (a banner, a rug) has no parts.
+            assert!(!module.groups.is_empty(), "{}", module.name);
             for &[x0, y0, z0, x1, y1, z1] in &module.parts {
                 assert!(x0 < x1 && y0 < y1 && z0 < z1, "{}: a part with no room", module.name);
                 let inside = x0 >= -width / 2.0 - 0.01 && x1 <= width / 2.0 + 0.01 && y0 >= -depth / 2.0 - 0.01;

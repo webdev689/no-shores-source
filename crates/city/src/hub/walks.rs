@@ -67,7 +67,7 @@ pub fn beacon_walk(ground: &Ground, frame: &Frame, laid: &mut Laid) {
     let stable = stand_against("stall-tack", "counter", frame.at(STABLE_TOWARD_M, base_side), frame.level, east);
     laid.stall(StationKind::Tack, stable);
     for side in [-1.0, 1.0] {
-        laid.piece(stand_at("lamp-post", "front", frame.at(-80.0, side * 142.0), frame.level, north));
+        laid.piece(stand_at("lamp-post", "front", frame.at(-77.5, side * 142.0), frame.level, north));
     }
 }
 

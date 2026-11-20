@@ -186,7 +186,7 @@ pub fn forge_yard(frame: &Frame, laid: &mut Laid) {
     laid.piece(stand_at("crates-barrels", "front", frame.at(42.0, 116.0), frame.level, west));
     laid.piece(stand_at("hay-cart", "front", frame.at(-44.0, 112.0), frame.level, frame.seaward));
     laid.spots.push(frame.at(42.0, 74.0));
-    for (toward, side) in [(44.0, 76.0), (-56.0, 76.0)] {
+    for (toward, side) in [(44.0, 76.0), (-56.0, 74.0)] {
         laid.piece(stand_at("lamp-post", "front", frame.at(toward, side), frame.level, frame.seaward));
     }
 }

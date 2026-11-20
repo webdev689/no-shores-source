@@ -1,9 +1,10 @@
 //! A social plan's ways and posts checked with the movement rules, for the tests of every social plan's ways: every
 //! link walked by a body from end to end over the plan's ground and boxes, never stepping up or down more than a
 //! body steps, inside the ring, and `CLEAR_M` clear of every box in a body's way either side of its line; every point
-//! joined to the rest; every post walked to from its way point; no point or post inside a box.
+//! joined to the rest; every post walked to from its way point, but a kept one, whose keeper stands at it all day;
+//! no point or post inside a box.
 
-use super::{Post, Ways};
+use super::{Keep, Post, Ways};
 use crate::collision::Box2;
 use movement::blocks::{ground_at, room_at};
 use movement::{Block, Blocks, Body, Controls, Mode, TICK_SECONDS, TUNING, Terrain, standing, step_body};
@@ -85,9 +86,13 @@ pub(crate) fn faults(
             continue;
         };
         let Some(z) = floors.get(post.reached_from as usize).copied().flatten() else { continue };
-        let fault = match floor.walk(from, z, post.at, false) {
-            Ok(arrived) => floor.stands(post.at, arrived),
-            Err(fault) => Some(fault),
+        let fault = if post.keep == Keep::Kept {
+            floor.stands(post.at, z)
+        } else {
+            match floor.walk(from, z, post.at, false) {
+                Ok(arrived) => floor.stands(post.at, arrived),
+                Err(fault) => Some(fault),
+            }
         };
         if let Some(fault) = fault {
             faults.push(format!("the {:?} post at {:?} from \"{name}\": {fault}", post.task, post.at));
@@ -248,7 +253,7 @@ fn inside(ring: &[[f64; 2]], [x, y]: [f64; 2]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::life::{Keep, Task};
+    use crate::life::Task;
     use movement::Flat;
 
     const RING: [[f64; 2]; 4] = [[-50.0, -50.0], [50.0, -50.0], [50.0, 50.0], [-50.0, 50.0]];
@@ -296,6 +301,21 @@ mod tests {
         assert!(beside.len() == 1 && beside[0].contains("from a box"), "{beside:?}");
         let across = faults_with(&[[8.0, -2.0, 9.0, 2.0, 1.0, 0.0]]);
         assert!(across.iter().any(|fault| fault.contains("[0, 1]")), "{across:?}");
+    }
+
+    #[test]
+    fn a_kept_post_behind_a_counter_is_stood_at_not_walked_to() {
+        // A counter clear of the way, between its end and the post 3 m north of it.
+        let counter = [[19.0, -1.8, 21.0, -1.6, 1.0, 0.0]];
+        let (ways, mut posts) = east_way();
+        posts[0].at = [20.0, -3.0];
+        let walked = faults(&ways, &posts, &RING, &counter, &Flat);
+        assert!(walked.iter().any(|fault| fault.contains("Idle")), "a walker is stopped by it: {walked:?}");
+        posts[0].keep = Keep::Kept;
+        assert_eq!(faults(&ways, &posts, &RING, &counter, &Flat), Vec::<String>::new());
+        posts[0].at = [20.0, -1.7];
+        let inside = faults(&ways, &posts, &RING, &counter, &Flat);
+        assert!(inside.iter().any(|fault| fault.contains("in a box")), "{inside:?}");
     }
 
     #[test]
