@@ -278,6 +278,7 @@ fn a_course_is_furnished_and_each_players_gear_is_theirs_alone() {
     assert_eq!(message.gear().unwrap().items().unwrap().len(), 5, "the second player's own starting kit");
     assert!(open_sea(include_bytes!("../../../content/world/layout.json"), 7));
     assert!(gear(first).is_empty(), "the sea keeps no gear");
+    assert!(set_difficulty(1), "a sea takes its tier, as a node's room does");
     assert!(!furnish(&bytes_of(&[7.0, 15.0])));
 }
 

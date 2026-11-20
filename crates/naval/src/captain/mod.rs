@@ -50,18 +50,18 @@ pub const WRECK_SPARE_S: f64 = 30.0;
 pub const PIRATE_RUNS_AT: f64 = 0.3;
 pub const GRAPPLE_HULL: f64 = 0.35;
 
-/// Whether a wary captain of `commission`, sound, falls on a player's Sloop met at sea with `hull_share` of her hull
-/// left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one she outguns `WARY_ODDS` to one by
+/// Whether a wary captain of `commission` at `strength` (`Captain::raised`), sound, falls on a player's Sloop met at
+/// sea with `hull_share` of her hull left, by DFO's `takesPrize` (navalAI.js): one holed under `GRAPPLE_HULL`, or one she outguns `WARY_ODDS` to one by
 /// their fighting powers.
 #[must_use]
-pub fn wary_takes(commission: Commission, hull_share: f64) -> bool {
+pub fn wary_takes(commission: Commission, strength: f64, hull_share: f64) -> bool {
     if hull_share < GRAPPLE_HULL {
         return true;
     }
     let arms = arms_of(commission.hull());
-    let her = Captain::new(commission, 0, 0.0, arms);
+    let her = Captain::new(commission, 0, 0.0, arms).raised(strength);
     let prize = Power::player(&crate::arms::LARGE_BOAT, hull_share);
-    odds(&her.power(&commission.damage()), &prize, [arms, arms_of(HullKind::Sloop)]) >= WARY_ODDS
+    odds(&her.power(&commission.damage_at(strength)), &prize, [arms, arms_of(HullKind::Sloop)]) >= WARY_ODDS
 }
 pub const WARY_ODDS: f64 = 1.25;
 /// The share of pirates who are bold, by their seed's own draw.
@@ -167,13 +167,14 @@ struct Plan {
     track: bool,
 }
 
-/// A captain: her commission (her faction and rank) and the class it gives her, her temper, seed and the course she
-/// cruises, her standing with each ship she may fight (who struck her, whom she spares, whom she fights), and her
+/// A captain: her commission (her faction and rank) and the class it gives her, what her level makes of her hull, men
+/// and guns' harm (`strength`, 1 at level 0), her temper, seed and the course she cruises, her standing with each ship she may fight (who struck her, whom she spares, whom she fights), and her
 /// memory of the ship she marks.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Captain {
     pub commission: Commission,
     pub build: Build,
+    pub strength: f64,
     pub temper: Temper,
     pub seed: u32,
     pub cruise: f64,
@@ -216,6 +217,7 @@ impl Captain {
         Self {
             commission,
             build: commission.build(),
+            strength: 1.0,
             temper: temper_for(commission, seed),
             seed,
             cruise,
@@ -236,6 +238,12 @@ impl Captain {
             present: None,
             avoid: Avoid::new(),
         }
+    }
+
+    /// Her strength raised to `strength`: her hull and men, and her guns' harm, that many times her class's.
+    #[must_use]
+    pub fn raised(self, strength: f64) -> Self {
+        Self { build: self.commission.build_at(strength), strength, ..self }
     }
 
     /// The ship she has as her enemy, if any.
@@ -343,7 +351,7 @@ impl Captain {
         let scale = self.commission.rank.scale();
         Power {
             struck_at: damage.struck_at,
-            might: scale.might,
+            might: scale.might * self.strength,
             reload: scale.reload,
             ..Power::captain(&self.build, damage.hull_share(), damage.crew_share())
         }

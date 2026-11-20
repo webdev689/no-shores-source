@@ -166,7 +166,7 @@ impl Fight {
         if let Some(laid) = battery.fire {
             let seed = self.draws.seed();
             let commission = command.her.commission;
-            let laid = Lay { gun: commission.armed(laid.gun), ..laid };
+            let laid = Lay { gun: commission.armed(laid.gun, command.her.strength), ..laid };
             let (skill, carry) = (command.her.build.skill, carry_of(&vessel.ship));
             let flag = Flag::Faction(commission.faction);
             self.balls.extend(volley(&laid, carry, skill, seed, self.clock, (id, flag)));

@@ -14,15 +14,27 @@ impl Captain {
     ) -> Plan {
         let ship = her.ship;
         let range = self.build.range_m.max(self.dead_zone);
-        let reach = lay(ship, her.pose, her.arms, Side::Starboard, her.guns.load, 0.0, None).reach;
+        let [beam, depth] = aim::hull_span(
+            [ship.x, ship.y],
+            [enemy.ship.x, enemy.ship.y],
+            Some(enemy.ship.heading),
+            her.arms,
+            arms_of(enemy.hull),
+        );
+        let reach = lay(ship, her.pose, her.arms, Side::Starboard, her.guns.load, 0.0, None).reach + beam + depth;
         let vel = self.enemy_vel.unwrap_or_else(|| velocity_of(&enemy.ship));
         let own = pace(her.hull, her.wind, self.way_share(her));
         let (me, them) = ([ship.x, ship.y], [enemy.ship.x, enemy.ship.y]);
-        if apart > (range * CLOSE_FROM).max(reach) {
+        let my = velocity_of(ship);
+        let rate = swing_rate(ship, her.hull).max(1.0) * DEG;
+        // Her own way toward the enemy, and the range a turn of `turn` (radians) closes: her turning circle's advance
+        // and her helm's ease, so she comes round to her broadside as the range comes to her reach, not after it.
+        let toward = ((my[0] * (them[0] - me[0]) + my[1] * (them[1] - me[1])) / apart.max(1e-6)).max(0.0);
+        let closes = |turn: f64| toward * (libm::sin(turn.abs().min(90.0 * DEG)) / rate + 4.0 * TURN_TAU);
+        if apart - closes(90.0 * DEG) > (range * CLOSE_FROM).max(reach) {
             self.present = None;
             return Plan { want: intercept(me, own, them, vel).1, sails: 1.0, track: false };
         }
-        let my = velocity_of(ship);
         let rel = [vel[0] - my[0], vel[1] - my[1]];
         let away = (vel[0] * (them[0] - me[0]) + vel[1] * (them[1] - me[1])) / apart.max(1e-6);
         if length(vel[0], vel[1]) > 0.3 {
@@ -39,16 +51,16 @@ impl Captain {
             }
         }
         let lead = lead_point(me, them, rel, her.guns.gun().speed);
-        let rate = swing_rate(ship, her.hull).max(1.0) * DEG;
         let reach_held = reach * aim::RUN_OUT_REACH;
+        let abeam_of = |side: Side| wrap(heading_to(me, lead) - side.sign() * 90.0 * DEG);
         let holds_lead = |present: Option<Present>, side: Side| {
             let lead_d = distance(me, lead);
             if present.is_some_and(|held| held.side == side && held.lays) {
                 return lead_d <= reach_held;
             }
-            let abeam = wrap(heading_to(me, lead) - side.sign() * 90.0 * DEG);
-            let round = wrap(abeam - ship.heading).abs() / rate + 4.0 * TURN_TAU + aim::RUN_OUT_S;
-            lead_d + away.max(0.0) * round <= reach_held
+            let turn = wrap(abeam_of(side) - ship.heading);
+            let round = turn.abs() / rate + 4.0 * TURN_TAU + aim::RUN_OUT_S;
+            lead_d - closes(turn) + away.max(0.0) * round <= reach_held
         };
         let close_in = if away > 0.0 {
             libm::asin(((away + CHASE_MARGIN * own) / length_of(ship).max(0.5)).clamp(0.0, 1.0))
@@ -57,7 +69,8 @@ impl Captain {
         };
         let dead = self.dead_zone;
         let bend = |present: Option<Present>, side: Side| {
-            let in_reach = apart <= reach * PRESENT_WITHIN && apart >= (range * POINT_BLANK).max(dead);
+            let coming = apart - closes(wrap(abeam_of(side) - ship.heading));
+            let in_reach = coming <= reach && apart >= (range * POINT_BLANK).max(dead);
             if her.guns.ready(side) && in_reach && holds_lead(present, side) {
                 return 0.0;
             }

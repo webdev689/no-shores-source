@@ -151,13 +151,17 @@ fn row(rank: Rank, level: u8, close: f64) -> String {
     let mut lengths: Vec<f64> = all.iter().map(|fought| fought.seconds).collect();
     lengths.sort_by(f64::total_cmp);
     let afloat: Vec<f64> = all.iter().filter(|fought| !fought.sunk).map(|fought| fought.hull_kept).collect();
+    let kept = if afloat.is_empty() {
+        "none afloat".to_owned()
+    } else {
+        format!("{:.0}%", 100.0 * afloat.iter().sum::<f64>() / afloat.len() as f64)
+    };
     format!(
-        "{} / {} of {}, {:.0} s, {:.0}%",
+        "{} / {} of {}, {:.0} s, {kept}",
         all.iter().filter(|fought| fought.won).count(),
         all.iter().filter(|fought| fought.sunk).count(),
         all.len(),
         lengths.get(lengths.len() / 2).copied().unwrap_or(0.0),
-        100.0 * afloat.iter().sum::<f64>() / afloat.len().max(1) as f64
     )
 }
 
@@ -177,6 +181,102 @@ fn measure_fights_by_level() {
     for rank in [Rank::Minor, Rank::Elite] {
         for level in [1, 4, 10, 19, 27] {
             eprintln!("| {rank:?} {level} | {} | {} |", row(rank, level, 300.0), row(rank, level, 150.0));
+        }
+    }
+}
+
+#[test]
+#[ignore = "scratch trace"]
+fn zz_trace_one_fight() {
+    let (layout, ports) = world();
+    let points = hostile_points(&Sea::new(&layout, crate::deck::test_deck(), 1, &ports));
+    let commission = Commission { faction: PIRATES, rank: Rank::Major };
+    let seed = (0x1000u32..)
+        .step_by(7919)
+        .find(|seed| matches!(naval::captain::temper_for(commission, *seed), naval::captain::Temper::Bold))
+        .unwrap();
+    let close: f64 = std::env::var("CLOSE").ok().and_then(|v| v.parse().ok()).unwrap_or(300.0);
+    let at = points[0];
+    let mut sea = Sea::new(&layout, crate::deck::test_deck(), seed, &ports);
+    let player = sea.join();
+    sea.harbour.characters.insert(player, gear::Character::starting());
+    sea.course(player, &[at], 10).unwrap();
+    sea.pirates.sailing.push(Pirate::standing(1, seed, commission, [at[0], at[1] - 700.0], std::f64::consts::PI, true));
+    sea.tick();
+    let mut shots = [0usize; 2];
+    for tick in 1..(400 * TICKS_A_SECOND) {
+        let Some((fought, crew)) = sea.fights.of_mut(player) else { break };
+        let orders = plain_orders(&fought.fight, crew.ship, tick, close);
+        if tick % 120 == 0 {
+            let me = fought.fight.vessel(crew.ship).unwrap();
+            for (id, v) in &fought.fight.ships {
+                if *id == crew.ship {
+                    continue;
+                }
+                let apart = distance([me.ship.x, me.ship.y], [v.ship.x, v.ship.y]);
+                let off = (wrap(heading_to([v.ship.x, v.ship.y], [me.ship.x, me.ship.y]) - v.ship.heading)
+                    .abs()
+                    .to_degrees()
+                    - 90.0)
+                    .abs();
+                let poff = (wrap(heading_to([me.ship.x, me.ship.y], [v.ship.x, v.ship.y]) - me.ship.heading)
+                    .abs()
+                    .to_degrees()
+                    - 90.0)
+                    .abs();
+                let mode = v.command().map(|c| format!("{:?}", c.her.mode)).unwrap_or_default();
+                let r = |x: &naval::fight::Vessel| {
+                    naval::gunnery::lay(
+                        &x.ship,
+                        &x.pose,
+                        naval::arms::arms_of(x.hull),
+                        naval::arms::Side::Starboard,
+                        x.guns.load,
+                        0.0,
+                        None,
+                    )
+                    .reach
+                };
+                let rp = |x: &naval::fight::Vessel| {
+                    naval::gunnery::lay(
+                        &x.ship,
+                        &x.pose,
+                        naval::arms::arms_of(x.hull),
+                        naval::arms::Side::Port,
+                        x.guns.load,
+                        0.0,
+                        None,
+                    )
+                    .reach
+                };
+                eprintln!(
+                    "   reach player s/p {:.0}/{:.0} her {:.0}/{:.0} hull kinds {:?} {:?}",
+                    r(me),
+                    rp(me),
+                    r(v),
+                    rp(v),
+                    me.hull,
+                    v.hull
+                );
+                eprintln!(
+                    "t{} apart {apart:.0} her off-beam {off:.0} player off-beam {poff:.0} her way {:.1} mine {:.1} hulls {:.0}/{:.0} {mode} shots p/c {shots:?}",
+                    tick / 60,
+                    v.ship.ahead,
+                    me.ship.ahead,
+                    me.damage.hull,
+                    v.damage.hull
+                );
+            }
+        }
+        let _ = sea.orders(player, orders);
+        sea.tick();
+        if let Some((fought, crew)) = sea.fights.of_mut(player) {
+            for event in &fought.events {
+                let text = format!("{event:?}");
+                if text.contains("Muzzle") {
+                    shots[usize::from(!text.contains(&format!("shooter: {},", crew.ship)))] += 1;
+                }
+            }
         }
     }
 }

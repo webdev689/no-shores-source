@@ -195,8 +195,14 @@ impl Commission {
     /// makes them.
     #[must_use]
     pub fn build(&self) -> Build {
+        self.build_at(1.0)
+    }
+
+    /// Her class as `build`, her hull and her men `strength` times as many: what her level makes of them.
+    #[must_use]
+    pub fn build_at(&self, strength: f64) -> Build {
         let base = if self.faction == GREY_TITHE { TITHE_SLOOP } else { PIRATE_SLOOP };
-        let scale = self.rank.scale().hull;
+        let scale = self.rank.scale().hull * strength;
         let (name, exposed) = (ship_name(self.faction, self.hull()), exposure(self.hull()));
         // Whole points and whole men, as every blow takes, so neither ever shows a fraction left.
         let (hull, crew) =
@@ -207,19 +213,27 @@ impl Commission {
     /// Her ship's hurts, sound: her hull as strong as her rank makes it, striking where her rank strikes.
     #[must_use]
     pub fn damage(&self) -> Damage {
-        let mut damage = Damage::new(&self.build(), false);
+        self.damage_at(1.0)
+    }
+
+    /// Her ship's hurts, sound, as `damage`, her hull and men `strength` times as many.
+    #[must_use]
+    pub fn damage_at(&self, strength: f64) -> Damage {
+        let mut damage = Damage::new(&self.build_at(strength), false);
         damage.struck_at = self.rank.scale().strikes_at;
         damage
     }
 
-    /// A gun as her gunners fire it: its harm by her rank's might, its scatter by her rank's aim error.
+    /// A gun as her gunners fire it: its harm by her rank's might and `strength`, what her level makes of it, its
+    /// scatter by her rank's aim error.
     #[must_use]
-    pub fn armed(&self, gun: Gun) -> Gun {
+    pub fn armed(&self, gun: Gun, strength: f64) -> Gun {
         let scale = self.rank.scale();
+        let might = scale.might * strength;
         Gun {
-            hull: gun.hull * scale.might,
-            sail: gun.sail * scale.might,
-            crew: gun.crew * scale.might,
+            hull: gun.hull * might,
+            sail: gun.sail * might,
+            crew: gun.crew * might,
             yaw_spread_deg: gun.yaw_spread_deg * scale.aim_error,
             pitch_spread_deg: gun.pitch_spread_deg * scale.aim_error,
             ..gun

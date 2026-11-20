@@ -74,7 +74,7 @@ pub fn held_pace(pace: u16, at: [f64; 2], heading: f64, pirates: impl IntoIterat
 #[must_use]
 pub fn holds(pirate: &Pirate, at: [f64; 2], chased: Option<u32>, hull: f64) -> bool {
     libm::hypot(pirate.x - at[0], pirate.y - at[1]) <= HOSTILE_NEAR_M
-        && (pirate.bold || chased == Some(pirate.id) || wary_takes(pirate.commission, hull))
+        && (pirate.bold || chased == Some(pirate.id) || wary_takes(pirate.commission, pirate.strength(), hull))
 }
 
 #[cfg(test)]

@@ -275,7 +275,8 @@ impl Fights {
     ) {
         let captain = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
         let waters = CoastWaters { coasts, swell: &weather.0 };
-        let fight = Fight::meet(own, captain, pirate.commission, pirate.seed, &waters, time);
+        let mut fight = Fight::meet(own, captain, pirate.commission, pirate.seed, &waters, time);
+        fight.raise(naval::fight::CAPTAIN, pirate.strength());
         let mut fought = SeaFight::new(fight, BTreeMap::from([(naval::fight::CAPTAIN, *pirate)]), weather);
         fought.put_in(player, own, kept, coasts, time);
         self.list.push(fought);
@@ -316,6 +317,7 @@ impl Fights {
         let ship = ship_at(pirate.x, pirate.y, pirate.heading, SAILS_SET);
         let waters = CoastWaters { coasts, swell: &fought.swell };
         fought.fight.enlist(id, ship, pirate.commission, pirate.seed, &waters, time);
+        fought.fight.raise(id, pirate.strength());
         fought.hostiles.insert(id, *pirate);
         true
     }

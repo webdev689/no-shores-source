@@ -165,10 +165,10 @@ fn a_players_ship_goes_down_at_none_and_is_no_ones_enemy_as_she_does() {
 fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
     let minor = Commission { faction: PIRATES, rank: Rank::Minor };
     let elite = Commission { faction: PIRATES, rank: Rank::Elite };
-    assert!(!wary_takes(minor, 1.0), "a Minor does not outgun a sound Sloop");
-    assert!(wary_takes(minor, 0.3), "holed under GRAPPLE_HULL");
+    assert!(!wary_takes(minor, 1.0, 1.0), "a Minor does not outgun a sound Sloop");
+    assert!(wary_takes(minor, 1.0, 0.3), "holed under GRAPPLE_HULL");
     for commission in [minor, elite] {
-        let taken: Vec<bool> = (0..=20).map(|share| wary_takes(commission, f64::from(share) / 20.0)).collect();
+        let taken: Vec<bool> = (0..=20).map(|share| wary_takes(commission, 1.0, f64::from(share) / 20.0)).collect();
         assert!(
             taken.windows(2).all(|pair| pair[0] || !pair[1]),
             "the weaker she finds a Sloop, the likelier she falls on her"
@@ -181,14 +181,14 @@ fn a_wary_captain_falls_on_a_sloop_she_outguns_or_one_nearly_gone() {
         &prize,
         [crate::arms::arms_of(elite.hull()), crate::arms::arms_of(HullKind::Sloop)],
     );
-    assert_eq!(wary_takes(elite, 0.6), odds >= crate::captain::WARY_ODDS, "DFO's odds of five to four");
+    assert_eq!(wary_takes(elite, 1.0, 0.6), odds >= crate::captain::WARY_ODDS, "DFO's odds of five to four");
 }
 
 #[test]
 fn a_wary_captain_who_will_not_engage_breaks_off_once_out_of_reach_for_her_give_up_time() {
     let commission = Commission { faction: PIRATES, rank: Rank::Minor };
     let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Wary).unwrap();
-    assert!(!wary_takes(commission, 1.0), "she will not fall on a whole Sloop");
+    assert!(!wary_takes(commission, 1.0, 1.0), "she will not fall on a whole Sloop");
     let mut fight = Fight::meet(at(0.0, 0.0), at(0.0, -400.0), commission, seed, &Open, 0.0);
     let early = run(&mut fight, ((CHASE_GIVE_UP_S - 5.0) * 60.0) as u32);
     assert!(!early.iter().any(|event| matches!(event, Event::Gone { .. })), "not before her give-up time");

@@ -62,6 +62,12 @@ impl Pirate {
         Pirate { id, seed, commission, level: 0, sight_m: SIGHT_LEAST_M, x, y, heading, bold, quarry: None }
     }
 
+    /// What her level makes of her hull, her men and her guns' harm: as a foe's level raises its health on land.
+    #[must_use]
+    pub fn strength(&self) -> f64 {
+        gear::power::foe_health_times(self.level)
+    }
+
     /// Whether a point lies within her sight.
     #[must_use]
     pub fn sees(&self, at: [f64; 2]) -> bool {
@@ -100,6 +106,8 @@ pub struct Pirates {
     parted: Vec<[u32; 2]>,
     /// The ship each player chases, by her number: met within `ENGAGE_RANGE` whatever her temper.
     chasing: BTreeMap<PlayerId, u32>,
+    /// The sea's tier, which raises the levels of the ships it sends as it raises foes on land.
+    pub difficulty: gear::Difficulty,
 }
 
 #[cfg(test)]
@@ -151,7 +159,8 @@ fn round_the_coast(
 /// one to come for keeps her heading.
 fn come_for(pirate: &Pirate, ships: &[Voyager], (seconds, clock): (f64, f64)) -> (f64, Option<PlayerId>) {
     let at = [pirate.x, pirate.y];
-    let takes = |ship: &Voyager| pirate.bold || naval::captain::wary_takes(pirate.commission, ship.hull);
+    let takes =
+        |ship: &Voyager| pirate.bold || naval::captain::wary_takes(pirate.commission, pirate.strength(), ship.hull);
     let open = |ship: &&Voyager| !ship.fighting && pirate.sees(ship.at) && takes(ship);
     let kept = ships.iter().filter(open).find(|ship| Some(ship.player) == pirate.quarry);
     let nearest = || ships.iter().filter(open).min_by(|one, other| apart(at, one.at).total_cmp(&apart(at, other.at)));
@@ -174,6 +183,7 @@ impl Pirates {
             sailing: Vec::new(),
             parted: Vec::new(),
             chasing: BTreeMap::new(),
+            difficulty: gear::Difficulty::Normal,
         }
     }
 
@@ -275,7 +285,11 @@ impl Pirates {
         let faction = faction_of(water.holder, self.draws.draw())?;
         let low = water.levels.map_or(0, |(low, _)| low);
         let commission = Commission { faction, rank: rank_for(low, self.draws.draw()) };
-        let level = level_in(water.levels, self.draws.draw());
+        // As a garrison's: a water with no band (level 0) stays none.
+        let level = match level_in(water.levels, self.draws.draw()) {
+            0 => 0,
+            level => self.difficulty.raise(level),
+        };
         let seed = self.draws.seed();
         let sight_m = sight_for(f64::from(ship.pace));
         let bold = matches!(temper_for(commission, seed), Temper::Bold);

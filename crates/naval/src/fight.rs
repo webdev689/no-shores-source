@@ -371,6 +371,15 @@ impl Fight {
         self.ships.insert(id, vessel);
     }
 
+    /// The captain numbered `id`, just enlisted, raised to `strength` (`Captain::raised`): her hull and men, sound, and
+    /// her guns' harm, that many times her rank's.
+    pub fn raise(&mut self, id: ShipId, strength: f64) {
+        let Some(vessel) = self.ships.get_mut(&id) else { return };
+        let Sailor::Captain(command) = &mut vessel.sailor else { return };
+        command.her = command.her.clone().raised(strength);
+        vessel.damage = command.her.commission.damage_at(strength);
+    }
+
     /// A ship leaves the fight: the captains forget her; balls she fired fly on.
     pub fn leave(&mut self, id: ShipId) {
         self.ships.remove(&id);
