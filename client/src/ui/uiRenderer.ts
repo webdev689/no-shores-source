@@ -3,9 +3,13 @@
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { ATLAS_SIZE, Shelves } from './atlas.ts';
 import type { Glyph } from './glyphs.ts';
-import { type Box, type Colour, QUAD_FLOATS, QuadList, UNCLIPPED } from './quads.ts';
+import { type Box, type Colour, colourOf, QUAD_FLOATS, QuadList, UNCLIPPED } from './quads.ts';
 import { type Face, layLine } from './text.ts';
 import { UI_SHADER } from './uiShader.ts';
+
+/** Device pixels a CSS pixel of the interface takes: the screen's ratio to a whole pixel, so every cell and edge
+ *  lands on whole pixels; a ratio of 1.5 draws at 2. */
+export const uiScale = (ratio: number): number => Math.max(1, Math.round(ratio));
 
 /** Bytes a quad takes. */
 const QUAD_BYTES = QUAD_FLOATS * 4;
@@ -92,18 +96,24 @@ export class UiRenderer {
   }
 
   /** `words` at `size` (a whole multiple of the face's grid) with their line's top-left at `x`, `y` (device pixels),
-   *  each unit `scale` device pixels, in `colour`; under them a hard shadow `shadow` units down and right where
-   *  given. */
+   *  each unit `scale` device pixels, in `ink.colour`; under them a hard shadow `ink.shadow.step` units down and
+   *  right where given; all faded in by `ink.fade`. */
   text(
     words: string,
     where: { readonly x: number; readonly y: number; readonly size: number; readonly scale: number },
-    colour: Colour,
+    ink: {
+      readonly colour: string;
+      readonly shadow?: { readonly colour: string; readonly step: number };
+      readonly fade?: number;
+    },
     clip: Box = UNCLIPPED,
-    shadow?: { readonly colour: Colour; readonly step: number },
   ): void {
     const { x, y, size, scale } = where;
+    const fade = ink.fade ?? 1;
     const { glyphs } = layLine(this.face, words, size);
-    const draw = (offset: number, tone: Colour) => {
+    const draw = (offset: number, css: string) => {
+      const [red, green, blue, alpha] = colourOf(css);
+      const tone: Colour = [red, green, blue, alpha * fade];
       for (const laid of glyphs) {
         const texels = this.glyphTexels(laid.glyph);
         if (!texels) continue;
@@ -116,8 +126,8 @@ export class UiRenderer {
         this.quads.add(box, tone, clip, texels);
       }
     };
-    if (shadow) draw(shadow.step, shadow.colour);
-    draw(0, colour);
+    if (ink.shadow) draw(ink.shadow.step, ink.shadow.colour);
+    draw(0, ink.colour);
   }
 
   /** Draws the frame's quads over what the canvas holds, and starts the next frame's list. */

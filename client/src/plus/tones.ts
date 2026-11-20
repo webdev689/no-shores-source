@@ -21,6 +21,8 @@ export const TONES = {
   groundTrack: 'rgba(6,7,9,0.8)',
   groove: 'rgba(163,152,128,0.26)',
   word: '#fbf8f0',
+  /** The HUD's own words, over the world. */
+  ink: '#f2efe6',
   wordDim: '#e2dccd',
 } as const;
 
