@@ -48,6 +48,23 @@ fn room_at(dungeon: &Dungeon, at: [f64; 3]) -> Option<usize> {
 }
 
 #[test]
+fn a_dungeon_laid_by_a_seed_and_a_style_stands_as_a_patrols_does() {
+    // A sea island's: no patrol, a seed and a style by its key.
+    for (seed, key) in [(4242, "caverns"), (77, "crypt"), (9001, "mines")] {
+        let style = dungeon::style_of(key).expect("a style");
+        let room = Room::dungeon_of("isle-test--dungeon", seed, style, LEVELS).expect("an island's dungeon");
+        let (arrival, _) = Dungeon::forge(seed, style).arrival();
+        assert_eq!(room.section.as_ref().map(|section| section.spawns.clone()), Some(vec![arrival]));
+        assert!(room.garrison.len() > 1 && room.cache().is_some(), "{key}: its bands and its cache");
+        assert_eq!(room.garrison[0].members[0].1, Miniboss, "{key}: its Reeve");
+    }
+    let (seed, style) = dungeon::of_patrol(PATROLS[0], 0);
+    let by_patrol = Room::dungeon(PATROLS[0], 0, LEVELS).expect("a patrol's dungeon");
+    let by_seed = Room::dungeon_of(&format!("{}--dungeon-0", PATROLS[0]), seed, style, LEVELS).expect("the same");
+    assert_eq!(by_patrol.living_foes(), by_seed.living_foes(), "the same dungeon, the same garrison");
+}
+
+#[test]
 fn a_dungeons_room_stands_its_reeve_alone_in_the_end_room_and_its_bands_past_the_way_in() {
     for patrol in PATROLS {
         for number in 0..dungeon::PER_PATROL {

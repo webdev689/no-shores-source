@@ -3,7 +3,15 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { dressingOf } from './dungeonDressing.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
-import { askDungeon, ceilingAt, courseOf, type DungeonLayout, readDungeon, seenBlocks } from './dungeonLayout.ts';
+import {
+  askDungeon,
+  askDungeonOf,
+  ceilingAt,
+  courseOf,
+  type DungeonLayout,
+  readDungeon,
+  seenBlocks,
+} from './dungeonLayout.ts';
 import { burningOf } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
 import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
@@ -63,6 +71,12 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
     'each glow x, y, z, kind',
   );
   assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
+  // A sea island's: laid by a seed and a style where no patrol lays it, the same as a patrol's laid by them.
+  const cove = askDungeonOf(module, 4242, 'caverns', 'The Gull Cove');
+  assert.equal(cove.style, 'caverns');
+  assert.match(cove.name, / of the Gull Cove$/);
+  assert.equal(askDungeonOf(module, 4242, 'caverns', 'The Gull Cove'), cove, 'laid once, kept');
+  assert.throws(() => askDungeonOf(module, 4242, 'grotto' as never, 'The Gull Cove'), /no grotto dungeon/);
 });
 
 test('an older room module that answers no landmarks or glows is read as standing none', async (context) => {

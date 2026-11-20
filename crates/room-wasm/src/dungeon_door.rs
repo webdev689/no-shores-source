@@ -8,12 +8,16 @@ use room::{NodeKind, PlayerId, Room};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-/// Which dungeon: its patrol's id and name, and its number among the patrol's.
+/// Which dungeon: its place's name, and either its patrol's id and its number among the patrol's, or the seed and the
+/// style's key it is laid by where no patrol lays it (a sea island's).
 #[derive(Deserialize)]
 struct Asked {
-    patrol: String,
+    patrol: Option<String>,
     name: String,
+    #[serde(default)]
     number: usize,
+    seed: Option<u32>,
+    style: Option<String>,
 }
 
 const fn side_number(side: Side) -> u8 {
@@ -25,11 +29,17 @@ const fn side_number(side: Side) -> u8 {
     }
 }
 
-/// The seed and style of the dungeon an ask names, or None for an ask that does not read or a number past the
-/// patrol's dungeons.
+/// The seed and style of the dungeon an ask names, or None for an ask that does not read, a number past the patrol's
+/// dungeons, or a seed without a style that is one.
 pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
     let asked = serde_json::from_slice::<Asked>(text).ok()?;
-    (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&asked.patrol, asked.number))
+    match (asked.patrol, asked.seed, asked.style) {
+        (_, Some(seed), Some(key)) => Some((seed, dungeon::style_of(&key)?)),
+        (Some(patrol), None, None) => {
+            (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&patrol, asked.number))
+        }
+        _ => None,
+    }
 }
 
 /// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
@@ -309,5 +319,20 @@ mod tests {
     fn an_ask_that_does_not_read_or_names_no_dungeon_is_null() {
         assert_eq!(dungeon_json(b"not json"), "null");
         assert_eq!(dungeon_json(br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":3}"#), "null");
+        assert_eq!(dungeon_json(br#"{"name":"The Cove","number":0}"#), "null", "neither a patrol nor a seed");
+        assert_eq!(dungeon_json(br#"{"name":"The Cove","seed":7}"#), "null", "a seed with no style");
+        assert_eq!(dungeon_json(br#"{"name":"The Cove","seed":7,"style":"grotto"}"#), "null", "no such style");
+    }
+
+    #[test]
+    fn a_dungeon_asked_by_its_seed_and_style_is_the_one_a_patrol_lays_by_them() {
+        let (seed, style) = dungeon::of_patrol("saltgrass-downs", 1);
+        let by_patrol = br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":1}"#;
+        let by_seed = format!(r#"{{"name":"The Saltgrass Downs","seed":{seed},"style":"{}"}}"#, style.key);
+        assert_eq!(dungeon_json(by_seed.as_bytes()), dungeon_json(by_patrol));
+        let cove = dungeon_json(br#"{"name":"The Gull Cove","seed":4242,"style":"caverns"}"#);
+        let laid: Value = serde_json::from_str(&cove).unwrap();
+        assert_eq!(laid["style"], "caverns");
+        assert!(laid["name"].as_str().unwrap().ends_with(" of the Gull Cove"));
     }
 }

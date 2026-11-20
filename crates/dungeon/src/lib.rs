@@ -117,6 +117,13 @@ impl Side {
     }
 }
 
+/// The style a key names (crypt, halls, cells, sanctum, caverns or mines), for a dungeon laid by a seed where there is
+/// no patrol, as on a sea island.
+#[must_use]
+pub fn style_of(key: &str) -> Option<Style> {
+    STYLES.into_iter().find(|style| style.key == key)
+}
+
 /// A patrol's dungeon by its number: its seed, from the patrol's id, and its style. A patrol's dungeons take three
 /// different styles of the six, shuffled by the patrol's id.
 #[must_use]

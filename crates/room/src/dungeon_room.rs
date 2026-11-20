@@ -104,6 +104,14 @@ impl Room {
             return None;
         }
         let (seed, style) = dungeon::of_patrol(patrol, number);
+        Self::dungeon_of(&format!("{patrol}--dungeon-{number}"), seed, style, levels)
+    }
+
+    /// The room of a dungeon laid by a seed and a style, where no patrol lays it (a sea island's): `name` seeds its
+    /// world, as a patrol's dungeon's room name does, and `levels` is its foes' band, the tier already applied. None
+    /// where its floor cannot be made.
+    #[must_use]
+    pub fn dungeon_of(name: &str, seed: u32, style: dungeon::Style, levels: Option<(u8, u8)>) -> Option<Self> {
         let dungeon = Dungeon::forge(seed, style);
         let floor = Floor::of_dungeon(&dungeon)?;
         let (width, depth) = (dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M);
@@ -112,7 +120,7 @@ impl Room {
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
         let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]] });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
-        room.world_seed = node_seed(&format!("{patrol}--dungeon-{number}"));
+        room.world_seed = node_seed(name);
         room.foes_most = NODE_FOES_MOST;
         room.stand_dungeon_garrison(&dungeon, levels);
         Some(room)

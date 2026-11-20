@@ -5,6 +5,15 @@ use crate::{
     BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor, name, of_patrol,
 };
 
+#[test]
+fn every_style_is_found_by_its_key_and_no_other_key_names_one() {
+    for style in STYLES {
+        assert_eq!(crate::style_of(style.key).map(|found| found.key), Some(style.key));
+    }
+    assert!(crate::style_of("grotto").is_none());
+    assert!(crate::style_of("").is_none());
+}
+
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
     (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
 }

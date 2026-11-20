@@ -98,6 +98,20 @@ const ROCK_TOP_M = 12;
 const doors = new WeakMap<WebAssembly.Module, ReturnType<typeof startRoomDoor>>();
 const laid = new Map<string, DungeonLayout>();
 
+/** A dungeon laid by `seed` and the style keyed `style` where no patrol lays it (a sea island's), named for its place
+ *  `name`, by the room module's own rules; a style that is none throws. */
+export function askDungeonOf(module: WebAssembly.Module, seed: number, style: StyleKey, name: string): DungeonLayout {
+  const key = `${seed}\n${style}\n${name}`;
+  const known = laid.get(key);
+  if (known) return known;
+  const door = doors.get(module) ?? startRoomDoor(module);
+  doors.set(module, door);
+  const layout = readDungeon(door.dungeonOf(seed, style, name));
+  if (!layout) throw new Error(`no ${style} dungeon from seed ${seed}`);
+  laid.set(key, layout);
+  return layout;
+}
+
 /** The dungeon `number` of the patrol `patrol` (its id) named `name`, laid by the room module's own rules; an ask it
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {

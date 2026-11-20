@@ -3,6 +3,7 @@ type: system
 status: planned
 code:
   - crates/dungeon/src/lib.rs#of_patrol
+  - crates/dungeon/src/lib.rs#style_of
   - crates/dungeon/src/lib.rs#name
   - crates/dungeon/src/styles.rs#STYLES
   - crates/dungeon/src/dungeon.rs#Dungeon
@@ -24,6 +25,7 @@ code:
   - crates/room-wasm/src/fighter_door.rs#set_dungeon
   - client/src/rules/dungeonRules.test.ts
   - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/dungeon_room.rs#dungeon_of
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/dungeon_room.rs#keep_cache
   - crates/room/src/floor.rs#Floor
@@ -36,6 +38,7 @@ code:
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
+  - client/src/game/dungeonLayout.ts#askDungeonOf
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
   - client/src/game/dungeonLight.ts#lightAt
@@ -65,6 +68,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A patrol's three.** `of_patrol` gives each its seed, from the patrol's id and its number, and its style; the
   three take three different styles of the six, shuffled by the patrol's id. `name` names one for its first style
   and its patrol: The Crypt of the Saltgrass Downs, The Caverns of the Sunken Fen.
+- **Laid where no patrol is.** A place that is no patrol, as a sea island, lays its dungeon by its own seed and a
+  style by its key (`style_of`): `Room::dungeon_of` stands its room, the room module answers its layout to an ask by
+  seed and style, and the page reads it with `askDungeonOf`. A patrol's dungeon is the same laid by `of_patrol`'s.
 - **The styles**, each with its two dungeon picture sets ([[Procedural Textures]]). The first four are the Forge's
   crypt, hall, cells and temple; the Caverns and the Mines are its cave and mine. Each style also names the style
   below it, which its last block may break into, and its entrances, the forged mounds or cave mouths with a door:
