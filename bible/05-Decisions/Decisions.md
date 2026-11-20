@@ -146,6 +146,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Vitals Go Top Left and the Arts and Weapons Bottom Left]]
 - [[The Display as Claude Lays It Out]]
 - [[The Swing's Arc Never Covers Its Striker]]
+- [[A Player's Melee Weapon Reaches a Tenth Further]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

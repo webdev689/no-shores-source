@@ -27,6 +27,7 @@ use crate::tuning::{
 use combat::arms::{stroke_shape, swing_ticks, weapon};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, clear_line, off, wrap};
+use combat::strike::reach_of;
 use combat::tuning::{ATTACK_PACE, BODY_RADIUS, guard_of};
 use combat::{CombatInput, Stroke};
 use core::f64::consts::{FRAC_PI_2, PI};
@@ -247,7 +248,7 @@ fn back_off(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
 /// A fighter hand to hand: its turn taken or waited for, then in to strike or out on the ring.
 fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Ask {
     let (me, tick) = (here.me, here.tick());
-    let reach = weapon(here.fighter.arms.melee).reach;
+    let reach = reach_of(&here.fighter);
     let director = here.world.director;
     let pressed = director.pressed();
     let ring = reach + pressed.ring_gap;
@@ -401,7 +402,7 @@ fn stroke(here: &Here<'_, '_>, sight: &Sight) -> Stroke {
     if sight.fighter.guarding().is_some() {
         return Stroke::Down;
     }
-    let reach = weapon(here.fighter.arms.melee).reach + BODY_RADIUS;
+    let reach = reach_of(&here.fighter) + BODY_RADIUS;
     let side = stroke_shape(Stroke::Left).half_arc;
     let near = here
         .world

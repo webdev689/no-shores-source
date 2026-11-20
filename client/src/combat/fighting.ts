@@ -268,7 +268,7 @@ export class Fighting {
     const own = this.own;
     const there = this.targetAt;
     const apart = own && there ? Math.hypot(there.x - own.x, there.y - own.y) : null;
-    return strokesReaching(apart, (stroke) => this.rules.strokeReach(this.arms, stroke));
+    return strokesReaching(apart, (stroke) => this.rules.strokeReach(this.arms, stroke, true));
   }
 
   private roll(): number {

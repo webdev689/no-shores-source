@@ -55,6 +55,9 @@ Players and foes fight by the same rules, which the [[Server]] decides and each 
 | Staff (two hands) | 2.2 | 13 | 1.15 | 14 | 18 / 46 |
 | Greatsword (two hands) | 2.3 | 24 | 1.50 | 21 | 20 / 50 |
 
+A player's weapon reaches a tenth further than the table's reach; a foe's reaches as far as it says. Bare fists reach
+1.0 m for everyone ([[A Player's Melee Weapon Reaches a Tenth Further]]).
+
 - **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
   the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is

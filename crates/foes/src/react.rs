@@ -9,10 +9,11 @@ use crate::dice::Purpose;
 use crate::senses::Here;
 use crate::steer::Ask;
 use crate::tuning::{BACK_TURNED, GUARD_AFTER, PRESS_LATEST, PRESS_LEAD, THREAT_MARGIN};
-use combat::arms::{OffHand, stroke_shape, weapon};
+use combat::arms::{OffHand, stroke_shape};
 use combat::fighter::{Action, Attack};
 use combat::shots::{foe_speed, shot_numbers};
 use combat::sight::{apart, bearing, off};
+use combat::strike::{reach_of, stroke_reach};
 use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, parry_window};
 use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::FRAC_PI_2;
@@ -91,7 +92,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let lands = match threat.lands {
         Some(lands) => {
             let Action::Attack(attack) = striker.action else { return None };
-            let reach = weapon(striker.arms.melee).reach + stroke_shape(attack.stroke).reach + BODY_RADIUS;
+            let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.side.is_players());
             let aimed_here = striker.target == Some(here.me) || facing <= stroke_shape(attack.stroke).half_arc + 0.5;
             (distance <= reach + THREAT_MARGIN && aimed_here).then_some(lands)?
         }
@@ -222,7 +223,7 @@ pub fn opening(
     if !can_swing(&fighter.action) || fighter.stamina <= 0.0 || here.numbers.shooter {
         return None;
     }
-    let reach = weapon(fighter.arms.melee).reach + BODY_RADIUS;
+    let reach = reach_of(fighter) + BODY_RADIUS;
     let near =
         |id: FighterId| here.enemy(id).is_some_and(|other| apart(here.at(), [other.body.x, other.body.y]) <= reach);
     let riposte = fighter.riposte.map(|(foe, _)| foe).filter(|foe| near(*foe));
