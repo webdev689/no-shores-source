@@ -462,3 +462,18 @@ test('a run found for strangers lets in each one found for it, and none of them 
     [5, "This run is another company's."],
   ]);
 });
+
+test('one account is one player in a room: a second socket signed in sends the first away and is kept', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{}');
+  room.held.set(2, '{}');
+  const sent: [number, string | undefined][] = [];
+  const keeper = new Keeper(kept, room, 'node-a', (player, why) => sent.push([player, why]));
+  const [now, here] = [() => clock.now, () => true];
+  assert.equal(await keeper.signIn(1, token, now, here), true);
+  assert.equal(await keeper.signIn(2, token, now, here), true, 'the newer socket is kept');
+  assert.deepEqual(sent, [[1, undefined]], 'the older is sent away as played elsewhere');
+  await keeper.due(clock.now + SAVE_UNCHANGED_MS);
+  assert.deepEqual(sent, [[1, undefined]], 'and the newer keeps its hold');
+});

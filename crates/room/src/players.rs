@@ -348,8 +348,12 @@ impl Room {
 
     /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
     /// spent for them again, however often they rejoin; the Arts' charge the room kept for it is theirs again; and in a
-    /// run that counts revives, the body it left with.
+    /// run that counts revives, the body it left with. False, noting nothing, for an account another player in the
+    /// room already has: one account is one player in a room.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
+        if self.players.iter().any(|(id, found)| *id != player && found.owner.as_deref() == Some(owner)) {
+            return false;
+        }
         let gathered = self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.owner = Some(owner.to_owned());

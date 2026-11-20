@@ -180,3 +180,19 @@ fn a_run_once_won_is_never_wiped_though_its_end_post_stands_again_and_its_cache_
     room.tick();
     assert!(wiped(&room.take_events()).is_empty(), "won: no wipe");
 }
+
+#[test]
+fn one_account_is_one_player_in_a_run_and_a_second_socket_comes_in_as_the_first_left() {
+    let mut room = abyss_run();
+    let (ada, _ben) = (room.join().expect("in"), room.join().expect("in"));
+    assert!(room.own(ada, "ada"));
+    room.run.as_mut().expect("a run").revives = Some(0);
+    fallen(&mut room, ada);
+    let again = room.join().expect("in");
+    assert!(!room.own(again, "ada"), "held by her first socket");
+    assert!(room.own(ada, "ada"), "which may be noted again");
+    room.leave(ada);
+    assert!(room.own(again, "ada"));
+    room.tick();
+    assert!(room.players[&again].fighter.dead(), "down, as she was, with none left");
+}

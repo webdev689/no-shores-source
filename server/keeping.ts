@@ -129,6 +129,13 @@ export class Keeper {
       await characters.release(claimed.account, holder, null).catch(() => false);
       return false;
     }
+    // One account plays one player here: its older socket (a rejoin the room has not seen close, or a second tab) goes
+    // first, so the room keeps that body before this player is given it.
+    for (const [other, kept] of this.held)
+      if (kept.account === claimed.account) {
+        this.held.delete(other);
+        this.lost(other);
+      }
     this.room.own(player, claimed.account);
     if (this.company) this.admitted.add(claimed.account);
     this.held.set(player, {

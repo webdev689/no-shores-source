@@ -90,7 +90,10 @@ they play in holds it while they are there.
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
   `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
   room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can
-  reach) and gives it to the player, trimming their fight by it.
+  reach) and gives it to the player, trimming their fight by it. One account is one player in a room: a second
+  socket of theirs signed in (a rejoin before the room saw the first close, or a second tab) sends the first away
+  as played elsewhere before it is given the character, so a run keeps the first one's body for it, and the rules
+  refuse to note one account for two players (`Room::own`).
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
