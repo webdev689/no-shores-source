@@ -421,6 +421,12 @@ pub extern "C" fn room_sloop() -> u64 {
     hand_over(deck_door::sloop_build_json().into_bytes())
 }
 
+/// The port cities' ids as JSON (`world::ports::MAIN_PORTS`): every other city is a ruin.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_main_ports() -> u64 {
+    hand_over(serde_json::to_vec(&world::ports::MAIN_PORTS).unwrap_or_default())
+}
+
 /// Every enemy type the rules know, as JSON (`roster_door::roster_json`).
 #[unsafe(no_mangle)]
 pub extern "C" fn room_roster() -> u64 {
