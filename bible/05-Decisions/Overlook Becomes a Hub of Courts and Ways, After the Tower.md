@@ -20,6 +20,9 @@ status: in force
 > "Build this to perfection, no holds barred, beyond the limits of detail. Take your time and make this something
 > special. Return when this is 100%"
 
+> Shown how it was coming: "This is insane. Keep pushing this. I want this to knock people's socks off. Dont forget
+> about wall adornments. Banners and other small things to spruce up ambience. You got this"
+
 ## What it settles
 
 - **Overlook gets a detailed pass.** The large road that leads to the ocean gets ramps.
@@ -29,4 +32,5 @@ status: in force
 - **Jumping off the ledge and falling kills the player at once, in a funny way**: the camera stays put and shows the
   dead body falling.
 - **The NPCs find their way round the new social space**, and some work or play instruments.
+- **Walls are adorned**: banners and other small things that lift the place's ambience.
 - The rest is Claude's: [[Overlook's Hub as Claude Shapes It]].
