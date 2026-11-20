@@ -212,9 +212,14 @@ export class Stage {
     if (seconds <= 0) this.weatherNow = to;
   }
 
+  /** The weather's wind, metres a second east and south: the sea fight's ships sail in it. */
+  wind(): readonly [number, number] {
+    return this.weatherNow.wind;
+  }
+
   /** Where the weather's wind blows toward, radians clockwise from north: the sails fill and the rain slants by it. */
   windBearing(): number {
-    const [east, south] = this.weatherNow.wind;
+    const [east, south] = this.wind();
     return Math.atan2(east, -south);
   }
 

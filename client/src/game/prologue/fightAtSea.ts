@@ -143,13 +143,15 @@ export class StoryFight {
 
   /** Sets `ambushers` upon her `ship` on the land worker's open landmass at `now`, every captain's Sloop drawn with
    *  `hull`'s sails and the fight's balls and arcs with its marks. A ship coming on with `way` (m/s) comes under
-   *  sail; each ship's sails go on from the rig `rigs` hands her (hers, then each ambusher's), as last drawn. */
+   *  sail; each ship's sails go on from the rig `rigs` hands her (hers, then each ambusher's), as last drawn. Every
+   *  ship sails in the story's `wind` (m/s east and south), the storm drawn round her, never the world's. */
   static async begin(
     land: LandWorker,
     ship: { x: number; y: number; heading: number; way?: number },
     ambushers: readonly Ambusher[],
     hull: { sails: readonly SailCorners[]; marks: MarkDrawer },
     now: number,
+    wind: () => readonly [number, number],
     rigs: Rigs = { captains: [] },
   ): Promise<StoryFight> {
     // The rules take a heading in [0, 2π) alone; the sea's may have turned past either end.
@@ -164,7 +166,7 @@ export class StoryFight {
     const source: FightSource = {
       fightBegin: () => Promise.reject(new Error('the story begins its own fight')),
       fightStep: async (_id, orders, time, ticks) => {
-        const view = await land.fightStep(orders, time, ticks);
+        const view = await land.fightStep(orders, time, ticks, wind());
         heard.push(...view.events);
         answered.latest = view;
         return view;

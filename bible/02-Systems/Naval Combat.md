@@ -98,6 +98,8 @@ is one pure function (`sail_hurt`), which a browser predicting her runs too.
   of her way. Braced, she takes half the harm to hull and canvas, but her guns are silent and do not load. Unhurt for 15
   s, with no ship within 700 m that would take her, her hands mend her to half, and a wreck floats again past 15%.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
+- **The wind** every ship sails in is the world's where she is, read each minute of world time; a fight a story
+  plays is told its own instead, the weather drawn round it ([[Prologue]]), so a storm drawn is a storm sailed.
 
 ## The captain
 

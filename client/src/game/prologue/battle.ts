@@ -156,6 +156,7 @@ export class Battle implements Beat {
       this.ambushers,
       { sails: shipSails('sloop'), marks },
       now,
+      () => stage.wind(),
       rigs,
     ).then(
       (fight) => {
