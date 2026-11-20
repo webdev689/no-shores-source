@@ -238,7 +238,7 @@ export class AttackFeel {
         elapsed: action.elapsed * tick,
         strike: action.strike * tick,
         end: action.end * tick,
-        reach: this.rules.strokeReach(view.arms, action.stroke),
+        reach: this.rules.strokeReach(view.arms, action.stroke, view.side === 'players'),
         halfArc: this.rules.strokeArc(STROKE_DIRECTIONS.indexOf(way) + 1),
         aim: view.aim,
         way,

@@ -68,21 +68,27 @@ export async function openCards(
   return { forge: new Cards(maker, store, looks, colours, dyes), store, looks, hair };
 }
 
-/** Composed frames kept on the GPU before the least lately asked for are let go, to be composed again as asked. */
-const KEPT_CARDS = 4000;
-/** How many are kept once the least lately asked for are let go. */
-const KEPT_AFTER = 3000;
+/** Composed frames kept on the GPU before the least lately asked for are let go (`most`), to be composed again as
+ *  asked, and how many are kept once they are (`after`). */
+export interface KeptCards {
+  readonly most: number;
+  readonly after: number;
+}
+const KEPT: KeptCards = { most: 4000, after: 3000 };
 /** What a move carries in hand: the townsfolk's props, the instruments and a cast's spark. */
 const CARRIED = /^(prop_|lute$|flute$|recorder$|tambourine$|spark$)/;
 /** The move a cast plays, whose spark glows in its Art's element; the forge draws the spark as what hangs free, so it
  *  is named to count as the weapon. */
 const CAST = 'cast';
 const SPARK: ReadonlySet<string> = new Set(['spark']);
-/** The forge's views of a figure. */
+/** The forge's views of a figure, and those also drawn mirrored for the other side (`viewOf`). */
 const VIEWS = 5;
-/** Warming starts at most this many frames a tick, and none while this many are under way. */
+const MIRRORED: ReadonlySet<number> = new Set([1, 2, 3]);
+/** Warming starts at most this many frames a tick, and none while this many are under way; it looks at most at this
+ *  many queued frames a tick, passing over those kept already, so a dress queued again costs no frame its whole. */
 const WARM_A_TICK = 2;
 const WARM_UNDER_WAY = 6;
+const WARM_LOOKS = 32;
 
 /** Each figure's frames, composed from the forge's strips once and kept as textures; while a frame is being composed,
  *  the figure keeps showing the last one it had. */
@@ -90,22 +96,42 @@ export class Cards {
   private readonly kept = new Map<string, Card | null>();
   private readonly composing = new Set<string>();
   private readonly last = new Map<number, Card>();
-  private readonly queued: { dress: Dress; anim: string; view: number; frame: number; glow: GlowLook }[] = [];
+  private readonly queued: {
+    dress: Dress;
+    anim: string;
+    view: number;
+    frame: number;
+    flip: boolean;
+    glow: GlowLook;
+    owner: number | string;
+    key: string;
+  }[] = [];
   private readonly warmed = new Set<string>();
+  /** The dress each warmed frame was warmed for, so a warmed frame let go has its dress warmed again. */
+  private readonly warmedBy = new Map<string, string>();
   private readonly scene: CardMaker;
   private readonly store: ForgeStore;
   private readonly looks: ForgeLooks;
   private readonly colours: Colours;
   private readonly dyes: DyeTable;
+  private readonly limits: KeptCards;
   /** The last strip that failed to load, for the status line. */
   failure = '';
 
-  constructor(scene: CardMaker, store: ForgeStore, looks: ForgeLooks, colours: Colours, dyes: DyeTable) {
+  constructor(
+    scene: CardMaker,
+    store: ForgeStore,
+    looks: ForgeLooks,
+    colours: Colours,
+    dyes: DyeTable,
+    limits: KeptCards = KEPT,
+  ) {
     this.scene = scene;
     this.store = store;
     this.looks = looks;
     this.colours = colours;
     this.dyes = dyes;
+    this.limits = limits;
   }
 
   /** How many frames are being composed. */
@@ -163,10 +189,8 @@ export class Cards {
     return !!own?.anims[anim] && (!held || !!own.layers[held]?.includes(anim));
   }
 
-  /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A
-   *  move carries the props, instrument or spark the forge draws in it; a weapon glowing in `glow` its outline, and a
-   *  cast's spark recoloured to it. */
-  private ask(dress: Dress, anim: string, view: number, frame: number, flip = false, glow: GlowLook = 0): Card | null {
+  /** The figure a frame of `dress` draws, with what its move carries in hand, and the key it is kept by. */
+  private framed(dress: Dress, anim: string, view: number, frame: number, flip: boolean, glow: GlowLook) {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
     const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
@@ -174,7 +198,14 @@ export class Cards {
     // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
     const held = [dress.outfit.right, dress.outfit.left, ...carried];
     const figure = { ...dressed, gear: flip ? mirroredGear(gear, anim, layers, held) : gear };
-    const key = JSON.stringify([figure, dress.outfit.dyes, anim, view, frame, glow]);
+    return { figure, key: JSON.stringify([figure, dress.outfit.dyes, anim, view, frame, glow]) };
+  }
+
+  /** A figure's frame in a move and a view, composed now if it is not kept or under way; the frame once composed. A
+   *  move carries the props, instrument or spark the forge draws in it; a weapon glowing in `glow` its outline, and a
+   *  cast's spark recoloured to it. */
+  private ask(dress: Dress, anim: string, view: number, frame: number, flip = false, glow: GlowLook = 0): Card | null {
+    const { figure, key } = this.framed(dress, anim, view, frame, flip, glow);
     const kept = this.kept.get(key);
     if (kept !== undefined) {
       // Asked again, it is kept the longest of all.
@@ -220,19 +251,25 @@ export class Cards {
     return card ?? this.last.get(id) ?? null;
   }
 
-  /** Queues every view and frame of a dress's moves to be composed ahead of need, its weapon glowing in `glow`, once
-   *  for each dress; they replace whatever is still queued, as only the newest dress will be shown. */
-  warm(dress: Dress, anims: readonly string[], glow: GlowLook = 0): void {
-    const key = JSON.stringify([dress, anims, glow]);
+  /** Queues every view and frame of a dress's moves to be composed ahead of need, as drawn and as mirrored, its weapon
+   *  glowing in `glow`, once for each dress; they replace whatever is still queued for the same figure (`owner`), as
+   *  only its newest dress will be shown, and leave every other figure's queued. The moves (`anims`, the same for the
+   *  same dress) are asked for only when the dress is new: a figure warms each frame. */
+  warm(dress: Dress, anims: () => readonly string[], glow: GlowLook = 0, owner: number | string = 0): void {
+    const key = JSON.stringify([dress, glow]);
     if (this.warmed.has(key)) return;
     this.warmed.add(key);
-    this.queued.length = 0;
+    // A dress replaced before all of it was composed is warmed again if it is worn again.
+    for (const dropped of this.queued) if (dropped.owner === owner) this.warmed.delete(dropped.key);
+    const others = this.queued.filter((queued) => queued.owner !== owner);
+    this.queued.splice(0, this.queued.length, ...others);
     const kept = structuredClone(dress);
-    for (const anim of anims) {
+    for (const anim of anims()) {
       if (!this.looks.bodies[dress.body]?.anims[anim]) continue;
       for (let view = 0; view < VIEWS; view++)
         for (let frame = 0; frame < this.frames(dress.body, anim); frame++)
-          this.queued.push({ dress: kept, anim, view, frame, glow });
+          for (const flip of MIRRORED.has(view) ? [false, true] : [false])
+            this.queued.push({ dress: kept, anim, view, frame, flip, glow, owner, key });
     }
   }
 
@@ -241,15 +278,22 @@ export class Cards {
     this.last.delete(id);
   }
 
-  /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Past the most
-   *  kept, the cards least lately asked for are let go here, before a frame asks for any, so none handed out this frame
-   *  is destroyed under it; a figure whose last card goes shows nothing until its next is composed. */
+  /** Starts composing a few queued frames, while few are under way, so warming never holds up a frame. Warming fills
+   *  the kept frames up to the most and never past: only frames asked for go past it, and then the least lately asked
+   *  for are let go here, before a frame asks for any, so none handed out this frame is destroyed under it; a figure
+   *  whose last card goes shows nothing until its next is composed. A warmed frame let go has its dress warmed again,
+   *  into the room let go, the next time its figure warms. */
   pump(): void {
-    if (this.kept.size > KEPT_CARDS) {
+    if (this.kept.size > this.limits.most) {
       const gone = new Set<Card>();
       for (const [key, card] of this.kept) {
-        if (this.kept.size <= KEPT_AFTER) break;
+        if (this.kept.size <= this.limits.after) break;
         this.kept.delete(key);
+        const dress = this.warmedBy.get(key);
+        if (dress !== undefined) {
+          this.warmed.delete(dress);
+          this.warmedBy.delete(key);
+        }
         if (card) gone.add(card);
       }
       for (const [id, card] of this.last) if (gone.has(card)) this.last.delete(id);
@@ -258,10 +302,16 @@ export class Cards {
         card.glow?.texture.destroy();
       }
     }
-    for (let started = 0; started < WARM_A_TICK && this.composing.size < WARM_UNDER_WAY; started++) {
+    let started = 0;
+    for (let looked = 0; looked < WARM_LOOKS && started < WARM_A_TICK; looked++) {
+      if (this.composing.size >= WARM_UNDER_WAY || this.kept.size + this.composing.size >= this.limits.most) return;
       const next = this.queued.shift();
       if (!next) return;
-      this.ask(next.dress, next.anim, next.view, next.frame, false, next.glow);
+      const { key } = this.framed(next.dress, next.anim, next.view, next.frame, next.flip, next.glow);
+      if (this.kept.has(key) || this.composing.has(key)) continue;
+      this.warmedBy.set(key, next.key);
+      this.ask(next.dress, next.anim, next.view, next.frame, next.flip, next.glow);
+      started += 1;
     }
   }
 }

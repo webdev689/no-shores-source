@@ -9,8 +9,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - The scaffold: the TypeScript client on WebGPU, the Rust repo checks, CI, this vault.
 - The [[Pick List]] of DFO Online, and the owner's decisions on it ([[Decisions]]).
-- The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP and Context7 keys are
-  network secrets on the Default environment. Kit fixes are logged with task-observer for the co-dev; the log lives
+- The co-dev's toolkit, installed by each session's first step ([[Toolkit]]). Its SkillsMP key is a network secret
+  on the personal Default environment, with `SKILLSMP_API_KEY` set there to `proxy-injected`; Context7 runs on its
+  anonymous tier there. Kit fixes are logged with task-observer for the co-dev; the log lives
   in `~/toolkit-data`, which a container loses at its end. Its first review is done: claude-mem installs with its
   provider, Serena gets every language at the repo's root, and the rules template passes the kit's own checks.
 - The [[World Map]]'s layout file and its rules, and the [[World Editor]], published on GitHub Pages
@@ -180,6 +181,28 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
+  then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
+  the owner's yes to merge: foes show their level, patrol
+  beats, climb by the navmesh's links, spread out, answer at the fight's pace, chase a target walking away, fight as
+  a group (one blow at a target each 1.2 s beat, one going in, a line on their side, one flanker) and share
+  themselves out across players ([[Foes Spread Across the Players They Fight]]); melee swings a quarter faster and
+  strikes every foe in reach; the soft lock lets go past 70 degrees; a click during a swap swings as it ends; a
+  locked-on dodge rolls the way it goes; a slot's grid closes off hover; the inventory holds Aurem alone and its
+  stacks in Destiny's grid; a full Ammo box says Ammo full; and the display's vitals stand at the top left and its
+  Arts and weapons at the bottom left, after the owner's two pictures
+  ([[The Vitals Go Top Left and the Arts and Weapons Bottom Left]], Claude's choices in
+  [[The Display as Claude Lays It Out]]). The display was looked at headless in the Test Ground at three sizes and a
+  pixel ratio of 2, on the game's page at a patrol and in Overlook, and in every state on a page running the real
+  display; not yet on a real GPU, in a fight with the player's own swing, or beside the owner's pictures, which stayed
+  in the session that took them. Its open choices, each in #68's description: the group's numbers; the display's
+  numbers; a locked-on backstep turning round or not; the vitals' frames over a night sky; starving foes in a crowd
+  of sixteen; a lone crossbowman drawn long; a foe under a ledge; a flanker changing hands; ripostes not held to the
+  beat; patience at one over the cap; sixteen foes about 1.4 m apart; node rooms baking no boxes; no height cap on
+  climbs. `tools/install-flatc.sh` is missing from the rooms' deploy filter, a workflow edit for the owner. Its known
+  limits, left open with reasons in the description: a crowd of many dresses composed ahead only as room comes
+  (keeping more needs a GPU measurement), small objects made each frame, and the Test Ground's panels running the
+  room on while the pointer is free.
 - The enemy system's open choices (#61, merged): whether the sea's pirates become the Grey Tithe; the roster's names and
   Corvane, Claude's for now; which hulls the ranks of ships sail, and who builds them; whether presence shifts over
   time; whether project-final's crystal faction comes over ([[Open Questions]]). Claude's tuning is the owner's to
@@ -214,9 +237,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Sloop Is About 18 m Long]]).
 - #48, #50 and #51 are merged and deployed. Walking or sprinting that does not happen on demand was not reproduced
   playing alone; when it happens is the owner's to say.
-- Which cloud environment sessions run on. Two are named Default: the kit's SkillsMP and Context7 keys are on the
-  unrestricted one; the other holds none, so a session there fails check-tools' key lines and cannot reach the forge's
-  renders. A personal `overlook-source` environment allows only the renders' R2 host and GitHub Pages.
+- Which cloud environment sessions run on. The personal Default (unrestricted) holds the SkillsMP key, and
+  check-tools passes there with no FAIL. Whether a second Default and a personal `overlook-source` environment still
+  exist is unchecked: none is listed to a session on the personal Default. A Context7 key, if wanted, goes on the
+  environment the same way.
 - Names for the armour sets and weapons, to replace the forge's ([[Three Races]]).
 - #60's audit calls are made, under the owner's "All decisions are yours" ([[The Audit's Calls Are Claude's]]); the
   owner can change any. What stays theirs: the Workers plan (a password sign-in takes about 50 ms of CPU, the Free plan

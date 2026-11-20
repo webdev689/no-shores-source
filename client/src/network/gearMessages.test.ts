@@ -28,6 +28,9 @@ test('a players own gear the server wrote reads back whole, every column spelled
   );
   assert.equal(gear.xp, 190_000n);
   assert.equal(gear.resources[4], 3, 'three of the node’s resource');
+  // Each stock its own count there: Weapon and Armor Fragments, Weapon and Armor Essence, then Fruit of Dagon, the
+  // order the inventory names them in (STOCK_NAMES).
+  assert.deepEqual(gear.stocks, [11, 12, 13, 14, 2]);
   assert.equal(gear.items.length, 6);
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);

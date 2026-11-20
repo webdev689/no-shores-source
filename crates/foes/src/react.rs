@@ -1,19 +1,20 @@
 //! A foe's answers to blows at it, the fight Overlook adds to DFO's brain. Seeing a swing begin or a shot loosed at
-//! it, a foe waits its reaction time, then parries (pressing its guard so the parry window spans the landing),
-//! blocks, dodges aside, or takes it, by its shares and what its stamina and its own action allow. And the
-//! openings a fight gives it: the riposte a parry earned, the counter a perfect dodge earned, and a target spent in its
-//! own swing's follow-through, staggered, down or drawing a bow.
+//! it, a foe waits its reaction time (a swing's at the fight's pace), then parries (pressing its guard so the parry
+//! window spans the landing), blocks, dodges aside, or takes it, by its shares and what its stamina and its own action
+//! allow. And the openings a fight gives it: the riposte a parry earned, the counter a perfect dodge earned, and a
+//! target spent in its own swing's follow-through, staggered, down or drawing a bow.
 
 use crate::brain::Brain;
 use crate::dice::Purpose;
 use crate::senses::Here;
 use crate::steer::Ask;
 use crate::tuning::{BACK_TURNED, GUARD_AFTER, PRESS_LATEST, PRESS_LEAD, THREAT_MARGIN};
-use combat::arms::{OffHand, stroke_shape, weapon};
+use combat::arms::{OffHand, stroke_shape};
 use combat::fighter::{Action, Attack};
 use combat::shots::{foe_speed, shot_numbers};
 use combat::sight::{apart, bearing, off};
-use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, PARRY_WINDOW};
+use combat::strike::{reach_of, stroke_reach};
+use combat::tuning::{BODY_RADIUS, DODGE_STAMINA, parry_window};
 use combat::{CombatInput, FighterId, Stroke};
 use core::f64::consts::FRAC_PI_2;
 
@@ -91,7 +92,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let lands = match threat.lands {
         Some(lands) => {
             let Action::Attack(attack) = striker.action else { return None };
-            let reach = weapon(striker.arms.melee).reach + stroke_shape(attack.stroke).reach + BODY_RADIUS;
+            let reach = stroke_reach(striker.arms.melee, attack.stroke, striker.side.is_players());
             let aimed_here = striker.target == Some(here.me) || facing <= stroke_shape(attack.stroke).half_arc + 0.5;
             (distance <= reach + THREAT_MARGIN && aimed_here).then_some(lands)?
         }
@@ -148,7 +149,7 @@ fn weigh(here: &Here<'_, '_>, threat: &Threat) -> Option<Defence> {
     let press = match answer {
         // A block is a guard raised so its parry window has closed before the blow lands, or one already held; raised
         // any later it would parry, which this answer is not.
-        Answer::Guard if held || lands > tick + u64::from(PARRY_WINDOW) => tick,
+        Answer::Guard if held || lands > tick + u64::from(parry_window(fighter.side)) => tick,
         Answer::Parry | Answer::Dodge if press + PRESS_LATEST <= lands => press,
         _ => return None,
     };
@@ -165,8 +166,11 @@ fn defence(here: &Here<'_, '_>, answer: Answer, from: FighterId, press: u64, lan
 /// time has passed, then holding the guard, waiting to press it, or hopping aside.
 pub fn defend(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Ask> {
     let tick = here.tick();
+    let reaction = |threat: &Threat| {
+        if threat.lands.is_some() { here.numbers.swing_reaction() } else { here.numbers.reaction }
+    };
     if let Some(threat) = brain.reactions.threat
-        && tick >= threat.seen + here.numbers.reaction
+        && tick >= threat.seen + reaction(&threat)
     {
         brain.reactions.threat = None;
         let busy = brain.reactions.defence.is_some_and(|defence| defence.until >= tick);
@@ -219,7 +223,7 @@ pub fn opening(
     if !can_swing(&fighter.action) || fighter.stamina <= 0.0 || here.numbers.shooter {
         return None;
     }
-    let reach = weapon(fighter.arms.melee).reach + BODY_RADIUS;
+    let reach = reach_of(fighter) + BODY_RADIUS;
     let near =
         |id: FighterId| here.enemy(id).is_some_and(|other| apart(here.at(), [other.body.x, other.body.y]) <= reach);
     let riposte = fighter.riposte.map(|(foe, _)| foe).filter(|foe| near(*foe));
