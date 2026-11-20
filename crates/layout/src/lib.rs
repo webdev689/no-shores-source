@@ -186,7 +186,11 @@ pub fn plan(
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0xB41D, draws: 0, into: &mut seating };
     for path in &paths {
         for &banks in &path.crossings {
-            pieces_land::bridge(&mut kit, banks, path.tier.width());
+            if brief.heights {
+                pieces_land::stone_bridge(&mut kit, banks, path.tier.width());
+            } else {
+                pieces_land::bridge(&mut kit, banks, path.tier.width());
+            }
         }
     }
     dressing::dress(&mut kit, &areas, &paths, &moduled);
@@ -327,7 +331,7 @@ pub fn plan(
     }
     // Where a gorge out of the claim meets a river, a footbridge carries its way over.
     for &(from, way) in &exits {
-        pieces_land::footbridges(&mut kit, reach, carve::gorge(&field, from, way, 0.0), &ring);
+        pieces_land::footbridges(&mut kit, reach, (carve::gorge(&field, from, way, 0.0), brief.heights), &ring);
     }
     let gorges: Vec<Path> = exits
         .iter()

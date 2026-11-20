@@ -181,8 +181,11 @@ pub const fn is_rock(shape: Shape) -> bool {
 }
 
 /// How long a slice of a turned part runs at most, metres: a part turned off the world's axes is boxed in slices along
-/// its longer side, so each slice's box, square to the world round its turned corners, keeps close to the rock.
+/// its longer side, so each slice's box, square to the world round its turned corners, keeps close to the rock. A
+/// slice runs no longer than the part is thick either (0.5 m at the least), so a thin wall's slices, a parapet's, keep
+/// as close to it as a lump's do.
 const SLICE_M: f64 = 2.0;
+const THINNEST_SLICE_M: f64 = 0.5;
 
 /// What a body runs into of a rock: each part's box, square to the world round its turned corners (west, north,
 /// east, south, top, bottom, as the city's boxes); a part turned off the world's axes in slices along its longer side.
@@ -197,7 +200,9 @@ pub fn boxes(solid: &Solid) -> Vec<Box2> {
         .flat_map(|[west, north, bottom, east, south, top]| {
             let (long, along_x) =
                 if east - west >= south - north { (east - west, true) } else { (south - north, false) };
-            let count = if square { 1 } else { (long / SLICE_M).ceil().max(1.0) as usize };
+            let short = (east - west).min(south - north);
+            let slice = SLICE_M.min(short.max(THINNEST_SLICE_M));
+            let count = if square { 1 } else { (long / slice).ceil().max(1.0) as usize };
             (0..count).map(move |slice| {
                 let (from, to) = (slice as f64 / count as f64, (slice + 1) as f64 / count as f64);
                 if along_x {

@@ -353,7 +353,7 @@ step a body cannot take (`crates/room/tests/map_planned.rs`), its keep highest, 
 farm, its mill, meadows and coven by the river.
 
 With heights a shrine, a keep and every cavern stand handcrafted [[Modules]] in place of their blocks, set pieces
-and dressing.
+and dressing, and every river crossing a stone bridge in place of a timber one.
 
 ### Ledges
 

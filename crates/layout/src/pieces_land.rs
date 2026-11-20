@@ -202,18 +202,15 @@ const RAIL_OUT_M: f64 = 0.8;
 /// How far a deck reaches out along a lower bank to meet the land at the other's height, metres, at the most.
 const BANK_REACH_M: f64 = 12.0;
 
-/// A bridge over a river from bank to bank, `width` the way's walked width over it: a timber deck 0.3 m over the land
-/// at its higher end, 3 m past each bank and on out along a lower bank (2 m at a time) until its two ends' land stands
-/// within 0.15 m, so a body steps onto it at either end; on piles, with rails either side. Each is recorded, so it is
-/// moved as a whole when the land under it settles.
-pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
-    let [from, to] = banks;
-    let (east, south) = (to[0] - from[0], to[1] - from[1]);
-    let length = (east * east + south * south).sqrt();
+/// Where a bridge's deck runs over a river and at what height: 3 m past each bank and on out along a lower bank (2 m
+/// at a time) until its two ends' land stands within 0.15 m, 0.3 m over the land at its higher end; its ends, its way
+/// and its deck's height. None where the banks lie together.
+fn deck_over(kit: &Kit, [from, to]: [[f64; 2]; 2]) -> Option<([[f64; 2]; 2], [f64; 2], f64)> {
+    let length = distance(from, to);
     if length < 1.0 {
-        return;
+        return None;
     }
-    let way = [east / length, south / length];
+    let way = [(to[0] - from[0]) / length, (to[1] - from[1]) / length];
     let (mut back, mut on) = (3.0, 3.0);
     loop {
         let (low_back, low_on) = (kit.height(ahead(from, way, -back, 0.0)), kit.height(ahead(to, way, on, 0.0)));
@@ -226,7 +223,41 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
         }
     }
     let (start, end) = (ahead(from, way, -back, 0.0), ahead(to, way, on, 0.0));
-    let deck = kit.height(start).max(kit.height(end)) + 0.3;
+    Some(([start, end], way, kit.height(start).max(kit.height(end)) + 0.3))
+}
+
+/// A stone bridge (a module, tools/modules/bridge.py) over a river where the brief asks for heights: the shortest as
+/// long as the crossing's deck (`deck_over`), its deck at the deck's height, turned along the way and recorded as a
+/// bridge so it moves as a whole with the land; a timber one where none is long enough.
+pub fn stone_bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
+    let Some(([start, end], way, deck)) = deck_over(kit, banks) else { return };
+    let span = distance(start, end);
+    let found = STONE_BRIDGES
+        .iter()
+        .find(|&&length| f64::from(length) >= span)
+        .and_then(|length| city::modules::number_of(&format!("stone-bridge-{length}")));
+    let Some(number) = found else { return bridge(kit, banks, width) };
+    let module = &city::modules::all()[number as usize];
+    let over = module.sockets.iter().find(|socket| socket.name == "far").map_or(0.0, |socket| socket.at[2]);
+    let middle = [(start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0];
+    // The module's far end lies along its own -y: turned so it lies along the way.
+    let turn = libm::atan2(way[0], -way[1]);
+    for solid in city::modules::solids(number, [middle[0], middle[1], deck - over], turn) {
+        kit.solid(solid);
+    }
+    let half = module.size[0] / 2.0;
+    kit.into.bridges.push([start[0], start[1], end[0], end[1], half]);
+}
+
+/// The stone bridges' lengths of deck, metres, as baked.
+const STONE_BRIDGES: [u32; 5] = [16, 22, 28, 34, 40];
+
+/// A bridge over a river from bank to bank, `width` the way's walked width over it: a timber deck 0.3 m over the land
+/// at its higher end, 3 m past each bank and on out along a lower bank (2 m at a time) until its two ends' land stands
+/// within 0.15 m, so a body steps onto it at either end; on piles, with rails either side. Each is recorded, so it is
+/// moved as a whole when the land under it settles.
+pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
+    let Some(([start, end], way, deck)) = deck_over(kit, banks) else { return };
     let span = distance(start, end);
     let middle = [(start[0] + end[0]) / 2.0, (start[1] + end[1]) / 2.0];
     let rail_out = width / 2.0 + RAIL_OUT_M;
@@ -258,8 +289,8 @@ pub fn bridge(kit: &mut Kit, banks: [[f64; 2]; 2], width: f64) {
 }
 
 /// A footbridge wherever a gorge out of a claim (its capsule) meets a river on `field` inside the section (`ring`),
-/// along the gorge.
-pub fn footbridges(kit: &mut Kit, field: &Field, [x1, y1, x2, y2, _]: [f64; 5], ring: &[[f64; 2]]) {
+/// along the gorge: of stone (`stone_bridge`) where the brief asks for heights (`stone`), else of timber.
+pub fn footbridges(kit: &mut Kit, field: &Field, ([x1, y1, x2, y2, _], stone): ([f64; 5], bool), ring: &[[f64; 2]]) {
     let steps = (distance([x1, y1], [x2, y2]) / 2.0).ceil() as usize;
     let along = |step: usize| {
         let share = step as f64 / steps.max(1) as f64;
@@ -276,7 +307,8 @@ pub fn footbridges(kit: &mut Kit, field: &Field, [x1, y1, x2, y2, _]: [f64; 5], 
             (true, false, Some(bank)) => {
                 let banks = [along(bank), along(step)];
                 if banks.iter().all(|at| ring_holds(ring, at[0], at[1])) {
-                    bridge(kit, banks, crate::paths::Tier::Footpath.width());
+                    let width = crate::paths::Tier::Footpath.width();
+                    if stone { stone_bridge(kit, banks, width) } else { bridge(kit, banks, width) }
                 }
                 entered = None;
             }

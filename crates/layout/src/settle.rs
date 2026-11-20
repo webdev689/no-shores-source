@@ -44,11 +44,11 @@ fn follow_ground(seating: &mut Seating, height: &dyn Fn(f64, f64) -> f64, was: &
             at[0] >= pad.bounds[0] && at[0] <= pad.bounds[2] && at[1] >= pad.bounds[1] && at[1] <= pad.bounds[3]
         })
     };
-    // A bridge's timbers move together, by as far as the land under its deck's higher end has moved, so its deck
-    // never steps where one length stood on a bank and the next over the water.
+    // A bridge's timbers (or its stone module) move together, by as far as the land under its deck's higher end has
+    // moved, so its deck never steps where one length stood on a bank and the next over the water.
     let bridges = seating.bridges.clone();
     let bridge_of = |solid: &city::solids::Solid| {
-        (solid.material == city::solids::Material::Timber)
+        (solid.material == city::solids::Material::Timber || matches!(solid.shape, city::solids::Shape::Module { .. }))
             .then(|| {
                 bridges.iter().position(|&[x1, y1, x2, y2, half]| {
                     crate::paths::off_line([solid.at[0], solid.at[1]], [x1, y1], [x2, y2]) <= half

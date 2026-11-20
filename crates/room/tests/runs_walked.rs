@@ -311,7 +311,8 @@ fn every_bridge_is_walked_over_both_ways() {
             }
         }
     }
-    assert!(bridges >= 2, "a path and a gorge cross rivers: {bridges} bridges");
+    // A crossing where the brief asks for heights is of stone, walked in modules_walked.rs; the rest are of timber.
+    assert!(bridges >= 1, "a timber bridge crosses a river: {bridges} bridges");
     assert!(failed.is_empty(), "{} of {bridges} bridges: {failed:#?}", failed.len());
 }
 

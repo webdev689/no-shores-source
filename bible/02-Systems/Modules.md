@@ -14,6 +14,8 @@ code:
   - crates/layout/src/modules.rs#hub
   - crates/layout/src/ledges.rs#cut
   - tools/modules/stairs.py#builder
+  - tools/modules/bridge.py#builder
+  - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
 ---
 # Modules
@@ -60,6 +62,10 @@ are written with paving last, since the first group carries the parts and paving
   2 m of rise. Steps of 0.25 m by 0.42 m climb to a landing at the top, with a landing and a brazier every 6 m of rise
   between, and rough rock cheeks either side stand a metre over the steps. An arched gateway set into the cheeks
   stands at the foot.
+- **The stone bridges** (`stone-bridge-16` to `stone-bridge-40`, a river crossing's): a deck 6.2 m wide paved
+  between parapets, 5.5 m over the bridge's foot, on one, two or three round arches cut out of its stone body, its
+  piers' cutwaters pointing into the water and its abutments solid at either end. Its parts are the deck, the
+  parapets, the piers and the abutments, so the water and a swimmer pass under the arches.
 
 ## Baking and publishing
 
@@ -91,6 +97,10 @@ does not make the committed manifest, and publishes with the repository's Cloudf
   its entry turned to the tunnel. The area's basin takes no platform of its own, since the module brings its
   platforms, and its ways arrive 2 m past its first socket: the citadel's ramp, the Old Stones' north flight.
   Every ledge ([[Layouts]], "Ledges") stands the cliff stair of the baked rise nearest its climb, stretched to it.
+  Every river crossing, a way's or a gate's gorge's, stands the shortest stone bridge as long as its deck would run
+  (timber where none is), its deck where the timber's would be, turned along the way, and moving with the land as
+  a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off
+  the way they line.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
   (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
@@ -98,7 +108,7 @@ does not make the committed manifest, and publishes with the repository's Cloudf
 The Gullwing Vale stands the Old Stones, the citadel at Valeguard and the chamber in the Hollow Coven's cavern, each
 walked by `crates/room/tests/modules_walked.rs`: up the Old Stones' flights to the upper tier; up the citadel's ramp,
 through its gate and up to its ward and its wall-walk; in from the tunnel and up the chamber's steps onto its shelf;
-up every ledge's stair from the low floor onto the high one.
+up every ledge's stair from the low floor onto the high one; over every stone bridge both ways.
 
 ## Limits
 

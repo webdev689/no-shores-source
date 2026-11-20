@@ -171,3 +171,42 @@ fn a_body_climbs_every_ledges_stair_from_the_low_place_onto_the_high_one() {
         );
     }
 }
+
+#[test]
+fn a_body_walks_over_every_stone_bridge_both_ways() {
+    let vale = vale();
+    let bridges: Vec<&Solid> = vale
+        .solids
+        .iter()
+        .filter(|solid| match solid.shape {
+            Shape::Module { module, group: 0 } => {
+                city::modules::all()[module as usize].name.starts_with("stone-bridge")
+            }
+            _ => false,
+        })
+        .collect();
+    assert!(!bridges.is_empty(), "the Vale's ways cross its river on stone");
+    for bridge in bridges {
+        let Shape::Module { module, .. } = bridge.shape else { continue };
+        let sockets = &city::modules::all()[module as usize].sockets;
+        let end = |name: &str| sockets.iter().find(|socket| socket.name == name).expect("the bridge's end");
+        let [near, far] = [end("near"), end("far")];
+        let past = |socket: &city::modules::Socket, out: f64| {
+            at(bridge, [socket.at[0] + socket.facing[0] * out, socket.at[1] + socket.facing[1] * out])
+        };
+        for (from, to) in [(near, far), (far, near)] {
+            let onto = past(to, 3.0);
+            let (body, passed) = walked(&vale, past(from, 3.0), &[past(from, -1.0), past(to, -1.0), onto], 40.0);
+            let land = vale.floor.height_at(onto[0], onto[1]);
+            assert!(
+                passed == 3 && (body.z - land).abs() < 0.6,
+                "over the bridge at {:.0},{:.0} from its {} end the body stops {:.1} m short, {:.2} m off the land",
+                bridge.at[0],
+                bridge.at[1],
+                from.name,
+                layout::field::distance([body.x, body.y], onto),
+                body.z - land
+            );
+        }
+    }
+}
