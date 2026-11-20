@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { activitiesAt, gatesAt } from './activities.ts';
-import { entranceCardOf, levelWords, type Named, resetWords, thisWeekOf } from './activityWords.ts';
+import { entranceCardOf, levelWords, type Named, thisWeekOf } from './activityWords.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -19,24 +19,15 @@ const record = { day: 20_778, cleared: [1], week: 2_968, elite: true, abyss: fal
 const burn = { name: 'Burn (Shadow)', words: 'Shadow spells deal double damage. Wearing Shadow, you take double.' };
 const revives = '5 revives for the company. A wipe starts the run over.';
 
-test('a reset’s time reads in minutes, then hours and minutes, then days and hours from two days', () => {
-  assert.deepEqual([1, 59, 60, 1_440, 2_879, 2_880, 5_760, 10_080].map(resetWords), [
-    'Resets in 1m',
-    'Resets in 59m',
-    'Resets in 1h 0m',
-    'Resets in 24h 0m',
-    'Resets in 47h 59m',
-    'Resets in 2d 0h',
-    'Resets in 4d 0h',
-    'Resets in 7d 0h',
-  ]);
+test('an island’s band reads as its levels, or one level where it is fixed', () => {
   assert.deepEqual([levelWords([3, 6]), levelWords([26, 26])], ['Levels 3 to 6', 'Level 26']);
 });
 
 test('This Week says what is on, what each pays, and what this character has taken or may not enter', async () => {
   const drawn = activitiesAt(await module, FRIDAY_NINE);
   const board = thisWeekOf(drawn, gatesAt(await module, 26, true), record, named);
-  assert.deepEqual([board.today.resets, board.week.resets], ['Resets in 24h 0m', 'Resets in 4d 0h']);
+  const ends = [(FRIDAY_NINE + 1_440) * 60_000, (FRIDAY_NINE + 5_760) * 60_000];
+  assert.deepEqual([board.today.day, board.today.endsAt, board.week.endsAt], [20_778, ...ends], 'when each resets');
   assert.equal(board.today.pays, 'Once a day at each tier, on any island: a Vestige and a richer cache.');
   assert.deepEqual(board.today.modifier, burn);
   assert.deepEqual(

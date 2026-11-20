@@ -11,6 +11,7 @@ code:
   - crates/gear/src/objectives.rs#saw
   - crates/gear/src/bounties.rs#board
   - crates/gear/src/quests.rs#step_at
+  - client/src/game/journalPage.ts#startJournal
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/abyss.rs#start_over
@@ -239,23 +240,25 @@ One engine counts both, since the owner's side quests and the board's bounties a
   carried forward (`Story::merged`, which never goes back), and a new one is judged as it starts. The reasons read
   "This place opens after the prologue.", "This dungeon opens at level 24." (or 28), "Elite seas open at level 10."
   and "Abyss seas open at level 20.". A sea island's dungeon is gated by its seas alone. The screens show what is
-  shut and why: This Week, an entrance's card and the voyage's card. The page reads every gate's reason for a level
+  shut and why: the Journal's timers, an entrance's card and the voyage's card. The page reads every gate's reason for a level
   from the rules (`room_gates`), so it never judges a gate itself.
 
 ## The screen
 
-- **This Week** is the menu's Journal ([[Interface]], "The menu"): the dungeon of the day and its pay, the day's
-  modifier with what it does, each tier's seas taken or not today, each island's dungeon of the day with its levels,
-  then the week's two with their levels, rules, modifiers and pay, taken or not, and the Abyss boon while held, each
-  under the time to its reset. A shut line says why in its gate's words. "Taken" is the character's record as their
-  gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken today.
-  Then the Bounties under the day's reset: each of the day's six as the gear last carried it, "Not taken", its count,
-  "Done. Turn it in at the bounty board." or "Turned in", with no press, or before the prologue the board's shut line
-  alone. Gear of another day than the page's (at sea, the last land's gear is kept through the reset) shows no board,
-  only "Six a day, from the board in Overlook’s plaza.", as before any room sent one. Quests stand under it marked
-  Later.
-- **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), where each
-  bounty is taken and turned in.
+- **The Journal** is the menu's ([[Interface]], "The menu"). Its timers hold the dungeon of the day and its pay, the
+  day's modifier with what it does, each tier's seas taken or not today, each island's dungeon of the day with its
+  levels, then the week's two with their levels, rules, modifiers and pay, taken or not, and the Abyss boon while
+  held, each counting to its reset. A shut line says why in its gate's words. "Taken" is the character's record as
+  their gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken
+  today. Its right column holds the day's bounties taken, as the gear last carried them, as tiles with no press, or
+  before the prologue the board's shut line alone. Gear of another day than the page's (at sea, the last land's gear
+  is kept through the reset) shows no bounty, only "Six a day, from the board in Overlook’s plaza.", as before any
+  room sent one. Its middle holds the quests held.
+- **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), after
+  Destiny's Bounty Tracker: "Bounties for XP and Aurem, posted each day.", the day's six as tiles in a row a kind
+  (land, sea, dungeons), a bar counting to the next board, and the chosen tile's card (its name, its kind, its words,
+  its count, what it pays, and its press, Take or Turn in, with E). Arrows move between tiles; E or a click takes or
+  turns one in. Before the prologue the tiles are grey and the card says why.
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
   its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's
   dungeon carries the day's modifier at Elite and Abyss seas while it is its island's dungeon of the day. An Elite
@@ -292,4 +295,4 @@ rather than one, with three rewards a day across them; Elite and Abyss seas open
 with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a minute, Find
 a Company's bands of ten levels, and a group found sharing one run without becoming a company; five shared revives,
 restored by a wipe; the modifier set; the rewards above and the quarter-more boon; six bounties a day paying XP and
-Aurem; one engine for quests and bounties; and the screen's names, This Week and Find a Company.
+Aurem; one engine for quests and bounties; and the screen's names, Find a Company and the Journal's Timers.

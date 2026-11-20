@@ -1,4 +1,4 @@
-// What This Week and an entrance's card say, from what the rules say is on (`activitiesAt`), why the gates shut
+// What the Journal's timers and an entrance's card say, from what the rules say is on (`activitiesAt`), why the gates shut
 // (`gatesAt`) and the character's record as their gear last carried it. Nothing here judges a rule: it only words
 // what the rules gave, and reads "taken" against the drawn day and week.
 import { type Activities, type Gates, type ModifierShown, eliteRun } from './activities.ts';
@@ -18,13 +18,6 @@ const ELITE_PAYS = 'Once a week: a Legendary Vestige and Essence.';
 const ABYSS_PAYS = 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.';
 const NEVER_MATCHED = 'Never matched. Bring your company.';
 const BOON = 'Abyss boon: 25% more XP until the week turns.';
-
-/** How long until a reset: minutes; then hours and minutes; then, from two days, days and hours. */
-export function resetWords(minutes: number): string {
-  if (minutes < 60) return `Resets in ${minutes}m`;
-  if (minutes < 2 * 1_440) return `Resets in ${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-  return `Resets in ${Math.floor(minutes / 1_440)}d ${Math.floor((minutes % 1_440) / 60)}h`;
-}
 
 /** An island's band, or a fixed level: "Levels 3 to 6", "Level 26". */
 export function levelWords([low, high]: readonly [number, number]): string {
@@ -47,23 +40,22 @@ export interface WeekDungeon extends WeekRow {
   readonly pays: string;
 }
 
-/** This Week's Bounties: each of the day's six as a line, or the board's shut line alone. */
-export interface WeekBounties {
-  readonly rows: readonly WeekRow[];
-  readonly shut: string | null;
-}
-
 export interface ThisWeek {
   readonly today: {
-    readonly resets: string;
+    /** The clock's day it words, as the gear's day counts it. */
+    readonly day: number;
+    /** When it resets, in Unix milliseconds. */
+    readonly endsAt: number;
     readonly pays: string;
     readonly modifier: ModifierShown | null;
     readonly tiers: readonly WeekRow[];
     readonly dungeons: readonly WeekRow[];
   };
-  readonly week: { readonly resets: string; readonly dungeons: readonly WeekDungeon[]; readonly boon: string | null };
-  /** The day's bounties as the player's gear last carried them; null before a room sent a board. */
-  readonly bounties: WeekBounties | null;
+  readonly week: {
+    readonly endsAt: number;
+    readonly dungeons: readonly WeekDungeon[];
+    readonly boon: string | null;
+  };
 }
 
 /** The names the page knows places by: a patrol's dungeon's, and a node's. */
@@ -97,14 +89,13 @@ function stateOf(shut: string | null, record: ActivityRecord | null, taken: bool
 /** An island's band at a tier, as its foes are raised; none for a continent with no island. */
 const bandAt = (drawn: Activities, continent: string, tier: number) => drawn.bands[continent]?.[tier] ?? null;
 
-/** What This Week says: the day's dungeons, its modifier and each tier taken or not, then the week's two, and the
- *  day's bounties as `bounties` words them. */
+/** What the Journal's timers say: the day's dungeons, its modifier and each tier taken or not, then the week's two,
+ *  each with when it resets. */
 export function thisWeekOf(
   drawn: Activities,
   gates: Gates | null,
   record: ActivityRecord | null,
   named: Named,
-  bounties: WeekBounties | null = null,
 ): ThisWeek {
   const tiers = SEAS.map((name, tier) => {
     const shut = gates?.day[tier] ?? null;
@@ -131,14 +122,18 @@ export function thisWeekOf(
   const boon = record?.week === drawn.week && record.boon ? BOON : null;
   return {
     today: {
-      resets: resetWords(drawn.untilDay),
+      day: drawn.day,
+      endsAt: (drawn.minute + drawn.untilDay) * 60_000,
       pays: DAY_PAYS,
       modifier: drawn.modifiers[drawn.dayModifier] ?? null,
       tiers,
       dungeons,
     },
-    week: { resets: resetWords(drawn.untilWeek), dungeons: [weekly('elite'), weekly('abyss')], boon },
-    bounties,
+    week: {
+      endsAt: (drawn.minute + drawn.untilWeek) * 60_000,
+      dungeons: [weekly('elite'), weekly('abyss')],
+      boon,
+    },
   };
 }
 

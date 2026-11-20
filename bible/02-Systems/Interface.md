@@ -9,6 +9,11 @@ code:
   - client/src/plus/tones.ts#TONES
   - client/src/plus/tones.ts#FILLS
   - client/src/plus/emblems.ts#emblemUrl
+  - client/src/game/journalPage.ts#startJournal
+  - client/src/game/journalTimers.ts#timersPanel
+  - client/src/game/journalWords.ts#questCardsOf
+  - client/src/plus/journalArt.ts#bannerUrl
+  - client/src/game/bountyTiles.ts#bountyTile
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
@@ -292,7 +297,9 @@ marked Later, a page saying what it will hold. The chosen tab is a lit brass pre
 between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
-username or Discord and hollow for a guest's; pressed, it opens Settings. Under them, the whole width of the menu,
+username or Discord and hollow for a guest's; pressed, it opens Settings. On the Journal its place is DFO's timer
+hourglass, which turns half over in four steps under the pointer; pressed, or T, it drops the timers from the
+Journal's top ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). Under them, the whole width of the menu,
 stands the player's banner
 ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to the banner's width at three times its
 cells, so it is never cut off, their name, level, Prestige and Defense over it, and their Aurem at its end, left blank
@@ -394,13 +401,25 @@ never while a press is held. Each press is an ask the room answers.
   toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
   loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
-- **Journal** is This Week ([[Activities]]): under "Today", its reset's time in a chip, the dungeon of the day's
-  pay, the day's modifier at Elite and Abyss seas with what it does, each tier's seas taken or not today (or why its
-  gate shuts), and each island's dungeon of the day with its levels; under "The week", its reset's time, the Elite
-  and the Abyss Dungeon of the week with their levels, rules, modifiers and pay, taken or not or shut, and the Abyss
-  boon while it is held. Breaches, Bounties and Quests follow, marked Later. It is read from the rules and from the
-  last word of the character a room sent, so it reads the same at sea; before any word it shows no taken and no
-  shut. It is built again only when the minute or that word changes.
+- **Journal** ([[Activities]], [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]):
+  - **The quests**: cards six a page in two columns (one under 900 px), story missions first, then side quests, then
+    kinds to come, with Page n / m, how many are held, and arrows. Each card shows its banner (a story mission's
+    swallowtail in blood and brass; a side quest's stone shield, which a kind to come wears too), its name, a line of
+    its tale in italics and its step's number and name, and is marked Done once every step is. A name or tale too
+    long for its card is cut short there and kept whole in its title. With none written, it says so.
+  - **The bounties**: six slots in two columns of three under "Bounties", with how many are taken. A tile is marked
+    by where it counts (a peak, waves, an arched door) on its kind's ground, with no words on it: a gauge of its count
+    while held, a gilded edge once done, its mark dimmed with a check once turned in. A slot not taken is an empty
+    frame. The hovered, focused or pressed tile's card stands under the grid: its name, its kind, its words, its
+    count and what it pays. Bounties are taken and turned in at the board alone.
+  - **The timers**: under Today, the daily reset, the dungeon of the day with its pay, the day's modifier, each
+    tier's seas taken or shut, and each island's dungeon with its levels; then the bounties' end. Under This week,
+    the weekly reset, the Elite and the Abyss Dungeon of the week with their levels, rules, modifiers and pay, taken
+    or shut; and the Abyss boon while held. Under Later, Breaches. Each reset counts down to its moment in the
+    player's own time; a row under way says Now over its countdown and when it ends, rewritten as each second turns.
+    Escape, Close or the hourglass takes the panel up, and it goes up as the Journal is left; the page under it
+    rests.
+  - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
 - **Ship.** The Sloop's details, as Manage shows them at sea: her hull, canvas, guns, loads and measure; her voyage
   while she is at sea; her cargo and crew marked Later.
 - **Social** is the Roster, after Destiny 1's ([[The Roster Follows Destiny 1, With Blocking]], [[Accounts]], "The
@@ -470,7 +489,7 @@ dungeon's name in its header; under it the run's tier and level ("Elite seas · 
 Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss Dungeon of
 the week's "Never matched. Bring your company."), its modifiers with what each does, and what it pays, "Taken today"
 or "Taken this week" once this character's record holds it; why it is shut, in its gate's words, if it is; and Enter
-(E) and Close (Esc) on its footer, Enter resting while it is shut. It reads as This Week does ([[Activities]]),
+(E) and Close (Esc) on its footer, Enter resting while it is shut. It reads as the Journal's timers do ([[Activities]]),
 built again as the minute or the character's word changes. While it stands the world is dimmed, the pointer is free
 and no key of the game's or the menu's acts behind it. It goes if the player falls, goes into a dungeon or leaves
 the place.

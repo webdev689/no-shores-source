@@ -70,3 +70,36 @@ test('Escape lets go of a hold under way, even where the page shown takes the st
   await new Promise((done) => setTimeout(done, 30));
   assert.equal(bought, false, 'the step back let go of the hold');
 });
+
+test('on the Journal the hourglass stands in the account mark’s place, and its timers go up as the menu leaves it', () => {
+  const { root, window } = fakePage();
+  Object.assign(globalThis, {
+    ResizeObserver: class {
+      observe() {}
+    },
+    setInterval: () => 0,
+  });
+  startGearWindow(
+    root as never,
+    null,
+    () => null,
+    () => null,
+    () => null,
+    () => false,
+    { week: () => null, kept: () => null },
+  );
+  const mark = root.all().find((node) => node.classList.contains('gear-profile'));
+  const glass = root.all().find((node) => node.getAttribute('aria-label') === 'Timers');
+  const timers = () => root.all().find((node) => node.dataset['key'] === 'timers');
+  const openAt = (view: string) => window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view } }));
+  openAt('journal');
+  assert.deepEqual([mark?.hidden, glass?.hidden], [true, false]);
+  const key = new FakeEvent('keydown', { key: 't' });
+  key.target = root;
+  window.dispatchEvent(key);
+  assert.equal(timers()?.hidden, false);
+  openAt('character');
+  assert.deepEqual([mark?.hidden, glass?.hidden], [false, true]);
+  openAt('journal');
+  assert.equal(timers()?.hidden, true, 'gone up as the Journal was left');
+});

@@ -1,7 +1,6 @@
-/* The activities' screens (client/src/game/activityScreens.ts): This Week in the menu's Journal, as the Ship page is
-   laid, the bounty board's screen laid as This Week is (bountyBoard.ts), and the card at a dungeon's entrance, the
-   menu's window narrowed to the run it opens; the gear screen's sheet gives the words, chips, headings, header and
-   footer they share. */
+/* The activities' screens (client/src/game/activityScreens.ts): the lines of the Journal's timers, and the card at a
+   dungeon's entrance, the menu's window narrowed to the run it opens; the gear screen's sheet gives the words, chips,
+   headings, header and footer they share. */
 
 .gear-week {
   max-width: 640px;

@@ -31,8 +31,8 @@ import { itemPage } from './itemPage.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
-import { laterPage, settingsPage, shipPage, thisWeekPage } from './menuPages.ts';
-import type { ThisWeek } from './activityWords.ts';
+import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { type JournalSource, startJournal } from './journalPage.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { rosterPage } from './rosterTab.ts';
 import { BOARD_TITLE, boardPage } from './bountyBoard.ts';
@@ -74,7 +74,8 @@ const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
     ['Right-click / X', 'Details'],
     [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
-  board: [['Click', 'Take or turn in']],
+  board: [['Click / E', 'Take or turn in']],
+  journal: [['T', 'Timers']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],
@@ -122,7 +123,7 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
-  week: () => ThisWeek | null = () => null,
+  source: JournalSource | null = null,
 ): void {
   const screen = make('div', '', `gear-screen ${ROLES.window}`);
   screen.hidden = true;
@@ -140,10 +141,10 @@ export function startGearWindow(
   const who = make('div', '', 'gear-who');
   const purse = make('div', '', 'gear-purse');
   banner.append(who, purse);
-  // The top line: the tabs, or a station's name, and the account's mark at its right, as DFO's stands in its corner.
-  const mark = accountMark(() => open('settings'));
+  // The top line: the tabs, or a station's name, and at its right the account's mark, or on the Journal DFO's hourglass.
+  const [mark, journal] = [accountMark(() => open('settings')), startJournal(source)];
   const top = make('div', '', 'gear-top');
-  top.append(tabRow, title, mark.node);
+  top.append(tabRow, title, mark.node, journal.hourglass);
   header.append(top, banner);
   // The room's answer to the last press, in the footer beside what the presses do.
   const answer = make('div', '', 'gear-answer');
@@ -348,8 +349,9 @@ export function startGearWindow(
 
   /** A page that needs no gear, built again only when what it shows changes. */
   const plainPage = (shown: View): HTMLElement => {
-    const [panel, board] = [shown === 'ship' ? ship() : null, shown === 'journal' ? week() : null];
-    const key = JSON.stringify([shown, panel, board]);
+    if (shown === 'journal') return journal.page();
+    const panel = shown === 'ship' ? ship() : null;
+    const key = JSON.stringify([shown, panel]);
     if (plain?.key === key) return plain.page;
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     const page =
@@ -357,11 +359,9 @@ export function startGearWindow(
         ? laterPage(TAB_PRESSES[shown as Tab].label, later)
         : shown === 'ship'
           ? shipPage(panel)
-          : shown === 'journal'
-            ? thisWeekPage(board)
-            : shown === 'social'
-              ? rosterPage(link, travel)
-              : settingsPage(link);
+          : shown === 'social'
+            ? rosterPage(link, travel)
+            : settingsPage(link);
     plain = { key, page };
     return page;
   };
@@ -379,8 +379,8 @@ export function startGearWindow(
         // One tab is a stop for Tab; the arrows move between them.
         node.tabIndex = chosen || (station !== null && node === tabs[0]) ? 0 : -1;
       }
-      tabRow.hidden = station !== null;
-      title.hidden = station === null;
+      [tabRow.hidden, title.hidden] = [station !== null, station === null];
+      [mark.node.hidden, journal.hourglass.hidden] = [view === 'journal', view !== 'journal'];
       title.textContent = station ?? '';
       body.setAttribute('aria-labelledby', isTab(view) ? `gear-tab-${view}` : 'gear-station-name');
     }
@@ -514,7 +514,7 @@ export function startGearWindow(
         : isKeeperView(view)
           ? npcPage(context, view, now.forge, redraw)
           : view === 'board'
-            ? boardPage(context)
+            ? boardPage(context, () => source?.week()?.today.endsAt ?? null)
             : inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()));
     const inspected = gear.items.find((each) => each.id === inspecting);
     if (!inspected) inspecting = null;

@@ -1,12 +1,10 @@
-// The menu's pages that need no gear: Journal, This Week now with the day's bounties and its quests still to come;
-// Guild, still to come and saying so; the Ship, the Sloop's details as Manage shows them; and Settings, which keeps the
-// account and the volumes of the interface and the world.
+// The menu's pages that need no gear: Guild, still to come and saying so; the Ship, the Sloop's details as Manage
+// shows them; and Settings, which keeps the account and the volumes of the interface and the world.
 
 import { make } from '../editor/dom.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import { ROLES } from '../plus/kit.ts';
 import { accountPanel } from './accountTab.ts';
-import type { ThisWeek, WeekDungeon, WeekRow } from './activityWords.ts';
 import { pressOf } from './gearDom.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { soundCredits } from '../soundSamples.ts';
@@ -28,89 +26,6 @@ export function laterPage(name: string, words: string): HTMLElement {
   const head = make('h2', '', 'gear-later-name');
   head.append(make('span', name), make('span', 'Later', `gear-chip ${ROLES.chip}`));
   page.append(head, make('p', words, 'gear-hint'));
-  return page;
-}
-
-/** A rule heading: its name, then a chip of `chip`'s words. */
-function headed(name: string, chip: string): HTMLElement {
-  const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
-  heading.append(make('span', name), make('span', chip, `gear-chip ${ROLES.chip}`));
-  return heading;
-}
-
-/** A line of This Week: its name, what is said of it, and this character's word on it. */
-function weekRow(row: WeekRow): HTMLElement {
-  const line = make('div', '', `gear-week-row${row.shut ? ' gear-week-shut' : ''}`);
-  const named = make('span', '', 'gear-week-what');
-  named.append(make('b', row.name));
-  if (row.about) named.append(make('span', row.about, 'gear-hint'));
-  line.append(named);
-  if (row.state !== null) line.append(make('span', row.state, 'gear-week-state'));
-  return line;
-}
-
-/** One of the week's two: its line, then its rules, its modifiers and its pay. */
-function weekDungeon(dungeon: WeekDungeon): HTMLElement {
-  const part = make('div', '', 'gear-week-dungeon');
-  part.append(weekRow(dungeon));
-  for (const rule of dungeon.rules) part.append(make('p', rule, 'gear-week-rule'));
-  for (const modifier of dungeon.modifiers) part.append(modifierLine(modifier.name, modifier.words));
-  part.append(make('p', dungeon.pays, 'gear-hint'));
-  return part;
-}
-
-/** A modifier's name and what it does. */
-function modifierLine(name: string, words: string): HTMLElement {
-  const line = make('p', '', 'gear-week-modifier');
-  line.append(make('b', name), make('span', words, 'gear-hint'));
-  return line;
-}
-
-/** A part still to come under its rule heading marked Later, with one line on what it will hold. */
-function laterPart(name: string, words: string | null): HTMLElement {
-  const part = make('section', '', 'gear-week-part');
-  part.append(headed(name, 'Later'));
-  if (words) part.append(make('p', words, 'gear-hint'));
-  return part;
-}
-
-/** The Journal: This Week's day and week, then Breaches, Bounties and Quests, still to come and marked Later. */
-export function thisWeekPage(board: ThisWeek | null): HTMLElement {
-  const page = make('div', '', `gear-week ${ROLES.panel}`);
-  page.append(make('h2', 'This Week', 'gear-ship-name'));
-  if (!board) {
-    page.append(make('p', 'Loading…', 'gear-hint gear-empty'));
-    return page;
-  }
-  const { today, week } = board;
-  const day = make('section', '', 'gear-week-part');
-  day.append(headed('Today', today.resets), make('h4', 'Dungeon of the day', 'gear-week-title'));
-  day.append(make('p', today.pays, 'gear-hint'));
-  if (today.modifier) {
-    day.append(make('p', 'At Elite and Abyss seas', 'gear-week-label'));
-    day.append(modifierLine(today.modifier.name, today.modifier.words));
-  }
-  const tiers = make('div', '', 'gear-week-rows');
-  tiers.append(...today.tiers.map(weekRow));
-  const dungeons = make('div', '', 'gear-week-rows');
-  dungeons.append(...today.dungeons.map(weekRow));
-  day.append(tiers, dungeons);
-  const thisWeek = make('section', '', 'gear-week-part');
-  thisWeek.append(headed('The week', week.resets), ...week.dungeons.map(weekDungeon));
-  if (week.boon) thisWeek.append(make('p', week.boon, 'gear-week-boon'));
-  // Before a room sent a board, where the bounties come from; before the prologue, why the board is shut.
-  const said = board.bounties ? board.bounties.shut : 'Six a day, from the board in Overlook’s plaza.';
-  const rows = make('div', '', 'gear-week-rows');
-  rows.append(...(board.bounties?.rows ?? []).map(weekRow));
-  const bounties = make('section', '', 'gear-week-part');
-  bounties.append(headed('Bounties', today.resets), ...(said ? [make('p', said, 'gear-hint')] : []), rows);
-  page.append(
-    day,
-    thisWeek,
-    laterPart('Breaches', null),
-    bounties,
-    laterPart('Quests', 'Your quests will be kept here.'),
-  );
   return page;
 }
 

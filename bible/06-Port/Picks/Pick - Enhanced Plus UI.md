@@ -17,7 +17,7 @@ dfo_paths:
   - src/ui/profileBadge.js
   - src/scenes/naval/navalHost.js
 dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars, compass and HUD places fc2a8e6, on the same
-  branch; the profile mark read at 1c0fd681 (main)
+  branch; the profile mark read at 1c0fd681 (main); the timers window and its hourglass read at 1c0fd681 (main)
 ---
 # Pick - Enhanced Plus UI
 
@@ -70,3 +70,13 @@ and the boss bar, the plates over foes and ships' plates do what Enhanced Plus d
 (`profileBadge.js` and its style in `enhancedStyle.js`) is the menu's account mark, in its top line
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The themes, the pad, the touch layer and the
 windows have not come over.
+
+The timers window comes over as the Journal's timers, read at 1c0fd681
+([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). DFO's hourglass
+(`.px-hourglass`) is drawn in the kit (`journalArt.ts`), turns half over in four steps under the pointer, and stands
+in the account mark's place on the Journal alone. The window (`enhancedTimers.js`) becomes a panel dropped from the
+Journal's top: its rows stand under a head per group, a reset counts down to its moment in the player's own clock, a
+row under way says Now over its countdown and when it ends, and the focus goes in as it opens and back to the
+hourglass as it shuts. Its words are written fresh from its pictures, and its rows are the day's and the week's
+activities. What stays behind: DFO's own rows (gates, the serpent, raids, seats and battles), its bar of group
+buttons, its rows' doors, and its placing beside the profile mark.

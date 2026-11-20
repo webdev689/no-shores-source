@@ -21,6 +21,8 @@ export interface WeekOn {
 /** What is on at a minute: the day's and the week's numbers, the minutes to the next of each and to Shape's leaving
  *  (none while he is away), each island's dungeon of the day, the day's modifier, and the week's two. */
 export interface Activities {
+  /** The Unix minute it was drawn at. */
+  readonly minute: number;
   readonly day: number;
   readonly week: number;
   readonly untilDay: number;
@@ -60,7 +62,7 @@ function doorOf(module: WebAssembly.Module): RoomDoor {
 
 /** What is on at a Unix minute, by the room module's own rules. */
 export function activitiesAt(module: WebAssembly.Module, minute: number): Activities {
-  return JSON.parse(doorOf(module).activities(minute)) as Activities;
+  return { ...(JSON.parse(doorOf(module).activities(minute)) as Omit<Activities, 'minute'>), minute };
 }
 
 /** Why each place is shut to a character of `level` (null where it is open), as the room module's gates judge. */

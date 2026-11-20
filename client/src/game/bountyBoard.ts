@@ -1,20 +1,28 @@
-// The bounty board's screen in the menu, opened at its counter in Overlook's plaza, and This Week's Bounties: the
-// day's six as the room's word gives them for the player, each taken and turned in at the board by the day of the
-// board shown. Nothing here judges a rule: the room refuses what the board no longer offers.
+// The bounty board's screen in the menu, opened at its counter in Overlook's plaza, after Destiny's Bounty Tracker:
+// the day's six as tiles in a row a kind, a bar counting to the next board, and the card of the tile chosen, each
+// bounty taken and turned in there by the day of the board shown. Nothing here judges a rule: the room refuses what
+// the board no longer offers.
 import { make } from '../editor/dom.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { ROLES } from '../plus/kit.ts';
-import type { WeekBounties } from './activityWords.ts';
+import { bountyCard, bountyTile, chooseTile, moveAmongTiles } from './bountyTiles.ts';
 import type { PageContext } from './characterPage.ts';
 import { pressOf } from './gearDom.ts';
+import { countdownWords } from './journalWords.ts';
 
 const SHUT = 'The bounty board opens after the prologue.';
 /** The board's screen's name, as the menu's header shows it: no keeper keeps it. */
 export const BOARD_TITLE = 'The Bounty Board';
+const DAY_MS = 86_400_000;
 
 export interface BountyRow {
   readonly place: number;
   readonly words: string;
+  readonly name: string;
+  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
+  readonly pool: number;
+  readonly count: number;
+  readonly target: number;
   /** "12 / 30" while held, "Turned in" once paid, else empty. */
   readonly progress: string;
   readonly state: 'open' | 'held' | 'done' | 'paid';
@@ -28,69 +36,93 @@ export function bountyRows(gear: GearState): readonly BountyRow[] {
   const open = gear.prologueDone !== false;
   const day = gear.day ?? 0;
   return (gear.bounties ?? []).map((bounty, place) => {
-    const state = bounty.paid ? 'paid' : !bounty.held ? 'open' : bounty.count >= bounty.target ? 'done' : 'held';
-    const progress = state === 'paid' ? 'Turned in' : state === 'open' ? '' : `${bounty.count} / ${bounty.target}`;
+    const { count, target } = bounty;
+    const state = bounty.paid ? 'paid' : !bounty.held ? 'open' : count >= target ? 'done' : 'held';
+    const progress = state === 'paid' ? 'Turned in' : state === 'open' ? '' : `${count} / ${target}`;
     const press =
       !open || state === 'held' || state === 'paid'
         ? null
         : state === 'open'
           ? { label: 'Take' as const, ask: { kind: ASKS.takeBounty, node: place, item: day } }
           : { label: 'Turn in' as const, ask: { kind: ASKS.turnInBounty, node: place, item: day } };
-    return { place, words: bounty.words, progress, state, press };
+    const { words, name, pool } = bounty;
+    return { place, words, name, pool, count, target, progress, state, press };
   });
 }
 
-/** What each bounty pays the player now, in words. */
-export function payWords(gear: GearState): string {
+/** What each bounty pays the player now, as the card's two lines. */
+export function payLines(gear: GearState): readonly [string, string] {
   const [earned, aurem] = [gear.bountyXp ?? 0, gear.bountyAurem ?? 0];
-  return `Each pays ${earned.toLocaleString()} XP and ${aurem.toLocaleString()} Aurem when turned in.`;
+  return [`+${earned.toLocaleString()} XP`, `+${aurem.toLocaleString()} Aurem`];
 }
 
-/** This Week's Bounties on the page's `day`: the same rows without their presses, or the board's shut line alone
- *  before the prologue; null before a room sent a board, or while the gear is of another day's board (at sea, the
- *  last land's gear is kept through the reset). */
-export function weekBountiesOf(gear: GearState | null, day: number): WeekBounties | null {
-  if (!gear?.bounties) return null;
-  if (gear.prologueDone === false) return { rows: [], shut: SHUT };
-  if (gear.day !== day) return null;
+/** A bounty's state in words: its count while held, done, turned in, or not taken. */
+export function bountyWords(row: BountyRow): string {
   const said = { open: 'Not taken', done: 'Done. Turn it in at the bounty board.', paid: 'Turned in' } as const;
-  const rows = bountyRows(gear).map((row) => {
-    const state = row.state === 'held' ? row.progress : said[row.state];
-    return { name: row.words, about: '', state, shut: false };
-  });
-  return { rows, shut: null };
+  return row.state === 'held' ? row.progress : said[row.state];
 }
 
-/** The bounty board's screen in the menu, laid as This Week is: today's bounties and what each pays, one line a
- *  bounty with its progress under its words and its press at its end, and when they end. */
-export function boardPage(context: PageContext): HTMLElement {
-  const page = make('div', '', `gear-week gear-board ${ROLES.panel}`);
+/** The tile last chosen on the board, kept as the screen is built again for the room's word. */
+let chosenPlace = 0;
+
+/** The bounty board's screen: one line, the day's six in a row a kind, the bar counting to the next board, and the
+ *  chosen tile's card with its press (E or a click), the arrows moving between tiles. */
+export function boardPage(context: PageContext, resetAt: () => number | null, now = () => Date.now()): HTMLElement {
+  const page = make('div', '', `gear-board ${ROLES.panel}`);
   const { gear } = context;
-  if (gear.prologueDone === false) {
-    page.append(make('p', SHUT, 'gear-hint gear-empty'));
-    return page;
-  }
-  const part = make('section', '', 'gear-week-part');
-  part.append(make('h3', 'Today’s bounties', `gear-heading ${ROLES.rule}`), make('p', payWords(gear), 'gear-hint'));
-  const rows = make('div', '', 'gear-week-rows');
-  for (const row of bountyRows(gear)) {
-    const line = make('div', '', `gear-week-row gear-bounty gear-bounty-${row.state}`);
-    line.dataset['key'] = `bounty-${row.place}`;
-    const named = make('span', '', 'gear-week-what');
-    named.append(make('b', row.words));
-    if (row.progress) named.append(make('span', row.progress, 'gear-hint'));
-    line.append(named);
-    const said = row.state === 'open' ? 'Not taken' : row.progress;
-    line.setAttribute('aria-label', `${row.words} ${said}`);
-    if (row.press) {
-      const { ask, label } = row.press;
-      const press = pressOf(label, () => context.ask(ask), label === 'Turn in' ? 'primary' : 'button');
-      press.setAttribute('aria-label', `${label}: ${row.words}`);
-      line.append(press);
+  const rows = bountyRows(gear);
+  const shut = gear.prologueDone === false;
+  page.append(make('p', 'Bounties for XP and Aurem, posted each day.', 'gear-hint gear-board-line'));
+  const grid = make('div', '', `gear-board-grid${shut ? ' gear-board-shut' : ''}`);
+  const card = make('div', '', 'gear-board-card');
+  card.setAttribute('aria-live', 'polite');
+  const pay = payLines(gear);
+  const footOf = (row: BountyRow): HTMLElement => {
+    if (!row.press) return make('p', row.state === 'paid' ? 'Turned in' : '', 'bounty-card-state');
+    const { ask, label } = row.press;
+    const press = pressOf(label, () => context.ask(ask), label === 'Turn in' ? 'primary' : 'button', 'E');
+    press.setAttribute('aria-label', `${label}: ${row.name}`);
+    return press;
+  };
+  const show = (row: BountyRow) => {
+    chosenPlace = row.place;
+    chooseTile(tiles, row.place);
+    card.replaceChildren(shut ? make('p', SHUT, 'gear-hint') : bountyCard(row, pay, footOf(row)));
+  };
+  const tiles: HTMLElement[] = [];
+  for (const pool of [0, 1, 2]) {
+    const line = make('div', '', `gear-board-row bounty-pool-${pool}`);
+    for (const row of rows.filter((one) => one.pool === pool)) {
+      const tile = bountyTile(row, 72);
+      if (shut) tile.setAttribute('aria-disabled', 'true');
+      tile.addEventListener('click', () => {
+        show(row);
+        if (!shut && row.press) context.ask(row.press.ask);
+      });
+      for (const chosen of ['pointerenter', 'focus']) tile.addEventListener(chosen, () => show(row));
+      line.append(tile);
+      tiles.push(tile);
     }
-    rows.append(line);
+    grid.append(line);
   }
-  part.append(rows, make('p', 'The board’s bounties end at the daily reset.', 'gear-hint'));
-  page.append(part);
+  grid.addEventListener('keydown', (event) => moveAmongTiles(tiles, event as KeyboardEvent));
+  const bar = make('div', '', `gear-board-bar ${ROLES.track}`);
+  const fill = make('div', '', ROLES.meter);
+  const left = make('span', '', 'gear-board-left');
+  bar.append(fill, left);
+  const write = () => {
+    const reset = resetAt();
+    const until = reset === null ? null : reset - now();
+    left.textContent = until === null ? 'New bounties at the daily reset' : `New bounties in ${countdownWords(until)}`;
+    fill.style.width = until === null ? '0%' : `${Math.round(100 * Math.min(1, Math.max(0, 1 - until / DAY_MS)))}%`;
+  };
+  write();
+  const timer = setInterval(() => (page.isConnected ? write() : clearInterval(timer)), 1_000);
+  const side = make('div', '', 'gear-board-side');
+  side.append(grid, bar);
+  page.append(side, card);
+  const first = rows.find((row) => row.place === chosenPlace) ?? rows[0];
+  if (first) show(first);
+  else card.append(make('p', 'Six a day, from the board in Overlook’s plaza.', 'gear-hint'));
   return page;
 }

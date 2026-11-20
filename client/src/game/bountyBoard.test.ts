@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearState } from '../network/gearMessages.ts';
-import { bountyRows, payWords, weekBountiesOf } from './bountyBoard.ts';
+import { boardPage, bountyRows, bountyWords, payLines } from './bountyBoard.ts';
+import type { PageContext } from './characterPage.ts';
+import { type FakeElement, FakeEvent, fakePage } from './pageForTests.ts';
 
-const bounty = (words: string, target: number, count = 0, held = false, paid = false) => ({
+const bounty = (words: string, target: number, count = 0, held = false, paid = false, pool = 0) => ({
   words,
   target,
   count,
   held,
   paid,
+  pool,
+  name: `Sample ${words.length}`,
 });
 const gear = {
   prologueDone: true,
@@ -18,7 +22,7 @@ const gear = {
   bounties: [
     bounty('Defeat 30 Grey Tithe foes.', 30),
     bounty('Defeat 2 foes of Miniboss rank or higher.', 2, 1, true),
-    bounty('Sink or take 3 ships.', 3, 3, true),
+    bounty('Sink or take 3 ships.', 3, 3, true, false, 1),
     bounty('Sink or take a ship of Elite rank or higher.', 1, 1, true, true),
     bounty('Clear 2 dungeons.', 2),
     bounty('Clear 3 dungeons.', 3),
@@ -38,31 +42,119 @@ test('each of the day’s bounties is taken, counted, turned in once done, and t
   );
   assert.deepEqual(rows[0]?.press?.ask, { kind: ASKS.takeBounty, node: 0, item: 20_778 }, 'by the day it was shown');
   assert.deepEqual(rows[2]?.press?.ask, { kind: ASKS.turnInBounty, node: 2, item: 20_778 });
-  assert.equal(payWords(gear), 'Each pays 3,500 XP and 210 Aurem when turned in.');
+  assert.deepEqual(payLines(gear), ['+3,500 XP', '+210 Aurem']);
   assert.ok(
     bountyRows({ ...gear, prologueDone: false }).every((row) => row.press === null),
     'shut until the prologue',
   );
   assert.deepEqual(bountyRows({ ...gear, bounties: undefined }), [], 'a room that sends no board');
+  assert.deepEqual([rows[2]?.pool, rows[2]?.name], [1, 'Sample 21'], 'where it counts, and its name');
 });
 
-test('This Week shows the same bounties without their presses, or the board shut until the prologue', () => {
-  const week = weekBountiesOf(gear, 20_778);
+test('a bounty’s state reads as its count while held, then done, turned in, or not taken', () => {
+  assert.deepEqual(bountyRows(gear).slice(0, 4).map(bountyWords), [
+    'Not taken',
+    '1 / 2',
+    'Done. Turn it in at the bounty board.',
+    'Turned in',
+  ]);
+});
+
+const FRIDAY_AT = 29_919_420 * 60_000;
+const classed = (root: FakeElement, name: string) => root.all().filter((node) => node.classList.contains(name));
+const keyed = (root: FakeElement, key: string) => root.all().find((node) => node.dataset['key'] === key);
+const labelled = (root: FakeElement, label: string) =>
+  root.all().find((node) => node.getAttribute('aria-label') === label);
+const sixOnTheBoard = {
+  ...gear,
+  bounties: [
+    { ...bounty('Defeat 30 Grey Tithe foes.', 30), name: 'Tithe Collector' },
+    { ...bounty('Defeat 2 foes of Miniboss rank or higher.', 2, 1, true), name: 'Big Game' },
+    { ...bounty('Sink or take 3 ships.', 3, 3, true, false, 1), name: 'Broadside' },
+    { ...bounty('Sink or take a ship of Elite rank or higher.', 1, 1, true, true, 1), name: 'Bigger Fish' },
+    { ...bounty('Clear a dungeon.', 1, 0, false, false, 2), name: 'Into the Dark' },
+    { ...bounty('Clear 3 dungeons.', 3, 0, false, false, 2), name: 'Deep Delver' },
+  ],
+} as unknown as GearState;
+
+function boardOf(shown: GearState) {
+  const { root } = fakePage();
+  const asked: unknown[] = [];
+  const context = { gear: shown, ask: (ask: unknown) => asked.push(ask) } as unknown as PageContext;
+  root.append(
+    boardPage(
+      context,
+      () => FRIDAY_AT + 3_600_000,
+      () => FRIDAY_AT,
+    ) as never,
+  );
+  // The bar counts down while its page stands; taken off, it stops.
+  return { root, asked, done: () => root.remove() };
+}
+
+test('the board is the day’s six as tiles, a row a kind, with no words on a tile, and a bar to the next board', () => {
+  const { root, done } = boardOf(sixOnTheBoard);
+  assert.ok(root.find('Bounties for XP and Aurem, posted each day.'));
+  const rows = classed(root, 'gear-board-row');
   assert.deepEqual(
-    week?.rows.slice(0, 4).map((row) => [row.name, row.state]),
+    rows.map((row) => classed(row, 'bounty-tile').map((tile) => tile.dataset['key'])),
     [
-      ['Defeat 30 Grey Tithe foes.', 'Not taken'],
-      ['Defeat 2 foes of Miniboss rank or higher.', '1 / 2'],
-      ['Sink or take 3 ships.', 'Done. Turn it in at the bounty board.'],
-      ['Sink or take a ship of Elite rank or higher.', 'Turned in'],
+      ['bounty-0', 'bounty-1'],
+      ['bounty-2', 'bounty-3'],
+      ['bounty-4', 'bounty-5'],
     ],
   );
-  assert.equal(week?.shut, null);
-  assert.deepEqual(weekBountiesOf({ ...gear, prologueDone: false }, 20_778), {
-    rows: [],
-    shut: 'The bounty board opens after the prologue.',
-  });
-  assert.equal(weekBountiesOf({ ...gear, bounties: undefined }, 20_778), null, 'no board sent yet');
-  assert.equal(weekBountiesOf(null, 20_778), null);
-  assert.equal(weekBountiesOf({ ...gear, day: 20_777 }, 20_778), null, 'yesterday’s gear read today: not yet known');
+  const tiles = classed(root, 'bounty-tile');
+  assert.deepEqual(
+    tiles.map((tile) => tile.textContent),
+    ['', '', '', '✓', '', ''],
+    'a mark and a look, a check once turned in',
+  );
+  assert.deepEqual(
+    tiles.map((tile) =>
+      ['open', 'held', 'done', 'paid'].find((state) => tile.classList.contains(`bounty-tile-${state}`)),
+    ),
+    ['open', 'held', 'done', 'paid', 'open', 'open'],
+  );
+  assert.ok(root.find('New bounties in 1:00:00'));
+  done();
+});
+
+test('the chosen tile’s card says its name, kind, words, count and pay, and E or a click takes or turns it in', () => {
+  const { root, asked, done } = boardOf(sixOnTheBoard);
+  const card = () => keyed(root, 'bounty-card');
+  for (const words of [
+    'Tithe Collector',
+    'Land bounty',
+    'Defeat 30 Grey Tithe foes.',
+    '0 / 30',
+    '+3,500 XP',
+    '+210 Aurem',
+  ])
+    assert.ok(card()?.find(words), words);
+  assert.ok(labelled(root, 'Take: Tithe Collector'), 'its press, E on its keycap');
+  keyed(root, 'bounty-2')?.dispatchEvent(new FakeEvent('pointerenter'));
+  assert.ok(card()?.find('Broadside') && card()?.find('Sea bounty') && labelled(root, 'Turn in: Broadside'));
+  keyed(root, 'bounty-3')?.dispatchEvent(new FakeEvent('focus'));
+  assert.ok(card()?.find('Turned in') && card()?.find('1 / 1'));
+  keyed(root, 'bounty-0')?.click();
+  const grid = classed(root, 'gear-board-grid')[0];
+  keyed(root, 'bounty-2')?.focus();
+  grid?.dispatchEvent(new FakeEvent('keydown', { key: 'e' }));
+  assert.deepEqual(asked, [
+    { kind: ASKS.takeBounty, node: 0, item: 20_778 },
+    { kind: ASKS.turnInBounty, node: 2, item: 20_778 },
+  ]);
+  grid?.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowDown' }));
+  assert.equal(document.activeElement, keyed(root, 'bounty-4'), 'the arrows move between tiles, two a row');
+  done();
+});
+
+test('before the prologue the board’s tiles are grey, its card says why, and nothing is asked', () => {
+  const { root, asked, done } = boardOf({ ...sixOnTheBoard, prologueDone: false });
+  assert.ok(classed(root, 'gear-board-shut').length === 1);
+  assert.ok(root.find('The bounty board opens after the prologue.'));
+  keyed(root, 'bounty-0')?.click();
+  assert.deepEqual(asked, []);
+  done();
 });

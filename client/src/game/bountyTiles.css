@@ -1,0 +1,131 @@
+/* A bounty's tile and card (bountyTiles.ts), after Destiny's Bounty Tracker, and the board's screen laid with them
+   (bountyBoard.ts): tiles in a row a kind, each kind on its own ground, a bar to the next board, and the card. */
+.bounty-tile {
+  position: relative;
+  width: var(--bounty-tile, 64px);
+  height: var(--bounty-tile, 64px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.bounty-tile-mark {
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+}
+.bounty-tile.bounty-pool-0 {
+  background-color: #3a352a;
+}
+.bounty-tile.bounty-pool-1 {
+  background-color: #1d2a33;
+}
+.bounty-tile.bounty-pool-2 {
+  background-color: #3d0d0a;
+}
+.bounty-tile .bounty-gauge {
+  position: absolute;
+  inset: auto 4px 4px;
+  height: 4px;
+}
+.bounty-tile-done {
+  border-color: #f3cf86 #7a5424 #5c3f1a #c08a3e;
+}
+.bounty-tile-paid .bounty-tile-mark {
+  opacity: 0.45;
+}
+.bounty-tile-check {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  color: var(--brass-lit);
+}
+.bounty-tile-chosen {
+  outline: 2px solid var(--brass-lit);
+  outline-offset: 1px;
+}
+.bounty-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+}
+.bounty-card-name {
+  font-size: var(--type-m);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.bounty-card-kind {
+  font-size: var(--type-xs);
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.bounty-card-words,
+.bounty-card-pay,
+.bounty-card-state {
+  margin: 0;
+}
+.bounty-card-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.bounty-card-count .bounty-gauge {
+  flex: 1 1 auto;
+  height: 6px;
+}
+.bounty-card-pay {
+  color: var(--gain);
+}
+
+.gear-board {
+  display: grid;
+  grid-template-columns: auto minmax(0, 260px);
+  gap: 8px 24px;
+  max-width: 640px;
+  margin: 24px auto;
+  padding: 18px 22px;
+}
+.gear-board-line {
+  grid-column: 1 / -1;
+  margin: 0 0 6px;
+}
+.gear-board-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gear-board-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gear-board-row {
+  display: flex;
+  gap: 8px;
+}
+.gear-board-shut .bounty-tile {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+.gear-board-bar {
+  position: relative;
+  height: 22px;
+}
+.gear-board-bar .plus-meter {
+  height: 100%;
+}
+.gear-board-left {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: var(--type-xs);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 560px) {
+  .gear-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -358,7 +358,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
-  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story', screens.week);
+  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story', screens);
   addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
