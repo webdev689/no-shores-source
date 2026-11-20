@@ -40,14 +40,60 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
                 None
             }
         }
-        // A boarder's gear is their deck room's, which holds their character while they fight on her deck.
-        Opened::Sea(sea) => {
+        // A boarder's gear is their deck room's, which holds their character while they fight on her deck; any other
+        // player's, the character the sea keeps for them, once it changed.
+        Opened::Sea(sea) if sea.on_deck(player) => {
             sea.deck_gear_change(player).and_then(|(room, boarder)| protocol::gear_wire::gear_bytes(room, boarder))
         }
+        Opened::Sea(sea) => sea.take_character_change(player).and_then(sea_gear_bytes),
         Opened::Fleet(_) => None,
     })
     .flatten()
     .unwrap_or_default()
+}
+
+thread_local! {
+    /// A room on land holding one player, made once, that writes a player's gear at sea as a land room writes it.
+    static GEAR_ROOM: std::cell::RefCell<Option<(room::Room, PlayerId)>> = const { std::cell::RefCell::new(None) };
+}
+
+/// A player's gear at sea, from the character the sea keeps for them: written by a room that holds them alone, so
+/// with no drops, nodes, wares or casting, none of which the sea has.
+fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
+    GEAR_ROOM.with(|held| {
+        let mut held = held.borrow_mut();
+        if held.is_none() {
+            let mut room = room::Room::new(Vec::new(), (0.0, 0.0));
+            *held = room.join().map(|player| (room, player));
+        }
+        let (room, player) = held.as_mut()?;
+        room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
+    })
+}
+
+/// The open sea keeps characters from now on (`Sea::keep_characters`): its players' courses wait for the keeper's
+/// word. 1 if a sea is open, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_keep_characters() -> u32 {
+    let kept = with_open(|opened| match opened {
+        Opened::Sea(sea) => {
+            sea.keep_characters();
+            true
+        }
+        Opened::Land { .. } | Opened::Fleet(_) => false,
+    });
+    u32::from(kept == Some(true))
+}
+
+/// The keeper has no character to give a player at sea (none kept, or the page plays unkept): the course held for
+/// them sails (`Sea::none_kept`). Nothing elsewhere.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_none_kept(player: PlayerId) {
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.none_kept(player);
+        }
+    });
 }
 
 /// A player's character as it is kept between sessions, as JSON's bytes, at sea with their ship's hurts in it; empty

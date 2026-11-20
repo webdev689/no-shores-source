@@ -421,3 +421,74 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_her_deck() {
     assert_eq!(seen.acknowledged(), 1, "her deck room took the boarder's step");
     assert_eq!(room.foes().map_or(0, |foes| foes.len()), 3, "a Minor's three hands stand to meet them");
 }
+
+/// A sea round one square continent 100 km a side, its north-west corner 100 km from the frame's.
+fn small_sea() {
+    let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 66));
+}
+
+/// The ships and hostile ships a player is sent in the prepared snapshot, by their numbers.
+fn seen_at_sea(player: PlayerId) -> (Vec<PlayerId>, Vec<u32>) {
+    let bytes = snapshot_door::snapshot_for(player);
+    let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+    let ships = snapshot.ships().map_or(Vec::new(), |ships| ships.iter().map(|ship| ship.player()).collect());
+    let pirates = snapshot.pirates().map_or(Vec::new(), |pirates| pirates.iter().map(|pirate| pirate.id()).collect());
+    (ships, pirates)
+}
+
+#[test]
+fn a_sea_that_keeps_characters_holds_a_players_course_until_the_keeper_says_none_is_kept() {
+    small_sea();
+    assert_eq!(gear_door::room_keep_characters(), 1);
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN, "held, not refused");
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(seen_at_sea(player).0, Vec::<PlayerId>::new(), "not at sea before the keeper answered");
+    gear_door::room_none_kept(player);
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(seen_at_sea(player).0, vec![player]);
+}
+
+#[test]
+fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_changes() {
+    small_sea();
+    let player = room_join();
+    assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    room_tick();
+    assert!(gear_door::gear(player).is_empty(), "no character held yet");
+    let mut character = gear::Character::starting();
+    character.materials.add_aurem(777);
+    assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
+    let bytes = gear_door::gear(player);
+    let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("her gear");
+    assert_eq!(gear.aurem(), character.materials.aurem, "the character given back");
+    assert!(gear_door::gear(player).is_empty(), "sent once until it changes again");
+}
+
+#[test]
+fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_the_players_within_60_km() {
+    small_sea();
+    let (one, near, far) = (room_join(), room_join(), room_join());
+    for (player, at) in [(one, [50_000.0, 50_000.0]), (near, [50_000.0, 90_000.0]), (far, [300_000.0, 50_000.0])] {
+        assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
+    }
+    let commission = naval::ranks::Commission { faction: 2, rank: naval::ranks::Rank::Minor };
+    // Wary Minors that leave a sound Sloop be, each kept at sea by the player within 1.1 times her 5 km sight of her:
+    // the first player, and the near one.
+    for (id, at) in [(1, [50_000.0, 44_600.0]), (2, [50_000.0, 95_400.0])] {
+        let pirate = room::pirates::Pirate::standing(id, 7, commission, at, 0.0, false);
+        with_open(|opened| {
+            if let Opened::Sea(sea) = opened {
+                sea.put_to_sea(pirate)
+            }
+        });
+    }
+    room_tick();
+    snapshot_door::prepare();
+    assert_eq!(seen_at_sea(one), (vec![one, near], vec![1]));
+    assert_eq!(seen_at_sea(near), (vec![one, near], vec![2]), "40 km off, within the page's farthest view");
+    assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, she sees no one");
+}

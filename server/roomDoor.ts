@@ -82,6 +82,12 @@ export interface RoomDoor {
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character, so what they gathered this turn follows a rejoin. */
   own(player: number, account: string): boolean;
+  /** The open sea keeps characters from now on: a player's courses wait for the keeper's word on theirs (a character
+   *  given back, or `noneKept`), so a ship comes back where the room last kept her; false if no sea is open. */
+  keepCharacters(): boolean;
+  /** The keeper has no character to give a player at sea (none kept, or the page plays unkept): the course held for
+   *  them sails. */
+  noneKept(player: number): void;
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
@@ -120,6 +126,8 @@ interface RoomExports {
   room_reseed(lootLow: number, lootHigh: number, worldLow: number, worldHigh: number): number;
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
+  room_keep_characters(): number;
+  room_none_kept(player: number): void;
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
@@ -204,6 +212,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
+    keepCharacters: () => exports.room_keep_characters() === 1,
+    noneKept: (player) => exports.room_none_kept(player),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
     mainPorts: () => new TextDecoder().decode(take(exports.room_main_ports())),

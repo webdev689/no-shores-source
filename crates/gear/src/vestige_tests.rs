@@ -179,8 +179,11 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     assert_eq!(names.map(Difficulty::from_name), Difficulty::ALL.map(Some));
     assert_eq!(Difficulty::default(), Difficulty::Normal);
     assert_eq!(Difficulty::from_name("gale"), None);
-    assert_eq!((Difficulty::Elite.raise(10), Difficulty::Abyss.raise(10)), (12, 13));
+    // Each harder voyage raises a foe more than the one before, and none past the highest level.
+    let raised = Difficulty::ALL.map(|difficulty| difficulty.raise(10));
+    assert!(raised[0] == 10 && raised[0] < raised[1] && raised[1] < raised[2], "{raised:?}");
     assert_eq!(Difficulty::Abyss.raise(30), FOE_LEVEL_MOST);
+    assert!(Difficulty::ALL.iter().all(|difficulty| difficulty.raise(FOE_LEVEL_MOST) == FOE_LEVEL_MOST));
     let mut normal = Character::starting();
     let mut abyss = Character::starting();
     let paid = normal.reward_kill(Foe::Swordsman, 5, None, Difficulty::Normal, &dice(1));

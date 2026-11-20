@@ -196,13 +196,14 @@ impl Sea {
         let player = self.next_player;
         self.next_player += 1;
         self.berths.insert(player, Berth::default());
+        self.await_keeper(player);
         player
     }
 
     pub fn leave(&mut self, player: PlayerId) {
         self.stop_repair(player);
         self.leave_decks(player);
-        self.harbour.characters.remove(&player);
+        self.harbour.forget(player);
         self.berths.remove(&player);
         self.fights.leave(player);
         self.aboard.remove(&player);
@@ -257,9 +258,13 @@ impl Sea {
     /// ship not yet at sea puts to sea at the first point; one at sea starts it from where it is, to the nearest
     /// metre, so the legs it sails are the legs judged. An empty course brings a ship at sea to rest. A course is
     /// refused whole when any point lies on a continent or any leg meets a coast. A player sets one course a tick. Off
-    /// the helm, only one that keeps her way is taken: her helmsman sails on, at the pace the page eases her to.
+    /// the helm, only one that keeps her way is taken: her helmsman sails on, at the pace the page eases her to. One
+    /// asked before the keeper answered for the player's character waits for it (`hold_course`).
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
+        if self.hold_course(player, points, pace) {
+            return Ok(());
+        }
         if self.fights.fighting(player) || self.on_deck(player) {
             return Err(CourseRefused::Fighting);
         }
@@ -285,7 +290,7 @@ impl Sea {
             return Err(CourseRefused::BadPace);
         }
         let start = match at_sea {
-            Some(ship) => whole(&[ship.x, ship.y]).ok_or(CourseRefused::BadCourse)?,
+            Some(ship) => whole(&ports::in_frame([ship.x, ship.y])).ok_or(CourseRefused::BadCourse)?,
             None => whole_points[0],
         };
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
