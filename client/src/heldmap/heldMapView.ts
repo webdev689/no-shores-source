@@ -11,7 +11,7 @@ import { HATCHES, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
 
-const INK_SHADER = /* wgsl */ `
+export const INK_SHADER = /* wgsl */ `
 struct Ink {
   // The map's rectangle, screen pixels: left, top, width, height; and the screen's width and height.
   rect: vec4f,

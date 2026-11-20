@@ -23,6 +23,8 @@ export class LocalRoom implements RoomLink {
   readonly joins = 1;
   readonly rejoining = false;
   readonly lost = null;
+  /** World time at the room's first tick, seconds, as its welcome says. */
+  readonly epoch: number;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
@@ -33,6 +35,8 @@ export class LocalRoom implements RoomLink {
     this.snapshot = snapshot;
     this.gear = gear;
     this.player = door.join();
+    const welcome = readFromRoom(door.joined(this.player));
+    this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
   }
 
   /** Opens a room on a course from the compiled `room-wasm` module, its player standing at `spawn`, with its stall and
@@ -47,7 +51,23 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.open(spawn, blocks)) throw new Error('the course is not one a room can stand on');
+    door.epoch(Date.now());
     door.furnish(furnishing.stall, furnishing.nodes);
+    door.day(Math.floor(Date.now() / 86_400_000));
+    return new LocalRoom(door, snapshot, gear);
+  }
+
+  /** Opens a room on a course laid over the open sea, as a wreck's decks are (`LocalRoom.open`, with no stall or
+   *  nodes): its foes walk the blocks alone, as the sea under them is no ground. */
+  static openOverSea(
+    module: WebAssembly.Module,
+    spawn: { readonly x: number; readonly y: number },
+    blocks: readonly CourseBlock[],
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
+  ): LocalRoom {
+    const door = startRoomDoor(module);
+    if (!door.open(spawn, blocks, true)) throw new Error('the course is not one a room can stand on');
     door.day(Math.floor(Date.now() / 86_400_000));
     return new LocalRoom(door, snapshot, gear);
   }
@@ -62,6 +82,7 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
+    door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
     return new LocalRoom(door, snapshot, () => undefined);
   }
@@ -82,6 +103,7 @@ export class LocalRoom implements RoomLink {
     const text = ports.length > 0 ? `{"layout":${layoutText},"ports":${JSON.stringify(ports)}}` : layoutText;
     if (!door.openSea(text, seed, Date.now() / 1000) || !door.difficulty(seas))
       throw new Error('the world’s layout is not one the sea can open round');
+    door.epoch(Date.now());
     return new LocalRoom(door, snapshot, () => undefined);
   }
 
@@ -105,6 +127,36 @@ export class LocalRoom implements RoomLink {
 
   send(bytes: Uint8Array<ArrayBuffer>): void {
     this.door.input(this.player, bytes);
+  }
+
+  /** Stands a foe of the roster on the top under (x, y), its post there (`RoomDoor.standFoe`); its number, or 0. */
+  standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number {
+    return this.door.standFoe(type, rank, x, y, facing, level);
+  }
+
+  /** Sends every foe away at once, as a scene clears its stage. */
+  clearFoes(): void {
+    this.door.clearFoes();
+  }
+
+  /** Sets where the next respawn stands the player: a checkpoint. */
+  setSpawn(x: number, y: number): void {
+    this.door.setSpawn(x, y);
+  }
+
+  /** Stands the player at once on the top under (x, y), as when they fall into the sea and are brought back. */
+  putPlayer(x: number, y: number): void {
+    this.door.putPlayer(this.player, x, y);
+  }
+
+  /** Stands a block on the course at once, as a way closing behind the player. */
+  standBlock(block: CourseBlock): void {
+    this.door.standBlock(block);
+  }
+
+  /** Takes a block from the course at once, as a way opening once the foes holding it have fallen. */
+  takeBlock(block: CourseBlock): void {
+    this.door.takeBlock(block);
   }
 
   /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */

@@ -6,6 +6,8 @@ import { AMMO_BOX, AMMO_CRATE, VESTIGE_ROWS } from './dropPictures.ts';
 import { DropsShown, FLIGHT_S, LINE_M, PIXEL_M, RISE_S, flightAt, lineLight, pictureOf } from './drops.ts';
 import { MARK_FLOATS } from './marks.ts';
 
+type Point = readonly [number, number, number];
+
 const FROM = [0, -10, 0] as const;
 const REST = [0, -8, 0.5] as const;
 const EYE = [0, 0, 1.6] as const;
@@ -108,6 +110,35 @@ test('a Vestige chimes by its rarity as it comes to rest, once; one told of at r
   assert.deepEqual(box.rested, [], 'ammo never chimes');
   assert.deepEqual(box.landed, [drop({ kind: DROPPED.ammoBox }).at], 'but every drop is told of where it lands');
   assert.deepEqual(ammo.frame([drop({ kind: DROPPED.ammoBox })], FLIGHT_S + 1, EYE).landed, [], 'once');
+});
+
+test('an Ammo box at rest stepped onto at full ammunition is told once each time, never while standing on it', () => {
+  const box = drop({ kind: DROPPED.ammoBox, flying: 0 });
+  const [far, onBox, nearEdge, high] = [
+    [0, -11, 0.5],
+    [0.4, -8.2, 0.5],
+    [1.4, -8, 0.5],
+    [0, -8, 3],
+  ] as const;
+  const walk = (shown: DropsShown, steps: readonly (readonly [Point, boolean])[], drops = [box]) =>
+    steps.map(([feet, full], step) => {
+      shown.frame(drops, step / 60, EYE);
+      return shown.ammoFull(drops, feet, full);
+    });
+  const full = (feet: Point) => [feet, true] as const;
+  assert.deepEqual(
+    walk(new DropsShown(), [far, onBox, onBox, nearEdge, far, onBox].map(full)),
+    [false, true, false, false, false, true],
+    'on stepping onto it, not while there, and again once stepped off and back',
+  );
+  assert.deepEqual(walk(new DropsShown(), [full(high)]), [false], 'not from a ledge over it');
+  assert.deepEqual(walk(new DropsShown(), [[onBox, false]]), [false], 'not while it can be taken');
+  assert.deepEqual(walk(new DropsShown(), [[onBox, false], full(onBox)]), [false, true], 'nor until it is full there');
+  const flying = drop({ kind: DROPPED.ammoBox, flying: 36 });
+  const steps = Array.from({ length: 40 }, () => full(onBox));
+  assert.equal(walk(new DropsShown(), steps, [flying]).indexOf(true), 36, 'only once it rests');
+  for (const kind of [DROPPED.vestige, DROPPED.crate])
+    assert.deepEqual(walk(new DropsShown(), [full(onBox)], [drop({ kind, flying: 0 })]), [false], 'an Ammo box alone');
 });
 
 test('a line is brightest where it leaves the picture and none at its tip, a glint climbing it', () => {

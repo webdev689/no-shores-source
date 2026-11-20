@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
-import { FoePlate, type MarkedFoe, poiseTrackOf, wardOf } from './foePlate.ts';
+import { FoePlate, type MarkedFoe, plateTier, poiseTrackOf, THIRDS, wardOf } from './foePlate.ts';
 import { findAll, onFakePage } from './page.test.ts';
 
 const view: FighterView = {
@@ -42,6 +42,7 @@ const rat = (id: number, changes: Partial<FighterView> = {}): MarkedFoe => ({
   phase: 1,
   alert: 2,
   factionNumber: 1,
+  level: 7,
 });
 
 test('the poise track: nothing to say at rest, filling toward a break, iron red, staggered white, open after a miss', () => {
@@ -137,4 +138,32 @@ test('a shield’s ward stands over its foe’s health from the bar’s left end
     assert.equal(ward()?.hidden, true, 'broken');
     plate.show(rat(2), 1 / 60);
     assert.equal(ward()?.hidden, true, 'a foe with none');
+  }));
+
+test('the plate’s square shows its foe’s level, not its faction’s emblem; a foe of no level leaves it empty', () =>
+  onFakePage((root) => {
+    const plate = new FoePlate(root, 'overhead');
+    const square = () => findAll(root, 'level')[0];
+    plate.show(rat(1), 0);
+    assert.equal(square()?.textContent, '7');
+    assert.equal(findAll(root, 'emblem').length, 0, 'the emblem is kept for later, off the plate');
+    plate.show({ ...rat(2), level: 12 }, 1 / 60);
+    assert.equal(square()?.textContent, '12', 'turned onto another foe');
+    plate.show({ ...rat(3), level: 0 }, 1 / 60);
+    assert.equal(square()?.textContent, '');
+  }));
+
+test('a plate’s tier goes with its foe’s rank, and every bar holds its thirds’ marks, which only an Elite’s and up over a figure show', () =>
+  onFakePage((root) => {
+    assert.deepEqual([1, 2, 3, 4, 5].map(plateTier), ['minor', 'major', 'elite', 'elite', 'elite']);
+    const plate = new FoePlate(root, 'overhead');
+    plate.show({ ...rat(1), rank: 1 }, 0);
+    assert.equal(plate.root.dataset['tier'], 'minor');
+    plate.show({ ...rat(2), rank: 3 }, 1 / 60);
+    assert.equal(plate.root.dataset['tier'], 'elite', 'turned onto an Elite');
+    assert.deepEqual(
+      findAll(root, 'third-mark').map((mark) => mark.style['left']),
+      THIRDS.map((share) => `${share * 100}%`),
+    );
+    assert.deepEqual(THIRDS, [1 / 3, 2 / 3]);
   }));

@@ -12,6 +12,7 @@ code:
   - crates/land/src/sites.rs#check_sites
   - crates/land/src/ground.rs#height_at
   - crates/land/src/ground_window.rs#window
+  - crates/land/src/outcrops.rs#stands
   - crates/land-wasm/src/lib.rs#land_open
   - crates/land-wasm/src/settled.rs#land_window
   - crates/land-wasm/src/settled.rs#land_city_plan
@@ -101,7 +102,60 @@ the metre, and `water_at` what water stands there: sea, a lake, a river, or none
   gathered keeps the level the flood gave it, so it crosses a lake at the lake's surface. Hand-carved
   rivers keep their width and depth; the rivers the water gathered take World 2.0's width and depth for their flow
   (2.4 √q + 1.5 m wide).
-- A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder.
+- A road's bed is its ground smoothed along it, eased back to the land over a 4 m shoulder. A layout's paths are laid
+  as roads after the land is made (`add_roads`), each point of a course 8 m from the next, but for its runs' ways
+  and the stretches of its ways over a basin's terrace or ramp and its edge, whose floors are carved to their levels
+  already.
+- A layout's sculpt carves the land round its patrol area or instance ([[Layouts]]): its network's floor (basins and
+  canyons) is left as it is and everything else in its claim is raised into a massif with stepped cliffs, fading back
+  to the land over 140 m past the claim. It is applied to the land before the towns, rivers and roads, never raises
+  the sea or the 35 m of strand inland from the coast, and only raises: the coast stays where it was painted. Where
+  sculpts meet, each one's rise is held under the faces rising from every other's floor (its basins, canyons, climbs,
+  runs and the gorges out through its gates), at the faces' own steepness past their tops, so no layout's massif or
+  fade buries another's floor, and where two floors meet both stay open with no step. Its
+  climbs are capsules whose level runs from one share of the massif's height to another along them: on a climb the
+  land is its level, and off it, over 2 m, whichever is lower of the floor's face and the climb's own face rising
+  from it, so a way up is cut into the rock with a drop on its floor's side; a lookout is a climb of no length at the
+  top, and a basin's shelf or platform a climb level along it inside the floor, raised over it as an embankment. The floor's distance counts the climbs, so a section reaches up them, and the floor's level at a point
+  (`floor_level`) is the nearest floor's or climb's, a raised floor's wherever the land stands at it: 0 for a floor,
+  a climb's level where it is nearer, so a face's foot and dead rock are measured over a terrace or a ramp as over the
+  land's own floor. `floor_share` is that level as a share of the massif's height, where a climb or a valley starts. Its raised floors
+  (`levels`, capsules as climbs are) are floor at a height: a place standing high, a way graded between places. The
+  land is cut to them first, then to its climbs, so a terrace stands on a raised floor as on the land's own; their
+  edges wander as a floor's do; and an outcrop standing on one rises from its level. A point within a raised
+  floor's own reach takes the level of the floor whose line runs nearest of those it stands on, as the ways were
+  graded along their lines, so a wide stretch of way never holds its level over the next as it ramps on, nor a floor's
+  wandered edge over a way; past every floor's own reach, in the wander, it takes the nearest wandered edge's. Round a roofed
+  floor (a cavern's hollow and tunnel, `roofed`) every face rises in 4 m, out to 20 m past its widest edge and easing
+  back to the 16 m run over 8 m more, so the rock a cave roof rests on stands whole under all its edges and the cliff
+  its tunnel opens in stands sheer. A climb's and a raised floor's
+  level is a share of the massif's local height (its rise varied by a slow noise), faded past the claim as the land is,
+  and the floor's level reads them the same way. A terraced sculpt's top (`terraced`, a layout with heights) stands
+  in plateaus at 0.45, 0.72 and the whole of that height, where a slower noise crosses its steps, each riser a cliff;
+  within 24 m of a floor, raised floor, climb or run the rock is held at least 0.4 of the height over its level, then
+  falls in 6 m to its plateau, so no body climbs out and a lookout stands on the top. Each bucket finds every
+  capsule within that hold, so the top steps nowhere along a bucket's edge. Its runs ([[Layouts]], "Runs") are cut
+  into its rock the same way. Where capsules meet (a run's at a bend, a climb's at its lookout) the level is a blend
+  of the near capsules', weighted by how near each is (within 3 m), so the land climbs round the bend and beside a
+  climb's top without a step. Its wings are capsules
+  that carry its claim past its ring, so the massif stands round a run that leaves the zone, or round the river its
+  brief names, and fades back past the wing. Neither is written when empty. Each sculpt measures its claim's edge
+  once a 32 m bucket: where a bucket lies wholly in the claim or wholly past its fade, the fade is 1 or 0 with no
+  measuring, the same to the bit; a 2 km close-up of carved ground samples in about a quarter of a second.
+- A sculpt's outcrops stand on its floor, each a shape with a middle, a radius, a tall and an angle (clockwise from
+  north), written `[x, y, radius, tall, shape, angle]`; four numbers, `[x, y, radius, tall]`, read as a mesa at
+  angle 0. Every shape stands in as many bands as fit, up to its most, each face rising over at least 8 m (`BAND_M`,
+  two of the close-up's 4 m samples), so the close-up draws its faces and never a point; on a small outcrop the flat
+  top gives way to its face. The stepped shapes part each face from the next by a 6 m ledge, so one of the close-up's
+  steps always lies nearly flat on it, and their flat top is the last face's ledge: a mesa is up to four faces under
+  a flat top over 0.55 of its radius (two faces from a radius of 49 m, three from 80 m), and a crag up to four under
+  a flat top over a quarter of its radius (two from 30 m, three from 48 m). The rounded shapes' faces meet: a tor is
+  a stack of up to three domes leaning along its angle; a whaleback a low ridge whose top runs 2.5 times its radius
+  either way along its angle; a knoll a steep-sided hill of up to three faces, each easing onto a soft shoulder; a
+  hummock one low face under a flat top over up to half its radius. Each edge wanders out by up to 35 % over three
+  quarters of its radius, so a broad outcrop's faces are no steeper than a small one's. An outcrop never rises past
+  its tall or its footprint (`footprint`: its radius, wandered out, round its spine), whose bounds, its reach, are
+  how the sculpt's buckets find it.
 
 The land's WebAssembly door gives the browser the same answers.
 
@@ -116,7 +170,8 @@ node at build time, for the room, and every browser predicting with it, to read.
 - the 1 km cells any point in it reads: from the cell before the one its spline starts in to two after, of the land,
   the coast's distance, the heights carried over the coast and the lakes' levels. A cut grid keeps the whole grid's
   corner and its cells' numbers (`first_column`, `first_row`), so a point finds its cell by the same sums;
-- each river and road with a segment within its reach of the rect, whole, and each town within 150 m of it.
+- each river and road with a segment within its reach of the rect, whole, each town within 150 m of it, and each
+  sculpt and pad reaching into it.
 
 Inside the rect, the window's `height_at` and `water_at` give the same bits as the whole ground's. A ground saves to
 JSON and loads to the same bits; its course index is not saved but built again on load, and a saved ground whose

@@ -16,7 +16,7 @@ async function world(): Promise<{ module: WebAssembly.Module; world: WorldData }
   const layout = JSON.parse(layoutText) as { continents: { id: string }[] };
   const cities = await Promise.all(
     layout.continents.map(
-      async ({ id }) => sitesOf(id, await readFile(new URL(`land/${id}.json`, WORLD), 'utf8')).city,
+      async ({ id }) => sitesOf(id, await readFile(new URL(`land/${id}.json`, WORLD), 'utf8'), []).city,
     ),
   );
   const found = cities.filter((city) => city !== null);

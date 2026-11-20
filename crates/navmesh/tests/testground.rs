@@ -1,5 +1,6 @@
 //! The Test Ground's own course, as the server's rooms stand on it: up the stairs to the platform, round the tall
-//! wall, never onto a top no step reaches, and the same path, to the bit, on every bake.
+//! wall, onto the tops no step reaches by the movement rules' own moves, off the platform's far edge, and the same
+//! path, to the bit, on every bake.
 
 mod common;
 
@@ -33,6 +34,7 @@ fn course() -> Course {
             max_x: number(block, "maxX"),
             max_y: number(block, "maxY"),
             top: number(block, "top"),
+            bottom: number(block, "bottom"),
         })
         .collect();
     Course { start: [number(&json["start"], "x"), number(&json["start"], "y"), 0.0], blocks }
@@ -87,18 +89,38 @@ fn the_far_side_of_the_tall_wall_is_reached_round_it() {
 }
 
 #[test]
-fn tops_no_step_reaches_are_off_the_mesh() {
+fn the_tops_no_step_reaches_are_climbed_onto_by_the_rules_own_moves() {
     let course = course();
     let navmesh = NavMesh::bake(&course.blocks, BOUNDS, &AGENT);
     let reach = navmesh.reachable_from(course.start).unwrap();
     assert!(reach.contains(PLATFORM), "the platform, by the stairs");
     assert!(reach.contains([-12.5, -4.0, 0.75]), "the top step, by the steps");
-    for top in [1.1, 2.3, 4.0] {
+    // The crate is mantled and the ledge caught on a jump; the tall wall is climbed, with no jump.
+    for (top, jump) in [(1.1, true), (2.3, true), (4.0, false)] {
         let block = named(&course, top);
         let on_top = [(block.min_x + block.max_x) / 2.0, (block.min_y + block.max_y) / 2.0, top];
-        assert!(!reach.contains(on_top), "the {top} m top is not reached");
-        assert_eq!(navmesh.find_path(course.start, on_top), None, "no path onto the {top} m top");
+        assert!(reach.contains(on_top), "the {top} m top is reached");
+        let route = path(&navmesh, course.start, on_top);
+        let at = |point: [f64; 3], link_end: [f64; 3]| (0..3).all(|axis| (point[axis] - link_end[axis]).abs() < 1e-9);
+        let up = navmesh.links().find(|link| {
+            link.to[2] == top && route.windows(2).any(|pair| at(pair[0], link.from) && at(pair[1], link.to))
+        });
+        assert!(up.is_some_and(|link| link.jump == jump && link.from[2] == 0.0), "up a link onto {top} m: {route:?}");
     }
+    let wall = named(&course, 1.0);
+    let over = |link: &&navmesh::Link| link.jump && link.to[2] == 0.0 && link.from[1] > wall.max_y;
+    assert!(navmesh.links().any(|link| over(&link) && link.to[1] < wall.min_y), "the thin wall is vaulted");
+}
+
+#[test]
+fn a_walk_off_the_platform_s_far_edge_drops_rather_than_go_back_down_the_stairs() {
+    let course = course();
+    let navmesh = NavMesh::bake(&course.blocks, BOUNDS, &AGENT);
+    let below = [18.0, -11.0, 0.0];
+    let route = path(&navmesh, PLATFORM, below);
+    ends_at(&route, below);
+    let drop = route.windows(2).position(|pair| pair[0][2] - pair[1][2] > 0.5);
+    assert!(drop.is_some_and(|at| route[at][2] == 1.6 && route[at][1] < -7.5), "off its northern edge: {route:?}");
 }
 
 #[test]

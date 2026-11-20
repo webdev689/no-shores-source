@@ -139,11 +139,12 @@ export class FleetSession {
   /** Their ship stepped by one set of orders, by the room's rules. */
   private stepped(ship: ArrayLike<number>, orders: FleetOrders, time: number): ShipFloats {
     const helm: Helm = { steer: orders.steer, crab: orders.crab, climb: orders.climb as Helm['climb'] };
-    return new Float64Array(this.rules.predict(ship, this.hurts(), time, [helm])?.ship ?? Array.from(ship));
+    const epoch = this.link.epoch ?? 0;
+    return new Float64Array(this.rules.predict(ship, this.hurts(), time, epoch, [helm])?.ship ?? Array.from(ship));
   }
 
   private poseAt(ship: ArrayLike<number>, time: number): Pose {
-    return this.rules.predict(ship, this.hurts(), time, [])?.pose ?? this.pose;
+    return this.rules.predict(ship, this.hurts(), time, this.link.epoch ?? 0, [])?.pose ?? this.pose;
   }
 
   /** A snapshot from the room: their ship set to its word with their orders it has not taken stepped on top, and what

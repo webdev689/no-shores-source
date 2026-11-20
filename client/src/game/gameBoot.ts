@@ -10,10 +10,13 @@ import { mainPortsOf } from '../rules/roster.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
 import { openHull, ShipModels } from '../ships/shipModels.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
+import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
 import { keptDiscovered } from './discovered.ts';
 import { FigureView } from './figureView.ts';
 import { arriving, type Flow } from './flow.ts';
+import { StoryHost } from './prologue/host.ts';
+import { installInterfaceSounds } from './uiSounds.ts';
 import { openForge } from './forge.ts';
 import { Hud } from './hud.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
@@ -30,10 +33,16 @@ export const FIRST_NODE = 'overlook-social';
 export const SEA_SHIPS = 16;
 
 /** Boots the game behind the first veil, `shipScale` the size ships are drawn at each frame (a ruin's wrecks too). */
-export async function bootGame(gpu: Gpu, hudRoot: HTMLElement, shipScale: () => number) {
+export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement, shipScale: () => number) {
   const hud = new Hud(hudRoot);
-  let flow: Flow = arriving(FIRST_NODE, 'Overlook');
-  if (flow.mode === 'loading') hud.veil(flow.words);
+  // The first tap or key wakes the sound, so the story's intro begins heard.
+  installInterfaceSounds(hudRoot);
+  const asked = new URLSearchParams(location.search).get('at');
+  // With `?at=` the page goes straight to a node; otherwise the story opens the game behind a tap to start.
+  let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
+  // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
+  hud.veil(flow.mode === 'loading' ? flow.words : null);
+  const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
@@ -50,11 +59,9 @@ export async function bootGame(gpu: Gpu, hudRoot: HTMLElement, shipScale: () => 
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
   const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
-  const [world, rmbText, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
+  const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
-    fetch(`${base}world/rmb/index.json`)
-      .then((answer) => (answer.ok ? answer.text() : null))
-      .catch(() => null),
+    loadLandTexts(base),
     fetch(`${base}movement.wasm`)
       .then((answer) => {
         if (!answer.ok) throw new Error(`movement.wasm: ${answer.status}`);
@@ -71,7 +78,6 @@ export async function bootGame(gpu: Gpu, hudRoot: HTMLElement, shipScale: () => 
   const biomeOf = (id: string) => continents.find((continent) => continent.id === id)?.climate ?? null;
   const drawersOn = (opened: Landmass) =>
     landDrawers(gpu, opened, scene, biomeOf(opened.id), base, cityAssets, shipScale);
-  const asked = new URLSearchParams(location.search).get('at');
   // Only arriving at another city's social space waits for the rules' module, to learn whether it is a ruin.
   const another = asked !== FIRST_NODE && asked?.endsWith('-social');
   const mainPorts = another ? await roomModule.then(mainPortsOf).catch(() => null) : null;
@@ -83,14 +89,28 @@ export async function bootGame(gpu: Gpu, hudRoot: HTMLElement, shipScale: () => 
   }
   const discovered = keptDiscovered(world);
   discovered.arrived(start.continent, start.node);
-  const landmass = await openLandmass(land, world, rmbText, start.continent);
+  const landmass = await openLandmass(land, world, landTexts, start.continent);
   /** A landmass's land as the scene draws it, its biome's woods coloured on it past the reach of its drawn trees. */
   const terrainFor = (opened: Landmass) => {
     const biome = biomeOf(opened.id);
     return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
   };
-  scene.setLand(landmass.view, terrainFor(landmass));
+  scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
   const views = { scene, figureView, shipModels, forge, firstPerson, store, sloop };
-  const modules = { roomModule, builtSloop, land, movement, seaWeather, seaView, drawersOn, terrainFor };
-  return { hud, flow, rooms, link, session, world, rmbText, start, discovered, landmass, ...views, ...modules };
+  const modules = { roomModule, builtSloop, land, movement, seaWeather, seaView, drawersOn, terrainFor, biomeOf };
+  return {
+    hud,
+    flow,
+    story,
+    rooms,
+    link,
+    session,
+    world,
+    landTexts,
+    start,
+    discovered,
+    landmass,
+    ...views,
+    ...modules,
+  };
 }

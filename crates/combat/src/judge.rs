@@ -273,7 +273,7 @@ pub fn answered(striker: &Fighter, defender: FighterId, verdict: &Verdict) -> Fi
     let mut next = *striker;
     match verdict {
         Verdict::Parried => next.action = Action::Staggered { left: PARRIED, cause: Cause::Parried },
-        // A sweep that lands on three leaves the lock where it was; a lock takes the one struck only if it had none.
+        // A blow that lands on several leaves the lock where it was; a lock takes the one struck only if it had none.
         Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. } => {
             next.target = next.target.or(Some(defender));
         }

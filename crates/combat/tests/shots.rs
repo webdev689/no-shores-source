@@ -147,11 +147,11 @@ fn a_quick_shot_takes_the_lock_and_flies_at_its_foe_and_aiming_lets_the_lock_go(
 
 #[test]
 fn a_quick_shot_flies_along_the_look_when_the_look_has_turned_from_the_locked_foe() {
-    // Locked on a foe 6 m due south, the look turned due north: the lock holds a while, but the shot goes ahead.
+    // Locked on a foe 6 m due south, the look turned due north: the lock lets go at once, and the shot goes ahead.
     let view = [(2, foe_at(0.0, 6.0, 0.0))];
     let locked = Fighter { target: Some(2), ..holding(Ranged::Pistolet) };
     let (fired, happening) = player_tick(1, &locked, &asking(0.0, TRIGGER), &view, &[], &movement::Flat);
-    assert_eq!(fired.target, Some(2), "the lock still holds");
+    assert_eq!(fired.target, None, "the look is past the lock's arc");
     let Some(Happening::Loosed(ball)) = happening else { panic!("a shot: {happening:?}") };
     assert!(ball.velocity[1] < 0.0 && ball.velocity[0].abs() < 1e-6, "north, along the look: {:?}", ball.velocity);
 }
@@ -176,7 +176,7 @@ fn an_arrow_falls_as_it_flies_and_stops_at_a_block_or_the_first_body_on_its_line
         flying = next;
     }
     assert!(flying.at[2] < 1.1 && flying.at[1] < -7.0);
-    let wall = [Block { min_x: -2.0, min_y: -4.2, max_x: 2.0, max_y: -4.0, top: 3.0 }];
+    let wall = [Block { min_x: -2.0, min_y: -4.2, max_x: 2.0, max_y: -4.0, top: 3.0, bottom: 0.0 }];
     let bodies = [(2, [0.0, -6.0, 0.0]), (3, [0.0, -3.0, 0.0]), (1, [0.0, -0.5, 0.0])];
     let mut stop = None;
     let mut shot = arrow;

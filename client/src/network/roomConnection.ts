@@ -1,5 +1,6 @@
 import type { ArtState } from './artMessages.ts';
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
+import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** A room's snapshot, as a link hands it on. */
@@ -18,6 +19,8 @@ export interface RoomLink {
   readonly joins: number;
   readonly rejoining: boolean;
   readonly lost: string | null;
+  /** World time at the room's first tick, seconds, from its last welcome; none from a stand-in that never says. */
+  readonly epoch?: number;
   send(bytes: Uint8Array<ArrayBuffer>): void;
   pump(seconds: number): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
@@ -38,8 +41,8 @@ export function rejoinWait(tries: number): number {
 }
 
 /** The codes a room closes a socket with when it sends its player away for not keeping to the messages (too many,
- *  too large, or not one, worker.ts): rejoining would only be sent away again. */
-const SENT_AWAY = [1008, 1009];
+ *  too large, or not one), or because its node is locked (worker.ts): rejoining would only be sent away again. */
+const SENT_AWAY = [1008, 1009, 4003];
 
 /** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
 interface Heard {
@@ -80,6 +83,7 @@ export class RoomConnection implements RoomLink {
   node: JoinedNode | null;
   joins = 1;
   rejoining = false;
+  epoch: number;
   /** Why the room sent the player away, in its words where it gave them; null while the link holds or rejoins. */
   lost: string | null = null;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
@@ -97,9 +101,14 @@ export class RoomConnection implements RoomLink {
     socket: WebSocket,
     welcome: Welcome,
   ) {
-    [this.url, this.snapshot, this.gear, this.session] = [url, heard.snapshot, heard.gear, heard.session];
+    // Each snapshot's tick says the room's world time, which keeps the page's clock in step with the room's.
+    const told = (shot: Snapshot) => {
+      WORLD_CLOCK.heard(this.epoch + Number(shot.tick) * ROOM_TICK_S);
+      heard.snapshot(shot);
+    };
+    [this.url, this.snapshot, this.gear, this.session] = [url, told, heard.gear, heard.session];
     [this.connect, this.socket] = [connect, socket];
-    [this.player, this.dressed, this.node] = [welcome.player, welcome.dressed, welcome.node];
+    [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     this.watch(socket);
   }
 
@@ -128,7 +137,8 @@ export class RoomConnection implements RoomLink {
         made = new RoomConnection(url, { snapshot, gear, session }, connect, socket, welcome);
         resolve(made);
       };
-      hear(socket, { welcomed, snapshot, gear: (sent) => (made ? made.heard(sent) : gear(sent)) });
+      const told = (shot: Snapshot) => (made ? made.snapshot(shot) : snapshot(shot));
+      hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)) });
       socket.addEventListener('error', () => reject(new Error(`the room at ${url} could not be reached`)));
       socket.addEventListener('close', (event) =>
         reject(new Error(`the room at ${url} closed: ${event.reason || 'it gave no reason'}`)),
@@ -169,7 +179,7 @@ export class RoomConnection implements RoomLink {
       return;
     }
     if (this.session !== null) socket.send(this.session);
-    [this.player, this.dressed, this.node] = [welcome.player, welcome.dressed, welcome.node];
+    [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
   }
 

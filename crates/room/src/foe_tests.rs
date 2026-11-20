@@ -191,7 +191,7 @@ fn the_same_inputs_give_the_same_heat_to_the_bit() {
 #[test]
 fn the_room_answers_the_firing_spots_near_a_point_on_its_course() {
     use ::foes::Spots;
-    let wall = Block { min_x: -4.0, min_y: -3.0, max_x: 4.0, max_y: -2.5, top: 3.0 };
+    let wall = Block { min_x: -4.0, min_y: -3.0, max_x: 4.0, max_y: -2.5, top: 3.0, bottom: 0.0 };
     let room = Room::new(vec![wall], (0.0, 6.0));
     let (centre, radius) = ([0.0, -1.0, 0.0], 3.0);
     let spots = room.spots().near(centre, radius);
@@ -208,7 +208,7 @@ fn the_room_answers_the_firing_spots_near_a_point_on_its_course() {
 #[test]
 fn a_crossbowman_fights_from_behind_the_room_s_cover() {
     const CROSSBOWMAN: u8 = 3;
-    let wall = Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5 };
+    let wall = Block { min_x: -6.0, min_y: -13.5, max_x: -2.0, max_y: -13.0, top: 2.5, bottom: 0.0 };
     let mut room = Room::new(vec![wall], (0.0, 0.0));
     let player = room.join().expect("a room with space");
     room.input(player, asking(&room, 1, major(CROSSBOWMAN), Controls::default())).unwrap();
@@ -248,7 +248,7 @@ fn put(room: &mut Room, x: f64, y: f64, facing: f64) -> FighterId {
 
 #[test]
 fn the_room_sends_how_alert_each_foe_is_as_it_notices_hunts_searches_and_lets_go() {
-    let wall = Block { min_x: 20.0, min_y: -40.0, max_x: 21.0, max_y: 40.0, top: 4.0 };
+    let wall = Block { min_x: 20.0, min_y: -40.0, max_x: 21.0, max_y: 40.0, top: 4.0, bottom: 0.0 };
     let mut room = Room::new(vec![wall], (0.0, 0.0));
     let player = room.join().expect("a room with space");
     room.input(player, asking(&room, 1, major(SWORDSMAN), Controls::default())).unwrap();
@@ -323,7 +323,7 @@ fn a_bosss_crew_comes_alert_to_the_foe_it_fights() {
 #[test]
 fn a_foe_sent_behind_a_wall_rounds_its_corner_rather_than_stick_there() {
     // A long wall, the place behind it, and two starts that left a foe pressed against one of its corners.
-    let wall = Block { min_x: -10.0, min_y: -6.0, max_x: 10.0, max_y: -5.5, top: 2.5 };
+    let wall = Block { min_x: -10.0, min_y: -6.0, max_x: 10.0, max_y: -5.5, top: 2.5, bottom: 0.0 };
     let place = [0.0, 3.0, 0.0];
     for start in [[8.0, -6.5, 0.0], [-9.5, -9.0, 0.0]] {
         let mut room = Room::new(vec![wall], (place[0], place[1]));
@@ -369,7 +369,7 @@ fn a_foe_walks_on_off_its_navmesh_to_a_player_standing_past_its_edge_and_strikes
 #[test]
 fn a_foe_sent_to_a_place_atop_a_wall_it_cannot_climb_goes_round_to_its_foot_rather_than_into_its_end() {
     // Its foe last seen standing on the wall, just over its northern face; the foe off the wall's eastern end.
-    let wall = Block { min_x: -8.0, min_y: -0.5, max_x: 8.0, max_y: 0.5, top: 2.5 };
+    let wall = Block { min_x: -8.0, min_y: -0.5, max_x: 8.0, max_y: 0.5, top: 2.5, bottom: 0.0 };
     let place = [0.0, -0.4, 2.5];
     let mut room = Room::new(vec![wall], (0.0, 30.0));
     let start = room.nav.nearest_point([14.0, 0.0, 0.0]).expect("the start is on the mesh");
@@ -512,7 +512,7 @@ fn a_shooter_caught_by_a_target_that_follows_it_fights_close_a_while_rather_than
             let apart = combat::sight::apart([me.x, me.y], [them.x, them.y]);
             let forward = if apart > 1.6 { pace } else { 0.0 };
             let mut input = asking(&room, sequence, None, Controls { forward, yaw, ..Controls::default() });
-            input.intent.combat.attack = (apart < 2.0 && sequence % 45 == 0).then_some(Stroke::Down);
+            input.intent.combat.attack = (apart < 2.0 && sequence % 90 == 0).then_some(Stroke::Down);
             room.input(player, input).unwrap();
             room.tick();
             let whole = room.players[&player].fighter.health_max;

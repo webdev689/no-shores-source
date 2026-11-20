@@ -180,7 +180,7 @@ export function aimCorners(
   return { corners: new Float32Array(corners), blended, added: total - blended };
 }
 
-const AIM_SHADER = /* wgsl */ `
+export const AIM_SHADER = /* wgsl */ `
 struct Camera {
   from_eye: mat4x4f,
   eye: vec4f,

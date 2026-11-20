@@ -22,13 +22,13 @@ function eyeFor(head: Point, yaw: number, pitch: number, blocks: ReturnType<type
 test('every hull’s masts stand on its middle line from its deck up, and its booms and yards over a body’s head', () => {
   for (const [hull, name] of HULL_NAMES.entries()) {
     const boxes = sparBoxes(hull);
-    const masts = boxes.filter((box) => box.bottom === undefined);
+    const masts = boxes.filter((box) => box.bottom <= 0);
     assert.ok(masts.length > 0 && masts.every((box) => box.minX < 0 && box.maxX > 0 && box.top > 10), name);
     const deck = HULL_DECKS[hull];
     assert.ok(deck);
-    for (const spar of boxes.filter((box) => box.bottom !== undefined)) {
+    for (const spar of boxes.filter((box) => box.bottom > 0)) {
       const plank = cellHeight(deck, (spar.minX + spar.maxX) / 2, (spar.minY + spar.maxY) / 2) ?? 0;
-      assert.ok((spar.bottom ?? 0) > plank + 1.8, `${name}: a spar clears a standing body (${spar.bottom})`);
+      assert.ok(spar.bottom > plank + 1.8, `${name}: a spar clears a standing body (${spar.bottom})`);
     }
   }
 });
@@ -52,8 +52,9 @@ test('from where boarders come aboard and along a walk the length of its deck, n
           for (const yaw of [0, Math.PI, Math.PI / 2, -Math.PI / 2])
             for (const pitch of [0.15, -0.2, 0.6]) {
               const eye = eyeFor(head, yaw, pitch, boxes);
-              assert.ok(rayHit(eye, head, boxes) >= 1, `${name} at ${x}, ${y} looking ${yaw}, ${pitch}: ${eye}`);
-              const inboard = rayHit(head, eye, sides) >= 1;
+              // The boom may stand the eye on a face it is already within reach of; nothing lies between.
+              assert.ok(rayHit(head, eye, boxes) >= 0.999, `${name} at ${x}, ${y} looking ${yaw}, ${pitch}: ${eye}`);
+              const inboard = rayHit(head, eye, sides) >= 0.999;
               assert.ok(inboard, `${name} at ${x}, ${y} looking ${yaw}: the eye ${eye} past the ship's side`);
             }
         }

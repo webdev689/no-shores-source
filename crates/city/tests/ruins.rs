@@ -54,7 +54,7 @@ fn overlook_is_planned_as_it_was() {
     assert_eq!(plan.name, "Overlook");
     assert!(!plan.social.stations.is_empty(), "a port city keeps its counters");
     // The plan before ruins were laid, pinned: a port city's plan must not change with them.
-    assert_eq!(fingerprint(&plan), "6760600ca67abcef");
+    assert_eq!(fingerprint(&plan), "832d7d9faea5f2c1");
 }
 
 #[test]
@@ -87,7 +87,12 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert!(port.works.iter().any(|solid| solid.material == Material::Roof));
     assert!(!ruin.works.iter().any(|solid| solid.material == Material::Roof));
     let heaps = ruin.works.iter().filter(|solid| solid.material == Material::Rubble).count();
-    let wall = port.works.iter().filter(|solid| solid.material == Material::Stone && solid.size[2] == 18.0).count();
+    // A wall piece is a stone block at least the wall's height: taller where the ground under it rises.
+    let wall = port
+        .works
+        .iter()
+        .filter(|solid| solid.material == Material::Stone && solid.shape == Shape::Block && solid.size[2] >= 18.0)
+        .count();
     assert!(heaps >= wall / 3 + ruin.gates.len(), "{heaps} heaps for {wall} pieces");
     assert!(!port.works.iter().any(|solid| solid.material == Material::Rubble));
     // The piers broken off: each of the ruin's is shorter than the port's.
@@ -111,5 +116,5 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert!(ruin.works.iter().all(|solid| !matches!(solid.shape, Shape::Arch { .. })), "every gate breached");
     // The same every time, and pinned, so every machine lays the same ruin.
     assert_eq!(ruin, plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans again"));
-    assert_eq!(fingerprint(&ruin), "922728626a411a2c");
+    assert_eq!(fingerprint(&ruin), "935af38abf063402");
 }

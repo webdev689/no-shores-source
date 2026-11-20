@@ -30,12 +30,12 @@ export class CityPainter {
   private readonly queue: PaintJob[];
   private readonly working = new Map<Worker, PaintJob>();
   private readonly tries = new Map<number, number>();
-  private readonly book: PictureBook;
+  private readonly book: Pick<PictureBook, 'pictures'>;
   private readonly onPainted: () => void;
   private readonly started = performance.now();
   private stopped = false;
 
-  constructor(gpu: Gpu, book: PictureBook, onPainted: () => void) {
+  constructor(gpu: Gpu, book: Pick<PictureBook, 'pictures'>, onPainted: () => void) {
     this.gpu = gpu;
     this.book = book;
     this.onPainted = onPainted;

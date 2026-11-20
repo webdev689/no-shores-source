@@ -29,6 +29,9 @@ const ASHORE_EVERY_MS = 60_000;
 /** The close code for a player whose character joined another room. */
 const ELSEWHERE = 4001;
 
+/** The close code for a player turned away from a locked node's room. */
+const LOCKED = 4003;
+
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
 
@@ -103,9 +106,10 @@ export class RoomHost extends DurableObject<Env> {
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     const player = this.guarded(() => this.room.join(), 0);
     if (player === 0) {
-      // A full room still takes the socket, to say why it closes.
+      // A full room, or a locked node's, still takes the socket, to say why it closes.
+      const locked = this.guarded(() => this.room.refusal(), null);
       server.accept();
-      server.close(1013, 'the room is full');
+      server.close(locked === null ? 1013 : LOCKED, locked ?? 'the room is full');
       return new Response(null, { status: 101, webSocket: client });
     }
     server.binaryType = 'arraybuffer';
@@ -114,8 +118,9 @@ export class RoomHost extends DurableObject<Env> {
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
-    server.send(this.room.joined(player));
+    // Ticking first: a room waking from rest sets its first tick's time anew, which the welcome carries.
     this.startTicking();
+    server.send(this.room.joined(player));
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -293,6 +298,7 @@ export class RoomHost extends DurableObject<Env> {
     if (this.ticking) return;
     const tickMs = this.room.tickSeconds * 1000;
     this.started = Date.now() - this.ticks * tickMs;
+    this.guarded(() => this.room.epoch(this.started), undefined);
     this.ticking = setInterval(() => {
       const due = Math.floor((Date.now() - this.started) / tickMs);
       if (this.ticks >= due) return;

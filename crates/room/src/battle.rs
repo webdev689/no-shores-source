@@ -454,7 +454,8 @@ impl Fights {
         for fought in &mut self.list {
             let orders: Vec<(ShipId, Orders)> = fought.crews.values().map(|crew| (crew.ship, crew.orders)).collect();
             let waters = CoastWaters { coasts, swell: &fought.swell };
-            let stepped = fought.fight.step(&orders, &waters, fought.wind, time);
+            let wind = fought.wind;
+            let stepped = fought.fight.step(&orders, &waters, &|_| wind, time);
             fought.events = std::mem::take(&mut fought.pending);
             fought.events.extend(stepped);
             for crew in fought.crews.values_mut() {

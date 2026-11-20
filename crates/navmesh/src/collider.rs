@@ -53,6 +53,15 @@ impl Collider {
         }
     }
 
+    /// Its underside: a block's, which may stand over the ground as a roof or a deck does; a ramp stands on the
+    /// ground, so it has none above it.
+    pub(crate) fn underside(&self) -> f64 {
+        match self {
+            Self::Block(block) => block.bottom,
+            Self::Ramp(_) => f64::NEG_INFINITY,
+        }
+    }
+
     /// Whether its top is shallow enough to walk: a block's always is, a ramp's within `max_slope` rise over run.
     pub(crate) fn walkable_top(&self, max_slope: f64) -> bool {
         match self {
@@ -89,26 +98,31 @@ impl Collider {
     }
 }
 
-/// The surface a body stands on at (x, y): of the tops over it and not under the ground, the one nearest `near` (a
-/// poly's own level, so a floor under an overhang is not taken for the one above it); the tallest when `near` is
-/// none; the ground when no top is over it.
+/// The surface a body stands on at (x, y): of the tops over it and not under the ground, and the ground where nothing
+/// stands on it, the one nearest `near` (a poly's own level, so a floor under an overhang or a deck is not taken for
+/// the one above it); the tallest when `near` is none; the ground when no top is over it.
 pub(crate) fn surface_near(colliders: &[Collider], ground: &dyn Terrain, x: f64, y: f64, near: Option<f64>) -> f64 {
     let floor = ground.height_at(x, y);
     let Some(near) = near else { return surface_top(colliders, floor, x, y) };
     let mut found = None;
     let mut best = f64::INFINITY;
+    let mut ground_open = true;
     for collider in colliders.iter().filter(|collider| collider.covers(x, y)) {
         let top = collider.surface(x, y);
         if top < floor {
             continue;
         }
+        ground_open &= collider.underside() > floor;
         let off = (top - near).abs();
         if off < best {
             best = off;
             found = Some(top);
         }
     }
-    found.unwrap_or(floor)
+    match found {
+        Some(top) if !ground_open || best <= (floor - near).abs() => top,
+        _ => floor,
+    }
 }
 
 /// The tallest top over (x, y), never below the ground there, at `floor`.

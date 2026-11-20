@@ -101,7 +101,7 @@ pub fn open_island(text: &[u8]) -> bool {
     }) else {
         return false;
     };
-    keep(Opened::Land { room: Box::new(room), node: None });
+    keep(Opened::Land { room: Box::new(room), node: None, refusal: None });
     true
 }
 

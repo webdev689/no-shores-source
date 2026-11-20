@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
-import { keysOf, levelOf, soundCredits, variantOf } from './soundSamples.ts';
+import { keysOf, levelOf, matchedLevel, measureOf, rushOf, soundCredits, variantOf } from './soundSamples.ts';
 
 test("every recorded sound is kept under its hash; Freesound's carry their whole credit, DFO's say where they came from", () => {
   const sounds = Object.entries(bank.sounds);
@@ -43,4 +43,32 @@ test('a held tone is levelled by its loudness, a click by its peak', () => {
   // The tone's loudest 20 ms is its whole: turned down to -24 dBFS, well under the click's peak level.
   assert.ok(Math.abs(levelOf([tone], rate) - 0.063 / Math.SQRT1_2) < 0.002);
   assert.equal(levelOf([click], rate), 0.3);
+});
+
+test("a sound's loudness is its loudest stretch, or the whole of it; a recording standing in takes it, under its peak", () => {
+  const rate = 1000;
+  const burst = Float32Array.from({ length: 4000 }, (unused, index) => (index >= 1000 && index < 1400 ? 0.5 : 0.05));
+  const loudest = measureOf([burst], rate, 0.4);
+  assert.ok(Math.abs(loudest.loud - 0.5) < 1e-9, 'its loudest 0.4 s is the burst');
+  assert.equal(loudest.peak, 0.5);
+  const whole = measureOf([burst], rate, Infinity);
+  assert.ok(Math.abs(whole.loud - Math.sqrt((400 * 0.25 + 3600 * 0.0025) / 4000)) < 1e-9, 'over all of it');
+  // As loud as the synthesiser's sound, unless the recording's peaks would then pass the most it may reach: that
+  // sound's own peak where nothing else is said, the mix's ceiling where it is, or nothing at all.
+  assert.ok(Math.abs(matchedLevel({ peak: 0.2, loud: 0.05 }, { peak: 1, loud: 0.1 }) - 2) < 1e-9);
+  assert.ok(Math.abs(matchedLevel({ peak: 0.5, loud: 0.05 }, { peak: 1, loud: 0.1 }) - 2) < 1e-9);
+  assert.ok(Math.abs(matchedLevel({ peak: 0.8, loud: 0.05 }, { peak: 1, loud: 0.1 }) - 1.25) < 1e-9);
+  assert.ok(Math.abs(matchedLevel({ peak: 0.8, loud: 0.05 }, { peak: 1, loud: 0.1 }, 2) - 2) < 1e-9);
+  assert.ok(Math.abs(matchedLevel({ peak: 0.9, loud: 0.01 }, { peak: 1, loud: 0.1 }, Infinity) - 10) < 1e-9);
+  assert.equal(matchedLevel({ peak: 0, loud: 0 }, { peak: 0, loud: 0 }), 0, 'silence stands in for silence');
+});
+
+test("a whoosh's rush is where its loudest 20 ms come", () => {
+  const rate = 44100;
+  // Quiet hiss, then a burst 90 ms in, as a heavy swing's recording rises to its rush.
+  const whoosh = Float32Array.from({ length: rate / 3 }, (unused, index) => {
+    const seconds = index / rate;
+    return (Math.abs(seconds - 0.09) < 0.01 ? 0.8 : 0.02) * Math.sin(index);
+  });
+  assert.ok(Math.abs(rushOf([whoosh], rate) - 0.09) < 0.002, `rush at ${rushOf([whoosh], rate)}`);
 });

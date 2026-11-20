@@ -1,4 +1,4 @@
-import type { FightLay, FightLook, FightView } from '../rules/fightRules.ts';
+import type { FightEvent, FightLay, FightLook, FightView } from '../rules/fightRules.ts';
 import type { ShadowMap } from '../shadow.ts';
 import type { LandView } from '../rules/landRules.ts';
 import { type AimDrawn, AimView } from '../ships/aimView.ts';
@@ -57,6 +57,8 @@ export class Naval {
   /** Where the player's own Sloop was drawn at the last step, and the wind's bearing the sails were last stepped in. */
   private own: FightingShip | null = null;
   private windBearing = 0;
+  /** The fight's events the last step took, for whatever else hears them (the sea's sounds). */
+  heard: readonly FightEvent[] = [];
   private readonly marks: MarkDrawer;
   /** What draws the aim over the water (`drawAimOver`), where the marks' device can; and the eye it is laid from. */
   private readonly aimView: AimView | null;
@@ -154,8 +156,9 @@ export class Naval {
     this.own = sailing;
     const toWindow = (point: readonly [number, number, number]) =>
       [point[0] - view.leftM, point[1] - view.topM, point[2]] as const;
+    this.heard = fighting.takeEvents();
     const splashes = this.feel.frame({
-      events: fighting.takeEvents(),
+      events: this.heard,
       ships: this.feelShips(answer),
       balls: answer.balls,
       now: time,
@@ -248,7 +251,7 @@ export class Naval {
   /** The fight's readout at `now` (`fightDisplay`): its plate and rose, the card on the nearest captain with `board`'s
    *  key while it can be boarded, and its last volley's tally; none out of a fight. */
   display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {
-    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board) : null;
+    return this.fight ? fightDisplay(this.fight.view, this.feel, now, board, this.fight.own) : null;
   }
 
   /** Its captain's ship while it floats, heights as drawn: in its hull and its faction's colours, its sails stepped

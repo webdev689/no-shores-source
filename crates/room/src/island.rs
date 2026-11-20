@@ -127,8 +127,10 @@ impl Room {
     fn stand_guards(&mut self, posts: &[[f64; 2]], faction: u8, levels: Option<(u8, u8)>) {
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
+        // An isle's guards hold their posts: with no lattice to draw a beat from, none walks one.
+        let mut beats = draws_of(self.world_seed);
         for (group, post) in guards(faction, &mut draws).iter().zip(posts) {
-            if let Some(found) = self.post_at(group, (post[0], post[1]), &section, &mut draws) {
+            if let Some(found) = self.post_at(group, (post[0], post[1]), (&section, &[]), (&mut draws, &mut beats)) {
                 self.garrison.push(found);
             }
         }

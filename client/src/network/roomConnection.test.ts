@@ -10,7 +10,7 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
   const builder = new flatbuffers.Builder(64);
   const part =
     'player' in message
-      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL)
+      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0)
       : Snapshot.createSnapshot(builder, message.tick, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
@@ -122,4 +122,20 @@ test('a room that sends the player away, or a page that leaves, is never joined 
   left.connection.close();
   context.mock.timers.tick(waitMs(9));
   assert.deepEqual([left.sockets.length, left.connection.lost], [1, null], 'the wait was let go');
+});
+
+test('a locked node’s room turns the player away saying why: a join fails with its words, and no rejoin is tried', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const socket = new FakeSocket();
+  const connect = () => socket as unknown as WebSocket;
+  const opening = RoomConnection.open('ws://test/room/node-burned-mill', () => undefined, undefined, null, connect);
+  socket.closed(4003, 'The Burned Mill is locked');
+  await assert.rejects(opening, /closed: The Burned Mill is locked$/);
+  const kept = await joined(3);
+  kept.sockets[0]?.closed(1001);
+  context.mock.timers.tick(waitMs(0));
+  kept.sockets[1]?.closed(4003, 'The Burned Mill is locked');
+  context.mock.timers.tick(waitMs(9));
+  const { rejoining, lost } = kept.connection;
+  assert.deepEqual([kept.sockets.length, rejoining, lost], [2, false, 'The Burned Mill is locked']);
 });

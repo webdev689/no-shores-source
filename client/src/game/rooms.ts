@@ -29,20 +29,22 @@ export function accountsFrom(rooms: string | null, given: string | null): string
 }
 
 /** The page's account, from its address: the link to the accounts its `?room=` and `?accounts=` name (null for none),
- *  and the session's token the rooms keep the player's character by, once the player is signed in or made a guest. A
- *  Discord sign-in comes back with a code in the address's fragment, which is taken and cleared at once; the tab's
- *  own nonce (in `passing`) redeems it. */
+ *  and a way to the session's token the rooms keep the player's character by, as it stands once the player is signed
+ *  in or made a guest. A Discord sign-in comes back with a code in the address's fragment, which is taken and cleared
+ *  at once; the tab's own nonce (in `passing`) redeems it. */
 export function accountOf(
   page: Location,
   kept: Kept,
   passing: Kept,
-): { link: AccountLink | null; session: Promise<string | null> } {
+): { link: AccountLink | null; session: () => Promise<string | null> } {
   const asking = new URLSearchParams(page.search);
   const where = accountsFrom(asking.get('room'), asking.get('accounts'));
-  if (where === null) return { link: null, session: Promise.resolve(null) };
+  if (where === null) return { link: null, session: () => Promise.resolve(null) };
   const link = new AccountLink(where, kept, undefined, passing);
   if (link.takeFrom(page.hash)) history.replaceState(null, '', `${page.pathname}${page.search}`);
-  return { link, session: link.session().then(() => link.token) };
+  // The token is read as each room connects, so a sign-in made after startup (at the story's helm) is the one used.
+  const first = link.session();
+  return { link, session: () => first.then(() => link.token) };
 }
 
 /** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder difficulty is its own room

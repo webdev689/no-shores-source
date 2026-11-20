@@ -14,6 +14,8 @@ code:
   - crates/sailing/src/waters.rs#weather_wind
   - crates/sailing/src/pose.rs#lag_of
   - crates/room/src/sea_weather.rs#SeaWeather
+  - crates/sailing/src/waters.rs#sail_wind
+  - crates/sailing/src/waters.rs#sea_wind_at
   - crates/sailing/src/waters.rs#OpenSea
   - crates/land/src/exact.rs#fingerprint
   - crates/land-wasm/src/sail.rs#sail_bytes
@@ -35,6 +37,7 @@ code:
   - client/src/ships/dress.ts#DRESSES
   - client/src/ships/flag.ts#flagGrid
   - client/src/ships/flagPictures.ts#flagPictures
+  - client/src/ships/shipView.ts#shipViewNamed
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -62,18 +65,20 @@ sail the other hulls ([[Hulls]]) by the same laws.
   sail running dead before it) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail its rudder
   swings it at its steerage, read at its way over its rig's gain: 3 degrees a second at no way, about 12 at its best
-  way in its rated wind. On its oars it swings at 20.
+  way in the usual breeze. On its oars it swings at 20.
 - **The ladder.** W climbs a rung, S comes down one: oars astern, oars at rest, oars ahead, sails set. A and D steer;
   backing water, the helm answers the other way. Shift with A or D pulls it sideways on its oars.
 - **A step.** Its swing and its way move toward what its rung asks, at the mod's rates under DFO's responsive helm.
   With its sails struck and its oars at rest, it coasts to a stop, faster for the share of its way its canvas made.
   It moves in its own frame, then swings, as the mod's boat did. Its heading stays in [0, 2π).
-- **The wind.** It sails in the weather's wind where it is ([[World Map]], "Weather and travel"): its way, and its
-  strength over 6.5 m/s (a moderate sea's middle) as a share of its rated wind (1.5), held between 0.3 and 2 of it
-  (`sea_wind`), so a calm's light air still moves it and a storm's gale does not run away with it
-  (`weather_wind`). The sea room's fights, the fleet room, a clash and the World Editor all take it. A fight takes the
-  wind where and when it began, and keeps it while it lasts (`sea_weather.rs`). A room counts its own ticks: its host
-  hands it the world time it opened at (`room_world_start`).
+- **The wind.** The [[Weather]]'s wind where it is ([[World Map]], "Weather and travel"), held for a minute of
+  world time at a time and read at the minute's start. Its sails feel it scaled so the weather's usual breeze
+  (6.5 m/s) is its rated wind (1.5 m/s), and the helm holds it between 0.3 and 2 times that: a gale drives it at most
+  twice as hard, a near calm still gives way. Every ship sails in the wind where it is, in a fight, among captains
+  alone and in a fleet room alike, and the World Editor takes it too. A room's world time is its host's wall at its
+  first tick, which its welcome carries, so a browser predicting its ship reads the same wind by the same rules; an
+  order the room takes just after a world minute turns can bring a small correction. A fight takes the sea's weather
+  where and when it began, and keeps it while it lasts (`sea_weather.rs`).
 - **Its pose.** It takes the mean of the water under its bow, stern, sides and middle at its waterline as its height,
   and its slope along and across it as its pitch and roll, each felt through its inertia: every wave answered as a
   first-order lag answers it, its time constant 0.02 s a metre of its waterline's length (`lag_of`), so a bigger hull
@@ -198,17 +203,17 @@ Boat's sizes; a spanker is a gaff sail:
 - **Luffing.** A sail more than 150 degrees off the wind flaps on a sine of the clock, a quarter full each way.
 - **Trimmed.** The gaff swings about its luff to leeward (`gaffTrim`): square off with the wind astern, 45 degrees
   with it abeam, home by 150 off it, at 100 degrees a second (300 by DFO's rule for the swing).
-- **Square sails.** A square sail is laid on its four corners, its columns from port to starboard. It bellies forward
-  as a gaff does sideways, 1.1 m full and 0.12 hanging, most a little under its middle, its head bent straight to its
-  yard; its wind is the cosine of the wind's way off its yard's face: full with the wind astern of it, empty along
-  it, aback past that. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
+- **Square sails.** A square sail is laid on its four corners, its columns from port to starboard and its rows from
+  its foot up to its yard; laced along its head and sheeted at its two foot corners, it bellies forward, fullest
+  amidst, 1.2 m full and 0.15 hanging. Its wind is read off its yard's face: full with the wind astern of it, half
+  full abeam and hanging with the wind ahead, never aback. Its yard is braced round its mast (`squareBrace`), its leeward arm aft: square with the wind
   astern, 45 degrees with it abeam and held there closer to it, at the gaff's 100 degrees a second. The yard is drawn
   turning with it: when its model loads, the round spar pieces lying across it within 0.8 m of the line through each
   sail's head are its yard, and a bare one across a mast with no sail on it turns with that mast's lowest sail. Each
   yard and its canvas turn by the same angle about the same upright line through the middle of the yard, so the
   sail's head stays on its yard at every brace.
 - **Set and furled.** Over 2 s: the gaff brailed in to the mast, the staysail rolled down its stay, a square sail
-  gathered in a bundle half a metre deep along its yard, the gaff and the yards home.
+  gathered up to its yard in loose folds, the gaff and the yards home.
 - **Holed and torn.** In a fight ([[Naval Combat]], "How it looks") its canvas is drawn with holes: a cell of a
   sail's grid (7 by 6 a sail) is left out where a ball passed through it, and more open as its canvas's share falls,
   each new one beside an old, a third of every sail's cells shot through with none left; a hole never closes for the
@@ -220,7 +225,11 @@ Boat's sizes; a spanker is a gaff sail:
   from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with the
   fight.
 
-In the editor its sails are set on the helm's top rung; at sea, while it is under way. The wind is the weather's.
+Any published hull is drawn by its name (`shipViewNamed`: its mesh and its sails' corners from `ships.json`), as
+the story draws the Brig and the Frigate.
+
+In the editor its sails are set on the helm's top rung; at sea, while it is under way. They are drawn in the wind
+the rules sail it in, where it is, which the page reads from the sky's law.
 
 Sail (`B`) puts it to sea at the camera's target, heading where the camera looks; the rules refuse it where the
 water is shallower than its draught, and the camera stands back off. Each frame owes it its time in whole ticks, one

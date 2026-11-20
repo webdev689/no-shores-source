@@ -53,7 +53,7 @@ async function realWorld() {
   const cities = [];
   const nodes = [];
   for (const continent of layout.continents) {
-    const sites = sitesOf(continent.id, await readFile(new URL(`land/${continent.id}.json`, world), 'utf8'));
+    const sites = sitesOf(continent.id, await readFile(new URL(`land/${continent.id}.json`, world), 'utf8'), []);
     if (sites.city) cities.push(sites.city);
     nodes.push(...sites.nodes);
   }

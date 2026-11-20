@@ -85,7 +85,8 @@ export function threatens(view: FighterView, player: number): boolean {
   return view.target === player && (kind === 'attack' || kind === 'telegraph' || kind === 'draw');
 }
 
-/** A press of the guard parries a blow landing within this many ticks of it (crates/combat/src/tuning.rs). */
+/** A player's press of the guard parries a blow landing within this many ticks of it (crates/combat/src/tuning.rs
+ *  PARRY_WINDOW); a foe's guard opens a shorter window, which no cue times. */
 const PARRY_WINDOW = 12;
 
 /** The parry ring over a foe at a blow the player can parry: the share of its wind-up still to come (1 as it begins,

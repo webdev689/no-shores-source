@@ -46,6 +46,14 @@ export function levelledCells(plan: CityPlan): Map<number, PlanCell & { level: n
   return levelled;
 }
 
+/** The levelled cells that stand on a plate of their own: all but those holding placed pieces, which stand on the
+ *  land. */
+function platedCells(plan: CityPlan): Map<number, PlanCell & { level: number }> {
+  const plated = levelledCells(plan);
+  for (const [index, cell] of plated) if (cell.use === 'pieces') plated.delete(index);
+  return plated;
+}
+
 /** The plates' tops (positions only, from the city's origin), and their tiles: per tile its layer and quarter turns,
  *  (side x 16) tiles a row. */
 export function groundPlates(
@@ -55,9 +63,11 @@ export function groundPlates(
   paving: number,
 ): { tops: Float32Array; tiles: Uint8Array; width: number } {
   const side = sideOf(plan);
-  const width = side * TILES;
+  const byPlace = platedCells(plan);
+  // A plan of placed pieces alone (a layout's) has no plates: its tile texture is one texel, not the grid's whole
+  // square, which for layouts spread over kilometres runs to many megabytes and past the device's texture limit.
+  const width = byPlace.size ? side * TILES : 1;
   const tiles = new Uint8Array(width * width * 2);
-  const byPlace = levelledCells(plan);
   const levelled = [...byPlace.values()];
   const tops = new Float32Array(levelled.length * 18);
   const paved = (column: number, row: number): boolean => {
@@ -107,7 +117,7 @@ export function plateSkirts(
   into: (cell: PlanCell) => MeshData,
 ): void {
   const side = sideOf(plan);
-  const levelled = levelledCells(plan);
+  const levelled = platedCells(plan);
   const [scaleU, scaleV] = [SOLID_TEXELS_PER_METRE / picture.width, SOLID_TEXELS_PER_METRE / picture.height];
   const sides = [
     { step: [0, -1], from: [0, 0], to: [1, 0], out: [0, -1, 0] },
@@ -160,19 +170,21 @@ const BUCKET_M = 64;
 export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean {
   const rects: (readonly [number, number, number, number])[] = plan.pads.map((pad) => pad.bounds);
   const solids: Solid[] = [...plan.works, ...plan.landmark, ...plan.social.solids];
-  const buckets = new Map<string, { rects: number[]; solids: number[] }>();
+  type Entry = { rects: number[]; solids: number[]; clearings: number[] };
+  const buckets = new Map<string, Entry>();
   const bucket = (column: number, row: number) => {
     const key = `${column},${row}`;
     let found = buckets.get(key);
-    if (!found) buckets.set(key, (found = { rects: [], solids: [] }));
+    if (!found) buckets.set(key, (found = { rects: [], solids: [], clearings: [] }));
     return found;
   };
-  const spread = (bounds: readonly number[], add: (entry: { rects: number[]; solids: number[] }) => void): void => {
+  const spread = (bounds: readonly number[], add: (entry: Entry) => void): void => {
     for (let row = Math.floor(bounds[1] / BUCKET_M); row <= Math.floor(bounds[3] / BUCKET_M); row++)
       for (let column = Math.floor(bounds[0] / BUCKET_M); column <= Math.floor(bounds[2] / BUCKET_M); column++)
         add(bucket(column, row));
   };
   rects.forEach((rect, k) => spread(rect, (entry) => entry.rects.push(k)));
+  const clearings = plan.clearings ?? [];
   const reaches = solids.map(solidReach);
   solids.forEach((solid, k) =>
     spread(
@@ -180,12 +192,19 @@ export function clearedGround(plan: CityPlan): (x: number, y: number) => boolean
       (entry) => entry.solids.push(k),
     ),
   );
+  clearings.forEach(({ at, radius }, k) =>
+    spread([at[0] - radius, at[1] - radius, at[0] + radius, at[1] + radius], (entry) => entry.clearings.push(k)),
+  );
   return (x, y) => {
     const entry = buckets.get(`${Math.floor(x / BUCKET_M)},${Math.floor(y / BUCKET_M)}`);
     if (!entry) return false;
     for (const k of entry.rects) {
       const rect = rects[k];
       if (x >= rect[0] && x <= rect[2] && y >= rect[1] && y <= rect[3]) return true;
+    }
+    for (const k of entry.clearings) {
+      const { at, radius } = clearings[k];
+      if (Math.hypot(x - at[0], y - at[1]) <= radius) return true;
     }
     for (const k of entry.solids) {
       const solid = solids[k];

@@ -1,18 +1,20 @@
-// A foe's plate, one layout for every bar of a foe: its faction's emblem in a square at the left and, to its right, its
-// name above a long thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge; its
-// debuffs' icons beside the bar.
+// A foe's plate, one layout for every bar of a foe: its level in a square at the left and, to its right, its
+// name above a thin bar of its health, the fill in its rank's colour over a dark trough with a hairline edge; its
+// debuffs' icons beside the bar. Over a figure its size goes with its rank, as Destiny's bars do: a Minor's short and
+// thin, so the crowd's fodder stays quiet, and an Elite's and up long and marked in thirds, so they stand out.
+import { PLATES } from '../plus/barLayout.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
-import { element, Meter } from '../plus/meter.ts';
+import { element, Meter, setStyle, showNode } from '../plus/meter.ts';
 import { foeDebuffs, StatusRow } from './statusIcons.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
  *  to 5 Boss), its faction's name, the phase it fights in (1 to 3) and how alert it is (0 idle, 1 suspicious, 2 alert,
- *  3 searching); its faction's number, which picks its emblem (none without it); its shield, if it stands with one;
- *  its debuffs; and whether it is a companion. */
+ *  3 searching); its faction's number, which picks its emblem (none without it); its level (0 for a foe of none,
+ *  whose square stands empty); its shield, if it stands with one; its debuffs; and whether it is a companion. */
 export interface MarkedFoe {
   readonly id: number;
   readonly name: string;
@@ -22,11 +24,34 @@ export interface MarkedFoe {
   readonly phase: number;
   readonly alert: number;
   readonly factionNumber?: number;
+  readonly level?: number;
   readonly shield?: FoeShield | null;
   readonly statuses?: FoeStatuses;
   /** A companion fighting beside the players, whose plate is drawn in the players' colour. */
   readonly ally?: boolean;
 }
+
+/** A plate's tier by its foe's rank: a Minor's, a Major's, or an Elite's and up. */
+export type PlateTier = 'minor' | 'major' | 'elite';
+export function plateTier(rank: number): PlateTier {
+  return rank <= 1 ? 'minor' : rank === 2 ? 'major' : 'elite';
+}
+
+/** A plate's width and its bar's height over a figure, by its tier, in CSS pixels, each as tall as its level's square
+ *  (`PLATES.overhead.height`), and the share of the room under the name its bar runs. A Major's is the size a ship's
+ *  plate is drawn at; a Minor's as wide, which "? Crossbowman", the longest name a Minor has, fills in the game's face,
+ *  so only its bar is short. A Minor's bar is 6 px: drawn far off at three quarters, it still holds a row of its red
+ *  and of a shield's colour. */
+export const OVERHEAD_SIZES: Readonly<
+  Record<PlateTier, { readonly width: number; readonly bar: number; readonly barShare: number }>
+> = {
+  minor: { width: PLATES.overhead.width, bar: 6, barShare: 0.6 },
+  major: { width: PLATES.overhead.width, bar: PLATES.overhead.bar, barShare: 1 },
+  elite: { width: 176, bar: 10, barShare: 1 },
+};
+
+/** Where an Elite's and up's bar over a figure is marked, as shares of its whole health: its thirds. */
+export const THIRDS: readonly number[] = [1 / 3, 2 / 3];
 
 /** A shield's ward over a foe's health, as DFO's Enhanced HUD laid a boss's: from the bar's left end, as long as the
  *  share of the foe's whole health it holds still, in its element's colour (by the gear crate's number); none once
@@ -79,12 +104,12 @@ class PoiseTrack {
       this.root.className = `poise-track poise-${state}${breaks ? ' poise-flash' : ''}`;
       this.last = { id, state };
     }
-    this.fill.style.width = `${Math.round(fill * 1000) / 10}%`;
+    setStyle(this.fill, 'width', `${Math.round(fill * 1000) / 10}%`);
     if (this.word.textContent !== word) this.word.textContent = word;
   }
 }
 
-/** What a plate holds besides its emblem, name and health: a poise track under the health; whether its health breaks
+/** What a plate holds besides its level, name and health: a poise track under the health; whether its health breaks
  *  off in pieces and remembers each foe's, for a plate that turns from foe to foe, taking a foe it first shows as
  *  whole (a plate that comes with the first blow, after it lands) or as found (one that comes before any blow); and
  *  spans after the name (by their class) for other words. */
@@ -99,7 +124,7 @@ export class FoePlate {
   readonly root: HTMLElement;
   readonly health: Meter;
   readonly words: Readonly<Record<string, HTMLElement>>;
-  private readonly emblem: HTMLElement;
+  private readonly level: HTMLElement;
   private readonly alert: HTMLElement;
   private readonly name: HTMLElement;
   private readonly mark: HTMLElement;
@@ -115,7 +140,7 @@ export class FoePlate {
 
   constructor(parent: HTMLElement, className: string, parts: PlateParts = {}) {
     this.root = element('div', `plate ${className}`, parent);
-    this.emblem = element('i', `emblem ${ROLES.chip}`, this.root);
+    this.level = element('b', `level ${ROLES.chip}`, this.root);
     const body = element('div', 'body', this.root);
     const title = element('div', 'title', body);
     this.alert = element('span', 'alert', title);
@@ -125,6 +150,7 @@ export class FoePlate {
     this.health = new Meter(body, 'health', { pieceLeast: parts.remembers ? PIECE_LEAST.foe : null });
     this.ward = element('i', 'ward', this.health.root);
     this.ward.hidden = true;
+    for (const share of THIRDS) element('i', 'third-mark', this.health.root).style.left = `${share * 100}%`;
     this.poise = parts.poise ? new PoiseTrack(body) : null;
     this.debuffs = new StatusRow(this.root, 'Debuffs');
     this.seen = parts.remembers ? new Map() : null;
@@ -141,8 +167,9 @@ export class FoePlate {
     const { dataset } = this.root;
     const band = foe.ally ? 'ally' : rankBand(foe.rank);
     if (dataset['band'] !== band) dataset['band'] = band;
-    const faction = String(foe.factionNumber ?? 0);
-    if (this.emblem.dataset['faction'] !== faction) this.emblem.dataset['faction'] = faction;
+    if (dataset['tier'] !== plateTier(foe.rank)) dataset['tier'] = plateTier(foe.rank);
+    const level = foe.level ? String(foe.level) : '';
+    if (this.level.textContent !== level) this.level.textContent = level;
     const mark = rankMark(foe.rank) ?? '';
     if (this.mark.dataset['mark'] !== mark) this.mark.dataset['mark'] = mark;
     if (this.name.textContent !== foe.name) this.name.textContent = foe.name;
@@ -150,9 +177,9 @@ export class FoePlate {
     this.alert.classList.toggle('now', alert === '!');
     this.health.set(share, seconds);
     const ward = wardOf(foe);
-    this.ward.hidden = !ward;
+    showNode(this.ward, !!ward);
     if (ward) {
-      this.ward.style.width = `${Math.round(ward.share * 1000) / 10}%`;
+      setStyle(this.ward, 'width', `${Math.round(ward.share * 1000) / 10}%`);
       if (this.ward.dataset['element'] !== String(ward.element)) this.ward.dataset['element'] = String(ward.element);
     }
     this.seen?.set(foe.id, Math.max(0, Math.min(1, share)));

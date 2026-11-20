@@ -26,7 +26,7 @@ export async function ashoreOn(
   const { rooms } = context;
   let link: RoomLink;
   if (rooms) {
-    const session = await context.session;
+    const session = await context.session();
     link = await RoomConnection.open(
       rooms(isleRoomName(held.seen, seas)),
       heard,
@@ -43,6 +43,8 @@ export async function ashoreOn(
     maxX: east + held.seen.at[0],
     maxY: south + held.seen.at[1],
     top,
+    // From the ground up: an island's ground stands over the sea, so this is under it everywhere.
+    bottom: -100,
   }));
   const open = (received: (snapshot: Snapshot) => void) => {
     hear = received;

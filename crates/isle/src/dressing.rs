@@ -9,8 +9,12 @@ use crate::draws::{Draws, Noise, mix};
 use crate::shape::{Shape, bearing_of, way};
 use crate::sites::Sites;
 use crate::{Kind, Placement};
+
 use core::f64::consts::{FRAC_PI_2, PI, TAU};
 use movement::{Block, Heights, Terrain};
+
+/// The underside of a block standing from an island's ground, metres: under the sea's floor round any island.
+const ISLE_BLOCK_BOTTOM_M: f64 = -100.0;
 
 /// Placements are kept in buckets this many metres square, to find a neighbour quickly.
 const BUCKET_M: f64 = 8.0;
@@ -342,6 +346,8 @@ pub fn blocks(placements: &[Placement]) -> Vec<Block> {
                 max_x: middle_x + half,
                 max_y: middle_y + half,
                 top,
+                // From the ground up: an island's ground stands over the sea, so this is under it everywhere.
+                bottom: ISLE_BLOCK_BOTTOM_M,
             });
         }
     }

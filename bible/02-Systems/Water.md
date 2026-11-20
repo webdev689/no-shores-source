@@ -69,15 +69,19 @@ pixel, where its surface meets the ground there, so it is the land's own line ho
 
 - **Depth.** The seabed is seen through the water, bent by the surface and tinted by the water it is seen through:
   sand shows turquoise in the shallows, and the sea deepens to blue. Lakes and rivers are greener and murkier.
-- **Light.** The sky and its clouds reflect, more at a glancing angle; the sun glints, its glitter blurring far off;
-  a crest glows green where the sun shines through it. Caustics dance on the bed.
+- **Light.** The sky ([[Sky]]) and its clouds reflect, more at a glancing angle; the sun glints, its glitter
+  blurring far off; a crest glows green where the sun shines through it. Caustics dance on the bed.
 - **Shadows.** The surface takes the sun's shadows: in a ship's, beside its waterline, it loses the sun's glints and a
   third of the light it scatters and reflects. The seabed's shadows fade with the water over them, about a seventh left
   three metres down, as the water scatters the light, so a ship's shadow lies on the surface by the ship and not on the
   bed apart from it (the land's shader, `terrainView.ts`).
-- **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea, less
-  on calm fresh water. So the reflected clouds lose their fine detail and keep their mean cover. Looking down, their
-  shapes still show; near the horizon they smear into a lighter sky.
+- **The weather.** The wind's chop runs along the local wind, to the nearest of sixteen bearings, and grows with it:
+  near glassy in a calm, steep in a gale. As the wind veers past a bearing, the chop fades over 8 s from the old
+  bearing's waves to the new. From a fresh breeze up the wind raises whitecaps in patches that break and fade. Rain roughens the surface and
+  dots it near the eye with spreading rings.
+- **Blurred reflections.** Waves too small to draw fan each reflected pixel's rays about 0.2 radians at sea in a
+  moderate breeze, more in a strong wind, less on calm fresh water. So the reflected clouds lose their fine detail
+  and keep their mean cover. Looking down, their shapes still show; near the horizon they smear into a lighter sky.
 - **Foam.** Foam is a lace of bubble walls. It covers crests that fold, a breaker's face and the surf behind it, the
   swash's edge and a splash. Each scale of lace gives way to its share as it shrinks toward a pixel.
 - **Fresh water.** A lake lies still under a light chop; a river's chop runs downstream at a pace set by its fall.
@@ -130,8 +134,9 @@ long and wide, so it matches the ship one sees; close in, everything is true siz
 
 The swell's longest waves hold from the raised view, and its whitecaps say the sea state: as the swell rises past a
 moderate sea's, more of its crests standing high in the sea round them break white, in patches, read from far off as
-the share of the sea they cover; a rough sea is flecked and a storm's is white-streaked. The wind's chop and the
-water's roughness rise with the swell's height there, so a calm sea or a roadstead lies glassy.
+the share of the sea they cover; a rough sea is flecked and a storm's is white-streaked. The wind's chop is calmed
+where the sea is sheltered, so a roadstead lies glassy, and its slope holds at 1.4 times a moderate breeze's: steeper,
+a storm's glints alias into blocks.
 
 ## Underwater
 

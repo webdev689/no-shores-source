@@ -1,3 +1,4 @@
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
 import { SHADOW_WGSL, ShadowMap } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
@@ -146,7 +147,7 @@ export function sphere(): { readonly corners: Float32Array<ArrayBuffer>; readonl
   return { corners: new Float32Array(corners), faces: new Uint16Array(faces) };
 }
 
-const MARK_SHADER = /* wgsl */ `
+export const MARK_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 ${SHADOW_WGSL}
 const AMBIENT = 0.45;
@@ -186,10 +187,12 @@ fn vertex_main(
 @fragment
 fn fragment_main(drawn: Drawn) -> @location(0) vec4f {
   let normal = normalize(drawn.normal);
-  let direct = max(dot(normal, SUN), 0.0);
+  let lit = max(dot(normal, sky_state.key.xyz), 0.0);
   // In the sun's shadows, as the land and the ships are: a crate in a ship's shadow is darker.
-  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0);
-  let light = AMBIENT + (1.0 - AMBIENT) * direct * sun;
+  let sun = select(1.0, sunlit(drawn.from_eye, normal), lit > 0.0) * sky_dapple(drawn.from_eye);
+  // Marks were lit a little brighter than the land: AMBIENT against the land's 0.35.
+  let direct = sky_direct(normal, sun) * ((1.0 - AMBIENT) / 0.65);
+  let light = sky_ambient(normal) * (AMBIENT / 0.35) + direct + sky_lamps(drawn.from_eye, normal);
   return vec4f(drawn.colour * light, 1.0);
 }
 `;
@@ -313,6 +316,7 @@ export class MarkView {
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, this.bindGroup);
     pass.setBindGroup(1, shadow.receiverGroup(this.pipeline));
+    skyUniformFor(this.device).bindAuto(pass, this.pipeline, [2]);
     pass.setVertexBuffer(0, this.corners);
     pass.setVertexBuffer(1, this.instances);
     pass.setIndexBuffer(this.faces, 'uint16');

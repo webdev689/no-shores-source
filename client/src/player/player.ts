@@ -2,10 +2,12 @@ import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import { MELEE, RANGED_SLOT } from './gear.ts';
 import type { InputFrame } from './input.ts';
+import { RUNNING } from './others.ts';
 import {
   AIM,
   type AimPlace,
   aimEased,
+  boomFollowed,
   cameraOrbit,
   eased,
   FIRST_PERSON,
@@ -127,9 +129,12 @@ export function updatePlayer(
     queued = { jump: false, crouch: false };
   }
   // DFO's figure faces where it moves and keeps its facing when still; striking or casting, it turns to the view.
-  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back.
+  // Locked on, it faces its foe on foot, so walking away backs off rather than turning its back; a sprint faces where
+  // it runs, and once it ends the figure faces its foe again. A sprint is a run's pace, as the run's frames are: the
+  // run held while crouched, or slowed against a wall, goes no faster than a walk.
   const acting = swinging || cast !== null;
-  const locked = toward !== null && !mounted && body.mode === 'ground';
+  const sprinting = Math.hypot(body.vx, body.vy) > RUNNING;
+  const locked = toward !== null && !mounted && body.mode === 'ground' && !sprinting;
   const walked = body.moving ? body.facing : player.facing;
   const facing = acting ? yaw : locked ? toward : body.mode !== 'ground' ? body.facing : walked;
   const blend = carry / movement.tickSeconds;
@@ -137,27 +142,51 @@ export function updatePlayer(
   return { body, previous, blend, carry, queued, yaw, pitch, view, mounted, drawn, loadout, cast, act, facing, aim };
 }
 
-/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate. */
+/** The body as drawn: eased from the tick before toward the last, so it moves smoothly at any frame rate, a move over
+ *  a lip too while the same move goes on. */
 export function shownBody(player: Player): Body {
   const { body, previous, blend } = player;
   const between = (from: number, to: number) => from + (to - from) * blend;
+  const going = body.over && previous.over && previous.over.progress <= body.over.progress ? previous.over : null;
   return {
     ...body,
     x: between(previous.x, body.x),
     y: between(previous.y, body.y),
     z: between(previous.z, body.z),
     crouch: between(previous.crouch, body.crouch),
+    over: body.over && going ? { ...body.over, progress: between(going.progress, body.over.progress) } : body.over,
   };
 }
 
-/** The camera the scene draws the player's frame from, its aiming view at `place`. */
+/** Where the player's eyes are, as drawn. */
+function headOf(player: Player, movement: MovementRules): readonly [number, number, number] {
+  const body = shownBody(player);
+  return [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)];
+}
+
+/** The camera the scene draws the player's frame from, its aiming view at `place`, kept off `blocks` and, given its
+ *  height, the ground. */
 export function playerCamera(
   player: Player,
   movement: MovementRules,
   blocks: readonly Block[],
   place: AimPlace = AIM,
+  groundAt: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
-  const body = shownBody(player);
-  const head = [body.x, body.y, body.z + movement.eyeHeight(body) + (player.mounted ? SADDLE : 0)] as const;
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place);
+  const head = headOf(player, movement);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, groundAt);
+}
+
+/** The player with the third-person camera's boom eased over `seconds` clear of `blocks` and the ground: called
+ *  once a frame before `playerCamera`, so the camera comes in and goes out smoothly. */
+export function cameraFollowed(
+  player: Player,
+  movement: MovementRules,
+  blocks: readonly Block[],
+  groundAt: ((x: number, y: number) => number | null) | null,
+  seconds: number,
+): Player {
+  const head = headOf(player, movement);
+  const { yaw, pitch, view, aim } = player;
+  return { ...player, view: boomFollowed(head, yaw, pitch, view, blocks, aim, AIM, groundAt, seconds) };
 }

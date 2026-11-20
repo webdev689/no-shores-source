@@ -1,0 +1,43 @@
+name: modules
+
+# Builds every handcrafted module in Blender, checks the bake makes exactly the manifest committed in
+# content/modules/modules.json (the meshes' keys are their hashes, so a commit's manifest names what this bake
+# uploads), and publishes the meshes to R2 with the repository's Cloudflare token whenever the module tools change.
+on:
+  push:
+    paths: [tools/modules/**, content/modules/**, .github/workflows/modules.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The token reaches only the two steps that check it and publish: pip runs others' install scripts.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+      - name: Install Blender's module
+        run: pip install bpy==5.3.0
+      # A bake that does not make the committed manifest prints the difference: commit the manifest it made.
+      - name: Bake and check the manifest is the bake's
+        run: |
+          python -I tools/modules/bake.py "$RUNNER_TEMP/modules"
+          git diff --exit-code content/modules/modules.json || { cat content/modules/modules.json; exit 1; }
+      - name: Publish the meshes
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+        run: python -I tools/modules/publish.py "$RUNNER_TEMP/modules"

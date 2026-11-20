@@ -7,20 +7,6 @@ import { fightSheetCss } from '../combat/hudSheet.ts';
 import { barSheetCss } from '../plus/barSheet.ts';
 import { SeaFightReadout, seaFightCss, type SeaFightModel } from '../plus/seaFight.ts';
 
-/** The fake page, its styles given `setProperty` as a page's are. */
-function onPage(run: (root: HTMLElement) => void): void {
-  onFakePage((root) => {
-    const page = globalThis.document as unknown as { createElement: (tag: string) => { style: object } };
-    const made = page.createElement;
-    page.createElement = (tag) => {
-      const node = made(tag);
-      Object.assign(node.style, { setProperty: () => undefined });
-      return node;
-    };
-    run(root);
-  });
-}
-
 const side = { fill: 1, ready: true, fresh: false, laid: false, load: 'Round', left: 0 };
 const MODEL: SeaFightModel = {
   ship: {
@@ -50,7 +36,7 @@ const MODEL: SeaFightModel = {
 };
 
 test("the ship's plate is the vitals' window: Hull, Sails and Crew bars naming themselves and their percent inside", () => {
-  onPage((root) => {
+  onFakePage((root) => {
     const readout = new SeaFightReadout(root);
     readout.update(MODEL);
     const [panel] = findAll(root, 'vitals');
@@ -75,7 +61,7 @@ test("the ship's plate is the vitals' window: Hull, Sails and Crew bars naming t
 });
 
 test("the card is the target plate: the faction's emblem framed, its name, one bar in its rank's colour, small words", () => {
-  onPage((root) => {
+  onFakePage((root) => {
     const readout = new SeaFightReadout(root);
     readout.update(MODEL);
     const [card] = findAll(root, 'plate', 'target');
@@ -87,7 +73,7 @@ test("the card is the target plate: the faction's emblem framed, its name, one b
   });
 });
 
-test('the plate and the card wear the very rules the on-foot vitals and target plate wear', () => {
+test('the card wears the very rules the on-foot target plate wears', () => {
   const rules = (scope: string) => barSheetCss(scope).replaceAll(scope, '');
   assert.ok(fightSheetCss().includes(barSheetCss('.fight-hud')), 'on foot');
   assert.ok(seaFightCss().includes(barSheetCss('.seafight')), 'at sea');
@@ -95,7 +81,7 @@ test('the plate and the card wear the very rules the on-foot vitals and target p
 });
 
 test('the warning stands under the card, and the ships’ plates under both, never over the sight', () => {
-  onPage((root) => {
+  onFakePage((root) => {
     const readout = new SeaFightReadout(root);
     const [card] = findAll(root, 'plate', 'target');
     const [warn] = findAll(root, 'seafight-warn');

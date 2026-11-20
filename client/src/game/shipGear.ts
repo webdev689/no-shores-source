@@ -14,18 +14,21 @@ import {
   type GearShip,
   type GearState,
 } from '../network/gearMessages.ts';
-import { CARRIED, type NodeShown, RARITIES, WORN, answerText, itemName, kindName, nodeShown } from '../player/gear.ts';
+import {
+  CARRIED,
+  type ModuleKey,
+  MODULES,
+  type NodeShown,
+  RARITIES,
+  WORN,
+  answerText,
+  isModule,
+  itemName,
+  kindName,
+  moduleOf,
+  nodeShown,
+} from '../player/gear.ts';
 
-/** The ship's modules by the gear crate's kind numbers, each fitted in its own slot (`kinds.rs`). */
-export const MODULES = [
-  { kind: 24, key: 'guns', name: 'Guns', slot: 7 },
-  { kind: 25, key: 'hull', name: 'Hull', slot: 8 },
-  { kind: 26, key: 'sails', name: 'Sails', slot: 9 },
-  { kind: 27, key: 'rigging', name: 'Rigging', slot: 10 },
-] as const;
-export type ModuleKey = (typeof MODULES)[number]['key'];
-const moduleOf = (kind: number) => MODULES.find((each) => each.kind === kind);
-export const isModule = (kind: number): boolean => moduleOf(kind) !== undefined;
 /** A module's glyph, which stands for its picture: the forge draws only what a figure wears. */
 export const moduleGlyph = (kind: number): ModuleKey | null => moduleOf(kind)?.key ?? null;
 

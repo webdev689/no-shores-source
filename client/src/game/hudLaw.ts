@@ -61,8 +61,8 @@ export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltm
 
 /** The words under a place's name: its kind, and its island's name where it has one. A ruined city's place is no
  *  social space: it says only that it lies in ruins. */
-export function placeWords(node: NodeInfo): string {
+export function placeWords(node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string }): string {
   const island = ISLANDS[node.continent];
-  const kind = node.name.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
+  const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
   return island ? `${kind} · ${island}` : kind;
 }

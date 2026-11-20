@@ -1,4 +1,11 @@
-import { beginRequest, type FightOrders, type FightView, readFight, stepRequest } from './fightRules.ts';
+import {
+  beginRequest,
+  type FightBegun,
+  type FightOrders,
+  type FightView,
+  readFight,
+  stepRequest,
+} from './fightRules.ts';
 import type { Block } from './movementRules.ts';
 
 /** A river as the land generates it: its course through cell centres, source first, with the flow at each point. */
@@ -31,6 +38,8 @@ export interface LandView {
   /** The biome's low ground (red, green, blue, 0..1) and snow line in metres; absent for a landmass with no biome. */
   readonly ground?: readonly [number, number, number];
   readonly snowM?: number;
+  /** The biome's key, which the weather reads its air by; absent for a landmass with no biome. */
+  readonly climate?: string;
   /** The sea's swell, the same over every landmass. */
   readonly swell?: Swell;
 }
@@ -135,7 +144,14 @@ export interface LandRules {
   /** Generates one continent of a layout with its edits file's text on it (null for none). Kept, it stays open for
    *  strokes, its city settled on it with the blocks of the RMB index's text (none for null); not kept, it is a
    *  preview and the open one stays open. */
-  open(layoutText: string, id: string, editsText: string | null, keep?: boolean, rmbText?: string | null): LandView;
+  open(
+    layoutText: string,
+    id: string,
+    editsText: string | null,
+    keep?: boolean,
+    rmbText?: string | null,
+    buildersText?: string | null,
+  ): LandView;
   /** One dab on the open landmass; `starts` begins a new stroke. */
   dab(brush: Brush, point: readonly [number, number], starts: boolean): LandPatch;
   /** The open landmass with its water run again. */
@@ -155,13 +171,23 @@ export interface LandRules {
   boxes(west: number, north: number, east: number, south: number): Block[];
   /** The open landmass's city's plan, as JSON, for the drawing; null with no city. */
   cityPlan(): string | null;
-  /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and its pose after. */
-  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `rank` names one),
-   *  every chance drawn from `seed`. */
-  fightBegin(ship: ShipFloats, seed: number, time: number, rank?: number): FightView;
+  /** The open landmass's nodes' layouts, as a JSON list. */
+  layouts(): string;
+  /** The ship sailed `ticks` ticks from the swell's `time`, in the weather's wind at world time `world` (seconds), and
+   *  its pose after. */
+  sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
+  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `begun` names a
+   *  rank), or `begun`'s captains set upon it where given, every chance drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, begun?: FightBegun): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
-  fightStep(orders: FightOrders, time: number, ticks: number): FightView;
+  /** A step of the fight in the world's wind at `world`, or in the weather's `wind` (m/s east and south) if told. */
+  fightStep(
+    orders: FightOrders,
+    time: number,
+    ticks: number,
+    world: number,
+    wind?: readonly [number, number],
+  ): FightView;
   /** The fight ended. */
   fightEnd(): void;
 }
@@ -180,6 +206,7 @@ interface LandExports {
   land_window(address: number, length: number): bigint;
   land_boxes(address: number, length: number): bigint;
   land_city_plan(): bigint;
+  land_layouts(): bigint;
   land_sail(address: number, length: number): bigint;
   land_fight_begin(address: number, length: number): bigint;
   land_fight_step(address: number, length: number): bigint;
@@ -200,6 +227,7 @@ interface ViewHeader {
   readonly rect?: [number, number, number, number];
   readonly ground?: [number, number, number] | null;
   readonly snow_m?: number | null;
+  readonly climate?: string | null;
   readonly swell?: { waves: SeaWave[]; full_depth_m: number; gone_depth_m: number; bearing: number };
 }
 
@@ -237,6 +265,7 @@ function takeView(exports: LandExports, packed: bigint): LandView {
       problems: header.problems ?? [],
       ...(header.ground ? { ground: header.ground } : {}),
       ...(typeof header.snow_m === 'number' ? { snowM: header.snow_m } : {}),
+      ...(typeof header.climate === 'string' ? { climate: header.climate } : {}),
       ...(header.swell
         ? {
             swell: {
@@ -292,9 +321,10 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     }
   };
   return {
-    open: (layoutText, id, editsText, keep = true, rmbText = null) => {
+    open: (layoutText, id, editsText, keep = true, rmbText = null, buildersText = null) => {
       const named = `{"id":${JSON.stringify(id)},"keep":${keep},"edits":${editsText ?? 'null'}`;
-      const request = `${named},"rmb":${rmbText ?? 'null'},"layout":${layoutText}}`;
+      const builders = buildersText ? `,${buildersText}` : '';
+      const request = `${named},"rmb":${rmbText ?? 'null'}${builders},"layout":${layoutText}}`;
       return takeView(exports, send(exports.land_open, request));
     },
     dab: (brush, point, starts) =>
@@ -325,15 +355,15 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    fightBegin: (ship, seed, time, rank) =>
-      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, rank)))),
-    fightStep: (orders, time, ticks) =>
-      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks)))),
+    fightBegin: (ship, seed, time, begun) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, begun)))),
+    fightStep: (orders, time, ticks, world, wind) =>
+      readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world, wind)))),
     fightEnd: () => {
       exports.land_fight_end();
     },
-    sail: (ship, helm, time, ticks) => {
-      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks]);
+    sail: (ship, helm, time, ticks, world) => {
+      const request = new Float64Array([...ship, helm.steer, helm.crab ? 1 : 0, helm.climb, time, ticks, world]);
       const packed = send(exports.land_sail, new Uint8Array(request.buffer));
       const address = Number(packed >> 32n);
       const length = Number(packed & 0xffff_ffffn);
@@ -373,10 +403,18 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
     boxes: (west, north, east, south) => {
       const answer = JSON.parse(
         takeText(exports, send(exports.land_boxes, JSON.stringify({ west, north, east, south }))),
-      ) as { boxes?: [number, number, number, number, number][]; error?: string };
+      ) as { boxes?: [number, number, number, number, number, number][]; error?: string };
       if (answer.error !== undefined) throw new Error(answer.error);
-      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top }));
+      return (answer.boxes ?? []).map(([minX, minY, maxX, maxY, top, bottom]) => ({
+        minX,
+        minY,
+        maxX,
+        maxY,
+        top,
+        bottom,
+      }));
     },
+    layouts: () => takeText(exports, exports.land_layouts()),
     cityPlan: () => {
       const text = takeText(exports, exports.land_city_plan());
       return text === 'null' ? null : text;

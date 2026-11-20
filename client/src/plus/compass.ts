@@ -107,6 +107,8 @@ export class Compass {
 
   constructor(parent: HTMLElement) {
     this.root = made('div', 'compass', parent);
+    // Its letters, read in a row, would say nothing of the bearing: a screen reader skips the strip.
+    this.root.ariaHidden = 'true';
     const strip = made('div', 'compass-strip', this.root);
     this.points = COMPASS_POINTS.map(([letters, bearing]) => ({
       node: made('span', `compass-point${letters.length === 1 ? ' cardinal' : ''}`, strip, letters),
@@ -141,16 +143,17 @@ export function compassCss(): string {
   return `
 .compass-column { position: absolute; left: 0; right: 0; top: ${top}px; display: flex; flex-direction: column;
   align-items: center; gap: ${gap}px; pointer-events: none; }
-.compass { position: relative; flex: none; width: min(${width}px, ${share * 100}vw); height: ${height}px;
+.compass { position: relative; flex: none; width: min(${width}px, ${share * 100}%); height: ${height}px;
   border-bottom: ${rule}px solid color-mix(in srgb, ${TONES.stoneMid} 55%, transparent); pointer-events: none;
+  box-shadow: 0 1px 0 color-mix(in srgb, ${TONES.outline} 50%, transparent);
   font-weight: 600; }
 .compass [hidden] { display: none !important; }
 /* A point at an end fades out rather than being cut in half, where half of NE would read as N. */
 .compass-strip { position: absolute; inset: 0; overflow: hidden;
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.compass-point { position: absolute; top: 2px; translate: -50% 0; font-size: 12px; letter-spacing: 0.18em;
+.compass-point { position: absolute; top: 8px; translate: -50% 0; font-size: 11px; line-height: 11px; letter-spacing: 0.18em;
   color: ${TONES.wordDim}; text-shadow: ${HALO}; }
-.compass-point.cardinal { top: 0; font-size: 15px; color: ${TONES.word}; }
+.compass-point.cardinal { top: 2px; font-size: 22px; line-height: 22px; color: ${TONES.word}; }
 .compass-needle { position: absolute; left: 50%; bottom: -${rule}px; width: 2px; height: 8px; translate: -50% 0;
   background: ${TONES.brass}; box-shadow: 0 0 0 1px ${TONES.outline}; }
 .compass-ship { position: absolute; top: 0; width: 0; height: 0; margin-left: -4px; border-left: 4px solid transparent;

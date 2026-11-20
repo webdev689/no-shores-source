@@ -3,6 +3,8 @@ type: system
 status: planned
 code:
   - content/world/layout.json
+  - content/world/open.json
+  - crates/land/src/sites.rs#locked
   - crates/world/src/layout.rs#Layout
   - crates/world/src/check.rs#check
   - crates/world/src/geometry.rs#doubled_area
@@ -82,6 +84,17 @@ Overworld's bird's-eye view of the side of an island, they choose a node (a miss
 patrol area, a world boss) and are taken there. A node is one section of the land, and its edge warns the player to
 go back. The rest of the island and of its city is the same ground the [[Land]] generates, drawn in less detail with
 distance, never reached. Each island has one major port city; Saltmere's is Overlook.
+
+Patrol areas and missions open as a pass is done on each ([[Patrol Zones and Missions Open as Their Pass Is Done]]).
+`content/world/open.json` lists the open ones by id. Every other patrol area and mission is locked; social spaces,
+dungeons and world bosses never are. A locked node still shows where the player picks a landing, greyed with a lock
+([[Overworld]]), but neither a click on it nor a gate toward it ([[Layouts]], "Gates") takes anyone there, and its room
+turns every player away ([[Server]]). A pass opens a node by adding its id to the list; a test holds the list to
+patrol and mission nodes of the edits files, each once. The rooms read the list from the node files, so a change
+reaches them at the next bake: a merge redeploys them, and locally `npm run bake` or `npm run server` bakes first.
+
+A page playing alone opens any node, locked or not: with no `?room=`, `?at=<id>` arrives there, and `&spawn=` and
+`&view=` picture it ([[Toolkit]], "Browser QA").
 
 ## Waters
 
@@ -187,7 +200,8 @@ source of each.
   and all of it at 60 km, the share taken as the mean over five rays, the wind's and 10 and 20 degrees either side.
   Within 3 km of a port's roadstead the sea is calm, the swell 0.3 of a moderate sea's whatever the weather, easing
   back to the open sea's over the next 500 m ([[Water]]).
-- DFO's dynamic weather and clouds will draw from it, rewritten for WebGPU ([[WebGPU Only]]).
+- DFO's dynamic weather and clouds draw from the sky's own field (`crates/sky`), rewritten for WebGPU ([[WebGPU Only]],
+  [[Weather and Day and Night Come From DFO, Much Improved]], [[Weather]]).
 - Ships sail faster than real speed, and faster still in the Overworld, DFO's raised travel camera over the same
   world. The speeds are tuning numbers, set by playing.
 

@@ -46,6 +46,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     dressed: [],
     node: null,
     protocol,
+    epoch: 0,
   });
   assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male"}')), 'taken');
   for (let sequence = 2; sequence <= 30; sequence++)
@@ -74,6 +75,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     dressed: [{ player: first, dress: '{"body":"male"}' }],
     node: null,
     protocol,
+    epoch: 0,
   });
 });
 
@@ -140,7 +142,7 @@ function nodeFile(): { text: string; ground: string } {
     ],
   };
   const named = { id: 'glade', kind: 'patrol', name: 'The Glade', continent: 'square', ...section };
-  const file = { ...named, bounds: [-150, -150, 150, 150], ground, boxes: [[-5, -8, 5, -7, 13]] };
+  const file = { ...named, bounds: [-150, -150, 150, 150], ground, boxes: [[-5, -8, 5, -7, 13, 12]] };
   return { text: JSON.stringify(file), ground: JSON.stringify(ground) };
 }
 
@@ -179,11 +181,12 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
     dressed: [],
     node,
     protocol: PROTOCOL,
+    epoch: 0,
   });
   // The browser stands bodies on the same ground and boxes, and finds the same bodies, to the bit.
   const movement = await startMovementRules(await built('movement_wasm'));
   assert.equal(movement.setGround(ground), true);
-  movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13 }]);
+  movement.setCourse([{ minX: -5, minY: -8, maxX: 5, maxY: -7, top: 13, bottom: 12 }]);
   room.tick();
   const joined = readFromRoom(room.snapshot());
   const bodies = joined?.kind === 'snapshot' ? joined.players.map((seen) => floatsOf(seen.body)) : [];
@@ -206,6 +209,17 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   seen = play(room, second, ++sequence, east, true);
   assert.deepEqual(seen.standing, { kind: 'inside' });
   assert.deepEqual(floatsOf(seen.body), floatsOf(movement.standing(30, -40)), 'back at the spawn nearest its death');
+});
+
+test('a locked node’s room takes no player and says why, so the host turns every join away; any other takes them', () => {
+  const { text } = nodeFile();
+  const locked = startRoomDoor(compiled);
+  assert.equal(locked.openNode(JSON.stringify({ ...(JSON.parse(text) as object), locked: true })), true);
+  assert.deepEqual([locked.join(), locked.refusal()], [0, 'The Glade is locked']);
+  const open = startRoomDoor(compiled);
+  assert.equal(open.openNode(text), true);
+  assert.notEqual(open.join(), 0);
+  assert.equal(open.refusal(), null);
 });
 
 test('a node’s room stands the foes a player asks for only once a page playing alone tells it to', () => {
@@ -293,7 +307,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), '70c6585bed308bbb');
+  assert.equal(hash.toString(16).padStart(16, '0'), '9aac7f443284439d');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -334,7 +348,7 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   const rules = startFleetRules(compiled);
   const helms = Array.from({ length: 149 }, (unused, index) => helmAt(index + 2));
   const hurts = { wrecked: false, sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
-  const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, helms);
+  const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, 0, helms);
   assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'their ship, to the bit');
   assert.equal(room.input(first, orders(151, { call: 'captain' })), 'taken');
   room.tick();

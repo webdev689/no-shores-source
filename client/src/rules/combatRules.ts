@@ -46,8 +46,9 @@ export interface CombatRules {
   ): { readonly fighter: Float64Array; readonly fired: Fired | null };
   /** What hands holding these forge layers fight with, as combat's arms code. */
   armsCode(right: string | null, left: string | null, drawn: boolean): number;
-  /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle. */
-  strokeReach(arms: number, stroke: number): number;
+  /** The farthest a stroke (1 to 6) of the melee weapon in this arms code reaches, feet to a body's middle, in a
+   *  player's hands or a foe's. */
+  strokeReach(arms: number, stroke: number, player: boolean): number;
   /** The half-width in radians of the arc a stroke (1 to 6) sweeps either side of its aim; 0 for no stroke. */
   strokeArc(stroke: number): number;
 }
@@ -62,7 +63,7 @@ interface FightExports {
   fighter_predict(address: number, length: number): bigint;
   fighter_arms(address: number, length: number): number;
   fighter_sizes(): number;
-  fighter_reach(arms: number, stroke: number): number;
+  fighter_reach(arms: number, stroke: number, player: number): number;
   fighter_stroke_arc(stroke: number): number;
 }
 
@@ -91,7 +92,7 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     sizes,
     setCourse: (blocks) => {
       const floats = new Float64Array(
-        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top]),
+        blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]),
       );
       lend(floatBytes(floats), (address) => exports.fighter_course(address, floats.byteLength));
     },
@@ -133,7 +134,7 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
       const text = new TextEncoder().encode(`${right ?? ''}\n${left ?? ''}\n${drawn ? 'drawn' : 'worn'}`);
       return lend(text, (address) => exports.fighter_arms(address, text.length));
     },
-    strokeReach: (arms, stroke) => exports.fighter_reach(arms, stroke),
+    strokeReach: (arms, stroke, player) => exports.fighter_reach(arms, stroke, player ? 1 : 0),
     strokeArc: (stroke) => exports.fighter_stroke_arc(stroke),
   };
 }

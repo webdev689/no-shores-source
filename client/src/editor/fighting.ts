@@ -86,12 +86,23 @@ export class Fighting {
   /** The look held last while aiming: each release fires it, as the aim lets go the frame it is let go. */
   private lastLook: FightLook | null = null;
   private said: { readonly text: string; readonly until: number }[] = [];
+  /** The player's ship's kind, as the readout names it. */
+  readonly own: string;
 
-  private constructor(source: FightSource, id: string, answer: FightView, now: number) {
+  private constructor(source: FightSource, id: string, answer: FightView, now: number, own = 'Sloop') {
+    this.own = own;
     this.source = source;
     this.id = id;
     this.answer = answer;
-    this.say(sightedWords(answer.captain.name, apart(answer, answer.captain)), now);
+    // Begun with several captains, the fight sights them all at once, by how many and the nearest.
+    const afloat = captainsOf(answer).filter((captain) => captain.state !== 'sunk');
+    const nearest = Math.round(Math.min(...afloat.map((captain) => apart(answer, captain))));
+    this.say(
+      afloat.length > 1
+        ? `${afloat.length} ships are sighted, the nearest ${nearest} m off.`
+        : sightedWords(answer.captain.name, apart(answer, answer.captain)),
+      now,
+    );
   }
 
   /** Calls a pirate captain onto the ring round the player's `ship`, or says why none comes. The rules decide where. */
@@ -110,9 +121,10 @@ export class Fighting {
     return new Fighting(source, id, answer, time);
   }
 
-  /** A fight begun elsewhere (the sea room's), its first view `answer`; `source` steps it. */
-  static joined(source: FightSource, id: string, answer: FightView, now: number): Fighting {
-    return new Fighting(source, id, answer, now);
+  /** A fight begun elsewhere (the sea room's, or the story's), its first view `answer`; `source` steps it. `own` is
+   *  the player's ship's kind as the readout names it. */
+  static joined(source: FightSource, id: string, answer: FightView, now: number, own?: string): Fighting {
+    return new Fighting(source, id, answer, now, own);
   }
 
   get view(): FightView {
@@ -185,6 +197,7 @@ export class Fighting {
   lines(now: number): string[] {
     const { player, lay } = this.answer;
     const near = captainsOf(this.answer)
+      .filter((captain) => captain.state !== 'sunk')
       .map((captain) => ({ captain, apart: Math.round(apart(this.answer, captain)) }))
       .filter(({ apart }) => apart <= LINE_REACH_M)
       .sort((one, other) => one.apart - other.apart);

@@ -6,6 +6,7 @@ code:
   - crates/movement/src/body.rs#TUNING
   - crates/movement/src/body.rs#TICK_SECONDS
   - crates/movement/src/blocks.rs#ground_at
+  - crates/movement/src/near.rs#Blocks
   - crates/movement/src/blocks.rs#pushed_out
   - crates/movement/src/terrain.rs#Terrain
   - crates/movement/src/heights.rs#Heights
@@ -33,13 +34,31 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   so a browser's step and a room's agree), run, mounted, and jump and crouch pressed. A control that is not a number
   counts as none, so a body never takes one in. A press between two ticks is kept for the next. The view turns
   every frame. The body is drawn eased from the tick before toward the last, so it moves smoothly, a tick behind.
-- **Blocks.** A course is a list of blocks, each a footprint and a top. The body, a square reaching 0.35 m each way
-  from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet, slides along a
-  block's sides, and is stopped by one taller than a step. A move is judged where the feet end it: stepping down
-  beside a taller block, the body is held where the drop would leave it overlapping that block, and slides on.
+- **Blocks.** A course is a list of blocks, each a footprint, a top and an underside (`bottom`): a block from the
+  ground up has its underside at or below the ground where it stands; a floor, a bridge or a roof has it over the
+  ground. Each crosses as six numbers: west, north, east, south, top, bottom. The body, a square reaching 0.35 m each
+  way from its centre, stands on the highest top under its centre within a step (0.5 m) of its feet (a footprint holds its own edges, so
+  blocks laid side by side hold every point of their seam) and slides along a block's sides. A block is in the way only where it overlaps the body's column: its top over a step above the feet
+  and its underside below the head. A move is judged where the feet end it: stepping down beside a taller block, the
+  body is held where the drop would leave it overlapping that block, and slides on. A body walks under a block whose
+  underside is over its head, stands on an upper floor's top, and falls off its edge as off any block.
 - **Never inside a block.** Falling past the top of a block beside it, too slowly to clear it, the body is pushed out
   of it the shortest way, never past its far side. A body set down overlapping a block, as a blow's charge may leave
-  it, is pushed out the same way before it moves. So no edge or corner holds a body fast.
+  it, is pushed out the same way before it moves. So no edge or corner holds a body fast. A block overhead, clear of
+  the body's column, never pushes it.
+- **The blocks near a body.** A course is kept with a grid over it (`Blocks`, `near.rs`), built once when the
+  blocks are set: in the movement door, in a room, and in the room door's course. Each cell lists, in the course's
+  order, every block whose footprint grown by the body's radius reaches into it, so a rule asks only the blocks of the
+  cell under the point it tests. Every rule still tests each of them itself, and those left out could not have held
+  the point, so the answers are the whole list's to the bit, first block found included. A cell is at least 2 m a
+  side, and a course has at most about 16,000 of them; building the Saltgrass Downs' grid takes a quarter of a
+  millisecond. A plain list still serves for a small course (the Test Ground's, a deck's).
+- **Head room.** The body is 1.8 m tall standing and 1.0 m crouched. Rising, by a jump, a climb or going over a lip,
+  its head stops at the lowest underside over it: its feet stay that far below and its upward speed ends. A crouched
+  body under a ceiling too low to stand stays crouched, and a crouched jump there leaves it crouched; pressed into a
+  wall there, it does not start a climb, since a climb stands it up. A lip is a
+  block's top, as before, and a slab overhead is never in the way, so it is never caught as a lip; a lip with no room
+  to stand over it, under a floor above, is not gone over.
 - **Terrain.** The blocks stand on a terrain: any ground known by its height at a point (`Terrain`), so the rules
   need nothing of the crate that makes it. A node's room stands its bodies on the [[Land]]'s window round its node,
   and its city's boxes as blocks ([[Server]]); the [[Test Ground]] and its rooms use open ground at 0 m. A body that
@@ -60,6 +79,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   nor between two walls that meet at a corner. So a passage one cell wide is walked to its end. A body standing on it
   faces north (its bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
   none), the same numbers the sea room stands its walkers on.
+- **Foes move by the same rules.** A foe's brain asks for the controls a player's keys would, and its room steps its
+  body by them as it steps a player's ([[Foes]]); the [[Navmesh]] tries each of its climbs and drops by these rules,
+  with those controls, before it lays one.
 - **Crossing into a browser.** A body is 22 numbers and its controls 7, little-endian 64-bit floats in one fixed
   order, so no number is rounded on the way. The door keeps the course, and steps the body in memory it reserved once;
   it leaves alone memory too short for a step.
@@ -72,7 +94,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 
 | Mode | What moves it on |
 |---|---|
-| Ground | Walks, runs, crouches or rides where the controls point. A jump, once the feet have stood 0.1 s, lifts it into the air, or goes over a lip within reach (1.8 m). Pressed still into a wall too high to grab, it climbs. Off an edge higher than a step, it falls |
+| Ground | Walks, runs, crouches or rides where the controls point. A jump, once the feet have stood 0.1 s, lifts it into the air, or goes over a lip within reach (1.8 m). Pressed into a wall too high to grab, stopped across its face however it slides along it and looking within 45° of square, it takes hold square to the wall and climbs. Off an edge higher than a step, it falls |
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, or goes over a low lip |
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs |
@@ -85,7 +107,7 @@ DFO's numbers ([[The Player Plays as in DFO]]), in `TUNING`: walking 4.43 m/s, r
 leaves at 4.5 m/s against gravity of 20 m/s², about half a metre high; crouched, it leaves at 0.8 of that speed.
 Shimmying and climbing go at 1 m/s. Riding goes at 6 m/s and galloping at 12, until Overlook has riding speeds of
 its own. A mantle or vault takes (0.25 + 0.22 × rise) × 1.05 seconds, DFO's time at
-middling skill. The eye stands 1.7 m over the feet, 0.8 m crouched.
+middling skill. The eye stands 1.7 m over the feet, 0.8 m crouched; the crown 1.8 m, 1.0 m crouched.
 
 The slope limit is Overlook's own: terrain rising 1.19 m a metre, about 50°, is the steepest walked up, Claude's
 choice ([[The World Is Claude's to Mold]]). The pace is the same up a slope as on the flat.
@@ -102,6 +124,12 @@ side (`crates/room/tests/agree_node.rs`) takes the windows and boxes the bake cu
 browser's (`client/src/rules/nodeWindow.test.ts`) generates the continent and settles its city in the land's door,
 cuts the same windows there, and steps them through the movement door. Both hold the same value.
 
+A tick's cost among a patrol area's boxes: bodies run 600 ticks each from the Saltgrass Downs' spawns and from
+every fiftieth of its 7,465 boxes (153 runs), turning, running, jumping and crouching among its buildings. Natively
+(`cargo test --release -p room --test near_blocks -- --ignored --nocapture`) a tick takes 37 µs over the whole list
+and 2.9 µs through the grid (tested offline, on an idle machine). The same test steps every run over the list and
+over the grid and holds them equal at every tick.
+
 ## Limits
 
 - The Test Ground stands bodies on open ground at 0 m; a node's room, and the [[Game]] on foot in a node, stand them
@@ -110,6 +138,8 @@ cuts the same windows there, and steps them through the movement door. Both hold
   gain height up a slope too steep to walk.
 - A body slides along a rise too steep for its path an axis at a time, as along a block, not along the rise's own
   contour.
+- Stepping up onto a block, the head is not checked against a ceiling: a step can take it up to 0.5 m into an
+  underside just over it.
 - Pushed out of a block it fell beside, a body moves up to 0.35 m sideways in one tick.
 - Whether the body is mounted is the client's to say; the rules take it as a control.
 - A frame counts for at most 0.1 s, so below 10 frames a second the body moves slower than real time.

@@ -88,14 +88,21 @@ fn each_kind_stands_its_drawn_groups_idle_on_the_ground_facing_out_and_clear_of_
             assert!(room.nav.nearest_point([x, y, foe.fighter.body.z]).is_some(), "on the navmesh");
         }
         for post in &room.garrison {
+            let holds = post.members[0].1 >= Miniboss;
+            assert_eq!(post.beat.is_none(), holds, "{kind:?}: a Boss's or a Miniboss's group holds its post");
             for (index, &(_, _, place, facing)) in post.members.iter().enumerate() {
-                let leads =
-                    index == 0 && matches!(kind, NodeKind::Dungeon | NodeKind::Boss) && post.members[0].1 >= Miniboss;
-                let toward = if leads {
-                    let [near_x, near_y] = respawn_point(&section(), place[0], place[1]).unwrap();
-                    bearing([place[0], place[1]], [near_x, near_y])
-                } else {
-                    bearing([post.at[0], post.at[1]], [place[0], place[1]])
+                let toward = match (&post.beat, index) {
+                    (None, 0) => {
+                        let [near_x, near_y] = respawn_point(&section(), place[0], place[1]).unwrap();
+                        bearing([place[0], place[1]], [near_x, near_y])
+                    }
+                    // A group that walks a beat stands its leader at its post facing its way to the beat's next point.
+                    (Some(beat), 0) => {
+                        assert_eq!(place, post.at, "{kind:?}: its leader at its post");
+                        let way = room.nav.find_path(place, beat.points()[1]).unwrap();
+                        bearing([place[0], place[1]], [way[1][0], way[1][1]])
+                    }
+                    _ => bearing([post.at[0], post.at[1]], [place[0], place[1]]),
                 };
                 assert!(wrap(facing - toward).abs() < 0.3, "{kind:?}: faces {facing}, not {toward}");
             }
@@ -242,7 +249,7 @@ fn corvane_calls_crossbowmen_behind_him_then_collectors_to_his_sides_on_the_grou
 
 #[test]
 fn a_foe_asked_for_on_a_platform_stands_on_its_top() {
-    let platform = Block { min_x: -10.0, min_y: -10.0, max_x: 10.0, max_y: 10.0, top: 1.6 };
+    let platform = Block { min_x: -10.0, min_y: -10.0, max_x: 10.0, max_y: 10.0, top: 1.6, bottom: 0.0 };
     let mut room = Room::new(vec![platform], (0.0, 0.0));
     let player = room.join().unwrap();
     room.players.get_mut(&player).unwrap().fighter.body.z = 1.6;
@@ -338,4 +345,29 @@ fn corvane_s_called_foes_fall_with_him_in_his_node_and_he_calls_them_all_anew_wh
     assert!(again != corvane && room.garrison[0].cleared_at.is_none(), "his group stood again");
     into_its_last_phase(&mut room, again);
     assert_eq!(called_by(&room, again).len(), 4);
+}
+
+#[test]
+fn a_node_s_mesh_keeps_its_layout_s_wall_a_body_s_radius_off_and_bakes_no_box_past_its_square() {
+    let (floor, section) = (sloped(), section());
+    let first = (section.spawns[0][0], section.spawns[0][1]);
+    let ground = floor.height_at(0.0, 150.0);
+    // A wall 20 m long across the baked square's middle, from below the ground to 10 m over it; a far box elsewhere.
+    let wall =
+        Block { min_x: -10.0, min_y: 150.0, max_x: 10.0, max_y: 151.0, top: ground + 10.0, bottom: ground - 10.0 };
+    let far = Block { min_x: -150.0, min_y: -150.0, max_x: -140.0, max_y: -140.0, top: 900.0, bottom: 0.0 };
+    let nav = baked(&floor, &[wall, far], first, Some(&section));
+    let at = |x: f64, y: f64| [x, y, floor.height_at(x, y)];
+    let route = nav.find_path(at(0.0, 145.0), at(0.0, 156.0)).expect("a way round the wall");
+    let clear = route.windows(2).all(|pair| {
+        (0..=20).all(|step| {
+            let t = f64::from(step) / 20.0;
+            let (x, y) = (pair[0][0] + (pair[1][0] - pair[0][0]) * t, pair[0][1] + (pair[1][1] - pair[0][1]) * t);
+            let (dx, dy) =
+                ((wall.min_x - x).max(x - wall.max_x).max(0.0), (wall.min_y - y).max(y - wall.max_y).max(0.0));
+            dx * dx + dy * dy >= (navmesh::AGENT.radius - 0.01) * (navmesh::AGENT.radius - 0.01)
+        })
+    });
+    assert!(route.len() > 2 && clear, "round the wall's end: {route:?}");
+    assert_eq!(nav, baked(&floor, &[wall], first, Some(&section)), "a box off the square bakes nothing");
 }

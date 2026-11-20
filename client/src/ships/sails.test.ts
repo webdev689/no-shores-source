@@ -100,7 +100,6 @@ const cornerOf = (canvas: Float32Array, column: number, row: number): number[] =
 test('a square sail is braced square before the wind, 45 degrees with it abeam and held there closer to it', () => {
   assert.deepEqual([0, 45, 90, 150, -90].map(squareBrace), [0, 22.5, 45, 45, -45]);
   assert.ok(Math.abs(sailWind('square', 0) - 1) < 1e-9, 'full with the wind astern');
-  assert.ok(sailWind('square', 135) < 0, 'aback with it ahead of its yard');
 });
 
 test('with the wind astern a square sail fills forward across the ship, square to its keel', () => {
@@ -136,4 +135,53 @@ test('at rest a square sail is furled up to its yard', () => {
   assert.equal(rig.sails[0]?.trimDeg, 0);
   assert.ok((middle(canvas)[2] ?? 0) > 12.8833 - 1, 'gathered under its yard');
   assert.ok((cornerOf(canvas, 3, 0)[2] ?? 0) > 12.8833 - 1, 'its foot too');
+});
+
+const pointAt = (canvas: Float32Array, row: number, column: number): number[] => {
+  const point = (row * SAIL_COLUMNS + column) * 3;
+  return [canvas[point] ?? Number.NaN, canvas[point + 1] ?? Number.NaN, canvas[point + 2] ?? Number.NaN];
+};
+const near = (point: readonly number[], to: readonly number[]): boolean =>
+  point.every((value, axis) => Math.abs(value - (to[axis] ?? Number.NaN)) < 1e-4);
+
+test("a square sail's canvas lies between its four corners, its foot below and its head along the yard", () => {
+  const rig = new SailRig([COURSE]);
+  const flat = rig.sails[0]?.flat ?? new Float32Array();
+  const top = SAIL_ROWS - 1;
+  assert.ok(near(pointAt(flat, 0, 0), COURSE.foot_port));
+  assert.ok(near(pointAt(flat, 0, SAIL_COLUMNS - 1), COURSE.foot_starboard));
+  assert.ok(near(pointAt(flat, top, 0), COURSE.head_port));
+  assert.ok(near(pointAt(flat, top, SAIL_COLUMNS - 1), COURSE.head_starboard));
+});
+
+test('a square sail set bellies forward, fullest with the wind astern, and stays laced to its yard', () => {
+  const belly = (offDeg: number): number => {
+    const rig = new SailRig([COURSE]);
+    sailFor(rig, 5, offDeg);
+    const canvas = rig.canvas()[0] ?? new Float32Array();
+    const flat = rig.sails[0]?.flat ?? new Float32Array();
+    const top = SAIL_ROWS - 1;
+    // Square before the wind, its yard is not braced round: its head and clews lie where its corners are.
+    if (offDeg === 0) {
+      assert.ok(near(pointAt(canvas, top, 3), pointAt(flat, top, 3)), 'its head stays on the yard');
+      assert.ok(near(pointAt(canvas, 0, 0), COURSE.foot_port), 'its clews stay sheeted home');
+    }
+    return (middle(canvas)[0] ?? 0) - (middle(flat)[0] ?? 0);
+  };
+  // Abeam its yard is braced round (the test above), so its belly there is not read along the ship.
+  const astern = belly(0);
+  assert.ok(astern > 0.9, `${astern}`);
+  assert.deepEqual(
+    [0, 90, 180].map((off) => sailWind('square', off)),
+    [1, 0.5, 0],
+  );
+});
+
+test('a square sail furled is gathered up to its yard', () => {
+  const rig = new SailRig([COURSE]);
+  sailFor(rig, 5, 0, false);
+  const canvas = rig.canvas()[0] ?? new Float32Array();
+  const drop = COURSE.head_port[2] - COURSE.foot_port[2];
+  for (let point = 2; point < canvas.length; point += 3)
+    assert.ok((canvas[point] ?? 0) > COURSE.head_port[2] - drop * 0.12, `${canvas[point]}`);
 });

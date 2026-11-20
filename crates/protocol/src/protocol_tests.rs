@@ -334,12 +334,12 @@ fn every_standing_crosses_and_comes_back() {
 
 #[test]
 fn a_welcome_and_snapshots_read_back_to_the_bit() {
-    let welcome = joined_bytes(7, &DRESSED, Some(NODE));
+    let welcome = joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25);
     let joined = flatbuffers::root::<messages::FromRoom>(&welcome).unwrap().joined().unwrap();
-    assert_eq!((joined.player(), joined.node()), (7, Some(NODE.0)));
+    assert_eq!((joined.player(), joined.node(), joined.epoch()), (7, Some(NODE.0), 1_234_567.25));
     assert_eq!(joined.bounds().unwrap().iter().collect::<Vec<_>>(), NODE.1);
     assert_eq!(dressed_in(joined.dressed()), vec![(7, DRESSED[0].1.to_owned())]);
-    let plain = joined_bytes(7, &[], None);
+    let plain = joined_bytes(7, &[], None, 0.0);
     let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
     assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
@@ -503,7 +503,7 @@ fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
     let (players, foes, shots, lines) = (players(), foes(), shots(), lines());
-    std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE))).unwrap();
+    std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25)).unwrap();
     let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());

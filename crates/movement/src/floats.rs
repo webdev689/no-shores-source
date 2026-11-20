@@ -9,8 +9,8 @@ use crate::body::{Body, Controls, Mode, Over};
 pub const BODY_FLOATS: usize = 22;
 /// The controls' numbers: forward, sideways, yaw, run, jump, crouch, mounted.
 pub const CONTROLS_FLOATS: usize = 7;
-/// A block's numbers: min x, min y, max x, max y, top.
-pub const BLOCK_FLOATS: usize = 5;
+/// A block's numbers: min x, min y, max x, max y, top, bottom.
+pub const BLOCK_FLOATS: usize = 6;
 
 const MODES: [Mode; 6] = [Mode::Ground, Mode::Air, Mode::Hang, Mode::Climb, Mode::Mantle, Mode::Vault];
 
@@ -113,7 +113,14 @@ impl Controls {
 impl Block {
     #[must_use]
     pub fn from_floats(floats: &[f64; BLOCK_FLOATS]) -> Self {
-        Block { min_x: floats[0], min_y: floats[1], max_x: floats[2], max_y: floats[3], top: floats[4] }
+        Block {
+            min_x: floats[0],
+            min_y: floats[1],
+            max_x: floats[2],
+            max_y: floats[3],
+            top: floats[4],
+            bottom: floats[5],
+        }
     }
 }
 

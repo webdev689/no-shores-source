@@ -116,6 +116,13 @@ export class Aboard {
     return this.walking && (this.view?.at ?? 0) >= 1 && this.context.walker.inFirstPerson;
   }
 
+  /** Where the player's feet are on her deck as she `lying` lies, world metres, while they walk it; else none. */
+  feetOn(lying: Lying): readonly [number, number, number] | null {
+    if (this.view?.kind !== 'deck') return null;
+    const { body } = this.context.walker.player;
+    return deckToWorld(lying, body.x, body.y, body.z);
+  }
+
   /** Opens Manage from the sea's view, or closes it. */
   manage(): void {
     if (!this.view) this.view = { kind: 'manage', at: 0, going: 'down' };
@@ -218,7 +225,9 @@ export class Aboard {
   private walkShot(lying: Lying): Shot {
     const { walker, movement } = this.context;
     const groundAt = (x: number, y: number) => cellHeight(this.deck, x, y);
-    const local = shotOfOrbit(playerCamera(walker.player, movement, []), LENS, groundAt, CAMERA_CLEARANCE_M);
+    // The deck has no blocks to ease the boom off, so a boom pulled in on foot is let go, not kept in.
+    const free = { ...walker.player, view: { ...walker.player.view, boom: undefined } };
+    const local = shotOfOrbit(playerCamera(free, movement, []), LENS, groundAt, CAMERA_CLEARANCE_M);
     return { ...local, eye: deckToWorld(lying, ...local.eye), yaw: local.yaw + lying.heading };
   }
 

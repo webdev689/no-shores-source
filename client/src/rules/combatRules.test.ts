@@ -5,7 +5,7 @@ import { startCombatRules } from './combatRules.ts';
 import { FIGHTER_FLOATS, GLANCE_FLOATS, fighterView } from './fighters.ts';
 
 /** The combat crate's agreement test holds the same fingerprint, course and script (crates/combat/tests/agree.rs). */
-const FIGHT_HASH = 'c093ed4fb2b11f6e';
+const FIGHT_HASH = '2bd58896a95c9e0f';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -13,7 +13,7 @@ const compiled = new WebAssembly.Module(
     throw new Error('room_wasm.wasm is not built: run `npm run wasm` first');
   }),
 );
-const COURSE = [{ minX: -3, minY: -8, maxX: 3, maxY: -7, top: 1.2 }];
+const COURSE = [{ minX: -3, minY: -8, maxX: 3, maxY: -7, top: 1.2, bottom: 0 }];
 /** The arms codes of a sword with a shield and of a bow, as the combat crate packs them. */
 const SWORD_AND_SHIELD = 2 | (1 << 16);
 const BOW = 1 << 8;
@@ -105,9 +105,10 @@ test('the arms of a forge layer pair read as the combat crate reads them', () =>
 
 test('a stroke reaches as far as the combat crate says: a sword’s thrust farthest, its sweeps least', () => {
   const rules = startCombatRules(compiled);
-  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6) - (1.8 + 0.5 + 0.35)) < 1e-12);
-  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 3) - (1.8 - 0.1 + 0.35)) < 1e-12);
-  assert.equal(rules.strokeReach(SWORD_AND_SHIELD, 0), 0, 'no stroke');
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6, false) - (1.8 + 0.5 + 0.35)) < 1e-12);
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 3, false) - (1.8 - 0.1 + 0.35)) < 1e-12);
+  assert.ok(Math.abs(rules.strokeReach(SWORD_AND_SHIELD, 6, true) - (1.8 * 1.1 + 0.5 + 0.35)) < 1e-12, 'a player’s');
+  assert.equal(rules.strokeReach(SWORD_AND_SHIELD, 0, true), 0, 'no stroke');
   const degrees = (stroke: number) => Math.round((rules.strokeArc(stroke) * 180) / Math.PI);
   assert.deepEqual(
     [1, 2, 3, 4, 5, 6].map(degrees),

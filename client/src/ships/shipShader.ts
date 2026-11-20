@@ -1,6 +1,7 @@
 // What every hull's view draws with, made once a device and shared: the ship shader, its pipeline (built off the
 // frame, so a hull first seen at sea does not stall one), and its parts' and the sides' flags' pictures and sampler.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
+import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, shadowLayouts } from '../shadow.ts';
 import { levelsOf } from '../textures/levels.ts';
 import type { Picture } from '../textures/picture.ts';
@@ -29,12 +30,12 @@ export const MAST_FLOATS_AT = 60 + MOST_YARDS * 4;
 const [HULL_PART, SAIL_PART] = [SHIP_PARTS.indexOf('hull'), SHIP_PARTS.indexOf('sail')];
 
 /** What both its shaders share: its uniforms and pictures, and where each vertex of it is drawn; its parts' pictures'
- *  mean lightness given, as a side's paint keeps a picture's grain about its colour. */
-const placeShader = (hullLight: number, sailLight: number) => /* wgsl */ `
+ *  mean lightness is set when the pipeline is made, as a side's paint keeps a picture's grain about its colour. */
+const PLACE_SHADER = /* wgsl */ `
 ${SHARED_WGSL}
 const AMBIENT = 0.35;
-const HULL_LIGHT = ${hullLight.toFixed(4)};
-const SAIL_LIGHT = ${sailLight.toFixed(4)};
+override HULL_LIGHT: f32 = 1.0;
+override SAIL_LIGHT: f32 = 1.0;
 const HULL_PART = ${HULL_PART}u;
 const SAIL_PART = ${SAIL_PART}u;
 const LIGHTNESS = vec3f(0.299, 0.587, 0.114);
@@ -116,8 +117,8 @@ fn placed(position: vec3f, normal: vec3f, part: vec4u) -> Placed {
 `;
 
 /** The ship shader proper, lit as the land is and in the sun's shadows (`SHADOW_WGSL`). */
-const drawShader = (hullLight: number, sailLight: number) => /* wgsl */ `
-${placeShader(hullLight, sailLight)}
+export const SHIP_DRAW_SHADER = /* wgsl */ `
+${PLACE_SHADER}
 ${SHADOW_WGSL}
 const BOUNCE = 0.15;
 
@@ -145,29 +146,31 @@ fn fragment_main(drawn: Drawn, @builtin(front_facing) facing: bool) -> @location
   // Sails and planks are single faces seen from both sides: the side seen is lit.
   let normal = normalize(select(-drawn.normal, drawn.normal, facing));
   var colour = textureSample(pictures, pictured, drawn.uv, drawn.part).rgb;
-  let light = dot(colour, LIGHTNESS);
+  let grain = dot(colour, LIGHTNESS);
   // A side paints the outside of its shell; its deck's fittings and the insides of its bulwarks keep their timber.
   if (drawn.part == HULL_PART && drawn.shell > 0.5) {
     let line = place.band.x + place.band.y * drawn.model.x;
     if (place.stripe.w > 0.0 && abs(drawn.model.y - line) < place.band.z) {
-      colour = place.stripe.rgb * clamp(light / HULL_LIGHT, 0.7, 1.3);
+      colour = place.stripe.rgb * clamp(grain / HULL_LIGHT, 0.7, 1.3);
     } else if (place.hull.w > 0.0) {
-      colour = place.hull.rgb * clamp(light / HULL_LIGHT, 0.6, 1.4);
+      colour = place.hull.rgb * clamp(grain / HULL_LIGHT, 0.6, 1.4);
     }
   } else if (drawn.part == SAIL_PART && place.canvas.w > 0.0) {
-    colour = place.canvas.rgb * clamp(light / SAIL_LIGHT, 0.75, 1.15);
+    colour = place.canvas.rgb * clamp(grain / SAIL_LIGHT, 0.75, 1.15);
   }
-  // The land's light: the sky's, what the water throws back onto its sides, and the sun where the shadows let it.
-  let ambient = AMBIENT + BOUNCE * (1.0 - abs(normal.z));
-  let direct = max(dot(normal, SUN), 0.0);
-  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0);
-  return vec4f(colour * place.shade.x * (ambient + (1.0 - ambient) * direct * sun), 1.0);
+  // The land's light: the sky's, what the water throws back onto its sides, the key light where the shadows and the
+  // clouds let it, and the lamps near.
+  let ambient = sky_ambient(normal) * (1.0 + (BOUNCE / AMBIENT) * (1.0 - abs(normal.z)));
+  let direct = max(dot(normal, sky_state.key.xyz), 0.0);
+  let sun = select(1.0, sunlit(drawn.from_eye, normal), direct > 0.0) * sky_dapple(drawn.from_eye);
+  let light = ambient + sky_direct(normal, sun) + sky_lamps(drawn.from_eye, normal);
+  return vec4f(colour * place.shade.x * light, 1.0);
 }
 `;
 
 /** Its shadow's shader: its faces drawn along the sun into its map (`SHADOW_CAST_WGSL`). */
-const castShader = (hullLight: number, sailLight: number) => /* wgsl */ `
-${placeShader(hullLight, sailLight)}
+export const SHIP_CAST_SHADER = /* wgsl */ `
+${PLACE_SHADER}
 ${SHADOW_CAST_WGSL}
 
 @vertex
@@ -200,7 +203,7 @@ function lightnessOf(picture: Picture | undefined): number {
 }
 
 /** Its parts' pictures and the sides' flags on the GPU: a layer each, with every level. */
-function picturesTexture(device: GPUDevice): GPUTexture {
+export function picturesTexture(device: GPUDevice): GPUTexture {
   const side = SHIP_PICTURE_TEXELS;
   const levels = Math.log2(side) + 1;
   const texture = device.createTexture({
@@ -240,8 +243,8 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
     const lightness = (part: (typeof SHIP_PARTS)[number]) => lightnessOf(pictures()[SHIP_PARTS.indexOf(part)]);
     const [hullLight, sailLight] = [lightness('hull'), lightness('sail')];
     const { device } = gpu;
-    const module = device.createShaderModule({ code: drawShader(hullLight, sailLight) });
-    const castModule = device.createShaderModule({ code: castShader(hullLight, sailLight) });
+    const module = device.createShaderModule({ code: SHIP_DRAW_SHADER });
+    const castModule = device.createShaderModule({ code: SHIP_CAST_SHADER });
     const both = SHADER_STAGE.vertex | SHADER_STAGE.fragment;
     const placeLayout = device.createBindGroupLayout({
       entries: [
@@ -251,6 +254,7 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
       ],
     });
     const shadows = shadowLayouts(device);
+    const sky = skyUniformFor(device);
     const buffers: GPUVertexBufferLayout[] = [
       {
         arrayStride: VERTEX_BYTES,
@@ -263,9 +267,16 @@ export function shipKit(gpu: Gpu): Promise<ShipKit> {
       },
     ];
     const drawing = device.createRenderPipelineAsync({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [placeLayout, shadows.receiver] }),
+      layout: device.createPipelineLayout({
+        bindGroupLayouts: [placeLayout, shadows.receiver, sky.empty, sky.layout],
+      }),
       vertex: { module, entryPoint: 'vertex_main', buffers },
-      fragment: { module, entryPoint: 'fragment_main', targets: [{ format: gpu.format }] },
+      fragment: {
+        module,
+        entryPoint: 'fragment_main',
+        constants: { HULL_LIGHT: hullLight, SAIL_LIGHT: sailLight },
+        targets: [{ format: gpu.format }],
+      },
       primitive: { topology: 'triangle-list', frontFace: FRONT_FACE },
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'greater' },
       multisample: { count: SAMPLES },

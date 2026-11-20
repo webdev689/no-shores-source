@@ -25,14 +25,14 @@ export interface ScreenQuad {
   };
 }
 
-const QUAD_BYTES = 32;
+const QUAD_BYTES = 48;
 const GLOW_BYTES = 48;
 /** The glow's clock wraps here, every rate in its shader whole over it. */
 const CLOCK_WRAP_S = 240;
 
 /** A weapon's outline: its quad grown by the pad, each texel of its field lit by `glow_colour` at the picture's own
  *  pixel. */
-const GLOW_SHADER = /* wgsl */ `
+export const GLOW_SHADER = /* wgsl */ `
 ${GLOW_WGSL}
 
 // The corners in clip space; whether it is mirrored, its element and the glow's clock; its surge, whether a blow's rim
@@ -72,9 +72,10 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
 }
 `;
 
-const SHADER = /* wgsl */ `
-// The corners in clip space; whether it is mirrored, the share of the picture across it draws, and how far down.
-struct Quad { corners: vec4f, drawn: vec4f }
+export const SHADER = /* wgsl */ `
+// The corners in clip space; whether it is mirrored, the share of the picture across it draws, and how far down;
+// and the light on it, against a clear afternoon's.
+struct Quad { corners: vec4f, drawn: vec4f, light: vec4f }
 @group(0) @binding(0) var<uniform> quad: Quad;
 @group(0) @binding(1) var picture: texture_2d<f32>;
 
@@ -98,7 +99,7 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f }
   let last = vec2f(round(quad.drawn.z * size.x) - 1.0, size.y - 1.0);
   let texel = textureLoad(picture, vec2i(min(at * size, last)), 0);
   if (texel.a < 0.5) { discard; }
-  return vec4f(texel.rgb, 1.0);
+  return vec4f(texel.rgb * quad.light.rgb, 1.0);
 }
 `;
 
@@ -199,14 +200,16 @@ export class FirstPersonView {
     }
   }
 
-  /** Draws `quads` in order into `colourView`, `width` by `height` pixels, keeping what is drawn there already; a
-   *  glowing one's outline straight after it, so a picture drawn later lies over it. */
+  /** Draws `quads` in order into `colourView`, `width` by `height` pixels, keeping what is drawn there already, in
+   *  `light` (a clear afternoon's is 1); a glowing one's outline straight after it, so a picture drawn later lies over
+   *  it. */
   draw(
     encoder: GPUCommandEncoder,
     colourView: GPUTextureView,
     width: number,
     height: number,
     quads: readonly ScreenQuad[],
+    light: readonly [number, number, number] = [1, 1, 1],
   ): void {
     if (!quads.length) return;
     const pass = encoder.beginRenderPass({
@@ -230,6 +233,8 @@ export class FirstPersonView {
         quad.part?.[0] ?? 0,
         quad.part?.[1] ?? 1,
         quad.reach ?? 1,
+        ...light,
+        1,
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, values);
       pass.setBindGroup(0, group);

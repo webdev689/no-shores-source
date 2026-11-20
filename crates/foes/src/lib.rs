@@ -17,11 +17,13 @@ pub mod factions;
 mod flank;
 mod leash;
 pub mod noises;
+mod pace;
 pub mod ranks;
 mod react;
 pub mod roles;
 pub mod roster;
 mod senses;
+mod share;
 mod shoot;
 mod steer;
 mod tactics;
@@ -38,6 +40,7 @@ pub use noises::Noise;
 pub use ranks::{Call, Place, Rank};
 pub use roles::Role;
 pub use roster::{FoeType, ROSTER, foe_type, in_role, spawn};
+pub use shoot::aimed_shot;
 
 use dice::Dice;
 use senses::Here;
@@ -57,6 +60,27 @@ pub trait Routes {
     fn walkable(&self, _point: [f64; 3]) -> bool {
         true
     }
+
+    /// The climb or drop the thinking foe's way crosses from where it stands, if it stands at one's start: none,
+    /// unless the routes know better.
+    fn crossing(&self, _from: [f64; 3]) -> Option<Crossing> {
+        None
+    }
+
+    /// Whether a body on its feet at `from` stepping to `to` drops off an edge more than a step high: never, unless the
+    /// routes know better.
+    fn drops(&self, _from: [f64; 3], _to: [f64; 3]) -> bool {
+        false
+    }
+}
+
+/// A climb or a drop on a foe's way, where it starts across: the bearing to face and walk along, square to a block's
+/// side, and whether to press jump to go over it, as a player would. Walked with no jump, the movement rules climb a
+/// side too high to go over, and drop a body off an edge.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Crossing {
+    pub bearing: f64,
+    pub jump: bool,
 }
 
 /// A straight line: open ground, and tests.
@@ -126,7 +150,6 @@ impl core::fmt::Debug for World<'_> {
 pub enum Seen {
     /// A fighter began a swing (the attack as begun: its strike and end ticks tell when its blow lands).
     Swung { by: FighterId, attack: combat::fighter::Attack },
-    /// A fighter loosed a shot: it is taken to leave now, arriving by its distance.
     /// A fighter loosed a shot, flying at `speed` (0 where the room does not know it, or it reaches its mark at once).
     Loosed { by: FighterId, speed: f64 },
     /// A blow reached this foe and came to `verdict`.
@@ -161,5 +184,7 @@ pub fn think(me: FighterId, brain: &Brain, board: &mut Board, world: &World<'_>)
     };
     let ask = tactics::decide(&mut next, &here, board);
     let intent = steer::controls(&mut next, &here, &ask);
+    pace::note(&next, &here, board, &intent);
+    board.aim(me, next.target);
     (next, intent)
 }
