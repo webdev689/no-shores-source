@@ -109,11 +109,15 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
-  // Flat stone (the plaza, a flat roof) holds puddles; walls and sloping roofs are only darkened and sheened.
-  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95);
-  let wet = max(sky_state.ambient_sky.w * 0.7, puddle);
+  // Fresh snow lies on the flat stone as on the ground round it, the city standing on the eye's own ground. Flat stone
+  // (the plaza, a flat roof) holds puddles where no snow lies; walls and sloping roofs are only darkened and sheened.
+  let rise = sqrt(max(1.0 - facing.z * facing.z, 0.0)) / max(facing.z, 1e-3);
+  let snow = sky_fresh_snow(sky_state.puddle_place.z, rise);
+  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95) * (1.0 - snow);
+  let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle);
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
-  return sky_soaked(albedo, wet) * (light + sky_lamps(from_eye, facing)) + sky_sheen(facing, from_eye, wet);
+  let surface = sky_soaked(sky_snowed(albedo, snow), wet);
+  return surface * (light + sky_lamps(from_eye, facing)) + sky_sheen(facing, from_eye, wet);
 }
 
 struct Surface {

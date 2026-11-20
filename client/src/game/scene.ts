@@ -277,14 +277,15 @@ export class GameScene {
     const camera = frameOf(local);
     const target = this.gpu.context.getCurrentTexture().createView();
     const eyeWater = this.waterAt(shot.eye[0], shot.eye[1], time);
+    // The weather's fog thickens the haze: their densities add.
+    const air = { clearM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity), fogDensity: look.fogDensity };
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(shot.fov / 2) },
       size: [size.width, size.height],
       time,
       seconds,
       exaggeration: 1,
-      // The weather's fog thickens the haze: their densities add.
-      fogM: 1 / (1 / Math.max(25_000, above * 60) + look.fogDensity),
+      fogM: air.clearM,
       world: [...origin],
       swell: more.swell ?? view.swell,
       coarse: drawn.cells,
@@ -305,7 +306,7 @@ export class GameScene {
     const groundAt = (x: number, y: number) => this.groundAt(x, y);
     // The bolts leave the deck the Overworld's camera stays under; under thin cover, where half cover's base would be.
     const baseM = cloudBaseOf(reading && { ...reading, cloud: Math.max(reading.cloud, 0.5) }) ?? 0;
-    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt });
+    this.bolts.encode(encoder, over, { fromEye, eye: shot.eye }, { list: strikes, worldS, baseM, groundAt, air });
     if (drawers.some((drawer) => drawer.lightInto))
       this.light.encode(encoder, target, targets.depth, (light) => {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye);

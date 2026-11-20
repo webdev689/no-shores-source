@@ -128,15 +128,27 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
   const zenith = mix(clearZenith, scale(grey, 0.85), greyed);
   let horizon = mix(clearHorizon, grey, greyed);
   horizon = mix(horizon, scale(SAND_AIR, skyLight), sand * 0.8);
+  // A flash lights the whole sky and the air under it, and so the ground it falls on and what that throws back.
+  const flashed = (colour: Colour, tint: Colour, share: number) => add(colour, scale(tint, flash * share));
+  // In a sandstorm the light from above comes through the dust: the sky's light is the dust's.
+  const overhead = mix(zenith, horizon, sand);
   // Eased up, so twilight's ground keeps more of the day's light than its darkening zenith alone would give.
-  const skyShare = Math.pow(clamp01(luminance(zenith) / luminance(DAY_ZENITH)), 0.6);
-  const ambientSky = add(
-    scale(mix(zenith, [0.36, 0.36, 0.36], 0.75), (0.35 / 0.41) * skyShare),
-    add(scale(NIGHT_FLOOR, 1 - skyShare), scale(moonAtGround, 0.5)),
+  const skyShare = Math.pow(clamp01(luminance(overhead) / luminance(DAY_ZENITH)), 0.6);
+  const ambientSky = flashed(
+    add(
+      scale(mix(overhead, [0.36, 0.36, 0.36], 0.75), (0.35 / 0.41) * skyShare),
+      add(scale(NIGHT_FLOOR, 1 - skyShare), scale(moonAtGround, 0.5)),
+    ),
+    [0.5, 0.52, 0.62],
+    0.5,
   );
   const ambientGround = add(scale(sunAtGround, 0.12 * smooth(0, 0.2, sun[2])), scale(ambientSky, 0.7));
   const fogDensity = FOG_BANK * fog + FALL_HAZE * falling + SAND_HAZE * sand;
-  const fogColour = mix(horizon, scale(grey, 0.95), clamp01(fog * 0.8 + falling * 0.5));
+  const fogColour = flashed(
+    mix(horizon, scale(grey, 0.95), clamp01(fog * 0.8 + falling * 0.5)),
+    [0.6, 0.62, 0.75],
+    0.5,
+  );
   return {
     key,
     keyBright: clamp01(luminance(keyLight) / luminance(sunLight(1))),
@@ -145,11 +157,11 @@ export function lookOf(reading: SkyReading, worldS: number, flash: number): SkyL
     daylight,
     moon,
     moonLit: reading.moonLit,
-    zenith: add(zenith, scale([0.55, 0.6, 0.75], flash * 0.6)),
-    horizon: add(horizon, scale([0.6, 0.62, 0.75], flash * 0.5)),
+    zenith: flashed(zenith, [0.55, 0.6, 0.75], 0.6),
+    horizon: flashed(horizon, [0.6, 0.62, 0.75], 0.5),
     cloud: cover,
     storm,
-    ambientSky: add(ambientSky, scale([0.5, 0.52, 0.62], flash * 0.5)),
+    ambientSky,
     ambientGround,
     wetness: reading.wetness,
     snowShare: reading.snowShare,
