@@ -131,6 +131,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Display as Claude Lays It Out]]
 - [[The Swing's Arc Never Covers Its Striker]]
 - [[A Player's Melee Weapon Reaches a Tenth Further]]
+- [[The Game's Loop Runs From Town to the Land and the Sea]]
+- [[Prestige Stays as Built, With a Costly Infusion]]
+- [[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]]
+- [[Where You Go and the Seas You Choose Set the Difficulty]]
+- [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
