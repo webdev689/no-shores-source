@@ -66,11 +66,13 @@ pub enum Homeward {
 }
 
 /// What a garrison foe's group asks of it, set by the room each tick: whether it is the leader its followers screen,
-/// held back behind them while one fights hand to hand at its target (`screened`), or the leader going in at once now
-/// they are gone (`push`); and whether its group defends its ground.
+/// held back behind them while one fights hand to hand at its target (`screened`), and the shield-bearer of them it
+/// stands behind (`behind`); or the leader going in at once now they are gone (`push`); and whether its group defends
+/// its ground.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Orders {
     pub screened: bool,
+    pub behind: Option<FighterId>,
     pub push: bool,
     pub defend: bool,
 }
@@ -127,9 +129,11 @@ pub struct Brain {
     /// A garrison foe's place at its post, and why it walks back there, if it does.
     pub(crate) home: Option<Home>,
     pub(crate) returning: Option<Homeward>,
-    /// What its group asks of it; until when it is broken, and whether it rages; when a blow last struck it.
+    /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; when
+    /// a blow last struck it.
     pub(crate) orders: Orders,
     pub(crate) broken_until: u64,
+    pub(crate) cover: Option<[f64; 3]>,
     pub(crate) raging: bool,
     pub(crate) struck_at: Option<u64>,
 }
@@ -167,6 +171,7 @@ impl Brain {
             returning: None,
             orders: Orders::default(),
             broken_until: 0,
+            cover: None,
             raging: false,
             struck_at: None,
         }

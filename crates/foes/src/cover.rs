@@ -17,6 +17,7 @@ use crate::tuning::{
     COVER_WEIGHT, DEFEND_HIDE, EYE, FLANK_WEIGHT, HIDE, KITE_OUT, NEAR_WEIGHT, PEEK, POST_GAP, POST_LEAVE, POST_RETRY,
     POST_SEEK, POST_TRIES, REPICK, ROUTE_TRIES, RUN_FROM, SHOOT_RANGE, STEP_ASIDE,
 };
+use crate::tuning::{GUARD_RESERVE, HOME_REACHED};
 use combat::fighter::Action;
 use combat::sight::{apart, bearing, clear_line, off};
 use combat::tuning::CHEST;
@@ -219,6 +220,30 @@ fn aims(brain: &Brain, here: &Here<'_, '_>, board: &Board, sight: &Sight) -> boo
     let Some(since) = board.held_since(sight.id, here.me) else { return false };
     let ready = matches!(here.fighter.action, Action::Idle) && here.tick() >= brain.bow.shot_ready;
     ready && aim_ready(brain, here, sight) && Dice { tick: since, ..here.dice }.roll(Purpose::PostAim) < AIMED_SHARE
+}
+
+/// A place to fall back behind as it breaks: of the firing spots within POST_SEEK of it, clear of every shooter's post,
+/// the nearest that hides it from its target and stands no nearer its target than it does; none in the open.
+pub(crate) fn cover_from(here: &Here<'_, '_>, board: &Board, sight: &Sight) -> Option<[f64; 3]> {
+    let (target, from_target) = (chest(sight.spot), apart(here.at(), flat(sight.spot)));
+    let taken: Vec<[f64; 3]> = board.posts_but(here.me).collect();
+    let near = |point: &[f64; 3]| apart(here.at(), flat(*point));
+    here.world
+        .spots
+        .near(here.feet(), POST_SEEK)
+        .into_iter()
+        .map(|spot| spot.point)
+        .filter(|point| apart(flat(*point), flat(sight.spot)) >= from_target)
+        .filter(|point| taken.iter().all(|other| apart(flat(*point), flat(*other)) >= POST_GAP))
+        .filter(|point| !exposed(here.world.blocks, *point, target))
+        .min_by(|one, two| near(one).total_cmp(&near(two)))
+}
+
+/// Holding the cover it fell back to: it runs there, then stands facing its target, its guard up if it bears a shield.
+pub(crate) fn hide_at(here: &Here<'_, '_>, cover: [f64; 3], sight: &Sight) -> Ask {
+    let guard = here.numbers.block > 0.0 && here.fighter.stamina > GUARD_RESERVE;
+    let way = (apart(here.at(), flat(cover)) > HOME_REACHED).then(|| way_to(here, cover)).flatten();
+    way.map_or_else(|| Ask::facing(sight.toward).guarded(guard), |way| Ask::walking(way, 1.0, true))
 }
 
 /// How long a shooter hides behind its cover before it looks out again: longer while its group defends its ground.

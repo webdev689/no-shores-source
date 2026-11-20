@@ -160,9 +160,11 @@ phases) is [[Enemies]].
   a full walk at most, and faces its way.
 - **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";
   [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]):
-  - **Broken**, as its group's leader falls, for 8 s it gives its turn up: a skirmisher runs from its target as a
-    coward does; a shooter holds its fire and falls back behind its cover, or in the open steps back facing its
-    target; any other huddles on the farther ring a foe backs off to, its guard up if it bears a shield.
+  - **Broken**, as its group's leader falls, for 8 s it gives its turn up and falls back to cover: a shooter holds its
+    fire behind its post's cover, and any foe runs behind the nearest firing spot within 11 m that hides it from its
+    target and stands no nearer it, and holds it facing its target, its guard up if it bears a shield. In the open, a
+    skirmisher runs from its target as a coward does, a shooter steps back facing its target, and any other huddles
+    on the farther ring a foe backs off to, its guard up if it bears a shield.
   - **Raging**, for the rest of its fight: it takes a turn at once, one over the turns' cap at most, never backs off
     or runs, never parries, blocks or dodges a blow nor holds up its guard, runs at its target, and after a blow only
     hops back before it waits again. The beat between blows holds it as it holds any foe. Its rage ends as its fight
@@ -173,9 +175,9 @@ phases) is [[Enemies]].
   - **Falling back**, as its group's places move to where it gives ground, a foe fighting gives its turn up and runs
     there by the room's routes, its target and its awareness kept, striking nothing on the way (a wind-up of its own
     it finishes first), and fights again once within 1 m of its place.
-  - **Screened**, a leader waits a ring farther out than its place in the line, behind its followers, taking no turn
-    and never flanking; walked in on, it fights back where it stands. **Going in**, its screen gone, it takes a turn
-    at once, one over the cap at most.
+  - **Screened**, a leader waits a ring farther out than its place in the line, right behind the shield-bearer of its
+    screen its group names, if any, taking no turn and never flanking; walked in on, it fights back where it stands.
+    **Going in**, its screen gone, it takes a turn at once, one over the cap at most.
 - **Turns and the ring.** By the room's heat, one to three foes a target fight it hand to hand at once and one to
   three shoot at it (the director, below). One of those with a turn goes in at a time, the rest keeping to the ring
   until it has struck: it walks in to its reach, squares up within 22.5 degrees, waits 0.3 to 0.9 s and swings once;

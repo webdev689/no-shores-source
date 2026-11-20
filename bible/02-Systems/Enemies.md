@@ -193,17 +193,19 @@ WebAssembly, so names, factions and weapons are read in one place.
   rages already), and the rest break by their role for 8 s ([[Foes]], "Its group").
 - **Its breaking point**: once half the foes it stood have fallen, it defends its ground until it stands again: its
   places gather back at its post, its foes fighting elsewhere fall back to them, and each fights only near its place.
-- **The Grey Tithe's tactic**: its shield-bearers hold the line before their target, as every shield-bearer does, and
-  its leader waits behind them, screened, while one of its followers that is not broken fights hand to hand at its
-  target; once none of them stands unbroken, it goes in at once.
+- **The Grey Tithe's tactic**, its shield front: its shield-bearers hold the line before their target, and its leader
+  is screened by its lower ranks. While one of them that is not broken fights hand to hand at its target, the leader
+  waits behind them, right behind the nearest shield-bearer of them; once none of them stands unbroken, it goes in at
+  once ([[Foes]], "Its group").
 - **A mission's or a dungeon's garrison gives ground** as one encounter, by the share of the foes it stood that stand
   (its waves not counted). More than three quarters standing, it holds its territory: each group its own post and
   beat. More than half, it falls back: each group's places gather 2.5 m round its fallback point, halfway along the
   navmesh's way from its post to the last stand's post, the post farthest from the spawns (its own post where that
   point is off the mesh, outside the section or within 25 m of a spawn). Less, it makes its last stand: the last
-  stand's group at its places there and every other foe 5 m round it, all defending, led by the highest rank standing
-  as it begins; that one's fall breaks every foe there. As groups stand again the share rises, and they go back.
-- **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand: each a band drawn
+  stand's group at its places there and every other of its foes 5 m round it, all defending (its waves come on, for
+  the players), led by the highest rank standing as it begins; that one's fall breaks every foe there. As groups stand again the share rises, and they go back.
+- **A mission's waves**: as its garrison falls back, a wave comes, and another for its last stand, both at once if it
+  gives up both at once: each a band drawn
   as its bands are (two to four Runners, Collectors and Crossbowmen, Minor or Major) at the island's levels, a shield
   drawn as any foe's, standing at the open post farthest from every player and at least 25 m from each, alert toward
   the nearest, its places at the last stand. A wave has its own leader, breaking point and break; it never stands

@@ -1,6 +1,6 @@
 //! A garrison's groups as Bungie leads them. Each group has a leader, its highest rank: when it falls the others
-//! break, one of them raging. Half a group fallen, it defends its ground at its post. A Grey Tithe group fights
-//! behind a shield front, its leader screened by its followers until they are gone. A mission's or a dungeon's
+//! break, one of them raging. Half a group fallen, it defends its ground at its post. A Grey Tithe leader is screened
+//! by its lower ranks until they are gone, standing behind a shield-bearer of them. A mission's or a dungeon's
 //! garrison is one encounter that gives ground as it falls, Halo's territory, fallback and last stand: more than
 //! three quarters of it standing, each group holds its own post; more than half, each falls back halfway to the post
 //! farthest from the spawns; less, all gather there to defend it, and the fall of the highest rank there breaks them.
@@ -10,6 +10,7 @@ use super::{PATROL, Post, SPAWN_CLEAR, SPREAD, draws_of, gird_of, ground_middle,
 use crate::Room;
 use ::foes::roles::Role;
 use ::foes::{Alertness, Mood, Orders, Rank, Seen, faction, foe_type, notice};
+use combat::arms::OffHand;
 use combat::fighter::FighterId;
 use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
@@ -178,12 +179,14 @@ impl Room {
             Stage::Fallback => {}
         }
         let waves = encounter.waves;
-        // A wave for each stage the mission gives up, however many at once, one at a time.
+        // A wave for each stage the mission gives up, however many at once.
         if stage > was
             && let Some(came) = waves
             && came < stage as u8
         {
-            self.arrive(came);
+            for wave in came..stage as u8 {
+                self.arrive(wave);
+            }
             if let Some(encounter) = self.encounter.as_mut() {
                 encounter.waves = Some(stage as u8);
             }
@@ -316,9 +319,10 @@ impl Room {
         self.round_at(point, count, out, start)
     }
 
-    /// What each foe of a group is asked: to defend its ground while its group does or makes its last stand; and, for
-    /// the leader of a group of a faction that fights behind a shield front, to wait behind its followers while one
-    /// that is not broken fights hand to hand at its target, and to go in at once once none of them stands unbroken.
+    /// What each foe of a group is asked: to defend its ground while its group does or makes its last stand (not a
+    /// wave, which comes on); and, for the leader of a group of a faction whose leaders fight screened, to wait behind
+    /// its followers of lower rank while one that is not broken fights hand to hand at its target, behind the nearest
+    /// shield-bearer of them, and to go in at once once none of them stands unbroken.
     fn give_orders(&mut self, post: usize, stage: Option<Stage>) {
         let tick = self.clock;
         let found = &self.garrison[post];
@@ -328,25 +332,37 @@ impl Room {
         let fights = leader.and_then(|id| self.foes[&id].brain.fights());
         let fronted = leader
             .is_some_and(|id| faction(self.foes[&id].brain.foe_type.faction).is_some_and(|faction| faction.screens));
-        let melee = |id: &FighterId| {
-            Some(*id) != leader
-                && self
-                    .foes
-                    .get(id)
-                    .is_some_and(|foe| foe.brain.role() != Role::Archer && foe.brain.mood(tick) != Mood::Broken)
+        let rank = leader.map(|id| self.foes[&id].brain.rank);
+        let below = |number: u8, of: Rank| {
+            rank.is_some_and(|rank| of < rank) && foe_type(number).is_some_and(|foe_type| foe_type.role != Role::Archer)
         };
-        let screen = living.iter().filter(|id| melee(id));
-        let screened = fronted && fights.is_some() && screen.clone().any(|id| self.foes[id].brain.fights() == fights);
-        let stood_melee = found
-            .members
-            .iter()
-            .filter(|(number, ..)| foe_type(*number).is_some_and(|foe_type| foe_type.role != Role::Archer));
-        let had_screen =
-            stood_melee.count() > usize::from(leader.is_some_and(|id| self.foes[&id].brain.role() != Role::Archer));
-        let push = fronted && fights.is_some() && had_screen && screen.count() == 0;
+        let screens = |id: &&FighterId| {
+            let brain = &self.foes[*id].brain;
+            below(brain.foe_type.number, brain.rank) && brain.mood(tick) != Mood::Broken
+        };
+        let screen: Vec<FighterId> = living.iter().filter(screens).copied().collect();
+        let at_target: Vec<FighterId> =
+            screen.iter().copied().filter(|id| self.foes[id].brain.fights() == fights).collect();
+        let screened = fronted && fights.is_some() && !at_target.is_empty();
+        let shields = at_target.iter().filter(|id| self.foes[*id].fighter.arms.off_hand == OffHand::Shield);
+        let behind = leader.filter(|_| screened).and_then(|leader| {
+            let at = self.foes[&leader].fighter.body;
+            let from = |id: &&FighterId| {
+                let body = self.foes[*id].fighter.body;
+                apart([at.x, at.y], [body.x, body.y])
+            };
+            shields.min_by(|one, two| from(one).total_cmp(&from(two))).copied()
+        });
+        let had_screen = found.members.iter().any(|&(number, of, ..)| below(number, of));
+        let push = fronted && fights.is_some() && had_screen && screen.is_empty();
         for id in living {
             let is_leader = Some(id) == leader;
-            let orders = Orders { screened: is_leader && screened, push: is_leader && push, defend };
+            let orders = Orders {
+                screened: is_leader && screened,
+                behind: behind.filter(|_| is_leader),
+                push: is_leader && push,
+                defend,
+            };
             if let Some(foe) = self.foes.get_mut(&id) {
                 foe.brain.order(orders);
             }

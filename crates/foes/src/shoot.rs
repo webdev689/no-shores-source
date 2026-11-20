@@ -139,10 +139,12 @@ pub fn ranged(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: 
     let tick = here.tick();
     let (me, target) = (here.me, sight.id);
     if tick < brain.broken_until {
-        // Broken, it holds its fire and falls back to its cover; in the open it steps back from its target, facing it.
+        // Broken, it holds its fire and falls back behind its post's cover, or any; in the open it steps back from its
+        // target, facing it.
         board.forget(me);
-        return hold(brain, here, board, sight, false)
-            .unwrap_or_else(|| Ask::stepping(sight.toward + PI, 1.0, sight.toward));
+        let back = || Ask::stepping(sight.toward + PI, 1.0, sight.toward);
+        let covered = |cover| crate::cover::hide_at(here, cover, sight);
+        return hold(brain, here, board, sight, false).unwrap_or_else(|| brain.cover.map_or_else(back, covered));
     }
     let has = turn(here, board, target);
     let walked = std::mem::take(&mut brain.bow.walked);

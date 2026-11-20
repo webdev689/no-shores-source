@@ -8,7 +8,7 @@
 
 use crate::board::Board;
 use crate::brain::{Brain, Plan};
-use crate::cover::{leave_post, unseen};
+use crate::cover::{cover_from, hide_at, leave_post, unseen};
 use crate::dice::Purpose;
 use crate::flank::{drift, in_place, ring_of};
 use crate::leash::{leash, unoccupied};
@@ -100,6 +100,10 @@ pub fn decide(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Ask 
         return unoccupied(brain, here, was_alert);
     };
     broken(brain, here, board, &sight);
+    if let Some(cover) = brain.cover.filter(|_| !here.numbers.shooter) {
+        board.forget(me);
+        return hide_at(here, cover, &sight);
+    }
     if let Some(ask) = flee(brain, here, board, &sight) {
         return ask;
     }
@@ -218,17 +222,23 @@ fn recover(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
     }
 }
 
-/// Broken by its leader's fall, for the break's time it gives its turn up: a skirmisher runs, and any other backs off,
-/// a shooter behind its cover, a fighter hand to hand huddled on a farther ring, its guard up if it bears a shield.
+/// Broken by its leader's fall, for the break's time it gives its turn up and falls back behind the nearest cover from
+/// its target; in the open a skirmisher runs, and any other backs off, a shooter stepping back, a fighter hand to hand
+/// huddled on a farther ring, its guard up if it bears a shield.
 fn broken(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) {
     let tick = here.tick();
+    if tick >= brain.broken_until {
+        brain.cover = None;
+        return;
+    }
     let breaking = if brain.role() == Role::Skirmisher { Plan::Flee } else { Plan::Backoff };
-    if tick >= brain.broken_until || (brain.plan == breaking && brain.until >= brain.broken_until) {
+    if brain.plan == breaking && brain.until >= brain.broken_until {
         return;
     }
     brain.plan = breaking;
     (brain.until, brain.hop_until, brain.ready_at) = (brain.broken_until, brain.broken_until, None);
     board.hand_on(sight.id, here.me, tick);
+    brain.cover = cover_from(here, board, sight);
 }
 
 /// Its group defending its ground, a fighter hand to hand fights only a target within DEFEND of its place, or one
@@ -346,8 +356,11 @@ fn melee(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sigh
         Plan::Engage => engage(brain, here, board, sight, reach),
         Plan::Backoff => hold_ring(brain, here, sight, ring + BACKOFF_GAP),
         Plan::Wait => {
-            // Screened, it waits a ring farther out, behind its followers.
+            // Screened, it waits a ring farther out, right behind its shield-bearer if it has one: its shield front.
             let ring = ring_of(brain, here, board, sight, ring) + if screened { RANK_GAP } else { 0.0 };
+            if let Some(shield) = brain.orders.behind.filter(|_| screened).and_then(|id| here.find(id)) {
+                brain.slot = Some(bearing([sight.spot[0], sight.spot[1]], [shield.body.x, shield.body.y]));
+            }
             hold_ring(brain, here, sight, ring)
         }
         _ => hold_ring(brain, here, sight, ring),

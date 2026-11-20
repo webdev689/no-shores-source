@@ -23,4 +23,5 @@ status: in force
 - The Grey Tithe has a group tactic of its own, such as a shield front with Minors screening an Elite
   ([[Enemy Factions Start With the Grey Tithe]]).
 - Missions have arrivals, such as a wave or a drop.
-- The details are Claude's, under "Really flesh this out" ([[Foe Groups as Claude Builds Them]]).
+- All five are built in full, as the owner asked: "Really flesh this out and build this to 100%". Claude's choices in
+  building them are listed in [[Foe Groups as Claude Builds Them]], for the owner to change.

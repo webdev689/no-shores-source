@@ -2,17 +2,20 @@
 //! shooter holds its fire and falls back, and a fighter hand to hand huddles on a farther ring, its guard up; raging,
 //! it goes in over the turns' cap, never backs off and answers no blow. Its group defending its ground, it fights only
 //! a target near its place, or one that struck it; falling back with its group, it runs to its new place, its target
-//! kept, and fights from there. A leader its followers screen waits behind them, and goes in once they are gone.
+//! kept, and fights from there. A leader its followers screen waits behind them, right behind a shield-bearer of them,
+//! and goes in once they are gone. Broken with cover near, any foe falls back behind it.
 
 mod common;
 
 use combat::Verdict;
+use combat::sight::{bearing, clear_line, off};
 use common::{Room, still, watching};
 use core::f64::consts::PI;
 use foes::Rank::{Elite, Major};
 use foes::brain::Plan;
 use foes::tuning::{BREAK, DEFEND, FALLEN_BACK, RANK_GAP, RING_GAP};
 use foes::{Brain, Director, Mood, Orders, Seen};
+use movement::Block;
 
 const PLAYER: u32 = 1;
 const RUNNER: u8 = 1;
@@ -203,4 +206,51 @@ fn a_foe_falling_back_with_its_group_runs_to_its_new_place_its_target_kept_then_
     assert!(arrived < fell + 360, "at a run: {} ticks", arrived - fell);
     assert_eq!(swings_between(&room, 10, fell, arrived), 0, "striking nothing on the way");
     assert!(swings_between(&room, 10, arrived, room.tick) > 0, "and fights from there");
+}
+
+#[test]
+fn a_foe_broken_with_cover_near_falls_back_behind_it_its_guard_up() {
+    // A wall 4 m long and higher than a head, 8 m north of the player, a step east of the line to the foe.
+    let wall = Block { min_x: 0.5, min_y: -8.5, max_x: 4.5, max_y: -8.0, top: 2.5 };
+    let room = Room::new(3).course(vec![wall]).player(PLAYER, 0.0, 0.0, 0.0);
+    let mut room = room.foe(10, COLLECTOR, Major, 0.0, -3.0, PI).alert(10, PLAYER);
+    room.run(30, &mut still(0.0));
+    let broke = room.tick;
+    brain_mut(&mut room, 10).breaks(broke, false);
+    room.run(240, &mut still(0.0));
+    let (foe, player) = (room.fighter(10), room.fighter(PLAYER));
+    assert!(
+        !clear_line(&room.blocks, player.chest(), foe.chest()),
+        "the wall between them: {:?}",
+        (foe.body.x, foe.body.y)
+    );
+    assert!(room.distance(10, PLAYER) > 8.0, "fallen back past it");
+    let guarded =
+        room.foe_intents(10).iter().filter(|(tick, intent)| *tick > broke + 180 && intent.combat.guard).count();
+    assert!(guarded > 30, "its guard up behind it: {guarded} ticks");
+    assert_eq!(swings_between(&room, 10, broke, room.tick), 0);
+}
+
+#[test]
+fn a_screened_leader_stands_right_behind_its_shield_bearer_not_the_middle_of_its_line() {
+    // A Collector and an Enforcer hold the line, the Runner flanks; their Reeve waits, screened, behind the Collector.
+    let mut room = Room::new(4).player(PLAYER, 0.0, 0.0, PI);
+    room.director = Director { heat: 0.1 };
+    room = room.foe(10, REEVE, Elite, 0.0, 8.0, 0.0).foe(11, COLLECTOR, Major, 4.0, -2.0, PI);
+    room = room.foe(12, RUNNER, Major, -3.0, -3.0, PI).foe(13, ENFORCER, Major, -4.0, -2.0, PI);
+    room = room.alert(10, PLAYER).alert(11, PLAYER).alert(12, PLAYER).alert(13, PLAYER);
+    brain_mut(&mut room, 10).order(Orders { screened: true, behind: Some(11), ..Orders::default() });
+    let mut apart = Vec::new();
+    for tick in 0..1200 {
+        room.step(&mut still(PI));
+        if tick >= 600 {
+            let at = |body: movement::Body| bearing([0.0, 0.0], [body.x, body.y]);
+            apart.push(off(at(room.fighter(10).body), at(room.fighter(11).body)));
+        }
+    }
+    // Behind the middle of its line it would stand about 45 degrees round from the Collector.
+    let mean = apart.iter().sum::<f64>() / apart.len() as f64;
+    assert!(mean < 0.2, "behind its shield-bearer, a mean {:.0} degrees round from it", mean.to_degrees());
+    assert!(room.distance(10, PLAYER) > room.distance(11, PLAYER) + 1.0, "and farther out");
+    assert!(room.swings(10).is_empty(), "screened, it strikes nothing");
 }

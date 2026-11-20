@@ -156,20 +156,22 @@ fn half_a_group_fallen_it_defends_its_ground_round_its_post_until_it_stands_agai
 }
 
 #[test]
-fn a_grey_tithe_leader_waits_behind_its_followers_and_goes_in_once_none_stands_unbroken() {
-    // Patrol "ford": its second group, a Collector Major leading a Runner and a Collector.
+fn a_grey_tithe_leader_waits_behind_its_lower_ranks_shield_bearer_and_goes_in_once_none_stands_unbroken() {
+    // Patrol "ford": its second group, a Collector Major leading a Runner Major and a Collector Minor.
     let mut room = node(NodeKind::Patrol, "ford");
     let player = room.join().unwrap();
     provoke(&mut room, 1, player);
     let leader = room.garrison[1].leader.unwrap();
-    assert!(room.foes[&leader].brain.orders().screened, "screened while its followers fight");
-    assert!(!room.foes[&leader].brain.orders().push);
-    for id in living(&room, 1).into_iter().filter(|id| *id != leader) {
-        kill(&mut room, id);
-    }
+    let minor = living(&room, 1).into_iter().find(|id| room.foes[id].brain.rank == Rank::Minor).unwrap();
+    let orders = room.foes[&leader].brain.orders();
+    assert!(orders.screened && !orders.push, "screened while its Minor fights");
+    assert_eq!(orders.behind, Some(minor), "standing behind its shield");
+    // The Runner, a Major as its leader is, screens nothing: with the Minor fallen, the leader goes in.
+    kill(&mut room, minor);
     run(&mut room, 1);
     let orders = room.foes[&leader].brain.orders();
     assert!(!orders.screened && orders.push, "its screen gone, it goes in");
+    assert_eq!(orders.behind, None);
 }
 
 #[test]
@@ -304,4 +306,21 @@ fn falling_back_a_fighting_group_runs_to_its_new_places_and_fights_on() {
     assert!(reached.iter().all(|reached| *reached), "each ran to its new place: {reached:?}");
     let still = fighting.iter().filter(|id| room.foes[id].brain.fights() == Some(player)).count();
     assert!(still > 0, "and fights on from there");
+}
+
+#[test]
+fn a_mission_falling_straight_to_its_last_stand_calls_both_its_waves() {
+    let mut room = node(NodeKind::Mission, "keep");
+    let player = room.join().unwrap();
+    stand_player(&mut room, player, [-30.0, 110.0]);
+    let stood: usize = room.garrison.iter().map(|post| post.standing.len()).sum();
+    let order: Vec<FighterId> = room.garrison.iter().rev().flat_map(|post| post.standing.clone()).collect();
+    let mut fallen = 0;
+    while (stood - fallen) * 2 > stood {
+        kill(&mut room, order[fallen]);
+        fallen += 1;
+    }
+    run(&mut room, 1);
+    assert_eq!(room.encounter.as_ref().unwrap().stage, Stage::LastStand);
+    assert_eq!(room.garrison.iter().filter(|post| post.arrival).count(), 2, "both its waves");
 }
