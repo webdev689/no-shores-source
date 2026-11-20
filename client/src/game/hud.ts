@@ -3,6 +3,7 @@ import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { ROLES, type Role, wearKit } from '../plus/kit.ts';
+import { SeaFightReadout, type SeaFightModel, wearSeaFight } from '../plus/seaFight.ts';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import type { HostileLook } from './seaHostiles.ts';
 import type { Landfall } from './seaLaw.ts';
@@ -124,6 +125,8 @@ export class Hud {
   private readonly manageButton = hudButton('Manage  B', () => this.manageWanted());
   private readonly wheel: HTMLButtonElement;
   private readonly panel = make('div', '', `ship-panel ${ROLES.window}`);
+  /** The sea fight's readout: her plate and rose, the card and the tally, made in the root. */
+  private readonly fight: SeaFightReadout;
   /** The shape Manage's panel was last built to, and the place each of its values is written. */
   private panelShape = '';
   private panelValues: HTMLElement[] = [];
@@ -141,6 +144,7 @@ export class Hud {
     root.classList.add('hud');
     wearKit(root.ownerDocument);
     wearCompass(root.ownerDocument);
+    wearSeaFight(root.ownerDocument);
     const place = make('div', '', 'place');
     place.append(this.placeTitle, this.placeKind);
     this.warning.append(make('div', 'Return to the area', 'warning-words'), this.count);
@@ -192,6 +196,10 @@ export class Hud {
       this.death,
       this.veilNode,
     );
+    // Under the menu, the death screen and the veil, which cover it.
+    this.fight = new SeaFightReadout(root);
+    root.insertBefore(this.fight.root, this.menuNode);
+    this.fight.update(null);
     this.reach({ kind: 'inside' });
     this.menu(null);
     this.seaBar(null);
@@ -250,6 +258,13 @@ export class Hud {
   ): void {
     this.compassColumn.hidden = view === null;
     if (view) this.seaCompass.update(view.heading, view.from, view.ships);
+  }
+
+  /** Shows the sea fight's readout, or hides it for none. */
+  seaFight(model: SeaFightModel | null): void {
+    this.fight.update(model);
+    // The ships' plates keep under the card, as under the compass.
+    this.shipPlates.top = this.fight.under;
   }
 
   /** Covers the view with words while a place loads, or lifts the cover. */

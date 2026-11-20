@@ -1,4 +1,5 @@
 import type { FightLay, FightLook } from '../rules/fightRules.ts';
+import { AimView } from '../ships/aimView.ts';
 import type { FleetLay } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
 import type { Mark, Splash } from '../ships/effects.ts';
@@ -12,7 +13,8 @@ import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { FleetInput, FleetVessel } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
-import { aimCameraOf, arcsOf, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
+import { AimCamera, aimHullOf } from './aimCamera.ts';
+import { aimOf, easedAimOf, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 import { SAILS_RUNG } from './sailing.ts';
 
@@ -22,8 +24,8 @@ const OTHER_SHADE = 0.85;
 const BALL_DRAWN = 2;
 const BALL = [0.12, 0.12, 0.12] as const;
 
-/** A lay as the editor's arcs draw it. */
-function arcsLay(lay: FleetLay | null): FightLay | null {
+/** A lay as the aim draws it. */
+function aimLay(lay: FleetLay | null): FightLay | null {
   if (!lay) return null;
   const ends = lay.ends.map((end) => end && { ...end });
   const { side, launches, elevation, reach, radius, onTarget } = lay;
@@ -49,10 +51,14 @@ export class FleetScene {
   private lay: FleetLay | null = null;
   /** Each other ship's rig by her number, for the hull she sails. */
   private readonly rigs = new Map<number, { readonly hull: number; readonly rig: SailRig }>();
+  /** What draws her lay's aim over the water, where the marks' device can, and the eye it is laid from. */
+  private readonly aimView: AimView | null;
+  private readonly aimEye = new AimCamera();
 
   constructor(play: FleetSloop, marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.play = play;
     this.marks = marks;
+    this.aimView = marks.gpu ? new AimView(marks.gpu) : null;
     this.shown = shown;
   }
 
@@ -66,9 +72,15 @@ export class FleetScene {
     return lookOf(orbit, this.play, view);
   }
 
-  /** The camera while aiming from her. */
-  aimCamera(orbit: Orbit, view: LandView, shown: number): Orbit {
-    return aimCameraOf(orbit, this.play, view, shown);
+  /** The camera `seconds` on: eased out to her battery while `aiming` and her guns can speak, short of every other
+   *  ship afloat, and home again. */
+  aimCamera(orbit: Orbit, view: LandView, shown: number, aiming: boolean, seconds: number): Orbit {
+    const alongside = this.play
+      .others()
+      .filter((vessel) => vessel.state !== 'sunk')
+      .map((vessel) => aimHullOf([...vessel.ship], vessel.pose[0] ?? 0, this.hullOf(vessel)));
+    const speaks = aiming && this.play.session.own()?.state === 'afloat';
+    return easedAimOf(this.aimEye, orbit, this.play, view, shown, speaks, alongside, seconds);
   }
 
   /** One frame: her orders owed and sent, her look's lay laid, the room's events made effects and fires burned. Answers
@@ -152,7 +164,7 @@ export class FleetScene {
     });
   }
 
-  /** Draws the balls aloft, her lay's arcs and the effects, heights as drawn. */
+  /** Draws the balls aloft and the effects, heights as drawn (her lay is `drawAimOver`'s). */
   draw(pass: GPURenderPassEncoder, view: LandView, shown: number, camera: ShipCamera, now: number): void {
     const marks: Mark[] = this.feel.marks(now).map((mark) => ({ ...mark, z: mark.z * shown }));
     const ships = this.feelShips();
@@ -166,8 +178,24 @@ export class FleetScene {
     );
     for (const [x, y, z, radius] of this.play.balls(now))
       marks.push({ x: x - view.leftM, y: y - view.topM, z: z * shown, radius: radius * BALL_DRAWN, colour: BALL });
-    marks.push(...arcsOf(arcsLay(this.lay), view, shown));
     this.marks.drawInto(pass, marks, camera);
+  }
+
+  /** Draws her lay's aim (`aimOf`) over a finished picture, after the water, hidden where `depth` stands nearer;
+   *  heights as drawn. */
+  drawAimOver(
+    encoder: GPUCommandEncoder,
+    target: GPUTextureView,
+    depth: GPUTexture,
+    view: LandView,
+    shown: number,
+    camera: ShipCamera,
+    now: number,
+  ): void {
+    const own = this.play.session.own();
+    const guns = own && { left: own.guns.left, braced: own.braced };
+    const aim = own && guns && aimOf(aimLay(this.lay), { state: own.state, guns }, view, shown);
+    if (aim) this.aimView?.drawOver(encoder, target, depth, aim, camera, now);
   }
 
   /** Each captain's bar over her hull's masthead, heights as drawn. */

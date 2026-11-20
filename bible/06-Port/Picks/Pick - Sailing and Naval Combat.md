@@ -45,6 +45,11 @@ DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over
   - Brought over: the aim down the sights, its eased camera, its reach, its sight and aim line, its arcs, rings,
     posts and strike marks in DFO's three tones, and the wheel's quiet and zoom ([[Naval Combat]], "The aim, as
     DFO's").
+  - Ported: `src/ui/naval/navalHud.js` (the plate, battery rose, target card, tally and aim line, on screen in every
+    sea fight and the World Editor's), `src/render/navalRender.js` (the aim's ribbons, foam rings, posts and strike
+    marks; the puffs' blends), `src/systems/naval/navalEffects.js` (the fight's puffs, the smoke and the balls'
+    trails on the wind), `src/scenes/naval/aimCamera.js` and `src/player/seaZoom.js` ([[Naval Combat]], "How it
+    looks").
 - **Pirates at sea**: DFO's director, trimmed to pirates alone
   ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]): they come over the horizon round a player on the
   [[Overworld]] and go once far off, and an encounter pans the view down to the fight.

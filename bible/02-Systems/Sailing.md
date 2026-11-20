@@ -161,7 +161,7 @@ picture's grain, the picture's lightness about its mean kept:
 |---|---|---|---|---|
 | A player's | As painted | None | As painted | Overlook's blue |
 | A friendly ship (merchantmen) | Natural timber, as painted | Overlook's blue | White | Overlook's blue |
-| The Grey Tithe | Slate grey | Bone | Grey | Dark slate, the balance |
+| The Grey Tithe | Slate grey | Bone | Grey | Her canvas grey, the balance in dark slate |
 | The pirates | Black | Red | Dark | Black, the skull |
 
 - **Her hull's paint** covers the outside of her shell, tagged when her model loads (`tagShip`). Her breadth is
@@ -179,7 +179,8 @@ picture's grain, the picture's lightness about its mean kept:
 - **Her flag** flies at the head of her tallest mast (the highest point of her spars), a tenth of her waterline's
   length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
   length, a crest and a half on it, running at 1.4 a second. Its picture is `flagPictures`, bearing the faction's
-  emblem where the [[Interface]]'s plates have one.
+  emblem where the [[Interface]]'s plates have one, in its own tones or, on the Grey Tithe's, shaded from her dark
+  slate, so her grey flag never reads as the pirates' black at a fight's range.
 
 Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
 `hullName`): a `Pirate`'s `hull` at sea and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`

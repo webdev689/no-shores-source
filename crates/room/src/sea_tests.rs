@@ -2,7 +2,7 @@ use super::*;
 use crate::clash::tests::at_sea;
 use crate::pirates::Pirate;
 use naval::fight::{CAPTAIN, End, Fight, HOSTILE_NEAR_M, PLAYER, Sailor, Vessel};
-use naval::ranks::{GREY_TITHE, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use sailing::ship::{Helm, SAILS_SET};
 
 /// A ship of a fight, by its number.
@@ -421,7 +421,7 @@ fn a_ship_met_at_sea_fights_under_her_own_faction_and_rank() {
     let (_, fought) = sea.fights().next().expect("a fight");
     let captain = fought.fight.vessel(CAPTAIN).and_then(naval::fight::Vessel::command);
     assert_eq!(captain.map(|command| command.her.commission), Some(commission));
-    assert_eq!(sea.fight_views().into_iter().map(|(_, _, shown)| shown).collect::<Vec<_>>(), [commission]);
+    assert_eq!(sea.fight_views().into_iter().map(|seen| seen.captain).collect::<Vec<_>>(), [commission]);
 }
 
 /// A player at rest at (50 km, 50 km), and 1 km north of them two ships 400 m apart heading north: a bold Elite of
@@ -479,7 +479,7 @@ fn a_player_who_comes_within_sight_of_a_clash_joins_it_and_its_captains_choose_w
     assert!(sea.clashes().is_empty() && sea.pirates().is_empty(), "the fight is hers now");
     assert_eq!((sailed(&fought.fight, PLAYER).rung, ship(&sea, player).pace), (0, 0), "hove to");
     let others_at = 2 + 2 * naval::wire::VESSEL_NUMBERS + 4;
-    let views: Vec<Vec<f64>> = sea.fight_views().into_iter().map(|(_, view, _)| view).collect();
+    let views: Vec<Vec<f64>> = sea.fight_views().into_iter().map(|seen| seen.numbers).collect();
     assert_eq!(
         views[0][others_at..others_at + 4],
         [1.0, 2.0, 2.0, 2.0],
@@ -508,7 +508,7 @@ fn a_captain_of_each_rank_at_sea_meets_a_player_in_her_ranks_hull() {
         let (_, fought) = sea.fights().next().expect("a fight");
         let hull = fought.fight.vessel(CAPTAIN).map(|vessel| vessel.hull);
         assert_eq!(hull, Some(rank.hull()), "{rank:?}");
-        let shown: Vec<_> = sea.fight_views().into_iter().map(|(_, _, commission)| commission.hull()).collect();
+        let shown: Vec<_> = sea.fight_views().into_iter().map(|seen| seen.captain.hull()).collect();
         assert_eq!(shown, [rank.hull()], "{rank:?}: the snapshot names her hull");
     }
 }

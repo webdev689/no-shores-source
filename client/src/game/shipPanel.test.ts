@@ -43,6 +43,17 @@ test('Manage shows its vessel and its voyage, and nothing marked Later', () => {
   assert.deepEqual(panel.parts[1]?.rows, [
     ['Heading', '0° N'],
     ['Pace', '×60'],
-    ['Under way', 'At anchor'],
+    ['Now', 'At anchor'],
   ]);
+});
+
+test('Manage lists her men only once her build carries a crew', () => {
+  const measure = { lengthM: 6, beamM: 2, draughtM: 0.6 };
+  const rowsOf = (crew: number) => {
+    const build = sloopBuildOf(BUILD.replace('"crew":0', `"crew":${crew}`));
+    assert.ok(build);
+    return new Map(shipPanelOf(build, measure, null).parts[0]?.rows);
+  };
+  assert.equal(rowsOf(0).has('Men'), false, 'no crew yet: no Men row over the Crew marked Later');
+  assert.equal(rowsOf(12).get('Men'), '12 / 12');
 });

@@ -62,7 +62,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   const show = (fight: unknown) =>
     showSeaHud(hud as unknown as Hud, sea(fight), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   show(null);
-  const fight = { lines: () => ['Fighting'], captains: [], aimingNow: false, view: { lay: null } };
+  const fight = { lines: () => ['Fighting'], captains: [], aimingNow: false, view: { lay: null }, display: () => null };
   show(fight);
   assert.notEqual(bars[0], null, 'out of a fight the bar stands');
   assert.equal(bars[1], null, 'in one it is hidden');
@@ -78,4 +78,31 @@ test('the place line names the water she is in as the helm does, managing her to
   assert.deepEqual(seaPlace(here(false, true), shown, state), ['Managing the Sloop', waterWords]);
   const nowhere = { boarding: { words: null }, helmView: false, aboard: { walking: false, managing: true } } as never;
   assert.deepEqual(seaPlace(nowhere, shown, state), ['Managing the Sloop', 'The Pale Expanse']);
+});
+
+test("in a fight the readout stands over the sea: her plate, rose, card and tally; on a struck ship's deck it goes", () => {
+  const readouts: unknown[] = [];
+  const hud = new Proxy(
+    {},
+    { get: (_target, key) => (key === 'seaFight' ? (model: unknown) => readouts.push(model) : () => undefined) },
+  );
+  const model = { ship: null, card: null, tally: null };
+  const fight = { lines: () => [], captains: [], aimingNow: false, view: { lay: null }, display: () => model };
+  const sea = (deck: unknown) =>
+    ({
+      helmView: false,
+      aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
+      boarding: { words: deck },
+      waterWords: null,
+      fight,
+      sighted: null,
+      inRoom: true,
+    }) as unknown as Sea;
+  const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
+  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [] };
+  const show = (deck: unknown) =>
+    showSeaHud(hud as unknown as Hud, sea(deck), shown as unknown as SeaFrame, state as unknown as SeaHudState);
+  show(null);
+  show({ place: 'Her deck', line: 'Fighting', hints: [] });
+  assert.deepEqual(readouts, [model, null]);
 });

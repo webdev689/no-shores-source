@@ -19,7 +19,6 @@ use crate::threat::{held_pace, holds};
 use core::f64::consts::{PI, TAU};
 use movement::{Controls, TICK_SECONDS};
 use naval::fight::Orders;
-use naval::ranks::Commission;
 use std::collections::{BTreeMap, VecDeque};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::{Point, edges, ring_contains, segments_meet};
@@ -365,6 +364,8 @@ impl Sea {
     /// rest where it left them.
     pub fn tick(&mut self) {
         self.clock += 1;
+        // The ships gone down are its last tick's: a host takes them after each, and none pile up untaken.
+        self.harbour.downs.clear();
         for aboard in self.aboard.values_mut() {
             aboard.tick(&self.deck, self.clock);
         }
@@ -458,9 +459,12 @@ impl Sea {
 
     /// Each fighting player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's
     /// waters now, and its first captain's commission.
-    pub fn fight_views(&self) -> Vec<(PlayerId, Vec<f64>, Commission)> {
+    pub fn fight_views(&self) -> Vec<crate::battle::FightSeen> {
         let time = self.clock as f64 * TICK_SECONDS;
-        self.fights.views(&self.coasts, time).collect()
+        // One on a deck boards no other.
+        let seen = self.fights.views(&self.coasts, time);
+        seen.map(|seen| crate::battle::FightSeen { may_board: seen.may_board && !self.on_deck(seen.player), ..seen })
+            .collect()
     }
 }
 

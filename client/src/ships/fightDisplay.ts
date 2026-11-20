@@ -1,5 +1,6 @@
 // The sea fight's readout as the Plus kit shows it (plus/seaFight.ts), from the fight's view and its feel: her plate
-// and rose, the card on the nearest captain, and her last volley's tally.
+// and rose, the card on the captain the look is on (the nearest while her guns are not laid), and her last volley's
+// tally.
 import type { SeaFightModel } from '../plus/seaFight.ts';
 import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import type { FightFeel } from './fightFeel.ts';
@@ -34,9 +35,17 @@ export function fightDisplay(
   };
   const [ownX = 0, ownY = 0] = player.ship;
   const apart = (captain: FightCaptain) => Math.hypot((captain.ship[0] ?? 0) - ownX, (captain.ship[1] ?? 0) - ownY);
+  // The card is on the ship the look is on: while her guns are laid, the captain nearest where they fall; else the
+  // nearest to her.
+  const falls = (lay?.ends ?? []).filter((end) => end !== null);
+  const [lookX, lookY] = falls.length
+    ? [0, 1].map((axis) => falls.reduce((sum, end) => sum + (end.point[axis] ?? 0), 0) / falls.length)
+    : [ownX, ownY];
+  const looked = (captain: FightCaptain) =>
+    Math.hypot((captain.ship[0] ?? 0) - (lookX ?? 0), (captain.ship[1] ?? 0) - (lookY ?? 0));
   const near = [view.captain, ...(view.others ?? [])]
     .filter((captain) => captain.state !== 'sunk')
-    .sort((one, other) => apart(one) - apart(other))[0];
+    .sort((one, other) => looked(one) - looked(other))[0];
   const state = near?.state === 'struck' ? 'struck' : near?.state === 'sinking' ? 'sinking' : 'afloat';
   return {
     ship: {

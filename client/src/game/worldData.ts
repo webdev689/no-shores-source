@@ -77,6 +77,19 @@ export function portsOf(
   return cities.map(({ id, name, continent, centre }) => ({ id, name, continent, centre }));
 }
 
+/** A port city as the page knows it: its id (its social space is the node `<id>-social`), name and continent. */
+export interface PortCity {
+  readonly id: string;
+  readonly name: string;
+  readonly continent: string;
+}
+
+/** The port cities among `ports`, in their order, as the sea numbers them: those whose ids are among the rules'
+ *  `mainPorts`. */
+export function portCities(ports: readonly PortCity[], mainPorts: readonly string[]): PortCity[] {
+  return ports.filter((port) => mainPorts.includes(port.id));
+}
+
 /** Loads the world from the pages' `world/` folder. */
 export async function loadWorld(base: string): Promise<WorldData> {
   const text = async (path: string) => {

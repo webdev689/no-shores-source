@@ -89,6 +89,23 @@ fn table_of(layout: &Layout, waters: &Waters, traffic: &Traffic) -> Value {
         "ports": ports,
         "routes": routes,
         "friendly_speed_m_s": world::traffic::SPEED_M_S,
+        "sea": sea_facts(),
+    })
+}
+
+/// What the page reads of the sea's rules beside its waters: the reach a hostile ship meets a player within, the
+/// furthest one may hold a voyage, metres; the reach of a port city's repairs; and each ship's name, by her faction's
+/// number (0 to the captains' last) and then her hull's.
+fn sea_facts() -> Value {
+    let factions = 0..=naval::ranks::CAPTAIN_FACTIONS.into_iter().max().unwrap_or(0);
+    let names: Vec<Vec<&str>> = factions
+        .map(|faction| sailing::HullKind::ALL.iter().map(|hull| naval::ranks::ship_name(faction, *hull)).collect())
+        .collect();
+    json!({
+        "engage_m": naval::captain::ENGAGE_RANGE,
+        "hold_reach_m": room::threat::hold_reach_m(),
+        "repair_reach_m": room::harbour::REPAIR_REACH_M,
+        "ship_names": names,
     })
 }
 

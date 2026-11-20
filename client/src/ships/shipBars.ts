@@ -30,7 +30,8 @@ const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
 /** Her ship's name, by the faction she sails for and her hull (the Sloop unless named): the Tithe's or the pirates'
  *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names her. */
 export function shipName(faction: number, hull = 0): string {
-  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Sloop';
+  // Any faction but the Tithe's sails as the pirates do, as the rules name her.
+  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Pirate Sloop';
   return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
 
@@ -323,6 +324,11 @@ export class HullLosses {
 export class ShipPlates {
   private readonly layout = new BarLayout();
   private readonly hulls = new HullLosses();
+
+  /** How far down the highest plate's top may stand, CSS pixels: under the compass, or what stands under it. */
+  set top(pixels: number) {
+    this.layout.top = pixels;
+  }
   private drawnAt: number | null = null;
 
   /** Draws `bars` onto `svg` at `now` (seconds), each where `project` puts the point over her, the picture `width`

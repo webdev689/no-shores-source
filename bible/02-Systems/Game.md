@@ -112,8 +112,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The keys listed
   name the fight's, the Arts' line ("R Anima · Q G Tenets") adding how to aim Dusk Daggers only while Shadow is worn.
-  Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand at 22 px a line,
-  over the vitals and the buffs above them.
+  Every key hint, on foot and at sea, is written one way: the key, then the action, with no colon ("Wheel zoom",
+  "E take the helm"). Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), the keys stand
+  at 22 px a line, over the vitals and the buffs above them, and the place line's small words under its name at 16 px
+  (20 px over the held map).
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the bottom left, each
   foe's name and bar, the parry rings, the words, the arrows to foes out of view, the marks of telegraphed blows, the
@@ -282,18 +284,24 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   of her hull coloured by her rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
   at sea where the room has them; coming within 750 m of such a fight, or of one with other players in it, joins it the
   same way, every captain in it under her own plate.
-- **What a fight leaves** (`seaAfter.ts`, [[Naval Combat]], "How a fight ends"). The sea's status line says, for 6 s
-  each, who joins the fight ("Player 4 joined the fight.", "The Pirate Schooner joined the fight."), a captain's
-  colours struck ("Her colours are down."), the boarding, each piece of what floats gathered and what it held
-  ("Gathered a chest: a Rare Vestige, an Ammo box."; what found no room, "nothing you had room for"), and washing up
-  ("Your ship went down: you washed up at Sunspire, your ship moored at its roadstead.", or "Beaten aboard her: …").
+- **The sea's word** (`seaWord.ts`, [[Naval Combat]], "How a fight ends"). The sea's status line says, for 6 s
+  each, who joins the fight ("Player 4 joined the fight.", "The Pirate Schooner joined the fight.", her hull as the
+  room tells it), a captain's colours struck ("The Tithe Brig's colours are down: …"), the boarding ("Boarders away:
+  the Tithe Brig's crew stands to meet them."), each piece of what floats gathered and what it held ("Gathered a chest:
+  a Rare Vestige, an Ammo box.", "an Atheric Vestige"; what found no room, "nothing you had room for"), and washing up
+  ("Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.", or "Beaten aboard her: …").
   Washed up, the fight's view goes back up, the ship lies where the room moored her, and once the landmass of that
-  port city is open the player walks into its social space behind the veil ("Washed up at Sunspire. Your ship lies at
-  its moorings."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel shows her hull, canvas and men
-  as the sea keeps them and a Repair part: R asks for her repair, which the panel shows with its seconds left
-  ("Repairing her: 13 s left"), "She is whole", or where it is had. Her voyage sails at the way her kept canvas
-  leaves her, as the room sails her (`seaLaw.ts` `followed`). Back at sea after a session, she lies where the room
-  last kept her.
+  port city is open the player walks into its social space behind the veil, in the same words ("You washed up at
+  Sunspire; your ship lies at its roadstead."), standing there as on arriving (`flow.ts`, `wash-up`). Manage's panel
+  shows her hull, canvas and men (men only once her build has a crew) as the sea keeps them, her voyage's state under
+  "Now", and a Repair part: R asks for her repair, which the panel shows with its seconds left ("Repairing her: 13 s
+  left"), "She is whole", or where it is had ("Repair: free, lying at rest within 3 km of a port city", the rules' own
+  reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's meeting reach
+  and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well, which the
+  page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that
+  difficulty's sea room (`sea--elite`, `sea--abyss`), the page leaving one for the other as the voyage sets out. Her
+  voyage sails at the way her kept canvas leaves her, as the room sails her (`seaLaw.ts` `followed`). Back at sea
+  after a session, she lies where the room last kept her.
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
   `friendlyShips.ts`). The page asks the waters' rules where they are at world time, seconds since the Unix epoch by
   the page's clock (the sea room sends none), four times a second within the sea view's reach of her (its far plane),
@@ -301,7 +309,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   as at a turn onto her next leg, is closed over about a second. One arrived lies at anchor at her destination's
   roadstead, no way on her, until she is gone. Of each hull only as many as the ships layer has slots for are drawn,
   16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
-  by the ships layer as her hull in friendly colours, her sails set and filled by the steady wind, posed on the swell,
+  by the ships layer as her hull in friendly colours, her sails set and filled by the steady wind (furled while she
+  lies at anchor), posed on the swell,
   at the size every ship is drawn: the Overworld's from the raised view and her true size on every view near hers
   (`shownScale`). Her footprint joins the water's with the nearest. The compass marks every one within 900 m in
   Overlook's blue (`#2f5d9a`).

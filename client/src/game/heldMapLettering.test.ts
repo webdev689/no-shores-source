@@ -125,7 +125,9 @@ function boxesOf(ask: LayoutAsk, lettering: Lettering) {
   const names = lettering.letters.flatMap((letter) =>
     letter.side ? [{ letter, box: nameBox(letter, letter.side, nameWidth(letter, widthOf), lettering.scale) }] : [],
   );
-  const marks = ask.places.map((place) => markBox(place.kind, place.x, place.y, lettering.scale));
+  const marks = lettering.letters
+    .filter((letter) => letter.kind !== 'water')
+    .map((letter) => markBox(letter.kind, letter.x, letter.y, lettering.scale));
   if (ask.ship) marks.push(markBox('ship', ask.ship.x, ask.ship.y, lettering.scale));
   return { names, marks };
 }
@@ -260,6 +262,32 @@ test('seen whole at 1280 x 720 and 1920 x 1080 every water is named on her own s
       for (const other of names)
         if (other.letter !== letter) assert.ok(!overlaps(box, other.box), `${letter.text} and ${other.letter.text}`);
       if (lettering.key) assert.ok(!overlaps(box, lettering.key.box), `${letter.text} clear of the key`);
+    }
+  }
+});
+
+test('at the opening view and seen whole no two marks overlap, a port and a ruin standing where they lie', async () => {
+  const real = await realWorld();
+  for (const screen of SCREENS.slice(0, 2)) {
+    const ink = stageOf(screen).ink;
+    const views = [
+      viewOn([2_809_214, 1_206_000], ink, WORLD),
+      clampView({ left: 0, top: 0, scale: leastScale(ink, WORLD) }, ink, WORLD),
+    ];
+    for (const view of views) {
+      const { ask, lettering } = lettered(screen, view, real);
+      const marked = lettering.letters.filter((letter) => letter.kind !== 'water');
+      assert.equal(marked.length, ask.places.length, 'every place keeps its mark');
+      const boxes = marked.map((letter) => markBox(letter.kind, letter.x, letter.y, lettering.scale));
+      boxes.forEach((box, index) => {
+        for (const [other, otherBox] of boxes.entries())
+          if (other > index)
+            assert.ok(!overlaps(box, otherBox), `${marked[index]?.text} and ${marked[other]?.text} (${screen.width})`);
+      });
+      for (const letter of marked.filter((each) => each.kind === 'port' || each.kind === 'ruin')) {
+        const asked = ask.places.find((place) => place.text === letter.text);
+        assert.deepEqual([letter.x, letter.y], [asked?.x, asked?.y], `${letter.text} where it lies`);
+      }
     }
   }
 });

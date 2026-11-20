@@ -6,8 +6,6 @@ import type { Point2 } from '../overworld/ground.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import { HOSTILE_PREFIX, hostileName, sightedHostiles } from './seaHostiles.ts';
 
-/** Within this of her she is met (crates/naval/src/captain `ENGAGE_RANGE`), metres. */
-export const MET_M = 750;
 /** Seconds between the chase's plans. */
 export const CHASE_EVERY_S = 0.5;
 
@@ -44,6 +42,8 @@ export function meetingPoint(ship: Point2, pirate: SeenPirate): Point2 {
 export class Chase {
   private quarry: { readonly id: number; readonly name: string } | null = null;
   private since = 0;
+  /** Within this of her she is met, metres: the rules' meeting reach (`Sea.facts`); none known, none met here. */
+  metM = 0;
   private readonly tell: (ship: number | null) => void;
 
   constructor(tell: (ship: number | null) => void = () => undefined) {
@@ -77,10 +77,10 @@ export class Chase {
     if (!this.quarry) return null;
     const id = this.quarry.id;
     const pirate = sightedHostiles(pirates, ship).find((each) => each.id === id);
-    // Lost from sight, or met: within a captain's 750 m a bold one takes the ship on, and a wary one is caught up.
+    // Lost from sight, or met: within a captain's reach a bold one takes the ship on, and a wary one is caught up.
     // Lost, the room is told; met, the room meets her itself, so it is not told to let her go first.
     if (!pirate) this.stop();
-    if (!pirate || Math.hypot(pirate.x - ship[0], pirate.y - ship[1]) <= MET_M) {
+    if (!pirate || Math.hypot(pirate.x - ship[0], pirate.y - ship[1]) <= this.metM) {
       this.quarry = null;
       return null;
     }

@@ -17,7 +17,7 @@ pub fn sea_snapshot_bytes(
     tick: u64,
     ships: &[(PlayerId, Ship)],
     pirates: &[Pirate],
-    fights: &[(PlayerId, Vec<f64>, Commission)],
+    fights: &[room::battle::FightSeen],
     aboard: &[(PlayerId, u32, Body)],
     harbour: &SeaHarbour,
 ) -> Vec<u8> {
@@ -55,7 +55,7 @@ pub fn sea_snapshot_bytes(
     let pirates = Some(builder.create_vector(&each));
     let each: Vec<_> = fights
         .iter()
-        .map(|(player, numbers, commission)| {
+        .map(|room::battle::FightSeen { player, numbers, captain: commission, may_board }| {
             let (view, others) = naval::wire::parted(numbers);
             let (view, faction, rank) =
                 (Some(builder.create_vector(&view)), commission.faction, commission.rank.number());
@@ -63,7 +63,7 @@ pub fn sea_snapshot_bytes(
             let hull = commission.hull().number();
             messages::SeaFight::create(
                 &mut builder,
-                &messages::SeaFightArgs { player: *player, view, faction, rank, others, hull },
+                &messages::SeaFightArgs { player: *player, view, faction, rank, others, hull, may_board: *may_board },
             )
         })
         .collect();

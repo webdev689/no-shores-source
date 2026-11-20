@@ -24,7 +24,7 @@ import type { Landmass } from './landmass.ts';
 import { arrivalFacing } from './nodes.ts';
 import type { Drawer, GameScene } from './scene.ts';
 import type { Sea } from './sea.ts';
-import type { SeaAfter } from './seaAfter.ts';
+import type { SeaWord } from './seaWord.ts';
 import { showSeaHud } from './seaHud.ts';
 import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
@@ -44,7 +44,7 @@ export interface Playing {
   foot: Foot | null;
   sea: Sea | null;
   heldMap: HeldMap | null;
-  afterFights: SeaAfter | null;
+  seaWord: SeaWord | null;
   landmass: Landmass;
   drawers: LandDrawers;
   ready: boolean;
@@ -123,6 +123,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.hints(shown.hints);
     hud.marks([]);
     hud.seaBar(null);
+    hud.seaFight(null);
     hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
   };
@@ -184,11 +185,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
     showStanding(here.boarding.standing ?? { kind: 'inside' });
-    const { landmass, afterFights } = playing;
+    const { landmass, seaWord } = playing;
     showSeaHud(
       hud,
       here,
-      { ...shown, note: afterFights?.note(shown.note, here.sighted, clock) ?? shown.note },
+      { ...shown, note: seaWord?.note(shown.note, here.sighted, clock) ?? shown.note },
       {
         landing: flow.mode === 'landing',
         onSea: flow.mode === 'sea' && !flow.menu,
@@ -203,7 +204,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
-    const ashore = flow.mode === 'sea' ? afterFights?.ashore(landmass) : null;
+    const ashore = flow.mode === 'sea' ? seaWord?.ashore(landmass) : null;
     if (ashore)
       parts.travel(ashore.washUp, () =>
         parts.goFoot(ashore.node, arrivalFacing(ashore.node, playing.landmass.plan, null)),

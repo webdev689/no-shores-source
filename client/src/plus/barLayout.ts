@@ -54,6 +54,8 @@ export class BarLayout {
   private readonly lifts = new Map<number, number>();
   /** The bars whose own place was covered last frame, so they were lifted. */
   private lifted = new Set<number>();
+  /** How far down the highest plate's top may stand: under the compass, or under what stands under it. */
+  top = UNDER_COMPASS;
 
   /** Lays this frame's bars, `seconds` after the last; `Infinity` sets each at its height at once. */
   lay(spots: readonly BarSpot[], seconds: number): Map<number, LaidBar> {
@@ -84,7 +86,7 @@ export class BarLayout {
       const slack = this.lifted.has(key) ? SLACK : 0;
       const halfWidth = spot.width / 2;
       // Never over the compass at the top of the screen: a plate high in the view stands under its foot.
-      const floor = UNDER_COMPASS + spot.height;
+      const floor = this.top + spot.height;
       const covers = (box: Box, foot: number) =>
         Math.abs(spot.x - box.x) < halfWidth + box.halfWidth + GAP + slack &&
         foot > box.top - GAP &&

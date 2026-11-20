@@ -3,9 +3,9 @@ import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
 import { MarkView } from '../ships/markView.ts';
-import { ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { PLAYER_LOOK } from '../ships/dress.ts';
+import { FightOverlay } from '../ships/fightOverlay.ts';
 import { type DrawnShip, openHull, ShipModels } from '../ships/shipModels.ts';
 import type { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
@@ -152,15 +152,14 @@ export class LandScene {
   private readonly marks: MarkView;
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
-  /** The picture's overlay, which the editor clears each frame: each captain's bar is drawn on it. */
-  private readonly overlay: SVGSVGElement;
-  private readonly shipPlates = new ShipPlates();
+  /** Each captain's plate over the picture, and the fight's readout beside it. */
+  private readonly fightOverlay: FightOverlay;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
     this.gpu = gpu;
     this.redraw = redraw;
     this.fail = fail;
-    this.overlay = overlay;
+    this.fightOverlay = new FightOverlay(overlay);
     this.water = new WaterView(gpu);
     this.models = new ShipModels(openHull(gpu), fail);
     this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
@@ -268,12 +267,11 @@ export class LandScene {
       this.shownClose = near;
     }
     const own = this.harbour.sailing;
-    const seen =
-      frame.aiming && fleet
-        ? fleet.aimCamera(orbit, view, shown)
-        : frame.aiming && own && this.naval.fighting
-          ? this.naval.aimCamera(orbit, own, view, shown)
-          : this.clearOfBed(orbit);
+    const seen = fleet
+      ? fleet.aimCamera(this.clearOfBed(orbit), view, shown, frame.aiming, seconds)
+      : own && this.naval.fighting
+        ? this.naval.aimCamera(this.clearOfBed(orbit), own, view, shown, frame.aiming, seconds)
+        : this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);
     const eyeWorld = [camera.eye[0] + view.leftM, camera.eye[1] + view.topM] as const;
@@ -336,10 +334,8 @@ export class LandScene {
     if (fleet) fleet.draw(pass, view, shown, shipCamera, now / 1000);
     else this.naval.draw(pass, view, shown, shipCamera, time);
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
-    if (bars.length > 0) {
-      const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
-      this.shipPlates.draw(this.overlay, bars, screenProjector(seen, size), size.width, now / 1000);
-    }
+    const display = fleet ? null : this.naval.display(time, { boardable: false, boardKey: 'E' });
+    this.fightOverlay.show(bars, (size) => screenProjector(seen, size), now / 1000, display);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -376,8 +372,9 @@ export class LandScene {
       drawn,
       target,
     });
-    // The fight's see-through puffs after the water, so its sky and surface never cover them.
+    // The fight's see-through puffs, then the lay's aim, after the water, so its sky and surface never cover them.
     this.marks.drawOver(encoder, target, drawn.depth);
+    (fleet ?? this.naval).drawAimOver(encoder, target, drawn.depth, view, shown, shipCamera, fleet ? now / 1000 : time);
     this.gpu.device.queue.submit([encoder.finish()]);
     const feet =
       near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;

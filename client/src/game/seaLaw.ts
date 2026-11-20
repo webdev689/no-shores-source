@@ -223,20 +223,18 @@ export function easedPace(sailed: SailedPace, dial: Pace, watched: boolean): Sai
   return EASED_LADDER[from + Math.sign(to - from)] ?? dial;
 }
 
-/** How near a hostile ship the room may hold a ship under the pace she asked, metres: her sight's 750 m and the 0.6 s
- *  of warning at ×100 closing on the fastest rank (crates/room/src/threat.rs), rounded up. */
-export const HOLD_REACH_M = 1_700;
-
 /** Whether the room's word on her pace (`room`) disagrees with the pace she is sailed at, so the page asks it again:
- *  a step the room refused. A slower word with a hostile ship within `HOLD_REACH_M` is the room holding her, not a
- *  refusal; no word yet, or at rest, says nothing. */
+ *  a step the room refused. A slower word with a hostile ship within `holdReachM` (the rules' furthest hold,
+ *  crates/room/src/threat.rs `hold_reach_m`) is the room holding her, not a refusal; no word yet, or at rest, says
+ *  nothing. */
 export function paceToAskAgain(
   sailed: SailedPace,
   room: RoomWord | null,
   hostiles: readonly { readonly x: number; readonly y: number }[],
+  holdReachM: number,
 ): boolean {
   if (!room || room.pace === 0 || room.pace === sailed) return false;
-  const near = hostiles.some((ship) => Math.hypot(ship.x - room.x, ship.y - room.y) <= HOLD_REACH_M);
+  const near = hostiles.some((ship) => Math.hypot(ship.x - room.x, ship.y - room.y) <= holdReachM);
   return room.pace > sailed || !near;
 }
 

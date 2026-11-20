@@ -64,17 +64,17 @@ code:
   - crates/room/src/deck_fight.rs
   - crates/room/src/sea_decks.rs#Decks
   - crates/foes/src/crews.rs#deck_crew
-  - client/src/game/seaAfter.ts#SeaAfter
+  - client/src/game/seaWord.ts#SeaWord
   - client/src/network/seaHarbour.ts#harbourOf
 ---
 # Naval Combat
 
-Broadsides, and rams, between players' Sloops and the enemy factions' captains, each in her rank's hull: DFO's naval
+Broadsides, and rams, between players' Sloops and the enemy factions' captains, each in its rank's hull: DFO's naval
 combat, rebuilt in Rust ([[Pick - Sailing and Naval Combat]]) on the [[Sailing]] crate's ships. The owner fights one
 captain alone in the [[World Editor]], or with other players in a fleet room on the [[Server]]. At sea a fight ends
 in a sinking and what floats, or in a captain striking and a boarding; a player who loses washes up at a port city,
 and the damage stays until repaired ([[The Sea Is a Patrol Zone, and the Ship Is Gear]],
-[[The Waters Come From the Islands]], [[Hulls]], [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]], [[The Sea Fight Looks and Aims as DFO's Does]]).
+[[The Waters Come From the Islands]], [[Hulls]], [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]], [[The Sea Fight Looks and Aims as DFO's Does]]). A ship is "it" ([[Ships Are It, Not Her]]).
 
 ## The fight
 
@@ -231,7 +231,8 @@ Pass]]) with Claude's numbers:
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where she went, 3 pieces for a
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought her, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
-  of their pieces gathers it. Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
+  of their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
+  floating are theirs again (`Sea::own`). Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
   her rank at her level (her water's, raised by the sea's tier): its Vestige by the rewards' foe her rank names
   (a Minor the Skirmisher's chance,
   a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one; at Elite or Abyss times
@@ -243,8 +244,10 @@ Pass]]) with Claude's numbers:
   fight may board her: their ship within 30 m of hers, both under 2 m/s, and her deck holding a crew (the pirates have
   no deck Boss, so their Boss is not boarded). With no one aboard by then she is scuttled
   (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player her
-  colours are down and to come alongside; E asks to board her (`seaAfter.ts` `boardable`, the fight's controls let E
-  through), and the sea's line says "Boarders away" as the boarder goes from their helm to her deck.
+  colours are down and to come alongside, naming her ("The Tithe Brig's colours are down: …"); E asks to board her
+  when the sea's snapshot says the player may (`may_board`, from `Fights::alongside`, the rule a boarding is taken by;
+  the fight's controls let E through), and the sea's line says "Boarders away: the Tithe Brig's crew stands to meet
+  them." as the boarder goes from their helm to her deck.
 - **Her deck** (`deck_fight.rs`, `sea_decks.rs`). The sea room holds the deck fight, so the one authority over the fight
   knows when her deck is won and when the last boarder leaves, and no second room is trusted with it: a room on land
   built as a node's room is, its floor her deck's grid of heights from her hull's manifest (in her own frame, a wall off
@@ -258,7 +261,7 @@ Pass]]) with Claude's numbers:
   The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
   pirates' Skirmisher, Swordsman and Archer), standing two abreast along her deck from 2 m forward of amidships, 1.6 m
   apart, facing aft, at her level. Clearing her deck opens her hold: what floats, twice over, every chest a rank higher
-  still, for each boarder. A boarder leaves her deck (back aboard their own ship) once her crew has fallen, and a
+  still, for each boarder, on top of the lot every player who fought her takes when she is scuttled. A boarder leaves her deck (back aboard their own ship) once her crew has fallen, and a
   minute after it fell every boarder still aboard is sent back; she is scuttled when the last one has left her. A
   boarder's own ship takes no orders or course while they stand on her deck. Her deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
@@ -280,15 +283,22 @@ Pass]]) with Claude's numbers:
   fills the view (`cardStand`'s `nearest`, on land too). While she holds the player the fight's keys and
   pointer are the foot's.
   Won, the display says "Her deck is yours" over her hold's take as the room laid it ("Her hold: 2 crates, a chest"),
-  and the keys begin "E: back aboard your ship · 45 s left"; E or the minute's end, the room has the boarder
+  and the keys begin "E back aboard your ship · 45 s left"; E or the minute's end, the room has the boarder
   back at their own ship's helm and the view is the sea's fight's again. Beaten, they wash up (below). On her deck
   every key but E, Enter (respawn), the menu's and Escape is the fight's on foot.
 - **Losing.** A player whose ship goes down, or who is beaten on a deck with no boarder left standing there, washes
   up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, on the traffic's sea mask: one
   search from every port when the room opens gives each cell of open water its nearest, so asking is a lookup): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of her hull, 25%
   of her canvas and half her men, a beaten boarder's with the hurts she had (a sunk ship's if she is going down). A
-  player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at. Every
-  boarder of a deck lost is let go of the fight, and she is scuttled with no one aboard.
+  player who leaves the sea mid-fight is kept as the fight has her, and at the port city she would wash up at; one who
+  leaves under a third of her hull is kept as sunk (`LEFT_AS_SUNK`). Every boarder of a deck lost is let go of the
+  fight, and she is scuttled with no one aboard; a captain going down or struck in a fight its last player left (gone,
+  or gone down) goes down all the same, laying what floats for those who fought her. The page says washing up one way, on the status line and the
+  veil alike: "Your ship went down: you washed up at Sunspire; your ship lies at its roadstead."
+- **A ship gone down.** Each captain's ship sunk or taken (a won ship is scuttled, so she counts once) is kept once for
+  the sea's hosts, for the bounties: `ShipDown` (`battle.rs`), the water she went down in and its holder, her rank and
+  level, and the accounts the room keeps of the players who fought her (`Sea::take_ship_downs`, the last tick's). No
+  host takes them yet: the bounties are still to come.
 - **Kept damage.** A player's ship's hull, canvas and men are kept as shares of whole, with their berth at sea and in
   their character (`ship`, in ten-thousandths), across sessions, until repaired; she starts every fight with them, and
   her voyage sails at her pace times the canvas she keeps (never under half), in the room and the page alike. Where
@@ -299,8 +309,8 @@ Pass]]) with Claude's numbers:
   edge, but she is kept within it: where the fight has her, where she washes up and where her next course starts.
   What changes her character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up) is sent
   to the player as their gear, five times a second at most, and so saved within 2 s ([[Accounts]]).
-- **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers "Repair
-  her" (R): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
+- **Repair** (`harbour.rs`). Within 3 km of a port city's roadstead, at rest and out of a fight, Manage offers
+  "Repair: free, lying at rest within 3 km of a port city" (R; the reach is the rules', from the waters' table): free, she is made whole evenly over a second for each hundredth she is missing (the most of hull, canvas
   and men), 100 s at most. Setting a course, heaving to for a fight or leaving the sea stops it where it stood.
 - **Its weather.** Each fight at sea, and each fight among captains alone (`clash.rs`), takes the swell and the wind
   where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and
@@ -346,20 +356,21 @@ whole bring the Pirate Sloop to strike.
 
 While sailing, `F` calls a pirate captain, a Major in her Sloop, onto the ring 650 to 1000 m round the Sloop, where the
 water floats her, heading across her waters on a slant; `F` again sends her off. The fight then steps the Sloop in her
-helm's place. Holding the right mouse aims: the camera stands at the aim eye past the ports on the side looked at, the
-look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
+helm's place. Holding the right mouse aims: the camera eases out to the aim eye past the ports on the side looked at,
+as the game's fight does ("The aim, as DFO's"), the look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
 lookReach), unless the look is on her: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, and `C` braces.
 
 Her ship is drawn in her hull and her faction's colours ([[Sailing]], "Her look"), and the water cuts her footprint
-as it does the player's. The balls and the lay's arcs are small lit spheres, and the fight looks as "How it looks"
-says. The panel shows her hull, canvas, guns' reload and load, a line for each captain within 400 m (nearest
-first, her mode in plain words: closing, cruising, running, struck, going down), DFO's messages naming each ship by
+as it does the player's. The balls are small lit spheres, the lay is drawn over the water as the game's fight draws
+it, and the fight looks as "How it looks" says. Her own hull, canvas, crew and guns are the readout's plate and rose,
+beside the card and the tally, as at sea ("How it looks", "The readout"). The panel shows a line for each captain
+within 400 m (nearest first, her mode in plain words: closing, cruising, running, struck, going down), DFO's messages naming each ship by
 her own name, and "Broadside from the Pirate Brig: C to brace." for the nearest captain whose guns stand run out. A
-captain is sighted in the voyage's one sentence: "A Pirate Sloop sighted, 1.0 km off.". Each arc of the lay starts where its ball leaves, a
-ripple after the gun before it and carried on by her way, and runs only to where that ball stops: a larger red mark
-where it strikes her, and a ring of the landing zone's radius where it splashes. The arcs are red, and
-the panel reads "Laying the ... guns: on target.", only when an unscattered ball strikes her.
+captain is sighted in the voyage's one sentence: "A Pirate Sloop sighted, 1.0 km off.". Each arc of the lay starts
+where its ball leaves, a ripple after the gun before it and carried on by her way, and runs only to where that ball
+stops. The panel reads "Laying the ... guns: on target." only when an unscattered ball strikes her and that side can
+fire.
 
 ## How it looks
 
@@ -368,8 +379,10 @@ puffs (`Effects`, after DFO's `navalEffects.js`), harm kept on the ship it struc
 sounds and, on the player's own ship, jars of the eye. Smoke, spray and foam are soft round puffs blended over what
 is behind them, smoke swelling as it thins and carried by a 4 m/s wind; flash, flame, embers and glints are light
 added unlit; splinters, shreds and planks are solid and lit. The puffs are drawn after the water, far to near, hidden
-where the scene stands nearer (`puffView.ts`), and a flash's or a fire's light falls on the hulls round it through
-the light layer: a muzzle's 26 m for 0.12 s, a burning ship's 16 m, three burning ships at most. At most 900 puffs
+where the scene stands nearer (`puffView.ts`); each glow gives its stepped halo through the light layer, as the
+land's bright things do. DFO's lights on the hulls round a flash (26 m for 0.12 s) or a burning ship (16 m, three at
+most) are kept as the effects' `light` marks but not drawn: the ships' shader takes no point lights yet, and the
+light layer drew their whole reach as a disc over the sky and sea. At most 900 puffs
 live at once; past that, spray, foam and glints go first, then splinters, shreds and embers, then flashes and planks,
 and smoke last.
 The view's own numbers stand in where no event says more: her canvas's share left holes her sails, a ship `struck`
@@ -385,7 +398,8 @@ captain's number comes with her in the view, so one leaving the fight never move
 - **A gun fired** (`muzzle`): a bloom at its mouth for 0.11 s and a tongue of fire along the shot, its light, and
   eight puffs of powder smoke that roll out down the shot, slow to the wind and hang as a bank down her side 9 to
   14 s, swelling to 6 to 10 m across as they thin; her own gun jars the eye (1.1).
-- **A ball in flight** keeps its sphere and leaves a faint grey trail, a puff every 0.04 s that lasts half a second.
+- **A ball in flight** keeps its sphere and leaves a faint grey trail, a puff every 0.04 s that lasts half a second,
+  carried off on the wind as the guns' smoke is.
   A ball coming within 8 m of her hull whistles once where it passed; one of hers going out never does.
 - **A ball in the water** (`Splash`): a column of spray thrown up and falling back, a spout of a few drops nearly
   straight up over it (10 m/s, a heavy ball's 14), and a ring of foam spreading flat on the water for 2.4 s (a heavy
@@ -403,7 +417,7 @@ captain's number comes with her in the view, so one leaving the fight never move
   as she sails on from it before it sinks. A fallen mast (`MastFell`) leans over her leeward side with its yards and
   sails, slowly then fast, for 3 s until its head is in the water, then drifts astern and is gone after 40 s.
 - **Fire**: unlit flames, embers rising and gouts of dark smoke up from her deck, along a third of her length, for
-  each fire the view gives her, and her light on the hulls round her.
+  each fire the view gives her.
 - **Run out**: a captain's battery running out glints at four ports along each side run out, about thirty flickers a
   second, while her guns stand out.
 - **Battered**: under three fifths of her hull, the player's ship smokes grey along her deck, more as she is hurt.
@@ -429,8 +443,11 @@ captain's number comes with her in the view, so one leaving the fight never move
   ([[DFO's Own Sounds Join the Sound Sheet]]); each stays silent until the owner picks one.
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
-- **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`): her plate, its battery rose, the card on the
-  nearest captain and her volley's tally ([[Interface]], "The sea fight's readout").
+- **The readout** (`plus/seaFight.ts`, fed by `ships/fightDisplay.ts`, shown by the HUD at sea and by
+  `ships/fightOverlay.ts` in the World Editor): her plate at the bottom right with its battery rose, the card under
+  the compass on the ship the look is on (the captain nearest where her laid guns fall, else the nearest), and her volley's tally under the sight, in every fight from its first frame to its
+  last ([[Interface]], "The sea fight's readout"). The panel leaves her own hurts and guns to it. On a struck ship's
+  deck it gives way to the fight on foot's display.
 - **From above**: at the raised view, where the ships are drawn larger ([[Overworld]]), every puff, ball, hole and
   piece of flotsam is drawn as many times larger about the point it came from, as the wakes are, so the fight reads
   from there; close in, all are their true size. The sea's splashes push its ripples as wide.
@@ -556,17 +573,20 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
 - **What the aim shows** (`aimOf`, drawn by `AimView`): each gun's unscattered flight to where the rules stop it, a
   ribbon 0.003 of the view's height across at any distance, dashed every 6 m of flight (the second half 0.35 as
   strong) and marching out at 9 m/s; each splash a ring flat on the sea, at least 1.6 m across its radius, and a post
-  of light 3.4 m tall over it; each strike a 2.2 m mark where the ball meets her. DFO's three tones: brass laid, red
+  of light 3.4 m tall over it, the ring DFO's foam ring (brightest at 0.7 of its radius, lit from 0.42 to 0.98 of
+  it, so a grazing look still reads it); each strike a 2.2 m mark where the ball meets her, stood a half mark out of
+  her side toward the eye so her hull never hides half of it. DFO's three tones: brass laid, red
   on target, grey while the side cannot fire (loading, braced, her guns silent). The ring is blended over the sea; the
   posts, strikes and arcs are light added onto the frame, unlit and unfogged; all are drawn over the finished
   picture after the water, hidden where the world's depth stands nearer.
 - **The wheel**: while aiming a notch steps the load, but only after 0.18 s of quiet since the last, so a trackpad's
   stream of small turns steps it once; out of the aim it zooms the fight's camera, a notch half again nearer or
   farther, from 11.4 m (DFO's nearest) to the fight camera's own 75 m.
-- **The screen**: a captain's plate stands under the compass, never over it.
+- **The screen**: a captain's plate stands under the compass, never over it; the sea's status line ("Fighting") stands
+  in the top right corner while the fight's readout shows, off the sky the aim looks at.
 
-The World Editor's own aim keeps its eye at once (`aimCameraOf`) and draws its lay as marks, as "In the World Editor"
-says; the game's fight draws it over the water.
+The World Editor's fight and its fleet room ease the eye the same way (`easedAimOf`) and draw the lay with `AimView`
+after the water.
 
 ## In a fleet room
 
