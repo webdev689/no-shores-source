@@ -91,6 +91,8 @@ export const MAGAZINE_DELAY = [1.5, 4.5] as const;
 /** Her hull under this share, she smokes along her deck, over this share of her length each way from amidships. */
 export const SMOKE_FROM = 0.6;
 const SMOKE_SPAN = 0.6;
+/** Her last volley's tally is shown this long once its last ball is down, seconds. */
+export const TALLY_S = 4;
 /** A ball last frame is the same ball this frame within this, metres. */
 const SAME_BALL_M = 40;
 
@@ -158,6 +160,15 @@ export class FightFeel {
   /** Her guns' reload and each captain's sides run out at the last frame. */
   private reloads: readonly [number, number] | null = null;
   private readonly runOut = new Map<number, number>();
+  /** Her volley while its balls are aloft, and its tally once the last is down. */
+  private volley: { balls: number; hits: number; holed: number; rig: number; lastShot: number } | null = null;
+  private tallied: {
+    readonly balls: number;
+    readonly hits: number;
+    readonly holed: number;
+    readonly rig: number;
+    readonly at: number;
+  } | null = null;
   /** The ships afire at the last frame, where their light stands (window metres). */
   private burning: Point[] = [];
 
@@ -188,6 +199,10 @@ export class FightFeel {
     this.aloft = input.balls;
     const splashes = input.events.flatMap((event) => this.take(event, ships, now, toWindow, input.windBearing));
     this.moments(ships, now, input.seconds, toWindow);
+    if (this.volley && input.balls.length === 0 && now - this.volley.lastShot > 0.2) {
+      const { balls, hits, holed, rig } = this.volley;
+      [this.tallied, this.volley] = [{ balls, hits, holed, rig, at: now }, null];
+    }
     ships.forEach((ship, index) => {
       const { vessel, rig, hull } = ship;
       const harm = rig?.harm;
@@ -231,6 +246,10 @@ export class FightFeel {
         const mouth: Point = [event.point[0] - middle[0], event.point[1] - middle[1], event.point[2] - middle[2]];
         this.effects.fire(toWindow(middle), mouth, event.launch, now);
         this.call('ship.cannon', toWindow(event.point));
+        if (event.ship === 0) {
+          this.volley ??= { balls: 0, hits: 0, holed: 0, rig: 0, lastShot: now };
+          [this.volley.balls, this.volley.lastShot] = [this.volley.balls + 1, now];
+        }
         if (event.ship === 0) this.kick(KICKS.gun, toWindow(event.point));
         return [];
       }
@@ -245,6 +264,12 @@ export class FightFeel {
         this.effects.dust(toWindow(event.point), now);
         return [];
       case 'hit':
+        // A ball striking another ship while her volley is aloft is counted hers.
+        if (this.volley && event.ship !== 0 && (event.by ?? 0) === 0) {
+          this.volley.hits++;
+          if (event.zone === 'holed') this.volley.holed++;
+          if (event.zone === 'rig' || event.part === 'rig' || event.part === 'sail') this.volley.rig++;
+        }
         this.hit(event, shipOf(event.ship), now, toWindow);
         return [];
       case 'ram': {
@@ -465,6 +490,15 @@ export class FightFeel {
   /** The side of hers a blow last came from while it is told, or null. */
   blow(now: number): BlowSide | null {
     return this.lastBlow && now - this.lastBlow.at < BLOW_S ? this.lastBlow.side : null;
+  }
+
+  /** Her last volley's tally while it is shown, or null. */
+  tally(
+    now: number,
+  ): { readonly balls: number; readonly hits: number; readonly holed: number; readonly rig: number } | null {
+    if (!this.tallied || now - this.tallied.at > TALLY_S) return null;
+    const { balls, hits, holed, rig } = this.tallied;
+    return { balls, hits, holed, rig };
   }
 
   /** When her side (0 port, 1 starboard) last came ready, seconds, or null. */
