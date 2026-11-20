@@ -280,7 +280,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **#112, the interface drawn by the game, in draft** ([[The Interface Uses No HTML, Now or Later]]): the face read
   into its grid's cells as the page starts, words laid where a browser sets them, one instanced draw a frame, the
-  kit's roles painted to the page's own pixels, and the HUD's toasts drawn by the game. Asked in it: signing in
+  kit's roles painted to the page's own pixels, the HUD's toasts drawn by the game, and death's grey drawn into the
+  scene under the interface, no longer a filter on the canvas. Asked in it: signing in
   without a browser's password manager (passkeys, Chromium's credential store, or neither); a WebTransport relay
   outside Cloudflare; the game's files at an address of their own. Merging needs the owner's yes.
 - **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
@@ -482,12 +483,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The interface's next stages, on #112's branch** (`claude/loving-darwin-sw4eae`), in order: the death drain moved
-  into the scene's own drawing (the canvas's filter would grey the interface over it); a tree of the game's own and
-  its layout; hit-testing and focus by pointer, keys and pad; typing through `EditContext`; then the HUD piece by
+- **The interface's next stages, on #112's branch** (`claude/loving-darwin-sw4eae`), in order: a tree of the game's
+  own and its layout; hit-testing and focus by pointer, keys and pad; typing through `EditContext`; then the HUD piece by
   piece (the tracker, the key strip, the sea bar, her ship's panel, the plates), the menus and screens, the Test
-  Ground and the World Editor; last, a check that refuses new HTML. Headless, each role was matched against the
-  page's kit at 2 device pixels a CSS pixel, the window's 114,400 pixels all within a level.
+  Ground and the World Editor (a cutscene's blur, still a filter on the canvas, moves with the cinema's screen); last,
+  a check that refuses new HTML. Headless, each role was matched against the page's kit at 2 device pixels a CSS
+  pixel, the window's 114,400 pixels all within a level; the drain matched Chromium's own filter at every pixel.
 - **Then the game worker** ([[Work Leaves the Main Thread Where It Can]]), its frame and long tasks measured first,
   and **the network's measures** ([[The Network Is Made Smaller and Readied for WebTransport]]).
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,

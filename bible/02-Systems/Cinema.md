@@ -46,8 +46,8 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
 - **The screen** (`Screen`), laid over the canvas: fades to black or white over any time, a white flash, the
   letterbox's bars, eyelids that close from above and below for waking, a blur over the whole view, the title (the
   game's name over a brass rule, sized to fit a phone's width) and a prompt that breathes under it. Each layer eases
-  by its own transition except the eyelids and the blur, which the story sets frame by frame: while the screen stands
-  the canvas's own ease (kept for the death's grey) is held off, so the blur follows each frame and clears at once.
+  by its own transition except the eyelids and the blur, which the story sets frame by frame, so the blur follows each
+  frame and clears at once.
   While it stands a touch on the canvas or the HUD is the story's (`touch-action: none`), so no drag pans the page or
   pulls it to reload and a held touch is never cut short. Once the story's black has gone after its end, the screen
   is taken away and the canvas and the HUD have their own ease and touches back.

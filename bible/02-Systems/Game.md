@@ -5,6 +5,8 @@ code:
   - client/index.html
   - client/src/main.ts
   - client/src/game/game.ts#startGame
+  - client/src/game/drain.ts#Drain
+  - client/src/game/drain.ts#DrainView
   - client/src/game/flow.ts#next
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
@@ -348,7 +350,9 @@ captains) are handed to the water at the size each is drawn; it keeps out of eac
 way.
 Under way the player's ship stirs the water's ripples at her bow and quarters, as the World Editor's does, and the
 ripples follow her.
-In death the world drains to grey, and comes back in colour on respawn or on leaving.
+In death the world drains to grey, and comes back in colour on respawn or on leaving: over 1.4 s each way, eased out,
+grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own picture, so the interface
+the game draws over the world keeps its colour.
 
 ## Limits
 

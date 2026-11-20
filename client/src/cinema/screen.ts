@@ -1,8 +1,8 @@
 // What a cutscene lays over the picture: a fade to black or white, the letterbox's bars, a flash, eyelids for waking,
 // a blur on the view, the game's title and a prompt that breathes. Plain elements over the canvas; each eases by its
-// own transition, so the page never steps them frame by frame except the eyelids and the blur, which the story drives
-// (the canvas's own ease, kept for the death's grey, is held off while the screen stands). While it stands, a touch on
-// the view is the story's alone: no drag pans the page or pulls it to reload, so a held touch is never cut short.
+// own transition, so the page never steps them frame by frame except the eyelids and the blur, which the story drives.
+// While it stands, a touch on the view is the story's alone: no drag pans the page or pulls it to reload, so a held
+// touch is never cut short.
 
 const STYLE_ID = 'cinema-screen';
 
@@ -85,7 +85,6 @@ export class Screen {
     this.canvas = canvas;
     this.hudRoot = root;
     for (const surface of [canvas, root]) surface.style.touchAction = 'none';
-    canvas.style.transition = 'none';
     this.root = made(page, 'cinema', root);
     made(page, 'cinema-bar top', this.root);
     made(page, 'cinema-bar bottom', this.root);
@@ -165,11 +164,10 @@ export class Screen {
     this.showSkip(null);
   }
 
-  /** Takes the screen away, giving the canvas and the HUD back their own ease and touches. */
+  /** Takes the screen away, giving the canvas and the HUD back their own touches. */
   remove(): void {
     this.blur(0);
     for (const surface of [this.canvas, this.hudRoot]) surface.style.touchAction = '';
-    this.canvas.style.transition = '';
     this.root.remove();
   }
 }

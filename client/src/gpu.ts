@@ -25,12 +25,19 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
     throw new GpuUnavailable('The page could not open a WebGPU drawing surface.');
   }
   const format = navigator.gpu.getPreferredCanvasFormat();
-  context.configure({ device, format, alphaMode: 'opaque' });
+  // Copied from as well as drawn into: the death's drain copies the finished picture aside to draw it back grey.
+  context.configure({
+    device,
+    format,
+    alphaMode: 'opaque',
+    usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource,
+  });
   return { device, context, format };
 }
 
 /** WebGPU's usage flags we use, by the specification's values: TypeScript's DOM types declare no constants for them. */
 export const TEXTURE_USAGE = {
+  copySource: 0x01,
   copyDestination: 0x02,
   textureBinding: 0x04,
   storageBinding: 0x08,

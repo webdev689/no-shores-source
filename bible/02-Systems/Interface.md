@@ -568,8 +568,8 @@ button's corner and screen, and the Tailor's wares.
 
 - Drawn by the game, only the toasts so far. A word's soft shade past its hard outline is not drawn, as a blur has no
   crisp form.
-- Death drains the world to grey by a filter on the canvas, which would grey what the game draws over it too. Before
-  the foot HUD's pieces move, the drain moves into the scene's own drawing, under the interface.
+- A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into
+  the scene's own drawing with the cinema's screen.
 - A screen reader hears a toast only in Chromium (`ariaNotify`), and nothing else the game draws.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.

@@ -29,6 +29,7 @@ import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { HelmMap } from './helmMap.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
+import { Drain } from './drain.ts';
 import { type Drawer, GameScene, type Overlay } from './scene.ts';
 import { Sea } from './sea.ts';
 import { seaPointer } from './seaPointer.ts';
@@ -145,6 +146,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const helmMap = new HelmMap({ gpu, outlines, store, root: hudRoot, sea: () => sea });
   let [ready, waited] = [false, 0];
   let wasDead = false;
+  /** Death's grey over the world, drawn under the interface. */
+  const drain = new Drain();
   let wasWalking = false;
   let charting: string | null = null;
   let sinceChart = 0;
@@ -182,7 +185,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
 
   /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
   const leaveHere = () => {
-    canvas.classList.remove('dead');
+    drain.toward(false);
     wasDead = false;
     after.leave();
   };
@@ -430,6 +433,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     scene.draw(shown.shot, size, clock, seconds, standing([], [...shown.figures, ...met], fight), {
       after: hands,
       carried,
+      drain: drain.share,
     });
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
@@ -447,7 +451,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     hud.reach(shown);
     const dead = shown.kind === 'dead';
     if (dead && !wasDead) document.exitPointerLock();
-    if (dead !== wasDead) canvas.classList.toggle('dead', dead);
+    drain.toward(dead);
     wasDead = dead;
   };
 
@@ -491,7 +495,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
         : undefined);
     // Walking her deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
-    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true, carried };
+    const more = { hulls: shown.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share };
     scene.draw(shown.shot, size, clock, seconds, standing(shown.ships, shown.figures), more);
     showStanding({ kind: 'inside' });
     showSeaHud(hud, here, shown, {
@@ -557,6 +561,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const seconds = Math.min(0.1, elapsed);
     last = now;
     clock += seconds;
+    drain.step(seconds);
     const controls = input.frame();
     const size = { width: canvas.width, height: canvas.height };
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;

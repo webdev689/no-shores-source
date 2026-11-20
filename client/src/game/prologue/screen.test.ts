@@ -27,11 +27,9 @@ test("while the screen stands, a touch on the view is the story's and the blur f
   assert.equal(root.style['touchAction'], 'none', 'nor one on the dialogue box over it');
   screen.blur(6);
   assert.equal(canvas.style['filter'], 'blur(6.0px)');
-  assert.equal(canvas.style['transition'], 'none', 'the canvas eases nothing the story steps');
   screen.blur(0);
   assert.equal(canvas.style['filter'], '');
   screen.remove();
   assert.equal(canvas.style['touchAction'], '');
   assert.equal(root.style['touchAction'], '');
-  assert.equal(canvas.style['transition'], '', "the death's grey eases again");
 });
