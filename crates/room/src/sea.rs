@@ -222,8 +222,8 @@ impl Sea {
         self.pirates.chase(player, ship);
     }
 
-    /// The player leaves the helm and stands behind the wheel on their ship's deck. Its helmsman keeps its course: under
-    /// way it sails on, at rest it stays.
+    /// The player leaves the helm and stands behind the wheel on their ship's deck. Its helmsman keeps its course:
+    /// under way it sails on, at rest it stays.
     pub fn leave_helm(&mut self, player: PlayerId) -> Result<(), HelmRefused> {
         let berth = self.berths.get(&player).ok_or(HelmRefused::NoSuchPlayer)?;
         if berth.sailing.is_none() {

@@ -161,7 +161,7 @@ fn a_boarder_comes_over_the_captains_rail_on_the_side_their_own_ship_lies() {
 }
 
 #[test]
-fn a_sea_that_keeps_characters_sails_no_course_before_the_keeper_answers_then_the_ship_lies_where_it_kept_it() {
+fn a_sea_that_keeps_characters_sails_no_course_before_the_keeper_answers_then_the_ship_lies_where_the_keeper_kept_it() {
     let mut sea = sea();
     sea.keep_characters();
     let player = sea.join();

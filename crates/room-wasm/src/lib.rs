@@ -196,7 +196,7 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
             },
         },
         Opened::Sea(sea) => {
-            // A boarder's inputs on its deck are a land room's.
+            // A boarder's inputs on the captain's deck are a land room's.
             if sea.on_deck(player)
                 && let Ok(input) = protocol::read_input(bytes)
             {

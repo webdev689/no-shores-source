@@ -1,6 +1,6 @@
-//! The sea room's snapshot: every ship at sea, every hostile ship, each player's fight, each player off the helm on its
-//! deck, and what the sea keeps after its fights (what floats, each ship's kept hurts, what each player is told, and
-//! each deck boarded), and the islands each player sees or has found.
+//! The sea room's snapshot: every ship at sea, every hostile ship, each player's fight, each player off the helm on
+//! their ship's deck, and what the sea keeps after its fights (what floats, each ship's kept hurts, what each player is
+//! told, and each deck boarded), and the islands each player sees or has found.
 
 use crate::{PlayerId, finish_snapshot, messages};
 use movement::Body;

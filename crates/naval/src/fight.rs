@@ -168,7 +168,7 @@ impl Hurts {
 
 /// A player's ship of `hull` stepped a tick by its helm, as its hurts let it: no sail sets on a wreck or with its
 /// rigging shot away, and its sails' and oars' pull is held back. Answers the ship and, when its helm climbed for sail
-/// its could not set, whether that was for its being a wreck.
+/// it could not set, whether that was for its being a wreck.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
