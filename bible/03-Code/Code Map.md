@@ -48,6 +48,7 @@ decision, made in the same change as its entry here.
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
 | `client/src/models/`, `content/forged/` | The models layer, which imports nothing: the [[Forged Models]], DFO's town buildings, props and room kit built from the three measured tables in `content/forged/` |
 | `client/src/plus/` | The [[Interface]]'s Enhanced Plus kit, which imports nothing: carved stone and brass, each surface painted by the role it plays |
+| `client/src/ui/` | The ui layer, which imports `plus`: the [[Interface]] as the GPU draws it, from the face's cells, the kit's frames and bevels, and one instanced draw a frame |
 | `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
 | `client/src/speech/` | The speech layer, which imports `plus`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
 | `client/src/cinema/` | The cinema layer, which imports `water` and `combat`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
@@ -122,7 +123,7 @@ and `layout`),
 and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
 `water`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page
 helpers),
-`plus` (imports nothing), `speech` (imports `plus`), `cinema` (imports `water` and `combat`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
+`plus` (imports nothing), `ui` and `speech` (each imports `plus`), `cinema` (imports `water` and `combat`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
 [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
 

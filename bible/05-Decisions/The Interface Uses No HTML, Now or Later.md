@@ -24,9 +24,9 @@ It replaces [[HTML Is Avoided Where It Can Be]].
 ## Claude's calls
 
 - The game draws its interface in WebGPU ([[Platform Research]], "The interface"): one atlas of Pixelify Sans's
-  glyphs and the frames' tiles, baked when the page is built from the font, `face.ts` and `frame.ts`; drawn at whole
-  multiples of its grid, unfiltered, in one instanced draw a frame; a tree of the game's own, laid out by a small
-  layout of its own; focus moved by keys, pad and pointer alike.
+  glyphs, read from the font into its grid's cells as the page starts (with `face.ts`'s mended glyphs), and the
+  kit's frames and bevels; drawn at whole multiples of its grid, unfiltered, in one instanced draw a frame; a tree of
+  the game's own, laid out by a small layout of its own; focus moved by keys, pad and pointer alike.
 - The page keeps one HTML file, holding the canvas and the script, as nothing can be drawn without it. The canvas
   carries a label and a role, and announcements go through `document.ariaNotify()`: neither builds interface in HTML.
 - Typing goes to the canvas through `EditContext` where the browser has it (Chromium), and through keys and paste

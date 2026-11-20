@@ -39,6 +39,7 @@ pub const LAYERS: &[Layer] = &[
             "cinema",
             "speech",
             "sky",
+            "ui",
         ],
     },
     Layer { name: "water", may_import: &["rules", "sky"] },
@@ -59,6 +60,7 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "layout", may_import: &["city"] },
     Layer { name: "heldmap", may_import: &["editor", "overworld", "forge", "firstperson", "plus"] },
     Layer { name: "plus", may_import: &[] },
+    Layer { name: "ui", may_import: &["plus"] },
     Layer { name: "speech", may_import: &["plus"] },
     Layer { name: "cinema", may_import: &["water", "combat"] },
 ];
