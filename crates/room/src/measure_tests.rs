@@ -110,6 +110,10 @@ fn measure(chase: bool) {
                 off(one).total_cmp(&off(other))
             });
             if sea.fights().any(|(fighting, _)| fighting == *player) {
+                if !fought.contains_key(player) {
+                    let here = charted.water(at).map(|(water, _)| water.holder);
+                    assert_ne!(here, Some(Holder::Home), "a fight in home waters, where none comes");
+                }
                 fought.entry(*player).or_insert(tick);
             } else if tick % 30 == 0 {
                 match quarry.filter(|_| chase) {
@@ -162,6 +166,7 @@ fn measure(chase: bool) {
             by(10) * 100.0
         );
     }
-    // A player is counted by the water she sets out in: from home waters her voyage reaches the waters beside them.
+    // A player is counted by the water she sets out in: from home waters her voyage reaches the waters beside them, so
+    // a fight of hers is checked to be out of home waters where it begins (above).
     assert!(!players.is_empty());
 }

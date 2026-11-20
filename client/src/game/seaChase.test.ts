@@ -27,6 +27,9 @@ test('a chase plans again each half second while she is sighted, says whom, and 
   assert.equal(chase.step(CHASE_EVERY_S, [{ ...pirate, y: -30_000 }], [0, 0]), null, 'out of her sight');
   assert.deepEqual([chase.words, chase.chasing], [null, null], 'lost: the chase is over');
   chase.start(pirate, [0, 0]);
+  chase.step(CHASE_EVERY_S, [pirate], [0, -7_300]);
+  assert.equal(chase.chasing, null, 'within 750 m of her: met');
+  chase.start(pirate, [0, 0]);
   chase.stop();
   assert.equal(chase.words, null, 'another course set');
 });

@@ -31,7 +31,7 @@ import { CloseZoom } from './seaClose.ts';
 import { Passage } from './passage.ts';
 import type { SeaFrame, SeaInput } from './seaFrame.ts';
 import { Chase } from './seaChase.ts';
-import { HOSTILE_PREFIX, SeaWatch, type WaterNamed } from './seaHostiles.ts';
+import { HOSTILE_PREFIX, SeaWatch, sightedHostiles, type WaterNamed } from './seaHostiles.ts';
 import { seaMarks } from './seaMarks.ts';
 import { type SeaHull, SeaShips } from './seaShips.ts';
 import { SeaCombat } from './seaCombat.ts';
@@ -316,7 +316,8 @@ export class Sea {
   /** Chases the hostile ship whose mark is chosen, if one is: true then. */
   chaseChosen(): boolean {
     const chosen = this.chosen;
-    const sighted = this.room?.pirates.some((each) => `${HOSTILE_PREFIX}${each.id}` === chosen) ?? false;
+    const pirates = sightedHostiles(this.room?.pirates ?? [], this.position);
+    const sighted = pirates.some((each) => `${HOSTILE_PREFIX}${each.id}` === chosen);
     if (chosen === null || !sighted || this.view.kind !== 'sail') return false;
     this.sailToMark(chosen);
     return true;
@@ -328,6 +329,7 @@ export class Sea {
   goAshore(): boolean {
     const landfall = this.landfall;
     if (!landfall) return false;
+    this.chase.stop();
     const nodes = this.islandMarks.filter((mark) => mark.kind !== 'port');
     const side = sideNodes(this.position, ringCentre(this.landmass.outline), nodes);
     const social = nodes.find((mark) => mark.kind === 'social');
@@ -493,8 +495,10 @@ export class Sea {
       pirates,
     );
     this.watch.step(dt, combat ? [] : pirates, this.position, this.waterAt?.(this.position) ?? null);
-    const toward = combat ? null : this.chase.step(dt, pirates, this.position);
+    const toward = combat || this.view.kind !== 'sail' ? null : this.chase.step(dt, pirates, this.position);
     if (toward) this.passage.sailTo(toward);
+    // A hostile ship's mark stays chosen only while she is chased.
+    if (this.chase.chasing === null && this.chosen?.startsWith(HOSTILE_PREFIX)) this.chosen = null;
     this.placed = marks.placed;
     return {
       shot: shown,

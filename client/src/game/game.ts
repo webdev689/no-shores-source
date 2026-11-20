@@ -224,7 +224,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
           waterline: sloop.waterline,
           marks: new MarkView(gpu),
           shown: (hull) => shipModels.shown(hull),
-          warm: () => Promise.all(HULL_NAMES.map((name, hull) => shipModels.load(hull))),
+          warm: () => Promise.all(HULL_NAMES.map((name) => shipModels.load(HULL_NAMES.indexOf(name)))),
         },
         anchorage,
         heading,

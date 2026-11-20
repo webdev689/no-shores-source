@@ -6,6 +6,8 @@ import type { Point2 } from '../overworld/ground.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import { hostileName, sightedHostiles } from './seaHostiles.ts';
 
+/** Within this of her she is met (crates/naval/src/captain `ENGAGE_RANGE`), metres. */
+export const MET_M = 750;
 /** Seconds between the chase's plans. */
 export const CHASE_EVERY_S = 0.5;
 /** A hostile ship's way at sea by her rank, 1 Minor to 5 Boss, metres a second at the world's own time
@@ -66,7 +68,8 @@ export class Chase {
     if (!this.quarry) return null;
     const id = this.quarry.id;
     const pirate = sightedHostiles(pirates, ship).find((each) => each.id === id);
-    if (!pirate) {
+    // Lost from sight, or met: within a captain's 750 m a bold one takes the ship on, and a wary one is caught up.
+    if (!pirate || Math.hypot(pirate.x - ship[0], pirate.y - ship[1]) <= MET_M) {
       this.stop();
       return null;
     }
