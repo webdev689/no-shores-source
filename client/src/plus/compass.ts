@@ -1,6 +1,6 @@
 // The compass across the top of the screen, after DFO's Enhanced HUD: a strip a quarter of the circle wide, its eight
 // points placed by the way the view looks and hidden off its ends, a brass needle at its middle, and over it a mark for
-// each ship round the player at her bearing, held at the end nearer her while she is off the strip, so the strip says
+// each ship round the player at its bearing, held at the end nearer it while it is off the strip, so the strip says
 // which way to turn. A point off the strip is hidden, never held at an end: one held there would say "north is exactly
 // there", which is a lie.
 import { HALO, TONES } from './tones.ts';
@@ -28,7 +28,7 @@ export const COMPASS = { top: 18, width: 520, share: 0.6, height: 26, rule: 2, g
 /** How far down the first thing under the compass stands, in CSS pixels. */
 export const UNDER_COMPASS = COMPASS.top + COMPASS.height + COMPASS.rule + COMPASS.gap;
 
-/** What a ship is to the player, which colours her mark: one that would take her, another player's, one whose
+/** What a ship is to the player, which colours its mark: one that would take the player, another player's, one whose
  *  colours are down, or a friendly merchantman in Overlook's blue. */
 export type ShipMarkKind = 'hostile' | 'ship' | 'struck' | 'friendly';
 export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
@@ -37,11 +37,11 @@ export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
   struck: '#8f8f8f',
   friendly: '#2f5d9a',
 };
-/** Ships farther off than this, in metres, have no mark, but one that names her own range. */
+/** Ships farther off than this, in metres, have no mark, but one that names its own range. */
 export const SHIP_MARK_RANGE_M = 900;
 
-/** A ship the compass marks: where she lies (metres, x east and y south), what she is to the player, and how far off
- *  she is marked from (a hostile ship's sight; `SHIP_MARK_RANGE_M` where none is named). */
+/** A ship the compass marks: where it lies (metres, x east and y south), what it is to the player, and how far off
+ *  it is marked from (a hostile ship's sight; `SHIP_MARK_RANGE_M` where none is named). */
 export interface ShipMark {
   readonly x: number;
   readonly y: number;

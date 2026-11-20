@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { UNDER_COMPASS } from './compass.ts';
 import { type RoseSide, seaFightCss, type SeaFightModel, seaFightWords } from './seaFight.ts';
 
 const side = (more: Partial<RoseSide> = {}): RoseSide => ({
@@ -43,7 +44,7 @@ test("the rose's chip says its load, and the seconds a side still loads", () => 
   assert.equal(words.starboard, 'Round');
 });
 
-test("the card says DFO's states: hostile, colours struck with the key that boards her, going down", () => {
+test("the card says DFO's states: hostile, colours struck with the key that boards it, going down", () => {
   const state = (more: Partial<SeaFightModel['card'] & object>) =>
     seaFightWords({ ship: null, card: { ...card, ...more }, tally: null, warn: null }).state;
   assert.equal(state({}), 'Hostile');
@@ -52,7 +53,7 @@ test("the card says DFO's states: hostile, colours struck with the key that boar
   assert.equal(state({ state: 'sinking' }), 'Going down');
 });
 
-test("the tally counts her last volley's balls struck, below her waterline and through her rigging", () => {
+test("the tally counts the last volley's balls struck, below the waterline and through the rigging", () => {
   const tally = (balls: number, hits: number, holed: number, rig: number) =>
     seaFightWords({ ship: null, card: null, tally: { balls, hits, holed, rig }, warn: null }).tally;
   assert.equal(tally(6, 3, 1, 2), '3 of 6 balls struck - 1 below the waterline - 2 in the rigging');
@@ -71,4 +72,11 @@ test("the side the look lays glows gold round its chip, as DFO's active battery 
   const rule = /\.seafight-side\.laid \{([^}]*)\}/.exec(seaFightCss())?.[1] ?? '';
   assert.match(rule, /box-shadow: 0 0 0 1px #050608, 0 0 8px rgba\(243, ?207, ?134, ?0\.45\)/);
   assert.doesNotMatch(rule, /background/, 'its load still fills it');
+});
+
+test('the broadside warning stands under the target card at the top, never over the sight or the ship aimed at', () => {
+  const rule = /\.seafight-warn \{([^}]*)\}/.exec(seaFightCss())?.[1] ?? '';
+  assert.doesNotMatch(rule, /50%\s*[-+]/, 'not stood off the middle of the screen, where the sight is');
+  assert.match(rule, new RegExp(`top: ${UNDER_COMPASS}px`), 'under the compass while no card shows');
+  assert.match(seaFightCss(), /@media \(prefers-reduced-motion: reduce\) \{ \.seafight-warn \{ animation: none; \} \}/);
 });

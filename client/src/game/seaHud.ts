@@ -1,10 +1,9 @@
 // What the heads-up display shows at sea each frame: where the player is, the keys for what they are doing, the marks,
 // the compass and the ships on it, a captain's bar and the fight's notices in a fight, the sea's bar, Manage's panel,
-// the offer at her wheel, and the voyage's line.
+// the offer at the ship's wheel, and the voyage's line.
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
-import { fightNotices } from '../ships/fightDisplay.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import { seaHints } from './hints.ts';
 import { sightOf } from './seaHostiles.ts';
@@ -16,7 +15,7 @@ import { aimLineOf, SeaSight } from './seaSight.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 
 /** What the display reads off the game besides the sea: whether a landing is being chosen or the sea's controls are
- *  the player's, the island she lies off and the sea's own name, the clock, her build once Manage asks for it, her
+ *  the player's, the island the ship lies off and the sea's own name, the clock, its build once Manage asks for it, its
  *  waterline, and whether a coast ahead is being charted. */
 export interface SeaHudState {
   readonly landing: boolean;
@@ -27,13 +26,15 @@ export interface SeaHudState {
   readonly build: () => SloopBuild | null;
   readonly waterline: Waterline;
   readonly charting: boolean;
-  /** The friendly ships round her, for the compass. */
+  /** The friendly ships round the ship, for the compass. */
   readonly friendly: readonly ShipMark[];
+  /** What the sea's word says now, DFO's toasts: a ship sighted, who joins, colours struck, what floats gathered. */
+  readonly notices: readonly string[];
 }
 
-/** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once her colours are
- *  down and red while she would take the player, none going down; out of one, every other player's ship in bone and
- *  every hostile one in red, marked as far off as she is sighted. */
+/** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
+ *  down and red while it would take the player, none going down; out of one, every other player's ship in bone and
+ *  every hostile one in red, marked as far off as it is sighted. */
 export function seaShipMarks(
   captains: readonly FightCaptain[] | null,
   sighted: Pick<SeaRoom, 'others' | 'pirates'> | null,
@@ -58,7 +59,7 @@ export function seaShipMarks(
 /** The sight over the display, made the first time the guns are laid. */
 let sight: SeaSight | null = null;
 
-/** The sight while the player lays her guns in a fight: the crosshair and the aim line. */
+/** The sight while the player lays their guns in a fight: the crosshair and the aim line. */
 function showSight(here: Sea, onDeck: boolean): void {
   const fight = here.fight;
   const aiming = fight !== null && fight.aimingNow && !onDeck;
@@ -69,8 +70,8 @@ function showSight(here: Sea, onDeck: boolean): void {
 }
 
 /** The place line at sea: the deck's fight's words on a struck ship's deck, the coast while landings are chosen, else
- *  what she is doing over the water she is in (its name and holder, as the helm says it; the region where it has
- *  none), or the island she lies off. */
+ *  what the ship is doing over the water it is in (its name and holder, as the helm says it; the region where it has
+ *  none), or the island it lies off. */
 export function seaPlace(
   here: Pick<Sea, 'boarding' | 'helmView' | 'aboard' | 'waterWords'>,
   shown: Pick<SeaFrame, 'landfall'>,
@@ -92,21 +93,21 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   const { onSea } = state;
   const atHelm = here.helmView;
   const { aboard } = here;
-  // On a struck ship's deck, the display says where her fight stands and lists the keys on foot.
+  // On a struck ship's deck, the display says where its fight stands and lists the keys on foot.
   const deck = here.boarding.words;
   hud.place(...seaPlace(here, shown, state));
   const { fight } = here;
-  // In a fight the hints are its keys alone, as on foot; of the panel's lines, its messages stand as DFO's notices,
-  // and what the card, the plates, the sight and its warning show is not said again.
+  // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
+  // notices, and what the card, the plates, the sight and its warning show is not said again.
   const fighting = fight ? [] : null;
   hud.hints(deck ? deck.hints : seaHints({ fighting, landing: state.landing, atHelm, ...aboard.where }));
-  hud.notices(fight && !deck ? fightNotices(fight.lines(state.clock), fight.view) : []);
+  hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
   hud.marks(shown.marks);
-  // Her plate, the battery rose, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),
+  // The player's plate, the battery rose, the card and the tally in a fight (on a struck ship's deck, the fight on foot's own),
   // before the ships' plates, which keep under its card.
   hud.seaFight(deck ? null : (here.fight?.display(state.clock) ?? null));
   const { eye, yaw, pitch, fov } = shown.shot;
-  // Aboard her the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
+  // Aboard it the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
   hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   // The held map raised at the helm covers the view, the compass with it.
   const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted);

@@ -114,7 +114,19 @@ test("the rules' events are the panel's words and the effects' to take", async (
   assert.ok(!fighting.lines(10).includes('The starboard guns are reloading (2.3 s).'), 'a message is shown a while');
 });
 
-test('her run-out battery warns the player to brace', async () => {
+test("the fight's messages are given on their own, apart from the captains' lines, the lay and the warning", async () => {
+  const refused: FightEvent = { kind: 'refused', why: 'reloading', side: 'starboard', left: 2.25 };
+  const fighting = await begun(source({ events: [refused] }).fights);
+  fighting.advance(0.1, IDLE, 1, failed);
+  await settle();
+  assert.deepEqual(fighting.messages(2), [
+    'A Pirate Sloop sighted, 1.0 km off.',
+    'The starboard guns are reloading (2.3 s).',
+  ]);
+  assert.deepEqual(fighting.messages(10), [], 'each is shown a while');
+});
+
+test('a run-out battery warns the player to brace', async () => {
   const fighting = await begun(source({ captain: { ...captain, run_out: ['port'] } }).fights);
   fighting.advance(0.1, IDLE, 1, failed);
   await settle();
@@ -161,7 +173,7 @@ test('a line for each captain within a few hundred metres, nearest first, in pla
   assert.ok(!lines.some((line) => line.includes('Far Sloop')));
 });
 
-test('the panel leaves her own hurts and guns to the plate and the rose: it has no line of hers', async () => {
+test('the panel leaves the ship’s own hurts and guns to the plate and the rose: it has no line of them', async () => {
   const fighting = await begun(source({}).fights);
   fighting.advance(0.1, IDLE, 1, failed);
   await settle();
@@ -182,7 +194,7 @@ test('the lay is said on target only while its side can fire', async () => {
   assert.equal(await said([4.2, 0]), 'Laying the port guns.', 'reloading');
 });
 
-test("every captain's strike and sinking is told by her own name", async () => {
+test("every captain's strike and sinking is told by its own name", async () => {
   const others = [brig(2, [40, 0]), brig(3, [90, 0], { name: 'Tithe Frigate' })];
   const events: FightEvent[] = [
     { kind: 'state', ship: 2, state: 'struck' },

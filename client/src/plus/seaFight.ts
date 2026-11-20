@@ -1,14 +1,14 @@
-// The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js): her SHIP PLATE at the bottom
-// right (her name, her hull, sails and crew as banded bars, a fire and a brace chip, and the BATTERY ROSE: bow over
+// The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js): the player's SHIP PLATE at the bottom
+// right (its name, its hull, sails and crew as banded bars, a fire and a brace chip, and the BATTERY ROSE: bow over
 // stern, port and starboard either side, each side filling as it reloads, glowing gold where the look lays it, brass-edged
 // once loaded, flashing as it comes ready, and the side a blow came from flashed); the TARGET CARD under the compass
-// (her name, class and distance, her hull and sail bars, her state and the key that boards her); and the TALLY of her
-// last volley; and the WARNING over the sight while a battery is run out at the player's ship. A readout, never a window: made once,
+// (its name, class and distance, its hull and sail bars, its state and the key that boards it); the TALLY of the
+// player's last volley; and the WARNING under the card while a battery is run out at the player's ship. A readout, never a window: made once,
 // updated each frame, pressed never.
 import { UNDER_COMPASS } from './compass.ts';
 import { HALO, TONES } from './tones.ts';
 
-/** A side of her guns as the rose shows it: its share loaded, whether ready, just come ready, laid by the look, its
+/** A side of the player's guns as the rose shows it: its share loaded, whether ready, just come ready, laid by the look, its
  *  load and the seconds it still loads. */
 export interface RoseSide {
   readonly fill: number;
@@ -19,7 +19,7 @@ export interface RoseSide {
   readonly left: number;
 }
 
-/** What the readout shows: her ship, the ship the card is on, and her last volley's count; any of them none. */
+/** What the readout shows: the player's ship, the ship the card is on, and its last volley's count; any of them none. */
 export interface SeaFightModel {
   readonly ship: {
     readonly name: string;
@@ -47,7 +47,7 @@ export interface SeaFightModel {
     readonly holed: number;
     readonly rig: number;
   } | null;
-  /** DFO's warning over the sight while a captain's battery is run out at the player's ship, its words; none else. */
+  /** DFO's warning, under the card, while a captain's battery is run out at the player's ship, its words; none else. */
   readonly warn: string | null;
 }
 
@@ -197,6 +197,8 @@ export class SeaFightReadout {
     this.tally.classList.toggle('miss', model.tally?.hits === 0);
     this.warn.hidden = model.warn === null;
     if (this.warn.textContent !== (model.warn ?? '')) this.warn.textContent = model.warn ?? '';
+    // Under the card, or the compass while none shows: clear of the sight and the ship aimed at.
+    if (model.warn !== null) this.warn.style.top = `${this.under}px`;
   }
 }
 
@@ -241,8 +243,8 @@ export function seaFightCss(): string {
 .seafight-tally { position: absolute; top: calc(50% + 64px); left: 50%; translate: -50% 0; font-size: 12px;
   letter-spacing: 0.1em; text-transform: uppercase; color: ${TONES.brassHi}; }
 .seafight-tally.miss { color: #b3a684; }
-/* DFO's warning over the sight (navalHud.js .dfnaval-warn): blood-edged, its words pulsing in steps. */
-.seafight-warn { position: absolute; top: calc(50% - 62px); left: 50%; translate: -50% 0; white-space: nowrap;
+/* DFO's warning (navalHud.js .dfnaval-warn), under the target card, never over the sight: blood-edged, pulsing in steps. */
+.seafight-warn { position: absolute; top: ${UNDER_COMPASS}px; left: 50%; translate: -50% 0; white-space: nowrap;
   padding: 3px 12px 4px; font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase; color: #ffd9cf;
   background: rgba(60, 12, 8, 0.72); border: 2px solid; border-color: #e0584a #5a130f #3d0d0a #b83a2e;
   box-shadow: 0 0 0 1px ${TONES.outline}; animation: seafight-warn 0.5s steps(1) infinite; }

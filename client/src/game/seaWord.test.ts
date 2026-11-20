@@ -5,7 +5,7 @@ import { SeaWord, linesOf, washedUpWords } from './seaWord.ts';
 
 const FACTS = { engageM: 750, holdReachM: 1_642.8, repairReachM: 3_000, shipNames: [] };
 
-test('the sea’s word becomes the player’s lines: washing up, a piece gathered, a ship joining, her colours struck', () => {
+test('the sea’s word becomes the player’s lines: washing up, a piece gathered, a ship joining, its colours struck', () => {
   const kinds = new Map([[7, 'chest']]);
   const names = new Map([[1, 'Tithe Brig']]);
   const lines = linesOf(
@@ -36,7 +36,7 @@ test('the best find reads as English: an Atheric Vestige', () => {
   assert.deepEqual(lines, ['Gathered a crate: an Atheric Vestige.']);
 });
 
-test('her repair reads its time left, whole, or how to have it, by the rules’ reach', () => {
+test('the ship’s repair reads its time left, whole, or how to have it, by the rules’ reach', () => {
   const word = new SeaWord([], FACTS);
   assert.equal(word.repairWords({ whole: false, left: 12.2 }), 'Repairing it: 13 s left');
   assert.equal(word.repairWords({ whole: true, left: 0 }), 'The ship is whole');
@@ -45,7 +45,7 @@ test('her repair reads its time left, whole, or how to have it, by the rules’ 
   assert.match(new SeaWord([], { ...FACTS, repairReachM: 1_500 }).repairWords({ whole: false, left: 0 }), /1\.5 km/);
 });
 
-test('washed up, the player walks into the social space of the port city she washed up at once its landmass is open', () => {
+test('washed up, the player walks into the social space of the port city they washed up at once its landmass is open', () => {
   const ports = portCities(
     [
       { id: 'overlook', name: 'Overlook', continent: 'continent-1' },
@@ -62,7 +62,7 @@ test('washed up, the player walks into the social space of the port city she was
   } as unknown as Parameters<SeaWord['step']>[0];
   word.step(room);
   const nodes = [{ id: 'sunspire-social' }, { id: 'sunspire-docks' }];
-  assert.equal(word.ashore({ id: 'continent-1', nodes }), null, 'her port’s landmass is not open yet');
+  assert.equal(word.ashore({ id: 'continent-1', nodes }), null, 'that port’s landmass is not open yet');
   const ashore = word.ashore({ id: 'continent-3', nodes });
   assert.deepEqual(ashore, {
     node: { id: 'sunspire-social' },
@@ -86,4 +86,18 @@ test('washed up on a found island, the player is told so and walks ashore there,
   word.step(room);
   assert.equal(word.takeWashedIsle(), 9);
   assert.equal(word.takeWashedIsle(), null);
+});
+
+test('each line of the sea’s word stands as a notice for a while, as DFO’s toasts do, several at once', () => {
+  const told = [[[22, 1, 0, 2, 3, 1]], [[22, 2, 4, 0, 0, 0]], []];
+  const room = {
+    flotsam: [],
+    takeTold: () => ({ naval: [], told: told.shift() ?? [] }),
+    shipNamed: () => null,
+  } as unknown as Parameters<SeaWord['step']>[0];
+  const word = new SeaWord([], FACTS);
+  assert.deepEqual(word.notices(room, 0), ['The Pirate Schooner joined the fight.']);
+  assert.deepEqual(word.notices(room, 1), ['The Pirate Schooner joined the fight.', 'Player 4 joined the fight.']);
+  assert.deepEqual(word.notices(room, 6.5), ['Player 4 joined the fight.'], 'each stands its own while');
+  assert.deepEqual(word.notices(null, 8), []);
 });

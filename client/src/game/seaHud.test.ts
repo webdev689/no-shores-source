@@ -59,12 +59,12 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
       inRoom: true,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [] };
+  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
   const show = (fight: unknown) =>
     showSeaHud(hud as unknown as Hud, sea(fight), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   show(null);
   const fight = {
-    lines: () => ['Fighting'],
+    messages: () => [],
     captains: [],
     aimingNow: false,
     view: { lay: null, captain: { name: 'Pirate Brig' } },
@@ -75,7 +75,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
   assert.equal(bars[1], null, 'in one it is hidden');
 });
 
-test('the place line names the water she is in as the helm does, managing her too', () => {
+test('the place line names the water the ship is in as the helm does, managing it too', () => {
   const waterWords = 'The Lantern Sea, Overlook’s home waters';
   const here = (helmView: boolean, managing: boolean) =>
     ({ boarding: { words: null }, helmView, aboard: { walking: false, managing }, waterWords }) as never;
@@ -87,7 +87,7 @@ test('the place line names the water she is in as the helm does, managing her to
   assert.deepEqual(seaPlace(nowhere, shown, state), ['Managing the Sloop', 'The Pale Expanse']);
 });
 
-test("in a fight the readout stands over the sea: her plate, rose, card and tally; on a struck ship's deck it goes", () => {
+test("in a fight the readout stands over the sea: the ship's plate, rose, card and tally; on a struck ship's deck it goes", () => {
   const readouts: unknown[] = [];
   const hud = new Proxy(
     {},
@@ -95,7 +95,7 @@ test("in a fight the readout stands over the sea: her plate, rose, card and tall
   );
   const model = { ship: null, card: null, tally: null, warn: null };
   const fight = {
-    lines: () => [],
+    messages: () => [],
     captains: [],
     aimingNow: false,
     view: { lay: null, captain: { name: 'Pirate Brig' } },
@@ -112,27 +112,23 @@ test("in a fight the readout stands over the sea: her plate, rose, card and tall
       inRoom: true,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [] };
+  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
   const show = (deck: unknown) =>
     showSeaHud(hud as unknown as Hud, sea(deck), shown as unknown as SeaFrame, state as unknown as SeaHudState);
   show(null);
-  show({ place: 'Her deck', line: 'Fighting', hints: [] });
+  show({ place: 'Its deck', line: 'Fighting', hints: [] });
   assert.deepEqual(readouts, [model, null]);
 });
 
-test("in a fight the hints are the fight's keys alone, as on foot, and the panel's messages are notices", () => {
+test("in a fight the hints are the fight's keys alone, as on foot, and the sea's word and the fight's messages are notices", () => {
   const said: Record<string, unknown[]> = { hints: [], notices: [] };
   const hud = new Proxy(
     {},
     { get: (_target, key: string) => (key in said ? (value: unknown) => said[key]?.push(value) : () => undefined) },
   );
-  const lines = [
-    'Pirate Brig, 200 m off, closing: hull 60/60, sails 40/40, 8 men.',
-    'Broadside from the Pirate Brig: C to brace.',
-    'The Pirate Brig surrenders!',
-  ];
   const view = { lay: null, captain: { name: 'Pirate Brig' }, others: [] };
-  const fight = { lines: () => lines, captains: [], aimingNow: false, view, display: () => null };
+  const messages = () => ['The Pirate Brig surrenders!'];
+  const fight = { messages, captains: [], aimingNow: false, view, display: () => null };
   const sea = {
     helmView: false,
     aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },
@@ -143,8 +139,9 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the panel
     inRoom: true,
   } as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [] };
+  const notices = ['The Pirate Schooner joined the fight.'];
+  const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices };
   showSeaHud(hud as unknown as Hud, sea, shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(said['hints'], [HINTS.fight]);
-  assert.deepEqual(said['notices'], [['The Pirate Brig surrenders!']]);
+  assert.deepEqual(said['notices'], [['The Pirate Schooner joined the fight.', 'The Pirate Brig surrenders!']]);
 });
