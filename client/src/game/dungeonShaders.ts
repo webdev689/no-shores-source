@@ -60,6 +60,10 @@ const WATER_TINT = vec3f(0.45, 0.55, 0.6);
 const ROOM_ALBEDO = 0.3;
 // How much still water mirrors square on, Schlick's F0 for water; edge on, it mirrors all.
 const WATER_F0 = 0.02;
+// A flame's radius (m), and how much brighter it burns than the light it sheds on a surface: what still water
+// mirrors of it.
+const FLAME_M = 0.12;
+const FLAME_IN_WATER = 20.0;
 
 struct Surface {
   @builtin(position) clip: vec4f,
@@ -99,8 +103,8 @@ fn mood_at(point: vec3f, normal: vec3f) -> vec3f {
 }
 
 // Still water over its bed, a slow ripple through its normal: through it the bed, lit as a floor is; in it the room,
-// its walls brighter toward its lights, mirrored more the lower the eye looks across it; on it each light a tight
-// gleam toward the eye, but the water's own glow, which lies on it.
+// its walls brighter toward its lights, and each light's flame but the water's own glow, which lies on it, all
+// mirrored more the lower the eye looks across it.
 fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> vec3f {
   let ripple = 0.04 * vec2f(
     sin(point.x * 2.3 + time * 0.7) + 0.6 * sin(point.y * 3.1 - time * 0.5),
@@ -108,20 +112,26 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> 
   );
   let rippled = normalize(normal + vec3f(ripple, 0.0));
   let to_eye = normalize(view.eye.xyz - point);
+  let mirror = reflect(-to_eye, rippled);
   var gleam = vec3f(0.0);
   for (var index = 0u; index < u32(view.lights.x); index++) {
     let lamp = lights[index];
     let towards = lamp.place.xyz - point;
     let distance = length(towards);
-    let share = max(0.0, 1.0 - distance / lamp.colour.w);
-    let half_way = normalize(towards / max(distance, 1e-3) + to_eye);
-    let shine = pow(max(dot(rippled, half_way), 0.0), 120.0);
+    let image = flame_image(dot(mirror, towards / max(distance, 1e-3)), distance);
     let burns = flicker(time, lamp.place.w, lamp.shape.x) * pulse(time, lamp.place.w, lamp.shape.y);
-    gleam += lamp.colour.rgb * share * share * shine * burns * 3.0 * lamp.shape.z;
+    gleam += lamp.colour.rgb * FLAME_IN_WATER * image * burns * lamp.shape.z;
   }
+  let mirrors = fresnel(max(dot(rippled, to_eye), 0.0));
   let through = bed * WATER_TINT * lights_at(point, rippled, time, mood);
-  let mirrored = ROOM_ALBEDO * lights_at(point, reflect(-to_eye, rippled), time, mood);
-  return mix(through, mirrored, fresnel(max(dot(rippled, to_eye), 0.0))) + gleam;
+  let mirrored = ROOM_ALBEDO * lights_at(point, mirror, time, mood);
+  return mix(through, mirrored, mirrors) + gleam * mirrors;
+}
+
+// How much of a flame shows along a line whose cosine to it is \`cosine\`, \`distance\` from it: all on its line,
+// falling to 1/e at its own angular radius, so a far flame is a small image, as bright as a near one.
+fn flame_image(cosine: f32, distance: f32) -> f32 {
+  return exp(-2.0 * (1.0 - cosine) * pow(max(distance, FLAME_M) / FLAME_M, 2.0));
 }
 
 // How much of the room still water mirrors, by the cosine between its normal and the eye (Schlick's).

@@ -88,10 +88,21 @@ test('still water shows its bed through it and the lit room in it, by Fresnel, a
   for (const burning of [LIGHT_KINDS.torch, LIGHT_KINDS.brazier, LIGHT_KINDS.crystals, LIGHT_KINDS.rune])
     assert.equal(floats(burning)[10], 1);
   const water = /fn water_at[\s\S]*?\n\}/.exec(DUNGEON_SHADER)?.[0] ?? '';
-  assert.match(water, /gleam \+= [^;]*lamp\.shape\.z/, "each light's gleam by its share");
-  assert.match(water, /return mix\(through, mirrored, fresnel\([^;]*\)\) \+ gleam;/, 'its bed and the room by Fresnel');
+  assert.match(
+    water,
+    /let image = flame_image\(dot\(mirror, [^;]*\);[\s\S]*gleam \+= [^;]*image[^;]*lamp\.shape\.z/,
+    "each light's flame mirrored, but water's own",
+  );
+  assert.doesNotMatch(/gleam \+= [^;]*;/.exec(water)?.[0] ?? '', /share/, 'a mirrored flame is as bright however far');
+  assert.match(water, /let mirrors = fresnel\(max\(dot\(rippled, to_eye\), 0\.0\)\);/, 'as much as Fresnel says');
+  assert.match(
+    water,
+    /return mix\(through, mirrored, mirrors\) \+ gleam \* mirrors;/,
+    'its bed and the room by Fresnel',
+  );
   assert.match(water, /let through = bed \* WATER_TINT \* lights_at\(/, 'its bed lit as a floor is, through the water');
-  assert.match(water, /let mirrored = ROOM_ALBEDO \* lights_at\(point, reflect\(/, 'the room lit toward its lights');
+  assert.match(water, /let mirror = reflect\(-to_eye, rippled\);/, 'the way the water mirrors');
+  assert.match(water, /let mirrored = ROOM_ALBEDO \* lights_at\(point, mirror,/, 'the room lit toward its lights');
   assert.match(DUNGEON_SHADER, /if water \{\s*return vec4f\(water_at\([^;]*sampled[^;]*\), 1\.0\);/, 'its bed sampled');
   const tint = (/vec3f\(([^)]*)\)/.exec(DUNGEON_SHADER.split('const WATER_TINT =')[1] ?? '')?.[1] ?? '')
     .split(',')
@@ -109,4 +120,22 @@ test('still water shows its bed through it and the lit room in it, by Fresnel, a
   assert.ok(Math.abs(fresnel(1) - 0.02) < 1e-9, 'square on, water mirrors 2%');
   assert.ok(Math.abs(fresnel(0) - 1) < 1e-9, 'edge on, all of it');
   assert.ok(fresnel(0.5) > fresnel(0.8) && fresnel(0.8) > fresnel(1));
+});
+
+test('a flame mirrored in still water is as wide as it looks from there, brightest where the mirror meets it', () => {
+  const flame = Number(/const FLAME_M = ([\d.]+);/.exec(DUNGEON_SHADER)?.[1]);
+  assert.ok(flame > 0.05 && flame < 0.3, `a flame ${flame} m across`);
+  const body = /fn flame_image\(cosine: f32, distance: f32\) -> f32 \{\s*return ([^;]+);\s*\}/.exec(
+    DUNGEON_SHADER,
+  )?.[1];
+  assert.ok(body, 'a flame image');
+  const image = (cosine: number, distance: number) =>
+    Number(runInNewContext(body, { cosine, distance, FLAME_M: flame, exp: Math.exp, pow: Math.pow, max: Math.max }));
+  for (const distance of [0.5, 2, 12]) assert.ok(Math.abs(image(1, distance) - 1) < 1e-9, 'whole on its line');
+  // At the flame's own angular radius from its line, a fall to 1/e: it looks smaller the farther it burns.
+  for (const distance of [1, 2, 8]) {
+    const edge = Math.cos(flame / distance);
+    assert.ok(Math.abs(image(edge, distance) - Math.exp(-1)) < 0.01, `at ${distance} m`);
+  }
+  assert.ok(image(Math.cos(0.05), 8) < image(Math.cos(0.05), 2));
 });
