@@ -79,7 +79,7 @@
   cursor: pointer;
   pointer-events: auto;
 }
-/* A module's glyph fills its tile as a piece's picture does, at four times its grid. */
+/* A module's glyph fills its tile as a piece's picture does, at twice its 24 cells. */
 #hud .gear-cell img.gear-glyph.ship-glyph {
   width: 48px;
   height: 48px;
@@ -94,14 +94,28 @@
 #hud .ship-module b {
   font-weight: 500;
 }
+/* Its four materials in one row beside its papers, each glyph at twice its cells so its grain and rings read, its
+   count and name under it. */
 .ship-materials {
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
   margin-bottom: 6px;
 }
-/* Its four materials keep to one row beside its papers. */
 .ship-materials .gear-currency {
-  gap: 4px;
-  padding: 4px 8px 4px 4px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 4px 6px;
+}
+.ship-materials .gear-currency-words {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 5px;
+}
+.ship-materials .gear-currency img.gear-glyph-fine {
+  width: 48px;
+  height: 48px;
 }
 /* The module's page draws its glyph large where a piece's picture stands. */
 .gear-item-art-glyph {
@@ -127,10 +141,34 @@
   gap: 8px;
   padding: 12px 14px;
 }
+/* An officer's head: their post's emblem framed in their grade, their name and what they are beside it. */
 .ship-officer-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+}
+.ship-officer-words {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+}
+#hud .gear-cell.ship-emblem {
+  width: 56px;
+  height: 56px;
+}
+/* On their own page the emblem stands at four times its cells. */
+#hud .ship-officer-page .gear-cell.ship-emblem {
+  width: 108px;
+  height: 108px;
+}
+#hud .ship-officer-page .ship-emblem img.gear-glyph-fine {
+  width: 96px;
+  height: 96px;
+}
+.ship-officer-page .ship-officer-name {
+  font-size: var(--type-l);
 }
 .ship-officer-name {
   font-size: var(--type-m);
