@@ -331,8 +331,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   valleys at their floors' levels; foes on floors under roofs ([[Navmesh]]); and the handcrafted [[Modules]] scripted
   in Blender ([[Handcrafted Playspaces Are Scripted in Blender]]), each walked by a body
   (`crates/room/tests/modules_walked.rs`). A third audit found what the second missed, each fixed at its cause with a
-  test (the pull request lists them). Continent 1's layouts settle in SETTLE natively. Left: switchbacks (waiting on
-  the owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
+  test (the pull request lists them). On a cloud session's machine continent 1's layouts settle in about 2.3 s
+  natively, and the World Editor's whole settle of continent 1 takes about 3.5 s. Left: switchbacks (waiting on the
+  owner, above), and the other 24 zones take heights once the owner has looked at Saltmere's.
 - The other 24 zones' runs, once the owner has looked at Saltmere's. A swamp's massif is 12 m high, so its faces are
   low enough to climb in places: its runs will need their end arenas cut deeper or walled.
 - The client audit's findings left: trees and water past 1 km stand on the uncarved 1 km ground (the middle ground

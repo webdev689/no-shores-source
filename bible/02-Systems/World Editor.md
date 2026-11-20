@@ -131,8 +131,9 @@ behind the camera is broken there.
 The land is carved as the game stands on it. Each landmass opened for shaping is settled in its worker with the
 same texts as the game's (the RMB blocks, the forged models' tables and the nodes' briefs), so its city and its
 nodes' [[Layouts]] are planned and laid on it, and its ground is the game's to the bit. After every stroke, place
-change, undo or redo the worker settles it again and plans the layouts again, off the page's thread: about 1.5 s
-for continent 1's ten layouts, then 0.15 s to cut them down to what the editor draws. Until then the views show
+change, undo or redo the worker settles it again and plans the layouts again, off the page's thread: about 3.5 s
+for continent 1 on a cloud session's machine (WebAssembly, measured under node), then 0.15 s to cut them down to
+what the editor draws. Until then the views show
 the layouts as they were.
 
 Each layout is drawn over both views once its section is 40 pixels across: its areas as circles in their group's

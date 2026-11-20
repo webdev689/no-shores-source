@@ -1,6 +1,7 @@
 //! The sculpts' tests: floors, cliffs, climbs, runs, wings, fades and the seams between them.
 
 use super::*;
+use crate::fades::inside_ring;
 
 fn sculpt() -> Sculpts {
     let claim = vec![[-500.0, -500.0], [500.0, -500.0], [500.0, 500.0], [-500.0, 500.0]];

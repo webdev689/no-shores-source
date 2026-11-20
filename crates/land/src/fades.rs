@@ -29,7 +29,7 @@ pub(crate) fn inside_claim(ring: &[[f64; 2]], wings: &[[f64; 5]], x: f64, y: f64
 }
 
 /// How far a point lies inside a ring (positive) or outside it (negative), by its nearest edge.
-fn inside_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
+pub(crate) fn inside_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
     let mut inside = false;
     let mut nearest = f64::INFINITY;
     for (at, &from) in ring.iter().enumerate() {

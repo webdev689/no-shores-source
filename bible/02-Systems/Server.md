@@ -213,7 +213,7 @@ city terraces and the layouts' carving included; the boxes of the city and the l
 with its top and its underside; for a social space, the counters that serve a player's gear (the Reader's, the
 vaults', the Quartermaster's, the Armsmith's and the Tailor's); and whether it is locked: each patrol area and mission
 the open list, `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"). The bake
-takes about 15 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's
+takes about 17 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's
 file the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and `server:deploy` run it
 first. It fails, writing nothing, when two nodes of the world share an id, when one is called `index`, or when an id
 is too long for its room's name, `node-<id>`, of at most 40 characters.
