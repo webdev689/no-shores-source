@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { boltPath, boltsInto, LOWEST_BASE_OVER_GROUND_M, MOST_SEGMENTS } from './bolts.ts';
+import { boltPath, boltsInto, LOWEST_BASE_OVER_GROUND_M, MOST_SEGMENTS, throughAir } from './bolts.ts';
 import { carriedOn, FALL_BOX_M, fallingOf, LONGEST_FALL_STEP_S } from './fall.ts';
 import { AFTERNOON } from './skyUniform.ts';
 
@@ -55,7 +55,7 @@ test('a bolt ends on the ground under its own strike, or on the sea, wherever th
   const into = new Float32Array(MOST_SEGMENTS * 8);
   const eye = [0, 0, 302] as const;
   const groundAt = (x: number, y: number) => (x === 0 && y === 0 ? 300 : x === 1000 ? -40 : 120);
-  const flashing = { worldS: strike.atS + 0.01, baseM: 900, groundAt };
+  const flashing = { worldS: strike.atS + 0.01, baseM: 900, groundAt, air: { clearM: 25_000, fogDensity: 0 } };
   const overSea = endsOf(into, boltsInto(into, eye, { ...flashing, list: [strike] }));
   assert.ok(overSea.length > 0, 'a strike flashing near the eye is drawn');
   assert.ok(
@@ -78,6 +78,29 @@ test('a bolt ends on the ground under its own strike, or on the sea, wherever th
   );
   const many = Array.from({ length: 40 }, (_unused, which) => ({ ...strike, x: 1000 + which * 10 }));
   assert.ok(boltsInto(into, eye, { ...flashing, list: many }) <= into.length, 'it writes no more than fits');
+});
+
+test("a bolt fades into the weather's haze as the sea under it does: its foot most, its top less", () => {
+  const eyeHigh = 30;
+  const [foot, top] = [
+    [2000, 0, -eyeHigh],
+    [2000, 0, 800 - eyeHigh],
+  ] as const;
+  const rain = (point: readonly [number, number, number]) => throughAir(eyeHigh, point, 20_000, 0.0012);
+  assert.ok(rain(foot) < 0.1, `the foot 2 km off through heavy rain: ${rain(foot)}`);
+  assert.ok(rain(top) > rain(foot) * 3, 'the top, in thinner air, shows more');
+  assert.ok(throughAir(eyeHigh, foot, 25_000, 0) > 0.9, 'in clear air it is barely dimmed');
+  // Drawn, a far bolt in heavy rain keeps its top's light and loses its foot's: it is far brighter than the haze.
+  const into = new Float32Array(MOST_SEGMENTS * 8);
+  const far = { ...strike, x: 2000, y: 0 };
+  const flashing = { worldS: strike.atS + 0.01, baseM: 900, groundAt: () => 0, list: [far] };
+  const lights = (fogDensity: number) => {
+    const floats = boltsInto(into, [0, 0, eyeHigh], { ...flashing, air: { clearM: 20_000, fogDensity } });
+    return Array.from({ length: floats / 8 }, (unused, segment) => into[segment * 8 + 3] ?? 0);
+  };
+  const [clear, rainy] = [lights(0), lights(0.0012)];
+  assert.ok(Math.abs((rainy[0] ?? 0) - (clear[0] ?? 0)) < 1e-6, 'the top blazes as in clear air');
+  assert.ok((rainy[27] ?? 0) < (clear[27] ?? 0) * 0.5, `the foot fades: ${rainy[27]} of ${clear[27]}`);
 });
 
 const RAIN = { box: [FALL_BOX_M, FALL_BOX_M, FALL_BOX_M], frame: 1 / 60 } as const;
