@@ -101,7 +101,9 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     let spot = room.shape_spots[gear::shape::place(week)];
     assert_eq!(room.shape_at(), Some(spot));
     assert!(room.players.get(&player).expect("in").gear_changed, "his coming is sent");
-    room.players.get_mut(&player).expect("in").character.add_shapes(20);
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    character.add_shapes(20);
+    character.xp = gear::power::xp_for_level(20);
     assert_eq!(ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0 }), answer_code(Err(Refusal::NotHere)));
     move_to(&mut room, player, [spot[0] + 1.0, spot[1]]);
     assert_eq!(ask(&mut room, player, 2, Ask::BuyFromShape { ware: 0 }), 0);
@@ -412,6 +414,7 @@ fn what_an_art_does_at_its_first_level_is_written_for_the_clients_test() {
             "duskDaggers": given(3, &[], 8, [0.0, -10.0], Status::Expose),
             "duskraven": given(3, &[], DUSKRAVEN, [0.0, -15.0], Status::Expose),
             "searing": given(2, &["searing"], DAWNFLARE, [2.0, -10.0], Status::Expose),
+            "overload": given(1, &["overload"], 3, [0.0, -3.0], Status::Expose),
         },
         "healsASecond": { "sunwell": sunwell_gain(1) / 3.0 },
         "power": dawnflare_harm(1) / dawnflare_harm(5),
@@ -436,9 +439,12 @@ fn others_see_only_the_cosmetics_a_player_keeps_and_wears() {
     let changes = room.take_dress_changes();
     let [(_, relayed)] = changes.as_slice() else { panic!("one dress relayed: {changes:?}") };
     assert_eq!(relayed_cosmetics(relayed), [None, None, None], "start pieces, whatever the page wrote");
-    let character = &mut room.players.get_mut(&player).expect("in").character;
-    character.cosmetics.kept.push("harbour_blue".to_owned());
-    character.cosmetics.dye = "harbour_blue".to_owned();
+    let found = room.players.get_mut(&player).expect("in");
+    found.character.cosmetics.kept.push("harbour_blue".to_owned());
+    found.character.cosmetics.dye = "harbour_blue".to_owned();
+    // The room marks a player's gear changed whenever their character does, and the host sends it.
+    found.gear_changed = true;
+    assert!(room.take_gear_change(player));
     room.tick();
     assert_eq!(room.take_dress_changes(), [], "a change of dress waits its turn, as one the page sends does");
     for _ in 0..crate::players::DRESS_EVERY {
@@ -449,4 +455,34 @@ fn others_see_only_the_cosmetics_a_player_keeps_and_wears() {
     assert_eq!(relayed_cosmetics(relayed), [Some("harbour_blue".to_owned()), None, None], "the dye worn, unasked");
     let joining: Vec<_> = room.dresses().map(|(_, dress)| relayed_cosmetics(dress)).collect();
     assert_eq!(joining, [[Some("harbour_blue".to_owned()), None, None]], "and so to one who joins");
+}
+
+#[test]
+fn a_dress_is_made_again_only_once_the_gear_it_is_made_from_changed() {
+    let (mut room, player) = room_with_player();
+    let sent = r#"{"body":"m","race":"human","tone":1,"outfit":{}}"#;
+    room.input(player, Input { sequence: 1, dress: Some(sent.to_owned()), ..Input::default() }).unwrap();
+    room.tick();
+    assert_eq!(room.take_dress_changes().len(), 1, "the first dress at once");
+    assert!(room.take_gear_change(player), "the joiner's gear sent, as the host sends it");
+    for _ in 0..=crate::players::DRESS_EVERY {
+        room.tick();
+    }
+    assert_eq!(room.take_dress_changes(), [], "made again from the gear sent, the same");
+    let worn = |room: &mut crate::Room| {
+        let found = room.players.get_mut(&player).expect("in");
+        found.character.cosmetics.kept.push("harbour_blue".to_owned());
+        found.character.cosmetics.dye = "harbour_blue".to_owned();
+    };
+    worn(&mut room);
+    for _ in 0..=crate::players::DRESS_EVERY {
+        room.tick();
+    }
+    assert_eq!(room.take_dress_changes(), [], "nothing made again while no gear is sent");
+    room.players.get_mut(&player).expect("in").gear_changed = true;
+    assert!(room.take_gear_change(player));
+    room.tick();
+    let changes = room.take_dress_changes();
+    let [(_, relayed)] = changes.as_slice() else { panic!("made again once the gear changed: {changes:?}") };
+    assert_eq!(relayed_cosmetics(relayed), [Some("harbour_blue".to_owned()), None, None]);
 }

@@ -81,30 +81,75 @@ fn a_worn_cosmetic_not_kept_or_of_the_wrong_kind_is_the_start_once_read() {
     assert_eq!(number_of("own_colours"), Some(0));
 }
 
-#[test]
-fn a_dress_shows_others_only_the_colours_its_wearer_has_earned() {
+/// A level 20 player of the Veiled's `rank`, pledged to them, who bought and wears each of the Veiled's wares named,
+/// by its place among them, in its slot.
+fn veiled_wearing(rank: u64, wares: &[(u8, crate::kinds::Slot)]) -> Character {
     let mut character = Character::starting();
-    let sent = r#"{"outfit":{"dyes":{"cuirass_steel":"veiled","formal_cloak":"heather","breeches":"White"}}}"#;
-    let shown = crate::cosmetics::colours_shown(&character);
-    let dress: serde_json::Value =
-        serde_json::from_str(&crate::cosmetics::dressed(sent, &character.cosmetics, &shown)).expect("a dress");
-    assert_eq!(dress["outfit"]["dyes"], serde_json::json!({ "breeches": "White" }), "a plain cloth dye stays");
     character.allegiance = std::mem::take(&mut character.allegiance).kept();
-    character.allegiance.reputation[2] = 3 * crate::factions::factions().reputation_per_rank;
+    character.allegiance.pledge = 3;
+    character.allegiance.reputation[2] = rank * crate::factions::factions().reputation_per_rank;
     character.materials.aurem = 1_000_000;
     character.xp = crate::power::xp_for_level(20);
-    let cowl = Ask::BuyFactionWare { faction: 3, ware: 1 };
-    assert_eq!(character.ask(cowl, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
-    let id = character
-        .items
-        .values()
-        .find(|(item, _)| item.named.as_deref() == Some("veiled_cowl"))
-        .map(|(item, _)| item.id);
-    let wear = Ask::Wear { item: id.expect("the cowl"), slot: crate::kinds::Slot::Head };
-    assert_eq!(character.ask(wear, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
-    let shown = crate::cosmetics::colours_shown(&character);
-    assert_eq!(shown, ["veiled"], "the Veiled's colour, for the cowl worn");
+    for &(ware, slot) in wares {
+        let named = &crate::factions::wares(3)[usize::from(ware)].id;
+        assert_eq!(character.ask(Ask::BuyFactionWare { faction: 3, ware }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
+        let item =
+            character.items.values().find(|(item, _)| item.named.as_ref() == Some(named)).map(|(item, _)| item.id);
+        let wear = Ask::Wear { item: item.expect("the ware bought"), slot };
+        assert_eq!(character.ask(wear, AT_COUNTER, &DICE).map(|_| ()), Ok(()), "{named} worn");
+    }
+    character
+}
+
+/// The dyes of `sent`'s outfit as the room relays them for `character`.
+fn relayed_dyes(sent: &str, character: &Character) -> serde_json::Value {
+    let shown = crate::cosmetics::colours_shown(character);
     let dress: serde_json::Value =
         serde_json::from_str(&crate::cosmetics::dressed(sent, &character.cosmetics, &shown)).expect("a dress");
-    assert_eq!(dress["outfit"]["dyes"], serde_json::json!({ "cuirass_steel": "veiled", "breeches": "White" }));
+    dress["outfit"]["dyes"].clone()
+}
+
+#[test]
+fn a_dress_shows_a_factions_colour_only_on_the_layers_of_its_pieces_worn() {
+    use crate::kinds::Slot;
+    let sent = r#"{"outfit":{"dyes":{"helm_brotherhood":"veiled","cuirass_steel":"veiled","under_steel":"veiled",
+        "formal_cloak":"heather","bow_ebony":"veiled","sword_iron":"veiled","breeches":"White"}}}"#;
+    let none = relayed_dyes(sent, &Character::starting());
+    assert_eq!(none, serde_json::json!({ "breeches": "White" }), "a plain cloth dye stays, no faction's colour");
+    let cowl = relayed_dyes(sent, &veiled_wearing(3, &[(1, Slot::Head)]));
+    assert_eq!(cowl, serde_json::json!({ "helm_brotherhood": "veiled", "breeches": "White" }), "the cowl's helm alone");
+    let coat = relayed_dyes(sent, &veiled_wearing(3, &[(2, Slot::Torso)]));
+    let padded = serde_json::json!({ "cuirass_steel": "veiled", "under_steel": "veiled", "breeches": "White" });
+    assert_eq!(coat, padded, "the coat's cuirass and its padding, in whatever set the page draws");
+    let bow = relayed_dyes(sent, &veiled_wearing(3, &[(6, Slot::Ranged)]));
+    assert_eq!(bow, serde_json::json!({ "bow_ebony": "veiled", "breeches": "White" }), "the bow, never the sword");
+    let every = r#"{"outfit":{"dyes":{"pauldrons_steel":"veiled","gauntlets_iron":"veiled","greaves_iron":"veiled",
+        "boots_iron":"veiled","dagger_ebony":"veiled","shield_ebony":"veiled","dagger_ebony_l":"veiled"}}}"#;
+    let bare = relayed_dyes(every, &veiled_wearing(3, &[]));
+    assert_eq!(bare, serde_json::json!({}), "none of them with none of the pieces");
+    let pieces = [(2, Slot::Torso), (3, Slot::Arms), (4, Slot::Legs), (5, Slot::Melee), (6, Slot::Ranged)];
+    let whole: serde_json::Value =
+        serde_json::from_str::<serde_json::Value>(every).expect("a dress")["outfit"]["dyes"].clone();
+    assert_eq!(relayed_dyes(every, &veiled_wearing(3, &pieces)), whole, "each on its own piece, both loadouts worn");
+}
+
+#[test]
+fn a_capes_dye_stands_only_on_the_cape_and_a_dye_kept_anywhere() {
+    use crate::kinds::Slot;
+    let sent =
+        r#"{"outfit":{"dyes":{"formal_cloak":"veiled_dusk","breeches":"veiled_dusk","cuirass_steel":"veiled"}}}"#;
+    let mut caped = veiled_wearing(0, &[(0, Slot::Cloak)]);
+    assert!(!caped.keeps_cosmetic("veiled_dusk"));
+    assert_eq!(relayed_dyes(sent, &caped), serde_json::json!({ "formal_cloak": "veiled_dusk" }), "the cape's own dye");
+    caped.cosmetics.kept.push("veiled_dusk".to_owned());
+    let kept = serde_json::json!({ "formal_cloak": "veiled_dusk", "breeches": "veiled_dusk" });
+    assert_eq!(relayed_dyes(sent, &caped), kept, "a dye kept on any layer; the cape never gives the faction's key");
+}
+
+#[test]
+fn a_dress_that_is_not_an_object_with_an_outfit_is_given_back_as_sent() {
+    let worn = crate::cosmetics::Cosmetics::default();
+    for sent in ["not a dress", "[1,2]", r#"{"body":"m"}"#, r#"{"outfit":3}"#] {
+        assert_eq!(crate::cosmetics::dressed(sent, &worn, &[]), sent);
+    }
 }

@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, normalize } from 'node:path';
 import { test } from 'node:test';
 
 const workflow = readFileSync(new URL('../.github/workflows/rooms.yml', import.meta.url), 'utf8');
@@ -43,6 +52,46 @@ test('the rooms’ code is every crate the room’s WebAssembly and the bake are
     'Cargo.lock',
   ])
     assert.ok(roomsCode.includes(path), path);
+});
+
+const repo = new URL('../', import.meta.url);
+/** Every file under a folder of the repository, by its path from the root. */
+const filesUnder = (folder: string): string[] =>
+  readdirSync(new URL(folder, repo), { recursive: true, encoding: 'utf8' }).map((name) => join(folder, name));
+/** Whether a path from the root lies under one of the rooms' code paths. */
+const deployed = (path: string) => roomsCode.some((code) => path === code || path.startsWith(`${code}/`));
+
+test('every file the rooms read lies under the rooms’ code, so a change to it deploys them', () => {
+  // What the room's crates build in: each `include_str!` and `include_bytes!` of their sources, not their tests'.
+  const sources = builtFrom(['room-wasm', 'bake'])
+    .flatMap((crate) => filesUnder(`crates/${crate}/src`))
+    .filter((path) => path.endsWith('.rs') && !path.endsWith('_tests.rs') && !path.includes('/tests/'));
+  const included = sources.flatMap((path) =>
+    [...readFileSync(new URL(path, repo), 'utf8').matchAll(/include_(?:str|bytes)!\(\s*"([^"]+)"/g)].map(([, file]) =>
+      normalize(join(dirname(path), file ?? '')),
+    ),
+  );
+  // What the protocol's version hashes: the schema's maker's numbered content, each named whole or by its folder's
+  // names.
+  const maker = readFileSync(new URL('tools/schema.mjs', repo), 'utf8');
+  const named = [...maker.matchAll(/'(content\/[^']+\.json)'/g)].map(([, path]) => path ?? '');
+  const listed = [...maker.matchAll(/\[([^\]]*)\]\.map\(\s*\(name\) => `(content\/[^`]*)\$\{name\}([^`]*)`/g)].flatMap(
+    ([, names, before, after]) =>
+      [...(names ?? '').matchAll(/'([^']+)'/g)].map(([, name]) => `${before}${name}${after}`),
+  );
+  // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates.
+  const imported = filesUnder('server')
+    .filter((path) => path.endsWith('.ts') && !path.endsWith('.test.ts'))
+    .flatMap((path) =>
+      [...readFileSync(new URL(path, repo), 'utf8').matchAll(/from '(\.[^']+)'/g)].map(([, file]) =>
+        normalize(join(dirname(path), file ?? '')),
+      ),
+    )
+    .filter((path) => !path.startsWith('server/') && !path.startsWith('target/'));
+  for (const [what, paths] of Object.entries({ included, named, listed, imported })) {
+    assert.ok(paths.length > 0, `some ${what} found`);
+    for (const path of paths) assert.ok(existsSync(new URL(path, repo)) && deployed(path), `${what}: ${path}`);
+  }
 });
 
 /** What the `ready` step decides for a commit that changes `changed` over the one last deployed: with the token, from

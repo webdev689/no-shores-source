@@ -20,7 +20,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Withdraw { item: 9 }),
         Asked::Gear(Ask::StoreVestige { vestige: 10 }),
         Asked::Gear(Ask::WithdrawVestige { vestige: 11 }),
-        Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 3 }),
+        Asked::Gear(Ask::Vend { vendor: gear::vendor::Vendor::Weaponsmith, ware: 3, day: 20_400 }),
         Asked::Gear(Ask::WearEmblem { emblem: 12 }),
         Asked::Gear(Ask::BuyEmblem { emblem: 13 }),
         Asked::Gear(Ask::UseCrate),
@@ -161,7 +161,7 @@ fn a_players_own_gear_crosses_whole_with_every_column_spelled_out() {
 fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
-    let vestige = Vestige { id: 3, rarity: Rarity::Rare, slot: Slot::Torso, level: 7 };
+    let vestige = Vestige::new(3, Rarity::Rare, Slot::Torso, 7);
     room.lay_drop(player, Dropped::Vestige(vestige), [4.0, -6.0, 0.5]);
     room.lay_drop(player, Dropped::Crate, [1.0, 1.0, 0.0]);
     room.tick();

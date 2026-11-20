@@ -164,9 +164,9 @@ fn a_kill_pays_every_player_who_struck_by_the_foes_kind_and_level() {
 fn a_player_carries_ten_vestiges_and_gathers_three_of_a_resource() {
     let mut character = Character::starting();
     for id in 0..VESTIGES_MOST as u32 {
-        assert!(character.pick_up(Vestige { id, rarity: Rarity::Normal, slot: Slot::Legs, level: 1 }));
+        assert!(character.pick_up(Vestige::new(id, Rarity::Normal, Slot::Legs, 1)));
     }
-    assert!(!character.pick_up(Vestige { id: 99, rarity: Rarity::Rare, slot: Slot::Legs, level: 1 }));
+    assert!(!character.pick_up(Vestige::new(99, Rarity::Rare, Slot::Legs, 1)));
     assert_eq!(character.gather(0), 3);
     assert_eq!(character.materials.resource(0), 3);
 }

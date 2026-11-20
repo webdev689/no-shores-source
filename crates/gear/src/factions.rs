@@ -260,7 +260,7 @@ impl Character {
         let rarity = if legendary { Rarity::Legendary } else { Rarity::Rare };
         let slot = Slot::VESTIGE[dice.pick(Purpose::Package, 1, Slot::VESTIGE.len())];
         let id = self.take_id();
-        self.vestiges.insert(id, (Vestige { id, rarity, slot, level }, false));
+        self.vestiges.insert(id, (Vestige::new(id, rarity, slot, level), false));
         self.materials.add_aurem(numbers.package_aurem);
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         self.allegiance.collected[at] += 1;

@@ -103,40 +103,88 @@ pub fn sold_on(seller: Seller, day: u64) -> Vec<u16> {
     sold
 }
 
-/// The colours a character may show others among its dress's own dyes: each faction's own colour, by its key, whose
-/// armour or weapon it wears, and a faction's dye, by its id, whose cape it wears.
+/// The colours a character may show others among its dress's own dyes, each on its own layers: a faction's own
+/// colour, by its key, on the layers of each piece of that faction worn; a faction's dye, by its id, on the cape of
+/// that faction worn; and a dye the player keeps, anywhere.
 #[must_use]
-pub fn colours_shown(character: &crate::character::Character) -> Vec<String> {
+pub fn colours_shown(character: &crate::character::Character) -> Vec<ShownColour> {
     let numbers = crate::factions::factions();
-    let mut shown: Vec<String> = crate::kinds::Slot::ALL
+    let mut shown: Vec<ShownColour> = crate::kinds::Slot::ALL
         .into_iter()
-        .filter_map(|slot| character.worn(slot))
-        .filter_map(|item| crate::catalogue::catalogue().named(item.named.as_deref()?))
-        .filter_map(|named| {
+        .filter_map(|slot| Some((slot, character.worn(slot)?)))
+        .filter_map(|(slot, item)| Some((slot, crate::catalogue::catalogue().named(item.named.as_deref()?)?)))
+        .filter_map(|(slot, named)| {
             let faction = numbers.factions.iter().find(|faction| Some(&faction.key) == named.faction.as_ref())?;
-            Some(if named.kind == crate::kinds::Kind::Cloak { faction.dye.clone() } else { faction.key.clone() })
+            let colour = if slot == crate::kinds::Slot::Cloak { &faction.dye } else { &faction.key };
+            Some(ShownColour { colour: colour.clone(), on: layers_of(slot, named.kind) })
         })
         .collect();
-    shown.sort();
-    shown.dedup();
+    shown.extend(
+        character
+            .cosmetics
+            .kept
+            .iter()
+            .filter(|kept| number_of(kept).is_some_and(|at| cosmetics()[usize::from(at)].kind == CosmeticKind::Dye))
+            .map(|kept| ShownColour { colour: kept.clone(), on: &[""] }),
+    );
     shown
 }
 
+/// A colour a character may show others among its dress's own dyes, and the layers it may stand on, each by the start
+/// of their names.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ShownColour {
+    pub colour: String,
+    pub on: &'static [&'static str],
+}
+
+/// The layers the forge draws a piece worn in `slot` with, by the start of their names, as the page dresses it: an
+/// armour slot's pieces in any set and the padding under a cuirass or greaves, a weapon's own files, and the formal
+/// cloak a faction's cape is drawn as. Names the page's (`gearLooks.ts` `PIECES`, `gear.ts` `HELD`).
+fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static [&'static str] {
+    use crate::kinds::{Kind, Slot};
+    match (slot, kind) {
+        (Slot::Head, _) => &["helm_"],
+        (Slot::Torso, _) => &["cuirass_", "pauldrons_", "under_"],
+        (Slot::Arms, _) => &["gauntlets_"],
+        (Slot::Legs, _) => &["greaves_", "boots_", "under_"],
+        (Slot::Cloak, _) => &["formal_cloak"],
+        (_, Kind::SwordAndShield) => &["sword_", "shield_"],
+        (_, Kind::DaggerAndShield) => &["dagger_", "shield_"],
+        (_, Kind::MaceAndShield) => &["mace_", "shield_"],
+        (_, Kind::DoubleDaggers) => &["dagger_"],
+        (_, Kind::Sword | Kind::DoubleSwords | Kind::Greatsword) => &["sword_"],
+        (_, Kind::Mace | Kind::DoubleMace) => &["mace_"],
+        (_, Kind::GreatAxe) => &["axe_"],
+        (_, Kind::Flail) => &["flail_"],
+        (_, Kind::Warhammer) => &["warhammer_"],
+        (_, Kind::Staff) => &["staff_"],
+        (_, Kind::Bow) => &["bow_"],
+        (_, Kind::Crossbow) => &["crossbow_"],
+        (_, Kind::Pistolet | Kind::DoublePistolet) => &["pistolet_"],
+        (_, Kind::Thunderlock) => &["thunderlock_"],
+        (_, Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak) => &[],
+    }
+}
+
 /// A dress as a browser wrote it, with the dye, coat and barding worn put in its outfit, and none of a start piece,
-/// and its own dyes keeping no faction's colour and no cosmetic dye but those `shown` allows (`colours_shown`): the
-/// room's word on what others see, not the browser's. A dress that is not an object with an outfit is given back as
-/// sent, for other pages to refuse.
+/// and its own dyes keeping a faction's colour or a cosmetic dye only on a layer `shown` allows it on
+/// (`colours_shown`): the room's word on what others see, not the browser's. A dress that is not an object with an
+/// outfit is given back as sent, for other pages to refuse.
 #[must_use]
-pub fn dressed(sent: &str, worn: &Cosmetics, shown: &[String]) -> String {
+pub fn dressed(sent: &str, worn: &Cosmetics, shown: &[ShownColour]) -> String {
     let Ok(serde_json::Value::Object(mut dress)) = serde_json::from_str(sent) else { return sent.to_owned() };
     let Some(serde_json::Value::Object(outfit)) = dress.get_mut("outfit") else { return sent.to_owned() };
     if let Some(serde_json::Value::Object(dyes)) = outfit.get_mut("dyes") {
-        let earned = |colour: &str| {
+        let earned = |layer: &str, colour: &str| {
             let factions = &crate::factions::factions().factions;
             let named = factions.iter().any(|faction| faction.key == colour) || number_of(colour).is_some();
-            !named || shown.iter().any(|allowed| allowed == colour)
+            !named
+                || shown
+                    .iter()
+                    .any(|allowed| allowed.colour == colour && allowed.on.iter().any(|on| layer.starts_with(on)))
         };
-        dyes.retain(|_, colour| colour.as_str().is_none_or(earned));
+        dyes.retain(|layer, colour| colour.as_str().is_none_or(|colour| earned(layer, colour)));
     }
     for (key, kind) in [("dye", CosmeticKind::Dye), ("coat", CosmeticKind::Coat), ("barding", CosmeticKind::Barding)] {
         let piece = worn.worn(kind);

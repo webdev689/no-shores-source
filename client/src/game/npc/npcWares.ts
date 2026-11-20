@@ -242,12 +242,13 @@ function mageRows(gear: GearState): Row[] {
 function shapeRows(gear: GearState): Row[] {
   if (!gear.shape) return [{ heading: 'Wares', wares: [], empty: SHAPE_AWAY_WORDS }];
   const shapes = gear.shapes ?? 0;
-  const wares = gear.shape.wares.map((item, place) =>
-    itemWare(`shape-${place}`, item, { amount: item.price, currency: 'shapes' }, shapes < item.price, {
-      kind: ASKS.buyFromShape,
-      node: place,
-    }),
-  );
+  const wares = gear.shape.wares.map((item, place) => {
+    // Each piece is made at its own level, and the room sells none to a player who could not wear it yet.
+    const low = gear.level < item.level;
+    const ask = low ? null : { kind: ASKS.buyFromShape, node: place };
+    const ware = itemWare(`shape-${place}`, item, { amount: item.price, currency: 'shapes' }, shapes < item.price, ask);
+    return low ? { ...ware, short: false, note: `From level ${item.level}`, dim: true } : ware;
+  });
   return [{ heading: 'Wares', wares }];
 }
 

@@ -118,7 +118,7 @@ test('each vendor’s stall shows its wares of the day, bought for their price i
     item({ id: 0, kind: 2, rarity: 2, level: 9, price: 2_000, attack: 120 }),
     item({ id: 1, kind: 12, rarity: 1, level: 9, price: 600 }),
   ];
-  const [armorsmith, weaponsmith] = vendorsOf(state({ wares, aurem: 1_000 }));
+  const [armorsmith, weaponsmith] = vendorsOf(state({ wares, aurem: 1_000, day: 20_400 }));
   assert.equal(armorsmith?.name, 'The Armorsmith');
   assert.deepEqual(
     armorsmith?.wares.map((ware) => [ware.kind, ware.affordable]),
@@ -127,6 +127,7 @@ test('each vendor’s stall shows its wares of the day, bought for their price i
       ['Magic Torso', true],
     ],
   );
-  assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0 });
+  // Asked by the day it was shown, so the room refuses it once the day has turned.
+  assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });
   assert.equal(weaponsmith?.wares[0]?.press.label, 'Hold to buy · 2,000');
 });

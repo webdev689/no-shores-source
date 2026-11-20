@@ -33,12 +33,24 @@ pub enum At {
 }
 
 /// A sealed drop: the colour it shows, the slot it holds an item for, and the level of that item.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Vestige {
     pub id: u32,
     pub rarity: Rarity,
     pub slot: Slot,
     pub level: u8,
+    /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
+    /// this one or later keeps them.
+    #[serde(flatten, default)]
+    pub unknown: UnknownKeys,
+}
+
+impl Vestige {
+    /// A Vestige of its own, with nothing a later room wrote on it.
+    #[must_use]
+    pub fn new(id: u32, rarity: Rarity, slot: Slot, level: u8) -> Self {
+        Vestige { id, rarity, slot, level, unknown: UnknownKeys::new() }
+    }
 }
 
 /// Every material a player holds: Aurem, each stock's fragments and Essence, Fruit of Dagon, and each island's
