@@ -261,11 +261,11 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     // In a social space, the day's wares, each numbered by its place among its vendor's.
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
-    let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day) } else { Vec::new() };
+    let emblems_sold = if room.in_social_space(player) { gear::emblems::sold_on(room.day()) } else { Vec::new() };
     let wares: Vec<_> = if room.in_social_space(player) {
         gear::vendor::Vendor::ALL
             .into_iter()
-            .flat_map(|vendor| gear::vendor::wares(vendor, room.day, character.level()))
+            .flat_map(|vendor| gear::vendor::wares(vendor, room.day(), character.level()))
             .enumerate()
             .map(|(place, mut ware)| {
                 ware.id = u32::try_from(place % gear::vendor::WARES).unwrap_or_default();

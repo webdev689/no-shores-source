@@ -126,11 +126,12 @@ pub enum Done {
     Identified(u32),
 }
 
-/// Where the player is when they ask, and the day, whose wares the vendors show.
+/// Where the player is when they ask, the day, whose wares the vendors show, and the week (`crate::clock`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Here {
     pub social: bool,
     pub day: u64,
+    pub week: u64,
 }
 
 impl Character {

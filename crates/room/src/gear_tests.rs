@@ -432,3 +432,19 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
     assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
     assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
 }
+
+#[test]
+fn the_vendors_day_turns_at_nine_utc_and_every_player_is_sent_the_new_wares() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.set_minute(29_919_419); // A Friday, 08:59 UTC.
+    assert_eq!(room.day(), 20_777);
+    assert!(room.take_gear_change(player));
+    room.set_minute(29_919_419);
+    assert!(!room.player(player).expect("in").gear_changed, "the same day sends nothing");
+    room.set_minute(29_919_420);
+    assert_eq!(room.day(), 20_778);
+    assert!(room.player(player).expect("in").gear_changed, "the new day's wares go out");
+    let here = room.here(player, &gear::Ask::UseCrate);
+    assert_eq!((here.day, here.week), (20_778, 2_968));
+}

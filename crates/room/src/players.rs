@@ -303,15 +303,21 @@ impl Room {
         true
     }
 
-    /// Sets the day, counted from the epoch, whose wares the room's vendors show; when it turns, every player is sent
-    /// the new day's wares, so none buys what they were not shown.
-    pub fn set_day(&mut self, day: u64) {
-        if self.day == day {
-            return;
-        }
-        self.day = day;
-        for found in self.players.values_mut() {
-            found.gear_changed = true;
+    /// The day, counted from the epoch, whose wares the room's vendors show (`gear::clock`).
+    #[must_use]
+    pub fn day(&self) -> u64 {
+        gear::clock::day_of(self.minute)
+    }
+
+    /// Sets the minute, counted from the epoch. When its day turns, every player is sent the new day's wares, so none
+    /// buys what they were not shown.
+    pub fn set_minute(&mut self, minute: u64) {
+        let before = self.day();
+        self.minute = minute;
+        if self.day() != before {
+            for found in self.players.values_mut() {
+                found.gear_changed = true;
+            }
         }
     }
 

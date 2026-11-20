@@ -57,7 +57,7 @@ export class LocalRoom implements RoomLink {
     if (!door.open(spawn, blocks)) throw new Error('the course is not one a room can stand on');
     door.epoch(Date.now());
     door.furnish(furnishing.stall, furnishing.nodes);
-    door.day(Math.floor(Date.now() / 86_400_000));
+    door.minute(Math.floor(Date.now() / 60_000));
     return new LocalRoom(door, snapshot, gear);
   }
 
@@ -72,7 +72,7 @@ export class LocalRoom implements RoomLink {
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.open(spawn, blocks, true)) throw new Error('the course is not one a room can stand on');
-    door.day(Math.floor(Date.now() / 86_400_000));
+    door.minute(Math.floor(Date.now() / 60_000));
     return new LocalRoom(door, snapshot, gear);
   }
 

@@ -140,8 +140,8 @@ pub struct Room {
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
-    /// The day it is, counted from the epoch, whose wares the vendors show; the host keeps it.
-    pub day: u64,
+    /// The minute it is, counted from the epoch (`set_minute`), whose day's wares it shows.
+    pub minute: u64,
 }
 
 impl Room {
@@ -205,7 +205,7 @@ impl Room {
             patrol: None,
             facing: core::f64::consts::PI,
             cache: None,
-            day: 0,
+            minute: 0,
         }
     }
 

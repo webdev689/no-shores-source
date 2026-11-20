@@ -138,7 +138,8 @@ impl Room {
         let at_counter = counter_for(ask).is_some_and(|wanted| {
             self.counters.iter().flatten().any(|counter| counter.kind == wanted && near(counter.at, COUNTER_REACH))
         });
-        Here { social: at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH)), day: self.day }
+        let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
+        Here { social, day: self.day(), week: gear::clock::week_of(self.minute) }
     }
 
     /// Whether a player stands in a social space, or within reach of the stall: where the vendors' wares are shown.

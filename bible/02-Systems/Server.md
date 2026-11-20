@@ -318,6 +318,8 @@ so every decision is Rust and the shell only carries bytes and time.
 - While anyone is in, a timer ticks the room in step with the clock, catching up whole ticks it was late for, and
   sends every player the snapshot after each tick, and their own gear when it changed; a socket closing as it is sent to is passed over, so the rest
   still get the tick. When the last player leaves it stops, and the room goes with the object.
+- Each second, and before its first tick, the host gives the room the Unix minute; the rules read the day and the week
+  from it (`gear::clock`).
 
 ## The browser's side
 

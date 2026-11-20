@@ -238,6 +238,7 @@ DFO's spoils ([[Pick - Loot Drops]]).
   so over four days the Quartermaster sells each armour piece at each rarity.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only in a social space, and carried with its
   slot's nine. Legendary and Atheric gear is never sold: it is earned.
+- A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the wares and the Tailor's emblems turn then.
 - The room sends the day's wares with a player's gear while they stand in a social space, with the Tailor's emblems,
   sends them again as the day turns, and a purchase is an ask like any other.
 
