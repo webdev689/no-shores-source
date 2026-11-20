@@ -30,6 +30,8 @@ const PRESENT_EVERY_MS = 30_000;
 const ELSEWHERE = 4001;
 /** The close code for a player whose character the room's gate shuts: the reason is the gate's. */
 const SHUT = 4003;
+/** The close code for a player a run cannot keep for now, the accounts not answering: the page joins again. */
+const AGAIN = 1013;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
@@ -105,7 +107,13 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    this.players.set(server, { player, count: undefined, signed: false, token: null });
+    const held = { player, count: undefined, signed: false, token: null };
+    this.players.set(server, held);
+    void this.keeper?.tokenDue(
+      player,
+      () => held.signed,
+      () => this.players.get(server) === held,
+    );
     server.addEventListener('message', (event) => this.message(server, event.data));
     server.addEventListener('close', () => this.left(server));
     server.addEventListener('error', () => this.left(server));
@@ -136,10 +144,10 @@ export class RoomHost extends DurableObject<Env> {
     // Only the game's nodes and dungeons keep characters: the Test Ground grants gear to try it, and at sea no one
     // holds any.
     const keeps = name.startsWith('node-') || name.startsWith('sea-dungeon-');
-    this.keeper = new Keeper(keeps ? characters : null, room, name, (player, why) => {
+    this.keeper = new Keeper(keeps ? characters : null, room, name, (player, why, rejoinable) => {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
-      if (socket)
-        this.dismiss(socket, why === undefined ? ELSEWHERE : SHUT, why ?? 'your character joined another room');
+      const code = why === undefined ? ELSEWHERE : rejoinable ? AGAIN : SHUT;
+      if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     });
     if (privateRun(name)) this.keeper.forCompany();
     if (name === 'sea')

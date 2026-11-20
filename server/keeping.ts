@@ -4,7 +4,7 @@
  * changes and now and then besides (which keeps the room's hold), and lets it go with a last save when they leave. A
  * player who sends no token, or whose token is no session, plays a character that is not kept. Should another room
  * take the character (the same player joined elsewhere), this room's next save learns it, and the player is let go.
- * A run's room is kept to one company (`forCompany`).
+ * A run's room is kept to one company (`forCompany`), and keeps no one unkept.
  */
 
 import type { Characters as Kept } from './accounts/characters.ts';
@@ -14,6 +14,10 @@ type Characters = Pick<Kept, 'claim' | 'save' | 'release' | 'companions'>;
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
+/** Why a run's room sends away a player it cannot keep: their token is no session, or none came in time. */
+export const SIGN_IN_FOR_RUN = 'Sign in to enter this run.';
+/** Why a run's room sends a player away while the accounts do not answer: joining again may find them back. */
+export const ACCOUNTS_TROUBLE = 'Something went wrong. Try again.';
 
 /** What the keeper needs of the room. */
 export interface KeptRoom {
@@ -34,6 +38,8 @@ export const SAVE_UNCHANGED_MS = 20_000;
  *  and a joiner plays on unkept. */
 const LEAVE_WAITS_MS = [1_000, 4_000, 15_000, 40_000];
 const CLAIM_WAITS_MS = [1_000, 4_000];
+/** How long a run's room waits for a joined player's token: as long as a claim's own waits. */
+const TOKEN_WAIT_MS = CLAIM_WAITS_MS.reduce((total, millis) => total + millis, 0);
 const sleep = (millis: number) => new Promise<void>((resolve) => setTimeout(resolve, millis));
 
 /** A session's token, as a browser sends it. */
@@ -55,8 +61,9 @@ export class Keeper {
   private readonly characters: Characters | null;
   private readonly room: KeptRoom;
   private readonly name: string;
-  /** Called for a player whose character another room took, or, with why, one the room's gate shuts to. */
-  private readonly lost: (player: number, why?: string) => void;
+  /** Called for a player whose character another room took, or, with why, one the room's gate shuts to or a run
+   *  cannot keep: `rejoinable` where joining again may let them in. */
+  private readonly lost: (player: number, why?: string, rejoinable?: boolean) => void;
   private readonly held = new Map<number, Held>();
   private readonly wait: (millis: number) => Promise<void>;
   private company = false;
@@ -65,7 +72,7 @@ export class Keeper {
     characters: Characters | null,
     room: KeptRoom,
     name: string,
-    lost: (player: number, why?: string) => void,
+    lost: (player: number, why?: string, rejoinable?: boolean) => void,
     wait: (millis: number) => Promise<void> = sleep,
   ) {
     this.characters = characters;
@@ -76,7 +83,8 @@ export class Keeper {
   }
 
   /** Keeps this room to one company: a character is given only while no one is kept here, or to one in the company of
-   *  someone kept here; any other is let go untouched, its player sent away with the reason. */
+   *  someone kept here; any other is let go untouched, its player sent away with the reason. A player it cannot keep
+   *  is sent away too, since one unkept could play in it unseen by the company's check. */
   forCompany(): this {
     this.company = true;
     return this;
@@ -94,7 +102,12 @@ export class Keeper {
       await this.wait(millis);
       claimed = await characters.claim(token, holder).catch(() => undefined);
     }
-    if (!claimed) return false;
+    if (!claimed) {
+      // A claim the accounts never answered (undefined) may be answered on a join again; no session never is.
+      const passing = claimed === undefined;
+      if (this.company && here()) this.lost(player, passing ? ACCOUNTS_TROUBLE : SIGN_IN_FOR_RUN, passing);
+      return false;
+    }
     // Asked before the checks, so nothing waits between judging the company and keeping the character.
     const companions = this.company
       ? await characters.companions(claimed.account).catch(() => [claimed.account])
@@ -124,6 +137,13 @@ export class Keeper {
       inFlight: null,
     });
     return true;
+  }
+
+  /** In a run's room, sends away a player who has sent no token (`signed`) once a claim's own waits have passed. */
+  async tokenDue(player: number, signed: () => boolean, here: () => boolean): Promise<void> {
+    if (!this.company || !this.characters) return;
+    await this.wait(TOKEN_WAIT_MS);
+    if (here() && !signed()) this.lost(player, SIGN_IN_FOR_RUN, false);
   }
 
   /** Whether no one is kept here, or someone among `companions` is. */

@@ -101,7 +101,9 @@ Company]]).
   both of the week's. A dungeon at Normal in a patrol stays in the patrol's shared room, as does a sea island's.
 - **A run's room** is named by an instance after its dungeon's name (`--run-` and eight lowercase letters or digits,
   [[Server]]). While anyone is kept in it, only their company joins (`Keeper.forCompany`); a player from another is
-  sent back saying "This run is another company's.". It is forgotten a minute after its last player leaves.
+  sent back saying "This run is another company's.", and one it cannot keep (no session, or no token in time)
+  saying "Sign in to enter this run.". No one plays in a run unkept. It is forgotten a minute after its last player
+  leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band. A run
   starts with four, or with fewer after a minute's wait.
 - **The Abyss Dungeon of the week is never matched**, as Destiny 1's hardest weekly strike was not: a company forms

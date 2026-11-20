@@ -4,7 +4,14 @@ import { handle } from './accounts/accounts.ts';
 import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
 import { sqliteForTests } from './accounts/sqliteForTests.ts';
-import { Keeper, type KeptRoom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
+import {
+  ACCOUNTS_TROUBLE,
+  Keeper,
+  type KeptRoom,
+  SAVE_AFTER_CHANGE_MS,
+  SAVE_UNCHANGED_MS,
+  SIGN_IN_FOR_RUN,
+} from './keeping.ts';
 
 /** A room on land whose players' characters are plain strings; `{` starts one it can read. Its gate shuts as `gate`
  *  says, open to all unless told. */
@@ -360,4 +367,29 @@ test('a run’s room keeps only the company of those kept in it, and anyone once
   await keeper.leave(1);
   await keeper.leave(3);
   assert.equal(await keeper.signIn(4, tokens['Cal'] ?? '', now, here), true, 'none kept: open to whoever has the name');
+});
+
+test('a run keeps no one unkept: a token that is no session, none in time, or no answer sends them away', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  for (const player of [1, 2, 3, 4, 5]) room.held.set(player, '{"starting":true}');
+  const sent: unknown[][] = [];
+  const told = (player: number, why?: string, rejoinable?: boolean) => void sent.push([player, why, rejoinable]);
+  const run = 'node-krakens-grotto--run-k3j4h5g6';
+  const keeper = new Keeper(kept, room, run, told, () => Promise.resolve()).forCompany();
+  const [now, here] = [() => clock.now, () => true];
+  assert.equal(await keeper.signIn(1, 'f'.repeat(64), now, here), false);
+  assert.deepEqual(sent, [[1, SIGN_IN_FOR_RUN, false]], 'not a session: sign in, and joining again will not help');
+  await keeper.tokenDue(2, () => false, here);
+  await keeper.tokenDue(3, () => true, here);
+  assert.deepEqual(sent.slice(1), [[2, SIGN_IN_FOR_RUN, false]], 'no token after the wait; a token on its way is not');
+  const down = { ...kept, claim: () => Promise.reject(new Error('the accounts are down')) };
+  const cut = new Keeper(down, room, run, told, () => Promise.resolve()).forCompany();
+  assert.equal(await cut.signIn(4, token, now, here), false);
+  assert.deepEqual(sent.slice(2), [[4, ACCOUNTS_TROUBLE, true]], 'joining again may find the accounts back');
+  assert.equal(await keeper.signIn(5, token, now, here), true, 'a player kept is let in');
+  const open = new Keeper(kept, room, 'node-saltgrass-downs', told, () => Promise.resolve());
+  await open.tokenDue(2, () => false, here);
+  assert.equal(await open.signIn(2, 'f'.repeat(64), now, here), false);
+  assert.equal(sent.length, 3, 'any other room still lets a player play unkept');
 });

@@ -324,10 +324,11 @@ so every decision is Rust and the shell only carries bytes and time.
   at the minute the first player joins. One no rule lays answers 404.
 - **A run keeps to its company** (`Keeper.forCompany`): a character is given only while no one is kept in it, or to
   one in the company of someone kept there (`companions`, [[Accounts]]); any other is let go untouched, and the
-  socket closed with 4003 and "This run is another company's.". A player who sends no token plays unkept, as in
-  every node's room; the instance, drawn at random, keeps others out in practice. An emptied run's room stays as
-  its company left it for `RUN_LINGER_MS`, a minute, through a dropped connection, and is then forgotten: the next
-  to come opens a fresh run.
+  socket closed with 4003 and "This run is another company's.". It keeps no one unkept: a token that is no session,
+  or no token five seconds after the join (a claim's own waits), closes with 4003 and "Sign in to enter this run.",
+  and a claim the accounts never answered closes with 1013 and "Something went wrong. Try again.", which the page
+  joins again on. An emptied run's room stays as its company left it for `RUN_LINGER_MS`, a minute, through a
+  dropped connection, and is then forgotten: the next to come opens a fresh run.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
