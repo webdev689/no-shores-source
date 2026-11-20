@@ -4,7 +4,7 @@ import type { FightCaptain, FightLay, FightVessel, FightView } from '../rules/fi
 import type { LandView } from '../rules/landRules.ts';
 import type { FightSource } from './fighting.ts';
 import type { Sailed } from '../terrain/landClient.ts';
-import { Naval } from './naval.ts';
+import { aimOf, arcsOf, Naval } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
@@ -171,7 +171,7 @@ test('each arc ends where its gun stops: a strike mark on her, a zone where it s
     radius: 2,
     on_target: true,
   };
-  const marks = Naval.arcs({ ...VIEW, lay }, WINDOW, 1);
+  const marks = arcsOf(lay, WINDOW, 1);
   const dots = marks.filter((mark) => mark.radius < 0.1 && mark.z !== 0.1);
   assert.ok(
     dots.filter((dot) => dot.y === 0).every((dot) => dot.x <= 5 + 1e-9),
@@ -186,4 +186,47 @@ test('each arc ends where its gun stops: a strike mark on her, a zone where it s
   const zone = marks.filter((mark) => Math.abs(Math.hypot(mark.x - 20, mark.y - 2) - 2) < 1e-9 && mark.z === 0.1);
   assert.ok(zone.length >= 12, 'a ring of the zone radius round the splash');
   assert.ok(!marks.some((mark) => mark.z === 3.77 && mark.radius < 0.1), 'no zone on her side');
+});
+
+const LAID: FightLay = {
+  side: 'starboard',
+  launches: [
+    [0, 0, 5, 10, 0, 0],
+    [0, 2, 5, 20, 0, 0],
+  ],
+  elevation: 0,
+  reach: 300,
+  ends: [
+    { time: 0.5, point: [5, 0, 3.77], water: false, strike: [5, 0, 3.77] },
+    { time: 1, point: [20, 2, 0.1], water: true, strike: null },
+  ],
+  radius: 1,
+  on_target: true,
+};
+
+test("the aim shows each gun's flight to where it stops, a strike where it meets her, a ring and post where it falls", () => {
+  const aim = aimOf(LAID, vessel, WINDOW, 1);
+  assert.ok(aim);
+  assert.equal(aim.arcs.length, 2);
+  const [struck = [], fell = []] = aim.arcs;
+  assert.deepEqual(struck[0], [0, 0, 5], 'from her gun');
+  assert.deepEqual(struck.at(-1), [5, 0, 5 - 9.81 * 0.125], 'to her side');
+  assert.deepEqual(fell.at(-1)?.slice(0, 2), [20, 2]);
+  assert.ok(struck.length >= 8, 'a smooth curve');
+  assert.deepEqual(aim.strikes, [[5, 0, 3.77]]);
+  assert.deepEqual(aim.zone, [[20, 2, 0.1]], 'the struck gun lays no ring');
+  assert.equal(aim.radius, 1.6, "DFO's least ring");
+});
+
+test("the aim's tone: hot on target while the side can fire, laid off it, not ready while she loads or braces", () => {
+  assert.equal(aimOf(LAID, vessel, WINDOW, 1)?.tone, 'hot');
+  assert.equal(aimOf({ ...LAID, on_target: false }, vessel, WINDOW, 1)?.tone, 'laid');
+  const loading = { ...vessel, guns: { ...vessel.guns, left: [0, 3.2] as const } };
+  assert.equal(aimOf(LAID, loading, WINDOW, 1)?.tone, 'idle', 'her starboard side still loads');
+  const portLoading = { ...vessel, guns: { ...vessel.guns, left: [3.2, 0] as const } };
+  assert.equal(aimOf(LAID, portLoading, WINDOW, 1)?.tone, 'hot', 'her port side is not the one laid');
+  const braced = { ...vessel, guns: { ...vessel.guns, braced: true } };
+  assert.equal(aimOf(LAID, braced, WINDOW, 1)?.tone, 'idle');
+  assert.equal(aimOf(LAID, { ...vessel, state: 'wrecked' }, WINDOW, 1)?.tone, 'idle');
+  assert.equal(aimOf(null, vessel, WINDOW, 1), null);
 });
