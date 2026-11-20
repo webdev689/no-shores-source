@@ -295,12 +295,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **The Lattice in the game, being talked through** ([[The Lattice Comes Into the Game Meaningfully, Talked Through
   First]]): the owner wants it in "in a meaningful way" and to talk first about the patrol spaces' world events and
-  the nine story missions. The talk stopped at Claude's questions, in [[Open Questions]], "The Lattice's places and
-  events": public events on a clock or rising on their own, a failed one spreading corruption, what one pays; the
-  missions as three acts of three or one chain through the islands, where the Lattice and the Heart come in, how near
-  the ninth comes to the Cube; who gives the side quests. Claude offered public events of its own as suggestions (a
-  crystal fall, a pylon or nest growing until broken, a fissure, the Grey Tithe pressing a hamlet, the two factions
-  clashing); none is the owner's yet. Read with them: #82 (the loop, the nine missions) and #97 (activities, the
+  the nine story missions. The public events are settled ([[Public Events Run on a Clock, After Destiny 1]]): on a
+  clock, nothing lasting when failed, paying gear, materials and reputation; the Fissure and the Grey Tithe raid, each
+  with a simple mechanic of its own and a heroic task; their numbers Claude's to tune. The talk stops at the rest of
+  [[Open Questions]], "The Lattice's places and events": which spaces hold which event, whose reputation they pay; the
+  missions as three acts of three or one chain through
+  the islands, where the Lattice and the Heart come in, how near the ninth comes to the Cube; who gives the side
+  quests. Read with them: #82 (the loop, the nine missions) and #97 (activities, the
   quest engine), both open.
 - **When it is built**: the owner's named yes covers uploading the Lattice's pictures (every move from all five
   sides, and the wave) to R2 with the Cloudflare key; where its foes appear first and their skin are Claude's. A map

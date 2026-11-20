@@ -69,6 +69,7 @@ compose as it composes any figure ([[The Lattice Are the Ruined Ports' People, O
   rock, a crate, a barrel, a cart, a wall, a lamppost, a boat); its own structures (a nest, a pylon, a shrine); and
   what an event leaves (a fissure, a crater). `python -I ../lattice/props.py --out <folder> [--props spire,crate]
   [--strain red]` draws a picture of each.
+- **Its public event**, the Fissure ([[Public Events Run on a Clock, After Destiny 1]]), is not built yet.
 - **Sizes.** The Bulwark is drawn at 1.2 times a man and the Heart at 3 times, each on a larger work frame. Every
   move has rows under the ground for what it brings down before its feet (a maul's head, an anchor's crown).
 
