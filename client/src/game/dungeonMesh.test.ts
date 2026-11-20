@@ -214,9 +214,9 @@ test("the return portal is a face on the end room's wall inside an arch of its t
   assert.ok(near(Math.max(...heights), 2.7), 'a lintel over it');
 });
 
-test("where a style's pack stands its own, the mesh leaves out the pillars, the brackets and the portal's arch", () => {
+test("where its kit pieces stand, the mesh leaves out the pillars, the brackets and the portal's arch", () => {
   const pillared: DungeonLayout = { ...layout, pillars: [[1.6, 1.6, 4]] };
-  const kitted = { styles: new Set(['crypt'] as const), floorless: new Set([0]) };
+  const kitted = { pillars: new Set([0]), torches: new Set([0]), portal: true, floorless: new Set([0]) };
   const plain = trianglesOf(dungeonMesh(pillared, [56, 2]));
   const dressed = trianglesOf(dungeonMesh(pillared, [56, 2], undefined, kitted));
   const pillar = ({ corners }: Triangle) =>

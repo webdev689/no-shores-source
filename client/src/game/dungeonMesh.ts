@@ -6,7 +6,7 @@
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
 import { besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
-import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS, styleAt, type StyleKey } from './dungeonLayout.ts';
+import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { uvOf } from './dungeonUv.ts';
 
 /** The trim bands' heights at a wall's foot and head. */
@@ -350,10 +350,16 @@ function portal(mesh: MeshBuilder, layout: DungeonLayout, arch: boolean): void {
   doorFace(mesh, face, opening.side, [COLOUR.portal, 0]);
 }
 
-/** What a dungeon's kits draw in the mesh's place: the styles whose pillars, brackets and portal arch they stand
- *  instead, and the cells whose floor a landmark lays itself. */
-export type Kitted = { readonly styles: ReadonlySet<StyleKey>; readonly floorless: ReadonlySet<number> };
-const UNKITTED: Kitted = { styles: new Set(), floorless: new Set() };
+/** What a dungeon's kits draw in the mesh's place: the pillars and the torches (by their number in the layout) whose
+ *  pillar and bracket a kit piece stands instead, whether one stands for the portal's arch, and the cells whose floor
+ *  a landmark lays itself. */
+export type Kitted = {
+  readonly pillars: ReadonlySet<number>;
+  readonly torches: ReadonlySet<number>;
+  readonly portal: boolean;
+  readonly floorless: ReadonlySet<number>;
+};
+const UNKITTED: Kitted = { pillars: new Set(), torches: new Set(), portal: false, floorless: new Set() };
 
 /** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it,
  *  and `kitted` says what it draws instead of the mesh. */
@@ -419,16 +425,12 @@ export function dungeonMesh(
     doorFrame(mesh, look, layout.boxes.slice(index * 2, index * 2 + 2), layout.doorway.lintel, height);
   });
   const cellOf = (x: number, y: number) => Math.floor(y / cell) * columns + Math.floor(x / cell);
-  const kittedAt = (index: number) => {
-    const style = styleAt(layout, index);
-    return !!style && kitted.styles.has(style);
-  };
-  for (const [x, y, height] of layout.pillars)
-    if (!kittedAt(cellOf(x, y))) pillar(mesh, lookAt(layout, cellOf(x, y)), x, y, height, layout.pillarHalf);
-  for (const each of layout.torches) torch(mesh, each, cell, !kittedAt(cellOf(each[0], each[1])));
+  layout.pillars.forEach(([x, y, height], index) => {
+    if (!kitted.pillars.has(index)) pillar(mesh, lookAt(layout, cellOf(x, y)), x, y, height, layout.pillarHalf);
+  });
+  layout.torches.forEach((each, index) => torch(mesh, each, cell, !kitted.torches.has(index)));
   doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
-  const endStyle = layout.looks[layout.rooms[layout.end]?.look ?? 0]?.style ?? layout.style;
-  portal(mesh, layout, !kitted.styles.has(endStyle));
+  portal(mesh, layout, !kitted.portal);
   furnish(mesh);
   return mesh.model();
 }

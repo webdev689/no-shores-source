@@ -31,6 +31,14 @@ import { type ModuleMesh, type ModulePack, type Place, type Turns, wallTurns } f
 /** A kit piece laid: its module, where it is laid, and the cell whose pictures it wears. */
 export type KitPlacement = { readonly module: string; readonly place: Place; readonly cell: number };
 
+/** The mesh's own pieces the kits stand in place of: the pillars and the torches, by their number in the layout,
+ *  whose kit pillar or sconce was laid, and whether the portal's arch was. */
+export type Fitted = {
+  readonly pillars: ReadonlySet<number>;
+  readonly torches: ReadonlySet<number>;
+  readonly portal: boolean;
+};
+
 type Rule = (typeof kits.styles)[StyleKey];
 type Wall = readonly [cell: number, side: number];
 type Piece = readonly [piece: string, place: Place];
@@ -72,6 +80,7 @@ type Site = {
   readonly placed: KitPlacement[];
   /** Each wall a set stands on, as `cell * 4 + side`. */
   readonly walled: Set<number>;
+  readonly fitted: { readonly pillars: Set<number>; readonly torches: Set<number>; portal: boolean };
 };
 
 /** A cell's ceiling at a 3 × 3 grid of points over a plan, kept to the cell. */
@@ -430,35 +439,41 @@ function fittings(site: Site): void {
     const door = `door.${variant(site, cell, `door.${side}`, 2)}`;
     put(site, cell, [[door, { origin: [...wallPoint(layout, cell, side), 0], turns: ((side + 3) % 4) as Turns }]]);
   }
-  for (const [x, y, height] of layout.pillars) {
+  layout.pillars.forEach(([x, y, height], index) => {
     const cell = cellAt(layout, x, y);
     const [base, cap] = [pieceOf(site, cell, 'pillar.base'), pieceOf(site, cell, 'pillar.capital')];
-    if (!base || !cap) continue;
+    if (!base || !cap) return;
     const capAt = height - cap.bounds[5];
     const [from, to] = [base.bounds[5], capAt + cap.bounds[2]];
-    if (!(to > from)) continue;
-    put(site, cell, [
-      ['pillar.base', { origin: [x, y, 0], turns: 0 }],
-      ['pillar.shaft', { origin: [x, y, 0], turns: 0, stretch: { from, to } }],
-      ['pillar.capital', { origin: [x, y, capAt], turns: 0 }],
-    ]);
-  }
-  for (const [x, y, z, side] of layout.torches)
-    put(site, cellAt(layout, x, y), [
-      ['sconce', { origin: [...ontoWall(layout, x, y, side), z], turns: wallTurns(side) }],
-    ]);
+    const laid =
+      to > from &&
+      put(site, cell, [
+        ['pillar.base', { origin: [x, y, 0], turns: 0 }],
+        ['pillar.shaft', { origin: [x, y, 0], turns: 0, stretch: { from, to } }],
+        ['pillar.capital', { origin: [x, y, capAt], turns: 0 }],
+      ]);
+    if (laid) site.fitted.pillars.add(index);
+  });
+  layout.torches.forEach(([x, y, z, side], index) => {
+    const sconce: Place = { origin: [...ontoWall(layout, x, y, side), z], turns: wallTurns(side) };
+    if (put(site, cellAt(layout, x, y), [['sconce', sconce]])) site.fitted.torches.add(index);
+  });
   const arch = (piece: string, x: number, y: number, side: number) => {
     const [east, south] = stepOf(side);
     const [wallX, wallY] = ontoWall(layout, x, y, side);
     const cell = cellAt(layout, wallX - (east * size) / 2, wallY - (south * size) / 2);
-    put(site, cell, [[piece, { origin: [wallX, wallY, 0], turns: wallTurns(side) }]]);
+    return put(site, cell, [[piece, { origin: [wallX, wallY, 0], turns: wallTurns(side) }]]);
   };
-  arch('portal', layout.portal.x, layout.portal.y, layout.portal.side);
+  site.fitted.portal = arch('portal', layout.portal.x, layout.portal.y, layout.portal.side);
   arch('exit', layout.exitDoor.x, layout.exitDoor.y, layout.wayIn.side);
 }
 
-/** Every kit piece of a dungeon, each from the pack of the style its cell wears; a style with no pack lays none. */
-export function kitPlacements(layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>): KitPlacement[] {
+/** Every kit piece of a dungeon, each from the pack of the style its cell wears (a style with no pack lays none),
+ *  and the mesh's own pieces they stand in place of. */
+export function kitsOf(
+  layout: DungeonLayout,
+  packs: ReadonlyMap<StyleKey, ModulePack>,
+): { readonly placed: readonly KitPlacement[]; readonly fitted: Fitted } {
   const busy = new Set<number>([layout.wayIn.cell]);
   for (const [cell, side] of layout.frames) {
     busy.add(cell);
@@ -475,6 +490,7 @@ export function kitPlacements(layout: DungeonLayout, packs: ReadonlyMap<StyleKey
     height: ceilingHeights(layout),
     placed: [],
     walled: new Set(),
+    fitted: { pillars: new Set(), torches: new Set(), portal: false },
   };
   timberSets(site);
   wallRuns(site);
@@ -482,5 +498,9 @@ export function kitPlacements(layout: DungeonLayout, packs: ReadonlyMap<StyleKey
   ceilings(site);
   floors(site);
   fittings(site);
-  return site.placed;
+  return { placed: site.placed, fitted: site.fitted };
 }
+
+/** Every kit piece of a dungeon, as `kitsOf` lays them. */
+export const kitPlacements = (layout: DungeonLayout, packs: ReadonlyMap<StyleKey, ModulePack>) =>
+  kitsOf(layout, packs).placed;

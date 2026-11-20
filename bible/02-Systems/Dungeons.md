@@ -246,8 +246,9 @@ dungeon"). A module older than the landmarks answers no landmarks or glows, and 
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
   layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Each cell
   wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
-  Where a look's style has a pack of pieces, its pillars, brackets and portal arch are the pack's; the jambs, the
-  flames, the portal's face and the exit door stay the mesh's.
+  Where a pillar's, a torch's or the portal's kit pieces are laid (`kitsOf`), the mesh leaves out its own pillar,
+  bracket or arch, and draws its own wherever they are not; the jambs, the flames, the portal's face and the exit
+  door stay the mesh's.
 - **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind the veil before it
   is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s, is drawn as
   above, with one warning; a pack that failed is asked for again when the next dungeon is entered.

@@ -140,6 +140,45 @@ test('every picture the pieces wear is in the book, the dressing set turned to t
   }
 });
 
+/** Every style's pack without the pieces named. */
+const without = (...pieces: string[]): ReadonlyMap<StyleKey, ModulePack> =>
+  new Map(
+    [...FULL_PACKS].map(([style, pack]) => {
+      const kept = [...pack.modules].filter(([name]) => !pieces.some((piece) => name === `${style}.${piece}`));
+      return [style, { ...pack, modules: new Map(kept) }] as const;
+    }),
+  );
+
+/** Whether a model holds a code-built pillar at (x, y): a face wholly within its half-width of it. */
+function pillarAt(model: ForgedModel, [x, y]: readonly number[], half: number): boolean {
+  const near = (vertex: number) =>
+    Math.abs((model.positions[vertex * 3] ?? 0) - (x ?? 0)) <= half + EPS &&
+    Math.abs((model.positions[vertex * 3 + 1] ?? 0) - (y ?? 0)) <= half + EPS;
+  for (let corner = 0; corner + 2 < model.indices.length; corner += 3)
+    if ([0, 1, 2].every((offset) => near(model.indices[corner + offset] ?? 0))) return true;
+  return false;
+}
+
+test('the mesh leaves out only the pillars, brackets and portal arch whose kit pieces were laid', () => {
+  const pillared = LAYOUTS.filter((layout) => layout.pillars.length > 0);
+  assert.ok(pillared.length > 2);
+  for (const layout of pillared) {
+    const full = dressingOf(layout, FULL_PACKS, 'temperate');
+    assert.ok(full.pillars.size > 0 && full.torches.size > 0 && full.portal);
+    const bare = dungeonMesh(layout, DOOR, undefined, full);
+    layout.pillars.forEach((pillar, index) =>
+      assert.equal(pillarAt(bare, pillar, layout.pillarHalf), !full.pillars.has(index), `pillar ${index}`),
+    );
+    const missing = dressingOf(layout, without('pillar.capital', 'sconce', 'portal'), 'temperate');
+    assert.deepEqual([missing.pillars.size, missing.torches.size, missing.portal], [0, 0, false]);
+    const model = dungeonMesh(layout, DOOR, undefined, missing);
+    for (const pillar of layout.pillars) assert.ok(pillarAt(model, pillar, layout.pillarHalf), 'the code pillar');
+    const plain = { pillars: new Set<number>(), torches: new Set<number>(), portal: false };
+    const unkitted = dungeonMesh(layout, DOOR, undefined, { ...plain, floorless: missing.floorless });
+    assert.deepEqual(counted(model), counted(unkitted), 'and every bracket and the portal’s arch');
+  }
+});
+
 test('the packs of every style the looks wear are each asked for once, and one that does not come is left out', async () => {
   const layout = LAYOUTS.find((each) => each.looks.length === 2) ?? LAYOUTS[0];
   assert.ok(layout);
