@@ -79,6 +79,7 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
+Its words call a ship "it" ([[Ships Are It, Not Her]]).
 
 ## How it works
 
