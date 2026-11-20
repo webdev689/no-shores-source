@@ -13,15 +13,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Post {
-    /// Keeps her men's nerve and leads the boarders.
+    /// Keeps her men's nerve under fire, and leads more hands aboard a struck ship.
     FirstMate = 0,
-    /// Fires the broadside the player is not laying, when it bears and is loaded.
+    /// Fires the broadside the player is not laying, when it bears on a ship within reach and is loaded.
     Gunner = 1,
-    /// Trims her sails: she keeps more way turning and with torn canvas.
+    /// Trims her sails: in a fight she keeps more of the way her torn canvas costs her.
     Bosun = 2,
     /// Patches her hull in a fight, giving back part of what each ball took once it has struck.
     Carpenter = 3,
-    /// Sights ships farther off and reads their level as they come into sight.
+    /// Sights ships farther off.
     Lookout = 4,
 }
 
