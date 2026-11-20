@@ -139,6 +139,11 @@ export class Boarding {
     return { place: `Her deck is yours`, line, hints: ['E: back aboard your ship', ...frame.hints] };
   }
 
+  /** The fight on foot on her deck while the player plays there, for the display's respawn. */
+  get foot(): DeckFight['foot'] | null {
+    return this.shown?.fight.foot ?? null;
+  }
+
   /** Where the player stands on her deck as her deck room said, for the display's word on a fall. */
   get standing(): FootFrame['standing'] | null {
     return this.shown?.frame.standing ?? null;

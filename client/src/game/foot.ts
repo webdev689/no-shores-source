@@ -580,9 +580,10 @@ export class Foot {
     return standingOf(standing.kind, standing.ticks);
   }
 
-  /** Asks the room to stand the player again at the section's spawn nearest where they died, once it offers it. */
+  /** Asks the room to stand the player again at the section's spawn nearest where they died, while it offers it. */
   respawn(): void {
-    this.fight.askRespawn();
+    const { standing } = this;
+    if (standing.kind === 'dead' && standing.canRespawn) this.fight.askRespawn();
   }
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */

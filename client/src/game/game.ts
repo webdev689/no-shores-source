@@ -387,7 +387,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     }
   };
 
-  const respawn = () => void (foot?.standing.kind === 'dead' && foot.standing.canRespawn && foot.respawn());
+  const respawn = () => (foot ?? sea?.boarding.foot)?.respawn();
 
   hud.onMark(choose);
   hud.onRespawn(respawn);
@@ -448,7 +448,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       input.lock();
   });
   seaPointer(canvas, input, {
-    atSea: () => flow.mode === 'sea' && !flow.menu,
+    // On a struck ship's deck the pointer and the wheel are the fight's on foot.
+    atSea: () => flow.mode === 'sea' && !flow.menu && !sea?.boarding.onDeck,
     sea: () => sea,
     map: () => heldMap,
   });

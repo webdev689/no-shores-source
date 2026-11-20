@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { Snapshot } from '../network/roomConnection.ts';
 import type { SeenDeck, SeenFlotsam } from '../network/seaHarbour.ts';
 import type { InputFrame } from '../player/input.ts';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
