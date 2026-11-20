@@ -343,7 +343,7 @@ impl Room {
 
     /// Stands every foe of a post's group at its place, idle, facing as it was posted, leashed to it, at its level
     /// raised by the seas and with its shield whole, if it has one.
-    fn stand_post(&mut self, post: usize) {
+    pub(crate) fn stand_post(&mut self, post: usize) {
         let (members, girds) = (self.garrison[post].members.clone(), self.garrison[post].girds.clone());
         let standing = members
             .iter()

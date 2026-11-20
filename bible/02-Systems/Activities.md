@@ -10,6 +10,7 @@ code:
   - crates/gear/src/clears.rs#clear_of_the_day
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
+  - crates/room/src/abyss.rs#start_over
 ---
 # Activities
 
@@ -21,8 +22,8 @@ Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
 ([[The Activities Are Built in Full, Before the Story's Missions]]). Its core is built (step 1): the clock, the tiers,
 the records, the story kept with the account and the gates. Of the dungeons (step 2), the rules are built: what is
-on, the Elite Dungeons and their Bosses, the modifiers, what a first clear pays and a run's room. Abyss's revives and
-wipe, the server's runs and the page's trips are not, nor the rest.
+on, the Elite Dungeons and their Bosses, the modifiers, what a first clear pays, a run's room, and Abyss's revives and
+wipe. The server's runs and the page's trips are not, nor the rest.
 
 ## What it is for
 
@@ -104,10 +105,12 @@ Company]]).
 
 They hold in every Abyss run, which the owner gave "Nightfall's rules: limited revives, and a wipe ends the run".
 
-- **Revives:** the company shares five a run. A fallen player stands again at the run's start while one is left;
-  when none are, the fallen stay down.
-- **A wipe ends the run:** when every player is down at once, all are sent to the entrance, the dungeon starts over
-  and its five revives with it.
+- **Revives:** the company shares five a run (`Room::revives`). Each stand of a fallen player takes one, the
+  lowest player number first when two fall together; when none are left, the fallen stay down.
+- **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over
+  and its five revives with it (`start_over`): its foes stand again at their posts, its shots, spells and drops are
+  gone, its cache shuts, and its players stand whole at the way in. A run whose cache stands open is won and never
+  wiped, so a cleared run keeps what it paid, and a room no one is in is never wiped.
 - **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
   carries it:
   - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes.

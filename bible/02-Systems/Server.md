@@ -136,7 +136,8 @@ on Cloudflare.
   with.
 - **The dead** stand again, whole, after four seconds, at the spawn nearest where they fell (in a dungeon, at its way
   in, facing into the room), and the foes leave them be for three more unless they strike first; a dead foe is gone
-  after ten.
+  after ten. In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none
+  is left; when every player in it is down at once and its cache is shut, the run starts over (`abyss.rs`).
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
   ticks since they joined, plus a slack of 6 ticks for the network's jitter, and a tick takes at most 3, so no one
   moves faster than real time and one catching up after a stall replays no faster than three times over.

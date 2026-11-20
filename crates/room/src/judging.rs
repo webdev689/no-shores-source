@@ -31,6 +31,8 @@ pub enum EventKind {
     /// A foe's shield took a blow, the amount what it took; and broke under one.
     Shielded = 12,
     ShieldBroken = 13,
+    /// Every player in an Abyss run fell at once: the run starts over. Told to each player.
+    Wiped = 14,
 }
 
 /// How a blow was struck, for the words a client shows.

@@ -202,7 +202,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   It opens from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's
   island band, raised by its difficulty. Its first clear pays the day's while it is its island's dungeon of the day.
 - **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
-  as it opens; at Abyss it carries five revives ([[Activities]]).
+  as it opens; at Abyss it carries five revives the company shares, and a wipe starts it over ([[Activities]]).
 
 | Run of | Its world seeds from | Levels | End foe | First clear pays | Modifiers | Gated as |
 |---|---|---|---|---|---|---|
