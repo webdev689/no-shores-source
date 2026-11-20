@@ -89,13 +89,12 @@ fn fragments_are_sold_from_the_factions_first_rank() {
 }
 
 #[test]
-fn the_level_sets_the_worn_spells_shares_and_level_five_is_as_written() {
+fn each_art_s_level_sets_its_spells_shares_and_level_five_is_as_written() {
     let mut character = Character::starting();
-    assert_eq!(character.spell_shares(), (0.6, 0.6));
+    assert_eq!(character.art_shares(1), (0.6, 0.6));
     character.arts.levels[0] = LEVEL_MOST;
-    assert_eq!(character.spell_shares(), (1.0, 1.0));
-    assert_eq!(character.ask_art(ArtAsk::Wear { art: 3 }), Ok(()));
-    assert_eq!(character.spell_shares(), (0.6, 0.6), "each Art its own level");
+    assert_eq!(character.art_shares(1), (1.0, 1.0));
+    assert_eq!(character.art_shares(3), (0.6, 0.6), "each Art its own level");
 }
 
 #[test]

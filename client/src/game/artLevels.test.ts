@@ -9,6 +9,7 @@ import {
   LASTING_LIFE,
   LASTING_MORE,
   barWords,
+  fragmentWords,
   howHad,
   lastingAt,
   levelOf,
@@ -18,7 +19,7 @@ import {
   ready,
   scaled,
 } from './artLevels.ts';
-import { artOf, coreChoices, fragmentCard, fragmentNumbers, spellNumbers } from './artsCards.ts';
+import { type Art, artOf, coreChoices, fragmentCard, fragmentNumbers, spellCard, spellNumbers } from './artsCards.ts';
 
 const standing = (levels: number[], earned: number[], owned: number[]): Standing => ({
   pledge: 0,
@@ -107,6 +108,7 @@ test('a spell’s numbers at each level are scaled as the room scales them, the 
     ['Radius', '10 m'],
     ['Lasts', '8.4 s'],
     ['Heals a second', '3.5'],
+    ['Linked lingers', '2.1 s'],
   ]);
   assert.deepEqual(spellNumbers(divine.tenets[0] ?? divine.anima, 4), [['Heals', '36']]);
   const shadow = art(3);
@@ -131,6 +133,51 @@ test('a spell’s numbers at each level are scaled as the room scales them, the 
   assert.deepEqual(fragmentNumbers(momentum, 1, [gale]), [['Crit lasts', '5.4 s']]);
   const held = [storm.core.indexOf(momentum), storm.core.indexOf(gale), null];
   assert.deepEqual(fragmentCard(storm, momentum, 0, 1, null, held).rows, [['Crit lasts', '5.4 s']]);
+});
+
+/** A spell's card rows at `level` with the fragments named `keys` in its Art's Core. */
+const cardRows = (each: Art, spell: string, level: number, keys: readonly string[]) => {
+  const found = [each.anima, ...each.tenets].find((one) => one.key === spell);
+  assert.ok(found);
+  const core = keys.map((key) => each.core.findIndex((fragment) => fragment.key === key));
+  return Object.fromEntries(spellCard(each, found, level, core).rows);
+};
+
+test('a spell’s card folds in its Core as the room does, agreeing with its fragments’ cards', () => {
+  const [storm, divine, shadow] = [art(1), art(2), art(3)];
+  const quicken = cardRows(storm, 'quicken', 1, ['gale', 'momentum']);
+  assert.deepEqual([quicken['Radius'], quicken['Haste lasts']], ['18 m', '5.4 s']);
+  const momentum = storm.core.find((fragment) => fragment.key === 'momentum');
+  const gale = storm.core.find((fragment) => fragment.key === 'gale');
+  assert.ok(momentum && gale);
+  assert.deepEqual(fragmentNumbers(momentum, 1, [gale]), [['Crit lasts', quicken['Haste lasts']]], 'as long as Haste');
+  assert.equal(cardRows(storm, 'tempest', 1, ['pursuit'])['Orbs'], '8');
+  assert.equal(cardRows(storm, 'arcLash', 1, ['conduction'])['Charges a Minor for'], '1.8 s');
+  const sunwell = cardRows(divine, 'sunwell', 1, ['radiance']);
+  assert.deepEqual([sunwell['Radius'], sunwell['Lasts']], ['13 m', '9.6 s']);
+  const daggers = cardRows(shadow, 'duskDaggers', 1, ['blades']);
+  assert.deepEqual([daggers['Radius'], daggers['Lasts']], ['5.5 m', '4.2 s']);
+  assert.equal(cardRows(shadow, 'vanish', 1, ['night'])['Veil lasts'], '3.6 s');
+  assert.equal(cardRows(shadow, 'duskraven', 5, ['hunger'])['Heals you'], '100% of its damage');
+  assert.deepEqual(cardRows(storm, 'quicken', 5, []), Object.fromEntries(spellNumbers(storm.tenets[0] ?? storm.anima)));
+});
+
+test('a fragment’s words name the seconds it adds at the level worn, as written at the highest', () => {
+  const fragments = arts.arts.flatMap((each) => each.core as readonly { key: string; text: string; moreS?: number }[]);
+  const gale = fragments.find((fragment) => fragment.key === 'gale');
+  assert.ok(gale);
+  assert.equal(fragmentWords(gale, 1), 'Quicken lasts 1.8 s longer and reaches 18 m.');
+  for (const fragment of fragments.filter((each) => LASTING_MORE.has(each.key))) {
+    assert.equal(fragmentWords(fragment, 5), fragment.text, `${fragment.key} at the highest level`);
+    assert.notEqual(fragmentWords(fragment, 1), fragment.text, `${fragment.key}'s words name its seconds`);
+  }
+  const shadow = art(3);
+  const dread = shadow.core.find((fragment) => fragment.key === 'dread');
+  assert.ok(dread);
+  assert.match(
+    fragmentCard(shadow, dread, null, 1).words,
+    /^Each Cosmic kill on an Exposed enemy keeps the Duskraven 1\.2 s longer\./,
+  );
 });
 
 /** What the room measured an Art doing at its first level (crates/room/src/standing_tests.rs writes it). */
@@ -168,6 +215,7 @@ test('at its first level the screen shows what the room does: the same shares, l
     const fragment = fragments.find((each) => each.key === key);
     assert.equal(scaled(key, 'moreS', fragment?.moreS ?? 0, 1), tenth(seconds), `${key}'s seconds more`);
   }
+  assert.deepEqual(Object.keys(GIVES).sort(), Object.keys(room.gives).sort(), 'what spells and fragments give');
   for (const [key, seconds] of Object.entries(room.gives)) {
     assert.equal(tenth((GIVES[key]?.[1] ?? 0) * lastingAt(1)), tenth(seconds), `what ${key} gives`);
   }

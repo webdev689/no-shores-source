@@ -8,7 +8,7 @@ import { FRAGMENT_MAPS } from './artFragments.ts';
 import { EMBLEM_FRAME, EMBLEM_MAPS, SPELL_MAPS, mapSvg } from '../player/artGlyphs.ts';
 import type { ArtState } from '../network/artMessages.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
-import { GIVES, GIVES_LONGER_BY, HEALS_A_SECOND, LEVEL_MOST, lastingAt, powerAt, scaled } from './artLevels.ts';
+import { GIVES, HEALS_A_SECOND, LEVEL_MOST, folded, fragmentWords, lastingAt, powerAt, scaled } from './artLevels.ts';
 import type { Card } from './gearCards.ts';
 
 /** A spell: its key, name and words, its recharge in seconds, and its numbers by name. */
@@ -96,23 +96,28 @@ const NUMBERS: readonly (readonly [field: string, label: string, written: (value
 function givesRow(key: string, level: number, held: readonly Fragment[] = []): [string, string][] {
   const gives = GIVES[key];
   if (!gives) return [];
-  const longer = held.find((fragment) => fragment.key === GIVES_LONGER_BY[key])?.['moreS'];
-  const seconds = gives[1] + (typeof longer === 'number' ? longer : 0);
+  const seconds = folded(key, 'givesS', gives[1], held);
   return [[gives[0], `${Math.round(seconds * lastingAt(level) * 10) / 10} s`]];
 }
 
-/** A spell's numbers at an Art's `level`, as its card's rows: its harm, healing and life as the room scales them. */
-export function spellNumbers(spell: Spell, level = LEVEL_MOST): [string, string][] {
+/** The fragments an Art's Core holds, from each slot's index in the Art's list. */
+export function heldOf(art: Art, core: readonly (number | null)[]): Fragment[] {
+  return core.flatMap((index) => (index === null ? [] : (art.core[index] ?? [])));
+}
+
+/** A spell's numbers at an Art's `level` with the fragments `held` in its Core, as its card's rows: its harm, healing
+ *  and life as the room scales them, and what the Core changes as the room folds it in. */
+export function spellNumbers(spell: Spell, level = LEVEL_MOST, held: readonly Fragment[] = []): [string, string][] {
   const rows = NUMBERS.flatMap(([field, label, written]) => {
     const value = spell[field];
     return typeof value === 'number'
-      ? [[label, written(scaled(spell.key, field, value, level))] as [string, string]]
+      ? [[label, written(scaled(spell.key, field, folded(spell.key, field, value, held), level))] as [string, string]]
       : [];
   });
   const linked = HEALS_A_SECOND[spell.key];
   const heals: [string, string][] =
     linked === undefined ? [] : [['Heals a second', String(Math.round(linked * powerAt(level) * 10) / 10)]];
-  return [...rows, ...heals, ...givesRow(spell.key, level)];
+  return [...rows, ...heals, ...givesRow(spell.key, level, held)];
 }
 
 /** A fragment's numbers the room scales by an Art's `level`, as its card's rows: the seconds it adds and what it
@@ -134,14 +139,14 @@ export function rechargeWords(seconds: number): string {
 }
 
 /** A spell's card: its name, whether it is the Anima or a Tenet and its element, its recharge large, its numbers at
- *  the Art's `level` and what it does. */
-export function spellCard(art: Art, spell: Spell, level = LEVEL_MOST): Card {
+ *  the Art's `level` with its Core (`core`, each slot's index in the Art's) and what it does. */
+export function spellCard(art: Art, spell: Spell, level = LEVEL_MOST, core: readonly (number | null)[] = []): Card {
   return {
     name: spell.name,
     rarity: 0,
     kind: spell === art.anima ? 'Anima' : 'Tenet',
     big: { label: 'Recharge', value: rechargeWords(spell.rechargeS) },
-    rows: spellNumbers(spell, level),
+    rows: spellNumbers(spell, level, heldOf(art, core)),
     element: art.element,
     traits: [],
     words: spell.text,
@@ -159,7 +164,7 @@ export function fragmentCard(
   howHad: string | null = null,
   core: readonly (number | null)[] = [],
 ): Card {
-  const held = core.flatMap((index) => (index === null ? [] : (art.core[index] ?? [])));
+  const held = heldOf(art, core);
   const where = setIn === null ? '' : ` Set in Core slot ${setIn + 1}.`;
   return {
     name: fragment.name,
@@ -169,7 +174,7 @@ export function fragmentCard(
     rows: fragmentNumbers(fragment, level, held),
     element: art.element,
     traits: [],
-    words: `${fragment.text}${where}${howHad ? ` ${howHad}` : ''}`,
+    words: `${fragmentWords(fragment, level)}${where}${howHad ? ` ${howHad}` : ''}`,
     compare: null,
   };
 }

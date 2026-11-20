@@ -163,7 +163,7 @@ impl Room {
         let spellfeed = self.perk_on(blow, "spellfeed");
         let Some(striker) = self.players.get(&blow.striker).map(|found| found.fighter) else { return };
         let element = Element::from_number(blow.element);
-        let mut dread = 0;
+        let mut dread = false;
         if let Some(found) = self.players.get_mut(&blow.striker) {
             let (character, casting) = (&found.character, &mut found.casting);
             let veiled = striker.statuses.has(Status::Veiled);
@@ -184,14 +184,14 @@ impl Room {
             match element {
                 Some(Element::Volt) => casting.cut(cut("recharge")),
                 Some(Element::Blaze) if striker.statuses.has(Status::Linked) => casting.cut(cut("zeal")),
-                Some(Element::Cosmic) if defender.statuses.has(Status::Expose) => {
-                    dread = character.fragment("dread").map_or(0, |fragment| ticks(fragment.more_s));
-                }
+                Some(Element::Cosmic) => dread = defender.statuses.has(Status::Expose),
                 _ => {}
             }
             found.gear_changed = true;
         }
-        self.keep_ravens(blow.striker, dread);
+        if dread {
+            self.keep_ravens(blow.striker);
+        }
     }
 
     /// Answers a player's ask of their Arts: 0 done, else the refusal's number.

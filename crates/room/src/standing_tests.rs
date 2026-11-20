@@ -1,15 +1,19 @@
-//! Where a player stands beyond their gear, in the room: an Art below its highest level casting its share, the
-//! factions', the Tailor's and the Tack's asks served only at their own counters, Shape on the plaza only from Friday to
-//! Sunday, and the Shapes a kill gives at the Elite and Abyss seas.
+//! Where a player stands beyond their gear, in the room: an Art below its highest level casting its share, a spell
+//! already out keeping its Art's level and Core, the factions', the Tailor's and the Tack's asks served only at their
+//! own counters, Shape on the plaza only from Friday to Sunday, and the Shapes a kill gives at the Elite and Abyss seas.
 
+use crate::arts::Cast;
 use crate::arts::arts_tests::{cast, room_with_player, stand_foe, wearing};
 use crate::asks::{Asked, Counter, CounterKind, answer_code};
 use crate::{FighterId, Input, PlayerId, Room};
+use combat::Status;
+use gear::arts::ArtAsk;
 use gear::{Ask, Refusal, Slot};
 
 const SUNWELL: u8 = 4;
 const MEND: u8 = 5;
 const DAWNFLARE: u8 = 6;
+const DUSKRAVEN: u8 = 7;
 /// Minutes since 1970 at the start of a Thursday, UTC, and at noon the day after, a Friday.
 const THURSDAY: u64 = (1_793_491_200 / 60) + 18 * 1_440;
 const FRIDAY_NOON: u64 = THURSDAY + 1_440 + 12 * 60;
@@ -169,6 +173,86 @@ fn a_spell_already_out_strikes_at_the_level_of_the_art_that_cast_it() {
     assert!((kept - switched).abs() < 1e-9, "wearing Storm after the cast changes nothing: {kept} against {switched}");
 }
 
+/// A hurt second player standing in a Sunwell its caster cast at Divine's first level, once the well is up.
+fn linked_by_a_first_level_sunwell() -> (Room, PlayerId, PlayerId) {
+    let (mut room, caster) = room_with_player();
+    room.players.get_mut(&caster).expect("in").character.arts.levels[1] = 1;
+    wearing(&mut room, caster, 2, &[]);
+    let other = room.join().expect("a room with space");
+    move_to(&mut room, other, [1.0, 0.0]);
+    let mut hurt = *room.fighter(other).expect("in");
+    hurt.health = 10.0;
+    room.set_fighter(other, hurt);
+    cast(&mut room, caster, SUNWELL, None, 0);
+    (room, caster, other)
+}
+
+#[test]
+fn linked_lingers_and_heals_by_its_sunwell_s_level_after_its_caster_leaves() {
+    let (mut room, caster, other) = linked_by_a_first_level_sunwell();
+    let lingers = room.fighter(other).expect("in").statuses.left(Status::Linked);
+    assert!((107..=108).contains(&lingers), "3 s at level 5, 1.8 s at level 1: {lingers}");
+    room.leave(caster);
+    let before = room.fighter(other).expect("in").health;
+    for _ in 0..180 {
+        room.tick();
+    }
+    let gained = room.fighter(other).expect("in").health - before;
+    assert!(!room.fighter(other).expect("in").statuses.has(Status::Linked), "Linked has run out");
+    // 1.8 s of linger holds one or two heals of the room's clock, each 3 at level 1, not 5.
+    assert!([3.0, 6.0].iter().any(|heals| (gained - heals).abs() < 1e-9), "3 a heal at level 1, not 5: {gained}");
+}
+
+/// The health a Shadow caster's Duskraven with Hunger gives back over its first bolts, the caster wearing Storm once
+/// the raven is out if `switch`.
+fn hunger_heal(switch: bool) -> f64 {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 3, &[place_of(3, "hunger")]);
+    let mut hurt = *room.fighter(player).expect("in");
+    hurt.health = 50.0;
+    room.set_fighter(player, hurt);
+    stand_foe(&mut room, 0.0, -15.0, 1000.0);
+    cast(&mut room, player, DUSKRAVEN, None, 0);
+    if switch {
+        room.answer(player, Asked::Art(ArtAsk::Wear { art: 1 }));
+    }
+    for _ in 0..120 {
+        room.tick();
+    }
+    room.fighter(player).expect("in").health - 50.0
+}
+
+#[test]
+fn a_spell_already_out_keeps_the_core_of_the_art_that_cast_it() {
+    let (kept, switched) = (hunger_heal(false), hunger_heal(true));
+    assert!(kept > 0.0);
+    assert!((kept - switched).abs() < 1e-9, "Hunger heals all a bolt deals after a swap: {kept} against {switched}");
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 2, &[place_of(2, "searing")]);
+    let foe = stand_foe(&mut room, 2.0, -10.0, 1000.0);
+    room.ask_cast(player, Some(Cast { spell: DAWNFLARE, aim: None }));
+    for _ in 0..19 {
+        room.tick();
+    }
+    room.answer(player, Asked::Art(ArtAsk::Wear { art: 1 }));
+    for _ in 0..60 {
+        room.tick();
+    }
+    assert!(room.fighter(foe).expect("in").statuses.has(Status::Expose), "Searing Exposes after a swap");
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 3, &[place_of(3, "dread")]);
+    let foe = stand_foe(&mut room, 0.0, -10.0, 7.0);
+    cast(&mut room, player, DUSKRAVEN, None, 0);
+    room.answer(player, Asked::Art(ArtAsk::Wear { art: 1 }));
+    room.give(foe, Status::Expose, None, None);
+    for _ in 0..40 {
+        room.tick();
+    }
+    assert!(room.fighter(foe).expect("lying there").dead());
+    let raven = room.spells_seen().find(|seen| seen.kind == DUSKRAVEN).map(|raven| raven.life);
+    assert_eq!(raven, Some(840), "Dread keeps the raven 2 s longer after a swap");
+}
+
 #[test]
 fn shape_sells_nowhere_outside_his_days_and_his_going_is_sent() {
     let (mut room, player) = room_with_player();
@@ -210,6 +294,41 @@ fn measured(art: u8, fragments: &[&str], spell: u8, status: Option<combat::Statu
     f64::from(ticks) / 60.0
 }
 
+/// Seconds of `status` a Minor foe standing at `at` first holds from the spell numbered `spell`, cast by a level 1
+/// caster wearing `art` with `fragments` and aimed at the foe.
+fn given(art: u8, fragments: &[&str], spell: u8, at: [f64; 2], status: Status) -> f64 {
+    let (mut room, player) = room_with_player();
+    room.players.get_mut(&player).expect("in").character.arts.levels.fill(1);
+    let places: Vec<u8> = fragments.iter().map(|key| place_of(art, key)).collect();
+    wearing(&mut room, player, art, &places);
+    let foe = stand_foe(&mut room, at[0], at[1], 1000.0);
+    room.foes.get_mut(&foe).expect("stood").brain.rank = ::foes::Rank::Minor;
+    room.ask_cast(player, Some(Cast { spell, aim: Some([at[0], at[1], 0.0]) }));
+    for _ in 0..600 {
+        room.tick();
+        let left = room.fighter(foe).expect("in").statuses.left(status);
+        if left > 0 {
+            return f64::from(left) / 60.0;
+        }
+    }
+    0.0
+}
+
+/// The seconds a level 1 Shadow caster's Duskraven is kept longer by a Cosmic kill on an Exposed foe, with Dread.
+fn dread_more() -> f64 {
+    let (mut room, player) = room_with_player();
+    room.players.get_mut(&player).expect("in").character.arts.levels.fill(1);
+    wearing(&mut room, player, 3, &[place_of(3, "dread")]);
+    let foe = stand_foe(&mut room, 0.0, -10.0, 4.0);
+    cast(&mut room, player, DUSKRAVEN, None, 0);
+    room.give(foe, Status::Expose, None, None);
+    for _ in 0..40 {
+        room.tick();
+    }
+    let life = room.spells_seen().find(|seen| seen.kind == DUSKRAVEN).map_or(0, |raven| raven.life);
+    f64::from(life) / 60.0 - measured(3, &[], DUSKRAVEN, None)
+}
+
 /// The harm a Dawnflare does to a foe on its path, cast at a Divine level: its burn, which nothing but power weighs.
 fn dawnflare_harm(level: u8) -> f64 {
     let (mut room, player) = room_with_player();
@@ -224,7 +343,6 @@ fn dawnflare_harm(level: u8) -> f64 {
 /// (client/src/game/artLevels.test.ts), which must show the same.
 #[test]
 fn what_an_art_does_at_its_first_level_is_written_for_the_clients_test() {
-    use combat::Status;
     let more = |art, key, spell, status| measured(art, &[key], spell, status) - measured(art, &[], spell, status);
     let numbers = serde_json::json!({
         "level": 1,
@@ -238,12 +356,18 @@ fn what_an_art_does_at_its_first_level_is_written_for_the_clients_test() {
             "blades": more(3, "blades", 8, None),
             "gale": more(1, "gale", 2, Some(Status::Haste)),
             "night": more(3, "night", 9, Some(Status::Veiled)),
+            "dread": dread_more(),
         },
         "gives": {
             "quicken": measured(1, &[], 2, Some(Status::Haste)),
             "vanish": measured(3, &[], 9, Some(Status::Veiled)),
             "momentum": measured(1, &["momentum"], 2, Some(Status::Crit)),
             "resolve": measured(2, &["resolve"], MEND, Some(Status::Crit)),
+            "sunwell": measured(2, &[], SUNWELL, Some(Status::Linked)),
+            "arcLash": given(1, &[], 3, [0.0, -3.0], Status::Charge),
+            "duskDaggers": given(3, &[], 8, [0.0, -10.0], Status::Expose),
+            "duskraven": given(3, &[], DUSKRAVEN, [0.0, -15.0], Status::Expose),
+            "searing": given(2, &["searing"], DAWNFLARE, [2.0, -10.0], Status::Expose),
         },
         "healsASecond": { "sunwell": sunwell_gain(1) / 3.0 },
         "power": dawnflare_harm(1) / dawnflare_harm(5),
